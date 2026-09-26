@@ -13,7 +13,7 @@ use pdfcer_core::document::Document;
 /// One stamp the operator can place — everything the placing verb needs, and
 /// everything a label needs, in one clonable value.
 ///
-/// # ★ Why the whole thing travels rather than an index
+/// # Why the whole thing travels rather than an index
 ///
 /// This is carried on `Action::CommitTextAnnot` and therefore has to survive
 /// the dialog that produced it. An index into a [`Library`] would be a handle
@@ -34,7 +34,7 @@ pub struct CustomStamp {
     pub file: PathBuf,
     /// The 0-based page of that file whose artwork this stamp is.
     ///
-    /// ★ Keyed by page, never by position in the list. §7.9.6 requires the
+    /// Keyed by page, never by position in the list. §7.9.6 requires the
     /// name tree be sorted lexicographically, so **page order is not tree
     /// order** — `StandardBusiness.pdf` proves it, with `SBApproved` on page 1
     /// and `SBCompleted` on page 5. A gallery that placed "the nth page"
@@ -192,7 +192,7 @@ fn read_collection(path: &Path) -> Option<(Category, usize)> {
 
     let (name, named_from_file) = match collection.category.as_deref().map(str::trim) {
         Some(title) if !title.is_empty() => (title.to_owned(), false),
-        // ★ The fallback, disclosed by the flag rather than silently pretty.
+        // The fallback, disclosed by the flag rather than silently pretty.
         // A collection with no `/Info` `/Title` is a file Acrobat itself
         // labels uselessly; the filename is the only other thing that was ever
         // the operator's choice.

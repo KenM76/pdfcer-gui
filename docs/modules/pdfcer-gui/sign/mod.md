@@ -17,7 +17,7 @@ that gets asserted once, by hand, and then drifts.
 
 ---
 
-# 1. ★★★ THE SUBSYSTEM WAS SHIPPED, ANSWERED OUR OWN REQUEST, AND WAS NOT
+# 1. THE SUBSYSTEM WAS SHIPPED, ANSWERED OUR OWN REQUEST, AND WAS NOT
 IN THE BINARY FOR THREE DAYS
 
 This module exists because of a defect worth stating before any of its
@@ -29,7 +29,7 @@ design, since the defect is the more transferable half.
 that does not re-name it strips it. So `pdfcer_core::sign` did not exist in
 this build at all. **Nothing failed to compile. No test went red.**
 
-★★ That is the JPX incident, repeating, three days after the warning about
+That is the JPX incident, repeating, three days after the warning about
 it was written into the very manifest that repeated it — the comment at
 `Cargo.toml`'s feature block records the day the GUI silently lost JPEG 2000
 decoding to the identical omission and says, in as many words, *"forgetting
@@ -40,7 +40,7 @@ mechanism that does is `tools/gates/check-forwarded-features.sh`, which
 reads the engine's own `default = [...]` and fails the build when a name in
 it is neither forwarded nor listed with a reason.
 
-★ And it went unnoticed for two of those days because
+And it went unnoticed for two of those days because
 `tools/gates/check-verb-coverage.sh` scored `EditSession::sign` as
 **consumed** on the bare word `sign` appearing in `app/actions/bookmarks.rs`
 — in a documentation table about the arithmetic **sign of `/Count`**. That
@@ -76,9 +76,9 @@ the interesting half is the prose:
 |---|---|---|
 | `10.12` (`02bb1ba`) | `SignRequest::certify` — a **certifying** (`/DocMDP`) signature | nothing; the capability was simply absent |
 | `10.13` (`ab40127`) | `SignRequest::field_name` resolving an EXISTING empty `/FT /Sig` field — signing **into** a box somebody else placed | nothing; absent |
-| `10.14` (`187fa09`) | a **composed** visible appearance: signer CN, date, reason, location, Helvetica, shrink-to-fit | ★★★ [`crate::text::sign::placement_note`], which told the operator in as many words that *"the box is an empty frame"* |
+| `10.14` (`187fa09`) | a **composed** visible appearance: signer CN, date, reason, location, Helvetica, shrink-to-fit | [`crate::text::sign::placement_note`], which told the operator in as many words that *"the box is an empty frame"* |
 
-★★ That third row is the one worth carrying, because the falsehood was
+That third row is the one worth carrying, because the falsehood was
 **under-promising** and therefore unreportable: an operator told the box
 would be empty, who then finds his own name in it, has been pleasantly
 surprised and will never file a defect. Nothing on the screen, in a test, or
@@ -92,7 +92,7 @@ successor.** The corrected string carries the same apparatus.
 
 ---
 
-# 2c. ★★★ SIGNING INTO A BOX THE SENDER PLACED — the half that matters
+# 2c. SIGNING INTO A BOX THE SENDER PLACED — the half that matters
 
 What shipped on 2026-09-06 signs by **creating** a signature field. That is
 the wrong half for this operator's ordinary day: a drawing goes out for
@@ -105,7 +105,7 @@ every `/FT /Sig` field in the document that has no `/V` — read once, when the
 window opens, out of `forms::parse_acroform`. [`Placement::ExistingField`]
 names one.
 
-**2. ★★★ Placement becomes a THREE-way choice, and the combination the
+**2. Placement becomes a THREE-way choice, and the combination the
 engine refuses is made unrepresentable.** `SignRequest::visible` beside a
 `field_name` that resolves to an existing field is
 `SignApplyError::RectRefusedForExistingField` — *"the existing field already
@@ -116,7 +116,7 @@ true, and the window **retires** the page chooser rather than greying it —
 R9's *absent* branch, with [`crate::text::sign::placement_field_note`]
 saying why it went.
 
-**3. ★★★ TWO ENFORCEMENT FAMILIES ARRIVE WITH IT, AND BOTH ARE THE AUTHOR'S
+**3. TWO ENFORCEMENT FAMILIES ARRIVE WITH IT, AND BOTH ARE THE AUTHOR'S
 RULES RATHER THAN PDFCER'S.** This is the design decision the wording has to
 carry, and getting it wrong makes a working feature read as a defect.
 
@@ -134,7 +134,7 @@ carry, and getting it wrong makes a working feature read as a defect.
   required timestamp, a legal attestation, revocation info, an unknown key —
   is **refused rather than skipped** (`SeedValueUnevaluable`).
 
-★★★ **The engine is therefore deliberately stricter than Acrobat, and the
+**The engine is therefore deliberately stricter than Acrobat, and the
 operator will meet refusals on documents Acrobat would sign.** A sentence
 that reads *"pdfcer could not sign this"* would be true and would be taken as
 a defect in pdfcer. [`crate::text::sign::author_imposed`] is the one wording
@@ -152,7 +152,7 @@ one is doing something unusual and why.
 catalog `/Perms`, which is *"the author's signature"*: it says what may be
 changed afterwards without invalidating it (Table 254 — `P` 1, 2 or 3).
 
-★ It is a **radio pair inside the Sign window**, not `file.certify` on the
+It is a **radio pair inside the Sign window**, not `file.certify` on the
 ribbon, and that is a design decision rather than an economy. The two acts
 share every field on this form — the same identity, the same reason, the same
 placement, the same destination, the same private key handled the same way —
@@ -168,7 +168,7 @@ not of the request: a certification must be the document's FIRST signature
 [`Standing::may_certify`] answers them there and the option is **absent with
 a sentence** rather than offered and then refused.
 
-## ★★ What the engine does that this module must NOT duplicate
+## What the engine does that this module must NOT duplicate
 
 `EditSession::sign` **self-verifies**: step 5 of its own documentation
 re-parses the bytes it is about to return and runs `signature_verify` over
@@ -193,7 +193,7 @@ a different subsystem from the one under test.
 
 ---
 
-# 3. ★★★ Why the session is handed to the verb, and why the file is reopened
+# 3. Why the session is handed to the verb, and why the file is reopened
 afterwards
 
 The opposite of [`crate::protect`]'s answer, and the asymmetry is the
@@ -206,7 +206,7 @@ the session as an **incremental update**. It must be the open session: the
 operator's unsaved edits are in it, and a signature that did not cover them
 would cover a document they are not looking at.
 
-★★ But the session is **left holding the placeholder**, not the signature.
+But the session is **left holding the placeholder**, not the signature.
 The engine says so outright: *"the session still holds the staged
 placeholder objects (zeros in `/Contents`) … a caller that wants to keep
 editing must re-open the returned bytes. A CLI writes the bytes and is done;
@@ -247,11 +247,11 @@ function.
 | [`Refusal::RecoveredBase`] | `SignApplyError::RecoveredBase` | a damaged file that loaded through cross-reference recovery |
 | [`Refusal::NotOnDisk`] | *(none — see below)* | File ▸ New makes a document that has never been written |
 
-★★ The first two are the ones the build brief names, and they are the two
+The first two are the ones the build brief names, and they are the two
 this shell can produce **in one session without leaving the application**,
 which is what makes them reachable rather than theoretical.
 
-★★★ The fifth has **no engine counterpart**, and that is the interesting
+The fifth has **no engine counterpart**, and that is the interesting
 one. `EditSession::sign` would not refuse a document that was never on
 disk — it would sign it, incrementally, over whatever base the session
 holds. The refusal is this shell's, and the reason is that an incremental
@@ -263,7 +263,7 @@ alternative is a signed file with no ancestor.
 
 ---
 
-# 5. ★★★ THE PASSPHRASE, AND A RULE STRICTER THAN THE ONE BESIDE IT
+# 5. THE PASSPHRASE, AND A RULE STRICTER THAN THE ONE BESIDE IT
 
 This module handles a **private key**, and that changes the standard from
 the one [`crate::protect`] works to.
@@ -308,7 +308,7 @@ a new file?"* So, unchanged here:
    been.
 3. **The write is atomic** — temp file, then rename ([`Prepared::write_to`]).
 
-★ Replacing is genuinely reasonable here in a way it is not for a redaction:
+Replacing is genuinely reasonable here in a way it is not for a redaction:
 a signature is an *incremental update*, so the replaced file still contains
 every byte it had. Nothing is lost by signing in place. It is still not the
 default, because "the file I sent out" and "the file I signed" being one

@@ -3,7 +3,7 @@
 `OPERATOR_REQUESTS.md` **O173**: *"Then it should be in the top of our
 settings as a button to execute the changeover."*
 
-## ★★★ Why this is FIRST, above the presets row
+## Why this is FIRST, above the presets row
 
 [`super`]'s ordering rule runs from what the **program** looks like, through
 what the **document** is made of, to what pdfcer **does with it** — and the
@@ -24,7 +24,7 @@ reason. A collapsed heading is a heading whose button is not on screen, and
 Settings showed nothing but a list of standards."* Four short lines is a
 price worth paying at the top of a scroll area; a hidden button is not.
 
-## ★★ It is drawn whether or not it would do anything
+## It is drawn whether or not it would do anything
 
 R9's escape hatch, the same shape [`super::acrobat`] argues at length. There
 is no ribbon command for this and there never will be — it is a machine
@@ -33,7 +33,7 @@ program that the capability exists. An operator who ticked *Don't ask me
 again* on the startup offer, and later changed their mind, has exactly one
 place to look, and it must be here whatever state the machine is in.
 
-## ★ Rule 4 — fuzzy, never sneaky
+## Rule 4 — fuzzy, never sneaky
 
 No canvas is involved, so the marking clause is not in play. The disclosure
 clause is, and it is the whole of [`state_line`]: pdfcer performs half an

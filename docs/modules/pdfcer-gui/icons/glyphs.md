@@ -49,7 +49,7 @@ the bug (the replacement character itself); the actual blast radius is
 | `◻` U+25FB (the substitution mark) | **NotoEmoji-Regular** |
 | `⚠` U+26A0 | **NotoEmoji-Regular** |
 | `ℹ` U+2139, `‼` U+203C, `❗` U+2757 | **NotoEmoji-Regular** |
-| `⚑` U+2691, `★` U+2605, `○` U+25CB, `⏴⏵⏷` U+23F4-7 | emoji-icon-font |
+| `⚑` U+2691, `` U+2605, `○` U+25CB, `⏴⏵⏷` U+23F4-7 | emoji-icon-font |
 | `—` `…` `·` `×` `“` `”` `−` `°` `◊` `•` `†` `‡` `№` `¶` `!` | Ubuntu-Light |
 | `▲` `△` `●` `◆` `□` `✓` `✗` `ⓘ` `※` | *no face — genuinely absent* |
 

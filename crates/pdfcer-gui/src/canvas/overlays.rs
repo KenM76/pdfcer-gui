@@ -44,7 +44,7 @@ mod tests {
     use super::*;
     use egui_shell::theme::Preset;
 
-    /// ★ **The preview role and the committed role are different colours, on
+    /// **The preview role and the committed role are different colours, on
     /// every preset.**
     ///
     /// The check `egui-shell`'s `overlays.rs` says the application owes and the
@@ -75,7 +75,7 @@ mod tests {
 
     /// Every role the canvas asks for is defined, on every preset.
     ///
-    /// ★ The failure this catches is the one `Overlays::get`'s `Option` makes
+    /// The failure this catches is the one `Overlays::get`'s `Option` makes
     /// possible: a role nobody defined returns `None`, the caller falls back,
     /// and **nothing looks broken** — the snap marker simply keeps drawing in
     /// the selection stroke, which is exactly the state this module was written

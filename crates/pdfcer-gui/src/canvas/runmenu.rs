@@ -23,7 +23,7 @@ const PICK_MEMORY_KEY: &str = "pdfcer-text-run-pick"; // ui-text-exempt: interna
 /// `text-run-menu pick=… offered=…` — what a right-click on a text object
 /// resolved to, and whether the row will be drawn.
 ///
-/// ★ Emitted on the frame of the click and on that frame only, so a driven
+/// Emitted on the frame of the click and on that frame only, so a driven
 /// check can read *which line the menu thinks it is about* without pressing
 /// anything. Without it, a row that failed to appear and a row that appeared
 /// about the wrong line are the same observation.
@@ -32,7 +32,7 @@ pub const TRACE_MENU: &str = "text-run-menu"; // ui-text-exempt: diagnostic trac
 /// `text-run-command pick=… outcome=…` — the row was pressed, and this is the
 /// operand it was carrying.
 ///
-/// ★ It carries the **pick**, not only the outcome, because the whole class of
+/// It carries the **pick**, not only the outcome, because the whole class of
 /// defect this design can produce is *the right verb on the wrong line*. A
 /// trace line has to carry the number a wrong build would get wrong.
 pub const TRACE_COMMAND: &str = "text-run-command"; // ui-text-exempt: diagnostic trace name
@@ -48,7 +48,7 @@ pub const TRACE_COMMAND: &str = "text-run-command"; // ui-text-exempt: diagnosti
 pub enum RunPick {
     /// On one visual line of a text object.
     ///
-    /// ★★ **Numbered in LINES, not show operators** — the same numbering
+    /// **Numbered in LINES, not show operators** — the same numbering
     /// `part_hits_of` answers in and `ObjectModelProvider::text_line_count`
     /// counts, so the number this menu picks is the number a Points-tool click
     /// would enter at. `VectorAction::MoveTextLine` and `DeleteTextLine`
@@ -111,14 +111,14 @@ impl RunPick {
 ///    menu offers and the line a Points-tool click would enter cannot
 ///    disagree.
 ///
-/// # ★★ Why `part_hits_of` and not a hit test of this module's own
+/// # Why `part_hits_of` and not a hit test of this module's own
 ///
 /// Because the alternative is two spellings of *"which line is under this
 /// point"*, and the failure mode of that shape is silent: a change to one
 /// spelling's index handling leaves the other answering a different line, with
 /// every unit test of both still green. One query, two callers, no drift.
 ///
-/// # ★ The coordinates
+/// # The coordinates
 ///
 /// `map.to_page(screen)` and `map.tolerance()` — the canonical pair, exactly
 /// as `menus::right_clicked_object` and `canvas::input::probe` both use. The
@@ -145,7 +145,7 @@ pub fn pick_at(
     if targets.part_kind_of(object) != Some(PartKind::TextLine) {
         return RunPick::Elsewhere;
     }
-    // 2. ★ `page_object_index` is `None` for a leaf — a text object painted
+    // 2. `page_object_index` is `None` for a leaf — a text object painted
     // from inside a form XObject. `part_hits_of` already answers empty there
     // (`canvas::target`'s `(Some(PartKind::TextLine), None)` arm, which is an
     // acknowledged hole rather than an oversight), so the row would not be
@@ -204,7 +204,7 @@ pub fn trace(pick: RunPick) {
 
 /// **The `(object, line)` a pressed row should select**, or `None` if it cannot.
 ///
-/// # ★★ Why the pick is re-validated here and not trusted from the menu
+/// # Why the pick is re-validated here and not trusted from the menu
 ///
 /// The row was drawn from [`pick_at`] on some earlier frame, and everything
 /// between then and now is a frame in which the document could have changed —
@@ -267,7 +267,7 @@ fn resolved(
     if targets.part_kind_of(object) != Some(PartKind::TextLine) {
         return None;
     }
-    // ★ Bounds-checked against the CURRENT line count, not against the `of`
+    // Bounds-checked against the CURRENT line count, not against the `of`
     // parked with the pick. A reflow between the click and the press can
     // shorten the object, and an index past the end is one the delete and move
     // arms find no run range for — after the selection outline had already
@@ -282,7 +282,7 @@ mod tests {
 
     /// **R9's one boolean.** A pick on a line is offered; nothing else is.
     ///
-    /// ★ Falsified: defining `offered` as `true` makes the second assertion
+    /// Falsified: defining `offered` as `true` makes the second assertion
     /// fail, which is the regression that would draw the row over paths,
     /// images and blank paper.
     #[test]
@@ -302,7 +302,7 @@ mod tests {
     /// The pick's default is *nowhere near a line*, so a frame before any
     /// right-click cannot be read as "line 0 of object 0".
     ///
-    /// ★ Falsified: making a `TextLine` variant the default makes this fail, and
+    /// Falsified: making a `TextLine` variant the default makes this fail, and
     /// would have offered the row on every right-click anywhere on the canvas
     /// before the operator had pointed at anything.
     #[test]
@@ -318,7 +318,7 @@ mod tests {
     /// assertion exists: it shows the two refusals are independent rather than
     /// one of them covering for the other.
     ///
-    /// ★ Falsified: moving the page comparison below `let targets = targets?`
+    /// Falsified: moving the page comparison below `let targets = targets?`
     /// leaves the first assertion passing for the wrong reason.
     #[test]
     fn a_pick_from_another_page_is_refused() {
@@ -334,7 +334,7 @@ mod tests {
 
     /// `Elsewhere` resolves to nothing even with a matching page.
     ///
-    /// ★ Falsified: an `_ =>` arm in [`resolved`] falling through to
+    /// Falsified: an `_ =>` arm in [`resolved`] falling through to
     /// `Some((TargetId::Object(0), 0))` makes this fail — the shape of the
     /// *"unwrap_or_default into line 0"* defect the enum's two variants exist
     /// to prevent.
@@ -348,7 +348,7 @@ mod tests {
     /// check that could only see `line` could not tell a wrong pick from a
     /// short object.
     ///
-    /// ★ Falsified: dropping `of` from the format string makes this fail.
+    /// Falsified: dropping `of` from the format string makes this fail.
     #[test]
     fn the_trace_word_names_the_line_and_the_total() {
         assert_eq!(

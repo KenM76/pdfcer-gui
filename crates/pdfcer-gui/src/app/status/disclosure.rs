@@ -73,7 +73,7 @@ fn fill_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
         // *"would report a constraint that was never evaluated"*. It takes the
         // general sentence, which is true of it.
         //
-        // ★ A missing bound is not a `Height`. That is the same mistake as
+        // A missing bound is not a `Height`. That is the same mistake as
         // reading a missing texture as zero thinned strokes (`O137`), and it is
         // written here because this arm is where somebody would make it.
         use pdfcer_core::vartext::AutoFitBound as Bound;
@@ -87,7 +87,7 @@ fn fill_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
             // grep read the `#[derive]` line and the attribute is on the line
             // after it. So `Some(_)` is genuinely reachable, not a formality.
             //
-            // ★ A bound this build has never met joins `Height` and `None` and
+            // A bound this build has never met joins `Height` and `None` and
             // gets the sentence that is true of **every** auto-size — *"pdfcer
             // chose N pt; another program may choose differently"* — rather
             // than a claim about a constraint it cannot name. That is the
@@ -167,7 +167,7 @@ fn fill_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
 /// clear it. One edit bumps the epoch once and records at most one kind of
 /// disclosure, so the fill line and this one can never both be live for the
 /// same revision; see
-/// [`crate::app::actions::last_edit_disclosure`]'s ★ section.
+/// [`crate::app::actions::last_edit_disclosure`]'s section.
 ///
 /// **It does not make the bar taller** — R128, asserted by
 /// [`tests::the_bar_is_exactly_as_tall_open_as_closed`].
@@ -188,7 +188,7 @@ fn edit_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
 /// words — *"live preview for everything we do"* — true rather than
 /// aspirational.
 ///
-/// # ★★★ Why this is the general answer and the drawn preview is not
+/// # Why this is the general answer and the drawn preview is not
 ///
 /// `canvas::shapes` draws a real preview, exactly, at pointer speed — and only
 /// where the shell holds the geometry: a path being moved, resized, rotated or
@@ -217,7 +217,7 @@ fn edit_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
 /// retirement rule at all, and it can appear for one edit and not the next
 /// depending only on how hard the page was to draw.
 ///
-/// ★ And it is **silent under 400 ms** ([`OpenDoc::page_is_catching_up`]),
+/// And it is **silent under 400 ms** ([`OpenDoc::page_is_catching_up`]),
 /// because the picture is behind after every edit and a line that flashed on
 /// each one would be noise that costs every other sentence this bar carries.
 ///
@@ -268,7 +268,7 @@ pub(super) fn disclosure_line(ui: &mut egui::Ui, region: &str, line: &str) {
 /// **This file's index was damaged and pdfcer rebuilt it** — the only line here
 /// that is about the FILE rather than about something the operator just did.
 ///
-/// # ★★★ Why it is in the status bar as well as in Properties
+/// # Why it is in the status bar as well as in Properties
 ///
 /// Operator ruling, 2026-08-26: *"disclose it."*
 ///
@@ -280,7 +280,7 @@ pub(super) fn disclosure_line(ui: &mut egui::Ui, region: &str, line: &str) {
 /// was defined twice pdfcer had to pick one, and on a drawing a wrong pick is a
 /// line in the wrong place on a page that renders perfectly.
 ///
-/// # ★★ How it avoids being the nagging the old shell was criticised for
+/// # How it avoids being the nagging the old shell was criticised for
 ///
 /// 1. **Off-canvas.** A line in the status bar, never a badge on the page. The
 ///    document is not in doubt as *drawn*; what is in doubt is how it was
@@ -292,7 +292,7 @@ pub(super) fn disclosure_line(ui: &mut egui::Ui, region: &str, line: &str) {
 ///    open. One sentence, and the operator decides whether it matters to the job
 ///    in front of them.
 ///
-/// ★ The counters stay in Properties. The status bar answers *"is there
+/// The counters stay in Properties. The status bar answers *"is there
 /// something I should know?"*; the panel answers *"what exactly?"* — and a line
 /// long enough to carry three numbers would push the zoom and page controls off
 /// a narrow window.
@@ -303,7 +303,7 @@ fn recovered_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
     disclosure_line(ui, REGION_RECOVERED, t::recovered_status_line());
 }
 
-/// ★★★ **This file contradicted itself, and pdfcer decided rather than
+/// **This file contradicted itself, and pdfcer decided rather than
 /// refusing** — engine `Pass 283.0`, decision 145, wired 2026-09-09.
 ///
 /// # What changed under the shell, and why silence was no longer an option
@@ -319,14 +319,14 @@ fn recovered_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
 /// > intervene in a decision that should always be an option along with them not
 /// > having to intervene."*
 ///
-/// ★★ The half of that sentence a shell can get wrong is the *last* clause. A
+/// The half of that sentence a shell can get wrong is the *last* clause. A
 /// loader that quietly picks one of two values and says nothing has made the
 /// file open — and has also made pdfcer's choice invisible, which is the exact
 /// shape rule 4 forbids: **an inference the operator cannot see still owes them
 /// a report.** Before this line, a file with a doubled key opened, looked
 /// perfect, and disclosed nothing anywhere in the program.
 ///
-/// # ★★★ Why this is not the recovered-index line with different words
+/// # Why this is not the recovered-index line with different words
 ///
 /// [`recovered_disclosure`] fires when the stored cross-reference table could
 /// not be parsed and pdfcer rebuilt the index by scanning. This fires when an
@@ -355,7 +355,7 @@ fn recovered_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
 ///    [`crate::text::anomalies`]' header for why the true "opened cleanly"
 ///    sentence is deliberately not written.
 ///
-/// # ★★ Its lifetime is the document's, and it carries no epoch key
+/// # Its lifetime is the document's, and it carries no epoch key
 ///
 /// [`fill_disclosure`] and [`edit_disclosure`] retire on the next edit because
 /// they describe something the operator just did. This describes **what the file
@@ -367,7 +367,7 @@ fn recovered_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
 /// there is no cached state, so there is nothing to clear and no way for one
 /// file's anomalies to be shown against another's.
 ///
-/// ★ The census only, never the detail. Which object and which two values is
+/// The census only, never the detail. Which object and which two values is
 /// Document properties' job; a line long enough to carry a `/PageMode` pair
 /// would push the zoom and page controls off a narrow window, and the shared
 /// [`disclosure_line`] gives this all four R128 defences — bounded width, fixed
@@ -379,7 +379,7 @@ fn load_anomalies_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
     disclosure_line(ui, REGION_LOAD_ANOMALIES, &line);
 }
 
-/// ★★★ **The page's colours are approximate at this zoom**, because the raster
+/// **The page's colours are approximate at this zoom**, because the raster
 /// grew past the size the engine will composite in CMYK.
 ///
 /// # What the operator sees without this, and why it reads as a bug
@@ -404,7 +404,7 @@ fn load_anomalies_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
 /// renders into a common grid so that resampling could not masquerade as the
 /// effect.
 ///
-/// # ★★ Why this is a disclosure and not just a fix
+/// # Why this is a disclosure and not just a fix
 ///
 ///
 /// `render::strategy::for_page` now asks the pixel question as well as the
@@ -419,14 +419,14 @@ fn load_anomalies_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
 /// of the page says nothing about which space it was composited in — so it owes
 /// an off-canvas report. Nothing is marked on the canvas.
 ///
-/// ★ It names **zooming out** as the remedy, because that is the one that
+/// It names **zooming out** as the remedy, because that is the one that
 /// works, is instant, and is the opposite of what an operator chasing a colour
 /// difference would try.
 fn blend_space_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
     let Some(texture) = doc.page_texture.as_ref() else {
         return;
     };
-    // ★ `cmyk_buffer_refused`, not `blends_in_wrong_space`. The first says
+    // `cmyk_buffer_refused`, not `blends_in_wrong_space`. The first says
     // *the correct buffer was not available*, which is true of the whole page
     // and is what changes with zoom. The second counts the blends that then
     // happened in the wrong space, and is zero on a page whose transparency is
@@ -438,7 +438,7 @@ fn blend_space_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
     disclosure_line(ui, REGION_BLEND_SPACE, &t::blend_space_status_line());
 }
 
-/// ★★★ **The canvas is deliberately not showing what will print** —
+/// **The canvas is deliberately not showing what will print** —
 /// `OPERATOR_REQUESTS.md` **O137**, and the line that makes the whole feature
 /// safe to ship.
 ///
@@ -450,7 +450,7 @@ fn blend_space_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
 /// convention the operator asked for by name. The document is untouched;
 /// printing, print preview and every export render the real widths.
 ///
-/// # ★★★ Why it exists, and why "he asked for it" is not an answer
+/// # Why it exists, and why "he asked for it" is not an answer
 ///
 /// The three lines above are rule 4's usual shape: pdfcer inferred something
 /// the operator cannot see. This one is not — he pressed a button and got what
@@ -466,7 +466,7 @@ fn blend_space_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
 /// suspended claim is stated, or the next surprising thing the operator sees is
 /// a plot that does not match his screen.
 ///
-/// ⇒ ★★ And the surprise is realistic rather than theoretical: this is a
+/// ⇒ And the surprise is realistic rather than theoretical: this is a
 /// **reading** aid, so it is on precisely while he is absorbed in reading, for
 /// as long as he likes, across documents and sheets. There is no gesture to
 /// remember it by and no mark on the page. Nothing else in the program persists
@@ -480,13 +480,13 @@ fn blend_space_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
 /// lines can be live together (a slow page, hairline on) and that is bounded
 /// the same way every other pair here is; see [`disclosure_line`].
 ///
-/// ★ Drawn through the shared [`disclosure_line`] so it inherits all four R128
+/// Drawn through the shared [`disclosure_line`] so it inherits all four R128
 /// defences at once — bounded width, fixed row height, truncation rather than
 /// wrapping, and the whole sentence on hover. **It does not make the bar
 /// taller**, which for a line that can be up for an hour is not a nicety: a bar
 /// that grew would re-fit the page underneath it.
 ///
-/// ★ Off-canvas, never a badge on the page — the same constraint
+/// Off-canvas, never a badge on the page — the same constraint
 /// [`edit_disclosure`] argues, and here it is doubly binding, because a mark
 /// drawn over the drawing to say *"this drawing is being drawn unfaithfully"*
 /// would itself be an unfaithful mark on the drawing.
@@ -518,7 +518,7 @@ fn line_weights_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
 
 /// Draw all of them, in the order the parent expects.
 pub(super) fn all(ui: &mut egui::Ui, doc: &OpenDoc) {
-    // ★ First, and the order is the argument: the other three describe what an
+    // First, and the order is the argument: the other three describe what an
     // edit DID, and this one describes whether the operator is looking at the
     // result yet. Reading "the picture is still being drawn" after a sentence
     // about what was drawn puts the two in the wrong causal order.
@@ -526,7 +526,7 @@ pub(super) fn all(ui: &mut egui::Ui, doc: &OpenDoc) {
     fill_disclosure(ui, doc);
     edit_disclosure(ui, doc);
     recovered_disclosure(ui, doc);
-    // ★ Immediately after its nearest relative, and before the two render-state
+    // Immediately after its nearest relative, and before the two render-state
     // lines. Both of these are about **how this file was assembled before
     // anything was drawn**, so they belong adjacent; and the index question
     // comes first because a rebuilt index is the more sweeping fact — it says
@@ -534,14 +534,14 @@ pub(super) fn all(ui: &mut egui::Ui, doc: &OpenDoc) {
     // objects it found said twice.
     load_anomalies_disclosure(ui, doc);
     blend_space_disclosure(ui, doc);
-    // ★★★ LAST, and the position is the argument. Every line above is about
+    // LAST, and the position is the argument. Every line above is about
     // something that HAPPENED — a fill, an edit, how the file was assembled, a
     // buffer that would not fit. This one is about a stance the operator is
     // holding, which outlives all of them; putting a durable state ahead of the
     // transient events would push a sentence he has already read in front of
     // the one he has not.
     //
-    // ★ It is also the line most likely to be up at the same time as another,
+    // It is also the line most likely to be up at the same time as another,
     // because it can be up for an hour — so it is the one that should yield
     // rightmost when the bar runs short, and last is where that happens.
     line_weights_disclosure(ui, doc);

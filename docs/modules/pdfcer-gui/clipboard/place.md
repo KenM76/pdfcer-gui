@@ -5,7 +5,7 @@
 payload from a real document and hands the ordered set to
 `native_clipboard::place`, which is the crate that owns the `unsafe`.
 
-## ★★★ The rule that governs every function here
+## The rule that governs every function here
 
 **The whole transaction lands or nothing is placed.**
 
@@ -31,7 +31,7 @@ each where it can be checked.
 | [`selection_payload`] | the selected page objects | `EditSession::copy_objects` → `ObjectClip::to_pdf` → a standalone one-page PDF whose `/MediaBox` is the selection's bounds → the engine's file writers |
 | [`page_payload`] | the whole current page | the live edit session's `DocumentView` → the same writers |
 
-★★ The selection route **fell out cleanly** and is therefore taken. Both
+The selection route **fell out cleanly** and is therefore taken. Both
 ends of it already existed: `canvas::clipimage::publish` has produced a
 standalone PDF from an `ObjectClip` since the object clipboard shipped, and
 `pdfcer_render::svg::export_svg` / `emf::export_emf` take a plain
@@ -47,7 +47,7 @@ the honest answer — a markup's vector form *is* on the page — and it is
 stated here because the alternative reading ("selection copy is broken for
 comments") is the one a reader would otherwise reach.
 
-## ★ Why the render is transparent by default
+## Why the render is transparent by default
 
 `pdfcer copy-page`'s own default: `--background` is `None` unless asked for,
 so the SVG carries no backdrop, the EMF is in *"its natural state (nothing

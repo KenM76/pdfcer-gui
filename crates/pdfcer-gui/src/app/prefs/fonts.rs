@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 
 /// The most folders this preference will hold.
 ///
-/// ★ Sixteen, and the cap exists for the same reason every cap in this project
+/// Sixteen, and the cap exists for the same reason every cap in this project
 /// does — a bound is a decision and an unbounded list is a decision nobody
 /// made. It is not a performance limit: an embed searches folders once per
 /// missing face. It is a **legibility** limit, because a settings pane listing
@@ -20,7 +20,7 @@ pub const MAX_FOLDERS: usize = 16;
 
 /// **The operating system's own font directories**, in search order.
 ///
-/// # ★★★ Why searching them is allowed, when pdfcer must not go looking
+/// # Why searching them is allowed, when pdfcer must not go looking
 ///
 /// The rule the module header states is against pdfcer **deciding silently** —
 /// a program that searched `C:\Windows\Fonts` on its own would be answering a
@@ -34,7 +34,7 @@ pub const MAX_FOLDERS: usize = 16;
 /// program must not decide, the answer is usually a visible setting rather than
 /// a permanent no.**
 ///
-/// # ★★ TWO folders, and the second is the one that matters
+/// # TWO folders, and the second is the one that matters
 ///
 /// | | |
 /// |---|---|
@@ -47,7 +47,7 @@ pub const MAX_FOLDERS: usize = 16;
 /// font the operator installed themselves for this drawing, which is the font
 /// they are most likely to have ticked the box for.
 ///
-/// # ★ Read from the environment rather than hard-coded
+/// # Read from the environment rather than hard-coded
 ///
 /// `%WINDIR%` is `C:\Windows` on essentially every machine and is not guaranteed
 /// to be; a domain image can put it elsewhere. The cost of asking is one
@@ -86,7 +86,7 @@ pub fn os_font_dirs() -> Vec<PathBuf> {
 
 /// Every folder an embed may take a donor from, given the preference.
 ///
-/// ★★ The operator's own folders **first**, then the OS ones. Order is search
+/// The operator's own folders **first**, then the OS ones. Order is search
 /// order and the first match wins ([`add`]), so a face the operator put in a
 /// folder of their own beats the same-named face the machine happens to have --
 /// which is the only ordering that makes their list mean anything. A folder
@@ -112,7 +112,7 @@ pub fn search_path(configured: &[PathBuf], include_os: bool) -> Vec<PathBuf> {
 /// Returns whether the list changed, so a caller can tell "added" from "you
 /// already have that one" without comparing lengths.
 ///
-/// ★ It does **not** check that the folder exists. A removable drive that is
+/// It does **not** check that the folder exists. A removable drive that is
 /// not mounted right now is still where the operator's fonts live, and a
 /// preference that silently dropped it on the day the drive was unplugged
 /// would be worse than one that keeps a path that occasionally resolves to
@@ -128,7 +128,7 @@ pub fn add(folders: &mut Vec<PathBuf>, folder: &Path) -> bool {
 
 /// Parse one `font_folder = …` line's value.
 ///
-/// ★ Trims, and rejects only the empty result. A path is otherwise taken
+/// Trims, and rejects only the empty result. A path is otherwise taken
 /// verbatim — no canonicalisation, no separator normalisation — because
 /// `Path` comparison on Windows is case-insensitive in the filesystem and
 /// case-sensitive in `PathBuf`, and a preference that rewrote what the
@@ -142,7 +142,7 @@ pub fn parse_one(value: &str) -> Option<PathBuf> {
 /// The `font_folder` lines for [`super::Prefs::write_to_string`], with the
 /// comment that explains them.
 ///
-/// ★ The comment is emitted **even when the list is empty**, which is the
+/// The comment is emitted **even when the list is empty**, which is the
 /// convention every other block in that file follows and is the reason the
 /// file is editable by hand: an operator who wants to add a folder without
 /// opening pdfcer needs to see the key name and its rules, and a key that only
@@ -178,7 +178,7 @@ mod tests {
 
     /// **A duplicate is refused and the list is unchanged.**
     ///
-    /// ★ Asserted through the return value as well as the length, because the
+    /// Asserted through the return value as well as the length, because the
     /// caller uses it to decide what to say: *"added"* and *"you already have
     /// that one"* are different sentences and a length comparison cannot tell
     /// them apart when the list is also at its cap.
@@ -223,7 +223,7 @@ mod tests {
         assert_eq!(parse_one("  C:/Fonts  "), Some(PathBuf::from("C:/Fonts")));
     }
 
-    /// ★★ **The comment block is written even with no folders**, so the file
+    /// **The comment block is written even with no folders**, so the file
     /// teaches its own key.
     ///
     /// The failure this guards is the tempting simplification — emit nothing
@@ -256,7 +256,7 @@ mod tests {
 /// The `use_os_fonts` line for [`super::Prefs::write_to_string`], with the
 /// comment that explains it.
 ///
-/// ★ Written **always**, both values, for [`write_block`]'s reason: the file is
+/// Written **always**, both values, for [`write_block`]'s reason: the file is
 /// editable by hand, and a key that only appears once it is already set cannot
 /// teach anybody it exists. This one has a second reason of its own — it is the
 /// switch with a licensing consequence, so the file states that consequence
@@ -287,7 +287,7 @@ pub fn write_os_flag(on: bool) -> String {
 mod os_tests {
     use super::*;
 
-    /// ★★ **The OS folders are searched AFTER the operator's own.**
+    /// **The OS folders are searched AFTER the operator's own.**
     ///
     /// Order is search order and the first match wins, so a face the operator
     /// put in a folder they curated for a job beats the same-named face the
@@ -306,7 +306,7 @@ mod os_tests {
 
     /// **Off means off.**
     ///
-    /// ★ The assertion that guards the licensing argument. A build whose
+    /// The assertion that guards the licensing argument. A build whose
     /// checkbox did nothing would be caught by the UI; a build that searched
     /// the OS folders regardless of it would not be caught anywhere else.
     #[test]
@@ -316,7 +316,7 @@ mod os_tests {
         assert!(search_path(&[], false).is_empty());
     }
 
-    /// ★★ **A folder already listed by hand is not added twice.**
+    /// **A folder already listed by hand is not added twice.**
     ///
     /// An operator who typed the machine's font folder into the list and then
     /// ticked the box has said one thing twice, and a list holding it twice
@@ -336,7 +336,7 @@ mod os_tests {
         );
     }
 
-    /// ★★★ **The real machine has at least one, and the parse link is live.**
+    /// **The real machine has at least one, and the parse link is live.**
     ///
     /// Every test above would pass on a build whose `os_font_dirs` returned an
     /// empty vector — they assert about ordering and absence. This one asserts

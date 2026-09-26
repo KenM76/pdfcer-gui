@@ -17,7 +17,7 @@
 //     document and only the file was outstanding. Nothing has been removed —
 //     the removal is ARMED — and `staged_into_document` says so.
 //
-// ★★★ The claim that survives both rewrites, and it is the one this group
+// The claim that survives both rewrites, and it is the one this group
 // exists for: **nothing has been written.** That is what an operator most needs
 // and is least likely to assume, because every redaction tool he has ever used
 // produced a file.
@@ -25,7 +25,7 @@
 
 /// The deferred destination, and **the default since 2026-09-04**.
 ///
-/// ★ It replaced [`destination_new_file`] as the default, and the swap is the
+/// It replaced [`destination_new_file`] as the default, and the swap is the
 /// safer direction rather than the more convenient one: a new file is a write,
 /// and this is not one. Nothing on disk changes until the operator saves, so
 /// the default answer is now the only one of the three that cannot lose
@@ -35,7 +35,7 @@
 /// he is looking at a document, and the two nouns that would be accurate are
 /// both ours rather than his.
 ///
-/// ★★ 2026-09-05: *"the removal happens when you Save"* rather than *"Save
+/// 2026-09-05: *"the removal happens when you Save"* rather than *"Save
 /// decides where it goes, and when"*. The old half-sentence was true of the
 /// collapsing verb, where the removal had already happened and only its
 /// destination was outstanding. On `Pass 250.2` the removal itself is what is
@@ -48,7 +48,7 @@ pub fn destination_open_document() -> &'static str {
 
 /// The *apply into the open document, now* destination.
 ///
-/// ★★★ Its wording carries the whole difference from its neighbour, because the
+/// Its wording carries the whole difference from its neighbour, because the
 /// two destinations differ in **when**, not in **where**. *"Now"* is the
 /// operative word and it does the work of a whole sentence: the row above puts
 /// the removal off until a save, and this one performs it at the click.
@@ -64,12 +64,12 @@ pub const fn destination_open_document_now() -> &'static str {
 
 /// See [`destination_open_document_now`].
 ///
-/// ★★ It names the price **at the control**, not after the press. His own ruling
+/// It names the price **at the control**, not after the press. His own ruling
 /// is on the record — *"finalizing the document and can't be undone is ok for
 /// now"* — so this is a cost he has already accepted, and a cost accepted in
 /// advance is still one that belongs where the choice is made.
 ///
-/// ★ *"No file is written"* is the clause that separates this from *Replace the
+/// *"No file is written"* is the clause that separates this from *Replace the
 /// original*: two rows both remove content immediately, and only one of them
 /// touches the disk.
 #[must_use]
@@ -81,7 +81,7 @@ pub const fn destination_open_document_now_tooltip() -> &'static str {
 
 /// The permanence statement for [`destination_open_document_now`].
 ///
-/// ★★★ Its own arm rather than reusing either neighbour, and the match it
+/// Its own arm rather than reusing either neighbour, and the match it
 /// belongs to says why in its own comment: *"a fourth destination that fell
 /// through to the wrong arm here would be a false claim in the one place a
 /// false claim is worst."*
@@ -94,7 +94,7 @@ pub const fn permanence_statement_now() -> &'static str {
 
 /// The confirm button for [`destination_open_document_now`].
 ///
-/// ★ No ellipsis: nothing further is asked. An ellipsis on this button would
+/// No ellipsis: nothing further is asked. An ellipsis on this button would
 /// promise a picker that is not coming, which is the convention its `NewFile`
 /// sibling relies on.
 #[must_use]
@@ -102,7 +102,7 @@ pub const fn confirm_button_into_document_now() -> &'static str {
     "Remove it now"
 }
 
-/// ★★ Why the deferred destination is safe, and the one thing about it that
+/// Why the deferred destination is safe, and the one thing about it that
 /// surprises people.
 ///
 /// **REWRITTEN 2026-09-05.** The sentence it replaces ended *"applying clears
@@ -119,7 +119,7 @@ pub fn destination_open_document_tooltip() -> &'static str {
     "Nothing is written and nothing is removed yet — the removal is set up now and carried out when you use Save or Save As. The page will not change in the meantime: you will still see the marks and the content underneath them, because nothing has happened to them. Undo still works, and you can call the whole thing off from this window."
 }
 
-/// ★★★ **The one thing the operator must know before he presses the button,
+/// **The one thing the operator must know before he presses the button,
 /// stated ABOVE it.**
 ///
 ///
@@ -137,7 +137,7 @@ pub fn destination_open_document_tooltip() -> &'static str {
 /// him are *"it did not work"* and *"it worked and the marks are just still
 /// drawn"* — and the second is the one that ships a marked file.
 ///
-/// # ★ Why no count, where the old one had two forms
+/// # Why no count, where the old one had two forms
 ///
 /// The old sentence branched on the number of undo steps because *"this will
 /// discard 14"* and *"this will discard 1"* are different decisions. Nothing
@@ -149,14 +149,14 @@ pub fn removal_happens_at_save() -> &'static str {
     "Nothing is removed when you press this. The page will look exactly as it does now — the marks and the content underneath them stay on screen — and the content leaves the document at the moment you use Save or Save As. Until then it is still in the file on disk, and you can call this off with the button below."
 }
 
-/// ★ **The confirm control's label for the deferred destination.**
+/// **The confirm control's label for the deferred destination.**
 ///
 /// No ellipsis, for [`confirm_button_replace`]'s reason inverted: there no
 /// further question was coming because the file was already named, and here
 /// none is coming because **no file is involved at all**. Promising a picker
 /// with a punctuation mark would be a lie the operator acts on either way.
 ///
-/// ★★ 2026-09-05: *"Set up"* rather than *"Permanently remove from this
+/// 2026-09-05: *"Set up"* rather than *"Permanently remove from this
 /// document"*. The old label was the consequence of the collapsing verb and is
 /// now a description of something the button does not do — it arms a removal
 /// that happens at the save — and on this dialog the standing rule is that
@@ -172,7 +172,7 @@ pub fn confirm_button_into_document() -> &'static str {
     "Set up the removal — it happens when I save"
 }
 
-/// ★★ **The permanence statement for the deferred destination.**
+/// **The permanence statement for the deferred destination.**
 ///
 /// A third form of [`super::permanence_statement`], and the only one of the
 /// three whose first clause is about something that does **not** happen. The
@@ -180,14 +180,14 @@ pub fn confirm_button_into_document() -> &'static str {
 /// identically to its two siblings, deliberately: it is the part an operator
 /// must not have to read twice to compare.
 ///
-/// ★★★ **REWRITTEN 2026-09-05.** Its first clause used to read *"Applying
+/// **REWRITTEN 2026-09-05.** Its first clause used to read *"Applying
 /// removes the marked content from the document you have open, and writes
 /// nothing"*, which was true of the collapsing verb and is now false in the
 /// most expensive direction available: it claims a removal that has not
 /// happened, at the top of the report, in the warning role, which is the one
 /// sentence a reader who takes in nothing else takes in.
 ///
-/// ★ It still says the file on disk *"still contains that content"*, which is a
+/// It still says the file on disk *"still contains that content"*, which is a
 /// rule-4 disclosure and not reassurance. An operator who arms a redaction,
 /// does not save, and hands over the original file has redacted nothing — and
 /// that is a genuinely reachable state on this destination and on no other.
@@ -196,14 +196,14 @@ pub fn permanence_statement_deferred() -> &'static str {
     "Applying sets the removal up now and carries it out when you save. Nothing is removed yet and nothing is written yet. When it does happen it is a full rewrite, not an edit: nothing can bring the removed content back — not Undo, not a previous revision, not any recovery tool. Until you save, the document you have open and the file on disk both still contain that content."
 }
 
-/// ★★ **The outcome sentence for the deferred destination.**
+/// **The outcome sentence for the deferred destination.**
 ///
 /// [`super::applied_clean`]'s sibling for the route where nothing has been
 /// removed yet, and it is drawn in the edit-disclosure slot by the action
 /// funnel rather than in a dialog — because arming a save is an ordinary edit
 /// now, and an ordinary edit reports where every other one does.
 ///
-/// ★★★ **RENAMED from `applied_into_document` and rewritten, 2026-09-05.** The
+/// **RENAMED from `applied_into_document` and rewritten, 2026-09-05.** The
 /// old sentence began *"Redacted — N region(s) … removed from this document,
 /// and verified absent from it"* and both halves of that are now false: nothing
 /// has been removed, and nothing has been verified, because the engine's
@@ -214,7 +214,7 @@ pub fn permanence_statement_deferred() -> &'static str {
 /// Rule 1 is kept mechanically: `residuals` picks between two genuinely
 /// different sentences rather than putting a number into one.
 ///
-/// ★ Both forms say the same two things at the end — **the page has not
+/// Both forms say the same two things at the end — **the page has not
 /// changed** and **Save is what does it** — because those are the two things
 /// this route can get wrong that the write-now routes cannot.
 #[must_use]
@@ -230,7 +230,7 @@ pub fn staged_into_document(regions: u64, pages: usize, residuals: usize) -> Str
     }
 }
 
-/// ★★★ **The sentence after a save that actually performed the removal.**
+/// **The sentence after a save that actually performed the removal.**
 ///
 /// New 2026-09-05, and it carries three facts an operator has no other way to
 /// learn. It is recorded by `crate::app::save` on every one of the three save
@@ -286,7 +286,7 @@ pub fn staging_cancelled(marks: usize) -> String {
 }
 
 // ---------------------------------------------------------------------------
-// ★ The STAGED phase — what the dialog says when it is reopened on a document
+// The STAGED phase — what the dialog says when it is reopened on a document
 // whose removal is already armed.
 //
 // A phase of its own rather than a disabled report, because the two questions
@@ -317,7 +317,7 @@ pub fn staged_body() -> &'static str {
 
 /// The control that un-stages a removal.
 ///
-/// ★★★ It exists because **a stageable operation that cannot be un-staged is a
+/// It exists because **a stageable operation that cannot be un-staged is a
 /// trap**, and the trap has teeth here: while a removal is armed the engine
 /// refuses both ordinary save modes by name, so an operator who changed his
 /// mind and had no way to say so could not save his document at all.
@@ -366,7 +366,7 @@ pub fn destination_new_file_tooltip() -> &'static str {
 
 /// The destination that replaces the source document.
 ///
-/// ★ It **names the file**. *"Replace the original"* is a sentence about a
+/// It **names the file**. *"Replace the original"* is a sentence about a
 /// role; *"Replace sheet-01.pdf"* is a sentence about a file, and the operator
 /// is about to destroy a file.
 #[must_use]
@@ -374,7 +374,7 @@ pub fn destination_replace(file_name: &str) -> String {
     format!("Replace {file_name} with the redacted document")
 }
 
-/// ★★ The consequence of replacing, stated where it is chosen rather than
+/// The consequence of replacing, stated where it is chosen rather than
 /// after.
 ///
 /// Two facts, in the order they matter: the file being replaced is the **only
@@ -384,7 +384,7 @@ pub fn destination_replace(file_name: &str) -> String {
 /// control that gets clicked past.
 #[must_use]
 pub fn destination_replace_tooltip() -> &'static str {
-    // ★ *"not Undo, not …"* rather than *"Undo does not reach it"*, and not by
+    // *"not Undo, not …"* rather than *"Undo does not reach it"*, and not by
     // preference: `no_post_apply_sentence_mentions_undo_as_a_way_back` rejected
     // the first draft of this sentence on 2026-09-04. The rule-3 sweep accepts
     // the word only in an explicit negation, and matching
@@ -393,7 +393,7 @@ pub fn destination_replace_tooltip() -> &'static str {
     "The file on disk is overwritten with the redacted document. It is the only remaining copy of the content you are removing, so once it is replaced that content is gone from your machine — not Undo, not an earlier revision of the file, not any recovery tool will bring it back."
 }
 
-/// ★★★ **The third acknowledgement: the FILE, not the content.**
+/// **The third acknowledgement: the FILE, not the content.**
 ///
 /// Distinct from [`confirm_checkbox`] because it is a different fact.
 /// That one is about the *content* — that applying removes what is underneath
@@ -411,7 +411,7 @@ pub fn overwrite_acknowledgement_checkbox(file_name: &str) -> String {
     )
 }
 
-/// ★ **The confirm control's label when the destination is the open file.**
+/// **The confirm control's label when the destination is the open file.**
 ///
 /// No ellipsis, and that is the point of the wording. On
 /// [`confirm_button`] the ellipsis is *"a promise that a further question is

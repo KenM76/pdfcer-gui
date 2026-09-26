@@ -80,7 +80,7 @@ pub(super) fn draw(ui: &egui::Ui, ctx: &mut Ctx<'_>, layout: &DockLayout) {
     let Some(drag) = ctx.float_drag.take() else {
         return;
     };
-    // ★ The stand-down, and unlike [`super::tear::draw`]'s it is reachable.
+    // The stand-down, and unlike [`super::tear::draw`]'s it is reachable.
     //
     // The other three affordances read one `egui` pointer and are mutually
     // exclusive by geometry. This one reads a pointer the *caller* supplies, so

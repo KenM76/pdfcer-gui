@@ -15,7 +15,7 @@ was hard:
 > it is done.
 
 
-# ★ Why a unit test cannot cover it
+# Why a unit test cannot cover it
 
 [`crate::checks`]' rule: *"it must fail against a build where the wiring is
 absent, and the wiring must be something no unit test in the workspace can

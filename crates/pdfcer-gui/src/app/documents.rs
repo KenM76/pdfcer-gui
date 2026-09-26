@@ -154,7 +154,7 @@ impl PdfcerApp {
     /// §5's rule for what becomes active afterwards. Closing the last one
     /// leaves [`Status::Empty`].
     ///
-    /// ★ The unsaved-edits question belongs to the caller. This is reached
+    /// The unsaved-edits question belongs to the caller. This is reached
     /// from [`PdfcerApp::close_document`] (which is behind both guards) and
     /// from the tab strip's ✕ (which raises an action that goes through the
     /// same guards). Nothing may call it directly from a click.
@@ -207,7 +207,7 @@ impl PdfcerApp {
     /// re-inserted, and a caller with the wrong convention is off by one in one
     /// direction only.
     ///
-    /// # ★ The document on screen does not change, and that is arithmetic
+    /// # The document on screen does not change, and that is arithmetic
     ///
     /// Reordering tabs is not navigation. An operator dragging tab 5 to the
     /// front has not asked to *look* at it, so the active document has to
@@ -322,7 +322,7 @@ mod tests {
     /// A `Status` that is a tab but is not a whole document, so the encoding
     /// can be exercised without building four `EditSession`s.
     ///
-    /// ★ Using `Failed` rather than `Open` is not a shortcut around the real
+    /// Using `Failed` rather than `Open` is not a shortcut around the real
     /// type — §2 makes a failed open a first-class tab, so this *is* one of
     /// the states the encoding has to carry, and the tests below are testing
     /// the tab arithmetic rather than anything about documents.
@@ -451,7 +451,7 @@ mod tests {
         assert_eq!(app.active_slot, 2, "back from the first wraps to the last");
     }
 
-    /// ★★ **Reordering tabs keeps the same document on screen.**
+    /// **Reordering tabs keeps the same document on screen.**
     ///
     /// The property that makes `move_slot` correct and the one a naive
     /// implementation gets wrong: dragging a tab is tidying, not navigation, so

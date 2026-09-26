@@ -16,7 +16,7 @@ that file on the same rule, and the subject boundary — *"the words for the
 two verbs that change a bookmark's PLACE rather than its name"* — decides
 where the cut falls.
 
-## ★★★ The `/Count` sign runs through every sentence in this file
+## The `/Count` sign runs through every sentence in this file
 
 §12.3.3 gives `/Count` two meanings and makes the **sign** carry
 open-or-closed, because Table 153 defines no `/Open` key:

@@ -11,14 +11,14 @@ use crate::app::state::Status;
 
 /// Whether `id` is one of the point commands this module dispatches.
 ///
-/// ★ Named `claims` rather than `handles` because
+/// Named `claims` rather than `handles` because
 /// `shell::commands::reach::guards::EVALUATED_GUARDS` is a set of **function
 /// names** read out of `dispatch.rs`'s syntax tree and asserted equal to the
 /// set the reachability checker evaluates. A guard function whose name is not
 /// in that set is a place commands can hide from the check that exists to find
 /// them, so a new module reuses an evaluated name rather than inventing one.
 ///
-/// ★★ A predicate paired with [`dispatch`] over the same ids, which is two
+/// A predicate paired with [`dispatch`] over the same ids, which is two
 /// statements of one set — the shape this crate usually refuses. It is accepted
 /// here only because the two sit adjacent in one small file. **Nothing
 /// mechanical welds them**: the `match` below ends in a `_ => {}`, so an id
@@ -34,7 +34,7 @@ pub(crate) fn claims(id: &str) -> bool {
 
 /// Dispatch one of the point commands.
 pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str, actions: &mut Vec<Action>) {
-    // ★ The capability, asked once for every arm. See the module header: they
+    // The capability, asked once for every arm. See the module header: they
     // decline alike because they are one capability, and the trace names the
     // command so a reader can still tell which was pressed.
     if !app.capabilities().author_markup {
@@ -45,7 +45,7 @@ pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str, actions: &m
         return;
     }
     match id {
-        // ★ **Finish** — `measure.finish`'s twin, deliberately down to the
+        // **Finish** — `measure.finish`'s twin, deliberately down to the
         // shape of this arm, because it answers the identical problem: PolyLine
         // and Polygon are runs of clicks with no natural end, exactly as the
         // radius/diameter pick set has none. The settled answer is **two
@@ -83,17 +83,17 @@ pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str, actions: &m
                 });
             }
         }
-        // ★★★ **The two node commands.** One arm, because the id IS the
+        // **The two node commands.** One arm, because the id IS the
         // operand's direction — add or remove — and everything else about the
         // operand is the parked pick that `action_for` reads.
         //
-        // ★★ A `let else` rather than a `match` enumerating every `Status`, on
+        // A `let else` rather than a `match` enumerating every `Status`, on
         // `super`'s own stated reasoning for the text-mark arm: every state but
         // `Open` is *no document*, therefore no selection, therefore no shape
         // to reshape, and that is the only property this arm reads. A new
         // failure state arriving later does not have to be classified here.
         //
-        // ★ It raises **nothing** when the row it came from has stopped being
+        // It raises **nothing** when the row it came from has stopped being
         // live — an undo between the frame the menu was drawn and the frame it
         // was pressed. `action_for` re-asks the engine and traces the decline;
         // it does not put a sentence on the status row, because a menu that
@@ -112,7 +112,7 @@ pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str, actions: &m
                 actions.push(action);
             }
         }
-        // ★ No catch-all that does anything: [`claims`] is the only route in,
+        // No catch-all that does anything: [`claims`] is the only route in,
         // and it and this `match` are the two statements of one set the header
         // above accepts. An id that reached here without being in that list
         // would be a bug in `super`'s routing, and doing nothing is the

@@ -38,7 +38,7 @@ const IMAGE_PATH_ENV: &str = "PDFCER_DIAG_IMAGE_PATH"; // ui-text-exempt: an env
 
 /// The fixture's pixel size.
 ///
-/// ★ **Wide and short, deliberately.** `Contain` on a square picture in a
+/// **Wide and short, deliberately.** `Contain` on a square picture in a
 /// square box is the identity, so a square fixture would let a letterbox defect
 /// pass the last assertion — which is the assertion this check exists for.
 const FIXTURE_W: u32 = 64;
@@ -99,7 +99,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 0: the fixture ------------------------------------------------------
     //
-    // ★★ **A PNG this harness encodes, or a file named by `PDFCER_UIV_IMAGE`.**
+    // **A PNG this harness encodes, or a file named by `PDFCER_UIV_IMAGE`.**
     //
     // The env seam was added 2026-08-19, on the operator's report that *"the
     // insert image button doesn't insert it either"* — for a **jpg** — while
@@ -178,7 +178,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
 
-    // ★★ **The operator's own sequence, when asked for**: a NEW document from
+    // **The operator's own sequence, when asked for**: a NEW document from
     // the template first, then the insert.
     //
     // 2026-08-20, verbatim: *"Make a new document from a template … and insert
@@ -213,7 +213,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.click_at(session.frame()?.declared_center(tab))?;
     session.settle(14);
 
-    // ★★ The page as it stands before ANY of this — one half of step 6.
+    // The page as it stands before ANY of this — one half of step 6.
     //
     let page_before = declared(&session.trace()?, ui_rect, PAGE)
         .map(|r| session.frame().map(|f| f.logical_to_capture_pixels(r)))
@@ -224,7 +224,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let Some(item) =
         declared_or_in_overflow(&session, &driver, ui_rect, "ribbon.item.edit.insert_image")?
     else {
-        // ★ A screenshot at the moment of failure, because this message has
+        // A screenshot at the moment of failure, because this message has
         // been wrong before. `D:/dev/rag/egui/` records the rule: a layout or
         // reachability defect has exactly one oracle and it is a rendered
         // screenshot. A trace can say a region was declared and say nothing at
@@ -323,7 +323,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("placed: `{}`", applied.raw));
 
-    // --- 4: ★ the disclosures reached the operator -------------------------
+    // --- 4: the disclosures reached the operator -------------------------
     //
     // `add_image`'s outcome always carries at least the resolution sentence, so
     // an EMPTY disclosure list means the apply arm called the engine and threw
@@ -339,7 +339,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 5: ★★ the promise and the result are the same number --------------
+    // --- 5: the promise and the result are the same number --------------
     let Some(previewed) = requested.get("dpi").and_then(|v| v.parse::<f64>().ok()) else {
         return Err(Error::new(format!(
             "the `{REQUESTED}` line carries no readable `dpi=`, so the promise cannot be \
@@ -373,7 +373,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          producer, two readings, same answer"
     ));
 
-    // --- 6: ★★ THE PICTURE IS ACTUALLY ON THE PAGE -------------------------
+    // --- 6: THE PICTURE IS ACTUALLY ON THE PAGE -------------------------
     //
     // Every assertion above reads the TRACE, and on 2026-08-20 every one of
     // them passed against the operator's own 4 MB JPEG while he was reporting
@@ -397,7 +397,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // picture seeded at its natural size covers most of the sheet, so a real
     // insert moves an enormous fraction of it. What it must not be is zero, and
     // zero is what an unrepainted canvas gives.
-    // ★ First, the sharp oracle, because it names the failure instead of
+    // First, the sharp oracle, because it names the failure instead of
     // measuring it. The Objects panel decomposes the page every frame and
     // traces what it found. A picture that reached the page IS an image
     // object; one that did not, is not — and this line says so in one integer,
@@ -441,7 +441,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             }
         }
     }
-    // ★★★ THE FLOOR IS THE PICTURE'S OWN AREA, NOT A FRACTION OF THE PAGE.
+    // THE FLOOR IS THE PICTURE'S OWN AREA, NOT A FRACTION OF THE PAGE.
     //
     // This read `differing * 500 < total` — one pixel in five hundred of the
     // page — on the argument that *"a picture seeded at its natural size covers
@@ -461,7 +461,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // that drives a document this project authored tests the shape this project
     // imagined* — reached from the measurement end instead.
     //
-    // ★ So the floor is derived from what was actually asked for: the fixture's
+    // So the floor is derived from what was actually asked for: the fixture's
     // size in points, projected through the page rect's own scale, quartered.
     // A quarter rather than the whole because the picture lands on ink of its
     // own colour some of the time, and anti-aliasing at 0.3× makes an exact
@@ -470,7 +470,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     //
     // The scale comes from the declared page rect against the page's own size,
     // so it needs no zoom trace and follows a resized window.
-    // ★ The page's own width in points, from the FILE rather than from a
+    // The page's own width in points, from the FILE rather than from a
     // trace. `page_geometry` reads the `/MediaBox`, which is the same number
     // the application projected — and reading it here rather than taking a
     // zoom off the channel means this floor follows a resized window, a fit

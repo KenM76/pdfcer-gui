@@ -17,7 +17,7 @@ This module is that sentence, implemented. It binds each mode the
 - the operator's own rearrangement of a mode is remembered, per mode;
 - Read → Edit → Read restores **your Edit**, not a default.
 
-## ★ Three modes are configuration, not a built-in — on both sides
+## Three modes are configuration, not a built-in — on both sides
 
 `egui-shell`'s workspace store ships **no names at all**, and says why:
 *"an application that wants three modes registers three workspaces; one

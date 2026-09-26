@@ -32,7 +32,7 @@ parked[0] … parked[active_slot-1]   status        parked[active_slot] … park
                                     active_slot
 ```
 
-### ★ Why this and not `Vec<Status>` with an index
+### Why this and not `Vec<Status>` with an index
 
 Because the alternative costs a hundred edits to buy nothing. `self.status`
 is named across the crate, and a large number of those sites are **split

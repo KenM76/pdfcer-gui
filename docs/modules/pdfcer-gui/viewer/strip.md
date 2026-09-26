@@ -25,7 +25,7 @@ origin has been added. Nothing downstream ever converts between strip and
 canvas space by hand; it asks for a `Placement` and builds a mapping from
 it.
 
-## ★ Single page is a one-row strip, and that is load-bearing
+## Single page is a one-row strip, and that is load-bearing
 
 The operator's constraint is that continuous scroll is *an option, not a
 replacement* — see [`super::display`]'s header. The way that constraint is

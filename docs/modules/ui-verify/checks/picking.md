@@ -32,7 +32,7 @@ refused to act on an inference without confirmation, which is
 The second click confirmed it, resolving pick **A**. Pick B was therefore
 never clicked at all, and the check blamed the routing.
 
-# ★★★ The lesson, and it is not "snapping is awkward"
+# The lesson, and it is not "snapping is awkward"
 
 **A sibling check had already found this, documented it at length, and
 solved it — and the two checks that needed the solution could not see it.**

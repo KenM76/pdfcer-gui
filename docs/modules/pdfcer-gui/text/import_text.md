@@ -4,7 +4,7 @@
 > *"also the engine can export PDFs as text. we should have export/import
 > for that."*
 
-## ★★★ The window's job, and it is not the same as the export window's
+## The window's job, and it is not the same as the export window's
 
 `text::export_text`'s header sets out a two-part shape: **standing** losses
 stated before the press, **counted** ones reported afterwards. That shape is
@@ -20,7 +20,7 @@ decisions, its defaults are answers to *"what would he have picked?"*, and
 the only sentence that warns about anything is the one about the font,
 because that is the invention an operator is least likely to expect.
 
-## ★★ The two things it says that a file picker cannot
+## The two things it says that a file picker cannot
 
 **New pages are created.** This does not put words onto the sheet he is
 looking at. The label says *"as pages"* for that reason and the window says
@@ -34,7 +34,7 @@ names every one of them by default (`Unmappable::Refuse`), which is the
 right default and is the one thing here an operator would call a bug if it
 were silent.
 
-## ★ What is deliberately NOT offered
+## What is deliberately NOT offered
 
 **A font picker beyond the Standard 14.** `place_text` embeds nothing, so
 offering a face this program cannot write with would be a control that

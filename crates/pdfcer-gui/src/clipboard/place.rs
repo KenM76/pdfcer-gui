@@ -16,7 +16,7 @@ use super::{ClipFormat, CopyPayload, ORDER, dib_v5, pixels_per_metre, svg_payloa
 /// produce the same clipboard for the same page rather than two answers that
 /// happen to look alike.
 ///
-/// ★ It is a compromise and worth naming as one. The number affects only the
+/// It is a compromise and worth naming as one. The number affects only the
 /// two **raster** entries and the rasters *embedded inside* the two vector
 /// ones: geometry is resolution-independent and is recorded at whatever scale
 /// the writer chose. So this is the resolution of a scanned page's picture, not
@@ -38,7 +38,7 @@ pub struct Placed {
 
 /// Why a copy-out did not happen.
 ///
-/// ★ Four variants rather than one, because the operator's next move differs
+/// Four variants rather than one, because the operator's next move differs
 /// for every one of them and a single "copy failed" would tell them nothing
 /// about which. The sentences live in [`crate::text::clipboard`]; this type
 /// carries only the distinction.
@@ -49,7 +49,7 @@ pub enum Refusal {
     /// A writer refused the page or the selection. Carries the engine's own
     /// message, which names the reason in the engine's vocabulary.
     Render(String),
-    /// ★★★ **The payload would have degraded Word's paste to a flat picture**
+    /// **The payload would have degraded Word's paste to a flat picture**
     /// — a raster with no vector in front of it. Refused rather than placed.
     ///
     /// Unreachable while both vector writers succeed, which is why it is a
@@ -64,13 +64,13 @@ pub enum Refusal {
     Clipboard(native_clipboard::PlaceError),
 }
 
-/// ★★★ **Copy the current page — or the selection on it — as vectors.**
+/// **Copy the current page — or the selection on it — as vectors.**
 ///
 /// The whole command, in the order the operator experiences it: work out what
 /// the operand is, produce every format for it, refuse if the set would
 /// degrade, then place it in one transaction.
 ///
-/// # ★★ Why the payload is built BEFORE the clipboard is opened
+/// # Why the payload is built BEFORE the clipboard is opened
 ///
 /// A CAD sheet can take seconds to record. Windows serialises clipboard access
 /// across every process on the desktop, so holding it open while rendering
@@ -87,7 +87,7 @@ pub enum Refusal {
 pub fn copy_out(doc: &crate::app::state::OpenDoc) -> Result<Placed, Refusal> {
     let options = render_options(doc);
     let selection = selection_payload(doc, &options);
-    // ★ Recorded before the `?`, because the disclosure has to say WHICH
+    // Recorded before the `?`, because the disclosure has to say WHICH
     // operand was copied and the `Result` is consumed on the next line. An
     // operator who selected three objects and got the whole page has been told
     // something untrue about their own document.
@@ -105,19 +105,19 @@ pub fn copy_out(doc: &crate::app::state::OpenDoc) -> Result<Placed, Refusal> {
 
 /// **The render options both routes use.**
 ///
-/// ★★★ Through the settings funnel, never `RenderOptions::default()`. That is
+/// Through the settings funnel, never `RenderOptions::default()`. That is
 /// the rule `app::actions::export` states and a `syn` check in `app::settings`
 /// enforces from the other side — it fails the build on any call site that
 /// constructs its own — so that one place turns the operator's configuration
 /// into render options, and an exported picture, a printed page and a copied
 /// one cannot disagree about CMYK intent or mask resampling.
 ///
-/// ★★ The annotation stance and the layer overrides come from the DOCUMENT,
+/// The annotation stance and the layer overrides come from the DOCUMENT,
 /// which is what makes this *a copy of what you can see*. An operator who has
 /// hidden a layer is looking at a drawing; the thing that reaches Word is a copy
 /// of that drawing, not of the one underneath it.
 ///
-/// ★ **Both routes take these, including the selection one**, and that is a
+/// **Both routes take these, including the selection one**, and that is a
 /// decision rather than reuse. `canvas::clipimage` renders a clip through the
 /// three-argument `render_page`, which takes no options at all, and argues that
 /// a freshly parsed standalone document has *"no session, no annotations and no
@@ -216,14 +216,14 @@ fn selection_bytes(
     objects: &[usize],
     options: &pdfcer_render::RenderOptions,
 ) -> Result<CopyPayload, Refusal> {
-    // ★ `&self`, and it commits nothing — the same call `canvas::clipboard`'s
+    // `&self`, and it commits nothing — the same call `canvas::clipboard`'s
     // content copy makes, for the same reason: a copy is not an edit.
     let clip = doc
         .session
         .copy_objects(page, objects)
         .map_err(|error| Refusal::Render(error.to_string()))?;
 
-    // ★★ `ObjectClip::to_pdf` returns a **standalone one-page document whose
+    // `ObjectClip::to_pdf` returns a **standalone one-page document whose
     // `/MediaBox` is the selection's bounds**, which is the whole reason this
     // route is worth having: what lands in Word is the selected line-work at
     // its own size, not the selection floating inside a page-sized rectangle
@@ -238,7 +238,7 @@ fn selection_bytes(
         return Err(Refusal::NoPage);
     };
 
-    // ★ The SAME options the page route uses — see [`render_options`] for why
+    // The SAME options the page route uses — see [`render_options`] for why
     // the clip is not exempt from the settings funnel even though it carries no
     // annotations and no layers for two of those fields to describe.
     let svg = pdfcer_render::svg::export_svg(
@@ -263,7 +263,7 @@ fn selection_bytes(
             .with_text(pdfcer_render::emf::EmfText::Outlines),
     )
     .map_err(|error| Refusal::Render(error.to_string()))?;
-    // ★ `render_page_with`, the four-argument form, NOT the three-argument
+    // `render_page_with`, the four-argument form, NOT the three-argument
     // `render_page` that `canvas::clipimage` uses on the same clip. That one
     // makes a thumbnail for an internal paste, where the operator's colour
     // settings genuinely do not matter; this raster is what a foreign
@@ -286,7 +286,7 @@ fn selection_bytes(
 /// pixels-per-metre in the DIB derived from the same number — cannot be right
 /// on one route and wrong on the other.
 ///
-/// ★★★ `Some(COPY_DPI)`, never `None`. The engine's note on the exporter is
+/// `Some(COPY_DPI)`, never `None`. The engine's note on the exporter is
 /// unambiguous about what leaving it out costs: *"without `pHYs` Word places a
 /// 300 DPI page four times too large."* On a clipboard that is worse than on a
 /// file, because there is no dialog in between where a size could be corrected.
@@ -308,7 +308,7 @@ fn raster_into(
 
 /// One entry, framed and ready to place.
 ///
-/// ★ Owned bytes rather than borrowed, because two of the four are **built at
+/// Owned bytes rather than borrowed, because two of the four are **built at
 /// this boundary and exist nowhere else**: the SVG's trailing NUL is added by
 /// [`svg_payload`] and the DIB is assembled by [`dib_v5`]. A borrowing form
 /// would need the caller to hold four temporaries alive in the right order,
@@ -323,7 +323,7 @@ struct Staged {
     bytes: Vec<u8>,
 }
 
-/// ★★★ **Frame the payload into ordered entries, or refuse the whole thing.**
+/// **Frame the payload into ordered entries, or refuse the whole thing.**
 ///
 /// The pure half of the placement, and everything a test can usefully assert:
 /// which formats, in which order, with which bytes. It crosses no syscall and
@@ -337,7 +337,7 @@ struct Staged {
 /// `native_clipboard::PlaceError::Nothing` gives: a caller that cannot tell
 /// *placed nothing* from *placed everything* will report the second.
 fn staged(payload: &CopyPayload) -> Result<Vec<Staged>, Refusal> {
-    // ★★★ THE GATE, and it is asked FIRST — before a single byte is framed.
+    // THE GATE, and it is asked FIRST — before a single byte is framed.
     //
     // `degrades_word_to_a_picture` is a property of what was PRODUCED, and this
     // is the last point at which the answer can still be "then place nothing".
@@ -348,7 +348,7 @@ fn staged(payload: &CopyPayload) -> Result<Vec<Staged>, Refusal> {
         return Err(Refusal::NoPage);
     }
 
-    // ★ Driven by `ORDER`, never by the struct's field order. `CopyPayload`'s
+    // Driven by `ORDER`, never by the struct's field order. `CopyPayload`'s
     // own `formats()` makes the same choice and states the reason: a second
     // list is a second answer, and the one that goes stale is whichever is not
     // the one being read at the time.
@@ -389,7 +389,7 @@ fn place(payload: &CopyPayload) -> Result<Vec<&'static str>, Refusal> {
     native_clipboard::place(&entries).map_err(Refusal::Clipboard)
 }
 
-/// ★★★ **How each format's bytes become a clipboard handle.**
+/// **How each format's bytes become a clipboard handle.**
 ///
 /// The mapping from this shell's vocabulary to `native-clipboard`'s, and it is
 /// the ONLY place the two meet. `Slot` says *how a byte block becomes a
@@ -397,7 +397,7 @@ fn place(payload: &CopyPayload) -> Result<Vec<&'static str>, Refusal> {
 /// types is what lets that crate know nothing about documents — see its header
 /// — and this function is the whole cost of the separation.
 ///
-/// ★★ **Its own function rather than an inline `match` inside [`place`]**, and
+/// **Its own function rather than an inline `match` inside [`place`]**, and
 /// the reason is that a test could not otherwise see it. The first version of
 /// this code inlined the `match`, and the falsification pass then found that
 /// swapping `Png` from `Registered` to `Predefined` **broke nothing**: the test
@@ -406,7 +406,7 @@ fn place(payload: &CopyPayload) -> Result<Vec<&'static str>, Refusal> {
 /// chooses the slot went unread. Extracting it is what turns that test into
 /// evidence rather than decoration.
 ///
-/// ★ Getting a slot wrong is silent in the worst way. `Registered` on a
+/// Getting a slot wrong is silent in the worst way. `Registered` on a
 /// predefined format registers a private name nothing reads; `Predefined` on a
 /// registered one places the bytes under a numeric id that means something else
 /// entirely. Both look like a successful copy from inside this program, and the
@@ -417,7 +417,7 @@ fn slot_for(format: ClipFormat) -> native_clipboard::Slot {
         // been called. `ClipFormat::is_registered` says the same thing from the
         // other side, and the tests assert the two against each other.
         ClipFormat::Svg | ClipFormat::Png => native_clipboard::Slot::Registered,
-        // ★★★ NOT `Predefined(CF_ENHMETAFILE)`. A metafile is a GDI handle, and
+        // NOT `Predefined(CF_ENHMETAFILE)`. A metafile is a GDI handle, and
         // handing the clipboard an `HGLOBAL` under that id is undefined rather
         // than refused — see `Slot::EnhMetaFile`.
         ClipFormat::Emf => native_clipboard::Slot::EnhMetaFile,
@@ -443,7 +443,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **The entries come out in the measured order, whatever order the
+    /// **The entries come out in the measured order, whatever order the
     /// payload's fields were filled in.**
     ///
     /// The single most important assertion in this module. A pasting
@@ -466,7 +466,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **A raster-only payload is refused, and nothing is framed.**
+    /// **A raster-only payload is refused, and nothing is framed.**
     ///
     /// *Half is worse than none.* This is the assertion that says so: the
     /// engine measured a raster-only paste into Word as a plain picture, and a
@@ -489,7 +489,7 @@ mod tests {
         assert_eq!(staged(&CopyPayload::default()), Err(Refusal::NoPage));
     }
 
-    /// ★★★ **The SVG entry carries its trailing NUL and the DIB its 124-byte
+    /// **The SVG entry carries its trailing NUL and the DIB its 124-byte
     /// header** — the framing is applied at this boundary and nowhere else.
     ///
     /// Both are Chromium's exact byte shapes, which is what Microsoft validated
@@ -522,7 +522,7 @@ mod tests {
         );
     }
 
-    /// ★★ **A payload missing one format still places the rest, in order** —
+    /// **A payload missing one format still places the rest, in order** —
     /// as long as a vector survives.
     ///
     /// The EMF is the one most likely to be absent in practice: it is the
@@ -541,7 +541,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The two registered formats are exactly the two `ClipFormat` says
+    /// **The two registered formats are exactly the two `ClipFormat` says
     /// are registered**, so the shell's vocabulary and Win32's cannot drift.
     ///
     /// The failure this guards against is silent in the worst way: registering
@@ -560,7 +560,7 @@ mod tests {
                  wrong id \u{2014} which looks like a successful copy from in here"
             );
         }
-        // ★★ And the metafile takes the HANDLE slot, not a predefined id. It is
+        // And the metafile takes the HANDLE slot, not a predefined id. It is
         // the one entry whose bytes are converted before placement, and
         // `Predefined(CF_ENHMETAFILE)` would hand GDI an `HGLOBAL`.
         assert!(matches!(

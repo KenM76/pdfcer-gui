@@ -84,7 +84,7 @@ pub fn window_point(child_origin: Pos2, app_origin: Pos2, local: Pos2) -> Pos2 {
 /// current outer origin. The window has to move by however far the pointer
 /// has got from the point it grabbed.
 ///
-/// ★ `grabbed` does not go stale when the window moves, and that is the whole
+/// `grabbed` does not go stale when the window moves, and that is the whole
 /// reason this is expressed as an absolute target. It is a point *on the
 /// window* — on the header strip — so it keeps the same window coordinates
 /// however far the window travels, while `local` is re-reported against the
@@ -198,7 +198,7 @@ pub(super) fn carry(
 /// single fact this gesture needs from the previous pass: did it command a
 /// move?
 ///
-/// ★ **Why a pass has to be declined at all.** The residual that drives
+/// **Why a pass has to be declined at all.** The residual that drives
 /// [`carry_to`] is the pointer's position minus the point it grabbed, both in
 /// the window's own coordinates. Move the window and both ends of that
 /// subtraction change — the grab because the window took it along, the pointer
@@ -209,7 +209,7 @@ pub(super) fn carry(
 /// +14, send −14, settle at 0, with the window visibly snapping back and forth
 /// once per pointer step for the length of the gesture.
 ///
-/// ★ **Why one pass and not a settled-residual test.** "Move only when the
+/// **Why one pass and not a settled-residual test.** "Move only when the
 /// last residual was zero" reads better and deadlocks: a platform that
 /// declines the move — a window clamped to a monitor edge, a compositor that
 /// places windows itself — leaves the residual non-zero forever and the window
@@ -306,7 +306,7 @@ mod tests {
     /// dock would offer a drop the pointer is nowhere near. Whether a point
     /// is over a compartment is [`super::super::geometry`]'s question, and it
     /// needs the truth to answer it.
-    /// ★★★ **Two frames of a carry settle, where a per-frame delta would
+    /// **Two frames of a carry settle, where a per-frame delta would
     /// oscillate.**
     ///
     /// The second frame is the whole point and is the one a delta-driven
@@ -346,7 +346,7 @@ mod tests {
     /// `+14`. With [`Settling`] declining that pass the window only ever
     /// advances.
     ///
-    /// ★ The assertion is monotonicity, not a list of positions. A position
+    /// The assertion is monotonicity, not a list of positions. A position
     /// list would be satisfied by an implementation that moved backwards and
     /// forwards through the same values, which is the defect.
     #[test]

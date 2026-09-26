@@ -22,7 +22,7 @@ the window manager, so it does **not** lag the pointer and is **not**
 clipped by our window, which are the two failures of drawing a cursor with
 `egui::Painter` instead.
 
-## ★ Why two tones rather than the inversion the operator expected
+## Why two tones rather than the inversion the operator expected
 
 The report guessed at the mechanism — *"I assume they change based on if
 they are over a black or white or grey object"* — and that guess describes
@@ -46,7 +46,7 @@ legible.
 
 So: **black core, white halo, on every background.**
 
-## ★ Why these two colours are not theme colours, and the gate agrees
+## Why these two colours are not theme colours, and the gate agrees
 
 Every other colour in this application comes from `egui_shell::theme` and
 `tools/gates/check-theme-colors.sh` enforces it. This one must not, and the
@@ -64,7 +64,7 @@ reference application converged on them. Nothing here constructs a
 `Color32`; the bitmap is bytes, so the gate has nothing to say either way,
 and this paragraph is the argument it would want if it did.
 
-## ★ The centre gap is not decoration
+## The centre gap is not decoration
 
 The arms stop short of the centre, leaving the target pixel and its
 neighbours unobscured. A crosshair whose arms meet hides the very point it
@@ -82,7 +82,7 @@ same `Arc` across frames means the cursor is converted to a platform handle
 **once**, and returning a fresh one every frame would re-upload a bitmap at
 sixty hertz.
 
-## ★ The trap: `cursor_image` is STICKY between frames
+## The trap: `cursor_image` is STICKY between frames
 
 `egui::PlatformOutput::take` explicitly keeps both `cursor_icon` and
 `cursor_image` across frames — *"sticky between frames"*, in its own

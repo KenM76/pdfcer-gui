@@ -19,7 +19,7 @@ use crate::text::panels::formfield as t;
 pub const REGION: &str = "properties.field_edit";
 /// The Required checkbox's own region.
 ///
-/// ★ Published per control rather than leaving a driven check to divide
+/// Published per control rather than leaving a driven check to divide
 /// [`REGION`] by eye — `panels::properties::text`'s note on this is the
 /// precedent, and the reason is that a check computing a control's position
 /// from a section's bounds passes on a build where the controls moved.
@@ -94,7 +94,7 @@ pub fn section(
 
     // -- Text fields --------------------------------------------------------
     //
-    // ★ Gated on the field's TYPE, and the gate is not cosmetic: `/Ff` is one
+    // Gated on the field's TYPE, and the gate is not cosmetic: `/Ff` is one
     // shared 32-bit word whose bits mean **different things per type** — bit 26
     // is `RadiosInUnison` on a `/Btn` and `RichText` on a `/Tx` — so a
     // mis-typed edit does not do nothing, it does something else. The engine
@@ -131,7 +131,7 @@ pub fn section(
         );
         max_len_row(ui, field, fqn, state, actions);
         comb_row(ui, field, fqn, state, actions);
-        // ★ Text fields only, and the gate is the same one the `/Ff` rows
+        // Text fields only, and the gate is the same one the `/Ff` rows
         // above carry: `/DV` is a **text string** on a `/Tx` and a **name** on
         // a `/Btn` (`/Yes`, `/Off`). `FieldEdit::with_default_value` takes a
         // `String`, so drawing this box for a checkbox would offer the operator
@@ -240,7 +240,7 @@ pub fn section(
 
 /// One boolean property, as a checkbox that commits on click.
 ///
-/// # ★★ It reads its state from the DOCUMENT, not from a draft
+/// # It reads its state from the DOCUMENT, not from a draft
 ///
 /// The `checked` argument is `field.flags`, re-read every frame from the
 /// session. There is no local copy to go stale, and the visible consequence is
@@ -283,7 +283,7 @@ fn flag_row(
 /// `/MaxLen` — the outer option is *touched or not*, the inner *present or
 /// absent*.
 ///
-/// ★ Zero means **absent**, and it is spelled that way rather than with a
+/// Zero means **absent**, and it is spelled that way rather than with a
 /// separate "limit the length" checkbox, because a spinner at zero and an
 /// unchecked box beside a greyed spinner say the same thing and the second
 /// costs a control. `/MaxLen` of zero is not meaningful in a file — a field
@@ -306,7 +306,7 @@ fn max_len_row(
         );
         crate::diag::ui_rect_visible(MAX_LEN_REGION, response.rect, ui.clip_rect());
         let response = response.on_hover_text(t::label_max_len_hover());
-        // ★ Committed on release or on losing focus, never on `.changed()`.
+        // Committed on release or on losing focus, never on `.changed()`.
         // Each commit is one `edit_field` and one undo entry, so a drag across
         // the spinner would author one edit per pixel — the same rule the text
         // style and markup width rows follow.
@@ -331,7 +331,7 @@ fn max_len_row(
 /// Comb — the one control whose edit is **two** properties, because the
 /// standard makes it indivisible.
 ///
-/// ★★ Table 228 permits `Comb` only when `/MaxLen` is present, and the engine
+/// Table 228 permits `Comb` only when `/MaxLen` is present, and the engine
 /// checks its gates **against the resulting field** rather than against the
 /// request. So turning comb on for a field with no max-length must send both or
 /// be refused with `CombPreconditionUnmet` — a refusal naming a property the
@@ -342,7 +342,7 @@ fn max_len_row(
 /// default when it holds nothing: a comb field needs a cell count and there is
 /// no honest way to have one without it.
 ///
-/// ★ This is **not** a violation of "one press, one undo entry". It is one act
+/// This is **not** a violation of "one press, one undo entry". It is one act
 /// that the standard defines as two writes, which is a different thing from a
 /// pane choosing to batch two acts.
 fn comb_row(
@@ -364,7 +364,7 @@ fn comb_row(
     if response.on_hover_text(t::flag_comb_hover()).changed() {
         let mut edit = FieldEdit::new().with_comb(on);
         if on && field.max_len.is_none() {
-            // ★ The spinner's value when it has one, and `DEFAULT_COMB_CELLS`
+            // The spinner's value when it has one, and `DEFAULT_COMB_CELLS`
             // when it does not. Never zero: `.with_comb(true)` plus
             // `.with_max_len(None)` is the refusal this branch exists to avoid,
             // and it would be a press that always fails.
@@ -385,7 +385,7 @@ fn comb_row(
 
 /// The cell count a comb field gets when it is turned on with no `/MaxLen`.
 ///
-/// ★ Ten, and the number is a **disclosed guess** rather than a right answer:
+/// Ten, and the number is a **disclosed guess** rather than a right answer:
 /// there is no way to know how many cells the operator wants, `/MaxLen` is
 /// mandatory for comb, and refusing the press would mean a checkbox that
 /// cannot be ticked on the majority of text fields. Ten is a postcode, a phone
@@ -396,12 +396,12 @@ const DEFAULT_COMB_CELLS: i64 = 10;
 
 /// `/TU`, the accessibility name.
 ///
-/// ★★ A draft and a button, not a live write — `super::formfield`'s rename row
+/// A draft and a button, not a live write — `super::formfield`'s rename row
 /// makes the argument and it is identical here: a `TextEdit` bound straight to
 /// the field would author one `edit_field` per keystroke, each one a real,
 /// separately undoable change.
 ///
-/// ★ **Empty commits `TooltipChoice::Declined`, which REMOVES `/TU`**, and that
+/// **Empty commits `TooltipChoice::Declined`, which REMOVES `/TU`**, and that
 /// is the engine's instruction rather than this pane's choice: *"an empty `/TU`
 /// would be worse than none, because a screen reader announces the empty name
 /// instead of falling back to the field's."*
@@ -438,7 +438,7 @@ fn tooltip_row(ui: &mut Ui, fqn: &str, state: &mut PanelsState, actions: &mut Ve
 
 /// `/DV`, the value a Reset button restores.
 ///
-/// # ★★★ Why this is worth a control at all
+/// # Why this is worth a control at all
 ///
 /// This shell already ships Reset — `FormEdit::Reset`, and `set_button_action`
 /// can author a `/ResetForm` button — and until `Pass 264`-era `FieldEdit`
@@ -452,11 +452,11 @@ fn tooltip_row(ui: &mut Ui, fqn: &str, state: &mut PanelsState, actions: &mut Ve
 /// exactly: *"a reset without a writer could only ever restore some OTHER
 /// application's defaults."*
 ///
-/// ★ Same draft-and-commit shape as [`tooltip_row`], for that function's stated
+/// Same draft-and-commit shape as [`tooltip_row`], for that function's stated
 /// reason: a `TextEdit` bound straight through would author one `edit_field`
 /// per keystroke, each separately undoable.
 ///
-/// ★★ **Empty clears `/DV` rather than writing an empty string**, and the two
+/// **Empty clears `/DV` rather than writing an empty string**, and the two
 /// are genuinely different: an empty `/DV` is a default *of nothing*, which
 /// Reset restores by blanking the field; no `/DV` is *no default*. Both blank
 /// the field on Reset today, so the distinction is invisible now — but it is
@@ -507,7 +507,7 @@ fn default_value_row(ui: &mut Ui, fqn: &str, state: &mut PanelsState, actions: &
 
 /// `/Q` — which end of the box the field's text sits against.
 ///
-/// # ★★★ Three named choices, not a number, and the refusal is unreachable
+/// # Three named choices, not a number, and the refusal is unreachable
 ///
 /// `FieldEdit::with_quadding` takes an `i64` and the engine **refuses** anything
 /// outside `0..=2` by name (`EditError::QuaddingInvalid`) rather than clamping —
@@ -520,12 +520,12 @@ fn default_value_row(ui: &mut Ui, fqn: &str, state: &mut PanelsState, actions: &
 /// to a failure mode rather than to a feature. If a future caller can produce
 /// an out-of-range `/Q`, that caller owes the sentence — this one cannot.
 ///
-/// ★★ **No draft, and that is deliberate.** [`FieldPropsDraft`]'s own doc gives
+/// **No draft, and that is deliberate.** [`FieldPropsDraft`]'s own doc gives
 /// the rule: a draft exists only for controls that take *typing*, because every
 /// other control reads the document each frame and a refused press therefore
 /// leaves the control where it was. A three-way chooser is a press, not typing.
 ///
-/// ★ The list is `ALL_QUADDINGS` rather than three literals, for
+/// The list is `ALL_QUADDINGS` rather than three literals, for
 /// `markup::ending_chooser`'s stated reason — and
 /// [`the_alignment_list_covers_every_variant_the_engine_has`] is what stops it
 /// drifting, by matching an exhaustive set with no wildcard so a fourth
@@ -564,7 +564,7 @@ fn alignment_row(ui: &mut Ui, field: &Field, fqn: &str, actions: &mut Vec<Action
 /// `OPERATOR_REQUESTS.md` O202's other half; the box's own fill and outline are
 /// `super::widgetedit`'s rows, a different dictionary set by a different verb.
 ///
-/// # ★★★ Three controls and ONE struct, so every press re-states the other two
+/// # Three controls and ONE struct, so every press re-states the other two
 ///
 /// `FieldEdit::with_appearance` takes a whole `FieldAppearance` — font, size and
 /// colour together — because `/DA` is one string and there is no way to write a
@@ -576,11 +576,11 @@ fn alignment_row(ui: &mut Ui, field: &Field, fqn: &str, actions: &mut Vec<Action
 /// single place the existing values are recovered, and all three rows start
 /// from it.
 ///
-/// ★ It is still one property per press as far as the operator is concerned,
+/// It is still one property per press as far as the operator is concerned,
 /// which is what `StyleChange`'s rule is about: one gesture, one undo entry, and
 /// the two values nobody touched come back unchanged.
 ///
-/// ## ★★ The whole group disappears over an ink pdfcer will not narrow
+/// ## The whole group disappears over an ink pdfcer will not narrow
 ///
 /// A `/DA` may set its colour in a space this engine models as a flag rather
 /// than a value — `/Separation`, `/DeviceN`, `/ICCBased`. There is no
@@ -616,7 +616,7 @@ fn text_appearance_rows(
 
 /// The face, as the fourteen every reader has built in.
 ///
-/// ★ A document's own embedded face is the **selected** entry and is not in the
+/// A document's own embedded face is the **selected** entry and is not in the
 /// list, because `FieldFont::Resource` is refused by name unless the key is
 /// already in `/AcroForm` `/DR` `/Font` — so this pane can offer a key it read
 /// out of this field and cannot offer one it made up. Picking any of the
@@ -672,7 +672,7 @@ fn font_row(
 /// `Tf`'s size, with **zero meaning auto** — Table 224's own convention, not
 /// this pane's.
 ///
-/// ★ Committed on release or on losing focus, never on `.changed()`, for the
+/// Committed on release or on losing focus, never on `.changed()`, for the
 /// reason [`max_len_row`] states: a drag across the spinner would otherwise
 /// author one `/DA` rewrite per pixel, each one separately undoable.
 fn text_size_row(
@@ -717,7 +717,7 @@ fn text_size_row(
 
 /// The ink the value's glyphs are drawn in.
 ///
-/// ★★ A four-ink separation gets the sentence and no control, for
+/// A four-ink separation gets the sentence and no control, for
 /// `text::panels::formfield::text_colour_unshowable`'s stated reason — showing a
 /// converted approximation would put a colour on screen the file does not
 /// contain, and the first nudge of the picker would commit pdfcer's guess. The
@@ -785,7 +785,7 @@ struct Appearance {
 
 /// A `/DA`'s `Tf` face, split by whether this pane can re-author it.
 ///
-/// ★ Two variants rather than reusing `FieldFont`, which is `#[non_exhaustive]`
+/// Two variants rather than reusing `FieldFont`, which is `#[non_exhaustive]`
 /// and therefore forces a wildcard arm on every match — and a wildcard here
 /// would mean a future engine variant silently becoming Helvetica. This enum is
 /// exhaustive, so a third case would fail to compile instead.
@@ -805,7 +805,7 @@ const DEFAULT_INK: TextColor = TextColor::Gray(0.0);
 
 /// Read the field's effective `/DA`.
 ///
-/// ★ `Field::default_appearance` is already the **inherited** value — `forms`
+/// `Field::default_appearance` is already the **inherited** value — `forms`
 /// falls back to `/AcroForm` `/DA` when the field states none — so this reads
 /// what the field actually draws with, not only what it states.
 ///
@@ -834,7 +834,7 @@ fn current_appearance(field: &Field) -> Appearance {
 
 /// A `/DA` resource key, as one of the fourteen when it names one.
 ///
-/// # ★★ Why this table is here and not a call into the engine
+/// # Why this table is here and not a call into the engine
 ///
 /// `pdfcer_core::fontdata::std14_by_base_font` takes a **`BaseFont` name** —
 /// `Helvetica`, `Times-Roman` — and a `/DA` carries a **resource key**, which by
@@ -880,7 +880,7 @@ fn appearance_edit(font: &Face, size: f64, ink: TextColor) -> FieldEdit {
 
 /// The ink as something a swatch can draw, or `None` for a four-ink separation.
 ///
-/// ★ CMYK is refused rather than converted, O202 decision 4: pdfcer owns no
+/// CMYK is refused rather than converted, O202 decision 4: pdfcer owns no
 /// rendering intent for a form field, so a converted swatch would show a colour
 /// the file does not contain.
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -895,13 +895,13 @@ fn swatch_rgb(ink: TextColor) -> Option<[u8; 3]> {
 
 /// Every justification `/Q` can state, in the order the chooser offers them.
 ///
-/// ★ Left first because Table 222 fixes it as `/Q`'s default, so the list reads
+/// Left first because Table 222 fixes it as `/Q`'s default, so the list reads
 /// in the order a document's own values do rather than in an invented one.
 const ALL_QUADDINGS: [Quadding; 3] = [Quadding::Left, Quadding::Center, Quadding::Right];
 
 /// What the typed controls hold, and the field they were read for.
 ///
-/// # ★ Why only two properties have a draft
+/// # Why only two properties have a draft
 ///
 /// Because only two take typing. Every checkbox reads `field.flags` straight
 /// from the session each frame, which is what makes a refused press leave the
@@ -918,7 +918,7 @@ pub struct FieldPropsDraft {
     /// The tooltip as the document holds it, so a commit can tell whether the
     /// operator changed anything.
     ///
-    /// ★ Its own field rather than a re-read, because the commit happens on
+    /// Its own field rather than a re-read, because the commit happens on
     /// `lost_focus` — a frame in which the draft has already been typed into
     /// and the document has not changed. Comparing the draft against a fresh
     /// read would work; keeping the read is what makes the comparison
@@ -941,7 +941,7 @@ pub struct FieldPropsDraft {
 impl FieldPropsDraft {
     /// Re-read from the document when the stamp has moved.
     ///
-    /// # ★★ The stamp is the name AND the epoch, and both are load-bearing
+    /// # The stamp is the name AND the epoch, and both are load-bearing
     ///
     /// **The name**, because clicking a second field must not leave the first
     /// field's tooltip sitting in the box waiting to be applied to the wrong
@@ -989,7 +989,7 @@ impl FieldPropsDraft {
 
     /// Pull the two typed values off a real field, and sync.
     ///
-    /// ★ `/TU` is `alternate_name`, **not** a field called `tooltip`. The
+    /// `/TU` is `alternate_name`, **not** a field called `tooltip`. The
     /// standard's own name for it is *alternate field name*; every application
     /// calls it the tooltip because that is where a reader shows it and what a
     /// screen reader announces. Raw bytes (§7.9.2), decoded the way every other
@@ -1000,7 +1000,7 @@ impl FieldPropsDraft {
             .as_deref()
             .map(|raw| String::from_utf8_lossy(raw).into_owned())
             .unwrap_or_default();
-        // ★ `display_text()` rather than a match on `FieldValue`. The enum is
+        // `display_text()` rather than a match on `FieldValue`. The enum is
         // `#[non_exhaustive]` and the engine owns the decoding rule (§7.9.2);
         // re-deriving it here would be a second statement of what a field's
         // value READS AS, which is exactly the drift `R221` forbids elsewhere.
@@ -1018,7 +1018,7 @@ impl FieldPropsDraft {
 mod tests {
     use super::*;
 
-    /// ★★★ **Every justification the engine has is offered**, and a fourth one
+    /// **Every justification the engine has is offered**, and a fourth one
     /// fails to compile here rather than going quietly unoffered.
     ///
     /// # Why a `match` and not `assert_eq!(ALL_QUADDINGS.len(), 3)`
@@ -1051,7 +1051,7 @@ mod tests {
         }
     }
 
-    /// ★★ **The three choices map onto the three `/Q` codes the engine accepts**,
+    /// **The three choices map onto the three `/Q` codes the engine accepts**,
     /// which is what makes `EditError::QuaddingInvalid` unreachable from this
     /// pane rather than merely unhandled.
     ///
@@ -1078,7 +1078,7 @@ mod tests {
         );
     }
 
-    /// ★★ **A draft seeded from one field does not survive onto another.**
+    /// **A draft seeded from one field does not survive onto another.**
     ///
     /// The failure this stamp exists for, and it is the expensive one: the
     /// operator types a tooltip, clicks a different field without committing,
@@ -1104,7 +1104,7 @@ mod tests {
             "the half-typed tooltip must not survive onto another field"
         );
         assert_eq!(draft.max_len, 0, "absent /MaxLen reads as zero");
-        // ★★★ The new box is covered by the same rule, and it is the one where
+        // The new box is covered by the same rule, and it is the one where
         // leaking would be worst: a half-typed DEFAULT VALUE carried onto
         // another field and committed writes a `/DV` the operator never typed
         // for a field they were not looking at — and unlike a tooltip, nothing
@@ -1120,7 +1120,7 @@ mod tests {
         );
     }
 
-    /// ★★ **An edit to the same field re-reads it**, which is the term that
+    /// **An edit to the same field re-reads it**, which is the term that
     /// stops the pane showing a stale value for ever.
     ///
     /// Without the epoch in the stamp, committing a max-length would leave the

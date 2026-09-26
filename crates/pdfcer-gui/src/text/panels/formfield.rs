@@ -3,7 +3,7 @@
 //! Covers [`crate::panels::properties::formfield`], the section that appears
 //! when an operator clicks a form field on the page in Edit mode.
 //!
-//! ## ★★★ The sentence this file exists for
+//! ## The sentence this file exists for
 //!
 //! [`not_editable_note`]. `pdfcer-core` has four verbs for an existing field —
 //! rename, delete, delete-a-widget, fill — and **none** for its flags. Required,
@@ -16,7 +16,7 @@
 //! instead. Saying it costs one line; not saying it costs a search that ends in
 //! the operator concluding the program is broken.
 //!
-//! ★★ It is worded as a **statement about pdfcer**, not about PDF. The format
+//! It is worded as a **statement about pdfcer**, not about PDF. The format
 //! permits changing every one of them; it is this engine that has no verb yet.
 //! Blaming the format would be a false claim, and the kind that is never
 //! corrected because nobody can check it.
@@ -75,7 +75,7 @@ pub fn label_flags() -> String {
 
 /// A 1-based page number.
 ///
-/// ★ 1-based, because that is what the page strip shows and what the operator
+/// 1-based, because that is what the page strip shows and what the operator
 /// would say out loud. Every 0-based index in this shell stops at the boundary
 /// with the person using it.
 #[must_use]
@@ -85,7 +85,7 @@ pub fn page_number(one_based: usize) -> String {
 
 /// How many boxes the field is drawn as, and which one was clicked.
 ///
-/// ★★ Shown only when there is more than one, and it is a **disclosure** rather
+/// Shown only when there is more than one, and it is a **disclosure** rather
 /// than a statistic: a field drawn in three places can be changed from three
 /// pages, and the two the operator is not looking at change with it. Nothing on
 /// the page says so.
@@ -96,7 +96,7 @@ pub fn box_count(total: usize, clicked: usize) -> String {
 
 /// What kind of control this is, in the operator's vocabulary.
 ///
-/// ★ A `/Btn` is three different controls and the spec tells them apart by
+/// A `/Btn` is three different controls and the spec tells them apart by
 /// flag bits, not by type. Reporting all three as "button" would be accurate
 /// about the format and useless to a person: a check box and a push button have
 /// nothing in common from where they sit.
@@ -113,7 +113,7 @@ pub fn field_type(field: &Field) -> String {
         },
         Some(FieldType::Choice) => "Drop-down list".to_owned(),
         Some(FieldType::Signature) => "Signature".to_owned(),
-        // ★★ Not "unknown" and not blank. A field with no `/FT` is a real and
+        // Not "unknown" and not blank. A field with no `/FT` is a real and
         // specific defect — no viewer knows how to fill it — and it is exactly
         // the shape `EditSession::adopt_widget` produces from a bare kid that
         // lost its `/Parent`. Saying so here is the same disclosure
@@ -132,7 +132,7 @@ pub fn field_value(field: &Field) -> Option<String> {
     if matches!(field.value, FieldValue::Absent) {
         return None;
     }
-    // ★★ `display_text` and not a decode of our own. A `/V` is raw bytes, and
+    // `display_text` and not a decode of our own. A `/V` is raw bytes, and
     // turning them into characters is §7.9.2 / Annex D.3 text-string decoding —
     // PDFDocEncoding or UTF-16BE with a BOM, not UTF-8. `String::from_utf8_lossy`
     // over a UTF-16 value produces interleaved NULs and replacement characters,
@@ -147,7 +147,7 @@ pub fn field_value(field: &Field) -> Option<String> {
 
 /// The flags that are set, named, or `None` when none are.
 ///
-/// ★ Only the ones that are **set**. A list of every flag with yes/no beside it
+/// Only the ones that are **set**. A list of every flag with yes/no beside it
 /// would be six rows of "No" on a typical field, and the reader has to search
 /// it to learn anything. Naming the exceptions is what a person would do.
 #[must_use]
@@ -164,7 +164,7 @@ pub fn field_flags(field: &Field) -> Option<String> {
     if f.no_export() {
         set.push("not exported");
     }
-    // ★ The type-specific bits are read only for the type they belong to,
+    // The type-specific bits are read only for the type they belong to,
     // because the SAME BIT means different things on different field types —
     // bit 18 is `Edit` on a choice and `DoNotSpellCheck`-adjacent territory
     // elsewhere. Reporting a text flag on a check box would be inventing a
@@ -196,7 +196,7 @@ pub fn field_flags(field: &Field) -> Option<String> {
 
 /// The label above the rename box.
 ///
-/// ★ It asks for the **short** name and says so, because `rename_field` takes a
+/// It asks for the **short** name and says so, because `rename_field` takes a
 /// partial name and rebuilds the qualified one from the parent chain. An
 /// operator who copied `Address.Line1` out of the row above and pasted it here
 /// would author a `/T` containing a dot, which nothing can address again.
@@ -214,7 +214,7 @@ pub fn rename_button() -> String {
 /// **Why there is no rename box at all** — `EditSession::rename_refusal`
 /// answered `Some` (R83).
 ///
-/// # ★★★ Drawn INSTEAD of the control, not under it
+/// # Drawn INSTEAD of the control, not under it
 ///
 /// This is the sentence R9 asks for when a capability is refused *permanently
 /// for this document*: the box and the button are not drawn, and this line
@@ -222,14 +222,14 @@ pub fn rename_button() -> String {
 /// certification signature is not — and would hide its own explanation behind a
 /// hover.
 ///
-/// ★★ It names **renaming**, not "editing", and that is deliberate. The pane
+/// It names **renaming**, not "editing", and that is deliberate. The pane
 /// around it still offers seven editable properties, because a certified form
 /// at `/P 2` permits filling and forbids restructuring (§12.8.2.2 Table 257). A
 /// sentence saying "this document cannot be changed" would be false about the
 /// controls directly below it, and an operator who believed it would stop
 /// trying things that work.
 ///
-/// ★ It does not name the *cause* by name. `rename_refusal` answers for
+/// It does not name the *cause* by name. `rename_refusal` answers for
 /// encryption as well as certification, and this shell has already shipped one
 /// structural-refusal string that names certification unconditionally — which
 /// is silently wrong on an encrypted file and sends the operator looking for a
@@ -245,13 +245,13 @@ pub fn rename_refused() -> String {
 /// **Why there are no delete buttons** — `EditSession::deletion_refusal`
 /// answered `Some` (R83).
 ///
-/// ★★ One sentence for both buttons, because both are refused by one gate:
+/// One sentence for both buttons, because both are refused by one gate:
 /// deleting a field and deleting one of its boxes are both *structural* changes
 /// to the form, which is precisely what a certification signature exists to
 /// freeze. Two sentences saying the same thing twice, one above the other,
 /// would read as two separate problems.
 ///
-/// ★★★ It says what the operator can do **instead**, and the answer is not
+/// It says what the operator can do **instead**, and the answer is not
 /// "delete it anyway" — it is that the form's structure is fixed and its
 /// contents are not. Without that clause the sentence is a dead end, and a dead
 /// end in a properties pane reads as a broken program rather than as a
@@ -265,7 +265,7 @@ pub fn delete_refused() -> String {
 
 /// Why Rename is greyed, in the terms of the rule that actually refused it.
 ///
-/// # ★★★ Why this takes the engine's refusal rather than a boolean
+/// # Why this takes the engine's refusal rather than a boolean
 ///
 ///
 /// That sentence was **wrong for the commonest case**. A freshly selected
@@ -279,7 +279,7 @@ pub fn delete_refused() -> String {
 /// engine raised, which means this function cannot describe a refusal
 /// different from the one about to happen.
 ///
-/// ★★ And the rule may grow a clause without this going stale in the dangerous
+/// And the rule may grow a clause without this going stale in the dangerous
 /// direction. A new variant lands in the catch-all, which says the name cannot
 /// be used and does not guess why — unhelpful, but true. The deleted model
 /// would have kept greying the old set and let the new refusal arrive on the
@@ -310,7 +310,7 @@ pub fn rename_disabled(refusal: &pdfcer_core::forms_author::FormAuthorError) -> 
         // its own sentence rather than being folded into the dot one.
         //
         F::EmptyNameSegment { .. } => "That name has a dot with nothing beside it. Remove the dot, or put a name on both sides of it.".to_owned(),
-        // ★★ The catch-all does not guess. Reaching here means the engine refused
+        // The catch-all does not guess. Reaching here means the engine refused
         // for a reason this shell has not met, and a wrong reason in a hover is
         // worse than none — it sends the operator to fix something that is not
         // broken.
@@ -326,7 +326,7 @@ pub fn delete_field() -> String {
 
 /// What deleting the field will take with it.
 ///
-/// ★★ Names the count in the hover rather than after the fact, because that is
+/// Names the count in the hover rather than after the fact, because that is
 /// where it can still change the operator's mind. A confirmation that said
 /// "deleted from 3 pages" afterwards is a report; this is a warning.
 #[must_use]
@@ -355,7 +355,7 @@ pub fn delete_box_hover() -> String {
         .to_owned()
 }
 
-/// ★★★ **RETIRED 2026-08-27 — this sentence was false, and it recommended a
+/// **RETIRED 2026-08-27 — this sentence was false, and it recommended a
 /// destructive workaround.**
 ///
 /// It read:
@@ -372,7 +372,7 @@ pub fn delete_box_hover() -> String {
 /// indistinguishable from an oversight; that was the right instinct in the old
 /// sentence and it is the only part of it that survives.
 ///
-/// ★ It names no remedy now, because there is no honest one. Delete-and-replace
+/// It names no remedy now, because there is no honest one. Delete-and-replace
 /// still "works" for a border and it is not advice this program should give.
 #[must_use]
 pub fn not_editable_note() -> String {
@@ -382,7 +382,7 @@ pub fn not_editable_note() -> String {
 }
 
 //
-// ★★ Every hover answers "what does this DO to the document", never "what is
+// Every hover answers "what does this DO to the document", never "what is
 // this called". `crate::text::tool`'s rule 2 — a sentence states a fact about
 // the program, never a tip — and the practical test each one below passes: an
 // operator who does not know what `/Ff` bit 2 is should be able to decide
@@ -391,7 +391,7 @@ pub fn not_editable_note() -> String {
 
 /// The heading over the editable properties.
 ///
-/// ★ *"Properties"*, not *"Editable properties"*. The section directly above it
+/// *"Properties"*, not *"Editable properties"*. The section directly above it
 /// is headed with the facts that are genuinely read-only, and a heading that
 /// advertised editability would invite the question of why the other section is
 /// not editable — which is a fact about the file (a name, a type, a page) and
@@ -407,7 +407,7 @@ pub const fn flag_required() -> &'static str {
     "Required"
 }
 
-/// ★ It says what happens **at submit**, because that is the only moment the
+/// It says what happens **at submit**, because that is the only moment the
 /// flag does anything. A required field is not enforced while typing and is not
 /// enforced on save; a reader checks it when the form is sent.
 #[must_use]
@@ -422,7 +422,7 @@ pub const fn flag_read_only() -> &'static str {
     "Read only"
 }
 
-/// ★★ It names what read-only does **not** do, which is the half that gets
+/// It names what read-only does **not** do, which is the half that gets
 /// people: the value is still there, still exported and still printed. An
 /// operator who sets this expecting the field to disappear has misread it.
 #[must_use]
@@ -450,7 +450,7 @@ pub const fn flag_password() -> &'static str {
     "Hide as typed"
 }
 
-/// ★★★ It states the security fact, because the control's name invites exactly
+/// It states the security fact, because the control's name invites exactly
 /// the wrong conclusion. `/Ff` bit 14 changes how a *reader draws* the value;
 /// the characters are stored in the file in plain text and anyone with the file
 /// can read them. An operator who used this for a password because it is called
@@ -468,7 +468,7 @@ pub const fn flag_comb() -> &'static str {
     "Equal cells"
 }
 
-/// ★★ It names the maximum-length requirement, because the standard makes them
+/// It names the maximum-length requirement, because the standard makes them
 /// inseparable (Table 228) and the pane sends both — so an operator who ticks
 /// this on a field with no limit will see a number appear above and should know
 /// why rather than think the program changed something they did not ask for.
@@ -522,7 +522,7 @@ pub const fn label_max_len() -> &'static str {
     "Maximum length"
 }
 
-/// ★ It says what **zero** means, because that is the one thing the control's
+/// It says what **zero** means, because that is the one thing the control's
 /// appearance cannot say. A spinner reading 0 looks like a limit of nothing;
 /// the pane spells zero as *no limit* because `/MaxLen` of zero is not
 /// meaningful in a file and the value is free to carry the absence.
@@ -533,7 +533,7 @@ pub const fn label_max_len_hover() -> &'static str {
 
 /// `/TU`.
 ///
-/// ★ *"Tooltip"* is the word the standard's own name (`/TU`, "alternate field
+/// *"Tooltip"* is the word the standard's own name (`/TU`, "alternate field
 /// name") does not use and every application does. It is also what a screen
 /// reader announces, which is the fact the hover carries.
 #[must_use]
@@ -549,7 +549,7 @@ pub const fn label_tooltip_hint() -> &'static str {
 
 /// `/DV` — the value a Reset button puts back.
 ///
-/// ★ *"Default value"* is the term Acrobat's field properties uses and the one
+/// *"Default value"* is the term Acrobat's field properties uses and the one
 /// the standard uses (§12.7.3.1, *default value*), so there is nothing to
 /// invent here. The label says what it is; the hover says what it is **for**,
 /// because the connection between this box and the Reset button is the part
@@ -561,7 +561,7 @@ pub const fn label_default_value() -> &'static str {
 
 /// See [`label_default_value`].
 ///
-/// ★★ It says **empty** rather than *blank* or *none*, because the box being
+/// It says **empty** rather than *blank* or *none*, because the box being
 /// empty is exactly the state it describes and the operator is looking at it.
 #[must_use]
 pub const fn label_default_value_hint() -> &'static str {
@@ -570,7 +570,7 @@ pub const fn label_default_value_hint() -> &'static str {
 
 /// See [`label_default_value`].
 ///
-/// ★★★ The hover carries the fact the label cannot: **this is what Reset
+/// The hover carries the fact the label cannot: **this is what Reset
 /// restores**, and a field with no default is emptied by it.
 ///
 ///
@@ -585,7 +585,7 @@ pub const fn label_default_value_hover() -> &'static str {
 
 /// `/Q` — which end of the box the field's text sits against.
 ///
-/// ★ *"Alignment"* is what Acrobat's field properties calls it and what every
+/// *"Alignment"* is what Acrobat's field properties calls it and what every
 /// word processor calls it. The standard's own term is *quadding*, which is a
 /// typesetter's word and appears nowhere an operator would look.
 #[must_use]
@@ -595,14 +595,14 @@ pub const fn label_alignment() -> &'static str {
 
 /// The three justifications, named for the operator.
 ///
-/// # ★★ Why these words and not the enum's
+/// # Why these words and not the enum's
 ///
 /// `Quadding::Center` is spelled the American way because the standard is; this
 /// shell writes British English everywhere else an operator reads. Naming the
 /// variant would leak a spelling decision made by ISO into a form-properties
 /// pane, so the operator-facing word is chosen here and the enum keeps its own.
 ///
-/// ★ *"Left"* rather than *"Left (default)"*. Table 222 does fix `0` as the
+/// *"Left"* rather than *"Left (default)"*. Table 222 does fix `0` as the
 /// default, but a chooser that annotates one option is making a claim about the
 /// document — and a field whose `/Q` is explicitly `0` and one with no `/Q` at
 /// all are both *left*, which is the only thing this control can honestly say.
@@ -618,7 +618,7 @@ pub const fn quadding_name(q: pdfcer_core::vartext::Quadding) -> &'static str {
 
 /// The heading over the widget-scoped properties.
 ///
-/// ★★ *"This box"*, not *"Widget"*. A widget annotation is what the file calls
+/// *"This box"*, not *"Widget"*. A widget annotation is what the file calls
 /// it and is a word no operator has any use for; what they are looking at is a
 /// rectangle on a page. The distinction the heading has to carry is not the
 /// spec's vocabulary but the **scope** — that these properties belong to this
@@ -631,7 +631,7 @@ pub const fn widget_heading() -> &'static str {
 
 /// Shown only when the field is drawn in more than one place.
 ///
-/// ★★★ **The one sentence that makes the field/widget split legible**, and it
+/// **The one sentence that makes the field/widget split legible**, and it
 /// is deliberately conditional. On a one-widget field — the overwhelming
 /// majority — there is no distinction to explain and the sentence would be
 /// noise. On a radio group it is the difference between changing one button and
@@ -647,7 +647,7 @@ pub fn widget_scope_note(boxes: usize) -> String {
 
 /// Lower-left x of the box.
 ///
-/// ★ The four are labelled X / Y / Width / Height rather than with the
+/// The four are labelled X / Y / Width / Height rather than with the
 /// standard's `/Rect` corners, because a corner pair is a spelling and a
 /// position-and-size is what an operator is thinking about. `super::geometry`
 /// made the same call for page objects and this matches it, so the two
@@ -681,7 +681,7 @@ pub const fn widget_apply() -> &'static str {
     "Apply"
 }
 
-/// ★★★ It says **which of two acts** is about to happen, before the press.
+/// It says **which of two acts** is about to happen, before the press.
 ///
 /// Moving and resizing are the same gesture on this pane and different acts on
 /// the file: a pure translation moves the baked artwork exactly and for
@@ -715,7 +715,7 @@ pub const fn label_caption() -> &'static str {
     "Caption"
 }
 
-/// ★ The hint names the push-button case, because that is the one where a
+/// The hint names the push-button case, because that is the one where a
 /// caption is not decoration: a push button has no value at all (§12.7.4.2.2),
 /// so the caption is the only thing telling anyone reading the field list what
 /// the button does.
@@ -752,7 +752,7 @@ pub const fn label_background() -> &'static str {
     "Background"
 }
 
-/// ★ Names the two kinds whose background is not a plain rectangle, because
+/// Names the two kinds whose background is not a plain rectangle, because
 /// those are the two where an operator picking a colour would otherwise be
 /// surprised by the shape of what appears.
 #[must_use]
@@ -763,7 +763,7 @@ pub const fn label_background_hover() -> &'static str {
 
 /// `/MK` `/BC`.
 ///
-/// ★★ **"Border and mark", not "Border"** — O202 decision 2. This is the ink a
+/// **"Border and mark", not "Border"** — O202 decision 2. This is the ink a
 /// check box's tick and a radio button's dot are drawn in as well as the
 /// outline, because `/MK` carries no third colour for the mark and the
 /// engine's own appearance builders read `/BC` for both. A label naming only
@@ -774,7 +774,7 @@ pub const fn label_border_colour() -> &'static str {
     "Border and mark"
 }
 
-/// ★ Says where the *thickness* comes from, because this row and the Border
+/// Says where the *thickness* comes from, because this row and the Border
 /// width row above are two keys in two different dictionaries and an operator
 /// who set a colour and saw no outline would otherwise have no way to learn
 /// that the width is zero.
@@ -797,7 +797,7 @@ pub const fn colour_mark_unstated() -> &'static str {
 
 /// The button face when the file states Table 189's empty array.
 ///
-/// ★ A word rather than a second dash. *The file is silent* and *the file says
+/// A word rather than a second dash. *The file is silent* and *the file says
 /// there is no colour* are different facts and the whole reason `/MK`'s
 /// colours are modelled as `Option<MkColor>` with an `MkColor::None` inside;
 /// two controls showing the same glyph for both would throw that away on the
@@ -876,7 +876,7 @@ pub const fn border_colour_unstated_note() -> &'static str {
 
 /// The popup note over a `/BC` that states the empty array.
 ///
-/// ★★ It says the box is **still drawn black**, which is the opposite of what
+/// It says the box is **still drawn black**, which is the opposite of what
 /// the phrase "no colour" suggests and is what the engine does. A box with no
 /// border says so through a border width of 0.
 #[must_use]
@@ -888,7 +888,7 @@ pub const fn border_colour_no_colour_note() -> &'static str {
 
 /// The button face for a four-ink separation — the file's own four numbers.
 ///
-/// ★★★ **Not a converted approximation**, O202 decision 4. pdfcer owns no
+/// **Not a converted approximation**, O202 decision 4. pdfcer owns no
 /// rendering intent for a widget's chrome, so converting DeviceCMYK to
 /// something a swatch could show would put a colour on screen that the file
 /// does not contain — and the operator's first nudge of the picker would
@@ -909,7 +909,7 @@ pub const fn colour_cmyk_note() -> &'static str {
 // ===========================================================================
 // What the operator touched, for a refusal and for the receipt.
 //
-// ★★ These are OPERATOR-VISIBLE and live here for that reason. They reach the
+// These are OPERATOR-VISIBLE and live here for that reason. They reach the
 // status line through `text::forms::field_widget_property_changed`, and they
 // reach a refusal through the engine's §6 rule — *"the gates are checked
 // against the RESULT, not against your request"* — which can name a property
@@ -964,7 +964,7 @@ pub const fn touched_border_colour() -> &'static str {
 }
 
 //
-// ★★★ Filed at 22:40 as *"a widget's border can be written and not read, so a
+// Filed at 22:40 as *"a widget's border can be written and not read, so a
 // properties control would lie"*, shipped by the engine within the hour, and
 // consumed here. The whole exchange turned on one sentence of the request, and
 // the engine quoted it back in three places of their own:
@@ -983,7 +983,7 @@ pub const fn label_border() -> &'static str {
     "Border"
 }
 
-/// ★★ Shown when `Widget::border` is `None` — *the file says nothing about a
+/// Shown when `Widget::border` is `None` — *the file says nothing about a
 /// border.*
 ///
 /// **Not "Solid, 1 pt".** `BorderSpec::default()` is solid/1 pt because that
@@ -993,7 +993,7 @@ pub const fn label_border() -> &'static str {
 /// `a_widget_whose_file_states_no_border_reads_a_dash_not_a_default` — goes red
 /// if the reader substitutes.
 ///
-/// ★ Distinct from a border of **width 0**, which Table 166 states as a value
+/// Distinct from a border of **width 0**, which Table 166 states as a value
 /// meaning *no border*. That is the file saying something definite and it reads
 /// as `0 pt`, not as this. Collapsing the two would tell an operator the file
 /// is silent when it has spoken.
@@ -1004,7 +1004,7 @@ pub const fn border_unstated() -> &'static str {
 
 /// One border style, in the operator's words.
 ///
-/// ★ Beveled and Inset are named by their **appearance** rather than by the
+/// Beveled and Inset are named by their **appearance** rather than by the
 /// standard's word, because *"beveled"* describes a 3-D raised edge that a
 /// person recognises on sight and cannot name, while *"inset"* is the same edge
 /// the other way up. The other three need no help.
@@ -1017,7 +1017,7 @@ pub fn border_style_label(style: pdfcer_core::edit::BorderStyle) -> &'static str
         BorderStyle::Beveled => "Raised edge",
         BorderStyle::Inset => "Sunken edge",
         BorderStyle::Underline => "Underline only",
-        // ★ NO catch-all arm, and that is deliberate rather than an oversight
+        // NO catch-all arm, and that is deliberate rather than an oversight
         // the compiler let through. `BorderStyle` is **not**
         // `#[non_exhaustive]`, so exhaustiveness here means a sixth style added
         // to `pdfcer-core` fails to build in this file — which is exactly where
@@ -1037,7 +1037,7 @@ pub const fn label_border_width() -> &'static str {
     "Border width"
 }
 
-/// ★ It states what **zero** means, because Table 166 makes zero a value —
+/// It states what **zero** means, because Table 166 makes zero a value —
 /// *no border* — rather than an absence, and a spinner showing 0 cannot say
 /// which it is on its own.
 #[must_use]
@@ -1054,7 +1054,7 @@ pub const fn label_visibility() -> &'static str {
 
 /// One visibility, in the operator's words.
 ///
-/// ★ Named by **where you see it** rather than by the flag combination, which
+/// Named by **where you see it** rather than by the flag combination, which
 /// is the only framing that answers the question an operator is asking. `/F`'s
 /// four settable combinations are Hidden, Print, NoView and their pairings;
 /// *"on screen and on paper"* is what those mean.
@@ -1066,13 +1066,13 @@ pub fn visibility_label(visibility: pdfcer_core::edit::Visibility) -> &'static s
         Visibility::ScreenOnly => "On screen only",
         Visibility::PrintOnly => "On paper only",
         Visibility::Hidden => "Nowhere — hidden",
-        // ★ Exhaustive, for [`border_style_label`]'s reason: `Visibility` is
+        // Exhaustive, for [`border_style_label`]'s reason: `Visibility` is
         // the four combinations pdfcer can SET, and a fifth would be a decision
         // this file must be forced to make rather than allowed to paper over.
     }
 }
 
-/// ★★★ Shown when `Widget::visibility` is `None` — *the file's flags are ones
+/// Shown when `Widget::visibility` is `None` — *the file's flags are ones
 /// pdfcer cannot set.*
 ///
 /// The engine's mapping is **exact-or-`None`**, never nearest, and their note
@@ -1080,7 +1080,7 @@ pub fn visibility_label(visibility: pdfcer_core::edit::Visibility) -> &'static s
 /// combinations and `Visibility` is the four pdfcer can write, so a file
 /// carrying `Print | NoZoom` has no nearest of the four that is not a lie.
 ///
-/// ★ `None` here can never mean *absent*: Table 164 makes an absent `/F` equal
+/// `None` here can never mean *absent*: Table 164 makes an absent `/F` equal
 /// to `0`, which **is** one of the four. So this sentence is always about a
 /// file that has said something pdfcer cannot express, and it says exactly that
 /// rather than showing nothing.
@@ -1093,7 +1093,7 @@ pub fn visibility_unmappable(flags: u32) -> String {
 
 /// **The box's current rotation**, and the fact that `None` is not zero.
 ///
-/// ★★ `Widget::rotation` is `Option<i64>`, and the distinction is the same one
+/// `Widget::rotation` is `Option<i64>`, and the distinction is the same one
 /// `Widget::border`'s docs call *"a fact to display, not a value to
 /// substitute"*: `None` means **the file states none**, `Some(0)` means the
 /// file says zero. They render identically and they are different facts, and an
@@ -1110,7 +1110,7 @@ pub fn widget_rotation_label(rotation: Option<i64>) -> String {
 
 /// Turn the box a quarter turn to the LEFT.
 ///
-/// ★★★ *Left* and *right*, never *clockwise* and *anticlockwise*, and never a
+/// *Left* and *right*, never *clockwise* and *anticlockwise*, and never a
 /// signed number. `/MK /R` is counterclockwise while the page's `/Rotate` is
 /// clockwise, and the standard's two sentences differ by exactly one word — so
 /// a label that named a direction convention would be asking the operator to
@@ -1129,7 +1129,7 @@ pub const fn widget_rotate_right() -> &'static str {
 
 /// What turning does and does not affect.
 ///
-/// ★ It says the box stays put, because that is the surprise: `/MK /R` turns
+/// It says the box stays put, because that is the surprise: `/MK /R` turns
 /// what is drawn INSIDE the rectangle and leaves the rectangle itself alone
 /// (§12.5.5 maps the appearance's `/BBox` into `/Rect`). An operator expecting
 /// a tall box to become a wide one needs telling once.
@@ -1158,7 +1158,7 @@ pub fn widget_rotated(now: i64, siblings: usize) -> String {
 
 /// **The rotation was written and the drawing did not follow.**
 ///
-/// ★★ Not a failure: the file is correct and carries the new angle. The baked
+/// Not a failure: the file is correct and carries the new angle. The baked
 /// appearance could not be regenerated, so the box keeps drawing at its old
 /// orientation until something regenerates it — and an operator watching a box
 /// refuse to turn is owed the reason rather than a mystery.
@@ -1190,7 +1190,7 @@ pub const fn label_text_font() -> &'static str {
     "Font"
 }
 
-/// ★ Says the list is the fourteen faces every reader has built in, because an
+/// Says the list is the fourteen faces every reader has built in, because an
 /// operator who has just come from their word processor's font menu would
 /// otherwise read a fourteen-entry list as pdfcer failing to find the rest.
 #[must_use]
@@ -1205,7 +1205,7 @@ pub const fn label_text_size() -> &'static str {
     "Size"
 }
 
-/// ★ Names what zero means, which is the one thing about this control that is
+/// Names what zero means, which is the one thing about this control that is
 /// not guessable from looking at it.
 #[must_use]
 pub const fn label_text_size_hover() -> &'static str {
@@ -1221,7 +1221,7 @@ pub const fn text_size_auto() -> &'static str {
 
 /// The text-colour swatch's label.
 ///
-/// ★★ **"Text colour", not "Colour"** — it sits directly under Background and
+/// **"Text colour", not "Colour"** — it sits directly under Background and
 /// Border and mark, and a bare "Colour" beside those two is the one label an
 /// operator could reasonably read as a third property of the box.
 #[must_use]
@@ -1237,7 +1237,7 @@ pub const fn label_text_colour_hover() -> &'static str {
 
 /// A face the document embedded, named by the key its own `/DA` uses.
 ///
-/// ★ Shown verbatim rather than prettified: it is not one of the fourteen, so
+/// Shown verbatim rather than prettified: it is not one of the fourteen, so
 /// this shell has no operator-facing name for it and the file's own key is the
 /// only honest thing to write. A friendly name invented here would be a guess
 /// presented as a fact about the document.
@@ -1248,7 +1248,7 @@ pub fn text_font_embedded(key: &str) -> String {
 
 /// The operator-facing name of one of the fourteen built-in faces.
 ///
-/// ★★ The vocabulary rule this file's header sets, applied to font names: the
+/// The vocabulary rule this file's header sets, applied to font names: the
 /// standard spells them `Helvetica-BoldOblique` and `Times-Roman`, and no font
 /// menu this operator has ever used writes them that way. **Oblique is offered
 /// as Italic** for the same reason — it is the word in every other program's
@@ -1276,7 +1276,7 @@ pub const fn text_font_name(font: pdfcer_core::fontdata::Std14) -> &'static str 
 
 /// Stands in for the swatch when the file states an ink no swatch can draw.
 ///
-/// ★★ R9 applied to a colour: the control is **absent**, not greyed, and this
+/// R9 applied to a colour: the control is **absent**, not greyed, and this
 /// sentence stands where it would have been. Converting the separation to
 /// something showable would put a colour on screen the file does not contain,
 /// and the operator's first nudge of the picker would commit pdfcer's guess as
@@ -1311,7 +1311,7 @@ pub const fn touched_text_size() -> &'static str {
 mod tests {
     use super::*;
 
-    /// ★★★ **The limitation note does not tell the operator to delete their
+    /// **The limitation note does not tell the operator to delete their
     /// field**, which is what it did until 2026-08-27.
     ///
     /// The test it replaces asserted the opposite — it required the string
@@ -1322,7 +1322,7 @@ mod tests {
     /// recommended destroying a field's name, value and tab position for
     /// nothing.
     ///
-    /// ★ A test can pin a sentence and cannot know whether the sentence is
+    /// A test can pin a sentence and cannot know whether the sentence is
     /// true. This one is written in the negative for that reason: it does not
     /// try to say what the note should claim, only that it must not send an
     /// operator down the destructive route again.
@@ -1343,7 +1343,7 @@ mod tests {
         );
     }
 
-    /// ★★ **A field with no type is described as a defect, not as "unknown".**
+    /// **A field with no type is described as a defect, not as "unknown".**
     ///
     /// A `/FT`-less field is what a bare kid that lost its `/Parent` becomes,
     /// and no viewer can fill it. "Unknown" would read as pdfcer failing to

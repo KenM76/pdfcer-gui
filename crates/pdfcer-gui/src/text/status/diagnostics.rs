@@ -1,7 +1,7 @@
 //! # `text::status::diagnostics` — **the narrator's whole vocabulary**
 //!
 //!
-//! ## ★ The seam is a consumer, not an alphabet
+//! ## The seam is a consumer, not an alphabet
 //!
 //! A catalog area in this crate is keyed by **the surface it serves**, and
 //! every function here is read by exactly one: `app::status::notes`, whose
@@ -15,7 +15,7 @@
 
 /// The disclosure control's label, closed and open.
 ///
-/// ★ **Closed is the default, and the caption is still shown.** `DEFECTS.md`
+/// **Closed is the default, and the caption is still shown.** `DEFECTS.md`
 /// records the old shell opening with a substitute-glyph census: *"The first
 /// thing a user reads is the app talking about itself. Excellent
 /// information, wrong prominence."* The fix is prominence, not deletion — so
@@ -26,7 +26,7 @@
 /// *"did pdfcer draw my page faithfully?"*, and "diagnostics" is the word an
 /// application uses about itself.
 ///
-/// ★ **The triangles are `⏵` (U+23F5) and `⏷` (U+23F7), and the choice was
+/// **The triangles are `⏵` (U+23F5) and `⏷` (U+23F7), and the choice was
 /// forced by measurement rather than taste.** The obvious glyphs for a
 /// disclosure — `▸` U+25B8 and `▾` U+25BE — are **absent from egui's
 /// bundled font set** (Ubuntu-Light + NotoEmoji + emoji-icon-font), as are
@@ -135,7 +135,7 @@ pub fn diagnostics_images_skipped(n: usize) -> String {
 
 /// Annotations the file carries that pdfcer drew **nothing** for.
 ///
-/// ## ★★★ Why this one is worded as an absence rather than as a fault
+/// ## Why this one is worded as an absence rather than as a fault
 ///
 /// Every other sentence in this catalog describes something the operator can
 /// look at and find wrong — a substituted glyph, an image-shaped hole. This
@@ -242,7 +242,7 @@ pub fn diagnostics_contents_missing(n: usize) -> String {
 
 /// The page carried no `/Resources` dictionary, and pdfcer supplied one.
 ///
-/// # ★★★ Why a repair that changes nothing on the page is still disclosed
+/// # Why a repair that changes nothing on the page is still disclosed
 ///
 ///
 /// ⚠ **It is not cosmetic bookkeeping, and the reason is easy to get

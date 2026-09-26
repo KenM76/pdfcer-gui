@@ -14,7 +14,7 @@ use crate::text::unshare::UnshareRefusal;
 /// possibly by many pages, possibly several times by one.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum XObjectAction {
-    /// ★★★ **Give this page its own private copy of a shared drawing.**
+    /// **Give this page its own private copy of a shared drawing.**
     ///
     /// `EditSession::unshare_form`. Raised by `crate::app::dispatch::format`'s
     /// `format.unshare_form` arm — from the Format contextual tab and from the
@@ -36,7 +36,7 @@ pub enum XObjectAction {
     /// operator had the default and no choice at all, which is the state `R206`
     /// exists to prevent.
     ///
-    /// # ★★ Both fields are load-bearing and neither is redundant
+    /// # Both fields are load-bearing and neither is redundant
     ///
     /// `page` is **not** merely for the trace, unlike
     /// `super::annot::AnnotAction::Delete`'s. The verb's signature is
@@ -80,7 +80,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: XObjectAction) {
 
 /// **Clone a shared form XObject for one page, as one undoable command.**
 ///
-/// # ★★★ Every refusal is caught INSIDE the closure and worded
+/// # Every refusal is caught INSIDE the closure and worded
 ///
 ///
 /// **This verb owes a sentence for every one of its refusals**, which is
@@ -100,7 +100,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: XObjectAction) {
 /// `crate::text::unshare`'s sentences all end by restating that the sharing is
 /// untouched.
 ///
-/// ★★ Recorded from **inside** the closure rather than before the call, for
+/// Recorded from **inside** the closure rather than before the call, for
 /// `record_resize_not_rebuildable`'s stated reason: whether the engine will
 /// refuse is a property of the FILE — is it encrypted, is it certified, is its
 /// `/Size` suppressing entries, is this form reached only from inside another —
@@ -134,7 +134,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: XObjectAction) {
 /// dirty document, bought for nothing, and then a false statement about their
 /// own file. [`UnshareRefusal::NotShared`]'s docs carry the full account.
 ///
-/// ★★ The order matters: the walk is done **outside** `vector_edit`, not inside
+/// The order matters: the walk is done **outside** `vector_edit`, not inside
 /// its closure. `vector_edit` cancels the render worker and takes `&mut` on the
 /// session before the closure runs, so a decline from inside it would have
 /// stopped a raster mid-flight to learn that nothing was going to happen. From
@@ -157,7 +157,7 @@ fn unshare(doc: &mut OpenDoc, page: usize, form: ObjId) {
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     //
-                    // ★ It names BOTH object numbers and the count. The count
+                    // It names BOTH object numbers and the count. The count
                     // is also on the status row, and that duplication is
                     // deliberate: a driven check must be able to assert the
                     // number without reading prose, and the two coming from one
@@ -187,7 +187,7 @@ fn unshare(doc: &mut OpenDoc, page: usize, form: ObjId) {
 /// other page draws it — in which case the decline is already worded and
 /// recorded and the caller must do nothing at all.
 ///
-/// # ★★★ Why this exists: the command shipped without ever asking
+/// # Why this exists: the command shipped without ever asking
 ///
 /// "Give this page its own copy" went out on 2026-08-28 and, for one day,
 /// **nothing in its chain asked whether the form was invoked more than once.**
@@ -204,7 +204,7 @@ fn unshare(doc: &mut OpenDoc, page: usize, form: ObjId) {
 ///
 /// ⇒ The question is the shell's to ask, and this is where it is asked.
 ///
-/// # ★★★ THE COST, and why a whole-document walk is affordable HERE
+/// # THE COST, and why a whole-document walk is affordable HERE
 ///
 /// `pdfcer_core::text_edit::invocation_set` walks **every page in the document**
 /// and decodes every form it finds, recursively. Its own documentation is blunt
@@ -219,7 +219,7 @@ fn unshare(doc: &mut OpenDoc, page: usize, form: ObjId) {
 /// cost something; the alternative — the edit itself — allocates an object and
 /// rewrites a resource dictionary, which is not cheap either.
 ///
-/// ## ★★★ And why the same walk must NOT go in a condition — R9
+/// ## And why the same walk must NOT go in a condition — R9
 ///
 /// The tempting shape is to grey the control when the form is not shared. It is
 /// wrong, and `crate::app::conditions`' own budget says why: conditions are
@@ -236,7 +236,7 @@ fn unshare(doc: &mut OpenDoc, page: usize, form: ObjId) {
 /// which is R9's own remedy and this project's founding rule: a refusal is a
 /// sentence, never a silence.
 ///
-/// # ★★★ What "not shared" is measured as, and why `is_shared()` alone is not
+/// # What "not shared" is measured as, and why `is_shared()` alone is not
 /// # the test
 ///
 /// `InvocationSet::is_shared()` is `sites.len() > 1` — *more than one `Do`
@@ -259,7 +259,7 @@ fn unshare(doc: &mut OpenDoc, page: usize, form: ObjId) {
 /// | drawn twice, both here | `true` | **decline** |
 /// | drawn here and on sheet 12 | `true` | proceed, "1 other page" |
 ///
-/// # ★★★ An incomplete walk NEVER declines
+/// # An incomplete walk NEVER declines
 ///
 /// `InvocationSet::is_lower_bound()` is true when some page's scan hit the
 /// depth guard or a form pdfcer could not decode. On such a document the count
@@ -276,7 +276,7 @@ fn unshare(doc: &mut OpenDoc, page: usize, form: ObjId) {
 /// but the scan never saw it — is treated the same way and for the same reason:
 /// the two disagree, and the honest response to a disagreement is not a claim.
 ///
-/// # ★★ Read through `session.view()` ALONE, since engine v0.41.0
+/// # Read through `session.view()` ALONE, since engine v0.41.0
 ///
 /// Until v0.41.0 this call took a **pair** — the object **graph** from
 /// `session.document()` (the base revision) and the **bytes** from
@@ -294,7 +294,7 @@ fn unshare(doc: &mut OpenDoc, page: usize, form: ObjId) {
 /// half that could disagree with the bytes, and it is gone.
 fn fanout(doc: &OpenDoc, page: usize, form: ObjId) -> Option<crate::text::unshare::Fanout> {
     let set = pdfcer_core::text_edit::invocation_set(&doc.session.view(), form.num);
-    // ★ Counted rather than read off `set.pages.len()`, because "other" is this
+    // Counted rather than read off `set.pages.len()`, because "other" is this
     // verb's whole subject: the page in front of the operator is not one of the
     // pages that keeps the original, and a build that forgot to subtract it
     // would over-report by exactly one on every document — the friendliest
@@ -305,7 +305,7 @@ fn fanout(doc: &OpenDoc, page: usize, form: ObjId) -> Option<crate::text::unshar
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
-        // ★ Written on BOTH paths — decline and proceed — because the number
+        // Written on BOTH paths — decline and proceed — because the number
         // that decided which one ran is the evidence a driven check needs, and
         // a line emitted only on success would leave the decline provable only
         // by the absence of something.
@@ -321,7 +321,7 @@ fn fanout(doc: &OpenDoc, page: usize, form: ObjId) -> Option<crate::text::unshar
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             //
-            // ★★★ The decline gets a line of its OWN, and it is not redundant
+            // The decline gets a line of its OWN, and it is not redundant
             // with the measurement above. A driven check that had to prove the
             // decline from the *absence* of `unshare-form-applied` would pass
             // on every build where the row is greyed, the dispatcher has no arm
@@ -345,7 +345,7 @@ fn fanout(doc: &OpenDoc, page: usize, form: ObjId) -> Option<crate::text::unshar
 
 /// Which sentence an `EditError` from `unshare_form` earns.
 ///
-/// # ★★ A total match with a named catch-all, not a `_ =>` with a guess
+/// # A total match with a named catch-all, not a `_ =>` with a guess
 ///
 /// Every variant the verb's own documentation names has an arm, in the order
 /// the engine checks them, so this function and `EditSession::unshare_form`'s
@@ -354,7 +354,7 @@ fn fanout(doc: &OpenDoc, page: usize, form: ObjId) -> Option<crate::text::unshar
 /// their own: both mean the page vector moved under a queued command, and the
 /// only honest operator-facing content for that is *nothing happened*.
 ///
-/// ★ It is a free function rather than a `From` impl because a `From` would
+/// It is a free function rather than a `From` impl because a `From` would
 /// invite this mapping to be reused for another verb's errors, and it is not
 /// reusable: `FormNotOnPage` earns a sentence about re-selecting *because this
 /// command's operand is derived from a selection*, which is not true of every
@@ -379,7 +379,7 @@ mod tests {
     use super::*;
     use pdfcer_core::edit::EditError;
 
-    /// ★★★ **Every refusal the verb documents maps to its own sentence**, and
+    /// **Every refusal the verb documents maps to its own sentence**, and
     /// none of them falls through to the catch-all.
     ///
     /// The failure this pins is the one that is invisible in a diff: somebody
@@ -424,7 +424,7 @@ mod tests {
         }
     }
 
-    /// ★ **An error the verb does not document still gets a sentence**, and it
+    /// **An error the verb does not document still gets a sentence**, and it
     /// is the one that promises nothing changed.
     ///
     /// The catch-all is not a hole; it is the honest fallback. This pins that

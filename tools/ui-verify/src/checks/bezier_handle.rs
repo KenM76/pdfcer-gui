@@ -144,7 +144,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: descend to the Node rung on each anchor until one has handles ---
     //
-    // ★★ **A sweep over the anchors, not a guess at which one is curved.**
+    // **A sweep over the anchors, not a guess at which one is curved.**
     //
     // Only anchors whose neighbouring segment is a cubic have handles at all —
     // `move_handle` refuses a straight one by name (`NoHandleHere`) and this
@@ -200,7 +200,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 4: drag the handle -------------------------------------------------
     //
-    // ★ The handle mark, not the anchor. They are tens of pixels apart on this
+    // The handle mark, not the anchor. They are tens of pixels apart on this
     // fixture by construction — the control points are pulled sixty points off
     // the chord — precisely so a check that aimed at the wrong one fails
     // visibly rather than passing on a coincidence.

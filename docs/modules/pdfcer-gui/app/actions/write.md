@@ -2,7 +2,7 @@
 picker out of the layout pass
 
 
-## ★★★ The seam, and it is the sharpest one this enum has
+## The seam, and it is the sharpest one this enum has
 
 Every other `Action` exists because something has to happen **after** the
 frame that raised it -- an edit through the funnel, a dialog opened, a
@@ -20,7 +20,7 @@ measured candidate for the next sub-enum -- 370 lines, and still the largest
 Today the family that grew is this one, so this one moved. The markup
 measurement stands and is still the answer the day markup grows.
 
-## ★★ Why a SAVE is in here with two exports
+## Why a SAVE is in here with two exports
 
 `Compacted` writes the document itself rather than a derivative of it, so it
 reads at first like the odd one out. It is not: it is here because it is an
@@ -28,7 +28,7 @@ reads at first like the odd one out. It is not: it is here because it is an
 changed, no undo entry is made, no epoch moves -- `app::save`'s header states
 that a save is a **read** of the session, and all three of these are.
 
-★ The alternative grouping -- *"things that produce a file"* -- would put
+The alternative grouping -- *"things that produce a file"* -- would put
 `SaveCopy` in here too, and `SaveCopy` is NOT an action: it is called
 directly, because its picker opens from the command dispatcher rather than
 from a widget's `clicked()`. Grouping by what a verb produces would have

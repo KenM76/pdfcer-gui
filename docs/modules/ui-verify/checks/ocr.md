@@ -36,7 +36,7 @@ a document with no text in it. Two trace lines are asserted rather than one
 — `ocr-applied` says *I asked*, `ocr-layer` says *it happened* — and only
 the pair distinguishes those two states.
 
-# ★ The falsifying phase, and what it is aimed at
+# The falsifying phase, and what it is aimed at
 
 Phases A–D could all be passed by a build that recognised correctly and then
 wrote the result out to the operator's file on its own initiative. That is

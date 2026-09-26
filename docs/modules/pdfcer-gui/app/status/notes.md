@@ -13,7 +13,7 @@
   pure decision function ([`notes_line`]), and its own editorial rule about
   which of the renderer's counters an operator can act on.
 
-## ★ Why this line is *narration* and the three below it are not
+## Why this line is *narration* and the three below it are not
 
 `DEFECTS.md`'s "Not defects" table records the old shell opening with a
 substitute-glyph census:
@@ -32,7 +32,7 @@ operator's own document and their own gesture, and a disclosure the
 operator has to *open something* to find is a disclosure that did not
 happen — the opposite failure. Hence: this one is demoted, those are not.
 
-## ★ Opening it does not make the bar taller (R128)
+## Opening it does not make the bar taller (R128)
 
 The parent's header carries the measurement — a content-driven status
 panel takes space from the central panel, an active `FitMode` recomputes

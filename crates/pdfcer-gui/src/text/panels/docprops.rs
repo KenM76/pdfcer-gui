@@ -9,7 +9,7 @@
 
 /// The heading over the document's own facts and fields.
 ///
-/// ★ **"This document" rather than "Document properties"**, and the reason
+/// **"This document" rather than "Document properties"**, and the reason
 /// survived the move to a panel that is *called* Document properties. The tab
 /// says what the surface is; the heading says what the words under it are
 /// about. Repeating the tab's own label immediately below it is a line of
@@ -24,7 +24,7 @@ pub const fn heading() -> &'static str {
 
 /// What is editable here, and what an empty box means.
 ///
-/// ★ The second sentence is the one that could not be guessed. Clearing a box
+/// The second sentence is the one that could not be guessed. Clearing a box
 /// **removes the key from the file** rather than storing an empty string —
 /// `set_info_field(field, None)` against `Some("")` — and they are different
 /// documents. It is also the only action in this panel that removes anything,
@@ -49,7 +49,7 @@ pub const fn note() -> &'static str {
 /// tool has met them under these names, and a novel word would be a novel
 /// thing to learn for no gain.
 ///
-/// # ★ `InfoField` is `#[non_exhaustive]`, so the compiler CANNOT catch a new
+/// # `InfoField` is `#[non_exhaustive]`, so the compiler CANNOT catch a new
 /// field here
 ///
 /// This function was first written as a `const fn` with four arms and no
@@ -110,7 +110,7 @@ pub fn info_label(field: pdfcer_core::edit::InfoField) -> &'static str {
     }
 }
 
-/// ★ **The value shown is pdfcer's reading of bytes it could not fully
+/// **The value shown is pdfcer's reading of bytes it could not fully
 /// decode.**
 ///
 /// Drawn under a field whose `InfoText::exact` is `false`. That flag means
@@ -158,7 +158,7 @@ pub const fn size_label() -> &'static str {
     "Size on disk"
 }
 
-/// ★ The size shown is the file as it was OPENED, not as it would be saved.
+/// The size shown is the file as it was OPENED, not as it would be saved.
 ///
 /// `Document::bytes()` is documented as *"the base revision, not the edited
 /// state"*, so with unsaved edits this number is the file on disk and not what
@@ -201,7 +201,7 @@ pub const fn page_size_label() -> &'static str {
 /// own rule. A sheet of exactly 210.5 mm read `210` on one and `211` on the
 /// other.
 ///
-/// ★ Both now take points and round through `units::whole_mm_from_points`,
+/// Both now take points and round through `units::whole_mm_from_points`,
 /// half away from zero. Printed with `{}`; `{:.0}` rounds half to EVEN and was
 /// the source of the disagreement.
 #[must_use]
@@ -211,7 +211,7 @@ pub fn page_size(width_pts: f64, height_pts: f64) -> String {
     format!("{width_mm} × {height_mm} mm")
 }
 
-/// ★ A document whose sheets are not all the same size.
+/// A document whose sheets are not all the same size.
 ///
 /// **The common case for this operator**, not an edge case: a drawing set is
 /// an A1 general arrangement with A3 details behind it. Reporting page one's
@@ -239,7 +239,7 @@ pub const fn encrypted() -> &'static str {
 
 /// An unencrypted document.
 ///
-/// ★ Stated rather than left blank. This panel's posture is that its silences
+/// Stated rather than left blank. This panel's posture is that its silences
 /// must be as legible as its numbers, and an absent encryption row is
 /// indistinguishable from a panel that does not check — which on this
 /// particular question is exactly the wrong impression to leave.
@@ -248,7 +248,7 @@ pub const fn not_encrypted() -> &'static str {
     "Not encrypted"
 }
 
-/// ★ What pdfcer does NOT tell you about an encrypted document.
+/// What pdfcer does NOT tell you about an encrypted document.
 ///
 /// The Signatures panel's discipline applied here: *say what you cannot tell
 /// you, first*. A row reading "Encrypted" invites the operator to conclude
@@ -270,7 +270,7 @@ pub const fn encryption_note() -> &'static str {
 
 /// Heading for the recovered-file disclosure.
 ///
-/// ★ Plain, and about the FILE rather than about pdfcer. "pdfcer had to repair
+/// Plain, and about the FILE rather than about pdfcer. "pdfcer had to repair
 /// this file" would read as pdfcer struggling; the file is the thing that is
 /// damaged, and the operator's next question is about the file.
 #[must_use]
@@ -280,7 +280,7 @@ pub const fn recovered_heading() -> &'static str {
 
 /// The detail line: what the rebuild involved.
 ///
-/// ★★ Three numbers, and only the middle one is a warning. Objects recovered
+/// Three numbers, and only the middle one is a warning. Objects recovered
 /// says how big the job was; **objects defined more than once** is the one that
 /// can put a line in the wrong place, because pdfcer had to choose; and repaired
 /// says how much else needed inference. Naming them separately lets an operator
@@ -295,7 +295,7 @@ pub fn recovered_detail(objects: usize, collisions: usize, repaired: usize) -> S
 
 /// The hover explanation.
 ///
-/// ★★★ States the consequence in the operator's terms and stops. It does not
+/// States the consequence in the operator's terms and stops. It does not
 /// tell them to do anything, because there is nothing reliable to tell them:
 /// the file may be perfectly fine, and the only real remedy is a good copy from
 /// whoever produced it. Inventing an action would be worse than naming the
@@ -353,7 +353,7 @@ pub fn dropped_summary(unparseable: usize, id_mismatch: usize) -> String {
 
 /// **The object numbers themselves, elided at a fixed count.**
 ///
-/// # ★ Why the numbers are printed at all
+/// # Why the numbers are printed at all
 ///
 /// The engine's own argument for carrying a list rather than a count: the
 /// complaint this came from was never that a tally was wrong, it was that a
@@ -384,7 +384,7 @@ pub fn dropped_numbers(numbers: &[u32], limit: usize) -> String {
 
 /// The hover explanation for the dropped-object lines.
 ///
-/// ★★ Ends without an instruction, for the same reason [`recovered_tooltip`]
+/// Ends without an instruction, for the same reason [`recovered_tooltip`]
 /// does: the file may be entirely fine, and the only real remedy is a good copy
 /// from whoever produced it. What it adds over that tooltip is the one thing an
 /// operator can actually check -- whether anything is visibly absent -- because
@@ -439,7 +439,7 @@ mod tests {
     /// one tested only below it cannot tell a correct rule from one that never
     /// does.
     ///
-    /// ★ The exactly-at-the-limit case is here on purpose: an off-by-one there
+    /// The exactly-at-the-limit case is here on purpose: an off-by-one there
     /// produces "and 0 more", which is the silent-truncation failure wearing
     /// the opposite coat — a remainder announced that does not exist.
     #[test]

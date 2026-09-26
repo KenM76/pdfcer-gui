@@ -21,7 +21,7 @@ use crate::canvas::{paging, zoom};
 /// either handler gets; which response the caller reads it from is a property
 /// of the call site. See the module header.
 ///
-/// # ★ Order matters, and it is the same order the ordinary path uses
+/// # Order matters, and it is the same order the ordinary path uses
 ///
 /// The page turn is read **before** the zoom, so the two are consulted in the
 /// order egui produced the events. They cannot both fire on one gesture: a

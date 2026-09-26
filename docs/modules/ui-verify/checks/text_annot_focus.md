@@ -6,7 +6,7 @@
 > *"adding text does bring up a window and a prompt, but it doesn't type
 > anything in the box when I type and nothing gets added."*
 
-# ★★ Why this exists when `text_annot_places_and_authors` already types
+# Why this exists when `text_annot_places_and_authors` already types
 
 Because that check **clicks the text field before typing into it**, and an
 operator has no reason to. A dialog that opens with a caption asking for

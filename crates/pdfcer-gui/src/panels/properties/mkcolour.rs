@@ -35,7 +35,7 @@ pub struct Row<'a> {
     /// The *no colour* entry's label, or `None` when this key has no such
     /// state worth offering.
     ///
-    /// ★★ `/BC` passes `None`, and that is a measurement rather than a
+    /// `/BC` passes `None`, and that is a measurement rather than a
     /// simplification. `WidgetChrome::stroke` resolves the empty array and the
     /// absent key to the **same black**, deliberately — a border's thickness
     /// lives in `/BS` `/W`, and letting an empty `/BC` mean *omit the stroke*
@@ -58,7 +58,7 @@ pub struct Row<'a> {
     pub remove_unavailable: &'a str,
     /// Draw the swatch as a disc rather than a bar.
     ///
-    /// ★ A fact about the ENGINE's radio builder, which fills a circle and says
+    /// A fact about the ENGINE's radio builder, which fills a circle and says
     /// so, not a decoration chosen here. A rectangular preview over a control
     /// that comes out round is a surface mis-stating the result of the
     /// operator's own press.

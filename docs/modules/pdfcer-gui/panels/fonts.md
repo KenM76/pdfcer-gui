@@ -10,7 +10,7 @@ where the old shell had it. `RIBBON_IA.md` §7's migration map moves it,
 and the reason is one sentence in the tab's own module docs: the Fonts
 panel answers *"what is inside this file"*, not *"what is on my screen"*.
 
-# ★ Why the panel says *why*, when the parity reference does not
+# Why the panel says *why*, when the parity reference does not
 
 Acrobat refuses to unembed a font whose character codes are glyph indices
 into its own embedded program, and it refuses **silently** — the font
@@ -34,7 +34,7 @@ and only 50 % carry `/ToUnicode`**. So the common case for "just remove
 the embedded fonts" is a case where removal destroys the document, and
 the operator has no way to know that from a font list alone.
 
-# ★ The coverage note is above the list, not beneath it
+# The coverage note is above the list, not beneath it
 
 A font inventory that quietly misses a surface and prints a confident
 list is this project's most-repeated defect shape. So the panel states
@@ -48,7 +48,7 @@ empty list beneath it *means*: without it, "0 fonts" and "pdfcer could not
 walk the page tree" render identically and an operator reads the second
 as the first.
 
-# ★ What did NOT come across: unembed, and embed
+# What did NOT come across: unembed, and embed
 
 The old panel carried two controls — remove a font's embedded program,
 and embed a missing one — each in a batch form under the summary and a

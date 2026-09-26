@@ -2,7 +2,7 @@
 
 `bookmark_add` — **a bookmark can be written, and the panel gets it back.**
 
-# ★ Why the fixture having NO bookmarks is the point, not a limitation
+# Why the fixture having NO bookmarks is the point, not a limitation
 
 `SW41177.pdf` is a CAD export with no outline. That is the state the
 Bookmarks panel spent its whole life unable to leave: it drew *"no
@@ -14,7 +14,7 @@ unit test cannot: the panel body takes an `OpenDoc` and an `egui::Ui`, and
 the guard that would come back is a two-line `if outline.items.is_empty() {
 return }` that every unit test of `read_outline` would still pass over.
 
-# ★★ What is asserted, and the one number that must NOT be used
+# What is asserted, and the one number that must NOT be used
 
 The engine's reply on `add_outline_item` spends its longest section on this
 and calls it *"not a footnote — the entire difficulty of the feature"*:
@@ -30,7 +30,7 @@ every depth, open or closed. The distinction is invisible on this fixture
 anybody adds a nested case, which is exactly when a harness quietly
 measuring the wrong quantity does its damage.
 
-# ★ The greyed Add button is asserted in BOTH states
+# The greyed Add button is asserted in BOTH states
 
 R9 reserves greying for *temporarily* unavailable, always explained. An
 empty title is the textbook case — one keystroke away from live — and

@@ -26,7 +26,7 @@ belongs to. For the two-line angular tool that is not a nicety — the whole
 measurement is *which two lines*, and picking the wrong one gives a
 confident, plausible, wrong angle.
 
-## ★ Rule 4: this is a cursor, not content marking, and the distinction is
+## Rule 4: this is a cursor, not content marking, and the distinction is
 exact
 
 `pdfce_FeatureRequests/README.md` rule 4 forbids drawing pdfcer's own
@@ -43,7 +43,7 @@ one-line test the rule gives — *would a screenshot of the editing canvas
 differ from the same document saved and reopened?* — is passed because
 nothing here survives a click, let alone a save.
 
-## ★★ Why the entity is resolved beside the snap and not beside the paint
+## Why the entity is resolved beside the snap and not beside the paint
 
 [`super::Resolved`] exists because the indicator and the click must read
 *one* derivation of "where would this land" — its own documentation records

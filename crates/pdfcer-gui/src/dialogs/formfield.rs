@@ -16,7 +16,7 @@ use crate::text::formfield as t;
 
 /// The dialog body's rect, for `ui-verify`.
 ///
-/// ★ These names are a **cross-repo stability contract**: `tools/ui-verify`
+/// These names are a **cross-repo stability contract**: `tools/ui-verify`
 /// asserts on them by string, so renaming one silently turns a check into a
 /// skip rather than a failure. Treat them as published API.
 const REGION_BODY: &str = "dialog.form_field.body";
@@ -51,7 +51,7 @@ pub struct FormFieldDialog {
     close_requested: bool,
     /// Whether the name field has ever actually held focus.
     ///
-    /// ★ Held, not *asked for* — the distinction the text-annotation dialog
+    /// Held, not *asked for* — the distinction the text-annotation dialog
     /// paid for twice. See [`Self::name_row`].
     focused_once: bool,
     /// How many focus requests have been spent while the window was focused.
@@ -66,7 +66,7 @@ pub struct FormFieldDialog {
 const FOCUS_ATTEMPT_FRAMES: u8 = 8;
 
 //
-// ★★★ THE REPORT, AND WHY IT WAS HALF RIGHT
+// THE REPORT, AND WHY IT WAS HALF RIGHT
 //
 // The review said this dialog *"clips"*. It does not: the body has scrolled
 // since it was written, so every control is reachable. What it does is open at
@@ -87,7 +87,7 @@ const FOCUS_ATTEMPT_FRAMES: u8 = 8;
 //      the text colour**, so the affordance exists. That is `print/layout.rs`'s
 //      remedy for its own invisible-scrollbar defect, reached the same way.
 //
-// ★★★ AND IT IS NOT MEASURED FROM THE BODY. R128, and this project has been
+// AND IT IS NOT MEASURED FROM THE BODY. R128, and this project has been
 // bitten three times — the fit-zoom loop, the About window growing 560 → 1,624
 // px in a few frames, and the print dialog's two mutually-causing scrollbars.
 // `print/layout.rs`'s header states the rule this section obeys:
@@ -148,7 +148,7 @@ const INTRO_PTS: f32 = 48.0;
 /// Height reserved UNDER the scrolling body for the separator and the button
 /// row.
 ///
-/// # ★ It is one constant used twice, and it was a literal `40.0` in one of the
+/// # It is one constant used twice, and it was a literal `40.0` in one of the
 /// # two places
 ///
 /// The body reserves this out of the scroll area's `max_height` because the
@@ -196,7 +196,7 @@ const SCROLLBAR_WIDTH_PTS: f32 = 10.0;
 /// common rows at the top, the kind's own rows, and the two common flags plus
 /// the border row at the bottom.
 ///
-/// ★★ A push button's *action* rows are deliberately **excluded**, and that is
+/// A push button's *action* rows are deliberately **excluded**, and that is
 /// the one judgement in this function. `dialogs::buttonaction::rows` draws a
 /// different set of controls for each of seven choices — from nothing at all
 /// for *Do nothing* to a radio pair, a label, a three-row box and a note for
@@ -249,7 +249,7 @@ fn content_height(kind: FormFieldKind) -> f32 {
 /// visible bar — which is the right answer and the reason the scroll area was
 /// never the defect.
 ///
-/// ★ `screen` is the *application* window's content rectangle, used as the
+/// `screen` is the *application* window's content rectangle, used as the
 /// stand-in for the monitor's usable height. It is not the same quantity —
 /// this dialog is an OS window and may legally be taller than its parent — but
 /// it is the only one `eframe 0.35` offers without a work-area query, it is
@@ -311,7 +311,7 @@ impl FormFieldDialog {
 
     /// Draw one frame. Returns `false` when it should close.
     pub fn show(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
-        // ★★★ **The harness's way past a second OS window.**
+        // **The harness's way past a second OS window.**
         //
         // R1 says a feature is not done until it is asserted by driving the
         // running binary. `tools/ui-verify` drives ONE window — the one
@@ -330,7 +330,7 @@ impl FormFieldDialog {
         // drag-and-drop would be the one feature in this shell that R1 could
         // not reach."*
         //
-        // ★ What it substitutes is the OPERATOR'S PRESS, not the authoring. It
+        // What it substitutes is the OPERATOR'S PRESS, not the authoring. It
         // sets the same flag the Add button sets, so everything after that
         // point — the readiness guard, the action, the remembering, the
         // narrowing and the engine call — is the path an operator takes. A seam
@@ -363,7 +363,7 @@ impl FormFieldDialog {
                 }
                 .into(),
             );
-            // ★★★ PUT THE TOOL DOWN. `OPERATOR_REQUESTS.md` **O53**.
+            // PUT THE TOOL DOWN. `OPERATOR_REQUESTS.md` **O53**.
             //
             // The tool stayed armed after a placement, so the operator's very
             // next click -- the one aimed at the checkbox they had just made,
@@ -371,14 +371,14 @@ impl FormFieldDialog {
             // *"I can't select it on the canvas"*, and he was right: nothing he
             // could do reached the selection, because the click never got there.
             //
-            // ★★★ **This project's own harness had been working around it for a
+            // **This project's own harness had been working around it for a
             // day.** `dragging_a_form_field_moves_it` presses Escape before it
             // selects, with a comment calling the arming normal *"exactly as a
             // markup pen does"*. => When a driven check needs a step the
             // operator would never know to take, that step is a bug report. It
             // was written down as scenery.
             //
-            // ★★ Acrobat is the parity reference for forms and returns to the
+            // Acrobat is the parity reference for forms and returns to the
             // selection tool after placing a field unless *Keep tool selected*
             // is ticked; Word, PowerPoint and Visio do the same for a drawn
             // shape. Illustrator and Inkscape keep the tool -- they are drawing
@@ -388,7 +388,7 @@ impl FormFieldDialog {
             crate::canvas::tool::select(ctx, crate::canvas::tool::CanvasTool::Select);
             return false;
         }
-        // ★ The window's own close button counts as Cancel and authors nothing:
+        // The window's own close button counts as Cancel and authors nothing:
         // the operator dismissed a question, and a dismissed question is not an
         // answer. The same reading the text-annotation dialog records.
         !(self.close_requested || !open)
@@ -399,7 +399,7 @@ impl FormFieldDialog {
         ui.label(t::intro(self.draft.kind));
         ui.add_space(8.0);
 
-        // ★★ SOLID SCROLLBARS, not egui's floating default — the second half of
+        // SOLID SCROLLBARS, not egui's floating default — the second half of
         // A16a, and the half that makes the first half honest.
         //
         // `ScrollStyle::default()` is `floating()`: a two-point sliver that
@@ -416,7 +416,7 @@ impl FormFieldDialog {
         // correctly sized and invisible*. Drawing it from the same visuals'
         // TEXT colour inherits whatever contrast the active theme gives text.
         //
-        // ★ Set on a scoped `style_mut` of the body's `Ui`, so it reaches this
+        // Set on a scoped `style_mut` of the body's `Ui`, so it reaches this
         // scroll area and nothing else in the program.
         let mut scroll = egui::style::ScrollStyle::solid();
         scroll.foreground_color = true;
@@ -424,7 +424,7 @@ impl FormFieldDialog {
         ui.style_mut().spacing.scroll = scroll;
 
         egui::ScrollArea::vertical()
-            // ★ The SAME constant the opening height adds back for the button
+            // The SAME constant the opening height adds back for the button
             // row. It was a literal `40.0` here against nothing at all there,
             // which is how the two halves of a reservation drift apart.
             .max_height(ui.available_height() - FOOTER_PTS)
@@ -444,7 +444,7 @@ impl FormFieldDialog {
         ui.add_space(6.0);
         ui.separator();
         ui.horizontal(|ui| {
-            // ★ Greyed with the reason on hover, which is the one situation R9
+            // Greyed with the reason on hover, which is the one situation R9
             // reserves greying for: *temporarily* unavailable, and one keystroke
             // makes it live.
             let ready = self.draft.is_authorable();
@@ -475,7 +475,7 @@ impl FormFieldDialog {
         );
         crate::diag::ui_rect(REGION_NAME, response.rect);
 
-        // ★★ Ask until the field actually HOLDS focus — not once. The
+        // Ask until the field actually HOLDS focus — not once. The
         // text-annotation dialog's header carries the full account; the short
         // version is that asking and holding are different facts, the frame
         // that opens this window is still resolving the pointer release that
@@ -483,7 +483,7 @@ impl FormFieldDialog {
         // retried. The operator's report of the same bug elsewhere was *"it
         // doesn't type anything in the box when I type."*
         //
-        // ★ And the budget is only spent while the WINDOW is focused, because
+        // And the budget is only spent while the WINDOW is focused, because
         // an OS window's focus is granted by the platform and Windows refuses
         // the foreground to a process that does not already have it. Spending
         // the eight frames during that wait means every attempt is made at a
@@ -521,7 +521,7 @@ impl FormFieldDialog {
                 .hint_text(t::tooltip_hint())
                 .char_limit(TOOLTIP_MAX),
         );
-        // ★ Stated ALWAYS, not only when empty, and off to the side rather than
+        // Stated ALWAYS, not only when empty, and off to the side rather than
         // as a warning. It is a consequence the operator cannot see — a screen
         // reader announcing only "edit box" — and rule 4's surviving half asks
         // for exactly that: report what cannot be seen, do not nag about it.
@@ -568,7 +568,7 @@ impl FormFieldDialog {
                 ui.add(egui::DragValue::new(n).range(1..=1_000));
             }
         });
-        // ★ Comb is offered only when it can be honoured. Its cells are
+        // Comb is offered only when it can be honoured. Its cells are
         // `max_len` divisions of the width, so without a maximum there is
         // nothing to divide by — `Draft::comb_ok` is the rule, asked here
         // rather than restated, so the dialog and the commit cannot disagree.
@@ -601,7 +601,7 @@ impl FormFieldDialog {
 
     /// A radio button's two extra choices.
     ///
-    /// ★★ The wording differs from the check box's even though the fields are
+    /// The wording differs from the check box's even though the fields are
     /// the same two, and deliberately: for a radio the **name is the group**,
     /// so what tells two members apart is the export value. An operator who
     /// reads "export value" as a technical detail here will place three radios
@@ -662,7 +662,7 @@ impl FormFieldDialog {
         // cancels.
         ui.add(egui::TextEdit::singleline(&mut self.draft.caption).desired_width(f32::INFINITY));
         crate::dialogs::buttonaction::rows(ui, &mut self.draft.action);
-        // ★★★ THE INERT NOTE IS GONE, and its deletion is the feature.
+        // THE INERT NOTE IS GONE, and its deletion is the feature.
         //
         // Until 2026-09-01 this row ended with a sentence saying pdfcer *"can
         // place the button but cannot yet give it something to do"*, and the
@@ -672,7 +672,7 @@ impl FormFieldDialog {
         // an action, it is now saying something untrue in the direction that
         // matters."*
         //
-        // ★ Two days passed before anyone checked. That is the finding worth
+        // Two days passed before anyone checked. That is the finding worth
         // keeping: the reply arrived, was read, and the sentence it warned
         // about stayed on screen — because nothing in this repository fails
         // when a capability lands. See `canvas::formfield::action`'s tripwire
@@ -776,7 +776,7 @@ impl FormFieldDialog {
 
 /// Whether `PDFCER_DIAG_FORM_ACCEPT` asks this dialog to accept itself.
 ///
-/// ★ Read every frame rather than latched, unlike `scripted_invoke`'s counter,
+/// Read every frame rather than latched, unlike `scripted_invoke`'s counter,
 /// and the difference is real: that one turns an env var into an **event**, so
 /// it must fire once. This is a **standing instruction** — *"in this run, accept
 /// every form-field dialog"* — and a check that places three fields wants all
@@ -811,7 +811,7 @@ mod tests {
         egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 900.0))
     }
 
-    /// ★★★ **Every kind's window opens tall enough for the rows that kind
+    /// **Every kind's window opens tall enough for the rows that kind
     /// draws** — review finding A16a.
     ///
     /// The defect in one assertion. The window was a flat `440 x 420` for all
@@ -820,7 +820,7 @@ mod tests {
     /// scrollbar nobody could see, which is why it was reported as clipping
     /// rather than as scrolling.
     ///
-    /// ★ Both sides of this comparison come from this file's own constants, so
+    /// Both sides of this comparison come from this file's own constants, so
     /// it does not prove the constants are *right* — no unit test can, because
     /// the true row heights exist only in a laid-out frame under a theme. What
     /// it proves is that the window and the inventory cannot drift apart, which
@@ -925,7 +925,7 @@ mod tests {
         assert!(dialog.draft.is_authorable());
     }
 
-    /// ★★ **Accepting raises exactly one action, carrying the whole draft.**
+    /// **Accepting raises exactly one action, carrying the whole draft.**
     ///
     /// The guard against the shape this dialog exists to avoid: authoring on
     /// placement. Nothing reaches the document until this action does, so a
@@ -978,7 +978,7 @@ mod tests {
         assert!(!still_open, "and the dialog closes");
     }
 
-    /// ★ **Comb is cleared when it cannot be honoured**, rather than left set
+    /// **Comb is cleared when it cannot be honoured**, rather than left set
     /// in a draft whose maximum length has since been switched off.
     ///
     /// Drives the real body so the clearing is asserted where it happens, not

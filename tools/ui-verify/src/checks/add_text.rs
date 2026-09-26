@@ -174,7 +174,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("the click on blank paper started an Add draft");
 
-    // --- C: ★★ TYPE, FOR REAL ----------------------------------------------
+    // --- C: TYPE, FOR REAL ----------------------------------------------
     //
     // Two keys already in `sys::vk`. WHAT is typed does not matter — the
     // assertion is that the draft grew, not what it says.
@@ -211,7 +211,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("real keystrokes reached the draft — the OS -> egui -> draft link holds");
 
-    // ★★ THE IN-PLACE EDITOR, CAPTURED MID-DRAFT.
+    // THE IN-PLACE EDITOR, CAPTURED MID-DRAFT.
     //
     // Everything above reads the trace, and the trace can say a keystroke
     // reached the draft. It cannot say the operator can SEE it — and for a

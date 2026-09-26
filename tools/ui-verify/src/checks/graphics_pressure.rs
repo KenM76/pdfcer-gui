@@ -33,7 +33,7 @@ const PRESSURE: &str = "gl-pressure";
 
 /// `egui`'s `InputState::default().max_texture_side`.
 ///
-/// ★ The number this check exists to distinguish from a device reading.
+/// The number this check exists to distinguish from a device reading.
 /// Spelled here because the failure text has to be able to say *"this is
 /// exactly the framework's pre-backend default"*, which is the sentence that
 /// tells the reader where to look.
@@ -103,7 +103,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- the precondition ---------------------------------------------------
     //
-    // ★ Before the presence or absence of a device reading means anything, the
+    // Before the presence or absence of a device reading means anything, the
     // application has to have got as far as a document. A mistyped or
     // relative path traces no `status` line at all, and this project has twice
     // produced confident, detailed, entirely wrong defect reports out of
@@ -136,7 +136,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 2: ★ and it is reporting a DEVICE, not a default ------------------
+    // --- 2: and it is reporting a DEVICE, not a default ------------------
     //
     // The standing value is the last one, because `diag::trace_on_change`
     // emits only when the value differs from the previous under that key.
@@ -262,7 +262,7 @@ fn launch_quiet(
     if let Some(name) = ctx.profile.viewport_env {
         spec.env.push((name.to_owned(), OFFSCREEN.to_owned()));
     }
-    // ★ Without this the line above is decoration: `Session::place` would move
+    // Without this the line above is decoration: `Session::place` would move
     // the window to `(780, 40)` the moment it appeared, onto the desktop the
     // operator is using.
     spec.place = false;

@@ -12,7 +12,7 @@ unit ([`Scale`]), the 1-2-5 [`Ladder`] and its exact tick walk — because a
 grid drawn on a different ladder from the ruler beside it would be two
 ornaments rather than one reading.
 
-## ★ Which space the grid is drawn in — page space, per page
+## Which space the grid is drawn in — page space, per page
 
 [`super::rulers`]' header §2 carries the argument in full and it is the
 decision this module exists to enact, so the short form is here:
@@ -37,7 +37,7 @@ it is a statement about the sheet. A grid not attached to the sheet cannot
 make such a statement. The same argument settles the guides, which is why
 [`super::guides`] stores a guide against a **page**.
 
-## ★ Rule 4
+## Rule 4
 
 A grid the operator switched on is chrome they asked for, and `panels`'
 one-line test — *would a screenshot of the editing canvas differ from a

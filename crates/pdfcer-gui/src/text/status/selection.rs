@@ -7,9 +7,9 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/text/status/selection.md`.
 
-/// ★★★ **This page's colours are approximate at this zoom.**
+/// **This page's colours are approximate at this zoom.**
 ///
-/// ★★★ **What is selected**, for the status bar's left-hand readout.
+/// **What is selected**, for the status bar's left-hand readout.
 ///
 /// # Why this line exists at all
 ///
@@ -45,7 +45,7 @@ pub fn selection_one_unsized(kind: &str) -> String {
     format!("Selected: {kind}")
 }
 
-/// ★★★ **The same object, when it lives inside a form XObject.**
+/// **The same object, when it lives inside a form XObject.**
 ///
 /// # The sentence this whole change exists to make sayable
 ///
@@ -67,7 +67,7 @@ pub fn selection_one_unsized(kind: &str) -> String {
 /// a separate subject, which is `status::selected`'s standing rule about the
 /// depth clause too.
 ///
-/// # ★ Rule 4: this is DISCLOSURE, and it is off-canvas
+/// # Rule 4: this is DISCLOSURE, and it is off-canvas
 ///
 /// Nothing is drawn differently on the page. A form-interior object renders
 /// exactly as it will render when saved, with no badge, tint or dashed
@@ -98,14 +98,14 @@ pub fn selection_one_in_form_unsized(kind: &str, nesting: usize) -> String {
     format!("Selected: {kind} · {}", inside_forms(nesting))
 }
 
-/// ★★ **You are working inside a container and nothing is selected.**
+/// **You are working inside a container and nothing is selected.**
 ///
 /// `OPERATOR_REQUESTS.md` O70. The one state in the Smart-Selector arm with no
 /// visible evidence anywhere else: no outline, no armed tool, nothing on the
 /// page — just clicks that resolve differently from how they resolved a moment
 /// ago.
 ///
-/// ★ It names **Escape** for the reason `text::placing::armed_instruction`
+/// It names **Escape** for the reason `text::placing::armed_instruction`
 /// does: this is the only statement of the way out that the operator can read
 /// at the moment they need it, and a scope with no visible exit is exactly the
 /// stranding the design exists to prevent.
@@ -123,7 +123,7 @@ fn inside_forms(nesting: usize) -> String {
     }
 }
 
-/// ★★★ **Why a verb refused when the subject lives in a form XObject.**
+/// **Why a verb refused when the subject lives in a form XObject.**
 ///
 /// # The sentence this replaced, and why it had to go
 ///
@@ -137,7 +137,7 @@ fn inside_forms(nesting: usize) -> String {
 /// operator not to try something the program can do, and it does so with the
 /// program's own voice.*
 ///
-/// # ★★ Why splitting it was not optional once it was wrong
+/// # Why splitting it was not optional once it was wrong
 ///
 /// One string was serving two call sites whose facts had drifted apart in
 /// opposite directions, which is how it stayed wrong: neither site could be
@@ -152,7 +152,7 @@ fn inside_forms(nesting: usize) -> String {
 ///   The old sentence told that operator their selection was inside a form at
 ///   the exact moment pdfcer had established it was not.
 ///
-/// # ★ The second site was silent, and the split is what exposed it
+/// # The second site was silent, and the split is what exposed it
 ///
 /// `Declined::still_true` filtered `InsideForm` on `selection_in_form`, which
 /// is the right predicate for a sentence about a form-interior selection and
@@ -171,7 +171,7 @@ pub enum InsideFormRefusal {
     /// carrying the page-object index; a leaf has no such index, so the fact
     /// travels without one.
     ///
-    /// ★ The sentence deliberately does not say *"inside a form"* first.
+    /// The sentence deliberately does not say *"inside a form"* first.
     /// Containment is not what refused here — the container is reachable —
     /// and leading with it would send the operator to press Escape, which
     /// would not help.
@@ -193,7 +193,7 @@ impl InsideFormRefusal {
     #[must_use]
     pub const fn line(self) -> &'static str {
         match self {
-            // ★ Names what pdfcer CAN reach, in the same shape
+            // Names what pdfcer CAN reach, in the same shape
             // `text::deleting`'s form-interior sentence does — that one has
             // said *"press Escape to step back out to the whole shape"* since
             // the day the rung existed, and it was right the whole time this
@@ -202,7 +202,7 @@ impl InsideFormRefusal {
             Self::NotAPath => {
                 "pdfcer can only drag the corners of a shape. Press Escape to step back out to the whole object, then drag it."
             }
-            // ★★ Names the absence, and names the act that creates the
+            // Names the absence, and names the act that creates the
             // thing this verb needs. It is deliberately not *"nothing is
             // selected"*: something usually IS selected — a page object — and
             // reporting the wrong absence is the failure mode this whole
@@ -229,10 +229,10 @@ pub fn selection_many(count: usize) -> String {
 }
 
 // ===========================================================================
-// ★ The Part rung — one line of a text block, one part of a shape
+// The Part rung — one line of a text block, one part of a shape
 // ===========================================================================
 
-/// ★★★ **What the operator has when the selection is narrower than an
+/// **What the operator has when the selection is narrower than an
 /// object**, appended to the line that names the object.
 ///
 /// # The gap this closes
@@ -243,7 +243,7 @@ pub fn selection_many(count: usize) -> String {
 /// nothing*, because a line that is confidently about the block gives the
 /// operator no reason to suspect he is not holding the block.
 ///
-/// # ★★ Why there is no index in it
+/// # Why there is no index in it
 ///
 /// The obvious wording is *line 4 of 27*, and it was refused. The Objects
 /// panel already numbers the same thing, as `Line #3`, **zero-based on
@@ -257,7 +257,7 @@ pub fn selection_many(count: usize) -> String {
 /// line), and how much there is (twenty-seven), and it cannot disagree with
 /// the panel because it does not name a position.
 ///
-/// # ★★ `held` is counted, never assumed
+/// # `held` is counted, never assumed
 ///
 /// A Shift-click at this rung adds a second chunk, and the operand of the next
 /// drag or Delete is then the whole set. A sentence with the literal `1` in it
@@ -265,7 +265,7 @@ pub fn selection_many(count: usize) -> String {
 /// which is the module header's failure mode exactly: confidently wrong beats
 /// silent at nothing.
 ///
-/// # ★ Rule 4
+/// # Rule 4
 ///
 /// Nothing is drawn on the drawing to express the rung. The selection
 /// outline is the cursor and is untouched; this is the off-canvas half.
@@ -278,7 +278,7 @@ pub fn selection_part_of_text(line: &str, held: usize, of: usize) -> String {
 /// The same clause for a **path**'s part, where the word is *part* rather
 /// than *line*.
 ///
-/// ★ Two functions rather than one with a flag, because the two words are
+/// Two functions rather than one with a flag, because the two words are
 /// the whole content of the difference and a flag would put the choice at
 /// the call site with nothing beside it explaining which is which. The
 /// caller asks `ObjectModelProvider::part_kind` — the one dispatcher the
@@ -293,7 +293,7 @@ pub fn selection_part_of_path(line: &str, held: usize, of: usize) -> String {
 /// The hover behind the text clause: what Delete does here, and the way
 /// back out.
 ///
-/// # ★★★ Why the way out is stated and not assumed
+/// # Why the way out is stated and not assumed
 ///
 /// A rung with no visible exit is a stranding, and this module's
 /// `inside_container` note records the same argument for the scope a bare
@@ -302,7 +302,7 @@ pub fn selection_part_of_path(line: &str, held: usize, of: usize) -> String {
 /// there — so the sentence that gets him back has to be somewhere he is
 /// already looking.
 ///
-/// ★★★ **It names both verbs, because the engine has both.**
+/// **It names both verbs, because the engine has both.**
 /// `delete_text_run` removes the line and `move_text_run` moves it, and
 /// `canvas::moving` routes a Part-rung drag on a run to the second exactly as
 /// it routes a Part-rung drag on a subpath to `move_subpath`. A hover that
@@ -310,7 +310,7 @@ pub fn selection_part_of_path(line: &str, held: usize, of: usize) -> String {
 /// exist — which is the failure mode O214 reported, in his words *"I thought
 /// we worked on this … but it didn't make it here"*.
 ///
-/// ★★ **The two lines the engine refuses are not hedged into this sentence.**
+/// **The two lines the engine refuses are not hedged into this sentence.**
 /// A run with no position of its own, and a run the next line's position is
 /// measured from, each get their own wording from `crate::text::arrange` at
 /// the moment the drag is declined. Folding a *"sometimes"* in here would cost
@@ -323,7 +323,7 @@ pub const fn selection_part_of_text_hint() -> &'static str {
 
 /// The hover behind the path clause.
 ///
-/// ★ The verbs are the same as the text one's — both parts drag and both
+/// The verbs are the same as the text one's — both parts drag and both
 /// parts delete — and what differs is the **nouns**: *part* of a *shape*
 /// against *line* of a *block of text*. That is why they stay two sentences
 /// rather than becoming one parameterised one: an operator told he is holding
@@ -333,7 +333,7 @@ pub const fn selection_part_of_path_hint() -> &'static str {
     "One part of a shape. Drag it to move it, or press Delete to remove just this part. Press Escape to select the whole shape again."
 }
 
-/// ★★ **…and how many other things were under the same click.**
+/// **…and how many other things were under the same click.**
 ///
 /// Appended to whichever line above applies, because it is a fact about the
 /// same selection: *"this one, and there were others."*
@@ -353,12 +353,12 @@ pub fn selection_with_depth(line: &str, taken: usize, of: usize) -> String {
 }
 
 // ===========================================================================
-// ★ Restyling existing text — `EditSession::format_text`, O37
+// Restyling existing text — `EditSession::format_text`, O37
 // ===========================================================================
 
 /// Why a restyle of existing text did not happen.
 ///
-/// # ★★ Why this is an enum here rather than a `String` from the engine
+/// # Why this is an enum here rather than a `String` from the engine
 ///
 /// `FormatError` writes excellent prose about itself — the synthetic-italic
 /// refusal explains the `Td` interaction, names §9.4.2 Table 108 and ends
@@ -386,7 +386,7 @@ pub fn selection_with_depth(line: &str, taken: usize, of: usize) -> String {
 /// `Declined::line` became a [`std::borrow::Cow`] on 2026-09-10 for O141's
 /// *"pdfcer cannot type a `q`"*, and the `Copy` half went here.
 ///
-/// ★ What the argument was actually protecting is intact and is worth naming
+/// What the argument was actually protecting is intact and is worth naming
 /// so it is not lost with the derive: **the engine's prose must not reach the
 /// status bar.** That is still true. What travels here is a list of
 /// `/BaseFont` names — data pdfcer computed, not a sentence pdfcer wrote —
@@ -405,7 +405,7 @@ pub enum TextStyleRefusal {
     /// The chosen face cannot show every character in the run — and the faces
     /// that **could**, which is the payload.
     ///
-    /// # ★★★ Why this variant carries data when none of its neighbours do
+    /// # Why this variant carries data when none of its neighbours do
     ///
     ///
     /// `pdfcer-core`'s `Pass 274.0` made this refusal end on a **working**
@@ -416,7 +416,7 @@ pub enum TextStyleRefusal {
     /// `ABCDEF+Helvetica` that had just refused. Both improvements landed
     /// inside `Refusal::message`, a prose field.
     ///
-    /// ★★ So this shell could not reach them. Splitting that message on
+    /// So this shell could not reach them. Splitting that message on
     /// `"these standard-14 faces have it: "` would have put a locator for
     /// another crate's sentence format inside a GUI, to break silently the
     /// first time the clause was reworded — and the public helper that looks
@@ -426,7 +426,7 @@ pub enum TextStyleRefusal {
     /// would have compiled, passed every gate, and sent the operator in a
     /// circle.
     ///
-    /// ★ Filed rather than worked around (`Pass 296.1`, requested and shipped
+    /// Filed rather than worked around (`Pass 296.1`, requested and shipped
     /// the same afternoon). `Refusal::remedy_faces` is now the same list the
     /// message's tail names, structured — one computation rendered twice — so
     /// what the operator reads here is exactly what pdfcer said, never more.
@@ -453,7 +453,7 @@ pub enum TextStyleRefusal {
     /// the variant itself, from a `preview_style_resolution` probe pinned to
     /// `StylePolicy::Refuse`, to get the wider reading.
     ///
-    /// ★★ `FormatRequest::set_style` refuses on the wide reading natively.
+    /// `FormatRequest::set_style` refuses on the wide reading natively.
     /// Its posture gate fires when the ladder reaches its **fourth** rung —
     /// after a real face on the page and after the standard-14 sibling have
     /// both been tried and neither was available — and returns
@@ -495,7 +495,7 @@ impl TextStyleRefusal {
     /// at text that did not change and the useful half is *what to do now*.
     #[must_use]
     pub fn line(&self) -> std::borrow::Cow<'static, str> {
-        // ★ Bound through a `&'static str` so only the arm that interpolates
+        // Bound through a `&'static str` so only the arm that interpolates
         // carries machinery — the same shape, and for the same reason, as
         // `crate::app::status::decline::Declined::line`, which this feeds. The
         // bar redraws every frame; it allocates only on the frames reporting
@@ -507,7 +507,7 @@ impl TextStyleRefusal {
             Self::NoRun => {
                 "Select some text on the page first — sweep across it with the Select tool, then change how it looks."
             }
-            // ★ The honest half of this is "pdfcer cannot be sure", and the
+            // The honest half of this is "pdfcer cannot be sure", and the
             // sentence says so rather than blaming the file. A run that cannot
             // be pinned is one where an edit might land on a different piece of
             // text that reads the same, and doing it anyway is the one outcome
@@ -525,12 +525,12 @@ impl TextStyleRefusal {
             // ⇒ A refusal sentence that states a limit the build no longer has
             // is worse than no sentence: it teaches the operator not to try
             // something the program can do, and it does so with the program's
-            // own voice. This is the ★★ obligation in the engine's release
+            // own voice. This is the obligation in the engine's release
             // note — *"a face outside those fourteen still refuses by name"* —
             // discharged as a sentence rather than a silence, and it now says
             // WHICH boundary was crossed and why that boundary exists.
             //
-            // ★ It names embedding as the reason rather than a deferral code.
+            // It names embedding as the reason rather than a deferral code.
             // `FF-C` means nothing to an operator; *"the font itself would have
             // to be copied into the file"* is the same fact in terms they can
             // weigh — and it is the honest account of why fourteen faces work
@@ -538,17 +538,17 @@ impl TextStyleRefusal {
             Self::FaceNotOnPage => {
                 "pdfcer can switch text to a font this page already carries, or to one of the fourteen standard faces it can add itself. Any other face would have to be copied into the file, which pdfcer cannot do yet. Pick one of the faces in the list."
             }
-            // ★ The refusal an operator would otherwise read as a bug. It says
+            // The refusal an operator would otherwise read as a bug. It says
             // what WOULD have happened, because "it moved my next line" is the
             // outcome they would have blamed pdfcer for.
             Self::ItalicWouldMove => {
                 "Slanting this text would shift the line that follows it, because the two share a position in the file. pdfcer changed nothing rather than move text you did not select."
             }
-            // ★★★ The only arm that returns early, because it is the only one
+            // The only arm that returns early, because it is the only one
             // with a subject the operator can see. See the variant's own docs
             // for why the list could not be had until `Pass 296.1`.
             Self::FaceLacksCharacters(remedy) => return coverage_line(remedy),
-            // ★ Remedy first, and the remedy is a SETTING, so the sentence
+            // Remedy first, and the remedy is a SETTING, so the sentence
             // names where it lives. A refusal caused by the operator's own
             // choice that does not say which choice reads as a program defect.
             Self::FakingDeclined => {
@@ -557,7 +557,7 @@ impl TextStyleRefusal {
             Self::Other => {
                 "pdfcer could not make that change to this text and changed nothing. Text that was converted to outlines has no font to change; a face has to cover every character in the run."
             }
-            // ★ The count is deliberately NOT in this sentence. The variant is
+            // The count is deliberately NOT in this sentence. The variant is
             // `Copy` and the catalog is `&'static str`, and adding an argument
             // to reach one number would make every sentence in this file a
             // `String`. What the operator needs is the fact that it is partial,
@@ -588,7 +588,7 @@ impl TextStyleRefusal {
 
 /// The coverage refusal's sentence, with or without the engine's remedy list.
 ///
-/// # ★★ Remedy first, which reverses the sentence when there is one
+/// # Remedy first, which reverses the sentence when there is one
 ///
 /// This module's rule is *remedy first in every arm that has one*, because the
 /// operator is looking at text that did not change and the useful half is what
@@ -598,11 +598,11 @@ impl TextStyleRefusal {
 /// sentence that opens *"That face has no shape…"* and ends *"… Times-Roman
 /// can"* buries the actionable half behind the explanation.
 ///
-/// ★ `"The face you picked"` rather than naming it. The name is in the face
+/// `"The face you picked"` rather than naming it. The name is in the face
 /// chooser the operator is looking at, and repeating it costs width on a bar
 /// that is already carrying up to fourteen face names in the first clause.
 ///
-/// # ★ Why `const WITHOUT` and not a second catalog function
+/// # Why `const WITHOUT` and not a second catalog function
 ///
 /// Because it is the *same* refusal. Two catalog entries would be two
 /// sentences that must be kept consistent with each other by hand, and this
@@ -620,7 +620,7 @@ fn coverage_line(remedy: &[String]) -> std::borrow::Cow<'static, str> {
 
 /// `["a", "b", "c"]` → `"a, b or c"`.
 ///
-/// ★ `or`, not `and`: the faces are **alternatives**, and `join_and` in
+/// `or`, not `and`: the faces are **alternatives**, and `join_and` in
 /// `crate::text::page_size` — whose subject is edges a drawing runs past, all
 /// of which are true at once — would read as though the operator needed all
 /// three. Copied rather than shared for exactly that reason: the two differ in
@@ -637,7 +637,7 @@ fn join_or(parts: &[String]) -> String {
 /// `bold` / `italic` / `bold italic` — the axes, in the operator's words, and
 /// **the engine's** words.
 ///
-/// # ★★ Why the shell has to choose this word at all now
+/// # Why the shell has to choose this word at all now
 ///
 ///
 ///
@@ -645,7 +645,7 @@ fn join_or(parts: &[String]) -> String {
 /// written for precisely this: its doc says *"for sentences about a style that
 /// a REAL face may have supplied (`Pass 179.0`)"*, which is this whole group.
 ///
-/// ★★ This function shipped for three hours with a hand-written
+/// This function shipped for three hours with a hand-written
 /// `match (bold, italic)` and a doc comment explaining that the engine's
 /// version *"is private"* and so could not be called. It is not private, it was
 /// never called `axes_label`, and **nothing was measured before that was
@@ -655,7 +655,7 @@ fn join_or(parts: &[String]) -> String {
 /// copy of the engine's word list, drifting the first time a third axis
 /// appeared, with a comment beside it explaining why the copy was correct.
 ///
-/// ★ The one case that is NOT delegated: `StyleSynthesis::None` renders as
+/// The one case that is NOT delegated: `StyleSynthesis::None` renders as
 /// `"nothing"`, which is right for the engine's *"synthesised nothing"* and
 /// wrong for *"this text is already nothing"*. It is unreachable from either
 /// control — Bold and Italic each send exactly one axis — and it is answered
@@ -678,13 +678,13 @@ fn axes(bold: bool, italic: bool) -> &'static str {
 /// Disclosure, **ladder rung 1, SAME family**: the page already carried the
 /// bold or italic form of this text's own typeface, and pdfcer bound it.
 ///
-/// ★ Worded as a **better** outcome rather than as a substitution, because it
+/// Worded as a **better** outcome rather than as a substitution, because it
 /// is one. The operator asked for bold; the page turned out to carry a genuine
 /// bold face, so they got a genuine bold face. Wording it as "pdfcer did
 /// something other than what you asked" would train them to distrust a control
 /// that just did its best possible job.
 ///
-/// ★★ It ends by saying the letterforms are **unchanged**, which is the whole
+/// It ends by saying the letterforms are **unchanged**, which is the whole
 /// reason this sentence and [`text_style_used_other_family`] are two sentences
 /// and not one. To a draughtsman those are different events: taking the same
 /// family's bold face is invisible on the plot, and taking another family's
@@ -692,7 +692,7 @@ fn axes(bold: bool, italic: bool) -> &'static str {
 /// attention, and a single sentence covering both would either alarm him about
 /// the harmless case or fail to warn him about the visible one.
 ///
-/// # ★★★ Why this is a PAIR again, and what it cost to be one sentence
+/// # Why this is a PAIR again, and what it cost to be one sentence
 ///
 ///
 /// What stood here instead named both `/BaseFont`s — *"was set in Calibri and
@@ -708,7 +708,7 @@ fn axes(bold: bool, italic: bool) -> &'static str {
 /// sentence's `from` argument went with it, which is why nothing here reads
 /// `FormatReport::font_change` any more.
 ///
-/// ★ `same_family` is `Option<bool>` and `None` — *nothing was bound* — must
+/// `same_family` is `Option<bool>` and `None` — *nothing was bound* — must
 /// **not** be flattened into `Some(false)`. Neither of this pair fires for it;
 /// see `crate::app::actions::textstyle::ladder_note`, which traces it as an
 /// engine invariant breaking rather than inventing a third sentence.
@@ -726,7 +726,7 @@ pub fn text_style_used_sibling_face(bold: bool, italic: bool, to: &str) -> Strin
 /// Disclosure, **ladder rung 1, DIFFERENT family**: the only real face that
 /// could show this text belonged to another typeface, and pdfcer used it.
 ///
-/// # ★★★ This is the half of a restyle the operator can SEE
+/// # This is the half of a restyle the operator can SEE
 ///
 /// The engine's own word for a cross-family fallback is that it is *"a bigger
 /// change than a weight swap"*, and on a drawing that is literally true: a
@@ -734,7 +734,7 @@ pub fn text_style_used_sibling_face(bold: bool, italic: bool, to: &str) -> Strin
 /// get heavier, it changes shape, and it changes shape at 1:1 on a plotter
 /// where nobody is looking at a status line any more.
 ///
-/// ★★ So the sentence leads with the **constraint** — no bold form of the
+/// So the sentence leads with the **constraint** — no bold form of the
 /// text's own typeface was available — before naming what pdfcer did instead.
 /// That order matters: *"pdfcer used Times-Bold"* read cold sounds like a
 /// choice somebody made carelessly, where *"nothing in your own typeface could
@@ -765,13 +765,13 @@ pub fn text_style_used_other_family(bold: bool, italic: bool, to: &str) -> Strin
 /// reader carries it, ISO 32000-1 §9.6.2.2 says it needs no font file, and
 /// binding it is one new `/Font` resource of about sixty bytes.
 ///
-/// ★★ So the operator was getting a **faked** weight on the commonest page in
+/// So the operator was getting a **faked** weight on the commonest page in
 /// their working set, five days after the engine shipped the rung that binds a
 /// real one. The sentence says which of the two happened, because after this
 /// change "pdfcer made it bold" has two very different meanings and only one of
 /// them survives being printed at 1:1 on a plotter.
 ///
-/// ★ It names the growth explicitly. An operator whose file must stay small —
+/// It names the growth explicitly. An operator whose file must stay small —
 /// a drawing going to a portal with an upload cap — is entitled to know that
 /// this route did not embed a typeface, and the alternative reading ("pdfcer
 /// added a font to my file") is the one they would otherwise assume.
@@ -785,7 +785,7 @@ pub fn text_style_used_standard_face(bold: bool, italic: bool, to: &str) -> Stri
 
 /// Disclosure, **ladder rung `AlreadyStyled`**: the text was already that way.
 ///
-/// # ★★ Not a refusal, and the distinction is the whole point
+/// # Not a refusal, and the distinction is the whole point
 ///
 /// Bold and Italic are buttons that APPLY, not switches that reflect — there is
 /// no "is this run bold" bit in a PDF, so a pressed-in toggle would be claiming
@@ -793,7 +793,7 @@ pub fn text_style_used_standard_face(bold: bool, italic: bool, to: &str) -> Stri
 /// in `Times-Bold` is therefore an ordinary, expected gesture, and the engine
 /// answers it by taking the ladder's zeroth rung and changing nothing.
 ///
-/// ★ Reported rather than silent, because "I pressed it and nothing happened"
+/// Reported rather than silent, because "I pressed it and nothing happened"
 /// is indistinguishable from a broken button. This sentence is the difference
 /// between a control that did nothing and a control that had nothing to do.
 #[must_use]
@@ -805,16 +805,16 @@ pub fn text_style_already_that_way(bold: bool, italic: bool) -> String {
 /// Disclosure, **ladder rung 4**: nothing real was available, so the letters
 /// were thickened or slanted artificially.
 ///
-/// ★★ Both halves of the ladder's failure are named, because they send the
+/// Both halves of the ladder's failure are named, because they send the
 /// operator to different remedies. *"Nothing on this page"* is answered by
 /// adding a face to the drawing; *"no standard face for this family"* is
 /// answered by choosing a different family. A sentence saying only "pdfcer
 /// faked it" leaves them with neither.
 ///
-/// # ★★★ It still does not name the faces pdfcer tried, and the reason CHANGED
+/// # It still does not name the faces pdfcer tried, and the reason CHANGED
 ///
 ///
-/// ★★ **The structure landed and this sentence still does not use it, which is
+/// **The structure landed and this sentence still does not use it, which is
 /// a decision and not an oversight.** `FormatReport::disclosures` already
 /// carries the engine's own *"Passed over (could not show these characters):
 /// …"* clause, verbatim, into the very same status line, one line below this
@@ -841,7 +841,7 @@ pub fn text_style_faked(bold: bool, italic: bool) -> String {
 
 /// Disclosure, **`StylePolicy::Warn` only**: the weight or slant was faked.
 ///
-/// # ★★ Why this is a separate sentence rather than louder formatting
+/// # Why this is a separate sentence rather than louder formatting
 ///
 /// The engine already reports a synthesis in `FormatReport::disclosures`, and
 /// under `Auto` that quiet report is the whole obligation. `Warn` exists for
@@ -850,7 +850,7 @@ pub fn text_style_faked(bold: bool, italic: bool) -> String {
 /// document that will be handed on — and a disclosure they have to go looking
 /// for does not serve them.
 ///
-/// ★ It is prose rather than an alarm colour because the edit **happened**.
+/// It is prose rather than an alarm colour because the edit **happened**.
 /// Rule 4's shape holds: the text renders exactly as it will render when
 /// saved, and the fact about it is said off-canvas.
 #[must_use]
@@ -879,7 +879,7 @@ pub const fn text_style_faked_warning() -> &'static str {
 // it names the two REASONS, which is what the operator can act on, and the
 // faces arrive in the engine's own verbatim sentence beside it.
 //
-// ★ The standing rule is the reason this is a tombstone and not a retained
+// The standing rule is the reason this is a tombstone and not a retained
 // function: a mechanism with no caller rots, and the next reader cannot tell a
 // deliberate fallback from a forgotten one. What is worth keeping is the
 // ARGUMENT — that "pdfcer faked it" without the reason invites the operator to
@@ -900,7 +900,7 @@ pub const fn text_run_width_held() -> &'static str {
 
 /// Disclosure: how many separate pieces of text one gesture restyled.
 ///
-/// # ★ Why this sentence exists at all
+/// # Why this sentence exists at all
 ///
 /// `EditSession` has no undo-grouping verb, so restyling N runs is N entries in
 /// the undo log and N presses of Ctrl+Z. That is a limit of the engine that the
@@ -940,14 +940,14 @@ pub fn text_style_multi(count: usize) -> String {
 // verdict rather than by a `FormatError` variant that the automatic route never
 // returns.
 //
-// ★ NOT re-derived here, then or now. `family_stem` is private, and a shell
+// NOT re-derived here, then or now. `family_stem` is private, and a shell
 // that re-implements pdfcer's font-family matching is decision 058's exact
 // case — it would agree on every fixture, disagree on the first real drawing,
 // and be the workaround every other consumer then has to write for itself. The
 // four hours between the deletion and the restoration were spent asking, which
 // is the whole point of the request channel.
 
-/// ★★★ **The cap fired on a PART, and nothing was said** —
+/// **The cap fired on a PART, and nothing was said** —
 /// `OPERATOR_REQUESTS.md` O69: *"the nodes are hard to see and click on."*
 ///
 /// The sibling of [`crate::text::status::too_many_anchors`], and it exists
@@ -962,7 +962,7 @@ pub fn text_style_multi(count: usize) -> String {
 /// selection box change, and the program went quiet. A limit reported as an
 /// absence is the failure `RESUME.md` records four separate occasions of.
 ///
-/// # ★★ Why it is not the same sentence
+/// # Why it is not the same sentence
 ///
 /// [`crate::text::status::too_many_anchors`] ends *"Double-click into a part
 /// of it, or use the Points tool, to see that part's"* — advice that is
@@ -971,7 +971,7 @@ pub fn text_style_multi(count: usize) -> String {
 /// rung that does not exist.
 ///
 ///
-/// ★ It lives here rather than beside its sibling in `text::status` because
+/// It lives here rather than beside its sibling in `text::status` because
 /// that module is at 1,482 lines against R2's 1,500. The seam is noticed
 /// rather than trimmed, which is that file's own standing note.
 #[must_use]

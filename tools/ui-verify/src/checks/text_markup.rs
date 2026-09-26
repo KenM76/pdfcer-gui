@@ -15,7 +15,7 @@ use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
-/// ★ **The only mode in which this feature exists**, and the check is aimed at
+/// **The only mode in which this feature exists**, and the check is aimed at
 /// it deliberately rather than for convenience.
 ///
 /// Marking text needs two things that do not overlap the way anyone expects:
@@ -481,7 +481,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("the application traced `{}`", commit.raw));
 
-    // ★ The boundary-spanning assertion — see the module header.
+    // The boundary-spanning assertion — see the module header.
     let commit_quads = commit.get_usize(QUADS_FIELD).unwrap_or(0);
     if commit_quads != selection_quads {
         return Ok(Some(format!(
@@ -618,7 +618,7 @@ mod tests {
         assert_ne!(SUBJECT, SIBLING);
         assert_ne!(SUBJECT, THIRD);
         assert_ne!(SIBLING, THIRD);
-        // ★ Review, not Read and not Edit. The whole feature exists in exactly
+        // Review, not Read and not Edit. The whole feature exists in exactly
         // one mode and this constant is where that finding is enforced: a
         // check aimed at Read would find no Markup tab, and one aimed at Edit
         // would find three permanently greyed controls and report phase C as a
@@ -626,7 +626,7 @@ mod tests {
         assert_eq!(MODE, "review");
     }
 
-    /// ★ **The quad counts really are compared, and a mismatch is visible to
+    /// **The quad counts really are compared, and a mismatch is visible to
     /// the parser** — the boundary-spanning assertion, tested on synthetic
     /// lines so that its arithmetic cannot be wrong in the one run that matters.
     #[test]

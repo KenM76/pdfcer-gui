@@ -8,12 +8,12 @@
 
 /// **How many pages arrived, and where.**
 ///
-/// ★★ It names **where** as well as how many, because the pages may have landed
+/// It names **where** as well as how many, because the pages may have landed
 /// anywhere in the document — the window offers four positions — and *"11 pages
 /// added"* leaves an operator scrolling to find them. `pages_before` is read in
 /// the apply arm before the edit for exactly this sentence.
 ///
-/// ★ *"sheets"* rather than *"pages"* in the operator's half of the sentence
+/// *"sheets"* rather than *"pages"* in the operator's half of the sentence
 /// would be wrong here: these are PDF pages and he is looking at a page count
 /// in the sidebar. `pages` is the word the rest of the program uses.
 #[must_use]
@@ -28,7 +28,7 @@ pub fn pages_created(pages: usize, pages_before: usize) -> String {
 
 /// **The undo promise cannot be kept** — `PlaceTextReport::coalesced` is false.
 ///
-/// ★★★ The engine's doc is explicit that the one-undo-entry fold is *checked,
+/// The engine's doc is explicit that the one-undo-entry fold is *checked,
 /// not assumed*: past `MAX_UNDO_DEPTH` — more than 255 non-blank pages — every
 /// page is still placed and they simply are not grouped.
 ///
@@ -60,12 +60,12 @@ pub fn paragraphs_split(count: usize) -> String {
 
 /// **Tabs became spaces**, so column alignment is gone.
 ///
-/// ★ It says *"columns will not line up"* rather than *"tabs were collapsed"*,
+/// It says *"columns will not line up"* rather than *"tabs were collapsed"*,
 /// because the operator's word for what he loses is columns. The mechanism —
 /// PDF text showing has no tab stops — is true, is in the engine's own
 /// sentence, and is not something he can act on.
 ///
-/// ★★ It names the remedy, and the remedy is a control in the window he just
+/// It names the remedy, and the remedy is a control in the window he just
 /// used: a monospaced face keeps space-aligned columns lined up, which is the
 /// one case where the font choice changes whether the import is readable.
 /// `dialogs::import_text`'s `FACES` note is why Courier is in the list at all.
@@ -80,7 +80,7 @@ pub fn tabs_collapsed(count: usize) -> String {
 
 /// **Form feeds in the source became page breaks.**
 ///
-/// ★★ Worth a sentence because it is the one disclosure where the operator may
+/// Worth a sentence because it is the one disclosure where the operator may
 /// not know his own file contains the character. U+000C is invisible in every
 /// editor, and it is what `Export text` writes between pages — so a file that
 /// left pdfcer, was edited, and came back keeps its original pagination, which
@@ -100,7 +100,7 @@ pub fn page_breaks(count: usize) -> String {
 
 /// **A word wider than the column.**
 ///
-/// ★ The engine does not hyphenate and does not shrink, so such a word runs
+/// The engine does not hyphenate and does not shrink, so such a word runs
 /// past the right margin. The remedy is the two controls that set the column:
 /// a smaller size or a narrower margin.
 #[must_use]
@@ -114,7 +114,7 @@ pub fn overlong_words(count: usize) -> String {
 
 /// **Non-printing bytes were removed.**
 ///
-/// ★ Reported rather than silent because they were *in his file*, and a
+/// Reported rather than silent because they were *in his file*, and a
 /// character count that does not match is the kind of thing somebody notices a
 /// week later on a register they are reconciling.
 #[must_use]
@@ -153,7 +153,7 @@ pub fn unmappable_dropped(count: usize) -> String {
 
 /// **The engine's own self-check failed** — this is a defect report.
 ///
-/// ★★★ `box_overflow_lines` is documented as *"a self-check that must be 0"*.
+/// `box_overflow_lines` is documented as *"a self-check that must be 0"*.
 /// A non-zero value is a fault in the placer, not a judgement about the
 /// operator's file, and the sentence says so — because an operator who reads it
 /// alongside the six ordinary disclosures would otherwise file it under
@@ -179,7 +179,7 @@ pub fn unreadable_file(why: &str) -> String {
 
 /// The file is not UTF-8.
 ///
-/// ★★ Its own sentence rather than folded into [`unreadable_file`], because it
+/// Its own sentence rather than folded into [`unreadable_file`], because it
 /// is the only one of the two with a remedy the operator can carry out, and the
 /// remedy is specific: re-save as UTF-8. A register exported from an older
 /// system in Windows-1252 is the realistic case and it is completely ordinary.
@@ -192,7 +192,7 @@ pub fn not_utf8() -> String {
 
 /// The margins leave no width.
 ///
-/// ★★ Both this and [`page_too_short`] name **the two controls that fix it**
+/// Both this and [`page_too_short`] name **the two controls that fix it**
 /// rather than the geometry that caused it. They are the only refusals in this
 /// module answerable *before* the press, so their sentences are instructions
 /// for the window rather than reports about a failure.
@@ -213,7 +213,7 @@ pub fn page_too_short() -> String {
 
 /// The font cannot write some of the text.
 ///
-/// ★★★ **The refusal a real text file is most likely to meet**, and the one
+/// **The refusal a real text file is most likely to meet**, and the one
 /// this window's `face_note` warns about before the press.
 ///
 /// It carries the engine's own listing verbatim — `U+2014 '—' ×12, …` — because
@@ -247,7 +247,7 @@ pub fn no_page_to_insert_beside() -> String {
 
 /// Everything else, carrying the engine's own words.
 ///
-/// ★ The engine's message rather than a shrug — `annots::refusal_for`'s
+/// The engine's message rather than a shrug — `annots::refusal_for`'s
 /// posture. What this adds is the guarantee, which is the half an operator
 /// needs before he starts looking for an undo: `place_text` plans before it
 /// writes, so a refusal means **nothing was created**.

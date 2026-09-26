@@ -30,7 +30,7 @@ const FIXTURE: &str = "fixtures/four-pages.pdf";
 
 /// The document the second check drives, and it is **not in the repository**.
 ///
-/// # ★★★ Why a repository fixture cannot serve — measured, not assumed
+/// # Why a repository fixture cannot serve — measured, not assumed
 ///
 ///
 /// That is not a defect, it is the region tier working. Above
@@ -40,7 +40,7 @@ const FIXTURE: &str = "fixtures/four-pages.pdf";
 /// across. The raster therefore stays viewport-sized for ever and there is no
 /// zoom at which a pixmap ceiling can bind on it.
 ///
-/// ★★ **So the refusal is a property of INK, not of size or of zoom.** What
+/// **So the refusal is a property of INK, not of size or of zoom.** What
 /// gives out is the rasterizer's capacity to draw the content inside the
 /// requested region at that scale, and a test document of four empty sheets has
 /// no content to give out on. The operator met it on a 36-sheet SOLIDWORKS
@@ -88,7 +88,7 @@ const MODE: &str = "review";
 /// 20.3, *just under* the 20.7 at which it becomes unorderable, so the state
 /// part A measures was unreachable and the run SKIPPED with "the strip never
 /// reported a page it could not order". One run before it had squeezed inside
-/// the same window and passed. ★★ **A check whose window is bounded above and
+/// the same window and passed. **A check whose window is bounded above and
 /// below by two different mechanisms is flaky until the arithmetic is done**,
 /// and a check that skips half the time is a check that has stopped running
 /// without anyone noticing.
@@ -109,7 +109,7 @@ const STATUS_REGION: &str = "status-group:raster-stop";
 
 /// The region an error sentence drawn over the page occupies.
 ///
-/// ★ It has exactly two publishers — `canvas::present`'s no-pages arm and its
+/// It has exactly two publishers — `canvas::present`'s no-pages arm and its
 /// **Single-mode** `render_error` arm — and the `nothing-visible` arm publishes
 /// **no** region at all. So part B's dead end cannot be mistaken for the
 /// painted error, which is the one confusion that would have made this region a
@@ -124,7 +124,7 @@ const UNAVAILABLE_EVENT: &str = "canvas-unavailable";
 /// zero — see the module header.
 const BEYOND_EVENT: &str = "strip-beyond-raster";
 
-/// ★★ `render::settle`'s record of whether the CURRENT page's raster order
+/// `render::settle`'s record of whether the CURRENT page's raster order
 /// could be filled at all — O186's third route, added 2026-09-12.
 ///
 /// `fillable=false` means the frame declined to place an order because the page
@@ -140,7 +140,7 @@ const REQUESTED_EVENT: &str = "strip-raster-requested";
 /// page, which is why it is the secondary oracle and not the primary one.
 const RENDER_EVENT: &str = "render-async-done";
 
-/// ★★★ The operator's error, at its source, **carrying the page index**. The
+/// The operator's error, at its source, **carrying the page index**. The
 /// primary oracle of part A.
 const BAD_RASTER_EVENT: &str = "bad-raster-size";
 
@@ -154,7 +154,7 @@ const LEARNED_EVENT: &str = "raster-ceiling-learned";
 
 /// `viewer::strip::ROW_GAP`, in points at zoom 1.
 ///
-/// # ★ Why a copy of another module's constant is tolerable here, and how a
+/// # Why a copy of another module's constant is tolerable here, and how a
 /// drift would show up
 ///
 /// This is used for **aim**, never for a verdict. The pointer is parked
@@ -174,7 +174,7 @@ const ROW_GAP_PT: f32 = 12.0;
 /// Where in the canvas the seam must sit before the climb starts, as fractions
 /// of the canvas height.
 ///
-/// # ★★★ Just BELOW the middle, and the asymmetry is the whole reason
+/// # Just BELOW the middle, and the asymmetry is the whole reason
 ///
 /// This was `(0.30, 0.70)` — centred and generous — on the argument that *"the
 /// further it is from the middle the sooner one of the two pages reaches an
@@ -232,7 +232,7 @@ const SEAM_BAND: (f32, f32) = (0.51, 0.60);
 /// window closes has to allow for it, or it predicts a window that is about two
 /// notches wider than the one that exists.
 ///
-/// ★ Used only for the feasibility prediction, never for a verdict. An exact
+/// Used only for the feasibility prediction, never for a verdict. An exact
 /// value is not needed and is not claimed; what is needed is that the prediction
 /// errs on the early side.
 const BOTTOM_DEAD_BAND_PT: f32 = 50.0;
@@ -240,7 +240,7 @@ const BOTTOM_DEAD_BAND_PT: f32 = 50.0;
 /// The zoom at which a letter-size neighbour stops being orderable as a whole
 /// page: `MAX_PIXMAP_EDGE / 792 pt`, with `MAX_PIXMAP_EDGE` measured at 16,384.
 ///
-/// ★ Used **only** to decide, before the climb, whether the window part A needs
+/// Used **only** to decide, before the climb, whether the window part A needs
 /// exists at all — never as a verdict. The state itself is still detected from
 /// the application's own `strip-beyond-raster pages=` line. Same discipline as
 /// [`ROW_GAP_PT`]: a copy of someone else's number is tolerable for aim and for
@@ -354,7 +354,7 @@ impl Check for TheStripNeverOrdersARasterItCannotFill {
 
 /// O186's fourth clause — the wall, and the sentence on the bottom bar.
 ///
-/// # ★★★ Why this is a SEPARATE check, decided by driving rather than by taste
+/// # Why this is a SEPARATE check, decided by driving rather than by taste
 ///
 ///
 /// The first half needs several pages of differing sizes in one strip. This half
@@ -418,7 +418,7 @@ use trace::{
     unfillable_counts, went_blank_between,
 };
 
-/// ★★★ Part A. The operator's raster error, at its source.
+/// Part A. The operator's raster error, at its source.
 ///
 /// Returns `Some(failure)` when the refusal happened, `None` when the state was
 /// entered and nothing went wrong. A state that was never entered is an `Err`,
@@ -463,12 +463,12 @@ fn part_a(
         notches += 1;
         let trace = session.trace()?;
 
-        // ★ The refusal is looked for FIRST, before the precondition, and on
+        // The refusal is looked for FIRST, before the precondition, and on
         // every notch. See the module header: on a build with the defect the
         // refusal teaches a ceiling and stalls the climb, so a run that gated
         // on the precondition would SKIP on exactly the build it is for.
         if let Some((page, line, at)) = first_bad_raster_after(&trace, mark) {
-            // ★★★ THREE ROUTES TO ONE SENTENCE, and the report has to say which.
+            // THREE ROUTES TO ONE SENTENCE, and the report has to say which.
             //
             //
             // So the attribution is made from the trace rather than assumed: the
@@ -621,7 +621,7 @@ fn part_a(
         )));
     }
 
-    // ★ The exact-mechanism clause. When the strip can order every visible page
+    // The exact-mechanism clause. When the strip can order every visible page
     // but one, the only page it may order is the one the canvas was acting on.
     let requested = requested_pages_after(&trace, wall_mark);
     if requested.is_empty() {
@@ -721,7 +721,7 @@ fn unconverted_panics(trace: &Trace) -> Option<String> {
     ))
 }
 
-/// ★★ Part B. The operator's fourth clause: the zoom stops, and the bottom bar
+/// Part B. The operator's fourth clause: the zoom stops, and the bottom bar
 /// says why.
 ///
 /// Returns `Some(failure)` for a breach of that clause. An unreachable wall is
@@ -743,7 +743,7 @@ fn part_b(
         "single",
     )?;
 
-    // ★ The canvas centre, not the page-rect centre. At part A's exit zoom the
+    // The canvas centre, not the page-rect centre. At part A's exit zoom the
     // page is far larger than the window, so its rect's midpoint is a
     // window-logical coordinate a long way outside the window — and
     // `declared_at` does not clamp, deliberately. Aiming there would send a
@@ -847,7 +847,7 @@ fn part_b(
         )));
     }
 
-    // ★ Anchored at `mark` — the start of part B — rather than at the learning.
+    // Anchored at `mark` — the start of part B — rather than at the learning.
     // No refusal on this path should EVER paint a sentence: `BadRasterSize` and
     // `RasterizerLimit` both map to `RefusalKind::BeyondRaster`, which
     // `absorb_render` absorbs. So zero messages across the whole of part B is
@@ -1136,7 +1136,7 @@ fn drive_b(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
-    // ★ A longer settle than part A's. This is a 5.7 MB vector drawing and the
+    // A longer settle than part A's. This is a 5.7 MB vector drawing and the
     // first frame has to raster a whole sheet of it; a short settle reads the
     // opening zoom before the fit has been applied, which would put the climb's
     // first notch somewhere this check did not choose.
@@ -1159,7 +1159,7 @@ fn drive_b(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String
     if let Some(failure) = part_b(&session, &driver, ui_rect, canvas, report)? {
         return Ok(Some(failure));
     }
-    // ★ Part C runs on whatever part B left standing — a held ceiling or a
+    // Part C runs on whatever part B left standing — a held ceiling or a
     // blank canvas — because O220's clause is about the gesture OUT of either
     // one. It is here rather than in a `Check` of its own because reaching the
     // wall costs sixty-eight or more notches on a 5.7 MB drawing, and this

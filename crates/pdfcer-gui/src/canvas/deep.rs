@@ -86,7 +86,7 @@ pub(super) fn track(
     };
 
     if deep {
-        // ★★★ THE ZOOM ANCHOR IS CONSUMED AT THIS TIER TOO —
+        // THE ZOOM ANCHOR IS CONSUMED AT THIS TIER TOO —
         // `OPERATOR_REQUESTS.md` **O24f**.
         //
         //
@@ -109,7 +109,7 @@ pub(super) fn track(
         // begins at a tier boundary is a defect in the tier hand-over.
         //
         //
-        // ★ Consumed unconditionally, not only when seeding. An anchor left
+        // Consumed unconditionally, not only when seeding. An anchor left
         // pending here would fire on whatever frame the operator next dropped
         // below the threshold, moving the view for a zoom that happened
         // minutes earlier.
@@ -136,7 +136,7 @@ pub(super) fn track(
         } else if let Some(prev) = doc.frame.deep_zoom
             && (prev - f64::from(doc.view.zoom)).abs() > f64::EPSILON
         {
-            // ★★ ZOOM ABOUT THE CURSOR, by re-statement rather than by solving
+            // ZOOM ABOUT THE CURSOR, by re-statement rather than by solving
             // for an offset. `DeepAnchor::zoomed_about` reads which page point
             // is under a window point at the OLD zoom and declares that point
             // anchored there — no large intermediate is formed, so nothing is
@@ -144,11 +144,11 @@ pub(super) fn track(
             // `viewer::deep` module exists for, and until O24f nothing called
             // it.
             //
-            // ★ The viewport centre when the pointer is elsewhere, matching
+            // The viewport centre when the pointer is elsewhere, matching
             // what `+`, `−` and Ctrl+0 anchor on at every other zoom. A
             // keyboard zoom must not lurch toward wherever the mouse happens
             // to be resting.
-            // ★ `ui.max_rect()` is the canvas's own region — inside the ruler
+            // `ui.max_rect()` is the canvas's own region — inside the ruler
             // gutters, and the same rect `input::pan_delta` tests against, so
             // a pointer over a ruler is treated as "not over the page" by both
             // and cannot anchor a zoom to a place the operator was not
@@ -165,7 +165,7 @@ pub(super) fn track(
             doc.frame.deep_anchor = doc.frame.deep_anchor.map(|a| a.zoomed_about(at, prev));
         }
         doc.frame.deep_zoom = Some(f64::from(doc.view.zoom));
-        // ★ Pan and wheel move the ANCHOR now. The scroll area has nothing to
+        // Pan and wheel move the ANCHOR now. The scroll area has nothing to
         // scroll, so routing them to it would be a gesture that silently does
         // nothing — which is how a deep zoom would come to feel frozen.
         if let Some(anchor) = doc.frame.deep_anchor {
@@ -181,7 +181,7 @@ pub(super) fn track(
             }
             doc.frame.deep_anchor = Some(moved);
         }
-        // ★★★ CONFINE THE PLACEMENT -- O186 stage one, and the position
+        // CONFINE THE PLACEMENT -- O186 stage one, and the position
         // in this block is the whole of why it works. Every mover above has
         // had the frame: the seed, the re-statement about the cursor, the pan
         // and the wheel. What is left is a placement, and a placement is the
@@ -189,7 +189,7 @@ pub(super) fn track(
         let (cx, cy) = confine(doc, layout, current, display_size, vp, overhang);
         trace::confined(cx, cy);
     } else if let Some(anchor) = doc.frame.deep_anchor {
-        // ★★★ LEAVING THE DEEP TIER — the hand-over BACK, which for two days
+        // LEAVING THE DEEP TIER — the hand-over BACK, which for two days
         // did not exist. `OPERATOR_REQUESTS.md` O26e.
         //
         // O24f built the hand-over **in**: crossing the threshold upward
@@ -199,14 +199,14 @@ pub(super) fn track(
         // scroll area happened to be carrying — which, at this tier, is the
         // zero the branch above forces every frame.
         //
-        // ★★ A hand-over is two functions and only one of them was written.
+        // A hand-over is two functions and only one of them was written.
         // The suite could not see it because `zoom_keeps_place` **climbs**:
         // it climbs to the ceiling, one notch at a time, with a tolerance
         // fine enough to catch a hundredth of a point, and then the run ends
         // without ever rolling the wheel the other way. A check that travels
         // in one direction tests one direction.
         //
-        // ★ Solved here, in `f64`, rather than left to the `f32` anchor
+        // Solved here, in `f64`, rather than left to the `f32` anchor
         // machinery. `offset_from_drawn` already stops the answer being
         // nonsense — it made this same descent land 0.005 pt out instead of
         // 1,152 pt out — but 0.005 pt at a million percent is fifty screen
@@ -220,7 +220,7 @@ pub(super) fn track(
         doc.frame.deep_anchor = None;
         doc.frame.deep_zoom = None;
         if handed.is_some() {
-            // ★ Spend the pending zoom anchor rather than clearing the field,
+            // Spend the pending zoom anchor rather than clearing the field,
             // so the `waited` bookkeeping in `zoom::consume_anchor` stays
             // consistent. Its answer is discarded: it is the `f32` solve this
             // branch exists to replace, and leaving the anchor armed would
@@ -239,7 +239,7 @@ pub(super) fn track(
 /// Returns `(moved_x, moved_y)` for [`trace::confined`]. `(false, false)` when
 /// there is nothing to confine.
 ///
-/// # ★★★ Where in the frame this is called, and why it is the END of the block
+/// # Where in the frame this is called, and why it is the END of the block
 ///
 /// **After** the seed, the re-statement and the pan/wheel, not before. Confining
 /// earlier would clamp the operator's *intent* — the page point he asked to look
@@ -261,14 +261,14 @@ pub(super) fn track(
 ///     u = page × zoom + page_origin − screen
 /// ```
 ///
-/// ★★ **This is the algebraic inverse of [`strip_placement`] and the two must
+/// **This is the algebraic inverse of [`strip_placement`] and the two must
 /// not drift.** They are deliberately in the same file, forty lines apart, for
 /// the reason this module's header gives about the hand-overs: a placement and
 /// its inverse in two files is how a seam acquires two opinions. Solve the
 /// clamped `u` back for `page` and the anchor still says *"this page point is
 /// under that screen pixel"* — it is simply a page point the view can place.
 ///
-/// # ★ Why `page` is adjusted and not `screen`
+/// # Why `page` is adjusted and not `screen`
 ///
 /// `screen` is where the operator's pointer was, and a zoom anchored on a
 /// pointer that has been quietly moved is the *other* O186 symptom — the cursor
@@ -362,7 +362,7 @@ fn confine(
 /// but discard the final notch of zoom-about-the-cursor, so the last step out
 /// of deep zoom would be the one step that did not hold the pointer.
 ///
-/// ★ The anchor point is the pointer when it is over the canvas and the
+/// The anchor point is the pointer when it is over the canvas and the
 /// viewport's centre when it is not — the rule stated once in
 /// [`zoom::anchor_point`] and applied here in the same words the deep branch
 /// applies it in, against the same `ui.max_rect()` so that a pointer resting
@@ -405,14 +405,14 @@ fn handover_offset(
 /// the scroll content's origin, and the strip's origin is that less where the
 /// page sits inside the strip.
 ///
-/// ★★★ Every large magnitude is subtracted **inside `f64`** before anything
+/// Every large magnitude is subtracted **inside `f64`** before anything
 /// narrows. At a trillion percent `anchor.page × zoom` is around 10¹², where
 /// an `f32` cannot represent the difference of two neighbouring screen pixels
 /// at all — this is the same technique the engine's own deep-zoom work
 /// describes as *"one subtraction moved into `f64`"*, and it is the reason the
 /// tier exists.
 ///
-/// ★ Falls back to [`viewer::deep::DeepAnchor::origin`] rather than declining,
+/// Falls back to [`viewer::deep::DeepAnchor::origin`] rather than declining,
 /// because a frame in this tier must draw something and the origin is the one
 /// placement that needs no history. The caller seeds a real anchor on the same
 /// frame it first becomes `deep`, so the fallback is reachable only on a frame
@@ -443,7 +443,7 @@ pub(super) fn strip_placement(
 /// **What of the strip is on screen, when the anchor owns the position** — the
 /// rect that decides which pages are drawn at all.
 ///
-/// ★ The scroll offset cannot answer this at this tier, because it has been
+/// The scroll offset cannot answer this at this tier, because it has been
 /// forced to zero and describes a place nobody is looking at. The strip's own
 /// placement on screen is the truth instead: whatever of it overlaps the
 /// viewport is what can be seen, so the viewport's origin expressed in strip

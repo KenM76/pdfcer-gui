@@ -40,12 +40,12 @@ pub(super) fn tab() -> Tab {
             // and Paste under a caption reading *"Organise"* are three commands
             // nobody scanning for a clipboard would look at.
             //
-            // ★ Before Organise, because a copy is the non-destructive one and
+            // Before Organise, because a copy is the non-destructive one and
             // because Organise's own note explains that IT leads with the
             // destructive verb deliberately -- putting a second destructive band
             // in front of it would undo that argument.
             //
-            // ★★★ These are the only clipboard controls in the program that are
+            // These are the only clipboard controls in the program that are
             // NOT also a chord, and that is not an omission. `Ctrl+C` belongs to
             // the canvas: the `pages.*` operand rule always resolves -- picked
             // sheets, else the current one -- so a chord rung consulting it
@@ -88,7 +88,7 @@ pub(super) fn tab() -> Tab {
             // is why it sits here and not in Organise: Organise is about the
             // set of sheets, Transform is about a sheet.
             //
-            // ★ Labelled (`command`) where its two neighbours are `icon_only`,
+            // Labelled (`command`) where its two neighbours are `icon_only`,
             // and that asymmetry is deliberate rather than an oversight. Rotate
             // left and rotate right are a *pair* an operator finds by shape and
             // position, and a glyph is enough for them. This one opens a window

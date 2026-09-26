@@ -41,7 +41,7 @@ pub fn set(ctx: &egui::Context, field: &str) {
 
 /// **Put it out.**
 ///
-/// ★ Called by the panel when nothing in it is focused — *not* by the canvas.
+/// Called by the panel when nothing in it is focused — *not* by the canvas.
 /// The writer owns the lifetime, because a reader that cleared what it read
 /// would race any other reader and would put the spotlight out on the first
 /// frame it was drawn.
@@ -59,7 +59,7 @@ pub fn get(ctx: &egui::Context) -> Option<Spotlight> {
 mod tests {
     use super::*;
 
-    /// ★ Set, read, clear — the whole contract, over a real `Context`.
+    /// Set, read, clear — the whole contract, over a real `Context`.
     ///
     /// Worth a test despite being three lines of `data_mut`, because the key is
     /// a string constant and a typo between the writer and the reader would
@@ -85,7 +85,7 @@ mod tests {
         assert_eq!(get(&ctx), None, "clear puts it out");
     }
 
-    /// ★★ The key is distinct from the canvas's own focus key.
+    /// The key is distinct from the canvas's own focus key.
     ///
     /// Pinned because the two are adjacent in purpose and a shared key would be
     /// the worst kind of bug here: clicking a panel row would move the canvas's

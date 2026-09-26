@@ -13,7 +13,7 @@ no borders and no background looks identical whether it is fillable or
 painted on. The wash is what says *"you can type here"* before the operator
 has clicked anything.
 
-# ★★ Why this needs a launched binary, when the drawing is four lines
+# Why this needs a launched binary, when the drawing is four lines
 
 Because the four lines are the *last* stage of a chain, and every earlier
 link is somewhere else:
@@ -29,7 +29,7 @@ A unit test of the drawing function can only reach step 4, with the other
 three supplied by hand. Nothing below the binary can tell you that the
 default is on *and* reaches the canvas *and* finds the fields.
 
-# ★★★ The trace had to distinguish three states before this could exist
+# The trace had to distinguish three states before this could exist
 
 Drawing nothing is the observable outcome of three completely different
 situations, and only one of them is a defect:
@@ -56,7 +56,7 @@ somebody working — which is worth preserving if the check is ever extended.
 An extension that needs the pointer belongs in a second check, not bolted
 onto this one.
 
-# ★★★ `boxes=` is the CANVAS CENSUS, not the document's field count
+# `boxes=` is the CANVAS CENSUS, not the document's field count
 
 Measured on `demo-form.pdf`, which carries **two** widgets: a text field and
 a check box. The trace says `boxes=1`, and that is correct rather than a

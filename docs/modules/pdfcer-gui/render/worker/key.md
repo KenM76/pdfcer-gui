@@ -1,7 +1,7 @@
 # `render::worker::key` — **what a render is OF**, as one comparable value
 
 
-## ★ Why this is the seam, and not "move the tests out"
+## Why this is the seam, and not "move the tests out"
 
 The obvious way to get a file under the ceiling is to move its `#[cfg(test)]`
 modules to a sibling, and it would have worked here — there are 375 lines of

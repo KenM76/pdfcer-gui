@@ -2,7 +2,7 @@
 decided
 
 
-## ★ Why this is a seam and not a size
+## Why this is a seam and not a size
 
 `tools/gates/check-file-size.sh`'s own header refuses a split made to fit a
 number: *"Split the module along its seams — one subject per file."* The
@@ -22,7 +22,7 @@ typing loop, the keyboard-ownership check and the cursor icon — which had
 ended up under the same heading because they run at the same moment, not
 because they are the same subject.
 
-## ★★ The layer order IS this module's content
+## The layer order IS this module's content
 
 Every position in the sequence is an argument, and each one travelled here
 with the code rather than being summarised:

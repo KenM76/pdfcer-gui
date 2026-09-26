@@ -18,7 +18,7 @@ different causes and only one of them is a bug:
 | *"I couldn't pan to the next point"* | a **quantised** pan — the view refuses small movements and only moves in steps |
 | *"it would jump back to its original location"* | a **reverting** pan — the view moves and is then put back |
 
-★★ A quantised pan is what an `f32` scroll offset does when its
+A quantised pan is what an `f32` scroll offset does when its
 representable spacing exceeds the drag: `last - pan` rounds straight back to
 `last`, so the view does not move at all. It looks like the drag was
 ignored. A reverting pan is something actively re-setting the offset after
@@ -27,7 +27,7 @@ the drag — a different fault with a different fix.
 This check tells them apart by measuring the offset at three moments: before
 the drag, immediately after, and several frames later.
 
-# ★★ Why it rolls the wheel rather than dragging
+# Why it rolls the wheel rather than dragging
 
 The first version drag-panned with the primary button and reported the view
 as stuck. That was a **harness** defect: `canvas::input::pan_delta` pans on

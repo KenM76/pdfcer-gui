@@ -13,7 +13,7 @@ draw again."*
 
 ## Why this is a separate part and not three more lines in part B
 
-★★★ **Every `scroll_at_held` in this check's other two parts rolls direction
+**Every `scroll_at_held` in this check's other two parts rolls direction
 `1`.** Parts A and B climb. A check that only ever pushes a control in one
 direction cannot see a handler that is dead in the other, and *"it prevents
 me from pressing ctrl and using the zoom wheel to zoom back out"* names a
@@ -58,7 +58,7 @@ number. That yields both halves of the operator's sentence from one read:
 * it draws again — a `canvas` line now stands *above* the
   `canvas-unavailable` line that was the verdict when this part began.
 
-★ While the canvas is blank, [`latest_canvas`] returns a **fossil**: the last
+While the canvas is blank, [`latest_canvas`] returns a **fossil**: the last
 frame that drew, which is the zoom the operator last had on screen. That is
 deliberately the baseline. The view's own zoom went on climbing above it
 while the screen was blank, so requiring the zoom to fall *below the fossil*
@@ -74,7 +74,7 @@ is Ctrl+wheel at the canvas.
 
 ## What this part does not reach, and which arm any given run measured
 
-★★★ **Which of the two rows above a run lands on is not this part's
+**Which of the two rows above a run lands on is not this part's
 choice — it is whatever part B left — so a PASS here is not a claim about
 both.** The note this part writes names the arm in as many words, and that
 note is the only place the distinction is legible; read it before quoting a

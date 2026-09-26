@@ -11,7 +11,7 @@ held a limitation and went red the day the engine lifted it. This one holds a
 *capability* and a *guard*, and the guard is the half that would otherwise be
 untestable in the only direction that matters.
 
-## ★★★ What was actually wrong, which is not what it looked like
+## What was actually wrong, which is not what it looked like
 
 His producer writes **one glyph per show operator**: a thirty-six character
 line is thirty-six `Tj`s, stepped along one row by x-only `Td`s. `Pass 256.0`
@@ -50,7 +50,7 @@ names, and on his line that operator holds one character. A thirty-six
 character `find` cannot match inside it. The engine was answering the
 question it had been asked, correctly, every time.
 
-## ★★★ Why the fix is not simply "drop the pin"
+## Why the fix is not simply "drop the pin"
 
 Because the pin is the **only** thing `EditRequest` carries that can choose
 between two identical strings on one page. There is no occurrence index on
@@ -74,7 +74,7 @@ sheet beats a spanning occurrence above it — dropping the pin can make the
 clicked run *unreachable*, not merely ambiguous. [`super::Plan::occurrences`]
 carries the engine's own ruling.
 
-## ★★★ The two fixtures, and why the second one is the important one
+## The two fixtures, and why the second one is the important one
 
 Both are authored by `tools/gen-per-glyph-fixtures.py` with **uncompressed**
 content streams, so `grep` answers *"how many show operators hold this
@@ -92,7 +92,7 @@ the wrong occurrence. And that build is not hypothetical — it is the obvious
 simplification of this code, and the one a future session will reach for on
 seeing a count it thinks is redundant.
 
-★★ [`the_engine_would_have_edited_the_wrong_one`] is what makes that concrete:
+[`the_engine_would_have_edited_the_wrong_one`] is what makes that concrete:
 it asserts, against the engine directly, that an unpinned request on
 `per-glyph-twice.pdf` **succeeds**, on whichever occurrence it reaches first.
 So the pin below is choosing between two edits the engine would both have

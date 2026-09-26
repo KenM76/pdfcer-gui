@@ -24,7 +24,7 @@ const SECTION: &str = "properties.info";
 const FIELD: &str = "properties.info.";
 /// The ribbon item that opens the panel, and the dock tab it mounts as.
 ///
-/// ★★ It is a **toggle**, unlike the `file.properties` control this check used
+/// It is a **toggle**, unlike the `file.properties` control this check used
 /// to press: its question is *"is this panel open?"*, so it falls through
 /// `app::dispatch`'s guard arm to `toggle_panel`. That is why the click below
 /// is guarded by *"only if the section is not already on screen"* — pressing it
@@ -109,7 +109,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     report.artifact(session.trace_path().to_path_buf());
     session.settle(40);
-    // ★★ MAXIMISE — at the harness's default 1,100 pt window the File tab's
+    // MAXIMISE — at the harness's default 1,100 pt window the File tab's
     // last two groups fold away entirely and this check reports a lost
     // command. See `about.rs` for the measurement; three checks shared it.
     session.maximize();
@@ -173,7 +173,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     session.settle(8);
 
-    // ★ Committing is what LEAVING the field does, not what typing does — the
+    // Committing is what LEAVING the field does, not what typing does — the
     // rule is `lost_focus`, shared with the Forms panel and the canvas form
     // editor, because `TextEdit::changed()` fires per keystroke and one typed
     // word must not be a dozen undo entries. So the commit is provoked by
@@ -210,7 +210,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("the typed title reached the document through the action funnel");
 
-    // --- 3: ★ and it is REALLY in the document -----------------------------
+    // --- 3: and it is REALLY in the document -----------------------------
     //
     // Go back to Title and leave it again without typing. The commit rule's
     // second condition is *the draft differs from what the document holds*, so
@@ -236,10 +236,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("a second departure from the untouched field wrote nothing — the value is stored");
 
-    // --- 4: ★ undo takes it out of the BOX, not only out of the file -------
+    // --- 4: undo takes it out of the BOX, not only out of the file -------
     let applied_before = trace.events(APPLIED).count();
     let committed_before = trace.events(COMMITTED).count();
-    // ★★ The QAT BUTTON, not `Ctrl+Z`, and the substitution is the fix for a
+    // The QAT BUTTON, not `Ctrl+Z`, and the substitution is the fix for a
     // permanent SKIP.
     //
     // Synthetic chords do not reach the target window from this session —

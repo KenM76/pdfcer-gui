@@ -35,12 +35,12 @@ by shaving doc comments to fit a threshold, which is the incentive
 `tools/gates/check-file-size.sh` says in its own header it exists to refuse.
 That module's own docs carry the full argument.
 
-★ **`pick`, `scale` and `state` never see an `egui` type**, and that is carried
+**`pick`, `scale` and `state` never see an `egui` type**, and that is carried
 across deliberately from the old shell's `measure_tool.rs`, whose header
 makes the argument: every transition is unit-testable without a live frame.
 It is also what let the whole file be salvaged rather than rewritten.
 
-## ★ This module owns no geometry
+## This module owns no geometry
 
 Every load-bearing computation is a call into the already-shipped
 `pdfcer-core::dimension` / `pdfcer-core::vector` — the Taubin best-fit circle,

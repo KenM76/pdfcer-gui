@@ -48,7 +48,7 @@ pub fn body(
             .weak(),
     );
 
-    // ★ The report is computed here rather than inside the row loop, because it
+    // The report is computed here rather than inside the row loop, because it
     // is one act over the whole FILE — one digest, one anchor-store read — and
     // computing it per row would both be wasteful and make the anchor
     // disclosure a per-row sentence, repeated as many times as there are
@@ -85,7 +85,7 @@ pub fn body(
                     .unwrap_or_else(|| t::signature_unnamed().to_owned());
                 ui.label(egui::RichText::new(tt::signature_heading(&name)));
 
-                // ★ Matched by INDEX, and the engine guarantees it: `verify_all`'s
+                // Matched by INDEX, and the engine guarantees it: `verify_all`'s
                 // own documentation says *"order and count match
                 // `byte_range_coverage`"*. Matching by `field_name` instead
                 // would look safer and be worse — two unnamed signature fields
@@ -115,7 +115,7 @@ pub fn body(
                     // trace's vocabulary a consequence of a Rust derive, so it
                     // changes silently when the type does.
                     //
-                    // ★ Fixed at the emitter rather than in the reader, and the
+                    // Fixed at the emitter rather than in the reader, and the
                     // absent case gets the same `none` spelling every other token
                     // helper here uses — so a check comparing two surfaces is
                     // comparing one language.
@@ -152,7 +152,7 @@ fn integrity_line(ui: &mut egui::Ui, verdict: Option<&SignatureVerdict>) {
         Integrity::DigestMismatch => tt::integrity_digest_mismatch().to_owned(),
         Integrity::SignatureInvalid => tt::integrity_signature_invalid().to_owned(),
         Integrity::Unverifiable { reason } => tt::integrity_unverifiable(reason),
-        // ★ `Integrity` is `#[non_exhaustive]`, so this arm is required by the
+        // `Integrity` is `#[non_exhaustive]`, so this arm is required by the
         // compiler — and it must not fall silent. A variant this build does not
         // know is still a verdict the engine reached, and rendering nothing
         // would make an unrecognised answer look like a missing one. The engine
@@ -191,7 +191,7 @@ fn coverage_line(ui: &mut egui::Ui, c: &ByteRangeCoverage) {
 
 /// Fact 3 — who signed, and whether they chain to a trusted anchor.
 ///
-/// ★★★ The four `NotChecked` sentences are chosen from the [`Anchors`] state
+/// The four `NotChecked` sentences are chosen from the [`Anchors`] state
 /// rather than from the verdict, and that is the whole design. The engine
 /// reports `NotChecked` identically whether the operator opted out, has no
 /// store, typed a wrong path, or has a corrupt store — it cannot know which,
@@ -273,7 +273,7 @@ fn anchor_provenance(ui: &mut egui::Ui, anchors: &Anchors) {
 
 /// One fact: its label, then its sentence.
 ///
-/// ★ A `horizontal_wrapped` rather than a `format!("{label} {said}")`, so the
+/// A `horizontal_wrapped` rather than a `format!("{label} {said}")`, so the
 /// three labels line up as a column and the sentences wrap under themselves.
 /// The alignment is not decoration: three facts printed as three unlabelled
 /// paragraphs is three facts a reader has to sort out, which is the first step
@@ -289,7 +289,7 @@ fn labelled(ui: &mut egui::Ui, label: &str, said: &str) {
 /// The signature field's name as one trace token, or `none`.
 ///
 ///
-/// ★ `none` rather than an empty string, matching every other token helper
+/// `none` rather than an empty string, matching every other token helper
 /// here: an empty value after `=` is indistinguishable from a truncated line,
 /// and a check cannot tell the two apart.
 fn field_token(name: Option<&str>) -> &str {
@@ -298,7 +298,7 @@ fn field_token(name: Option<&str>) -> &str {
 
 /// The integrity verdict as one trace token.
 ///
-/// ★ Not operator copy and not in the catalog: a driven check matches on it,
+/// Not operator copy and not in the catalog: a driven check matches on it,
 /// and a check that matched translated prose would break the day the prose
 /// improved. Same argument as `crate::trust`'s anchor token.
 const fn integrity_token(integrity: &Integrity) -> &'static str {
@@ -349,7 +349,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The leading sentence names three facts and says they are never
+    /// **The leading sentence names three facts and says they are never
     /// merged.**
     ///
     /// This replaces `the_caveat_denies_validity_checking_explicitly`, which
@@ -374,7 +374,7 @@ mod tests {
         assert!(intro.contains("intact and untrusted"), "{intro}");
     }
 
-    /// ★★★ **Every state this panel can be in produces a trust sentence that
+    /// **Every state this panel can be in produces a trust sentence that
     /// says "not checked", unless the engine actually reached a verdict.**
     ///
     /// The assertion that stands between an operator and a silent grey row.
@@ -448,7 +448,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The trace tokens are distinct, and there is one per variant.**
+    /// **The trace tokens are distinct, and there is one per variant.**
     ///
     /// A driven check reads `integrity=` and `trust=` off the row line. Two
     /// variants sharing a token would make a check that asserts *"the trust

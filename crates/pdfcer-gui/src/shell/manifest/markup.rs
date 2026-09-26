@@ -39,7 +39,7 @@ pub(super) fn tab() -> Tab {
                     icon_only("markup.arrow"),
                     icon_only("markup.polyline"),
                     icon_only("markup.polygon"),
-                    // ★ Directly after Polygon, and that placement is the
+                    // Directly after Polygon, and that placement is the
                     // teaching. A revision cloud IS a polygon with a cloudy
                     // border — `/Subtype /Polygon` plus `/BE`, Table 181 — and
                     // an operator who has just learned that Polygon is "click
@@ -156,7 +156,7 @@ pub(super) fn tab() -> Tab {
             // widest group on the tab by some margin; asking for two lets the
             // packer find a narrower shape.
             //
-            // ★ A **hint**, not a layout: `plan::rows_for` reads it as *"skip the
+            // A **hint**, not a layout: `plan::rows_for` reads it as *"skip the
             // fits-already short-circuit and search"*, then returns the narrowest
             // packing within the band's row ceiling — so this asks for a block
             // and does not dictate one. The packing is greedy in item order, so

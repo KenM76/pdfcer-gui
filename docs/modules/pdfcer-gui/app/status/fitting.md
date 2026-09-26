@@ -7,20 +7,20 @@
 status-group:page    457.4 .. 603.1     ok
 status-group:zoom    326.7 .. 435.4     ok
 status-group:fit       6.6 .. 304.7     ok, and 298 pt wide — half the bar
-status-group:find    -54.2 ..  -15.4    ★ off the left edge
-status-group:filter -127.5 ..  -76.2    ★ off the left edge
+status-group:find    -54.2 ..  -15.4    off the left edge
+status-group:filter -127.5 ..  -76.2    off the left edge
 ```
 
 **Find and the selection filter were unreachable**, and `status-group:notes`
 sat at 8 .. 114, underneath the fit group, so the left-hand notes and the
 right-hand cluster were drawn on top of each other.
 
-★ It is the redaction-apply defect's shape — a control declared outside the
+It is the redaction-apply defect's shape — a control declared outside the
 body it lives in — reached by *scaling* rather than by adding copy, which is
 why no layout test saw it. Every test in this crate measures at
 `ui_scale = 1.0`.
 
-## ★★ Why the existing argument did not hold, and it is worth reading
+## Why the existing argument did not hold, and it is worth reading
 
 `status.rs` already argued the case, correctly, for the mechanism it chose:
 
@@ -46,7 +46,7 @@ narrows, VS Code hides them by declared priority, and browsers do the same
 with their own. Nothing announces it, and nothing should: a status bar is a
 summary surface, and an overflow chevron on one is a control about a control.
 
-★ **Relative order survives any subset**, which is what makes shedding by
+**Relative order survives any subset**, which is what makes shedding by
 priority safe rather than disruptive. A right-to-left run draws whatever it
 is given in the order it is given; removing an item from the middle closes
 the gap without moving anything past anything else. So `Filter · Zoom ·
@@ -55,7 +55,7 @@ does, minus two. `status::fit`'s warning about not reordering controls the
 operator has learned is about the four fit buttons **among themselves**; it
 does not bind here.
 
-## ★★★ THE CLAUSE THAT DECIDES EVERYTHING: nothing may shed its only home
+## THE CLAUSE THAT DECIDES EVERYTHING: nothing may shed its only home
 
 This is what makes the design legitimate rather than convenient, and it is
 **enforced, not asserted** — [`SHED_ORDER`] names each group this module may
@@ -63,7 +63,7 @@ drop beside a command that still reaches it, and
 [`tests::nothing_sheddable_loses_its_last_route`] resolves every one through
 the real command registry.
 
-★★ **That test immediately refused the first design, and it was right.**
+**That test immediately refused the first design, and it was right.**
 The obvious rule — shed from the low-priority end, which in this layout is
 the left — would have dropped the **selection filter** first, since it is
 leftmost. The filter has **no ribbon command, no menu entry and no
@@ -83,7 +83,7 @@ Checking the rest against the registry left exactly two groups that may go:
 And it is enough: at the 611 pt width that found the defect, dropping the
 fit group alone takes the cluster from 666 pt to 362 pt.
 
-★ Two of the five being unsheddable is a finding about the **ribbon**, not
+Two of the five being unsheddable is a finding about the **ribbon**, not
 about this module, and it is recorded rather than worked around: the
 selection filter and the zoom stepper are status-bar-only capabilities. If
 either acquires a home, it can join the list — one line, and the test will

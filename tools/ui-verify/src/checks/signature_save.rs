@@ -84,7 +84,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ The fixture is NOT `ctx.pdf`, and that is the same ruling `reflow`
+    // The fixture is NOT `ctx.pdf`, and that is the same ruling `reflow`
     // makes: the oracle here is bound to a document with one approval
     // signature and a page to spare, so a `--pdf` an operator passed would be
     // measured against an expectation that is not about it. A signed drawing
@@ -106,7 +106,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
 
-    // ★ Removed first, and that is not tidiness: a file left by a previous run
+    // Removed first, and that is not tidiness: a file left by a previous run
     // would satisfy assertion 5 on a build that wrote nothing — the single most
     // likely way for a file-oracle check to go quietly green.
     let target = ctx.out("signed-copy.pdf");

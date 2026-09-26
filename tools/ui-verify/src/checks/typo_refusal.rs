@@ -15,7 +15,7 @@ use crate::sys::vk;
 
 /// Reset the dock, take Edit mode, arm the **edit** caret — one per frame.
 ///
-/// ★ `view.reset_layout` first, and it is not decoration. The application
+/// `view.reset_layout` first, and it is not decoration. The application
 /// persists its dock layout across runs and the harness does not clear it, so a
 /// launch inherits whatever the previous launch left — including a previous
 /// *driven* launch. A check that reads a docked region without resetting is
@@ -26,7 +26,7 @@ const INVOKE: &str = "view.reset_layout,mode.edit,edit.text";
 /// The characters seeded into the draft. One letter, because the operator's
 /// correction was one letter: `clien` → `clien`**`t`**.
 ///
-/// ★ Seeded rather than typed, for `enter_newline`'s reason: `sys::vk` is a
+/// Seeded rather than typed, for `enter_newline`'s reason: `sys::vk` is a
 /// deliberately closed list of non-character virtual keys and this machine
 /// cannot inject an arbitrary character. The keystroke is not the subject here
 /// — the refusal after the commit is — so a seam that puts the letter in the
@@ -36,7 +36,7 @@ const SEED: &str = "t";
 /// `layout-reset scope=… changed=…` — the application's own report that the
 /// dock went back to its default arrangement.
 ///
-/// ★ Note `changed=false` is a perfectly good answer: it means the layout was
+/// Note `changed=false` is a perfectly good answer: it means the layout was
 /// already default. What matters is that the reset **ran**, not that it moved
 /// anything, so this is keyed on the line's presence and not on its field.
 const RESET_EVENT: &str = "layout-reset";
@@ -49,7 +49,7 @@ const REFUSED_EVENT: &str = "edit-text-refused";
 /// `edit-text page=… n=…` — the funnel's SUCCESS arm, and since 2026-09-06 the
 /// line this check's positive assertion rests on.
 ///
-/// ★ The bare verb name, not `edit-text-applied`: `vector_edit` names its
+/// The bare verb name, not `edit-text-applied`: `vector_edit` names its
 /// success line after the verb it was given, and this check is aimed at
 /// `"edit-text"`. Spelling it `edit-text-applied` here would look right, find
 /// nothing, and report a correct build as one whose edit never reached the
@@ -223,7 +223,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 1: bring the aim page onto the canvas ------------------------------
     //
-    // ★ `text_selection::aim` REFUSES to convert a point whose page is not the
+    // `text_selection::aim` REFUSES to convert a point whose page is not the
     // page on screen, and it is right to: mapping page 2's coordinates through
     // page 1's rect yields a click that is plausible, precise and in the wrong
     // place. The operator's typo is on his page 2, so the check has to get
@@ -248,7 +248,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .filter_map(|l| l.get("reason").map(str::to_owned))
         .last();
 
-    // ★★★ A CARET IS EXPECTED. See the module header's "Why the caret is
+    // A CARET IS EXPECTED. See the module header's "Why the caret is
     // OFFERED" section: the tempting `Identity-H` forecast is falsified by the
     // engine's own fixture, so a build that withholds the caret here has
     // reinstated a guard that refuses editing on text pdfcer can edit.
@@ -346,7 +346,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          text the document arrived with, committed from a caret in one gesture"
     ));
 
-    // ★★★ THE DECISION THAT MADE IT POSSIBLE, asserted separately from the
+    // THE DECISION THAT MADE IT POSSIBLE, asserted separately from the
     // outcome — because an edit that landed for the WRONG reason is a build
     // waiting to edit the wrong occurrence on a page that has two.
     //
@@ -361,7 +361,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // spans — so a pin without the flag is the refusal he reported, and the
     // flag without a pin has nothing to anchor to.
     //
-    // ★ `span_from_pin` is the complement of `one_operator` by construction:
+    // `span_from_pin` is the complement of `one_operator` by construction:
     // a whole-operator run is named by the pin alone, and a run written across
     // several operators spans from the pin.
     let pin_line = trace.events("edit-text-pin").last();
@@ -439,7 +439,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
     }
 
-    // ★★ AND THE OPERATOR IS NOT TOLD IT FAILED. A build that applied the edit
+    // AND THE OPERATOR IS NOT TOLD IT FAILED. A build that applied the edit
     // and left a decline in the slot would be reporting a failure over a
     // document that is fine, which is its own defect — and this is the region
     // the check's previous incarnation existed to see drawn.
@@ -466,13 +466,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: the NEGATIVE CONTROL — the contrast the operator noticed --------
     //
-    // ★★★ Without this the check has no dynamic range. The oracle above is
+    // Without this the check has no dynamic range. The oracle above is
     // "a region was published", and a build that published it unconditionally
     // — or that never retires a stale one — satisfies the positive arm
     // permanently. What has to be shown is that the SAME instrument is silent
     // when the same gesture succeeds.
     //
-    // ★★★ IT ARMS **ADD TEXT** AND CLICKS THE SAME POINT, and three cheaper
+    // IT ARMS **ADD TEXT** AND CLICKS THE SAME POINT, and three cheaper
     // ideas were driven and discarded first. All three were trying to find
     // *bare paper* for the `edit.text` tool to turn into a new-text draft.
     //
@@ -508,7 +508,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // point, same page, same process, same instrument — one gesture refused and
     // explained, the other accepted and silent.
     //
-    // ★★★ NO ESCAPE BEFORE IT, and the first version of this check pressed one.
+    // NO ESCAPE BEFORE IT, and the first version of this check pressed one.
     //
     // The reasoning was that clicking elsewhere with a live draft COMMITS it
     // (`textedit::click`'s `commit_into`), which would raise a second refusal
@@ -582,7 +582,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         added.raw
     ));
 
-    // ★★★ THE BASELINE ASSERTION. A decline published after a SUCCESSFUL edit
+    // THE BASELINE ASSERTION. A decline published after a SUCCESSFUL edit
     // means the slot is not gated on failure, and every reading above is an
     // artefact of the frame count rather than of the program.
     if let Some(stray) = trace.lines.iter().find(|r| {
@@ -614,7 +614,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
 /// **Roll the wheel until the canvas is showing `want`.**
 ///
-/// ## ★★★ Why this exists rather than a page-number box or a thumbnail
+/// ## Why this exists rather than a page-number box or a thumbnail
 ///
 /// `text_selection::aim` refuses to convert a point whose page is not the page
 /// the application says it is drawing, and the refusal is one of this harness's
@@ -629,7 +629,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 /// reset the dock. It is chosen over a keyboard chord because there is none:
 /// `sys::vk` carries no `PAGE_DOWN`, deliberately.
 ///
-/// ## ★★ It reads the application's own answer, not its own count
+/// ## It reads the application's own answer, not its own count
 ///
 /// The loop does not scroll "the right number of times". It scrolls, then asks
 /// the `canvas` line which page is on screen, and stops when that number is the
@@ -637,7 +637,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 /// display mode and the platform, and a count derived from any of those is a
 /// proxy for the thing that actually matters.
 ///
-/// ★ It also refuses to loop for ever on a document that cannot reach the page:
+/// It also refuses to loop for ever on a document that cannot reach the page:
 /// a `--doc-point` naming page 9 of a three-page file would otherwise scroll to
 /// the end and spin. The failure says how far it got.
 fn scroll_to_page(
@@ -680,7 +680,7 @@ fn scroll_to_page(
             ));
             return Ok(());
         }
-        // ★ A page index that has stopped moving means the end of the document,
+        // A page index that has stopped moving means the end of the document,
         // and continuing would spend forty steps learning the same thing.
         if step > 2 && now == seen {
             break;

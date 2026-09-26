@@ -18,11 +18,11 @@ use super::{Committing, LAST_COMMIT, pin};
 pub struct Plan {
     /// The request, with its provenance pin.
     pub request: EditRequest,
-    /// ★ The options, with the [`disposition`] this module exists to choose.
+    /// The options, with the [`disposition`] this module exists to choose.
     pub options: EditOptions,
     /// Why that disposition, for the trace and the disclosure.
     pub reason: Reason,
-    /// ★★★ **Whether the run being edited is ONE show operator** —
+    /// **Whether the run being edited is ONE show operator** —
     /// `OPERATOR_REQUESTS.md` **O140**, and the only field here that exists to
     /// explain a *failure* rather than to shape a request.
     ///
@@ -42,14 +42,14 @@ pub struct Plan {
     /// from a run it had segmented itself. **This shell does know**, and this
     /// field is the whole of that knowledge.
     ///
-    /// ★ `true` when there is no pin at all, which is the honest default: with
+    /// `true` when there is no pin at all, which is the honest default: with
     /// no provenance the shell has measured nothing, and claiming a split it
     /// did not observe would put a confident wrong sentence in front of the
     /// operator — the one outcome `crate::text::textedit::EditRefusal`'s header
     /// argues is worse than the silence it replaces.
     pub one_operator: bool,
 
-    /// ★★★ **How many times the text being edited appears on the page** — the
+    /// **How many times the text being edited appears on the page** — the
     /// count that would license dropping the provenance pin so that the
     /// engine's cross-operator matcher could reach a split run.
     /// `OPERATOR_REQUESTS.md` **O142**, the operator:
@@ -118,7 +118,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
         [1.0_f32, 0.0, 0.0, 1.0, 0.0, 0.0],
     );
     let mut finding = None;
-    // ★★ Whether the caret's visual line is made of more than one show
+    // Whether the caret's visual line is made of more than one show
     // operator, re-derived here rather than carried on the `Anchor`.
     //
     // The `Anchor` docs give the rule and it applies unchanged: everything but
@@ -132,18 +132,18 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
     // something it never saw. The single-run case is also the overwhelmingly
     // commoner one in ordinary prose documents.
     let mut shares_the_line = false;
-    // ★★★ **Defaults to `true`, and the default is a claim about knowledge
+    // **Defaults to `true`, and the default is a claim about knowledge
     // rather than about the run** — see [`Plan::one_operator`]. If the
     // extraction fails, or the run carries no provenance, this shell has
     // measured nothing; answering `false` there would let the apply arm tell
     // the operator his line is written one letter at a time on the strength of
     // an extraction that never ran.
     let mut one_operator = true;
-    // ★ Always `None` — see [`Plan::occurrences`], which carries the whole
+    // Always `None` — see [`Plan::occurrences`], which carries the whole
     // argument. Nothing in this function counts.
     let occurrences = None;
 
-    // ★★ **This extraction is its own, and it is NOT `doc.page_text()`.**
+    // **This extraction is its own, and it is NOT `doc.page_text()`.**
     //
     // `app::cache`'s extraction runs with `ExtractOptions::default()`, and the
     // engine's contract is that provenance is `None` unless the extraction set
@@ -172,7 +172,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
     // worth stating: `capture_provenance` populates a field and changes no
     // segmentation, so `runs[i]` names the same run under both options.
     {
-        // ★ The funnel's output, MODIFIED — not a second construction.
+        // The funnel's output, MODIFIED — not a second construction.
         //
         // `with_provenance(true)` is the one thing no setting governs: it is the
         // substrate for editing text, and `app::cache`'s read-only extraction
@@ -191,7 +191,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
         // and this reads it for free.
         if let Some(text) = doc.provenance_page_text(page) {
             let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
-            // ★★ The pin, and the buffer it indexes — [`pin::of_run`].
+            // The pin, and the buffer it indexes — [`pin::of_run`].
             //
             // Both facts, from one call, over the model just recognised. The
             // measurement lives in [`pin`] rather than inline because
@@ -202,7 +202,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
                 request.pinned_span = Some(p.span);
                 matrices = (p.text_matrix, p.ctm);
                 request.target = p.target;
-                // ★★★ **The find string is DROPPED when the pin is exact.**
+                // **The find string is DROPPED when the pin is exact.**
                 //
                 // `EditRequest::whole_operator`: an empty `find` beside a pin
                 // means *"this whole show operator"*, which is precisely what a
@@ -220,7 +220,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
                 // string this shell holds contains characters no show operator
                 // ever wrote and the match can never succeed.
                 //
-                // ## ★★ And why only when the run is one operator
+                // ## And why only when the run is one operator
                 //
                 // See [`pin::spans_one_operator`]. On a split run the whole
                 // -operator form would replace one fragment's text with the
@@ -228,7 +228,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
                 // old glyphs — visible corruption reported as success. The
                 // find-based form fails cleanly there instead, which is the
                 // right outcome for a case this shell cannot yet edit at all.
-                // ★★★ THE DECISION IS TRACED, because without it the two
+                // THE DECISION IS TRACED, because without it the two
                 // outcomes are indistinguishable from outside the process and
                 // one of them is correct.
                 //
@@ -243,7 +243,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
                 // string unmatchable, because a reader seeing 30 characters for
                 // a six-character cell has the whole story in one line.
                 one_operator = pin::spans_one_operator(&model, run);
-                // ★★★ **O142 — a typo inside a run written one glyph at a
+                // **O142 — a typo inside a run written one glyph at a
                 // time**, and the request shape that reaches it.
                 //
                 // A plain pin confines the match to the one operator it names,
@@ -257,7 +257,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
                 // [`Plan::occurrences`] for why taking the pin off is not the
                 // weaker version of that, but a different and unsafe thing.
                 //
-                // ★★ Measured on the operator's own file, one `EditSession`
+                // Measured on the operator's own file, one `EditSession`
                 // per shape, page 2, the run at doc-point `1,200.4,537.1`:
                 //
                 // | request | result |
@@ -267,7 +267,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
                 // | `"clien"` + plain pin | `NotFound` |
                 // | `"clien"`, no pin | **OK**, `operators_spanned=5` |
                 //
-                // ★★★ The second row is what settles the choice of `find`: the
+                // The second row is what settles the choice of `find`: the
                 // whole-run string — synthesised spaces and all — matches
                 // perfectly once the match is allowed to span, 36 characters
                 // over 36 operators. The synthesised-space case documented
@@ -276,7 +276,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
                 // the changed span alone (`"n"` → `"nt"`) occurs **33 times**
                 // on that page, where the whole run occurs once.
                 //
-                // ★ Spanning puts the replacement into the operator holding the
+                // Spanning puts the replacement into the operator holding the
                 // match's end and empties the ones before it (each kept as `() Tj`);
                 // the engine keeps the line where the match began, and narrows the
                 // rewrite to the part that differs by itself.
@@ -289,7 +289,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     //
-                    // ★ `span_from_pin` is the field that says how the request
+                    // `span_from_pin` is the field that says how the request
                     // is addressed. It is spelled as `0`/`1` rather than
                     // `{:?}` on a `bool` for the reason that bans `{:?}` from
                     // every parsed field in this tree: a `Debug` spelling is a
@@ -307,7 +307,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
                     request.find.clear();
                 }
             }
-            // ★ The SAME model the caret's hit test used, with the same
+            // The SAME model the caret's hit test used, with the same
             // options — `BlockRecognitionOptions::default()` — because the
             // question is *how did the thing the operator clicked get
             // segmented*, and asking it of a differently-recognised model would
@@ -326,7 +326,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
     }
 
     let reason = disposition::choose(matrices.0, matrices.1, shares_the_line, finding);
-    // ★★★ **The words the operator typed, kept where a refusal can find them**
+    // **The words the operator typed, kept where a refusal can find them**
     // — `OPERATOR_REQUESTS.md` O141. See [`LAST_COMMIT`].
     LAST_COMMIT.with_borrow_mut(|slot| {
         *slot = Some(Committing {

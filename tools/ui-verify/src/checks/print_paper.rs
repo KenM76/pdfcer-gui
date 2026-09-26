@@ -129,7 +129,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         )));
     }
 
-    // ★ Through the overflow when the ribbon has folded it there.
+    // Through the overflow when the ribbon has folded it there.
     //
     // At the harness's 1100 pt window the File tab correctly folds its
     // rightmost groups — Print among them — into the overflow menu. That is the
@@ -224,7 +224,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     report.note(format!("before: paper={paper_before} sheet={sheet_before}"));
 
     // --- E. open the list and choose a DIFFERENT sheet -----------------------
-    // ★★ FROM HERE ON THE REGIONS ARE IN THE DIALOG'S OWN OS WINDOW.
+    // FROM HERE ON THE REGIONS ARE IN THE DIALOG'S OWN OS WINDOW.
     //
     //
     // `declared_in` carries the viewport tag and `frame_for` turns it into the
@@ -253,12 +253,12 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         )));
     }
 
-    // ★ Entry 1 upward, never entry 0. Entry 0 is "from the printer's own
+    // Entry 1 upward, never entry 0. Entry 0 is "from the printer's own
     // settings" — the state the dialog is already in — so clicking it would
     // leave `paper=` unchanged and the check would report a harness failure it
     // had caused itself. Entry 1 is the driver's first enumerated form.
     //
-    // ★★ And it TRIES SEVERAL, which is the difference between a check and a
+    // And it TRIES SEVERAL, which is the difference between a check and a
     // false accusation. A driver is entitled to list a form whose size equals
     // the sheet the device already defaults to — `dmPaperSize` naming Letter on
     // a Letter-default printer is not a bug — and choosing that one produces an

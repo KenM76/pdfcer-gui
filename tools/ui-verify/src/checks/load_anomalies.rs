@@ -78,7 +78,7 @@ const STATUS_LINE: &str = "status";
 /// Where the window is put for the two no-input launches, as
 /// `PDFCER_DIAG_VIEWPORT` takes it: `x,y,w,h` in desktop pixels.
 ///
-/// ★★ **Off the desktop, on purpose.** Neither status-bar launch reads a single
+/// **Off the desktop, on purpose.** Neither status-bar launch reads a single
 /// pixel — the whole verdict comes from the trace — so the window does not need
 /// to be anywhere a human could see it, and putting it where a human cannot
 /// means this check can run while the operator is working. Every on-screen
@@ -143,7 +143,7 @@ fn drive_status_bar(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opti
     session.settle(45);
 
     let trace = session.trace()?;
-    // ★ The document has to be OPEN before the presence or absence of a
+    // The document has to be OPEN before the presence or absence of a
     // disclosure means anything. A launch that opened nothing — a mistyped
     // path, a relative path resolved against the wrong directory — traces no
     // `status` line at all, and every region on a document-dependent surface is
@@ -169,7 +169,7 @@ fn drive_status_bar(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opti
     report.note("the census line is on the bar for the contradicting file");
     drop(session);
 
-    // --- 2: ★★ THE CONTROL, and it is the half that makes this a check -----
+    // --- 2: THE CONTROL, and it is the half that makes this a check -----
     let session = launch_quiet(ctx, &exe, CLEAN, "load_anomalies.clean.trace.txt")?;
     report.note(format!(
         "control launch on fixtures/{CLEAN} as pid {}",
@@ -256,7 +256,7 @@ fn drive_panel(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<St
     ));
     report.artifact(session.trace_path().to_path_buf());
     session.settle(40);
-    // ★★ MAXIMISE — at the harness's default 1,100 pt window the File tab's
+    // MAXIMISE — at the harness's default 1,100 pt window the File tab's
     // last two groups fold away entirely and a check reports a lost command.
     // `about.rs` holds the measurement; three checks already share it.
     session.maximize();
@@ -284,7 +284,7 @@ fn drive_panel(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<St
             list(&declared_names(&trace, ui_rect, "properties"))
         )));
     }
-    // ★★ The control is published inside the row prefix's namespace and is
+    // The control is published inside the row prefix's namespace and is
     // NOT a row. Subtracting it here rather than renaming its region keeps the
     // block's regions in one namespace — they appear and disappear together —
     // at the cost of this one line, which is the trade this check would rather
@@ -307,7 +307,7 @@ fn drive_panel(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<St
     report.note("one anomaly row is drawn, matching the one anomaly the engine reports");
     drop(session);
 
-    // --- 2: ★★ the control, with the panel OPEN ----------------------------
+    // --- 2: the control, with the panel OPEN ----------------------------
     //
     // This is stronger than the status bar's control. There, the absence could
     // in principle be explained by the bar not drawing at all; here the panel is
@@ -445,7 +445,7 @@ fn drive_reread(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
     };
     report.note("the re-read control is drawn at the foot of the anomaly block");
 
-    // ★★ The mark is taken BEFORE the click, and everything below is read
+    // The mark is taken BEFORE the click, and everything below is read
     // `_after` it.
     //
     // The document was opened at launch, so the trace already carries a
@@ -512,7 +512,7 @@ fn drive_reread(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
     }
     report.note("a loader started, under the reading the operator asked for");
 
-    // ★ And the document survived it.
+    // And the document survived it.
     //
     // A re-load replaces the open document. If it replaced it with nothing —
     // a load that failed under the new policy, a slot closed and not refilled
@@ -532,7 +532,7 @@ fn drive_reread(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
     report.note("a document is still open after the re-read");
     drop(session);
 
-    // --- 2: ★★ the control, and it is R9 rather than tidiness ----------
+    // --- 2: the control, and it is R9 rather than tidiness ----------
     //
     // A clean file has no duplicate key, so there is no other reading to offer
     // and the button must not exist. Not greyed — absent. Greying is reserved
@@ -601,7 +601,7 @@ fn ui_rect_event(ctx: &CheckContext) -> Result<&'static str> {
 
 /// This module's fixtures, resolved by [`crate::checks::driving::repo_fixture`].
 ///
-/// ★ The shared resolver carries the whole account of why the path comes from
+/// The shared resolver carries the whole account of why the path comes from
 /// `CARGO_MANIFEST_DIR` and never from `--source-root`. What stays here is the
 /// sentence that is about THIS check: why its two documents are not
 /// substitutable for whatever `--pdf` happened to name.
@@ -626,7 +626,7 @@ fn launch_quiet(
     if let Some(name) = ctx.profile.viewport_env {
         spec.env.push((name.to_owned(), OFFSCREEN.to_owned()));
     }
-    // ★ Without this the line above is decoration: `Session::place` would move
+    // Without this the line above is decoration: `Session::place` would move
     // the window to `(780, 40)` the moment it appeared. See `OFFSCREEN`.
     spec.place = false;
     Session::launch(&spec, ctx.profile.trace_prefix)
@@ -664,7 +664,7 @@ fn base_spec(
 
 /// Bring the Document properties panel to the front, if it is not already.
 ///
-/// ★ Reuses `properties_metadata`'s opener rather than spelling the two clicks
+/// Reuses `properties_metadata`'s opener rather than spelling the two clicks
 /// again. It is the same ribbon item and the same toggle hazard — pressing
 /// `file.document_properties` while the panel is up CLOSES it — and two copies
 /// of that guard would be two places for the next ribbon move to have to be

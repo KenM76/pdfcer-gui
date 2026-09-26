@@ -12,13 +12,13 @@ use crate::canvas::selection::AnnotKind;
 
 /// Whether `id` is one of the four Arrange commands.
 ///
-/// ★ Named `claims` rather than `handles` for [`super::markupnodes::claims`]'
+/// Named `claims` rather than `handles` for [`super::markupnodes::claims`]'
 /// stated reason: `shell::commands::reach::guards::EVALUATED_GUARDS` is a set of
 /// **function names** read out of `dispatch.rs`'s syntax tree, `claims` is
 /// already in it, and the register's own note blesses two guards sharing a name.
 /// One line in `guard_claiming` and no change to that list.
 ///
-/// ★★ Paired with [`destination`] rather than with a second `match` in
+/// Paired with [`destination`] rather than with a second `match` in
 /// [`dispatch`], which is `dispatch::routes`' improvement on the
 /// membership-test shape: the two statements that could grow apart are **one
 /// statement**, so an id this predicate claims and that function cannot place is
@@ -30,7 +30,7 @@ pub(crate) fn claims(id: &str) -> bool {
 
 /// Which end of the stack each command means.
 ///
-/// ★★★ **`markup.` and not `arrange.`**, and the reason is a registry invariant
+/// **`markup.` and not `arrange.`**, and the reason is a registry invariant
 /// rather than taste. `shell::commands::tests::every_handler_token_is_in_its_
 /// tabs_block` asserts that a command's handler token sits inside the hundred
 /// belonging to its id's prefix — `markup.` is 500-599 — and it panics by name
@@ -51,7 +51,7 @@ fn destination(id: &str) -> Option<ArrangeTo> {
 
 /// Dispatch one of the four.
 ///
-/// # ★★ Three gates, and only one of them can be met by an operator who did
+/// # Three gates, and only one of them can be met by an operator who did
 /// nothing wrong
 ///
 /// | gate | reachable from the ribbon? | how it reports |
@@ -88,7 +88,7 @@ pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
         });
         return;
     };
-    // ★ Rule 15, guarded by the `AnnotKind` match the compiler checks and not by
+    // Rule 15, guarded by the `AnnotKind` match the compiler checks and not by
     // a `/Subtype` string. A **ce dimension** is pdfcer-authored and its depth is
     // not this verb's to change — its label and witness lines are a group, and
     // `reorder_annotations` would move the `/Line` and leave them behind. A
@@ -106,13 +106,13 @@ pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
         return;
     };
     if annot.target.locked {
-        // ★★ A sentence, not just a trace — this is the one gate an operator
+        // A sentence, not just a trace — this is the one gate an operator
         // meets having done nothing wrong, and unlike the Delete key's locked
         // refusal there is **no standing sentence on screen about it**: the
         // Properties panel says a locked mark's *appearance* cannot be changed,
         // which is a true statement about a different control.
         //
-        // ★ Recorded through `record_note` rather than `status::decline`, and
+        // Recorded through `record_note` rather than `status::decline`, and
         // the distinction is that module's own: a decline reports *a gesture
         // just failed*, and the lock is a **standing property of the open
         // document** — true from the moment it was opened, true whether or not
@@ -192,7 +192,7 @@ mod tests {
         );
     }
 
-    /// ★ **The front pair really is the front pair.**
+    /// **The front pair really is the front pair.**
     ///
     /// The one place the label and the array end are related, and the place a
     /// reader thinking of `/Annots` as a list will get it backwards. `Front`

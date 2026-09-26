@@ -9,7 +9,7 @@
 use super::OpenDoc;
 
 impl OpenDoc {
-    /// ★ **What the render tier needs to know about `page`'s colour** — the one
+    /// **What the render tier needs to know about `page`'s colour** — the one
     /// reader of [`Self::ink_pages`].
     ///
     /// Two facts in one value, because they are only ever wanted together and
@@ -44,7 +44,7 @@ impl OpenDoc {
     /// that can disagree with the render is worse than no pre-flight, because a
     /// caller acts on it.
     ///
-    /// # ★★ Why this takes the render options when [`Self::ink_at`] does not
+    /// # Why this takes the render options when [`Self::ink_at`] does not
     ///
     /// `ink_at` reads `Settings::max_cmyk_buffer_bytes` directly: that is a
     /// **budget**, and its question is asked before there is a render to run.
@@ -111,7 +111,7 @@ impl OpenDoc {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             //
-            // ★ `source.token()`, NEVER the `Debug` derive. The derive spells
+            // `source.token()`, NEVER the `Debug` derive. The derive spells
             // `PageGroup`; pdfcer's own metrics line spells `page_group`, and
             // two spellings of one fact across a boundary whose whole purpose
             // is that both sides agree means a CLI log and a shell log do not

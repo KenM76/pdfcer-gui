@@ -6,7 +6,7 @@
 //! a different time from the widget code they check. `use super::*` reaches
 //! `find::bar` exactly as an inline `mod tests` would.
 //!
-//! ★★ **The inner `#![cfg(test)]` is load-bearing and is not a duplicate of
+//! **The inner `#![cfg(test)]` is load-bearing and is not a duplicate of
 //! the outer `#[cfg(test)] mod tests;`.** Without it,
 //! `tools/gates/check-ui-strings.sh` walks this file as ordinary source and
 //! reports every assertion message as a user-visible string that should live
@@ -18,10 +18,10 @@ use super::*;
 use egui::{Context, RawInput};
 
 // =======================================================================
-// ★ The OCR offer
+// The OCR offer
 // =======================================================================
 
-/// ★ **A page with no text at all, after a search that found nothing.**
+/// **A page with no text at all, after a search that found nothing.**
 ///
 /// The one combination that offers OCR, and the operator's actual rule
 /// stated as a case: there is nothing on this page for any search to have
@@ -31,7 +31,7 @@ fn a_page_with_no_text_at_all_offers_recognition() {
     assert!(offer_ocr(Readout::Empty, || false));
 }
 
-/// ★★ **THE FALSIFYING CASE.** An ordinary empty result offers nothing.
+/// **THE FALSIFYING CASE.** An ordinary empty result offers nothing.
 ///
 /// This is the assertion the whole feature turns on, and it is the one a
 /// plausible wrong implementation fails. Offering OCR on any zero-hit
@@ -53,7 +53,7 @@ fn an_ordinary_empty_result_on_a_text_page_offers_nothing() {
     );
 }
 
-/// ★ **The page is not even asked about unless the search came back empty.**
+/// **The page is not even asked about unless the search came back empty.**
 ///
 /// The short-circuit, asserted rather than assumed — and it is a
 /// correctness property, not an optimisation. `page_has_extractable_text`
@@ -103,10 +103,10 @@ fn the_offer_raises_the_registered_recognise_command() {
 }
 
 // =======================================================================
-// ★ Placement
+// Placement
 // =======================================================================
 
-/// ★ **The box is pinned inside the canvas viewport's top-right corner**,
+/// **The box is pinned inside the canvas viewport's top-right corner**,
 /// not the window's.
 ///
 /// The distinction is invisible until a dock is open, and then it is the
@@ -154,10 +154,10 @@ fn a_narrow_host_still_yields_a_pivot_on_the_canvas() {
 }
 
 // =======================================================================
-// ★ What Enter means
+// What Enter means
 // =======================================================================
 
-/// ★ **Enter searches when the answer is not current and steps when it
+/// **Enter searches when the answer is not current and steps when it
 /// is.**
 ///
 /// The whole of the bar's key behaviour, asserted without a frame. The
@@ -200,7 +200,7 @@ fn enter_searches_when_there_is_no_current_answer_and_steps_when_there_is() {
     );
 }
 
-/// ★ **Enter on a fruitless search does nothing at all.**
+/// **Enter on a fruitless search does nothing at all.**
 ///
 /// A search is a whole-document text extraction — 350 ms on the benchmark
 /// drawing, measured. Re-running one that just matched nothing, once per
@@ -265,7 +265,7 @@ fn every_readout_that_says_something_explains_itself() {
 // The options menu
 // =======================================================================
 
-/// ★ **The word-rule chooser appears with Whole word and not before.**
+/// **The word-rule chooser appears with Whole word and not before.**
 ///
 /// P3, applied to the one control on this surface whose availability is
 /// conditional. Driven through a real `Ui` so what is asserted is what the
@@ -308,7 +308,7 @@ fn the_word_rule_chooser_appears_only_with_whole_word() {
 
 /// Every string the given closure painted, flattened.
 ///
-/// ★ Read off the **painted shapes**, not off the source. A test that
+/// Read off the **painted shapes**, not off the source. A test that
 /// asserted `t::find_zoom()` equals `"Zoom"` would prove the catalog agrees
 /// with itself and would pass on a build where the checkbox was never added
 /// to the menu at all — which is the defect worth catching, because a
@@ -334,7 +334,7 @@ fn painted_text(ctx: &Context, build: impl FnMut(&mut egui::Ui)) -> Vec<String> 
     out
 }
 
-/// ★★ **The options menu offers a control named exactly *Zoom*.**
+/// **The options menu offers a control named exactly *Zoom*.**
 ///
 /// The operator's request named the control: *"add a checkbox option to our
 /// search bar called zoom"*. A request that carries a name is a request for
@@ -354,7 +354,7 @@ fn the_options_menu_offers_a_control_named_zoom() {
     );
 }
 
-/// ★ **Toggling Zoom does not disturb the search options.**
+/// **Toggling Zoom does not disturb the search options.**
 ///
 /// The load-bearing property of the split in [`options`]: a `FindOptions`
 /// change re-runs the search, and re-running a search because a *view*
@@ -380,7 +380,7 @@ fn toggling_zoom_leaves_the_search_options_alone() {
 // Legibility — the labels that are glyphs
 // =======================================================================
 
-/// ★ **Every glyph the bar draws exists in the bundled font set.**
+/// **Every glyph the bar draws exists in the bundled font set.**
 ///
 /// `⏴`, `⏵` and `×` are the entire visible text of three controls. A
 /// codepoint egui's bundled fonts (Ubuntu-Light + NotoEmoji +
@@ -475,7 +475,7 @@ fn frame(ctx: &Context, state: &mut FindState, epoch: u64, input: RawInput) -> V
     actions
 }
 
-/// ★ **The box is exactly the same size whatever the readout says.**
+/// **The box is exactly the same size whatever the readout says.**
 ///
 /// The property the module docs argue for: the overlay is anchored by its
 /// top-right corner, so a box that changed width would move the search
@@ -548,7 +548,7 @@ fn the_step_buttons_are_inert_until_there_is_something_to_step() {
     );
 }
 
-/// ★ **Typing raises nothing.**
+/// **Typing raises nothing.**
 ///
 /// The cost rule, from the other end: a search is a whole-document text
 /// extraction — 350 ms on the benchmark drawing — so a bar that raised one

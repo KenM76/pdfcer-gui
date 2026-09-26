@@ -4,7 +4,7 @@
 //! whole reason this file is as long as it is: a page paste changes what is on
 //! screen dramatically and hides its two most consequential effects completely.
 //!
-//! ## ★★ Rule 4, and why the page clipboard is its sharpest case
+//! ## Rule 4, and why the page clipboard is its sharpest case
 //!
 //! A pasted page renders exactly as a saved-and-reopened one would. Nothing is
 //! badged, tinted or outlined — the operator's standing ruling, and doubly right
@@ -27,7 +27,7 @@
 /// cannot travel unless every one of those sheets was picked, so the engine
 /// leaves it out and counts it.
 ///
-/// # ★★★ Why this is said at the COPY and not at the paste
+/// # Why this is said at the COPY and not at the paste
 ///
 /// Because it is a fact about **their selection**, and it is still fixable. At
 /// the copy the operator can widen the pick and copy again; by the paste the
@@ -59,7 +59,7 @@ pub fn fields_dropped(n: usize) -> String {
 /// `InsertOutcome::orphaned_widgets`, and the engine flagged it by name as
 /// *"the one that produces a document that looks right and is not"*.
 ///
-/// # ★★★ The mechanism, because the sentence has to be trusted
+/// # The mechanism, because the sentence has to be trusted
 ///
 /// A page's `/Annots` array reaches its form-field boxes, so they travel with
 /// the page. The `/AcroForm` dictionary that **owns** them is a catalog entry
@@ -90,7 +90,7 @@ pub fn orphaned_widgets(n: usize) -> String {
 
 /// **What a page copy leaves on the operating system's clipboard.**
 ///
-/// ★ The clip **is a PDF** — the engine's own choice, because `pageops::assemble`
+/// The clip **is a PDF** — the engine's own choice, because `pageops::assemble`
 /// already does object copying, reference remapping and page-tree construction
 /// on every split and merge, and a private page format would be a second
 /// implementation of the most-exercised code in the crate.
@@ -114,7 +114,7 @@ pub fn os_marker(pages: usize) -> String {
 
 /// The clipboard holds no pages.
 ///
-/// ★ It names the **command**, not the chord, because there is no chord: page
+/// It names the **command**, not the chord, because there is no chord: page
 /// copy and paste are named commands on the Pages tab, and `Ctrl+C` belongs to
 /// the canvas. Telling the operator to press a key that does something else is
 /// worse than saying nothing. `app::dispatch::pageclip`'s header carries why.
@@ -126,7 +126,7 @@ pub const fn nothing_copied() -> &'static str {
 
 /// The engine declined to copy the pages, in its own words.
 ///
-/// ★ Its sentence, prefixed with what was being attempted rather than replaced.
+/// Its sentence, prefixed with what was being attempted rather than replaced.
 /// The engine's refusals name the document's own state — an encryption, a
 /// certification — and are written by the party that knows why; what they cannot
 /// know is which gesture the operator was making when they met one.
@@ -141,7 +141,7 @@ mod tests {
 
     /// Singular and plural are spelled out, never `field(s)`.
     ///
-    /// ★ A parenthesised plural is the tell of a program that could not be
+    /// A parenthesised plural is the tell of a program that could not be
     /// bothered, and every one of these sentences is read by somebody who did
     /// not expect it — which is the whole reason it exists.
     #[test]
@@ -158,7 +158,7 @@ mod tests {
         }
     }
 
-    /// ★★ Every disclosure names the REMEDY, not just the problem.
+    /// Every disclosure names the REMEDY, not just the problem.
     ///
     /// The two invisible facts are the ones an operator cannot investigate for
     /// themselves — a left-behind field and an orphaned box both look like

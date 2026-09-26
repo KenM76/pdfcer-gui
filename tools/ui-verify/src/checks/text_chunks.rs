@@ -30,7 +30,7 @@ pub(crate) const DRAWN_EVENT: &str = "canvas-chunks"; // ui-text-exempt: a trace
 
 /// `canvas-chunks-declined reason=…` — written when none were.
 ///
-/// ★ A distinct first token, deliberately: `tools/gates/check-trace-names.py`
+/// A distinct first token, deliberately: `tools/gates/check-trace-names.py`
 /// compares first tokens, and a shared one would make the two events
 /// indistinguishable to `Trace::events`.
 pub(crate) const DECLINED_EVENT: &str = "canvas-chunks-declined"; // ui-text-exempt: a trace event name, never displayed
@@ -79,7 +79,7 @@ impl std::fmt::Display for Verdict {
 
 /// The newest of the two lines after `after`, or `None` if neither was written.
 ///
-/// ★ Both are read and the later one wins, rather than one being preferred:
+/// Both are read and the later one wins, rather than one being preferred:
 /// they are two spellings of one state, and asking only for the one a step
 /// expects would turn *the opposite happened* into *nothing happened*.
 pub(crate) fn verdict(trace: &Trace, after: usize) -> Option<Verdict> {
@@ -252,7 +252,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED. The header says
+    // PINNED: `--pdf` and `--doc-point` are read and IGNORED. The header says
     // why the document has to be this one.
     let (pdf, target) = crate::fixture::text_point_target();
     if !pdf.is_file() {
@@ -410,7 +410,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     let off = verdict(&session.trace()?, mark);
     if off != Some(Verdict::Declined("switched-off".to_owned())) {
-        // ★ Restore before reporting. This check leaves the boxes on however it
+        // Restore before reporting. This check leaves the boxes on however it
         // ends, and a failure here is exactly the run that would otherwise
         // poison the next one.
         let _ = press_the_toggle(&session, &driver, ui_rect, true, report);

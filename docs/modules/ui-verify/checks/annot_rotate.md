@@ -6,7 +6,7 @@ is turned.**
 # What this is for
 
 
-## ★★★ Why this cannot be a unit test, and what it is really guarding
+## Why this cannot be a unit test, and what it is really guarding
 
 `canvas::rotating`'s arithmetic is pure and has eight unit tests;
 `gesture::meaning` has four more for the new rung. What none of them can
@@ -72,13 +72,13 @@ way, pivoted about a corner instead of the centre, or left the appearance
 `/Matrix` alone. This project's standing rule, earned by `DEFECTS.md` D14:
 **a trace line must carry the number a wrong build would get wrong.**
 
-★ `from=`/`to=` are **reported and not asserted**, deliberately. `/Rect`
+`from=`/`to=` are **reported and not asserted**, deliberately. `/Rect`
 grows at any angle that is not a quarter turn (§12.5.2 requires it upright)
 and this check drives exactly a quarter turn, where it must **not** grow —
 so asserting growth would be asserting the opposite of what this gesture
 produces. What the two numbers are for is the reader of a failed run.
 
-# ★★ Where it aims, and why it no longer mirrors a constant
+# Where it aims, and why it no longer mirrors a constant
 
 `checks::rotate` — the page-content sibling — derives the handle's position
 from the selection outline plus its own copy of `ROTATE_STEM_PX`, and says

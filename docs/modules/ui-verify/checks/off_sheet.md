@@ -26,7 +26,7 @@ viewports away, and the canvas draws nothing. That was real; it is fixed by
 `canvas::deep::confine`; and this check's passing run traced the clamp
 firing on `y` nine times on the way up to 107,105,325 %.
 
-## ★★★ The measurement: his blank frame is two orders of magnitude below that
+## The measurement: his blank frame is two orders of magnitude below that
 
 Driven against the pre-fix binary. The canvas went blank after **thirty**
 notches at a peak zoom of **3,981 %**, with `tier=scroll` on every frame,
@@ -47,7 +47,7 @@ that module is derived from `pasteboard`, one subtraction covers the shallow
 tier the operator hit, the deep tier's new clamp, **and** a scroll bar
 dragged to its stop.
 
-★ The scroll-bar route deserves a sentence of its own: it was blank too,
+The scroll-bar route deserves a sentence of its own: it was blank too,
 reachable at any zoom with no deep tier involved and no pointer off the
 sheet, and nobody had ever reported it — because a scroll bar sitting at its
 own stop does not feel like a defect.
@@ -65,7 +65,7 @@ stating because it is not obvious from the symptom:
   At zoom 540 one plain wheel notch is about 0.09 pt. Escaping by panning
   would take roughly seven and a half thousand rolls.
 
-★ **That terminality belongs to the deep tier, and the operator's blank
+**That terminality belongs to the deep tier, and the operator's blank
 frame was not in the deep tier** — so on his own reproduction the escape
 hatch was never the thing standing between him and a page. Measured: from
 the shallow-tier blank at 3,981 %, eighty Ctrl+wheel notches out drew a page
@@ -82,7 +82,7 @@ so every notch re-seeds the anchor from whatever is under the pointer, and
 if that is blank pasteboard above the sheet the anchor's page y is
 **negative** and grows in screen magnitude with the zoom.
 
-★ `DocPoint` y is PDF y-up; `DeepAnchor.page` y is y-down from the page's
+`DocPoint` y is PDF y-up; `DeepAnchor.page` y is y-down from the page's
 top-left. A point *above* the sheet is therefore a **high** `DocPoint` y and
 a **negative** anchor page y. That sign flip is what made the measured
 anchor `(1199.50, −0.54)` read as "almost on the page" when it was in fact
@@ -90,7 +90,7 @@ half a point off the top of it, with a zoom of several hundred multiplying
 that half point into a view that had left the sheet.
 
 ⚠ The magnitude of the initial aim is deliberately **not** load-bearing —
-and ★ the reason this paragraph originally gave for that is the sentence
+and the reason this paragraph originally gave for that is the sentence
 that had the defect written into it. Below the deep threshold the `egui`
 scroll area clamps the offset to its own content range, so however far above
 the sheet the first notch aims, by the time the threshold is crossed the
@@ -98,7 +98,7 @@ page's top edge is **at most one pasteboard below the viewport** — which is
 why the measured anchor was a fraction of a point off the page rather than
 the eighty-odd points this check starts by aiming at.
 
-★★★ That clause was written as a reassurance. It **is** the defect. One
+That clause was written as a reassurance. It **is** the defect. One
 pasteboard below the viewport was one whole *viewport* below it, which is
 precisely the placement at which the sheet occupies zero of the canvas — so
 the harmless-sounding bound the aim converges to was itself the blank frame,
@@ -133,7 +133,7 @@ and *did the clamp ever actually fire* — which SKIP rather than pass,
 because a run that never drove the anchor out of range has measured nothing
 about a mechanism whose only job is to catch an anchor out of range.
 
-★★★ **The first run of this check answered the open design question it was
+**The first run of this check answered the open design question it was
 written to settle, and the answer was worse than the question allowed for.**
 
 The question: clamping the anchor to the ends of
@@ -152,7 +152,7 @@ the build of the day at the **shallow** tier, thirty notches in, before the
 clamp existed to be exercised. That is what sent the fix to
 `geometry::pasteboard` instead of to either tier.
 
-★ The lesson to carry, because it generalises past this defect: *"the other
+The lesson to carry, because it generalises past this defect: *"the other
 tier does the same thing"* is an argument about **blame**, not about
 correctness, and a clamp whose range endpoints are themselves the failure
 state will park the view on that failure and report itself as having

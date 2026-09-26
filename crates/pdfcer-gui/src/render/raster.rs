@@ -155,7 +155,7 @@ pub fn texture_from_pixels(
     pixels: &crate::render::worker::RenderedPixels,
 ) -> PageTexture {
     let image = pixmap_to_color_image(&pixels.pixmap);
-    // ★ Recorded BEFORE the upload is ordered, and from the key rather than
+    // Recorded BEFORE the upload is ordered, and from the key rather than
     // from the image: this is the provenance a `GL_OUT_OF_MEMORY` drained at
     // the top of the next frame is matched against, and GL's error flag
     // carries none of its own. See `crate::render::pressure`.

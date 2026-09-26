@@ -37,7 +37,7 @@ pub const REGION_CANCEL: &str = "text-annot.cancel";
 /// The region the sticky note's icon chooser publishes, so a driven check can
 /// find it and press one of the seven.
 ///
-/// ★ Its own region rather than sharing [`REGION_BODY`], for the reason every
+/// Its own region rather than sharing [`REGION_BODY`], for the reason every
 /// other region in this shell is separate: a check that asserts *"the icon
 /// chooser is on screen"* against the window's own rectangle would pass on a
 /// window with no chooser in it at all.
@@ -50,7 +50,7 @@ pub const REGION_STAMP_SIZE: &str = "text-annot.stamp-size"; // ui-text-exempt: 
 /// The region the **operator's own** stamps publish, one enclosing box for the
 /// whole custom half of the gallery.
 ///
-/// ★ Separate from [`REGION_BODY`] and from [`REGION_STAMP_SIZE`] for the
+/// Separate from [`REGION_BODY`] and from [`REGION_STAMP_SIZE`] for the
 /// reason the latter's comment states and this case makes sharper still: this
 /// half of the gallery is **conditionally present**. It renders nothing at all
 /// on a machine with no stamps folder (R9), so a driven check keyed on the
@@ -85,7 +85,7 @@ pub struct TextAnnotDialog {
     /// The icon selected in the sticky note's chooser. Meaningless for the
     /// other kinds and carried anyway, exactly as [`Self::stamp`] is.
     icon: StickyIcon,
-    /// ★★★ **The operator's own stamps, as they were on disk when this window
+    /// **The operator's own stamps, as they were on disk when this window
     /// opened** (`OPERATOR_REQUESTS.md` O172).
     ///
     /// # Why it is scanned per open, and not once per session
@@ -107,7 +107,7 @@ pub struct TextAnnotDialog {
     library: Library,
     /// **Which of his own stamps is selected**, or `None` for a standard one.
     ///
-    /// ★ This field, rather than a `StampName`-shaped enum with a `Custom`
+    /// This field, rather than a `StampName`-shaped enum with a `Custom`
     /// arm, and the reason is the type: `StampName` is the engine's spelling
     /// of §12.5.6.12's **closed vocabulary**, and a custom stamp is by
     /// definition not in it. Widening that enum here would be this shell
@@ -122,7 +122,7 @@ pub struct TextAnnotDialog {
     /// **What to remember, once this window has committed** -- `None` until it
     /// does, and `None` forever on any window that is not a stamp.
     ///
-    /// ★★ Written at the commit, read by the host after [`Self::show`] has
+    /// Written at the commit, read by the host after [`Self::show`] has
     /// returned `false`, and that ordering is the whole design. The alternative
     /// -- the host reading `self.stamp` / `self.custom` when the window closes
     /// -- cannot tell Add from Cancel, so dismissing a window would set the
@@ -135,12 +135,12 @@ pub struct TextAnnotDialog {
     close_requested: bool,
     /// Whether the text field has been **observed holding** focus.
     ///
-    /// ★ It exists because a dialog that asks a question should put the caret
+    /// It exists because a dialog that asks a question should put the caret
     /// where the answer goes. Without it the operator draws a box, a window
     /// appears asking what it should say, and they have to click into the field
     /// before they can type — which is a step the window itself created.
     ///
-    /// ★★ Note what it records: that the field **has** focus, not that focus
+    /// Note what it records: that the field **has** focus, not that focus
     /// was **requested**. Those were conflated, and the difference is the whole
     /// defect — see [`Self::field`].
     focused_once: bool,
@@ -179,7 +179,7 @@ const WINDOW_PTS: egui::Vec2 = egui::vec2(420.0, 240.0);
 /// **How much taller the sticky note's window opens**, in points.
 ///
 ///
-/// # ★ A constant added to [`WINDOW_PTS`], not a size measured from the body
+/// # A constant added to [`WINDOW_PTS`], not a size measured from the body
 ///
 /// `print/layout.rs`' rule and `Host::fit`'s: **a size measured from the
 /// content it sizes is R128**, and this project has met that three times. So
@@ -194,12 +194,12 @@ const STICKY_EXTRA_PTS: f32 = 190.0;
 
 /// **How much taller the stamp's window opens**, in points.
 ///
-/// ★★ [`STICKY_EXTRA_PTS`]'s argument. The stamp body is seven radio rows, a
+/// [`STICKY_EXTRA_PTS`]'s argument. The stamp body is seven radio rows, a
 /// heading and a wrapped disclosure where the text box has a four-line field,
 /// and `Pass 287.0`'s size chooser adds a second heading, one combo row and a
 /// second wrapped disclosure under all of it.
 ///
-/// ★ The ten sizes live inside the combo's POPUP, which is drawn in its own
+/// The ten sizes live inside the combo's POPUP, which is drawn in its own
 /// layer and costs the window no height at all. That is the concrete reason
 /// the chooser is a combo and the gallery is radios, stated here rather than
 /// only in [`TextAnnotDialog::sizes`]: ten radio rows would have needed
@@ -286,7 +286,7 @@ const CUSTOM_DYNAMIC_NOTE_PTS: f32 = 22.0;
 /// Roughly eleven rows. Past that the body scrolls, which is what a scroll
 /// area is for.
 ///
-/// ★ A cap is needed even though [`window_size`] already clamps to the
+/// A cap is needed even though [`window_size`] already clamps to the
 /// application window. Without one a collection of forty stamps opens a dialog
 /// the full height of the window it belongs to, standing over the drawing he
 /// is annotating — the exact thing this module's header argues against for the
@@ -311,7 +311,7 @@ const CUSTOM_EXTRA_MAX_PTS: f32 = 320.0;
 /// for a body that did not yet have this section in it. **A guessed size is a
 /// claim about the content, and the content changed under the claim.**
 ///
-/// # ★★ Why counting the library is NOT the R128 feedback loop
+/// # Why counting the library is NOT the R128 feedback loop
 ///
 /// The rule this module states three times — *a size measured from the content
 /// it sizes is R128* — is about querying a `Ui` that is being laid out inside
@@ -332,7 +332,7 @@ fn custom_extra_pts(library: &Library) -> f32 {
     }
     let categories = library.categories.len();
     let stamps: usize = library.categories.iter().map(|c| c.stamps.len()).sum();
-    // ★ `saturating` arithmetic is not available on f32 and is not needed: the
+    // `saturating` arithmetic is not available on f32 and is not needed: the
     // counts come from a directory scan and the cap below bounds the result
     // whatever they are.
     #[allow(clippy::cast_precision_loss)]
@@ -381,7 +381,7 @@ fn window_size(screen: egui::Rect, kind: TextAnnotKind, custom_extra: f32) -> eg
     // silently unsized dialog.
     let extra = match kind {
         TextAnnotKind::Sticky => STICKY_EXTRA_PTS,
-        // ★ `custom_extra` is added to the stamp's arm and nowhere else. The
+        // `custom_extra` is added to the stamp's arm and nowhere else. The
         // caller computes it from the library, and the other two kinds have no
         // gallery to put one in — see [`custom_extra_pts`] for why counting the
         // operator's stamps is not the feedback loop this file forbids three
@@ -394,7 +394,7 @@ fn window_size(screen: egui::Rect, kind: TextAnnotKind, custom_extra: f32) -> eg
             .x
             .min(screen.width() - SCREEN_MARGIN_PTS)
             .max(MIN_WINDOW_PTS.x),
-        // ★ Clamped to the application window, minus the same margin the width
+        // Clamped to the application window, minus the same margin the width
         // leaves, so a tall dialog on a short screen is squeezed rather than
         // running off the bottom — and floored at `MIN_WINDOW_PTS.y` for the
         // reason `window_size`'s width floor exists: an unreachable negative
@@ -413,7 +413,7 @@ fn window_size(screen: egui::Rect, kind: TextAnnotKind, custom_extra: f32) -> eg
 /// centred vertically sits exactly over the middle of the page, which on a
 /// drawing sheet is where the content is.
 ///
-/// # ★★ This is not, and must not become, a click-relative position
+/// # This is not, and must not become, a click-relative position
 ///
 /// The review that found A16c described the discarded computation as
 /// *"click-relative"*. It never was, and making it so would contradict this
@@ -424,7 +424,7 @@ fn window_size(screen: egui::Rect, kind: TextAnnotKind, custom_extra: f32) -> eg
 /// one. What A16c is about is the dialog reaching **the position it computed**
 /// instead of the corner.
 ///
-/// ★ The clamp onto the application window lives in
+/// The clamp onto the application window lives in
 /// `dialogs::host::placement`, not here. This function's job is to say where
 /// the dialog belongs; keeping it free of edge cases is what lets it be a
 /// three-line expression that can be read at a glance and tested without a
@@ -449,7 +449,7 @@ fn opening_position(screen: egui::Rect, size: egui::Vec2) -> egui::Pos2 {
 /// | `custom` | one of the operator's own stamps was found again and re-selected |
 /// | `gone` | a custom stamp WAS remembered and is no longer in the folder |
 ///
-/// ★★★ `gone` exists because the operator is told nothing when it happens, and
+/// `gone` exists because the operator is told nothing when it happens, and
 /// that silence is deliberate: to him, *"the collection I deleted"* and *"the
 /// first stamp of this session"* are the same situation, so a sentence about it
 /// would be noise about his own housekeeping. But the two are NOT the same
@@ -481,7 +481,7 @@ impl TextAnnotDialog {
     /// [`crate::stamps::lastused`] for why the memory is a name that is
     /// re-resolved here rather than a stored stamp.
     ///
-    /// ★★ It is a REQUIRED argument rather than one with a
+    /// It is a REQUIRED argument rather than one with a
     /// keep-the-old-behaviour default. A defaulted parameter silently declines
     /// the feature at every call site written before it existed, the compiler
     /// goes quiet about it, and the tests stay green -- this project has been
@@ -535,7 +535,7 @@ impl TextAnnotDialog {
                 format!(
                     "stamp-gallery-opens restored={} remembered={}",
                     restored_kind(last, custom.as_ref()),
-                    // ★ The value is QUOTED because a category name holds spaces --
+                    // The value is QUOTED because a category name holds spaces --
                     // this fixture's is *Site Review*. A driven check parses these
                     // lines by splitting on whitespace at `key=`, so an unquoted
                     // token would arrive truncated, and a label spelled `Rev=1`
@@ -558,7 +558,7 @@ impl TextAnnotDialog {
             // would let that argument be silently overturned by an edit to a
             // `#[derive]` attribute three files away.
             //
-            // ★★ It is deliberately NOT remembered alongside the stamp. The
+            // It is deliberately NOT remembered alongside the stamp. The
             // size is a property of the box he is drawing right now, and
             // `FitTheBox` already derives it from that box; carrying a literal
             // point size over from a stamp placed on a different sheet would
@@ -598,7 +598,7 @@ impl TextAnnotDialog {
         // that it almost never has a remembered position to restore, so the
         // corner is very nearly the only place it ever appeared.
         //
-        // ★ [`Host::opening_near`] clamps this onto the application window, so
+        // [`Host::opening_near`] clamps this onto the application window, so
         // the arithmetic below may stay a statement about where the dialog
         // *should* go without also having to be a statement about monitors.
         let (frame, ()) = crate::dialogs::host::Host::new(
@@ -610,7 +610,7 @@ impl TextAnnotDialog {
         .opening_near(opening_position(screen, size))
         .show(ctx, |ui| {
             crate::diag::ui_rect(REGION_BODY, ui.max_rect());
-            // ★★★ The body scrolls; the buttons do not. See
+            // The body scrolls; the buttons do not. See
             // [`crate::dialogs::host::Host::scrolled`] for the operator's rule
             // this enacts and why it is structural rather than best-effort.
             //
@@ -644,7 +644,7 @@ impl TextAnnotDialog {
             });
             return false;
         }
-        // ★ The window's own close button counts as Cancel, and authors
+        // The window's own close button counts as Cancel, and authors
         // nothing. That is the honest reading: the operator dismissed a
         // question, and a dismissed question is not an answer.
         !(self.close_requested || !open)
@@ -672,7 +672,7 @@ impl TextAnnotDialog {
         } else {
             self.field(ui);
         }
-        // ★★★ **The icon chooser — the sticky note's own gallery**, and it sits
+        // **The icon chooser — the sticky note's own gallery**, and it sits
         // BELOW the text field rather than above it.
         //
         // The field is the question the window opened to ask (*"what is the
@@ -683,7 +683,7 @@ impl TextAnnotDialog {
         // `TextAnnotDialog::field`'s retry exists to prevent, arrived at from
         // the layout instead of from the focus race.
         //
-        // ★ It is drawn for the sticky kind alone, and absent — not greyed —
+        // It is drawn for the sticky kind alone, and absent — not greyed —
         // for the other two. R9, and the engine agrees in writing: an `icon` on
         // anything but a `/Text` is `EditError::StylePropertyNotApplicable`,
         // refused by name rather than swallowed, because a `/Stamp`'s face
@@ -696,7 +696,7 @@ impl TextAnnotDialog {
     ///
     fn footer(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
-            // ★ Accept is greyed when there is nothing to author, with the
+            // Accept is greyed when there is nothing to author, with the
             // reason on hover. That is the one place this shell greys rather
             // than hides: the control is *temporarily* unavailable — a
             // keystroke makes it live — which is exactly what greying is
@@ -741,7 +741,7 @@ impl TextAnnotDialog {
                 .char_limit(MAX_TEXT_CHARS),
         );
         crate::diag::ui_rect(REGION_TEXT, response.rect);
-        // ★★ **Ask until the field actually HOLDS focus — not once.**
+        // **Ask until the field actually HOLDS focus — not once.**
         //
         //
         // The dialog's first frame is the frame **after** the gesture that
@@ -753,7 +753,7 @@ impl TextAnnotDialog {
         // type while every keystroke went somewhere else. The operator's report
         // was *"it doesn't type anything in the box when I type"*.
         //
-        // ★ Why it is bounded, and not simply "ask whenever unfocused". The
+        // Why it is bounded, and not simply "ask whenever unfocused". The
         // original comment's objection is still correct — `request_focus` every
         // frame would fight anything the operator clicked, including Cancel, and
         // a dialog that cannot be cancelled is worse than one that cannot be
@@ -781,7 +781,7 @@ impl TextAnnotDialog {
         // keeps its original meaning — *don't fight the operator's own click* —
         // and stops being consumed by a wait that has nothing to do with them.
         let window_focused = ui.ctx().input(|i| i.viewport().focused) != Some(false);
-        // ★★ Published because a field that never takes focus is a whole
+        // Published because a field that never takes focus is a whole
         // defect class in this shell — *"it doesn't type anything in the box
         // when I type"* — and it is invisible from outside: the box is drawn,
         // the caret blinks, and the characters go somewhere else. The four
@@ -813,14 +813,14 @@ impl TextAnnotDialog {
     /// **The sticky note's icon chooser**, for the one kind that has a `/Name`
     /// picture.
     ///
-    /// ★ Radios over a combo box, matching [`Self::gallery`] one function down
+    /// Radios over a combo box, matching [`Self::gallery`] one function down
     /// and for its stated reason: seven entries is a set an operator reads at a
     /// glance, and a combo would hide six of them behind a click for no saving.
     /// Using the *same* control for the two choosers is deliberate — they are
     /// the same act (*pick one of seven*) and a window that answered it two
     /// ways would be teaching the operator a distinction that does not exist.
     ///
-    /// ★★ The disclosure under it is not optional. The engine's sticky author
+    /// The disclosure under it is not optional. The engine's sticky author
     /// passes the icon to `/Name` and **nowhere else** — the marker artwork is
     /// the same dog-eared page glyph for all seven, by the trade-dress
     /// decision `annot_author` records as *R44 choice (a)*: the spec supplies
@@ -847,7 +847,7 @@ impl TextAnnotDialog {
     /// half, and the answer to *"I have to draw the size before it gets
     /// applied"*.
     ///
-    /// # ★★ A combo, where the two galleries beside it are radios
+    /// # A combo, where the two galleries beside it are radios
     ///
     /// [`Self::icons`] argues for radios and gives the reason — *seven entries
     /// is a set an operator reads at a glance* — and then says using the same
@@ -856,7 +856,7 @@ impl TextAnnotDialog {
     /// the point rather than an exception to that rule:
     ///
     ///
-    /// # ★ What the disclosure under it is, and what it is NOT
+    /// # What the disclosure under it is, and what it is NOT
     ///
     /// [`crate::text::textannot::stamp_size_bound`] tells the operator the box
     /// will widen if the words need it. That is **not** an R8b rule 4
@@ -877,7 +877,7 @@ impl TextAnnotDialog {
                         *size,
                         t::stamp_size_label(*size),
                     );
-                    // ★★★ **Each open entry declares its own region, and this is
+                    // **Each open entry declares its own region, and this is
                     // what makes the chooser DRIVABLE at all.**
                     //
                     // The alternative a harness is pushed into without this is
@@ -892,7 +892,7 @@ impl TextAnnotDialog {
                     // harness. This project has already lost a day to that
                     // exact shape.
                     //
-                    // ★★ The name is keyed on
+                    // The name is keyed on
                     // [`StampSize::trace_token`](crate::canvas::textannot::StampSize::trace_token)
                     // — the same token the commit's `stamp-style size=` field
                     // carries — so the check presses `…stamp-size.24` and then
@@ -915,7 +915,7 @@ impl TextAnnotDialog {
                 }
             })
             .response;
-        // ★ The region covers the CONTROL, not the popup. The popup is drawn
+        // The region covers the CONTROL, not the popup. The popup is drawn
         // in its own layer and exists only while it is open, so a driven check
         // has to press this rectangle first and read the popup's own entries
         // afterwards. The union with the cursor is taken because the heading
@@ -934,7 +934,7 @@ impl TextAnnotDialog {
             egui::Rect::from_min_max(top, ui.cursor().min).union(response.rect),
             ui.clip_rect(),
         );
-        // ★★★ **The control reports its own state, and this is a separate fact
+        // **The control reports its own state, and this is a separate fact
         // from the size reaching the engine.**
         //
         // A combo that stores the operator's pick correctly and goes on
@@ -944,7 +944,7 @@ impl TextAnnotDialog {
         // `canvas::textannot`'s `stamp-style` line proves the *commit* carried
         // the number; nothing there proves the *window* ever admitted it.
         //
-        // ★★ [`crate::diag::trace_changed`] rather than `trace`, because this
+        // [`crate::diag::trace_changed`] rather than `trace`, because this
         // is a frame-loop call site: an unchanged value re-reported sixty times
         // a second answers the question no better and buries every other line
         // in the capture. The slot de-duplicates on the formatted line, so the
@@ -966,7 +966,7 @@ impl TextAnnotDialog {
 
     /// **Select a standard stamp**, and clear whatever custom one was live.
     ///
-    /// # ★★★ Why this is a method and not two lines at the call site
+    /// # Why this is a method and not two lines at the call site
     ///
     /// Because the gallery's selection spans **two fields**, and the invariant
     /// *"exactly one of them is the selection"* is the only thing that stops a
@@ -986,7 +986,7 @@ impl TextAnnotDialog {
 
     /// **Select one of the operator's own stamps.**
     ///
-    /// ★ [`Self::stamp`] is deliberately left alone rather than reset. It is
+    /// [`Self::stamp`] is deliberately left alone rather than reset. It is
     /// not read on this route — `app::actions::apply` forks on `custom` before
     /// it looks at anything else — so clearing it would buy nothing, and it
     /// means a click back onto a standard stamp restores the one he had
@@ -997,7 +997,7 @@ impl TextAnnotDialog {
 
     /// The stamp gallery: the seven standard stamps, then the operator's own.
     ///
-    /// # ★★ Why `ui.radio(..).clicked()` and not `ui.radio_value(..)`
+    /// # Why `ui.radio(..).clicked()` and not `ui.radio_value(..)`
     ///
     /// Because the selection spans **two** fields. `radio_value` writes one
     /// variable and knows nothing about the other, so a click on `Approved`
@@ -1022,7 +1022,7 @@ impl TextAnnotDialog {
         ui.add_space(4.0);
         ui.label(egui::RichText::new(t::stamp_bound()).small().weak());
         let _ = self.custom_stamps(ui);
-        // ★ The size chooser is drawn by the gallery rather than by
+        // The size chooser is drawn by the gallery rather than by
         // `Self::body`, which is where `Self::icons` is called from. The
         // difference is that `icons` guards on the kind itself and returns
         // early for the other two; this function is ALREADY the stamp-only
@@ -1030,7 +1030,7 @@ impl TextAnnotDialog {
         // false — and a condition that cannot be false is a line a reader has
         // to prove harmless.
         //
-        // ★★ It IS guarded on the custom selection, and that guard is R9 rather
+        // It IS guarded on the custom selection, and that guard is R9 rather
         // than tidiness. The size chooser sets the point size of the **label
         // text the engine draws** for a standard stamp; a custom stamp has no
         // label — its words are pixels in somebody's artwork — so the control
@@ -1069,7 +1069,7 @@ impl TextAnnotDialog {
         }
         let top = ui.cursor().min;
         let mut index = 0usize;
-        // ★★ The click is recorded here and applied after the loop, because
+        // The click is recorded here and applied after the loop, because
         // the loop holds `&self.library` and `Self::select_custom` needs
         // `&mut self`. The alternative — indexing `self.library.categories[i]`
         // so each borrow ends at the statement — reads worse and clones the
@@ -1136,7 +1136,7 @@ impl TextAnnotDialog {
         if let Some(stamp) = picked {
             self.select_custom(stamp);
         }
-        // ★★ The pre-commit disclosure for a dynamic stamp — R8b rule 4's
+        // The pre-commit disclosure for a dynamic stamp — R8b rule 4's
         // *affordance* half. It appears only once one is chosen, sits in the
         // window rather than on the canvas, blocks nothing, and does not tell
         // him to stop. Its whole job is that the choice is still reversible

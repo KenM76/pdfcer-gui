@@ -7,7 +7,7 @@ use super::CommandText;
 
 /// `format.colour` — the mark's **stroke** colour, `/C`.
 ///
-/// # ★ "Line colour", not "Colour" and not "Stroke"
+/// # "Line colour", not "Colour" and not "Stroke"
 ///
 /// Three names were possible and two are refused:
 ///
@@ -26,7 +26,7 @@ use super::CommandText;
 /// as one family, which is what an operator scanning a band of five needs more
 /// than either name needs to be short.
 ///
-/// ## ★★ The tooltip names the refusal, because the refusal is common here
+/// ## The tooltip names the refusal, because the refusal is common here
 ///
 /// A `/C` that is not RGB or grey — DeviceCMYK, or a separation — has no
 /// faithful sRGB, so the swatch shows the default rather than a converted
@@ -47,14 +47,14 @@ pub const fn format_colour() -> CommandText {
 
 /// `format.fill` — the mark's **interior** colour, `/IC`.
 ///
-/// ★★★ **The one control here whose default state is "off", and the tooltip
+/// **The one control here whose default state is "off", and the tooltip
 /// has to say so.** See this module's header: pdfcer authors every shape with
 /// no fill on purpose, Acrobat does the same, and an operator who tries a fill
 /// on a drawing needs to know in the same sentence how to get back to the
 /// mark they had. `StyleEdit::Clear` is that route and *"No fill"* is what it
 /// is called on screen.
 ///
-/// ★ It says *"shapes that have an interior"* rather than listing them,
+/// It says *"shapes that have an interior"* rather than listing them,
 /// because the list is the engine's and would go stale here: `/IC` is
 /// meaningful for `Square`, `Circle`, `Polygon` and the cloud built on one, and
 /// `MarkupStyle::interior`'s own doc says the subtypes without an interior
@@ -74,7 +74,7 @@ pub const fn format_fill() -> CommandText {
 
 /// `format.line_width` — `/BS` `/W`, in points.
 ///
-/// ★★ **The tooltip discloses that the mark's box moves.**
+/// **The tooltip discloses that the mark's box moves.**
 /// `MarkupStyle::width`'s own doc carries the warning — for every subtype
 /// except `Square` and `Circle` the `/Rect` is derived from the geometry plus a
 /// margin that contains the stroke and any arrowheads, so a wider pen needs a
@@ -96,12 +96,12 @@ pub const fn format_line_width() -> CommandText {
 
 /// `format.opacity` — `/CA`, shown as a percentage.
 ///
-/// ★ **Per cent, not `0.0`–`1.0`.** That is the unit every application an
+/// **Per cent, not `0.0`–`1.0`.** That is the unit every application an
 /// operator has used states opacity in, and `/CA`'s own range is a file-format
 /// detail they should never meet. The Properties panel's twin makes the same
 /// choice and its doc comment carries the argument.
 ///
-/// ★★ The tooltip says what the setting is *for* — seeing the drawing through
+/// The tooltip says what the setting is *for* — seeing the drawing through
 /// a mark — rather than what the number means, because the number is on the
 /// control. A tooltip that reads "sets the opacity" is a tooltip that has told
 /// the operator nothing they could not read off the label.
@@ -116,7 +116,7 @@ pub const fn format_opacity() -> CommandText {
 
 /// `format.arrowheads` — `/LE`, the pair of line endings. `/Line` only.
 ///
-/// # ★★★ Why the control offers four POSITIONS and not nine pairs
+/// # Why the control offers four POSITIONS and not nine pairs
 ///
 /// `/LE` is two independent endings (§12.5.6.7, Table 176) and pdfcer's author
 /// side offers three shapes each, which is nine combinations — a menu nobody
@@ -142,7 +142,7 @@ pub const fn format_arrowheads() -> CommandText {
 
 /// `format.line_style` — `/BS` `/S` and `/D`, the border's line style.
 ///
-/// # ★★★ Why the tooltip says what LEAVING IT ALONE does
+/// # Why the tooltip says what LEAVING IT ALONE does
 ///
 ///
 /// ⇒ So the sentence a hover most needs to carry is *your producer's dash is
@@ -150,13 +150,13 @@ pub const fn format_arrowheads() -> CommandText {
 /// learn it, and the wrong belief — *"if I recolour this it will go solid"* — is
 /// one they would have been right to hold a day earlier.
 ///
-/// ★ It names the `/Line`-and-shapes restriction the same way
+/// It names the `/Line`-and-shapes restriction the same way
 /// [`format_arrowheads`] names its own, and for that string's reason: the
 /// control is **absent** for a highlight, an underline, a strikeout and a
 /// squiggly, and an operator who saw it on a cloud and then not on a highlight
 /// is owed the rule rather than left to infer one.
 ///
-/// ★ *"Line style"* and not *"Dash pattern"*: §5.8 names the row *Line style*,
+/// *"Line style"* and not *"Dash pattern"*: §5.8 names the row *Line style*,
 /// and the chooser's first entry is **Solid** — a label reading *Dash pattern*
 /// would make the first entry read as *no dash pattern*, which is the absence
 /// of the thing the label promises rather than one of its values.
@@ -178,7 +178,7 @@ mod tests {
     /// The six hold the catalog's two copy rules — a label is a name and
     /// takes no trailing period, a tooltip is prose and ends in one.
     ///
-    /// ★ Asserted **here** rather than by adding five rows to
+    /// Asserted **here** rather than by adding five rows to
     /// `super::tests::all()`. That list is a hand-maintained enumeration of the
     /// whole catalog and is edited by whoever adds a command anywhere; five
     /// concurrent tracks were writing in this tree on the day these landed, and
@@ -221,7 +221,7 @@ mod tests {
         assert_eq!(labels.len(), total, "two of these six share a label");
     }
 
-    /// ★ **None of the five reuses a label the Font group already carries.**
+    /// **None of the five reuses a label the Font group already carries.**
     ///
     /// The collision that nearly happened: `RIBBON_IA.md` §5.8 calls this
     /// group's first row *Colour*, and `format.font_colour` is already called

@@ -115,7 +115,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .ok_or_else(|| Error::new("the binary has no parent directory to write userdata into"))?
         .join("userdata");
 
-    // ★ The guard is armed BEFORE the first write, so every return below —
+    // The guard is armed BEFORE the first write, so every return below —
     // including the error ones, including a panic — puts the sandbox back.
     let _restore = RestorePrefs(userdata.clone());
     write_prefs(&userdata)?;
@@ -221,7 +221,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         persisted.raw
     ));
 
-    // ★★ KILLED, not closed. See the module header: O187's write is not
+    // KILLED, not closed. See the module header: O187's write is not
     // debounced and must not need an exit hook. Dropping the session kills the
     // process, so nothing below can have been rescued on the way out.
     drop(session);
@@ -230,7 +230,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  next launch reads was written at the moment of the gesture",
     );
 
-    // ★★ the file, read BETWEEN the two launches, because the two halves of
+    // the file, read BETWEEN the two launches, because the two halves of
     // this check fail in ways that are identical from launch 2 alone. A write
     // that never reached the disk and a read that dropped it both present as
     // `previews=1` in a new process, and they live in different modules.
@@ -309,7 +309,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     keyboard_reaches_the_window(&session, &driver)?;
 
     let before = session.trace()?.events(PERSIST_EVENT).count();
-    // ★ ONE click on the `DragValue`, which is what puts egui into keyboard
+    // ONE click on the `DragValue`, which is what puts egui into keyboard
     // editing and selects the whole of the displayed text. See `type_the_zero`
     // for why nothing else is pressed first.
     click_region(&session, &driver, ui_rect, BUDGET, "the time-limit spinner")?;
@@ -508,13 +508,13 @@ fn open_panel(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
 
 /// Click a named region, once it has stopped moving.
 ///
-/// ★ Through [`stable_rect`] rather than [`driving::declared`], because raising
+/// Through [`stable_rect`] rather than [`driving::declared`], because raising
 /// a dock panel re-lays the dock out over several frames and `ui-rect` is a
 /// change log: reading it the frame after a panel opens answers *where that
 /// control was*, and a click aimed at a stale coordinate lands on the canvas
 /// with no error anywhere. This project has that failure on record twice.
 ///
-/// ★★ And through [`frame_of`] rather than `session.frame()`, which costs
+/// And through [`frame_of`] rather than `session.frame()`, which costs
 /// nothing on a main-window region and survives the day this panel is allowed
 /// to float into its own OS window — at which point its rectangles become
 /// relative to *that* window's origin and every click would land hundreds of
@@ -542,7 +542,7 @@ fn click_region(
 
 /// **Prove a keystroke reaches this window before typing anything that matters.**
 ///
-/// ★★★ Without this, a build in which the pointer works and the keyboard does
+/// Without this, a build in which the pointer works and the keyboard does
 /// not would produce *"typing `0` into the limit wrote nothing"* — a confident,
 /// detailed and entirely wrong report naming O187 as the culprit. `find_bar`'s
 /// first run did exactly that against a build in which `Ctrl+F` worked.
@@ -578,7 +578,7 @@ fn keyboard_reaches_the_window(session: &Session, driver: &Driver) -> Result<()>
 
 /// Type the zero and commit it.
 ///
-/// ★ **No `Ctrl+A` first, deliberately.** egui's `DragValue` selects the whole
+/// **No `Ctrl+A` first, deliberately.** egui's `DragValue` selects the whole
 /// of its displayed text the frame its edit gains focus, so the click has
 /// already done it — and `Ctrl+A` is bound in this application to a document
 /// verb whose guard depends on a text field being focused. Pressing it here
@@ -586,7 +586,7 @@ fn keyboard_reaches_the_window(session: &Session, driver: &Driver) -> Result<()>
 /// defect in this project once broke, which is a dependency worth not having
 /// when the alternative is nothing at all.
 ///
-/// ★★ `Enter` rather than clicking elsewhere. The commit is on `ended` —
+/// `Enter` rather than clicking elsewhere. The commit is on `ended` —
 /// `lost_focus` — because `app::spinnerdraft` exists to stop a re-seeded value
 /// throwing a drag away, and Enter is the only way to end the edit that does
 /// not also press something else.
@@ -631,7 +631,7 @@ struct Persisted {
 /// The first `page-previews-persisted` line **after** the first `before` of
 /// them, or `None` if the gesture produced no new one.
 ///
-/// ★ Counted rather than compared against an absolute absence, because this
+/// Counted rather than compared against an absolute absence, because this
 /// check performs two write-through gestures in two processes and a naive
 /// `last()` would happily return the previous one. An absence assertion is only
 /// as good as when its baseline was taken.
@@ -688,13 +688,13 @@ const SEED_BUDGET_MS: usize = 2000;
 
 /// Write the sandbox's preference file to this check's starting state.
 ///
-/// ★★★ Through `sandbox::write_prefs`, never `fs::write`, and never a delete.
+/// Through `sandbox::write_prefs`, never `fs::write`, and never a delete.
 /// The header it prepends carries `ask_default_app = false`; three checks that
 /// wrote the file directly re-enabled the O173 startup offer in front of their
 /// own launches, and deleting it does the same thing by omission — every absent
 /// key takes its compiled-in default, and that one's is `true`.
 ///
-/// ★ The previews tick is left absent and takes its compiled-in default, which
+/// The previews tick is left absent and takes its compiled-in default, which
 /// is on. The limit is written, because its compiled-in default is the value
 /// this check types — the module header carries that argument in full.
 ///
@@ -719,7 +719,7 @@ fn write_prefs(userdata: &Path) -> Result<()> {
 
 /// Put the sandbox back to the bare seed when the check ends, however it ends.
 ///
-/// ★ A guard rather than a line at the end, because there are a dozen returns
+/// A guard rather than a line at the end, because there are a dozen returns
 /// above and the one that gets forgotten is the one that leaves this check's
 /// gestures — the previews tick cleared, a planted time limit — standing in
 /// front of every check that runs afterwards. The next check to draw a Pages
@@ -754,7 +754,7 @@ mod tests {
 
     /// **The value typed in is the one value that is not a quantity.**
     ///
-    /// ★ Pinned because every other number this control accepts is clamped to a
+    /// Pinned because every other number this control accepts is clamped to a
     /// floor, and a check that typed `1` would pass against a build with O187's
     /// second half missing entirely — `1` and `100` are both *a limit*, and the
     /// operator would never know. Only `0` can tell the two builds apart.
@@ -770,7 +770,7 @@ mod tests {
 
     /// The three regions named are the panel's, not the ribbon's.
     ///
-    /// ★ A check that named `ribbon.item.view.panel_pages` as its control would
+    /// A check that named `ribbon.item.view.panel_pages` as its control would
     /// be asserting that a menu entry exists, which is true in every build that
     /// has ever shipped and says nothing about the preference.
     #[test]
@@ -785,7 +785,7 @@ mod tests {
 
     /// The control chord is one this check does not otherwise depend on.
     ///
-    /// ★★ `Ctrl+2` puts the application into the mode it is already in, so the
+    /// `Ctrl+2` puts the application into the mode it is already in, so the
     /// probe cannot change any state an assertion reads. A probe bound to a
     /// verb with a side effect would be a setup step pretending to be a
     /// measurement.
@@ -801,7 +801,7 @@ mod tests {
 
     /// `value_of` reads a key past the sandbox header's comments.
     ///
-    /// ★ The header is comment lines and a blank; a parser that took the first
+    /// The header is comment lines and a blank; a parser that took the first
     /// `=` it saw anywhere would read one of them. This is the assertion that
     /// the independent oracle is actually independent *and* correct.
     #[test]

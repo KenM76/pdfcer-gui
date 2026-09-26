@@ -27,13 +27,13 @@ const RESULT_EVENT: &str = "place-result"; // ui-text-exempt: trace event name, 
 const REGION_PREFIX: &str = "insert-image"; // ui-text-exempt: trace region prefix, never displayed
 /// Where on the page the click lands, as a fraction of the sheet.
 ///
-/// ★ Away from the edges and away from the centre. A default placement already
+/// Away from the edges and away from the centre. A default placement already
 /// sits near the middle, so a click there could pass against a build that
 /// ignored the pointer completely.
 const AT: (f64, f64) = (0.31, 0.62);
 /// How far the recorded placement may sit from the point that was clicked.
 ///
-/// ★ Generous against the real error and tight against the real defect. The
+/// Generous against the real error and tight against the real defect. The
 /// measured agreement is under half a point; one screen pixel at the fit zoom
 /// this fixture opens at is about 3 pt, so a few points absorbs the click
 /// quantisation. The mirror this check was written after is about 300 pt out,
@@ -102,7 +102,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // The image the picker will "choose".
     //
-    // ★ Its own file rather than sharing `insert_image`'s, because both checks
+    // Its own file rather than sharing `insert_image`'s, because both checks
     // write into one output directory and a shared path would make each run
     // depend on whether the other had run first. That order-dependence is a
     // hazard this suite has already been bitten by once.
@@ -162,7 +162,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- B: press it, and the window steps aside ---------------------------
     //
-    // ★★★ **`frame_of`, never `session.frame()`.** The insert window is a real
+    // **`frame_of`, never `session.frame()`.** The insert window is a real
     // OS viewport — its regions are tagged `viewport="0BC0"` and its rects
     // start at `x=0` because they are relative to ITS client origin, not the
     // application's. Converting them against the main window aims hundreds of
@@ -174,7 +174,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // touched the button. `D:/dev/rag/egui/` carries three instances of the
     // same shape; this is the fourth.
     //
-    // ★ The frame is resolved from a trace read now rather than the one above:
+    // The frame is resolved from a trace read now rather than the one above:
     // a stale coordinate is the other harness hazard this project has written
     // up twice, and re-reading is free.
     let trace = session.trace()?;
@@ -220,7 +220,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    // ★★★ **WHERE it landed, not merely that it landed.**
+    // **WHERE it landed, not merely that it landed.**
     //
     // The first version of this check asserted the line's existence and
     // nothing else, and it would have passed the build it was written
@@ -248,7 +248,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let (want_x, want_y) = (at.x, at.y);
     let off = (f64::from(llx) - want_x).hypot(f64::from(lly) - want_y);
     if off > TOLERANCE_PT {
-        // ★ The mirror is named explicitly, because it is the failure this
+        // The mirror is named explicitly, because it is the failure this
         // check has actually seen and its signature is unmistakable: the x
         // agrees to a fraction of a point and the y is the page height minus
         // the one aimed at.

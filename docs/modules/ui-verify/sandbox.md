@@ -3,7 +3,7 @@
 **A profile directory per check** — the fix for a suite that measured the
 order it ran in.
 
-# ★★★ The defect this module exists for
+# The defect this module exists for
 
 `pdfcer-gui` is **portable**: `pdfcer_core::settings::resolve_store()` looks
 for a writable `userdata/` *beside the executable* first, and only falls back
@@ -77,7 +77,7 @@ before the process starts, and its own note argues why and what that costs a
 check written to measure the thing it suppresses. Nothing else of the
 operator's is brought across; see below.
 
-## ★ Why a hard link rather than a copy
+## Why a hard link rather than a copy
 
 Three properties, each of which a copy would spend:
 
@@ -93,7 +93,7 @@ feature*. A sandbox that quietly refreshed the timestamp would disarm that
 gate for the whole suite, and the failure it lets through is precisely the
 one the gate was written to catch.
 
-## ★★ Why the sandbox root sits beside the exe and not under `--out`
+## Why the sandbox root sits beside the exe and not under `--out`
 
 
 It also inherits the operator's own discipline. The standing rule is **never
@@ -109,7 +109,7 @@ the run header prints it, because "this sweep copied 4 GB" is worth knowing
 and "this sweep silently did something other than what the module says" is
 not.
 
-## ★ What is brought across, and what deliberately is not
+## What is brought across, and what deliberately is not
 
 **Brought:** the executable, its sibling `models/` directory, and any sibling
 `.dll`. `models/ocrs` is resolved *beside the executable* by

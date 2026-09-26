@@ -14,7 +14,7 @@ use crate::report::CheckReport;
 
 /// The mode this runs in.
 ///
-/// ★ **Read**, deliberately, and it is an assertion rather than a convenience.
+/// **Read**, deliberately, and it is an assertion rather than a convenience.
 /// An export reads the document and writes elsewhere, so there is no mode in
 /// which it should be refused — and a reading stance exporting a drawing is
 /// exactly what a reading stance is for. If a capability gate ever creeps onto
@@ -83,7 +83,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
 
-    // ★ Removed before the run, not just named. A file left by an earlier run
+    // Removed before the run, not just named. A file left by an earlier run
     // would let a build that writes NOTHING pass every assertion below — which
     // is `a_driven_check_that_does_not_establish_its_preconditions_measures_the_previous_run`
     // in the Rust RAG, and it is the failure this line exists to prevent.
@@ -168,7 +168,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }));
     }
 
-    // --- 3: ★ the scale was INFERRED, not assumed --------------------------
+    // --- 3: the scale was INFERRED, not assumed --------------------------
     //
     // The window traces its suggestion on open, and the value is the whole
     // point of the feature: `Uncalibrated` on a drawing with no calibrated
@@ -208,7 +208,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("wrote: `{}`", wrote.raw));
 
-    // --- 5: ★ the file is on disk, and it is a DXF -------------------------
+    // --- 5: the file is on disk, and it is a DXF -------------------------
     if !target.exists() {
         return Ok(Some(format!(
             "the shell traced a successful export and {} does not exist. The disclosure and \
@@ -236,7 +236,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         written.len()
     ));
 
-    // --- 6: ★★ the file agrees with what the shell REPORTED ----------------
+    // --- 6: the file agrees with what the shell REPORTED ----------------
     //
     // The cross-check, and the reason this check is worth more than a smoke
     // test. `polylines` counts LINE + LWPOLYLINE entities, so those two markers

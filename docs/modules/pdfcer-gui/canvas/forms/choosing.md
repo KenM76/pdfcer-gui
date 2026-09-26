@@ -37,7 +37,7 @@ A Tab arrival deliberately leaves the list **closed**: tabbing through a
 form would otherwise spray open dropdowns over the sheet, and no program
 behaves that way. Space, Enter or either vertical arrow opens it.
 
-## ★ The popup is constrained to the half-plane it chose, not to the screen
+## The popup is constrained to the half-plane it chose, not to the screen
 
 A page-anchored popup constrained to the viewport slides **back over its own
 anchor** when it does not fit — and then it takes that anchor's clicks,

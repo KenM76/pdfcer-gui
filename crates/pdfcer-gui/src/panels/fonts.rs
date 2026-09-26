@@ -232,7 +232,7 @@ fn row_body(ui: &mut egui::Ui, f: &pdfcer_core::fontinfo::FontRecord) {
 
 /// Render one font's `fsType` state.
 ///
-/// ★ Four states, and **none of them may look like `0`.** `fsType == 0`
+/// Four states, and **none of them may look like `0`.** `fsType == 0`
 /// genuinely *means* Installable — the most permissive value the field can
 /// express — so a blank, a dash, or an empty line for "we could not read it"
 /// would assert the broadest embedding right there is on the strength of
@@ -292,7 +292,7 @@ mod tests {
         pdfcer_core::fontinfo::inventory(&doc.view())
     }
 
-    /// **★ A font whose codes are glyph indices into its own program is
+    /// **A font whose codes are glyph indices into its own program is
     /// reported as blocked, with a reason.**
     ///
     /// The sentence this panel exists to say, asserted against a real file.

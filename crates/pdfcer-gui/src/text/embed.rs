@@ -14,7 +14,7 @@ pub const fn window_title() -> &'static str {
 
 /// The opening sentence.
 ///
-/// ★ It states the **permanence** and the **size**, which are the two
+/// It states the **permanence** and the **size**, which are the two
 /// consequences an operator cannot see from a list of font names. Embedding is
 /// undoable in this session; it is not undoable in a file somebody has already
 /// been sent.
@@ -39,12 +39,12 @@ pub fn will_embed(count: usize) -> String {
 
 /// One font that will be embedded, and where it comes from.
 ///
-/// ★★ It names the **source**, not just the face. Two files on a machine can
+/// It names the **source**, not just the face. Two files on a machine can
 /// advertise one name and produce visibly different letters, and an operator
 /// embedding into a drawing they will send out is entitled to know which one is
 /// going in.
 ///
-/// ★★★ Three rungs, three sentences, and the collapse to two would be the
+/// Three rungs, three sentences, and the collapse to two would be the
 /// defect. `FontMatch`'s own doc calls them *"three materially different acts:
 /// honouring a name the file already spells, applying a well-known family
 /// equivalence, or falling back to a face pdfcer ships"* — and the third is the
@@ -55,14 +55,14 @@ pub fn embed_row(face: &str, source: &str, matched: crate::app::fonts::Match) ->
     use crate::app::fonts::Match;
     match matched {
         Match::Exact => format!("{face} — from {source}"),
-        // ★ The weaker file match, said plainly. A stem match is this shell
+        // The weaker file match, said plainly. A stem match is this shell
         // deciding that a file called `Helv.ttf` is the face the document calls
         // `Helvetica` — an inference, and Rule 4's surviving half says an
         // inference the operator cannot see owes them a report.
         Match::Stem => {
             format!("{face} — from {source}, matched on the file's name rather than the font's")
         }
-        // ★★ A documented family equivalence, and the sentence says the
+        // A documented family equivalence, and the sentence says the
         // letterforms differ. `Helvetica` → `Arial` is metric-compatible by
         // design and the advances come from `/Widths` regardless, so the page
         // does not reflow — what changes is the shape of every letter, which is
@@ -71,7 +71,7 @@ pub fn embed_row(face: &str, source: &str, matched: crate::app::fonts::Match) ->
             "{face} — from {source}, a different face of the same metrics. The letters \
              will look different."
         ),
-        // ★★★ The loud one, and O47's answer was "always, DISCLOSED LOUDLY".
+        // The loud one, and O47's answer was "always, DISCLOSED LOUDLY".
         // It says three things in order: that nothing of theirs answered, that
         // pdfcer supplied one of its own, and that the result is a stand-in.
         // Dropping any of the three leaves a row that reads like the others.
@@ -90,11 +90,11 @@ pub fn cannot_embed(count: usize) -> String {
 
 /// One blocked font, with the engine's reason put into the operator's words.
 ///
-/// ★★★ Every arm names **what would fix it**, or says plainly that nothing
+/// Every arm names **what would fix it**, or says plainly that nothing
 /// will. A reason with no remedy and no closure is a sentence that leaves
 /// somebody trying things.
 ///
-/// ★ `#[non_exhaustive]` on the engine's enum means a ninth blocker is
+/// `#[non_exhaustive]` on the engine's enum means a ninth blocker is
 /// possible, and the catch-all says *"pdfcer would not embed it"* rather than
 /// inventing a reason — the same posture `TextColor::Other` takes. A build
 /// meeting a blocker it cannot name should say so, not guess.
@@ -169,7 +169,7 @@ pub fn blocked_row(face: &str, blocker: &EmbedBlocker, pdfcer_has_a_copy: bool) 
 ///
 /// **The offer: which fonts pdfcer could stand in for, by name.**
 ///
-/// # ★★★ A LIST, NEVER A COUNT
+/// # A LIST, NEVER A COUNT
 ///
 /// *"3 fonts would be substituted"* is a number an operator cannot act on.
 /// *"Helvetica, Helvetica-Bold, Times-Roman"* is a sentence he can read and
@@ -177,7 +177,7 @@ pub fn blocked_row(face: &str, blocker: &EmbedBlocker, pdfcer_has_a_copy: bool) 
 /// reads, so yes"*. The whole reason this control is safe to offer is that the
 /// consequence is stated **before** the press, and a count does not state it.
 ///
-/// ★ The document's own spelling, subset tag and all, because that is the
+/// The document's own spelling, subset tag and all, because that is the
 /// string he saw in the Fonts panel and in whatever told him a font was
 /// missing. Translating it to a tidier family name here would make the window
 /// and the panel disagree about what the document contains.
@@ -197,13 +197,13 @@ pub fn own_fonts_offer(faces: &[String]) -> String {
 /// **What using them costs, in his terms** — the two things the list does not
 /// say.
 ///
-/// ★★ Both sentences are consequences he cannot see by looking at the drawing,
+/// Both sentences are consequences he cannot see by looking at the drawing,
 /// which is exactly the class rule 4 says an inference owes a report for.
 ///
 /// 1. **The letters change on somebody else's screen.** It is his drawing and
 ///    his client's monitor, and a stand-in is a different face however good the
 ///    metrics match — the page does not reflow, and every letterform differs.
-/// 2. ★★★ **It is a licence he takes on, not just a look he accepts.** pdfcer's
+/// 2. **It is a licence he takes on, not just a look he accepts.** pdfcer's
 ///    fourteen substitutes are BSD-3-Clause (`THIRD_PARTY_LICENSES.md`,
 ///    *"Bundled Foxit substitute faces"*), and embedding one puts it inside a
 ///    file he then sends out, carrying that licence's attribution condition
@@ -223,11 +223,11 @@ pub const fn own_fonts_consequence() -> &'static str {
 
 /// The checkbox itself.
 ///
-/// ★ Phrased as what it does, not as what it is. *"Use pdfcer's own copies"*
+/// Phrased as what it does, not as what it is. *"Use pdfcer's own copies"*
 /// answers *"what will happen if I tick this"*; a label like *"Bundled fonts"*
 /// names an implementation detail and makes the operator work out the rest.
 ///
-/// ★★ *"where none of yours match"* is in the label rather than only in the
+/// *"where none of yours match"* is in the label rather than only in the
 /// prose above, because that clause is what makes the control safe: it is the
 /// **last** rung, so ticking it can never displace a real font he owns. A label
 /// without it reads as *"use substitutes instead of my fonts"*, which is not
@@ -237,7 +237,7 @@ pub const fn own_fonts_checkbox() -> &'static str {
     "Use pdfcer's own copies where none of yours match"
 }
 
-/// ★ Distinct from a blocked font: an unmatched name is one the *request* named
+/// Distinct from a blocked font: an unmatched name is one the *request* named
 /// and the document does not have, which is an operator's typo or a stale list
 /// rather than anything about the file.
 #[must_use]
@@ -250,11 +250,11 @@ pub fn unmatched(names: &[String]) -> String {
 
 /// What the document claims about PDF/A, and what an embed does to it.
 ///
-/// ★★★ Returns `None` when there is no claim, because a document with no PDF/A
+/// Returns `None` when there is no claim, because a document with no PDF/A
 /// identification owes no sentence and a window that said *"this is not a
 /// PDF/A"* to everybody would be noise on every ordinary drawing.
 ///
-/// ★★ pdfcer is **choosing** this disclosure rather than matching Acrobat —
+/// pdfcer is **choosing** this disclosure rather than matching Acrobat —
 /// their own note says whether Acrobat warns about the same thing is an
 /// unresolved gap in the parity research. A deliberate choice is one this shell
 /// repeats rather than quietly dropping.
@@ -274,7 +274,7 @@ pub fn pdfa_line(claim: &PdfaClaim) -> Option<String> {
                  the document's, and pdfcer does not re-check it."
             ))
         }
-        // ★ Its own sentence, and the engine's own reason for the distinction:
+        // Its own sentence, and the engine's own reason for the distinction:
         // an output intent alone is NOT a PDF/A claim, because a plain PDF may
         // legitimately carry one for colour management. Reporting it as a claim
         // would tell an operator their drawing is something it is not.
@@ -320,7 +320,7 @@ pub fn refused(detail: &str) -> String {
 
 /// The most the file can grow by, in the operator's units.
 ///
-/// ★★ A **ceiling**, said as one. `bytes_added_uncompressed` is explicit that
+/// A **ceiling**, said as one. `bytes_added_uncompressed` is explicit that
 /// the writer deflates every program stream and a face typically halves, so
 /// this number is always larger than what lands on disk. Reporting it as a
 /// prediction would make pdfcer wrong on every single embed; reporting it as a
@@ -339,7 +339,7 @@ pub fn size_ceiling(bytes: u64) -> String {
 
 /// How many fonts are still without a program once this plan has run.
 ///
-/// ★★★ `missing_after` is *"the end state the whole feature exists to reach"*,
+/// `missing_after` is *"the end state the whole feature exists to reach"*,
 /// and the engine says so in those words. A window that reported only what it
 /// embedded would read as success on a file a print service will still reject.
 /// Returns `None` at zero — there is no sentence to write about a number that
@@ -356,7 +356,7 @@ pub fn still_missing(count: usize) -> Option<String> {
 
 /// The same sentence when some of those fonts are **not** listed below.
 ///
-/// ★★★ Gated on `unexplained_missing`, and the engine's own docs demand exactly
+/// Gated on `unexplained_missing`, and the engine's own docs demand exactly
 /// this gate: under a named selection a font nobody asked about is neither a
 /// target nor a refusal, so *"each one is listed below"* becomes a claim the
 /// window cannot keep and an operator is sent looking for reasons that were
@@ -373,7 +373,7 @@ pub fn still_missing_partly_unexplained(count: usize, unexplained: usize) -> Str
 
 /// Why the Embed button is dead.
 ///
-/// ★★ It points at the **evidence already on screen** rather than naming a
+/// It points at the **evidence already on screen** rather than naming a
 /// cause. The window is open precisely because there is a list, every row of
 /// that list carries its own reason, and those reasons differ — one font needs
 /// a folder, another is a Type 3 that never can be. A single hover sentence
@@ -386,7 +386,7 @@ pub const fn nothing_to_embed() -> &'static str {
 
 /// The disclosure after an embed, one sentence per fact worth stating.
 ///
-/// ★★★ Three clauses and each is CONDITIONAL, which is the whole design. A
+/// Three clauses and each is CONDITIONAL, which is the whole design. A
 /// fixed sentence would either say nothing about the substitutions or say
 /// *"0 substituted"* on every ordinary embed, and both train an operator to
 /// stop reading the line.
@@ -425,7 +425,7 @@ pub fn embedded_disclosure(
 mod tests {
     use super::*;
 
-    /// ★★ **Every blocker an operator can meet names a remedy or says there is
+    /// **Every blocker an operator can meet names a remedy or says there is
     /// none.**
     ///
     /// The failure this guards is a reason that leaves somebody trying things:
@@ -443,7 +443,7 @@ mod tests {
             EmbedBlocker::ProgramUnrecognised,
             EmbedBlocker::ProgramIsCollection,
         ] {
-            // ★ BOTH positions of the new flag, in the same loop. A sweep run
+            // BOTH positions of the new flag, in the same loop. A sweep run
             // only at `false` would have left the `pdfcer_has_a_copy` arm —
             // which is the arm a declined standard-14 font actually lands on —
             // untested by the completeness check written to make sure no
@@ -463,14 +463,14 @@ mod tests {
     /// **A standard-14 font pdfcer carries is told so, and one it does not is
     /// not** — the two halves of the same row, asserted together.
     ///
-    /// ★★★ This is the assertion that catches the wording defect the switch
+    /// This is the assertion that catches the wording defect the switch
     /// created. Before 2026-09-05 pdfcer's own faces answered
     /// unconditionally, so a font pdfcer carries could never be reported as
     /// *"pdfcer has nowhere to take it from"*; with the box unticked it can be,
     /// and the old sentence would have told the operator pdfcer has no copy of
     /// a font it is holding.
     ///
-    /// ★ The two are asserted **against each other** rather than against
+    /// The two are asserted **against each other** rather than against
     /// literal strings. A test pinning the exact sentence would fail every time
     /// somebody improved the wording, which trains people to update the
     /// expected string without reading it. What must never happen is the two
@@ -498,7 +498,7 @@ mod tests {
 
     /// **The offer names the fonts**, and does not merely count them.
     ///
-    /// ★★ The property is that every face in the list appears in the sentence.
+    /// The property is that every face in the list appears in the sentence.
     /// A count is what a hurried implementation produces and it is exactly what
     /// makes the disclosure useless: an operator cannot decide whether he minds
     /// a substitution without knowing which font is being substituted.
@@ -542,7 +542,7 @@ mod tests {
 
     /// **A document with no PDF/A claim gets no sentence about PDF/A.**
     ///
-    /// ★ The one that matters: this window opens on every drawing, and a line
+    /// The one that matters: this window opens on every drawing, and a line
     /// saying *"this is not a PDF/A"* on all of them is noise that trains an
     /// operator to stop reading the window.
     #[test]
@@ -559,7 +559,7 @@ mod tests {
         );
     }
 
-    /// ★★ **An output intent is not reported as a claim.**
+    /// **An output intent is not reported as a claim.**
     ///
     /// The engine's own distinction, and losing it would tell an operator their
     /// colour-managed drawing claims a conformance it does not.
@@ -570,7 +570,7 @@ mod tests {
         assert!(line.contains("not a claim"), "{line}");
     }
 
-    /// ★★ **The disclosure after an embed drops the clauses that would be
+    /// **The disclosure after an embed drops the clauses that would be
     /// zero.**
     ///
     /// The failure this guards is the fixed sentence: a line reading
@@ -596,7 +596,7 @@ mod tests {
         assert!(still_missing(1).is_some());
     }
 
-    /// ★★★ **The size is stated as a CEILING, in both branches.**
+    /// **The size is stated as a CEILING, in both branches.**
     ///
     /// `bytes_added_uncompressed` is always larger than what lands on disk -
     /// the writer deflates every program stream - so a sentence phrased as a
@@ -610,7 +610,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **Each of the four rungs reads as a different sentence, and the
+    /// **Each of the four rungs reads as a different sentence, and the
     /// bundled one is the loudest.**
     ///
     /// `OPERATOR_REQUESTS.md` **O47** was answered *"yes"* — pdfcer may use its
@@ -635,7 +635,7 @@ mod tests {
         assert!(stem.contains("matched on the file's name"), "{stem}");
         assert!(alias.contains("look different"), "{alias}");
 
-        // ★★ The three clauses the loud row must carry, asserted one at a time
+        // The three clauses the loud row must carry, asserted one at a time
         // so a rewrite that drops one fails naming which.
         assert!(
             bundled.contains("none of your fonts matched"),

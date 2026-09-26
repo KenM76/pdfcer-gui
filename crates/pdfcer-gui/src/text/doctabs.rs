@@ -6,7 +6,7 @@
 //! tab strip to find the other, and reads the caption to check where it will
 //! land.
 //!
-//! ## ★ The unsaved marker is a PREFIX, and that is not a style choice
+//! ## The unsaved marker is a PREFIX, and that is not a style choice
 //!
 //! A tab is truncated from the right with an ellipsis when the strip is
 //! crowded — which is exactly when several documents are open, which is
@@ -17,7 +17,7 @@
 //!
 //! So it goes in front, where truncation cannot reach it.
 //!
-//! ## ★ And the tooltip is the whole path, always
+//! ## And the tooltip is the whole path, always
 //!
 //! `SW41177.pdf` and `SW41177.pdf` are two different drawings when they are in
 //! two different job folders, and a CAD office has that situation constantly.
@@ -74,7 +74,7 @@ pub fn tab_tooltip_open(path: &Path, unsaved: bool) -> String {
 
 /// The hover text on a **created** document's tab.
 ///
-/// ★ It says the document has never been written, which the path cannot: a
+/// It says the document has never been written, which the path cannot: a
 /// created document's path is a *name*, so showing it as a location would
 /// assert that a file exists at `Untitled 2.pdf` in whatever the operator reads
 /// as the current directory.
@@ -117,7 +117,7 @@ pub const fn tab_reason_needs_password() -> &'static str {
 /// | one | `SW41177.pdf — pdfcer` |
 /// | several | `SW41177.pdf — 3 documents open — pdfcer` |
 ///
-/// ★ The count is there because the window title is the **only** place a
+/// The count is there because the window title is the **only** place a
 /// tabbed application reaches an operator who is not looking at it. Alt-Tab,
 /// the taskbar and a screen-reader's window list all read this string and none
 /// of them can see the tab strip; an operator who left three drawings marked
@@ -140,7 +140,7 @@ pub const fn tab_reason_needs_password() -> &'static str {
 /// parameter) is the exit statement when the mode is on and `None` the rest of
 /// the time, so the hint exists for exactly as long as the state it explains.
 ///
-/// ★ It goes **first**, ahead of the file name, and that overrides the
+/// It goes **first**, ahead of the file name, and that overrides the
 /// paragraph above for one state only. The argument is this module's own, from
 /// the unsaved marker three functions up: *a trailing marker is the first thing
 /// the ellipsis eats.* A taskbar button showing `SW41177.pdf — pdfcer — 2…` has
@@ -149,7 +149,7 @@ pub const fn tab_reason_needs_password() -> &'static str {
 /// document name is still there and still ahead of everything else that is not
 /// this.
 ///
-/// ★ The build stamp stays **last**, untouched, because
+/// The build stamp stays **last**, untouched, because
 /// `ui-verify`'s `the_title_bar_carries_the_build_time` finds it by splitting
 /// the title from the right. Prefixing costs that check nothing; appending
 /// would have silently re-aimed it at this sentence and left the stamp
@@ -162,7 +162,7 @@ pub const fn tab_reason_needs_password() -> &'static str {
 pub fn window_title(active: Option<&Path>, count: usize, read_mode: Option<&str>) -> String {
     let base = crate::text::window_title();
     let stamp = build_day();
-    // ★ One join, in one place. The alternative — four `format!`s each with the
+    // One join, in one place. The alternative — four `format!`s each with the
     // prefix threaded in — is four chances for one of them to drop it, and the
     // one that dropped it would be the no-document form, which is exactly the
     // state an operator reaches by closing a file *while in read mode*.
@@ -209,7 +209,7 @@ pub fn window_title(active: Option<&Path>, count: usize, read_mode: Option<&str>
 /// window list. If a report can be about the wrong build, the build has to be
 /// on the outside of the window.
 ///
-/// ★★★ **The day AND the local time** — 2026-09-02, on the operator's ask:
+/// **The day AND the local time** — 2026-09-02, on the operator's ask:
 /// *"add the local compilation time to the top bar at the end of the date you
 /// added."*
 ///
@@ -221,7 +221,7 @@ pub fn window_title(active: Option<&Path>, count: usize, read_mode: Option<&str>
 /// time answer *is this the one I just installed*, which is the question that
 /// was actually being got wrong.
 ///
-/// # ★★ The zone is shown when it is NOT local, and that is the whole subtlety
+/// # The zone is shown when it is NOT local, and that is the whole subtlety
 ///
 /// `PDFCER_BUILD_TIME` has two producers and they disagree about zone:
 ///
@@ -233,7 +233,7 @@ pub fn window_title(active: Option<&Path>, count: usize, read_mode: Option<&str>
 /// a true hour in a named zone**, which is `build.rs`'s own sentence about why
 /// the fallback labels itself.
 ///
-/// ★ Still derived by truncation from the one value with one producer, so it
+/// Still derived by truncation from the one value with one producer, so it
 /// cannot disagree with what About shows. A second stamp computed elsewhere
 /// eventually would.
 fn build_day() -> &'static str {
@@ -242,7 +242,7 @@ fn build_day() -> &'static str {
 
 /// [`build_day`]'s rule, over a stamp passed in so it can be tested.
 ///
-/// ★ Every unrecognised shape falls through to the whole string rather than to a
+/// Every unrecognised shape falls through to the whole string rather than to a
 /// placeholder: the failure this guards against is a title with **no build in
 /// it**, and something datelike is always better than nothing.
 fn stamp_for_title(stamp: &'static str) -> &'static str {
@@ -251,7 +251,7 @@ fn stamp_for_title(stamp: &'static str) -> &'static str {
     let Some((minute_end, _)) = stamp.char_indices().nth(16) else {
         return stamp;
     };
-    // ★ The zone is whatever follows, and only a NON-local one is kept. `UTC`
+    // The zone is whatever follows, and only a NON-local one is kept. `UTC`
     // is the fallback's label; a numeric offset means the packager set it from
     // the machine's own clock and the operator is already standing in it.
     let zone = stamp[minute_end..].trim();
@@ -280,7 +280,7 @@ pub fn drag_landing_here(moving: usize, gap: usize, page_count: usize) -> String
 
 /// **Where a page drag would land, when it lands in a DIFFERENT document.**
 ///
-/// ★ It says **copy**, and saying so is the whole point of the sentence.
+/// It says **copy**, and saying so is the whole point of the sentence.
 ///
 /// Dragging a page from one open document into another does not remove it from
 /// the one it came from, and an operator who assumed a move would find out by
@@ -296,7 +296,7 @@ pub fn drag_landing_here(moving: usize, gap: usize, page_count: usize) -> String
 /// Explorer reaches the same conclusion for the same reason and copies between
 /// volumes by default.
 ///
-/// ★ It names the **source**, not the target. The operator is looking at the
+/// It names the **source**, not the target. The operator is looking at the
 /// target — it is the panel or the page view the pointer is inside — so the
 /// document that is not on screen is the one the sentence has to supply.
 #[must_use]
@@ -314,7 +314,7 @@ pub fn drag_landing_other(moving: usize, gap: usize, source: &str, page_count: u
 
 /// **Where a page drag would land, when Shift is held and it therefore MOVES.**
 ///
-/// ★ Shift, because that is what Shift does on this desktop. Windows has bound
+/// Shift, because that is what Shift does on this desktop. Windows has bound
 /// the drag modifiers the same way since the mid-nineties and every operator on
 /// it has the reflex already:
 ///
@@ -329,7 +329,7 @@ pub fn drag_landing_other(moving: usize, gap: usize, source: &str, page_count: u
 /// separate undo stacks — so the unmodified drag copies and Shift is what asks
 /// for the sheets to be taken out of where they came from.
 ///
-/// ## ★ The sentence says the source will lose them, in those words
+/// ## The sentence says the source will lose them, in those words
 ///
 /// A copy that turns out to have been a move is discovered a day later, on the
 /// drawing you did not have open. So the caption names the source document and
@@ -349,14 +349,14 @@ pub fn drag_landing_move(moving: usize, gap: usize, source: &str, page_count: us
 /// **The copy caption with the hint that the other half of the gesture
 /// exists.**
 ///
-/// ★ One function rather than two joined at the call site, because the joined
+/// One function rather than two joined at the call site, because the joined
 /// result is what the operator reads and `R1` puts *that* in the catalogue. A
 /// `format!("{} {}", a, b)` in a caller is a composition decision — how the two
 /// sentences meet, whether with a space, a dash or a newline — made somewhere
 /// nobody looking for the operator's words would think to look. The gate
 /// caught it.
 ///
-/// ★ The hint rides with the copy sentence and only with it: an operator
+/// The hint rides with the copy sentence and only with it: an operator
 /// already holding Shift does not need to be told Shift is available, and a
 /// hint that is always on screen is furniture nobody reads.
 #[must_use]
@@ -374,7 +374,7 @@ pub fn drag_landing_copy_with_hint(
 
 /// **What a move actually did**, on the status row afterwards.
 ///
-/// ★ It states the undo consequence, and that is the part that cannot be left
+/// It states the undo consequence, and that is the part that cannot be left
 /// out. A cross-document move is **two** edits in two documents, each with its
 /// own undo stack, so one Ctrl+Z reverses one half of it. There is no ordering
 /// of the two commands that makes a single undo mean *"put it back how it
@@ -398,12 +398,12 @@ pub fn moved_out_of(moving: usize, source: &str) -> String {
 
 /// A move inserted its pages and could not remove them from the source.
 ///
-/// ★ Its own sentence rather than silence, and rather than the engine's raw
+/// Its own sentence rather than silence, and rather than the engine's raw
 /// refusal, because the operator is now looking at a state neither of the two
 /// things they asked for: the pages are in both documents. Saying which half
 /// happened is the only way they can finish the job by hand.
 ///
-/// ★ It names the **remedy**, because the operator's next act is not guessable
+/// It names the **remedy**, because the operator's next act is not guessable
 /// from the refusal: the sheets they wanted moved are sitting in the document
 /// they came from and have to be deleted there, in that document, by hand.
 #[must_use]
@@ -433,7 +433,7 @@ pub const fn drag_over_nothing() -> &'static str {
 /// you ask in the dialog; nothing does it on a drag.
 #[must_use]
 pub const fn drag_refused_self_copy() -> &'static str {
-    // ★ "the Pages tab" rather than the ribbon-path spelling with a U+25B8
+    // "the Pages tab" rather than the ribbon-path spelling with a U+25B8
     // in it. `icons::glyphs` refuses that codepoint in operator-visible
     // strings and is right to: the font stack cannot draw it, so it renders as
     // a substitution box — and this sentence's whole job is to give
@@ -457,7 +457,7 @@ pub fn drag_target_refused(reason: &str) -> String {
 mod title_stamp_tests {
     use super::stamp_for_title;
 
-    /// ★★★ **A packaged build shows the time and drops the offset.**
+    /// **A packaged build shows the time and drops the offset.**
     ///
     /// The operator's ask (2026-09-02) and the common case: `package-portable`
     /// stamps local time with a numeric offset, and the offset is noise to
@@ -477,7 +477,7 @@ mod title_stamp_tests {
         );
     }
 
-    /// ★★ **A dev build KEEPS its `UTC`, and that is the point of the rule.**
+    /// **A dev build KEEPS its `UTC`, and that is the point of the rule.**
     ///
     /// `build.rs`'s fallback computes UTC because it has no date crate and
     /// cannot know the machine's offset. Showing `06:25` bare would invite
@@ -496,7 +496,7 @@ mod title_stamp_tests {
         );
     }
 
-    /// ★ Anything unrecognised is shown whole rather than replaced.
+    /// Anything unrecognised is shown whole rather than replaced.
     ///
     /// The failure this guards against is a title with **no build in it**. A
     /// stamp in a shape this function does not know is still information; a
@@ -508,7 +508,7 @@ mod title_stamp_tests {
         assert_eq!(stamp_for_title("2026-09-02"), "2026-09-02");
     }
 
-    /// ★ The date still leads, so the title is sortable by eye.
+    /// The date still leads, so the title is sortable by eye.
     #[test]
     fn the_date_still_comes_first() {
         let out = stamp_for_title("2026-09-02 06:25 +0100");
@@ -523,7 +523,7 @@ mod title_read_mode_tests {
     use super::window_title;
     use std::path::Path;
 
-    /// ★★★ **The ordinary title says nothing about read mode**, and this is the
+    /// **The ordinary title says nothing about read mode**, and this is the
     /// assertion the obvious wrong implementation fails.
     ///
     /// A hint that were always present would be furniture nobody reads, and it
@@ -555,7 +555,7 @@ mod title_read_mode_tests {
         assert!(title.contains("3 documents open"), "{title}");
     }
 
-    /// ★★ **The build stamp is still last**, in every form.
+    /// **The build stamp is still last**, in every form.
     ///
     /// `ui-verify`'s `the_title_bar_carries_the_build_time` finds the stamp by
     /// splitting the title from the right. Prefixing costs that check nothing;
@@ -579,7 +579,7 @@ mod title_read_mode_tests {
         }
     }
 
-    /// ★ **With no document open the hint is still there.**
+    /// **With no document open the hint is still there.**
     ///
     /// Read mode is per window, not per document, so an operator can close
     /// their last file while in it. That is the form a four-branch

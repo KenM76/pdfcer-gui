@@ -12,7 +12,7 @@ use std::path::PathBuf;
 
 /// A drop that has landed and has not yet been claimed.
 ///
-/// ★ Carries **every** path, not just the first. The claiming surface needs to
+/// Carries **every** path, not just the first. The claiming surface needs to
 /// know how many arrived so it can say so, and `dropped`'s
 /// "only the first" rule is that module's decision to make rather than this
 /// one's — this module's job ends at *where*.
@@ -37,7 +37,7 @@ const DIAG_DROP_PATH: &str = "PDFCER_DIAG_DROP_PATH"; // ui-text-exempt: an envi
 
 /// How long to wait before firing [`DIAG_DROP_PATH`], in milliseconds.
 ///
-/// # ★★★ Why a delay is the difference between drivable and not
+/// # Why a delay is the difference between drivable and not
 ///
 /// A real drop carries a position, and this feature is entirely *about* the
 /// position — so a check must be able to say **where** the simulated file
@@ -63,7 +63,7 @@ thread_local! {
     static DROPPED_ONCE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     /// When the process started drawing, for [`DIAG_DROP_AFTER_MS`].
     ///
-    /// ★ Set on the first [`poll`] rather than at `main`, so the delay is
+    /// Set on the first [`poll`] rather than at `main`, so the delay is
     /// measured from the first frame — which is what the check is waiting for
     /// too. Measuring from process start would count the time `eframe` spends
     /// creating a window against a budget meant for the harness's pointer.
@@ -206,7 +206,7 @@ pub fn unclaimed(ctx: &egui::Context) -> Option<Landed> {
 
 /// **Plant a landing**, for the tests of a surface that claims one.
 ///
-/// ★ `#[cfg(test)]` rather than a public seam: a landing is written by exactly
+/// `#[cfg(test)]` rather than a public seam: a landing is written by exactly
 /// one function in the running program ([`poll`]), and a second writer would
 /// be a second answer to *"was a file dropped?"* that could disagree with the
 /// input it is supposed to be reporting.
@@ -269,7 +269,7 @@ mod tests {
         );
     }
 
-    /// ★★ **`unclaimed` sees what `claim` left**, which is the whole fallback.
+    /// **`unclaimed` sees what `claim` left**, which is the whole fallback.
     ///
     /// Written as a sequence rather than as two assertions about one function,
     /// because the property is about the ORDER: a surface claims during the
@@ -297,7 +297,7 @@ mod tests {
         );
     }
 
-    /// ★ A landing carries every path, not the first.
+    /// A landing carries every path, not the first.
     ///
     /// `app::dropped` decides that only the first is acted on and says so to
     /// the operator. This module must not make that decision early, or the

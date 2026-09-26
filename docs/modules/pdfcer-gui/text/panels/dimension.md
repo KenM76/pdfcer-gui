@@ -22,7 +22,7 @@ dimension"* only where the operator has one selected and can see which, and
 otherwise says *"the dimensions you draw"*, exactly as
 [`crate::text::scale`] and [`crate::text::dimension_groups`] do.
 
-## ★ One vocabulary, shared with the CLI
+## One vocabulary, shared with the CLI
 
 `pdfcer dimension-style` names these eleven `unit`, `fraction`,
 `decimal-marker`, `standard`, `text-height`, `line-width`, `arrow-length`,
@@ -31,7 +31,7 @@ states the hazard of diverging: *"a panel using different words for the same
 nine things is how an operator ends up unable to script what he just
 clicked."* These are the same words, in the operator's English.
 
-## ★ What this catalog must NOT do: build a label
+## What this catalog must NOT do: build a label
 
 `docs/core-api/03-capabilities.md` §1.6 trap (b) is explicit, and it cost
 `pdfcer` a shipped defect: *"A panel that previews 'nominal + tolerance' by

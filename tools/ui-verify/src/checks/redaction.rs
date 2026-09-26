@@ -50,7 +50,7 @@ pub(super) const ACK_REGION: &str = "redact-apply-ack";
 
 /// The dialog's confirm control.
 ///
-/// ★ Declared by the application **only while it is enabled**, which is what
+/// Declared by the application **only while it is enabled**, which is what
 /// makes phase E possible at all: its absence from the trace is positive
 /// evidence that the gate is closed, rather than the absence of evidence a
 /// disabled-but-drawn control would leave.
@@ -58,7 +58,7 @@ pub(super) const CONFIRM_REGION: &str = "redact-apply-confirm";
 
 /// The dialog's *replace the open file* destination choice.
 ///
-/// ★ Declared by the application **only while the document has an original to
+/// Declared by the application **only while the document has an original to
 /// replace** — `RedactDialog::can_replace_original`, which asks the file system
 /// — so its absence is ambiguous between "this build does not draw the control"
 /// and "the fixture is no longer on disk". Phase E2 says so rather than
@@ -68,7 +68,7 @@ const DESTINATION_REPLACE_REGION: &str = "redact-apply-destination-replace";
 /// The dialog's *this document* destination choice — **the default**, and the
 /// one the operator asked for by name.
 ///
-/// ★ Declared **unconditionally**, unlike its two siblings: every document can
+/// Declared **unconditionally**, unlike its two siblings: every document can
 /// be redacted into, including one created in this session with no file to
 /// replace. So its absence is unambiguous and is a **failure** rather than a
 /// SKIP — there is no innocent reading of it.
@@ -76,7 +76,7 @@ const DESTINATION_INTO_DOCUMENT_REGION: &str = "redact-apply-destination-into-do
 
 /// The dialog's *this document, **now*** destination choice.
 ///
-/// # ★★★ Why its absence is a FAILURE and not a SKIP
+/// # Why its absence is a FAILURE and not a SKIP
 ///
 /// The deferred destination is the default and, by its own doc's terms, **the
 /// page does not change** when it is chosen. Offer that alone and the operator
@@ -99,13 +99,13 @@ pub(super) const DESTINATION_NEW_FILE_REGION: &str = "redact-apply-destination-n
 
 /// The dialog's staging disclosure.
 ///
-/// ★★★ Declared only while the deferred destination is selected, which is what
+/// Declared only while the deferred destination is selected, which is what
 /// makes the geometric assertion in phase E3 possible: the sentence must be
 /// **above** the confirm control, because it is the one thing the operator
 /// cannot work out by looking — he presses a control about permanent removal
 /// and *the page does not change*.
 ///
-/// ★★ The name says **staging**, and it has to: the sentence at this region is
+/// The name says **staging**, and it has to: the sentence at this region is
 /// about the write being deferred, not about undo history. A region name that
 /// described a different sentence would aim this check at one thing and find
 /// another — a check that passes while measuring something else, which is this
@@ -228,7 +228,7 @@ fn digest(bytes: &[u8]) -> (usize, u64) {
 /// future writer compressed the *output*; keeping the input uncompressed is
 /// what stops it arising in the first place.
 ///
-/// ★ `pub(super)` so `checks::signing` can arm a redaction on the same
+/// `pub(super)` so `checks::signing` can arm a redaction on the same
 /// document rather than authoring a second one. That check needs a
 /// document whose whole-page redaction actually **verifies** — `four-pages.pdf`
 /// refuses with `VerificationFailed { survivors: ["SCALE", "REVISION"] }`, so a
@@ -407,7 +407,7 @@ pub(super) fn click_command(
     (name, id): (&str, &str),
     settle: u32,
 ) -> Result<()> {
-    // ★★ **Three places a ribbon control can be**, and this asked about one.
+    // **Three places a ribbon control can be**, and this asked about one.
     //
     // `region` reads a declared rect out of the trace, which is right for the
     // panel's and the dialog's controls — they are always drawn when their
@@ -422,7 +422,7 @@ pub(super) fn click_command(
     // and not the whole truth: `ribbon.group.file.export.collapsed` was in the
     // same trace.
     //
-    // ★ `declared_or_in_overflow` is the one statement of "where can a ribbon
+    // `declared_or_in_overflow` is the one statement of "where can a ribbon
     // command be" and it knows all three places. A second copy of that lookup
     // anywhere is a rule stated twice, and this is what its drift looks like:
     // nothing fails, the checks simply stop being able to begin.
@@ -467,7 +467,7 @@ pub(super) fn click_command(
 /// click plus an unchanged application is reported as a SKIP by the caller
 /// rather than as a failure of the feature.
 ///
-/// # ★★★ It takes the NAME, and it must keep taking the name
+/// # It takes the NAME, and it must keep taking the name
 ///
 /// A rectangle does not carry the viewport it was measured in, and this check
 /// drives two of them: the marking panel is in the application window, the
@@ -562,7 +562,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .map_err(|e| Error::new(format!("cannot write {}: {e}", fixture.display())))?;
     let before = digest(&source);
 
-    // ★ RUN 1 of the byte scan — the falsifying phase. See the module header's
+    // RUN 1 of the byte scan — the falsifying phase. See the module header's
     // table: if the instrument cannot see the secret in the file that was just
     // written from a constant containing it, then every absence it reports
     // afterwards is worthless, and this is where that is caught.
@@ -726,7 +726,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             )));
         }
 
-        // --- PHASE E: ★ the gate ------------------------------------------
+        // --- PHASE E: the gate ------------------------------------------
         //
         // The confirm control is declared by the application only while it is
         // ENABLED, so its absence now is positive evidence that the
@@ -747,7 +747,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 .to_owned(),
         );
 
-        // --- PHASE E2: ★ the destination choice is DRAWN ------------------
+        // --- PHASE E2: the destination choice is DRAWN ------------------
         //
         // Deliberately a **presence** assertion rather than a click: this
         // check's own written
@@ -757,7 +757,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // and a terrible thing for a check that then wants to compare the
         // fixture against the output (phases G–I do exactly that).
         //
-        // ★ What it is worth: the operator asked for this control by name, and
+        // What it is worth: the operator asked for this control by name, and
         // a build that shipped it as dead code — the field set, the radio never
         // drawn — would pass every unit test in `dialogs::redact`, because
         // those drive `choose_destination` directly and never lay anything out.
@@ -786,7 +786,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ));
         }
 
-        // --- PHASE E3: ★★★ the DEFAULT destination, and the undo disclosure
+        // --- PHASE E3: the DEFAULT destination, and the undo disclosure
         //                    that has to precede the button -----------------
         //
         // The default destination is not a file at all: it applies the removal
@@ -799,7 +799,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         //    can be redacted into — so its absence has no innocent reading and
         //    is a failure rather than a SKIP.
         //
-        // 2. ★★★ **the staging sentence is ABOVE the confirm control.**
+        // 2. **the staging sentence is ABOVE the confirm control.**
         //
         //    The sentence is about staging, not about undo: the undo log
         //    survives the default destination. What it discloses is the more
@@ -825,7 +825,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  apply into the open document, and let Save decide where it lands."
             )));
         }
-        // ★★★ AND THE APPLY-NOW ROW BESIDE IT. See the constant: its absence
+        // AND THE APPLY-NOW ROW BESIDE IT. See the constant: its absence
         // IS the state an operator reports as the feature having regressed.
         if declared(&trace, ui_rect, DESTINATION_INTO_DOCUMENT_NOW_REGION).is_none() {
             return Ok(Some(format!(
@@ -889,7 +889,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
         // --- PHASE E4: move to the write-now destination --------------------
         //
-        // ★ Deliberate, and said out loud rather than left as a click nobody
+        // Deliberate, and said out loud rather than left as a click nobody
         // explains: phases F–I are entirely about **a file** — that the source
         // was not touched, that the output lacks the secret, that a second
         // process can extract nothing from it — and the default destination
@@ -999,7 +999,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let output = std::fs::read(&target)
         .map_err(|e| Error::new(format!("cannot read {}: {e}", target.display())))?;
 
-    // --- PHASE G: ★ the source is untouched -------------------------------
+    // --- PHASE G: the source is untouched -------------------------------
     //
     // The most damaging thing this shell could do, and the one that cannot be
     // undone by anybody: overwriting the file the content was removed from
@@ -1023,7 +1023,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("phase G: the document that was opened is byte-for-byte unchanged".to_owned());
 
-    // --- PHASE H: ★ RUNS 2 AND 3 of the byte scan -------------------------
+    // --- PHASE H: RUNS 2 AND 3 of the byte scan -------------------------
     //
     // Run 2 first, deliberately. It establishes that the scan is a valid
     // instrument on THIS file before run 3 uses it to report an absence — see
@@ -1057,7 +1057,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
 
     // =======================================================================
-    // PHASE I: ★ a SECOND PROCESS, which performed no redaction and holds
+    // PHASE I: a SECOND PROCESS, which performed no redaction and holds
     // none of the first one's state, cannot extract the redacted page's text
     // =======================================================================
     {
@@ -1146,7 +1146,7 @@ mod tests {
         );
     }
 
-    /// ★ **The two strings cannot be confused with each other, or with
+    /// **The two strings cannot be confused with each other, or with
     /// anything a producer emits.**
     ///
     /// A shared prefix would make the survivor's presence satisfy a scan for

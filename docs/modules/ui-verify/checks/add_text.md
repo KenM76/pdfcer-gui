@@ -5,7 +5,7 @@
 The command literally labelled *"Add text"*, driven end to end with the
 keyboard, and the one path in this shell that had no driven coverage at all.
 
-# ★★ Why the existing text-editing check does not cover this
+# Why the existing text-editing check does not cover this
 
 `checks::text_edit` drives the *other* verb (`edit.text`, which rewrites a
 run already on the page) and supplies its characters through

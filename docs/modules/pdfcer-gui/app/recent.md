@@ -11,7 +11,7 @@ first, persisted beside the layout and the settings, plus the small
 amount of caching that keeps *"is this file still there?"* from costing
 a blocking stat per frame.
 
-## ★ Where the file lives, and why that is not this module's decision
+## Where the file lives, and why that is not this module's decision
 
 `<the settings directory>/recent.txt` — **beside `settings.txt` and
 `layout.ron`**, and the directory is resolved by asking `pdfcer-core`,
@@ -33,7 +33,7 @@ two, the writability probe comes with it, and *no writable location at
 all* stays a working session in which only saving is impossible (see
 [`RecentFiles::can_save`]).
 
-## ★ Why a flat text file rather than RON
+## Why a flat text file rather than RON
 
 Because this crate **cannot serialize**. `serde` and `ron` are workspace
 dependencies of `egui-shell`, not of `pdfcer-gui`, and `Cargo.toml` is not
@@ -56,7 +56,7 @@ place in this module where dropping at save is right: it is not a
 judgement about whether the file still exists, it is the format saying it
 cannot spell the name. See [`RecentFiles::render`].
 
-## ★ Missing files are dropped at DISPLAY time, never at save time
+## Missing files are dropped at DISPLAY time, never at save time
 
 This is the rule the whole presence cache exists to serve, and it is a
 statement about how drafting offices actually work:
@@ -75,7 +75,7 @@ writes the whole list, and only [`RecentFiles::present_at`] — what the
 menu draws — filters. Reconnect the drive and the entry comes back by
 itself.
 
-## ★ …and why the presence check is cached
+## …and why the presence check is cached
 
 `Path::exists` on a **dead** network path is not fast. It is a blocking
 call that can take seconds while SMB waits out its own timeout, and the

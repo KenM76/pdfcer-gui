@@ -16,7 +16,7 @@ not**: the space that slack creates senses hover and refuses clicks, so a
 press out there never became a gesture. An object dragged past the sheet
 edge was invisible, unclickable, and still in the file.
 
-## ★★★ The one-way door, and the exact line it was
+## The one-way door, and the exact line it was
 
 [`super::present::show`] allocates two kinds of interactive rectangle:
 
@@ -42,7 +42,7 @@ Every layer below the input surface already accepted off-page points. The
 whole of part B's "reach" half is therefore: **sense the clicks, and hand
 `interact` the right one of the two responses.** That is this module.
 
-## ★★ Why a two-response choice rather than one bigger rectangle
+## Why a two-response choice rather than one bigger rectangle
 
 The obvious shape — widen the page's own interaction rect until it covers
 the pasteboard — is wrong, and the comment at its call site has said so for
@@ -57,7 +57,7 @@ keep winning on their own sheets no matter what the content senses, and the
 content only ever sees a pointer that no page wanted. Nothing arbitrates;
 the allocation order already did.
 
-## ★★ The rule, and the two clauses that are not obvious
+## The rule, and the two clauses that are not obvious
 
 [`surface`] is a pure function of four booleans so that it can be tested at
 all — `egui::Response` cannot be built in a unit test without a live
@@ -65,7 +65,7 @@ context, and a rule with this many cases that is only ever exercised by
 driving is a rule that silently loses a case.
 
 
-## ★★★ The fifth clause, and the two-day-old defect that earned it
+## The fifth clause, and the two-day-old defect that earned it
 
 
 egui derives a popup's identity from the id of the `Response` it was
@@ -90,7 +90,7 @@ failing that, the choice must treat an open popup as belonging to its
 anchor. This function takes the second route because the choice is
 already expressed here, as booleans, where it can be unit-tested.
 
-★ It is a clause of the SAME rule the first two rows state, not a special
+It is a clause of the SAME rule the first two rows state, not a special
 case: an open menu owned by the page is an interaction in flight owned by
 the page, in precisely the sense row three means by *"a band started on
 the sheet and dragged off it is one gesture"*.

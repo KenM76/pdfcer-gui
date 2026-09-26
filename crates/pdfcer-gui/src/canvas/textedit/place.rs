@@ -48,7 +48,7 @@ pub fn click(
     click: &Click<'_>,
     actions: &mut Vec<crate::app::actions::Action>,
 ) -> Result<(), Refusal> {
-    // ★★★ A CLICK INSIDE THE EDITOR BOX BELONGS TO THE DRAFT, not to the page.
+    // A CLICK INSIDE THE EDITOR BOX BELONGS TO THE DRAFT, not to the page.
     //
     // Without this, clicking into the middle of what you are typing would
     // commit the draft and open a new one from whatever run the PAGE has at
@@ -93,7 +93,7 @@ pub fn click(
         // becomes an origin at the click point, and the two ribbon commands
         // (`edit.text`, `edit.add_text`) survive as two doors into one room.
         //
-        // ★ Only `NoRun` falls through. Every other refusal — an encrypted
+        // Only `NoRun` falls through. Every other refusal — an encrypted
         // document, a page that will not decompose, a run the engine cannot
         // address — is still reported, because those say *this cannot be done
         // here* rather than *there is nothing here*. Swallowing them would put
@@ -121,7 +121,7 @@ pub fn click(
             Err(other) => return Err(other),
         },
     };
-    // ★★★ **A RUN WHOSE FONT CAN SPELL NOTHING GETS NO CARET AT ALL.**
+    // **A RUN WHOSE FONT CAN SPELL NOTHING GETS NO CARET AT ALL.**
     //
     // `run_repertoire` answers with an *empty* repertoire and a `reason` — not
     // an `Err` — when a run's font offers no character `edit_text` could put
@@ -164,7 +164,7 @@ pub fn click(
         // type, not for a suggestion.
         Anchor::Origin { .. } | Anchor::Box { .. } => String::new(),
     };
-    // ★★ The caret lands WHERE THE CLICK LANDED, not at the end.
+    // The caret lands WHERE THE CLICK LANDED, not at the end.
     //
     //
     // Falls back to the end of the text, which is the old behaviour, when the
@@ -223,7 +223,7 @@ pub fn click(
 ///
 /// The operator, 2026-08-21: *"I should be able to make it multi line."*
 ///
-/// # ★ The conversion is `markup::band::endpoints`, not a new one
+/// # The conversion is `markup::band::endpoints`, not a new one
 ///
 /// That function is the canvas → page hop the markup band and the
 /// text-annotation band already use, and reusing it is the standing rule rather
@@ -254,7 +254,7 @@ pub fn begin_box(
     /// operator can have meant.
     const MIN_PT: f64 = 12.0;
 
-    // ★ A sweep that STARTS inside a live editor box is a text selection, not
+    // A sweep that STARTS inside a live editor box is a text selection, not
     // a new box — see `keys::pointer`, which has already made it one. Without
     // this, dragging across what you are typing would commit that draft and
     // open a second box on top of it.
@@ -281,7 +281,7 @@ pub fn begin_box(
         ctx,
         Draft {
             page: page_index,
-            // ★ `Add`, not `Edit`, and it is not a choice: the box authors new
+            // `Add`, not `Edit`, and it is not a choice: the box authors new
             // content through `add_text`. Carrying `Edit` here would send an
             // empty box down `edit_text`'s planning path, which pins a span in a
             // run that does not exist.
@@ -297,7 +297,7 @@ pub fn begin_box(
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
-        // ★ The box's own extent, because that is what a wrong build gets
+        // The box's own extent, because that is what a wrong build gets
         // wrong: a band converted through the wrong hop produces a plausible
         // rectangle somewhere else on the page, and the draft would accept
         // typing either way.
@@ -358,7 +358,7 @@ fn has_no_anchor(c: &Click<'_>, run: usize) -> Option<bool> {
 /// before this is called, and asking it again here with different arithmetic is
 /// how a caret comes to land on a different line from the one that was clicked.
 ///
-/// ★ Rotated runs. The comparison is done in **PDF user space** against the
+/// Rotated runs. The comparison is done in **PDF user space** against the
 /// glyph origins as published, which is the same space `resolve_run` works in.
 /// For a run rotated off the horizontal this compares the wrong axis and the
 /// caret will land at a boundary the operator did not aim at - it is still
@@ -419,7 +419,7 @@ fn resolve_run(c: &Click<'_>) -> Result<Anchor, Refusal> {
     // follower `Tm` untouched — and this module has been *choosing* between the
     // two dispositions on every commit for days.
     //
-    // ★ How expensive the refusal was, measured rather than guessed. A
+    // How expensive the refusal was, measured rather than guessed. A
     // SolidWorks-exported drawing sheet writes text as one show operator per
     // *cell*, so nearly every visual line on a title block or a parts table is
     // multi-run. `tools/ui-verify`'s `text_edit_on_a_real_drawing` armed the
@@ -450,7 +450,7 @@ fn resolve_run(c: &Click<'_>) -> Result<Anchor, Refusal> {
     if original.is_empty() {
         return Err(Refusal::NoRun);
     }
-    // ★★ **Announced BEFORE the edit, not after it.**
+    // **Announced BEFORE the edit, not after it.**
     //
     // `MeasureState`'s derived-point rule in the operator's own vocabulary:
     // *a derived point is pdfcer's inference, so rule 4 requires it to be
@@ -477,7 +477,7 @@ fn resolve_run(c: &Click<'_>) -> Result<Anchor, Refusal> {
             format!("text-edit-shares-line run={}", pos.run)
         });
     }
-    // ★★★ **THE EDITABILITY CHECK, and it is the last thing before the caret.**
+    // **THE EDITABILITY CHECK, and it is the last thing before the caret.**
     //
     // Added 2026-08-20 on the operator's *"Still no editing text on top of the
     // canvas."* Every stage of this module worked; the commit reached

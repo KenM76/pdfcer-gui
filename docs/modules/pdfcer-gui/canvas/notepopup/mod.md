@@ -4,7 +4,7 @@ The window that opens when an operator clicks a note on the page, and the
 tooltip that appears when they hover one. **The canvas half of the review
 surface**, and the half that was missing.
 
-## ★★★ The report this closes
+## The report this closes
 
 The operator:
 
@@ -46,7 +46,7 @@ invent one — the convergence of the product class IS the spec"*:
   §12.5.6.4 Table 172 and §12.5.6.14 Table 183 both say so, and the
   state is in the file.
 
-★ **A single click rather than a double.** In a reader, one click opens the
+**A single click rather than a double.** In a reader, one click opens the
 note; in an editor with the comment tool armed, one click selects and two
 open. pdfcer has to serve both stances from one canvas, and a single click
 serves both because opening a pop-up **does not consume the click**: in
@@ -54,7 +54,7 @@ Review and Edit the same press still selects the annotation, so the
 selection outline, the grips and the Format tab all behave exactly as they
 did. Nothing was taken away to add this.
 
-## ★★★ Rule 4: the pop-up is CHROME, and the page is untouched
+## Rule 4: the pop-up is CHROME, and the page is untouched
 
 *"Fuzzy never sneaky"*, and the one-line test this project uses for it:
 **would a screenshot of the editing canvas differ from a screenshot of the
@@ -68,7 +68,7 @@ A pop-up is the same class of thing as a selection handle or a snap marker
 - It is drawn at a **fixed size in screen points and does not scale with
   zoom**, which is what makes it unmistakably interface rather than
   content. Acrobat's pop-up behaves the same way and for the same reason.
-  ★ Its *position* does follow the page, because it is about a particular
+  Its *position* does follow the page, because it is about a particular
   note; its *size* does not, because it is about the operator's eyes.
 - Nothing it shows is inferred. The words, the byline and the date are
   verbatim from the file; the open state is read from `/Open`, never
@@ -86,7 +86,7 @@ A pop-up is the same class of thing as a selection handle or a snap marker
 | read the thread of replies | ✅ | ✅ | ✅ |
 | edit the note, remove it, delete the comment | — | ✅ | ✅ |
 
-### ★★★ Read shows and does not edit, and the reason is on screen
+### Read shows and does not edit, and the reason is on screen
 
 `MODES_AND_PANELS.md`'s stance for Read is *"the page content is not yours
 to alter"*, and **reading is not editing** — which is the whole argument
@@ -101,7 +101,7 @@ it — so the pop-up carries **one sentence naming the mode that can**
 disabled `TextEdit` would be the half-built surface the no-placeholders
 rule exists to forbid.
 
-## ★★★ What it CANNOT do, and what kind of absence each is
+## What it CANNOT do, and what kind of absence each is
 
 Neither absence here is an engine gap. `EditSession::add_reply` writes
 `/IRT` and `/RT /R` with its own `/Popup`, and `EditSession::add_review_state`
@@ -115,7 +115,7 @@ reviewer's work list already lives.
   decision and the same place: a review status is a property of the work
   list rather than of one open window.
 
-★★ Both are **scope** decisions rather than capability ones, and the
+Both are **scope** decisions rather than capability ones, and the
 distinction is worth keeping sharp, because the two expire on different
 events: a capability absence is a statement about the **program** and ends
 when the engine moves, while a scope absence is a statement about **one
@@ -127,7 +127,7 @@ capability argument that is no longer true.
 drawn**: no empty status row. A control that no state of the program could
 enable is not an affordance, it is a promise.
 
-## ★★★ Recording `/Open`
+## Recording `/Open`
 
 `EditSession::set_annotation_open` writes the window state **into the
 document**, and `controls`' `open_default` is the control for it. The read
@@ -159,13 +159,13 @@ has no position in it). [`clicked_on`] is called from
 `crate::canvas::clicking` beside the annotation hit test — **one
 statement**, consuming nothing.
 
-★ [`show`] takes this frame's mapping from `crate::canvas::zoom::last_frame`
+[`show`] takes this frame's mapping from `crate::canvas::zoom::last_frame`
 rather than being handed one. `canvas::present` publishes it through
 `remember_frame` **before** it calls `interact`, so by the time this runs
 it is this frame's map and not the previous one — which is what keeps the
 window from lagging a pan by a frame.
 
-## ★★★ A pop-up NEVER covers the annotation it belongs to
+## A pop-up NEVER covers the annotation it belongs to
 
 An `egui::Area` at `Order::Middle` takes every press inside it, so a pop-up
 laid over its own note swallows every gesture on that note — and the
@@ -179,7 +179,7 @@ answer. ⇒ **A window that describes a thing must not be laid over the
 thing**, and on an immediate-mode canvas that is not a cosmetic rule: the
 window is an input surface, and the thing underneath becomes unreachable.
 
-## ★★ WHEN a pop-up opens, which is a separate question from where
+## WHEN a pop-up opens, which is a separate question from where
 
 A comment with no words must not open an empty pop-up. [`model::under`]
 answers for every annotation that *can* carry a note rather than for those

@@ -13,7 +13,7 @@ use crate::report::CheckReport;
 
 /// Edit mode, then arm the push-button tool.
 ///
-/// ★ `edit.form_push_button` through the harness seam is also the control point
+/// `edit.form_push_button` through the harness seam is also the control point
 /// for link 1: the seam bypasses the ribbon, so a build where the command is
 /// greyed but the dispatcher still arms would get past this. Link 1 is asserted
 /// separately, below, by reading the ribbon item's own region.
@@ -22,7 +22,7 @@ const INVOKE: &str = "mode.edit,edit.form_push_button";
 const COMBO_REGION: &str = "form.button.action"; // ui-text-exempt: a trace region name, never displayed
 /// The *Clear the form* row inside the popup.
 ///
-/// ★ Named by KIND, matching the publisher. An index-named region would keep
+/// Named by KIND, matching the publisher. An index-named region would keep
 /// passing after `ButtonDoesKind::ALL` was reordered, aiming at whatever row
 /// now sits second.
 const RESET_ROW: &str = "form.button.action.row.ResetForm"; // ui-text-exempt: a trace region name
@@ -30,13 +30,13 @@ const RESET_ROW: &str = "form.button.action.row.ResetForm"; // ui-text-exempt: a
 const ACCEPT_REGION: &str = "dialog.form_field.accept"; // ui-text-exempt: a trace region name
 /// The line the chooser writes when the operator changes it.
 const CHOSE: &str = "button-action-chose"; // ui-text-exempt: a trace event name, never displayed
-/// ★ The line this check exists to read.
+/// The line this check exists to read.
 const APPLIED: &str = "button-action-applied"; // ui-text-exempt: a trace event name, never displayed
 /// The line the author path writes when the SECOND verb refuses.
 const REFUSED: &str = "button-action-refused"; // ui-text-exempt: a trace event name, never displayed
 /// The page region, so a failure can say whether a sheet was drawn at all.
 const PAGE_REGION: &str = "page"; // ui-text-exempt: a trace region name, never displayed
-/// ★★★ The line `panels::forms::button` writes when it READS an existing
+/// The line `panels::forms::button` writes when it READS an existing
 /// button's action — the half that could not ship until `Pass 212.0`.
 const READ: &str = "button-action-read"; // ui-text-exempt: a trace event name
 /// The Forms panel's dock TAB — clicked to bring its body forward.
@@ -115,7 +115,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
-    // ★★ Deliberately NOT `PDFCER_DIAG_FORM_ACCEPT`. That seam accepts the
+    // Deliberately NOT `PDFCER_DIAG_FORM_ACCEPT`. That seam accepts the
     // dialog with its default draft, whose action is `Nothing` — so a run using
     // it would author an inert button and read no `button-action-applied` line,
     // and would be measuring the placement that already worked. The dialog is
@@ -158,7 +158,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let trace = session.trace()?;
     if declared(&trace, ui_rect, COMBO_REGION).is_none() {
-        // ★★★ Two very different diagnoses share this symptom, so name both and
+        // Two very different diagnoses share this symptom, so name both and
         // say which regions WERE declared. A dialog that never opened is a
         // greyed tool or a broken drag; a dialog that opened without the chooser
         // is `dialogs::formfield::button_rows` not calling into
@@ -179,7 +179,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("★ the placement dialog opened, and it draws an action chooser");
 
     // --- B: open the chooser ------------------------------------------------
-    // ★ Re-read the trace rather than reusing the one above: a coordinate held
+    // Re-read the trace rather than reusing the one above: a coordinate held
     // across an act that could move it is the other standing harness hazard,
     // and re-reading is free.
     let trace = session.trace()?;
@@ -302,7 +302,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // row's pixels: the sentence a reader sees is chosen from four states, and
     // `state=` names which one — a screenshot reading "Clear the form" cannot
     // distinguish a correct `Known` from a lucky default.
-    // ★★★ **BRING THE PANEL TO THE FRONT.** `view.panel_forms` puts the panel
+    // **BRING THE PANEL TO THE FRONT.** `view.panel_forms` puts the panel
     // in the layout; it does not make it the ACTIVE TAB of its dock group, and
     // a background tab draws no body at all.
     //

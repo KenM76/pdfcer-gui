@@ -13,7 +13,7 @@
 /// whose form structure is frozen** — `EditSession::deletion_refusal` answered
 /// `Some`.
 ///
-/// # ★★★ Why a sentence exists for a state every control already withholds
+/// # Why a sentence exists for a state every control already withholds
 ///
 /// It should be unreachable. `panels::properties::formfield::refuses_delete` is
 /// asked by the panel's two delete buttons, by the condition behind the
@@ -24,7 +24,7 @@
 /// and any engine guard the query does not forecast.
 ///
 ///
-/// # ★★ Why the wording is not
+/// # Why the wording is not
 /// [`crate::text::panels::formfield::delete_refused`]'s, when the fact is the
 /// same
 ///
@@ -36,14 +36,14 @@
 /// So this says *what you just pressed did nothing, and why*, and the panel
 /// says *what this document is*.
 ///
-/// ★ Like [`flatten_declined_certified`] it names **which gate refused**,
+/// Like [`flatten_declined_certified`] it names **which gate refused**,
 /// because deletion and filling take different ones: on the ordinary shape —
 /// a certified fillable form at `/P 2` — §12.8.2.2 Table 257 permits filling
 /// and forbids restructuring, so an operator who has just typed a value into
 /// the very box they are trying to remove would otherwise conclude the program
 /// is broken.
 ///
-/// ★ And like it, it offers **no way round**. There is one — remove the
+/// And like it, it offers **no way round**. There is one — remove the
 /// signature — and pdfcer will not suggest defeating a certification as a
 /// workaround for a convenience.
 #[must_use]

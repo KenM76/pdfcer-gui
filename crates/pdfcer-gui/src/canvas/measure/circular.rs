@@ -53,7 +53,7 @@ pub fn finishable(ctx: &egui::Context) -> bool {
 
 /// **End the gesture: author the dimension and empty the pick set.**
 ///
-/// ★ **The one commit path**, reached by both endings — see the module header
+/// **The one commit path**, reached by both endings — see the module header
 /// for the argument, which is the reason this function exists rather than two
 /// arms that each build a `DimensionKind`.
 ///
@@ -125,7 +125,7 @@ pub fn finish(ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
 /// asked, because a screenshot cannot distinguish them and neither can the
 /// engine.
 ///
-/// ★ **The first click of the pair has already picked a point**, and that is
+/// **The first click of the pair has already picked a point**, and that is
 /// deliberate rather than an accident of how `egui` reports a double-click.
 /// Swallowing the pair would make the operator's last point need a separate
 /// click *and* a double-click somewhere harmless. It is also what
@@ -184,7 +184,7 @@ pub(super) fn take_point(
         // `origin` is on the line because a run that measured a raster and a
         // run that measured vector geometry produce the same numbers and are
         // not the same evidence — see `PickOrigin`.
-        // ★★★ The FIT is on this line, and it is the field the operator's
+        // The FIT is on this line, and it is the field the operator's
         // report is about.
         //
         // O105 is *"selecting more points around a hole doesn't always get it
@@ -212,7 +212,7 @@ pub(super) fn take_point(
 
 /// **Remove the point at `index`** — the Tool panel's route into the same set.
 ///
-/// ★★ Two routes to one capability, and the panel's is the one that cannot be
+/// Two routes to one capability, and the panel's is the one that cannot be
 /// substituted. A pick set on a dense CAD sheet is invisible: the operator
 /// cannot tell four picked points from five, and cannot tell *which* four. See
 /// `OPERATOR_REQUESTS.md` O107.
@@ -327,7 +327,7 @@ mod tests {
     /// enough that a deliberately-near click lands inside it.
     const TOL: f64 = 1.0;
 
-    /// ★★★ **A click adds one point; a click near an existing one takes that
+    /// **A click adds one point; a click near an existing one takes that
     /// point out.**
     ///
     /// The whole of the pick, and both halves matter. A build that only added
@@ -336,7 +336,7 @@ mod tests {
     /// have selected them"* — which is how this behaviour came to be asked for
     /// in the first place.
     ///
-    /// ★ The second assertion is the one that could not exist under the old
+    /// The second assertion is the one that could not exist under the old
     /// object pick: it adds a point 0.5 pt from the first, and requires the set
     /// to SHRINK. Under an object pick there was no such distance — the unit
     /// was the whole object — which is exactly why *"selecting more points
@@ -363,7 +363,7 @@ mod tests {
         );
     }
 
-    /// ★★ **A click with nothing under it is still a point** —
+    /// **A click with nothing under it is still a point** —
     /// `OPERATOR_REQUESTS.md` O106, the ask that makes a bitmap measurable.
     ///
     /// The origin is carried rather than discarded, because a set of five free
@@ -381,7 +381,7 @@ mod tests {
         );
     }
 
-    /// ★ **Three free positions fit a circle**, which is the whole of O106.
+    /// **Three free positions fit a circle**, which is the whole of O106.
     ///
     /// Asserted on the fit rather than on the count, because *"the points went
     /// in"* is not the claim — the claim is that a drawing with no vector
@@ -399,7 +399,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The panel's removal and the canvas's removal are the same act.**
+    /// **The panel's removal and the canvas's removal are the same act.**
     ///
     /// `OPERATOR_REQUESTS.md` O107 asks for both routes, and the failure to
     /// guard against is two pick sets: a panel that removed from its own copy
@@ -428,7 +428,7 @@ mod tests {
         );
     }
 
-    /// ★ **The pick never reaches the selection.**
+    /// **The pick never reaches the selection.**
     ///
     /// A circle-fit attempt has no meaning as the substrate's general object
     /// selection (ui-spec §3.1), and the two must not leak into each other.
@@ -458,7 +458,7 @@ mod tests {
         assert_eq!(selection.len(), 1, "the selection is untouched either way");
     }
 
-    /// ★ **The two endings author the same dimension from the same picks.**
+    /// **The two endings author the same dimension from the same picks.**
     ///
     /// The property the one-commit-path design exists for, asserted the only
     /// way that means anything: run *both* endings over identical states and
@@ -509,7 +509,7 @@ mod tests {
         );
     }
 
-    /// ★ **Both endings empty the pick set**, so a second Finish does not place
+    /// **Both endings empty the pick set**, so a second Finish does not place
     /// the same circle twice.
     ///
     /// The failure without it is quiet and expensive: the operator presses
@@ -535,7 +535,7 @@ mod tests {
         assert_eq!(actions.len(), 1, "and raises nothing");
     }
 
-    /// ★ **A degenerate set commits nothing, from either ending.**
+    /// **A degenerate set commits nothing, from either ending.**
     ///
     /// `CircularPick::author` returns `None` for fewer than three usable points
     /// or a numerically singular set, and its docs say that is precisely when
@@ -568,7 +568,7 @@ mod tests {
         assert!(st.circular.in_progress());
     }
 
-    /// ★ **`measure.finishable` is true exactly when pressing Finish would do
+    /// **`measure.finishable` is true exactly when pressing Finish would do
     /// something** — all five of the states that decide it.
     ///
     /// This is the condition behind a ribbon control, so each `false` row is a
@@ -611,7 +611,7 @@ mod tests {
         assert!(!finishable(&ctx));
     }
 
-    /// ★ **Asking whether Finish is available does not manufacture state.**
+    /// **Asking whether Finish is available does not manufacture state.**
     ///
     /// [`finishable`] runs on every frame, for every document, armed or not. If
     /// it went through `super::load` — which builds a `MeasureState` when there

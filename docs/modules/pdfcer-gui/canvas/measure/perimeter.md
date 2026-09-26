@@ -37,7 +37,7 @@ settled with the operator on 2026-08-14: a **double-click**, because that is
 what every polyline tool in every drawing package uses, plus a ribbon
 command for a pick that is awkward to double-click on.
 
-## ★ The third ending: click the first vertex to CLOSE
+## The third ending: click the first vertex to CLOSE
 
 A perimeter has a shape the other two do not — it can be a *ring*. Ken's
 words were *"click around to make a shape"*, which is a closed one; a path

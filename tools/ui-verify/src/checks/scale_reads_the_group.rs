@@ -25,7 +25,7 @@ const SPAN_PT: f64 = 400.0;
 
 /// The real-world length typed into the calibrated window, as a bare number.
 ///
-/// ★ No unit suffix and no punctuation. `Driver::type_ascii` sends key events
+/// No unit suffix and no punctuation. `Driver::type_ascii` sends key events
 /// and refuses punctuation, and this crate's own note on that is a finding
 /// rather than an excuse — so the value is chosen to be typeable rather than
 /// realistic. The group's display unit supplies the unit, which is the ordinary
@@ -46,7 +46,7 @@ const TYPED_REAL_LENGTH: &str = "100";
 /// How far the seeded ratio must move before this check believes the window
 /// read the document.
 ///
-/// ★ A **relative** floor rather than an absolute one, and generous. The point
+/// A **relative** floor rather than an absolute one, and generous. The point
 /// is not to predict the arithmetic — `ScaleEntryFields::for_group` has five
 /// unit tests for that, including one calibrated by hand against the engine's
 /// own documented formula. The point is to distinguish *"seeded from the
@@ -83,7 +83,7 @@ impl Check for SetScaleReadsTheGroupItIsAboutToOverwrite {
 
 /// The seeded ratio's real side, from the most recent `scale-seeded` line.
 ///
-/// ★ Two plain numeric keys rather than one `1:100` field, because a check that
+/// Two plain numeric keys rather than one `1:100` field, because a check that
 /// has to split a packed field is a check that can report the opposite of the
 /// truth while quoting the truth in its own message. `dialogs::scale`'s
 /// `reseed` emits them separately for this reader.
@@ -300,14 +300,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 6: pick two points ------------------------------------------------
     let mapping = CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, target.page)?;
-    // ★★ `span_from`, not `target.x + SPAN_PT`. This check SKIPPED on its
+    // `span_from`, not `target.x + SPAN_PT`. This check SKIPPED on its
     // first-ever sweep because 2000 + 400 is sixteen points past the right edge
     // of `a1-titleblock.pdf`, and its sibling `measure_calibrate` had been
     // skipping for the same reason in every recorded sweep. The span is
     // unsigned as far as every assertion below is concerned; see
     // `CanvasMapping::span_from` for the measurement.
     let span = mapping.span_from(target, SPAN_PT)?;
-    // ★★★ `picking::resolve_pick`, NOT a bare `click_at`. One click is not
+    // `picking::resolve_pick`, NOT a bare `click_at`. One click is not
     // always one pick: a click that lands on a DERIVED snap candidate — a
     // centreline pdfcer inferred rather than one the file states — is announced
     // and not acted on, and the operator confirms it with a second click on the
@@ -353,7 +353,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 7: ★★★ HIDDEN, NOT CLOSED — the assertion the wrong build fails ----
+    // --- 7: HIDDEN, NOT CLOSED — the assertion the wrong build fails ----
     let opens = trace.events("scale-open").count();
     let delivered = trace.events("scale-delivered").count();
     if delivered != 1 {
@@ -426,7 +426,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("the calibration committed, so the group now has a scale to read back");
 
-    // --- 9: ★ O192 proper — reopen, and see the number you set --------------
+    // --- 9: O192 proper — reopen, and see the number you set --------------
     click_set_scale(&session, &driver, ui_rect)?;
     let trace = session.trace()?;
     if declared(&trace, ui_rect, "dialog:set-scale").is_none() {

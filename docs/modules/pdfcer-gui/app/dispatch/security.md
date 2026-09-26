@@ -2,7 +2,7 @@
 
 `app::dispatch::security` — the File ▸ Security band's commands
 
-## ★★ The subject, and why the module is not called `protect`
+## The subject, and why the module is not called `protect`
 
 *Protection* describes encrypting and re-permissioning and not signing — a
 signature protects nothing, it asserts authorship. The module is named after
@@ -27,7 +27,7 @@ disclosures, and none of that has anything to say to the rest of
 a file has stopped being one subject.** Compressing prose to get back under
 it answers the number and not the signal.
 
-★ The alternative — an exemption in `tools/gates/check-file-size.sh` — is
+The alternative — an exemption in `tools/gates/check-file-size.sh` — is
 explicitly an operator decision, not a build session's, and the gate says so
 in its own failure text. Splitting is what the rule asks for.
 
@@ -45,7 +45,7 @@ pinned by [`tests::the_guard_and_the_dispatcher_claim_the_same_ids`], so a
 Security command added to one and not the other fails a named test rather
 than becoming a control that traces `command-unimplemented`.
 
-# ★★ What this dispatch deliberately does NOT decide
+# What this dispatch deliberately does NOT decide
 
 **Whether the document is signed.** Neither the registry predicate
 (`doc.open`) nor these arms ask, and that is the R9 ruling rather than an

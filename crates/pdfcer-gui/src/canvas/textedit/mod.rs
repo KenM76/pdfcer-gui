@@ -49,7 +49,7 @@
 //!   draft. Named rather than left implied, because a highlight that some keys
 //!   respect and others silently ignore is worse than none.
 
-/// ★★ **The page's lines, reassembled into paragraphs** — and the arrow keys
+/// **The page's lines, reassembled into paragraphs** — and the arrow keys
 /// that walk between them. Its header carries the four lines the behaviour is
 /// modelled on and why the reassembly is `pdfcer-core`'s rather than this
 /// shell's.
@@ -64,7 +64,7 @@ pub mod caret;
 pub mod hit;
 /// What every key means inside a draft — the keystroke contract.
 pub mod keys;
-/// ★★★ **The caret's arithmetic inside a draft that holds more than one line**
+/// **The caret's arithmetic inside a draft that holds more than one line**
 /// — `OPERATOR_REQUESTS.md` **O127**, defect 2.
 ///
 /// Enter inserting a line break is one keystroke; a caret that can reach the
@@ -78,7 +78,7 @@ pub mod lines;
 /// header carries the standing rule that the text and the caret are measured
 /// from ONE layout.
 pub mod paint;
-/// ★ **Where a press puts the caret** — the three gestures that start a draft,
+/// **Where a press puts the caret** — the three gestures that start a draft,
 /// and the refusals each of them can raise. Its header carries why a text BOX
 /// must be a drag rather than a click.
 pub mod place;
@@ -87,7 +87,7 @@ pub mod place;
 /// whole feature: a reflow is planned against the BASE document, so a page
 /// already edited this session is refused by name.
 pub mod reflow;
-/// ★ **What an edit report is worth telling anyone** — which of
+/// **What an edit report is worth telling anyone** — which of
 /// `EditReport`'s eleven fields reach the operator, which reach the diagnostic
 /// channel, and which reach neither. Its header carries the rule and why the
 /// middle row of it exists.
@@ -109,17 +109,17 @@ pub mod disposition;
 // `EditOptions::default()` run beside it as the falsifier. `#[cfg(test)]`
 // inside; it compiles to nothing in a release build.
 mod proof;
-// ★★★ The experiment that decides whose defect O141's last step is: ONE
+// The experiment that decides whose defect O141's last step is: ONE
 // `EditSession`, `format_text` then `edit_text`, located by find text alone so
 // no operand this shell computes is in the request. It refuses; the same pair
 // with a reopen between them succeeds. `#[cfg(test)]` inside.
 mod facewall;
-/// ★★ **Planning the commit** — the whole of what a text edit decides, from a
+/// **Planning the commit** — the whole of what a text edit decides, from a
 /// caret and two strings to one `EditRequest`. `plan` and `Plan` are
 /// re-exported below, so every caller reaches them through this module.
 mod plan;
 pub use plan::{Plan, plan};
-// ★★★ O142 — a typo in a run written one glyph per show operator, which only
+// O142 — a typo in a run written one glyph per show operator, which only
 // a spanning match can reach, and the guard that keeps the spanning match
 // addressed to the occurrence the operator clicked. Two fixtures: one where the
 // run is unique, one where the same text appears twice and the edit must land
@@ -128,7 +128,7 @@ mod glyphwall;
 // The per-keystroke re-measure measurement `DEFECTS.md` D4b's fix would need,
 // and the reason it is not wired. `#[ignore]`d; run it and read the numbers.
 mod cost;
-/// ★★ The face, size and colour NEW page text is written in — the Phase 5 row
+/// The face, size and colour NEW page text is written in — the Phase 5 row
 /// that read *"choosing what those three controls are is a decision, not an
 /// omission"*. The decision is in that module's header, along with why it lives
 /// in `egui::Memory` where the markup pen does not.
@@ -213,7 +213,7 @@ pub enum Anchor {
     Run { run: usize, original: String },
     /// A point in **PDF user space** where new text will be placed.
     Origin { x: f64, y: f64 },
-    /// ★★★ **A RECTANGLE in PDF user space** — new text, wrapped to its width.
+    /// **A RECTANGLE in PDF user space** — new text, wrapped to its width.
     ///
     /// The operator: *"I should be able to make it multi line."*
     ///
@@ -230,7 +230,7 @@ pub enum Anchor {
     /// Enter makes a new paragraph, and running past the right edge makes a new
     /// line — from one field.
     ///
-    /// # ★ Why this is a third variant and not a `wrap: Option<Rect>` on
+    /// # Why this is a third variant and not a `wrap: Option<Rect>` on
     /// [`Self::Origin`]
     ///
     /// Because the two are **different gestures with different affordances**,
@@ -269,7 +269,7 @@ pub struct Draft {
     pub anchor: Anchor,
     /// The operator's in-progress text.
     pub text: String,
-    /// ★★ **Where the caret sits inside [`Self::text`], as a CHARACTER index.**
+    /// **Where the caret sits inside [`Self::text`], as a CHARACTER index.**
     ///
     /// `0` is before the first character; `text.chars().count()` is after the
     /// last. Every edit and every movement clamps into that range, so the
@@ -304,7 +304,7 @@ pub struct Draft {
     /// of characters, and the alternative is a byte index plus a boundary check
     /// at every call site.
     pub caret: usize,
-    /// ★★ **The other end of a selection**, as a character index, or `None`
+    /// **The other end of a selection**, as a character index, or `None`
     /// when nothing is selected.
     ///
     /// The selection is the range between this and [`Self::caret`], in either
@@ -313,7 +313,7 @@ pub struct Draft {
     /// a word must extend leftward and then shrink back rightward, and a
     /// normalised pair forgets which end the operator is dragging.
     ///
-    /// # ★ Why it is called a mark
+    /// # Why it is called a mark
     ///
     /// Because "anchor" is taken. [`Anchor`] already means *what on the page
     /// this draft is attached to*, which is a different question with a
@@ -327,7 +327,7 @@ pub struct Draft {
     /// has ever used has all three, and without them replacing a word means
     /// pressing Backspace once per character.
     ///
-    /// ★ **It is cleared by any un-shifted movement**, which is what makes a
+    /// **It is cleared by any un-shifted movement**, which is what makes a
     /// selection feel like a selection rather than a mode. That rule lives in
     /// [`caret::moved`] so it is applied in one place; every arrow arm calls
     /// it, and an arm that forgot would leave a highlight behind after the
@@ -347,7 +347,7 @@ pub struct Draft {
 /// the whole difference from the old shell, which set a boolean and stopped
 /// responding to the keyboard.
 ///
-/// ★★ **There is no variant for "the line is made of several runs"**, and
+/// **There is no variant for "the line is made of several runs"**, and
 /// there must not be: on a CAD sheet that describes nearly every click, and it
 /// answers a question about the *line* when the operator is editing a *run*.
 /// `place::resolve_run` carries the measurement. That case is a disclosure —
@@ -362,7 +362,7 @@ pub enum Refusal {
     /// The page's text could not be extracted (an image-only page, a damaged
     /// content stream).
     NoText,
-    /// ★★ **The run is real and readable, and it covers no show operator the
+    /// **The run is real and readable, and it covers no show operator the
     /// surgery could anchor on** — its glyphs come from `/ActualText`, which
     /// supplies the text without drawing it.
     ///
@@ -384,7 +384,7 @@ pub enum Refusal {
     ///
     /// [`Editability::NoAnchor`]: pdfcer_core::text_extract::Editability::NoAnchor
     NoAnchor,
-    /// ★★★ **The run is real, addressable, and its font can spell nothing at
+    /// **The run is real, addressable, and its font can spell nothing at
     /// all** — so the caret declines to open rather than open and refuse every
     /// key.
     ///
@@ -402,7 +402,7 @@ pub enum Refusal {
     /// one says *there is nothing here*, this one says *this text is here and
     /// pdfcer cannot spell into it*.
     ///
-    /// # ★★ Why a refusal and not a caret that greys out
+    /// # Why a refusal and not a caret that greys out
     ///
     /// Because there is no key it would accept. [`Self::NoAnchor`]'s argument
     /// applies unchanged and is the module's oldest lesson: *a control that
@@ -422,13 +422,13 @@ pub enum Refusal {
     /// `PDFCER_DIAG` — where the clause number is exactly what a reader wants
     /// — and `crate::text::textedit::refusal` says the same fact in his terms.
     ///
-    /// ★ It carries no payload for that reason. A `String` here would be the
+    /// It carries no payload for that reason. A `String` here would be the
     /// engine's sentence travelling towards a surface that must not show it,
     /// and `Refusal` would stop being `Copy` to carry it.
     NoUsableEncoding,
 }
 
-/// ★★★ **Is the operator composing text ANYWHERE?** The one predicate, asked in
+/// **Is the operator composing text ANYWHERE?** The one predicate, asked in
 /// one place.
 ///
 /// # Two claimants, one predicate
@@ -484,7 +484,7 @@ pub(crate) fn store(ctx: &egui::Context, draft: Draft) {
 /// the reason `measure::abandon` does: the ladder rung above it needs to know
 /// whether this rung consumed the key.
 ///
-/// ★ **Every caller runs `commit_into` immediately before it**, so nothing in
+/// **Every caller runs `commit_into` immediately before it**, so nothing in
 /// the program reaches this without writing what was typed — Escape included,
 /// which takes the [`settle`] route. Read the name as *forget*, not as *throw
 /// away*: a caller that meant to discard would be the first, and would be
@@ -519,7 +519,7 @@ pub fn abandon(ctx: &egui::Context) -> bool {
 /// entry on the undo stack every time they clicked away — the old shell's own
 /// finding, and it matters more here because clicking out commits.
 ///
-/// ## ★★ An emptied RUN is a write; an empty ADD caret is not
+/// ## An emptied RUN is a write; an empty ADD caret is not
 ///
 /// The two look like one rule and they are opposite ones, so the emptiness
 /// guard sits on `Origin` and `Box` and not on `Run`.
@@ -555,7 +555,7 @@ pub(super) fn commit_into(
                 page: draft.page,
                 origin: (*x, *y),
                 text: draft.text.clone(),
-                // ★ Sampled HERE, at the commit, not read in `apply`. See the
+                // Sampled HERE, at the commit, not read in `apply`. See the
                 // variant's own docs: an action is what the operator asked for,
                 // and it is applied on a later frame.
                 pen: pen::read(ctx),
@@ -563,7 +563,7 @@ pub(super) fn commit_into(
                 wrap: None,
             });
         }
-        // ★★ The boxed variant, and it reaches the SAME action — one commit
+        // The boxed variant, and it reaches the SAME action — one commit
         // path, one apply arm, one place that can be wrong about a font.
         //
         // The whole difference is that `wrap` is `Some`, which is what
@@ -571,7 +571,7 @@ pub(super) fn commit_into(
         // newlines split paragraphs and each is wrapped independently to the
         // box's width, top-anchored from its top edge.
         //
-        // ★ `origin` is still carried and is still the box's lower-left, even
+        // `origin` is still carried and is still the box's lower-left, even
         // though the engine documents it as **ignored** in boxed mode. Sending a
         // meaningless value would be worse than sending a meaningful one that
         // happens to be unread: the day a caller or a trace wants to know where
@@ -589,7 +589,7 @@ pub(super) fn commit_into(
     }
 }
 
-/// ★★★ **Finish a draft that is going out of scope: write what it says, then
+/// **Finish a draft that is going out of scope: write what it says, then
 /// tear it down.** Reports whether there was one.
 ///
 /// # The rule it enacts: typed text is not thrown away by a navigation gesture
@@ -611,7 +611,7 @@ pub(super) fn commit_into(
 /// draft). An exit that meant *throw this away* would be the first, and there
 /// is none.
 ///
-/// ## ★ Why it is safe for the emptied-run case
+/// ## Why it is safe for the emptied-run case
 ///
 /// [`commit_into`] treats an emptied `Run` as a deletion and an empty `Add`
 /// caret as nothing at all, so settling a draft the operator never typed into
@@ -631,7 +631,7 @@ pub fn settle(ctx: &egui::Context, actions: &mut Vec<crate::app::actions::Action
 /// **What the text edit currently being applied is trying to write** — the four
 /// operands of the `Action::CommitTextEdit` that [`plan`] was called for.
 ///
-/// ## ★★★ Why this exists, and it is O141's second half rather than a cache
+/// ## Why this exists, and it is O141's second half rather than a cache
 ///
 /// When the engine refuses a commit because the run's font has no code for the
 /// character just typed, the shell offers a face that carries it
@@ -663,7 +663,7 @@ pub fn settle(ctx: &egui::Context, actions: &mut Vec<crate::app::actions::Action
 /// before `EditSession::edit_text` is called with the request it built. There is
 /// no path from a caret to the engine that does not cross this line.
 ///
-/// ## ★ Why staleness cannot bite, stated rather than assumed
+/// ## Why staleness cannot bite, stated rather than assumed
 ///
 /// The slot is written on **every** call and read only by
 /// `panels::properties::refusedchar::record`, which is itself called only from
@@ -725,7 +725,7 @@ pub struct Preview<'a> {
 mod tests {
     use super::*;
 
-    /// ★ **A draft equal to what it replaces is not a write.**
+    /// **A draft equal to what it replaces is not a write.**
     ///
     /// The no-op guard, and it is load-bearing because clicking away commits: an
     /// operator who typed a letter and removed it again would otherwise get an
@@ -745,7 +745,7 @@ mod tests {
             seeded: true,
         };
         let mut actions = Vec::new();
-        // ★ A bare `Context`, and it is the honest one for a pure-commit test:
+        // A bare `Context`, and it is the honest one for a pure-commit test:
         // the pen it reads is whatever `TextPen::default()` is, which is the
         // engine's own default, so these assertions are about the ACTION's
         // shape and not about a pen nobody set.
@@ -753,7 +753,7 @@ mod tests {
         assert!(actions.is_empty(), "an unchanged draft is not an edit");
     }
 
-    /// ★★★ **A box draft commits as a WRAPPED PARAGRAPH, and carries its
+    /// **A box draft commits as a WRAPPED PARAGRAPH, and carries its
     /// rectangle.**
     ///
     /// The operator: *"I should be able to make it multi line."*
@@ -824,7 +824,7 @@ mod tests {
         ));
     }
 
-    /// ★★ **Enter inserts inside a box and commits everywhere else**, which is
+    /// **Enter inserts inside a box and commits everywhere else**, which is
     /// the whole reason `Anchor::Box` is a variant rather than a flag.
     ///
     /// Asserted on the ANCHOR, because that is the fact the keystroke handler
@@ -855,7 +855,7 @@ mod tests {
         ));
     }
 
-    /// ★★ **An emptied run commits the emptying.**
+    /// **An emptied run commits the emptying.**
     ///
     /// Deleting every character of a run and clicking away is ambiguous —
     /// "remove this text" and "I changed my mind" are the same gesture — and
@@ -881,7 +881,7 @@ mod tests {
             seeded: true,
         };
         let mut actions = Vec::new();
-        // ★ A bare `Context`, and it is the honest one for a pure-commit test:
+        // A bare `Context`, and it is the honest one for a pure-commit test:
         // the pen it reads is whatever `TextPen::default()` is, which is the
         // engine's own default, so these assertions are about the ACTION's
         // shape and not about a pen nobody set.
@@ -915,7 +915,7 @@ mod tests {
             seeded: true,
         };
         let mut actions = Vec::new();
-        // ★ A bare `Context`, and it is the honest one for a pure-commit test:
+        // A bare `Context`, and it is the honest one for a pure-commit test:
         // the pen it reads is whatever `TextPen::default()` is, which is the
         // engine's own default, so these assertions are about the ACTION's
         // shape and not about a pen nobody set.
@@ -936,14 +936,14 @@ mod tests {
     /// no typing is a caret, not a write, and a dragged box nobody typed into is
     /// the same thing with a size.
     ///
-    /// ★ **Both** add anchors are asserted here, because this is the whole of
+    /// **Both** add anchors are asserted here, because this is the whole of
     /// the emptiness guard: `commit_into`'s `Run` arm deliberately does not
     /// carry one (`an_emptied_run_draft_commits_the_emptying`), so an assertion
     /// covering `Origin` alone would leave the `Box` arm's guard held by
     /// nothing while its header claimed otherwise.
     #[test]
     fn an_empty_add_text_draft_places_nothing() {
-        // ★ A bare `Context`, and it is the honest one for a pure-commit test:
+        // A bare `Context`, and it is the honest one for a pure-commit test:
         // the pen it reads is whatever `TextPen::default()` is, which is the
         // engine's own default, so these assertions are about the ACTION's
         // shape and not about a pen nobody set.

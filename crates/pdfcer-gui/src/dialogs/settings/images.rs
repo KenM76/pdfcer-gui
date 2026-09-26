@@ -62,7 +62,7 @@ pub fn mask_resample(ui: &mut Ui, draft: &mut Draft) {
 
 /// How a large image is reduced to fit.
 ///
-/// # ★ The guess disclosure the old window omitted
+/// # The guess disclosure the old window omitted
 ///
 /// `pdfcer-core` grades this default tier (d) as explicitly as it grades the
 /// mask filter above, and the old note read as a confident recommendation with

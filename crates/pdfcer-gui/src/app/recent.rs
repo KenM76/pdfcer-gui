@@ -439,7 +439,7 @@ impl RecentFiles {
 /// an icon key from. What made it visible was resolving both sides to the
 /// **asset** each one draws and giving the custom kinds a declared glyph.
 ///
-/// ⇒ ★★ **A comment that names the file where the rest of the work lives is
+/// ⇒ **A comment that names the file where the rest of the work lives is
 /// the best available substitute for a mechanism, and it is still not one.**
 /// That sentence was correct, precise, and sat unactioned; what moved it was an
 /// instrument that compares the two pictures.
@@ -452,7 +452,7 @@ pub fn menu(ui: &mut egui::Ui, recent: &mut RecentFiles, now: Instant) -> Option
     let text = crate::text::commands::file_recent();
     let mut chosen: Option<PathBuf> = None;
     ui.add_enabled_ui(!recent.is_empty(), |ui| {
-        // ★ `icons::image` takes its tint from THIS `Ui`'s `text_color()`, so
+        // `icons::image` takes its tint from THIS `Ui`'s `text_color()`, so
         // inside `add_enabled_ui(false, …)` the glyph fades in lockstep with
         // the word beside it and no disabled-state branch is needed here.
         let glyph = crate::icons::image(ui, crate::icons::Icon::Recent);
@@ -511,7 +511,7 @@ mod tests {
         path
     }
 
-    /// ★ **The recent list sits beside the layout file and the settings
+    /// **The recent list sits beside the layout file and the settings
     /// file.**
     ///
     /// Asserted against `LayoutStore`'s own resolution rather than against a
@@ -547,7 +547,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// ★ **Newest first, and re-opening a document moves it rather than
+    /// **Newest first, and re-opening a document moves it rather than
     /// duplicating it.**
     ///
     /// The property that makes this a most-recently-used list rather than a
@@ -601,7 +601,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// ★ **A missing file is dropped at DISPLAY time and kept in the file.**
+    /// **A missing file is dropped at DISPLAY time and kept in the file.**
     ///
     /// The rule the module header argues: a network drive that is temporarily
     /// absent is not a file the operator wants forgotten. Asserted from both
@@ -647,7 +647,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// ★ **The presence check is throttled.**
+    /// **The presence check is throttled.**
     ///
     /// `Path::is_file` on a dead network path blocks for as long as the
     /// filesystem takes to give up, on the UI thread. Without the throttle
@@ -744,7 +744,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// ★ **A default store points nowhere and can erase nothing.**
+    /// **A default store points nowhere and can erase nothing.**
     ///
     /// `Default` exists so `PdfcerApp` keeps deriving it, and because
     /// `PdfcerApp::new` deliberately uses it under `cfg(test)` so a unit test
@@ -766,7 +766,7 @@ mod tests {
     // The application path: what records an entry, and what opens one
     // =======================================================================
 
-    /// ★ **Opening a document records it; failing to open one does not.**
+    /// **Opening a document records it; failing to open one does not.**
     ///
     /// The recording lives in [`crate::app::PdfcerApp::open_path`] — the one
     /// function that opens documents, and the one `argv` reaches without an
@@ -810,7 +810,7 @@ mod tests {
         assert_eq!(app.recent.entries().len(), 1);
     }
 
-    /// ★ **`file.recent` opens the entry the menu parked, and falls back to
+    /// **`file.recent` opens the entry the menu parked, and falls back to
     /// the newest reachable one when there is none.**
     ///
     /// Two routes into one command, which is the whole reason the menu is a

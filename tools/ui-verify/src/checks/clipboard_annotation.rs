@@ -16,7 +16,7 @@ use crate::sys::vk;
 
 /// The mode whose canvas selects annotations and may paste one.
 ///
-/// ★ **Review, not Edit**, and the choice is an assertion in itself. A comment
+/// **Review, not Edit**, and the choice is an assertion in itself. A comment
 /// is markup, so pasting one needs `author_markup` — which Review grants —
 /// rather than `edit_content`, which only Edit does. A build that demanded the
 /// content capability for an annotation clip would leave the mode whose entire
@@ -29,7 +29,7 @@ const FIXTURE: &str = "fixtures/annots-with-everything.pdf";
 
 /// The sticky note's `/Rect` centre in PDF user space — `[360 660 380 680]`.
 ///
-/// ★ Hard-coded rather than taken from `--doc-point`, which this check ignores
+/// Hard-coded rather than taken from `--doc-point`, which this check ignores
 /// along with `--pdf`: the point and the fixture are one fact, and a suite-wide
 /// coordinate aimed at a different document would put the click on blank paper
 /// and report a defect about the hit test.
@@ -123,7 +123,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             fixture.display()
         )));
     }
-    // ★ A sweep that supplied `--pdf` and had it thrown away must be told so.
+    // A sweep that supplied `--pdf` and had it thrown away must be told so.
     // A run that silently ignored a flag is indistinguishable from one that
     // honoured it, which is the finding `RESUME.md` records about the two other
     // fixture-pinning checks in this suite.
@@ -163,7 +163,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 2: click the sticky note ------------------------------------------
     //
-    // ★ No tool is armed first and none should be: with a markup or measure
+    // No tool is armed first and none should be: with a markup or measure
     // tool armed a click on the page is a PICK, not a selection, and the check
     // would report "the note could not be selected" about a build whose
     // selection is fine. `sys::vk::V`'s doc comment carries the general rule;
@@ -196,7 +196,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     //
     // ⇒ **Ask what the check SAMPLED before asking what is broken.**
     //
-    // ★ Reading `subtype=` is a strength the old oracle did not have: it proves
+    // Reading `subtype=` is a strength the old oracle did not have: it proves
     // the click took the **/Text** annotation and not the /Square at `/Annots`
     // 0, which is the aim error this fixture was built to expose. `sel=1` would
     // have been equally happy with either.
@@ -242,7 +242,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("★ the copy ran: `{}`", copy.raw));
 
-    // ★★★ THE LINE THAT MAKES THIS CHECK ABLE TO FAIL.
+    // THE LINE THAT MAKES THIS CHECK ABLE TO FAIL.
     //
     // `kind=selection` alone would be satisfied by a build that copied the
     // PAGE CONTENT under the note and no annotation — same event, same page,
@@ -288,7 +288,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 4: Ctrl+V ----------------------------------------------------------
     //
-    // ★★ This is the step the whole check is worth writing for. `egui-winit`
+    // This is the step the whole check is worth writing for. `egui-winit`
     // raises `Event::Paste` only when the OS clipboard holds non-empty text and
     // swallows the raw key either way, so a copy path that forgot the marker
     // leaves this keystroke producing NO EVENT OF ANY KIND — and whether it
@@ -326,7 +326,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // should no longer fire in Review — and it is kept because it is one of
         // only two witnesses that would notice the escape list being narrowed
         // again. `a_paste_review_may_not_do_says_so` is the other and owns the
-        // refusal side. ★ Neither has been re-run against the fixed build: the
+        // refusal side. Neither has been re-run against the fixed build: the
         // session that made the fix worked headlessly.
         let refusal = trace
             .events(CHORD_NOT_OFFERED)

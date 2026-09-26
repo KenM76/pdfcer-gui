@@ -53,7 +53,7 @@ pub(super) const SPLITTER_INSET_PTS: f32 = 4.0;
 /// The space reserved out of the body so that a scrollbar's appearance on one
 /// axis cannot raise one on the other.
 ///
-/// # ★★★ This constant is the fix for the operator's "two scroll bars"
+/// # This constant is the fix for the operator's "two scroll bars"
 ///
 /// Wider than [`SCROLLBAR_WIDTH_PTS`] on purpose. egui reserves slightly more
 /// than the bar's drawn width for a solid bar — measured at **14 pt** for a
@@ -81,7 +81,7 @@ pub(super) const MIN_CONTENT_WIDTH_PTS: f32 =
 
 /// The width a solid scrollbar occupies, in egui points.
 ///
-/// ★ Named rather than inlined because it is used **twice for one reason**: it
+/// Named rather than inlined because it is used **twice for one reason**: it
 /// is what the bar is drawn at, and it is what the body reserves out of the
 /// column height so that a horizontal bar appearing cannot raise a vertical one
 /// as a side effect. Those two uses must agree or the deadlock in
@@ -105,7 +105,7 @@ pub(super) const REGION_SPLITTER: &str = "print.splitter";
 
 /// The preview column's own rect, for the driven harness.
 ///
-/// # ★★★ It exists to be able to GO AWAY
+/// # It exists to be able to GO AWAY
 ///
 /// Every other region in this shell is published so that something can be
 /// aimed at, measured or clicked. This one is published so that
@@ -114,7 +114,7 @@ pub(super) const REGION_SPLITTER: &str = "print.splitter";
 /// from outside the process that the column **collapsed** rather than merely
 /// gaining a sibling in another window.
 ///
-/// ★★ Without it, the honest-looking check *"a second window appeared"* passes
+/// Without it, the honest-looking check *"a second window appeared"* passes
 /// on a build that opens the pop-out **and keeps drawing the column too** —
 /// two previews of one sheet, which is precisely the shape O112 asked against.
 /// A presence assertion cannot see that; an absence assertion can, and an
@@ -136,7 +136,7 @@ pub(super) const REGION_PREVIEW_COLUMN: &str = "print.preview.column";
 /// disagree about one of the four, and the failure of a width in this file has
 /// twice been a scrollbar the operator could not dismiss.
 ///
-/// # ★★★ It is PURE, and that is what makes the collapse falsifiable
+/// # It is PURE, and that is what makes the collapse falsifiable
 ///
 /// The one thing a unit test genuinely can assert about this dialog's layout is
 /// a relationship between numbers we own — `layout::tests`' own header says so,
@@ -262,7 +262,7 @@ impl PrintDialog {
     /// 1300 x 900: both bars present, two thirds of the window empty, nothing
     /// needing to scroll.
     ///
-    /// ★★ And the failure was **inverted**, which a single screenshot would
+    /// And the failure was **inverted**, which a single screenshot would
     /// have missed and walking the size series found: at 700 x 520 the options
     /// column was clipped below "Landscape" — the entire Paper section
     /// unreachable — with **no vertical bar at all**. Bars where nothing needed
@@ -276,7 +276,7 @@ impl PrintDialog {
     /// the content does not fit.
     ///
     ///
-    /// ★ `context` is the frame's one cache context — see
+    /// `context` is the frame's one cache context — see
     /// [`super::verdicts::Context`]. It is `Some` exactly when `job` is, and
     /// the two are zipped below rather than unwrapped separately: the preview
     /// needs both or neither, and a `job` drawn against a context from a
@@ -302,7 +302,7 @@ impl PrintDialog {
         let body_height = (ui.available_height() - FOOTER_HEIGHT_PTS).max(MIN_BODY_HEIGHT_PTS);
         let outer_width = ui.available_width();
 
-        // ★ The allowance, subtracted ONCE, from the outer size.
+        // The allowance, subtracted ONCE, from the outer size.
         //
         // In the common case this makes the content strictly narrower and
         // shorter than the viewport, so neither bar is drawn and the ten points
@@ -311,7 +311,7 @@ impl PrintDialog {
         // was already reserved for it, so its appearance cannot change the
         // other axis. **The allowance is what decouples the two axes.**
         //
-        // ★★★ THE TWO ITEM GAPS ARE IN THE ARITHMETIC, and leaving them out was
+        // THE TWO ITEM GAPS ARE IN THE ARITHMETIC, and leaving them out was
         // this defect's third layer.
         //
         // `horizontal_top` inserts `spacing.item_spacing.x` between every child,
@@ -321,13 +321,13 @@ impl PrintDialog {
         // spare, with the horizontal bar still drawn. The 16 the allowance
         // reserved and the 16 the spacing consumed were the same 16.
         //
-        // ★ Read from the style rather than assumed to be 8, because this
+        // Read from the style rather than assumed to be 8, because this
         // shell's `Metrics::gutter` differs per theme preset — so a hard-coded
         // gap would be right in one preset and reintroduce the bar in another,
         // which is precisely the kind of defect that gets reported as
         // "sometimes".
         //
-        // ★★ Setting `item_spacing.x = 0` was tried first and is WORSE, though
+        // Setting `item_spacing.x = 0` was tried first and is WORSE, though
         // it also removes the bar. The zero inherits into every child `Ui`, so
         // the radio rows inside the options column lost their spacing too —
         // *"Subset ●Every page ○Odd only"*, *"Sheet 1 of 1Next"*. Fixing a
@@ -351,14 +351,14 @@ impl PrintDialog {
         let split = Columns::split(outer_width, gap, self.preview_width, self.preview_popped);
         let column_height = (body_height - SCROLLBAR_ALLOWANCE_PTS).max(MIN_BODY_HEIGHT_PTS);
 
-        // ★ The split, clamped and written back. Written back so a drag cannot
+        // The split, clamped and written back. Written back so a drag cannot
         // accumulate past the bound: if the stored width were left at 900 while
         // the window only allows 400, every later frame would re-clamp to 400
         // and the operator's first drag back would appear to do nothing until
         // it had unwound 500 pt of invisible travel. Storing the clamped value
         // keeps the control and the state in step, which is the rule the zoom
         // controls beside it follow too.
-        // ★★★ THE CLAMP DOES NOT WRITE BACK, and the first version of this did.
+        // THE CLAMP DOES NOT WRITE BACK, and the first version of this did.
         //
         // Writing the clamped value into `self.preview_width` looks like the
         // careful thing — it keeps the state and the layout in step, which is
@@ -374,13 +374,13 @@ impl PrintDialog {
         // the preview for as long as it is too narrow, and widening restores
         // exactly what was asked for.
         //
-        // ★ The drag then has to be expressed against the CLAMPED value rather
+        // The drag then has to be expressed against the CLAMPED value rather
         // than the preference, or a drag begun while clamped would move an
         // invisible number and appear to do nothing until it had caught up. See
         // [`Self::splitter`], which is handed the effective width for that
         // reason.
         //
-        // ★ Both numbers now come out of [`Columns::split`] rather than being
+        // Both numbers now come out of [`Columns::split`] rather than being
         // derived here, so the popped-out case cannot be given a second,
         // slightly different arithmetic by whoever adds the next branch. The
         // clamp-without-write-back described above is inside that function and
@@ -388,7 +388,7 @@ impl PrintDialog {
         let preview_width = split.preview;
         let options_width = split.options;
 
-        // ★ SOLID SCROLLBARS, not egui's floating default.
+        // SOLID SCROLLBARS, not egui's floating default.
         //
         // `ScrollStyle::default()` is `floating()`: a 2 pt sliver that
         // allocates no space and fades out when the pointer is elsewhere.
@@ -409,7 +409,7 @@ impl PrintDialog {
         ui.style_mut().spacing.scroll = scroll;
 
         let out = egui::ScrollArea::both()
-            // ★★★ `auto_shrink` TRUE ON BOTH AXES, and the previous value was
+            // `auto_shrink` TRUE ON BOTH AXES, and the previous value was
             // the defect rather than a setting near it.
             //
             // `auto_shrink([false, false])` means *"the content is at least as
@@ -438,7 +438,7 @@ impl PrintDialog {
                 // sized columns; wrapping them would stack the preview
                 // above the options rather than beside them.
                 ui.horizontal_top(|ui| {
-                    // ★★★ R9, AND IT IS THE WHOLE OF ASK 2's DESIGN: WHILE THE
+                    // R9, AND IT IS THE WHOLE OF ASK 2's DESIGN: WHILE THE
                     // PREVIEW IS POPPED OUT, THIS COLUMN DRAWS NOTHING AT ALL.
                     //
                     // Not a greyed rectangle. Not a *"the preview is in another
@@ -454,7 +454,7 @@ impl PrintDialog {
                     // occupies space, answers no question, and teaches the
                     // operator that the dialog has a dead region in it.
                     //
-                    // ★ The route back is the popped window's own close button
+                    // The route back is the popped window's own close button
                     // — `Frame::closed`, which `popout::popped_preview` turns
                     // straight into `preview_popped = false`. So there is
                     // nothing for this branch to draw a control for either: the
@@ -488,7 +488,7 @@ impl PrintDialog {
                                 }
                             },
                         );
-                        // ★★ The column's own rect, and it is published with
+                        // The column's own rect, and it is published with
                         // the UNGATED `ui_rect` on purpose.
                         //
                         // Its job is to answer *"was this column laid out at
@@ -516,12 +516,12 @@ impl PrintDialog {
                 });
             });
 
-        // ★ The numbers this layout turned on, so a driven check can assert the
+        // The numbers this layout turned on, so a driven check can assert the
         // deadlock is gone WITHOUT reading pixels — and so that "which width
         // did it use" is answerable from outside the process, which is the
         // question this defect turned on twice. Costs nothing when
         // `PDFCER_DIAG` is unset.
-        // ★ `content_w` is the LAID-OUT width — the columns plus the item gaps
+        // `content_w` is the LAID-OUT width — the columns plus the item gaps
         // egui inserts between them — not the sum of the columns. Reporting the
         // sum would report a number that is not what the scroll area measures,
         // which is the mistake this whole defect was made of.
@@ -541,7 +541,7 @@ impl PrintDialog {
 
     /// The draggable divider between the preview and the options.
     ///
-    /// # ★ Why a real splitter and not a `ui.separator()`
+    /// # Why a real splitter and not a `ui.separator()`
     ///
     /// Operator request, 2026-09-03: *"the preview should be adjustable
     /// size."* The preview column was a hard-coded 340 pt, so widening the
@@ -549,14 +549,14 @@ impl PrintDialog {
     /// which is the wrong way round, because the preview is the reason the
     /// dialog exists.
     ///
-    /// # ★★ The affordance is a CURSOR, and nothing is drawn on the preview
+    /// # The affordance is a CURSOR, and nothing is drawn on the preview
     ///
     /// Rule 4's pre-commit clause: a resize cursor over the divider and a
     /// hover-lift on the divider itself are the *pointer*, which is welcome. No
     /// grip dots on the sheet, no outline round the preview, nothing that
     /// changes what a screenshot of the previewed page looks like.
     ///
-    /// ★ `drag_delta()` rather than the pointer's absolute position, because
+    /// `drag_delta()` rather than the pointer's absolute position, because
     /// the two differ by wherever inside the divider the press landed —
     /// absolute tracking makes the divider jump to centre itself under the
     /// cursor on the first pixel of movement.
@@ -565,7 +565,7 @@ impl PrintDialog {
             egui::vec2(SPLITTER_WIDTH_PTS, height),
             egui::Sense::click_and_drag(),
         );
-        // ★ Against the EFFECTIVE width, not the stored preference. If the
+        // Against the EFFECTIVE width, not the stored preference. If the
         // window is currently too narrow to honour the preference the two
         // differ, and adding the delta to the preference would move a number
         // nothing is drawing — the operator would drag and see nothing happen
@@ -574,7 +574,7 @@ impl PrintDialog {
         if response.dragged_by(egui::PointerButton::Primary) {
             self.preview_width = effective_width + response.drag_delta().x;
         }
-        // ★ Double-click restores the default, which is the convention every
+        // Double-click restores the default, which is the convention every
         // splitter on this machine carries and costs one line. Without it a
         // width dragged to an extreme has no way back except by feel.
         if response.double_clicked() {
@@ -611,7 +611,7 @@ impl PrintDialog {
     // theme fill are `Host::buttons`', and all it does itself is set two
     // request flags that `mod.rs` acts on after the frame. That is layout.
     //
-    // ★ It was moved because `mod.rs` stood at 1,492 lines against R2's 1,500
+    // It was moved because `mod.rs` stood at 1,492 lines against R2's 1,500
     // and the pop-out preview needed a field, a call site and their reasons.
     // Growing a file past a ceiling to add a feature is how a file gets a
     // second reason to exist; moving the block whose subject this file already
@@ -622,7 +622,7 @@ impl PrintDialog {
 
     /// The footer: Close, the commit button, and the last outcome.
     ///
-    /// # ★ The commit button is ABSENT, not greyed, when there is nothing to print
+    /// # The commit button is ABSENT, not greyed, when there is nothing to print
     ///
     /// The no-placeholders rule's own distinction: greying is for
     /// *temporarily* unavailable, and there are two genuinely different
@@ -636,7 +636,7 @@ impl PrintDialog {
     ///   it *should* be is the operator's call, and the clip count in the
     ///   label is how they make it.
     ///
-    /// # ★★★ The label's count is corrected by what the preview has seen
+    /// # The label's count is corrected by what the preview has seen
     ///
     /// Operator request O113, 2026-09-04. It used to be [`Job::clipped`] —
     /// a geometric count of page boxes exceeding the printable rectangle —
@@ -650,7 +650,7 @@ impl PrintDialog {
     /// function does not choose wording, so the button and the preview's own
     /// caption cannot come to say different things about one job.
     ///
-    /// ★ Drawn AFTER the body, which is what makes the sheet on screen count
+    /// Drawn AFTER the body, which is what makes the sheet on screen count
     /// as examined on the same frame it is drawn. The alternative — the
     /// footer reading a cache the preview has not written yet — would make the
     /// button lag the picture beside it by exactly one frame, which is a
@@ -667,7 +667,7 @@ impl PrintDialog {
         // area that could raise a bar, and its one variable-width child
         // is `.truncate()`d.
         ui.horizontal(|ui| {
-            // ★★ G4 — ENTER PRESSES PRINT, AND PRINT LOOKS LIKE THE DEFAULT.
+            // G4 — ENTER PRESSES PRINT, AND PRINT LOOKS LIKE THE DEFAULT.
             //
             // The operator's second item, and the failure mode
             // `ui-conventions/dialogs.md` names: *"the operator types into the
@@ -675,7 +675,7 @@ impl PrintDialog {
             // In this dialog the last field is the page range, which is exactly
             // the box somebody types into and then expects Enter to act on.
             //
-            // ★ The pair is drawn only when there is a job to send. That is not
+            // The pair is drawn only when there is a job to send. That is not
             // a styling decision, it is the no-placeholders invariant: a
             // default button for a print that cannot happen is a control the
             // operator would press and be ignored by — and worse, it would make
@@ -683,12 +683,12 @@ impl PrintDialog {
             // something, which is the very complaint. With no job, the footer
             // keeps its plain Close and Enter is honestly inert.
             //
-            // ★ `Host::buttons` owns the ordering, the theme fill and the Enter
+            // `Host::buttons` owns the ordering, the theme fill and the Enter
             // guard, so no dialog can implement two of the three. It puts
             // Cancel to the LEFT of the affirmative in the right-to-left
             // layout, which is Windows' order and the order every dialog on
             // this machine uses.
-            // ★★★ THE OUTCOME IS DRAWN FIRST, AND THE ORDER IS THE BUG FIX.
+            // THE OUTCOME IS DRAWN FIRST, AND THE ORDER IS THE BUG FIX.
             //
             // Operator report, 2026-08-25: *"when I press print, instead of
             // closing after printing it just keeps expanding its size in
@@ -713,7 +713,7 @@ impl PrintDialog {
             //    NEW right edge, and the label is placed `w` past it again;
             // 4. goto 2, for ever, in steps of exactly `w`.
             //
-            // ★ Note what this is NOT. It is not the once-per-size guard
+            // Note what this is NOT. It is not the once-per-size guard
             // failing — every size in the sequence is genuinely new, so the
             // guard is satisfied every time. It is not `FIT_MARGIN` being too
             // small — the step is a whole label wide. **It is a measurement fed
@@ -730,14 +730,14 @@ impl PrintDialog {
             // what every dialog on this machine does, so the fix costs nothing
             // in layout terms and gains the Windows idiom.
             //
-            // ★ `truncate()` is not decoration either: `t::failed` carries a
+            // `truncate()` is not decoration either: `t::failed` carries a
             // driver's own error text and can be arbitrarily long. Untruncated
             // it would push the buttons off the row and re-create the overflow
             // by a different route — a *bounded* one, since the text does not
             // grow with the window, but bounded overflow is still overflow.
             // The full text is not lost; it is what the trace records.
             match &self.outcome {
-                // ★ A SUCCESS DRAWS NOTHING HERE, and the arm is kept rather
+                // A SUCCESS DRAWS NOTHING HERE, and the arm is kept rather
                 // than folded into `None` so the reason is where somebody
                 // looking for the missing receipt will find it.
                 //
@@ -759,7 +759,7 @@ impl PrintDialog {
             }
             match job.filter(|j| !j.plans.is_empty()) {
                 Some(job) => {
-                    // ★ `ClipClaim::None` when there is no context, which
+                    // `ClipClaim::None` when there is no context, which
                     // happens only when there is no job — and this arm has
                     // one. The plain label is therefore not a fallback that
                     // could hide a clip; it is what an unclipped job says.
@@ -768,7 +768,7 @@ impl PrintDialog {
                         .unwrap_or(super::verdicts::ClipClaim::None)
                         .commit_label()
                         .unwrap_or_else(|| t::commit().to_owned());
-                    // ★★★ THREE ROUTES, NOT TWO — `OPERATOR_REQUESTS.md` **O185**.
+                    // THREE ROUTES, NOT TWO — `OPERATOR_REQUESTS.md` **O185**.
                     //
                     // Until 2026-09-14 the footer offered Print and Close, and
                     // the operator's complaint was that neither said the thing
@@ -798,14 +798,14 @@ impl PrintDialog {
                     }
                 }
                 None => {
-                    // ★★ The same two meanings the job arm offers, minus the one
+                    // The same two meanings the job arm offers, minus the one
                     // there is nothing to do. With no job there is nothing to
                     // print, so the AFFIRMATIVE button is *Keep and close* —
                     // which is why this is `buttons` and not `footer`: the
                     // third route is not missing here, it has been promoted to
                     // the first.
                     //
-                    // ★ Leaving it as the bare Close it was until O185 would
+                    // Leaving it as the bare Close it was until O185 would
                     // reproduce that request in miniature. An operator who
                     // opens Print on a document with no printable pages, fixes
                     // the copy count and the tray, then closes, would find the
@@ -830,7 +830,7 @@ impl PrintDialog {
 mod tests {
     //! The relationships between this file's own constants.
     //!
-    //! ★★ These are deliberately the ONLY thing asserted here. Whether a
+    //! These are deliberately the ONLY thing asserted here. Whether a
     //! scrollbar actually appears is egui's decision, made against a viewport
     //! that exists only in a laid-out frame — see this module's header. It is
     //! asserted by `ui-verify`'s
@@ -847,7 +847,7 @@ mod tests {
     // relationship it pinned was true for every one of the many frames in which
     // the operator was looking at two scrollbars he could not dismiss.
     //
-    // ★★ It was a test of the WRONG QUANTITY, and that is worth keeping. A
+    // It was a test of the WRONG QUANTITY, and that is worth keeping. A
     // scrollbar appears when the content exceeds the **viewport**, and the
     // viewport is egui's, is smaller than the space the widths were derived
     // from, and does not exist until a frame has been laid out. No relationship
@@ -873,7 +873,7 @@ mod tests {
     /// solid bar — measured at 14 pt for a 10 pt bar — so equality is not even
     /// the boundary, it is already over it.
     ///
-    /// ★ This is the one thing in that arithmetic a constant CAN pin, and it is
+    /// This is the one thing in that arithmetic a constant CAN pin, and it is
     /// pinned here so that a later change tuning the bar's width cannot quietly
     /// make the allowance too small. It does not, and cannot, prove no bar
     /// appears; see the retired test above for why.
@@ -937,7 +937,7 @@ mod tests {
     ///    hole in the dialog, which is a placeholder made of nothing at all and
     ///    is exactly as bad as a greyed rectangle.
     ///
-    /// ★ Claim 3 is the one worth the test. Claims 1 and 2 are what anybody
+    /// Claim 3 is the one worth the test. Claims 1 and 2 are what anybody
     /// would write; claim 3 is what makes the difference between *collapsing*
     /// the column and merely *emptying* it, and it is invisible in a screenshot
     /// of a wide dialog where the extra room is not obviously anybody's.

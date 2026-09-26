@@ -39,7 +39,7 @@ use pdfcer_render::tiny_skia::{Point as SkPoint, Transform};
 /// One selectable thing on a page, addressed opaquely — and **which of the
 /// two index spaces it lives in**.
 ///
-/// # ★★★ WHY THIS IS AN ENUM AND NOT A NUMBER
+/// # WHY THIS IS AN ENUM AND NOT A NUMBER
 ///
 /// A page has two lists of objects, not one, and they index **different
 /// content streams**:
@@ -97,14 +97,14 @@ pub enum TargetId {
     /// paint-order verbs — see the type docs — and that is a statement
     /// about the INDEX SPACE, which is what this type is for.
     ///
-    /// ★★ It is **not** a statement about editability. `is_editable` on a leaf
+    /// It is **not** a statement about editability. `is_editable` on a leaf
     /// means *"this leaf is a path"*, and a leaf reached through this variant
     /// is edited by the **form-scoped** verbs — `move_objects_in_form`,
     /// `move_subpath_in_form`, `move_node_in_form`, `move_nodes_in_form`,
     /// `move_handle_in_form`, `delete_objects_in_form` — every one of which
     /// this shell calls.
     ///
-    /// ★ [`Self::page_object_index`] returning `None` guards one thing only:
+    /// [`Self::page_object_index`] returning `None` guards one thing only:
     /// *do not hand a leaf index to a paint-order verb*. It does not mean *do
     /// not edit this*, and reading it that way withholds working verbs.
     Leaf(u64),
@@ -114,7 +114,7 @@ impl TargetId {
     /// The index an [`pdfcer_core::edit::EditSession`] paint-order verb will
     /// accept — `None` for a leaf.
     ///
-    /// ★ **This is the only supported way to turn a `TargetId` into an edit
+    /// **This is the only supported way to turn a `TargetId` into an edit
     /// operand**, and its `None` is the guard that makes the two index spaces
     /// impossible to confuse. Do not pattern-match `Object(i)` and cast at a
     /// call site that is about to edit: the match compiles just as well when
@@ -191,13 +191,13 @@ pub struct ObjectModelProvider {
     /// **The page's own extent in canvas units**, or `None` when this
     /// provider was built from parts and nobody supplied one.
     ///
-    /// ★★★ Held for exactly one question:
+    /// Held for exactly one question:
     /// [`crate::canvas::target::CanvasTargetProvider::container_is_worth_selecting`],
     /// which needs to know whether a form covers the whole sheet. It is
     /// `page_device_geometry(page, 1.0)`'s first two returns, kept alongside
     /// the transform this provider is really built from.
     ///
-    /// ★ `None` makes that predicate answer `true`, which is the behaviour
+    /// `None` makes that predicate answer `true`, which is the behaviour
     /// before it existed. A provider that cannot measure must not guess.
     page_extent_px: Option<egui::Vec2>,
 }
@@ -215,7 +215,7 @@ pub struct ObjectModelProvider {
 /// | Drag to move | `move_subpath` | `move_text_run` — **but conditionally**, see [`RunMoveBlock`] |
 /// | Descend to Point | yes | no (a run has no anchors) |
 ///
-/// ★★ Note the word **conditionally**. A subpath can always be moved; a run
+/// Note the word **conditionally**. A subpath can always be moved; a run
 /// can be moved only when
 /// the file gave it a position of its own. That asymmetry does not go away
 /// with a verb — it is a property of ISO 32000-1 sub-clause 9.4.2, where a
@@ -244,7 +244,7 @@ pub enum PartKind {
 /// **Why moving one line of a text object would be refused**, asked before the
 /// gesture rather than after it.
 ///
-/// # ★★★ This is the ENGINE's guard, re-spelled, not a second opinion
+/// # This is the ENGINE's guard, re-spelled, not a second opinion
 ///
 /// [`ObjectModelProvider::text_run_move_refusal_of`] calls
 /// [`pdfcer_core::vector::edit::text_run_move_refusal`], which is *the same
@@ -255,7 +255,7 @@ pub enum PartKind {
 /// control the engine refuses, or grey out one it would have allowed"*
 /// (`R221`, `R243`).
 ///
-/// ★★ **Contrast [`ObjectModelProvider::text_run_delete_would_move_next`]
+/// **Contrast [`ObjectModelProvider::text_run_delete_would_move_next`]
 /// three functions below**, which IS a hand-rolled copy of the delete-side
 /// rule, written before the engine exported anything. It reads the same
 /// `positioned_by` flag and reaches the same answer today. It is a standing
@@ -272,13 +272,13 @@ pub enum PartKind {
 /// | [`Self::WouldMoveNextRun`] | the line AFTER this one carries on from it, so moving this one drags that one too | select the whole block and drag that |
 /// | [`Self::NotThere`] | the index is not a run of this object | nothing — a stale selection, not worded |
 ///
-/// ★ The first two are ISO 32000-1 sub-clause 9.4.2 showing through, and
+/// The first two are ISO 32000-1 sub-clause 9.4.2 showing through, and
 /// they are common on real CAD exports: a producer that writes `(A) Tj (B) Tj`
 /// with no positioning operator between them has made B's origin a function of
 /// A's advance, and no amount of engine work can separate them without
 /// rewriting the file's shape.
 ///
-/// ★ `NotThere` exists because a selection can outlive the edit that
+/// `NotThere` exists because a selection can outlive the edit that
 /// removed what it named. It is a refusal, so the drag does nothing, but it
 /// earns no sentence — the operator has not done anything wrong and there is
 /// nothing for them to do differently.
@@ -357,7 +357,7 @@ impl ObjectModelProvider {
         page: &Page,
         page_index: usize,
     ) -> Result<Self, String> {
-        // ★★★ **TIMED, because this shell measures its own loop rather than
+        // **TIMED, because this shell measures its own loop rather than
         // inheriting the engine's numbers.**
         //
         // The engine's measurement of `decompose_page` says the decode is
@@ -387,7 +387,7 @@ impl ObjectModelProvider {
             objects,
             to_canvas,
             to_pdf: to_canvas.invert(),
-            // ★ At scale 1.0 these ARE the page's canvas-space extent, which is
+            // At scale 1.0 these ARE the page's canvas-space extent, which is
             // the space `bounds` answers in. Taken here rather than re-derived
             // from the crop box, so the geometry has one source.
             #[allow(
@@ -412,7 +412,7 @@ impl ObjectModelProvider {
             objects,
             to_canvas,
             to_pdf: to_canvas.invert(),
-            // ★ Headless tests construct from parts and have no page. `None`
+            // Headless tests construct from parts and have no page. `None`
             // makes `container_is_worth_selecting` answer `true`, which is what
             // those tests were written against — a unit test must not start
             // depending on a geometric judgement it never supplied the geometry
@@ -797,7 +797,7 @@ impl ObjectModelProvider {
     /// target — the operand half of the same question
     /// [`Self::containing_form`] answers in paint order.
     ///
-    /// # ★★★ Why there have to be two of these, and it is not an oversight
+    /// # Why there have to be two of these, and it is not an oversight
     ///
     /// [`Self::containing_form`]'s own doc comment argues at length for
     /// answering in `paint_order` rather than in `containment`, and every word
@@ -878,7 +878,7 @@ impl ObjectModelProvider {
     /// Every object a canvas-space marquee rect takes, under `mode` and
     /// `forms`.
     ///
-    /// # ★★★ Why `mode` is a parameter — `OPERATOR_REQUESTS.md` O88
+    /// # Why `mode` is a parameter — `OPERATOR_REQUESTS.md` O88
     ///
     /// [`MarqueeMode::Enclosed`] is the **default**, and the reasoning for it
     /// holds: a marquee that grabs everything it grazes is unusable on a dense
@@ -903,12 +903,12 @@ impl ObjectModelProvider {
     /// convention rather than an invention: no modifier key, nothing new to
     /// learn, and the behaviour a drawing-office hand already has.
     ///
-    /// ★ **Select All still passes `Enclosed` explicitly**
+    /// **Select All still passes `Enclosed` explicitly**
     /// (`app::actions::apply`), and must: it hands an infinite rect, under
     /// which the two modes agree, and stating the mode keeps the call readable
     /// rather than resting on that coincidence.
     ///
-    /// # ★★★ The ENGINE answers this, and this shell states no enclosure rule
+    /// # The ENGINE answers this, and this shell states no enclosure rule
     ///
     /// The body below is one call to [`hit_test_rect_deep`]. It must stay one
     /// call: a hand-written loop over `objects.leaves` applying `contained_by`
@@ -918,7 +918,7 @@ impl ObjectModelProvider {
     /// because a local copy keeps compiling and keeps returning something
     /// plausible.
     ///
-    /// ★★ **What the engine's version does that a local loop cannot**: it interleaves
+    /// **What the engine's version does that a local loop cannot**: it interleaves
     /// the two lists on [`pdfcer_core::vector::FormLeaf::paint_order`] instead
     /// of appending every leaf after every object, so a marquee's result and a
     /// click's result order the same objects the same way. Front-most **last**,
@@ -926,7 +926,7 @@ impl ObjectModelProvider {
     /// first; a marquee answers *"which ones?"* and a caller drawing handles or
     /// re-emitting them wants paint order.
     ///
-    /// # ★★ `forms` is the caller's, and this shell's answer is not the
+    /// # `forms` is the caller's, and this shell's answer is not the
     /// engine's default
     ///
     /// [`FormMarquee::Exclude`] is the engine's default and the one that makes
@@ -944,7 +944,7 @@ impl ObjectModelProvider {
     /// way round, because in the engine's shell the form is the unreachable
     /// thing and here it is the reachable one.
     ///
-    /// ★ And the case that would make `Include` obnoxious is already handled
+    /// And the case that would make `Include` obnoxious is already handled
     /// **downstream**, not here: a page-sized wrapper touched by every crossing
     /// band is dropped by `canvas::marquee::without_page_wrappers`, which reuses
     /// `container_is_worth_selecting` — the click ladder's own rule. That is why
@@ -963,7 +963,7 @@ impl ObjectModelProvider {
         let Some(bounds) = self.canvas_rect_to_pdf_bounds(rect) else {
             return Vec::new();
         };
-        // ★ One call, one enclosure rule, one ordering. The mapping below is
+        // One call, one enclosure rule, one ordering. The mapping below is
         // the only thing this shell still owns about a marquee: the engine
         // answers in its own index spaces and this turns them into the two
         // `TargetId` variants the selection vocabulary uses. It is the same
@@ -989,7 +989,7 @@ impl ObjectModelProvider {
         if page_index != self.page_index {
             return None;
         }
-        // ★ Both lists, resolved by the id itself rather than by a caller
+        // Both lists, resolved by the id itself rather than by a caller
         // that had to remember which one it was holding. A leaf's geometry is
         // already in page space — `decompose_page` maps it there on the way
         // out — so this is the same projection, not a second one.

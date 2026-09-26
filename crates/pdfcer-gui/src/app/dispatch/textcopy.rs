@@ -26,7 +26,7 @@ pub fn handles(id: &str) -> bool {
 /// document.
 pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str) {
     match id {
-        // ★★ **The page's text comes from the per-page extraction cache**
+        // **The page's text comes from the per-page extraction cache**
         // (`app::cache::PageTextCache`), which is what canvas text selection
         // reads too. The session has no cheap route to one page's text —
         // `EditSession::find_text_with` needs `&mut` and walks the **whole
@@ -48,7 +48,7 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str) {
                         "page",
                     ),
                     None => {
-                        // ★ The engine's own reason where there is one, and
+                        // The engine's own reason where there is one, and
                         // a distinct token where there is not.
                         //
                         // Two facts reach here and they are traced apart:
@@ -94,7 +94,7 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str) {
                     // operator is copying the document they are looking at,
                     // unsaved edits included.
                     &doc.session.view(),
-                    // ★ The funnel, not `ExtractOptions::default()`. This
+                    // The funnel, not `ExtractOptions::default()`. This
                     // and the page-level extraction in `app::cache` must
                     // agree, or the same document copied two ways would
                     // come out spaced two ways — and the operator's word-gap

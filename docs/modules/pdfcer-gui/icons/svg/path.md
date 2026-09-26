@@ -18,7 +18,7 @@ to use costs a few dozen lines and removes a whole class of future failure
 become a build break. Anything that is not one of those letters is
 [`IconError::UnsupportedPathCommand`], never a skip.
 
-## ★ Two lexing rules that look like details and are not
+## Two lexing rules that look like details and are not
 
 * **Number extent is computed, not delegated.** `1.5.5` is two numbers,
   `1-2` is two numbers, and `M6 14h12l4 4` has no separators at all.

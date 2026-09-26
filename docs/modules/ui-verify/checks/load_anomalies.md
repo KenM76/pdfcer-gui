@@ -22,7 +22,7 @@ rows where an operator can read them. That is this file's whole subject, and
 it is the standing rule R1 — *verify by driving the binary, not by a passing
 test*.
 
-# ★★★ The second launch is the check
+# The second launch is the check
 
 Each of the two checks below launches **twice**: once on
 `fixtures/contradicts-itself.pdf`, asserting the disclosure is THERE, and
@@ -43,7 +43,7 @@ anomaly. If that ever changed, the absence assertion here would go red and
 blame the program for something that is true of the fixture — so the
 tripwire lives in the crate that runs on every `cargo test`, not here.
 
-# ★★★ The third check is not a disclosure at all — it is the way out
+# The third check is not a disclosure at all — it is the way out
 
 `RereadingUnderTheOtherValueIsOffered` drives the **control** that arrived
 at the foot of that same block on 2026-09-10. The operator's ruling is that

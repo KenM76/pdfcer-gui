@@ -239,7 +239,7 @@ mod tests {
         dir
     }
 
-    /// ★ **A sheet set does not inherit a report's setting.**
+    /// **A sheet set does not inherit a report's setting.**
     ///
     #[test]
     fn a_sheet_set_does_not_inherit_a_reports_setting() {
@@ -330,7 +330,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// ★ **A corrupt file degrades into a shorter list, never into an error.**
+    /// **A corrupt file degrades into a shorter list, never into an error.**
     ///
     /// Every rejection is local: a line with no separator, an unknown mode id
     /// and an empty path are each skipped and the rest is kept. The

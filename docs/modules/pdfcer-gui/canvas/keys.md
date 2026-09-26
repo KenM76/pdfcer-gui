@@ -16,7 +16,7 @@ A mode-shaped guard would have been wrong in both directions — Review and
 Edit both offer the measure tools, and in neither of them should Tab stop
 moving focus when the operator is not measuring.
 
-## ★ Many claimants for Escape, one press, one effect
+## Many claimants for Escape, one press, one effect
 
 Decision 025's L1 is that Escape ascends **exactly one rung** rather than
 collapsing the ladder, and the same discipline governs everything else that
@@ -30,11 +30,11 @@ first"*, and rung 3 has two occupants that cannot both be present:
 | 2 | a **guide drag in flight** | [`crate::canvas::guides::cancel_drag`] | its return value: `true` when there was one |
 | 3a | a **measure pick**, a **markup vertex run**, a **text draft** or a **pending placement** in progress | [`crate::canvas::measure::abandon`] / [`crate::canvas::markup::vertex::abandon`] / [`crate::canvas::textedit::settle`] / [`crate::dialogs::placing`] | its return value: `true` when there was one. Only the text draft **writes** what it retires |
 | 3b | an **armed markup or measure tool** | [`crate::canvas::tool::disarm_markup`] / [`crate::canvas::tool::disarm_measure`] | its return value: `true` when there was one armed |
-| — | ★ the **armed text tool** is deliberately **not** a claimant — see below | — | — |
+| — | the **armed text tool** is deliberately **not** a claimant — see below | — | — |
 | 4 | an **armed region zoom** | [`crate::canvas::zoom::disarm_region_zoom`] | its return value: `true` when there was something to retire |
 | 5 | the **selection ladder**, or the **text selection** | [`crate::canvas::selection::SelectionState::escape`] / clearing [`crate::canvas::textsel::TextSelection`] | it is last, so it acts only when none above did |
 
-### ★ Why the text selection shares rung 5 rather than taking a sixth
+### Why the text selection shares rung 5 rather than taking a sixth
 
 The two occupants of rung 5 can both be present. In **Edit**, an operator
 can marquee some objects with the select tool, arm the text tool, sweep a
@@ -74,7 +74,7 @@ unlike the content ladder, whose first press *ascends* and whose second
 clears — a text range has no rungs to ascend, since there is no larger unit
 than the sweep the operator made and no smaller one they have descended into.
 
-### ★ Why the armed TEXT tool takes no rung at all
+### Why the armed TEXT tool takes no rung at all
 
 Rung 3b retires an armed markup or measure tool, so the obvious symmetry is a
 third call beside them. It is deliberately absent, and the decision is
@@ -108,7 +108,7 @@ pressing it again returns to the select tool
 pressed, so pressing it un-presses it* rule the four markup buttons follow —
 rung 3b is the **extra** affordance those tools get, not their only one.
 
-### ★ Why a measure pick is TWO rungs rather than one
+### Why a measure pick is TWO rungs rather than one
 
 A markup **band** is a drag, so abandoning it and retiring the pen are
 already separated by the table: the drag is claimant 1, the tool is claimant
@@ -118,7 +118,7 @@ point B not is unmistakably a gesture in flight. Without 3a, one Escape
 would put the tool down *and* silently discard that pick: two effects from
 one press, which is exactly what decision 025's L1 forbids.
 
-★ **The same argument admits a second occupant to 3a**, and the fact that
+**The same argument admits a second occupant to 3a**, and the fact that
 it needs no new reasoning is the point. PolyLine and Polygon
 are also gestured by clicks
 ([`crate::canvas::markup::vertex`]), so a run of three vertices with the
@@ -140,7 +140,7 @@ two, and it is the thing the operator is most likely to have meant.
 Pressing Escape twice puts the tool down; pressing it once corrects a
 mis-aimed first click without leaving the tool.
 
-### ★ Why a focused form field is rung 0, and why its rung is unlike every
+### Why a focused form field is rung 0, and why its rung is unlike every
 other
 
 It is numbered 0 rather than 1 because it does not merely *outrank* the
@@ -162,7 +162,7 @@ the shape the `escape_consumed` flag was invented for one row down.
 [`crate::canvas::forms::escape_spent`] is the same report-rather-than-
 re-derive contract, read once and cleared by the reading.
 
-### ★ Where the markup tool sits, and why the transience rule does not
+### Where the markup tool sits, and why the transience rule does not
 settle it
 
 Row 1 needed **no change at all**, and that is the first thing to notice: a

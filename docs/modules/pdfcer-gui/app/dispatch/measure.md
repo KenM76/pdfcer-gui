@@ -8,11 +8,11 @@ stated once: the capability they all gate on, and the way an authoring
 group is resolved. Split across `super`'s match they were restated per arm,
 and restated rules agree only by inspection.
 
-★ [`active_group`] takes the **command id** so its trace line names the
+[`active_group`] takes the **command id** so its trace line names the
 command that fell back. That is the one thing a per-arm copy of the
 resolution got right, and it is why the shared helper is not argument-free.
 
-## ★ What the fallback is for, and why it is traced rather than silent
+## What the fallback is for, and why it is traced rather than silent
 
 `canvas::measure::active_group` returns `None` when the measure tool has
 never been armed this session — there is no state in `egui::Memory` and no

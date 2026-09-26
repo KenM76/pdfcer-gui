@@ -19,7 +19,7 @@ WHY THIS IS ITS OWN FILE
 THE LESSON THIS FILE IS THE RECORD OF
 ===========================================================================
 
-★★★ **A check's measuring window can be bounded below by the application
+**A check's measuring window can be bounded below by the application
 and above by the harness's own geometry, and then it is flaky until somebody
 does the arithmetic.** Part A's window was bounded below at zoom 20.7 (where
 the neighbour becomes unorderable) and above at 18.9 (where the growing gap

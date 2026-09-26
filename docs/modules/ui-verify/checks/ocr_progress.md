@@ -3,7 +3,7 @@
 **The three checks about a recognition run while it is still running** —
 progress, Stop, and Cancel.
 
-# ★★★ Why this file exists at all, when `checks::ocr` already drives OCR
+# Why this file exists at all, when `checks::ocr` already drives OCR
 
 `checks::ocr` drives a **one-page** run and asserts its *result*: words came
 back, the session took them, nothing was written to disk. Every one of those
@@ -30,7 +30,7 @@ So these checks drive `fixtures/synthetic-image-only-8pages.pdf`, which
 exists for exactly this and whose header
 (`crates/pdfcer-gui-base/src/ocr/fixture.rs`) argues the eight.
 
-# ★★ What was already true, and why it was not enough
+# What was already true, and why it was not enough
 
 
 **They call the verb. They cannot see the chain in front of it.** Between
@@ -42,7 +42,7 @@ tests say nothing about any of them. `OPERATOR_REQUESTS.md` O93 is marked
 **not shipped** on precisely that reading of R1, and this file is what
 closes it.
 
-# ★★★ The one that would have been missed, and it is not the buttons
+# The one that would have been missed, and it is not the buttons
 
 **A rect is not an oracle for "the user can see it is doing something".**
 
@@ -53,7 +53,7 @@ frozen application the request is about. So the shell now traces the
 **numbers** as well (`ocr-progress attempted=… of=… words=… chars=…`, on
 change), and [`OcrSaysHowFarItHasGot`] asserts that two of them differ.
 
-★ Writing that check is also what found the defect underneath it. egui is
+Writing that check is also what found the defect underneath it. egui is
 immediate-mode and idle: the OCR worker is on another thread and generates
 no input events, so **nothing would have requested the next frame** and the
 window would have held the frame it drew when the run started. It worked
@@ -71,7 +71,7 @@ on any document that already has text the doubling guard skips everything
 and the honest answer to *"how far did it get"* is *"it declined to look"*.
 A suite-wide `--pdf` is a drawing; a drawing is the wrong subject here.
 
-★★ **`PDFCER_VERIFY_SCAN` overrides it, and should be used.** Point it at a
+**`PDFCER_VERIFY_SCAN` overrides it, and should be used.** Point it at a
 genuinely scanned, multi-page, text-free PDF and these checks run against
 real material — scanner noise, skew, JPEG ringing, rotated pages, the lot.
 The synthetic fixture is a *rendered* page and flatters the recogniser; it

@@ -19,7 +19,7 @@ use pdfcer_core::object::ObjId;
 
 /// Which optional-content groups the operator has hidden, if any.
 ///
-/// # ★ `None` is not "hide nothing"
+/// # `None` is not "hide nothing"
 ///
 /// `pdfcer_render::LayerVisibility` **replaces** the document's own default
 /// configuration rather than merging with it (core API trap T-12.9). So:
@@ -40,7 +40,7 @@ use pdfcer_core::object::ObjId;
 /// render time, in a second place, with the merge rules the engine
 /// deliberately refused to define.
 ///
-/// # ★ The operator's toggle is session-only, and nothing here can save it
+/// # The operator's toggle is session-only, and nothing here can save it
 ///
 /// §8.11.2.1 puts the live state outside the document entirely: the toggle is
 /// *"session-only state, held nowhere the save path can see it"*, lost on

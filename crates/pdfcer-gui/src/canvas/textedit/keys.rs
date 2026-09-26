@@ -25,7 +25,7 @@ use crate::app::state::OpenDoc;
 ///
 /// Returns `true` when the draft changed and must be written back.
 ///
-/// # ★★★ The three gestures, and why they are one function
+/// # The three gestures, and why they are one function
 ///
 /// | gesture | result |
 /// |---|---|
@@ -38,7 +38,7 @@ use crate::app::state::OpenDoc;
 /// the containment check and three chances to drift on which coordinate space
 /// is being asked about.
 ///
-/// # ★★ The press origin, not the current position, anchors the drag
+/// # The press origin, not the current position, anchors the drag
 ///
 /// `PointerState::press_origin` is where the button went down, so the mark is
 /// recomputed from it every frame rather than stored. That is deliberate: a
@@ -47,7 +47,7 @@ use crate::app::state::OpenDoc;
 /// `canvas::markup::ink`'s header records what forgetting one of those four
 /// costs. Derived state cannot go stale.
 ///
-/// # ★ Why this reads raw pointer input rather than a `Response`
+/// # Why this reads raw pointer input rather than a `Response`
 ///
 /// Because the draft is not a widget. It is painted into the canvas and the
 /// canvas's own `Response` covers the whole page; a second `interact` over the
@@ -72,7 +72,7 @@ fn pointer(ui: &Ui, ctx: &egui::Context, draft: &mut Draft) -> bool {
     let Some(pos) = pos else {
         return false;
     };
-    // ★ The PRESS decides whether this gesture belongs to the box, not the
+    // The PRESS decides whether this gesture belongs to the box, not the
     // current position. A sweep that starts inside and runs out over the page
     // keeps selecting to the end of the text, which is what every text field
     // does; a press that starts outside never becomes the draft's business no
@@ -116,7 +116,7 @@ fn pointer(ui: &Ui, ctx: &egui::Context, draft: &mut Draft) -> bool {
 /// call it unconditionally — which the `Text` arm does, because *"replace the
 /// selection if there is one"* and *"insert here"* is one act.
 ///
-/// ★ It clears the mark, and that is not tidying: a mark left pointing into
+/// It clears the mark, and that is not tidying: a mark left pointing into
 /// text that no longer exists is an index past the end of the string, and the
 /// next Shift+Left would select a range that is not there.
 fn take_selection(draft: &mut Draft) -> usize {
@@ -150,7 +150,7 @@ pub enum EnterMeans {
 /// | a clicked **point** | a line break | commit |
 /// | an existing **run** | a worded decline | commit |
 ///
-/// # ★★★ Why this is a function rather than three branches in the arm
+/// # Why this is a function rather than three branches in the arm
 ///
 /// Because *"decide the whole interaction, not half of it"* is a claim that has
 /// to be checkable, and a `match` buried inside a 200-line event loop is not.
@@ -159,11 +159,11 @@ pub enum EnterMeans {
 /// `canvas::moving::eligible` and `SelectionState::click` are written to, and
 /// the reason those two have rules a reader can trust.
 ///
-/// ★ It is also the trace's operand. `text-edit-enter means=NewLine` says which
+/// It is also the trace's operand. `text-edit-enter means=NewLine` says which
 /// branch was taken; the line it replaced said `boxed=1 command=0` and left the
 /// reader to re-run the rule in their head against a build they were debugging.
 ///
-/// # ★★ What changed, and the argument that was retired to change it
+/// # What changed, and the argument that was retired to change it
 ///
 ///
 /// That argument is now retired rather than ignored. Enter means **one** thing:
@@ -177,7 +177,7 @@ pub enum EnterMeans {
 /// (*"does it already contain a newline?"*) would make the first Enter behave
 /// differently from every one after it, which is the worst available answer.
 ///
-/// # ★★★ [`EnterMeans::CannotSplit`] is the FILE's rule, not this shell's
+/// # [`EnterMeans::CannotSplit`] is the FILE's rule, not this shell's
 ///
 /// `EditSession::edit_text` replaces the string inside **one show operator**,
 /// re-encoding it into that run's own font. `\n` has no code in any standard
@@ -192,7 +192,7 @@ pub enum EnterMeans {
 #[must_use]
 pub const fn enter_means(anchor: &Anchor, command: bool) -> EnterMeans {
     if command {
-        // ★ Asked FIRST, so the chord is unconditional. An operator should not
+        // Asked FIRST, so the chord is unconditional. An operator should not
         // have to know which gesture started the draft they are in to know how
         // to finish it — and O127's brief is explicit that commit must not be
         // reachable only by mouse.
@@ -226,7 +226,7 @@ pub fn typing(
     let Some(mut draft) = read(ctx) else {
         return false;
     };
-    // ★★ THE POINTER FIRST, and before the seam, because a press that lands
+    // THE POINTER FIRST, and before the seam, because a press that lands
     // in the box is the operator saying *where* the next keystroke goes — and
     // a keystroke arriving in the same frame must land at the new caret rather
     // than the old one.
@@ -247,7 +247,7 @@ pub fn typing(
         }
     }
     if focused {
-        // ★★ Read once, outside the loop: see [`caret::shifted`] for why the
+        // Read once, outside the loop: see [`caret::shifted`] for why the
         // frame's own modifier state is consulted at all, and why ignoring it
         // cost this shell its whole first driven run of Shift+arrow.
         let frame_shift = ui.input(|i| i.modifiers.shift);
@@ -265,13 +265,13 @@ pub fn typing(
                     // > word and then loses it. The alphabet is knowable before
                     // > the first keystroke and we do not use it that way yet."*
                     //
-                    // ★ Only a caret in an EXISTING run has a wall. An
+                    // Only a caret in an EXISTING run has a wall. An
                     // `Origin`/`Box` anchor is text pdfcer is about to author
                     // with a face pdfcer chooses, so nothing constrains it — and
                     // `sieve` is not even asked, which also keeps the page walk
                     // off the Add-text path entirely.
                     //
-                    // ★★ `take_selection` runs only if something survives. A
+                    // `take_selection` runs only if something survives. A
                     // keystroke that is refused whole must leave the selection
                     // standing: the operator has not replaced his selection, he
                     // has pressed a key that did nothing, and eating the
@@ -308,7 +308,7 @@ pub fn typing(
                         ));
                     }
                     if !sieved.kept.is_empty() {
-                        // ★★ TYPING REPLACES THE SELECTION. Rule 2 of the four
+                        // TYPING REPLACES THE SELECTION. Rule 2 of the four
                         // in `caret`'s selection section, and the one an
                         // operator notices first: select a word, type a word,
                         // and the old one is gone.
@@ -317,7 +317,7 @@ pub fn typing(
                         changed = true;
                     }
                 }
-                // ★ Rule 3: with a selection, Backspace and Delete remove
+                // Rule 3: with a selection, Backspace and Delete remove
                 // THAT and nothing else — they stop being different keys, which
                 // is what every text field does and is why both arms are the
                 // same two lines.
@@ -345,7 +345,7 @@ pub fn typing(
                     };
                     changed = true;
                 }
-                // ★★ SELECT ALL. `Ctrl+A` is not in the keymap and must not be:
+                // SELECT ALL. `Ctrl+A` is not in the keymap and must not be:
                 // the application's own Select-all acts on OBJECTS, and while a
                 // draft is live the operator means the text they are typing.
                 // The draft takes the chord first and the event is consumed, so
@@ -360,7 +360,7 @@ pub fn typing(
                     draft.caret = draft.text.chars().count();
                     changed = true;
                 }
-                // ★★★ THE DRAFT'S CLIPBOARD — copy, cut and paste. Defect O18.
+                // THE DRAFT'S CLIPBOARD — copy, cut and paste. Defect O18.
                 //
                 // All three were absent until 2026-08-21, and the absence was
                 // not an oversight so much as a half-finished thought.
@@ -378,7 +378,7 @@ pub fn typing(
                 // gets it, and a chord with no owner does not go quiet — it goes
                 // to whoever claims it next.
                 //
-                // ★ These arrive as `Event::Copy` / `Event::Cut` /
+                // These arrive as `Event::Copy` / `Event::Cut` /
                 // `Event::Paste`, never as key events: `egui-winit` intercepts
                 // the three chords and returns before pushing an `Event::Key`.
                 // Matching on `Key::C` here would compile, read correctly, pass
@@ -391,7 +391,7 @@ pub fn typing(
                     copy_selection(ctx, &draft);
                 }
                 egui::Event::Cut => {
-                    // ★ Cut is copy-then-delete, in that order, and it is a
+                    // Cut is copy-then-delete, in that order, and it is a
                     // no-op with no selection rather than a cut of the whole
                     // draft. Some editors cut the current line when nothing is
                     // selected; a text box on a drawing is not a code editor,
@@ -403,7 +403,7 @@ pub fn typing(
                     }
                 }
                 egui::Event::Paste(pasted) if !pasted.is_empty() => {
-                    // ★ Replaces the selection, exactly as typing does — rule 2
+                    // Replaces the selection, exactly as typing does — rule 2
                     // of the four in `caret`'s selection section. Reusing
                     // `take_selection` rather than repeating its two lines is
                     // what keeps paste and typing from drifting apart on a rule
@@ -419,7 +419,7 @@ pub fn typing(
                     draft.caret = insert(&mut draft.text, draft.caret, &pasted);
                     changed = true;
                 }
-                // ★★ **Caret movement**, 2026-08-20, on the operator's report
+                // **Caret movement**, 2026-08-20, on the operator's report
                 // that *"the cursor just sits at the end of a text line. It
                 // can't be moved to the center of an existing text block."*
                 //
@@ -428,7 +428,7 @@ pub fn typing(
                 // Backspace popped, so changing `SHEET 1 OF 4` to `SHEET 2 OF
                 // 4` meant deleting back to `SHEET ` and retyping the rest.
                 //
-                // ★ `changed` is set for a pure movement, and that is
+                // `changed` is set for a pure movement, and that is
                 // deliberate rather than sloppy. It is the flag that decides
                 // whether the draft is written back to `egui::Memory`, and a
                 // moved caret IS a changed draft - without this the arrow keys
@@ -443,7 +443,7 @@ pub fn typing(
                     modifiers,
                     ..
                 } => {
-                    // ★ Rule 4, applied by one function so every movement arm
+                    // Rule 4, applied by one function so every movement arm
                     // agrees: Shift plants or keeps the mark, no Shift drops it.
                     draft.mark = caret::moved(
                         draft.mark,
@@ -476,7 +476,7 @@ pub fn typing(
                     };
                     changed = true;
                 }
-                // ★★★ UP AND DOWN WALK THE PAGE'S OWN LINES, AND CROSS INTO
+                // UP AND DOWN WALK THE PAGE'S OWN LINES, AND CROSS INTO
                 // THE NEXT PARAGRAPH.
                 //
                 // The operator, 2026-08-21: *"there was an acrobat feature in
@@ -492,20 +492,20 @@ pub fn typing(
                 // knowing what a paragraph is. The old shell's whole
                 // contribution was **asking**, and this shell had not been.
                 //
-                // ★ It was not bound at all before today, and that was right at
+                // It was not bound at all before today, and that was right at
                 // the time: the caret is a character index into ONE run, and a
                 // single run has no line above it. What changed is not the
                 // draft — it is that the *page* is now the thing being
                 // navigated.
                 //
-                // ★★ THE DRAFT IS COMMITTED ON THE WAY OUT. A caret that left
+                // THE DRAFT IS COMMITTED ON THE WAY OUT. A caret that left
                 // a run with unsaved keystrokes in it would silently discard
                 // them, which is the defect class this whole module exists
                 // against — and `commit_into` writes nothing when the text is
                 // unchanged, so an operator who is merely reading with the
                 // arrow keys puts nothing on the undo stack.
                 //
-                // ★ A BOX draft is deliberately excluded. Its lines are the
+                // A BOX draft is deliberately excluded. Its lines are the
                 // shell's wrap rather than the page's, so this model would move
                 // the caret to a run somewhere else on the sheet mid-paragraph.
                 // Named in `blocks`' header rather than left to be discovered.
@@ -515,7 +515,7 @@ pub fn typing(
                     modifiers,
                     ..
                 } => {
-                    // ★★★ **THE DRAFT'S OWN LINES COME FIRST** — O127, defect 2.
+                    // **THE DRAFT'S OWN LINES COME FIRST** — O127, defect 2.
                     //
                     // A multi-line draft is a thing the operator is *looking
                     // at*, and Up in it means the line above **in the box**,
@@ -524,7 +524,7 @@ pub fn typing(
                     // are both plausible and only one of them is what the
                     // operator can see.
                     //
-                    // ★ It is also the cheap one: this is arithmetic on a
+                    // It is also the cheap one: this is arithmetic on a
                     // `String`, while `blocks::step` extracts and recognises
                     // the whole page — 336 ms on the benchmark CAD sheet, on a
                     // keystroke path. A draft that answers here never pays it.
@@ -561,7 +561,7 @@ pub fn typing(
                         return true;
                     }
                 }
-                // ★★ HOME AND END REACH THE ENDS OF THE LINE THE OPERATOR CAN
+                // HOME AND END REACH THE ENDS OF THE LINE THE OPERATOR CAN
                 // SEE, which on a CAD sheet is usually several show operators
                 // wide. `blocks::line` answers `false` when the line is this
                 // run — the common case, and the cheap one — and the two
@@ -572,7 +572,7 @@ pub fn typing(
                     modifiers,
                     ..
                 } => {
-                    // ★ Shift+Home selects to the start of the draft and stays
+                    // Shift+Home selects to the start of the draft and stays
                     // in it, rather than walking to another run: a selection
                     // that spanned two show operators would be a selection this
                     // shell cannot commit, and offering it would be a gesture
@@ -617,7 +617,7 @@ pub fn typing(
                     draft.caret = draft.text.chars().count();
                     changed = true;
                 }
-                // ★★★ ENTER MEANS TWO THINGS, AND THE ANCHOR DECIDES WHICH.
+                // ENTER MEANS TWO THINGS, AND THE ANCHOR DECIDES WHICH.
                 //
                 // The operator, 2026-08-21: *"I should be able to make it multi
                 // line."*
@@ -627,13 +627,13 @@ pub fn typing(
                 // | a **box** | a paragraph break | commit |
                 // | a point, or an existing run | commit | commit |
                 //
-                // ★ This is the old shell's own split, carried across verbatim:
+                // This is the old shell's own split, carried across verbatim:
                 // *"in box mode a plain Enter is a paragraph break; Ctrl+Enter
                 // accepts. In point mode Enter accepts (single line)."* It is
                 // also what every program in the class does, which is the
                 // standing tie-breaker.
                 //
-                // ★★ And it is why `Anchor::Box` is a variant rather than an
+                // And it is why `Anchor::Box` is a variant rather than an
                 // `Option<Rect>` on `Origin`. Enter cannot mean *insert* and
                 // *commit* in one draft, so the keystroke handler has to know
                 // which gesture started it — and asking the TEXT ("does it
@@ -641,7 +641,7 @@ pub fn typing(
                 // commit and every one after it insert, which is the worst
                 // possible answer.
                 //
-                // ★ A newline in an EXISTING run is refused by construction
+                // A newline in an EXISTING run is refused by construction
                 // rather than by a check: `Anchor::Run` is not a box, so plain
                 // Enter commits there. That is correct and not a limitation
                 // being hidden — `edit_text` replaces the text of ONE show
@@ -654,7 +654,7 @@ pub fn typing(
                     modifiers,
                     ..
                 } => {
-                    // ★★★ The decision is a PURE FUNCTION and this arm only
+                    // The decision is a PURE FUNCTION and this arm only
                     // carries it out — see [`enter_means`], whose docs are the
                     // whole of Enter's contract and whose tests prove it
                     // without a window, a document or a keyboard.
@@ -662,7 +662,7 @@ pub fn typing(
                     crate::diag::trace(|| {
                         // ui-text-exempt: diagnostic trace, never displayed.
                         //
-                        // ★ Enter is the one keystroke in this handler with
+                        // Enter is the one keystroke in this handler with
                         // THREE meanings, so its ARRIVAL is worth reporting
                         // separately from its effect. The multi-line work spent
                         // a driven run on *"did the key arrive, or did the
@@ -670,7 +670,7 @@ pub fn typing(
                         // line cannot answer: it reports a length, and both
                         // failures leave the length unchanged.
                         //
-                        // ★★ It now reports the DECISION rather than the two
+                        // It now reports the DECISION rather than the two
                         // inputs it was derived from. `boxed=1 command=0` left
                         // a reader to re-run the rule in their head; `means=`
                         // is the answer, so a harness can assert the branch
@@ -678,7 +678,7 @@ pub fn typing(
                         format!("text-edit-enter means={means:?}")
                     });
                     if means == EnterMeans::Commit {
-                        // ★★★ **Ctrl+Enter ALWAYS commits**, in every draft.
+                        // **Ctrl+Enter ALWAYS commits**, in every draft.
                         // O127's brief: *"commit must not be reachable only by
                         // mouse."* It already was for a box; it is now the one
                         // chord that finishes any draft, so an operator does
@@ -689,7 +689,7 @@ pub fn typing(
                         return true;
                     }
                     if means == EnterMeans::CannotSplit {
-                        // ★★★ **A LINE ALREADY ON THE PAGE CANNOT BE SPLIT, AND
+                        // **A LINE ALREADY ON THE PAGE CANNOT BE SPLIT, AND
                         // NOW IT SAYS SO** — O127, defect 2.
                         //
                         // This used to commit. That is a defensible behaviour
@@ -707,7 +707,7 @@ pub fn typing(
                         // they just pressed rather than about a box that has
                         // already closed.
                         //
-                        // ★★ It is the FILE's rule and not a shortcoming of
+                        // It is the FILE's rule and not a shortcoming of
                         // this shell. `EditSession::edit_text` re-encodes the
                         // replacement into the run's own font, and `\n` has no
                         // code in any standard encoding — the engine refuses it
@@ -723,14 +723,14 @@ pub fn typing(
                         });
                         continue;
                     }
-                    // ★★★ **BOTH AUTHORING ANCHORS TAKE A LINE BREAK.**
+                    // **BOTH AUTHORING ANCHORS TAKE A LINE BREAK.**
                     //
                     // The box always did. `Anchor::Origin` — a click on bare
                     // page — did not, and committed instead; that is the half
                     // of the report that reads *"can the enter key create new
                     // lines when we are … creating text?"*
                     //
-                    // ★★ The box was a variant rather than an `Option<Rect>` on
+                    // The box was a variant rather than an `Option<Rect>` on
                     // `Origin` **because Enter could not mean two things in one
                     // draft**, and that argument is now retired rather than
                     // ignored: Enter means the same thing in both, so the
@@ -742,7 +742,7 @@ pub fn typing(
                     // handler that reached for a crop box would be the second
                     // place in this shell that decides how wide new text is.
                     //
-                    // ★ `newline`, NOT `insert` — see its docs. `insert` drops
+                    // `newline`, NOT `insert` — see its docs. `insert` drops
                     // control characters, correctly, and ate this exact
                     // keystroke for one driven run.
                     draft.caret = take_selection(&mut draft);
@@ -756,21 +756,21 @@ pub fn typing(
     if changed {
         // The selection, published for the harness.
         //
-        // ★ A TRACE RATHER THAN A MUTATION, and that is the point of it. The
+        // A TRACE RATHER THAN A MUTATION, and that is the point of it. The
         // honest way to prove Shift+Right selected three characters is to type
         // over them and see the text shrink — but a driven check runs on the
         // operator's own drawing, and proving a *selection* by making an
         // *edit* is a bad trade. This line carries the two numbers a wrong
         // build would get wrong, so nothing has to be changed to read them.
         //
-        // ★★ It reports the EMPTY case too, in its own words rather than by
+        // It reports the EMPTY case too, in its own words rather than by
         // going quiet. Rule 4 — an unshifted move drops the selection — is
         // exactly as important as the selecting, and an absent line cannot be
         // told from a build where the trace stopped being emitted.
         crate::diag::trace_on_change("text-select", || {
             // ui-text-exempt: diagnostic trace, never displayed.
             match caret::range(draft.mark, draft.caret) {
-                // ★ The KEY IS NOT REPEATED in the value. `trace_on_change`
+                // The KEY IS NOT REPEATED in the value. `trace_on_change`
                 // prints `pdfcer-diag <key> <value>`, so a value beginning with
                 // the key produces `text-select text-select from=0 …` — which
                 // parses, reads as a typo, and was one until this line.
@@ -843,7 +843,7 @@ mod tests {
 
     /// Lay `text` out and publish it as the editor box, the way `paint` does.
     ///
-    /// ★ A REAL GALLEY, from the same font stack the shell draws with, because
+    /// A REAL GALLEY, from the same font stack the shell draws with, because
     /// the whole claim of `hit` is that the layout which is hit-tested is the
     /// layout which was drawn. A stub that mapped x to an index would test the
     /// arithmetic of a stub.
@@ -931,7 +931,7 @@ mod tests {
         frame(ctx, input);
     }
 
-    /// ★★★ **CTRL+C IN A TEXT BOX COPIES THE SELECTED TEXT** — defect O18, the
+    /// **CTRL+C IN A TEXT BOX COPIES THE SELECTED TEXT** — defect O18, the
     /// operator's report of 2026-08-21.
     ///
     /// The event injected is `Event::Copy`, which is what `egui-winit` actually
@@ -939,7 +939,7 @@ mod tests {
     /// feeding `Event::Key { key: C }` certifies a path the running application
     /// can never take.
     ///
-    /// ★ It asserts the draft is UNCHANGED as well. A copy that quietly moved
+    /// It asserts the draft is UNCHANGED as well. A copy that quietly moved
     /// the caret or dropped the selection would pass a "did it copy" check and
     /// still be wrong — the operator's next Shift+Left would select the wrong
     /// range.
@@ -955,7 +955,7 @@ mod tests {
         assert_eq!(after.mark, Some(0), "a copy must not drop the selection");
     }
 
-    /// ★★ **CTRL+X removes what it copied**, and copy runs first.
+    /// **CTRL+X removes what it copied**, and copy runs first.
     #[test]
     fn ctrl_x_in_a_text_box_cuts_the_selection() {
         let ctx = egui::Context::default();
@@ -968,7 +968,7 @@ mod tests {
         assert_eq!(after.mark, None, "a stale mark would index past the string");
     }
 
-    /// ★★★ **A CUT WITH NO SELECTION MUST DESTROY NOTHING.**
+    /// **A CUT WITH NO SELECTION MUST DESTROY NOTHING.**
     ///
     /// Some editors cut the whole current line when nothing is selected. A text
     /// box on a drawing is not a code editor, and a stray Ctrl+X silently
@@ -984,7 +984,7 @@ mod tests {
         assert_eq!(after.text, "SHEET 1 OF 4", "a cut with nothing selected");
     }
 
-    /// ★★ **CTRL+V pastes at the caret**, and replaces a selection if there is
+    /// **CTRL+V pastes at the caret**, and replaces a selection if there is
     /// one — rule 2, the same rule typing obeys.
     #[test]
     fn ctrl_v_replaces_the_selection_the_way_typing_does() {
@@ -1020,7 +1020,7 @@ mod tests {
         assert_eq!(after.text, "SHEETS 1 OF 4");
     }
 
-    /// ★ **A multi-line paste arrives as one line**, because the draft is
+    /// **A multi-line paste arrives as one line**, because the draft is
     /// single-line. Named as a test rather than left to be discovered: the
     /// filtering is `caret::insert`'s and it is deliberate — a newline the draft
     /// cannot represent would otherwise be dropped later or committed as a
@@ -1035,7 +1035,7 @@ mod tests {
         assert_eq!(after.text, "onetwo");
     }
 
-    /// ★★★ **A DRAG ACROSS THE TEXT SELECTS WHAT IT CROSSED** — the pointer
+    /// **A DRAG ACROSS THE TEXT SELECTS WHAT IT CROSSED** — the pointer
     /// half of `OPERATOR_REQUESTS.md` O14 item 11.
     ///
     /// Driven through the same function the keyboard goes through, with a real
@@ -1067,7 +1067,7 @@ mod tests {
         );
     }
 
-    /// ★★ **A press with no travel places the caret and clears any selection**,
+    /// **A press with no travel places the caret and clears any selection**,
     /// which is the gesture that makes a sweep undoable by clicking.
     #[test]
     fn a_press_inside_the_box_places_the_caret_and_drops_the_selection() {
@@ -1091,7 +1091,7 @@ mod tests {
         );
     }
 
-    /// ★ **A press that begins OUTSIDE the box is not the draft's business**,
+    /// **A press that begins OUTSIDE the box is not the draft's business**,
     /// however far it is dragged into one. That is what keeps a marquee on the
     /// page from turning into a text selection when it happens to cross the
     /// editor.
@@ -1145,7 +1145,7 @@ mod tests {
         input.events.push(egui::Event::Text("h".to_owned()));
         let mut actions = Vec::new();
         let inner = ctx.clone();
-        // ★ A real document, because `typing` now takes one: Up and Down ask
+        // A real document, because `typing` now takes one: Up and Down ask
         // the PAGE where the next line is (see `blocks`). This test's own event
         // is a `Text`, which never reaches that path — the document is here to
         // satisfy the signature, and passing a real one rather than inventing a
@@ -1164,7 +1164,7 @@ mod tests {
         );
     }
 
-    /// ★★ **Shift+Right selects, and a plain Right drops it** — the two halves
+    /// **Shift+Right selects, and a plain Right drops it** — the two halves
     /// of the selection, driven through the same event loop the keyboard uses.
     ///
     /// A unit test rather than only a driven one, because the driven check
@@ -1232,7 +1232,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **Enter means a NEW LINE, and it means it everywhere it can.**
+    /// **Enter means a NEW LINE, and it means it everywhere it can.**
     ///
     /// `OPERATOR_REQUESTS.md` **O127**, defect 2, and the whole of the answer to
     /// *"can the enter key create new lines when we are editing or creating
@@ -1257,7 +1257,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **Ctrl+Enter commits every draft there is.**
+    /// **Ctrl+Enter commits every draft there is.**
     ///
     /// O127's brief in one assertion: *"commit must not be reachable only by
     /// mouse."* Asserted across all three anchors rather than on the one that
@@ -1287,7 +1287,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **Enter in text already on the page DECLINES rather than
+    /// **Enter in text already on the page DECLINES rather than
     /// committing.**
     ///
     ///
@@ -1313,7 +1313,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The three outcomes are distinct, and the modifier is what separates
+    /// **The three outcomes are distinct, and the modifier is what separates
     /// the two that share an anchor.**
     ///
     /// A build that collapsed `CannotSplit` into `Commit` would compile, would

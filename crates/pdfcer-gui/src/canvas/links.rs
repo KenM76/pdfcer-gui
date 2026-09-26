@@ -23,7 +23,7 @@ pub struct Hit {
     pub destination: Destination,
     /// Its position in the page's `/Annots` array.
     ///
-    /// ★ **Not** its index in the resolved list — those disagree on any page
+    /// **Not** its index in the resolved list — those disagree on any page
     /// carrying a non-link annotation, and this is the one the engine takes
     /// when an annotation has to be addressed back to it.
     pub annots_index: usize,
@@ -49,7 +49,7 @@ impl Hit {
 /// `PageMapping::to_page` produces and the same space every other hit test on
 /// this surface takes.
 ///
-/// ## ★ Last match wins
+/// ## Last match wins
 ///
 /// `/Annots` is painted in array order, so a later entry is drawn over an
 /// earlier one and is the one under the pointer where two overlap. Overlapping
@@ -57,7 +57,7 @@ impl Hit {
 /// and a first-match scan looks correct on every document that does not have
 /// them, which is almost all of them.
 ///
-/// ## ★★ A link with no `/Rect` is skipped, and that is not a filter
+/// ## A link with no `/Rect` is skipped, and that is not a filter
 ///
 /// §12.5.2 makes `/Rect` required, so a link without one has a destination it
 /// can never be clicked to reach. The engine keeps it in the list rather than
@@ -96,7 +96,7 @@ pub fn follow(hit: &Hit, doc: &OpenDoc, actions: &mut Vec<Action>) {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
-        // ★ The VARIANT is named, not merely "a link was clicked". The whole
+        // The VARIANT is named, not merely "a link was clicked". The whole
         // defect class here is a viewer collapsing five destinations into two
         // behaviours, and a trace that said `link-followed` for all five would
         // be unable to show it.
@@ -108,7 +108,7 @@ pub fn follow(hit: &Hit, doc: &OpenDoc, actions: &mut Vec<Action>) {
         )
     });
     match &hit.destination {
-        // ★★ The ONE navigable case, and it goes through the same pipeline a
+        // The ONE navigable case, and it goes through the same pipeline a
         // bookmark does — `app::actions::destination::actions_for`, page first
         // and unconditionally, zoom before scroll. Reusing it is not tidiness:
         // a second implementation of Table 151 would be a second set of answers
@@ -125,7 +125,7 @@ pub fn follow(hit: &Hit, doc: &OpenDoc, actions: &mut Vec<Action>) {
             let name = hit.destination.name_lossy().unwrap_or_default();
             crate::app::actions::record_note(doc.edit_epoch, t::unresolved_name(&name));
         }
-        // ★ `/GoToR`. The remote name is NEVER resolved against this document's
+        // `/GoToR`. The remote name is NEVER resolved against this document's
         // name tree — §12.6.4.3 puts it in the target file's namespace, and a
         // document that happened to define the same name would otherwise
         // produce a confident, entirely wrong local page jump with no error
@@ -143,7 +143,7 @@ pub fn follow(hit: &Hit, doc: &OpenDoc, actions: &mut Vec<Action>) {
         // and the deprecated `/Win` fallback, so *"which file does this open?"*
         // has an answer where one is written.
         //
-        // ★ `/Launch` stays NON-navigation. It starts an application; it does
+        // `/Launch` stays NON-navigation. It starts an application; it does
         // not go to a page, and pdfcer will not run it (R13). What changed is
         // only that the disclosure can now NAME the file instead of saying
         // "this is a Launch action" and stopping — which is the difference
@@ -159,7 +159,7 @@ pub fn follow(hit: &Hit, doc: &OpenDoc, actions: &mut Vec<Action>) {
             };
             crate::app::actions::record_note(doc.edit_epoch, note);
         }
-        // ★ `Destination` is `#[non_exhaustive]`. A variant added by a later
+        // `Destination` is `#[non_exhaustive]`. A variant added by a later
         // engine Pass must not silently become "nothing happened": this arm
         // says the link exists and pdfcer does not know what it is, which is
         // true and is a sentence somebody will report.
@@ -186,7 +186,7 @@ fn remote_label(file: &Option<Vec<u8>>, target: &RemoteTarget) -> String {
         |bytes| String::from_utf8_lossy(bytes).into_owned(),
     );
     match target {
-        // ★ `+ 1`. `RemoteTarget::PageNumber` is 0-based and every page number
+        // `+ 1`. `RemoteTarget::PageNumber` is 0-based and every page number
         // this program shows an operator is 1-based. The engine's own reply
         // flagged this as the conversion it nearly got wrong in its CLI.
         RemoteTarget::PageNumber(n) => t::remote_page(&name, n.saturating_add(1).unsigned_abs()),
@@ -222,7 +222,7 @@ fn kind_token(destination: &Destination) -> &'static str {
 /// cursor it has an opinion about is one describing a gesture already under
 /// way, and that outranks a hover.
 ///
-/// ★ Does nothing in a mode that edits content, matching [`follow`]'s own gate.
+/// Does nothing in a mode that edits content, matching [`follow`]'s own gate.
 /// A hand promising navigation in a mode where the click selects instead would
 /// be a lie told sixty times a second.
 pub(super) fn cursor(
@@ -260,7 +260,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **Exactly one of the five variants is navigable.**
+    /// **Exactly one of the five variants is navigable.**
     ///
     /// The single most important assertion in this file, and the one the
     /// engine's note is explicitly about: a viewer that treats `UnmappedPage`
@@ -300,7 +300,7 @@ mod tests {
 
     /// Every variant gets its own trace token, and none of them collide.
     ///
-    /// ★ Pinned because the trace is the only oracle a driven check has for
+    /// Pinned because the trace is the only oracle a driven check has for
     /// *which* of the five happened, and two variants sharing a token would
     /// make the check unable to tell a followed link from a disclosed one.
     #[test]
@@ -327,7 +327,7 @@ mod tests {
         }
     }
 
-    /// ★★ **A remote page number is reported 1-based.**
+    /// **A remote page number is reported 1-based.**
     ///
     /// `RemoteTarget::Page` is 0-based, every page number this program shows an
     /// operator is 1-based, and the engine's own reply flagged this as the

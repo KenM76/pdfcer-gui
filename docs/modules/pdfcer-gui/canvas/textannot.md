@@ -1,7 +1,7 @@
 # `canvas::textannot` — the three markup kinds that carry WORDS
 
 
-## ★ Why they were left out, and why that was right at the time
+## Why they were left out, and why that was right at the time
 
 `shell::commands::reach`'s register carries the reason verbatim, quoting
 `canvas::markup`'s own table of kinds it deliberately does not handle:
@@ -28,7 +28,7 @@ Then the dialog opens, and **nothing is authored until Accept**. That is
 rule 4 applied to a gesture whose output is words: a half-typed note
 committed on a stray click would be content the operator did not write.
 
-## ★ Escape has two meanings here and they are ordered
+## Escape has two meanings here and they are ordered
 
 A placing drag in flight is abandoned by Escape, exactly as a markup band
 is — that rung already exists and this kind rides it. Escape with the

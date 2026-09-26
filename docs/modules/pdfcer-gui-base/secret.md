@@ -3,7 +3,7 @@
 One type, [`Secret`], and its whole reason for existing is its [`Debug`]
 implementation.
 
-## ★★★ The hazard, stated before the type
+## The hazard, stated before the type
 
 A document password travels from a text field, through
 `pdfcer_gui::app::actions::Action`, into the action queue, and out again in

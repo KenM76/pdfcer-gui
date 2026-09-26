@@ -14,7 +14,7 @@ a reviewer of that wording should be reading a file that contains nothing
 else. It is re-exported from [`super`], so no call site knows the split
 exists.
 
-## ★★★ The one sentence-writing problem this surface has, which no other
+## The one sentence-writing problem this surface has, which no other
 panel in the shell has
 
 **A form field is invisible on a printed page, and a grouping node is

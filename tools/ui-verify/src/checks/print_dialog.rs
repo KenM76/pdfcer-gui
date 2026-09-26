@@ -112,7 +112,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         )));
     }
 
-    // ★ Nothing may have opened this dialog yet.
+    // Nothing may have opened this dialog yet.
     //
     // A print dialog that appears without being asked for is the specified
     // default of `view.app_initiative` — **Never** — broken in the most
@@ -156,7 +156,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     }
 
     // --- B. the Print control ----------------------------------------------
-    // ★ Through the overflow when the ribbon has folded it there.
+    // Through the overflow when the ribbon has folded it there.
     //
     // At the harness's 1100 pt window the File tab correctly folds its
     // rightmost groups — Print among them — into the overflow menu. That is the
@@ -192,7 +192,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     // --- C. the verdict ----------------------------------------------------
     let trace = session.trace()?;
     let Some(open) = trace.events(OPEN_EVENT).next() else {
-        // ★ Distinguish the three ways this can be empty before naming one.
+        // Distinguish the three ways this can be empty before naming one.
         //
         // "No `print-open` line" is a symptom with three causes and wildly
         // different fixes, and a check that reports the wrong one costs the
@@ -237,7 +237,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         .and_then(|n| n.parse().ok())
         .unwrap_or_default();
 
-    // ★ The defect, named exactly. `NotLinked` was the refusal the four holes
+    // The defect, named exactly. `NotLinked` was the refusal the four holes
     // returned; the variant no longer exists, so seeing it means an old binary
     // is being driven, which is a far more useful thing to say than "printers
     // was zero".
@@ -276,7 +276,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         "the spooler answered with {printers} printer(s); the adapter is reaching `pdfcer-print`"
     ));
 
-    // --- D. ★★★ AND IT OPENED IN ITS OWN OS WINDOW -------------------------
+    // --- D. AND IT OPENED IN ITS OWN OS WINDOW -------------------------
     //
     //
     // > *"Print dialogue box doesn't pop up in its own movable window. It is
@@ -284,7 +284,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     // > assume you've been trained on a million lines of code and software that
     // > pops it up in its own window."*
     //
-    // ★ The oracle is `viewport-inner`, and there is no other. A screenshot of
+    // The oracle is `viewport-inner`, and there is no other. A screenshot of
     // the application window cannot show it — a dialog in its own window is
     // *absent* from that capture, and an in-viewport panel that regressed would
     // look like a perfectly good dialog in it. "Is this a separate OS window"

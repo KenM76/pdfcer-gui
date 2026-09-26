@@ -70,7 +70,7 @@ const MIN_PLURAL_RATIO: f64 = 2.0;
 /// between 6.0× and 8.3×. Five sits between those two ranges: above anything
 /// the right answer can produce, below anything the block-sized one can.
 ///
-/// ★ Expressed against the CONTROL rather than against the block's own bounds,
+/// Expressed against the CONTROL rather than against the block's own bounds,
 /// because the block's bounds would have to be measured by marking it — a third
 /// gesture and a third undo, to bound a number the control already bounds.
 const MAX_PLURAL_RATIO: f64 = 5.0;
@@ -198,7 +198,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED. The header says
+    // PINNED: `--pdf` and `--doc-point` are read and IGNORED. The header says
     // why the document has to be this one.
     let (pdf, _) = crate::fixture::text_chunk_point(PAIR[0]);
     if !pdf.is_file() {
@@ -244,7 +244,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
-    // ★ Normalise the saved dock layout, or a panel TOGGLE alternates between
+    // Normalise the saved dock layout, or a panel TOGGLE alternates between
     // opening and closing across runs — a check that passes on odd-numbered
     // runs is worse than one that never passes. The application writes this
     // file; deleting it is putting the machine back, not editing the build.
@@ -288,7 +288,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "the document starts with {before} redaction mark(s)"
     ));
 
-    // ★★★ EVERY AIM IS CONVERTED HERE, after the panel is open and before the
+    // EVERY AIM IS CONVERTED HERE, after the panel is open and before the
     // first gesture. Opening the redaction panel MOVES THE CANVAS RECT — the
     // dock takes width from it — so an aim computed before the panel opened
     // names a point on the old canvas and lands on the wrong line, or off the
@@ -556,7 +556,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- H: one gesture, ONE undo ------------------------------------------
     //
-    // ★★ Asserted last and asserted at all: `marks` rising by one proves the
+    // Asserted last and asserted at all: `marks` rising by one proves the
     // document holds a single annotation, and it does NOT prove the history
     // holds a single entry. A build that folded the annotation and not the
     // undo log reads +1 here and still costs the operator two presses.

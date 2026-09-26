@@ -55,7 +55,7 @@ const ON_THE_SHARED_SQUARE: (f64, f64) = (40.0, 40.0);
 /// than "the click went outside the client area", which are different
 /// diagnoses.
 ///
-/// ★ It matters twice here rather than once, because the same point is
+/// It matters twice here rather than once, because the same point is
 /// right-clicked. A popup opened near an edge is repositioned by `egui`, which
 /// is exactly the case the published rect exists to survive — but a check
 /// should not be *testing* that incidentally while trying to test something
@@ -100,7 +100,7 @@ const OTHER_FIELD: &str = "other";
 
 /// What one check needs to know about the document it opens.
 ///
-/// ★ Its existence is the point made in the module header: these two checks
+/// Its existence is the point made in the module header: these two checks
 /// differ in **which file they open**, and almost nowhere else. Bundling the
 /// three facts that vary keeps [`open_and_press`] identical for both, so a
 /// change to the gesture sequence cannot be made for one case and forgotten
@@ -182,7 +182,7 @@ impl Check for TheUnshareDeclinesWhenNothingElseDrawsTheForm {
 
 /// Resolve a fixture under the engine repository's synthetic corpus.
 ///
-/// ★ The path is derived, not configured, and `None` rather than a panic —
+/// The path is derived, not configured, and `None` rather than a panic —
 /// `form_selection`'s helper verbatim in shape, for the reason its own docs
 /// give: `D:\Dev\pdfcer` is READ-ONLY to this project, and a missing corpus is a
 /// SKIP with a reason rather than a crash mid-suite.
@@ -301,7 +301,7 @@ fn open_and_press(
 
     // --- 2: select something INSIDE the form -------------------------------
     //
-    // ★ The operand this command derives from is a LEAF, and nothing else will
+    // The operand this command derives from is a LEAF, and nothing else will
     // do: `format.unshare_form`'s dispatch arm reads the selection's first leaf
     // and asks for that leaf's outermost enclosing form. Selecting the form
     // itself would leave `selection.in_form` false and grey the row — which is
@@ -386,7 +386,7 @@ fn open_and_press(
     // unevidenced excuse is worse than silence, because a reader sees a
     // question already answered and stops asking it.
     //
-    // ★★ It is also the assertion R9 is defended by. The correct-looking
+    // It is also the assertion R9 is defended by. The correct-looking
     // "improvement" to this feature is to grey the row when the form is not
     // shared — and that would need a whole-document page walk in a per-frame
     // condition, sixty times a second, to learn an answer that moves only when
@@ -606,7 +606,7 @@ fn drive_unshared(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
 
     // --- it declined, and said so -------------------------------------------
     //
-    // ★★★ The positive half. See the module header: proving a decline from the
+    // The positive half. See the module header: proving a decline from the
     // absence of `unshare-form-applied` would pass on every build where the
     // press never arrived at all.
     let Some(declined) = trace.last(DECLINED) else {
@@ -644,7 +644,7 @@ fn drive_unshared(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
 
     // --- and NOTHING was edited ---------------------------------------------
     //
-    // ★★★ The clause that makes the decline worth having. A build that worded
+    // The clause that makes the decline worth having. A build that worded
     // a refusal and performed the edit anyway would pass every assertion above.
     let applied_now = trace.events(APPLIED).count();
     if applied_now > pressed.applied_before {
@@ -697,7 +697,7 @@ fn aim(mapping: &CanvasMapping, frame: &WindowFrame, point: (f64, f64)) -> Resul
 
 /// The `first=` value of the most recent `canvas-selection` line, if any.
 ///
-/// ★ The **last** line rather than a count of new ones, for
+/// The **last** line rather than a count of new ones, for
 /// `form_selection::last_first`'s reason: `canvas-selection` is emitted through
 /// `diag::trace_changed`, so a click producing the same selection as the
 /// previous one emits nothing, and a consumer that counted lines would read a

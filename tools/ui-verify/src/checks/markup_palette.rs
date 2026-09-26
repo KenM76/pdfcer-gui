@@ -17,7 +17,7 @@ use crate::report::CheckReport;
 /// Review mode, then arm the rectangle tool — both through the harness seam
 /// rather than through ribbon clicks.
 ///
-/// ★ Review because markup is authored there, and naming the mode makes the run
+/// Review because markup is authored there, and naming the mode makes the run
 /// reproducible rather than dependent on whatever mode was last stored. With
 /// [`crate::sandbox`] there is no stored mode to inherit, and the invoke is kept
 /// anyway: a check should say which mode it drives rather than rely on the
@@ -45,7 +45,7 @@ const ACROBAT_RED: Rgb = Rgb {
 /// Two colours this shell has actually drawn shapes in, named so a failure can
 /// say *which* wrong answer it got.
 ///
-/// ★ The yellow is not hypothetical: `(1.0, 1.0, 0.0)` is what the highlighter
+/// The yellow is not hypothetical: `(1.0, 1.0, 0.0)` is what the highlighter
 /// carried in this shell until 2026-09-06, *"written from memory"*. The orange
 /// is Acrobat's real highlighter and is the near miss a careless fix would
 /// produce — 46 apart from the red in the green channel, which is inside a
@@ -77,7 +77,7 @@ const NEAR_MISSES: [(&str, Rgb); 3] = [
 /// [`ACROBAT_RED`]'s, as a maximum absolute per-component difference on the
 /// 0–1 normalised vector [`hue_from_paper`] returns.
 ///
-/// # ★★ Where the number comes from
+/// # Where the number comes from
 ///
 ///
 /// The nearest wrong answer this shell could plausibly produce is the
@@ -88,7 +88,7 @@ const NEAR_MISSES: [(&str, Rgb); 3] = [
 /// about the rendering changes, and one with a stated gap on both sides does
 /// not.
 ///
-/// ★ [`tests::the_tolerance_cannot_swallow_a_near_miss`] fails if this is ever
+/// [`tests::the_tolerance_cannot_swallow_a_near_miss`] fails if this is ever
 /// widened to admit anything in [`NEAR_MISSES`]. That is what stops a future
 /// session making a red run green by moving a constant at four in the afternoon.
 const HUE_TOLERANCE: f64 = 0.10;
@@ -96,7 +96,7 @@ const HUE_TOLERANCE: f64 = 0.10;
 /// The smallest `paper − ink` a channel may reach before the direction is
 /// treated as unmeasurable.
 ///
-/// ★ Normalising a vector near the origin amplifies noise without bound: two
+/// Normalising a vector near the origin amplifies noise without bound: two
 /// pixels of capture noise on a nearly-white box would produce a confident
 /// direction pointing anywhere. Below this the check reports that it could not
 /// read a colour — a SKIP — rather than reporting a wrong one.
@@ -126,7 +126,7 @@ const CORE_FRACTION: f64 = 0.25;
 /// Where the shape is drawn, as fractions of the page: `((x0, y0), (x1, y1))` in
 /// PDF user space, origin bottom-left.
 ///
-/// ★ The middle third of the sheet, which on a CAD drawing is inside the frame
+/// The middle third of the sheet, which on a CAD drawing is inside the frame
 /// and clear of the title block. `markup_move` places its shape in the same
 /// region for the same reason, and this check asserts the emptiness rather than
 /// assuming it.
@@ -135,7 +135,7 @@ const SHAPE: ((f64, f64), (f64, f64)) = ((0.35, 0.35), (0.55, 0.50));
 /// Half-height of the strip laid along the top edge, as a fraction of the page
 /// **height**.
 ///
-/// ★ A fraction of the page and not a constant in points, because
+/// A fraction of the page and not a constant in points, because
 /// `markup_node_edit` measured what a points constant costs: 22 pt on its
 /// fixture at fit-page zoom is an 8 × 9 pixel window, too few pixels for any
 /// oracle to speak. This is roughly 1 % of the sheet, which is 8 px on an 800 px
@@ -164,7 +164,7 @@ const INTERIOR: ((f64, f64), (f64, f64)) = ((0.25, 0.25), (0.75, 0.75));
 
 /// The smallest ink count that counts as *something is drawn here*.
 ///
-/// ★ Four, and the reasoning is `InkReport::is_text`'s: one or two pixels either
+/// Four, and the reasoning is `InkReport::is_text`'s: one or two pixels either
 /// way is antialiasing on an edge that did not move. Used in both directions —
 /// as the floor the strip must clear *after* the drag, and as the ceiling the
 /// strip and the interior must stay under *before* it — because a baseline
@@ -205,7 +205,7 @@ struct Core {
     colour: Rgb,
     /// The box's own paper — the mean of its brightest quarter.
     ///
-    /// ★ Measured per box rather than assumed to be white, because the paper a
+    /// Measured per box rather than assumed to be white, because the paper a
     /// stroke is composited over is whatever the renderer put there: a sheet
     /// with a tint, a theme that dims the page, a canvas that draws a shadow. The
     /// direction the ink pulls away from the paper is only meaningful against
@@ -367,7 +367,7 @@ fn interior_box(page: PageGeometry) -> (DocPoint, DocPoint) {
 
 /// One capture, both boxes.
 ///
-/// ★★ Both from the **same** capture, which is what makes the interior reading a
+/// Both from the **same** capture, which is what makes the interior reading a
 /// control on the strip reading rather than a second experiment: nothing that
 /// happened between two frames can satisfy one and not the other.
 fn read_both(
@@ -472,7 +472,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(40);
     let driver = Driver::new(session.window());
 
-    // ★ The mapping is re-derived after every settle in this check rather than
+    // The mapping is re-derived after every settle in this check rather than
     // cached, for `text_selection::aim`'s stated reason: the same `DocPoint` is
     // a different screen pixel in different modes and at different scroll
     // positions, and a cached mapping is a stale coordinate — which this project
@@ -548,14 +548,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- and photograph it --------------------------------------------------
     //
-    // ★ Nothing is selected: the rectangle tool authors and does not select, so
+    // Nothing is selected: the rectangle tool authors and does not select, so
     // there is no selection outline and no resize grip anywhere in either box.
     // A check that photographed a selected shape would be measuring the
     // **shell's** accent colour along the same edge, which is drawn over the
     // annotation and would satisfy an "ink is here" reading with a colour that
     // has nothing to do with the palette.
     //
-    // ★★★ **PARK THE POINTER FIRST, and the first run of this check is why.**
+    // **PARK THE POINTER FIRST, and the first run of this check is why.**
     //
     // A drag ends with the pointer on the shape's own corner, and hovering a
     // markup pops the note tooltip — *"No note has been written on this
@@ -605,7 +605,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★★ The control. A filled shape would satisfy every colour assertion below
+    // The control. A filled shape would satisfy every colour assertion below
     // and would be a different program from the one `canvas::markup::spec`
     // describes — *"a filled comment shape hides the drawing it is a comment
     // about"*. Asserted here, from the same capture the colour comes from.
@@ -692,7 +692,7 @@ mod tests {
 
     /// **The check must be able to fail.**
     ///
-    /// ★★★ A tolerance wide enough to admit the highlighter's orange would make
+    /// A tolerance wide enough to admit the highlighter's orange would make
     /// every assertion in this file decoration — and widening a constant is
     /// exactly what a future session does when a run goes red at four in the
     /// afternoon. This test is what makes that widening cost something: it goes
@@ -710,7 +710,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **The measure is unaffected by dilution** — the property the whole
+    /// **The measure is unaffected by dilution** — the property the whole
     /// oracle rests on, asserted directly.
     ///
     /// Acrobat's red composited over white at every strength from 10 % to 100 %
@@ -741,7 +741,7 @@ mod tests {
 
     /// And a diluted WRONG colour is still wrong.
     ///
-    /// ★ The pair with the test above is what makes either mean anything: a
+    /// The pair with the test above is what makes either mean anything: a
     /// measure invariant to dilution is worthless if it is invariant to
     /// everything. The highlighter's orange at 20 % strength — a pale peach,
     /// closer to Acrobat's red in raw bytes than the red is to itself undiluted

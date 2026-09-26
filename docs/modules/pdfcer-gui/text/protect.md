@@ -33,7 +33,7 @@ Three reasons, and the first is the one that decides it.
    the CLI. So the split is by *kind of claim*, not by subject, and nothing
    is duplicated across it.
 
-## ★★★ The three disclosures, and why they are three
+## The three disclosures, and why they are three
 
 `OPERATOR_REQUESTS.md` O119 lists three things the operator said "change the
 answer" before he gave one. All three are on screen, and the surface may not
@@ -45,7 +45,7 @@ ship without them:
 | 2 | **a signed document is refused** | [`signed_refusal`] here | instead of the whole form — the dialog opens, states it, and offers nothing |
 | 3 | **re-permissioning needs the owner password** | [`owner_password_note`] here | above the current-owner-password field, on every job that touches an already-protected file |
 
-★ Number 1 is the important one and it is **not re-worded here**. The engine
+Number 1 is the important one and it is **not re-worded here**. The engine
 supplied it, the CLI prints it, `text::security` catalogued it, and
 `EncryptionSettings::PERMISSIONS_DISCLOSURE` is the same sentence in the
 engine's own source. A UI that presented permissions as enforcement would be

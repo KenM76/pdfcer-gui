@@ -25,7 +25,7 @@
 //!
 //! ## The sabotage, because a green first run is not evidence
 //!
-//! ★ The NARROW one, deliberately: **only `export_text.rs`'s struct literal**
+//! The NARROW one, deliberately: **only `export_text.rs`'s struct literal**
 //! was switched to take `ExportTextPrefs::default()` for its four fields, the
 //! release binary was rebuilt, and the check was re-driven. It returned
 //! `RESULT: FAIL` naming **4 of the 12** — the four text rows, each with its
@@ -58,7 +58,7 @@ use crate::trace::TraceLine;
 
 /// The environment variable that rings a command per frame.
 ///
-/// ★ The whole reason this check needs no input. See the module header.
+/// The whole reason this check needs no input. See the module header.
 const INVOKE_ENV: &str = "PDFCER_DIAG_INVOKE";
 
 /// The three commands, in the order they are rung — one per frame.
@@ -91,7 +91,7 @@ const EVENTS: [(&str, &str); 3] = [
 
 /// The preferences file, beside the executable under test.
 ///
-/// ★ **Reset to the bare sandbox seed** before the control run and rewritten
+/// **Reset to the bare sandbox seed** before the control run and rewritten
 /// before the second — never deleted. Those are not the same act: deletion
 /// takes `ask_default_app = false` with it, and the symptom is the O173 offer
 /// opening a real OS window in front of this check's own process. See
@@ -309,7 +309,7 @@ fn launch_all_three(
 
 /// The three `-open` lines, or a message naming which are absent.
 ///
-/// ★ The FIRST of each, not the last. Each window emits its line once, as it
+/// The FIRST of each, not the last. Each window emits its line once, as it
 /// is built; a second would mean the window was opened twice, and the first is
 /// the one produced by the preferences file this check just wrote.
 fn open_lines(session: &Session) -> Result<Vec<(&'static str, TraceLine)>> {
@@ -368,7 +368,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     let prefs_path = dir.join(PREFS_FILE);
 
-    // ★ A guard rather than a line at the end, because there is more than one
+    // A guard rather than a line at the end, because there is more than one
     // way out below — several FAILs, several SKIPs, and a `?` on every launch
     // and every trace read, none of which looks like an exit when reading down
     // the page.
@@ -435,7 +435,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         report.note(format!("control `{event}`: `{}`", line.raw));
     }
 
-    // ★★★ The calibration trap. See the module header: a calibrated ce
+    // The calibration trap. See the module header: a calibrated ce
     // dimension group on the page OVERRULES the remembered DXF units, by
     // design and for a reason worth more than this assertion.
     let suggestion = token(&control, DXF_EVENT, "suggestion").to_owned();
@@ -457,7 +457,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- the seed ------------------------------------------------------------
     //
-    // ★ Written in the writer's own vocabulary, and every value required to
+    // Written in the writer's own vocabulary, and every value required to
     // DIFFER from what the control run just reported. A seeded value that
     // happened to equal the default would come back correct whether the file
     // was read or ignored, so it is a SKIP rather than a pass.
@@ -493,7 +493,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         text.push_str(seed.file);
         text.push('\n');
     }
-    // ★ Through `sandbox::write_prefs`, which carries the O173 suppression as a
+    // Through `sandbox::write_prefs`, which carries the O173 suppression as a
     // header. Writing this file directly would drop it.
     if let Err(why) = crate::sandbox::write_prefs(&dir, &text) {
         return Err(Error::new(format!(
@@ -514,7 +514,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         report.note(format!("seeded `{event}`: `{}`", line.raw));
     }
 
-    // ★ The two runs must have been measuring the same page. `suggestion=` is a
+    // The two runs must have been measuring the same page. `suggestion=` is a
     // property of the document and of nothing this check writes, so a change
     // means the control and the comparison are not about the same thing — and
     // the units row's treatment was decided on the control's answer.
@@ -555,7 +555,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     if !wrong.is_empty() {
-        // ★★ Three escalations rather than two, because this check spans three
+        // Three escalations rather than two, because this check spans three
         // windows and the SHAPE of the failure names the layer. All of them is
         // the path; all of one window's is that window's constructor; a
         // scattering is individual arms.
@@ -604,7 +604,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 mod tests {
     use super::*;
 
-    /// ★★★ **Every seeded value must be spelled the way the file spells it.**
+    /// **Every seeded value must be spelled the way the file spells it.**
     ///
     /// The seed is written straight into `preferences.txt`. A value the parser
     /// does not recognise would be dropped with a `PrefNote::BadValue`, the
@@ -653,7 +653,7 @@ mod tests {
         }
     }
 
-    /// ★★ **A row is identified by `(event, field)`, and `scope` proves why.**
+    /// **A row is identified by `(event, field)`, and `scope` proves why.**
     ///
     /// `scope=` appears on the image window's line and on the text window's,
     /// with different shipped defaults. A uniqueness test over `field` alone
@@ -700,7 +700,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **The fifth column exists for exactly one reason, and this pins it.**
+    /// **The fifth column exists for exactly one reason, and this pins it.**
     ///
     /// The file spells a bool `true`/`false` (`opening::bool_key`); the three
     /// traces spell it `1`/`0` (`u8::from`). Every other row is the same
@@ -724,7 +724,7 @@ mod tests {
         }
     }
 
-    /// ★ **The commands rung and the lines read are the same three.**
+    /// **The commands rung and the lines read are the same three.**
     ///
     /// The list is an environment variable and the events are constants, so
     /// nothing but this ties them together. Adding a fourth export window

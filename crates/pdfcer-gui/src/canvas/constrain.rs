@@ -69,7 +69,7 @@ pub enum Lock {
     Axis(Axis),
     /// A resize keeping the object's proportions.
     Aspect,
-    /// ★ A rotation snapping to fixed steps.
+    /// A rotation snapping to fixed steps.
     ///
     /// The third flavour of the same convention, and the one that is neither an
     /// axis nor a ratio: `drag-moves` D5 says *"Shift constrains to an axis or
@@ -115,7 +115,7 @@ pub fn axis(delta: Vec2) -> Vec2 {
 /// — a Bézier handle, a perimeter vertex — because those verbs take the point
 /// the thing is going to, not how far it moved.
 ///
-/// ★ It filters `at - from`, never `at`. That is [`drag-moves` D8] restated:
+/// It filters `at - from`, never `at`. That is [`drag-moves` D8] restated:
 /// the grab point survives because the constraint acts on the displacement, so
 /// a handle grabbed three pixels off its centre stays three pixels off its
 /// centre for the whole locked drag instead of snapping onto the axis line.
@@ -160,7 +160,7 @@ pub fn aspect(sx: f32, sy: f32) -> (f32, f32) {
 // The four call sites, as three functions
 // ===========================================================================
 //
-// ★★ APPLY AND ANNOUNCE ARE ONE CALL, and that is the point of this section.
+// APPLY AND ANNOUNCE ARE ONE CALL, and that is the point of this section.
 //
 // A caller cannot reach the arithmetic without the announcement, or the
 // announcement without the arithmetic, because a drag that constrains silently
@@ -240,7 +240,7 @@ fn slot() -> egui::Id {
 /// constrained.
 pub fn announce(ctx: &egui::Context, lock: Lock) {
     let frame = ctx.cumulative_pass_nr();
-    // ★ Traced ONCE per lock change, not once per frame.
+    // Traced ONCE per lock change, not once per frame.
     //
     // A drag runs at 60 Hz and the announcement is re-made every frame of it.
     // Tracing unconditionally would put sixty identical lines a second on the
@@ -289,7 +289,7 @@ pub fn caption(ctx: &egui::Context) -> Option<&'static str> {
 mod tests {
     use super::*;
 
-    /// ★ **A mostly-horizontal drag keeps its x and loses its y entirely.**
+    /// **A mostly-horizontal drag keeps its x and loses its y entirely.**
     ///
     /// The base case, asserted as *exactly* zero rather than "small", because a
     /// residual is the difference between a constraint and a suggestion.
@@ -309,7 +309,7 @@ mod tests {
         assert!((locked.y + 90.0).abs() < f32::EPSILON);
     }
 
-    /// ★★ **The lock follows the pointer; it is not sampled at the press.**
+    /// **The lock follows the pointer; it is not sampled at the press.**
     ///
     /// Asserted as a property of the function rather than of a gesture: the
     /// same call with a different delta gives a different axis, which is what
@@ -329,7 +329,7 @@ mod tests {
         assert_eq!(dominant(Vec2::new(-10.0, 10.0)), Axis::Horizontal);
     }
 
-    /// ★ **The grab point survives an absolute-position lock.**
+    /// **The grab point survives an absolute-position lock.**
     ///
     /// `toward` filters the displacement, so the returned point keeps whatever
     /// offset the press had on the locked axis. A build that filtered `at`
@@ -347,7 +347,7 @@ mod tests {
         );
     }
 
-    /// ★★ **Aspect keeps the factor the pointer worked hardest for.**
+    /// **Aspect keeps the factor the pointer worked hardest for.**
     ///
     /// Growing 1.5× on x while barely moving y must give 1.5× on both — not the
     /// average, not the smaller, and not x-because-x-is-first.
@@ -357,7 +357,7 @@ mod tests {
         assert_eq!(aspect(1.02, 0.4), (0.4, 0.4));
     }
 
-    /// ★★ **A mid-edge grip becomes a proportional resize, with no special
+    /// **A mid-edge grip becomes a proportional resize, with no special
     /// case.**
     ///
     /// `East` leaves `sy` at exactly 1.0, which is distance zero from unity and

@@ -143,7 +143,7 @@ pub const fn edit_cut() -> CommandText {
 
 /// `edit.copy` — the object clipboard's copy.
 ///
-/// ★ The tooltip names **what it copies**, not what it does, because the honest
+/// The tooltip names **what it copies**, not what it does, because the honest
 /// scope is narrower than the word "copy" promises: `EditSession` has no verb
 /// that puts page content back, so a copied path could never be pasted. Saying
 /// *"comment or markup"* is the difference between a control that under-promises
@@ -159,7 +159,7 @@ pub const fn edit_copy() -> CommandText {
 
 /// `edit.paste` — the object clipboard's paste.
 ///
-/// ★ The tooltip was rewritten on 2026-08-29 and the old wording is worth
+/// The tooltip was rewritten on 2026-08-29 and the old wording is worth
 /// recording, because it had quietly become false twice: it said *"the copied
 /// comment or markup"* after `Pass 120.0` made page content pasteable and again
 /// after form fields joined the clipboard. A tooltip that names a NARROWER scope
@@ -179,13 +179,13 @@ pub const fn edit_paste() -> CommandText {
 ///
 /// **Ken, 2026-08-29:** *"ctrl shift v for paste as duplicate."*
 ///
-/// ★★★ The tooltip leads with the CONSEQUENCE — *"typing in one fills both"* —
+/// The tooltip leads with the CONSEQUENCE — *"typing in one fills both"* —
 /// rather than with the mechanism (*"a second widget of the same field"*), which
 /// is a sentence about PDF structure. The consequence is the thing that will
 /// surprise him at the printer, and it is the ONLY disclosure there is: two
 /// linked boxes and two independent boxes are pixel-identical on the page.
 ///
-/// ★ It says what happens over a non-field clipboard too, because the command is
+/// It says what happens over a non-field clipboard too, because the command is
 /// not withheld there — it falls through to an ordinary paste, and a control that
 /// silently means something else is worse than one that says so.
 #[must_use]
@@ -201,7 +201,7 @@ pub const fn edit_paste_duplicate() -> CommandText {
 /// `edit.duplicate` — a second copy of the selected comment, **without using
 /// the clipboard**.
 ///
-/// ★★★ The tooltip's first clause is *"without using the clipboard"*, and that
+/// The tooltip's first clause is *"without using the clipboard"*, and that
 /// is the whole reason the command exists rather than a nicety of phrasing.
 /// `Ctrl+C` then `Ctrl+V` already produces a second comment; what it also does
 /// is throw away whatever the operator was carrying — a part number, a
@@ -214,12 +214,12 @@ pub const fn edit_paste_duplicate() -> CommandText {
 /// would describe what they can already see happening and omit the only thing
 /// they cannot.
 ///
-/// ★★ It names the OFFSET, because a duplicate that landed exactly on its
+/// It names the OFFSET, because a duplicate that landed exactly on its
 /// original would look like a command that did nothing — the invisible-paste
 /// problem `canvas::clipboard`'s header names — and because the offset is what
 /// makes pressing it repeatedly walk a row, which is the gesture it is for.
 ///
-/// ★ *"Comment"*, not *"annotation"*: `crate::text`'s standing rule that a
+/// *"Comment"*, not *"annotation"*: `crate::text`'s standing rule that a
 /// label is the operator's vocabulary, and the same word the Comments panel and
 /// the whole of `crate::text::markup` use.
 #[must_use]
@@ -238,7 +238,7 @@ pub const fn edit_duplicate() -> CommandText {
 /// able to copy and paste anything to other software - like copy and paste
 /// vector graphics into word or inkscape for example if possible."*
 ///
-/// ★★★ The tooltip leads with **what arrives at the other end**, because that is
+/// The tooltip leads with **what arrives at the other end**, because that is
 /// the only thing that distinguishes this from the Copy beside it. Ordinary Copy
 /// puts an internal clip on the clipboard plus a picture; this puts the
 /// *geometry*, so what lands in the next drawing is still line-work rather than
@@ -246,14 +246,14 @@ pub const fn edit_duplicate() -> CommandText {
 /// the paste — they find out when they try to recolour it — so the difference
 /// has to be stated before the press rather than discovered after it.
 ///
-/// ★ It names Word and Inkscape by name, which this catalogue does sparingly,
+/// It names Word and Inkscape by name, which this catalogue does sparingly,
 /// because they are the two applications the operator named and because the
 /// promise is *specifically* about them: the format order was measured against a
 /// real Word paste, and Inkscape's own preference list is where the SVG's
 /// position came from. A vaguer "other programs" would be a weaker claim than
 /// the one that was actually tested.
 ///
-/// ★★ It says what the operand is — selection if there is one, page otherwise —
+/// It says what the operand is — selection if there is one, page otherwise —
 /// because that is the one thing about this command that is not visible on the
 /// button, and getting a whole sheet when three parts were selected is the
 /// surprise worth spending a clause on.
@@ -269,7 +269,7 @@ pub const fn edit_copy_as_vector() -> CommandText {
 
 /// `pages.copy` — copy the picked sheets.
 ///
-/// ★ The tooltip names the OPERAND RULE, because it is the one thing an
+/// The tooltip names the OPERAND RULE, because it is the one thing an
 /// operator cannot see: with sheets picked it copies those, with none picked it
 /// copies the one they are looking at. Every `pages.*` verb works that way and
 /// none of them says so anywhere else.
@@ -293,7 +293,7 @@ pub const fn pages_cut() -> CommandText {
 
 /// `pages.paste` — put copied sheets in after the current one.
 ///
-/// ★★ It says WHERE, because a page paste changes the document dramatically and
+/// It says WHERE, because a page paste changes the document dramatically and
 /// an operator who cannot predict where the sheets land will not use it twice.
 #[must_use]
 pub const fn pages_paste() -> CommandText {
@@ -306,13 +306,13 @@ pub const fn pages_paste() -> CommandText {
 
 /// `edit.redact_selection` — mark what is selected, without searching for it.
 ///
-/// ★★★ The tooltip's second sentence is the whole control. *"Nothing is removed
+/// The tooltip's second sentence is the whole control. *"Nothing is removed
 /// until you apply"* is the fact that decides whether an operator trusts this
 /// button or is frightened of it, and it is also the fact that stops them
 /// believing the job is done. A redaction that was marked and never applied is
 /// a document that still contains every word.
 ///
-/// ★ The first sentence names what the search box cannot reach, because that is
+/// The first sentence names what the search box cannot reach, because that is
 /// why this exists: on a CAD drawing a title-block value is often vector
 /// strokes and a stamp is often an image, and neither is findable by typing.
 #[must_use]
@@ -327,25 +327,25 @@ pub const fn edit_redact_selection() -> CommandText {
 
 /// `edit.offpage` — find everything drawn outside the sheet.
 ///
-/// ★★★ **The label says what the operator is looking for, not what the program
+/// **The label says what the operator is looking for, not what the program
 /// does.** *"Check for content off the sheet"* over *"Off-page census"* or
 /// *"Scan document"*: the first is a sentence a draughtsman would say out loud
 /// about a drawing they are about to send, and the other two are a description
 /// of a mechanism nobody asked about.
 ///
-/// ★★★ The tooltip leads with the CONSEQUENCE, and it must. Every other control
+/// The tooltip leads with the CONSEQUENCE, and it must. Every other control
 /// in the Protect group is about content the operator can see and has decided to
 /// remove; this one is about content they **cannot see and do not know is
 /// there** — it does not render, it does not print, and no amount of looking at
 /// the drawing discloses it. An operator with no reason to believe their file
 /// contains anything hidden will not press a button that offers to look.
 ///
-/// ★★ The third sentence names the examples, because the abstraction is the
+/// The third sentence names the examples, because the abstraction is the
 /// part that fails to land: "objects outside the page boundary" means nothing,
 /// and "a revision note dragged off the sheet instead of deleted" is a thing
 /// every draughtsman has done.
 ///
-/// ★ It does **not** promise removal, for `edit.redact_selection`'s reason
+/// It does **not** promise removal, for `edit.redact_selection`'s reason
 /// turned around: that one has to say *nothing is removed until you apply*
 /// because its name sounds destructive. This one has to avoid implying removal
 /// at all, because its name sounds like a report — and it is one. What it offers
@@ -373,7 +373,7 @@ pub const fn view_tool_select() -> CommandText {
 
 /// The **Node tool** — the white arrow.
 ///
-/// ★ Named *Points*, not *Node*, and not *Direct selection*. "Node" is this
+/// Named *Points*, not *Node*, and not *Direct selection*. "Node" is this
 /// program's internal word (`SelectionLevel::Node`); a draughtsman says
 /// *point*, and `text::commands`' standing rule is that a label is the
 /// operator's vocabulary and an id is the format's. Illustrator's own name for
@@ -438,7 +438,7 @@ pub const fn view_zoom_fit_width() -> CommandText {
 
 /// `view.zoom_fit_height`
 ///
-/// ★ Deliberately the same sentence as its two siblings with one word
+/// Deliberately the same sentence as its two siblings with one word
 /// changed. The three fit modes differ in exactly one respect and the copy
 /// says so; three separately-worded tooltips would invite the reader to hunt
 /// for a distinction that is not there.
@@ -472,7 +472,7 @@ pub const fn view_show_points() -> CommandText {
 
 /// `view.smart_select`
 ///
-/// ★ The tooltip states what a **click** does and what a **double-click** does,
+/// The tooltip states what a **click** does and what a **double-click** does,
 /// because those are two halves of one rule and an operator told only the first
 /// concludes the second is not offered — the failure
 /// `panels::tool::armed`'s form-field instruction records.
@@ -486,7 +486,7 @@ pub const fn view_smart_select() -> CommandText {
 
 /// `view.text_chunks`
 ///
-/// ★ The label is **Text chunks**, not *Parts* and not a third *Points*.
+/// The label is **Text chunks**, not *Parts* and not a third *Points*.
 /// `RIBBON_IA.md` §8 item 5 already carries two controls labelled *Points* —
 /// `view.tool_node` and `view.show_points` — and a third would make the word
 /// mean nothing. *Chunk* is also the word the operator used for the thing.
@@ -504,7 +504,7 @@ pub const fn view_text_chunks() -> CommandText {
 
 /// `view.ocr_layer`
 ///
-/// ★ The label says **OCR text**, not *Show invisible text* and not *X-ray*.
+/// The label says **OCR text**, not *Show invisible text* and not *X-ray*.
 /// An operator who has scanned a drawing knows the letters OCR; the word
 /// *invisible* describes the mechanism, and the mechanism is the one thing
 /// about this feature they do not have to know.
@@ -581,11 +581,11 @@ pub const fn view_guides() -> CommandText {
 
 /// `view.line_weights`
 ///
-/// ★★★ **`OPERATOR_REQUESTS.md` O137, asked for by name** — *"the button to
+/// **`OPERATOR_REQUESTS.md` O137, asked for by name** — *"the button to
 /// show all lines without their thickness — thin lines or something like cad
 /// has. The button never worked but I do want that display option!"*
 ///
-/// # ★★★ Every clause of this tooltip is doing a job, and three of them are
+/// # Every clause of this tooltip is doing a job, and three of them are
 /// defences against a specific misreading
 ///
 /// **The label is "Line weights", not "Thin lines" or "Hairlines".** It names
@@ -619,7 +619,7 @@ pub const fn view_guides() -> CommandText {
 /// decides whether to press it. The status line says the same thing while it is
 /// on; a disclosure the operator meets only after acting is half a disclosure.
 ///
-/// # ★ Why there is no Settings entry for it (a decision, not an omission)
+/// # Why there is no Settings entry for it (a decision, not an omission)
 ///
 /// The 2026-08-17 sweep moved the two surviving `view.*` settings into
 /// Settings ▸ Drawing the page on the argument that *"a value set once and
@@ -731,7 +731,7 @@ pub const fn view_panel_bookmarks() -> CommandText {
 
 /// `view.panel_layers`
 ///
-/// ## ★ Reworded at S4, because the old tooltip undersold a capability
+/// ## Reworded at S4, because the old tooltip undersold a capability
 ///
 /// It read:
 ///
@@ -765,7 +765,7 @@ pub const fn view_panel_layers() -> CommandText {
 
 /// `view.panel_signatures`
 ///
-/// ★★★ **CORRECTED 2026-09-05.** The second sentence read *"pdfcer does not
+/// **CORRECTED 2026-09-05.** The second sentence read *"pdfcer does not
 /// check whether they are valid."* It became false when
 /// `signature::verify_all_with_trust` was wired (`crate::trust::examine`,
 /// engine `pdfcer-core` v0.38.0 at `b01964f`), and it was **missed by the
@@ -840,7 +840,7 @@ pub const fn view_fullscreen() -> CommandText {
 
 /// `view.next_document`
 ///
-/// ★ The tooltip names the chord because that is how this command will
+/// The tooltip names the chord because that is how this command will
 /// actually be used. Ctrl+Tab is the gesture; the button is the thing that
 /// tells an operator the gesture exists, which is why the button is on the
 /// ribbon at all when nobody will click it twice.
@@ -863,12 +863,12 @@ pub const fn view_previous_document() -> CommandText {
 
 /// `view.close_other_documents`
 ///
-/// ★ The label says which one **survives**, not how many go. *"Close others"*
+/// The label says which one **survives**, not how many go. *"Close others"*
 /// is what every browser and every editor calls it, and an operator reading it
 /// in a menu opened on a specific tab already knows which that is — which is
 /// what makes the short wording safe rather than merely terse.
 ///
-/// ★★ The tooltip has to say **which** *this one* is, because the command has
+/// The tooltip has to say **which** *this one* is, because the command has
 /// two routes with two operands: from a tab's context menu it keeps the tab
 /// that was right-clicked, and from the ribbon it keeps the one on screen. So
 /// it says *"the one you opened this on"* rather than naming either, which is
@@ -885,7 +885,7 @@ pub const fn view_close_other_documents() -> CommandText {
 
 /// `view.reset_layout`
 ///
-/// ★ **This entry lost an ellipsis and a promise, and both losses are the
+/// **This entry lost an ellipsis and a promise, and both losses are the
 /// same correction.** It used to read *"Reset layout…"* / *"Put the panels
 /// back where they started. You choose which ones — the left panel, the
 /// right panel, or just whether they are open."*
@@ -917,12 +917,12 @@ pub const fn view_close_other_documents() -> CommandText {
 /// drag-to-tear"*, and a menu row named after a gesture that does not
 /// exist here would teach the wrong thing about the interface.
 ///
-/// ★ **No ellipsis.** It acts; it does not ask. The convention this
+/// **No ellipsis.** It acts; it does not ask. The convention this
 /// catalog follows is that an ellipsis means a dialog is coming.
 #[must_use]
 pub const fn view_panel_float() -> CommandText {
     CommandText::new(
-        // ★ "Float panel" and not "Float". The label has to be unique across
+        // "Float panel" and not "Float". The label has to be unique across
         // the whole registry (`no_two_commands_share_a_label`), and the noun
         // earns its place beyond that test: this row sits in a menu beside
         // "Reset layout", which acts on the whole dock, so saying which
@@ -951,7 +951,7 @@ pub const fn view_panel_dock() -> CommandText {
 
 /// **Close this panel** — take it off screen entirely.
 ///
-/// ★★ The tooltip names the way back, and that is not padding. Closing is
+/// The tooltip names the way back, and that is not padding. Closing is
 /// the only one of the three verbs that leaves no visible trace of the
 /// panel anywhere, so it is the only one where an operator can be left
 /// wondering whether they have lost something. Naming the View tab costs
@@ -959,7 +959,7 @@ pub const fn view_panel_dock() -> CommandText {
 #[must_use]
 pub const fn view_panel_close() -> CommandText {
     CommandText::new(
-        // ★★ "Close panel", not "Close" — and here the noun is load-bearing
+        // "Close panel", not "Close" — and here the noun is load-bearing
         // rather than merely tidy. `file.close` is already labelled "Close"
         // and closes the DOCUMENT. Two rows reading "Close", one of which
         // discards a panel and the other of which can discard unsaved work,
@@ -972,7 +972,7 @@ pub const fn view_panel_close() -> CommandText {
 /// **Dock all floating panels** — the way back to a window you cannot
 /// reach.
 ///
-/// # ★★★ Why this exists as a command of its own
+/// # Why this exists as a command of its own
 ///
 /// A floating panel lives in an OS window at a remembered desktop
 /// position. Unplug the monitor that position was on and the window is
@@ -985,13 +985,13 @@ pub const fn view_panel_close() -> CommandText {
 /// window, which is the one surface guaranteed to be on a monitor that
 /// exists.
 ///
-/// ★★ Reset layout is the other route and it is stronger — it also
+/// Reset layout is the other route and it is stronger — it also
 /// restores the arrangement. This one is the *cheap* route: it costs the
 /// operator nothing they arranged. Offering both is the two-tier shape
 /// `MODES_AND_PANELS.md` singles out as the thing the best product in its
 /// benchmark table got right.
 ///
-/// ★ Greyed rather than hidden when nothing is floating, and that is R9
+/// Greyed rather than hidden when nothing is floating, and that is R9
 /// applied rather than R9 broken: this is *temporarily* unavailable —
 /// there is simply nothing to dock this second — and the hover says so.
 /// Hiding it would make the remedy invisible exactly until the operator

@@ -8,7 +8,7 @@ use crate::trace::Trace;
 
 /// The census line the canvas publishes for every **selectable** widget.
 ///
-/// ★ `form-target`, not `form-box`: the second lists what a click can FILL,
+/// `form-target`, not `form-box`: the second lists what a click can FILL,
 /// which excludes drop-downs, push buttons and any widget with no appearance.
 /// `form_field`'s own constant carries the longer version of this note.
 pub const TARGET_LINE: &str = "form-target";
@@ -44,7 +44,7 @@ impl WidgetBox {
 
     /// Is `p` inside this box, grown by `margin` on every side?
     ///
-    /// ★ The margin is what makes "outside" mean *comfortably* outside. A
+    /// The margin is what makes "outside" mean *comfortably* outside. A
     /// point one unit clear of an edge survives this test and can still land
     /// inside the widget once the canvas mapping has rounded it to a whole
     /// screen pixel, which at a fit zoom of 0.29 is three canvas units wide.

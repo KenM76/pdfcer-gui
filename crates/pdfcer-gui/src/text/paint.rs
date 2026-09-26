@@ -4,7 +4,7 @@
 //! the reason the section exists at all: the sentence drawn **instead of** a
 //! swatch when pdfcer cannot decode the ink.
 //!
-//! ## ★★★ The refusal is the important string here
+//! ## The refusal is the important string here
 //!
 //! A colour control with no current value is a control that silently discards
 //! what was there the moment it is touched. Over a `/Separation` stroke that
@@ -12,7 +12,7 @@
 //! invisibly, and looking entirely normal while it happens. So the swatch is
 //! **absent** and this sentence stands where it would have been.
 //!
-//! ★ It names the ink where the file names it. *"This stroke is PANTONE 300"*
+//! It names the ink where the file names it. *"This stroke is PANTONE 300"*
 //! tells a drawing office what it needs; *"pdfcer cannot show this colour"* tells
 //! them only that something is wrong.
 
@@ -24,7 +24,7 @@ pub fn heading() -> String {
 
 /// The fill channel.
 ///
-/// ★ "Fill" and "Line", not "fill" and "stroke". *Stroke* is the PDF word and
+/// "Fill" and "Line", not "fill" and "stroke". *Stroke* is the PDF word and
 /// the drawing-office word is *line* — the same vocabulary rule
 /// `text::formfield`'s header states, applied one panel along.
 #[must_use]
@@ -38,7 +38,7 @@ pub fn stroke_label() -> String {
     "Line".to_owned()
 }
 
-/// ★★★ Drawn where a swatch cannot honestly go.
+/// Drawn where a swatch cannot honestly go.
 ///
 /// Two forms, because a named ink and an unnamed undecodable space are
 /// different amounts of help. Neither offers to change anything.
@@ -60,7 +60,7 @@ pub fn recoloured(changed: usize) -> String {
     format!("Recoloured {changed} object(s).")
 }
 
-/// ★★ The status line when some objects were refused.
+/// The status line when some objects were refused.
 ///
 /// The operator asked for exactly this shape: *"a selection of twelve strokes
 /// where three are in a colour space pdfcer will not rewrite needs to say 'nine
@@ -84,13 +84,13 @@ pub fn recoloured_partly(changed: usize, refused: usize) -> String {
 
 /// **What the two swatches are about to act on.**
 ///
-/// ★★ The count is the whole safety of a multi-object colour control. A marquee
+/// The count is the whole safety of a multi-object colour control. A marquee
 /// on a CAD sheet routinely takes hundreds of objects, and *"Fill"* over a
 /// swatch says nothing about how many things pressing it changes. Word,
 /// Illustrator and Inkscape all report the selection size somewhere permanent;
 /// this panel has no status strip of its own, so the row says it.
 ///
-/// ★ `not_paths` is reported separately rather than folded into the count,
+/// `not_paths` is reported separately rather than folded into the count,
 /// because they are two different facts and only one is about what will change.
 /// A marquee over a table catches its rules **and** its labels, and an operator
 /// who recolours it needs to know the labels were not included — otherwise the
@@ -106,7 +106,7 @@ pub fn subject(paths: usize, not_paths: usize) -> String {
     }
 }
 
-/// ★★★ **Named inks inside a selection that will still be recoloured** — drawn
+/// **Named inks inside a selection that will still be recoloured** — drawn
 /// above a live swatch, never instead of one.
 ///
 /// The state O89 called out as the hard one: *"A mixed selection containing one
@@ -116,12 +116,12 @@ pub fn subject(paths: usize, not_paths: usize) -> String {
 /// sentence adds is that the operator **knows before pressing**, rather than
 /// finding out from a count afterwards.
 ///
-/// ★ It names the inks where the file names them, for
+/// It names the inks where the file names them, for
 /// [`undecoded`]'s reason: *"this stroke is spot ink PANTONE 300"* tells a
 /// drawing office what it needs. An unnamed undecodable space contributes to
 /// the count and not to the list, because there is nothing truthful to call it.
 ///
-/// ★★ The list is capped at three names. A selection of two hundred strokes in
+/// The list is capped at three names. A selection of two hundred strokes in
 /// nine separations would otherwise put a paragraph on a 180-point panel and
 /// the sentence would be scrolled past — which is the failure mode
 /// `text::panels::fonts`' two-word verdicts were shortened to avoid.
@@ -156,7 +156,7 @@ pub fn mixed_named_inks(inks: &[Option<String>], total: usize) -> String {
     }
 }
 
-/// ★★★ Drawn where a swatch cannot go because **every** member of the selection
+/// Drawn where a swatch cannot go because **every** member of the selection
 /// carries an ink pdfcer will not overwrite.
 ///
 /// The single-object refusal, widened to say how many. It is
@@ -179,7 +179,7 @@ pub fn undecoded_across(ink: Option<String>, total: usize) -> String {
     }
 }
 
-/// ★★ Drawn at the top of the colour picker when the selected **shapes**
+/// Drawn at the top of the colour picker when the selected **shapes**
 /// disagree.
 ///
 /// Not an error and not a refusal: the control still applies. This is the
@@ -187,7 +187,7 @@ pub fn undecoded_across(ink: Option<String>, total: usize) -> String {
 /// what it means — there is no one colour to open on, and picking one sets all
 /// of them.
 ///
-/// ★★★ It names **shapes**, where the clicked-text twin
+/// It names **shapes**, where the clicked-text twin
 /// (`crate::text::panels::textobject::mixed_hint`) names **words**, and the two
 /// exist separately for a defect that shipped for twenty minutes and could not
 /// have been caught by a test: `panels::properties::swatch` is shared by both

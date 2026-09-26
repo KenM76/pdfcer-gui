@@ -46,7 +46,7 @@ use pdfcer_core::edit::EditSession;
 use pdfcer_core::ocr::{OcrPage, models};
 use pdfcer_core::page_tree::{self, Rect};
 
-/// ★★ **The raster size recognition is run at, as a pixel count** — measured,
+/// **The raster size recognition is run at, as a pixel count** — measured,
 /// not chosen.
 ///
 ///
@@ -105,7 +105,7 @@ use pdfcer_core::page_tree::{self, Rect};
 /// differently at each size, and reading a maximum out of it was reading a
 /// maximum out of noise.
 ///
-/// ★★ **That is why [`TARGET_PIXELS`] does not move.** 8.4 Mpx puts the
+/// **That is why [`TARGET_PIXELS`] does not move.** 8.4 Mpx puts the
 /// benchmark sheet at 150 DPI, which is inside the plateau and 2.2 points off
 /// the nominal best — a difference this sample cannot resolve. The constant was
 /// right for a wrong reason and is now right for a measured one, which is worth
@@ -170,7 +170,7 @@ pub const MIN_DPI: f32 = 50.0;
 /// message says so.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Refusal {
-    /// ★ **This page already draws text**, so recognising it would add an
+    /// **This page already draws text**, so recognising it would add an
     /// invisible duplicate rather than make anything findable.
     ///
     ///
@@ -181,7 +181,7 @@ pub enum Refusal {
     AlreadyHasText,
     /// **The operator pressed Cancel.** Nothing was kept.
     ///
-    /// ★ A refusal rather than an outcome, because every caller that handles
+    /// A refusal rather than an outcome, because every caller that handles
     /// "nothing came back" already handles this shape — and because it IS a
     /// refusal from the run's point of view: it produced no result, on purpose.
     /// The count is carried so the status line can say what was discarded
@@ -214,7 +214,7 @@ pub enum Refusal {
 
 /// A finished recognition, before it is anywhere on disk.
 ///
-/// ★ **The bytes and the report travel together and are only ever handed over
+/// **The bytes and the report travel together and are only ever handed over
 /// together.** `pdfcer-core`'s report type says a caller "that builds a layer
 /// and drops the report has made pdfcer silent about a page of guesses", and
 /// keeping them in one struct is how that is made awkward to do by accident.
@@ -223,14 +223,14 @@ pub struct Recognised {
     /// **How many pages had been attempted when the operator pressed Stop**, or
     /// `None` for a run that finished on its own.
     ///
-    /// ★★★ Carried on the result rather than inferred from a page count,
+    /// Carried on the result rather than inferred from a page count,
     /// because the two are not the same: a complete run over pages that were
     /// all skipped also has fewer written pages than requested. Only this
     /// distinguishes *"the document is done"* from *"the operator ended it at
     /// page 40"* — and reporting the second as the first is how somebody
     /// discovers, months later, that a word on page 150 is not in the layer.
     pub stopped_after: Option<usize>,
-    /// ★★★ **The recognised words, per page, ready to be applied to the open
+    /// **The recognised words, per page, ready to be applied to the open
     /// session as one undoable edit.**
     ///
     ///
@@ -242,7 +242,7 @@ pub struct Recognised {
     /// open document and saves over it, like every other edit.
     ///
     ///
-    /// # ★★ And it deletes the unsaved-edits refusal, which no guard could fix
+    /// # And it deletes the unsaved-edits refusal, which no guard could fix
     ///
     /// The free function read the document's **base** revision, so a recognised
     /// copy taken after any edit silently omitted that edit. This shell
@@ -278,7 +278,7 @@ pub struct Recognised {
     /// diagnosis — a large gap means the engine and the page geometry disagree
     /// — and it is invisible from either number alone.
     pub words_recognised: usize,
-    /// ★ **How many pages produced words**, across a multi-page run.
+    /// **How many pages produced words**, across a multi-page run.
     ///
     /// `1` for the single-page case this used to be the only shape of. Reported
     /// so the dialog can say *"12 of 36 pages"* rather than a word count alone,
@@ -300,7 +300,7 @@ pub struct Recognised {
 /// (ISO 32000-1 §8.3.2.3). One line, in one place, so no call site does the
 /// division by hand and gets 96 into it.
 ///
-/// ★ That "one place" is now [`crate::units::scale_from_dpi`], one level
+/// That "one place" is now [`crate::units::scale_from_dpi`], one level
 /// further out again: this function was one of THREE that each held the same
 /// one line, which is the same defect at a larger scale. The `f32` signature
 /// stays because every caller hands the result to `pdfcer-render` as a scale;
@@ -448,7 +448,7 @@ pub struct Request {
     /// that base is what the operator is looking at.
     ///
     pub session: Arc<EditSession>,
-    /// ★★★ **The pages to recognise, zero-based, in order.**
+    /// **The pages to recognise, zero-based, in order.**
     ///
     /// # Why this is a list
     ///
@@ -465,7 +465,7 @@ pub struct Request {
     /// successive in-place recognitions of one page produce a document that
     /// round-trips byte-identical and extracts both layers. Revisions chain.
     ///
-    /// ★★ **And the same measurement found a hazard**: a second pass over a
+    /// **And the same measurement found a hazard**: a second pass over a
     /// page that already has a layer **adds a second one** — 427 codes became
     /// 854 — rather than replacing it. It does not affect a run that visits
     /// each page once, which is every run this shell issues, but it is why
@@ -475,19 +475,19 @@ pub struct Request {
     /// arrives, the job reports [`Refusal::NothingRecognised`] rather than
     /// succeeding at nothing.
     pub pages: Vec<usize>,
-    /// ★★ **Leave alone any page that already has real text on it.**
+    /// **Leave alone any page that already has real text on it.**
     ///
     /// The default, and the safe one. It is OCRmyPDF's `--skip-text`, which is
     /// that tool's default for the same reason: recognising a page that is
     /// already text adds an invisible duplicate of text the file already has,
     /// which doubles every search hit and every copy.
     ///
-    /// ★ "Real text" means text the page draws **visibly**. A page that already
+    /// "Real text" means text the page draws **visibly**. A page that already
     /// carries an invisible OCR layer counts as having text, so re-running over
     /// a recognised document is the no-op an operator would expect rather than
     /// a doubling.
     pub skip_pages_with_text: bool,
-    /// ★ **The operator's extraction settings**, carried rather than defaulted.
+    /// **The operator's extraction settings**, carried rather than defaulted.
     ///
     /// Read only by the [`Self::skip_pages_with_text`] guard, and it would have
     /// been tempting to call `ExtractOptions::default()` at the point of use —
@@ -519,7 +519,7 @@ pub struct Request {
 /// `render::worker::render_on_worker` is: a body that cannot reach `self` is a
 /// body that provably shares nothing with the UI thread.
 ///
-/// ★★★ **Recognise every requested page, chaining the revisions.**
+/// **Recognise every requested page, chaining the revisions.**
 ///
 /// # The shape, and why it is a fold rather than a map
 ///
@@ -544,7 +544,7 @@ pub struct Request {
 /// recogniser itself is broken, every remaining page will fail the same way and
 /// grinding through thirty-nine more is only a slower way to say so.
 ///
-/// # ★ A run that recognised nothing anywhere is a refusal
+/// # A run that recognised nothing anywhere is a refusal
 ///
 /// If no page produced a single word, there is nothing to write and nothing to
 /// save, and reporting success would leave the operator with a dialog saying it
@@ -573,13 +573,13 @@ pub(in crate::ocr) fn recognise(
     let mut total_words = 0usize;
     let mut pages_skipped = 0usize;
     let mut dpi = 0.0f32;
-    // ★★ Counted separately from `pages_skipped`, and only so that a run which
+    // Counted separately from `pages_skipped`, and only so that a run which
     // produced nothing can say WHY. See the refusal below.
     let mut already_had_text = 0usize;
 
     let of = request.pages.len();
     for (attempted, &page_index) in request.pages.iter().enumerate() {
-        // ★★★ **CHECKED BETWEEN PAGES, NEVER INSIDE ONE**, and that is what
+        // **CHECKED BETWEEN PAGES, NEVER INSIDE ONE**, and that is what
         // makes "Stop keeps the finished pages" true by construction: there is
         // no moment in this loop at which a half-recognised page exists.
         //
@@ -601,7 +601,7 @@ pub(in crate::ocr) fn recognise(
             Ok(one) => {
                 total_words += one.words;
                 dpi = one.dpi;
-                // ★ Sent BEFORE the page is pushed, so the count the operator
+                // Sent BEFORE the page is pushed, so the count the operator
                 // reads is the count of pages ATTEMPTED rather than kept. A
                 // progress line that stalled on a run of skipped pages would
                 // look exactly like the freeze this feature exists to disprove.
@@ -641,7 +641,7 @@ pub(in crate::ocr) fn recognise(
     }
 
     if pages.is_empty() {
-        // ★★★ **WHICH nothing — the two empty results are not the same.**
+        // **WHICH nothing — the two empty results are not the same.**
         //
         // A CAD sheet whose every page already has text selects nothing, and
         // reporting that as `NothingRecognised` reads as *"the recogniser
@@ -692,7 +692,7 @@ fn recognise_one(
     recogniser: &Recogniser,
     page_index: usize,
 ) -> Result<OnePage, Refusal> {
-    // ★★★ **THE SESSION'S VIEW, NOT ITS BASE AND NOT THE FILE.**
+    // **THE SESSION'S VIEW, NOT ITS BASE AND NOT THE FILE.**
     //
     // This is the whole reason the engine grew a session verb. The old code
     // read the operator's file off disk — correct at the time, because
@@ -710,7 +710,7 @@ fn recognise_one(
         .get(page_index)
         .ok_or(Refusal::NoSuchPage(page_index))?;
 
-    // ★★ **The doubling guard, and the reason it is measured rather than
+    // **The doubling guard, and the reason it is measured rather than
     // assumed.**
     //
     //
@@ -752,7 +752,7 @@ fn recognise_one(
 
     let words = recogniser.recognise(w, h, &grey)?;
     let words_recognised = words.len();
-    // ★ The flip, and the ONLY place it happens. See the module header.
+    // The flip, and the ONLY place it happens. See the module header.
     //
     //
     // `pdfcer-render` honours `/Rotate`: `page_device_geometry` swaps the
@@ -760,14 +760,14 @@ fn recognise_one(
     // so on an odd quarter turn every recognised word landed on the wrong axis
     // at the wrong scale.
     //
-    // ★★ And the failure is invisible by construction, which is why it needed
+    // And the failure is invisible by construction, which is why it needed
     // reporting rather than noticing. The OCR layer is Table 106 mode 3 —
     // rendered but not shown — so a page whose every word is misplaced **looks
     // exactly like a page whose every word is right**. The only symptom is that
     // selecting or searching picks the wrong thing, and an operator meeting
     // that would reasonably blame the recogniser rather than the geometry.
     //
-    // ★ Not an edge case in the one population OCR exists for: scanner drivers
+    // Not an edge case in the one population OCR exists for: scanner drivers
     // and "rotate pages" commands in other tools write `/Rotate` rather than
     // re-imaging the pixels, so a rotated scan is the norm rather than the
     // exception.
@@ -791,7 +791,7 @@ fn recognise_one(
         return Err(Refusal::NothingRecognised);
     }
 
-    // ★ Counted from the words that were actually PLACED, not from what the
+    // Counted from the words that were actually PLACED, not from what the
     // recogniser emitted — the two differ whenever a word is dropped on the way
     // into page space, and the number an operator watches must describe what
     // ended up in their document.
@@ -840,7 +840,7 @@ mod tests {
         assert_eq!(raster_scale(MAX_DPI), 300.0 / 72.0);
     }
 
-    /// ★★ **The measured optimum is reproduced for the sheet it was measured
+    /// **The measured optimum is reproduced for the sheet it was measured
     /// on.**
     ///
     /// `SW41177.pdf`'s first page is 1584 × 1224 pt, and [`TARGET_PIXELS`] is
@@ -862,7 +862,7 @@ mod tests {
     /// existed to protect. It now asserts what cannot become false by
     /// re-measuring: that this page's DPI is the one `TARGET_PIXELS` implies.
     ///
-    /// ★ When the sweep is re-run and the constant moves, this test should
+    /// When the sweep is re-run and the constant moves, this test should
     /// **pass unchanged**. If it does not, the fitting arithmetic has come
     /// apart — which is precisely what the old version could not tell you.
     #[test]
@@ -917,7 +917,7 @@ mod tests {
     /// A business card at 8.4 megapixels is over 1,000 DPI — resolution with no
     /// ink behind it, paid for in seconds.
     ///
-    /// ★ **US Letter is the interesting row and is asserted separately.** It
+    /// **US Letter is the interesting row and is asserted separately.** It
     /// lands at 299.7 DPI, a quarter of a DPI under the ceiling: the measured
     /// 8.4-megapixel target and the conventional 300-DPI scanning standard
     /// coincide almost exactly on the commonest page size in the world. That is
@@ -939,7 +939,7 @@ mod tests {
         );
     }
 
-    /// ★ **An A0 sheet is reduced, and the reduction lands near the target.**
+    /// **An A0 sheet is reduced, and the reduction lands near the target.**
     ///
     /// 3370 × 2384 pt at 300 DPI would be 138 megapixels and 550 MB of RGBA
     /// before anything is recognised. More to the point, the measurement says a
@@ -988,7 +988,7 @@ mod tests {
         assert_eq!(black[0], 0x00);
     }
 
-    /// ★ **A saturated colour is not mid-grey, which a flat average would
+    /// **A saturated colour is not mid-grey, which a flat average would
     /// make it.**
     ///
     /// The reason the luma weights are there rather than `(r+g+b)/3`. Pure
@@ -1019,7 +1019,7 @@ mod tests {
         assert_eq!(out[15], 0xFF, "the padding is paper, not ink");
     }
 
-    /// ★ **`ocrs` reports no confidence, and the shell says so.** If this
+    /// **`ocrs` reports no confidence, and the shell says so.** If this
     /// became `true` the dialog would drop its "nothing here has been scored"
     /// statement and a page of unscored guesses would present as checked.
     #[test]
@@ -1055,7 +1055,7 @@ mod tests {
         assert!(err.to_string().contains("ocrs"));
     }
 
-    /// ★★★ **An EMPTY `models/ocrs` does not resolve, and so cannot shadow a
+    /// **An EMPTY `models/ocrs` does not resolve, and so cannot shadow a
     /// good copy further down the search order.**
     ///
     /// The hazard `pdfcer-core` built `resolve_model_dir_with` for, and it is
@@ -1065,12 +1065,12 @@ mod tests {
     /// reached, and the failure surfaces one layer down in the engine's
     /// vocabulary — a missing model file, after we said there was not one.
     ///
-    /// ★ Realistic rather than contrived. A part-finished extraction, an
+    /// Realistic rather than contrived. A part-finished extraction, an
     /// antivirus quarantine that took the weights and left the folder, or an
     /// operator creating the directory by hand before copying into it all
     /// produce exactly this state.
     ///
-    /// ★★ The positive half is asserted too, and it is what makes this test
+    /// The positive half is asserted too, and it is what makes this test
     /// discriminate. Its first draft checked only that an empty directory
     /// fails — which the OLD resolver also does when the path is wrong, so the
     /// test passed against the very code it was written to condemn. Putting a

@@ -15,7 +15,7 @@ preview column goes away when it does.**
 
 Ask 1 shipped the same day. This is ask 2.
 
-# ★★★ WHY THE OBVIOUS CHECK IS WORTHLESS, and what this does instead
+# WHY THE OBVIOUS CHECK IS WORTHLESS, and what this does instead
 
 The obvious check is *"press Pop out, and assert a second window appeared"*.
 It passes on a build that opens the pop-out window **and goes on drawing the
@@ -28,7 +28,7 @@ So the load-bearing assertion here is an **absence**: after the click, the
 publishes `ui-rect-gone name=…` for every region drawn last frame and not
 this one, which is exactly the event that says a surface stopped existing.
 
-## ★★ And an absence assertion is vacuous unless the run is DRIVEN into the
+## And an absence assertion is vacuous unless the run is DRIVEN into the
 ## state where the absence is the claim
 
 A check that merely asserted *"`print.preview.column` is not declared"*
@@ -46,7 +46,7 @@ Hence the pairing, which is the whole design:
 Neither half alone is worth anything. The first proves the run reached the
 state the second is about; the second proves the state changed.
 
-## ★ The width is asserted as a RELATIONSHIP, never a value
+## The width is asserted as a RELATIONSHIP, never a value
 
 `options_w == content_w` while popped — the options take the whole room —
 rather than "the options are N points wide". Every width in this dialog
@@ -62,7 +62,7 @@ OS close button **and** Escape together. This check presses Escape at the
 popped window and asserts the preview comes home: `print-preview-popped
 state=in`, and the column's region declared again.
 
-★★ That half **degrades to a skip rather than a failure** when the popped
+That half **degrades to a skip rather than a failure** when the popped
 window did not have the keyboard. Focus is a window-manager question this
 harness has been wrong about before — nine checks skipped in one sweep on a
 stray `OpenWith.exe` holding the foreground — and reporting *"closing the

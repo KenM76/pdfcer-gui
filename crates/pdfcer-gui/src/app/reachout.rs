@@ -26,7 +26,7 @@ pub struct ReachOut {
     pub script_on_open: bool,
     /// The engine stopped walking before it finished.
     ///
-    /// ★★ Disclosed, never swallowed. A count of zero from a walk that stopped
+    /// Disclosed, never swallowed. A count of zero from a walk that stopped
     /// early means *"nothing found so far"*, not *"nothing is there"*, and
     /// presenting the first as the second is the clean-bill-of-health failure —
     /// silence and safety are indistinguishable to a reader.
@@ -47,7 +47,7 @@ impl ReachOut {
 
     /// Whether there is anything at all to say.
     ///
-    /// ★ The overwhelmingly common answer is `false`, and that is the point: a
+    /// The overwhelmingly common answer is `false`, and that is the point: a
     /// disclosure that fires on every document is one nobody reads.
     #[must_use]
     pub const fn worth_saying(self) -> bool {
@@ -87,7 +87,7 @@ pub fn scan(session: &pdfcer_core::edit::EditSession) -> ReachOut {
 mod tests {
     use super::*;
 
-    /// ★★★ An ordinary form says NOTHING.
+    /// An ordinary form says NOTHING.
     ///
     /// The single most important property here. A form that computes a total
     /// carries calculate and format scripts, and a shell that warned about
@@ -111,7 +111,7 @@ mod tests {
     /// Each of the four facts alone is enough to speak.
     #[test]
     fn every_reaching_fact_is_worth_saying_on_its_own() {
-        // ★ Built by MUTATION rather than by struct literal, because
+        // Built by MUTATION rather than by struct literal, because
         // `FormJavaScript` is `#[non_exhaustive]` — a field the engine adds
         // later must not break this test, which is exactly what that attribute
         // is for. `..Default::default()` does not help: the restriction is on
@@ -122,7 +122,7 @@ mod tests {
         launch.launch_action_count = 1;
         let mut on_open = FormJavaScript::default();
         on_open.open_action_is_javascript = true;
-        // ★★ Truncation counts even with every counter at zero, and that is the
+        // Truncation counts even with every counter at zero, and that is the
         // whole reason it is a field here. "Nothing found" from a walk that
         // stopped early is not an all-clear.
         let mut truncated = FormJavaScript::default();

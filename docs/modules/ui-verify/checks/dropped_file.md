@@ -17,11 +17,11 @@ Half of that was false and half was worse than reported.
   read `dropped_files`. A file dragged onto the window was ignored, silently,
   with no cursor feedback on the way in.
 
-★★ And the second made the first *look* broken. Both were tried in the same
+And the second made the first *look* broken. Both were tried in the same
 minute; only one of them told the operator anything, so the reasonable
 conclusion from the chair was that pictures do not work.
 
-# ★★ Why this check needs an environment seam where others need none
+# Why this check needs an environment seam where others need none
 
 Because a drop **cannot be synthesised by moving a mouse**. It originates in
 Explorer and is delivered by the window manager as an OLE drag-drop

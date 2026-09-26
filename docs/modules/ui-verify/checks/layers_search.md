@@ -23,7 +23,7 @@ with no window open. This check answers the two things they cannot:
    layout; `crate::diag::ui_rect_visible` is what proves visibility, and
    the dock's whole rect stream goes through it.
 
-# ★★★ Why this check cannot pass on an absence
+# Why this check cannot pass on an absence
 
 The field is drawn conditionally, and `crate::diag::ui_rect` is a **change
 log** — it emits a line when a rect appears or moves, and
@@ -44,7 +44,7 @@ for `layer-row`, which `panels::layers` traces once per drawn row — and
 only then requires the field. A fixture with too few layers makes the
 check ERROR with a message naming the fixture, not pass.
 
-# ★★★ What is deliberately NOT covered, and it is the honest limit
+# What is deliberately NOT covered, and it is the honest limit
 
 **Typing, and therefore the narrowed and empty states.**
 

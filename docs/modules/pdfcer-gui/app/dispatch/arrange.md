@@ -5,7 +5,7 @@ Bring to front, Bring forward, Send backward, Send to back. Every drawing
 program has them; this one had the engine verb, a test for it, three written
 disclosures about it — and no way for the operator to reach any of it.
 
-## ★★★ The capability was present, tested, disclosed, and unreachable
+## The capability was present, tested, disclosed, and unreachable
 
 
 > `/Annots` order is **paint order** for every annotation, so moving a widget
@@ -22,7 +22,7 @@ nobody looking to put a revision cloud on top of a highlight would ever open.
 reachable from exactly one surface, and that surface was about something
 else.**
 
-## ★★ Why this is a module and not four arms in [`super`]
+## Why this is a module and not four arms in [`super`]
 
 Two reasons, and the second is the load-bearing one.
 
@@ -36,7 +36,7 @@ Two reasons, and the second is the load-bearing one.
    lines of gate written four times, which is four places for the next
    change to be made in three of them.
 
-## ★ What is deliberately NOT decided here
+## What is deliberately NOT decided here
 
 **The permutation.** This module resolves *which mark* and *which end* and
 raises an action; the array itself is read at apply time by

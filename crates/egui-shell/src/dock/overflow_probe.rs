@@ -151,7 +151,7 @@ mod tests {
         assert!(!crosses(DockSide::Left, right, outer));
     }
 
-    /// ★★★ **The regression guard for the wobble.** A body that allocates
+    /// **The regression guard for the wobble.** A body that allocates
     /// 0.4 pt past its compartment — what egui's own solid scroll bar does on
     /// a fade-in frame — must not move the side's frame by a fraction of a
     /// point. Without `draw_stack`'s child ui this reports

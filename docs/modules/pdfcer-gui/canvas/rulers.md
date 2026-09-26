@@ -7,7 +7,7 @@ here.
 
 ---
 
-## ★ 1. What unit the ruler reads in — the question, and the answer
+## 1. What unit the ruler reads in — the question, and the answer
 
 `RIBBON_IA.md` says *"rulers along the canvas edges, **in the document's
 units**"*, and that phrase hides a real decision rather than a formatting
@@ -112,7 +112,7 @@ magnitude more.
 
 ---
 
-## ★ 2. Which space the grid is drawn in — page space, per page
+## 2. Which space the grid is drawn in — page space, per page
 
 Under a continuous mode several pages are on screen at once, so "where is
 the grid" has two candidate answers and only one survives contact with a
@@ -157,7 +157,7 @@ it.
 
 ---
 
-## ★ 3. Rulers reserve layout space, and the reservation is a CONSTANT
+## 3. Rulers reserve layout space, and the reservation is a CONSTANT
 
 The gutters sit along the canvas edges, so switching them on shrinks the
 viewport the strip is laid out into — and the viewport is what
@@ -182,7 +182,7 @@ constancy rather than trusting this paragraph.
 
 ---
 
-## ★ 4. Rule 4 — why chrome the operator switched on is allowed
+## 4. Rule 4 — why chrome the operator switched on is allowed
 
 `panels`' one-line test: *would a screenshot of the editing canvas differ
 from a screenshot of the same document saved and reopened?* For a ruler and

@@ -32,7 +32,7 @@ way worth recording:
    because the only machine reading that field was this check and it had
    never been run. The first sweep to run it duly reported *"the radio
    drew and did not bind"* while quoting `format=emf` in the same sentence.
-   ★ **Changing a trace field's spelling is an edit to every reader of
+   **Changing a trace field's spelling is an edit to every reader of
    that field, and an unrun check is a reader that cannot object.** See
    [`EMF_KEY`], which now carries that history where the comparison is.
 2. **With that corrected, the pipeline is whole.** 143,132 bytes on disk,
@@ -69,7 +69,7 @@ Four of the five links between the radio and the file are outside anything a
 4. **the writer runs against the live `DocumentView`** — the session's view,
    with its overlay and staging buffer, not a freshly-loaded `Document`.
 
-# ★★★ The assertions that make this more than a smoke test
+# The assertions that make this more than a smoke test
 
 **The file is parsed as an [MS-EMF] metafile and cross-checked against
 itself and against the trace.** Three independent claims:
@@ -80,7 +80,7 @@ itself and against the trace.** Three independent claims:
 | the metafile agrees with itself | the header's `nBytes` at offset 48 equals the file's length | a truncated write, or a header back-patched from the wrong buffer; GDI refuses such a file and the operator gets an empty paste |
 | the shell's story matches the disk | the trace's `bytes=` equals the file's length | the disclosure describes one export and the disk holds another |
 
-★ The middle one is the one worth having. `nBytes` is back-patched into a
+The middle one is the one worth having. `nBytes` is back-patched into a
 placeholder after every record is written (`pdfcer_render::emf`'s writer
 resizes `out` to 108 zero bytes, writes the body, then copies the header
 over the front) — so a header whose `nBytes` disagrees with the file length

@@ -1,7 +1,7 @@
 //! The tab-menu seam — what an application is handed when it wants to own
 //! a panel tab's secondary click.
 //!
-//! # ★ THE SEAM: the dock hands out a `Response`; the application decides
+//! # THE SEAM: the dock hands out a `Response`; the application decides
 //! what a right-click means
 //!
 //! A dock's job is *layout*: which panels are on which side, in which
@@ -49,7 +49,7 @@
 //! are others, and all of them arrive through this one seam without the
 //! dock growing a concept per feature.
 //!
-//! # ★ Why one `&mut TabMenu` rather than two arguments
+//! # Why one `&mut TabMenu` rather than two arguments
 //!
 //! The obvious spelling is `FnMut(&PanelId, &egui::Response)`. It is
 //! rejected for one concrete reason and one structural one.
@@ -77,7 +77,7 @@
 //! that adopted the seam. The cost is one extra type in the public API;
 //! the cost of the alternative is a breaking change per capability.
 //!
-//! # ★ What happens to the dock's built-in "Close"
+//! # What happens to the dock's built-in "Close"
 //!
 //! | The application… | The tab's secondary click is owned by | "Close" |
 //! |---|---|---|
@@ -307,7 +307,7 @@ impl<'a> TabMenu<'a> {
     /// panel's header strip offers. A no-op on a panel that is not
     /// floating.
     ///
-    /// ★ It is offered on a **tab** as well as on a header strip, and
+    /// It is offered on a **tab** as well as on a header strip, and
     /// deliberately: one handler serves both surfaces, so an application
     /// writes one menu and gets the right rows in both places by making
     /// the rows conditional rather than by writing the menu twice.

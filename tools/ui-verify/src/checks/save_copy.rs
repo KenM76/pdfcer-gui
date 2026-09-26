@@ -594,7 +594,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .map_err(|e| Error::new(format!("cannot read {}: {e}", target.display())))?;
     report.artifact(target.clone());
 
-    // --- ★ PHASE D: the document that was opened is untouched ---------------
+    // --- PHASE D: the document that was opened is untouched ---------------
     let after_bytes = std::fs::read(&pdf)
         .map_err(|e| Error::new(format!("cannot re-read {}: {e}", pdf.display())))?;
     let after = digest(&after_bytes);
@@ -618,7 +618,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         after.0, after.1
     ));
 
-    // --- ★ PHASE E: the copy is an APPENDED revision, not a rewrite ---------
+    // --- PHASE E: the copy is an APPENDED revision, not a rewrite ---------
     if !copy.starts_with(&source) {
         let shared = copy
             .iter()
@@ -649,7 +649,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
 
     // =======================================================================
-    // ★ PHASE F — THE ROUND TRIP: re-open the file that came out
+    // PHASE F — THE ROUND TRIP: re-open the file that came out
     // =======================================================================
     let listed_reopened = {
         // A second `PDFCER_DIAG_SAVE_PATH` is set and never used; harmless, and
@@ -746,7 +746,7 @@ mod tests {
         assert_eq!(MODE, "review");
     }
 
-    /// ★ **The digest notices a single changed byte and a truncation.**
+    /// **The digest notices a single changed byte and a truncation.**
     ///
     /// Phase D's whole verdict rests on this function, so a digest that answered
     /// "unchanged" for a modified file would turn the check's assertion about
@@ -765,7 +765,7 @@ mod tests {
         assert_eq!(digest(a), digest(a), "and it must be stable");
     }
 
-    /// ★ **Phase E's comparison really distinguishes an appended update from a
+    /// **Phase E's comparison really distinguishes an appended update from a
     /// rewrite.**
     ///
     /// The predicate is one `starts_with`, which is exactly the kind of line
@@ -845,7 +845,7 @@ mod tests {
                 .events(INVOKE_EVENT)
                 .any(|l| l.get("id") == Some(SAVE.1))
         );
-        // ★ Read through the SHARED census reader and anchored at 0, which is
+        // Read through the SHARED census reader and anchored at 0, which is
         // "anything in this capture" — the one place a zero anchor is right,
         // because the capture is three synthetic lines rather than a run.
         let census = comments_census::Census::since(&app, 0)
@@ -854,7 +854,7 @@ mod tests {
         assert_eq!(census.listed, 3);
         assert_eq!(census.excluded, 0);
 
-        // ★ The save line's fields survive a path with SPACES in it. The
+        // The save line's fields survive a path with SPACES in it. The
         // application Debug-quotes the path for exactly this reason, and a
         // build that stopped would leave every field after `path=` unreadable —
         // so `appended` would parse as `None`, default to 0, and this check

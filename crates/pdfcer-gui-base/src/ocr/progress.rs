@@ -64,7 +64,7 @@ impl Control {
 
     /// **Finish the page in hand and keep everything.**
     ///
-    /// ★ Refuses to downgrade a Cancel. An operator who cancelled and then hit
+    /// Refuses to downgrade a Cancel. An operator who cancelled and then hit
     /// Stop — two clicks in the same second on adjacent buttons — must not have
     /// the abandonment quietly turned into a partial write.
     pub fn stop(&self) {
@@ -88,7 +88,7 @@ impl Control {
 
 /// One message from the worker.
 ///
-/// ★★ `Page` is sent **after** the page is recognised, carrying that page's own
+/// `Page` is sent **after** the page is recognised, carrying that page's own
 /// counts. The dialog accumulates; the worker does not send running totals,
 /// because a message that is a total rather than an event cannot be dropped
 /// safely and this channel is allowed to be drained in batches.
@@ -114,7 +114,7 @@ pub struct PageDone {
     pub words: usize,
     /// Characters recognised on this page.
     ///
-    /// ★ Asked for by name. It is the more responsive of the two on a dense
+    /// Asked for by name. It is the more responsive of the two on a dense
     /// drawing — a page can produce hundreds of characters in a handful of
     /// "words" — so it is the number that best shows the thing is alive.
     pub chars: usize,
@@ -122,7 +122,7 @@ pub struct PageDone {
 
 /// How a run ended.
 ///
-/// ★★★ `Stopped` is a distinct outcome and NOT a successful run with fewer
+/// `Stopped` is a distinct outcome and NOT a successful run with fewer
 /// pages. The disclosure has to say the run ended early, or an operator who
 /// stopped at page 40 of 200 is left believing the whole document was
 /// recognised — which they will discover months later, searching for a word
@@ -169,7 +169,7 @@ mod tests {
         assert_eq!(c.wish(), Wish::Cancel);
     }
 
-    /// ★★★ **Cancel outranks Stop, and Stop cannot downgrade a Cancel.**
+    /// **Cancel outranks Stop, and Stop cannot downgrade a Cancel.**
     ///
     /// Two adjacent buttons and a run the operator has decided against: the
     /// order the clicks land in must not decide whether a partial layer is

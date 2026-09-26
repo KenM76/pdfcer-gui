@@ -258,7 +258,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(verdict(&failures));
     };
 
-    // --- 3: ★★★ and it is in the stack it was AIMED at ---------------------
+    // --- 3: and it is in the stack it was AIMED at ---------------------
     //
     // The assertion the two above cannot make between them: a panel that
     // docked back to its own left-dock home satisfies both of them.

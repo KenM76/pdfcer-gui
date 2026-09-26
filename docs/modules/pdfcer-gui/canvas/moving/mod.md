@@ -35,7 +35,7 @@ each of them is a place the gesture can go quietly wrong.
    not a subpath), so it refuses and traces, exactly as Delete refuses at
    the Part rung today.
 
-## ★ Why the selection needs no invalidation across a move
+## Why the selection needs no invalidation across a move
 
 Because a move **does not renumber**. This was an open question that
 blocked the whole feature, was asked as `request_stable_object_identity.md`,

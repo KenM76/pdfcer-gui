@@ -18,7 +18,7 @@ siblings measure those:
 | **zoom** | `off_page_zoom` | it survives being zoomed in on |
 | **find** | *this one* | the operator can learn a sheet has anything out there **without already knowing** |
 
-★★★ The fourth is the one that was missing, and it is the only one that
+The fourth is the one that was missing, and it is the only one that
 scales. Seeing and reaching are answers to *"I know something is over
 there"*; on a thirty-six sheet drawing set nobody knows that, and scrolling
 every sheet out to its pasteboard to check is not a procedure a person
@@ -34,7 +34,7 @@ performs. The census is what turns a capability into something he can use.
    difference between *"scanning"* and *"stalled after page one"* is exactly
    the difference a check has to be able to state. The line is emitted once,
    on the completing frame, which is what makes `Trace::last` usable here.
-3. **`objects >= 1`** — ★★ the assertion that can actually fail. The fixture
+3. **`objects >= 1`** — the assertion that can actually fail. The fixture
    is chosen so a clean answer is a DEFECT rather than a fact about the
    input: `fixtures/off-page-object.pdf` is 485 bytes of hand-written syntax
    with one square on the page and one entirely beside it, and its sibling
@@ -47,7 +47,7 @@ performs. The census is what turns a capability into something he can use.
 6. **`redact-mark-offpage … epoch=…`** — the action reached the document
    through the edit funnel.
 
-## ★★ Why `objects` and not `dirty`
+## Why `objects` and not `dirty`
 
 `dirty` counts PAGES with something outside; `objects` counts the marks. On
 a one-page fixture `dirty` can only ever be 0 or 1, so an assertion on it is
@@ -55,7 +55,7 @@ one bit wide and is satisfied by a scan that found the page and
 misattributed why. `objects` is the number the operator is actually shown,
 and it is the number a wrong tolerance or a wrong page box moves first.
 
-## ★★ Why the applied line is matched on a FIELD and not on its name
+## Why the applied line is matched on a FIELD and not on its name
 
 The edit funnel writes `redact-mark-offpage-refused page=… detail=…` on the
 branch where the document is **untouched**, and that line shares the success
@@ -81,7 +81,7 @@ What remains unfalsified and is named so nobody reads it as measured: the
 funnel refuses this edit, so that clause is argued from the funnel's source
 rather than from a red run.
 
-## ★★★ What this check does NOT assert, stated rather than implied
+## What this check does NOT assert, stated rather than implied
 
 - **That the marks are in the right place.** The action carries BANDS —
   rectangles covering the strip of pasteboard outside the sheet — not the

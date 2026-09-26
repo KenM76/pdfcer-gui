@@ -9,7 +9,7 @@
 //! what happens if you **never touch it**, and what it **costs or does not
 //! affect**.
 //!
-//! ★ The radius line does the heavy lifting here and is the one an operator
+//! The radius line does the heavy lifting here and is the one an operator
 //! could not guess. Choosing a colour for text that the file itself renders as
 //! nothing sounds like it must be changing the document; it is not, and saying
 //! so is the difference between a setting somebody uses and one they leave

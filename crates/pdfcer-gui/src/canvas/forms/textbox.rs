@@ -15,7 +15,7 @@
 //! field commits `FillText` on focus loss, an editable combo commits
 //! `SetChoice` on Enter and has a popup list to close first.
 //!
-//! ## ★ Why the dressing is shared and the lifecycle is not
+//! ## Why the dressing is shared and the lifecycle is not
 //!
 //! The three appearance rules below are *properties of the document*, so two
 //! independent statements of them is two places for a form to be drawn with
@@ -44,13 +44,13 @@ pub(super) struct Spec<'a> {
     /// `/Ff` `Password`. Always `false` for a combo box.
     pub(super) password: bool,
     /// The field's name, when this frame is the one that should report what
-    /// the tint resolved to. `None` on every other frame — see [`lay`]'s ★★.
+    /// the tint resolved to. `None` on every other frame — see [`lay`]'s .
     pub(super) trace: Option<&'a str>,
 }
 
 /// Build the editor, dress it from the document, and place it.
 ///
-/// # ★★★ `/Q`, and it is the one placement property this editor reads
+/// # `/Q`, and it is the one placement property this editor reads
 ///
 /// [`super`]'s §3 refuses to make this box a facsimile of the rendered widget,
 /// and the refusal is **arithmetic**: the overlay is a font substitution by
@@ -65,7 +65,7 @@ pub(super) struct Spec<'a> {
 /// the moment the value committed. The whole of the rule is
 /// [`super::boxes::editor_align`].
 ///
-/// # ★★★ `/MK` `/BG`, the second property, admitted by the same test
+/// # `/MK` `/BG`, the second property, admitted by the same test
 ///
 /// A live box painted `extreme_bg_color` — near-white under every light preset
 /// — makes a pale-yellow or shaded field **turn grey the moment the operator
@@ -74,7 +74,7 @@ pub(super) struct Spec<'a> {
 /// looked at, which is what pdfcer's rule 4 forbids. The engine's own
 /// `Widget::background` doc names this editor as its intended consumer.
 ///
-/// ★★ **The fill and the ink arrive together, and that is not tidiness.** A
+/// **The fill and the ink arrive together, and that is not tidiness.** A
 /// document-derived fill under a theme-chosen foreground is `DEFECTS.md` D2's
 /// second shape — *a foreground assigned for a fill the text is not on* — and
 /// it is how the old GUI shipped near-white headings on light grey.
@@ -87,7 +87,7 @@ pub(super) struct Spec<'a> {
 /// which rule 4 admits in full — it says where the keystrokes are going, not
 /// what the document contains.
 ///
-/// # ★★ The refusal is traced, because an operator cannot see one
+/// # The refusal is traced, because an operator cannot see one
 ///
 /// Three outcomes reach this point and only two of them are visible. A field
 /// with no `/BG` keeps the theme box, which is right and expected. A field
@@ -154,7 +154,7 @@ pub(super) fn lay(ui: &mut Ui, draft: &mut String, spec: &Spec<'_>) -> egui::Res
 
 /// Put the caret at the end of the draft, or select the whole of it.
 ///
-/// # ★★ Two seatings, and the difference is measured rather than chosen
+/// # Two seatings, and the difference is measured rather than chosen
 ///
 /// A `/Tx` field seats the caret at the **end**: the click that asked for the
 /// editor was consumed by the page (see [`super`]'s §4), so there is no click

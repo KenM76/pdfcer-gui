@@ -4,10 +4,10 @@
 sheets are A1 and I want them A3"* — and, before it does anything, tells the
 operator which of two very different things he is about to get.
 
-## ★★★ Why this window exists, and why it is mostly a sentence
+## Why this window exists, and why it is mostly a sentence
 
 
-★ [`crate::app::blank`]'s §3a has known this the whole time; its comments
+[`crate::app::blank`]'s §3a has known this the whole time; its comments
 say in as many words that *"pdfcer-core answered it on 2026-08-18 —
 `EditSession::set_media_box`, `set_media_boxes` and a `pdfcer_core::paper`
 table"*. **Writing it down was mistaken for acting on it.** That is the
@@ -15,7 +15,7 @@ fourth instance of the pattern found this week and it is recorded here
 rather than in a session log because this file is where a reader will next
 be standing when it matters.
 
-## ★★★ THE DESIGN DECISION: this window's real product is a MEASUREMENT
+## THE DESIGN DECISION: this window's real product is a MEASUREMENT
 
 Changing a `/MediaBox` changes **the paper**. It does not move, scale or
 reflow one byte of what is drawn on the page. So:

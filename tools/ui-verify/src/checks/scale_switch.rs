@@ -16,7 +16,7 @@ use crate::report::CheckReport;
 
 /// Review mode and the rectangle tool.
 ///
-/// ★★★ **`view.panel_tool` is no longer rung, because it no longer exists.**
+/// **`view.panel_tool` is no longer rung, because it no longer exists.**
 /// `OPERATOR_REQUESTS.md` O123 dissolved the Tool panel and moved the three
 /// resize switches to Properties, on the operator's own argument that they were
 /// never the tool's: *"everything can be in object and properties."*
@@ -31,14 +31,14 @@ const INVOKE: &str = "mode.review,markup.rectangle";
 /// The Properties panel's body compartment, as the DOCK reports it — the oracle
 /// for *"can the operator see the switches' panel?"*.
 ///
-/// ★★ The dock's name rather than a panel-published one, and that is the whole
+/// The dock's name rather than a panel-published one, and that is the whole
 /// upgrade: it goes through `crate::diag::ui_rect_visible`, so its presence is a
 /// claim about **reachability** rather than about a function having run.
 const PANEL_REGION: &str = "dock.body.file.properties";
 
 /// The Properties panel's dock tab header, for raising it from behind a sibling.
 ///
-/// ★ A tab header, never a ribbon toggle. The toggle would *unmount* a panel
+/// A tab header, never a ribbon toggle. The toggle would *unmount* a panel
 /// that is already mounted, and the check would then report absent switches
 /// about a panel it closed itself.
 const PANEL_TAB_REGION: &str = "dock.tab.file.properties";
@@ -60,7 +60,7 @@ const SHAPE: ((f64, f64), (f64, f64)) = ((0.30, 0.30), (0.50, 0.45));
 /// How many frames to wait for the Tool panel to swap its armed block for its
 /// idle one, after the select tool has been armed from the ribbon.
 ///
-/// ★★ **This is a poll, not a retry.** Nothing is pressed again inside the loop
+/// **This is a poll, not a retry.** Nothing is pressed again inside the loop
 /// — the invoke is already confirmed against the shell's own trace — so the
 /// only question left is *which frame does the panel redraw in*, and a fixed
 /// settle would be a guess at it. It was `DISARM_TRIES` while the step pressed
@@ -75,7 +75,7 @@ const IDLE_TRIES: usize = 5;
 /// How far the bottom-right grip travels, as a fraction of **the shape's own
 /// size** — so the two scale factors come out equal.
 ///
-/// ## ★★★ Three wrong answers before this one, and each was wrong differently
+/// ## Three wrong answers before this one, and each was wrong differently
 ///
 /// | attempt | value | why it was not uniform |
 /// |---|---|---|
@@ -89,7 +89,7 @@ const IDLE_TRIES: usize = 5;
 /// check's own guard then declined to read — the guard was right each time,
 /// and this constant was the thing that was wrong.
 ///
-/// ★ The check asserts the two scale factors AGREE off the trace rather than
+/// The check asserts the two scale factors AGREE off the trace rather than
 /// arithmetic, which is what turned two silent mis-measurements into two
 /// specific, self-describing skips.
 const GRIP_TRAVEL_OF_SHAPE: f64 = 0.25;
@@ -97,7 +97,7 @@ const GRIP_TRAVEL_OF_SHAPE: f64 = 0.25;
 /// How far the two scale factors may disagree and still count as one uniform
 /// drag.
 ///
-/// ★★ It is **pointer quantisation**, not a fudge. The pointer is delivered at
+/// It is **pointer quantisation**, not a fudge. The pointer is delivered at
 /// integer screen pixels; the shape is about 86 px on a side at fit zoom on
 /// this fixture, so one pixel of rounding on a 25 % travel moves a scale factor
 /// by about `1 / 86` ≈ 0.012. Twice that is the ceiling used here, which leaves
@@ -191,7 +191,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(45);
     let driver = Driver::new(session.window());
 
-    // ★★★ **NORMALISE: the panel this check reads may be behind a sibling tab.**
+    // **NORMALISE: the panel this check reads may be behind a sibling tab.**
     //
     // Since `OPERATOR_REQUESTS.md` O123 the three resize switches live in the
     // Properties panel, and Review mounts Properties in a stack it shares with
@@ -220,7 +220,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 list(&declared_names(&trace, ui_rect, "dock.tab."))
             )));
         };
-        // ★ Resolved from the frame taken a moment ago rather than from one
+        // Resolved from the frame taken a moment ago rather than from one
         // cached earlier: the dock width changes when a panel opens, and a
         // stale coordinate is the harness hazard this project has written up
         // twice. Nothing has moved between the `declared` above and here.
@@ -283,7 +283,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // is the same channel, and polling it five times only converts a silent
     // wrong answer into a slow one.
     //
-    // ★★ Clicking `ribbon.item.view.tool_select` does not depend on focus at
+    // Clicking `ribbon.item.view.tool_select` does not depend on focus at
     // all. It is this harness's most exercised primitive, it has an oracle of
     // its own (the shell's `ribbon-command-invoked id=view.tool_select`), and
     // `app::dispatch`'s arm calls `canvas::tool::arm::select` — a plain write,
@@ -292,12 +292,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // makes the step *deterministic* rather than merely more likely to work:
     // there is no state this click can be wrong about.
     //
-    // ★ The View tab is clicked first because the control lives on View ▸
+    // The View tab is clicked first because the control lives on View ▸
     // Navigate, and View is the one tab every mode is shown. Switching tabs
     // disturbs neither the dock nor the canvas, and every coordinate after this
     // point is re-derived through `aim`.
     //
-    // ★★ **And no chord fallback here**, deliberately, where `markup_move` and
+    // **And no chord fallback here**, deliberately, where `markup_move` and
     // `measure_perimeter` keep one. Those two need the pen down and have been
     // passing on `V` for weeks with no panel of their own; this check raises the
     // Tool panel by construction, which is the exact condition under which `V`
@@ -317,7 +317,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("★ the select tool was armed by clicking View ▸ Select, not by a keystroke");
 
-    // ★★ The click is delivered and confirmed; the PANEL still redraws on its
+    // The click is delivered and confirmed; the PANEL still redraws on its
     // own schedule, so the region is polled rather than read once. This is not
     // the old retry loop — nothing is pressed again — it is waiting for the
     // frame in which the idle block replaces the armed one. The first runs of
@@ -385,7 +385,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- D: drag the bottom-right grip, proportionally ----------------------
     let grip = aim(ctx, &session, page, corner(SHAPE.1))?;
-    // ★ Each axis travels the same FRACTION OF THE SHAPE, so both scale
+    // Each axis travels the same FRACTION OF THE SHAPE, so both scale
     // factors are `1 + GRIP_TRAVEL_OF_SHAPE` exactly. See that constant.
     let shape_w = (SHAPE.1.0 - SHAPE.0.0) * page.width_pt;
     let shape_h = (SHAPE.1.1 - SHAPE.0.1) * page.height_pt;
@@ -445,7 +445,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // were live only where they overlapped its own box, `canvas::pressing`),
     // so this guard had never run in the life of the feature.
     //
-    // ★ The subject is unaffected and is asserted above: `stroke=true` means the
+    // The subject is unaffected and is asserted above: `stroke=true` means the
     // operator's switch reached the engine. What this guard is for is the
     // *other* reading of a failure there — that the drag was so lopsided the
     // engine treated it as a distortion — and one pixel of rounding is not that.

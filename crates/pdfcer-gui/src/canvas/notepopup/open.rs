@@ -114,7 +114,7 @@ mod tests {
         ObjId::new(num, 0)
     }
 
-    /// ★★★ **An untouched note reads its state out of the file.**
+    /// **An untouched note reads its state out of the file.**
     ///
     /// The assertion this module's whole shape exists for. An implementation
     /// that started every pop-up closed — the obvious one — passes every other

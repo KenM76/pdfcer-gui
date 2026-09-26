@@ -10,7 +10,7 @@ The driven assertion for `EditSession::deletion_refusal`, which
 first, because this file is the same defect wearing a `/Widget` and the
 shapes are deliberately identical.
 
-# ★★★ What was wrong, and why "the annotation one is fixed" was not enough
+# What was wrong, and why "the annotation one is fixed" was not enough
 
 On 2026-08-29 the R83 pass closed the annotation door: `format.delete`
 acquired `visible_when: "selection.delete_permitted"` on the Format tab and
@@ -40,7 +40,7 @@ nothing is said — **and the Properties panel that was correctly showing
 refused gesture that destroys its own explanation, which is the exact defect
 shape the R83 work existed to remove.
 
-# ★★★ Why only driving can prove it fixed
+# Why only driving can prove it fixed
 
 Every unit test in the crate can assert the *rules*, and this fix ships
 seven of them. None can assert the **sequence**: a manifest `visible_when`
@@ -51,7 +51,7 @@ and — the assertion no unit test can reach — **that the panel's sentence is
 still on screen after the press.** R1: a capability is not verified until
 the running binary has been driven through it.
 
-# ★★★ The fixture pair, and why the check drives BOTH
+# The fixture pair, and why the check drives BOTH
 
 `fixtures/certified-comments.pdf` and `fixtures/threaded-comments.pdf` are
 **one document differing in one dictionary** — the catalog's `/Perms` —
@@ -59,7 +59,7 @@ built by one function in `tools/gen-certified-fixture.py`. Both carry the
 same merged signature field, `/T (Certifier)`, whose sole widget is at
 `[60 60 300 120]` on page 1.
 
-★★ That widget is the one [`super::annot_delete_gate`] deliberately steers
+That widget is the one [`super::annot_delete_gate`] deliberately steers
 its click *away* from, and its reason is this check's operand: a click that
 lands there *"would select a form field, take the form surface's branch, and
 report the annotation gate as broken."* The two checks aim at the two
@@ -75,7 +75,7 @@ control withheld where it would have worked leaves the operator no gesture
 that reports it. So phase E re-launches on the ordinary twin and asserts the
 control is **there**.
 
-# ★★ The absence assertions, and what makes them admissible
+# The absence assertions, and what makes them admissible
 
 Three of this check's assertions are that something is **not** there:
 `properties.form_field.delete` on the certified run, the funnel's own
@@ -101,7 +101,7 @@ be the same trace.
 | D | press Delete | `canvas-delete-declined … reason=field-delete-refused`, **no** `delete-widget` funnel line, and `properties.form_field.delete_refused` **still** declared |
 | E | relaunch on the **ordinary** twin, click the same point | `form-field-gates … delete_refused=0`, `properties.form_field.delete` declared, `…delete_refused` **not** |
 
-# ★ Why Edit mode rather than Review
+# Why Edit mode rather than Review
 
 [`super::annot_delete_gate`] drives Review, and for a reason that inverts
 here. `canvas::forms` gives the **selection** surface to `edit_content` and

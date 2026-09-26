@@ -1,6 +1,6 @@
 //! # `app::prefs` — the shell's own preferences, as distinct from the engine's settings
 //!
-//! ## ★ Why this is not `pdfcer_core::settings`
+//! ## Why this is not `pdfcer_core::settings`
 //!
 //! That store has a stated purpose and this is not it. Its own window says so
 //! in its first paragraph: *"The PDF standard leaves some things genuinely
@@ -15,7 +15,7 @@
 /// blocker. See its header.
 pub mod fonts;
 
-/// ★★ How much memory pdfcer may spend so a page it has already drawn does not
+/// How much memory pdfcer may spend so a page it has already drawn does not
 /// have to be drawn again.
 ///
 /// Its header carries the part a reader would otherwise carry out wrongly: the
@@ -31,24 +31,24 @@ pub mod chrome;
 /// document open, never on the hot path.
 pub mod opening;
 
-/// ★★ **What the three Export windows open with** — `OPERATOR_REQUESTS.md`
+/// **What the three Export windows open with** — `OPERATOR_REQUESTS.md`
 /// **O196**. Its own file for the reason [`printing`] has one: it carries this
 /// group's whole file format, parser and writer together, and the judgement
 /// about *which* of those windows' settings may be remembered is worth keeping.
 /// The DXF scale is the interesting omission; see its header.
 pub mod exporting;
 
-/// ★★ **Whether the canvas grows to show what sits off the sheet — one answer
+/// **Whether the canvas grows to show what sits off the sheet — one answer
 /// per ribbon mode.** Its own file because *why the answer is per mode at all*
 /// is the whole of the operator's request, and because it carries this group's
 /// file format — parser and writer together, on [`printing`]'s precedent. See
 /// its header.
 pub mod offpage;
 
-/// ★ Which chord means which form-field paste — O58. Its own file because
+/// Which chord means which form-field paste — O58. Its own file because
 /// neither order is obviously right and the argument for each is worth keeping.
 pub mod pastechords;
-/// ★★ **What the Print window opens with** — `OPERATOR_REQUESTS.md` **O166**.
+/// **What the Print window opens with** — `OPERATOR_REQUESTS.md` **O166**.
 /// Its own file because deciding *which* of that window's controls may be
 /// remembered is a judgement worth keeping, and because it carries this group's
 /// whole file format — parser and writer together. See its header.
@@ -96,7 +96,7 @@ pub use wheel::WheelPaging;
 
 /// The shipped maximum zoom, as a percentage.
 ///
-/// ★★ **The maximum, on the operator's instruction of 2026-08-22** — *"Also
+/// **The maximum, on the operator's instruction of 2026-08-22** — *"Also
 /// set the default to be able to hit the maximum zoom."*
 ///
 /// It was 800 % for one build, chosen so a fresh install behaved exactly as
@@ -106,7 +106,7 @@ pub use wheel::WheelPaging;
 /// he has to find a preferences file to switch on is a capability most of its
 /// users never have.
 ///
-/// ★ What this does NOT change is the behaviour he cares about. The ceiling is
+/// What this does NOT change is the behaviour he cares about. The ceiling is
 /// permission, not policy: `viewer::zoom_ceiling` still lets the whole-page
 /// raster bind wherever it can, so **panning stays instant at every zoom that
 /// could render whole-page before** — the region path engages only above it,
@@ -141,7 +141,7 @@ pub const MIN_MAX_ZOOM_PERCENT: f32 = 10.0;
 /// number and then misbehaves, which is the defect this feature has otherwise
 /// refused throughout.
 ///
-/// ★ None of this is a judgement about what is sensible. The operator was
+/// None of this is a judgement about what is sensible. The operator was
 /// explicit that the performance trade is his to make (*"it is up to the user
 /// to determine how much of a performance hit they want to take"*); the
 /// question here is only what the shell can put on the screen.
@@ -150,7 +150,7 @@ pub const MAX_MAX_ZOOM_PERCENT: f32 = 1e12;
 /// Format a percentage for the preferences file without an exponent or a
 /// trailing `.0`.
 ///
-/// ★ `1e12` is what `f32::to_string` produces for a trillion, and a file the
+/// `1e12` is what `f32::to_string` produces for a trillion, and a file the
 /// operator opens in a text editor should say `1000000000000`. The file is
 /// his to read and edit; a machine-shaped number there is a small rudeness
 /// with a real cost, because he cannot tell at a glance what he set.
@@ -206,7 +206,7 @@ pub struct Prefs {
     /// when the operator pressed the control, not the one that happened to be
     /// set when the document opened.
     pub redaction_reach: RedactionReach,
-    /// ★★ **How much memory the page cache may hold**, so a page already drawn
+    /// **How much memory the page cache may hold**, so a page already drawn
     /// is not drawn again.
     ///
     /// Read every frame by `crate::render::settle::fill_strip`, which hands it
@@ -222,7 +222,7 @@ pub struct Prefs {
     /// file holds and what the control edits; `render::settle` converts once,
     /// at the one place it is read.
     pub zoom_settle_ms: u64,
-    /// ★★ **The highest zoom the operator wants to be able to reach**, as a
+    /// **The highest zoom the operator wants to be able to reach**, as a
     /// percentage — `OPERATOR_REQUESTS.md` O24.
     ///
     /// > *"add a setting so the user can set the maximum zoom … I'm not
@@ -234,7 +234,7 @@ pub struct Prefs {
     /// preflight. The trade is explicitly his; the setting's whole job is to
     /// be honest about what it does and to actually do it.
     ///
-    /// ★ It is also the control he asked for to **compare the two rendering
+    /// It is also the control he asked for to **compare the two rendering
     /// paths**: the shell rasterizes the whole page while it can and switches
     /// to the visible region only when it cannot. Set this low and he never
     /// leaves the whole-page path; set it high and he exercises the region
@@ -250,7 +250,7 @@ pub struct Prefs {
     /// **Folders pdfcer searches when it has to embed a font a document names
     /// but does not carry**, in search order.
     ///
-    /// ★★ Empty by default, and the emptiness is honest rather than a gap:
+    /// Empty by default, and the emptiness is honest rather than a gap:
     /// `pdfcer`'s own note is that **"the source fonts come from
     /// `--font-dir`; pdfcer never goes looking"**, so a shell that guessed
     /// `C:\Windows\Fonts` would be embedding whatever that machine happened
@@ -265,7 +265,7 @@ pub struct Prefs {
     /// `OPERATOR_REQUESTS.md` **O50**, in his words: *"just a simple checkbox
     /// to include fonts from the OS installed font folders."*
     ///
-    /// ★★★ **`false` by default, and that is the whole of the licensing
+    /// **`false` by default, and that is the whole of the licensing
     /// argument surviving intact.** The field above explains why pdfcer must not
     /// go looking on its own; this does not overrule that, it satisfies it. The
     /// objection was never to *using* system fonts — it was to pdfcer deciding
@@ -273,7 +273,7 @@ pub struct Prefs {
     /// operator making that decision once, visibly, where they can find it
     /// again.
     ///
-    /// ★ It is a **separate preference** rather than the two OS folders being
+    /// It is a **separate preference** rather than the two OS folders being
     /// appended to [`Self::font_folders`] when the box is ticked, and the
     /// difference shows up the day the machine changes: a stored *intent*
     /// ("use this computer's fonts") still means the right thing on a new
@@ -282,7 +282,7 @@ pub struct Prefs {
     pub use_os_fonts: bool,
     /// How the first page of a newly opened document is sized to the window.
     ///
-    /// ★ Read **once**, by [`Self::seed_view`], in the one place a document is
+    /// Read **once**, by [`Self::seed_view`], in the one place a document is
     /// adopted. Unlike the two above it is not consulted again — changing it
     /// while a document is open must not resize the page the operator is
     /// looking at, because they may have zoomed it deliberately since.
@@ -307,7 +307,7 @@ pub struct Prefs {
     /// Ken, 2026-09-02: *"in our display section we should have an option to
     /// shade the form fields like acrobat does."*
     ///
-    /// # ★★★ Why this is not the thing rule 4 forbids, and the distinction is
+    /// # Why this is not the thing rule 4 forbids, and the distinction is
     /// exact
     ///
     /// The standing rule is *applied content renders exactly as saved content
@@ -321,7 +321,7 @@ pub struct Prefs {
     /// snap indicator. It says nothing about pdfcer's confidence in anything and
     /// marks no inference.
     ///
-    /// ★★ The property that keeps it honest is where it is drawn: it is painted
+    /// The property that keeps it honest is where it is drawn: it is painted
     /// by the canvas **overlay**, over the finished page texture, and reaches
     /// no rasterizer. It cannot appear in a print, an export, a Save, or a
     /// `render-page`. The one-line test rule 4 is judged by — *would a
@@ -330,7 +330,7 @@ pub struct Prefs {
     /// what differs is a control's affordance rather than pdfcer marking its own
     /// uncertainty.
     ///
-    /// ★ **On by default, which is Acrobat's answer** and the useful one: an
+    /// **On by default, which is Acrobat's answer** and the useful one: an
     /// operator who does not know a form is fillable is the person this exists
     /// for, and they will not go looking for a setting to reveal it. Somebody
     /// who wants the page clean turns it off once.
@@ -339,7 +339,7 @@ pub struct Prefs {
     /// his words: *"we should be able to change the editing colour of the ocr
     /// text layer just for editing, and remember the user's setting."*
     ///
-    /// ★★ *"Just for editing"* is the whole of the rule, and it is why this is
+    /// *"Just for editing"* is the whole of the rule, and it is why this is
     /// a preference at all rather than anything the document carries. The
     /// layer is **invisible text**: mode-3 glyphs that render as nothing, in
     /// this file and in every other reader. Choosing a colour for it changes
@@ -348,7 +348,7 @@ pub struct Prefs {
     /// for it to reach, because the colour is never written anywhere near the
     /// content stream.
     ///
-    /// ★ It is therefore not the thing R8b forbids either, for
+    /// It is therefore not the thing R8b forbids either, for
     /// [`Self::shade_form_fields`]'s reason stated once more: the overlay is a
     /// deliberate X-ray the operator switched on, drawn by the canvas overlay,
     /// showing content the page genuinely holds. It marks no inference and
@@ -366,7 +366,7 @@ pub struct Prefs {
     /// its first available engine without erasing the choice, so a build that
     /// has it again picks it back up.
     pub ocr_engine: Option<crate::ocr::EngineId>,
-    /// ★★★ **How a document the program has never seen is laid out** —
+    /// **How a document the program has never seen is laid out** —
     /// `OPERATOR_REQUESTS.md` O80.
     ///
     /// The operator: *"it should remember my page display preferences from my
@@ -394,7 +394,7 @@ pub struct Prefs {
     /// | this (global) | *"I read drawings one page at a time"* | the per-mode default |
     /// | `default_for_mode` | *"Read is for reading"* | nothing |
     ///
-    /// # ★★ Why `Option`, and why collapsing it would be a regression
+    /// # Why `Option`, and why collapsing it would be a regression
     ///
     /// `None` means *"fall through to the per-mode default"*, and it has to
     /// stay expressible. `MODES_AND_PANELS.md`'s per-mode rule — Read is
@@ -407,7 +407,7 @@ pub struct Prefs {
     /// makes for its own layer: *nothing recorded* and *recorded as single*
     /// are different states and must not be collapsed.
     ///
-    /// # ★ This overturns a written decision, and the header it overturns has
+    /// # This overturns a written decision, and the header it overturns has
     /// been rewritten rather than left contradicting the code
     ///
     /// `crate::app::prefs::opening`'s header said a global default for page
@@ -416,7 +416,7 @@ pub struct Prefs {
     /// **precedence**, not absence: per document beats global beats per mode.
     /// Three tiers with a stated order is one axis, not two.
     pub default_page_display: Option<crate::viewer::PageDisplay>,
-    /// ★★★ **Whether the canvas shows, and reaches, what sits off the
+    /// **Whether the canvas shows, and reaches, what sits off the
     /// sheet — one remembered answer per ribbon mode**, 2026-09-11.
     ///
     /// Not a `bool`, and that is the whole design: Read opens without the
@@ -439,7 +439,7 @@ pub struct Prefs {
     /// `egui::Memory`, because the canvas reads it from places that have a
     /// context and nothing else; this is where it survives a restart.
     ///
-    /// ★ **`true` by default**, which is the same argument that module makes:
+    /// **`true` by default**, which is the same argument that module makes:
     /// the checkbox exists so the behaviour can be turned OFF, and the
     /// behaviour is what every drawing program in the class does.
     pub smart_select: bool,
@@ -450,7 +450,7 @@ pub struct Prefs {
     /// `egui::Memory` for [`Self::smart_select`]'s reason, and this is where it
     /// survives a restart.
     ///
-    /// ★ **`true` by default**, on the same argument: the switch exists so the
+    /// **`true` by default**, on the same argument: the switch exists so the
     /// boxes can be turned OFF, and an operator who has to find a checkbox
     /// before the thing he asked for appears has not been given it.
     pub text_chunks: bool,
@@ -468,7 +468,7 @@ pub struct Prefs {
     /// the find state once at startup.
     ///
     ///
-    /// ★★ **This is not a search option.** It changes nothing about which
+    /// **This is not a search option.** It changes nothing about which
     /// text matches, so it is deliberately not a `FindOptions` field: those
     /// re-run the search when they change, and re-running a search because a
     /// view preference moved would throw away the operator's place in the
@@ -487,13 +487,13 @@ pub struct Prefs {
     /// state once at startup.
     ///
     ///
-    /// ★★ **This one DOES change what matches**, unlike its neighbour
+    /// **This one DOES change what matches**, unlike its neighbour
     /// above, so changing it makes a standing result set wrong rather than
     /// merely stale. `FindState::set_trim_query` clears the results for
     /// that reason. It is still not a `FindOptions` field: those are the
     /// bar's own menu, and he asked for this one in Settings.
     pub find_trim_query: bool,
-    /// ★★★ **Is the pages panel allowed to draw page pictures?** —
+    /// **Is the pages panel allowed to draw page pictures?** —
     /// `OPERATOR_REQUESTS.md` **O187**, 2026-09-12, and it closes the half
     /// **O151** left open on 2026-09-08.
     ///
@@ -513,12 +513,12 @@ pub struct Prefs {
     /// [`PrefAction::PagePreviews`](crate::app::actions::prefs::PrefAction::PagePreviews), read
     /// back into the cache once at startup.
     ///
-    /// ★ **`true` by default** — the behaviour every build has had, and
+    /// **`true` by default** — the behaviour every build has had, and
     /// [`Self::smart_select`]'s argument exactly: a checkbox that exists so
     /// something can be turned OFF defaults to ON.
     ///
     pub page_previews: bool,
-    /// ★★★ **How long one page picture may take, in milliseconds — and
+    /// **How long one page picture may take, in milliseconds — and
     /// `0` means never give up** — `OPERATOR_REQUESTS.md` **O187**,
     /// 2026-09-12: *“setting it to 0 should set it to infinity (never time
     /// out)”*.
@@ -528,7 +528,7 @@ pub struct Prefs {
     /// holds the live value as an `Option<Duration>` — `None` being the
     /// same fact in the type system rather than in a sentinel.
     ///
-    /// # ★ Why a `u64` of milliseconds and not an `Option`
+    /// # Why a `u64` of milliseconds and not an `Option`
     ///
     /// Because the preferences **file** is the operator's, and they type
     /// into it. `0` is the number he asked to be able to type, it is what
@@ -539,7 +539,7 @@ pub struct Prefs {
     /// [`crate::panels::pages::thumbnails::budget_from_millis`] — and never
     /// re-derived.
     ///
-    /// # ★★ `0` is also the shipped default — O225
+    /// # `0` is also the shipped default — O225
     ///
     /// *"draw page previews should be set to 'no limit' by default."* A
     /// budget that trips leaves a tile with no picture, and nothing on
@@ -558,7 +558,7 @@ pub struct Prefs {
     /// it is set and the tooltip says what never means, so the state is
     /// legible rather than merely true.
     ///
-    /// ★★ **Out-of-range values are clamped, `0` is not** — see
+    /// **Out-of-range values are clamped, `0` is not** — see
     /// `budget_from_millis`. 1 ms would be an off switch wearing a number,
     /// so it becomes the 100 ms floor; `0` is a deliberate instruction and
     /// survives untouched.
@@ -573,7 +573,7 @@ pub struct Prefs {
     /// restart that reopened with the band stuck open would be a setting that
     /// had silently changed itself.
     ///
-    /// ★ **Off by default.** An operator who has never heard of the feature
+    /// **Off by default.** An operator who has never heard of the feature
     /// gets the ribbon they have always had, and the two ways to it are the
     /// Settings window and `view.ribbon_autohide` on View ▸ Window. The tab
     /// strip never hides with it — see [`egui_shell::peek`] on why Office's
@@ -583,7 +583,7 @@ pub struct Prefs {
     /// the same instruction, *"left rail should also have the option to auto
     /// hide as well."*
     ///
-    /// ★ Off by default, for [`Self::ribbon_auto_hide`]'s reason. When it is on
+    /// Off by default, for [`Self::ribbon_auto_hide`]'s reason. When it is on
     /// the rail still reserves `egui_shell::dock::rail::PEEK_WIDTH_PTS` of
     /// permanent, chevron-marked edge, so the panels that are reachable ONLY
     /// from the rail — `markup.comments` in Read, which is on no tab that mode
@@ -599,7 +599,7 @@ pub struct Prefs {
     /// **How big the program's own controls are drawn**, as a multiplier on
     /// whatever the operating system already asked for.
     ///
-    /// # ★ A multiplier, not a size, and the distinction is the whole design
+    /// # A multiplier, not a size, and the distinction is the whole design
     ///
     /// `egui`'s `Context::set_zoom_factor` multiplies the *native* pixels per
     /// point — the value the window system reports, which on Windows is the
@@ -621,7 +621,7 @@ pub struct Prefs {
     /// two places — the parser and the control. [`chrome::normalise_ui_scale`]
     /// is the one place instead, applied on the way in.
     ///
-    /// # ★ Live-previewed, like the theme, and for the identical reason
+    /// # Live-previewed, like the theme, and for the identical reason
     ///
     /// `app::frame`'s step 0 reads this from the **draft** while the settings
     /// window is open. A scale cannot be judged from a number — you choose it
@@ -636,7 +636,7 @@ pub struct Prefs {
     /// [`Self::ui_scale`], because it too changes only the program's own
     /// appearance. See [`crate::icons::accent`].
     pub colour_icons: bool,
-    /// ★★★ **Which rendering standard the operator chose**, by its engine id —
+    /// **Which rendering standard the operator chose**, by its engine id —
     /// or `None` if they have never chosen one in any sitting.
     ///
     /// # The defect this exists for
@@ -653,13 +653,13 @@ pub struct Prefs {
     /// therefore false, and Save was correctly greyed for a draft that really
     /// did equal what was already saved.
     ///
-    /// ★ And the worse half he had not seen yet: **his choice was discarded.**
+    /// And the worse half he had not seen yet: **his choice was discarded.**
     /// Nothing recorded it, so on reopening the window `preset::matching`
     /// supplied the derived reading — *"your settings look like this one"* —
     /// which returns the FIRST of the eight. Choose PDF/X-4, come back, and the
     /// window says PDF/X-1a.
     ///
-    /// # ★★ Why persisting it is not the thing the old comment refused
+    /// # Why persisting it is not the thing the old comment refused
     ///
     /// `Draft::chosen_preset` carried a deliberate argument for *not* storing
     /// this: the derived reading *"cannot claim an intent nobody expressed in
@@ -676,13 +676,13 @@ pub struct Prefs {
     /// is also this shell's to keep: the engine has no concept of the window
     /// having been used.
     ///
-    /// ★ Retired on save when it no longer holds. If a control is changed by
+    /// Retired on save when it no longer holds. If a control is changed by
     /// hand afterwards the settings stop being that standard's, and
     /// `preset::live_choice` already declines to show it —
     /// [`crate::dialogs::settings::commit`] clears the stored value to match,
     /// so the file never carries a claim the settings contradict.
     pub chosen_standard: Option<String>,
-    /// ★★★ **The operator's name, written into every comment they author** —
+    /// **The operator's name, written into every comment they author** —
     /// `/T`, which §12.5.6.4 Table 170 defines as *"the name of the person who
     /// created the annotation"*.
     ///
@@ -694,7 +694,7 @@ pub struct Prefs {
     /// shows an author column, and pdfcer's rows were blank in it. A comment
     /// nobody signed is a comment nobody can answer.
     ///
-    /// # ★★ Why a PREFERENCE and not a setting
+    /// # Why a PREFERENCE and not a setting
     ///
     /// `Settings` is the engine's store and describes how to read and write
     /// PDFs. This describes **the person at the keyboard**. It is the same
@@ -702,7 +702,7 @@ pub struct Prefs {
     /// sharper here: two operators sharing one machine's settings file would
     /// still want two names.
     ///
-    /// # ★ Empty means anonymous, and that is a real choice
+    /// # Empty means anonymous, and that is a real choice
     ///
     /// The default is empty and an empty value writes **no `/T` at all**,
     /// which is legal and is what every reviewer UI shows as an anonymous
@@ -718,7 +718,7 @@ pub struct Prefs {
     /// `true` (the default) means the offer may be made; ticking the dialog's
     /// *Don't ask me again* writes `false` here and it is never made again.
     ///
-    /// # ★★ Named for the thing it permits, not the thing it suppresses
+    /// # Named for the thing it permits, not the thing it suppresses
     ///
     /// A `suppress_default_app_prompt` would default to `false`, and a
     /// hand-editable file whose every off-switch defaults to off is a file
@@ -732,7 +732,7 @@ pub struct Prefs {
     /// `crate::dialogs::settings` does not read this field at all, which is the
     /// mechanical form of that promise.
     ///
-    /// # ★ It is also **not** a record of whether pdfcer is the default
+    /// # It is also **not** a record of whether pdfcer is the default
     ///
     /// That question has exactly one honest answer and it is
     /// [`crate::app::assoc::is_default`], which asks Windows. A remembered
@@ -741,11 +741,11 @@ pub struct Prefs {
     /// false about the machine.
     pub ask_default_app: bool,
 
-    /// ★★★ **Where Acrobat is, when the operator has had to say** —
+    /// **Where Acrobat is, when the operator has had to say** —
     /// `OPERATOR_REQUESTS.md` **O122**: *"have a setting where people can
     /// change it."*
     ///
-    /// # ★★ Empty is the normal value, and it means "find it yourself"
+    /// # Empty is the normal value, and it means "find it yourself"
     ///
     /// Not "there is no Acrobat". `crate::acrobat::resolve` reads an empty or
     /// whitespace-only value as *unset* and goes and asks Windows — the
@@ -757,7 +757,7 @@ pub struct Prefs {
     /// permanently suppress the button with no way back except editing this
     /// file by hand, which is the trap version of an escape hatch.
     ///
-    /// # ★★★ Why this exists at all, given discovery works
+    /// # Why this exists at all, given discovery works
     ///
     /// Because discovery reads registrations, and a registration is a thing an
     /// installer writes. A portable copy, a second version kept for a client,
@@ -766,7 +766,7 @@ pub struct Prefs {
     /// does not expand — every one of those is an Acrobat that exists and that
     /// discovery cannot see.
     ///
-    /// ★ And it is visible in Settings **whether or not discovery succeeded**,
+    /// And it is visible in Settings **whether or not discovery succeeded**,
     /// which is O122's decision and is the load-bearing half: somebody in that
     /// position arrives having seen no button at all, so the only place they
     /// can be told the feature exists is the field that fixes it. See
@@ -793,7 +793,7 @@ pub struct Prefs {
     /// does not name is installed, or an administrator hands somebody a store
     /// to use.
     ///
-    /// ★ **R9's escape hatch, and it is the load-bearing half.** The control
+    /// **R9's escape hatch, and it is the load-bearing half.** The control
     /// that inspects a store is ABSENT when there is no store — an unavailable
     /// capability renders nothing. Somebody in that position therefore sees no
     /// evidence the feature exists, so the path field is drawn in Settings
@@ -821,7 +821,7 @@ pub struct Prefs {
     /// nothing, and the Settings group says so where both controls are drawn.
     pub acrobat_trust_store_path: String,
 
-    /// ★★★ **What the Print window opens with** — `OPERATOR_REQUESTS.md`
+    /// **What the Print window opens with** — `OPERATOR_REQUESTS.md`
     /// **O166**, his words of 2026-09-10: *"the printer dialogue box needs to
     /// remember our last settings."*
     ///
@@ -831,12 +831,12 @@ pub struct Prefs {
     /// not — the short version being that a setting is remembered only if it
     /// would still be the right answer for a **different document**.
     ///
-    /// ★ `pub(crate)` where every field above it is `pub`, because it carries
+    /// `pub(crate)` where every field above it is `pub`, because it carries
     /// the print dialog's own crate-private types. That is deliberate and is
     /// argued in [`printing`]'s header: storing the real types rather than a
     /// mirrored set is what makes a new variant a compile error here instead of
     /// a silent round-trip to the default.
-    /// ★★ **What the three Export windows open with** -- O196.
+    /// **What the three Export windows open with** -- O196.
     ///
     /// One field holding three groups, because a window reads only its own and
     /// a fourth export window should add a struct rather than widen one. Read
@@ -872,38 +872,38 @@ impl Default for Prefs {
             off_page: OffPagePrefs::default(),
             page_cache: PageCache::default(),
             zoom_settle_ms: DEFAULT_SETTLE_MS,
-            // ★ The shipped default is today's ceiling, so a fresh install
+            // The shipped default is today's ceiling, so a fresh install
             // behaves exactly as the shell behaved before this existed.
             // Raising it is the operator's decision, which is the whole
             // point of the setting.
             max_zoom_percent: DEFAULT_MAX_ZOOM_PERCENT,
-            // ★ Empty, deliberately. See the field's own note: guessing a
+            // Empty, deliberately. See the field's own note: guessing a
             // system font directory would embed whatever that machine holds
             // into the operator's document, which is a licensing decision.
             font_folders: Vec::new(),
             use_os_fonts: false,
             opening_fit: OpeningFit::default(),
             wheel_paging: WheelPaging::default(),
-            // ★ True, which is Acrobat's answer — see the field's ★ on why the
+            // True, which is Acrobat's answer — see the field's on why the
             // default is the useful one rather than the unobtrusive one.
             shade_form_fields: true,
-            // ★ Named, not a literal: the value and the argument for it live
+            // Named, not a literal: the value and the argument for it live
             // on the painter's constant, and a second copy here is a number
             // that drifts away from the sentence justifying it.
             ocr_layer_colour: crate::canvas::ocrlayer::DEFAULT_COLOUR,
             ocr_engine: None,
-            // ★ `None` — "he has not said" — so a fresh profile keeps
+            // `None` — "he has not said" — so a fresh profile keeps
             // `MODES_AND_PANELS.md`'s per-mode rule. See the field.
             default_page_display: None,
             smart_select: true,
             text_chunks: true,
             find_zoom_on_jump: true,
             find_trim_query: true,
-            // ★ True = what every build has done, deliberately. See the
-            // field's ★ on why a checkbox that exists to disable something
+            // True = what every build has done, deliberately. See the
+            // field's on why a checkbox that exists to disable something
             // defaults to enabled.
             page_previews: true,
-            // ★ No limit, and it is NOT written as a literal: `0` is the
+            // No limit, and it is NOT written as a literal: `0` is the
             // sentinel, `PAGE_BUDGET_DEFAULT` is where the decision and its
             // measurements live, and `millis_from_budget` is the one place
             // that knows how the two spell each other. Three constants for
@@ -917,24 +917,24 @@ impl Default for Prefs {
             ui_scale: DEFAULT_UI_SCALE,
             colour_icons: false,
             chosen_standard: None,
-            // ★ Empty = anonymous, deliberately. See the field's own note on
+            // Empty = anonymous, deliberately. See the field's own note on
             // why the OS user name is not a defensible guess.
             author_name: String::new(),
-            // ★ Empty = "ask Windows", deliberately. See the field's own note
+            // Empty = "ask Windows", deliberately. See the field's own note
             // on why a cleared field must not mean "no Acrobat".
             // True: the offer may be made. See the field's note on why the
             // key is named for what it permits rather than what it suppresses.
             ask_default_app: true,
             acrobat_path: String::new(),
-            // ★ Empty = "look in the usual places", deliberately, and for the
+            // Empty = "look in the usual places", deliberately, and for the
             // reason spelled out on the field: a cleared box is how a person
             // un-sets a path, so it cannot also mean "there is no store".
             acrobat_trust_store_path: String::new(),
-            // ★ Exactly what `PrintDialog::open` hard-coded before O166, so a
+            // Exactly what `PrintDialog::open` hard-coded before O166, so a
             // fresh `userdata` folder opens the Print window in the state every
             // previous build of pdfcer opened it in. Asserted, not assumed —
             // see `printing::tests::the_default_is_what_the_dialog_used_to_hard_code`.
-            // ★ Exactly what the three Export windows hard-coded before O196,
+            // Exactly what the three Export windows hard-coded before O196,
             // so a fresh `userdata` folder opens each of them in the state every
             // previous build of pdfcer opened it in. Asserted per window -- see
             // `exporting::tests::the_image_default_is_what_the_dialog_used_to_hard_code`
@@ -1053,7 +1053,7 @@ impl Prefs {
     ///
     /// Called once per document, from `PdfcerApp::adopt`, and from nowhere else.
     ///
-    /// # ★ Why this is a method here rather than a field read in `ViewState::default`
+    /// # Why this is a method here rather than a field read in `ViewState::default`
     ///
     /// Because `ViewState::default()` cannot see the application. `OpenDoc::assemble`
     /// builds a document without a `PdfcerApp` in reach — its own comment says
@@ -1062,7 +1062,7 @@ impl Prefs {
     /// `Default` the **conservative** answer, which is what every test that
     /// builds one without a configuration relies on.
     ///
-    /// # ★ The remembered-guides override still wins, and that is not a
+    /// # The remembered-guides override still wins, and that is not a
     /// coincidence of ordering
     ///
     /// `OpenDoc::assemble` may already have set `view.guides = true`, because

@@ -103,7 +103,7 @@ impl Prefs {
                 },
                 // ui-text-exempt: a file KEY, matched literally.
                 //
-                // ★ Taken verbatim, with no validation against the engine's
+                // Taken verbatim, with no validation against the engine's
                 // standard list. A hand-edited or newer-pdfcer id that this
                 // build does not know is not an error: `preset::live_choice`
                 // asks `still_holds`, which answers `false` for an unknown id
@@ -120,20 +120,20 @@ impl Prefs {
                         (!value.trim().is_empty()).then(|| value.trim().to_owned());
                 }
                 // ui-text-exempt: a file KEY, matched literally.
-                // ★ Trimmed, and an all-whitespace value is the same as
+                // Trimmed, and an all-whitespace value is the same as
                 // absent: a name of three spaces would write a `/T` that
                 // renders as an empty author column in every reviewer UI,
                 // which is worse than no key at all because it claims one.
                 "author_name" => prefs.author_name = value.trim().to_owned(),
                 // ui-text-exempt: a file KEY, matched literally.
-                // ★ Trimmed, like its neighbour and for a related reason: a
+                // Trimmed, like its neighbour and for a related reason: a
                 // path with a trailing space is a path that does not exist, and
                 // the failure would present as "the setting does nothing".
                 // `resolve` trims again at the point of use, because this file
                 // is not the only way the value arrives.
                 "acrobat_path" => prefs.acrobat_path = value.trim().to_owned(),
                 // ui-text-exempt: a file KEY, matched literally.
-                // ★ Trimmed for its neighbour's reason exactly: a path with a
+                // Trimmed for its neighbour's reason exactly: a path with a
                 // trailing space is a path that does not exist, and the failure
                 // presents as "the trust setting does nothing" rather than as
                 // "that file is not there". `crate::trust::locate` trims again,
@@ -142,7 +142,7 @@ impl Prefs {
                     prefs.acrobat_trust_store_path = value.trim().to_owned();
                 }
                 // ui-text-exempt: a file KEY, matched literally.
-                // ★ A REPEATED key: every occurrence appends. That is why this
+                // A REPEATED key: every occurrence appends. That is why this
                 // arm pushes where every other arm assigns, and it is the one
                 // place the file's grammar is not "one key, one value".
                 // `fonts::add` applies the cap and the duplicate rule, so a
@@ -158,7 +158,7 @@ impl Prefs {
                     // ui-text-exempt: file VALUES, parsed not displayed.
                     "true" => prefs.use_os_fonts = true,
                     "false" => prefs.use_os_fonts = false,
-                    // ★ Reported rather than silently defaulted, and it keeps
+                    // Reported rather than silently defaulted, and it keeps
                     // the operator's OLD value: a hand-edited `use_os_fonts =
                     // yes` is somebody trying to switch it ON, and a parser
                     // that answered by turning it off would be the opposite of
@@ -181,7 +181,7 @@ impl Prefs {
                         }
                         prefs.max_zoom_percent = clamped;
                     }
-                    // ★ A non-finite value is a BadValue rather than a clamp.
+                    // A non-finite value is a BadValue rather than a clamp.
                     // `inf` would propagate into a scroll extent and blank the
                     // canvas, and reporting it as "clamped" would imply the
                     // operator wrote something reasonable.
@@ -225,7 +225,7 @@ impl Prefs {
                     }),
                 },
                 "ui_scale" => match value.parse::<f32>() {
-                    // ★ `is_finite` first, and it is not defensive padding.
+                    // `is_finite` first, and it is not defensive padding.
                     // `"nan"` and `"inf"` both parse successfully as `f32`, so
                     // without this a hand-edited `ui_scale = nan` would reach
                     // `normalise_ui_scale`, where `clamp` propagates NaN rather
@@ -264,7 +264,7 @@ impl Prefs {
                         line,
                     }),
                 },
-                // ★ An unreadable token leaves the DEFAULT in place and is
+                // An unreadable token leaves the DEFAULT in place and is
                 // REPORTED, exactly as every sibling arm does. Swallowing it
                 // silently was the first version and was wrong: a token this
                 // build cannot read is either a file from a newer build or a
@@ -279,7 +279,7 @@ impl Prefs {
                         line,
                     }),
                 },
-                // ★ O80. The absent key and the present-but-unparseable key
+                // O80. The absent key and the present-but-unparseable key
                 // are different: absent leaves `None` (he has not said), and
                 // a bad value is a note, exactly as every other key here does
                 // it — a typo in a hand-edited file must not silently become
@@ -301,7 +301,7 @@ impl Prefs {
                         line,
                     }),
                 },
-                // ★ `opening::bool_from_key`, which is the file's existing
+                // `opening::bool_from_key`, which is the file's existing
                 // vocabulary — `true`/`false` and nothing else. A key that also
                 // accepted `yes` would be a second dialect in one file, and the
                 // strictness is deliberate: that function's own header records
@@ -396,7 +396,7 @@ impl Prefs {
                         line,
                     }),
                 },
-                // ★★ Parsed, NOT clamped here, and that is deliberate. A
+                // Parsed, NOT clamped here, and that is deliberate. A
                 // hand-edited 5 ms is a legal `u64` and an illegal budget;
                 // clamping it at the parse would make the file disagree
                 // with itself silently on the next write. The single place
@@ -448,7 +448,7 @@ impl Prefs {
                         }),
                     }
                 }
-                // ★★ The print group — thirteen keys, delegated whole.
+                // The print group — thirteen keys, delegated whole.
                 //
                 // ⚠ This is the ONE family whose parser is not an arm in this
                 // match, and the reason is the rule this file's header states
@@ -740,7 +740,7 @@ impl Prefs {
         out.push_str("wheel_paging = ");
         out.push_str(self.wheel_paging.key());
         out.push('\n');
-        // ★★ O80. Written only when he has stated one — an absent key is how
+        // O80. Written only when he has stated one — an absent key is how
         // "fall through to the per-mode default" is spelled on disk, and
         // emitting a value for `None` would make the file claim a preference
         // nobody expressed. The comment goes above it either way, so somebody

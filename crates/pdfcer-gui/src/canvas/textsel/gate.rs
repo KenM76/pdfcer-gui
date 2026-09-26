@@ -20,7 +20,7 @@ use crate::canvas::tool::CanvasTool;
 /// capability would be the operator's *copying is not authoring* ruling restated
 /// in a place free to disagree with it.
 ///
-/// # ★ Two disjuncts, and the second one is the original rule unchanged
+/// # Two disjuncts, and the second one is the original rule unchanged
 ///
 /// > A press means text when the **text tool is armed**, *or* when the select
 /// > tool is active and the mode cannot select content.
@@ -48,7 +48,7 @@ mod tests {
 
     use crate::canvas::textedit::TextEditKind;
 
-    /// ★★ **The caret tool is not a sweep tool**, in every mode.
+    /// **The caret tool is not a sweep tool**, in every mode.
     ///
     /// This is the assertion that keeps this file's §3 true after
     /// `CanvasTool::TextEdit` landed. The gate reads `is_text()`, which is
@@ -85,10 +85,10 @@ mod tests {
     }
 
     // =======================================================================
-    // ★ The mode gate — this module's header
+    // The mode gate — this module's header
     // =======================================================================
 
-    /// ★ **Read and Review select text; Edit selects content.**
+    /// **Read and Review select text; Edit selects content.**
     ///
     /// The whole gate, asserted against the shipped manifest rather than against
     /// hand-written flags — so a change to a mode's tab list fails here and
@@ -114,7 +114,7 @@ mod tests {
         );
     }
 
-    /// ★ **With the SELECT tool, text and content can never both be
+    /// **With the SELECT tool, text and content can never both be
     /// available** — the exclusive-or, unchanged by the arrival of the text
     /// tool.
     ///
@@ -123,7 +123,7 @@ mod tests {
     /// has to be a property of the rule rather than of the modes that happen to
     /// ship.
     ///
-    /// ★ The tool is now named in the assertion rather than being *the* tool,
+    /// The tool is now named in the assertion rather than being *the* tool,
     /// and that narrowing is the point. This exclusive-or is what an **un-armed**
     /// canvas guarantees, and it is what makes Read and Review's behaviour
     /// unchanged by the addition. The armed case is a different guarantee with a
@@ -149,7 +149,7 @@ mod tests {
         }
     }
 
-    /// ★ **The armed text tool takes the press in EVERY mode — Edit included,
+    /// **The armed text tool takes the press in EVERY mode — Edit included,
     /// which is the whole reason it exists.**
     ///
     /// The first disjunct of [`takes_the_press`], asserted over every capability
@@ -199,7 +199,7 @@ mod tests {
     /// selection would be the tool arming and then doing nothing — the
     /// *"visible control, silently inert"* failure, wearing a crosshair.
     ///
-    /// ★ The test's name was `an_armed_tool_is_not_a_text_gesture` until the text
+    /// The test's name was `an_armed_tool_is_not_a_text_gesture` until the text
     /// tool landed, at which point the general claim stopped being true: an armed
     /// tool *is* a text gesture when it is the text tool. What survives is the
     /// narrower and more useful statement — **the press belongs to whichever tool

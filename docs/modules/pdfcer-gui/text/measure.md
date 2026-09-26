@@ -7,7 +7,7 @@ dimension** is CAD-exported page content pdfcer reads and must not alter.
 This catalog avoids the bare word, exactly as [`crate::text::scale`] and
 [`crate::text::dimension_groups`] do.
 
-## ★ Why this module exists at all
+## Why this module exists at all
 
 Because the two-line tool's output is an **inference**, and the shell was
 swallowing every statement about it.

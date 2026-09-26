@@ -223,7 +223,7 @@ pub fn show(ui: &mut Ui, group: &Group, overrides: &mut StyleOverrides) -> bool 
 
     // --- tolerance precision --------------------------------------------
     //
-    // ★ The one row whose cleared state is NOT simply "inherit": the resolved
+    // The one row whose cleared state is NOT simply "inherit": the resolved
     // value is itself an `Option<u32>`, whose `None` means *use the same number
     // of decimals as the measurement*. So this control offers a number when
     // ticked, and the caption underneath names what the inherited state
@@ -270,7 +270,7 @@ struct Row<'a, T> {
 impl<T: Copy> Row<'_, T> {
     /// Draw the editor, if this row is overridden.
     ///
-    /// ★ **Absent, not greyed, when inherited.** R9 reserves greying for
+    /// **Absent, not greyed, when inherited.** R9 reserves greying for
     /// *temporarily* unavailable, and an inherited property is not unavailable
     /// — it has a value, supplied by a tier above. A greyed spinner would
     /// invite a drag and then refuse it. The provenance sentence already drawn
@@ -303,7 +303,7 @@ fn row<'a, T: Copy>(
         if response.changed() {
             *slot = if set { Some(seed()) } else { None };
         }
-        // ★ The predicate is the ENGINE's. `follows_group()` is true for
+        // The predicate is the ENGINE's. `follows_group()` is true for
         // `Factory` as well as `Group`, and a hand-rolled `== Group` here would
         // tell an operator that a never-set property will survive a group edit.
         // It will not.
@@ -385,7 +385,7 @@ fn rgb_of(c: egui::Color32) -> Rgb {
 /// Every property this panel draws, paired with the provenance field that
 /// discloses it.
 ///
-/// ★ Exists **only** for the test below, and that is worth the lines. The
+/// Exists **only** for the test below, and that is worth the lines. The
 /// engine's `StyleProvenance::each()` returns a fixed-size `[_; 11]` precisely
 /// so a consumer gets a compile error rather than a short list when a twelfth
 /// property lands — but this module does not call `each()`, it reads the fields
@@ -412,7 +412,7 @@ mod tests {
     use super::*;
     use pdfcer_core::dimension::GroupId;
 
-    /// ★ **Every property the cascade has, this panel draws.**
+    /// **Every property the cascade has, this panel draws.**
     ///
     /// The gap this closes is specific and would otherwise be silent. The
     /// engine's `StyleProvenance::each()` is a fixed-size array so that a
@@ -440,7 +440,7 @@ mod tests {
 
     /// Ticking a box seeds the value that was already in force.
     ///
-    /// ★ The property is *the number does not jump*. Seeding from
+    /// The property is *the number does not jump*. Seeding from
     /// `StyleDefaults::FACTORY` instead would take a ce dimension inheriting a
     /// 3 pt group text height and snap it to 10 pt the instant the operator
     /// asked to edit it — a change nobody requested, applied by a checkbox.
@@ -461,7 +461,7 @@ mod tests {
         );
     }
 
-    /// ★ The four concrete-field properties never report `Factory`.
+    /// The four concrete-field properties never report `Factory`.
     ///
     /// Asserted against the engine rather than assumed, because this panel
     /// renders whatever provenance it is given: if `unit` ever did report

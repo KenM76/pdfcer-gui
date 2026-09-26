@@ -21,7 +21,7 @@ BSD-3-Clause and embedding one puts that licence inside a file the operator
 then distributes. `pdfcer`'s own CLI keeps `--use-bundled-fonts` off for
 exactly that, in those words.
 
-## ★★★ WHY THIS CHECK NOW DRIVES BOTH POSITIONS
+## WHY THIS CHECK NOW DRIVES BOTH POSITIONS
 
 > *A check that the switch is off by default passes on a build that ignores
 > the switch entirely.*
@@ -42,7 +42,7 @@ build with no switch at all. Neither is worth anything without the other,
 and `own_fonts_offered=` exists on the trace line so that the first half can
 be made at all.
 
-## ★★★ Why it is a SEPARATE check and not a parameter of the other one
+## Why it is a SEPARATE check and not a parameter of the other one
 
 Because it asserts the opposite premise. `embedding_fonts_puts_a_program_in_
 the_document` supplies a real font folder and would pass identically with the
@@ -50,13 +50,13 @@ bundled rung ripped out — the folder answers first, every time, by design.
 Only a run with **no folder at all** can distinguish *"pdfcer ships faces and
 will use them"* from *"pdfcer ships faces and never reaches them"*.
 
-★★ That is also why it is worth the extra process launch. Two checks over one
+That is also why it is worth the extra process launch. Two checks over one
 feature, differing in one environment variable, is the shape that catches a
 rung being unreachable — which is the same failure the whole resolver had on
 the day it was written, when only the exact rung worked and every test
 registered a name and then asked for it.
 
-## ★★ The oracle is `substituted=true`, and it is the point of the row
+## The oracle is `substituted=true`, and it is the point of the row
 
 The operator's *"yes"* came with a condition: **disclosed loudly**. A build
 that embedded a bundled face and reported it as an ordinary match would
@@ -76,7 +76,7 @@ correctness together.
 disclosure and the guard are the same flag, which is why understating it is a
 correctness defect rather than a cosmetic one.
 
-## ★★★ A DECLINE IS A SKIP, NOT A FAILURE — and reading it the other way
+## A DECLINE IS A SKIP, NOT A FAILURE — and reading it the other way
 cost an afternoon
 
 The 2026-08-28 sweep ran this check twice. On `fixtures\a1-titleblock.pdf`
@@ -100,14 +100,14 @@ nothing can answer for is a `NoSourceFont` row, which is `shown`, which
 opens the window. So a decline is a statement about the FIXTURE and
 carries no information about the resolver at all.
 
-★★★ **The oracle for a broken bundled rung is the `targets=0` branch
+**The oracle for a broken bundled rung is the `targets=0` branch
 below, and it always was.** If `allow_bundled` stopped reaching
 `resolve_for_embedding`, this run would still open a window — full of
 `NoSourceFont` rows — and that branch would fail it by name. Turning the
 decline into a skip therefore gives up nothing: it removes a false failure
 and leaves every true one standing.
 
-★★ The general lesson, and it is the expensive half: **a check whose
+The general lesson, and it is the expensive half: **a check whose
 failure message names a suspect can teach a reader the wrong suspect.**
 This one named `Library::scan_with(folders, true)` — a call that was
 correct, tested (`app::fonts::a_bundled_face_answers_only_when_it_is_

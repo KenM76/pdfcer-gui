@@ -1,7 +1,7 @@
 //! # `canvas::forms` tests — the focus's own assertions
 //!
 //!
-//! ★ The seam is the one this crate has now taken half a dozen times
+//! The seam is the one this crate has now taken half a dozen times
 //! (`app/state`, `app/prefs`, `canvas/geometry`, `canvas/selection`): the
 //! parent answers *"what does this surface do?"* and this answers *"is it
 //! still doing it?"*. Nothing moved but its address — the two tests that were
@@ -12,7 +12,7 @@
 //! `/Q` — are tested in [`super::boxes`], beside the functions they pin, and
 //! must go on being tested there.
 
-// ★ The INNER attribute, and it is load-bearing for more than the compiler.
+// The INNER attribute, and it is load-bearing for more than the compiler.
 //
 // `tools/gates/check-ui-strings.sh` stops scanning a file at `#![cfg(test)]`,
 // because a test assertion message is read by whoever is staring at a failing
@@ -22,7 +22,7 @@
 #![cfg(test)]
 
 use super::*;
-/// ★ **A focus that outlives its document is discarded; one that outlives
+/// **A focus that outlives its document is discarded; one that outlives
 /// a revision is re-seeded.**
 ///
 /// The difference from the panel, pinned. Dropping the focus on an epoch
@@ -68,7 +68,7 @@ fn an_edit_reseeds_the_draft_and_a_different_document_discards_it() {
     };
     assert!(elsewhere.sync(&doc, "").is_none());
 }
-/// ★ **Escape is reported once, and cleared by the reading.**
+/// **Escape is reported once, and cleared by the reading.**
 ///
 /// Claimant 0's contract. A flag that survived its reading would spend the
 /// *next* Escape as well — which the operator would experience as a press
@@ -82,7 +82,7 @@ fn escape_is_claimed_exactly_once() {
     assert!(!escape_spent(&ctx), "and it is not claimed twice");
 }
 
-/// ★★★ **The panel can read what is being typed on the page — but only while
+/// **The panel can read what is being typed on the page — but only while
 /// the page is the thing being typed into.**
 ///
 /// The 2026-09 review's row **A12c**, pinned from both sides. The positive
@@ -90,7 +90,7 @@ fn escape_is_claimed_exactly_once() {
 /// published to [`crate::panels::forms::rows`], so the panel row beside the
 /// field stops showing the value from before the gesture started.
 ///
-/// ★★ The three negative halves are the safety argument, and each of them is
+/// The three negative halves are the safety argument, and each of them is
 /// a way for this fix to become a worse defect than the one it replaces:
 ///
 /// * **No `egui` focus** — a `Focus` outlives the frames the editor is

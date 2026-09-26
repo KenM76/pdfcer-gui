@@ -68,7 +68,7 @@ pub enum Reason {
     /// The run's `Tm` or CTM is rotated or skewed, so a follower shift computed
     /// in user-space x would be in the wrong frame. `Pin`.
     Rotated,
-    /// ★★ The caret's **visual line is made of more than one show operator**,
+    /// The caret's **visual line is made of more than one show operator**,
     /// so what looks like one line is several independently positioned pieces.
     /// `Pin`.
     ///
@@ -89,7 +89,7 @@ pub enum Reason {
     /// rung sits **above** it: a line made of separate pieces is not a line
     /// that grows, whatever its alignment reads as.
     ///
-    /// # ★ It is a disposition and NOT a refusal
+    /// # It is a disposition and NOT a refusal
     ///
     /// Refusing this shape outright — `canvas::textedit::resolve_run` answering
     /// `Refusal::SpansRuns` — refuses nearly every click on a CAD sheet, because
@@ -190,7 +190,7 @@ pub fn choose(
     if !is_upright(text_matrix, ctm) {
         return Reason::Rotated;
     }
-    // ★★ Rung 2 — the caret's line is several independently positioned pieces.
+    // Rung 2 — the caret's line is several independently positioned pieces.
     //
     // Above alignment and below rotation, and both placements are arguments.
     // Below rotation because rotation is the *correctness* bound — a follower
@@ -268,20 +268,20 @@ mod tests {
     // The rotation guard — D4b case 2
     // =======================================================================
 
-    /// ★ **An upright matrix pair is upright.** The floor: if this were false
+    /// **An upright matrix pair is upright.** The floor: if this were false
     /// every edit would pin and the fix would look like it worked.
     #[test]
     fn an_upright_matrix_pair_is_upright() {
         assert!(is_upright(UPRIGHT, UPRIGHT));
     }
 
-    /// ★ **A quarter turn in the TEXT matrix is caught.**
+    /// **A quarter turn in the TEXT matrix is caught.**
     #[test]
     fn a_rotated_text_matrix_is_not_upright() {
         assert!(!is_upright(ROTATED_90, UPRIGHT));
     }
 
-    /// ★★ **A quarter turn in the CTM is caught, with an upright `Tm`.**
+    /// **A quarter turn in the CTM is caught, with an upright `Tm`.**
     ///
     /// The case a `Tm`-only guard would miss, and the one that matters most
     /// here: a landscape CAD plot rotates the whole content stream with one
@@ -293,7 +293,7 @@ mod tests {
         assert!(!is_upright(UPRIGHT, ROTATED_90));
     }
 
-    /// ★ **A skew with `b = 0` is caught**, which a one-term guard would not
+    /// **A skew with `b = 0` is caught**, which a one-term guard would not
     /// be. `reflow_apply`'s own test is `|b| > eps || |c| > eps`, both terms.
     #[test]
     fn a_skewed_matrix_with_a_zero_b_term_is_not_upright() {
@@ -313,7 +313,7 @@ mod tests {
         assert!(!is_upright(real, UPRIGHT), "1e-5 is above MTX_EPS");
     }
 
-    /// ★★ **Rotation pins, whatever the alignment says.**
+    /// **Rotation pins, whatever the alignment says.**
     ///
     /// The rung-order assertion. It is written against `None` and against a
     /// real left-aligned detection in `the_engines_own_findings_drive_the_choice`,
@@ -334,7 +334,7 @@ mod tests {
     // The fall-back, and the fact that it is disclosed as one
     // =======================================================================
 
-    /// ★ **No block resolved is not "left aligned".**
+    /// **No block resolved is not "left aligned".**
     ///
     /// Both answer `Reflow`, so the disposition alone cannot tell them apart —
     /// which is why [`Reason`] exists and why this asserts the *reason* rather
@@ -347,7 +347,7 @@ mod tests {
         assert_eq!(r.disposition(), FollowerDisposition::Reflow);
     }
 
-    /// ★★ **A line made of several pieces PINS, whatever its alignment reads
+    /// **A line made of several pieces PINS, whatever its alignment reads
     /// as** — the assertion the whole multi-run rung rests on.
     ///
     /// The failure it forbids is concrete: a SolidWorks parts table writes one
@@ -381,7 +381,7 @@ mod tests {
         );
     }
 
-    /// ★ **Rotation still outranks it**, which is the other half of the rung
+    /// **Rotation still outranks it**, which is the other half of the rung
     /// order.
     ///
     /// Both pin, so the *disposition* cannot tell them apart — which is exactly
@@ -434,7 +434,7 @@ mod tests {
         }
     }
 
-    /// ★ **Every non-left alignment pins**, stated over the enum rather than
+    /// **Every non-left alignment pins**, stated over the enum rather than
     /// over the three names, so a fifth `BlockAlignment` variant added upstream
     /// fails here instead of silently reflowing.
     #[test]

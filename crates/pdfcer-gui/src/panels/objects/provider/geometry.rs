@@ -14,7 +14,7 @@ use super::{ObjectModelProvider, PartKind, RunMoveBlock, TargetId, resolve};
 
 impl ObjectModelProvider {
     // ===================================================================
-    // ★★★ THE SAME FOUR QUESTIONS, ASKED OF EITHER INDEX SPACE
+    // THE SAME FOUR QUESTIONS, ASKED OF EITHER INDEX SPACE
     // ===================================================================
     //
     // `OPERATOR_REQUESTS.md` O70, 2026-09-01. Everything below this line
@@ -36,7 +36,7 @@ impl ObjectModelProvider {
     // implementation — which is the distinction `mapping`'s header draws
     // between a shared helper and a second opinion.
     //
-    // ## ★★ The engine already published the leaf-friendly forms
+    // ## The engine already published the leaf-friendly forms
     //
     // `hit_test_subpaths_of(&PathObject, …)` takes the object rather than a
     // model and an index, and `PathObject::page_subpaths` is geometry in page
@@ -46,7 +46,7 @@ impl ObjectModelProvider {
 
     /// **The decomposed object a target names**, from either list.
     ///
-    /// ★ `None` for an index the page does not have, which is the contract
+    /// `None` for an index the page does not have, which is the contract
     /// every accessor here inherits: a selection can outlive an edit that
     /// removed what it named, and the honest answer is to drop the entry
     /// rather than to panic on the frame that is trying to draw it.
@@ -76,10 +76,10 @@ impl ObjectModelProvider {
     /// why** — asked BEFORE the drag, so the ghost never promises a move the
     /// engine is going to decline.
     ///
-    /// # ★★★ The engine's own guard, called rather than copied
+    /// # The engine's own guard, called rather than copied
     ///
     ///
-    /// ★★ **It does not promise success.** A singular `Tm` or CTM is
+    /// **It does not promise success.** A singular `Tm` or CTM is
     /// discovered during planning, from geometry, not from the run's
     /// structure, so `None` here means *"the move will be planned"* and not
     /// *"the move will land"*. The residual failure arrives as an ordinary
@@ -128,7 +128,7 @@ fn run_move_block(refusal: pdfcer_core::vector::VectorEditError) -> RunMoveBlock
         pdfcer_core::vector::VectorEditError::MoveWouldMoveNextRun { .. } => {
             RunMoveBlock::WouldMoveNextRun
         }
-        // ★ `TextRunOutOfRange` today, and `VectorEditError` is
+        // `TextRunOutOfRange` today, and `VectorEditError` is
         // `#[non_exhaustive]`, so a refusal this crate has never seen lands
         // here too. Both readings are the same instruction to the shell:
         // decline the drag, say nothing, do not guess. A new variant that
@@ -141,7 +141,7 @@ fn run_move_block(refusal: pdfcer_core::vector::VectorEditError) -> RunMoveBlock
 impl ObjectModelProvider {
     /// [`Self::subpath_hits`], for either index space.
     ///
-    /// ★ Through `hit_test_subpaths_of` rather than `hit_test_subpaths`: the
+    /// Through `hit_test_subpaths_of` rather than `hit_test_subpaths`: the
     /// first takes the path, the second takes the model and an index into its
     /// page list. The engine published both, and the object-taking form is the
     /// one a leaf can use — the geometry is identical, only the addressing
@@ -154,7 +154,7 @@ impl ObjectModelProvider {
         let Some(pdf) = self.canvas_to_pdf(point) else {
             return Vec::new();
         };
-        // ★ `vector::hit::` rather than `vector::`: the object-taking form is
+        // `vector::hit::` rather than `vector::`: the object-taking form is
         // `pub` in its own module and is NOT in `vector`'s re-export list,
         // where its index-taking sibling is. The module itself is `pub mod`,
         // so the path is public and this is a spelling rather than a
@@ -239,7 +239,7 @@ impl ObjectModelProvider {
     /// empty and no handle is drawn — which is the honest answer rather than a
     /// grab target for a gesture with nothing to move.
     ///
-    /// ★ The object-scoped anchor index is brought back into the subpath's own
+    /// The object-scoped anchor index is brought back into the subpath's own
     /// space with the SAME running offset [`Self::subpath_node_points_of`]
     /// computes. Two walks that disagreed about which subpath anchor 7 falls in
     /// would draw a handle on one curve and move another.
@@ -284,7 +284,7 @@ impl ObjectModelProvider {
 
     /// [`Self::subpath_bounds_canvas`], for either index space.
     ///
-    /// ★ Computed from the subpath's own anchors rather than through
+    /// Computed from the subpath's own anchors rather than through
     /// `vector::subpath_bounds`, which takes a model and a page index. Anchors
     /// alone under-report a curve whose control points bow outside them — the
     /// same approximation the page-object form inherits from the engine on a

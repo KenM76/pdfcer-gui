@@ -29,7 +29,7 @@ const PART_LEVEL: &str = "Part";
 /// `canvas-move-declined level=… sel=… reason=… detail=…` — written by
 /// `canvas::moving::decline`, **on release only**.
 ///
-/// ★ Not per frame. An in-flight drag is re-evaluated 60 times a second and a
+/// Not per frame. An in-flight drag is re-evaluated 60 times a second and a
 /// refusal traced per frame would bury every other event on the channel — the
 /// lesson `canvas-pointer` taught when a stationary pointer emitted fifty
 /// identical lines in nine seconds.
@@ -38,7 +38,7 @@ const MOVE_DECLINED_EVENT: &str = "canvas-move-declined";
 /// `canvas-decline-recorded what=…` — the apply phase's line, written once per
 /// decline by `app::status::decline::canvas::record_canvas`.
 ///
-/// ★★★ **The per-refusal tokens live in [`AIMS`], not in constants here.** A
+/// **The per-refusal tokens live in [`AIMS`], not in constants here.** A
 /// token hoisted to module scope reads as a property of the check, so it
 /// survives the disappearance of the refusal it names — the assertion stays
 /// green while the constant becomes the name of nothing. A token that only one
@@ -65,7 +65,7 @@ const FIXTURE: &str = "inherited-runs.pdf";
 /// Page index of [`FIXTURE`] this check uses.
 const PAGE: usize = 0;
 
-/// ★★★ **The four aims, and the answer each one must produce.**
+/// **The four aims, and the answer each one must produce.**
 ///
 /// One launch, one fixture, four drags — one per visual LINE of
 /// `inherited-runs.pdf`. Every field here is measured; the spans are recorded
@@ -73,7 +73,7 @@ const PAGE: usize = 0;
 /// `provider::line::tests::the_local_fixture_gives_all_four_line_move_answers`,
 /// which decomposes the same file.
 ///
-/// ★★ **The aim is not asserted directly, and it does not need to be.** The
+/// **The aim is not asserted directly, and it does not need to be.** The
 /// two refusing lines produce different answers and differ from the two that
 /// move, so an aim that landed on the wrong one mostly produces the wrong
 /// answer and this check fails — loudly, naming what it got. That is the
@@ -81,7 +81,7 @@ const PAGE: usize = 0;
 /// checks against four separate fixtures could not: the discriminating power
 /// is in the document, not in the harness's arithmetic.
 ///
-/// ★★★ **Two aims are on rotated text, and that is not decoration.** An
+/// **Two aims are on rotated text, and that is not decoration.** An
 /// inherited show operator advances along the text direction, so a horizontal
 /// one always lands on its predecessor's baseline and is always inside its
 /// predecessor's line. A line can only BEGIN with an inherited piece when the
@@ -149,11 +149,11 @@ enum Expect {
 /// `vector_edit_on_page`, which becomes the head of its success line:
 /// `move-text-line page=0 n=N epoch=N disclosures=…`.
 ///
-/// ★ `n=` is the number of show operators the line is written in, not `1`.
+/// `n=` is the number of show operators the line is written in, not `1`.
 /// The pieces go to one `move_text_runs` as a set, one undo step, so a line
 /// a producer wrote as nine `Tj`s reports `n=9`.
 ///
-/// ★★ Asserted instead of `canvas-move`, and the difference is the whole
+/// Asserted instead of `canvas-move`, and the difference is the whole
 /// point of asserting it. `canvas-move` is written by the canvas when it
 /// RAISES the action; this one is written by the apply phase after the engine
 /// has accepted the edit and the epoch has moved. A shell that raised a move
@@ -163,7 +163,7 @@ const MOVED_EVENT: &str = "move-text-line";
 
 /// How far the drag travels, in window logical points, on each axis.
 ///
-/// ★ Comfortably past any drag threshold and past
+/// Comfortably past any drag threshold and past
 /// `canvas::moving::Refusal::NoTravel`'s floor, and small enough that the
 /// pointer stays well inside the canvas on a 612 × 792 page at fit zoom. The
 /// destination does not matter: the release is refused before any geometry is
@@ -282,7 +282,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 2: read the canvas mapping -----------------------------------------
     //
-    // ★★★ **The Points tool is armed inside [`one_aim`], NOT once here, and the
+    // **The Points tool is armed inside [`one_aim`], NOT once here, and the
     // reason is measured rather than stylistic.** This check's first shape armed
     // it once before the loop, on the reasoning that a tool stays armed and the
     // two later rows would then not get a free `decline::retire` from a fresh
@@ -295,7 +295,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // pick to correct and that single press is the one that puts the tool down.
     // Arming before a clearing Escape disarms; arming after it does not.
     //
-    // ★★ The general shape, worth carrying: **a setup step that runs once and a
+    // The general shape, worth carrying: **a setup step that runs once and a
     // clearing step that runs per row are in a race, and the clearing step
     // wins.** The fix is not to drop the clearing step — it is what keeps each
     // row's status-bar control honest — but to put every precondition it
@@ -306,14 +306,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: each aim in turn ------------------------------------------------
     //
-    // ★★★ **The rows share a launch and are otherwise independent**, which is
+    // **The rows share a launch and are otherwise independent**, which is
     // the shape a suite that shares state taught this project to insist on. Any
     // row may FAIL, and a FAIL stops the check — but no row leaves a
     // precondition behind for the next one, because each re-reads the trace
     // from its own mark and each asserts its own empty-slot control before it
     // presses.
     //
-    // ★★ The third row EDITS THE DOCUMENT, and it runs last for that reason.
+    // The third row EDITS THE DOCUMENT, and it runs last for that reason.
     // A committed move changes the page, and every aim above it is computed
     // from the page as loaded. Running the control first would have moved a
     // line the two refusal rows are then aiming at.
@@ -332,7 +332,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 /// Same three-way return as [`drive`]: `Err` SKIP, `Ok(Some(_))` FAIL,
 /// `Ok(None)` pass.
 ///
-/// # ★★ Why the control is INSIDE this function and not once at the top
+/// # Why the control is INSIDE this function and not once at the top
 ///
 /// Because `status-group:decline` is one region shared by every decline in the
 /// application, and two of the three rows put a sentence in it. A control taken
@@ -361,14 +361,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 /// twice puts the tool down; pressing it once corrects a mis-aimed pick"* —
 /// and neither of those is a command.
 ///
-/// ★★ **That is behaviour, not a defect, and the fix was to stop needing it.**
+/// **That is behaviour, not a defect, and the fix was to stop needing it.**
 /// Both of this check's sentences are `still_true` for the reason
 /// `decline::fresh` calls *"the FILE cannot change under it"*: they report a
 /// property of the document, so no later moment makes them stale and they are
 /// meant to outlive a deselection. A check that demanded an empty slot was
 /// asserting a retirement policy this project deliberately does not have.
 ///
-/// ★★★ **So the per-row link is a MARK, not an absence.** Every assertion below
+/// **So the per-row link is a MARK, not an absence.** Every assertion below
 /// is anchored at a `Trace::mark` taken immediately before this row's drag and
 /// reads `last_after`. A sentence left standing by an earlier row cannot
 /// satisfy them, because the events that carry it are behind the mark. The
@@ -400,7 +400,7 @@ fn one_aim(
 
     // --- arm the Points tool ------------------------------------------------
     //
-    // ★★★ After the Escape above, never before it: see step 2 in [`drive`] for
+    // After the Escape above, never before it: see step 2 in [`drive`] for
     // the measurement. On a text object this is what makes a single click land
     // on the Part rung at all — a double-click opens the caret and never
     // touches the ladder, and the arrow tool's click selects the whole block.
@@ -462,7 +462,7 @@ fn one_aim(
 
 /// Assert the CONTROL row: the drag committed a `move_text_run`.
 ///
-/// ★★★ **This is the row that proves the other two are measuring something.**
+/// **This is the row that proves the other two are measuring something.**
 /// It is also the whole of O188's move half as the operator experiences it —
 /// he drags one label in a title block and the label moves.
 fn moved(
@@ -497,7 +497,7 @@ fn moved(
     };
     report.note(format!("dragging {what} moved it: `{}`", line.raw));
 
-    // ★★ And it must NOT have worded a refusal at the operator. A build that
+    // And it must NOT have worded a refusal at the operator. A build that
     // both moved the line and put a sentence on the bar is worse than one that
     // did neither, because the operator is told his edit did not happen while
     // looking at it having happened.
@@ -574,7 +574,7 @@ fn declined(
         line.raw
     ));
 
-    // --- b: ★★★ THE O188 DEFECT ITSELF. Did the refusal raise a sentence? ---
+    // --- b: THE O188 DEFECT ITSELF. Did the refusal raise a sentence? ---
     let at_decline = line.lineno;
     let found = after
         .events(RECORDED_EVENT)
@@ -629,7 +629,7 @@ fn declined(
 /// Render a list of region names for a failure message, or say there were
 /// none.
 ///
-/// ★ A failure message that prints `[]` for an empty list makes the reader
+/// A failure message that prints `[]` for an empty list makes the reader
 /// wonder whether the query was wrong. Saying *none* answers that.
 fn list(names: &[String]) -> String {
     if names.is_empty() {

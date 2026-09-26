@@ -30,7 +30,7 @@ const CANCEL_REGION: &str = "unsaved.cancel";
 
 /// The **Save all** control, which must be ABSENT with one dirty document.
 ///
-/// ★ Its absence is an assertion, not an omission: the button is drawn if and
+/// Its absence is an assertion, not an omission: the button is drawn if and
 /// only if more than one document is dirty, so a run with one must show no such
 /// region at all. See `dialogs::unsaved`'s `REGION_SAVE_ALL`.
 const SAVE_ALL_REGION: &str = "unsaved.save_all";
@@ -115,7 +115,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- phase A: a CLEAN document closes with no question ------------------
     //
-    // ★★ The falsifying half, and it runs first. A build that popped the dialog
+    // The falsifying half, and it runs first. A build that popped the dialog
     // on every close would satisfy every assertion in phase B, so this one has
     // to establish that the question is CONDITIONAL before the next one
     // establishes that it appears.
@@ -151,7 +151,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 u64::from(CLOSE_FRAMES) * 25 / 1000
             )));
         }
-        // ★ The process is MEANT to be gone by here — Alt+F4 was pressed and the
+        // The process is MEANT to be gone by here — Alt+F4 was pressed and the
         // loop above waited for it. Said out loud so `Session::trace`'s liveness
         // guard, which otherwise reports a dead process as a red failure, knows
         // this exit is the subject rather than a crash. See that function.
@@ -186,7 +186,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(12);
     let driver = Driver::new(session.window());
 
-    // ★★★ **THE STATE NOTHING ELSE CONSTRUCTS.** Everything below is ordinary;
+    // **THE STATE NOTHING ELSE CONSTRUCTS.** Everything below is ordinary;
     // this line is the reason the defect survived a suite of 140 checks. A
     // rotation is the cheapest edit that needs no canvas aim, no tool and no
     // typing — it is one ribbon command and it dirties the session.
@@ -199,7 +199,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.press_chord(&[sys::vk::ALT], sys::vk::F4)?;
     session.settle(30);
 
-    // ★ Still running is the FIRST thing asserted, because a process that has
+    // Still running is the FIRST thing asserted, because a process that has
     // gone cannot be asked anything and every assertion below would then be
     // about a trace that stops mid-sentence.
     if session.has_exited()? {
@@ -237,7 +237,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("and the question was asked: `{}`", asked.raw));
 
-    // ★★ **Save all must be ABSENT here**, because exactly one document is
+    // **Save all must be ABSENT here**, because exactly one document is
     // dirty. Its presence would mean the count is not reaching the dialog, and
     // the operator would meet a button that does the same as the one beside it
     // on a modal standing between them and leaving.
@@ -257,7 +257,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- Cancel, and the program stays ---------------------------------------
     //
-    // ★★ The ending is Cancel on purpose. Save would write a file and Discard
+    // The ending is Cancel on purpose. Save would write a file and Discard
     // would destroy work, and a check running unattended on the operator's own
     // machine should do neither. Cancel proves the whole chain and leaves
     // nothing behind.
@@ -293,7 +293,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 mod tests {
     use super::*;
 
-    /// ★★★ **The two phases assert opposite things, and both are needed.**
+    /// **The two phases assert opposite things, and both are needed.**
     ///
     /// Phase A: a clean close must NOT be held. Phase B: a dirty close MUST be.
     /// Either alone passes against a wrong build — A alone against one that
@@ -320,7 +320,7 @@ mod tests {
         }
     }
 
-    /// ★ The check ends on Cancel, which writes nothing and destroys nothing.
+    /// The check ends on Cancel, which writes nothing and destroys nothing.
     ///
     /// Pinned as a sentence because it is a policy rather than a mechanism: this
     /// suite runs unattended on the operator's own machine, and a check that

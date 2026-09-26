@@ -16,7 +16,7 @@ should have a default dimensioning and tolerance style that can be set for
 the group, but these should have a checkbox to override and set
 differently."*
 
-## ★ The disclosure is DATA, not a heuristic
+## The disclosure is DATA, not a heuristic
 
 `style_provenance(group, &record.style)` answers, per property, which tier
 supplied the value in force: `Factory`, `Group` or `Dimension`. This module
@@ -36,7 +36,7 @@ Two consequences a reader should not have to rediscover:
   thing to get wrong, and the note beside each row takes the predicate from
   the engine rather than matching on the variant here.
 
-## ★ Four properties can never report `Factory`, and that is not a bug
+## Four properties can never report `Factory`, and that is not a bug
 
 `unit`, `fraction`, `decimal_marker` and `standard` are **concrete**, not
 `Option`s — the first three inside `Group::format`, the last as

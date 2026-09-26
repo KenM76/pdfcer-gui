@@ -19,7 +19,7 @@ use crate::canvas::zoom;
 
 /// Escape and Delete, for the canvas selection.
 ///
-/// # ★ `DEFECTS.md` D1, from the other end
+/// # `DEFECTS.md` D1, from the other end
 ///
 /// D1 is *"I can't even click on an object and delete it by hitting the
 /// delete key."* Its cause was `ctx.egui_wants_keyboard_input()` — which means
@@ -66,7 +66,7 @@ use crate::canvas::zoom;
 /// header on why it shares a rung with the ladder instead of taking a sixth.
 /// Everything the key rungs need that is not the keyboard.
 ///
-/// ★★ A struct because the list reached eight when the form-field Delete landed
+/// A struct because the list reached eight when the form-field Delete landed
 /// (`OPERATOR_REQUESTS.md` **O53**), and eight positional parameters is a call
 /// nobody can read — three of them are `bool`-ish and transposing two would
 /// compile. `gesture::Press`, `resizing::Frame` and `dragroute::Frame` all took
@@ -88,17 +88,17 @@ pub(super) struct Keys<'a> {
     pub caps: Capabilities,
     /// The selected form field, when one is selected.
     ///
-    /// ★★★ On the DOCUMENT, not on `SelectionState` — `canvas::selection::annot`
+    /// On the DOCUMENT, not on `SelectionState` — `canvas::selection::annot`
     /// excludes `/Widget` so the form surface owns those presses. That is why it
     /// arrives as its own parameter rather than being read off the selection,
     /// and why Delete could not reach one until it did: the ladder below never
     /// had the fact in front of it.
     pub selected_field: Option<&'a crate::app::state::SelectedField>,
-    /// ★★★ **Whether deleting the selected annotation would be refused** —
+    /// **Whether deleting the selected annotation would be refused** —
     /// `crate::panels::properties::annotdelete::refuses`, computed by the
     /// caller.
     ///
-    /// ★★★ **`refuses`, taking the live selection — never `refuses_selected`.**
+    /// **`refuses`, taking the live selection — never `refuses_selected`.**
     /// The caller is `canvas::interact`, and that function opens by moving the
     /// selection off the document (`std::mem::take(&mut doc.selection)`), so a
     /// query that reads `doc.selection` sees an empty one and answers `false`
@@ -121,7 +121,7 @@ pub(super) struct Keys<'a> {
     /// [`Self::selected_field`], and for the same reason stated one field up:
     /// the fact lives somewhere this function cannot see.
     ///
-    /// # ★★ What it costs to get wrong, which is why the ladder consults it
+    /// # What it costs to get wrong, which is why the ladder consults it
     ///
     /// `annot.target.locked` is one of the **three** things that refuse a
     /// delete. A rung that asks it and nothing else has not asked about
@@ -138,7 +138,7 @@ pub(super) struct Keys<'a> {
     /// shape this refusal can take, and it is what makes this a rung rather
     /// than a nicety.
     ///
-    /// ★ `bool` rather than the `Refusal` itself: this rung only decides whether
+    /// `bool` rather than the `Refusal` itself: this rung only decides whether
     /// to proceed. **The wording is not this file's** — it is already on screen
     /// in `panels::properties::annotdelete`, drawn from the moment the
     /// annotation was selected, which is the R83 half a keystroke cannot
@@ -157,7 +157,7 @@ pub(super) struct Keys<'a> {
     /// §12.5.3 Table 165's per-annotation `Locked` bit, which no form field
     /// has.
     ///
-    /// # ★★★ What its absence costs, and it is the same defect one rung up
+    /// # What its absence costs, and it is the same defect one rung up
     ///
     /// Rung 0 sits **above** the annotation branch that asks its own gate, and
     /// it returns six lines before reaching it. A rung 0 written as
@@ -174,7 +174,7 @@ pub(super) struct Keys<'a> {
     /// sentence explaining the refusal goes blank on the same frame. The box
     /// stays, the selection vanishes, nothing is said.
     ///
-    /// ★ `bool` rather than the refusal, for [`Self::annot_delete_refused`]'s
+    /// `bool` rather than the refusal, for [`Self::annot_delete_refused`]'s
     /// reason verbatim: this rung decides only whether to proceed, and the
     /// wording is already on screen in
     /// `panels::properties::formfield`'s delete row, drawn from the moment the
@@ -183,7 +183,7 @@ pub(super) struct Keys<'a> {
     pub field_delete_refused: bool,
     /// Whether Escape was already spent by a drag this frame.
     pub escape_consumed: bool,
-    /// ★★★ **The page's object model**, so Delete can reach the deeper rungs.
+    /// **The page's object model**, so Delete can reach the deeper rungs.
     ///
     /// # Why this field exists at all
     ///
@@ -196,7 +196,7 @@ pub(super) struct Keys<'a> {
     /// `delete_text_run`) — so something has to say which kind of part it is,
     /// and only the decomposition knows.
     ///
-    /// # ★★ It is an `Option`, and the `None` case is not a formality
+    /// # It is an `Option`, and the `None` case is not a formality
     ///
     /// `canvas::interact` builds the provider only when the frame needs one
     /// (`needs_targets`), because `decompose_page` walks every content stream on
@@ -208,7 +208,7 @@ pub(super) struct Keys<'a> {
     /// decompose un-deletable at the rung where deletion needs no decomposition
     /// at all.
     ///
-    /// ★ It does not violate this struct's *"no `&OpenDoc`"* rule: a provider is
+    /// It does not violate this struct's *"no `&OpenDoc`"* rule: a provider is
     /// a decomposition, not the application state, and the eleven unit tests
     /// below pass `None` and still exercise every rung of the ladder.
     pub targets: Option<&'a crate::panels::objects::provider::ObjectModelProvider>,
@@ -222,7 +222,7 @@ pub(super) struct Keys<'a> {
     ///
     /// A plain integer, so it costs the unit tests nothing.
     pub edit_epoch: u64,
-    /// ★★★ **Whether this frame ASKED for the decomposition** — the tripwire
+    /// **Whether this frame ASKED for the decomposition** — the tripwire
     /// half of [`Self::targets`], and it exists because those two facts are
     /// different and were for one commit indistinguishable.
     ///
@@ -241,7 +241,7 @@ pub(super) struct Keys<'a> {
     /// every rung of the ladder — they never reach the assert, because they
     /// never supply a selection at a deeper rung without a provider.
     pub model_attempted: bool,
-    /// ★★★ **The page on screen**, for the arrow-key nudge and for nothing else.
+    /// **The page on screen**, for the arrow-key nudge and for nothing else.
     ///
     /// # Why a `&Page` does not break this struct's "no `&OpenDoc`" rule
     ///
@@ -253,7 +253,7 @@ pub(super) struct Keys<'a> {
     /// rule in this module be tested without a window or a file."* It is not
     /// the application state, and the tests below pass `None`.
     ///
-    /// # ★★ Why it is needed at all, when a nudge is a fixed step
+    /// # Why it is needed at all, when a nudge is a fixed step
     ///
     /// Because *up* is a screen fact and `dy` is a page fact, and the two are
     /// related by the page's own device transform — the Y flip **and**
@@ -290,7 +290,7 @@ pub(super) fn canvas_keys(
         model_attempted,
         page,
     } = keys;
-    // ★ Claimant 0, and it is read BEFORE the D1 guard rather than after it.
+    // Claimant 0, and it is read BEFORE the D1 guard rather than after it.
     //
     // That order is the whole point: `egui`'s `TextEdit` has already
     // surrendered focus by the time this runs, so the guard below no longer
@@ -302,7 +302,7 @@ pub(super) fn canvas_keys(
     // an un-armed `disarm_region_zoom` costs one.
     let form_settled = crate::canvas::forms::escape_spent(ctx);
 
-    // ★ Claimant 0b: a Tab the raw-input hook already took off egui, for the
+    // Claimant 0b: a Tab the raw-input hook already took off egui, for the
     // object ring.
     //
     // Read BEFORE the D1 guard for a different reason than `escape_spent` is:
@@ -312,9 +312,9 @@ pub(super) fn canvas_keys(
     // press was claimed, which is very nearly all of them.
     crate::canvas::objring::advance(ctx, page_index, targets, pick, selection);
 
-    // ★ D1: `text_edit_focused()`, NEVER `egui_wants_keyboard_input()`.
+    // D1: `text_edit_focused()`, NEVER `egui_wants_keyboard_input()`.
     //
-    // ★★ And deliberately NOT `textedit::composing` here, which is the wider
+    // And deliberately NOT `textedit::composing` here, which is the wider
     // predicate this project otherwise insists on. A canvas draft must still
     // reach rung 3a of the Escape ladder below — that rung is what SETTLES the
     // draft, writing what was typed — and a draft in flight is exactly the
@@ -339,7 +339,7 @@ pub(super) fn canvas_keys(
         )
     });
 
-    // ★ Tab advances the snap cycle, and ONLY while a measure tool is armed.
+    // Tab advances the snap cycle, and ONLY while a measure tool is armed.
     //
     // Tab is egui's focus key, so taking it unconditionally would break
     // keyboard navigation of every panel and every dialog. The guard is the
@@ -355,7 +355,7 @@ pub(super) fn canvas_keys(
         return;
     }
 
-    // ★★★ **The arrow keys nudge the selected markup** — the gesture every
+    // **The arrow keys nudge the selected markup** — the gesture every
     // drawing program has and this one did not.
     //
     // It is read here rather than in `app::keyboard` for the reason Delete and
@@ -366,7 +366,7 @@ pub(super) fn canvas_keys(
     // from somebody who is typing, and asking that question twice in one frame
     // is how the two spellings of it come to disagree (`DEFECTS.md` D1).
     //
-    // ★ It does NOT return early, and the omission is deliberate: a frame
+    // It does NOT return early, and the omission is deliberate: a frame
     // carrying an arrow carries neither Escape nor Delete, so there is nothing
     // below to protect from it, and a `return` here would be a claim about key
     // exclusivity that this function would then rely on without checking.
@@ -384,7 +384,7 @@ pub(super) fn canvas_keys(
         actions,
     );
 
-    // ★ Escape retires the most transient thing first, and exactly one thing.
+    // Escape retires the most transient thing first, and exactly one thing.
     //
     // The precedence is: a focused form field (spent above) → a drag in flight
     // (spent at step 3, and reported here as `escape_consumed`) → a guide drag
@@ -448,7 +448,7 @@ pub(super) fn canvas_keys(
     // it without also putting the pen down — and it is the one rung that
     // **writes** what it retires rather than discarding it.
     //
-    // ★★★ `OPERATOR_REQUESTS.md` **O223**, and it overturns what this rung used
+    // `OPERATOR_REQUESTS.md` **O223**, and it overturns what this rung used
     // to do:
     //
     // > *"for adding and editing text when using any tool that has text escape
@@ -491,14 +491,14 @@ pub(super) fn canvas_keys(
     // it does not have to be folded into a neighbour's variable.
     let rung_3a_spent = vertex_abandoned || draft_settled;
 
-    // ★★★ **…and a PENDING PLACEMENT, fourth on the same rung** —
+    // **…and a PENDING PLACEMENT, fourth on the same rung** —
     // `OPERATOR_REQUESTS.md` O66.
     //
     // A window has stepped aside and is waiting for the operator to point at
     // the page. Escape is the way back, and it is the ONLY way back: the window
     // is not on screen, so there is no Cancel button to press.
     //
-    // ★★ **Decision 025 L1 is not broken by this, and a reader will reach for
+    // **Decision 025 L1 is not broken by this, and a reader will reach for
     // the opposite conclusion.** L1 forbids one Escape having two effects.
     // Abandoning a placement is ONE effect; the window reappearing is not a
     // second act but the *undo of the hide*, because being hidden was never a
@@ -511,7 +511,7 @@ pub(super) fn canvas_keys(
     // belt to that braces, and it is what stops one press both cancelling a
     // placement and putting a pen down.
     //
-    // ★ ABOVE the disarm claimants below. `disarm_any` would put the placement
+    // ABOVE the disarm claimants below. `disarm_any` would put the placement
     // tool down and leave the pending record set — a hidden window with its
     // tool retired, which is the worst of the reachable states. Cancelling
     // first clears both, because `placing::cancel` does the disarm itself.
@@ -555,7 +555,7 @@ pub(super) fn canvas_keys(
         });
     }
 
-    // ★★★ …and ANY OTHER ARMED TOOL, last on this rung — on the operator:
+    // …and ANY OTHER ARMED TOOL, last on this rung — on the operator:
     // *"Escape should get me out of a tool."*
     //
     // The two calls above cover a pen and a measure tool. They leave the caret,
@@ -612,7 +612,7 @@ pub(super) fn canvas_keys(
         && !tool_disarmed
         && !disarmed
     {
-        // ★ Rung 5's two occupants, and they cannot both be here — see the
+        // Rung 5's two occupants, and they cannot both be here — see the
         // header. The text branch is tested first because it is the one that
         // can be non-empty in a mode where the other is *structurally* empty:
         // in Read the ladder has nothing to ascend, so calling `escape()` first
@@ -628,7 +628,7 @@ pub(super) fn canvas_keys(
                     selection.len()
                 )
             });
-            // ★★★ **Claimant 6 — LEAVE THE CONTAINER**, and only when the rung
+            // **Claimant 6 — LEAVE THE CONTAINER**, and only when the rung
             // above found nothing left to do. `OPERATOR_REQUESTS.md` O70.
             //
             // Below the selection rather than above it, which is the opposite
@@ -657,7 +657,7 @@ pub(super) fn canvas_keys(
         return;
     }
 
-    // ★★★ **A CANVAS DRAFT TAKES DELETE AND BACKSPACE.**
+    // **A CANVAS DRAFT TAKES DELETE AND BACKSPACE.**
     //
     // Above every rung below it, and it has to be: with a caret on the page the
     // operator is typing, and Delete means "eat the character in front of me".
@@ -665,7 +665,7 @@ pub(super) fn canvas_keys(
     // silently, destructively, while they were mid-word — which is defect D1's
     // family in its worst form. D1 lost a keystroke; this would lose a drawing.
     //
-    // ★ Note where the guard is, and why it is not at this function's entry.
+    // Note where the guard is, and why it is not at this function's entry.
     // The entry test is deliberately `text_edit_focused()` alone, because
     // **Escape must still reach rung 3a**, which is what settles the draft. A
     // draft in flight is precisely the state in which Escape has the most to
@@ -683,7 +683,7 @@ pub(super) fn canvas_keys(
         return;
     }
 
-    // ★★ An ANNOTATION takes the key, on its OWN capability, above the
+    // An ANNOTATION takes the key, on its OWN capability, above the
     // content gate.
     //
     // # Why it is above, and what being below it cost
@@ -712,7 +712,7 @@ pub(super) fn canvas_keys(
     // reader of the trace is entitled to tell "the file forbids it" from
     // "nothing was selected", because only one of those is something the
     // operator can act on.
-    // ★★★ A FORM FIELD, and it is checked FIRST of the three Delete claimants.
+    // A FORM FIELD, and it is checked FIRST of the three Delete claimants.
     //
     // `OPERATOR_REQUESTS.md` **O53**: *"if the engine is capable, I should be
     // able to select the object and do all of the ordinary editing one would
@@ -721,14 +721,14 @@ pub(super) fn canvas_keys(
     // had `doc.selected_field` in front of it, because a widget is deliberately
     // not an annotation selection.
     //
-    // ★★ First rather than last, and the order is not arbitrary: a form
+    // First rather than last, and the order is not arbitrary: a form
     // selection and an annotation selection are mutually exclusive by
     // construction (the form surface owns `/Widget` presses and
     // `selection::annot` excludes them), so this is a statement of that rather
     // than a precedence. Putting it first means a reader meets the narrowest
     // claim before the general ones.
     //
-    // ★ `edit_content` guards it, matching where the SELECTION is offered:
+    // `edit_content` guards it, matching where the SELECTION is offered:
     // `canvas::forms` gives the selection surface to Edit and the fill surface
     // to Read and Review, because *"the same click cannot both type a value and
     // select the box to rename it."* One predicate per capability -- the same
@@ -736,7 +736,7 @@ pub(super) fn canvas_keys(
     if caps.edit_content
         && let Some(field) = selected_field
     {
-        // ★★★ **The gate, asked through the one function that also withholds
+        // **The gate, asked through the one function that also withholds
         // the menu item and draws the sentence** —
         // `panels::properties::formfield::refuses_delete`, arriving as
         // [`Keys::field_delete_refused`] because this function takes no
@@ -747,7 +747,7 @@ pub(super) fn canvas_keys(
         // so a review of that branch reads straight past this one — a rung
         // that asks nothing looks like a rung with nothing to ask.
         //
-        // ★★ Declines to the TRACE, not to `app::status::decline`, and that is
+        // Declines to the TRACE, not to `app::status::decline`, and that is
         // the same ruling the annotation rung below makes for the same reason:
         // a key cannot be undrawn, so R9's remedy for a permanently
         // unavailable capability has nowhere to render — but the sentence is
@@ -782,7 +782,7 @@ pub(super) fn canvas_keys(
     if caps.author_markup
         && let Some(annot) = selection.annot()
     {
-        // ★★★ **The gate, asked through the one function that also withholds the
+        // **The gate, asked through the one function that also withholds the
         // control** — `panels::properties::annotdelete::gate`.
         //
         // This was `if annot.target.locked` and nothing else, which is one of
@@ -794,7 +794,7 @@ pub(super) fn canvas_keys(
         // operator. Discovery by pressing, on a press the program already knew
         // would fail: R83's whole subject.
         //
-        // ★★ Why the key declines to the TRACE while the ribbon's Delete is
+        // Why the key declines to the TRACE while the ribbon's Delete is
         // withheld outright, and why that is not two policies
         //
         // Because a key cannot be undrawn. R9's remedy for a permanently
@@ -832,7 +832,7 @@ pub(super) fn canvas_keys(
         return;
     }
 
-    // ★ A mode that cannot edit CONTENT has no Delete for content.
+    // A mode that cannot edit CONTENT has no Delete for content.
     //
     // Escape is deliberately **above** this line and ungated: every one of its
     // claimants — a form draft, a guide drag, an armed region zoom — is
@@ -856,7 +856,7 @@ pub(super) fn canvas_keys(
         return;
     }
 
-    // ★★★ **DELETE REACHES THE RUNG THE OPERATOR IS ON.**
+    // **DELETE REACHES THE RUNG THE OPERATOR IS ON.**
     //
     // A ladder that answered the question here — `deletable_objects_on` (Object
     // rung only), a leaf fallback, and for every deeper rung
@@ -869,7 +869,7 @@ pub(super) fn canvas_keys(
     // wired: on a CAD export a line can be entered, selected and **dragged**,
     // and still not be removed.
     //
-    // ★★ The decision lives in [`crate::canvas::deleting::subject`], which the
+    // The decision lives in [`crate::canvas::deleting::subject`], which the
     // ribbon's `format.delete` asks as well, so Delete-the-key and
     // Delete-the-command cannot act on different things. That divergence is not
     // hypothetical — `app::dispatch::format`'s own arm carries the form-field
@@ -878,7 +878,7 @@ pub(super) fn canvas_keys(
     // places is a rule that drifts, and the drift here removes a drawing view
     // instead of a line.
     //
-    // ★ `deletable_objects_on` is still live and still the answer to *"what may
+    // `deletable_objects_on` is still live and still the answer to *"what may
     // a Delete act on at the Object rung"* — `app::conditions` and the tests
     // read it. What this ladder does not do is treat its empty answer as the
     // end of the question.
@@ -890,14 +890,14 @@ pub(super) fn canvas_keys(
         // second mechanism for the same outcome, and the two would disagree the
         // first time the engine refused the edit.
         Ok(subject) => actions.push(crate::canvas::deleting::action(subject).into()),
-        // ★★ A silent decline IS the defect, and this is where it ends. Three
+        // A silent decline IS the defect, and this is where it ends. Three
         // of the eleven refusals put a sentence on the status row — the three an
         // operator meets having done nothing wrong — and every one of the eleven
         // is named on the trace. `deleting::decline` owns which is which and
         // `text::deleting` owns the words; neither decision belongs in a key
         // handler.
         Err(reason) => {
-            // ★★★ **THE TRIPWIRE FOR THE FIFTH RECURRENCE**, and it is here
+            // **THE TRIPWIRE FOR THE FIFTH RECURRENCE**, and it is here
             // rather than in `deleting::decline` because this is the only
             // place that knows both halves of the question.
             //
@@ -916,7 +916,7 @@ pub(super) fn canvas_keys(
             // anything here — go and add the missing term to that module,
             // where every other reason a frame needs the model already lives.
             //
-            // ★ Release builds are not left silent either: `decline` carries
+            // Release builds are not left silent either: `decline` carries
             // `model_attempted` onto the trace as `asked=`, so a driven check
             // reads the same distinction the assert makes.
             debug_assert!(

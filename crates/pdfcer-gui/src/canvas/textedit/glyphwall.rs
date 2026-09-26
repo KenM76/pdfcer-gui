@@ -5,7 +5,7 @@
 
 #![cfg(test)]
 // ---------------------------------------------------------------------------
-// ★ A deliberate duplicate of the `#![cfg(test)]` above, for
+// A deliberate duplicate of the `#![cfg(test)]` above, for
 // `tools/gates/check-ui-strings.sh` rather than for rustc — the same device
 // `proof.rs` and `facewall.rs` use and for the same reason: the gate reads
 // modules line by line and cannot see an inner attribute at the top of a file
@@ -29,7 +29,7 @@ const FIXED: &str = "ABCD";
 /// A correction to the **same** run that changes its first and last characters
 /// and leaves the middle one alone.
 ///
-/// ★ The changed region therefore covers all three show operators, so the
+/// The changed region therefore covers all three show operators, so the
 /// engine cannot narrow the rewrite to one of them. See
 /// [`a_change_that_straddles_operators_keeps_the_spanning_form`].
 const STRADDLED: &str = "XBY";
@@ -54,7 +54,7 @@ fn session(fixture: &str) -> EditSession {
 
 /// The page's runs **in order**, as the session now sees them.
 ///
-/// ★ Separate from [`page_text`] and not a convenience: with two identical
+/// Separate from [`page_text`] and not a convenience: with two identical
 /// strings on one page, *which* one changed is expressible only as a position
 /// in this list. A concatenated string can say the fix is present; it cannot
 /// say the clicked run is the one that has it, and that is the whole question
@@ -89,7 +89,7 @@ fn page_text(session: &EditSession) -> String {
     text.runs.iter().map(|r| r.text.as_str()).collect()
 }
 
-/// ★★★ **The control that makes every assertion below evidence: the fixture's
+/// **The control that makes every assertion below evidence: the fixture's
 /// run really is split across operators.**
 ///
 /// If it were one operator the exact-pin path would be taken, the `find` would
@@ -117,7 +117,7 @@ fn the_fixtures_runs_are_written_one_glyph_per_operator() {
     }
 }
 
-/// ★★★ **HIS TYPO. The pin stays on, the span search starts at it, and the
+/// **HIS TYPO. The pin stays on, the span search starts at it, and the
 /// correction lands.**
 ///
 /// Driven through the real [`super::plan`] rather than by hand-building an
@@ -129,7 +129,7 @@ fn a_typo_in_a_run_written_one_glyph_at_a_time_can_be_corrected() {
     let doc = crate::app::state::open_local_fixture(UNIQUE);
     let planned = super::plan(&doc, 0, 0, RUN, FIXED);
 
-    // ★★★ **THE PIN STAYS ON**, and the obvious simplification here is to
+    // **THE PIN STAYS ON**, and the obvious simplification here is to
     // drop it because this fixture holds the run only once.
     //
     // `EditRequest::spanning_from` starts the span search at the pinned
@@ -147,7 +147,7 @@ fn a_typo_in_a_run_written_one_glyph_at_a_time_can_be_corrected() {
          pass every other assertion here on this fixture — which holds one occurrence — \
          and reach the wrong text on a page with two"
     );
-    // ★★★ **AND IT SPANS FROM THE PIN.** The whole-run `find` says what, the
+    // **AND IT SPANS FROM THE PIN.** The whole-run `find` says what, the
     // pin says which one, and `span_from_pin` lets the match run on past the
     // one-glyph operator the pin names. The engine narrows the rewrite to the
     // part that differs by itself.
@@ -167,7 +167,7 @@ fn a_typo_in_a_run_written_one_glyph_at_a_time_can_be_corrected() {
     );
 
     let mut session = session(UNIQUE);
-    // ★ Sampled BEFORE the edit, from the same session the edit runs in, so the
+    // Sampled BEFORE the edit, from the same session the edit runs in, so the
     // comparison below is against this document rather than against a number
     // written down when the fixture was authored.
     let before_left = left_edge(&session, 0);
@@ -180,7 +180,7 @@ fn a_typo_in_a_run_written_one_glyph_at_a_time_can_be_corrected() {
          returns Ok and leaves the run alone is what this assertion exists to catch"
     );
 
-    // ★★★ **AND THE LINE MUST NOT MOVE** — the operator's own report, O213:
+    // **AND THE LINE MUST NOT MOVE** — the operator's own report, O213:
     //
     // > *"the entire line shifts to the right after instead of staying in
     // > place."*
@@ -189,7 +189,7 @@ fn a_typo_in_a_run_written_one_glyph_at_a_time_can_be_corrected() {
     // END and empties the ones before it; the engine keeps the line where the
     // match began.
     //
-    // ★ The tolerance is 0.5 pt: loose enough that a legitimate re-spacing of
+    // The tolerance is 0.5 pt: loose enough that a legitimate re-spacing of
     // sub-point size never trips it, tight enough that no displacement a reader
     // could see can pass. A whole-operator shift on this fixture is 7 pt.
     let moved = left_edge(&session, 0) - before_left;
@@ -201,7 +201,7 @@ fn a_typo_in_a_run_written_one_glyph_at_a_time_can_be_corrected() {
     );
 }
 
-/// ★★★ **A change that touches the run's first and last operators** and leaves
+/// **A change that touches the run's first and last operators** and leaves
 /// the middle one alone — the engine cannot narrow it to one operator, so the
 /// span genuinely crosses all three.
 ///
@@ -247,7 +247,7 @@ fn a_change_that_straddles_operators_keeps_the_spanning_form() {
 /// **The left edge of run `index` on page 0** — the one number that says whether
 /// an edit left the text where the producer put it.
 ///
-/// ★★★ It names a run, and that is the whole point. The minimum `llx` over
+/// It names a run, and that is the whole point. The minimum `llx` over
 /// *every* run on the page answers a different question — *"is anything on this
 /// page still at the far left?"* — and on a sheet with a title block something
 /// always is, so an edit could fling the corrected line across the page while
@@ -275,7 +275,7 @@ fn left_edge(session: &EditSession, index: usize) -> f64 {
         .llx
 }
 
-/// ★★★ **THE GUARD, INVERTED 2026-09-08: two identical runs on one page, and
+/// **THE GUARD, INVERTED 2026-09-08: two identical runs on one page, and
 /// the shell now edits THE ONE THAT WAS CLICKED.**
 ///
 /// # What this test asserted until today, and why it was right then
@@ -305,7 +305,7 @@ fn left_edge(session: &EditSession, index: usize) -> f64 {
 /// scanned from operator 0 would also produce a page containing the fix and
 /// would pass any assertion phrased as "the corrected text is present".
 ///
-/// ★ That trap is not hypothetical — the engine's own reply records its third
+/// That trap is not hypothetical — the engine's own reply records its third
 /// sabotage passing twice, once because the fixture lacked a third
 /// occurrence and once because the assertion asked *"does this operator appear
 /// somewhere"* rather than naming the line.
@@ -339,7 +339,7 @@ fn a_typo_that_appears_twice_on_the_page_edits_the_one_that_was_clicked() {
          with `python tools/gen-per-glyph-fixtures.py`. Got: {before:?}"
     );
 
-    // ★★★ The control that the fixture is really per-glyph is
+    // The control that the fixture is really per-glyph is
     // [`the_fixtures_runs_are_written_one_glyph_per_operator`], which reads
     // `Plan::one_operator` over both fixtures. It cannot be `operators_spanned`:
     // the engine narrows the rewrite to the operators that differ, so that
@@ -353,7 +353,7 @@ fn a_typo_that_appears_twice_on_the_page_edits_the_one_that_was_clicked() {
         .edit_text(&planned.request, &planned.options)
         .expect("★★★ the edit that was refused until Pass 272.0 must now land");
 
-    // ★★★ THE ASSERTION THAT DISCRIMINATES. Not "the page contains ABCD" —
+    // THE ASSERTION THAT DISCRIMINATES. Not "the page contains ABCD" —
     // a build that scanned from operator 0 satisfies that too, on this exact
     // page, while having edited the wrong run.
     let after = page_runs(&session);
@@ -371,7 +371,7 @@ fn a_typo_that_appears_twice_on_the_page_edits_the_one_that_was_clicked() {
          too far. Got: {after:?}"
     );
 
-    // ★ And it must be the FIRST — the run `plan` was given (index 0). Order
+    // And it must be the FIRST — the run `plan` was given (index 0). Order
     // is the only thing that names which of two identical strings was edited;
     // asserting on their number cannot. This is the engine's own lesson about
     // its third sabotage, applied here.
@@ -385,7 +385,7 @@ fn a_typo_that_appears_twice_on_the_page_edits_the_one_that_was_clicked() {
     );
 }
 
-/// ★★★ **The guard is a DECISION, not an inherited limitation** — asserted
+/// **The guard is a DECISION, not an inherited limitation** — asserted
 /// against the engine directly, with no `plan` in the way.
 ///
 /// Without this, a reader could believe `per-glyph-twice.pdf` refuses because

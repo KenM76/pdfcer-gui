@@ -21,7 +21,7 @@ sparse and lives inside title blocks and tables.
 > it is verified against the author's model of the problem, not against the
 > problem.**
 
-# ★ What this check is really asking
+# What this check is really asking
 
 Not *"does the caret work"* — the other two settle that. This asks the two
 questions that separate a working feature from an operator's *"it doesn't
@@ -38,7 +38,7 @@ work"*:
    indistinguishable from a feature that does nothing** — which is the
    operator's sentence, exactly.
 
-# ★★ The aim comes from the ENGINE, not from a guess
+# The aim comes from the ENGINE, not from a guess
 
 `--doc-point` is required and there is deliberately no default, for the
 reason `CheckContext::target` already records: *a click on empty page is
@@ -79,7 +79,7 @@ on the same drawing before the engine's `Pass 121.1`. So O198's
 *"still can't edit when the text has been reflowed"* **does not reproduce
 on this build**.
 
-★ That is not a claim the operator was wrong. It is a claim about WHICH
+That is not a claim the operator was wrong. It is a claim about WHICH
 BUILD: he is running a published one that predates the fixes, and this
 check being green and his report being accurate are the same state of the
 world one release apart. **The release is the answer to O198**, not more
@@ -95,6 +95,6 @@ is written out IN THIS FILE, at step 6, where the identical mistake was
 corrected once before: **a check that asserts on the absence of a line
 must first ask whether a DIFFERENT line explains the absence.** That
 correction was about `edit-text-refused`; this one is about
-`text-edit-became-add`. ★ A rule written down beside one instance of
+`text-edit-became-add`. A rule written down beside one instance of
 itself does not generalise on its own — the next instance arrives wearing
 a different event name and reads as a new problem.

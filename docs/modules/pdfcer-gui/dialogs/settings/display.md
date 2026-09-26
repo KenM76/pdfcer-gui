@@ -4,7 +4,7 @@ The eighth group, and the only one whose settings are **not** about the PDF
 standard. Every other group in this window exists because a clause declines
 to have an opinion; these two exist because a machine has a speed.
 
-## ★ Two settings, out of seven commissioned
+## Two settings, out of seven commissioned
 
 `RIBBON_IA.md` §5.2 specified a View ▸ Render group of five, plus two
 behaviour settings on the same tab, and `shell::manifest::DIRECTED` carried

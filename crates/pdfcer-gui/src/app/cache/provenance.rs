@@ -59,7 +59,7 @@ pub(crate) struct ProvenanceTextCache {
     /// The `(page index, edit epoch)` the text below describes, or `None`
     /// before the first build.
     ///
-    /// ★★★ **What actually makes a failed extraction cheap, and it is NOT the
+    /// **What actually makes a failed extraction cheap, and it is NOT the
     /// order this line is written in.**
     ///
     ///
@@ -106,7 +106,7 @@ impl OpenDoc {
     /// let pin = pin::of_run(&model, run)?;
     /// ```
     ///
-    /// # ★★★ The extraction options are the operator's, MODIFIED
+    /// # The extraction options are the operator's, MODIFIED
     ///
     /// `settings.extract_options().with_provenance(true)` — the funnel's
     /// output with one field turned on, **never** `ExtractOptions::default()`.
@@ -131,7 +131,7 @@ impl OpenDoc {
     pub(crate) fn provenance_page_text(&self, page: usize) -> Option<CachedText<'_>> {
         self.ensure_provenance_text(page);
         let held = self.provenance_text.text.borrow();
-        // ★ The borrow is released by the `?`-free clone and the function
+        // The borrow is released by the `?`-free clone and the function
         // return, before any caller code runs. That is the whole point of the
         // `Rc` — see the module header.
         let text = Rc::clone(held.as_ref()?);
@@ -148,7 +148,7 @@ impl OpenDoc {
         if self.provenance_text.built_for.get() == Some(key) {
             return;
         }
-        // ★ Recorded here rather than after the extraction — see
+        // Recorded here rather than after the extraction — see
         // [`ProvenanceTextCache::built_for`] for what that does and does not
         // buy, measured rather than assumed. What matters is that it is
         // recorded on the failure arm too, which it is, because the store at
@@ -194,7 +194,7 @@ mod tests {
     /// exactly the shape of check that let six duplicate extractions sit in
     /// this crate unnoticed.
     ///
-    /// ★ The two handles are **held at once**, deliberately. The old caches in
+    /// The two handles are **held at once**, deliberately. The old caches in
     /// [`super::super`] hand out `Ref`s and their equivalent test holds two to
     /// prove a shared borrow is enough; this one hands out an `Rc` precisely so
     /// that overlapping handles are possible, and a test that took them one
@@ -217,7 +217,7 @@ mod tests {
     /// — which on the edit path means a pinned span naming a byte range in the
     /// wrong content stream, i.e. an edit applied to a page the operator is not
     /// looking at.
-    /// ★★★ **The handle is HELD, never dropped, and that is the whole
+    /// **The handle is HELD, never dropped, and that is the whole
     /// correctness of this test.**
     ///
     ///
@@ -249,7 +249,7 @@ mod tests {
             !std::ptr::eq(ptr0, std::rc::Rc::as_ptr(&page1.text)),
             "★ page 1 was served page 0's text"
         );
-        // ★ And going back is a rebuild too, because the cache holds one page.
+        // And going back is a rebuild too, because the cache holds one page.
         // Asserted so that growing it into a map is a deliberate change with a
         // test to update, rather than something that quietly happens.
         let back = doc.provenance_page_text(0).expect("page 0 again");
@@ -257,7 +257,7 @@ mod tests {
             !std::ptr::eq(ptr0, std::rc::Rc::as_ptr(&back.text)),
             "the cache holds one page; returning to page 0 re-extracts it"
         );
-        // ★ Dropped only now, after every comparison, for the reason the doc
+        // Dropped only now, after every comparison, for the reason the doc
         // comment above gives at length. Moving this line up is the defect.
         drop(page0);
     }
@@ -269,7 +269,7 @@ mod tests {
     /// no longer exists — the silent-wrong-edit failure the module header
     /// calls worse than a panic.
     ///
-    /// ★ The epoch is moved directly rather than by performing an edit,
+    /// The epoch is moved directly rather than by performing an edit,
     /// because this is a test of the **cache key**, not of any verb. A test
     /// that ran a real edit would fail for a dozen reasons that are not this
     /// one, and would stop compiling every time a verb's signature moved.

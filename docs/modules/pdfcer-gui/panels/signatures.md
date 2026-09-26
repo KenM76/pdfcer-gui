@@ -2,7 +2,7 @@
 separately and never merged
 
 
-## ★★★ THE RULE THIS PANEL EXISTS TO KEEP
+## THE RULE THIS PANEL EXISTS TO KEEP
 
 **This is the one place in the product where a wrong answer is worse than no
 answer.** A panel that said *"trusted"* about a chain it had not really
@@ -17,7 +17,7 @@ arithmetic anywhere in this file that combines two of the facts into a
 third. The order is also the order of increasing uncertainty: integrity is
 arithmetic, coverage is arithmetic, trust is a judgement about the world.
 
-★★ And [`pdfcer_core::signature::Trust::NotChecked`] renders **as itself**.
+And [`pdfcer_core::signature::Trust::NotChecked`] renders **as itself**.
 Not as a soft "no", not as a grey tick, not omitted. Hiding it would make
 this panel indistinguishable, on screen, from one that had checked and found
 nothing wrong — which is the inversion the whole feature exists to prevent.
@@ -34,7 +34,7 @@ store is corrupt"* are opposite calls to action.
 | trust | not computed | the operator's own Acrobat anchors, opt-in, off by default |
 | the leading caveat | *"pdfcer does not check whether these signatures are valid — it cannot yet"* | replaced: that sentence became FALSE the moment this was wired |
 
-★★★ That last row is this project's most expensive recorded failure shape —
+That last row is this project's most expensive recorded failure shape —
 a claim that was true when written and false within hours, with the prose
 around it still true. The replacement
 ([`crate::text::trust::panel_intro`]) names the three facts instead of
@@ -57,7 +57,7 @@ the question worth asking. An unsaved edit is not in the file and cannot be
 covered by a signature; the panel says which state it measured rather than
 leaving an operator to assume.
 
-## ★★ Why verification is automatic, and what stops it being per-frame
+## Why verification is automatic, and what stops it being per-frame
 
 The alternative considered was a *Check signatures* button. It was refused:
 an operator who has opened a panel called Signatures has already asked, and

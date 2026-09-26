@@ -45,7 +45,7 @@ pub struct OrientedBox {
     /// can be drawn round a sheared stamp; a number cannot be put in a
     /// properties field for it.
     ///
-    /// ★ An annotation with an appearance but **no `/Matrix` key** answers
+    /// An annotation with an appearance but **no `/Matrix` key** answers
     /// `Some(0.0)` — Table 95's default, and what the renderer paints with —
     /// while `Annotation::appearance_matrix` answers `None`, because the file
     /// really did say nothing. The engine draws that distinction deliberately,
@@ -63,7 +63,7 @@ impl OrientedBox {
     /// is well under a pixel and is far larger than any float noise a
     /// `/Matrix` round-trip introduces.
     ///
-    /// ★ **A quarter turn is NOT upright by this test, and that is deliberate.**
+    /// **A quarter turn is NOT upright by this test, and that is deliberate.**
     /// A 90°-turned annotation's `/Rect` does bound it exactly, so an outline
     /// drawn from `/Rect` would look right — but its *corner order* has rotated,
     /// so a grip the operator grabs at the artwork's own top-left is at the
@@ -90,7 +90,7 @@ impl OrientedBox {
 pub fn oriented(view: &DocumentView<'_>, annot: &Annotation) -> Option<OrientedBox> {
     Some(OrientedBox {
         corners: pdfcer_render::annot::appearance_placement(view, annot)?,
-        // ★★★ `rem_euclid`, and read [`OrientedBox::degrees`] before removing
+        // `rem_euclid`, and read [`OrientedBox::degrees`] before removing
         // it: the engine returns a signed `atan2` and this shell needs
         // `[0, 360)`. Omitting it made every clockwise rotation report itself
         // upright and cost a driven run to find.
@@ -105,7 +105,7 @@ pub fn oriented(view: &DocumentView<'_>, annot: &Annotation) -> Option<OrientedB
 /// The shape most callers here want: the selection and the properties panel
 /// both hold an `ObjId` and a page, not an `Annotation`.
 ///
-/// ★ Through `annot::page_annotations` rather than a hand-rolled dictionary
+/// Through `annot::page_annotations` rather than a hand-rolled dictionary
 /// read, because `appearance_placement` takes the engine's own modelled
 /// `Annotation` — including its `Appearance` enum, which is where `/AS`
 /// selection and the *"named but not painted"* distinction live. A shell that

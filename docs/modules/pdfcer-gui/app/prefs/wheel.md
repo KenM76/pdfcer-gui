@@ -7,7 +7,7 @@
 > button to scroll or flip through pages, or the current way it is now when
 > the scroll wheel is used."*
 
-## ★ Why this is a choice at all, rather than a behaviour
+## Why this is a choice at all, rather than a behaviour
 
 Under a **continuous** display mode there is nothing to decide: the whole
 document is one scroll and the wheel scrolls it. Under
@@ -24,7 +24,7 @@ answers are both right for somebody:
   by default — there is *nothing to scroll*, so today's wheel does nothing
   at all and the operator reaches for the page buttons every time.
 
-★★ That last sentence is the whole case for the feature. The default
+That last sentence is the whole case for the feature. The default
 behaviour is not merely a matter of taste in the common configuration; it
 is a dead control.
 

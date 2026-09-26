@@ -5,7 +5,7 @@
 
 /// **The Markup tab's Arrange group caption.**
 ///
-/// # ★★ Why this one caption is not in [`crate::text::ribbon`] with the other
+/// # Why this one caption is not in [`crate::text::ribbon`] with the other
 /// twenty
 ///
 /// Every other group caption in the build lives there, and this one should
@@ -20,7 +20,7 @@
 /// `group_markup_style` is a two-line change the next session that touches that
 /// file should make.
 ///
-/// ★ The word itself: **Arrange**, which is what Illustrator, InDesign,
+/// The word itself: **Arrange**, which is what Illustrator, InDesign,
 /// PowerPoint and Visio all call this group of four. Acrobat calls it nothing —
 /// its four are loose in a context menu — so there is no parity reason to
 /// deviate and four programs' worth of reason not to.
@@ -31,7 +31,7 @@ pub const fn group_arrange() -> &'static str {
 
 /// **Why an arrow key moved nothing**, in the shell's reading of the cases.
 ///
-/// # ★ Four variants and not five — the one that is deliberately silent
+/// # Four variants and not five — the one that is deliberately silent
 ///
 /// A nudge with **nothing selected at all** produces no sentence and no
 /// variant. That is not an oversight: the arrow keys are pressed constantly for
@@ -75,7 +75,7 @@ pub enum NudgeRefusal {
 /// The sentence for a refused nudge, or `None` when the case is one this
 /// catalog deliberately leaves silent.
 ///
-/// ★ Returns `Option` even though every present variant has a sentence, so that
+/// Returns `Option` even though every present variant has a sentence, so that
 /// the *shape* of the answer matches [`crate::text::deleting::refusal`]'s —
 /// eleven refusals there, three of which speak. A future variant that should
 /// not speak is then a `None` arm rather than a change of signature at the one
@@ -109,7 +109,7 @@ pub const fn locked_cannot_move() -> &'static str {
 
 /// **The arrow keys move a mark, and what is selected is not one.**
 ///
-/// # ★★ Worded as *today*, and the reason is that it is true and will change
+/// # Worded as *today*, and the reason is that it is true and will change
 ///
 /// `crate::canvas::moving` moves page content on a drag through five verbs, and
 /// none of them is out of reach of a keystroke in principle. What is missing is
@@ -134,7 +134,7 @@ pub const fn not_a_markup() -> &'static str {
 /// `move_dimension` rather than `move_annotation`. `crate::canvas::dimdrag`
 /// already owns that gesture for the pointer.
 ///
-/// ★ The word "measurement" does the work. It says why this one thing behaves
+/// The word "measurement" does the work. It says why this one thing behaves
 /// differently without naming a verb, an `/IT` entry or a subtype — the rule
 /// this file's header sets.
 #[must_use]
@@ -161,7 +161,7 @@ pub const fn degenerate_page() -> &'static str {
 /// **A drag on one line inside a block of text, refused** — `OPERATOR_REQUESTS.md`
 /// O188, 2026-09-15.
 ///
-/// # ★★★ Why this refusal gets a sentence when nine of its ten siblings do not
+/// # Why this refusal gets a sentence when nine of its ten siblings do not
 ///
 /// [`crate::canvas::moving::Refusal`] has eleven variants and
 /// [`crate::canvas::moving::Refusal::worded`] hands exactly two of them to the
@@ -178,7 +178,7 @@ pub const fn degenerate_page() -> &'static str {
 ///
 ///
 ///
-/// ★★ **The distinction is not pedantry, it decides what he does next.**
+/// **The distinction is not pedantry, it decides what he does next.**
 /// *pdfcer cannot move a line* invites him to go looking for a newer build, a
 /// setting, or a different program. *This line's position is not written down
 /// in this file* tells him it is this drawing, that the very same gesture will
@@ -203,14 +203,14 @@ pub const fn degenerate_page() -> &'static str {
 ///   inherited from this one, so moving this one moves that one too. pdfcer
 ///   will not silently move something the operator did not select.
 ///
-/// ★★ Both are asked **before the press is accepted**, by
+/// Both are asked **before the press is accepted**, by
 /// `canvas::moving::eligible` through
 /// `ObjectModelProvider::text_run_move_refusal_of`, which calls the engine's
 /// own `text_run_move_refusal` — the function the planner runs first. So the
 /// sentence and the outcome cannot disagree, and no ghost outline is ever drawn
 /// for a drag that will not commit.
 ///
-/// # ★★ The order of the clauses is the argument, not the style
+/// # The order of the clauses is the argument, not the style
 ///
 /// | clause | what it is doing |
 /// |---|---|
@@ -225,7 +225,7 @@ pub const fn degenerate_page() -> &'static str {
 /// spent advertising Delete is a line not spent on the only thing these two
 /// still have to explain, which is why *this* line is the exception.
 ///
-/// ★ It is also a claim this pair could no longer make honestly. Delete's
+/// It is also a claim this pair could no longer make honestly. Delete's
 /// own refusal is the mirror of [`run_would_drag_the_next_line`]'s — the same
 /// §9.4.2 inheritance blocks both — so *Delete removes that line on its own*
 /// would be false for a selection reachable from here, and an offer that is
@@ -240,7 +240,7 @@ pub const fn degenerate_page() -> &'static str {
 /// for it: they state a property of the document, which nothing but an edit can
 /// change — not pressing Escape, and not selecting something else.
 ///
-/// ★★ That does **not** reopen the retirement rule.
+/// That does **not** reopen the retirement rule.
 /// `app::status::decline::fresh` still answers `true` for both, and the trap it
 /// is avoiding is unchanged: the remedy these sentences name is *press Escape*,
 /// and a predicate keyed on *is a line still selected?* would delete the
@@ -254,7 +254,7 @@ pub const fn degenerate_page() -> &'static str {
 /// object — which `move_objects`/`transform_objects` really does move, so the
 /// remedy is a gesture that works and not a hope.
 ///
-/// ★ Says **block of text** and **line** rather than *show operator*, *run*
+/// Says **block of text** and **line** rather than *show operator*, *run*
 /// or *`Tj`*; says *takes its position from* rather than *`Td`*, *`Tm`* or
 /// *text-space displacement*. The operator can see a block of text and a line
 /// inside it; they cannot see any of the rest, and a sentence in the file
@@ -271,7 +271,7 @@ pub const fn run_has_no_position_of_its_own() -> &'static str {
 /// second of O188's two refusals.
 ///
 ///
-/// ★★ **What this one has to get across that its twin does not** is that the
+/// **What this one has to get across that its twin does not** is that the
 /// refusal is protecting something. The other sentence reports an absence; this
 /// one reports a consequence — the drag *could* be performed and pdfcer is
 /// declining, because carrying it out would move a line the operator did not
@@ -279,7 +279,7 @@ pub const fn run_has_no_position_of_its_own() -> &'static str {
 /// timid. Said as *moving this line would drag that one with it*, it reads as
 /// the program noticing something he could not see, which is what happened.
 ///
-/// ★ **Not** *“the next line is attached to this one”*, which is the obvious
+/// **Not** *“the next line is attached to this one”*, which is the obvious
 /// plain-English rendering and is wrong in the direction that matters: it
 /// suggests a relationship he could detach, and there is no such control. *Takes
 /// its position from* names a one-way dependency that is a fact about the file.
@@ -313,7 +313,7 @@ pub fn line_takes_several_undo_presses(pieces: usize) -> String {
 
 /// **The mark was already where the command would have put it.**
 ///
-/// ★★★ The sentence [`crate::app::actions::reorder::reorder_annotations`]
+/// The sentence [`crate::app::actions::reorder::reorder_annotations`]
 /// deliberately does **not** have, and the difference between the two callers is
 /// the whole argument for it.
 ///
@@ -345,7 +345,7 @@ pub const fn already_there(front: bool) -> &'static str {
 
 /// **The mark is locked, so pdfcer leaves its depth alone.**
 ///
-/// # ★★★ A shell decision, and the one place this feature goes beyond the spec
+/// # A shell decision, and the one place this feature goes beyond the spec
 ///
 /// §12.5.3 Table 165 bit 8 says *"do not allow the annotation to be deleted or
 /// its properties (including position and size) to be modified by the user"*. A
@@ -366,7 +366,7 @@ pub const fn already_there(front: bool) -> &'static str {
 /// application: Acrobat greys its whole Arrange submenu for a locked comment,
 /// which is the behaviour this matches.
 ///
-/// ★ A separate sentence from [`locked_cannot_move`] because they refuse
+/// A separate sentence from [`locked_cannot_move`] because they refuse
 /// different things and an operator who pressed *Send to back* and read *"it
 /// cannot be moved"* would think the program had misheard them.
 #[must_use]
@@ -382,7 +382,7 @@ pub const fn locked_cannot_arrange() -> &'static str {
 /// no object id, so nothing can name them in a new order, and the engine holds
 /// them at the index they had while everything else flows around them.
 ///
-/// ★★★ This is the disclosure the whole command owes, and it is the one the
+/// This is the disclosure the whole command owes, and it is the one the
 /// brief for this work singled out: *"a z-order command that silently did not
 /// take is exactly the failure this project keeps finding."* The mark may
 /// genuinely still be behind something after a Bring to front, and the only
@@ -410,7 +410,7 @@ pub fn pinned(count: usize) -> String {
 
 /// **Form fields on this page changed their tab order.**
 ///
-/// ★★★ The exact inverse of
+/// The exact inverse of
 /// [`crate::text::forms::reorder_moved_non_widgets`], and writing both down is
 /// the point.
 ///
@@ -428,7 +428,7 @@ pub fn pinned(count: usize) -> String {
 /// type, because it is a fact about *this* caller's intent rather than about the
 /// reorder.
 ///
-/// ★ Only said when the count is non-zero, which on a page with no form fields
+/// Only said when the count is non-zero, which on a page with no form fields
 /// is every time. A drawing sheet gets no sentence about tab order.
 #[must_use]
 pub fn tab_order_changed(count: usize) -> String {
@@ -452,7 +452,7 @@ pub fn tab_order_changed(count: usize) -> String {
 /// surviving half is that a consequence the operator cannot see still owes a
 /// report.
 ///
-/// ★ Deliberately not [`crate::text::forms::reorder_copied_shared_array`]'s
+/// Deliberately not [`crate::text::forms::reorder_copied_shared_array`]'s
 /// wording re-used. That one is written for somebody who was arranging a tab
 /// order; this one is written for somebody who was arranging marks, and the
 /// noun it has to use is different. Two sentences about one engine flag, in two
@@ -476,7 +476,7 @@ pub const fn copied_shared_list() -> &'static str {
 /// about where their mark now is, and saying nothing would leave a Bring to
 /// front that visibly worked and technically did not.
 ///
-/// ★ Says **"prepress"**, because that is the word a drawing office uses for
+/// Says **"prepress"**, because that is the word a drawing office uses for
 /// the thing a trap network is part of, and the sentence has to explain why an
 /// invisible annotation outranks the operator's own.
 #[must_use]

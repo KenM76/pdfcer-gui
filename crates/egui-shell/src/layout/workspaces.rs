@@ -405,7 +405,7 @@ mod tests {
         assert_eq!(doc.workspace_names(), vec!["Marking up"]);
     }
 
-    /// ★ **Saving over a name replaces it in place**, so the operator's
+    /// **Saving over a name replaces it in place**, so the operator's
     /// own menu does not reorder itself every time they use it.
     #[test]
     fn saving_over_a_name_keeps_its_position_in_the_list() {
@@ -468,7 +468,7 @@ mod tests {
         assert_eq!(loaded.document, doc);
     }
 
-    /// ★ **One bad workspace does not cost the others.**
+    /// **One bad workspace does not cost the others.**
     ///
     /// The per-item promise at the granularity an operator thinks in.
     /// Here: an unnamed one, a duplicate one, one whose only panel this
@@ -530,7 +530,7 @@ mod tests {
         );
     }
 
-    /// ★ **The shell ships no workspace names of its own.**
+    /// **The shell ships no workspace names of its own.**
     ///
     /// `MODES_AND_PANELS.md` makes a mode *a named workspace*, and
     /// `SHELL_FRAMEWORK.md` makes Read/Review/Edit a configuration rather
@@ -557,7 +557,7 @@ mod tests {
         names.iter().map(|n| PanelId::new(*n)).collect()
     }
 
-    /// ★ **`Unknown` and `New(vec![])` are different answers.**
+    /// **`Unknown` and `New(vec![])` are different answers.**
     ///
     /// The single most important property here, because collapsing them is
     /// the tempting simplification and it is the one that reintroduces a

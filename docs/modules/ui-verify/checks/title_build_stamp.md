@@ -13,7 +13,7 @@
 lost its time would put the project back to spending mornings on defects that
 do not exist in the build on disk.
 
-# ★★★ The one check in this suite that needs no input at all
+# The one check in this suite that needs no input at all
 
 The title is published as `window-title "..."` whenever it changes, and the
 window is placed with `PDFCER_DIAG_VIEWPORT`, which lays out a real window
@@ -25,7 +25,7 @@ That is worth naming rather than just doing: most of this suite is gated on
 `--allow-input` and therefore on the operator being away from the desk. A
 check that can run at any time is a check that can run *often*.
 
-# ★★ What is asserted, and why the zone rule is the interesting part
+# What is asserted, and why the zone rule is the interesting part
 
 `PDFCER_BUILD_TIME` has two producers and they disagree about zone:
 

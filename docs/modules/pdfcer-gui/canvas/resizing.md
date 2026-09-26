@@ -1,6 +1,6 @@
 # `canvas::resizing` — what the eight resize grips commit
 
-## ★★★ The verb is `transform_objects`, and it is kind-agnostic
+## The verb is `transform_objects`, and it is kind-agnostic
 
 `EditSession::transform_objects` wraps each object's operator run in
 `q <cm> … Q`. **That never looks at an operand**, which is what makes it
@@ -17,7 +17,7 @@ drafting package does. It is nonetheless something pdfcer decided and the
 operator did not, so it is **disclosed** ([`crate::text::resizing`]) rather
 than assumed.
 
-★★ **The matrix is PAGE space and nothing else.** `cm` composes into the CTM
+**The matrix is PAGE space and nothing else.** `cm` composes into the CTM
 in force at that point in the stream — the object's *user* space — so the
 engine emits `X = CTM × M × CTM⁻¹` per object from that object's own captured
 CTM. A selection spanning two local spaces gets two different `cm` operands

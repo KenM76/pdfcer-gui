@@ -1,7 +1,7 @@
 # `checks::scale_aim` — getting to a zoom rung, and staying on the target
 
 
-## ★★ The seam is a real subject boundary, not a size-driven cut
+## The seam is a real subject boundary, not a size-driven cut
 
 `scale_sweep` is now one thing: **what the mouse can do once you are
 there.** Click-select, drag, marquee, nodes, handles, pan — a battery of
@@ -17,7 +17,7 @@ gesture — and it is entirely uninterested in what a press means.
 for a module boundary (`canvas::interact`'s header makes the identical
 argument about composition versus interaction).
 
-## ★★★ Why the aiming half is worth reading alone
+## Why the aiming half is worth reading alone
 
 Because it is the half that can make every measurement in the other file a
 statement about the harness. The 2026-09-05 sweep filed *"clicking directly

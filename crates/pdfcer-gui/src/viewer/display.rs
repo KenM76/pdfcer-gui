@@ -216,7 +216,7 @@ mod tests {
         assert_eq!(PageDisplay::ALL.len(), 4);
     }
 
-    /// ★ **Every mode round-trips through its on-disk spelling.**
+    /// **Every mode round-trips through its on-disk spelling.**
     ///
     /// The persistence format's whole correctness. A variant with no `id` arm
     /// would not compile; a variant whose `id` collides with another's would
@@ -243,7 +243,7 @@ mod tests {
         assert_eq!(PageDisplay::from_id("Single"), None, "ids are lowercase");
     }
 
-    /// ★ **Read defaults to continuous; every other mode keeps single page.**
+    /// **Read defaults to continuous; every other mode keeps single page.**
     ///
     #[test]
     fn only_read_defaults_to_continuous() {
@@ -274,7 +274,7 @@ mod tests {
         );
     }
 
-    /// ★ **The cover page is alone, and every later spread is odd-then-even.**
+    /// **The cover page is alone, and every later spread is odd-then-even.**
     ///
     /// The spread rule, stated as the mapping a reader can check by eye
     /// against a physical document. Getting the parity backwards puts page 3

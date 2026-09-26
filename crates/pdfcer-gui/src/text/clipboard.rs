@@ -14,7 +14,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/text/clipboard.md`.
 
 use crate::canvas::clipboard::Refusal;
-// ★ Aliased. Two different refusals share the word in this crate — the object
+// Aliased. Two different refusals share the word in this crate — the object
 // clipboard's, imported above, and the vector copy-out's — and importing both
 // under one name would be a compile error while importing the second
 // unqualified would make `refusal` and `copy_out_refusal` look like two arms of
@@ -23,7 +23,7 @@ use crate::clipboard::place::Refusal as CopyOut;
 
 /// The sentence for a refusal.
 #[must_use]
-/// ★ Returns an owned `String` since 2026-08-29, not `&'static str`.
+/// Returns an owned `String` since 2026-08-29, not `&'static str`.
 ///
 /// One variant — [`Refusal::CutWouldNotSurvive`] — carries a **subtype**, and
 /// its sentence is built around it. The alternative was a second function for
@@ -37,7 +37,7 @@ pub fn refusal(reason: Refusal) -> String {
         Refusal::NothingSelected => {
             "Nothing is selected. Click something on the page first.".to_owned()
         }
-        // ★★★ **The cut's delete half would be refused, so its copy half did
+        // **The cut's delete half would be refused, so its copy half did
         // not run either** — and the sentence comes from `annotdelete`'s
         // catalog rather than being written again here.
         //
@@ -48,11 +48,11 @@ pub fn refusal(reason: Refusal) -> String {
         // `UnembedBlocker::reason` delegating to `Removability::reason` exists
         // to prevent.
         //
-        // ★ It does not say *"nothing was copied"*, though nothing was: the
+        // It does not say *"nothing was copied"*, though nothing was: the
         // operator pressed cut, and what they need is the reason the document
         // will not allow it, not an inventory of what did not happen.
         Refusal::DeleteRefused(why) => why.line().to_owned(),
-        // ★ Owned, so this function returns `String` rather than
+        // Owned, so this function returns `String` rather than
         // `&'static str` -- the subtype is data and the sentence is built
         // around it. See `cut_would_not_survive`.
         Refusal::CutWouldNotSurvive(subtype) => cut_would_not_survive(subtype),
@@ -68,7 +68,7 @@ pub fn refusal(reason: Refusal) -> String {
         // reads 'copy failed' tries four more shapes."* `Pass 120.0` shipped
         // the object clipboard and made it false.
         //
-        // ★ Kept in the comment rather than deleted with the string, because
+        // Kept in the comment rather than deleted with the string, because
         // this is the **third** refusal in two days to expire the week it was
         // written — after `NotAPath` and `ManyObjects` on the resize. The
         // pattern is worth naming: **a refusal is a claim with a date on it**,
@@ -95,7 +95,7 @@ pub fn refusal(reason: Refusal) -> String {
         // fact, which is the divergence `UnembedBlocker::reason` delegating to
         // `Removability::reason` exists to prevent.
         //
-        // ★ The list is joined rather than reported one at a time because a
+        // The list is joined rather than reported one at a time because a
         // future multi-annotation selection can refuse several at once, and
         // *"and 2 others"* is the shape that makes an operator go looking for
         // the other two.
@@ -127,7 +127,7 @@ pub fn refusal(reason: Refusal) -> String {
 ///
 /// `pdfcer-core`'s `CutWouldNotSurvive { subtype }`, in the operator's terms.
 ///
-/// # ★★★ Why this exists even though the button is greyed
+/// # Why this exists even though the button is greyed
 ///
 /// Because **a chord is not a button.** `Ctrl+X` is dispatched through the
 /// keymap without consulting command enablement, so it reaches the handler
@@ -143,7 +143,7 @@ pub fn refusal(reason: Refusal) -> String {
 /// move differs completely between the three, and only one of them is a
 /// limitation at all.
 ///
-/// ★ The `Redact` case is the one that will actually happen, and it is not an
+/// The `Redact` case is the one that will actually happen, and it is not an
 /// apology. Refusing to put a redaction mark on the clipboard is pdfcer
 /// protecting them from arming a destructive operation somewhere they did not
 /// review — so the sentence says what it is *for*, and offers Delete, which is
@@ -161,7 +161,7 @@ pub fn cut_would_not_survive(subtype: &str) -> String {
         "Popup" => "A comment's pop-up window cannot be cut on its own. Cut the comment it \
              belongs to and the pop-up goes with it."
             .to_owned(),
-        // ★ A named catch-all, not a guess. The engine may refuse a subtype
+        // A named catch-all, not a guess. The engine may refuse a subtype
         // this shell has never seen -- a ce dimension whose sidecar record is
         // missing is the documented fourth case -- and the honest answer names
         // what it was rather than inventing a reason for it.
@@ -174,7 +174,7 @@ pub fn cut_would_not_survive(subtype: &str) -> String {
 
 /// **Why a copy could not carry what was selected**, naming the subtypes.
 ///
-/// # ★★ Why each subtype earns its own clause rather than one general refusal
+/// # Why each subtype earns its own clause rather than one general refusal
 ///
 /// Because the operator's next move differs, and in one case the refusal is
 /// protecting them rather than admitting a limit:
@@ -185,12 +185,12 @@ pub fn cut_would_not_survive(subtype: &str) -> String {
 /// | `/Popup` | copy the comment it belongs to; the pop-up travels with it |
 /// | `/Redact` | nothing — and that is the point. A redaction mark is a **pending destructive operation**, and pasting one arms a redaction in a document nobody reviewed |
 ///
-/// ★ The `/Redact` line is the one that must not be softened into *"pdfcer
+/// The `/Redact` line is the one that must not be softened into *"pdfcer
 /// cannot copy this"*. It can; it declines to, and an operator who reads a
 /// capability limit will go looking for a workaround for something that is a
 /// safeguard.
 ///
-/// ★★ The catch-all is **named, not guessed**. `pdfcer-core` may refuse a
+/// The catch-all is **named, not guessed**. `pdfcer-core` may refuse a
 /// subtype this shell has never seen — a ce dimension whose sidecar record is
 /// missing is the documented fourth case — and the honest answer says which it
 /// was rather than inventing a reason for it. Same posture as
@@ -226,7 +226,7 @@ fn cannot_carry(subtypes: &[String]) -> String {
 /// exactly like one that took everything. Nothing errors and nothing is marked,
 /// which is the definition of sneaky.
 ///
-/// # ★★ The two halves are different kinds of loss and are said differently
+/// # The two halves are different kinds of loss and are said differently
 ///
 /// * **`left_behind`** — annotations that will not be on the clipboard at all.
 ///   The operator will notice, eventually, and this is what stops it being a
@@ -234,7 +234,7 @@ fn cannot_carry(subtypes: &[String]) -> String {
 /// * **`thin`** — annotations that *will* paste, and will paste **without their
 ///   author, date, note text and opacity**. This is the one nobody would ever
 ///   report: the mark is on the page, it looks right, and what is missing lives
-///   in the pop-up. ★★ **Corrected 2026-09-05: it used to read *"a pop-up this
+///   in the pop-up. **Corrected 2026-09-05: it used to read *"a pop-up this
 ///   shell does not draw"*, and that stopped being true the day
 ///   `crate::canvas::notepopup` shipped** — which makes the loss *more*
 ///   reportable, not less, because the operator can now open the pop-up and
@@ -244,7 +244,7 @@ fn cannot_carry(subtypes: &[String]) -> String {
 ///   `add_markup` rather than `add_markup_with` — and the sentence says so
 ///   plainly, because an operator who believes it is their mistake will retry.
 ///
-/// # ★ Why it is not reachable today, said rather than implied
+/// # Why it is not reachable today, said rather than implied
 ///
 /// The engine's markup carrier holds all four keys itself since `Pass 270.0`
 /// (`MarkupCarry`), so `thin` is zero for every clip this shell parks; and the three
@@ -277,7 +277,7 @@ pub fn partial_copy(left_behind: &[String], thin: usize) -> String {
 
 /// What a content copy leaves on the **operating system's** clipboard.
 ///
-/// ★★ It exists because of a toolkit constraint rather than a design wish:
+/// It exists because of a toolkit constraint rather than a design wish:
 /// `egui-winit` synthesises `Event::Paste` only when the OS clipboard holds
 /// non-empty text, and swallows the `Ctrl+V` keystroke entirely otherwise — so
 /// without something here, whether paste works depends on what the operator
@@ -302,7 +302,7 @@ pub fn partial_copy(left_behind: &[String], thin: usize) -> String {
 /// what the panel is called — so that is the word here, rather than the file
 /// format's *annotation* or the engine's *markup*.
 ///
-/// ★ The mixed line reads *"2 objects and 1 comment"* rather than *"3
+/// The mixed line reads *"2 objects and 1 comment"* rather than *"3
 /// items"*, because the two halves came from two different selections in the
 /// operator's mind and a total tells them nothing about whether the copy took
 /// what they meant.
@@ -327,7 +327,7 @@ pub fn os_marker(objects: usize, comments: usize) -> String {
 
 /// **What a vector copy-out put on the clipboard**, said on the status row.
 ///
-/// ★★★ It names the OPERAND, and that is the whole reason this is a sentence
+/// It names the OPERAND, and that is the whole reason this is a sentence
 /// rather than a silence. `edit.copy_as_vector` copies the selection when there
 /// is one and the whole page when there is not, and those two outcomes look
 /// identical from the button — the operator finds out which they got when they
@@ -336,7 +336,7 @@ pub fn os_marker(objects: usize, comments: usize) -> String {
 /// `DEFECTS.md` D4a calls *a sentence describing a different world than the one
 /// on screen*, one step removed.
 ///
-/// ★★ It does **not** list the clipboard format names. `image/svg+xml`,
+/// It does **not** list the clipboard format names. `image/svg+xml`,
 /// `CF_ENHMETAFILE`, `CF_DIBV5` are wire identifiers — they belong in the trace,
 /// where a developer looks, and `crate::clipboard::ClipFormat::name` is where
 /// they live. What an operator can act on is *how many ways the receiving
@@ -357,7 +357,7 @@ pub fn copied_as_vector(selection: bool, formats: usize) -> String {
 
 /// Why a vector copy-out did not happen.
 ///
-/// ★★★ The [`CopyOut::WouldDegrade`] arm is the one this whole feature is built
+/// The [`CopyOut::WouldDegrade`] arm is the one this whole feature is built
 /// around, and it is the reason a refusal is better than a success here. Placing
 /// only the raster formats would produce a paste that **works**: Word accepts it,
 /// it looks right at 100%, and it is a flat picture that cannot be scaled,
@@ -369,7 +369,7 @@ pub fn copied_as_vector(selection: bool, formats: usize) -> String {
 /// was copied, in that order: the cause first, because the operator's next move
 /// (try a different page, or export to SVG and place the file) depends on it.
 ///
-/// ★ Every arm ends by saying what is still on the clipboard. `native-clipboard`
+/// Every arm ends by saying what is still on the clipboard. `native-clipboard`
 /// stages every handle before it opens the clipboard, so all of these except the
 /// partial-placement case leave the previous contents intact — which is a real
 /// reassurance and not a platitude, because the operator may have had something
@@ -380,7 +380,7 @@ pub fn copy_out_refusal(reason: &CopyOut) -> String {
         CopyOut::NoPage => "There is no page to copy. Open a document first \u{2014} whatever was \
              on the clipboard is still there."
             .to_owned(),
-        // ★ The engine's own message is carried rather than paraphrased, for
+        // The engine's own message is carried rather than paraphrased, for
         // `text::export_image`'s reason: it names the numbers, and a shell
         // rewording is a second account of a failure only the engine saw.
         CopyOut::Render(why) => format!(
@@ -398,7 +398,7 @@ pub fn copy_out_refusal(reason: &CopyOut) -> String {
 
 /// The sentence for the operating system's own refusal.
 ///
-/// ★★ Split out so the four Win32 outcomes get four different next moves rather
+/// Split out so the four Win32 outcomes get four different next moves rather
 /// than one shrug. *Another program is holding it* is transient and the answer is
 /// to press the button again; a **partial** placement is the one case where the
 /// clipboard has genuinely changed, and the operator needs to know that what is
@@ -446,7 +446,7 @@ fn clipboard_refusal(err: &native_clipboard::PlaceError) -> String {
 
 /// **Which clipboard verb the active mode refused, and what it was about.**
 ///
-/// # ★★★ Why the operand is in the variant and not only the verb
+/// # Why the operand is in the variant and not only the verb
 ///
 /// Because the remedy differs by operand, and the remedy is the whole point of
 /// saying anything. In **Review** a paste of a comment is permitted and a paste
@@ -454,7 +454,7 @@ fn clipboard_refusal(err: &native_clipboard::PlaceError) -> String {
 /// the time and useless the other half. The six sentences below name the mode
 /// that CAN do it, which is a fact only the operand determines.
 ///
-/// # ★★ The mode names are literals here, and a test pins them
+/// # The mode names are literals here, and a test pins them
 ///
 /// `line` returns `&'static str` because [`crate::app::status::decline`]'s own
 /// `line` does, and threading a `String` through that enum for one family would
@@ -471,7 +471,7 @@ pub enum ModeRefusal {
     /// `edit.paste` with a **comment or markup** on the clipboard — or with
     /// nothing on it — in a mode that authors no markup.
     ///
-    /// ★ The empty clipboard lands here on purpose: in Read, *"nothing has been
+    /// The empty clipboard lands here on purpose: in Read, *"nothing has been
     /// copied"* would be true and useless, because copying something would not
     /// help. `app::dispatch::clipboard`'s paste gate says the same thing in the
     /// same words at the point it makes the choice.
@@ -490,7 +490,7 @@ pub enum ModeRefusal {
     /// `edit.duplicate` over a **comment or markup**, in a mode that authors
     /// none. 2026-09-06.
     ///
-    /// # ★★ Why this is a seventh variant and not [`Self::PasteMarkup`] reused
+    /// # Why this is a seventh variant and not [`Self::PasteMarkup`] reused
     ///
     /// Because that sentence says *"Switch to Review to **paste** this"*, and
     /// nothing was pasted. The operator pressed `Ctrl+D` over a comment they
@@ -499,7 +499,7 @@ pub enum ModeRefusal {
     /// nothing to do with what they just did, which is the *"describing a
     /// different world than the one on screen"* shape `DEFECTS.md` D4a names.
     ///
-    /// ★ The remedy is identical to [`Self::PasteMarkup`]'s and the sentence
+    /// The remedy is identical to [`Self::PasteMarkup`]'s and the sentence
     /// still has to be its own, which is this enum's founding argument turned
     /// round: the variants are distinguished by **what the operator did**, not
     /// by which mode fixes it. Two acts that share a remedy still owe two
@@ -518,7 +518,7 @@ impl ModeRefusal {
     /// mode that can do it**, because that is the operator's next move and it
     /// is one control away.
     ///
-    /// ★ The three cut sentences add *"Nothing has been removed"*. A cut that
+    /// The three cut sentences add *"Nothing has been removed"*. A cut that
     /// is refused after the operator has watched a selection sit there is the
     /// one case in this family where they might reasonably fear the document
     /// changed, and rule 4 says the disclosure goes where the doubt is.
@@ -543,7 +543,7 @@ impl ModeRefusal {
             Self::CutField => {
                 "That is a form field, which is part of the document rather than a comment on it, and this mode does not change what is on the page. Nothing has been removed — switch to Edit to cut it."
             }
-            // ★ *"Nothing has been added"*, on the three cut sentences' own
+            // *"Nothing has been added"*, on the three cut sentences' own
             // rule inverted. A duplicate that is refused after the operator has
             // watched a selected comment sit there is a case where they may
             // reasonably wonder whether a second one landed off-screen, and
@@ -559,7 +559,7 @@ impl ModeRefusal {
 mod tests {
     use super::*;
 
-    /// ★ **Every refusal says what to do next, or why there is nothing to do.**
+    /// **Every refusal says what to do next, or why there is nothing to do.**
     ///
     /// Asserted as a length floor rather than by matching words, because the
     /// property is *"this is a sentence, not a label"*. A four-word refusal is
@@ -568,7 +568,7 @@ mod tests {
     #[test]
     fn every_refusal_is_a_sentence() {
         //
-        // ★★ `.clone()` because `Refusal` stopped being `Copy` when that
+        // `.clone()` because `Refusal` stopped being `Copy` when that
         // variant arrived carrying the subtypes. Cloning in a test costs
         // nothing and is preferable to taking `&Refusal` in the signature —
         // every production call site owns its refusal and moves it, and a
@@ -594,7 +594,7 @@ mod tests {
         }
     }
 
-    /// ★★ **A partial copy's sentence says BOTH what was left behind and what
+    /// **A partial copy's sentence says BOTH what was left behind and what
     /// arrived thin**, and never claims the copy failed.
     ///
     /// The wording trap here is real and one-directional: *"could not be
@@ -626,7 +626,7 @@ mod tests {
 
     /// The OS marker names comments as comments, and a mixed copy as both.
     ///
-    /// ★ `os_marker(0, 1)` was the case that did not exist before 2026-09-05
+    /// `os_marker(0, 1)` was the case that did not exist before 2026-09-05
     /// and is the one an operator now meets most: a comment copied and pasted
     /// into an email says *"1 comment copied from pdfcer"*, not *"1 object"*.
     #[test]
@@ -635,7 +635,7 @@ mod tests {
         assert!(os_marker(1, 0).starts_with("1 object copied"));
         assert!(os_marker(2, 1).starts_with("2 objects and 1 comment copied"));
         assert!(os_marker(1, 3).starts_with("1 object and 3 comments copied"));
-        // ★ The trailing pronoun follows the TOTAL, not either count: "Paste
+        // The trailing pronoun follows the TOTAL, not either count: "Paste
         // it back" over two things is the tell of a template nobody read.
         assert!(os_marker(0, 1).contains("Paste it back"));
         assert!(os_marker(1, 1).contains("Paste them back"));
@@ -651,7 +651,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **Every mode refusal names a mode the selector actually offers.**
+    /// **Every mode refusal names a mode the selector actually offers.**
     ///
     /// `ModeRefusal::line` returns `&'static str`, so *"Edit"* and *"Review"*
     /// are written out rather than built from `crate::text::ribbon`. This is
@@ -680,11 +680,11 @@ mod tests {
         }
     }
 
-    /// ★★ **Every one of the seven is a distinct sentence**, and the four that
+    /// **Every one of the seven is a distinct sentence**, and the four that
     /// follow a gesture over a visible operand say the document is unchanged.
     ///
     ///
-    /// ★ `DuplicateMarkup` says *"Nothing has been added"* rather than
+    /// `DuplicateMarkup` says *"Nothing has been added"* rather than
     /// *"removed"*, which is why it is asserted separately below rather than
     /// folded into the cut loop: the doubt it answers is the opposite one — a
     /// second comment landed somewhere I cannot see.

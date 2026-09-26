@@ -3,7 +3,7 @@
 `three_clicks_round_a_hole_measure_the_hole` — the operator's own report,
 driven, on a fixture built to reproduce it.
 
-# ★★★ The defect, in his words and then in numbers
+# The defect, in his words and then in numbers
 
 
 > *"can you check our radius/diameter dimensioning tool? selecting a point
@@ -18,7 +18,7 @@ circle fit. On his own drawing — `SW41177.pdf` page 1, read with
 region. One click anywhere on it handed the fit six thousand points
 scattered over half the sheet, and the circle through them is enormous.
 
-# ★★★ Why this check pins its own fixture and ignores `--pdf`
+# Why this check pins its own fixture and ignores `--pdf`
 
 Because on a document with one tidy circle in its own object, **the defect
 cannot occur**: a click contributes that circle's anchors, the fit is the
@@ -47,12 +47,12 @@ passed `--pdf` and had it ignored must be able to see that happen.
 | D | clicking a row removes that point | O107's literal ask |
 | E | clicking the canvas near a picked point removes it too | O107's other route — *"we should be able to unselect points/clicked locations"* |
 
-★★ **B is the load-bearing one and A alone would be worthless.** A build
+**B is the load-bearing one and A alone would be worthless.** A build
 that accepted three clicks and fitted them to the wrong geometry satisfies A
 completely. The count says the clicks registered; only the radius says the
 tool measured the thing under them.
 
-# ★ What it deliberately does NOT assert
+# What it deliberately does NOT assert
 
 That a **free** position works — O106. The fixture is vector geometry and
 every rim click snaps, which is the correct behaviour on a drawing that has

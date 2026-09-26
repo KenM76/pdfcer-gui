@@ -28,7 +28,7 @@ operating system's clipboard, read from outside the process.** That is what
 this check does, and it is the entire justification for
 [`crate::sys::clipboard_text`] existing.
 
-# ★★ It clears the clipboard first, and that is not hygiene
+# It clears the clipboard first, and that is not hygiene
 
 It is the difference between a check and a coin toss. Three outcomes are
 otherwise indistinguishable:

@@ -1,6 +1,6 @@
 //! # `canvas::zoom` — the anchor rule, decided once, and the five paths that route through it
 //!
-//! ## ★ The rule
+//! ## The rule
 //!
 //! > **A zoom holds one page point still, and that point is where the operator
 //! > is looking: the pointer when it is over the canvas, the centre of the
@@ -80,14 +80,14 @@ pub struct CanvasFrame {
     /// **The page every other field here describes** — `canvas::show`'s
     /// acting page for the frame this record was written on.
     ///
-    /// ★ Under a continuous mode `map`, `extent`, `display` and `offset` are
+    /// Under a continuous mode `map`, `extent`, `display` and `offset` are
     /// all about one page of a strip, and an anchor built from them is only
     /// meaningful against that same page. Carrying the index is what lets the
     /// canvas convert the solve's answer back through the **right** page's
     /// origin a frame later, when the current page may have moved on. See
     /// [`crate::viewer::ZoomAnchor::page`].
     pub page: usize,
-    /// ★★★ **The OUTER viewport** — `ui.available_size()` measured *before* the
+    /// **The OUTER viewport** — `ui.available_size()` measured *before* the
     /// scroll area — as against [`Self::viewport`], which is the size inside
     /// it. `OPERATOR_REQUESTS.md` O78.
     ///
@@ -148,7 +148,7 @@ pub fn last_frame(ctx: &Context) -> Option<CanvasFrame> {
 // The rule
 // ---------------------------------------------------------------------------
 
-/// ★ **The anchor rule.** The canvas-space point a zoom step must hold still.
+/// **The anchor rule.** The canvas-space point a zoom step must hold still.
 ///
 /// `pointer` is the pointer's latest screen position, if it has one. It is
 /// honoured when it lies inside the canvas viewport; otherwise the viewport's
@@ -388,7 +388,7 @@ pub fn is_discrete_zoom(action: &Action) -> bool {
     matches!(action, Action::ZoomIn | Action::ZoomOut | Action::ZoomTo(_))
 }
 
-/// ★ **Arm the anchor for any discrete zoom in `actions`.** The one-line
+/// **Arm the anchor for any discrete zoom in `actions`.** The one-line
 /// integration point, and the one to prefer.
 ///
 /// Called once per frame at the action funnel — immediately before the
@@ -417,7 +417,7 @@ pub fn arm_for_actions(ctx: &Context, doc: &mut OpenDoc, actions: &[Action]) {
     }
 }
 
-/// ★ **Zoom in / out / actual size, anchored.** The explicit alternative to
+/// **Zoom in / out / actual size, anchored.** The explicit alternative to
 /// [`arm_for_actions`], for a caller that would rather say so at the call
 /// site than rely on a funnel.
 ///
@@ -433,14 +433,14 @@ pub fn zoom_step(ctx: &Context, doc: &mut OpenDoc, step: ZoomStep, actions: &mut
     });
 }
 
-/// ★ **A modified wheel notch, turned into an anchored zoom** — the body of the
+/// **A modified wheel notch, turned into an anchored zoom** — the body of the
 /// Ctrl+wheel gesture, with the hover gate left to the caller.
 ///
 /// Does nothing when this frame carries no `zoom_delta`, which is every frame
 /// but the ones the operator is actually turning the wheel on. That early
 /// return is why the caller can be a bare `if hovered` with no second test.
 ///
-/// # ★★★ Why this is a function rather than a block in `present`
+/// # Why this is a function rather than a block in `present`
 ///
 /// It has **two** callers, and it had to before either of them could be
 /// trusted: the ordinary one in `canvas::present`, and the escape hatch in
@@ -450,7 +450,7 @@ pub fn zoom_step(ctx: &Context, doc: &mut OpenDoc, step: ZoomStep, actions: &mut
 /// and `present` returns **above** its own input handling, so the one gesture
 /// that would have got the operator out was unreachable.
 ///
-/// ★★ Inlining it at the second site would be the **fourth** spelling of the
+/// Inlining it at the second site would be the **fourth** spelling of the
 /// zoom rule in this crate's history, and the first three drifted: the wheel
 /// built its own [`ZoomAnchor`] from the pointer position while the discrete
 /// commands went through [`arm_anchor`], and *"the rule is decided once for all
@@ -458,7 +458,7 @@ pub fn zoom_step(ctx: &Context, doc: &mut OpenDoc, step: ZoomStep, actions: &mut
 /// anchor would zoom about the viewport's top-left, which on a blank canvas
 /// means the operator claws his way out and arrives somewhere else again.
 ///
-/// ★ Takes the [`Context`] and not a `Ui`, so the escape hatch can call it on a
+/// Takes the [`Context`] and not a `Ui`, so the escape hatch can call it on a
 /// frame where no `Ui` for the canvas *content* exists — which is the very
 /// condition the hatch is for. Nothing in here needs a `Ui`: the wheel delta and
 /// the pointer position are both context-wide input, not widget state.
@@ -511,7 +511,7 @@ pub enum ZoomOutcome {
 impl ZoomOutcome {
     /// Whether the per-page raster ceiling (or the floor) changed the answer.
     ///
-    /// # ★ How the ceiling reports itself, and why this follows rather than
+    /// # How the ceiling reports itself, and why this follows rather than
     /// invents
     ///
     /// The ceiling already has a self-report and it is deliberately quiet:
@@ -532,7 +532,7 @@ impl ZoomOutcome {
     ///    granted. The operator gets "as close as this page can go, centred on
     ///    what you asked for", which is the honest partial answer.
     ///
-    /// ## ★ The surface now exists, and this is deliberately NOT wired to it
+    /// ## The surface now exists, and this is deliberately NOT wired to it
     ///
     /// This sentence used to read *"this predicate is what a caller with a
     /// notice surface would key on to say so in words. There is no such
@@ -630,18 +630,18 @@ pub fn plan_framing(
     region: Rect,
     margin: f32,
     pixels_per_point: f32,
-    // ★★ O218: the operator's View ▸ Render ▸ Quality. It belongs beside
+    // O218: the operator's View ▸ Render ▸ Quality. It belongs beside
     // `pixels_per_point` and not somewhere else, because the two are the two
     // halves of `viewer::raster_density` — a ceiling derived from one without
     // the other is wrong by the multiplier, which on Sharper is 1.5× and hands
     // the engine a pixmap it refuses.
     quality: crate::app::prefs::RenderQuality,
-    // ★ O24: the operator's configured maximum, as a percentage. Threaded
+    // O24: the operator's configured maximum, as a percentage. Threaded
     // rather than read from a global for the same reason `pixels_per_point`
     // is — this function stays pure with respect to egui and to app state,
     // which is what keeps it reviewable and unit-testable.
     max_zoom_percent: f32,
-    // ★★ O186: the raster ceiling this page has already been measured to have,
+    // O186: the raster ceiling this page has already been measured to have,
     // as a raster SCALE, or `None` if it has never refused a render — which is
     // the answer for every page of every document until one does.
     //
@@ -679,7 +679,7 @@ pub fn plan_framing(
     }
 }
 
-/// ★ **Zoom so a canvas-space region fills the viewport, centred.** The shared
+/// **Zoom so a canvas-space region fills the viewport, centred.** The shared
 /// verb behind both marquee-zoom and zoom-to-selection.
 ///
 /// `region` is in canvas space — the space the marquee already reports and the
@@ -690,7 +690,7 @@ pub fn zoom_to_rect(
     doc: &mut OpenDoc,
     region: Rect,
     margin: f32,
-    // ★ O24: the operator's configured maximum, threaded to `plan_framing`.
+    // O24: the operator's configured maximum, threaded to `plan_framing`.
     max_zoom_percent: f32,
     actions: &mut Vec<Action>,
 ) -> ZoomOutcome {
@@ -709,19 +709,19 @@ fn frame_rect(
     doc: &mut OpenDoc,
     region: Rect,
     margin: f32,
-    // ★ O24: the operator's configured maximum, threaded to `plan_framing`.
+    // O24: the operator's configured maximum, threaded to `plan_framing`.
     max_zoom_percent: f32,
     actions: &mut Vec<Action>,
 ) -> ZoomOutcome {
     let Some(frame) = last_frame(ctx) else {
         return ZoomOutcome::NoCanvas;
     };
-    // ★★ O186. Resolved here because this is the first frame in the call chain
+    // O186. Resolved here because this is the first frame in the call chain
     // that holds the document: `plan_framing` below is deliberately pure and
     // `zoom_ceiling` below that is deliberately ignorant of page identity, so
     // the page-and-epoch question can only be asked at this level.
     //
-    // ★ It matters that a FRAMING zoom is capped too, and not only the ladder.
+    // It matters that a FRAMING zoom is capped too, and not only the ladder.
     // "Zoom to selection" on a small object is the single easiest way to ask
     // for an enormous magnification in one gesture — no wheel notches, no
     // typing a percentage — which makes it the most likely route to the wall,
@@ -746,7 +746,7 @@ fn frame_rect(
     plan.outcome
 }
 
-/// ★ **Zoom to the selection.** The entry point `view.zoom_selection` calls.
+/// **Zoom to the selection.** The entry point `view.zoom_selection` calls.
 ///
 /// # Where the bounds come from, and what happens when there are none
 ///
@@ -778,7 +778,7 @@ pub fn zoom_to_selection(
     ctx: &Context,
     doc: &mut OpenDoc,
     margin: f32,
-    // ★ O24: the operator's configured maximum, threaded to `plan_framing`.
+    // O24: the operator's configured maximum, threaded to `plan_framing`.
     max_zoom_percent: f32,
     actions: &mut Vec<Action>,
 ) -> ZoomOutcome {
@@ -887,7 +887,7 @@ mod tests {
 
     // ---- the rule -----------------------------------------------------
 
-    /// ★ **The pointer wins when it is over the canvas.**
+    /// **The pointer wins when it is over the canvas.**
     #[test]
     fn a_pointer_over_the_canvas_is_the_anchor() {
         let f = frame(2.0);
@@ -899,7 +899,7 @@ mod tests {
         );
     }
 
-    /// ★ **A pointer that is not over the canvas falls back to the viewport
+    /// **A pointer that is not over the canvas falls back to the viewport
     /// centre — never to the page's top-left**, which is the defect this rule
     /// replaces.
     #[test]
@@ -953,7 +953,7 @@ mod tests {
 
     // ---- the handshake -------------------------------------------------
 
-    /// ★ **An anchor armed before the zoom action is applied survives the
+    /// **An anchor armed before the zoom action is applied survives the
     /// frame it was armed on** — the gate without which every discrete zoom
     /// command silently does nothing.
     #[test]
@@ -970,7 +970,7 @@ mod tests {
         );
     }
 
-    /// ★ **A zoom that never landed drops its anchor** rather than leaving it
+    /// **A zoom that never landed drops its anchor** rather than leaving it
     /// pending to be spent on an unrelated layout change frames later.
     #[test]
     fn an_anchor_whose_zoom_never_landed_is_dropped_after_one_frame() {
@@ -995,7 +995,7 @@ mod tests {
 
     // ---- framing --------------------------------------------------------
 
-    /// ★ **A framing anchor really does land its point at the centre of the
+    /// **A framing anchor really does land its point at the centre of the
     /// viewport**, at the scale that was granted.
     ///
     /// Asserted as the outcome — where the anchored point ends up on screen —
@@ -1029,7 +1029,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **A region at the page's very corner CAN now be centred** — and
+    /// **A region at the page's very corner CAN now be centred** — and
     /// this test is the record of that changing.
     ///
     /// It used to assert the opposite: that framing a region hard against the
@@ -1049,7 +1049,7 @@ mod tests {
     /// page-local offset is a legitimate position rather than an over-range
     /// one to be truncated.
     ///
-    /// ★ It stayed asserting saturation for a while after the pasteboard
+    /// It stayed asserting saturation for a while after the pasteboard
     /// landed, because `geometry::zoom_anchor_offset` was still clamping to
     /// the page's own range — which is `OPERATOR_REQUESTS.md` O24e, the zoom
     /// that threw away whatever the operator had panned to. A test that pins
@@ -1086,7 +1086,7 @@ mod tests {
             "the corner region landed at {landed:?}, not the viewport centre"
         );
 
-        // ★ And the offset that actually reaches the scroll area is inside the
+        // And the offset that actually reaches the scroll area is inside the
         // content, because `strip_offset` clamps against `content_extent` —
         // the pasteboard included. The saturation the old test protected is
         // still there; it is just further out.
@@ -1149,7 +1149,7 @@ mod tests {
         assert_eq!(framed_region(forwards), framed_region(backwards));
     }
 
-    /// ★ **The ceiling is reported, not hidden.** A region small enough to ask
+    /// **The ceiling is reported, not hidden.** A region small enough to ask
     /// for more magnification than the page's raster allows still zooms — to
     /// the ceiling — and says that the answer was changed.
     #[test]
@@ -1198,7 +1198,7 @@ mod tests {
         assert!((back.display.0 - 300.0).abs() < 1e-4);
     }
 
-    /// ★ **Every discrete zoom is recognised, and the wheel is not.**
+    /// **Every discrete zoom is recognised, and the wheel is not.**
     ///
     /// The predicate [`arm_for_actions`] funnels on. A zoom action missing
     /// from it is a command that silently keeps the old top-left anchoring —
@@ -1220,7 +1220,7 @@ mod tests {
         );
     }
 
-    /// ★ **The bounds a zoom-to-selection needs come from the selection layer,
+    /// **The bounds a zoom-to-selection needs come from the selection layer,
     /// and an empty selection has none** — the input side of the decline,
     /// asserted where it can be asserted without a document.
     ///

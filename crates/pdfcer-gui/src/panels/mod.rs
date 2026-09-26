@@ -15,7 +15,7 @@ pub mod attachments;
 pub mod bookmarks;
 pub mod comments;
 pub mod dimension_groups;
-/// ★★★ **The document's own properties**, a panel of its own rather than a
+/// **The document's own properties**, a panel of its own rather than a
 /// permanently-drawn section of [`properties`]. Its header carries the
 /// argument.
 pub mod docprops;
@@ -54,7 +54,7 @@ pub enum Panel {
     Objects,
     /// The read-only facts about one object — **and about nothing else**.
     ///
-    /// ★★ That clause is the variant's WHOLE scope. A panel commissioned for
+    /// That clause is the variant's WHOLE scope. A panel commissioned for
     /// two subjects in one sentence — the document's own title, author,
     /// subject and keywords, and the properties of whatever is selected on the
     /// page — draws the first permanently, because it is true of no selection.
@@ -63,7 +63,7 @@ pub enum Panel {
     /// **The document's own title, author, subject and keywords**, and the
     /// facts pdfcer read about the file — `file.document_properties`.
     ///
-    /// ★★★ **Its own tab, and never a section of [`Self::Properties`]**: a
+    /// **Its own tab, and never a section of [`Self::Properties`]**: a
     /// block with no selection to be scoped to is on screen in the Properties
     /// panel every frame, under everything else.
     ///
@@ -72,7 +72,7 @@ pub enum Panel {
     /// Document** band is *"inspection of what is inside the file"* and already
     /// holds Properties and Fonts. A document's title is inside the file.
     ///
-    /// ★★ **A new id rather than a second meaning for `file.properties`.**
+    /// **A new id rather than a second meaning for `file.properties`.**
     /// [`Self::command_id`] is the single binding between a command and a
     /// panel, and `crate::app::dispatch` resolves toggles through
     /// [`Self::from_command_id`] — so one id cannot open two panels, and a
@@ -81,7 +81,7 @@ pub enum Panel {
     /// record what that costs when it is got wrong: an id no code has ever
     /// resolved is a guess, and that one was wrong for weeks.
     ///
-    /// ★ **A toggle, unlike [`Self::Properties`].** It falls through
+    /// **A toggle, unlike [`Self::Properties`].** It falls through
     /// `dispatch`'s guard arm to `toggle_panel` because its control asks *"is
     /// this panel open?"*, which is the question `file.fonts` and the whole
     /// `view.panel_*` family ask. `file.properties` is show-only for a reason
@@ -131,7 +131,7 @@ pub enum Panel {
     Comments,
     /// Marking content for permanent removal, and reviewing what is marked.
     ///
-    /// ★ **The only panel whose command reads as an authoring verb rather than
+    /// **The only panel whose command reads as an authoring verb rather than
     /// as a panel name**, and the reason is worth stating at the variant.
     /// `edit.redact`'s shipped tooltip describes an *action* — *"Mark what is
     /// to be permanently removed"* — because marking is what the surface is
@@ -155,7 +155,7 @@ pub enum Panel {
     Redact,
     /// Where ce-dimension groups are made, chosen and configured.
     ///
-    /// ★ **The only panel that was built as a window first and moved**, and
+    /// **The only panel that was built as a window first and moved**, and
     /// the move is the operator's, not a refactor: a window whose content is
     /// taller than the screen can push its own title bar — and its only ✕ —
     /// off the desktop, and he could not close it. See
@@ -175,7 +175,7 @@ pub enum Panel {
     DimensionGroups,
     /// The whole files this document carries inside itself (§7.11.4.1).
     ///
-    /// ★★ **The sixth panel whose command is not on View ▸ Panels**, and the
+    /// **The sixth panel whose command is not on View ▸ Panels**, and the
     /// only one `RIBBON_IA.md` names nowhere at all — it lists no Attachments
     /// control on any tab, in any group. So the placement is argued rather than
     /// read off, and the argument is [`Self::Redact`]'s, applied to the same
@@ -190,7 +190,7 @@ pub enum Panel {
     /// property that decided Redact and is the closest defensible precedent
     /// this IA has.
     ///
-    /// ★ The cost is stated rather than hidden: Acrobat *Reader* lists
+    /// The cost is stated rather than hidden: Acrobat *Reader* lists
     /// attachments and saves them out, and this build's Read mode cannot. The
     /// day that matters, the fix is a second panel — a listing with no verbs —
     /// and not a second id for this one, because P1 gives a command one tab and
@@ -238,7 +238,7 @@ impl Panel {
     /// - **Fonts is `file.fonts`.** §7's migration map moves it from View ▸
     ///   Panels to File ▸ Document, because the Fonts panel answers "what is
     ///   inside this file", not "what is on my screen".
-    /// - **Properties is `file.properties`.** ★★ The document's own title,
+    /// - **Properties is `file.properties`.** The document's own title,
     ///   author, subject and keywords are a second panel and a second command,
     ///   so this tooltip says only what its own panel does. See
     ///   [`Self::DocumentProperties`].
@@ -248,7 +248,7 @@ impl Panel {
     #[must_use]
     pub fn command_id(self) -> &'static str {
         match self {
-            // ★ **The sixth panel whose command is not on View ▸ Panels**, and
+            // **The sixth panel whose command is not on View ▸ Panels**, and
             // the only one `RIBBON_IA.md` places nowhere: §5.2's Panels row
             // names Pages, Objects, Bookmarks, Layers, Signatures, Comments and
             // Forms, and no section of that document mentions attachments at
@@ -263,13 +263,13 @@ impl Panel {
             Self::Fonts => "file.fonts",
             Self::Objects => "view.panel_objects",
             Self::Properties => "file.properties",
-            // ★ The seventh id that is not a `view.panel_*`, and the one that
+            // The seventh id that is not a `view.panel_*`, and the one that
             // needed no argument: File ▸ Document is the band for *"what is
             // inside this file"*, and it already holds Properties and Fonts.
             // See the variant for why it is a NEW id rather than a second
             // meaning for the one above it.
             Self::DocumentProperties => "file.document_properties",
-            // ★ **On View ▸ Panels**, not on Edit. A form panel does answer
+            // **On View ▸ Panels**, not on Edit. A form panel does answer
             // "what can I fill in this file", which is an edit of the
             // document rather than of the view — and that is the wrong
             // question. The question is *which modes may fill*, and the
@@ -285,7 +285,7 @@ impl Panel {
             // precisely the class of half-built surface this module's
             // header is about.
             Self::Forms => "view.panel_forms",
-            // ★ **This command is not registered in this build**, and the
+            // **This command is not registered in this build**, and the
             // panel is therefore filtered out of every arrangement by
             // `SHELL_FRAMEWORK.md` §5b — see `pages`' own header, which
             // carries the account and the exact lines needed.
@@ -298,7 +298,7 @@ impl Panel {
             // else because a thumbnail grid answers *"what is on my
             // screen"* — it is a navigator, and navigators live in View.
             Self::Pages => "view.panel_pages",
-            // ★ **The third panel whose command is not on View ▸ Panels**, and
+            // **The third panel whose command is not on View ▸ Panels**, and
             // the only one whose placement had to be *chosen* between two
             // sentences of `RIBBON_IA.md` rather than read off one.
             //
@@ -323,14 +323,14 @@ impl Panel {
             // Edit precisely because Read mounts it and Read is shown `file`
             // and `view` only.
             //
-            // ★ `crate::app::modes::defaults` still names the panel by the
+            // `crate::app::modes::defaults` still names the panel by the
             // OTHER id — `view.panel_comments`, with a matching
             // `ABSENT_PANELS` entry — so the default arrangements will not
             // mount this panel until both are changed. That file is not this
             // panel's to edit; the two lines it needs are in this work's
             // report to the shell owner.
             Self::Comments => "markup.comments",
-            // ★ **The fourth panel whose command is not on View ▸ Panels**, and
+            // **The fourth panel whose command is not on View ▸ Panels**, and
             // the only one whose command was written as a *verb*.
             //
             // `RIBBON_IA.md` §5.4 puts Redact on **Edit ▸ Protect**, and
@@ -349,7 +349,7 @@ impl Panel {
             // [`Self::Forms`], which had to acquire a `view.` id precisely
             // because Read *should* reach it.
             Self::Redact => "edit.redact",
-            // ★ **The fifth panel whose command is not on View ▸ Panels.** It
+            // **The fifth panel whose command is not on View ▸ Panels.** It
             // stays where `RIBBON_IA.md` put the control — Measure ▸ Scale —
             // and the variant's own doc carries the argument. The command has
             // been registered and drawn since the Measure tab was built, and
@@ -386,7 +386,7 @@ impl Panel {
     /// `fn body(ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut Vec<Action>)`
     /// and never see the empty case.
     ///
-    /// # ★ Two routes out, and why context-menu commands take the second
+    /// # Two routes out, and why context-menu commands take the second
     ///
     /// `actions` carries what a panel decides for itself — the Bookmarks
     /// panel's `GoToPage`, the Layers panel's `SetLayerVisible`. The
@@ -471,7 +471,7 @@ impl Panel {
 /// `PdfcerApp` would put the Objects panel's expansion set next to the render
 /// worker.
 ///
-/// # ★ What is NO LONGER here: the two caches, and their identity key
+/// # What is NO LONGER here: the two caches, and their identity key
 ///
 /// Until S4 this struct also held the page decomposition and the font
 /// inventory, guarded by a `DocKey` assembled from the `Arc<EditSession>`'s
@@ -521,7 +521,7 @@ pub struct PanelsState {
     tree: ObjectTreeUi,
     /// The Pages panel's picked sheets and its thumbnail cache.
     ///
-    /// # ★ Why this cache lives here and not on `OpenDoc`
+    /// # Why this cache lives here and not on `OpenDoc`
     ///
     /// Every other derived cache moved to `crate::app::state::OpenDoc` at S4,
     /// and the argument for that move — *"the document's own lifetime bounds
@@ -569,7 +569,7 @@ pub struct PanelsState {
     /// mutate. It is the operator's own typing rather than a derived cache,
     /// which is the line this module's header draws.
     ///
-    /// ★ Reset with the document by [`Self::forget_document`], and here that
+    /// Reset with the document by [`Self::forget_document`], and here that
     /// is a straightforward good rather than a safety property: a query left
     /// over from a previous file would open the next one showing a filtered
     /// layer list with no obvious cause. Unlike `redact`'s, this search
@@ -584,12 +584,12 @@ pub struct PanelsState {
     /// `&OpenDoc`, shared. It is also the operator's own typing rather than a
     /// derived cache — this module's header draws exactly that line.
     ///
-    /// ★ Reset with the document by [`Self::forget_document`], and that matters
+    /// Reset with the document by [`Self::forget_document`], and that matters
     /// more here than for a search term: a half-typed `/Author` carried into a
     /// second file would be written into **that** file's metadata by the next
     /// focus change, silently, in a field nobody looks at twice.
     ///
-    /// ★★ Named after [`Panel::DocumentProperties`] and never `properties`: a
+    /// Named after [`Panel::DocumentProperties`] and never `properties`: a
     /// field named after a panel that does not draw it is how the next reader
     /// looks in the wrong place, and this struct already holds a `geometry`, a
     /// `text_style` and a `text_object` that ARE the Properties panel's.
@@ -599,7 +599,7 @@ pub struct PanelsState {
     field_rename: String,
     /// The fully-qualified name [`Self::field_rename`] was seeded from.
     field_rename_key: Option<String>,
-    /// ★ The two TYPED properties of the selected form field — its tooltip and
+    /// The two TYPED properties of the selected form field — its tooltip and
     /// its maximum length — and the `(name, epoch)` they were read at.
     ///
     /// Only two, and the omission is the design: every other property in
@@ -619,7 +619,7 @@ pub struct PanelsState {
     /// because `properties::choiceopts` destructures it into three disjoint
     /// borrows in one frame. Same stamp rule, different shape.
     choice_opts: properties::choiceopts::ChoiceOptsDraft,
-    /// ★ The selected WIDGET's four typed numbers and its caption, and the
+    /// The selected WIDGET's four typed numbers and its caption, and the
     /// `(name, widget index, epoch)` they were read at.
     ///
     /// Separate from [`Self::field_props`] rather than a field inside it,
@@ -637,7 +637,7 @@ pub struct PanelsState {
     /// and this one must not (it describes one object). Merging them would make
     /// one struct with two reset rules.
     geometry: properties::geometry::GeometryDraft,
-    /// ★ The selected text's face, size and colour, and the size being typed.
+    /// The selected text's face, size and colour, and the size being typed.
     ///
     /// Held here for a stronger reason than its neighbours: the read-back needs
     /// an extraction with provenance on — 392 ms on the operator's benchmark
@@ -646,7 +646,7 @@ pub struct PanelsState {
     /// program is for. The struct carries a `(page, run, epoch)` stamp and
     /// re-reads only when it moves.
     text_style: properties::text::TextStyleDraft,
-    /// ★★★ The **clicked text object's** run range and colour — O89's object
+    /// The **clicked text object's** run range and colour — O89's object
     /// route.
     ///
     /// Held here for exactly [`Self::text_style`]'s reason and at exactly its
@@ -657,14 +657,14 @@ pub struct PanelsState {
     /// drawings this program is for. The struct carries a
     /// `(page, object, epoch)` stamp and re-reads only when it moves.
     ///
-    /// ★ Separate from [`Self::text_style`] rather than a second case inside
+    /// Separate from [`Self::text_style`] rather than a second case inside
     /// it, and the reason is the stamp: that one is keyed on a **run** and this
     /// on an **object**, and the two selections are different index spaces that
     /// can both be absent, either be present, and — since the Text tool can be
     /// armed in Edit — both be present at once. One struct with two stamps is
     /// one struct with two reset rules.
     text_object: properties::textobject::TextObjectDraft,
-    /// ★★★ **The character an edit was refused for, the face the operator
+    /// **The character an edit was refused for, the face the operator
     /// picked to answer it, and the revision both were live for** —
     /// `OPERATOR_REQUESTS.md` O141.
     ///
@@ -675,19 +675,19 @@ pub struct PanelsState {
     /// hold the program under three frames a second for as long as the refusal
     /// was on screen. The struct carries a `(page, run, epoch)` stamp.
     ///
-    /// ★★ It is also more than a cache, which is why it could not live behind
+    /// It is also more than a cache, which is why it could not live behind
     /// interior mutability on `OpenDoc` — this module's header draws that line
     /// for the Layers checkbox and it binds here. `RefusedCharUi::taken` records
     /// that **the operator pressed a row in this block**, which is an operator
     /// instruction and the only thing that distinguishes the face swap they
     /// asked for from any other edit that would retire the report.
     ///
-    /// ★ Reset with the document by [`Self::forget_document`], for
+    /// Reset with the document by [`Self::forget_document`], for
     /// [`Self::bookmarks`]' reason: a `(page, run)` pair names different text in
     /// a different file, so an offer carried across would restyle a run nobody
     /// asked about.
     refused_char: properties::refusedchar::RefusedCharUi,
-    /// ★ The memoised answer to *what would go with deleting the selected
+    /// The memoised answer to *what would go with deleting the selected
     /// annotation?* — `EditSession::annotation_deletion_preview`.
     ///
     /// Held here for [`Self::text_style`]'s reason at a smaller magnitude, and
@@ -699,7 +699,7 @@ pub struct PanelsState {
     /// worst case is one call per frame; the `(annotation id, edit epoch)` stamp
     /// takes it down to none. See `properties::annotdelete`'s header.
     ///
-    /// ★★ Not a document cache smuggled into the operator's own state. What is
+    /// Not a document cache smuggled into the operator's own state. What is
     /// stored is the finished **sentence**, which is drawing state, and it is
     /// reset with the document by [`Self::forget_document`] like everything else
     /// here — an object id carried into a second file names a different object
@@ -711,12 +711,12 @@ pub struct PanelsState {
     /// Here for [`Self::pages`]' reason: a panel body is handed `&OpenDoc`,
     /// shared, and a text field the operator types into is **their** state.
     ///
-    /// ★ Reset with the document by [`Self::forget_document`], and the parent
+    /// Reset with the document by [`Self::forget_document`], and the parent
     /// is why that matters more than for a search term: an `ObjId` carried into
     /// a second file names a different object there, and a bookmark would be
     /// filed under whatever happens to hold that number.
     bookmarks: bookmarks::BookmarksUi,
-    /// ★ The Attachments panel's half-typed description.
+    /// The Attachments panel's half-typed description.
     ///
     /// Here for [`Self::properties`]' reason, and the hazard is the same one
     /// stated more sharply: `attach_file` takes a description **at attach
@@ -736,7 +736,7 @@ pub struct PanelsState {
     /// — it is handed `&OpenDoc` and `&mut PanelsState` and nothing else — so
     /// the request has to leave through the state it is allowed to touch.
     ///
-    /// ★ Reset with the document by [`Self::forget_document`], for the reason
+    /// Reset with the document by [`Self::forget_document`], for the reason
     /// [`Self::bookmarks`] gives and one of its own: a `GroupId` names a
     /// different group in a different file, so a selection carried across would
     /// point the appearance controls at somebody else's group.
@@ -750,7 +750,7 @@ pub struct PanelsState {
     /// [`comments::note::NoteDraft`]'s header carries the argument for why it
     /// is a draft rather than a live binding.
     ///
-    /// ★ Reset with the document by [`Self::forget_document`], and here that
+    /// Reset with the document by [`Self::forget_document`], and here that
     /// matters as much as it does for a half-typed `/Author`: an `ObjId` names
     /// a different annotation in a different file, so a draft carried across
     /// would offer to write one document's comment onto another document's
@@ -778,7 +778,7 @@ pub struct ObjectTreeUi {
     /// an edit acts on. This is one `usize` naming a row, page-scoped and
     /// cleared by [`PanelsState::sync`] on any page or revision change.
     ///
-    /// # ★ A panel-local focus is DELETED, never grown
+    /// # A panel-local focus is DELETED, never grown
     ///
     /// The distinction is what stops a shell acquiring two selections.
     /// [`properties`] reads `OpenDoc::selection`, the Objects panel's row
@@ -874,13 +874,13 @@ impl PanelsState {
     /// for everything here that describes a DOCUMENT, and wrong for the two
     /// fields that describe the OPERATOR.
     ///
-    /// ★★★ **The page-preview tick and its time limit are carried across the
+    /// **The page-preview tick and its time limit are carried across the
     /// reset**, and the body says at length why. In one sentence: they are
     /// preferences read from `preferences.txt` at construction, this function
     /// runs after construction on every launch that opens a file, and a reset
     /// over them makes `OPERATOR_REQUESTS.md` O187 do nothing at all.
     ///
-    /// ★★ **One thing this struct's reset cannot reach**, and it is named here
+    /// **One thing this struct's reset cannot reach**, and it is named here
     /// rather than left to be discovered: `properties::refusedchar` keeps the
     /// refusal that has been *recorded and not yet adopted* in a thread-local,
     /// because it is written by the dispatcher and read by a body that is handed
@@ -890,7 +890,7 @@ impl PanelsState {
     /// says so explicitly, and the "forgotten by construction" property above
     /// holds for every field that a `Default` can reach.
     pub fn forget_document(&mut self) {
-        // ★★★ THE TWO PAGE-PREVIEW PREFERENCES ARE CARRIED ACROSS THE RESET,
+        // THE TWO PAGE-PREVIEW PREFERENCES ARE CARRIED ACROSS THE RESET,
         // and this is the whole of O187 working or not working.
         //
         // They are seeded once, in `PdfcerApp::new`, from `preferences.txt`.
@@ -905,7 +905,7 @@ impl PanelsState {
         // and every gate stay green: the defect lives in the frame BETWEEN
         // the seed and the first draw.
         //
-        // ★★ Why a carry rather than a reseed at the call site: this
+        // Why a carry rather than a reseed at the call site: this
         // function is also called from `Panel::show` EVERY FRAME while
         // nothing is open, and that call site has no `Prefs` to reseed from.
         // A carry holds for every caller, present and future, and it is
@@ -993,7 +993,7 @@ impl PanelsState {
     /// handed `&mut PanelsState` and reaches its own state through an
     /// accessor, so the field stays private and no other panel can write it.
     ///
-    /// ★ Named after [`Panel::DocumentProperties`] and not after Properties:
+    /// Named after [`Panel::DocumentProperties`] and not after Properties:
     /// an accessor named for the panel that does not own the state is how a
     /// caller writes the wrong drafts.
     pub fn docprops_mut(&mut self) -> &mut docprops::InfoDrafts {
@@ -1013,7 +1013,7 @@ impl PanelsState {
     /// **The rename draft for the selected form field**, re-seeded whenever the
     /// selection moves.
     ///
-    /// ★★ The re-seeding is the whole reason this is a method rather than a
+    /// The re-seeding is the whole reason this is a method rather than a
     /// bare `&mut String`. Without it, clicking field A, typing a new name, then
     /// clicking field B leaves A's half-typed name in the box — aimed at B. The
     /// operator presses Rename and renames the wrong field to a name they chose
@@ -1117,7 +1117,7 @@ impl PanelsState {
 
     /// **The pages the operator has picked in the Pages panel.**
     ///
-    /// ★ Read-only, and this is the accessor a `pages.*` dispatch arm must
+    /// Read-only, and this is the accessor a `pages.*` dispatch arm must
     /// use when the first one lands. The ribbon's Pages tab already promises
     /// this set in every one of its tooltips — `pages.delete` is *"Remove
     /// **the selected pages** from this document"* — and
@@ -1217,7 +1217,7 @@ pub const ELLIPSIS: char = '\u{2026}';
 /// not. The caller draws whichever it got and attaches the **full** text on
 /// hover in the `Some` case.
 ///
-/// # ★★★ Shortening is not the clipping that is ruled out
+/// # Shortening is not the clipping that is ruled out
 ///
 /// The standing requirement is that **row text must not clip**: a panel that
 /// cuts a row at the pane's edge with no bar, no mark and no recovery loses
@@ -1227,7 +1227,7 @@ pub const ELLIPSIS: char = '\u{2026}';
 /// seeing `AAAAAA+SpaceGrotesk-Bold 1` and having no idea a `2` was cut off —
 /// cannot happen.
 ///
-/// # ★★ Why a `measure` closure rather than a `&Ui`
+/// # Why a `measure` closure rather than a `&Ui`
 ///
 /// So the decision is a pure function and can be tested against a synthetic
 /// font. Every earlier attempt at this in this crate ended as three lines

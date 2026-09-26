@@ -1,7 +1,7 @@
 //! # `shell::commands::catalog::format` — the Format contextual tab — what changes about the selection
 //!
 //!
-//! ## ★★★ The split is per TAB, and the reason it was refused before is gone
+//! ## The split is per TAB, and the reason it was refused before is gone
 //!
 //! [`super`]'s header argued against exactly this cut:
 //!
@@ -19,7 +19,7 @@ pub(super) fn band() -> Vec<Command> {
         command("format.delete", t::format_delete(), 800)
             .with_icon("delete")
             .enabled_when("selection.actionable"),
-        // ★ A second ROUTE to `file.properties`, not a second command that
+        // A second ROUTE to `file.properties`, not a second command that
         // opens the panel. Its arm raises `Action::Command("file.properties")`,
         // which is the mechanism that keeps one command's guards in one place.
         //
@@ -34,7 +34,7 @@ pub(super) fn band() -> Vec<Command> {
         command("format.properties", t::format_properties(), 801)
             .with_icon("properties")
             .enabled_when("selection.actionable"),
-        // ★★ **Greyed, not absent, when the selection is not inside a form.**
+        // **Greyed, not absent, when the selection is not inside a form.**
         //
         // R9 draws the line by *why* a thing is unavailable: a capability this
         // build does not have renders nothing at all, and a capability that is
@@ -44,7 +44,7 @@ pub(super) fn band() -> Vec<Command> {
         // any document with a form. That is the greying case, and it reads the
         // same way `format.delete`'s `selection.any` does one line above.
         //
-        // ★ And a greyed control is a hint, never an enforcement. `enabled_when`
+        // And a greyed control is a hint, never an enforcement. `enabled_when`
         // greys a ribbon item and stops nothing: every non-ribbon route — the
         // context menu, a chord, a future script — reaches the dispatcher
         // without consulting it. The arm in `app::dispatch` therefore asks the
@@ -53,7 +53,7 @@ pub(super) fn band() -> Vec<Command> {
         // written and two tests refused it for making `Ctrl+Z` on an empty
         // stack do nothing and say nothing.
         //
-        // ★ The glyph is `pick-form-xobject`, **reused** rather than new, under
+        // The glyph is `pick-form-xobject`, **reused** rather than new, under
         // the same shared-key convention `format.properties` uses one line
         // above. It is not a near-miss reuse of the kind the header's refusal
         // table is full of: that glyph's entire subject *is* a form XObject —
@@ -70,7 +70,7 @@ pub(super) fn band() -> Vec<Command> {
             .with_icon("pick-form-xobject")
             .enabled_when("selection.in_form"),
         // ===================================================================
-        // ★★★ format.select_text_line — THE ROUTE TO ONE LINE OF A TEXT BLOCK
+        // format.select_text_line — THE ROUTE TO ONE LINE OF A TEXT BLOCK
         // ===================================================================
         //
         // `OPERATOR_REQUESTS.md` O188, and specifically the half of it that was
@@ -87,7 +87,7 @@ pub(super) fn band() -> Vec<Command> {
         // opens the caret, so the Part rung on a text object had exactly one
         // entrance and no surface named it.
         //
-        // ## ★★★ NO RIBBON HOME — and the register that makes that legible
+        // ## NO RIBBON HOME — and the register that makes that legible
         //
         // `manifest::registers::TAB_SCOPED`. O53's ruling is that a command
         // must not exist only on a context menu, and the bar for an exemption
@@ -101,7 +101,7 @@ pub(super) fn band() -> Vec<Command> {
         // The two markup node verbs are the precedent and the argument is
         // theirs, one surface along.
         //
-        // ## ★★ The icon is `pick-part`, reused, and it is the honest glyph
+        // ## The icon is `pick-part`, reused, and it is the honest glyph
         //
         // Not a near-miss of the kind this catalog's refusal table is full of.
         // `Icon::PickPart`'s own doc in `icons::catalog` reads: *"Selection
@@ -116,7 +116,7 @@ pub(super) fn band() -> Vec<Command> {
         // `icons/assets/PROVENANCE.md` declares that directory the operator's
         // own art, and a machine-drawn SVG would make that note false.
         //
-        // ## ★★ `enabled_when` == the item's `shown_when`, and that IS R9
+        // ## `enabled_when` == the item's `shown_when`, and that IS R9
         //
         // `shell::menus::RUN_SELECT_OFFERED` on both. R9 greys only what is
         // *temporarily* unavailable, and there is no such state here: nothing
@@ -124,7 +124,7 @@ pub(super) fn band() -> Vec<Command> {
         // object into a multi-run one, or moves the pointer onto a line it is
         // not on. So the row is offered or absent.
         //
-        // ★ Carrying it on the command as well as on the item is not belt and
+        // Carrying it on the command as well as on the item is not belt and
         // braces for its own sake — `enabled_when` is the registry's and the
         // item has no enablement field, so this is what stops a stale frame,
         // or any future non-menu route, from dispatching a row whose operand
@@ -161,7 +161,7 @@ pub(super) fn band() -> Vec<Command> {
         // also about *the thing you just clicked and what encloses it*.
         //
         //
-        // ★★ **`selection.in_form`, the same predicate as `select_form` one
+        // **`selection.in_form`, the same predicate as `select_form` one
         // line above, and that is the correct answer rather than a convenient
         // one.** `app::conditions` publishes it as *"something selected on this
         // page lives inside a form XObject"*, and this verb's operand is
@@ -174,13 +174,13 @@ pub(super) fn band() -> Vec<Command> {
         // more, so the predicate is false and this control correctly greys.
         // Two acts, two conditions, both honest about what they need.
         //
-        // ★ Greyed rather than absent, on `format.select_form`'s R9 reading
+        // Greyed rather than absent, on `format.select_form`'s R9 reading
         // exactly: the capability is present in this build and on this
         // document, and what is missing is the operand, which the next click
         // supplies. The tooltip explains it on hover, which is the half of R9
         // that makes greying legitimate rather than lazy.
         //
-        // ★ The glyph is `pick-form-xobject`, shared with `format.select_form`
+        // The glyph is `pick-form-xobject`, shared with `format.select_form`
         // under the header's shared-key convention. The two commands are about
         // one structure — a form XObject — and a family sharing a glyph is how
         // a ribbon reads as grouped. Drawing new art was never the alternative:
@@ -192,7 +192,7 @@ pub(super) fn band() -> Vec<Command> {
         // -------------------------------------------------------------------
         // The Font group — `RIBBON_IA.md` §5.8's "Text run" row.
         //
-        // ★★★ **All five are gated on TEXT RUNS and NOT on `selection.any`**,
+        // **All five are gated on TEXT RUNS and NOT on `selection.any`**,
         // and getting that backwards would grey them in exactly the state where
         // they work.
         //
@@ -204,7 +204,7 @@ pub(super) fn band() -> Vec<Command> {
         // spaces. So the swept range is the operand, and the swept range is
         // what `selection.text` reports.
         //
-        // ★★★ **CORRECTED 2026-09-14 — the condition is now
+        // **CORRECTED 2026-09-14 — the condition is now
         // `selection.text_runs`, and the paragraph above is why it had to
         // change.** `OPERATOR_REQUESTS.md` O198: *"That entire area is always
         // greyed out in the menu."*
@@ -220,7 +220,7 @@ pub(super) fn band() -> Vec<Command> {
         // already stakes every restyle on. The object colour swatch in
         // `panels::properties::textobject` had been using it, alone, for weeks.
         //
-        // ★★★ **And the old spelling was unreachable in the only mode that
+        // **And the old spelling was unreachable in the only mode that
         // draws these five.** `canvas::textsel::gate::takes_the_press` is
         // `tool.is_text() || (Select && !caps.edit_content)`, so in Edit the
         // Select tool resolves an object and never a range; in Read and Review
@@ -241,7 +241,7 @@ pub(super) fn band() -> Vec<Command> {
         // place; see that module's header for why the expensive half may never
         // be called from here.
         //
-        // ★★ **Greyed rather than absent when there is no sweep**, which is R9
+        // **Greyed rather than absent when there is no sweep**, which is R9
         // read carefully. The capability is present — this build has
         // `format_text`, this mode may edit content, this document is open —
         // and what is missing is the *operand*, which the next gesture
@@ -257,7 +257,7 @@ pub(super) fn band() -> Vec<Command> {
         // so Read and Review — which cannot change page content at all — draw
         // no Font group rather than five permanently greyed controls.
         //
-        // ★ Three of the five are drawn by an `Item::Custom` and have no
+        // Three of the five are drawn by an `Item::Custom` and have no
         // button of their own: a face chooser, a size field and a colour
         // swatch are not buttons. They are registered anyway, because a
         // registered command is how this shell learns a capability exists
@@ -299,7 +299,7 @@ pub(super) fn band() -> Vec<Command> {
         //   `icons/assets/PROVENANCE.md` requires of every future asset.
         //
         //
-        // ★ The general lesson, and it is the second time in three days this
+        // The general lesson, and it is the second time in three days this
         // project has paid for it (`edit.select_all` was the first): **a refusal
         // whose reason is "no art exists" has an expiry date, and quoting it
         // does not make it the operator's ruling.** A refusal that names a WRONG
@@ -307,7 +307,7 @@ pub(super) fn band() -> Vec<Command> {
         // ui-spec §3.2 — has no expiry date at all. The two look identical in a
         // coverage table and are opposites.
         //
-        // ★★ **The other three still refuse, and for a reason that is NOT about
+        // **The other three still refuse, and for a reason that is NOT about
         // supply**, which is why they are not corrected alongside their two
         // neighbours. A face chooser, a size field and a colour swatch are drawn
         // by an `Item::Custom` — an `egui::ComboBox`, an `egui::DragValue` and
@@ -319,7 +319,7 @@ pub(super) fn band() -> Vec<Command> {
         // one thing the control exists to report.
         command("format.font", t::format_font(), 803).enabled_when("selection.text_runs"),
         command("format.font_size", t::format_font_size(), 804).enabled_when("selection.text_runs"),
-        // ★ `bold` — a capital B stroked at 4 rather than the set's 2.5, so the
+        // `bold` — a capital B stroked at 4 rather than the set's 2.5, so the
         // picture says HEAVIER, which is the thing the label cannot. The asset's
         // own comment carries the weight argument and the two axes that keep it
         // apart from its neighbour below. Closest neighbour in the whole set at
@@ -328,7 +328,7 @@ pub(super) fn band() -> Vec<Command> {
         command("format.bold", t::format_bold(), 805)
             .with_icon("bold")
             .enabled_when("selection.text_runs"),
-        // ★ `italic` — a slanted capital I with OFFSET serifs, which is the cue
+        // `italic` — a slanted capital I with OFFSET serifs, which is the cue
         // that keeps it clear of `text-select`'s bare centred I-beam (0.737 at
         // 16 px; its closest neighbour anywhere is `measure-angle` at 0.719, and
         // the pair `bold ~ italic` measures 0.820). The slant is exaggerated to
@@ -345,7 +345,7 @@ pub(super) fn band() -> Vec<Command> {
         // working for the Markup tools."*
         //
         //
-        // ★★ **All five are `enabled_when(MARKUP_RESTYLABLE)`, which is the
+        // **All five are `enabled_when(MARKUP_RESTYLABLE)`, which is the
         // SAME condition the manifest gives them as `shown_when`** — deliberate,
         // and this file's header already argues that the duplication is not
         // redundant: the tab and its contents are evaluated independently, and
@@ -368,7 +368,7 @@ pub(super) fn band() -> Vec<Command> {
         // and shows no tooltip for an `Item::Custom`.
         //
         //
-        // ★ And a swatch's entire face IS the colour it reports; a glyph over
+        // And a swatch's entire face IS the colour it reports; a glyph over
         // it would cover the one thing the control exists to say.
         command("format.colour", t::format_colour(), 809).enabled_when(MARKUP_RESTYLABLE),
         command("format.fill", t::format_fill(), 810).enabled_when(MARKUP_RESTYLABLE),
@@ -387,7 +387,7 @@ pub(super) fn band() -> Vec<Command> {
 /// and no error at all, because an unset condition and a false condition are
 /// the same value.
 ///
-/// ★ It is **not** shared with `manifest::format`'s `MARKUP_VISIBLE_WHEN`,
+/// It is **not** shared with `manifest::format`'s `MARKUP_VISIBLE_WHEN`,
 /// which holds the same string. That is the same deliberate de-aliasing
 /// `manifest::SELECTION_ANY` records the cost of: while `SELECTION_ANY` read
 /// `= format::VISIBLE_WHEN`, editing the Format tab's condition would have

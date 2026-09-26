@@ -6,7 +6,7 @@ deliberately does not know *which*, because that answer is a judgment about
 this application's commands and the shell is forbidden to hold one (R7).
 This file is where pdfcer answers.
 
-## ★★★ Why one table and not a `.collapses_at(n)` on each group
+## Why one table and not a `.collapses_at(n)` on each group
 
 Because a collapse priority is not a property of a group. It is a
 **ranking of groups against each other**, and the only way to review a
@@ -43,6 +43,6 @@ the rest by how far they are from that tab's reason for existing:
 | Tools | — | every group here is a utility; none outranks the others |
 | Format | Selection | one group; collapsing it would gain nothing |
 
-★ **Lower collapses first**, and the numbers are deliberately sparse (1, 2,
+**Lower collapses first**, and the numbers are deliberately sparse (1, 2,
 3, 4) rather than dense, so a group can be inserted between two existing
 rungs later without renumbering the tab.

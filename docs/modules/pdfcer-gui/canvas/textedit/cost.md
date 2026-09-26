@@ -48,7 +48,7 @@ fit in a frame".
 
 ---
 
-# ★★ THE MEASUREMENT, and the decision it forced
+# THE MEASUREMENT, and the decision it forced
 
 `--release`, median of 5, this machine:
 

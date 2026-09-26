@@ -42,7 +42,7 @@ pub struct ViewFrame {
     /// than a frame late — which is the difference between panning that
     /// tracks the hand and panning that lags it.
     pub last_scroll_offset: egui::Vec2,
-    /// ★★ **Where the view is, once the scroll offset can no longer say** —
+    /// **Where the view is, once the scroll offset can no longer say** —
     /// O24 tier 3.
     ///
     /// `None` below the sub-pixel content extent, where `egui::ScrollArea`'s
@@ -50,7 +50,7 @@ pub struct ViewFrame {
     /// from before this feature. `Some` above it, where the position is a page
     /// point in `f64` and the screen pixel it sits under.
     ///
-    /// ★ Seeded on the way in from wherever the scroll area had settled, and
+    /// Seeded on the way in from wherever the scroll area had settled, and
     /// cleared on the way out — so crossing the threshold in either direction
     /// does not move the page under the operator, and re-entering starts from
     /// the truth rather than from a stale anchor.
@@ -58,7 +58,7 @@ pub struct ViewFrame {
     /// The zoom [`Self::deep_anchor`] was last valid at, or `None` outside the
     /// deep tier.
     ///
-    /// ★★ **What makes zoom-to-cursor possible above the threshold.**
+    /// **What makes zoom-to-cursor possible above the threshold.**
     /// `DeepAnchor::zoomed_about` needs the zoom the anchor was written at, so
     /// it can read which page point sits under the cursor *before* re-stating
     /// the anchor at the new scale. The anchor itself deliberately does not

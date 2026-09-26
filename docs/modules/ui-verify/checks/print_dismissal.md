@@ -31,7 +31,7 @@ all three keep one meaning, and the meaning they keep has to be the safe
 one. *Keep and close* is a fourth, positively-chosen route that G4 never
 contemplated.
 
-# ★★★ What this check is FOR, said before what it does
+# What this check is FOR, said before what it does
 
 **It is the assertion that the two labelled routes out are not the same
 button.** Everything else here is scaffolding for that one sentence.
@@ -52,7 +52,7 @@ only "after Cancel the setting is the original" passes perfectly against a
 build that never saves anything at all, which is precisely the build O185
 replaced.
 
-## ★★★ And the order the three are tested in is not cosmetic
+## And the order the three are tested in is not cosmetic
 
 The cross-run comparison is tested **first**, and it has to be, because in
 the order this file was originally written — Cancel-restored, Keep-kept,
@@ -74,7 +74,7 @@ it, and a build where one route produces some *third* value — neither the
 opening token nor the clicked one — passes it and is caught by the absolute
 claim below.
 
-# ★★ What this check deliberately CANNOT establish
+# What this check deliberately CANNOT establish
 
 **It never presses Print, and no future edit may make it.** Committing is
 how a print job reaches a real device, and this suite runs unattended on the
@@ -100,9 +100,9 @@ What stands in for it:
 
 | The claim | What holds it |
 |---|---|
-| Cancel declines to write | ★ **this check** — the Cancel run's reopen |
-| Keep writes | ★ **this check** — the Keep run's reopen |
-| the two are different buttons | ★ **this check** — the cross-run assertion |
+| Cancel declines to write | **this check** — the Cancel run's reopen |
+| Keep writes | **this check** — the Keep run's reopen |
+| the two are different buttons | **this check** — the cross-run assertion |
 | Cancel puts back a value already written | ⚠ **nothing automated** — see below |
 | the settings survive to disk at all | `the_print_window_opens_on_the_settings_you_last_used`, which reads a seeded file back in a second process |
 
@@ -136,7 +136,7 @@ rectangle a driver can aim at: the paper combo, `print.paper`, with its
 entries under `print.paper.item.N` and `print.paper.auto`. Copies, collate,
 reverse, duplex and the rest are drawn and unaddressable.
 
-★ Within that combo the target is **`print.paper.auto`**, not a numbered
+Within that combo the target is **`print.paper.auto`**, not a numbered
 form, and the difference matters more than it looks:
 
 - A numbered entry is one of the **driver's** forms, so which one exists and
@@ -170,14 +170,14 @@ click on the combo entry did not change the live choice, this check has
 learned nothing about dismissal and says so as a SKIP rather than accusing
 the application of a defect it caused itself.
 
-★ `print-dismissed` did not exist before O185. Nothing traced a close at
+`print-dismissed` did not exist before O185. Nothing traced a close at
 all — no `print-close`, no event on `frame.closed` — so a build that took
 the wrong branch on the way out was indistinguishable from one that took the
 right branch and wrote nothing. This is the fifth time in this project that
 sitting down to write a driven check found a trace that could not tell apart
 the two states the check exists for.
 
-# ★ `reverted=false` on a green Cancel run is correct, and is not a bug
+# `reverted=false` on a green Cancel run is correct, and is not a bug
 
 The Cancel run's `print-dismissed` line reads `reverted=false`, and a reader
 meeting that for the first time will read it as *the revert did not happen*.

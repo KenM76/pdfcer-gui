@@ -59,7 +59,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
 
-    // ★ No `--pdf`. About is one of the few commands that must work with
+    // No `--pdf`. About is one of the few commands that must work with
     // nothing open — `dialogs::open_about` takes no `Status` precisely so that
     // cannot regress — and driving it on an empty shell is what proves it.
     let mut spec = LaunchSpec::new(&exe, ctx.out("about.trace.txt"));
@@ -92,7 +92,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let driver = Driver::new(session.window());
 
     // --- A: open it --------------------------------------------------------
-    // ★ Through the overflow when the ribbon has folded it there. At the
+    // Through the overflow when the ribbon has folded it there. At the
     // harness's 1100 pt window the File tab's rightmost groups are correctly in
     // the overflow menu, and a check that looked only at the tab would report
     // "About is missing" about a ribbon behaving exactly as designed. See
@@ -149,7 +149,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         line.get("engine").unwrap_or_default(),
         line.get("engine_rev").unwrap_or_default()
     ));
-    // ★ Reported, never asserted. `iccce` is legitimately absent today, and a
+    // Reported, never asserted. `iccce` is legitimately absent today, and a
     // check that failed on that would have to be edited on the day it lands —
     // which is the wrong direction for a gate to point.
     let icc = line.get("iccce").unwrap_or_default();

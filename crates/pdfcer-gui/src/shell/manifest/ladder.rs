@@ -77,7 +77,7 @@ pub(super) fn apply(shell: &mut Shell) {
 mod tests {
     use super::*;
 
-    /// ★★ **Every entry names a group that exists.**
+    /// **Every entry names a group that exists.**
     ///
     /// The guard that pays for keeping the ranking away from the definitions.
     /// A renamed group would otherwise lose its rung silently: the ribbon
@@ -126,7 +126,7 @@ mod tests {
         assert_eq!(group.collapse, Some(1));
     }
 
-    /// ★★★ **Every tab keeps at least one group off the ladder** — except the
+    /// **Every tab keeps at least one group off the ladder** — except the
     /// one where that is a deliberate decision, which is named here so the
     /// exception cannot be acquired by accident.
     ///

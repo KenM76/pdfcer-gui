@@ -28,7 +28,7 @@ opens. That is deliberate — the alternative is a cache that is stale
 exactly when it matters, on the run after the operator has just made a new
 stamp in Acrobat and gone looking for it here.
 
-## ★★ Why the SHIPPED collections are excluded, and it is argued
+## Why the SHIPPED collections are excluded, and it is argued
 
 Acrobat's install carries four more collections at
 `…/Acrobat DC/Acrobat/plug_ins/Annotations/Stamps/ENU/` — `Standard`,

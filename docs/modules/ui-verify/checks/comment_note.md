@@ -13,7 +13,7 @@ case:
 > typo in your own comment, answer someone else's.
 
 
-# ★★★ Why this cannot be a unit test, in the specific
+# Why this cannot be a unit test, in the specific
 
 The chain is five links and each has its own passing test:
 
@@ -50,7 +50,7 @@ mouse.
 | F | read the census again | `with_note=1` |
 | G | select the shape, Ctrl+C, Ctrl+V | `paste-markup … note=true` |
 
-# ★★★ Phase G exists because THIS CHECK CREATED THE DEFECT IT GUARDS
+# Phase G exists because THIS CHECK CREATED THE DEFECT IT GUARDS
 
 The object clipboard copies a markup by reading it into a `MarkupSpec` and
 authoring a new one. That is lossless only for what a spec can express — and
@@ -65,7 +65,7 @@ direction no screenshot can see. This phase is the tripwire on that, and it
 is here rather than in `object_clipboard` because this is the check that can
 produce an annotation with a note to copy in the first place.
 
-# ★★ Phase F is the assertion that matters, and B is what makes it mean
+# Phase F is the assertion that matters, and B is what makes it mean
 anything
 
 `set-markup-note-applied` says the engine accepted the call. `with_note=1`
@@ -79,7 +79,7 @@ precisely because reading the file on disk showed nothing until a save.
 Phase B pins `with_note=0` first, so F cannot be satisfied by a fixture that
 arrived with a commented annotation already on it.
 
-# ★ The word typed is TAIL
+# The word typed is TAIL
 
 Four letters, all of them already in the closed `vk` list (`T`, `A`, `I`,
 `L`), and a word a drafter would recognise in a failure message. The list is

@@ -5,7 +5,7 @@ turned into a gate.**
 
 ⬜ **NOT RUN.** This harness takes the foreground of the entire desktop, so
 it cannot share a machine with anyone working. Nothing below has been
-observed working. ★ A layout-and-clipping claim has **exactly one oracle — a
+observed working. A layout-and-clipping claim has **exactly one oracle — a
 rendered screenshot** — and green unit tests behind it are a different
 claim entirely.
 
@@ -22,7 +22,7 @@ command is `markup.comments` on the **Markup** tab, and Read mode is shown
 `["file", "view"]`. So in Read mode there was **no route at all** — a mode
 named Read that could not read the comments.
 
-# ★★★ Why this cannot be a unit test, in the specific
+# Why this cannot be a unit test, in the specific
 
 The pop-up is an `egui::Area` at `Order::Middle`, positioned from a page
 rectangle through this frame's `PageMapping` and constrained to the canvas
@@ -31,7 +31,7 @@ and the failure they produce is not a wrong value — it is a window that
 laid out perfectly and is off the edge of the canvas, or behind the docked
 panels, or under the page it belongs to.
 
-★★★ **A driven assertion that proves LAYOUT does not prove VISIBILITY**, and
+**A driven assertion that proves LAYOUT does not prove VISIBILITY**, and
 panels have shipped unreachable in real builds with every gate green on
 exactly that gap. This check leans on `crate::diag::ui_rect_visible`'s own
 contract instead: that function **publishes nothing at all** unless the
@@ -47,7 +47,7 @@ pin their own fixture for this reason and say so when a `--pdf` was supplied
 and thrown away, *"because a sweep that silently ignored a flag is
 indistinguishable from one that honoured it."*
 
-★★★ **The pinning is not convenience, it is the difference between this
+**The pinning is not convenience, it is the difference between this
 check being able to fail and not.** `RESUME.md`'s falsification discipline
 names the trap: *"a fixture note with empty `/Contents` makes 'the pop-up
 shows the words' pass on a build that shows nothing."* An arbitrary CAD
@@ -58,7 +58,7 @@ report nothing while looking healthy. The fixture carries:
 |---|---|
 | a note with real `/Contents`, `/T` and `/M` | so "it shows the words" has something to show |
 | that note authored **`/Open true`** | so "the file's state is honoured" has a positive case |
-| a **second note authored `/Open false`**, also with words | so a build that opens *every* pop-up fails. ★ Without this the check is vacuous in the other direction, which is the shape `RESUME.md` calls out: *"an absence check is vacuous if the run already stands where the defect lands"* |
+| a **second note authored `/Open false`**, also with words | so a build that opens *every* pop-up fails. Without this the check is vacuous in the other direction, which is the shape `RESUME.md` calls out: *"an absence check is vacuous if the run already stands where the defect lands"* |
 | a `/Popup` with **its own `/Rect`, away from the note** | so a build that always draws "beside the note" is distinguishable from one that honours the file |
 | a **reply** (`/IRT`, a different author) | so the thread is exercised |
 
@@ -80,7 +80,7 @@ with the Read ribbon, which is `file` and `view` alone.
 | C | click the **closed** note at `0,110,310` | `note-popup-toggle`, then `open=2` |
 | D | click it again | `open=1` — a click toggles, which is the class convention and the gesture an operator who opened one by accident tries |
 
-# ★★ Phase A is the whole report and phase B is what makes it mean anything
+# Phase A is the whole report and phase B is what makes it mean anything
 
 `open=1` alone would pass on a build that opens every pop-up it finds.
 `from_file=1` is the field that says the pop-up is open **because the

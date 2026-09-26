@@ -371,7 +371,7 @@ pub fn remember(document: &Path, guides: &Guides) {
     remember_at(default_path().as_deref(), document, guides);
 }
 
-/// ★ **What a freshly opened document starts with**: its remembered guides,
+/// **What a freshly opened document starts with**: its remembered guides,
 /// and the view state that shows them.
 ///
 /// The two halves are returned together because the rule joining them is the
@@ -485,7 +485,7 @@ fn parse(text: &str) -> Vec<(String, PathBuf)> {
 
 /// A document's path as this store keys it.
 ///
-/// ★ **`std::path::absolute`, and not `std::fs::canonicalize`** — the same
+/// **`std::path::absolute`, and not `std::fs::canonicalize`** — the same
 /// normalisation [`crate::viewer::remembered`] uses, and it has to stay the
 /// same or the two stores would disagree about whether two spellings name one
 /// document.
@@ -561,7 +561,7 @@ fn store(ctx: &Context, drag: Option<Drag>) {
 
 /// **Abandon a guide drag in flight.** Returns whether there was one.
 ///
-/// # ★ It reports rather than being asked
+/// # It reports rather than being asked
 ///
 /// The return value is the whole interface. `canvas::keys` cannot know
 /// whether a guide is being dragged — the drag lives in this module's own
@@ -800,7 +800,7 @@ fn preview(ui: &Ui, geometry: &CanvasGeometry) {
     let Some(p) = ui.ctx().pointer_latest_pos() else {
         return;
     };
-    // ★ The content-area selection ink, by its role name. Not
+    // The content-area selection ink, by its role name. Not
     // `visuals().selection.stroke` — that is `egui`'s selected-WIDGET channel,
     // and a canvas that reads it is borrowing a colour that belongs to another
     // surface. Same colour, named address.
@@ -878,7 +878,7 @@ mod tests {
         g
     }
 
-    /// ★ **Every guide survives a round trip through the on-disk spelling**,
+    /// **Every guide survives a round trip through the on-disk spelling**,
     /// including a negative coordinate.
     ///
     /// Negative is not an edge case invented for the test: canvas space has
@@ -904,7 +904,7 @@ mod tests {
         assert_ne!(GuideAxis::Horizontal.id(), GuideAxis::Vertical.id());
     }
 
-    /// ★ **A corrupt payload degrades into fewer guides, never into an
+    /// **A corrupt payload degrades into fewer guides, never into an
     /// error.**
     ///
     /// The posture the module header commits to, asserted token by token:
@@ -974,7 +974,7 @@ mod tests {
         assert_eq!(guides.on_page(9).count(), 0);
     }
 
-    /// ★ **A guide is stored against a page in canvas space, so it does not
+    /// **A guide is stored against a page in canvas space, so it does not
     /// move when the view does.**
     ///
     /// The property `GUI_ROADMAP.md` names for the selection — identity, not
@@ -1009,7 +1009,7 @@ mod tests {
         }
     }
 
-    /// ★ **The catch band is the same number of screen points wide at every
+    /// **The catch band is the same number of screen points wide at every
     /// zoom.**
     ///
     /// The law `canvas::mapping` exists to enforce, applied to a guide: a
@@ -1039,7 +1039,7 @@ mod tests {
         }
     }
 
-    /// ★ **A document's guides come back after a reopen, and a second
+    /// **A document's guides come back after a reopen, and a second
     /// document's do not leak into the first.**
     ///
     /// The whole of `PLANNED`'s *"need a per-document store to survive a
@@ -1091,7 +1091,7 @@ mod tests {
         let _ = std::fs::remove_file(&file);
     }
 
-    /// ★ **A path containing spaces round-trips**, which is why the payload is
+    /// **A path containing spaces round-trips**, which is why the payload is
     /// written first and the path is the whole remainder of the line.
     ///
     /// Not hypothetical: every Windows operator has

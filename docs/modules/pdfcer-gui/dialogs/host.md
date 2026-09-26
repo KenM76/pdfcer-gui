@@ -20,7 +20,7 @@ That default ordering is itself the guidance. This module restores it here:
 calling [`Host::show`] is now as easy as calling `egui::Window::new`, so the
 path of least resistance and the right answer are the same path.
 
-## ★ What an OS window buys, concretely
+## What an OS window buys, concretely
 
 Not aesthetics. Four things an operator does with a print dialog:
 
@@ -32,7 +32,7 @@ Not aesthetics. Four things an operator does with a print dialog:
    preview specifically: the preview is the point of the dialog and it is
    the first thing the 520 pt floor squeezes.
 
-## ★★ It degrades, and that is deliberate rather than incidental
+## It degrades, and that is deliberate rather than incidental
 
 `Context::show_viewport_immediate` falls back to an **embedded** window —
 literally the `egui::Window` this replaces — when the backend has no
@@ -71,7 +71,7 @@ caller that had to remember them would forget one:
   **accent** and the foreground the theme pairs with it
   (`Theme::accent_pair`), so the operator knows what Enter will do before
   pressing it. A default nobody can see is not a default; it is a surprise.
-  ★ This sentence said *"the theme's own selection fill"* until 2026-09-03,
+  This sentence said *"the theme's own selection fill"* until 2026-09-03,
   and that was the defect rather than a description of it: `selection_fill`
   is a 27 %-opacity canvas tint, so the default button rendered **paler than
   an ordinary button** and read as disabled. See [`Host::buttons`].
@@ -83,7 +83,7 @@ and re-applied on the next open through `ViewportBuilder::with_position`.
 **Nothing is remembered in the embedded fallback**, because egui places that
 window and the OS does not.
 
-★ It is stored in memory rather than on disk, deliberately. A position that
+It is stored in memory rather than on disk, deliberately. A position that
 survived a restart would have to be validated against the *current* monitor
 layout — G6 says so in the same breath — and a dialog that opens on a
 monitor which is no longer attached is worse than one that opens centred.
@@ -91,7 +91,7 @@ Persisting it is a real feature with a real check to write; the session-long
 version is the nine-tenths of it that costs nothing and cannot strand
 anybody.
 
-## ★★ THE HOST OWNS NO STATE, AND THAT IS WHAT MADE THE OTHER THIRTEEN
+## THE HOST OWNS NO STATE, AND THAT IS WHAT MADE THE OTHER THIRTEEN
 ## DIALOGS ONE LINE EACH
 
 The first version of this module kept the remembered position in a `Host`
@@ -114,7 +114,7 @@ frame rather than an object with a lifetime. Three consequences, all wanted:
    and called that correct because it had no way to be otherwise.
 3. There is no second copy of the position to go stale.
 
-★ It is `insert_temp`, so it is session-scoped and never written to disk —
+It is `insert_temp`, so it is session-scoped and never written to disk —
 see the paragraph above for why that is the feature and not a shortcut.
 
 ## What this does NOT fix, said so it is a decision
@@ -127,7 +127,7 @@ them is one — and `egui-winit` never passes down the parent relationship
 egui itself tracks in `viewport_parents`. So a dialog could fall behind the
 main window, which is *the* classic Windows bug.
 
-★★ **What closed it was a second symptom, not a second look.** The dialog
+**What closed it was a second symptom, not a second look.** The dialog
 also **lost the keyboard a third of a second after opening**, measured with
 both windows reporting their own focus, with the application asking for none
 of it. The operator's version: *drag out a note box, type without clicking
@@ -143,7 +143,7 @@ has either problem. `crate::dialogs::host` now sets it through
 process's** windows — the crate that call lives in exists so that this
 crate's `#![forbid(unsafe_code)]` survives.
 
-★ `with_always_on_top` remains refused, and the reason is worth keeping now
+`with_always_on_top` remains refused, and the reason is worth keeping now
 that it is not the only option: this project's own RAG records an
 always-on-top window swallowing the driven harness's clicks with
 `SetForegroundWindow` still reporting success. Trading a rare confusion for
@@ -154,7 +154,7 @@ gets the z-order guarantee without the input trap.
   in-viewport version had. Ordered tab traversal and a focus trap are not
   asserted by anything and are still a gap.
 
-## ★ The diagnostic channel had to learn about viewports, and why
+## The diagnostic channel had to learn about viewports, and why
 
 `crate::diag::ui_rect` publishes a named region's rectangle so a driven
 check can aim at a control without guessing. Those rectangles are **relative

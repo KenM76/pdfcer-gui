@@ -193,7 +193,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ),
     ));
 
-    // ★ The panel on screen, before anything is dragged. Read from the BODY
+    // The panel on screen, before anything is dragged. Read from the BODY
     // regions rather than assumed to be the first tab: the arrangement is the
     // application's and a saved layout may have raised any tab in the stack.
     let bodies_before = declared_names(&trace, ui_rect, BODY);
@@ -258,7 +258,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 4: ★ and it said where it was going while it went -----------------
+    // --- 4: and it said where it was going while it went -----------------
     let caret = strip.caret();
     let Some(drawn) = declared_since(&trace, ui_rect, &caret, mark) else {
         return Ok(Some(format!(
@@ -285,7 +285,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note(format!("the caret marked the boundary at {drawn:?}"));
 
-    // --- 5: ★★ and the operator is still looking at the same panel ---------
+    // --- 5: and the operator is still looking at the same panel ---------
     let bodies_after = declared_names(&trace, ui_rect, BODY);
     if bodies_after != bodies_before {
         return Ok(Some(format!(

@@ -171,7 +171,7 @@ pub enum ScanError {
 ///
 /// 1. **Comments — line, doc and block (nested).** Comments are not drawn.
 ///    This matters here more than in most scanners: this codebase's doc
-///    comments are dense with `★ ▸ § —`, and `▸` in particular is a
+///    comments are dense with `▸ § —`, and `▸` in particular is a
 ///    codepoint the font stack cannot draw. Scanning comments would produce
 ///    a permanent false failure that would get the gate switched off.
 ///
@@ -593,7 +593,7 @@ mod tests {
     fn comments_are_not_scanned() {
         let src = r#"
 // a line comment with ▸
-//! a doc comment with ▸ and ★
+//! a doc comment with ▸ and 
 /* a block /* nested */ comment with ▸ */
 fn f() -> &'static str { "kept —" }
 "#;
@@ -970,7 +970,7 @@ pub fn after() -> &'static str { "after —" }
     #[test]
     fn the_gate_catches_a_planted_unrenderable_codepoint() {
         const PLANTED: &str = r####"
-//! A catalog module — the doc comment carries ▸ and ★, which must be ignored.
+//! A catalog module — the doc comment carries ▸ and , which must be ignored.
 
 /// A ▸ in an item doc comment, also ignored.
 pub fn ok() -> &'static str {

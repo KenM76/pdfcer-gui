@@ -15,7 +15,7 @@ use crate::acrobat::{Edition, Source, Viewer};
 
 /// `file.open_in_acrobat` — the control beside the mode selector.
 ///
-/// ★ **No ellipsis**, deliberately, and it is a close call. This crate's
+/// **No ellipsis**, deliberately, and it is a close call. This crate's
 /// convention is that an ellipsis means *"activating this opens a dialog
 /// rather than acting"*, and this control always raises a dialog. But the
 /// dialog is a **confirmation of the thing the label names**, not a request
@@ -24,7 +24,7 @@ use crate::acrobat::{Edition, Source, Viewer};
 /// asks whether you meant it. An ellipsis here would suggest there is more to
 /// decide than *yes* or *no*.
 ///
-/// ★★ The tooltip states the closing up front rather than at the end. It is
+/// The tooltip states the closing up front rather than at the end. It is
 /// the surprising half, and a hover sentence is read from the left until it
 /// stops being interesting.
 #[must_use]
@@ -54,7 +54,7 @@ pub fn no_document_tooltip() -> String {
 
 /// The window title, shared by all three.
 ///
-/// ★ One title rather than three. The window is the same window answering the
+/// One title rather than three. The window is the same window answering the
 /// same request; changing its name according to which sentence is inside it
 /// would make a taskbar entry that renames itself while the operator is
 /// looking away.
@@ -71,7 +71,7 @@ pub fn confirm_close_heading() -> String {
 
 /// The body of the clean case.
 ///
-/// ★ It says **why**, in one clause, and the why is the part that makes the
+/// It says **why**, in one clause, and the why is the part that makes the
 /// behaviour reasonable rather than officious. An operator told only *"it will
 /// be closed"* reads a program being awkward; told *"because two programs
 /// editing one file is how work gets lost"*, they read a program looking after
@@ -95,7 +95,7 @@ pub fn save_first_heading() -> String {
 
 /// The body of the unsaved case.
 ///
-/// ★★★ It names the number of edits and it names the **file**, because those
+/// It names the number of edits and it names the **file**, because those
 /// are the two things that make the choice concrete. And it closes on the
 /// consequence of *not* saving, phrased as a fact rather than as an option:
 /// there is no button for that outcome and the sentence must not read as if
@@ -117,7 +117,7 @@ pub fn save_first_body(edits: u64, file: &str, viewer: &Viewer) -> String {
 
 /// The heading of the never-saved refusal.
 ///
-/// ★ A statement, not a question. There is nothing to decide: this is the one
+/// A statement, not a question. There is nothing to decide: this is the one
 /// of the three that offers no way forward, and a heading shaped like a
 /// question would promise one.
 #[must_use]
@@ -127,7 +127,7 @@ pub fn no_file_heading() -> String {
 
 /// The body of the never-saved refusal.
 ///
-/// ★★ It says what to do — *save it somewhere first* — because a refusal that
+/// It says what to do — *save it somewhere first* — because a refusal that
 /// only refuses leaves the operator to guess, and the guess most people make
 /// is that the button is broken. And it is careful **not** to say Acrobat is
 /// missing: that is a different refusal with a different remedy, and confusing
@@ -141,7 +141,7 @@ pub fn no_file_body() -> String {
 
 /// The button that saves and then hands over.
 ///
-/// ★ Named for **what it does**, never *Yes* or *OK*, which is this crate's
+/// Named for **what it does**, never *Yes* or *OK*, which is this crate's
 /// standing rule for a button whose press has consequences: an operator who
 /// reads only the buttons — which is most operators, most of the time — must
 /// still get it right.
@@ -152,7 +152,7 @@ pub fn save_and_open_button() -> String {
 
 /// The button that goes ahead with a clean document.
 ///
-/// ★ Also named for what it does, and *not* "OK" — even though the operator's
+/// Also named for what it does, and *not* "OK" — even though the operator's
 /// own words were *"with and ok button to continue"*. What he asked for is a
 /// confirm-and-proceed control, which this is; what "OK" would cost is the
 /// sentence that says the document is closing being the only place that fact
@@ -183,7 +183,7 @@ pub fn handed_over(viewer: &Viewer) -> String {
     )
 }
 
-/// ★★ The status line when the launch failed **after** the save succeeded.
+/// The status line when the launch failed **after** the save succeeded.
 ///
 /// A real state and the one worth wording most carefully: the operator's work
 /// is safe on disk, and the only thing that did not happen is the handover.
@@ -198,7 +198,7 @@ pub fn launch_failed(detail: &str) -> String {
 
 /// The decline when the save the operator asked for did not happen.
 ///
-/// ★ Nothing else follows a failed save. The document is not closed and
+/// Nothing else follows a failed save. The document is not closed and
 /// Acrobat is not started, because the whole point of the question was that
 /// the edits must survive the handover.
 #[must_use]
@@ -242,7 +242,7 @@ pub fn path_label() -> String {
     "Acrobat program".to_owned()
 }
 
-/// ★★★ The note under the field, which is the escape hatch's instructions.
+/// The note under the field, which is the escape hatch's instructions.
 ///
 /// This is the string O122's decision hangs on: *"the path control lives in
 /// Settings and is visible there whether or not discovery succeeded, so a
@@ -284,7 +284,7 @@ pub fn path_filter_name() -> String {
     "Programs".to_owned()
 }
 
-/// ★★★ **What discovery actually resolved**, shown under the field.
+/// **What discovery actually resolved**, shown under the field.
 ///
 /// The half of the escape hatch that makes it usable rather than merely
 /// present. Without this line a person who typed a path with a letter missing
@@ -312,7 +312,7 @@ pub fn resolved_note(viewer: Option<&Viewer>) -> String {
 
 /// The product name for an edition, as it appears in prose.
 ///
-/// ★ Not `Debug`, and not a bare "Acrobat": which of the two is installed is a
+/// Not `Debug`, and not a bare "Acrobat": which of the two is installed is a
 /// thing the operator knows about their own machine, and naming it is how they
 /// confirm that pdfcer found the one they meant. Somebody with both installed
 /// who sees *Acrobat Reader* here has been told about a misconfiguration they
@@ -338,7 +338,7 @@ mod tests {
         }
     }
 
-    /// **★★★ Every sentence the operator can be shown before the document is
+    /// **Every sentence the operator can be shown before the document is
     /// handed over says that it will be closed.**
     ///
     /// O122 point 6 in checkable form. The two dialogs that lead to a handover
@@ -360,7 +360,7 @@ mod tests {
             );
         }
 
-        // ★★ AND THE CLEAN SHAPE SAYS IT IN THE **HEADING**, not only
+        // AND THE CLEAN SHAPE SAYS IT IN THE **HEADING**, not only
         // somewhere in the paragraph.
         //
         // Added after a falsification found the gap: replacing the heading
@@ -381,7 +381,7 @@ mod tests {
         );
     }
 
-    /// **★★★ No sentence and no button offers to open without saving.**
+    /// **No sentence and no button offers to open without saving.**
     ///
     /// The module header's argument, mechanised. A future edit that adds a
     /// *Don't save* button to this dialog — reasonably, by analogy with
@@ -416,7 +416,7 @@ mod tests {
         );
     }
 
-    /// **★★ The three refusals are three different sentences.**
+    /// **The three refusals are three different sentences.**
     ///
     /// The one that matters is that *"no file on disk"* does not read as
     /// *"Acrobat is missing"*: they have different remedies, and an operator

@@ -5,14 +5,14 @@
 /// The lower bound on how many layers a document must have before the
 /// search field is drawn at all.
 ///
-/// ★★ **Two**, and it is a threshold rather than "always" for R9's reason.
+/// **Two**, and it is a threshold rather than "always" for R9's reason.
 /// A search over a one-row list can do exactly one thing — remove the row —
 /// so a field offering it is a control whose only outcome is to make the
 /// panel emptier. Drawing it anyway would be the placeholder rule broken in
 /// its subtler form: not a control that does nothing, but a control whose
 /// every outcome is useless.
 ///
-/// ★ Not a larger number, though a reader will wonder. A threshold of, say,
+/// Not a larger number, though a reader will wonder. A threshold of, say,
 /// eight would be a judgement about when a list becomes hard to scan, and
 /// this panel is the wrong place to make it: a CAD sheet with three layers
 /// called `A-ANNO-TEXT`, `A-ANNO-DIMS` and `A-ANNO-NOTE` is genuinely
@@ -31,7 +31,7 @@ pub const MIN_LAYERS_FOR_SEARCH: usize = 2;
 /// makes "clearing the box restores the list" true by construction rather
 /// than by a branch somewhere else remembering to skip the filter.
 ///
-/// # ★ Why this takes `&str` and not `&Layer`
+/// # Why this takes `&str` and not `&Layer`
 ///
 /// So that the rule cannot quietly grow a second input. A predicate handed
 /// the whole layer could be extended to consult `visible_by_default` or
@@ -56,7 +56,7 @@ pub fn matches(name: &str, query: &str) -> bool {
 /// `MAX_LAYERS` rows of a few dozen bytes, once per frame, with nothing on
 /// the heap.
 ///
-/// ★ Byte windows are safe here despite UTF-8 being multi-byte, and the
+/// Byte windows are safe here despite UTF-8 being multi-byte, and the
 /// reason is worth stating because it looks like a bug: `eq_ignore_ascii_case`
 /// on two byte slices is `true` only when they are equal after folding
 /// *ASCII* letters, and every non-ASCII byte must therefore match exactly.
@@ -140,7 +140,7 @@ mod tests {
         }
     }
 
-    /// ★★ **Case-insensitive**, which is `FindOptions`' argued default:
+    /// **Case-insensitive**, which is `FindOptions`' argued default:
     /// *"an operator who types `total` and is not shown `TOTAL` on the next
     /// line reads that as a search that did not work."*
     #[test]
@@ -186,7 +186,7 @@ mod tests {
         );
     }
 
-    /// ★ **A multi-byte name does not produce a false match**, and the
+    /// **A multi-byte name does not produce a false match**, and the
     /// window walk does not panic on one.
     ///
     /// The slicing argument in [`contains_ignore_ascii_case`]'s docs, made
@@ -209,7 +209,7 @@ mod tests {
         assert!(!matches("", "x"));
     }
 
-    /// ★★ **The name the ROW shows is what is matched.**
+    /// **The name the ROW shows is what is matched.**
     ///
     /// Asserted through the placeholder the panel actually draws, so that a
     /// change to that wording is caught here rather than leaving one row in
@@ -235,7 +235,7 @@ mod tests {
         assert!(!f.is_empty_because_of_the_query());
     }
 
-    /// ★★★ **A query that matches nothing is distinguishable from a
+    /// **A query that matches nothing is distinguishable from a
     /// document with no layers.**
     ///
     /// The whole reason `Filtered` counts rather than discards. Without

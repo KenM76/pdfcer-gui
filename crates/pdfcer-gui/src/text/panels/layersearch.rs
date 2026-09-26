@@ -8,7 +8,7 @@
 
 /// The hint inside the empty search field.
 ///
-/// ★ *"Search layers"* and not *"Filter…"* or *"Type to filter"*. The
+/// *"Search layers"* and not *"Filter…"* or *"Type to filter"*. The
 /// operator asked for *"a search to implement on the layers"* and that is
 /// the word they used; a control whose label is not the word the person
 /// asking for it used is a control they have to translate. "Filter" is also
@@ -35,7 +35,7 @@ pub fn field_tooltip() -> &'static str {
 
 /// The label on the control that empties the field.
 ///
-/// ★★ It exists at all because the field is drawn **above a list the
+/// It exists at all because the field is drawn **above a list the
 /// search may have emptied**, and an empty list is the one state in which
 /// the operator most needs to undo the thing that caused it. Clearing a
 /// text field by selecting and deleting is three gestures; this is one, and
@@ -62,7 +62,7 @@ pub fn clear_tooltip() -> &'static str {
 /// panel with no query in it says exactly what it said before this feature
 /// existed.
 ///
-/// ★ It reports `shown of total` rather than `hidden`, and the two are not
+/// It reports `shown of total` rather than `hidden`, and the two are not
 /// interchangeable. The operator is looking at the list; the useful number
 /// is the size of the thing in front of them and how much of the whole it
 /// is. *"13 layers hidden"* makes them do the subtraction to find out
@@ -82,11 +82,11 @@ pub fn narrowed(shown: usize, total: usize) -> Option<String> {
 /// typed"* are different states, and the operator can see the layers are in
 /// the document because they were on screen a moment ago.
 ///
-/// ★★ The query is quoted back, per rule 2. The count of what was hidden
+/// The query is quoted back, per rule 2. The count of what was hidden
 /// follows it, because the two together are the complete answer: *what you
 /// asked for*, and *what is still there behind it*.
 ///
-/// ★ The query is **not** truncated. A pasted paragraph would make a long
+/// The query is **not** truncated. A pasted paragraph would make a long
 /// line, and a long line in a narrow panel wraps — which is ugly and
 /// correct. Eliding it would produce a sentence quoting something the
 /// operator did not type, which for the one string whose job is to prove
@@ -125,7 +125,7 @@ mod tests {
         assert!(line.contains("16"), "{line}");
     }
 
-    /// ★★★ **The empty case quotes the query back** — rule 2, and the only
+    /// **The empty case quotes the query back** — rule 2, and the only
     /// way an operator can be sure the search ran rather than the panel
     /// failing.
     #[test]
@@ -178,7 +178,7 @@ mod tests {
         }
     }
 
-    /// ★ **The field's tooltip states what is matched.**
+    /// **The field's tooltip states what is matched.**
     ///
     /// Decision 1 (names only, never state) is invisible to an operator
     /// until they type `hidden` and are surprised. This is the one place it

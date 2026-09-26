@@ -20,7 +20,7 @@
 //! is welcome on the canvas it is drawn over; nothing about the document
 //! underneath is marked, and the outline is gone the instant the button is.
 //!
-//! ## ★ The window opens where the operator let go
+//! ## The window opens where the operator let go
 //!
 //! Not at [`super::float::opening_position`]'s cascade, which is the answer for
 //! the *command* route, where there is no pointer and no place the operator has
@@ -35,7 +35,7 @@
 //! platform reports; a headless frame reports nothing and the two coordinate
 //! spaces coincide at the origin.
 //!
-//! ## ★★ Two places inside the dock's footprint where a tear is still offered
+//! ## Two places inside the dock's footprint where a tear is still offered
 //!
 //! A **collapsed side's rail** and nothing else: it draws, but it publishes no
 //! side rectangle, because there are no columns under it to resolve a drop
@@ -83,7 +83,7 @@ pub struct TearPreview {
 /// [`super::drag::settle`], so that the two affordances it defers to have
 /// already had their say and the settlement reads one decision.
 ///
-/// ## ★ The stand-down is redundant today, and is kept anyway
+/// ## The stand-down is redundant today, and is kept anyway
 ///
 /// Both of the other two affordances require the pointer to be *inside* a
 /// compartment — a caret needs the strip it is inserting into, a compass needs

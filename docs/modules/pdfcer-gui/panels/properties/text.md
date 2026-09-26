@@ -15,7 +15,7 @@ built where that section says to build them:
 > *"…when I have an object selected like text the Tool tab doesn't switch
 > to giving me the editable stuff for that object."* — O46, 2026-08-26
 
-## ★★★ The operand is the TEXT SELECTION, not the object selection
+## The operand is the TEXT SELECTION, not the object selection
 
 This is the decision most likely to be read as a shortcut, so it is argued
 rather than asserted.
@@ -31,7 +31,7 @@ overlap, most plausibly — and an inference that picks the wrong run
 restyles text the operator did not select, silently, in a file they then
 send to somebody. The text sweep *is* a run range, exactly, by construction.
 
-★ That is a real gap and it is named rather than hidden: clicking a text
+That is a real gap and it is named rather than hidden: clicking a text
 object with the Select tool does not raise this section; sweeping across the
 text does.
 
@@ -56,13 +56,13 @@ kept its old spelling. **(2)** This section is now exactly what its heading
 claims: the editor for a **swept range**. With nothing swept it returns
 `false` and says nothing, because something else is speaking.
 
-★ Four of the five controls here are still sweep-only, and that is a
+Four of the five controls here are still sweep-only, and that is a
 decision rather than a leftover: face, size, bold and italic each need a
 reading of **one run** to be honest, and a whole object has no single answer
 to any of them. Colour is the one property for which *"they disagree"* is
 itself a displayable answer.
 
-## ★★ Why the read-back is stamped and not re-read every frame
+## Why the read-back is stamped and not re-read every frame
 
 The values shown — face, size, colour — come from `GlyphProvenance`, and
 provenance is **off** in the shared page-text cache. Reading it means an
@@ -75,12 +75,12 @@ frames a second on exactly the drawings this program is for. So
 re-reads only when it moves, which is the same shape as
 [`super::geometry::GeometryDraft`] and for a much larger reason.
 
-## ★★★ Bold and Italic are NEVER greyed, and that is the engine's ruling
+## Bold and Italic are NEVER greyed, and that is the engine's ruling
 
 `set_font` selects a real face and refuses when the page carries none.
 `gate_synthesis` refuses synthesis when a real face **is** available.
 
-★★★ **They are NOT exact complements, and this paragraph used to say they
+**They are NOT exact complements, and this paragraph used to say they
 were.** It read *"so between them every page is covered and there is no
 page on which bold is unreachable"*, quoting the engine — who withdrew the
 claim in writing on 2026-08-27 after reproducing the counter-example.
@@ -90,7 +90,7 @@ synthesis is already gated off. On `textedit/format_family.pdf` bold is
 reachable by neither verb. Filed, confirmed, and queued first by the
 engine; `crate::app::actions::textstyle`'s header carries the whole of it.
 
-★★ The conclusion survives its premise, which is why the two buttons still
+The conclusion survives its premise, which is why the two buttons still
 do not grey. Greying them would mean predicting a refusal that depends on a
 per-run glyph-coverage test this shell cannot run without doing the
 engine's work. The honest behaviour is to try and to show the engine's own
@@ -126,7 +126,7 @@ that works. So `FaceCannotCover` is deleted rather than retargeted; a
 sentence kept alive past its subject is how a shell ends up warning about a
 limit that no longer exists.
 
-⇒ ★★ And the instrument changed with it. The 2026-08-29 join was previewing
+⇒ And the instrument changed with it. The 2026-08-29 join was previewing
 the **R90 gate**: one bit, *"is there a real face on this page that claims
 this style"*. The gate is one input to the ladder's decision, not the
 decision, and it **cannot see rung 2 by construction** — the standard-14
@@ -143,7 +143,7 @@ than two answers kept in step by hand, and the join, its load-bearing
 ordering constraint in [`TextStyleDraft::sync`], and `FaceCannotCover` all
 die together because they were one workaround.
 
-⇒ ★★ **The buttons still do not grey**, and the reason has moved once more
+⇒ **The buttons still do not grey**, and the reason has moved once more
 — from *we cannot know*, to *knowing is not a reason to withhold*, to *the
 only refusal left is the operator's own setting*:
 
@@ -161,7 +161,7 @@ What changed instead is which sentence the hover carries, and that is exactly
 R83's size of change: the operator learns before the gesture rather than from
 a refusal after it. [`bold_hint`] carries the seven-row table.
 
-★ This is also why the two toggles do **not** show the run's current state.
+This is also why the two toggles do **not** show the run's current state.
 There is no "is this run bold" bit in a PDF: weight is a property of the
 *face* (`Helvetica-Bold` is a different font from `Helvetica`), and a
 synthetic weight is a stroke width in the content stream. A toggle drawn
@@ -191,13 +191,13 @@ row it sits on. Both surfaces — this panel and the ribbon's Format ▸ Font
 group — draw the identical body, because *"a face offered in one and not the
 other"* is the divergence this project keeps finding.
 
-★★ **The shell writes nothing.** `FormatPlan::created_font` puts the
+**The shell writes nothing.** `FormatPlan::created_font` puts the
 resource write on the caller, and `EditSession::format_text` **is** that
 caller: it folds the write into the same undo command on both its page and
 form paths. [`super::face`]'s header carries the evidence. Nothing here
 allocates an object or knows the shape of a font dictionary.
 
-★ The refusal for a fifteenth face is a **sentence**, not a silence —
+The refusal for a fifteenth face is a **sentence**, not a silence —
 `crate::text::status::selection::TextStyleRefusal::FaceNotOnPage`, whose old
 wording (*"pdfcer can only switch text to a font this page already carries"*)
 stated a limit this engine no longer has and was corrected in the same

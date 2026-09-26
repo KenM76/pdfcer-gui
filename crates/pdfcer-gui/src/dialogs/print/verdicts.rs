@@ -38,7 +38,7 @@ use crate::text::print as t;
 ///   and fit drop out for the same reason, which is why panning does not throw
 ///   a verdict away.
 ///
-/// ★ It is `PartialEq` rather than `Eq` because `Settings` carries a `String`
+/// It is `PartialEq` rather than `Eq` because `Settings` carries a `String`
 /// and `printable_pt` carries `f64`s. Comparing device dimensions with `==` is
 /// exact here on purpose: these numbers are copied out of the driver's own
 /// report, not computed, so two reads of an unchanged device produce the same
@@ -79,7 +79,7 @@ impl Context {
 
     /// The preview texture's cache key for `page`.
     ///
-    /// # ★★★ This is the enforcement, not a convenience
+    /// # This is the enforcement, not a convenience
     ///
     /// `super::preview::texture_for` obtains its key from **here**. That is
     /// what makes "the verdict is keyed on at least what the pixels are keyed
@@ -130,13 +130,13 @@ impl Sheet {
     /// The identity of the sheet `plan` describes, or `None` when the plan
     /// names a page the document no longer has.
     ///
-    /// ★ One function, called by both the write path and the read path, so
+    /// One function, called by both the write path and the read path, so
     /// the two cannot build the identity differently. A remembered verdict
     /// that could never be found again would look exactly like a preview that
     /// was never opened — a silent, permanent over-count with nothing to say
     /// why.
     ///
-    /// ★★ `page_sizes` is indexed by `plan.index`, the **document** page, and
+    /// `page_sizes` is indexed by `plan.index`, the **document** page, and
     /// never by a position in the plan list. That is the same defect
     /// `super::preview::paint` carries a comment about, and it would be
     /// re-introduced here by using the loop counter.
@@ -236,7 +236,7 @@ impl Verdicts {
     /// into a claim — split that way so the arithmetic is testable without a
     /// `Job`, a device or a document.
     ///
-    /// ★ Only [`Overhang::BlankBand`] and [`Overhang::Losing`] are treated as
+    /// Only [`Overhang::BlankBand`] and [`Overhang::Losing`] are treated as
     /// knowledge. `Unknown` means the page would not render and the whole band
     /// was hatched as the honest fallback — *"we could not look"*, which must
     /// not be allowed to look like *"we looked and it was fine"*. `Fits` on a
@@ -288,7 +288,7 @@ pub(super) enum ClipClaim {
     /// stands exactly: this many sheets have a page box exceeding the printable
     /// rectangle. Said in the words it has always been said in.
     ///
-    /// ★★★ THE RULING ON PRINTING WITHOUT EVER OPENING THE PREVIEW, and it is
+    /// THE RULING ON PRINTING WITHOUT EVER OPENING THE PREVIEW, and it is
     /// a decision rather than an accident of the arithmetic.
     ///
     /// The preview column is drawn whenever the dialog is open, so "never
@@ -381,7 +381,7 @@ impl ClipClaim {
     /// The job-wide sentence under the preview, or `None` when there is
     /// nothing to say.
     ///
-    /// ★ `Geometric` and `Measured` share one sentence, and that is not
+    /// `Geometric` and `Measured` share one sentence, and that is not
     /// laziness. [`t::clip_summary`] has always read *"N of these T sheets
     /// will lose content outside the printable area"* — a content claim. Under
     /// `Measured` that claim is now **verified**; under `Geometric` it is the
@@ -398,7 +398,7 @@ impl ClipClaim {
 
     /// One word for the diagnostic trace.
     ///
-    /// ★ This is the ONLY headless evidence of which claim a frame made, and
+    /// This is the ONLY headless evidence of which claim a frame made, and
     /// it is needed for the same reason `overhang=` is: a button reading
     /// *"Print — 2 sheets will lose content"* and one reading *"Print — up to
     /// 2 sheets may lose content"* differ by a state nothing else exposes, and

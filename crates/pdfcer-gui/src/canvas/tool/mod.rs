@@ -37,7 +37,7 @@ pub enum CanvasTool {
     /// its anchors appears **immediately**; click an anchor to select it,
     /// Shift-click to add, drag to move the set.
     ///
-    /// # ★★ Why this exists, and what it replaces
+    /// # Why this exists, and what it replaces
     ///
     /// It replaces a **ritual this project invented**: reaching an anchor by
     /// clicking an object, double-clicking to descend to its subpath and
@@ -69,7 +69,7 @@ pub enum CanvasTool {
     Hand,
     /// Drag authors a markup annotation of the carried kind.
     ///
-    /// # ★ One variant carrying a kind, not one variant per shape
+    /// # One variant carrying a kind, not one variant per shape
     ///
     /// All markup kinds live in the carried [`MarkupKind`] rather than becoming
     /// separate `CanvasTool` entries, because separate entries would put
@@ -105,7 +105,7 @@ pub enum CanvasTool {
     /// alternative it avoids is three separate `CanvasTool` variants for the
     /// measure tools plus five helper predicates to ask which is active.
     ///
-    /// # ★ Unlike every other tool, this one works on CLICKS
+    /// # Unlike every other tool, this one works on CLICKS
     ///
     /// A ce dimension is picked, not dragged: point A, point B, and a third
     /// click saying how far off the geometry the dimension sits. So
@@ -123,7 +123,7 @@ pub enum CanvasTool {
     /// Places a **text-bearing** annotation of the carried kind — a text box,
     /// a sticky note or a stamp.
     ///
-    /// # ★ A fourth family, and why it is not `Markup(kind)`
+    /// # A fourth family, and why it is not `Markup(kind)`
     ///
     /// `Markup` and this one look alike from outside — both draw a rectangle
     /// on the page and both end in an annotation — and they are different in
@@ -146,7 +146,7 @@ pub enum CanvasTool {
     /// mode, including the ones whose primary button is otherwise the content
     /// marquee.
     ///
-    /// # ★ The variant that carries nothing, and why that is the point
+    /// # The variant that carries nothing, and why that is the point
     ///
     /// `Markup` and `Measure` each carry a kind because the operator is drawing
     /// exactly one shape or placing exactly one dimension, and a type that could
@@ -177,7 +177,7 @@ pub enum CanvasTool {
     /// permitted in every mode, and [`retire_forbidden`] says so explicitly
     /// rather than by omission.
     ///
-    /// # ★ It is exclusive with the content marquee by PRECEDENCE, not by
+    /// # It is exclusive with the content marquee by PRECEDENCE, not by
     /// construction
     ///
     /// This is the one property this variant genuinely weakens, so it is stated
@@ -206,7 +206,7 @@ pub enum CanvasTool {
     /// [`TextEditKind::Edit`], at a fresh origin for [`TextEditKind::Add`] — and
     /// the keyboard then edits the page's own content.
     ///
-    /// # ★ The argument the module header demands of every new variant
+    /// # The argument the module header demands of every new variant
     ///
     /// Made here against the bar the header sets — *"arrives with its own
     /// state"* — and against the sharper objection text editing specifically
@@ -270,18 +270,18 @@ pub enum CanvasTool {
     TextEdit(TextEditKind),
     /// **Placing a new form field**, armed from Edit ▸ Forms.
     ///
-    /// ★ Geometrically identical to a markup rectangle — arm, put a rectangle
+    /// Geometrically identical to a markup rectangle — arm, put a rectangle
     /// on a page, commit once — which is why it borrows
     /// [`crate::canvas::markup::band`]'s drag rather than growing a second one.
     ///
-    /// ★★ It differs in exactly one way, and the difference is the feature:
+    /// It differs in exactly one way, and the difference is the feature:
     /// **the release authors nothing.** It opens a dialog, and the field exists
     /// only once the operator presses OK. That is what makes Escape free and
     /// what stops a mis-drag leaving a stray control on the page — which
     /// matters more here than for markup, because an unwanted annotation is
     /// obvious and an unwanted invisible form field is not.
     Form(crate::canvas::formfield::FormFieldKind),
-    /// ★★★ **A window is waiting for the operator to point at the page** —
+    /// **A window is waiting for the operator to point at the page** —
     /// `OPERATOR_REQUESTS.md` O66.
     ///
     /// > *"anything we are inserting like this should have an option in its
@@ -293,7 +293,7 @@ pub enum CanvasTool {
     /// press meaning of its own, and a commit path — which is the requesting
     /// dialog's own Insert rather than anything on this canvas.
     ///
-    /// ★ The dialog that armed it is **not on screen** while this is active,
+    /// The dialog that armed it is **not on screen** while this is active,
     /// and that is derived rather than stored — see
     /// [`crate::canvas::placing`]'s header for why a stored flag rebuilds a
     /// stranding bug the Set-scale round trip already has.
@@ -349,7 +349,7 @@ impl CanvasTool {
     /// cursors** — correctly, because a markup drag over a selected object
     /// draws a shape rather than resizing anything.
     ///
-    /// ★ `Text` returns `CursorIcon::Text` in both states, on the same argument
+    /// `Text` returns `CursorIcon::Text` in both states, on the same argument
     /// the crosshair makes and with one extra consequence worth naming. The
     /// I-beam is what Acrobat, Inkscape and SolidWorks all show over selectable
     /// text, and [`cursor_for`]'s own note records why this shell would not
@@ -371,16 +371,16 @@ impl CanvasTool {
     #[must_use]
     pub fn cursor(self, dragging: bool) -> Option<CursorIcon> {
         match self {
-            // ★ The same crosshair a markup rectangle uses, because it is the
+            // The same crosshair a markup rectangle uses, because it is the
             // same gesture: the operator is about to put a rectangle on the
             // page. A different cursor would imply a different act.
             Self::Form(_) => Some(CursorIcon::Crosshair),
-            // ★ Crosshair, joining the Form / Markup / TextAnnot group for
+            // Crosshair, joining the Form / Markup / TextAnnot group for
             // their stated reason: the gesture is *put something here*, and a
             // crosshair is the one cursor that says so without implying what.
             Self::Place(_) => Some(CursorIcon::Crosshair),
             Self::Select => None,
-            // ★ **The same answer as `Select` — `None` — and that is the whole
+            // **The same answer as `Select` — `None` — and that is the whole
             // point.** The Node tool's feedback is the anchors it draws, not a
             // cursor, and returning an icon here would suppress the anchor and
             // handle cursors underneath exactly as `Text`'s I-beam suppresses
@@ -390,7 +390,7 @@ impl CanvasTool {
             Self::Node => None,
             Self::Hand if dragging => Some(CursorIcon::Grabbing),
             Self::Hand => Some(CursorIcon::Grab),
-            // ★ The text-annotation tools join the crosshair group. They place
+            // The text-annotation tools join the crosshair group. They place
             // something on the page, which is what the crosshair says, and the
             // fact that the placing is followed by typing changes nothing
             // about the gesture the cursor is describing.
@@ -404,7 +404,7 @@ impl CanvasTool {
             // says which of the two things a drag on this page is about to do,
             // which is the whole reason the tool exists.
             Self::Text => Some(CursorIcon::Text),
-            // ★ …and the same I-beam for the caret tool, which is the one place
+            // …and the same I-beam for the caret tool, which is the one place
             // this file gives two variants one answer on purpose. The pointer
             // says *what a press on this page is about to do*, and for both of
             // these it is about to do something to text — sweep it or put a
@@ -517,7 +517,7 @@ impl CanvasTool {
     /// separately is how a canvas comes to place a caret while the ribbon says
     /// Add text.
     ///
-    /// ★ Note what it is **not** a sibling of: [`Self::is_text`]. That answers
+    /// Note what it is **not** a sibling of: [`Self::is_text`]. That answers
     /// *"is the text SWEEP armed"* and this answers *"is the text CARET armed"*,
     /// and they are false at the same time and true at different times. They are
     /// two questions with confusingly similar names, so each names the other
@@ -541,7 +541,7 @@ pub use arm::*;
 
 #[cfg(test)]
 mod tests {
-    // ★ Imported HERE rather than at module scope. Every production user of
+    // Imported HERE rather than at module scope. Every production user of
     // these two is in `arm`, so a module-level import would be unused in the
     // non-test build and clippy would refuse it.
     // The tests still exercise the arming API through the re-export, which is
@@ -552,7 +552,7 @@ mod tests {
     use super::*;
     use egui::{Context, Event, Modifiers, RawInput};
 
-    /// ★ **Space borrows the hand and gives it back** — the requirement,
+    /// **Space borrows the hand and gives it back** — the requirement,
     /// stated as the pure rule it is implemented as.
     ///
     /// The third case is the one that matters: releasing space returns to
@@ -601,7 +601,7 @@ mod tests {
         assert_eq!(CanvasTool::Hand.markup_kind(), None);
     }
 
-    /// ★ **The text tool does not pan, shows an I-beam in both states, and is
+    /// **The text tool does not pan, shows an I-beam in both states, and is
     /// the only tool `is_text` answers `true` for.**
     ///
     /// All three halves, because each has a distinct and plausible failure. A
@@ -632,7 +632,7 @@ mod tests {
             assert!(!other.is_text(), "{other:?} is not the text tool");
         }
 
-        // ★ Rung 1 of `cursor_for`, on hover with no button down and no gesture
+        // Rung 1 of `cursor_for`, on hover with no button down and no gesture
         // — which is the whole difference the tool makes to the pointer, and the
         // half the un-armed rule could not pay for. It also outranks a hovered
         // grip, which is load-bearing in Edit: a content selection can be on the
@@ -662,7 +662,7 @@ mod tests {
         );
     }
 
-    /// ★ **Pressing the armed Text button again retires it; pressing it from
+    /// **Pressing the armed Text button again retires it; pressing it from
     /// another tool takes it.**
     ///
     /// `arm_markup`'s two halves for a tool with no kind, and both matter for the
@@ -700,7 +700,7 @@ mod tests {
         assert_eq!(toggle_hand(&ctx), CanvasTool::Select);
     }
 
-    /// ★ **Space borrows the hand out of the text tool and gives it back**, and
+    /// **Space borrows the hand out of the text tool and gives it back**, and
     /// **Escape does not claim the text tool.**
     ///
     /// The first is the property the derived-never-stored design exists for,
@@ -735,7 +735,7 @@ mod tests {
         );
     }
 
-    /// ★ **No mode retires the text tool** — the `retire_forbidden` decision,
+    /// **No mode retires the text tool** — the `retire_forbidden` decision,
     /// asserted over every capability combination rather than over the three
     /// shipped modes.
     ///
@@ -777,7 +777,7 @@ mod tests {
         }
     }
 
-    /// ★ **The cursor precedence**, all four rungs, in one test that would
+    /// **The cursor precedence**, all four rungs, in one test that would
     /// have caught each of them being reordered.
     ///
     /// This rule was four `if`s in the middle of `canvas::interact` and had no
@@ -845,7 +845,7 @@ mod tests {
         );
     }
 
-    /// ★ **Pressing an armed markup button again retires the tool; pressing a
+    /// **Pressing an armed markup button again retires the tool; pressing a
     /// different one changes kind.**
     ///
     /// Both halves, because a build that only armed would pass a test of the
@@ -871,7 +871,7 @@ mod tests {
         assert_eq!(selected(&ctx), CanvasTool::Select);
     }
 
-    /// ★ **Escape's claimant reports whether it took the key.**
+    /// **Escape's claimant reports whether it took the key.**
     ///
     /// `false` with nothing armed is the load-bearing half: without it Escape
     /// would be consumed by a tool that was not armed, and the selection ladder
@@ -893,7 +893,7 @@ mod tests {
         assert_eq!(selected(&ctx), CanvasTool::Hand);
     }
 
-    /// ★ **Space borrows the hand out of the markup tool and gives it back.**
+    /// **Space borrows the hand out of the markup tool and gives it back.**
     ///
     /// The property the whole "derived, never stored" design exists for,
     /// asserted for the new tool: an operator drawing a rectangle who holds
@@ -919,7 +919,7 @@ mod tests {
         assert_eq!(selected(&ctx), CanvasTool::Hand);
     }
 
-    /// ★ **A focused text field keeps the space bar**, so typing a page
+    /// **A focused text field keeps the space bar**, so typing a page
     /// number into the status bar does not pan the drawing under the
     /// operator.
     ///

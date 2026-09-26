@@ -4,7 +4,7 @@
 numbers rather than from a mode flag: **at this zoom, on this page, do we
 rasterize the whole sheet or only what is on screen?**
 
-## ★★★ The constraint that shaped this, in the operator's words
+## The constraint that shaped this, in the operator's words
 
 > *"I don't want to lose our capability to pan around a page and still see
 > high detail as we pan. I don't want the affect that other readers have
@@ -31,14 +31,14 @@ So region rendering may not simply replace it.
 | [`Strategy::WholePage`] | while the page's raster fits `MAX_PIXMAP_EDGE` — **and, on a page blended in ink, while it still composites in ink** ([`Ink`]) | **free, full detail** |
 | [`Strategy::Region`] | only above that | free within the overscan; a re-raster on leaving it |
 
-★★ **The tier he works in does not change at all.** On an A1 sheet the
+**The tier he works in does not change at all.** On an A1 sheet the
 whole-page raster survives to about 1,034 %, and today `MAX_ZOOM` stops him
 at 800 % first — so every zoom he has ever used keeps exactly the behaviour
 he has, *by construction rather than by tuning*. There is no low-zoom
 performance question to answer here, because at low zoom this module returns
 [`Strategy::WholePage`] and nothing downstream is different.
 
-★ And the region tier only ever engages where the zoom is currently
+And the region tier only ever engages where the zoom is currently
 **unavailable**. It cannot regress anything, because there is nothing there
 to regress.
 

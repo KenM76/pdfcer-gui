@@ -37,7 +37,7 @@ pub enum Vertical {
 /// caller leaves the caret where it is, which is what every editor does at the
 /// end of a document.
 ///
-/// # ★★ It crosses paragraphs without knowing what one is
+/// # It crosses paragraphs without knowing what one is
 ///
 /// `caret_up` and `caret_down` walk the model's **lines**, and a `Block` is a
 /// group of lines. So a caret on the last line of one paragraph steps to the
@@ -46,7 +46,7 @@ pub enum Vertical {
 /// move to the next block of text"*, and it is `pdfcer-core`'s recognition doing
 /// the work.
 ///
-/// # ★ The desired column is preserved, which is what makes repeated presses
+/// # The desired column is preserved, which is what makes repeated presses
 /// # behave
 ///
 /// `caret_x` is the caret's page-space x; passing it to `caret_up` asks for the
@@ -71,7 +71,7 @@ pub enum Vertical {
 pub fn neighbour(doc: &OpenDoc, run: usize, caret: usize, dir: Vertical) -> Option<(usize, usize)> {
     let text = doc.page_text()?;
     let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
-    // ★ CHARACTERS in, BYTES to the model, characters out.
+    // CHARACTERS in, BYTES to the model, characters out.
     //
     // `Draft::caret` is a character index — its own docs are explicit, and the
     // reason is that a keystroke moves the caret by one character and `é` is one
@@ -100,7 +100,7 @@ pub fn neighbour(doc: &OpenDoc, run: usize, caret: usize, dir: Vertical) -> Opti
 /// Home and End. Salvaged from the same four lines as [`neighbour`] and using
 /// the same model, so a line means the same thing to both.
 ///
-/// ★ A *line* here is the page's, not the run's — a line drawn as four separate
+/// A *line* here is the page's, not the run's — a line drawn as four separate
 /// show operators (a CAD title block's row, which is the shape this operator's
 /// documents are full of) is one line to the model, so End reaches the end of
 /// what he can see rather than the end of the fragment he happens to be in.
@@ -147,7 +147,7 @@ fn char_offset(
 /// **Press Up or Down in a run-anchored draft.** `true` when the caret moved
 /// and the caller must stop handling the event.
 ///
-/// # ★★ Why this is a function and not four lines in the match arm
+/// # Why this is a function and not four lines in the match arm
 ///
 /// Because the arm has to do three things in a fixed order and two of them are
 /// easy to leave out: trace the outcome, **commit the draft it is leaving**,
@@ -157,7 +157,7 @@ fn char_offset(
 /// `commit_into` writes nothing when the text is unchanged, so an operator
 /// merely *reading* with the arrow keys puts nothing on the undo stack.
 ///
-/// # ★★★ The NOWHERE outcome is traced too, and that came from a driven run
+/// # The NOWHERE outcome is traced too, and that came from a driven run
 ///
 /// The first live run of `arrow_keys_walk_between_blocks` failed with *"the
 /// arrow keys moved the caret nowhere"*, and the trace could not say which of
@@ -175,7 +175,7 @@ fn char_offset(
 /// cannot tell a build defect from a fixture fact will eventually accuse the
 /// wrong one.
 ///
-/// ★ And `None` is genuinely ordinary here, which is why it must not read as
+/// And `None` is genuinely ordinary here, which is why it must not read as
 /// an error: `caret_up`/`caret_down` never cross a **column band**
 /// (`pdfcer-core`'s reading order), so a lone label in the middle of a drawing
 /// has nothing above or below it by construction.
@@ -186,7 +186,7 @@ pub(super) fn step(
     dir: Vertical,
     actions: &mut Vec<crate::app::actions::Action>,
 ) -> bool {
-    // ★ A BOX draft is deliberately excluded, and so is a bare-page one. Their
+    // A BOX draft is deliberately excluded, and so is a bare-page one. Their
     // lines are the shell's wrap rather than the page's, so this model would
     // move the caret to a run somewhere else on the sheet mid-paragraph.
     let Anchor::Run { run, .. } = draft.anchor else {
@@ -220,7 +220,7 @@ pub(super) fn step(
 /// **Press Home or End in a run-anchored draft.** `true` when the caret moved
 /// to a slot the draft did not already contain, and the caller must stop.
 ///
-/// # ★★ A LINE IS THE PAGE'S, NOT THE RUN'S — which is the whole point
+/// # A LINE IS THE PAGE'S, NOT THE RUN'S — which is the whole point
 ///
 /// A row of a CAD title block is drawn as four or five separate show
 /// operators, and the operator sees **one line**. So End belongs at the end of
@@ -229,7 +229,7 @@ pub(super) fn step(
 /// [`step`] does. That is the same recognition that made `Reason::SharesTheLine`
 /// necessary, put to a second use.
 ///
-/// ★ `false` is the ordinary answer, not a failure: on a line that is one run,
+/// `false` is the ordinary answer, not a failure: on a line that is one run,
 /// [`line_end`] reports there is nowhere new to go and the caller falls back to
 /// moving within the draft — which lands in the same place, one allocation
 /// cheaper and without touching the undo stack.
@@ -264,7 +264,7 @@ pub(super) fn line(
 
 /// Commit the draft being left and open one on `to_run`.
 ///
-/// ★★ The order is load-bearing: **commit first**. A caret that walks out of a
+/// The order is load-bearing: **commit first**. A caret that walks out of a
 /// run with unsaved keystrokes in it silently discards them, which is this
 /// project's defining defect class — and `commit_into` writes nothing when the
 /// text is unchanged, so an operator merely *reading* with the navigation keys
@@ -304,7 +304,7 @@ fn land(
 
 #[cfg(test)]
 mod tests {
-    /// ★ **The two conversions are inverses**, which is the only property in
+    /// **The two conversions are inverses**, which is the only property in
     /// this module a test can reach without a document.
     ///
     /// Everything else here is `pdfcer-core`'s recognition, which has its own

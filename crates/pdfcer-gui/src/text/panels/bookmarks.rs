@@ -9,7 +9,7 @@
 
 /// The glyph on a row whose children are **hidden** — press to reveal them.
 ///
-/// ★ A right-pointing triangle, which is the disclosure control every tree in
+/// A right-pointing triangle, which is the disclosure control every tree in
 /// every operating system uses: Explorer's navigation pane, Finder's sidebar,
 /// every IDE's project tree, Acrobat's own Bookmarks panel. The operator's
 /// standing tie-breaker is *"make it work the way other programs do"*, and
@@ -20,7 +20,7 @@
 /// and the day somebody wants `+`/`−` instead there must be one place to
 /// change it.
 ///
-/// # ★★★ It is U+23F5, not U+25B6, and that was measured rather than chosen
+/// # It is U+23F5, not U+25B6, and that was measured rather than chosen
 ///
 /// The obvious pair is `▶` U+25B6 / `▼` U+25BC — the Geometric Shapes
 /// triangles every style guide names. **The bundled font stack cannot draw
@@ -57,7 +57,7 @@ pub const fn bookmark_expanded_glyph() -> &'static str {
 
 /// Hover text on the triangle of a **collapsed** row.
 ///
-/// ★★ It says the change is **saved into the document**, and that is the
+/// It says the change is **saved into the document**, and that is the
 /// non-obvious half. Every other outline panel an operator has used —
 /// Explorer's tree, an IDE's file list, a spreadsheet's grouping — treats
 /// expand and collapse as a view setting that belongs to the window. Here it
@@ -76,7 +76,7 @@ pub const fn bookmark_expand_tooltip() -> &'static str {
 
 /// Hover text on the triangle of an **expanded** row.
 ///
-/// ★ It names the consequence the operator is about to create for themselves:
+/// It names the consequence the operator is about to create for themselves:
 /// the rows go out of sight, and everything else in this panel that talks
 /// about a collapsed bookmark — the add row's disclosure, the move's — is
 /// about the state this button produces. See [`bookmark_expand_tooltip`] for
@@ -94,7 +94,7 @@ pub const fn bookmark_collapse_tooltip() -> &'static str {
 
 /// The standing hint that says the rows can be dragged.
 ///
-/// ★ Drawn once, above the list, beside the sentence that explains what
+/// Drawn once, above the list, beside the sentence that explains what
 /// clicking a row does. R83 forbids offering a control that cannot work, and
 /// its quieter twin is that a gesture nobody is told about is a capability the
 /// program does not have. A drag has no widget to look at, which is exactly
@@ -111,7 +111,7 @@ pub const fn bookmark_drag_hint() -> &'static str {
      Whatever is filed under it comes with it."
 }
 
-/// ★★ **What the move did**, said after the press from the engine's own report.
+/// **What the move did**, said after the press from the engine's own report.
 ///
 /// # The number is `OutlineMove::visible_items`, and it is not a subtree size
 ///
@@ -154,7 +154,7 @@ pub fn bookmark_moved(visible_items: usize, reparented: bool) -> String {
     }
 }
 
-/// ★★★ **The subtree that travelled and was never counted**, because it was
+/// **The subtree that travelled and was never counted**, because it was
 /// collapsed.
 ///
 /// # Why the engine's number cannot say this
@@ -176,7 +176,7 @@ pub fn bookmark_moved(visible_items: usize, reparented: bool) -> String {
 /// second only when it differs from the first, which is exactly when the item
 /// was collapsed.
 ///
-/// ★ It is worded as a fact about the branch, not as a warning: the move
+/// It is worded as a fact about the branch, not as a warning: the move
 /// worked, everything went, and the only thing the operator could not see is
 /// how much.
 #[must_use]
@@ -188,7 +188,7 @@ pub fn bookmark_move_took_hidden(descendants: usize) -> String {
     }
 }
 
-/// ★★★ **The bookmark landed somewhere it cannot be seen**, and the panel is
+/// **The bookmark landed somewhere it cannot be seen**, and the panel is
 /// right to show it that way.
 ///
 /// # The trap this closes, in the operator's own terms
@@ -228,7 +228,7 @@ pub const fn bookmark_move_into_collapsed() -> &'static str {
 /// **The move was asked for and changed nothing**, because the bookmark was
 /// already there.
 ///
-/// # ★ Why this is a disclosure and not a silence
+/// # Why this is a disclosure and not a silence
 ///
 /// `OutlineMove::moved` is `false` for a placement the bookmark already
 /// occupies, and the engine is explicit that this is *"a legitimate request
@@ -252,7 +252,7 @@ pub const fn bookmark_move_no_change() -> &'static str {
 /// **A bookmark cannot be filed inside itself** — the decline for a drop that
 /// landed on the dragged row or somewhere in its own subtree.
 ///
-/// # ★★★ Why this is a sentence and not a dimmed caret alone
+/// # Why this is a sentence and not a dimmed caret alone
 ///
 /// The caret **is** dimmed over such a landing, before the press, which is the
 /// disclosure this panel prefers. But the operator can release anyway, and
@@ -278,7 +278,7 @@ pub const fn bookmark_move_no_change() -> &'static str {
 /// `EditSession::deletion_refusal`. If the two ever disagree, the engine wins
 /// and [`bookmark_move_declined_engine`] is what the operator reads.
 ///
-/// ★ The bookmark is **not named**, deliberately. See the module header.
+/// The bookmark is **not named**, deliberately. See the module header.
 #[must_use]
 pub const fn bookmark_move_declined_own_subtree() -> &'static str {
     "A bookmark cannot be filed inside itself, or inside anything filed under \
@@ -288,7 +288,7 @@ pub const fn bookmark_move_declined_own_subtree() -> &'static str {
 /// **The engine refused the move** — the residue the shell's own forecast
 /// cannot cover.
 ///
-/// # ★★ What is actually left after the forecast
+/// # What is actually left after the forecast
 ///
 /// `crate::panels::bookmarks::reorder` refuses a drop into the dragged item's
 /// own subtree before raising anything, so `OutlineMoveIntoOwnSubtree` should
@@ -309,11 +309,11 @@ pub const fn bookmark_move_declined_own_subtree() -> &'static str {
 /// verb, and it is why a catch-all sentence is honest here — the operator can
 /// act on none of them, so splitting them would be detail without a remedy.
 ///
-/// ★ The engine's own `Display` prose is **not** printed. It is written for a
+/// The engine's own `Display` prose is **not** printed. It is written for a
 /// log, it reaches the trace through `vector_edit`, and the operator gets a
 /// sentence that says what happened and what state the document is in.
 ///
-/// ★ The bookmark is **not named**. See the module header.
+/// The bookmark is **not named**. See the module header.
 #[must_use]
 pub const fn bookmark_move_declined_engine() -> &'static str {
     "That bookmark was not moved \u{2014} pdfcer declined the change, and the \
@@ -325,7 +325,7 @@ pub const fn bookmark_move_declined_engine() -> &'static str {
 mod tests {
     use super::*;
 
-    /// ★★ **The move disclosure never says "0 bookmarks".**
+    /// **The move disclosure never says "0 bookmarks".**
     ///
     /// `OutlineMove::visible_items` counts the item itself, so `1` means *just
     /// this one* and the sentence must not subtract its way into a template.
@@ -347,7 +347,7 @@ mod tests {
         assert!(bookmark_moved(8, true).contains('7'));
     }
 
-    /// ★ **Re-parenting and reordering do not read the same.**
+    /// **Re-parenting and reordering do not read the same.**
     ///
     /// `OutlineMove::reparented` is carried by the engine precisely so a shell
     /// does not derive it, *"because it is the fact a disclosure sentence turns
@@ -361,7 +361,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **The hidden-subtree sentence is about the branch, not about the
+    /// **The hidden-subtree sentence is about the branch, not about the
     /// screen**, and it is the one place the two `/Count` quantities are
     /// visibly different.
     ///
@@ -383,7 +383,7 @@ mod tests {
         assert!(bookmark_move_took_hidden(1).contains("1 bookmark hidden"));
     }
 
-    /// ★ **The collapsed-destination sentence names the remedy and does not
+    /// **The collapsed-destination sentence names the remedy and does not
     /// read as a failure.**
     ///
     /// Its whole purpose is that the operator watched a row leave and did not
@@ -409,7 +409,7 @@ mod tests {
         assert!(add.contains("still be in the file"), "{add}");
     }
 
-    /// ★★ **Neither decline names a bookmark**, which is what keeps
+    /// **Neither decline names a bookmark**, which is what keeps
     /// `Declined` `Copy`.
     ///
     /// The field-group pair made this rule: a `String` payload on that enum
@@ -428,7 +428,7 @@ mod tests {
         assert!(engine.contains("exactly as it was"), "{engine}");
     }
 
-    /// ★ **The two triangles differ**, and both are one character.
+    /// **The two triangles differ**, and both are one character.
     ///
     /// A build that returned the same glyph for both states would give the
     /// operator a control that never appears to respond — the row would open
@@ -441,7 +441,7 @@ mod tests {
         assert_eq!(bookmark_expanded_glyph().chars().count(), 1);
     }
 
-    /// ★★ **Both triangle tooltips say the state is stored in the document.**
+    /// **Both triangle tooltips say the state is stored in the document.**
     ///
     /// The one genuinely surprising fact about this control. Every other tree
     /// an operator has used treats expand and collapse as a window setting;
@@ -457,7 +457,7 @@ mod tests {
         assert_ne!(bookmark_expand_tooltip(), bookmark_collapse_tooltip());
     }
 
-    /// ★ **The drag hint names all three landings.**
+    /// **The drag hint names all three landings.**
     ///
     /// The three-band split is the only part of the gesture that cannot be
     /// discovered by trying it once: an edge drop and a middle drop look

@@ -138,7 +138,7 @@ pub(super) fn size_token(size: Option<(f64, f64)>) -> String {
 
 /// **The largest page the auto decision measured**, as a [`size_token`].
 ///
-/// ★ This is the field that makes O167 checkable from outside the process,
+/// This is the field that makes O167 checkable from outside the process,
 /// and it is worth saying why the other three are not enough. `pick=auto` says
 /// the operator chose the policy; `auto=matched` says the decision ran;
 /// `paper=Form(8)` says it was turned into a request. **None of them says the
@@ -445,7 +445,7 @@ mod tests {
     /// every drawing. 10 pt over A4 on the short edge is 3.5 mm — small,
     /// visible, and refused.
     ///
-    /// ★ The answer is A3, not Letter, and the reason is worth keeping: Letter
+    /// The answer is A3, not Letter, and the reason is worth keeping: Letter
     /// is **wider** than this page (612 vs 605) and **shorter** than it
     /// (792 vs 842), so it does not hold it either way round. A fit test that
     /// compared one axis, or compared areas, would have answered Letter — and
@@ -474,7 +474,7 @@ mod tests {
 
     /// **Every outcome resolves to a paper the engine can act on.**
     ///
-    /// ★ The property asserted is the one that matters downstream:
+    /// The property asserted is the one that matters downstream:
     /// `AutoFromPages` must never survive the resolution. A build where it did
     /// would hand the spooler a variant it maps to `DeviceDefault` anyway — so
     /// the job would print on the device's own sheet while the sentence under
@@ -514,7 +514,7 @@ mod tests {
     /// asserted `"595.28x841.89"` would pass on a spelling no consumer could
     /// read back, and that is precisely the failure this token replaced.
     ///
-    /// ★ The tolerance is one hundredth of a point, which is the rounding the
+    /// The tolerance is one hundredth of a point, which is the rounding the
     /// two-decimal format applies on purpose. 0.01 pt is 3.5 micron; the fit
     /// tolerance this number is compared against is [`FIT_TOLERANCE_PT`], two
     /// hundred times larger.
@@ -575,7 +575,7 @@ mod tests {
         };
         assert_eq!(mixed_token(&AutoPaper::Matched(single.clone())), "no");
         assert_eq!(mixed_token(&AutoPaper::TooBig(many.clone())), "yes");
-        // ★ And the page it reports is the page the choice was made FOR, not
+        // And the page it reports is the page the choice was made FOR, not
         // the sheet it chose — the two are equal in this fixture on purpose,
         // so the assertion below uses a Match where they differ.
         let bigger = Match {

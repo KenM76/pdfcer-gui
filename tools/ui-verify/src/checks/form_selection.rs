@@ -69,7 +69,7 @@ impl Check for AClickInsideAFormSelectsWhatIsDrawnThere {
 
 /// Resolve a fixture under the engine repository's synthetic corpus.
 ///
-/// ★ The path is derived, not configured. `D:\Dev\pdfcer` is READ-ONLY to this
+/// The path is derived, not configured. `D:\Dev\pdfcer` is READ-ONLY to this
 /// project and its corpus is the only place this shape exists, so the check
 /// reads from it and writes nowhere near it. `None` rather than a panic turns
 /// a missing corpus into a SKIP with a reason instead of a crash mid-suite.
@@ -279,7 +279,7 @@ fn aim(mapping: &CanvasMapping, frame: &WindowFrame, point: (f64, f64)) -> Resul
 
 /// The `first=` value of the most recent `canvas-selection` line, if any.
 ///
-/// ★ The **last** line rather than a count of new ones. `canvas-selection` is
+/// The **last** line rather than a count of new ones. `canvas-selection` is
 /// emitted through `diag::trace_changed`, so a click producing the same
 /// selection as the previous one emits nothing — a consumer that counted lines
 /// would read a legitimate no-change as a dropped event. Reading the last line

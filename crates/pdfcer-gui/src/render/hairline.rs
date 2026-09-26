@@ -12,7 +12,7 @@
 //! `render::worker` sits at 1,474 of R2's 1,500 lines with no room for a
 //! measurement this size.
 //!
-//! ## ★★★ Why this exists when four other tests already cover the feature
+//! ## Why this exists when four other tests already cover the feature
 //!
 //! Because all four of them are about **wiring**, and wiring can be perfect
 //! over a renderer that ignores the field.
@@ -30,7 +30,7 @@
 //! That is exactly the operator's complaint about the control this replaces:
 //! *"the button never worked."* So this file measures the PIXELS.
 //!
-//! ## ★★★ It also falsifies the OPPOSITE convention, which is the real risk
+//! ## It also falsifies the OPPOSITE convention, which is the real risk
 //!
 //! The two display modes routinely confused with each other are opposites:
 //!
@@ -62,7 +62,7 @@
 //! and it is *harmless at page fit and fat when you zoom in*, which is the
 //! whole of what he reported.
 //!
-//! ## ★★ THE SCALE IS THE PRECONDITION, and getting it wrong makes the test
+//! ## THE SCALE IS THE PRECONDITION, and getting it wrong makes the test
 //! vacuous rather than red
 //!
 //! At scale 1.0 a 1.0-unit stroke is one device pixel, the engine's §8.4.3.2
@@ -87,7 +87,7 @@ const SCALE: f32 = 4.0;
 
 /// A pixel this dark or darker counts as ink.
 ///
-/// ★ Generous on purpose. The question is *how much of the page is covered by
+/// Generous on purpose. The question is *how much of the page is covered by
 /// stroke*, and a threshold tuned tight to full black would count only the
 /// cores of the strokes and would move with the renderer's antialiasing. 128 is
 /// "more than half way to black", which every pixel inside a 4 px stroke
@@ -97,7 +97,7 @@ const INK: u8 = 128;
 /// Render the pinned fixture's first page under one stroke-display convention
 /// and return `(ink pixels, total pixels)`.
 ///
-/// ★ Built through `RenderOptions::default()` **plus one assignment**, which is
+/// Built through `RenderOptions::default()` **plus one assignment**, which is
 /// deliberately the same two lines `render::worker::render_on_worker` executes
 /// — a test that constructed its options some other way would be measuring a
 /// third code path. (This file is `#![cfg(test)]`, so
@@ -141,7 +141,7 @@ fn ink_at(display: StrokeDisplay) -> (u64, u64) {
 
 /// How many strokes the renderer THINNED at `display`, on the pinned fixture.
 ///
-/// ★ A sibling of [`ink_at`] rather than a second return value from it,
+/// A sibling of [`ink_at`] rather than a second return value from it,
 /// deliberately: that function is about pixels and this one is about the
 /// engine's own count, and a caller reading `(ink, total, thinned)` would have
 /// to remember which two are pixels. Both build their options the same way —
@@ -163,7 +163,7 @@ fn hairlined_at(display: StrokeDisplay) -> usize {
         .strokes_hairlined
 }
 
-/// ★★★ **Turning line weights off puts strictly LESS ink on the page** — the
+/// **Turning line weights off puts strictly LESS ink on the page** — the
 /// one assertion in the whole feature that a build with perfect plumbing and an
 /// indifferent renderer cannot satisfy.
 ///
@@ -179,7 +179,7 @@ fn hairlined_at(display: StrokeDisplay) -> usize {
 ///   what he asked for. This is the failure worth having a test for: it looks
 ///   like a working feature from every other angle.
 ///
-/// ★ The threshold is a **ratio**, not a pixel count, so it survives a change
+/// The threshold is a **ratio**, not a pixel count, so it survives a change
 /// of `SCALE` or of the fixture's page size. It asks only that the drawing lose
 /// a fifth of its ink, where the arithmetic predicts about three quarters (a
 /// 4 px stroke becoming a 1 px stroke) — deliberately far below the expected
@@ -217,7 +217,7 @@ fn line_weights_off_puts_less_ink_on_a_real_drawing() {
     );
 }
 
-/// ★★ **Where there is nothing to cap, the two modes are the same picture** —
+/// **Where there is nothing to cap, the two modes are the same picture** —
 /// the boundary that keeps the test above from being satisfiable by any change
 /// at all.
 ///
@@ -273,7 +273,7 @@ fn the_two_modes_are_identical_where_there_is_nothing_to_cap() {
     );
 }
 
-/// ★★★ **BOTH SENTENCES ARE REACHABLE, and the zero one is not hypothetical.**
+/// **BOTH SENTENCES ARE REACHABLE, and the zero one is not hypothetical.**
 ///
 /// `app::status::disclosure::line_weights_disclosure` picks between
 /// `text::status::line_weights_off` and `line_weights_no_effect` on
@@ -287,7 +287,7 @@ fn the_two_modes_are_identical_where_there_is_nothing_to_cap() {
 /// | a real CAD sheet, mode ON | **> 0** | *line weights are off* |
 /// | the same sheet, mode OFF | **0** | — (no disclosure at all; the toggle is on) |
 ///
-/// ★★ **The second row is the control and it is the load-bearing one.** With
+/// **The second row is the control and it is the load-bearing one.** With
 /// the mode off nothing is thinned, so the counter must be zero — and if it
 /// were not, it would be counting *strokes drawn* rather than *strokes
 /// thinned*, and the zero sentence would then never appear on any drawing with

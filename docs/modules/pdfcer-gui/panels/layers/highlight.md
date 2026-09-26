@@ -5,7 +5,7 @@
 The operator's ask, verbatim: *"selecting an object highlights that
 layer"*.
 
-# ★★★ THE ENGINE ANSWERED. This file is the second half arriving.
+# THE ENGINE ANSWERED. This file is the second half arriving.
 
 
 > `vector::decompose`'s walk counted `/OC` sections into
@@ -14,7 +14,7 @@ layer"*.
 > `bool`. Two places knew which layer an object was on, and neither could
 > say.
 
-★★ **The workaround was refused, and the refusal is what produced the
+**The workaround was refused, and the refusal is what produced the
 capability.** This shell *could* have re-tokenized the page with
 `ContentStream::from_page`, kept its own `/OC` stack and indexed by
 `VectorObject::tokens()` — about forty lines of public API. It was refused
@@ -53,7 +53,7 @@ three-valued design turns on it:
 > OCMD is reported as its own `ObjId`, never expanded, and visibility is
 > NOT resolved here."*
 
-# ★★★ THE TWO DIVERGENCES THE SECOND ROUTE FOUND
+# THE TWO DIVERGENCES THE SECOND ROUTE FOUND
 
 This project's standing finding is that **adding a second route to a
 capability audits it**. Building the page-object route beside the
@@ -100,7 +100,7 @@ instead was considered and rejected: it would retire the feature on exactly
 the CAD drawings it was built for, in exchange for a case the engine
 measured at 0.6 % of files carrying optional content at all.
 
-# ★★★ Why the answer is FIVE-valued, which is the whole design
+# Why the answer is FIVE-valued, which is the whole design
 
 The obvious type is `Option<ObjId>`, and it is wrong here in a way that
 matters more than usual.
@@ -123,7 +123,7 @@ silence instead of as a highlight.
 so a multi-object selection folds without anybody writing an order down
 twice. See [`Membership::join`].
 
-# ★★★ The operator's own finding: THE UNIT OF SELECTION IS NOT HIS
+# The operator's own finding: THE UNIT OF SELECTION IS NOT HIS
 
 He measured it on his own drawing: **one PDF path object holds 6,681
 anchors across half his sheet** (`RESUME.md`; `pdfcer object-list` on
@@ -145,7 +145,7 @@ two title blocks, and the layer named is the **whole object's**. See
 [`crate::text::panels::layers::layer_selection_granularity`], which the
 panel shows whenever the selected object holds more than one part.
 
-# ★★★ Rule 4 — this is DISCLOSURE, and none of it touches the canvas
+# Rule 4 — this is DISCLOSURE, and none of it touches the canvas
 
 Nothing is drawn differently on the page. No badge, no tint, no dashed
 outline, no provisional layer painted over the selected content. The
@@ -157,7 +157,7 @@ module produces lands in two off-canvas places:
 | the Layers panel row | a background plate on the layer the selection is on |
 | the status bar's selection line | the layer's name, as a clause on the line that already names the object |
 
-★★ The second exists because **the canvas is the primary surface, never a
+The second exists because **the canvas is the primary surface, never a
 panel.** The engine can now answer *"which layer is this on"*, so clicking
 the object must be able to reach that answer with no panel open. A panel is
 a supplement.

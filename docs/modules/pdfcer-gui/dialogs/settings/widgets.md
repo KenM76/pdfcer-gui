@@ -6,7 +6,7 @@ entries are hand-laid-out drifts into thirteen slightly different layouts
 within a year, and the reader notices the inconsistency before they notice
 the content.
 
-## ★ [`header`]'s signature is where obligation 2 and 3 are enforced
+## [`header`]'s signature is where obligation 2 and 3 are enforced
 
 `crate::dialogs::settings`' header names three things this window must show
 that a conventional settings screen omits. Two of them are properties of

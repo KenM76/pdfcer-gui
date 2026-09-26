@@ -9,7 +9,7 @@ and its border stays the weight it was.**
 > *"Form shape outlines of checkboxes and such scale when I drag them
 > larger."*
 
-## ★★★ The cause was neither of the two the row first guessed
+## The cause was neither of the two the row first guessed
 
 The border did not thicken because pdfcer wrote a bigger `/BS /W`. It
 thickened because **nothing was rewritten at all**: the engine rebuilt a
@@ -25,7 +25,7 @@ redrawn at the new size, and a foreign one refuses by name rather than
 stretching. The shell's half is passing the operator's three scale answers
 through `WidgetEdit::with_resize`, which the same Pass made possible.
 
-## ★★ Why the oracle is `regenerated=`, not a pixel
+## Why the oracle is `regenerated=`, not a pixel
 
 **A screenshot cannot tell the two apart.** A border that thickened because
 `/BS /W` changed and one that thickened because the placement matrix scaled
@@ -40,7 +40,7 @@ edit-widget-applied field=… widget=0 resized=true regenerated=true stale=false
 | field | meaning | the defect's value |
 |---|---|---|
 | `resized` | the extent changed | `true` — it always was |
-| `regenerated` | the appearance was **rebuilt** at the new size | ★ `false` |
+| `regenerated` | the appearance was **rebuilt** at the new size | `false` |
 | `stale` | the engine says the artwork no longer fits | `false` either way |
 
 ⇒ `regenerated=false` on a resize IS the operator's complaint, stated
@@ -48,7 +48,7 @@ exactly. That is the same argument `markup_move` makes for reading `keys=`
 and `scale_switch` for reading `stroke=`: where the picture is identical,
 the trace is the only oracle that exists.
 
-★ And note what a weaker check would have passed. `edit-widget-applied`
+And note what a weaker check would have passed. `edit-widget-applied`
 being present at all, or `resized=true`, is true on the broken build —
 this check must read the third field or it is measuring nothing.
 
@@ -61,7 +61,7 @@ this check must read the third field or it is measuring nothing.
 | C | drag a corner grip outward | `resize-widget-commit … grip=…` |
 | D | the engine redrew it | `edit-widget-applied … regenerated=true` |
 
-★★ Step A **drags** rather than clicks, and that is not a stylistic choice.
+Step A **drags** rather than clicks, and that is not a stylistic choice.
 A clicked check box is authored at its default 14 pt, which on this sweep's
 1584 pt sheet at fit zoom is four pixels — smaller than one grip's hit
 square, so there is no corner to aim at and the gesture under test cannot be

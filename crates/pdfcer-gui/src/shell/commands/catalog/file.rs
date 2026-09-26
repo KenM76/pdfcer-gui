@@ -1,7 +1,7 @@
 //! # `shell::commands::catalog::file` — the File tab — opening, saving, exporting, printing, and pdfcer itself
 //!
 //!
-//! ## ★★★ The split is per TAB, and the reason it was refused before is gone
+//! ## The split is per TAB, and the reason it was refused before is gone
 //!
 //! [`super`]'s header argued against exactly this cut:
 //!
@@ -16,7 +16,7 @@ use crate::text::commands as t;
 /// This band's commands, in ribbon order.
 pub(super) fn band() -> Vec<Command> {
     vec![
-        // ★ **New — first in the band, and it now draws a glyph.**
+        // **New — first in the band, and it now draws a glyph.**
         //
         // Order: New, Open, Recent, Close. All three reference applications
         // open their File menu with New and follow it with Open, and this is
@@ -40,7 +40,7 @@ pub(super) fn band() -> Vec<Command> {
         // overturned.* Nothing here was drawn by a build session; the
         // provenance note remains true and `PROVENANCE.md` is untouched.
         //
-        // # ★ The part of the old refusal that OUTLIVES it — do not lose this
+        // # The part of the old refusal that OUTLIVES it — do not lose this
         //
         // The refusal also named three reuses and rejected each by name, and
         // **those three rejections are still load-bearing**, because they are
@@ -71,7 +71,7 @@ pub(super) fn band() -> Vec<Command> {
         // operator with nothing open is exactly the operator most likely to
         // want this.
         command("file.new", t::file_new(), 103).with_icon("new-document"),
-        // ★ The sized New, immediately after the plain one.
+        // The sized New, immediately after the plain one.
         //
         // Order matters here in the way §5.1's own table does: New, New from
         // template, Open, Recent, Close. The two ways to MAKE a document sit
@@ -79,7 +79,7 @@ pub(super) fn band() -> Vec<Command> {
         // away.
         //
         //
-        // ★ **What survives is the pair rule, and it is the whole point of the
+        // **What survives is the pair rule, and it is the whole point of the
         // drawing.** The refusal's own words were that "the two New controls
         // sharing a glyph they do not have would be worse than the two of them
         // reading `New` and `New from template…`" — the hazard it named was
@@ -109,7 +109,7 @@ pub(super) fn band() -> Vec<Command> {
         command("file.close", t::file_close(), 101)
             .with_icon("close")
             .enabled_when("doc.open"),
-        // ★ Recent — the one command whose ribbon control is NOT a button.
+        // Recent — the one command whose ribbon control is NOT a button.
         //
         // It is drawn by the `recent_files` custom item in File ▸ File, which
         // is what asks *which* of the ten documents; this command is the verb
@@ -138,7 +138,7 @@ pub(super) fn band() -> Vec<Command> {
         // drawn twice."* That was an argument against a BORROW, not against a
         // picture, and a glyph of this command's own settles it.
         //
-        // ★ **And the constraint it was protecting outlives it.** Open sits
+        // **And the constraint it was protecting outlives it.** Open sits
         // immediately beside this, so `recent` must never drift toward
         // `open`'s folder — `Icon::Recent`'s own doc names that refusal as the
         // reason it is a clock rather than a folder-with-something-on-it. Two
@@ -152,7 +152,7 @@ pub(super) fn band() -> Vec<Command> {
         // * **NOT `info`**, the set's other closed ring, told apart by hands
         //   rather than a dot-and-stem inside.
         //
-        // # ★ The half that is NOT discharged, and is deliberately left alone
+        // # The half that is NOT discharged, and is deliberately left alone
         //
         // The refusal's second sentence — *"a command with no key renders as
         // text, which is a real answer … and the right one for a menu button
@@ -169,7 +169,7 @@ pub(super) fn band() -> Vec<Command> {
         // pixel-level result this file cannot deliver is the drift this module
         // keeps recording.
         //
-        // ★★★ **DISCHARGED 2026-09-05.** What stood here added *"…and
+        // **DISCHARGED 2026-09-05.** What stood here added *"…and
         // `app::recent::menu` draws it with `ui.menu_button(text.label, …)` …
         // what the operator sees in File ▸ File does not change until that
         // custom item is taught to paint it — which is a change in
@@ -178,7 +178,7 @@ pub(super) fn band() -> Vec<Command> {
         // approved mockup's `['Recent','recent',{menu:1}]` — an icon AND a word
         // — is what File ▸ File draws.
         //
-        // ⇒ ★★ The sentence was accurate, named the exact file, and sat
+        // ⇒ The sentence was accurate, named the exact file, and sat
         // unactioned for a day. **A comment that names where the other half of
         // the work lives is the best available substitute for a mechanism and
         // is still not one** — the same finding `RESUME.md` records about
@@ -195,7 +195,7 @@ pub(super) fn band() -> Vec<Command> {
         // of the two, the bare `save` body belongs to the one an operator
         // presses fifty times a day without reading the label.
         //
-        // ★★ **The consequence of that — Save-a-copy going without — is
+        // **The consequence of that — Save-a-copy going without — is
         // DISCHARGED as of 2026-09-04**, by `save-copy`, a glyph drawn for that
         // role and adopted from the outside review of 2026-09-03. What was
         // written here was *"Save-a-copy renders as text, which is a real answer
@@ -206,7 +206,7 @@ pub(super) fn band() -> Vec<Command> {
         // copy verb may not be drawn. Three bodies now exist, so nothing is
         // being taken from Save.
         //
-        // ★ **The rule that survives is the one this block was really making,
+        // **The rule that survives is the one this block was really making,
         // and it is now the family's grammar rather than a tie-break.** All
         // three save controls carry the SAME body — that is what says "these
         // are the same family" — and they separate on ONE interior difference
@@ -222,7 +222,7 @@ pub(super) fn band() -> Vec<Command> {
         //   one ("another file").
         // * `save-compact` — the body carrying a contained downward arrow.
         //
-        // ★ `save-copy` must additionally not be read as `copy`, which is also
+        // `save-copy` must additionally not be read as `copy`, which is also
         // two offset rects: that glyph is two BLANK rounded rects and means the
         // CLIPBOARD — take this and hold it. The retained SHUTTER and label
         // field are what keep this in the save family, and they are doing real
@@ -238,11 +238,11 @@ pub(super) fn band() -> Vec<Command> {
         command("file.save_copy", t::file_save_copy(), 110)
             .with_icon("save-copy")
             .enabled_when("doc.open"),
-        // ★ **Save As**, `OPERATOR_REQUESTS.md` O95 — beside Save a copy and
+        // **Save As**, `OPERATOR_REQUESTS.md` O95 — beside Save a copy and
         // not instead of it. The two are different acts (see `Action::SaveAs`),
         // and every editor the operator uses offers both.
         //
-        // ★★ **The icon refusal here is DISCHARGED as of 2026-09-04**, by
+        // **The icon refusal here is DISCHARGED as of 2026-09-04**, by
         // `save-as` — a glyph drawn for this role and adopted from the outside
         // review of 2026-09-03. It was refused *"on the same reasoning
         // `file.new` and `file.ocr` record: the icon directory is declared the
@@ -252,7 +252,7 @@ pub(super) fn band() -> Vec<Command> {
         // never an argument that this control should be wordless forever, only
         // that a build session could not be the one to end it. It did not.
         //
-        // ★ **The "every reuse would mislead" half is the durable half**, and
+        // **The "every reuse would mislead" half is the durable half**, and
         // the two glyphs it was steering away from are the two this drawing has
         // to keep visibly apart from:
         //
@@ -273,7 +273,7 @@ pub(super) fn band() -> Vec<Command> {
         command("file.save_as", t::file_save_as(), 113)
             .with_icon("save-as")
             .enabled_when("doc.open"),
-        // ★★ **The icon refusal here is DISCHARGED as of 2026-09-04**, by
+        // **The icon refusal here is DISCHARGED as of 2026-09-04**, by
         // `save-compact` — a glyph drawn for this role and adopted from the
         // outside review of 2026-09-03. The refusal for this one is not written
         // at this registration; it is recorded with the coverage count in
@@ -282,7 +282,7 @@ pub(super) fn band() -> Vec<Command> {
         // picture whose only job is to look like the other two — which is
         // exactly the confusion this command's NAME is built to prevent."*
         //
-        // ★★★ **That is the strongest of this band's refusals and the one to
+        // **That is the strongest of this band's refusals and the one to
         // read before trusting the glyph**, because unlike `file.new`,
         // `file.new_from_template`, `file.save_as` and `file.ocr` it does not
         // rest on the provenance clause at all, and unlike `file.recent`'s and
@@ -299,7 +299,7 @@ pub(super) fn band() -> Vec<Command> {
         // consistency pass and the exact defect the refusal predicted arrives
         // — three discs whose only job is to look like each other.
         //
-        // ★ The mark, and the two separations that keep it honest:
+        // The mark, and the two separations that keep it honest:
         //
         // * A downward arrow FILLING THE FIELD BENEATH THE SHUTTER. Down is
         //   "smaller"; putting the arrow INSIDE the body is what keeps the
@@ -316,7 +316,7 @@ pub(super) fn band() -> Vec<Command> {
         //   by carrying neither: all three are one body with one different
         //   thing said about it.
         //
-        // ★ `doc.open`, like its two neighbours, and NOT gated on the document
+        // `doc.open`, like its two neighbours, and NOT gated on the document
         // having anything to reclaim. A file with nothing unused still gets a
         // copy — the window says so — because an operator who asked for one is
         // owed it, and because whether there is anything to reclaim is not
@@ -341,7 +341,7 @@ pub(super) fn band() -> Vec<Command> {
         // only what a reader of the result can do with it — CAD geometry there,
         // form values there, a picture here.
         //
-        // ★★★ **IT WORE `export` FOR ABOUT SIX HOURS, AND THAT WAS WRONG.**
+        // **IT WORE `export` FOR ABOUT SIX HOURS, AND THAT WAS WRONG.**
         // The argument is left standing below rather than deleted, because the
         // reversal is the useful part and a comment that quietly changed its
         // mind teaches nobody anything.
@@ -359,7 +359,7 @@ pub(super) fn band() -> Vec<Command> {
         // interior marks — and can, because they are three spellings of one
         // verb where these are three different verbs.
         //
-        // ★★ WHERE IT FAILS: the premise that the format is a word only a label
+        // WHERE IT FAILS: the premise that the format is a word only a label
         // can say is **false for this one control**, and true for the other
         // two. A DXF is a coordinate list and a form-data file is a set of
         // name/value pairs — neither has a picture, so neither can be drawn,
@@ -380,14 +380,14 @@ pub(super) fn band() -> Vec<Command> {
         // that draws an empty tray, `pick-link.svg` by leaving a closed frame
         // horizontally where that escapes a deliberate corner gap diagonally.
         //
-        // ★ `doc.pages` rather than `doc.open`, matching `file.export_dxf` and
+        // `doc.pages` rather than `doc.open`, matching `file.export_dxf` and
         // for the stronger version of its reason: every control in the window
         // is a statement about a page, and the largest-page measurement the
         // window opens with has nothing to fold over on a document with none.
         command("file.export_image", t::file_export_image(), 124)
             .with_icon("export-image")
             .enabled_when("doc.pages"),
-        // ★★★ **Export text — wired 2026-09-04**, on the operator's ask:
+        // **Export text — wired 2026-09-04**, on the operator's ask:
         // *"also the engine can export PDFs as text. we should have
         // export/import for that."*
         //
@@ -397,7 +397,7 @@ pub(super) fn band() -> Vec<Command> {
         // document.* CAD geometry, a picture, the filled values — and now the
         // words.
         //
-        // ★★ **It wears `export`, the shared tray, and that is the CORRECT side
+        // **It wears `export`, the shared tray, and that is the CORRECT side
         // of the line `file.export_image` had to cross.**
         //
         // That registration's own note draws the line and it is worth applying
@@ -410,14 +410,14 @@ pub(super) fn band() -> Vec<Command> {
         // image *does* have a picture and this icon set already draws it, so a
         // generic tray there asked the operator to unlearn `image.svg`.
         //
-        // ★ The near miss is `copy-page-text` / `copy-document-text`, two
+        // The near miss is `copy-page-text` / `copy-document-text`, two
         // registrations below: sheets with text RULES on them. Those are the
         // right art for *the words of this page, to the clipboard*, and sharing
         // one with this command would put three controls in one band reading as
         // two — and would lose the only cue separating a clipboard copy from a
         // file write, which is the whole difference between them.
         //
-        // ★ `doc.pages` rather than `doc.open`, matching every export in this
+        // `doc.pages` rather than `doc.open`, matching every export in this
         // band and for the copy verbs' version of the reason: text is drawn on
         // pages, and a legal `/Count 0` document has none to export from.
         command("file.export_text", t::file_export_text(), 125)
@@ -430,7 +430,7 @@ pub(super) fn band() -> Vec<Command> {
         // first. It is also the order of increasing consequence: exporting
         // reads, importing writes."* Both clauses apply here unchanged.
         //
-        // ★★ **`insert-pages`' art, and NOT `import-form-data`'s** — the
+        // **`insert-pages`' art, and NOT `import-form-data`'s** — the
         // choice is argued at length in `icons::catalog::tests::SHARED_PAIRS`,
         // and the short form is that the obvious pick is the wrong one. This
         // command and `pages.insert_pages` are two controls about one thing —
@@ -448,13 +448,13 @@ pub(super) fn band() -> Vec<Command> {
         command("file.import_text", t::file_import_text(), 129)
             .with_icon("insert-pages")
             .enabled_when("doc.pages"),
-        // ★★★ **Save as stamp collection — `OPERATOR_REQUESTS.md` O169,
+        // **Save as stamp collection — `OPERATOR_REQUESTS.md` O169,
         // wired 2026-09-10.** The operator: *"if acrobat has a way of adding
         // custom stamps or text, we need the same feature too with the same
         // import/export to make the stamps as Adobe has and is compatible with
         // adobe's"*.
         //
-        // ★★ **There is no import half to register, and that is a finding
+        // **There is no import half to register, and that is a finding
         // rather than a gap.** A stamp collection *is an ordinary PDF* — one
         // page per stamp, the category in `/Info` `/Title`, the names in the
         // catalog's name tree — so opening one is `file.open`, which already
@@ -464,7 +464,7 @@ pub(super) fn band() -> Vec<Command> {
         // this rests on, taken against the four Adobe collections on this
         // machine.
         //
-        // ★ `stamp` rather than `export`, on `file.export_image`'s argument
+        // `stamp` rather than `export`, on `file.export_image`'s argument
         // three registrations above and not on the shared-key convention: the
         // tray glyph is honest for a DXF and for form data because a coordinate
         // list and a set of name/value pairs have no picture. **A stamp has a
@@ -477,12 +477,12 @@ pub(super) fn band() -> Vec<Command> {
         // labels — "Stamp" and "Save as stamp collection" — are not confusable
         // in one pass.
         //
-        // ★ `doc.pages` rather than `doc.open`, matching `file.export_dxf` and
+        // `doc.pages` rather than `doc.open`, matching `file.export_dxf` and
         // for the stronger version of its reason: the window draws one row per
         // page, so a document with none opens a window with nothing in it and a
         // greyed Save button explaining that every page is unticked — which is
         // a true sentence about a state the operator cannot fix.
-        // ★★ Token **119**, and it took two tries to land on a free one.
+        // Token **119**, and it took two tries to land on a free one.
         //
         //
         // ⇒ **Enumerate from the registry, never from the source text.** That is
@@ -499,11 +499,11 @@ pub(super) fn band() -> Vec<Command> {
         command("file.export_form_data", t::file_export_form_data(), 121)
             .with_icon("export")
             .enabled_when("doc.open"),
-        // ★★ Registered beside its twin and reached the same way. The two are
+        // Registered beside its twin and reached the same way. The two are
         // one round trip, and `file.export_form_data`'s note above applies to
         // both: the FORMAT is the file's extension, not a third dialog.
         //
-        // ★ `doc.pages` rather than a condition about whether the document has
+        // `doc.pages` rather than a condition about whether the document has
         // a form. A certification refusal, an encrypted file and a document
         // with no `/AcroForm` are all engine answers this shell would have to
         // ask for per frame, and all three are worded declines at the moment of
@@ -574,7 +574,7 @@ pub(super) fn band() -> Vec<Command> {
         // in this very group. The convention was being stated in this file and
         // then broken two registrations later.
         //
-        // ★ **Three separations, and all three are load-bearing:**
+        // **Three separations, and all three are load-bearing:**
         //
         // * **From `copy` itself** — `edit.copy`'s and `pages.copy`'s plain two
         //   blank offset rects — by TEXT RULES. Only these two copy WORDS; the
@@ -600,7 +600,7 @@ pub(super) fn band() -> Vec<Command> {
         command("file.copy_document_text", t::file_copy_document_text(), 123)
             .with_icon("copy-document-text")
             .enabled_when("doc.pages"),
-        // ★ Print had no icon because the salvage source drew it with the
+        // Print had no icon because the salvage source drew it with the
         // *stamp* glyph, and that was a mis-assignment rather than a
         // convention to carry — `stamp` means "a mark applied with a stamp"
         // (icon ui-spec §3.4) and is shared with the reserved Bates glyph.
@@ -630,7 +630,7 @@ pub(super) fn band() -> Vec<Command> {
         // it out?"*, so the band sits immediately after the band that sends it
         // out. `crate::shell::manifest::file` places it there.
         //
-        // # ★★★ Why both are gated on `doc.open` and NOT on "is it signed"
+        // # Why both are gated on `doc.open` and NOT on "is it signed"
         //
         // Because whether **this** document is signed is not known when the
         // registry is built, and a predicate that had to answer it would be a
@@ -645,14 +645,14 @@ pub(super) fn band() -> Vec<Command> {
         // operator's document, not a failure. The tooltips name the refusal too,
         // so an operator who only ever hovers still meets it.
         //
-        // ★ `doc.open` rather than `doc.pages`: protection is a property of the
+        // `doc.open` rather than `doc.pages`: protection is a property of the
         // FILE, not of its pages. A legal `/Count 0` document can perfectly well
         // carry a password, and refusing to let one be set would be this shell
         // inventing a restriction the standard does not have.
         //
         // # Tokens 126 and 127
         //
-        // New ids get new numbers in the `file.` block. ★ These were 125 and
+        // New ids get new numbers in the `file.` block. These were 125 and
         // 126 for about an hour, and 125 collided: a CONCURRENT track wired
         // `file.export_text` and took 125 in the same working tree. The
         // collision was caught by `every_handler_token_is_unique`, which is
@@ -675,7 +675,7 @@ pub(super) fn band() -> Vec<Command> {
         )
         .with_icon("permissions")
         .enabled_when("doc.open"),
-        // ★★★ SIGNING — `file.sign`, token **128**, and the `#[cfg]` here is
+        // SIGNING — `file.sign`, token **128**, and the `#[cfg]` here is
         // THE ONLY EXPRESSION OF THE CAPABILITY ANYWHERE IN THE GUI.
         //
         // `SHELL_FRAMEWORK.md` §5b's one rule: *a capability's presence is
@@ -725,7 +725,7 @@ pub(super) fn band() -> Vec<Command> {
         command("file.properties", t::file_properties(), 140)
             .with_icon("properties")
             .enabled_when("doc.open"),
-        // ★★★ **Document properties** — the operator, 2026-09-05: *"the
+        // **Document properties** — the operator, 2026-09-05: *"the
         // document properties are still always visible in the properties tab.
         // it needs to get out of there and be in its own document properties
         // tab."*
@@ -794,7 +794,7 @@ pub(super) fn band() -> Vec<Command> {
             .enabled_when("doc.open"),
         // Settings, the shortcut list and About are always available: they
         // are about pdfcer, not about a document.
-        // ★★★ **Open in Acrobat** — `OPERATOR_REQUESTS.md` **O122**, the
+        // **Open in Acrobat** — `OPERATOR_REQUESTS.md` **O122**, the
         // operator, 2026-09-04: *"beside our read-review-edit buttons at the
         // top there should be an open in acrobat button."*
         //
@@ -807,7 +807,7 @@ pub(super) fn band() -> Vec<Command> {
         // region existing; the argument for this command being in it is his
         // sentence and nothing more, and that is sufficient.
         //
-        // ## ★★★ Registered UNCONDITIONALLY, absent CONDITIONALLY
+        // ## Registered UNCONDITIONALLY, absent CONDITIONALLY
         //
         // The obvious spelling is to register this only on a machine that has
         // an Acrobat, so R8's rule holds by construction: *a capability's
@@ -831,7 +831,7 @@ pub(super) fn band() -> Vec<Command> {
         // block, and `PdfcerApp::conditions`, which sets the name from the one
         // resolved viewer.
         //
-        // ## ★★★ The icon refusal was ARGUED and then DISCHARGED, within hours
+        // ## The icon refusal was ARGUED and then DISCHARGED, within hours
         //
         // This registration was written with no icon, and the argument was the
         // one `file.save_as`, `edit.select_all` and `edit.attachments` all
@@ -842,7 +842,7 @@ pub(super) fn band() -> Vec<Command> {
         // `icons/assets/PROVENANCE.md` declares that directory the operator's
         // own art.
         //
-        // ★ The second clause is what got spent, and it got spent the same
+        // The second clause is what got spent, and it got spent the same
         // afternoon: `open-in-acrobat.svg` was drawn on the icon track for
         // this command, before this command existed to name it. So the glyph
         // is purpose-drawn rather than borrowed, `PROVENANCE.md` is untouched,
@@ -870,7 +870,7 @@ pub(super) fn band() -> Vec<Command> {
         .enabled_when("doc.open"),
         command("file.settings", t::file_settings(), 150).with_icon("settings"),
         command("file.shortcuts", t::file_shortcuts(), 151).with_icon("keyboard"),
-        // ★ `file.about` carries an OBLIGATION, not a courtesy: it is the
+        // `file.about` carries an OBLIGATION, not a courtesy: it is the
         // in-application half of the attribution surface that shipping
         // CC-BY-SA-4.0 OCR model weights requires, BY needing the notice to
         // reach the RECIPIENT rather than a reader of the repository. The
@@ -887,7 +887,7 @@ pub(super) fn band() -> Vec<Command> {
         // back from outside — and `icons/assets/PROVENANCE.md` is untouched,
         // which is the property that clause existed to protect.
         //
-        // ★ **The second clause is not spent; it is the drawing's brief.** The
+        // **The second clause is not spent; it is the drawing's brief.** The
         // reuses it rejected by name are the neighbours this glyph has to stay
         // visibly apart from, and two of the three are on surfaces an operator
         // reaches in the same minute:
@@ -915,7 +915,7 @@ pub(super) fn band() -> Vec<Command> {
         // rasterize, and a document with none would open a dialog whose only
         // possible outcome is a refusal.
         //
-        // ★ On the FILE tab, where `RIBBON_IA.md` §5.7 says Tools. Read's tab
+        // On the FILE tab, where `RIBBON_IA.md` §5.7 says Tools. Read's tab
         // list is `["file", "view"]`, so Tools would put OCR out of reach in
         // the one mode the operator asked for it in. Argued in full in
         // `super::manifest::tools`'s header.

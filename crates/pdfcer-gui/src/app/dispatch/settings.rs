@@ -1,6 +1,6 @@
 //! # `app::dispatch::settings` — the commands that open the Settings window
 //!
-//! ## ★★ The seam, and why two ids share one arm
+//! ## The seam, and why two ids share one arm
 //!
 //! `file.settings` and `tools.font_folders` open **one window, one draft, one
 //! Save**. They differ in one thing: *where the window lands*.
@@ -25,7 +25,7 @@ pub(crate) fn handles(id: &str) -> bool {
 
 /// Which settings group an id asks to land on, or `None` for the whole window.
 ///
-/// ★ One function, so [`handles`] and [`dispatch`] cannot answer differently
+/// One function, so [`handles`] and [`dispatch`] cannot answer differently
 /// about the same id — `routes::target` states that rule and it applies here for
 /// the same reason.
 #[must_use]
@@ -39,7 +39,7 @@ fn focus(id: &str) -> Option<&'static str> {
 
 /// Open the Settings window, at the group the id names.
 ///
-/// ★ **Application-scoped**, like About: these are choices about pdfcer, and an
+/// **Application-scoped**, like About: these are choices about pdfcer, and an
 /// operator who has just launched the program and wants a dark window should not
 /// have to open a document first.
 ///
@@ -52,7 +52,7 @@ fn focus(id: &str) -> Option<&'static str> {
 /// some of these settings change saved bytes and the window's whole promise is
 /// that nothing takes effect until Save.
 ///
-/// ★★ The guard is also what makes the landing safe to re-fire: pressing Tools ▸
+/// The guard is also what makes the landing safe to re-fire: pressing Tools ▸
 /// Font folders while the window is already open does **nothing**, rather than
 /// scrolling a window the operator has since scrolled somewhere else.
 pub(crate) fn dispatch(id: &str, draft: &mut Option<Draft>, settings: &Settings, prefs: &Prefs) {
@@ -65,7 +65,7 @@ pub(crate) fn dispatch(id: &str, draft: &mut Option<Draft>, settings: &Settings,
 mod tests {
     use super::*;
 
-    /// ★★ **Only the font route asks for a group, and it asks for one that
+    /// **Only the font route asks for a group, and it asks for one that
     /// exists.**
     ///
     /// The second half is the load-bearing one: the group key is a string
@@ -80,7 +80,7 @@ mod tests {
         assert!(handles("tools.font_folders"));
         assert!(!handles("file.print"));
 
-        // ★ The key, checked against the dialog's own source rather than
+        // The key, checked against the dialog's own source rather than
         // against a second copy of the string. A test asserting
         // `focus(..) == Some("fonts")` against a constant this module also owns
         // would pass on a rename that broke the landing.

@@ -5,7 +5,7 @@ function per string, per `crate::text`'s contract: the gate
 `tools/gates/check-ui-strings.sh` fails the build for a literal that
 reaches a widget from anywhere else.
 
-## ★ What this surface is a size chooser FOR, which decides the wording
+## What this surface is a size chooser FOR, which decides the wording
 
 Not for drafting. Nobody drafts a sheet in pdfcer — documents arrive from
 SolidWorks — and `crate::app::blank`'s header says so plainly while

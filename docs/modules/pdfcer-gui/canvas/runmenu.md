@@ -27,7 +27,7 @@ this module exists to discharge:
 > works, but only after he has tried to drag. **A route he can find
 > *before* failing is owed.**
 
-## ★★★ One route, announced nowhere
+## One route, announced nowhere
 
 Measured across every gesture this canvas has: without this module the Part
 rung on a text object — the rung at which *one line* is the operand — is
@@ -53,7 +53,7 @@ goes looking has already lost the rung. That is not a discoverability
 weakness; it is a capability that ships unreachable to anybody who was not
 told.
 
-## ★★ Why a MENU ROW and not a new gesture
+## Why a MENU ROW and not a new gesture
 
 The standing rule is *use the conventional interaction, never invent one*,
 and it bars a menu row that **performs an edit**: the conventional way to
@@ -68,12 +68,12 @@ ribbon is three inches away. `canvas::annotnodes::menu`'s two shipped rows
 are the same shape one surface along — a Points-tool chord route nothing
 announced, given a row somebody can read.
 
-★ And `canvas::menus`' own rule that *"a right-click never descends"* is
+And `canvas::menus`' own rule that *"a right-click never descends"* is
 not breached. The right-click still selects the **whole object**, exactly
 as it always has; the descent happens only when the operator reads a row
 that says so and presses it. The rule is about what a click does silently.
 
-## ★★★ The operand problem, and where it is parked
+## The operand problem, and where it is parked
 
 A menu row carries **a command id and nothing else**
 (`egui_shell::manifest::Item::Command`). *"Select this line of text"* needs
@@ -105,7 +105,7 @@ R9 reserves greying for the recoverable case, so this row has one condition
 item's `shown_when` and the command's `enabled_when`: shown implies
 pressable, and a stale frame cannot press a dead row.
 
-★★ **The `of > 1` gate is part of that decision and is not an
+**The `of > 1` gate is part of that decision and is not an
 optimisation.** On a text object with a single run, *"select this line"*
 and *"select this object"* name the same ink, and `delete_text_run` on the
 only run is `delete_objects` spelled at a deeper rung. Offering the row

@@ -1,7 +1,7 @@
 //! # `text::export_form` — the words form-data export says
 //!
 //!
-//! ## ★★★ The sentence this module exists for
+//! ## The sentence this module exists for
 //!
 //! [`neutralised`]. Everything else here is a count and a path.
 //!
@@ -16,12 +16,12 @@
 //! CSV; nothing about the file says a character was added. So the count is
 //! stated and the fields are named.
 //!
-//! ★ It is a **disclosure**, not a warning, and the wording keeps that
+//! It is a **disclosure**, not a warning, and the wording keeps that
 //! distinction. pdfcer did something correct and is saying what it did. A
 //! sentence shaped as an alarm would invite the operator to undo a protection
 //! they did not ask for and should keep.
 //!
-//! ## ★ Why the counts are stated at all
+//! ## Why the counts are stated at all
 //!
 //! Because an export is a file the operator cannot see from here. *"Written"*
 //! alone is true of a zero-field export and of a four-hundred-field one, and
@@ -30,7 +30,7 @@
 
 /// The save dialog's title bar.
 ///
-/// ★ It names all three formats, because the dialog is where the format is
+/// It names all three formats, because the dialog is where the format is
 /// **chosen** — by the extension — and a title saying only "Export form data"
 /// would leave an operator who wants CSV with no way to know they may ask for
 /// it. The one place this can be said is the one window they are looking at.
@@ -45,7 +45,7 @@ pub const fn import_dialog_title() -> &'static str {
     "Import form data — .fdf, .xfdf or .csv"
 }
 
-/// ★★★ **What an import did, and what it could not find.**
+/// **What an import did, and what it could not find.**
 ///
 /// The two numbers are not decoration and the second is the important one: a
 /// data file may legitimately name a **superset** of this document's fields —
@@ -57,7 +57,7 @@ pub const fn import_dialog_title() -> &'static str {
 /// them**. A sentence saying only "imported" would be true and would hide the
 /// ten fields they thought they were setting.
 ///
-/// ★ `skipped` is mentioned only when it is non-zero. The overwhelming case is
+/// `skipped` is mentioned only when it is non-zero. The overwhelming case is
 /// a file that matches, and a bar that narrated "0 skipped" would be adding a
 /// number to be ignored.
 #[must_use]
@@ -78,7 +78,7 @@ pub fn import_unreadable(detail: &str) -> String {
     format!("That file could not be read: {detail}")
 }
 
-/// ★★ The bytes were read and are not form data pdfcer can parse.
+/// The bytes were read and are not form data pdfcer can parse.
 ///
 /// Distinct from [`import_unreadable`], and the distinction is the operator's
 /// next move: an unreadable file is a permissions or a path problem, and an
@@ -91,7 +91,7 @@ pub fn import_unparseable(detail: &str) -> String {
 
 /// The engine refused the import outright.
 ///
-/// ★ Its own sentence rather than folding into [`import_unparseable`], because
+/// Its own sentence rather than folding into [`import_unparseable`], because
 /// this is a refusal about the **document** — no form, a certification that
 /// forbids filling, an encrypted file — rather than about the data file. An
 /// operator told their data file was bad when their document is certified would
@@ -103,7 +103,7 @@ pub fn import_refused(detail: &str) -> String {
 
 /// The open document carries no `/AcroForm` at all.
 ///
-/// ★ Distinct from [`no_fields`], and the two are not pedantry: a document with
+/// Distinct from [`no_fields`], and the two are not pedantry: a document with
 /// no form has nothing to export and never will until fields are added, while a
 /// document with an empty form is one somebody has already started. The remedy
 /// differs, so the sentence does.
@@ -120,7 +120,7 @@ pub const fn no_fields() -> &'static str {
 
 /// FDF written.
 ///
-/// ★ The format is named in the operator's terms — *"the format Acrobat
+/// The format is named in the operator's terms — *"the format Acrobat
 /// uses"* — because `FDF` is an acronym that tells somebody who does not
 /// already know it precisely nothing, and the reason to pick it over the other
 /// two is exactly that other software reads it.
@@ -141,7 +141,7 @@ pub fn wrote_csv(fields: usize) -> String {
     format!("Exported {fields} field value(s) as CSV, for a spreadsheet.")
 }
 
-/// ★★★ **Values were rewritten so a spreadsheet will not execute them.**
+/// **Values were rewritten so a spreadsheet will not execute them.**
 ///
 /// See the module header. The three things this sentence has to carry:
 ///
@@ -157,7 +157,7 @@ pub fn wrote_csv(fields: usize) -> String {
 /// thing that went wrong. It is a protection, and an operator who reads it as
 /// an error will go looking for a way to switch it off.
 ///
-/// ★ The field list is **elided in the middle** past a few names. A status line
+/// The field list is **elided in the middle** past a few names. A status line
 /// is one line; naming four hundred fields would push everything else off it,
 /// and the first and last names are what an operator scans to recognise the
 /// group.
@@ -172,7 +172,7 @@ pub fn neutralised(count: usize, fields: &[String]) -> String {
 
 /// The field names, bounded.
 ///
-/// ★ It keeps the FIRST few and says how many were dropped, rather than
+/// It keeps the FIRST few and says how many were dropped, rather than
 /// sampling from the middle or the end. A form's field names share a prefix —
 /// `Revision.Row0.Date`, `Revision.Row1.Date` — so the opening names are what
 /// identify the group, and an operator who recognises the prefix does not need
@@ -195,7 +195,7 @@ const MAX_NAMED_FIELDS: usize = 4;
 
 /// Where the file went.
 ///
-/// ★ Its own sentence rather than a clause on the format line, because the two
+/// Its own sentence rather than a clause on the format line, because the two
 /// answer different questions and an operator scanning for *"where is it?"*
 /// should not have to read past *"what is it?"*.
 #[must_use]
@@ -205,7 +205,7 @@ pub fn written_to(path: &str) -> String {
 
 /// The write failed, with the operating system's own reason.
 ///
-/// ★ The OS string is passed through rather than re-worded, for
+/// The OS string is passed through rather than re-worded, for
 /// `export_dxf::export_failed`'s reason: *"access is denied"* and *"the device
 /// is not ready"* are different problems with different remedies, and a
 /// generic *"could not write the file"* throws away the only part an operator
@@ -219,7 +219,7 @@ pub fn export_failed(detail: &str) -> String {
 mod tests {
     use super::*;
 
-    /// ★★ **The neutralisation sentence says what was done, not that something
+    /// **The neutralisation sentence says what was done, not that something
     /// went wrong.**
     ///
     /// The failure this guards is a rewording toward alarm. pdfcer performed a
@@ -241,7 +241,7 @@ mod tests {
 
     /// **A long field list is elided rather than allowed to run off the bar.**
     ///
-    /// ★ Asserted against a real shape rather than a token: a form whose every
+    /// Asserted against a real shape rather than a token: a form whose every
     /// field is formula-shaped is a revision table with forty rows, and that is
     /// the case that would otherwise push the count off the line.
     #[test]

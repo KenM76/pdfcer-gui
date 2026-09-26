@@ -6,7 +6,7 @@ explicit that it is: `EmbedRequest::supplied` is a `/BaseFont` → donor map
 *"the shell resolved for it"*, and `pdfcer`'s own note is blunter —
 **"the source fonts come from `--font-dir`; pdfcer never goes looking."**
 
-## ★★★ Why pdfcer does not go looking, and why this module must not either
+## Why pdfcer does not go looking, and why this module must not either
 
 Embedding puts a font **program** — the actual outlines — inside somebody's
 document, which they then send to somebody else. Which font that is, is a
@@ -20,7 +20,7 @@ is empty until an operator puts something in it, and this module searches
 no "well, try the system fonts too". An empty list means an embed has
 nowhere to take a font from, and that is reported rather than worked around.
 
-## ★★★ The WALK is the shell's; the RESOLUTION is the engine's
+## The WALK is the shell's; the RESOLUTION is the engine's
 
 
 `resolve_for_embedding` tries, in order:
@@ -64,7 +64,7 @@ the bundled faces are BSD-3-Clause, and embedding one puts it inside a file
 the operator distributes.
 
 
-## ★★ A stem match is still disclosed, and the engine does not distinguish it
+## A stem match is still disclosed, and the engine does not distinguish it
 
 `FontEnvironment` registers a file's filename stem alongside its advertised
 names and reports a hit on either as `Exact`. That is right for the

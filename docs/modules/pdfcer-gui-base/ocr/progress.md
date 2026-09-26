@@ -11,7 +11,7 @@ it early**
 
 Three things in one sentence, and the third is the one with a sharp edge.
 
-## ★★★ Cancel and Stop are DIFFERENT, and the difference is the whole design
+## Cancel and Stop are DIFFERENT, and the difference is the whole design
 
 | | the current page | what survives |
 |---|---|---|
@@ -24,13 +24,13 @@ pages; one who presses Cancel has asked for none of them. Getting that
 backwards either throws away twenty minutes of work or writes a partial
 layer somebody did not want.
 
-★★ **Stop finishes the page it is on**, which is his wording and is also the
+**Stop finishes the page it is on**, which is his wording and is also the
 only coherent reading: a page is recognised as a unit — rendered, run
 through the model, converted to page space — and half of one is not a thing
 that can be kept. The wait is bounded by one page, which on a scanned sheet
 is a second or two.
 
-## ★ Why a flag and not a channel message
+## Why a flag and not a channel message
 
 The worker is a plain loop over pages; it does not select on anything. A
 shared flag it reads at the top of each iteration costs one atomic load per
@@ -40,7 +40,7 @@ The flag is checked **between** pages and never inside one, which is what
 makes "Stop keeps the finished pages" true by construction rather than by
 care: there is no point in the loop where a half-recognised page exists.
 
-## ★★ Why progress is a channel message and not a shared counter
+## Why progress is a channel message and not a shared counter
 
 A counter would need the UI to poll a lock, and — more importantly — a
 counter cannot carry *what was found*. The operator asked for words and

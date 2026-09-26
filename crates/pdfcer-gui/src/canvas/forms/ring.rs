@@ -165,7 +165,7 @@ impl TabRings {
 /// same reason: the stops are indices into that list, so the two must be
 /// rebuilt on the same boundary or an index can name a box that has moved.
 ///
-/// ★ Built for every page that has a box rather than for every page in the
+/// Built for every page that has a box rather than for every page in the
 /// document, which is what keeps the cost proportional to the form instead of
 /// to the file. It is still strictly less work than the cache miss beside it —
 /// [`super::placed`] asks `widget_rects` for *every* page — and it happens on

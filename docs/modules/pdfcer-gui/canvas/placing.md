@@ -25,7 +25,7 @@ and the **dialog → canvas** direction exactly once, hard-wired in
 gesture; it was a *general* way for a window to step aside, let the operator
 point, and come back.
 
-## ★★★ The one design decision, and it is the whole file
+## The one design decision, and it is the whole file
 
 **A dialog is hidden for exactly as long as a placement is pending for it,
 and "hidden" is DERIVED from the pending record rather than stored.**

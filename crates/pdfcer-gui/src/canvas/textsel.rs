@@ -98,7 +98,7 @@ pub struct TextSelection {
     /// rectangles paint as one band anyway, and merging them is what lets a
     /// selection over a paragraph cost four boxes instead of four hundred.
     pub quads: Vec<Rect>,
-    /// ★ **The same boxes, in PDF user space** — ready to become a text
+    /// **The same boxes, in PDF user space** — ready to become a text
     /// markup's `/QuadPoints`.
     ///
     /// One entry per entry of [`Self::quads`], in the same order, from the same
@@ -137,7 +137,7 @@ impl TextSelection {
         self.epoch == epoch
     }
 
-    /// ★★ **Which runs of the page's extraction this selection covers**, low
+    /// **Which runs of the page's extraction this selection covers**, low
     /// to high, or nothing when the revision has moved.
     ///
     /// The operand of every restyle. `crate::app::actions::textstyle` turns
@@ -151,7 +151,7 @@ impl TextSelection {
     /// get the ordering wrong exactly once. `ordered` already exists here and is
     /// already the one place that decides it.
     ///
-    /// # ★ Why the byte offsets are dropped
+    /// # Why the byte offsets are dropped
     ///
     /// `format_text` restyles **one whole show operator**. There is no verb that
     /// restyles half of one, so a caller handed byte offsets could only ignore
@@ -160,7 +160,7 @@ impl TextSelection {
     /// through the middle of a word restyles the word, and the shell must not
     /// pretend otherwise.
     ///
-    /// # ★ Why the staleness gate is here and not left to the caller
+    /// # Why the staleness gate is here and not left to the caller
     ///
     /// Same rule as [`Self::highlights`] and for a worse reason: a stale quad
     /// paints a wash in the wrong place, and a stale run ordinal **restyles the
@@ -241,7 +241,7 @@ impl TextSelection {
         }
     }
 
-    /// ★ **The quads a text markup would be authored from**, or nothing at all.
+    /// **The quads a text markup would be authored from**, or nothing at all.
     ///
     /// [`Self::highlights`]'s twin, and deliberately the same shape: the caller
     /// is handed an empty slice rather than being asked to check a revision for
@@ -323,14 +323,14 @@ pub struct PageContext<'a> {
 ///
 /// # Returns
 ///
-/// The new selection, or `None`. ★ `None` is returned when the page has **no
+/// The new selection, or `None`. `None` is returned when the page has **no
 /// extractable text or no such page**, and the caller must assign it: a sweep
 /// over a page with nothing on it clears whatever was selected, which is what
 /// the operator asked for by sweeping there. Returning the *old* selection on a
 /// miss would make a sweep across a blank page do nothing at all, which reads as
 /// the gesture being broken rather than as there being nothing to select.
 ///
-/// # ★ Why the trace fires on every frame and not only at the release
+/// # Why the trace fires on every frame and not only at the release
 ///
 /// `trace::text_selection` collapses the frames where the range did not move, so
 /// what reaches the channel is the sequence of *distinct* states the selection
@@ -346,7 +346,7 @@ pub fn sweep(
 ) -> Option<TextSelection> {
     let selection =
         if let (Some(page_text), Some(page)) = (doc.page_text(), doc.pages.get(page_index)) {
-            // ★ THE page's extraction, from `OpenDoc::page_text` — never a fresh
+            // THE page's extraction, from `OpenDoc::page_text` — never a fresh
             // one built here. A second extraction with its own options would
             // segment lines differently from the one the page was drawn and
             // cached from, so a sweep would select against text that does not
@@ -373,7 +373,7 @@ pub fn sweep(
     selection
 }
 
-/// ★★★ **Re-resolve a selection against the revision that just replaced it.**
+/// **Re-resolve a selection against the revision that just replaced it.**
 ///
 /// What makes a restyle repeatable without re-sweeping. Pressing Bold is an
 /// edit; an edit bumps [`crate::app::state::OpenDoc::edit_epoch`];
@@ -382,7 +382,7 @@ pub fn sweep(
 /// straight afterwards restyles nothing and the operator has to sweep the same
 /// words again between every pair of presses (`OPERATOR_REQUESTS.md` O198).
 ///
-/// # ★★★ THE STALENESS RULE IS NOT RELAXED. THE GEOMETRY IS REBUILT.
+/// # THE STALENESS RULE IS NOT RELAXED. THE GEOMETRY IS REBUILT.
 ///
 /// Module header §7 rejects two wrong answers, and this is neither of them.
 /// It does **not** re-stamp the old selection with a new epoch — that is
@@ -393,7 +393,7 @@ pub fn sweep(
 /// from the two positions the operator's own gesture set, at exactly one
 /// moment: immediately after an edit that claimed not to change the text.
 ///
-/// # ★★★ THE GUARD, AND WHY IT IS THE COVERED CHARACTERS
+/// # THE GUARD, AND WHY IT IS THE COVERED CHARACTERS
 ///
 /// A restyle changes how text looks and never what it says. So the covered
 /// string is an invariant the caller can check, and this function checks it:
@@ -406,7 +406,7 @@ pub fn sweep(
 /// restyle, the covered text moves and this declines. The shell does not have
 /// to know whether `format_text` renumbers; it measures.
 ///
-/// ★★ It is deliberately NOT a check that the run ORDINALS are unchanged. A
+/// It is deliberately NOT a check that the run ORDINALS are unchanged. A
 /// producer that re-emits a title block as two operators instead of three has
 /// renumbered nothing the operator can see, and the characters are the thing
 /// the operator swept.
@@ -617,7 +617,7 @@ fn model<'a>(ctx: &PageContext<'a>) -> EditableTextModel<'a> {
 
 /// **Is `canvas` inside the box of any text run on this page?**
 ///
-/// # ★★★ CONTAINMENT, and it must not be [`hit`]
+/// # CONTAINMENT, and it must not be [`hit`]
 ///
 /// [`hit`] falls back to the nearest line **within one line-height** when no
 /// box contains the point — deliberately, because that is Acrobat's behaviour
@@ -631,14 +631,14 @@ fn model<'a>(ctx: &PageContext<'a>) -> EditableTextModel<'a> {
 /// everywhere would make a scanned page's image unselectable, which is the
 /// mirror image of the defect it exists to fix.
 ///
-/// ## ★★ Artifacts count
+/// ## Artifacts count
 ///
 /// A run flagged as an artifact — a running head, a folio — is still text an
 /// operator can see and expects to select. `include_artifacts` governs what
 /// goes into extracted *plain text*, which is a different question from what is
 /// under the pointer.
 ///
-/// ## ★ A run with no `bbox` is skipped rather than guessed at
+/// ## A run with no `bbox` is skipped rather than guessed at
 ///
 /// `TextRun::bbox` is `Option` because a run whose glyphs carry no usable
 /// geometry has no honest box. Treating that as a hit would put the answer back
@@ -681,7 +681,7 @@ pub fn word_at(ctx: &PageContext<'_>, canvas: Pos2) -> Option<()> {
 /// function is allowed to be strict.
 fn hit(model: &EditableTextModel<'_>, ctx: &PageContext<'_>, canvas: Pos2) -> Option<TextPosition> {
     let pdf = crate::viewer::canvas_to_pdf_space(canvas, ctx.page)?;
-    // ★★ ONE call, and no shell-side rotated-band pass in front of it.
+    // ONE call, and no shell-side rotated-band pass in front of it.
     // `EditableTextModel::hit_test` projects the point onto the line, so a press
     // in the middle of a 90° letter lands on that letter.
     //
@@ -697,7 +697,7 @@ fn hit(model: &EditableTextModel<'_>, ctx: &PageContext<'_>, canvas: Pos2) -> Op
     model.hit_test(f64::from(pdf.x), f64::from(pdf.y))
 }
 
-/// ★★ **Which way the text under `canvas` runs**, in CANVAS space, as an angle
+/// **Which way the text under `canvas` runs**, in CANVAS space, as an angle
 /// in degrees from the horizontal — or `None` where the pointer is not over
 /// rotated text.
 ///
@@ -721,13 +721,13 @@ fn hit(model: &EditableTextModel<'_>, ctx: &PageContext<'_>, canvas: Pos2) -> Op
 /// with `/Rotate 90` turns its vertical stamp into a horizontal one on screen,
 /// and the I-beam has to follow the picture, not the file.
 ///
-/// # ★ `None` is the common answer and is not a failure
+/// # `None` is the common answer and is not a failure
 ///
 /// Ordinary horizontal text answers `None`, because the upright beam is already
 /// right for it and saying so would mean every ordinary page paying for a
 /// bitmap lookup to be told nothing changed.
 ///
-/// ★★ Blank paper answers `None` for a stronger reason, and it is why this
+/// Blank paper answers `None` for a stronger reason, and it is why this
 /// function does **not** use [`hit`]. `EditableTextModel::hit_test` falls back
 /// to the *nearest* line when no line contains the point, which is right for a
 /// drag — Acrobat does it — and wrong for a cursor: the empty inches beside a
@@ -737,7 +737,7 @@ fn hit(model: &EditableTextModel<'_>, ctx: &PageContext<'_>, canvas: Pos2) -> Op
 #[must_use]
 pub fn tilt_at(ctx: &PageContext<'_>, canvas: Pos2) -> Option<f32> {
     let pdf = crate::viewer::canvas_to_pdf_space(canvas, ctx.page)?;
-    // ★ The engine's own answer: `Line::direction` is the unit vector every
+    // The engine's own answer: `Line::direction` is the unit vector every
     // glyph on that line shares, sourced from the §9.4.4 text rendering matrix
     // rather than recovered from glyph origins. A shell-side census over origins
     // can come up empty on exactly the sparse rotated stamp it would be written
@@ -779,7 +779,7 @@ pub fn tilt_at(ctx: &PageContext<'_>, canvas: Pos2) -> Option<f32> {
 /// vector taken from the §9.4.4 text rendering matrix and shared by every glyph
 /// on the line by construction.
 ///
-/// ★ Why a *tolerance* rather than exact equality with `(1, 0)`: a page that
+/// Why a *tolerance* rather than exact equality with `(1, 0)`: a page that
 /// rotates through the CTM rather than through `Tm`, and a fitted OCR baseline,
 /// both produce a direction a hair off horizontal. Treating those as rotated
 /// would send ordinary prose down the frame-accumulating path for no benefit;
@@ -792,7 +792,7 @@ fn is_rotated(model: &EditableTextModel<'_>, line: usize) -> bool {
     })
 }
 
-/// ★ **The one derivation** — module header §5.
+/// **The one derivation** — module header §5.
 ///
 /// One ordered pair in, one [`TextSelection`] out, and both of its halves
 /// produced by the same walk over the same byte windows:
@@ -844,7 +844,7 @@ fn resolve(
         let Some(glyph) = model.glyph(*gref) else {
             continue;
         };
-        // ★ Which frame this glyph's cell is measured in, decided on the
+        // Which frame this glyph's cell is measured in, decided on the
         // ENGINE's `Line::direction`. A glyph on a rotated line is banded with
         // its own line, in that line's axes; every other glyph keeps the
         // engine's line and page axes. The two never mix, because a `Band`
@@ -911,7 +911,7 @@ fn resolve(
         } else {
             run.text.len()
         };
-        // ★★ Every run is copied verbatim, including the extraction's derived
+        // Every run is copied verbatim, including the extraction's derived
         // word spaces and line breaks. There is deliberately no filter here for
         // spurious breaks inside a rotated line: the extraction resolves a
         // baseline step into the line's own frame, so it emits none. A filter
@@ -922,14 +922,14 @@ fn resolve(
         }
     }
 
-    // ★ The projection into canvas space, through `find::reveal::quad_to_canvas`
+    // The projection into canvas space, through `find::reveal::quad_to_canvas`
     // — the SAME function Find projects its hits with. Reusing it rather than
     // mapping two corners here is what makes a selection box and a find box over
     // the same word land in the same place on a rotated page: it maps all four
     // corners and bounds them, because `/Rotate 90` sends the `ul`/`lr` pair to
     // two corners that are no longer the extremes.
     //
-    // ★ **Both spaces are kept, and they are pushed in the same iteration** —
+    // **Both spaces are kept, and they are pushed in the same iteration** —
     // module header §5.1. A box whose projection declines contributes to
     // *neither*: the two vectors are index-aligned by construction, and a
     // `filter_map` on one with a plain `map` on the other would let the wash and
@@ -979,20 +979,20 @@ fn ordered(a: TextPosition, b: TextPosition) -> (TextPosition, TextPosition) {
 /// rule about *this* module, and a caller holding them would have to know all of
 /// them to get any of them right.
 ///
-/// ★ These two live apart from [`crate::canvas::keys::canvas_keys`] because
+/// These two live apart from [`crate::canvas::keys::canvas_keys`] because
 /// both need the page's **extraction** — one to build a range over it, one to
 /// read a string out of a selection made against it — and `canvas_keys` is
 /// deliberately a document-free function that a headless `egui::Context` can
 /// drive end to end. Escape stays there, where its precedence question is
 /// answered.
 ///
-/// ★ Gated on [`takes_the_press`], the same predicate the press is gated on, so
+/// Gated on [`takes_the_press`], the same predicate the press is gated on, so
 /// a mode whose primary button does not select content does not answer Ctrl+A
 /// with a text selection the operator has no gesture to clear. §1.3 of this
 /// module's header records that the *other* half of Ctrl+A — select every
 /// object — is a known gap rather than an oversight.
 ///
-/// ★★ **[`pending_key`] FIRST, and the ordering is load-bearing.** The chord is
+/// **[`pending_key`] FIRST, and the ordering is load-bearing.** The chord is
 /// read off `egui::InputState` — one map lookup — and the page's extraction is
 /// fetched **only** when one fired. Asking for the extraction in order to
 /// discover that no chord was pressed builds it on the first frame of every

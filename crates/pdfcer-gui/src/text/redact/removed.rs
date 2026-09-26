@@ -92,7 +92,7 @@ pub fn removed_text_none() -> &'static str {
 /// the operator cannot see owes a report under R8b whether or not the report is
 /// comfortable.
 ///
-/// ★ **It names no cause, deliberately.** At least two produce this state and
+/// **It names no cause, deliberately.** At least two produce this state and
 /// the shell cannot tell them apart from the report: a font whose encoding
 /// cannot be inverted decodes to nothing, and a removed region whose mark the
 /// engine could not attribute is skipped when `redacted_text` is assembled. The

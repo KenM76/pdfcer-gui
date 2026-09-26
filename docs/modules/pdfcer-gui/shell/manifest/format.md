@@ -74,7 +74,7 @@ what made it true costs the next reader the whole feature.* The register
 entries were caught (`manifest::PLANNED` names each absent command and is
 asserted in both directions); the paragraph was not.
 
-★ Two clauses of the old header **stand**, and they are kept as live text
+Two clauses of the old header **stand**, and they are kept as live text
 rather than quotation because they still decide things:
 
 - **Delete-and-re-add is not a workaround and is deliberately not built.**

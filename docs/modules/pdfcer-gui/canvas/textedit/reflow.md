@@ -3,7 +3,7 @@
 One question, asked of the document: *the operator's caret is on run N; which
 **block** is that, and is it one `reflow_block` can act on?*
 
-## ★★★ Why this is a module and not two lines at the call site
+## Why this is a module and not two lines at the call site
 
 `OPERATOR_REQUESTS.md` **O54(b)**: *"I think the paragraph reflow was
 implemented ages ago in the pdfcer core, so we should have that option too."*
@@ -12,14 +12,14 @@ design — the integer this module returns is **not a description of a
 paragraph**. It is an **index into a list the engine rebuilds for itself**,
 and it means whatever that list says it means.
 
-## ★★★ THE RECOGNITION IS THE ENGINE'S, AND THIS MODULE HAD IT BACKWARDS
+## THE RECOGNITION IS THE ENGINE'S, AND THIS MODULE HAD IT BACKWARDS
 
 
 > The block recognition must match the one the caret was placed against —
 > `BlockRecognitionOptions::default()`, the same as [`super::plan`]'s. *"The
 > question is how did the thing the operator clicked get segmented, and
 > asking it of a differently-recognised model would answer about a different
-> segmentation."* ★ Not `reflow_recognition_options()` … using it here would
+> segmentation."* Not `reflow_recognition_options()` … using it here would
 > name a block index the operator's caret never pointed at.
 
 Every sentence of that is true about *paragraphs* and false about *indices*,
@@ -60,7 +60,7 @@ Two failure modes come out of that, and the quiet one is the bad one:
    marked, the wrong text moves. No test in this crate could see it, because
    both option sets produce a valid model and a valid index.
 
-★ The two lists agree at index 0 and diverge at the first place the relaxed
+The two lists agree at index 0 and diverge at the first place the relaxed
 config merges what the default split — which on a business letter is never,
 and on a CAD sheet is almost immediately. That is why this shipped: the only
 driven check of the feature, `ui-verify`'s `ReflowingAParagraphRewrapsIt`,

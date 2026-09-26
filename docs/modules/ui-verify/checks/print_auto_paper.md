@@ -15,7 +15,7 @@ extent, picks the smallest enumerated sheet that holds them all with each
 page free to lie either way round, and asks the driver for that sheet.
 When nothing holds them it takes the largest available and says so.
 
-# ★★★ The claim this check exists for, and why the obvious one is not it
+# The claim this check exists for, and why the obvious one is not it
 
 Four things could be asserted after clicking that entry, and three of them
 are worth almost nothing on their own:
@@ -25,7 +25,7 @@ are worth almost nothing on their own:
 | `pick=auto` | the click landed on the entry |
 | `auto=matched` | the decision ran |
 | `paper=Form(8)` | its answer was turned into a request the driver will see |
-| ★ `largest=` fits `sheet=` | **the sheet has something to do with this document** |
+| `largest=` fits `sheet=` | **the sheet has something to do with this document** |
 
 A build that resolved auto to the first form in the driver's list would
 emit the first three, correctly, and be completely wrong. The operator's
@@ -45,7 +45,7 @@ fixture. Nothing here hard-codes A3, and nothing here needs to know what
 printer this PC has — which is the difference between a check that runs on
 the operator's machine and one that runs on mine.
 
-## ★★★ The band is the application's DECLARED tolerance — and the first
+## The band is the application's DECLARED tolerance — and the first
 run is what taught this check that
 
 This section is written out of a correction, because the corrected version
@@ -138,7 +138,7 @@ It costs two release builds and about four minutes, and it is the only thing
 that has ever demonstrated that this check discriminates the state it names
 from the three states that look like it.
 
-# ★ What this check deliberately CANNOT establish
+# What this check deliberately CANNOT establish
 
 **It never presses Print.** Four print checks state that rule in their own
 words rather than by reference, because the day somebody adds a sixth by

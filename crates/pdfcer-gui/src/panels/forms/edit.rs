@@ -57,7 +57,7 @@ pub struct FillDisclosure {
     /// class rule 4's surviving half is about: an inference the operator
     /// cannot see still owes an off-canvas report.
     ///
-    /// ★ `None` on a **multiline** field, and that is the engine being careful
+    /// `None` on a **multiline** field, and that is the engine being careful
     /// rather than incomplete: multiline keeps the older whole-box route, so
     /// naming a bound there *"would report a constraint that was never
     /// evaluated"*. Treat `None` as *no bound was decided*, never as `Height`.
@@ -83,7 +83,7 @@ impl FillDisclosure {
 thread_local! {
     /// The most recent fill's disclosures, waiting to be read by the panel.
     ///
-    /// # ★ Why a thread-local and not a field on `OpenDoc`
+    /// # Why a thread-local and not a field on `OpenDoc`
     ///
     /// It should be a field on [`OpenDoc`], beside `edit_epoch`, dropped with
     /// the document — and the constraint is a **boundary rather than a design
@@ -221,7 +221,7 @@ pub enum FormEdit {
     },
     /// Write every value in a recompute plan the operator has just reviewed.
     ///
-    /// # ★ The plan travels with the action rather than being recomputed
+    /// # The plan travels with the action rather than being recomputed
     ///
     /// [`apply`] could call `form_script::recompute::plan` itself and get the
     /// same answer — the action is applied in the same frame that raised it,
@@ -337,7 +337,7 @@ pub fn apply(doc: &mut OpenDoc, edit: &FormEdit) {
             // 3. The document changed: every paint-order index and every
             //    cached decomposition describing it is now stale.
             doc.edit_epoch = doc.edit_epoch.wrapping_add(1);
-            // ★★★ **…and the per-page answer beside it** —
+            // **…and the per-page answer beside it** —
             // `OPERATOR_REQUESTS.md` O74, and this is the operator's literal
             // case: *"even just fill out a form … it seems to really slow down
             // clicking a checkbox."*
@@ -404,7 +404,7 @@ pub fn apply(doc: &mut OpenDoc, edit: &FormEdit) {
 /// `OPERATOR_REQUESTS.md` O74. `None` means *"not established"* and is the
 /// answer for everything this function has not proved, which is most of it.
 ///
-/// # ★★★ Why every branch below defaults to `None`
+/// # Why every branch below defaults to `None`
 ///
 /// A `Some(page)` is a promise that no rasteriser drawing any **other** sheet
 /// would produce a different picture. If that promise is ever false the page
@@ -504,7 +504,7 @@ impl Applied {
 
 /// The stable trace token for an [`pdfcer_core::vartext::AutoFitBound`].
 ///
-/// # ★★★ Why this exists rather than `{:?}`
+/// # Why this exists rather than `{:?}`
 ///
 /// **Never `Debug`-format a field a machine reads.** `Debug` is a derived,
 /// unstable rendering owned by another crate: a rename upstream, a
@@ -529,7 +529,7 @@ impl Applied {
 /// grepped the derive line. The compiler rejected it immediately (`E0004`), so
 /// it cost two minutes.
 ///
-/// ★★★ It is left here because of *when* it happened: **within the hour of
+/// It is left here because of *when* it happened: **within the hour of
 /// writing a RAG lesson titled "`#[non_exhaustive]` removes the compile-time
 /// guarantee, and comments keep claiming it anyway"**, after that same class
 /// had bitten twice the same evening in unrelated modules. Knowing the rule is
@@ -561,7 +561,7 @@ const fn bound_token(bound: pdfcer_core::vartext::AutoFitBound) -> &'static str 
 /// Build a [`FillDisclosure`] from a fill's outcome.
 ///
 /// `epoch` is filled in by [`apply`], which is the only place that knows the
-/// revision the disclosure will be read against — see the ★ comment there.
+/// revision the disclosure will be read against — see the comment there.
 fn disclosure_of(field: &str, out: &FillOutcome) -> FillDisclosure {
     FillDisclosure {
         field: field.to_owned(),
@@ -625,7 +625,7 @@ fn run(session: &mut EditSession, edit: &FormEdit) -> Result<Applied, EditError>
             Ok(Applied::plain(1))
         }
         FormEdit::Recompute { changes } => {
-            // ★ STOPS AT THE FIRST REFUSAL, and leaves what landed.
+            // STOPS AT THE FIRST REFUSAL, and leaves what landed.
             //
             // The alternative — carry on and report the failures at the end —
             // would be worse in the one case that matters. These values are
@@ -642,7 +642,7 @@ fn run(session: &mut EditSession, edit: &FormEdit) -> Result<Applied, EditError>
             // Ctrl+Z, once per field written — which is exactly what
             // `crate::text::forms::recompute_apply_tooltip` tells them.
             //
-            // ★ The disclosure carried out of a recompute is the LAST fill's,
+            // The disclosure carried out of a recompute is the LAST fill's,
             // and that is a deliberate narrowing rather than an oversight: the
             // slot holds one, a plan can write forty, and a panel line naming
             // one of forty fields would be worse than one naming none. What
@@ -673,7 +673,7 @@ fn run(session: &mut EditSession, edit: &FormEdit) -> Result<Applied, EditError>
         }
         FormEdit::RegenerateAppearances => {
             let out = session.regenerate_appearances()?;
-            // ★ NOT `out.regenerated`. Clearing `/NeedAppearances` is itself a
+            // NOT `out.regenerated`. Clearing `/NeedAppearances` is itself a
             // change to the document even when no field's appearance moved —
             // it is the whole point of the control on a form whose values were
             // already drawn — so a run that regenerated nothing and cleared
@@ -736,7 +736,7 @@ mod tests {
         assert_eq!(seen.len(), 8, "a variant was added without a label");
     }
 
-    /// **★ A trace label never carries an operand.**
+    /// **A trace label never carries an operand.**
     ///
     /// The label is what reaches stderr, and `FormEdit::FillText` carries
     /// whatever the operator typed — which, on a `/Ff` `Password` field, is a
@@ -847,7 +847,7 @@ mod tests {
         );
     }
 
-    /// ★ **A fill carries back exactly the two facts the document cannot be
+    /// **A fill carries back exactly the two facts the document cannot be
     /// asked again — and only when there is something to say.**
     ///
     /// Driven through a real `EditSession` and a real form, because the whole
@@ -890,7 +890,7 @@ mod tests {
                 .expect("the fixture has a text field")
         };
 
-        // ★ Text every WinAnsi font can carry: nothing was substituted.
+        // Text every WinAnsi font can carry: nothing was substituted.
         let plain = run(
             &mut session,
             &FormEdit::FillText {
@@ -907,7 +907,7 @@ mod tests {
         );
         assert_eq!(plain.field, target);
 
-        // ★ Text it cannot: two CJK characters with no WinAnsi code, written
+        // Text it cannot: two CJK characters with no WinAnsi code, written
         // as `?` and counted.
         let substituted = run(
             &mut session,
@@ -940,7 +940,7 @@ mod tests {
         );
     }
 
-    /// ★ **A disclosure is shown only while it describes the revision on
+    /// **A disclosure is shown only while it describes the revision on
     /// screen.**
     ///
     /// The staleness rule, which is what lets an undo silence the sentence with

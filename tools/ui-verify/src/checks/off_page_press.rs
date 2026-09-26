@@ -18,7 +18,7 @@ const RIBBON_MODE: &str = "edit";
 
 /// Single-page display, then **100%** — not fit-page.
 ///
-/// ★★★ **The zoom is load-bearing and fit-page is wrong here.** This check
+/// **The zoom is load-bearing and fit-page is wrong here.** This check
 /// aims at x = -100 pt, which is 100 pt of grey to the left of the sheet, and
 /// what matters is how many SCREEN pixels that is. Fit-page on a 200 x 200
 /// fixture in a maximised window puts the sheet at roughly 3.8 px per point, so
@@ -26,11 +26,11 @@ const RIBBON_MODE: &str = "edit";
 /// exists -- `doc_to_window_off_page` refuses, correctly, and the check SKIPS.
 ///
 ///
-/// ★★ It also fixes the aim in a way fit-page cannot: 100% is a property of
+/// It also fixes the aim in a way fit-page cannot: 100% is a property of
 /// the DOCUMENT, so the geometry this check depends on no longer varies with
 /// the window size on the day.
 ///
-/// ★★★ `mode.edit` is named FIRST, and it is not decoration. Since
+/// `mode.edit` is named FIRST, and it is not decoration. Since
 /// 2026-09-11 the display of off-sheet content is a per-mode preference and
 /// **Read ships with it OFF** — the operator's request: *"by default, read
 /// doesn't show off page items, review and edit do show off page items."*
@@ -46,7 +46,7 @@ const INVOKE: &str = "mode.edit,view.page_single,view.zoom_actual";
 /// The band's mode and kind breakdown.
 const MODE: &str = "marquee-mode"; // ui-text-exempt: a trace event name, never displayed
 
-/// ★★★ **Which of the canvas's two interactive rectangles owned the frame** —
+/// **Which of the canvas's two interactive rectangles owned the frame** —
 /// the direct evidence that the mechanism under test ran, as opposed to the
 /// band having arrived by some other route.
 const SURFACE: &str = "canvas-surface"; // ui-text-exempt: a trace event name, never displayed
@@ -88,7 +88,7 @@ const BAND_TO: (f64, f64) = (-100.0, 120.0);
 /// its own content stream — the oracle the unit tests below measure the band
 /// against.
 ///
-/// ★★ `#[cfg(test)]` because the DRIVEN half must not read it. The check's
+/// `#[cfg(test)]` because the DRIVEN half must not read it. The check's
 /// oracle at run time is `hits == 1`, and it is airtight only because the
 /// geometry was argued in advance; a run-time comparison against these numbers
 /// would be the harness agreeing with itself. They exist so that an edit to the
@@ -217,7 +217,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- aim -----------------------------------------------------------------
     //
-    // ★ BOTH corners go through the off-page conversion here, where
+    // BOTH corners go through the off-page conversion here, where
     // `off_page_marquee` sends only its destination that way. That asymmetry is
     // the difference between the two checks stated in arithmetic: this gesture
     // has no point on the paper at all.
@@ -249,7 +249,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // --- read ----------------------------------------------------------------
     let trace = session.trace()?;
 
-    // ★★★ First: **did the pasteboard ever hold a GESTURE?** — not merely
+    // First: **did the pasteboard ever hold a GESTURE?** — not merely
     // "was the pasteboard chosen".
     //
     // ⚠ MEASURED, 2026-09-10, and this check got it wrong on its first draft.
@@ -384,7 +384,7 @@ mod tests {
         )
     }
 
-    /// ★★★ **The whole subject in one assertion: the press is not on the
+    /// **The whole subject in one assertion: the press is not on the
     /// sheet.**
     ///
     /// This is the ONLY thing that distinguishes this check from
@@ -407,7 +407,7 @@ mod tests {
         let _ = FIXTURE_PAGE;
     }
 
-    /// ★★★ **The band must touch the off-page square without enclosing it**, or
+    /// **The band must touch the off-page square without enclosing it**, or
     /// the check stops discriminating between the two marquee modes and would
     /// be green under the pre-O88 behaviour it is written to exclude.
     #[test]
@@ -423,7 +423,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The band must miss the on-page square**, or `hits == 1` proves
+    /// **The band must miss the on-page square**, or `hits == 1` proves
     /// nothing about where the objects are.
     ///
     /// Asserted on both axes independently, because the check's failure message
@@ -453,7 +453,7 @@ mod tests {
         assert!(BAND_TO.0 < BAND_FROM.0);
     }
 
-    /// ★★ **The origin must clear the off-page square by more than the pick
+    /// **The origin must clear the off-page square by more than the pick
     /// tolerance**, or the press selects that square directly, no band runs,
     /// and the check reports a marquee defect that does not exist.
     ///

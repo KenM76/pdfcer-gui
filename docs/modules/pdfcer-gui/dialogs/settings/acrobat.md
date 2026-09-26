@@ -5,7 +5,7 @@ had to say
 it."* One control, and — like [`super::comments`] — a module for it because
 the argument is about placement and about what the control has to explain.
 
-## ★★★ This group is visible whether or not discovery succeeded, and that
+## This group is visible whether or not discovery succeeded, and that
 is the whole decision
 
 O122's escape hatch, in the row's own words:
@@ -31,7 +31,7 @@ prevents in the other direction: the remedy for an absent capability must be
 reachable, and an absent capability whose remedy is also absent is a dead
 end.
 
-## ★★ Why the resolved state is shown, and not just the field
+## Why the resolved state is shown, and not just the field
 
 Because without it a typo is invisible. A person who types
 `D:\Apps\Acrobatt.exe` and a person who types the correct path see exactly

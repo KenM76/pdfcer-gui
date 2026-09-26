@@ -1,7 +1,7 @@
 //! # `panels::comments::tests` — the Comments panel's own assertions
 //!
 //!
-//! ★ Chosen over splitting the drawing code because the drawing genuinely is
+//! Chosen over splitting the drawing code because the drawing genuinely is
 //! one surface — a row is a header, a note, a byline and two controls laid out
 //! together, and cutting between them would put the reasoning about a single
 //! row in two files. The tests have no such coupling: each one names its own
@@ -15,7 +15,7 @@
 //! and the gate would fail on a file that shows the operator nothing.
 #![cfg(test)]
 
-/// ★★★ **A READING STANCE OFFERS NO CONTROL THAT WRITES.**
+/// **A READING STANCE OFFERS NO CONTROL THAT WRITES.**
 ///
 /// # The defect, and how it was actually found
 ///
@@ -49,7 +49,7 @@
 /// withhold everything. So every existing test ran as though it were in
 /// Edit and could not have seen this.
 ///
-/// ★★ And a predicate test would have been worse than none: this project's
+/// And a predicate test would have been worse than none: this project's
 /// standing lesson is that **a unit test which calls the verb cannot see
 /// the chain in front of it** — eight green tests once passed while the
 /// feature did one of fourteen things. A test of a
@@ -145,7 +145,7 @@ fn row_by(author: Option<&str>) -> CommentRow {
     }
 }
 
-/// ★★★ **Correcting somebody else's typo must not re-attribute their
+/// **Correcting somebody else's typo must not re-attribute their
 /// comment.**
 ///
 /// The mistake `pdfcer-core` warned about by name when it shipped
@@ -173,7 +173,7 @@ fn a_note_with_no_author_is_ours_to_sign() {
     assert!(!keeps_author(&row_by(None)));
 }
 
-/// ★ Whitespace is absent. A producer writing `/T ()` or `/T ( )` leaves a
+/// Whitespace is absent. A producer writing `/T ()` or `/T ( )` leaves a
 /// byline nobody wrote, and preserving it would credit the comment to a
 /// space — while the row's own byline, which trims the same way, would show
 /// nothing at all. Two surfaces, one rule.
@@ -187,7 +187,7 @@ use crate::shell::{commands, manifest};
 use egui_shell::CommandRegistry;
 use std::collections::BTreeSet;
 
-/// **★ The command that opens this panel exists and is on the ribbon.**
+/// **The command that opens this panel exists and is on the ribbon.**
 ///
 /// The check three panels in the old shell shipped without: they had a
 /// body, a rail entry and a diagnostic step, and *"no control an operator
@@ -237,7 +237,7 @@ fn the_panel_enum_and_this_module_agree() {
     assert_eq!(Panel::Comments.command_id(), COMMAND_ID);
 }
 
-/// **★ The page index travels 0-based and prints 1-based.**
+/// **The page index travels 0-based and prints 1-based.**
 ///
 /// The off-by-one that would otherwise be invisible.
 /// [`crate::app::actions::Action::GoToPage`] takes a 0-based index — the
@@ -280,7 +280,7 @@ fn the_page_index_travels_zero_based_and_prints_one_based() {
     }
 }
 
-/// ★★★ **The Delete this panel now offers actually reaches the engine.**
+/// **The Delete this panel now offers actually reaches the engine.**
 ///
 /// # Why this is a test and not a paragraph
 ///
@@ -371,7 +371,7 @@ fn a_ce_dimension_row_says_ce_dimension_and_still_says_line() {
 // ANSWERING A COMMENT — `EditSession::add_reply`, `Pass 253.0`
 // ===========================================================================
 
-/// ★★★ **A blank reply is not offered, and a written one is.**
+/// **A blank reply is not offered, and a written one is.**
 ///
 /// # Why this guard exists at all, which is not obvious
 ///
@@ -383,7 +383,7 @@ fn a_ce_dimension_row_says_ce_dimension_and_still_says_line() {
 /// to somebody's thread that says nothing and that this panel offers no later
 /// way to give words to.
 ///
-/// ★ Both directions, and the whitespace case explicitly: a guard that only
+/// Both directions, and the whitespace case explicitly: a guard that only
 /// stopped `""` would stop only the operator who pressed Post with the cursor
 /// at position zero, and `"   "` renders in every surface exactly as an empty
 /// reply does.
@@ -400,7 +400,7 @@ fn a_reply_is_postable_only_when_it_says_something() {
     assert!(!reply_is_postable("\n\t "));
 }
 
-/// ★★★ **A reply row's *Go to* opens the ROOT's window, not its own.**
+/// **A reply row's *Go to* opens the ROOT's window, not its own.**
 ///
 /// # The defect this stops, which arrived with the Reply control
 ///
@@ -412,7 +412,7 @@ fn a_reply_is_postable_only_when_it_says_something() {
 /// for a window that is never drawn: the operator presses the button, the page
 /// changes, and nothing opens.
 ///
-/// ★★ The identity case is the control and it is not a formality — it is the
+/// The identity case is the control and it is not a formality — it is the
 /// overwhelmingly common one, and a `thread_root` that walked to the first row
 /// in the list, or returned the last id it saw, would pass a reply-only test
 /// and break every ordinary comment in the document.
@@ -438,7 +438,7 @@ fn a_reply_resolves_to_the_comment_at_the_head_of_its_thread() {
     assert_eq!(model::thread_root(&rows, id(7)), id(7));
 }
 
-/// ★★★ **A cyclic `/IRT` terminates.**
+/// **A cyclic `/IRT` terminates.**
 ///
 /// §7.3.10 makes a dangling reference not an error and says nothing at all
 /// about a circular one, and `pdfcer-core` models `/IRT` *"unresolved … a
@@ -447,7 +447,7 @@ fn a_reply_resolves_to_the_comment_at_the_head_of_its_thread() {
 /// survive — and an unbounded upward walk over one hangs **the frame that is
 /// trying to draw**, which is the worst available outcome on a display surface.
 ///
-/// ★ The dangling case is asserted beside it, because it terminates for a
+/// The dangling case is asserted beside it, because it terminates for a
 /// different reason — the parent is not in the list at all — and a build that
 /// handled the cycle by bounding the loop while panicking on a missing parent
 /// would pass the first half of this test.
@@ -481,7 +481,7 @@ fn a_malformed_thread_resolves_to_something_real_rather_than_hanging() {
     assert_eq!(model::thread_root(&dangling, id(7)), id(7));
 }
 
-/// ★★★ **A READING STANCE OFFERS NO REPLY EDITOR EITHER — including when one
+/// **A READING STANCE OFFERS NO REPLY EDITOR EITHER — including when one
 /// is already open.**
 ///
 /// # Why this needs its own test beside the count above
@@ -567,7 +567,7 @@ fn a_reading_stance_draws_no_reply_editor_even_with_a_reply_draft_open() {
 // ESCAPE WRITES THE DRAFT — `editor::escape_commits`
 // ===========================================================================
 
-/// ★★★ **Escape writes what was typed.**
+/// **Escape writes what was typed.**
 ///
 /// The whole point of the rule, and the only assertion here whose failure is a
 /// data-loss defect rather than a tidiness one: an operator who typed a
@@ -594,7 +594,7 @@ fn escape_on_an_edited_note_writes_it() {
     );
 }
 
-/// ★★ The negative that keeps the positive honest: an editor opened and left
+/// The negative that keeps the positive honest: an editor opened and left
 /// alone raises **nothing**.
 ///
 /// `set_markup_note` on text identical to what is already there is a call whose
@@ -617,7 +617,7 @@ fn escape_on_an_untouched_note_writes_nothing() {
     );
 }
 
-/// ★★ A `Note::Description` is compared the same way a `Note::Text` is.
+/// A `Note::Description` is compared the same way a `Note::Text` is.
 ///
 /// The editor seeds from either — §12.5.2's `/Contents` carries both meanings —
 /// so a comparison that only knew about `Note::Text` would read a description
@@ -638,7 +638,7 @@ fn escape_over_an_untouched_description_writes_nothing() {
     );
 }
 
-/// ★★★ **Escape posts a reply**, and posts it as a reply.
+/// **Escape posts a reply**, and posts it as a reply.
 ///
 /// The destination is the one thing in this file that cannot be recovered
 /// afterwards: a `SetNote` raised from a reply draft writes the answer **over
@@ -664,7 +664,7 @@ fn escape_on_a_reply_posts_it() {
     );
 }
 
-/// ★ A blank reply is the one draft where closing loses nothing, so it raises
+/// A blank reply is the one draft where closing loses nothing, so it raises
 /// nothing — the same answer *Post reply* gives by not being drawn at all.
 ///
 /// Whitespace counts as blank, per `reply_is_postable`: a reply containing one

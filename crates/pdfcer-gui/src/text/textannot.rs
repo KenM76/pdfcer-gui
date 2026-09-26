@@ -3,7 +3,7 @@
 //! Copy for the three markup kinds that carry words: text box, sticky note and
 //! stamp.
 //!
-//! ## ★ The one distinction every string here has to preserve
+//! ## The one distinction every string here has to preserve
 //!
 //! **A text box is painted on the page. A sticky note is not.**
 //!
@@ -16,7 +16,7 @@
 //! control is identical. A shared string would be one an author could reword
 //! for one kind and silently change for the other.
 //!
-//! ## ★ It is no longer only the dialog's copy, and that is deliberate
+//! ## It is no longer only the dialog's copy, and that is deliberate
 //!
 //! Everything above `cancel` is the authoring dialog. Everything below it is
 //! about **editing a note on a text box that is already placed** — a surface
@@ -44,7 +44,7 @@ pub const fn title(kind: TextAnnotKind) -> &'static str {
 
 /// The sentence under the title.
 ///
-/// ★ Each says **where the words end up**, which is the distinction this
+/// Each says **where the words end up**, which is the distinction this
 /// module exists to preserve. The text box's says "on the page"; the sticky's
 /// says the opposite in as many words, because an operator who believes a
 /// sticky prints will use it for something that needed to.
@@ -103,7 +103,7 @@ pub const fn bound(kind: TextAnnotKind) -> &'static str {
 
 /// One stamp's name, as an operator reads it.
 ///
-/// ★ Title case, not the `/Name` spelling. The PDF carries `/NotApproved`;
+/// Title case, not the `/Name` spelling. The PDF carries `/NotApproved`;
 /// nobody says that out loud, and a gallery that listed it would be showing
 /// the operator the file format rather than the choice. The engine's own
 /// appearance paints its own label — this is only how the option is *offered*.
@@ -129,13 +129,13 @@ pub const fn stamp_label(stamp: StampName) -> &'static str {
 
 /// One sticky-note icon's name, as an operator reads it.
 ///
-/// ★ Title case with a space, not the `/Name` spelling. The PDF carries
+/// Title case with a space, not the `/Name` spelling. The PDF carries
 /// `/NewParagraph`; the operator is choosing a picture, not a name object, and
 /// a chooser listing the run-together form would be showing them the file
 /// format. The same rule [`stamp_label`] follows, and the same rule
 /// `text::commands` states for every label in this shell.
 ///
-/// # ★★ No catch-all, unlike [`stamp_label`], and the difference is the enum
+/// # No catch-all, unlike [`stamp_label`], and the difference is the enum
 ///
 /// `StampName` is `#[non_exhaustive]`, so that function needs a `_ =>` arm and
 /// returns the empty string for a stamp it has no prose for. `StickyIcon` is
@@ -158,7 +158,7 @@ pub fn sticky_icon_label(icon: &StickyIcon) -> &'static str {
         StickyIcon::NewParagraph => "New paragraph",
         StickyIcon::Paragraph => "Paragraph",
         StickyIcon::Insert => "Insert",
-        // ★★★ **A name §12.5.6.4 permits and pdfcer does not model** —
+        // **A name §12.5.6.4 permits and pdfcer does not model** —
         // `StickyIcon::Other`, new in `pdfcer-core` `Pass 253.5`.
         //
         // This function cannot name it, and that is a property of its return
@@ -172,7 +172,7 @@ pub fn sticky_icon_label(icon: &StickyIcon) -> &'static str {
         // does. A caller that does not will show this word, which is why it
         // says *what pdfcer knows about it* rather than pretending to a name.
         //
-        // ★ `#[non_exhaustive]` is NOT what this arm is for. `StickyIcon` is a
+        // `#[non_exhaustive]` is NOT what this arm is for. `StickyIcon` is a
         // closed enum; this is a real variant with a real meaning, and a
         // wildcard here would also silently swallow an eighth standard icon if
         // §12.5.6.4 ever grew one.
@@ -182,7 +182,7 @@ pub fn sticky_icon_label(icon: &StickyIcon) -> &'static str {
 
 /// The label over the sticky note's icon chooser.
 ///
-/// ★ *"Icon"* rather than *"Name"*. `/Name` is the format's word for the key
+/// *"Icon"* rather than *"Name"*. `/Name` is the format's word for the key
 /// and it is also the word for four other things in a PDF; the operator is
 /// picking a picture. `text::commands`' standing rule: a label is the
 /// operator's vocabulary and an id is the format's.
@@ -191,7 +191,7 @@ pub const fn sticky_icon_heading() -> &'static str {
     "Icon"
 }
 
-/// ★★★ **What the icon actually changes** — said under every chooser that
+/// **What the icon actually changes** — said under every chooser that
 /// offers one, on both surfaces.
 ///
 /// # Why this sentence has to exist
@@ -211,7 +211,7 @@ pub const fn sticky_icon_heading() -> &'static str {
 /// gap between the file and the picture this shell states rather than lets
 /// somebody discover.
 ///
-/// ★ It says *"other PDF readers"* and does not name Acrobat. Naming a
+/// It says *"other PDF readers"* and does not name Acrobat. Naming a
 /// competitor's product in operator copy is a claim about that product's
 /// behaviour, and this one is true of every reader that ships Table 172
 /// artwork rather than of one.
@@ -224,7 +224,7 @@ pub const fn sticky_icon_bound() -> &'static str {
 
 /// What the gallery does not offer, said once under it.
 ///
-/// ★ A disclosure rather than a limitation apologised for. Acrobat's *dynamic*
+/// A disclosure rather than a limitation apologised for. Acrobat's *dynamic*
 /// stamps bake a name and a timestamp into the appearance; pdfcer has no
 /// identity to put in one, and the note-text exchange settled that this shell
 /// invents no placeholder for `/T`. So a stamp claiming to be signed by
@@ -238,7 +238,7 @@ pub const fn stamp_bound() -> &'static str {
 
 /// The label over the stamp's size chooser.
 ///
-/// ★ *"Size"* and not *"Font size"*. The operator is choosing how big the
+/// *"Size"* and not *"Font size"*. The operator is choosing how big the
 /// stamp reads on the sheet; the fact that a stamp's appearance is drawn with a
 /// font is pdfcer's business. The same rule [`sticky_icon_heading`] follows one
 /// screen up — a label is the operator's vocabulary and an id is the format's.
@@ -249,7 +249,7 @@ pub const fn stamp_size_heading() -> &'static str {
 
 /// One label size, as an operator reads it in the chooser.
 ///
-/// # ★★ Why the default entry is a SENTENCE and the others are numbers
+/// # Why the default entry is a SENTENCE and the others are numbers
 ///
 /// [`StampSize::FitTheBox`] is not a size, it is a **policy** — *the box you
 /// drew decides*. Listing it as a number would be a lie about what it does, and
@@ -266,7 +266,7 @@ pub fn stamp_size_label(size: StampSize) -> String {
     }
 }
 
-/// ★★★ **What the size chooser does to the box**, said once under it.
+/// **What the size chooser does to the box**, said once under it.
 ///
 /// # Why this sentence has to exist
 ///
@@ -283,7 +283,7 @@ pub fn stamp_size_label(size: StampSize) -> String {
 ///     box large, which is what a caller who drew a deliberately big stamp
 ///     meant.
 ///
-/// ★ It is **not** a disclosure of an inference under R8b rule 4, and that
+/// It is **not** a disclosure of an inference under R8b rule 4, and that
 /// distinction matters because the sentence looks like one. A grown box is
 /// visible on the canvas *as itself* — the operator sees a wider stamp, and a
 /// screenshot of it matches a screenshot of the saved file. This sentence is
@@ -326,7 +326,7 @@ pub const fn cancel() -> &'static str {
 // EDITING a note that already exists — the other end of the same distinction
 // ===========================================================================
 //
-// ★★★ **A `/FreeText`'s `/Contents` and the words painted in it are kept in
+// **A `/FreeText`'s `/Contents` and the words painted in it are kept in
 // step BY THE ENGINE, in the same command and the same undo entry.**
 //
 // `annot_author::free_text` writes the operator's words TWICE — into the `/AP`
@@ -351,7 +351,7 @@ pub const fn cancel() -> &'static str {
 // it. The disclosure is off-canvas and after the fact, and it keys on the
 // engine's own answer rather than on a subtype this shell classified.
 //
-// # ★★★ Which `appearance_rebaked == false` owes a sentence, and why the
+// # Which `appearance_rebaked == false` owes a sentence, and why the
 // subtype test is not enough
 //
 // [`pdfcer_core::edit::MarkupNoteChange::appearance_rebaked`] is `false` on
@@ -384,7 +384,7 @@ pub const fn cancel() -> &'static str {
 /// [`pdfcer_core::edit::MarkupNoteChange::subtype`]: the raw `/Subtype` name,
 /// not a label of ours.
 ///
-/// # ★ Why the answer is `FreeText` and NOT the other two note-bearing kinds
+/// # Why the answer is `FreeText` and NOT the other two note-bearing kinds
 ///
 /// Measured per kind rather than assumed for the family, and the family turns
 /// out not to be uniform:
@@ -400,7 +400,7 @@ pub const fn cancel() -> &'static str {
 /// the correct and final answer, not a failure. Saying otherwise would be a
 /// warning an operator learns to ignore, which costs the one case that is real.
 ///
-/// ★ The stamp row is the one worth reading twice. A stamp's `/Contents` is a
+/// The stamp row is the one worth reading twice. A stamp's `/Contents` is a
 /// comment *about* the stamp, not the stamp's words — so it is not stale, it
 /// was never the same thing. (Its painted label is separately unreachable: it
 /// is baked into the `/AP` and stored under no key, so nothing can read it
@@ -418,7 +418,7 @@ pub fn paints_its_note(subtype: &str) -> bool {
 /// an inference of ours. See the section banner for the four-row table this
 /// implements and for why `false` alone is not the condition.
 ///
-/// ★ States the two halves separately and in that order — what did change,
+/// States the two halves separately and in that order — what did change,
 /// then what did not — because an operator who reads only the first clause
 /// must not come away believing the page moved. It also says **why** the
 /// picture was left alone, since "it was not redrawn" without "because it is
@@ -454,7 +454,7 @@ pub fn note_clear_disclosure(subtype: &str, appearance_rebaked: bool) -> Option<
 /// The status-line disclosure after a mark is placed whose words contained
 /// characters pdfcer could **not** write, or `None`.
 ///
-/// # ★★★ Why a substitution the operator can SEE still owes a sentence
+/// # Why a substitution the operator can SEE still owes a sentence
 ///
 /// The Base-14 fonts a stamp label and a text box are drawn in are encoded in
 /// `WinAnsi`, which has no code point for an em dash, a curly quote, an
@@ -464,7 +464,7 @@ pub fn note_clear_disclosure(subtype: &str, appearance_rebaked: bool) -> Option<
 /// character came out of a word processor's autocorrect would be worse than
 /// drawing it with a `?`.
 ///
-/// ★★★ The `?` is on the page for anyone to see, so this looks at first like
+/// The `?` is on the page for anyone to see, so this looks at first like
 /// the kind of visible outcome R8b rule 4 says owes nothing. **It is not**,
 /// and the distinction is the one that rule turns on: what the operator
 /// cannot see is *that pdfcer did it*. A `?` in the middle of a stamp reads
@@ -473,7 +473,7 @@ pub fn note_clear_disclosure(subtype: &str, appearance_rebaked: bool) -> Option<
 /// attributable to the program that performed it.
 ///
 ///
-/// ★ A separate sentence from the forms one rather than a shared helper, for
+/// A separate sentence from the forms one rather than a shared helper, for
 /// this module's standing reason: the two describe different acts on
 /// different objects, and a shared sentence is one an author can reword for a
 /// form field and silently change for a stamp. The forms sentence also names
@@ -492,7 +492,7 @@ pub fn placed_unencodable(count: usize) -> Option<String> {
 mod tests {
     use super::*;
 
-    /// ★ **The two kinds' intros disagree about printing, out loud.**
+    /// **The two kinds' intros disagree about printing, out loud.**
     ///
     /// The one property this module exists to hold. A text box prints and a
     /// sticky does not, and an operator who has them backwards has either
@@ -567,7 +567,7 @@ mod tests {
     /// operator cannot tell which of two entries is currently selected, and the
     /// control silently stops reporting its own state.
     ///
-    /// ★ The unit clause is the one that would actually fire. `"12"` and
+    /// The unit clause is the one that would actually fire. `"12"` and
     /// `"12 pt"` are both plausible things for a future edit to produce, they
     /// are distinct from each other, and only one of them is readable in a list
     /// whose first entry is a sentence.
@@ -608,7 +608,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **The size disclosure says the box GROWS and says it is never
+    /// **The size disclosure says the box GROWS and says it is never
     /// narrowed** — both halves, because either alone is a different promise.
     ///
     /// The operator drew a rectangle. Telling them it may widen, without
@@ -643,7 +643,7 @@ mod tests {
     /// subtype here makes both of them ask about it.
     const QUIET: [&str; 6] = ["Text", "Stamp", "Square", "Highlight", "Line", "Polygon"];
 
-    /// ★★★ **Exactly one of the four rows owes the operator a sentence: a
+    /// **Exactly one of the four rows owes the operator a sentence: a
     /// `/FreeText` whose appearance the engine did NOT re-bake.**
     ///
     /// The guard on the section banner's table, and it is deliberately built
@@ -726,7 +726,7 @@ mod tests {
         );
     }
 
-    /// ★★ **Each disclosure says what did NOT change, and WHY it was left
+    /// **Each disclosure says what did NOT change, and WHY it was left
     /// alone.**
     ///
     /// The negative clause was the whole point of these sentences when they
@@ -734,7 +734,7 @@ mod tests {
     /// was changed"* is true, is what the operator already knows, and leaves
     /// the whole of the surviving half unsaid.
     ///
-    /// ★ The *why* clause is new, and it is what stops the sentence reading as
+    /// The *why* clause is new, and it is what stops the sentence reading as
     /// a defect report. On the old build the picture did not move because
     /// pdfcer could not move it; on this one it did not move because moving it
     /// would have thrown away a shadow, a gradient or an image that another

@@ -24,7 +24,7 @@
 //! right, which is why nothing in this module knows the words. The shell
 //! owns the **mechanism**; the application owns the row that raises it.
 //!
-//! ## ★★★ The one decision the rest of this module follows from
+//! ## The one decision the rest of this module follows from
 //!
 //! > **A floated panel remembers where it came from, and docking it back
 //! > puts it there.**
@@ -44,7 +44,7 @@
 //! layout**, and it survives a restart. That last clause is the one that
 //! costs something — see "Why the home is an address and not a handle".
 //!
-//! ## ★★ Why the home is an ADDRESS and not a handle
+//! ## Why the home is an ADDRESS and not a handle
 //!
 //! `DockHome` is four `usize`s. It is emphatically **not** a stable
 //! identity for a stack, and it cannot be, because
@@ -67,7 +67,7 @@
 //! place as the arrangement allows, and the operator gets their panel
 //! back **with its compartment**.
 //!
-//! ★★★ Delegating to [`super::DockLayout::mount`] and its permissive
+//! Delegating to [`super::DockLayout::mount`] and its permissive
 //! clamp instead reads correct and is not: **floating a panel that was
 //! alone in its stack prunes that stack**, so the home is out of range one
 //! frame later with nothing having moved on, and the clamp merges the
@@ -114,7 +114,7 @@
 //! | Absent | `mount` | Docked | The application's View ▸ Panels group. |
 //! | Absent | — | Floating | **Deliberately not an edge.** |
 //!
-//! ★ **The last row is a decision.** "Open this panel" from a menu always
+//! **The last row is a decision.** "Open this panel" from a menu always
 //! opens it *docked*, even if the last thing the operator did was float
 //! it and then close the window. Two reasons, and the second is the one
 //! that decides it:
@@ -130,7 +130,7 @@
 //!    general form: a surface that reopens showing something other than
 //!    what the operator last saw is read as a defect.
 //!
-//! ★★ **Closing is one verb for both states**, and that is also a
+//! **Closing is one verb for both states**, and that is also a
 //! decision. It would be easy to give a float window a "close" that means
 //! *dock it back and then close it*, so that a later reopen finds the old
 //! home. It is rejected: the operator pressed a close button on a window,
@@ -343,7 +343,7 @@ impl DockLayout {
     /// response is to do nothing, and a `Result` would make three call
     /// sites each invent a way of ignoring it.
     ///
-    /// ★ The order of the two mutations matters and is not
+    /// The order of the two mutations matters and is not
     /// interchangeable. The address is read **before** the removal,
     /// because `close` calls `normalize`, and `normalize` prunes the stack
     /// and the column the panel just left — so an address read afterwards
@@ -398,7 +398,7 @@ impl DockLayout {
     ///
     /// Returns `false` when the panel is not floating.
     ///
-    /// # ★★★ Why this does not simply call [`DockLayout::mount`]
+    /// # Why this does not simply call [`DockLayout::mount`]
     ///
     /// The case here looks exactly like the one the permissive clamp was
     /// designed for and is the opposite of it.
@@ -425,7 +425,7 @@ impl DockLayout {
     /// **restore, do not recompute** — and it applies to structure, not
     /// only to sizes.
     ///
-    /// # ★★ The tab index IS honoured
+    /// # The tab index IS honoured
     ///
     /// Appending is the tempting alternative, on the reasoning that a
     /// recorded tab index describes a stack that has since changed. The
@@ -437,7 +437,7 @@ impl DockLayout {
     /// unchanged (the common case) and degrades to appending when it is
     /// not.
     ///
-    /// # ★ It activates the panel afterwards
+    /// # It activates the panel afterwards
     ///
     /// Docking a window into a stack whose front tab is something else,
     /// and leaving it behind that tab, is a command whose entire visible
@@ -474,7 +474,7 @@ impl DockLayout {
 
     /// **Put every floating panel back**, and say how many there were.
     ///
-    /// ★★★ This is the recovery route, and it is the reason it is a public
+    /// This is the recovery route, and it is the reason it is a public
     /// verb rather than a loop written at one call site. A window that is
     /// off-screen because the monitor it was on has been unplugged cannot
     /// be reached with a pointer, cannot be closed, and — since it is
@@ -565,7 +565,7 @@ pub fn clamp_size(size: [f32; 2]) -> [f32; 2] {
 /// Called from [`super::DockLayout::normalize`], which is the one place
 /// structural invariants are repaired.
 ///
-/// ## ★★ Which copy wins when a panel is both docked and floating
+/// ## Which copy wins when a panel is both docked and floating
 ///
 /// **The docked one.** The float entry is dropped.
 ///
@@ -607,7 +607,7 @@ pub(super) fn normalize_floats(layout: &mut DockLayout) {
 /// Returns the position to open at, or `None` for *"place it as if it had
 /// never been placed"*.
 ///
-/// # ★★★ The problem, stated honestly, including the part that is a guess
+/// # The problem, stated honestly, including the part that is a guess
 ///
 /// A float window's position is stored in desktop coordinates. Desktop
 /// coordinates are only meaningful relative to a monitor arrangement, and
@@ -690,7 +690,7 @@ pub fn honour_position(
 /// float commands produces a run of visibly distinct windows rather than
 /// one window and a mystery.
 ///
-/// ★ Deliberately **not** clamped onto the application window, unlike
+/// Deliberately **not** clamped onto the application window, unlike
 /// `dialogs::host::placement::opening`'s chosen-position path. A dialog
 /// belongs to the window that raised it and must stay on it; a float is
 /// the operator asking for a surface that is *not* confined to that
@@ -748,7 +748,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **Float, then dock, is the identity on the arrangement.**
+    /// **Float, then dock, is the identity on the arrangement.**
     ///
     /// The single most important property in this module, and the one an
     /// operator will test within ten seconds of finding the command. A
@@ -788,7 +788,7 @@ mod tests {
         );
     }
 
-    /// ★ **Docking back makes the panel the active tab.**
+    /// **Docking back makes the panel the active tab.**
     ///
     /// Without this, docking a window into a three-tab stack whose front
     /// tab is something else is a command whose only visible effect is
@@ -804,7 +804,7 @@ mod tests {
         );
     }
 
-    /// ★★ **Floating the last panel of a column prunes the column, and
+    /// **Floating the last panel of a column prunes the column, and
     /// docking it back rebuilds one.**
     ///
     /// The "dead column" case, reached by the float path rather than by
@@ -828,7 +828,7 @@ mod tests {
         assert!(l.is_normalized());
     }
 
-    /// ★★ **A stale home does not lose the panel.**
+    /// **A stale home does not lose the panel.**
     ///
     /// The operator floats a panel out of the second column, then closes
     /// everything else in that column so it is pruned, then docks the
@@ -874,7 +874,7 @@ mod tests {
         assert_eq!(l, sample());
     }
 
-    /// ★★★ **Closing a floating panel removes it entirely** — it does not
+    /// **Closing a floating panel removes it entirely** — it does not
     /// leave a float entry pointing at a panel that is nowhere.
     ///
     /// A leaked entry would draw a window every frame for a panel the
@@ -890,7 +890,7 @@ mod tests {
         assert!(l.floating.is_empty());
     }
 
-    /// ★★ **A floating panel counts as present**, so the application
+    /// **A floating panel counts as present**, so the application
     /// cannot mount a second copy of it.
     ///
     /// The View ▸ Panels group calls `mount` for a panel that is not
@@ -911,7 +911,7 @@ mod tests {
         assert_eq!(l.floating.len(), 1);
     }
 
-    /// ★★ **A floating panel is on screen**, which is what a toolbar
+    /// **A floating panel is on screen**, which is what a toolbar
     /// toggle reads to decide whether it is lit.
     #[test]
     fn a_floating_panel_reports_as_on_screen() {
@@ -925,7 +925,7 @@ mod tests {
         assert!(!l.is_on_screen(&id("layers")));
     }
 
-    /// ★ **A float on a hidden side is still on screen.**
+    /// **A float on a hidden side is still on screen.**
     ///
     /// The float has no side, so collapsing the dock it came from cannot
     /// hide it. Worth pinning because `is_on_screen`'s docked branch
@@ -953,7 +953,7 @@ mod tests {
         assert_eq!(l.dock_all_floating(), 0, "and it is idempotent");
     }
 
-    /// ★★ **A panel that is both docked and floating is repaired by
+    /// **A panel that is both docked and floating is repaired by
     /// dropping the float.**
     ///
     /// Not reachable through any verb here; reachable through a
@@ -1002,7 +1002,7 @@ mod tests {
         assert!(l.is_normalized(), "and the repair must be idempotent");
     }
 
-    /// ★★★ **A float survives a round trip through the on-disk form,
+    /// **A float survives a round trip through the on-disk form,
     /// with its home, its size and its position.**
     ///
     /// This is the "remembers, per mode, the way docked width already
@@ -1023,7 +1023,7 @@ mod tests {
         assert_eq!(f.home.stack, 1);
     }
 
-    /// ★★ **A layout written before floats existed still loads.**
+    /// **A layout written before floats existed still loads.**
     ///
     /// The backward-compatibility claim, asserted rather than asserted
     /// *about*. A `layout.ron` with no `floating` key is what every
@@ -1067,7 +1067,7 @@ mod tests {
         assert_eq!(at, Some(egui::pos2(300.0, 200.0)));
     }
 
-    /// ★★★ **A position far outside every plausible monitor is dropped.**
+    /// **A position far outside every plausible monitor is dropped.**
     ///
     /// The unplugged-monitor case as far as it is answerable here. See
     /// [`honour_position`]'s docs for what this can and cannot know.
@@ -1092,7 +1092,7 @@ mod tests {
         assert_eq!(honour_position(None, DEFAULT_SIZE_PTS, app(), None), None);
     }
 
-    /// ★ **With no monitor size reported, the fallback reach is used and
+    /// **With no monitor size reported, the fallback reach is used and
     /// a reasonable position still survives.**
     ///
     /// `monitor_size` is `None` on the first frame, which is exactly when

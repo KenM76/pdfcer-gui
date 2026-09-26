@@ -9,7 +9,7 @@ export/import for that"* — which was half a feature for two days because
 `place_text` shipped as `Pass 252.0`; this is what says the shell reached
 them.
 
-## ★★★ The five links, and four of them have no test anywhere else
+## The five links, and four of them have no test anywhere else
 
 | # | link | its own test |
 |---|---|---|
@@ -24,7 +24,7 @@ window; a button whose published rect is right and whose click lands on the
 main window instead does nothing, says nothing, and looks exactly like a
 feature that was never wired.
 
-## ★★ `frame_of`, never `session.frame()` — this is a DIALOG
+## `frame_of`, never `session.frame()` — this is a DIALOG
 
 A dialog is a separate viewport with its own client rect. This project spent
 a driven run discovering that: every in-dialog click landed hundreds of
@@ -32,7 +32,7 @@ points away and the symptom was *silence*. `driving::frame_of` resolves the
 frame the region was published in, and it is safe on main-window regions
 too, so there is no reason to reach for the other one.
 
-## ★ The picker is an OS dialog, so it is bypassed by the env seam
+## The picker is an OS dialog, so it is bypassed by the env seam
 
 `PDFCER_DIAG_TEXT_IMPORT_PATH` — the same seam `pick_form_data_source`,
 `pick_document` and `pick_image_source` all carry, and for the same reason:

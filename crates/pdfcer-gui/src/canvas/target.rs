@@ -71,7 +71,7 @@ pub trait CanvasTargetProvider {
     /// Which **class** a target belongs to, for the operator's selection
     /// filter — or `None` for a target this provider no longer knows.
     ///
-    /// ★ This exists so that [`crate::canvas::input::probe`] can skip
+    /// This exists so that [`crate::canvas::input::probe`] can skip
     /// candidates whose class is switched off *without* knowing anything
     /// about how objects are stored. The alternative — handing `probe` the
     /// decomposition and letting it match on `VectorObject` — would put a
@@ -103,7 +103,7 @@ pub trait CanvasTargetProvider {
 
     /// **Is this container worth selecting instead of what is inside it?**
     ///
-    /// # ★★★ The question the Smart-Selector forgot to ask
+    /// # The question the Smart-Selector forgot to ask
     ///
     /// `canvas::smart::Scope::resolve` maps a leaf to its containing form so
     /// that a first click selects the container and a double-click descends —
@@ -123,7 +123,7 @@ pub trait CanvasTargetProvider {
     /// > *"There are obviously more than one item on the page, but when I click
     /// > on one of the objects all I get is the page selected."*
     ///
-    /// ★★ So a container is worth resolving to only when selecting it says
+    /// So a container is worth resolving to only when selecting it says
     /// something selecting the leaf does not. A container that holds
     /// **everything on the page** says nothing: it IS the page, under another
     /// name.
@@ -145,7 +145,7 @@ pub trait CanvasTargetProvider {
     /// Every target a marquee rect takes, under `mode` and `forms`.
     ///
     ///
-    /// ★★ `forms` is a parameter as of 2026-09-11, and for the same reason one
+    /// `forms` is a parameter as of 2026-09-11, and for the same reason one
     /// rung up: the engine's [`pdfcer_core::vector::hit_test_rect_deep`] makes
     /// it explicit *"a deliberate act at the call site rather than a
     /// surprise"*, and a shell that pinned it to one value inside one
@@ -194,7 +194,7 @@ pub trait CanvasTargetProvider {
     /// The page's decomposed geometry, for a consumer that needs the model
     /// itself rather than a hit test over it.
     ///
-    /// ★ **The one consumer is the two-line measure tool**, whose pick is
+    /// **The one consumer is the two-line measure tool**, whose pick is
     /// `pdfcer_core::vector::linepick::pick_line_in_page` — a query this trait
     /// deliberately does not wrap. Wrapping it would put a *second* line-pick
     /// rule in the shell beside the engine's, and the whole point of the
@@ -214,7 +214,7 @@ pub trait CanvasTargetProvider {
     /// fit input**, and the only query on this trait whose result is not
     /// canvas space.
     ///
-    /// ★ **PDF user space, deliberately**, where every other geometric value
+    /// **PDF user space, deliberately**, where every other geometric value
     /// crossing this trait is canvas space. The reason is the same one that
     /// keeps the two-line pick going through
     /// [`Self::page_objects_model`]: these points are handed straight to
@@ -244,7 +244,7 @@ pub trait CanvasTargetProvider {
     }
 
     // ===================================================================
-    // ★★★ THE SAME THREE QUESTIONS, FOR EITHER INDEX SPACE
+    // THE SAME THREE QUESTIONS, FOR EITHER INDEX SPACE
     // ===================================================================
     //
     // `OPERATOR_REQUESTS.md` O70, 2026-09-01. The three above take a page
@@ -269,7 +269,7 @@ pub trait CanvasTargetProvider {
     ) -> Vec<usize> {
         match target.page_object_index() {
             Some(object) => self.part_hits(page_index, object, point, tolerance),
-            // ★ A double that does not model leaves answers "no parts" rather
+            // A double that does not model leaves answers "no parts" rather
             // than pretending — the same shape `object_class` uses for "I
             // cannot say", and the honest answer for a provider with one list.
             None => Vec::new(),
@@ -337,12 +337,12 @@ pub trait CanvasTargetProvider {
 /// **How much of a page's content a container may cover and still be worth
 /// selecting**, as a fraction of the union of every page object's bounds.
 ///
-/// ★ 0.9 — a container over nine tenths of everything on the sheet **is** the
+/// 0.9 — a container over nine tenths of everything on the sheet **is** the
 /// sheet. See [`CanvasTargetProvider::container_is_worth_selecting`] for the
 /// defect this number exists to prevent, and for why it errs generous.
 const COVERS_EVERYTHING: f32 = 0.9;
 
-/// ★ **The re-attachment.**
+/// **The re-attachment.**
 ///
 /// `panels::objects::provider` carried these methods across salvage as
 /// inherent methods with their signatures and semantics unchanged, precisely
@@ -367,7 +367,7 @@ const COVERS_EVERYTHING: f32 = 0.9;
 impl CanvasTargetProvider for ObjectModelProvider {
     /// Measured, not assumed. See the trait for why the question exists.
     ///
-    /// # ★★ The measurement, and why it is not "is it page-sized"
+    /// # The measurement, and why it is not "is it page-sized"
     ///
     /// The obvious predicate — compare the form's `/BBox` with the page's media
     /// box — needs a page rect this provider does not hold, and it answers the
@@ -381,7 +381,7 @@ impl CanvasTargetProvider for ObjectModelProvider {
     /// all of it, the container IS the page's content, and selecting it tells
     /// the operator nothing they did not already know.
     ///
-    /// ★ [`COVERS_EVERYTHING`] is deliberately generous. What it guards against
+    /// [`COVERS_EVERYTHING`] is deliberately generous. What it guards against
     /// is severe and constant — every click on a CAD drawing — and the cost of
     /// being slightly too generous is that one unusually large title block
     /// stops being offered as a container on the *first* click, while staying
@@ -391,7 +391,7 @@ impl CanvasTargetProvider for ObjectModelProvider {
         let Some(bounds) = self.bounds(page_index, container) else {
             return true;
         };
-        // ★★★ AGAINST THE PAGE — and the first version of this compared against
+        // AGAINST THE PAGE — and the first version of this compared against
         // the union of every page object's bounds instead.
         //
         // That was wrong in a way only a SECOND fixture could show: when the
@@ -399,7 +399,7 @@ impl CanvasTargetProvider for ObjectModelProvider {
         // 1.0, and every lone container is judged "holds everything" — a stamp
         // on an otherwise empty sheet included.
         //
-        // ★★ Caught by two of this project's own driven checks contradicting
+        // Caught by two of this project's own driven checks contradicting
         // each other within the hour, which is the most useful thing a suite
         // can do. One demanded the leaf on a page-sized wrapper; the other
         // demanded the container on a 320×220 form on a 400×300 page. Both are
@@ -412,7 +412,7 @@ impl CanvasTargetProvider for ObjectModelProvider {
         }
         let covers = (bounds.width() / page.x).min(1.0) * (bounds.height() / page.y).min(1.0);
         let worth = covers < COVERS_EVERYTHING;
-        // ★★ Traced, because the alternative is inferring this from a selection
+        // Traced, because the alternative is inferring this from a selection
         // two layers away. When those two checks disagreed, neither could say
         // what the predicate had actually answered — the numbers had to be
         // reconstructed by hand from a fixture generator. One line ends that.
@@ -465,7 +465,7 @@ impl CanvasTargetProvider for ObjectModelProvider {
         Self::hit_test_rect(self, page_index, rect, mode, forms)
     }
 
-    /// ★ `Self::containing_form`, spelled as the inherent call rather than as
+    /// `Self::containing_form`, spelled as the inherent call rather than as
     /// `self.containing_form(..)`, which would be ambiguous to a reader for
     /// the same reason the four lines above are spelled this way: the
     /// provider has an inherent method of that name and this is the trait's.
@@ -475,7 +475,7 @@ impl CanvasTargetProvider for ObjectModelProvider {
         Self::containing_form(self, page_index, target)
     }
 
-    // ★ The three `_of` overrides, which is where a leaf's Part and Node rungs
+    // The three `_of` overrides, which is where a leaf's Part and Node rungs
     // actually come from — the trait's defaults answer only for a page object.
     // `provider::geometry` holds the implementations and its header carries why
     // none of it needed an engine request.
@@ -507,7 +507,7 @@ impl CanvasTargetProvider for ObjectModelProvider {
             (Some(PartKind::TextLine), Some(object)) => {
                 self.text_line_hits(object, point, tolerance)
             }
-            // ★ A text line INSIDE a form has no leaf-indexed hit test yet —
+            // A text line INSIDE a form has no leaf-indexed hit test yet —
             // `text_line_hits` indexes the page's own list, and answering from it
             // would return another object's lines entirely. Empty is the honest
             // answer, and it is the next thing to build rather than an
@@ -516,7 +516,7 @@ impl CanvasTargetProvider for ObjectModelProvider {
         }
     }
 
-    // ★★★ Dispatches on the KIND, for the reason written out at length in
+    // Dispatches on the KIND, for the reason written out at length in
     // `part_hits_of` above: the first version of that function generalised over
     // index space and dropped the part-kind axis that was already there, and
     // this one had the same defect — subpath-only, so a text line's outline
@@ -558,7 +558,7 @@ impl CanvasTargetProvider for ObjectModelProvider {
         if page_index != self.page_index() {
             return None;
         }
-        // ★ Both lists. The classifier is `object_kind`, unchanged and
+        // Both lists. The classifier is `object_kind`, unchanged and
         // still the only one in this crate — a leaf holds a `VectorObject`
         // exactly like a page object does, so the same hop answers for it and
         // the operator's pick filter works identically inside a form.
@@ -639,7 +639,7 @@ pub struct StubTargets {
     /// One rect per **form-interior leaf**, in the order the real provider
     /// would list them.
     ///
-    /// ★ A second list rather than a flag on the first, because that is the
+    /// A second list rather than a flag on the first, because that is the
     /// shape the engine ships and the shape the two index spaces have. A stub
     /// that modelled a leaf as "an object with a marker" could not reproduce
     /// the one property every test here turns on: that `objects[1]` and
@@ -654,7 +654,7 @@ pub struct StubTargets {
     /// exists to model, and every test that used the stub to reason about a
     /// band near a form was measuring a shell that does not exist.
     ///
-    /// ★ The general rule, which this is the second instance of in this file:
+    /// The general rule, which this is the second instance of in this file:
     /// **a double's doc comment claiming to match the real thing is a claim to
     /// measure, not a note to write.** Nothing fails when it stops being true.
     pub leaves: Vec<Rect>,
@@ -809,7 +809,7 @@ impl CanvasTargetProvider for StubTargets {
             MarqueeMode::Enclosed => rect.contains_rect(*r),
             MarqueeMode::Touched => rect.intersects(*r),
         };
-        // ★ The stub has no `ImageSource`, so it cannot tell a form from any
+        // The stub has no `ImageSource`, so it cannot tell a form from any
         // other page object the way the engine does. What it CAN model is the
         // consequence, which is the part a caller depends on: under `Exclude`
         // an object that some leaf names as its container is skipped. That is
@@ -824,7 +824,7 @@ impl CanvasTargetProvider for StubTargets {
             .filter(|(i, r)| selects(r) && !(forms == FormMarquee::Exclude && is_form(*i)))
             .map(|(i, _)| TargetId::Object(i as u64))
             .collect();
-        // ★★ Leaves, appended rather than interleaved. The live provider gets
+        // Leaves, appended rather than interleaved. The live provider gets
         // paint order from the engine; this stub has no paint order to get,
         // because a `Rect` carries none. Appending is therefore an honest
         // simplification rather than a divergence to hide: the SET is the
@@ -969,7 +969,7 @@ mod tests {
             vec![TargetId::Object(1)],
             "an object the marquee only grazes must not be selected"
         );
-        // ★★ …and the SAME band as a crossing window takes BOTH — O88.
+        // …and the SAME band as a crossing window takes BOTH — O88.
         //
         // The pair is the point. An `Enclosed`-only assertion passes against a
         // stub that ignores its mode argument entirely, which is exactly the
@@ -983,7 +983,7 @@ mod tests {
         );
     }
 
-    /// ★★★ The stub's marquee reaches INSIDE a form, and honours `FormMarquee`.
+    /// The stub's marquee reaches INSIDE a form, and honours `FormMarquee`.
     ///
     /// # What this is really testing, and why it is not the engine's job
     ///

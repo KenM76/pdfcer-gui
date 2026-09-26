@@ -5,7 +5,7 @@
 
 use pdfcer_core::object::ObjId;
 
-/// ★★★ **Where the words go when Save is pressed** — the one thing that
+/// **Where the words go when Save is pressed** — the one thing that
 /// distinguishes writing a note from answering one.
 ///
 /// # Why the destination lives on the draft rather than beside it
@@ -18,12 +18,12 @@ use pdfcer_core::object::ObjId;
 /// **stale-draft rule, the Escape route and the seeding rule are written
 /// once** and cannot come to differ between the two.
 ///
-/// ★★ And it is on the **stamp**, beside the annotation and the epoch, rather
+/// And it is on the **stamp**, beside the annotation and the epoch, rather
 /// than a fourth loose field. Those three answer one question together —
 /// *what is open, on what, as of when* — and a destination that could be read
 /// while nothing was open is a destination that eventually is.
 ///
-/// # ★ Why an enum and not `is_reply: bool`
+/// # Why an enum and not `is_reply: bool`
 ///
 /// The two reach different engine verbs with different outcomes:
 /// `set_markup_note` edits a dictionary that exists, `add_reply` creates an
@@ -82,7 +82,7 @@ impl NoteDraft {
 
     /// **Open the editor to ANSWER one annotation**, empty.
     ///
-    /// ★★★ Empty, and that is the opposite of [`Self::begin`]'s rule rather
+    /// Empty, and that is the opposite of [`Self::begin`]'s rule rather
     /// than an oversight in it. Seeding a note editor is right because *edit*
     /// is commoner than *replace* and the operator is correcting words that
     /// already exist. Seeding a **reply** with the parent's words would put
@@ -117,7 +117,7 @@ impl NoteDraft {
     /// [`Self::sync`]; in practice `sync` runs first, and this is the belt to
     /// its braces.
     ///
-    /// ★ The **destination is deliberately not compared**, and that is what
+    /// The **destination is deliberately not compared**, and that is what
     /// makes the row draw one editor rather than two: a row whose reply box is
     /// open must not also offer *Add note* beside it, because two boxes on one
     /// row is two drafts and this type holds one. Ask [`Self::target`] when the
@@ -172,7 +172,7 @@ impl NoteDraft {
 /// Two members, and the pairing is the point: both are *the operator's place in
 /// this panel* rather than anything about the document.
 ///
-/// # ★ Why a struct rather than two fields on `PanelsState`
+/// # Why a struct rather than two fields on `PanelsState`
 ///
 /// Because `PanelsState` hands each panel **one** accessor, deliberately — a
 /// panel reaches its own state and cannot reach another's. Two loose fields
@@ -183,7 +183,7 @@ impl NoteDraft {
 pub struct CommentsUi {
     /// The note being typed. See [`NoteDraft`].
     pub draft: NoteDraft,
-    /// ★★★ **How many WRITING controls the panel drew on its last frame** —
+    /// **How many WRITING controls the panel drew on its last frame** —
     /// Delete buttons plus note editors — so a headless test can assert that a
     /// reading stance offers none.
     ///
@@ -200,7 +200,7 @@ pub struct CommentsUi {
     /// fresh one — the failure mode `NoteDraft`'s epoch stamp exists to prevent,
     /// in its cheapest form.
     pub writing_controls_drawn: u32,
-    /// ★ **What the reviewer has narrowed the list to**, and how it is
+    /// **What the reviewer has narrowed the list to**, and how it is
     /// ordered. Added 2026-09-05; see [`super::filter`].
     ///
     /// Deliberately **not** stamped with the edit epoch, unlike [`NoteDraft`],
@@ -210,14 +210,14 @@ pub struct CommentsUi {
     /// which an edit cannot make wrong — and resetting it on every keystroke
     /// in a note would throw away the narrowing that made the note findable.
     ///
-    /// ★★ It survives the panel being closed and reopened, which is correct: a
+    /// It survives the panel being closed and reopened, which is correct: a
     /// reviewer who filtered to their own comments, went to look at the page
     /// and came back is still doing the same job. What keeps that honest is
     /// that the filtered list **says so** on every frame — see
     /// [`crate::text::panels::comments::comments_filtered`] — so a filter
     /// nobody remembers setting can never be a filter nobody can see.
     pub filter: super::filter::Filter,
-    /// ★★★ **The annotation this panel last scrolled to**, so it scrolls once
+    /// **The annotation this panel last scrolled to**, so it scrolls once
     /// per selection *change* rather than once per frame.
     ///
     /// Without it, `scroll_to_me` on the selected row would run every frame and
@@ -226,7 +226,7 @@ pub struct CommentsUi {
     /// surface fighting its user. With it, the scroll is a response to a
     /// gesture, which is what an operator reads it as.
     ///
-    /// ★ Deliberately **not** stamped with the edit epoch, unlike
+    /// Deliberately **not** stamped with the edit epoch, unlike
     /// [`NoteDraft`]'s key, and the difference is worth stating: a draft holds
     /// *words that would be written into the document*, so a document that moved
     /// under it invalidates it. This holds only *where the scrollbar is*, which
@@ -263,7 +263,7 @@ mod tests {
         assert_eq!(draft.text(), "Check this radius");
     }
 
-    /// ★ The property the epoch exists for. An edit landing while the operator
+    /// The property the epoch exists for. An edit landing while the operator
     /// is typing drops the draft rather than leaving words pointed at an
     /// object id that may now name something else.
     #[test]
@@ -312,7 +312,7 @@ mod tests {
         assert!(draft.text().is_empty());
     }
 
-    /// ★★★ **The destination is remembered, and the two openings differ.**
+    /// **The destination is remembered, and the two openings differ.**
     ///
     /// The single assertion this whole `DraftTarget` change exists for. A
     /// build that stamped `Note` for both would compile, would draw a box that
@@ -322,7 +322,7 @@ mod tests {
     /// reads the file, which is exactly the class of defect a unit test can
     /// still catch.
     ///
-    /// ★ Both directions, because asserting only the reply case would pass on
+    /// Both directions, because asserting only the reply case would pass on
     /// an implementation that returned `Reply` unconditionally — and that
     /// build turns every note correction into a new annotation, leaving the
     /// typo on the page with an answer stuck to it.
@@ -341,7 +341,7 @@ mod tests {
         assert_eq!(draft.target(), None);
     }
 
-    /// ★★ **A reply opens EMPTY**, where a note edit opens seeded.
+    /// **A reply opens EMPTY**, where a note edit opens seeded.
     ///
     /// The rule on `begin_reply`, asserted because it is a one-character
     /// difference in the implementation with a consequence in the file: a
@@ -367,7 +367,7 @@ mod tests {
         );
     }
 
-    /// ★ **One row draws one editor, whichever destination it has.**
+    /// **One row draws one editor, whichever destination it has.**
     ///
     /// [`NoteDraft::editing`] deliberately ignores the destination, so a row
     /// whose reply box is open reports itself as editing and does not also
@@ -384,7 +384,7 @@ mod tests {
         assert!(!draft.editing(id(7), 4));
     }
 
-    /// ★★★ **An edit under the operator drops a REPLY draft too.**
+    /// **An edit under the operator drops a REPLY draft too.**
     ///
     /// The epoch rule is the expensive half of this type and the whole reason
     /// the reply reuses it rather than getting a draft of its own. A build

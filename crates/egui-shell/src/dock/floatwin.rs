@@ -5,7 +5,7 @@
 //! remembering what the operator did to it, and drawing the one control
 //! that offers the way back.
 //!
-//! ## ★★★ Why this is a second call and not part of `Dock::show`
+//! ## Why this is a second call and not part of `Dock::show`
 //!
 //! [`super::Dock::show`] is handed a `&mut egui::Ui` and is called from
 //! *inside* the application's layout — between the ribbon and the canvas,
@@ -38,7 +38,7 @@
 //! asserts is zero — and its field documentation carries the whole
 //! argument.
 //!
-//! ## ★★★ …and forgetting is not the only way a float window ends up blank
+//! ## …and forgetting is not the only way a float window ends up blank
 //!
 //! [`super::DockFrameReport::floats_undrawn`] catches the application that
 //! never called [`super::Dock::show_floating`]. It cannot catch the case
@@ -57,7 +57,7 @@
 //! field documentation carries what it can and cannot see, and two tests in
 //! this file falsify it in both directions.
 //!
-//! ★★ **This crate cannot answer the question with a diagnostic, and must
+//! **This crate cannot answer the question with a diagnostic, and must
 //! not grow one.** An oracle that looks for a `ui-rect` tagged with the
 //! float's viewport is asking the *application* a question: the tagged
 //! regions are published by the consuming crate, inside its own `body`
@@ -66,7 +66,7 @@
 //! general lesson is in
 //! `D:/dev/rag/egui/a_float_windows_emptiness_is_not_observable_from_any_number_the_dock_already_publishes.md`.
 //!
-//! ## ★★ The one-dispatcher rule survives, and that is the finding this
+//! ## The one-dispatcher rule survives, and that is the finding this
 //! whole capability rests on
 //!
 //! `MODES_AND_PANELS.md` §"Tear-out" records why tear-out is cheap here
@@ -165,7 +165,7 @@ pub struct FloatFrameReport {
     /// main window because there is no window system" are distinguishable
     /// in a report rather than only in a screenshot.
     pub real_windows: usize,
-    /// ★★★ **Every panel whose window was drawn and whose BODY laid out
+    /// **Every panel whose window was drawn and whose BODY laid out
     /// nothing** — an open window with an empty panel in it.
     ///
     /// # Why this is a second number and not an implication of the first
@@ -194,7 +194,7 @@ pub struct FloatFrameReport {
     /// rectangle it was constructed with, so a zero width or height is
     /// exact rather than heuristic.
     ///
-    /// ★ It measures **allocation**, not paint. A body that only calls
+    /// It measures **allocation**, not paint. A body that only calls
     /// `ui.painter()` without allocating is reported here as empty even
     /// though pixels reached the window. That is the honest bound of a
     /// layout-level measurement, and it is the right direction to be wrong
@@ -259,7 +259,7 @@ impl Dock<'_> {
             // re-derived on the next frame when the real rectangle exists.
             .unwrap_or(Rect::from_min_size(Pos2::ZERO, Vec2::new(1200.0, 800.0)));
         let monitor = ctx.input(|i| i.viewport().monitor_size);
-        // ★ The panel the operator asked to bring forward, read from the
+        // The panel the operator asked to bring forward, read from the
         // previous frame's dock report. `DockLayout::activate` deliberately
         // does nothing structural to a float — there is no tab to select —
         // so raising the window is this module's half of that verb, and it
@@ -269,7 +269,7 @@ impl Dock<'_> {
         let mut intents: Vec<Intent> = Vec::new();
         let mut unplaced = 0usize;
         let mut tab_menu = self.tab_menu.take();
-        // ★ At most one carry per frame, because there is one pointer. Held
+        // At most one carry per frame, because there is one pointer. Held
         // across the loop rather than written straight into `state` so that a
         // viewport callback re-run within the frame overwrites its own answer
         // instead of appending a second one — the discipline `geometry` and
@@ -297,14 +297,14 @@ impl Dock<'_> {
                 .with_title(self.float_title(&f.panel))
                 .with_inner_size(Vec2::new(size[0], size[1]))
                 .with_min_inner_size(Vec2::new(float::MIN_SIZE_PTS[0], float::MIN_SIZE_PTS[1]))
-                // ★ A panel window IS in the window list, unlike a dialog's
+                // A panel window IS in the window list, unlike a dialog's
                 // decision to be there for findability alone. A floated
                 // panel is a place the operator works, not a transaction
                 // they finish, so it minimises, it restores, and it is
                 // reachable from the taskbar when it falls behind
                 // something.
                 .with_taskbar(true);
-            // ★★★ ASSERTED ONCE, on the frame the window opens.
+            // ASSERTED ONCE, on the frame the window opens.
             //
             // `show_viewport_immediate` diffs this builder against the
             // previous frame's and issues a `ViewportCommand` per changed
@@ -321,7 +321,7 @@ impl Dock<'_> {
             let mut closed = false;
             let mut dock_back = false;
             let mut geometry: Option<(Option<[f32; 2]>, [f32; 2])> = None;
-            // ★★ Set inside the callback, read after it, for `geometry`'s
+            // Set inside the callback, read after it, for `geometry`'s
             // reason: `egui` may run a viewport callback twice in one frame,
             // and the LAST run is the one whose answers the frame keeps.
             let mut body_extent = Vec2::ZERO;
@@ -332,7 +332,7 @@ impl Dock<'_> {
                 // safe under the twice-per-frame re-run described in the
                 // header. The class is the honest answer to "did the platform
                 // give us a real window", and it is only knowable in here.
-                // ★★ Nothing has painted this. A viewport callback's `Ui`
+                // Nothing has painted this. A viewport callback's `Ui`
                 // is the child window's ROOT — the position
                 // `eframe::App::ui` occupies for the main window — and the
                 // application's `CentralPanel`, which is what fills the
@@ -342,7 +342,7 @@ impl Dock<'_> {
                 let theme = Theme::of(ui.ctx());
                 ui.painter()
                     .rect_filled(ui.max_rect(), 0.0, theme.palette.panel);
-                // ★ Bring this window to the front when the application
+                // Bring this window to the front when the application
                 // activated its panel — "View ▸ Panels ▸ Layers" on a panel
                 // that is already floating behind the main window. The layout
                 // has nothing to change (there is no tab to select), so
@@ -373,7 +373,7 @@ impl Dock<'_> {
                     }
                     response
                 } else {
-                    // ★ No handler, so the shell owns the strip — and the
+                    // No handler, so the shell owns the strip — and the
                     // built-in offer is **Dock**, not Close. The OS window
                     // already has a close button; it does not have a way
                     // back into the dock, and a float window with no route
@@ -388,7 +388,7 @@ impl Dock<'_> {
                     }
                     response
                 };
-                // ★★ The carry, sensed on the same strip both branches drew.
+                // The carry, sensed on the same strip both branches drew.
                 //
                 // Deliberately after the menu handler and not instead of it: a
                 // click on the strip is the menu, a drag on it is the carry,
@@ -408,7 +408,7 @@ impl Dock<'_> {
                 );
                 child.set_clip_rect(body_rect);
                 body(&f.panel, &mut child);
-                // ★★★ **How much of the window the panel actually filled.**
+                // **How much of the window the panel actually filled.**
                 //
                 // `min_rect` on a `Ui` nothing has allocated into is the
                 // empty rectangle it was built with, so this is an exact
@@ -423,7 +423,7 @@ impl Dock<'_> {
                     let (outer, inner_rect) = ui
                         .ctx()
                         .input(|i| (i.viewport().outer_rect, i.viewport().inner_rect));
-                    // ★ The OUTER position and the INNER size, and the
+                    // The OUTER position and the INNER size, and the
                     // pairing is not arbitrary: `with_position` takes the
                     // outer corner while `with_inner_size` takes the client
                     // extent, so storing the inner origin would walk the
@@ -470,7 +470,7 @@ impl Dock<'_> {
         report.layout_changed = apply_float_intents(&mut state.layout, &intents, &mut report);
         forget_closed_windows(ctx, state);
         state.floats_drawn = report.drawn.len();
-        // ★ Set unconditionally, including to `None`. The report is consumed
+        // Set unconditionally, including to `None`. The report is consumed
         // by the next [`Dock::show`], so writing `None` is how a gesture that
         // has ended stops offering a drop — see
         // [`super::state::DockState::set_float_drag`].
@@ -660,7 +660,7 @@ fn seen_key(panel: &PanelId) -> egui::Id {
 /// reappears wherever the platform decides rather than where the operator left
 /// it.
 ///
-/// ★ Swept from [`DockState::floats_seen`] — the panels this module has opened
+/// Swept from [`DockState::floats_seen`] — the panels this module has opened
 /// a window for — and **not** from the floats it is about to draw. A panel can
 /// stop floating by a route that never passes through
 /// [`Dock::show_floating`]: the *Dock all* command, a drop
@@ -712,7 +712,7 @@ mod tests {
         assert!(body.height() > 0.0);
     }
 
-    /// ★ **A window too short for both gives the body everything.**
+    /// **A window too short for both gives the body everything.**
     ///
     /// A header with no body shows nothing; a body with no header is still
     /// a panel, and the OS close button is not ours to lose.
@@ -748,7 +748,7 @@ mod tests {
         assert_ne!(viewport_id(&id("print")), ViewportId::from_hash_of("print"));
     }
 
-    /// ★★★ **The close intent removes the panel; the dock intent puts it
+    /// **The close intent removes the panel; the dock intent puts it
     /// back.** Both report, and both mark the layout worth saving.
     #[test]
     fn the_float_intents_apply_and_report() {
@@ -768,7 +768,7 @@ mod tests {
         assert!(!l.contains(&id("layers")));
     }
 
-    /// ★★ **A window that has not moved does not mark the layout dirty.**
+    /// **A window that has not moved does not mark the layout dirty.**
     ///
     /// The geometry intent is raised every frame for every open float. If
     /// it reported a change every time, `layout_changed` would be true on
@@ -811,7 +811,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **A float window whose panel allocates nothing is REPORTED, not
+    /// **A float window whose panel allocates nothing is REPORTED, not
     /// silently counted as a success.**
     ///
     /// This is the falsification of [`FloatFrameReport::empty_bodies`]
@@ -847,7 +847,7 @@ mod tests {
         );
     }
 
-    /// ★★ **…and a panel that allocates one small rectangle is not
+    /// **…and a panel that allocates one small rectangle is not
     /// reported**, which is what keeps the test above from being a check
     /// that always fires.
     ///
@@ -858,7 +858,7 @@ mod tests {
     /// measurement that called it empty would fail every correct panel on a
     /// document that gives it nothing to list.
     ///
-    /// ★★★ The sentence cannot be spelled as a sentence *here*; see the
+    /// The sentence cannot be spelled as a sentence *here*; see the
     /// comment at the allocation for the reason, which is what makes a
     /// label-based spelling of this test fail against a working dock.
     #[test]
@@ -868,7 +868,7 @@ mod tests {
         let mut empty = 1usize;
         let _ = ctx.run_ui(frame_input(), |ui| {
             let report = Dock::new().show_floating(ui.ctx(), &mut state, |_panel, ui| {
-                // ★★★ NOT `ui.label(...)`, and the reason is a trap this
+                // NOT `ui.label(...)`, and the reason is a trap this
                 // crate is deliberately built into. `Cargo.toml` pins `egui`
                 // with `default-features = false` precisely "so this crate
                 // does not silently acquire fonts" — so in every test in
@@ -922,7 +922,7 @@ mod tests {
         assert_eq!(l, before);
     }
 
-    /// ★★★ **A panel docked back by a route that never passes through
+    /// **A panel docked back by a route that never passes through
     /// `show_floating` still forgets its window.**
     ///
     /// The opened-once flag is what makes a float window open at its stored

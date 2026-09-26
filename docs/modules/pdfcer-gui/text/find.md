@@ -14,7 +14,7 @@ registered command, so its copy lives in [`crate::text::commands`] with
 every other command's, keyed by command id and consumed by
 `crate::shell::commands`. This file holds the copy the *controls* own.
 
-## ★ Why the wildcard control's label says what `#` and `?` do
+## Why the wildcard control's label says what `#` and `?` do
 
 Because the alternative shipped once and was a defect. `pdfcer-core`'s
 [`pdfcer_core::edit::TextSearchOptions::wildcards`] records it in full:
@@ -30,7 +30,7 @@ A control called "Wildcards" with no further explanation would be the
 same defect with a checkbox in front of it: the operator still would not
 know that `#` is a digit class, and would still be surprised by `?`.
 
-## ★ Why the whole-word rule is worded as three plain descriptions
+## Why the whole-word rule is worded as three plain descriptions
 
 ISO 32000-1 §14.8.2.5 NOTE 1 declines to define "word", and
 [`pdfcer_core::edit::WordBoundary`] carries the whole argument. What

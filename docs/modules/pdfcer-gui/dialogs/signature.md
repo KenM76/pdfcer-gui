@@ -22,7 +22,7 @@ save is a normal afternoon. The two together produced a file whose
 signature pdfcer believed to be invalidated, and pdfcer kept that belief to
 itself.
 
-## ★★ 1. Why the engine says this can only be asked at save time
+## 1. Why the engine says this can only be asked at save time
 
 [`EditSession::signature_impact_of_save`]'s own documentation:
 
@@ -44,7 +44,7 @@ moment they delete it.** They are told when they save. That is not this
 shell declining to be helpful; it is the only moment at which the answer
 exists.
 
-## ★★★ 2. The three impacts and the three surfaces
+## 2. The three impacts and the three surfaces
 
 [`disclosure_for`] is the whole decision, as a pure function, and this is
 the table it encodes:
@@ -72,7 +72,7 @@ interaction, never invent one*. Every document application that can
 invalidate a signature asks first. A note after the fact would tell the
 operator about a choice at the moment it stopped being available.
 
-## ★★ 3. Why the window's copy branches on `documentation_basis`
+## 3. Why the window's copy branches on `documentation_basis`
 
 `SignatureImpact::Invalidated` is one variant reached on two very different
 footings, and the engine exposes
@@ -96,7 +96,7 @@ with the dialog — because the census it was computed from describes the
 document as it stood when the operator was asked, which is what a
 confirmation's text is for.
 
-## ★ 4. Why `documentation_basis` is NOT consulted on a full rewrite
+## 4. Why `documentation_basis` is NOT consulted on a full rewrite
 
 A trap, recorded because the next reader will reach for it. The helper takes
 only the impact and the census — **it cannot see the `SaveMode`** — so for a
@@ -129,7 +129,7 @@ shipped and already correct on the spec's own terms. Adding a second window
 in front of it would put two modals on one gesture — and the second would be
 the weaker of the two, which is the wrong one to leave standing.
 
-## ★★ 6. The shape is `dialogs::unsaved`'s, deliberately and exactly
+## 6. The shape is `dialogs::unsaved`'s, deliberately and exactly
 
 [`crate::dialogs::unsaved`] is this shell's existing *ask before
 proceeding* machinery and this module copies it rather than paraphrasing
@@ -153,7 +153,7 @@ and the destructive thing happens. Read this way it fails **closed** — a
 missing `if` asks a question whose answer performs the save anyway, so the
 operator sees one redundant window instead of an unannounced write.
 
-## ★★ 7. The one route that is told afterwards rather than asked first
+## 7. The one route that is told afterwards rather than asked first
 
 `crate::app::lifecycle::resume_after_unsaved` writes a copy when the
 operator presses *Save a copy…* inside the unsaved-edits window. That call
@@ -168,7 +168,7 @@ left to be discovered:
    on the answer to the first is the same failure one step along, and its
    result is a confirmation dismissed unread.
 2. **That button writes a copy, and only a copy.** This build has no *Save*
-   inside that window and the whole of `dialogs::unsaved`'s §★★ is the
+   inside that window and the whole of `dialogs::unsaved`'s §is the
    argument for why. So the operator's signed original is untouched by that
    write, no matter what the answer here would have been — which is the fact
    that makes deferring the disclosure safe on this route and would not make

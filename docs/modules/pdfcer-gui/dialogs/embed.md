@@ -20,7 +20,7 @@ is still a report, and the shape below still governs.
 
 
 
-## ★★★ WHY THE SWITCH IS OFF BY DEFAULT, and it is not a matter of taste
+## WHY THE SWITCH IS OFF BY DEFAULT, and it is not a matter of taste
 
 Two reasons, and the second is the one that decided it.
 
@@ -29,7 +29,7 @@ looks like on the screen of whoever it is sent to. That is disclosed per
 row either way — see [`crate::text::embed::embed_row`]'s `Bundled` arm — so
 on its own it argues for loud disclosure rather than for a default.
 
-**2. ★★★ It is a LICENCE the operator takes on, not a look they accept.**
+**2. It is a LICENCE the operator takes on, not a look they accept.**
 pdfcer's fourteen substitute faces are BSD-3-Clause (`THIRD_PARTY_LICENSES.md`,
 *"Bundled Foxit substitute faces"*), and embedding one puts it **inside a
 file the operator then distributes**, carrying that licence's attribution
@@ -54,7 +54,7 @@ so pdfcer does not make it for you."* — `pdfcer-cli`'s
   this window before the act and the disclosure row after it. Both;
   neither on the drawing.
 
-## ★★ The preview is `embed_preview`, and it is the SAME computation the
+## The preview is `embed_preview`, and it is the SAME computation the
 commit runs
 
 `EditSession::embed_preview(&request)` is `&self` and side-effect-free, and
@@ -63,12 +63,12 @@ for the shape are *"the same value is returned by the preview query and by
 the committing call, produced by the same function, so a front end cannot
 show one thing and do another."*
 
-★ That is the property `preview_font_resources` had to be fixed to have
+That is the property `preview_font_resources` had to be fixed to have
 twelve hours earlier, and the reason it mattered there applies here: a
 preview and a commit that compute the same answer separately eventually
 disagree, and the disagreement is silent.
 
-## ★ The plan is computed ONCE, when the window opens
+## The plan is computed ONCE, when the window opens
 
 Not per frame. Building it scans every configured font folder — reading and
 parsing every font file in each — which measured **3,359 face names** on an

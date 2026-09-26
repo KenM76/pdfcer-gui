@@ -7,7 +7,7 @@ rather than the part that is *decisive*, and the fiddly part is where the
 bugs live: a value read out of the registry is a string somebody's installer
 wrote, and installers have written every shape of it.
 
-## ★★ The three shapes, and where each one comes from
+## The three shapes, and where each one comes from
 
 | Source | Example value | What has to be undone |
 |---|---|---|
@@ -19,7 +19,7 @@ The third is the awkward one, and it has an unquoted spelling too —
 `C:\Program Files\…\Acrobat.exe %1` — which cannot be split on whitespace
 because the path contains some. See [`executable_from_command`].
 
-## ★★★ Why [`edition_of`] is a filter and not just a label
+## Why [`edition_of`] is a filter and not just a label
 
 It answers *"is this an Acrobat?"*, and the answer is `None` far more often
 than it looks like it should be. `super`'s §4 records the measurement that

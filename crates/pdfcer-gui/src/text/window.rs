@@ -11,7 +11,7 @@
 
 /// **The window title's read-mode prefix**, when a chord turns the mode off.
 ///
-/// ★ It goes at the **front** of the title, and that is the same decision
+/// It goes at the **front** of the title, and that is the same decision
 /// `crate::text::doctabs`' header makes about the unsaved marker, for the same
 /// measured reason:
 ///
@@ -47,7 +47,7 @@ pub const fn title_read_mode_unbound() -> &'static str {
 
 /// **The status bar's read-mode line**, when a chord turns the mode off.
 ///
-/// ★ It says what comes **back**, not what is hidden. An operator reading this
+/// It says what comes **back**, not what is hidden. An operator reading this
 /// bar is looking at a window with no ribbon and no panels and is trying to
 /// work out whether that is a mode or a fault; *"the ribbon and the panels"*
 /// names the two things they have noticed missing and attaches them to a key.
@@ -65,7 +65,7 @@ pub fn status_read_mode(chord: &str) -> String {
 
 /// The status bar's line when read mode and **full screen** are both on.
 ///
-/// ★ This is the one state in which `view.fullscreen` is also a trap, and the
+/// This is the one state in which `view.fullscreen` is also a trap, and the
 /// reason is compositional rather than intrinsic: full screen hides no chrome
 /// of pdfcer's own, so its ribbon control is normally right there — but read
 /// mode has taken the ribbon away, and with it that control. Two hidden
@@ -100,7 +100,7 @@ pub const fn status_read_mode_unbound() -> &'static str {
 
 /// **The escape hatch**, drawn only when no chord is bound.
 ///
-/// ★★ A control rather than a sentence, and this is the one place in the
+/// A control rather than a sentence, and this is the one place in the
 /// feature where that is right. R9 forbids drawing a control that cannot work
 /// and forbids placeholders; it does not forbid the only working route to a
 /// capability. With a chord bound, a statement is the better surface — it
@@ -121,7 +121,7 @@ pub const fn leave_read_mode_button() -> &'static str {
 mod tests {
     use super::*;
 
-    /// ★★★ **No string in this catalog names a key.**
+    /// **No string in this catalog names a key.**
     ///
     /// The rule this module exists to hold, asserted rather than trusted — and
     /// the probe list is the one `crate::text::shortcuts` uses, because the

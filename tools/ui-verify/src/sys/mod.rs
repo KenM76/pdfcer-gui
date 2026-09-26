@@ -47,7 +47,7 @@ pub mod vk {
     pub const SHIFT: u16 = 0x10;
     /// `VK_LSHIFT` — the LEFT shift specifically.
     ///
-    /// ★ Not a synonym for [`SHIFT`] where synthesis is concerned. `VK_SHIFT`
+    /// Not a synonym for [`SHIFT`] where synthesis is concerned. `VK_SHIFT`
     /// is the "either shift" virtual key that Windows reports in keyboard
     /// STATE; a real keyboard never sends it, and a toolkit that derives its
     /// modifier state from key events — winit does — may not recognise it.
@@ -119,7 +119,7 @@ pub mod vk {
 
     /// `D`, `T`, `A`, `I` and `L` — the five letters that spell **DETAIL**.
     ///
-    /// ★ The closed-list rule again, and this is the first entry that exists to
+    /// The closed-list rule again, and this is the first entry that exists to
     /// **type a word** rather than to press a chord.
     /// `checks::dimension_groups` names a new dimension group, and the name is
     /// the one thing in that window a check must supply — the Add button is

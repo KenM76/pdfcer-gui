@@ -24,7 +24,7 @@ const INVOKE: &str = "mode.edit,file.properties";
 /// The certified fixture. See the module header and
 /// `tools/gen-certified-fixture.py`.
 ///
-/// ★★★ **Relative to `CARGO_MANIFEST_DIR`, which is `tools/ui-verify`** — two
+/// **Relative to `CARGO_MANIFEST_DIR`, which is `tools/ui-verify`** — two
 /// levels up, not three. See [`super::annot_delete_gate`]'s note on the same
 /// constant: this file inherited the wrong depth from it, and both resolved to
 /// a `D:/Dev/fixtures/` that does not exist, so both SKIPPED on every run while
@@ -34,7 +34,7 @@ const CERTIFIED: &str = "../../fixtures/certified-comments.pdf";
 const ORDINARY: &str = "../../fixtures/threaded-comments.pdf";
 /// The line `canvas::forms` writes when a click selects a form field.
 const SELECT_EVENT: &str = "form-field-selected";
-/// ★★★ The per-frame census `panels::properties::formfield` writes.
+/// The per-frame census `panels::properties::formfield` writes.
 ///
 /// The `-gates` suffix is not decoration: `tools/gates/check-trace-names.py`
 /// forbids a module's own summary line from sharing its first token with a
@@ -49,7 +49,7 @@ const GATES_EVENT: &str = "form-field-gates";
 /// rather than the event alone: in Edit mode both rungs are reachable, and a
 /// decline from the wrong one would say nothing about the gate under test.
 const DECLINED_EVENT: &str = "canvas-delete-declined";
-/// ★★★ The **funnel's** own line for a widget delete that reached the engine.
+/// The **funnel's** own line for a widget delete that reached the engine.
 ///
 /// Asserted **absent** in phase D. Its presence means the ladder let the action
 /// through and the engine refused it — which is the pre-fix behaviour exactly,
@@ -68,7 +68,7 @@ const PAGE_REGION: &str = "page";
 
 /// The signature widget's `/Rect` centre, in PDF user space on page 1.
 ///
-/// ★ Derived from `objs[11]` in `tools/gen-certified-fixture.py`
+/// Derived from `objs[11]` in `tools/gen-certified-fixture.py`
 /// (`/Rect [60 60 300 120]`), and stated as a point rather than as a page
 /// fraction for the reason [`super::annot_delete_gate`] gives about its own
 /// operand: the target is **in the fixture**, so the aim has to be where the
@@ -82,7 +82,7 @@ const WIDGET_CENTRE: DocPoint = DocPoint {
 
 /// The field the fixture pair names, asserted by `/T` rather than discovered.
 ///
-/// ★ The whole evidential value of the pair is that the two documents are
+/// The whole evidential value of the pair is that the two documents are
 /// identical apart from one dictionary. A check that went looking for
 /// *"a field"* could find a different one in each run and would report the
 /// difference as a gate difference.
@@ -147,7 +147,7 @@ fn open_and_select(
             ctx.profile.default_exe
         ))
     })?;
-    // ★ NOT `ctx.pdf`: the oracle here is bound to a document whose
+    // NOT `ctx.pdf`: the oracle here is bound to a document whose
     // certification, `/AcroForm` and widget geometry are all known, so a
     // `--pdf` an operator passed would be measured against an expectation that
     // is not about it.
@@ -199,7 +199,7 @@ fn open_and_select(
 
     // ---- select the signature widget -------------------------------------
     //
-    // ★ Asserted by FIELD NAME rather than by "something got selected". Page 1
+    // Asserted by FIELD NAME rather than by "something got selected". Page 1
     // also carries a `/Square` markup at `[120 560 320 700]`, and a click that
     // landed there would take the annotation branch — at which point the field
     // gate is deliberately not consulted and this check would report it open on
@@ -353,7 +353,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // ---- E: the ordinary twin -------------------------------------------
     //
-    // ★★★ Without this, a build whose gate refused unconditionally passes
+    // Without this, a build whose gate refused unconditionally passes
     // everything above. The two fixtures differ in one dictionary, so a
     // difference here is caused by that dictionary and by nothing else.
     let ordinary = match open_and_select(ctx, report, ORDINARY, "ordinary")? {

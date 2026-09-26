@@ -9,7 +9,7 @@ AutoCAD all answer Shift the same way. An operator who holds Shift and gets
 a free-form resize does not conclude that pdfcer chose differently. They
 conclude it is broken, and they are close enough to right.
 
-## ★★ The reason it is ONE module and not five call sites
+## The reason it is ONE module and not five call sites
 
 There are five drags on this canvas that a modifier ought to constrain —
 move, resize, Bézier handle, ce-dimension label, ce-dimension vertex — and
@@ -46,7 +46,7 @@ keeps is the one the pointer travelled furthest to produce, measured as a
 `s = 1 + d/extent` — so comparing the two factors' distance from unity *is*
 comparing relative travel, with no second derivation to drift.
 
-★ **And the mid-edge grips fall out for free.** `East` and `West` leave
+**And the mid-edge grips fall out for free.** `East` and `West` leave
 `sy` at exactly `1.0`; `North` and `South` leave `sx` at `1.0`. A factor of
 `1.0` is distance zero from unity, so it can never win, so the live axis's
 factor is applied to both — which is proportional resize driven from one

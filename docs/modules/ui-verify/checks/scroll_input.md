@@ -26,7 +26,7 @@ That leaves one question, and everything else waits on it:
 | input dies | this is a **pre-existing defect in today's shell**, met whenever he scrolls a long way down a drawing. It outranks O23 entirely, and O23 has been getting the blame |
 | input survives | the difference is that the offset was **forced on the frame the content was first laid out**, and the fix is to force it one frame later |
 
-★★★ **ANSWERED 2026-09-05: input SURVIVES.** Driven on `four-pages.pdf`, at
+**ANSWERED 2026-09-05: input SURVIVES.** Driven on `four-pages.pdf`, at
 a wheel-reached offset of **1,182 pt** with a page still under the pointer,
 the canvas answers every movement. Driven on `a1-titleblock.pdf` at 832 pt,
 the same. So the second row is the true one, the pasteboard is cleared, and
@@ -35,7 +35,7 @@ what remains of O23 is the forced-offset-on-the-first-layout-frame question
 mouse"*. ⚠ It took a repair to this check to establish that; see the section
 at the foot of this header before quoting the answer.
 
-# ★★ Why the assertion is `canvas-pointer` events and not a selection
+# Why the assertion is `canvas-pointer` events and not a selection
 
 Because the symptom is the *absence of input*, not a bad hit test. Asserting
 a selection would need an object under a point that survives an arbitrary
@@ -44,7 +44,7 @@ nothing to do with the question. `canvas-pointer` is emitted whenever the
 pointer is over the page, needs no object, and is exactly the line that went
 to zero.
 
-# ★ The control comes first
+# The control comes first
 
 It moves the pointer and counts events **before** scrolling. Without that,
 "no events after the scroll" is indistinguishable from "this build never
@@ -98,7 +98,7 @@ offset the document actually has, with a page still under the pointer:
 | a page is still drawn, the offset barely moved | **SKIP** — the fixture is too short to scroll |
 | no page is drawn | back off to the last step that had one; if none, **SKIP** |
 
-★ And the pointer is aimed at the **page's own rect after the scroll**,
+And the pointer is aimed at the **page's own rect after the scroll**,
 not at a fixed fraction of the viewport. The viewport does not move when
 the document scrolls and the page does, so a fixed aim point drifts off the
 sheet as the very thing under test happens — which is the same mistake in a

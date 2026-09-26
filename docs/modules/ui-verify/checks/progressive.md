@@ -10,7 +10,7 @@
 > or zoomed out area instead of just remaining blank while the higher
 > definition render occurs."*
 
-# ★★★ Why this is not [`super::pan_refresh`], which already passes
+# Why this is not [`super::pan_refresh`], which already passes
 
 That check exists for the operator's **previous** report on the same
 gesture — *"it doesn't always render the new exposed area"* (O25) — and it
@@ -26,7 +26,7 @@ So the two checks differ in exactly one respect and it is the whole subject:
 this one captures **immediately after the gesture**, without waiting for a
 raster, and requires the canvas to be showing something anyway.
 
-# ★★★ Why this is measured from the TRACE and not from a screenshot
+# Why this is measured from the TRACE and not from a screenshot
 
 This project's standing rule is that layout and clipping defects have
 exactly one oracle and it is a rendered screenshot. **This is not a layout

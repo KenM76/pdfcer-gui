@@ -1,7 +1,7 @@
 # `shell::menus::tests` — the sweeps that keep the menu document honest
 
 
-## ★ The seam, and why it is a subject rather than a cut
+## The seam, and why it is a subject rather than a cut
 
 [`super`] is a **document**: one function returning the menus pdfcer
 defines, plus the prose arguing every row of every one of them. It changes

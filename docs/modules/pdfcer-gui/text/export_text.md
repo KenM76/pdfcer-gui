@@ -12,7 +12,7 @@ import side; the short version is that **`pdfcer-core` has no verb that
 turns a text file into PDF page content**, and a request has been filed
 rather than a round trip faked.
 
-## ★★★ The one sentence this whole window is arranged around
+## The one sentence this whole window is arranged around
 
 > **A scanned drawing has no text layer, so exporting it writes an empty
 > file — and an empty file looks exactly like a successful export.**
@@ -23,7 +23,7 @@ cleanly, and the person who finds out is whoever needed the words. So the
 export **refuses** rather than writing nothing — [`no_text_at_all`] — and it
 names the remedy, which is `File ▸ Recognise text`.
 
-## ★★ What "the text of this document" means, and why it is not decided here
+## What "the text of this document" means, and why it is not decided here
 
 
 That is not laziness, it is the whole point. Two answers to *"what is the
@@ -38,7 +38,7 @@ is the same argument with a file on the end of it.
 and every one of them is named in the receipt afterwards. The default is the
 clipboard's own bytes.
 
-## ★ Why the losses are said TWICE — in the window and in the receipt
+## Why the losses are said TWICE — in the window and in the receipt
 
 They are different losses.
 

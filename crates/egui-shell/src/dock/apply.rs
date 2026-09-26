@@ -8,7 +8,7 @@
 //! [`super::plan`] is split on. [`apply`] is `pub(super)` rather than
 //! public because it is `Dock::show`'s internals, not an API.
 //!
-//! # ★★ The property every arm here depends on
+//! # The property every arm here depends on
 //!
 //! **"Did anything change" is decided ONCE, by comparing the whole layout
 //! against a clone taken before the loop.** No arm sets a flag. That is
@@ -49,7 +49,7 @@ pub(super) fn apply(
 
     for intent in intents {
         match intent {
-            // ★★ Collapse a side, or bring it back. One toggle, two controls:
+            // Collapse a side, or bring it back. One toggle, two controls:
             // the chevron on an open side and the rail on a shut one, neither
             // of which can be pressed in the state the other lives in.
             Intent::ToggleSide(side) => {

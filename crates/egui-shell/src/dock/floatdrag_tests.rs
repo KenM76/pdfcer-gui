@@ -8,7 +8,7 @@
 //! never read, or the intent was raised and never applied. A verb's unit tests
 //! cannot see the chain in front of it.
 //!
-//! # ★ The pointer here is NOT `egui`'s
+//! # The pointer here is NOT `egui`'s
 //!
 //! Every other gesture file in this crate presses and drags through
 //! [`super::drive`]'s event pump. This one sends **no pointer events at all**

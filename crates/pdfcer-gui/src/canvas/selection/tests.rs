@@ -28,7 +28,7 @@
 
 #![cfg(test)]
 
-/// ★★ **One canvas, one selection** — content and annotation are mutually
+/// **One canvas, one selection** — content and annotation are mutually
 /// exclusive, in both directions.
 ///
 /// The invariant this type owns, and the reason the annotation lives here
@@ -99,7 +99,7 @@ fn selecting_an_annotation_and_selecting_content_replace_each_other() {
     assert_eq!(state.len(), 1);
 }
 
-/// ★ `is_empty` answers about **both**, and the Format tab depends on it.
+/// `is_empty` answers about **both**, and the Format tab depends on it.
 ///
 /// Pinned separately from the exclusion test because it is a different
 /// failure: a build that kept the two exclusive and still answered
@@ -160,10 +160,10 @@ fn hit_object(index: u64) -> ClickHit {
 }
 
 // -----------------------------------------------------------------
-// ★ Invariant 1 — selection is identity, never position
+// Invariant 1 — selection is identity, never position
 // -----------------------------------------------------------------
 
-/// ★ **Navigation never alters the selection.**
+/// **Navigation never alters the selection.**
 ///
 /// The acceptance criterion, as close to literally as a headless test can
 /// state it: select a node, then perform every navigation the roadmap
@@ -171,7 +171,7 @@ fn hit_object(index: u64) -> ClickHit {
 /// change page-display mode, switch ribbon tab — and assert the selection
 /// is byte-identical afterwards.
 ///
-/// # ★ Phase 3's gestures were added to THIS sweep, not to a parallel test
+/// # Phase 3's gestures were added to THIS sweep, not to a parallel test
 ///
 /// The hand-tool pan, the anchored discrete zoom, the marquee zoom and
 /// zoom-to-selection are navigation, so they belong to the invariant that
@@ -313,7 +313,7 @@ fn navigating_the_view_never_alters_the_selection() {
         view.set_zoom(applied, MAX_ZOOM);
     }
 
-    // ★ Zoom to the selection — the one navigation that reads it.
+    // Zoom to the selection — the one navigation that reads it.
     let bounds = sel
         .outline_union()
         .expect("a resolved selection has bounds to frame");
@@ -333,7 +333,7 @@ fn navigating_the_view_never_alters_the_selection() {
 
     // ---- Phase 4's page-display modes, in the same sweep ---------------
     //
-    // ★ Added HERE rather than in a parallel test, for the reason this
+    // Added HERE rather than in a parallel test, for the reason this
     // test's header already gives about Phase 3's gestures: a page-display
     // change is navigation, and navigation is governed by this invariant.
     // A second test asserting the same property about a fifth operation
@@ -396,7 +396,7 @@ fn navigating_the_view_never_alters_the_selection() {
     );
 }
 
-/// ★ **A selection on another page survives a provider for a different
+/// **A selection on another page survives a provider for a different
 /// page** — the half of invariant 3 the acceptance criterion turns on.
 ///
 /// Paging away rebuilds the provider for the new page. A `resolve` that
@@ -479,7 +479,7 @@ fn losing_the_provider_does_not_lose_the_selection() {
     );
 }
 
-/// ★ **Delete's operand list is empty at every rung below Object** — the
+/// **Delete's operand list is empty at every rung below Object** — the
 /// one statement of that rule, asserted where it lives.
 ///
 /// The canvas keys and the ribbon's `format.delete` both read
@@ -560,7 +560,7 @@ fn a_plain_click_replaces_and_a_shift_click_toggles() {
     );
 }
 
-/// ★★★ **SHIFT-PICKING A SECOND ANCHOR ADDS IT** — the model half of the
+/// **SHIFT-PICKING A SECOND ANCHOR ADDS IT** — the model half of the
 /// driven check `multi_node_move_moves_every_picked_anchor`.
 ///
 /// # Why this test was written
@@ -577,7 +577,7 @@ fn a_plain_click_replaces_and_a_shift_click_toggles() {
 /// So the question was whether the *model* is wrong or the driven path is, and
 /// the two need very different fixes. This is the cheap half of that question.
 ///
-/// ★ It asserts through [`SelectionState::selected_nodes_on`] as well as
+/// It asserts through [`SelectionState::selected_nodes_on`] as well as
 /// through the entry count, because that accessor is what
 /// `canvas::moving`'s multi-node drag actually reads. A model that held two
 /// entries but reported one node would satisfy a length check and still fail
@@ -637,7 +637,7 @@ fn shift_picking_a_second_anchor_adds_it_rather_than_replacing() {
     );
 }
 
-/// ★★ …and shift on an anchor that is already picked REMOVES it, which is the
+/// …and shift on an anchor that is already picked REMOVES it, which is the
 /// other half of a toggle and the half a naive fix breaks.
 #[test]
 fn shift_picking_a_selected_anchor_removes_it() {
@@ -836,7 +836,7 @@ fn a_double_click_descends_one_rung_at_a_time() {
     assert_eq!(sel, at_the_bottom);
 }
 
-/// ★ **Escape ascends exactly one rung per press.**
+/// **Escape ascends exactly one rung per press.**
 ///
 /// The old shell shipped Escape as "clear everything", so an operator two
 /// rungs inside a drawing found one press putting them back at the page.
@@ -995,7 +995,7 @@ fn missing_every_anchor_falls_back_to_the_part_rung() {
 // Marquee
 // -----------------------------------------------------------------
 
-/// **★★★ A subtracting band takes exactly its hits out and leaves the rest** —
+/// **A subtracting band takes exactly its hits out and leaves the rest** —
 /// `OPERATOR_REQUESTS.md` O104.
 ///
 /// The operator, 2026-09-03: *"I can't unselect things once I have selected
@@ -1027,7 +1027,7 @@ fn a_subtracting_band_removes_only_what_it_hit() {
     );
 }
 
-/// **★★ An EMPTY subtracting band changes nothing — it must not clear.**
+/// **An EMPTY subtracting band changes nothing — it must not clear.**
 ///
 /// The asymmetry with a plain band is deliberate and is the whole safety of the
 /// gesture. A plain band that encloses nothing means *"select nothing"*, which
@@ -1134,7 +1134,7 @@ fn the_grip_box_is_the_union_of_the_selection() {
     assert!(union.contains_rect(rect(200.0, 200.0, 50.0, 50.0)));
 }
 
-/// ★★★ **A placed object arrives selected, at the Object rung, alone.**
+/// **A placed object arrives selected, at the Object rung, alone.**
 ///
 /// The operator, 2026-08-26: *"if I add an image I Expect to click on it to
 /// resize but dragging doesn't resize."* He was right about the symptom and it
@@ -1175,7 +1175,7 @@ fn a_placed_object_replaces_the_selection_at_the_object_rung() {
 // refusal and every disclosure in the application is phrased in terms of them.
 // ===========================================================================
 
-/// ★★★ **An empty operand list is not an empty selection**, and the three
+/// **An empty operand list is not an empty selection**, and the three
 /// accessors say which is which.
 ///
 #[test]
@@ -1241,7 +1241,7 @@ fn a_mixed_selection_splits_into_operands_and_leaves() {
 /// Deleting is refused for a leaf, structurally, at the one funnel that feeds
 /// `EditSession::delete_objects`.
 ///
-/// ★ The consequence if this ever returned the leaf's number: `delete_objects`
+/// The consequence if this ever returned the leaf's number: `delete_objects`
 /// would resolve it against the **page's** paint order, find a real object
 /// there, and delete the wrong thing — silently, because the index is in
 /// range. That is the file-corruption failure `TargetId` exists to make
@@ -1254,7 +1254,7 @@ fn a_leaf_is_never_a_delete_operand() {
     assert!(sel.deletable_objects_on(0).is_empty());
 }
 
-/// ★★ **A second plain click on an already-selected text block descends to
+/// **A second plain click on an already-selected text block descends to
 /// the chunk under the pointer** — O215 ask 1, at the rung where it is decided.
 ///
 /// The first click selects the block; the second, landing on a chunk of the

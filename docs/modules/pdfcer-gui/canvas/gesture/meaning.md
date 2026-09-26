@@ -24,7 +24,7 @@ while the hand is active, so no press ever arrives here to be classified.
 That rule — *one state machine, one meaning per frame* — is stated in full in
 [`super`]'s header, under "Marquee versus pan".
 
-## ★ Marquee-select versus marquee-zoom: one rubber band, two releases
+## Marquee-select versus marquee-zoom: one rubber band, two releases
 
 Phase 3.4 adds a marquee that *zooms* to what it encloses. It is
 deliberately **the same gesture**: same press, same in-flight rect, same

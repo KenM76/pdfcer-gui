@@ -24,7 +24,7 @@ Delete.
 | [`menus`] | the right-click: which of the two canvas menus opens, and the select-first rule that makes it about the thing you pointed at |
 | [`overlay`] | what all of it looks like — and what rule 4 forbids it looking like |
 | [`geometry`] | the pan and zoom-anchor arithmetic |
-| [`pasteboard`] | ★ **off-page reach** — which of the canvas's two interactive rectangles owns this frame's gesture |
+| [`pasteboard`] | **off-page reach** — which of the canvas's two interactive rectangles owns this frame's gesture |
 | [`keys`] | Escape and Delete, and which of Escape's three claimants gets it |
 | [`tool`] | select or hand, and the space bar that borrows the hand |
 | [`zoom`] | **the anchor rule**, the two-frame handshake, and the five zoom paths that route through it |

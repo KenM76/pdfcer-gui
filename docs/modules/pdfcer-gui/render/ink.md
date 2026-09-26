@@ -38,7 +38,7 @@ that cannot see it reports it as the first.
 * near-uniform canvas **and** `ink=30` → the engine produced a picture and
   the shell did not show it. That is the defect O174 was.
 
-★ Note what is *not* claimed: this says nothing about whether the rectangle
+Note what is *not* claimed: this says nothing about whether the rectangle
 requested was the *right* rectangle. A shell asking for the wrong blank
 square still reads `ink=1`. That question belongs to `render::region`'s
 calibration against `pdfcer_render::region_base_geometry_of`, which is where

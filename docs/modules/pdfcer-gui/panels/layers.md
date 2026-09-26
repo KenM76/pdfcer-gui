@@ -36,7 +36,7 @@ them from the magnification — so a zoom-banded layer can read "shown"
 here while its content is off the page. Said out loud rather than left to
 be discovered as a defect.
 
-# ★ The visibility control, and the three preconditions it waited on
+# The visibility control, and the three preconditions it waited on
 
 **All three now hold.** The section is kept rather than deleted because
 it is a worked example of `crate::render::worker`'s rule — *"the key
@@ -104,7 +104,7 @@ replaced `the_layers_note_states_that_switching_is_unavailable` **in this
 commit**, which is the discipline working in the other direction: the
 assertion that pinned the absence came out with the absence.
 
-# ★ `/RBGroups`: how the radio behaviour survives an action funnel
+# `/RBGroups`: how the radio behaviour survives an action funnel
 
 Table 101's `/RBGroups` are "radio button" groups — at most one member ON
 — and `pdfcer_core::layers` hands the panel everything needed to honour
@@ -139,7 +139,7 @@ the radio rule is tested against real fixtures without an egui context.
 which alternate the operator meant, which is exactly the class of
 invention rule 4 forbids.
 
-## ★ `DA-A8`: a locked layer inside a radio group
+## `DA-A8`: a locked layer inside a radio group
 
 `pdfcer_core::layers` names this as a genuine gap in the standard and hands
 the decision here verbatim: a locked group's state *"cannot be changed
@@ -155,7 +155,7 @@ as a side effect of clicking a *different* row, which is a lock bypass
 nobody watching the screen would see, and this way the violation is on the
 page where the operator already is.
 
-# ★ Reset means "the document's own default", not "show everything"
+# Reset means "the document's own default", not "show everything"
 
 [`crate::app::actions::Action::ResetLayers`] drops the override, which
 restores `/D` (§8.11.4.3). It is emphatically **not**

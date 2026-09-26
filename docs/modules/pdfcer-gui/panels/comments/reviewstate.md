@@ -13,18 +13,18 @@ separable from the widget that shows it.
 
 ---
 
-## ★★★ FACT ONE — A STATUS IS **APPENDED**, NOT SET
+## FACT ONE — A STATUS IS **APPENDED**, NOT SET
 
 This is the fact the whole module is shaped around, and it is the engine's
 own, twice over, in `add_review_state`'s doc comment:
 
-> *"★★ THE STATUS IS NOT WRITTEN ONTO THE ANNOTATION IT DESCRIBES —
+> *"THE STATUS IS NOT WRITTEN ONTO THE ANNOTATION IT DESCRIBES —
 > §12.5.6.3 puts it on a **separate** `/Text` annotation that points at the
 > reviewed one through `/IRT`, and says so with a `shall`. That is why this
 > verb returns a new `ObjId` rather than mutating the target, and why
 > nothing about the target changes."*
 
-> *"★★ AND A SECOND STATUS CHAINS ONTO THE FIRST, PER AUTHOR — The clause's
+> *"AND A SECOND STATUS CHAINS ONTO THE FIRST, PER AUTHOR — The clause's
 > last sentence is also a `shall`: 'Additional state changes shall be made
 > by adding text annotations **in reply to the previous reply** for a given
 > user.' So this verb walks the `/IRT` graph rooted at `target`, keeps the
@@ -45,7 +45,7 @@ each be wrong under the other reading:
    [`crate::app::actions::Action::RecordReviewState`]. Nothing in this
    feature is named *set*.
 
-### ★★ There is deliberately NO resolver in the engine, and that is a
+### There is deliberately NO resolver in the engine, and that is a
 decision this module inherits rather than works around
 
 > *"Deciding which of several state annotations is current is left to the
@@ -66,7 +66,7 @@ terminate on a malformed file rather than hang."*
 
 ---
 
-## ★★★ FACT TWO — THE ENGINE READS THE STRINGS **VERBATIM**
+## FACT TWO — THE ENGINE READS THE STRINGS **VERBATIM**
 
 `Annotation::state` and `Annotation::state_model` are `Option<String>`, and
 `state`'s own doc says why it is not an enum:
@@ -91,20 +91,20 @@ surfaces saying the same thing about the same problem:
 | [`StateReading::Foreign`] | `/StateModel` is a vocabulary pdfcer **will not author** | show both verbatim; pdfcer offers **nothing in it**, and says what it will do instead |
 | [`StateReading::ModelMissing`] | `/State` present, `/StateModel` absent — Table 171's one non-conforming combination | show it as the malformed thing it is |
 
-★★ **Collapsing `Unmodelled` into `Foreign` would grey a row pdfcer writes
+**Collapsing `Unmodelled` into `Foreign` would grey a row pdfcer writes
 happily.** A `/StateModel` of `Review` carrying a `/State` of `Deferred` is
 a document pdfcer can add its own `Accepted` to — same model, same chain
 rule, same file. Saying "pdfcer does not author this vocabulary" about it
 would be this shell claiming an incapacity it does not have, which is the
 failure `crate::text::buttonaction`'s four-state table exists to prevent.
 
-★ And the difference is **visible**: [`StateReading::authorable_model`]
+And the difference is **visible**: [`StateReading::authorable_model`]
 answers `Some` for the first three and `None` for `Foreign`, and that is the
 one thing the row's note is keyed off.
 
 ---
 
-## ★★ R8b — THE STATUS IS OFF-CANVAS, ALWAYS
+## R8b — THE STATUS IS OFF-CANVAS, ALWAYS
 
 *"Fuzzy, never sneaky."* A review status is a **disclosure about a
 comment**, not part of the comment's appearance, so it is drawn in this
@@ -119,7 +119,7 @@ same reason, and stays untouched by this Pass.
 
 ---
 
-## ★ WHAT THE PANEL LOOKS LIKE AFTERWARDS, AND THE ROW NOBODY ORDERED
+## WHAT THE PANEL LOOKS LIKE AFTERWARDS, AND THE ROW NOBODY ORDERED
 
 A status annotation is a `/Text` with `/IRT`, `/State`, `/StateModel`, a
 `/T` — and a **deliberately empty** `/Contents`: *"A status is not a
@@ -147,13 +147,13 @@ status** control of its own (R83: an affordance nobody could want).
 | the chooser beside the sort | [`status_strip`] |
 | the row's status lines and its control | [`row_status`] |
 
-## ★★ Every test below has been FALSIFIED, and one of them was vacuous
+## Every test below has been FALSIFIED, and one of them was vacuous
 
 Twenty-one guards, twenty-one mutations, one at a time, each restored from a
 byte copy — never `git checkout`, because four other agents held uncommitted
 work in this tree the day this was written. All twenty-one went red.
 
-★★★ **The sweep earned its cost on the first run.**
+**The sweep earned its cost on the first run.**
 `a_status_with_no_irt_reaches_no_target_but_is_still_read` asserted
 `s.on(1).is_empty()` and stayed **green** when [`walk_up`] was broken to make
 an `/IRT`-less status its own target — because that answer lands on
@@ -163,7 +163,7 @@ It now asserts over the whole index. That test is the reason the rule is
 *break the guard and watch it go red*, not *write the guard and watch it
 pass*.
 
-★ Two mutations are recorded in that test suite for a second reason: the
+Two mutations are recorded in that test suite for a second reason: the
 first fixture for [`MAX_CHAIN`] could not reach the bound at all (both
 statuses in a two-cycle are superseded, so the walk never runs), and the
 `#[non_exhaustive]` note on [`OFFERED`] exists because no `match` here can be

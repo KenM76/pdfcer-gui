@@ -2,7 +2,7 @@
 //! # `panels::tests` — the reachability sweep and the width arithmetic
 //!
 //!
-//! ★ `#![cfg(test)]` is the FIRST line, an inner attribute on the file rather
+//! `#![cfg(test)]` is the FIRST line, an inner attribute on the file rather
 //! than an outer `#[cfg(test)]` on the `mod` line. Both work; this one is the
 //! shape the project uses, because it keeps the condition in the file it
 //! conditions — a `mod tests;` in the parent with no attribute would compile
@@ -15,7 +15,7 @@ use crate::shell::{commands, manifest};
 use egui_shell::CommandRegistry;
 use std::collections::BTreeSet;
 
-/// **★ Every panel is reachable from the ribbon.**
+/// **Every panel is reachable from the ribbon.**
 ///
 /// The check three panels shipped without. The old shell's
 /// `panels_structure.rs` header records what that cost:
@@ -75,7 +75,7 @@ fn every_panel_is_reachable_from_the_ribbon() {
 /// while only one of them could ever be opened — the failure hiding
 /// inside the fix.
 ///
-/// ★★★ **It was a live hazard and on 2026-09-05 it became the live case.**
+/// **It was a live hazard and on 2026-09-05 it became the live case.**
 /// `file.properties`' tooltip commissioned two subjects in one sentence — the
 /// document's own metadata and the selection's properties — and the temptation
 /// this refuses was to hang the second panel off that same id when the operator
@@ -98,7 +98,7 @@ fn no_two_panels_share_a_command() {
     }
 }
 
-/// ★★★ **The document's own properties have a panel of their own, in every
+/// **The document's own properties have a panel of their own, in every
 /// mode, and the selection inspector still exists** — `OPERATOR_REQUESTS.md`
 /// O136.
 ///
@@ -106,7 +106,7 @@ fn no_two_panels_share_a_command() {
 /// in the properties tab. it needs to get out of there and be in its own
 /// document properties tab."*
 ///
-/// # ★★★ Why this is one test and not three
+/// # Why this is one test and not three
 ///
 /// Because the interesting assertion is **negative** — *the metadata is not in
 /// the Properties panel any more* — and a negative about a panel is satisfied
@@ -127,7 +127,7 @@ fn no_two_panels_share_a_command() {
 /// project has a standing lesson about exactly that shape (`read_mode_can_reach
 /// _the_comment_list_by_both_routes`, whose header argues it at length).
 ///
-/// # ★ What it does NOT assert
+/// # What it does NOT assert
 ///
 /// That the Properties panel's *body* no longer draws the metadata. There is no
 /// headless frame runner in this crate, so the only oracle for what a body
@@ -166,7 +166,7 @@ fn the_documents_own_properties_are_their_own_panel_in_every_mode() {
         );
     }
 
-    // ★ The positive control for the selection inspector. Read never mounted
+    // The positive control for the selection inspector. Read never mounted
     // it (its verbs live on tabs Read is not shown), so the two modes that did
     // are the ones asserted — a build that moved the metadata by deleting the
     // panel it was in would satisfy every assertion above and fail here.
@@ -184,7 +184,7 @@ fn the_documents_own_properties_are_their_own_panel_in_every_mode() {
     );
 }
 
-/// ★★★ **Every mode can actually reach the Document properties command** — the
+/// **Every mode can actually reach the Document properties command** — the
 /// control is on the `file` tab, and the mode gate offers it there.
 ///
 /// # ⚠ TWO vacuity holes, and the first one was found by falsifying this test
@@ -213,7 +213,7 @@ fn document_properties_is_offered_in_every_mode_and_redact_is_not() {
     let shell = manifest::built_in();
     let id = Panel::DocumentProperties.command_id();
 
-    // ★ The half that closes hole 2: the control is on the `file` tab, which is
+    // The half that closes hole 2: the control is on the `file` tab, which is
     // the one tab every mode's list contains.
     let tabs: BTreeSet<String> = shell
         .command_references()
@@ -230,7 +230,7 @@ fn document_properties_is_offered_in_every_mode_and_redact_is_not() {
          tab and Read is shown ONLY `file` and `view`, so anywhere else is a mode that mounts \
          a panel it cannot reopen."
     );
-    // ★ P1, restated where it bites: one command, at most one tab. Two would
+    // P1, restated where it bites: one command, at most one tab. Two would
     // be a `Shell::validate` failure, and an invalid manifest makes
     // `Capabilities::for_mode` return FULL — every authoring capability granted
     // to every mode, silently.
@@ -293,7 +293,7 @@ fn the_panel_catalog_is_complete() {
     );
 }
 
-/// **★ The container width exceeds the viewport when a row is wider —
+/// **The container width exceeds the viewport when a row is wider —
 /// which is the whole of the no-clipping fix.**
 ///
 /// If this returned the viewport width, `ScrollArea` would compare
@@ -348,7 +348,7 @@ fn clicking_the_focused_row_again_clears_the_focus() {
     assert_eq!(state.focus(), None, "the same row clears it");
 }
 
-/// **★ The panel focus has not quietly become a selection.**
+/// **The panel focus has not quietly become a selection.**
 ///
 /// [`ObjectTreeUi::focus`]'s own docs say the field is **deleted** when
 /// the real selection model lands, not extended — because two selections
@@ -453,7 +453,7 @@ fn the_panel_focus_has_not_quietly_become_a_selection() {
 /// A measurer with one point per character, so a test can state widths in
 /// characters and read like the thing it is asserting.
 ///
-/// ★ Deliberately NOT a real font. The property under test is the *decision*
+/// Deliberately NOT a real font. The property under test is the *decision*
 /// — does this row need shortening, and to what — and a real font would make
 /// every expected value a measurement nobody could check by reading.
 fn per_char(text: &str) -> f32 {
@@ -471,7 +471,7 @@ fn a_row_that_fits_is_returned_unchanged() {
     assert_eq!(elide_to_width("#12 Path", 8.0, per_char), None);
 }
 
-/// ★★★ **A row that does not fit comes back shortened, ending in the ellipsis,
+/// **A row that does not fit comes back shortened, ending in the ellipsis,
 /// and no wider than the space it was given.**
 ///
 /// The three conditions together are the whole contract. Asserting only the
@@ -496,7 +496,7 @@ fn a_row_that_overflows_is_shortened_to_fit() {
     );
 }
 
-/// ★★ **It keeps as much as it can**, which is what makes the shortened row
+/// **It keeps as much as it can**, which is what makes the shortened row
 /// worth reading.
 ///
 /// A correct-but-useless implementation returns the bare ellipsis every time
@@ -511,7 +511,7 @@ fn it_keeps_every_character_that_fits() {
     assert_eq!(out, "abcdefghijklmnopqrs\u{2026}");
 }
 
-/// ★ **Multi-byte characters are never split.**
+/// **Multi-byte characters are never split.**
 ///
 /// Object rows carry the middle dot, the em dash and the multiplication sign,
 /// and font names carry accents. A byte-offset slice would panic here rather
@@ -547,7 +547,7 @@ fn an_impossibly_narrow_pane_still_gets_an_ellipsis() {
     );
 }
 
-/// ★★★ **A document opening does not throw away the operator's preview
+/// **A document opening does not throw away the operator's preview
 /// preferences** — `OPERATOR_REQUESTS.md` O187, and the defect that shipped
 /// inside it.
 ///
@@ -592,7 +592,7 @@ fn opening_a_document_does_not_throw_away_the_preview_preferences() {
         "opening a document replaced `never time out` with a number, so the second half of O187 reaches nothing the operator can see"
     );
 
-    // ★ And the ordinary direction too, because a carry that only ever
+    // And the ordinary direction too, because a carry that only ever
     // preserved the non-default values would be satisfied by a `forget` that
     // simply stopped resetting the cache at all — which would also stop
     // forgetting the THUMBNAILS, and those are document state.

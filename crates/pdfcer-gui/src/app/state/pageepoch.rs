@@ -21,7 +21,7 @@ pub struct PageEpochs {
     /// most of them and is the point. See this module's header, §"Why the
     /// default is `bump_all`".
     all: u64,
-    /// ★★★ **One monotonic issuer for BOTH kinds of bump.** It is what makes
+    /// **One monotonic issuer for BOTH kinds of bump.** It is what makes
     /// `bump_all` mean what it says, and it must not be split in two.
     ///
     /// *Two counters compared with `max` do not compose.* Increment `all` and
@@ -86,7 +86,7 @@ impl PageEpochs {
     /// same conservative choice [`Self::get`] makes, made once here so the two
     /// cannot disagree.
     ///
-    /// ★ The number it issues comes from [`Self::next`], shared with
+    /// The number it issues comes from [`Self::next`], shared with
     /// [`Self::bump_all`] — see that field for why a second counter here would
     /// let a document-wide bump fail to move a recently narrowed page.
     pub fn bump(&mut self, page: usize) {
@@ -104,7 +104,7 @@ impl PageEpochs {
     /// inserted page reports the document-wide floor and no cache mistakes it
     /// for a page it has a picture of.
     ///
-    /// ★ It does **not** bump anything. A page count changing is not by itself
+    /// It does **not** bump anything. A page count changing is not by itself
     /// an edit to any page's content, and the caller that knows the pages were
     /// *renumbered* raises `bump_all` separately — two facts, two calls, so
     /// neither is inferred from the other. A document that gains a page at the
@@ -141,7 +141,7 @@ mod tests {
         assert_eq!(e.get(3), before[3]);
     }
 
-    /// ★★★ The invariant the design rests on: a document-wide bump raises
+    /// The invariant the design rests on: a document-wide bump raises
     /// every page, **whatever order the two kinds of bump arrived in**.
     ///
     /// This is the assertion that makes it safe to narrow a verb without
@@ -211,7 +211,7 @@ mod tests {
         assert_ne!(e.get(3), floor);
     }
 
-    /// ★★★ **A document-wide bump moves a page that was JUST narrowed.**
+    /// **A document-wide bump moves a page that was JUST narrowed.**
     ///
     /// This is what pins the shared issuer [`PageEpochs::next`] documents: with
     /// two independent counters, narrowing page 1 and then raising everything

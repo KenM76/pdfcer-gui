@@ -26,7 +26,7 @@ exactly as it did before — `crate::text::redact::destination_replace(..)` —
 and the split is invisible to consumers, which is the property that makes it
 a mechanical change rather than a rename.
 
-## ★ The wording rule this group adds to the three it inherits
+## The wording rule this group adds to the three it inherits
 
 `crate::text::redact`'s rules 1–3 bind here unchanged. This group adds a
 fourth of its own, and every string below obeys it:

@@ -38,7 +38,7 @@ purpose, so that a test which does not mention modes is not silently
 asserting one. **A `..Default::default()` added to `Frame` would reopen this
 defect completely and break no test in the workspace.**
 
-# ★ Why the Edit half is load-bearing, and not a courtesy
+# Why the Edit half is load-bearing, and not a courtesy
 
 The whole check is an assertion about an **absence**: no
 `canvas-selection via=click` line after a click in Read. `crate::report`'s
@@ -85,7 +85,7 @@ forbids, and it is why `on_mode_capabilities_changed` clears the selection
 on the way in: so that `press_kind` never has to refuse a grip the operator
 is looking at.
 
-# ★ The one thing about the trace that shapes this whole file
+# The one thing about the trace that shapes this whole file
 
 `canvas-selection` is emitted through `crate::diag::trace_changed`, which
 **suppresses a line identical to the last one written to the same slot**.
@@ -118,7 +118,7 @@ and asserts they landed. A chord that produces no trace is evidence about
 the **keymap**, never about the machine; reading it as an environment limit
 is how a whole class of assertions goes unwritten and unchallenged.
 
-★ **The Delete key is gated by the same `Capabilities::edit_content`**
+**The Delete key is gated by the same `Capabilities::edit_content`**
 (`canvas::keys::canvas_keys` receives `caps` on its `Keys` argument), and it
 is covered by unit test rather than driven here — named so the gap is on the
 record rather than implied.

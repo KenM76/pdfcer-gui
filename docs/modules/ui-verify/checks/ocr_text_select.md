@@ -7,7 +7,7 @@ not lose to the picture it sits on.**
 
 Ken, 2026-09-01: *"I can't seem to copy and paste text we have OCRed."*
 
-## ★★★ It was caused by a feature that shipped seven hours earlier
+## It was caused by a feature that shipped seven hours earlier
 
 His own earlier ask — *"select images so we can copy and paste them"* —
 landed that morning as a Read-mode arm: a click on an image selects it, and
@@ -24,7 +24,7 @@ invisible text lying exactly on top.
 ⇒ The one document class where selecting text matters most is the one where
 the arm swallowed it.
 
-## ★★ Why this check is not "does OCR work"
+## Why this check is not "does OCR work"
 
 Three things were ruled out **before** any code was changed, by measurement
 rather than by reading:
@@ -48,7 +48,7 @@ traces a text selection. Both are "something was selected".
 | B | click a point **on a recognised word** | a text selection, and NOT `via=read-image` |
 | C | click a point on the same page with **no** word under it | `via=read-image` — the picture still wins where the words are not |
 
-★★★ Step C is the control point and is the half a careless fix would break.
+Step C is the control point and is the half a careless fix would break.
 Making text win everywhere would take the image feature away again, which is
 the same defect facing the other direction — and a check asserting only B
 would pass against exactly that.

@@ -82,7 +82,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note(format!("launched as pid {}", session.pid()));
     session.settle(40);
 
-    // ★ The ONE click, and it is not a concession. A mode is a stance the
+    // The ONE click, and it is not a concession. A mode is a stance the
     // operator chooses, and Edit is the one O123 rearranged; asking what Read
     // shows would be asking a different and easier question. Nothing after this
     // is clicked.
@@ -119,7 +119,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("the status line drew at {status:?}"));
 
-    // ★ Inside the strip it was given. A line drawn at the right coordinates in
+    // Inside the strip it was given. A line drawn at the right coordinates in
     // the wrong compartment is a line painted over the first stack's tab bar,
     // and it looks like a rendering fault rather than a wiring one.
     if !banner.contains_rect(status) {
@@ -139,7 +139,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★★★ The pixel channel. Everything above is arithmetic the application did
+    // The pixel channel. Everything above is arithmetic the application did
     // about itself; this is the only assertion in the check that a build with a
     // correct layout and an empty painter cannot satisfy.
     let path = ctx.out("first_frame.png");

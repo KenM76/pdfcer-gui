@@ -21,7 +21,7 @@ use super::printing::KeyOutcome;
 
 /// The lowest resolution the Export-image window's own `DragValue` accepts.
 ///
-/// ★ These four constants are **the controls' bounds**, not separately reasoned
+/// These four constants are **the controls' bounds**, not separately reasoned
 /// limits, and [`super::printing`]'s header states why that matters: *"a file
 /// that refused a value the operator could produce by dragging the box would
 /// silently discard a setting they had just made."* If a control's range
@@ -71,7 +71,7 @@ pub struct ExportImagePrefs {
     pub transparent: bool,
     /// JPEG quality.
     ///
-    /// ★ Remembered even though the control is only drawn for JPEG. The window
+    /// Remembered even though the control is only drawn for JPEG. The window
     /// already carries the value across a format switch for the same reason: a
     /// setting that survives being hidden is one the operator does not have to
     /// re-find when they come back to the format it belongs to.
@@ -82,7 +82,7 @@ pub struct ExportImagePrefs {
 }
 
 impl Default for ExportImagePrefs {
-    /// ★ Exactly what `ExportImageDialog::open` hard-coded before this existed.
+    /// Exactly what `ExportImageDialog::open` hard-coded before this existed.
     ///
     /// The specification, not a coincidence: a fresh `userdata` folder must open
     /// this window the way every previous build of pdfcer opened it. **Deleting
@@ -100,7 +100,7 @@ impl Default for ExportImagePrefs {
             // will be printed — the case the operator has to
             // remember to fix.
             dpi: 300.0,
-            // ★★ Transparency ON, and that is the operator's own
+            // Transparency ON, and that is the operator's own
             // instruction rather than a taste: *there had better be full
             // support (including transparency where supported!)*. A default
             // of white would make the feature he asked for the one he has to
@@ -137,7 +137,7 @@ pub struct ExportTextPrefs {
 }
 
 impl Default for ExportTextPrefs {
-    /// ★ Exactly what `ExportTextDialog::open` hard-coded before this existed.
+    /// Exactly what `ExportTextDialog::open` hard-coded before this existed.
     ///
     /// ⚠ Written out field by field rather than `#[derive(Default)]`, and that
     /// is not style. [`PageScope`] has **no** `Default` impl at all, and the
@@ -146,7 +146,7 @@ impl Default for ExportTextPrefs {
     /// the derive would have been a coincidence that compiles.
     fn default() -> Self {
         Self {
-            // ★ `AllPages`, where the image window defaults to `CurrentPage`.
+            // `AllPages`, where the image window defaults to `CurrentPage`.
             // The divergence is argued in `dialogs/export_text.rs` and is the
             // reason these are two keys and not one.
             scope: PageScope::AllPages,
@@ -177,7 +177,7 @@ pub struct ExportDxfPrefs {
 }
 
 impl Default for ExportDxfPrefs {
-    /// ★ Exactly what `DxfOptions::default()` gave `ExportDxfDialog::open`
+    /// Exactly what `DxfOptions::default()` gave `ExportDxfDialog::open`
     /// before this existed — read off the engine at pin `5e17017` and written
     /// here as literals rather than delegated to `DxfOptions::default()`.
     ///
@@ -231,7 +231,7 @@ pub fn image_format_from_key(token: &str) -> Option<ImageFormat> {
 
 /// The file token for a page scope.
 ///
-/// ★★ **Lossy on purpose.** [`PageScope::Typed`] has no token, because the
+/// **Lossy on purpose.** [`PageScope::Typed`] has no token, because the
 /// typed range it depends on is not remembered; a window restored into `Typed`
 /// with an empty range box would open with its Export button greyed and nothing
 /// on screen to explain it. The caller decides what `Typed` degrades *to* — see
@@ -324,7 +324,7 @@ pub fn line_endings_from_key(token: &str) -> Option<LineEndings> {
 
 /// The file token for DXF output units.
 ///
-/// ★ `millimetres` with the British spelling, matching the engine's own variant
+/// `millimetres` with the British spelling, matching the engine's own variant
 /// name. The file is a vocabulary of its own and consistency with the type it
 /// describes beats consistency with any other file on the machine.
 #[must_use]
@@ -338,7 +338,7 @@ pub const fn dxf_units_key(value: DxfUnits) -> &'static str {
 
 /// DXF output units from a file token, or `None`.
 ///
-/// ★ `mm` and `millimeters` are accepted **in addition**, and this is the one
+/// `mm` and `millimeters` are accepted **in addition**, and this is the one
 /// place in this module that takes a synonym. The reason is not symmetry with
 /// the writer — the writer emits exactly one spelling — it is that this is the
 /// single key in the file whose British spelling an American hand-editor will
@@ -415,7 +415,7 @@ pub struct ExportPrefs {
 /// borrowed from [`super::printing`] rather than re-declared, for the reason
 /// `offpage` borrows it: a second copy is a second thing that can drift.
 ///
-/// # ★ Out of range CLAMPS; unparseable is a `BadValue`
+/// # Out of range CLAMPS; unparseable is a `BadValue`
 ///
 /// The numeric keys follow [`super::printing`]'s ruling exactly. `dpi = 99999`
 /// becomes [`MAX_EXPORT_DPI`] silently, because the number is a legible
@@ -441,7 +441,7 @@ pub(super) fn parse_key(prefs: &mut ExportPrefs, key: &str, value: &str) -> KeyO
         // ui-text-exempt: file KEYS, parsed out of preferences.txt.
         "export_image_format" => store!(image_format_from_key(value), prefs.image.format),
         "export_image_pages" => store!(page_scope_from_key(value), prefs.image.scope),
-        // ★ Parsed as `f32` rather than as an integer, because the control is a
+        // Parsed as `f32` rather than as an integer, because the control is a
         // float `DragValue` and a hand-editor who writes `150.5` has written
         // something the window can hold. `is_finite` rather than a bare `ok()`:
         // `"inf"` and `"NaN"` both parse successfully as `f32` and neither is a
@@ -496,7 +496,7 @@ pub(super) fn parse_key(prefs: &mut ExportPrefs, key: &str, value: &str) -> KeyO
 /// `export_dxf_units = millimetres` tells an operator nothing about what else
 /// they could write there.
 ///
-/// ★ Written **unconditionally**, even on a fresh profile where every value is
+/// Written **unconditionally**, even on a fresh profile where every value is
 /// the default. `offpage`'s own note is the reason: *"a preference nobody can
 /// discover is a preference nobody has."*
 pub(super) fn write_block(prefs: &ExportPrefs, out: &mut String) {

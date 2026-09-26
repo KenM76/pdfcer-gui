@@ -43,7 +43,7 @@ pub const STRIKEOUT_PINK: [u8; 3] = [248, 100, 100];
 /// **Acrobat's sticky note** — `#9643FC`, a violet.
 ///
 /// Shared with the file-attachment marker and with a highlight-carrying-a-note.
-/// ★ Emphatically **not** the yellow sticky of folk memory — that is the icon
+/// Emphatically **not** the yellow sticky of folk memory — that is the icon
 /// Acrobat *used* to draw, and the current comment UI marks a note in this
 /// violet. Another value that a memory would have got wrong.
 pub const NOTE_PURPLE: [u8; 3] = [150, 67, 252];
@@ -77,7 +77,7 @@ pub const BLACK: [u8; 3] = [0, 0, 0];
 
 /// **White** — `#FFFFFF`, from `cFreeText\cfillColor`.
 ///
-/// ★ Worth having in a *markup* palette specifically because this shell's
+/// Worth having in a *markup* palette specifically because this shell's
 /// drawings are black-on-white CAD sheets: a white mark is the one that
 /// disappears, and an operator who picks it by accident needs to be able to see
 /// that they did. The grid draws every cell with a border for exactly that
@@ -86,7 +86,7 @@ pub const WHITE: [u8; 3] = [255, 255, 255];
 
 /// One cell of the palette grid: a colour and the word for it.
 ///
-/// # ★ The name is not decoration — it is the only label the cell has
+/// # The name is not decoration — it is the only label the cell has
 ///
 /// A colour cell is a filled square about twelve points on a side. It cannot
 /// carry text, so the tooltip is the entire accessible name of the control, in
@@ -166,7 +166,7 @@ pub const COLUMNS: usize = 5;
 
 /// **The palette**, in the order it is drawn: hues left to right, neutrals last.
 ///
-/// # ★ The order is a spectrum, deliberately
+/// # The order is a spectrum, deliberately
 ///
 /// Red, orange, yellow, green, blue, violet, magenta, pink, then black and
 /// white. Not the order the constants are declared in, and not Acrobat's
@@ -224,7 +224,7 @@ pub const ACROBAT: [Swatch; 10] = [
 mod tests {
     use super::*;
 
-    /// ★★★ **Every colour a markup kind defaults to is IN the grid.**
+    /// **Every colour a markup kind defaults to is IN the grid.**
     ///
     /// The property that makes the palette a palette rather than a decoration:
     /// an operator who changes the highlighter to red and wants it back must be
@@ -278,7 +278,7 @@ mod tests {
         }
     }
 
-    /// ★ **The measured Acrobat fractions round-trip to these bytes.**
+    /// **The measured Acrobat fractions round-trip to these bytes.**
     ///
     /// This is the test that keeps the module header honest. The header claims
     /// each byte triple is the registry's float triple; a typo in either would

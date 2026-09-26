@@ -10,7 +10,7 @@
 //! [`super::progress`], whose header carries the argument that matters most:
 //! **Cancel and Stop are different acts and must never collapse into one.**
 //!
-//! ## ★★ The two properties this file exists to keep true
+//! ## The two properties this file exists to keep true
 //!
 //! 1. **The UI thread never blocks on the worker.** [`Job::poll`] is
 //!    `try_recv` in a loop and returns immediately whether there is anything
@@ -36,7 +36,7 @@ pub struct Job {
     control: progress::Control,
     /// Everything the worker has reported so far, folded as it arrives.
     ///
-    /// ★ Accumulated HERE rather than sent as running totals, so a batch of
+    /// Accumulated HERE rather than sent as running totals, so a batch of
     /// messages drained in one frame cannot double-count and a dropped message
     /// cannot silently lower the total. The worker reports events; the UI keeps
     /// the sum.
@@ -71,7 +71,7 @@ impl std::fmt::Debug for Job {
 /// worker reports upward and is told downward, and a function that took only
 /// the sender could not honour a Stop.
 ///
-/// ★ Sending is deliberately allowed to fail and is ignored. A dropped receiver
+/// Sending is deliberately allowed to fail and is ignored. A dropped receiver
 /// means the dialog is gone; the run then finishes or is abandoned on its own
 /// terms and nobody is listening either way. Treating it as an error would turn
 /// "the operator closed the window" into a reported fault.
@@ -113,7 +113,7 @@ impl Job {
                 control: worker_control,
             };
             let outcome = recognise(&request, &reporter);
-            // ★★ The three endings, kept apart. `Cancelled` arrives as a
+            // The three endings, kept apart. `Cancelled` arrives as a
             // refusal from the loop and is turned into its own outcome here,
             // rather than reaching the dialog as "nothing was recognised" —
             // which is what every other empty result means and is not what
@@ -167,7 +167,7 @@ impl Job {
         if self.done {
             return None;
         }
-        // ★★ DRAIN, rather than take one. A page can finish between two frames
+        // DRAIN, rather than take one. A page can finish between two frames
         // and several can finish during one slow frame; reading a single
         // message per frame would make the progress line lag the work by
         // exactly as long as the work takes, which is the appearance of a

@@ -27,13 +27,13 @@ use crate::panels::Panel;
 /// panel lands, the suite fails until this entry is removed — which is the
 /// same commit in which the default starts mounting it.
 pub const ABSENT_PANELS: &[(&str, &str)] = &[
-    // ★★ **The list is empty, and empty is a valid state** — it means every
+    // **The list is empty, and empty is a valid state** — it means every
     // panel the defaults name exists in this build. Do not delete the list:
     // it is the discipline and not the entries, and the next
     // intended-but-unbuilt panel belongs here rather than in a document
     // nobody re-reads.
     //
-    // ★★ **The distinction this list draws**, which is the one that is easy
+    // **The distinction this list draws**, which is the one that is easy
     // to get wrong: an *absent panel* is one whose **body** does not exist. A
     // panel whose body exists but whose **command** is not registered is NOT
     // an entry here — it belongs in `crate::shell::manifest::PLANNED`, and
@@ -41,7 +41,7 @@ pub const ABSENT_PANELS: &[(&str, &str)] = &[
     // until a `View ▸ Panels` control references a registered command. See
     // `crate::panels::pages`' header for the exact lines.
     //
-    // ★ **A reason recorded from the wrong end is worse than no entry at
+    // **A reason recorded from the wrong end is worse than no entry at
     // all.** *"Annotation authoring does not exist yet, so neither does the
     // panel that lists comments"* is false on its merits — listing what a
     // document already carries needs no authoring — and an entry carrying it
@@ -86,7 +86,7 @@ struct ModeSpec {
 
 /// The Comments panel's id.
 ///
-/// ★ **Asked of the panel, never spelled as a literal** — and both halves of
+/// **Asked of the panel, never spelled as a literal** — and both halves of
 /// `const COMMENTS: &str = "view.panel_comments"` would be wrong, which is why
 /// this is a function like [`pages`] rather than a corrected constant.
 ///
@@ -135,14 +135,14 @@ const NAVIGATOR_WIDTH: f32 = 280.0;
 ///
 /// This is Read's and Review's width. Edit's is [`EDIT_INSPECTOR_WIDTH`], and
 /// the two being different constants is the whole of what *"remembered per
-/// mode"* needs from this file — see that constant's ★★ section.
+/// mode"* needs from this file — see that constant's section.
 const INSPECTOR_WIDTH: f32 = 320.0;
 
 /// The default width of **Edit's** inspector dock, in points —
 /// `OPERATOR_REQUESTS.md` **O123**: *"Default dock width 360 px in Edit,
 /// remembered per mode."*
 ///
-/// ## ★★ "Remembered per mode" is already built, and this is the other half
+/// ## "Remembered per mode" is already built, and this is the other half
 ///
 /// A width is stored on [`egui_shell::dock::SideLayout::width_pts`], which is
 /// per side, of a [`egui_shell::dock::DockLayout`], which is saved **per mode**
@@ -155,7 +155,7 @@ const INSPECTOR_WIDTH: f32 = 320.0;
 /// operator who has dragged Edit's dock is unaffected by either number, because
 /// their saved workspace wins. This is only the first frame of a fresh profile.
 ///
-/// ## ★★★ Why 360 rather than "as wide as the widest row"
+/// ## Why 360 rather than "as wide as the widest row"
 ///
 /// Because no width fits every row and a dock that tried would be one nobody
 /// wants. The complaint this number answers is real: our object rows already
@@ -238,7 +238,7 @@ fn spec(mode_id: &str) -> ModeSpec {
         // an inspector in a mode with no edit verbs is a panel whose every
         // row is a fact you cannot act on.
         //
-        // ★ **Forms is here, and it is the one exception to the sentence
+        // **Forms is here, and it is the one exception to the sentence
         // above.** On the operator's own answer: pdfcer should fill forms
         // without leaving Read, because Acrobat Reader does and replacing it
         // is the stated goal. The taxonomy is amended openly rather than
@@ -261,7 +261,7 @@ fn spec(mode_id: &str) -> ModeSpec {
         // "where am I" — down a tab bar in the mode that needs them most.
         "read" => ModeSpec {
             left: vec![vec![pages(), Panel::Bookmarks.command_id()]],
-            // ★★★ **COMMENTS IS MOUNTED IN READ**, on the operator's report:
+            // **COMMENTS IS MOUNTED IN READ**, on the operator's report:
             //
             // > *"I could add a yellow sticky note but even in read mode I
             // > don't think I could figure out how to read it."*
@@ -276,7 +276,7 @@ fn spec(mode_id: &str) -> ModeSpec {
             // half is `manifest::view`'s Panels group, which carries the
             // toggle.
             //
-            // ★★ **The argument is the Forms argument, and it is STRONGER
+            // **The argument is the Forms argument, and it is STRONGER
             // here.** Forms is mounted in Read on the operator's ruling, and
             // that one had to overcome a real objection: filling
             // a field *writes to the file*. Reading a comment writes nothing.
@@ -296,13 +296,13 @@ fn spec(mode_id: &str) -> ModeSpec {
             // is *for* goes at the front and the one that writes goes behind
             // it. In Review the front is the reviewer's work list; in Read the
             // front is the thing being read.
-            // ★★★ **Document properties is mounted in READ**, and the
+            // **Document properties is mounted in READ**, and the
             // argument is one clause long: **reading a document's title is
             // reading.** It authors nothing, it writes nothing, and the panel's
             // four boxes are the same four boxes Acrobat Reader shows under
             // File ▸ Properties in a product with no editing at all.
             //
-            // ★★ It is also the one panel in Read's dock that can be reopened
+            // It is also the one panel in Read's dock that can be reopened
             // with no argument about tabs. Its command is
             // `file.document_properties`, on File ▸ Document, and Read is shown
             // `["file", "view"]` — so the trap `Panel::Forms` had to move off
@@ -335,7 +335,7 @@ fn spec(mode_id: &str) -> ModeSpec {
         // than altering what it says. That is the same stance markup takes,
         // which is why the two share a mode.
         //
-        // ★ **Read fills forms too, on the operator's own ruling**, and the
+        // **Read fills forms too, on the operator's own ruling**, and the
         // cost of that is exactly two things: Forms in Read's arrangement
         // plus a fill verb Read can reach. The verb is `view.panel_forms`, on
         // View ▸ Panels rather than on the Edit tab, because P1 gives a
@@ -348,7 +348,7 @@ fn spec(mode_id: &str) -> ModeSpec {
         "review" => ModeSpec {
             left: vec![vec![pages(), Panel::Bookmarks.command_id()]],
             right: vec![
-                // ★★★ **The Tool panel is gone** — `OPERATOR_REQUESTS.md` O123.
+                // **The Tool panel is gone** — `OPERATOR_REQUESTS.md` O123.
                 //
                 // The argument for giving it a stack of its own here was
                 // *"its entire purpose is being OFFERED rather than asked for
@@ -367,7 +367,7 @@ fn spec(mode_id: &str) -> ModeSpec {
                     comments(),
                     Panel::Properties.command_id(),
                     Panel::Forms.command_id(),
-                    // ★ Dimension groups, and Review gets it for the reason the
+                    // Dimension groups, and Review gets it for the reason the
                     // mode taxonomy already settled: Review is shown the `measure`
                     // tab, so it may author a ce dimension, and a mode that can
                     // author one must be able to say which group it joins. The
@@ -380,7 +380,7 @@ fn spec(mode_id: &str) -> ModeSpec {
                     // reachable in one click and invisible until asked for. Group
                     // setup is not what a reviewer opens Review to do.
                     Panel::DimensionGroups.command_id(),
-                    // ★ Document properties, last, for the reason the two
+                    // Document properties, last, for the reason the two
                     // entries above it are where they are: the tail of this
                     // stack is the "asked for, not offered" end, and a
                     // reviewer's subject is the drawing rather than its
@@ -401,7 +401,7 @@ fn spec(mode_id: &str) -> ModeSpec {
         // other, and it is why Objects and Properties are separate stacks
         // rather than two tabs of one.
         "edit" => ModeSpec {
-            // ★★★ **ONE stack, five tabs** — `OPERATOR_REQUESTS.md` O123:
+            // **ONE stack, five tabs** — `OPERATOR_REQUESTS.md` O123:
             // *"Layers, Signatures and Fonts join Pages and Bookmarks as tabs
             // in one dock instead of a second dock with a fixed split."*
             //
@@ -413,7 +413,7 @@ fn spec(mode_id: &str) -> ModeSpec {
             // a second tab bar plus `plan::MIN_STACK_HEIGHT` of floor, spent
             // on a pair nobody has reported using together.
             //
-            // ★ Five tabs is where `plan`'s overflow affordance starts to
+            // Five tabs is where `plan`'s overflow affordance starts to
             // matter at a 280 pt navigator, and that is the same three-rung
             // ladder `RIBBON_SCALING.md` documents for the band. It is the
             // dock's own mechanism, already built and already checked by
@@ -426,7 +426,7 @@ fn spec(mode_id: &str) -> ModeSpec {
                 Panel::Fonts.command_id(),
             ]],
             right: vec![
-                // ★★★ **Objects over Properties is the master–detail pair, and
+                // **Objects over Properties is the master–detail pair, and
                 // it now has the whole side** — `OPERATOR_REQUESTS.md` O123.
                 //
                 // > *"Objects and Properties become master–detail in one panel
@@ -440,7 +440,7 @@ fn spec(mode_id: &str) -> ModeSpec {
                 // `egui_shell::dock`'s own stack splitter, dragged at
                 // `dock/mod.rs`, floored at `plan::MIN_STACK_HEIGHT`.
                 //
-                // ★ So what O123 changes here is **room, not linkage**. A
+                // So what O123 changes here is **room, not linkage**. A
                 // Tool panel stack takes a third of the side; without it that
                 // third is these two panels'. A row click already raises
                 // `Action::SelectObject` and Properties already reads the same
@@ -451,7 +451,7 @@ fn spec(mode_id: &str) -> ModeSpec {
                     Panel::Properties.command_id(),
                     comments(),
                     Panel::Forms.command_id(),
-                    // ★ Redact, and it is deliberately the LAST tab of this
+                    // Redact, and it is deliberately the LAST tab of this
                     // stack rather than a stack of its own or the first of
                     // this one.
                     //
@@ -479,7 +479,7 @@ fn spec(mode_id: &str) -> ModeSpec {
                     // tabs are all "asked for, not offered". See Review's arm
                     // for why this panel is mounted at all.
                     Panel::DimensionGroups.command_id(),
-                    // ★ Attachments, after Dimension groups, and in **Edit
+                    // Attachments, after Dimension groups, and in **Edit
                     // alone**. Both facts follow from the same rule the two
                     // above it follow rather than from a new judgment:
                     //
@@ -494,7 +494,7 @@ fn spec(mode_id: &str) -> ModeSpec {
                     // closing it, which is the trap `crate::panels::Panel::Forms`
                     // had to move off Edit to escape.
                     Panel::Attachments.command_id(),
-                    // ★★ Document properties, last of the detail stack.
+                    // Document properties, last of the detail stack.
                     //
                     // It is in Edit because *"Edit is everything"* is this
                     // module's rule and
@@ -504,7 +504,7 @@ fn spec(mode_id: &str) -> ModeSpec {
                     // got: the end of the stack that is asked for rather than
                     // offered.
                     //
-                    // ★★★ **And it must not be the FIRST tab of this stack.**
+                    // **And it must not be the FIRST tab of this stack.**
                     // These two stacks are the master–detail pair O123 asked
                     // for — Objects above, its detail below — and a tabbed
                     // stack draws only its active tab. Putting this panel at
@@ -597,7 +597,7 @@ mod tests {
         layout.panels().map(|p| p.as_str().to_owned()).collect()
     }
 
-    /// ★★★ **Edit's inspector starts at 360 pt and the reading stances start
+    /// **Edit's inspector starts at 360 pt and the reading stances start
     /// at 320** — `OPERATOR_REQUESTS.md` O123, part 6.
     ///
     /// Asserted per mode rather than as one constant, because *"remembered per
@@ -606,7 +606,7 @@ mod tests {
     /// widen Read's and Review's docks too and take that room from the page in
     /// the two modes whose whole subject is the page.
     ///
-    /// ★ The left widths are asserted in the same test on purpose. Edit's left
+    /// The left widths are asserted in the same test on purpose. Edit's left
     /// side became ONE stack of five tabs in this change, and a five-tab bar in
     /// a 280 pt navigator is where the dock's overflow affordance starts to
     /// matter — so a future widening of the navigator is a decision somebody
@@ -637,7 +637,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **Edit's left side is ONE stack, and it holds all five navigators**
+    /// **Edit's left side is ONE stack, and it holds all five navigators**
     /// — `OPERATOR_REQUESTS.md` O123, part 5.
     ///
     /// > *"Layers, Signatures and Fonts join Pages and Bookmarks as tabs in one
@@ -665,7 +665,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **Objects sits directly above Properties on Edit's right side, and
+    /// **Objects sits directly above Properties on Edit's right side, and
     /// nothing sits above them** — `OPERATOR_REQUESTS.md` O123, parts 3 and 4.
     ///
     /// > *"Objects and Properties become master–detail in one panel with a
@@ -695,7 +695,7 @@ mod tests {
         );
     }
 
-    /// ★ **Each mode's default is the arrangement `MODES_AND_PANELS.md`
+    /// **Each mode's default is the arrangement `MODES_AND_PANELS.md`
     /// specifies.**
     ///
     /// Asserted on the *unfiltered* defaults, because that is where the
@@ -715,7 +715,7 @@ mod tests {
             [
                 comments(),
                 Panel::Forms.command_id(),
-                // ★ Document properties is in Read's stack. Restated here by
+                // Document properties is in Read's stack. Restated here by
                 // hand, like every other member: this assertion is a
                 // *literal transcript* of the arrangement, and the arrangement
                 // is the spec, so a change to it cannot slip through as an
@@ -754,7 +754,7 @@ mod tests {
         // INVITES you to add — a comment, a field value — and not an
         // inspector for content the mode gives you no verb to change.
         assert!(!review.contains(&PanelId::new(Panel::Objects.command_id())));
-        // ★ **Read has Forms and still has no Objects**, and asserting the
+        // **Read has Forms and still has no Objects**, and asserting the
         // pair together is the point. The rule was never "Read mounts
         // nothing that writes" — it is "Read mounts nothing whose rows it
         // gives you no verb for". Forms carries its verb in its own rows
@@ -782,7 +782,7 @@ mod tests {
         assert_eq!(objects.side, DockSide::Right, "Objects is on the right");
     }
 
-    /// ★★★ **Read can read the comments — both halves of it.**
+    /// **Read can read the comments — both halves of it.**
     ///
     /// # The report this exists for
     ///
@@ -799,7 +799,7 @@ mod tests {
     ///    tab, and the mode table shows Read `["file", "view"]`. **So the
     ///    toggle could not be reached to fix (1) by hand.**
     ///
-    /// ⇒ ★★ **This test asserts BOTH**, deliberately in one place, because
+    /// ⇒ **This test asserts BOTH**, deliberately in one place, because
     /// that is the property that was violated. Two separate tests, each
     /// passing, would each have been green on a build where he still could
     /// not read his note — a barrier removed while another remains is
@@ -822,7 +822,7 @@ mod tests {
              written in Review cannot be read in Read"
         );
 
-        // ★★ **Route two is the RAIL, and the reason it is not the View tab
+        // **Route two is the RAIL, and the reason it is not the View tab
         // is a rule that bites much harder than it looks.**
         //
         // The obvious placement — `markup.comments` beside the other panel
@@ -880,7 +880,7 @@ mod tests {
         }
     }
 
-    /// ★ **A panel this build does not have is not mounted, and takes
+    /// **A panel this build does not have is not mounted, and takes
     /// nothing else with it.**
     ///
     /// `SHELL_FRAMEWORK.md` §5b applied to the *defaults* rather than to a
@@ -903,7 +903,7 @@ mod tests {
             [
                 Panel::Pages.command_id(),
                 Panel::Bookmarks.command_id(),
-                // ★ Comments is in Read's default, on his report that a
+                // Comments is in Read's default, on his report that a
                 // sticky note could not be read in Read. Listed here because
                 // this assertion is a *literal transcript* of the
                 // arrangement, which is the point of it: the arrangement is
@@ -933,7 +933,7 @@ mod tests {
             "a panel the catalog does not hold must not be mounted"
         );
 
-        // ★ `ABSENT_PANELS` is empty, so **nothing real is filtered here**:
+        // `ABSENT_PANELS` is empty, so **nothing real is filtered here**:
         // this assertion borrows no absent panel and proves nothing on its
         // own. That is a better state to be in and a weaker test, and both
         // halves are worth saying — the property itself is proven above, by
@@ -966,7 +966,7 @@ mod tests {
         assert!(!bare.left.visible, "an empty side must not be visible");
     }
 
-    /// ★ **Every panel a default names either exists or is declared
+    /// **Every panel a default names either exists or is declared
     /// absent.**
     ///
     /// [`ABSENT_PANELS`] is the `PLANNED` discipline applied to panels, and

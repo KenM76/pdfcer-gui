@@ -163,7 +163,7 @@ impl Modes {
         let remembered = restored.is_some();
         let default = layout_for_build(mode_id, catalog);
 
-        // ★ A PANEL ADDED IN A NEW RELEASE MUST NOT BE BORN INVISIBLE.
+        // A PANEL ADDED IN A NEW RELEASE MUST NOT BE BORN INVISIBLE.
         //
         // A mode is a remembered workspace, so an operator who upgrades
         // restores an arrangement saved before the new panel existed and never
@@ -232,7 +232,7 @@ impl Modes {
         });
 
         self.active = Some(mode_id.to_owned());
-        // ★ Which mode, alongside its arrangement. The two are one answer to
+        // Which mode, alongside its arrangement. The two are one answer to
         // the question *"where was I?"* and storing only the second is what
         // made the application come back in Read with an Edit layout in it.
         //
@@ -431,7 +431,7 @@ fn adopt(layout: &mut DockLayout, default: &DockLayout, new: &[PanelId]) -> Vec<
             let stack_ix = at.stack.min(column.stacks.len().saturating_sub(1));
             if let Some(stack) = column.stacks.get_mut(stack_ix) {
                 stack.tabs.push(id.clone());
-                // ★★★ **And it is RAISED, or the whole function is a no-op the
+                // **And it is RAISED, or the whole function is a no-op the
                 // trace reports as a success.**
                 //
                 //
@@ -443,7 +443,7 @@ fn adopt(layout: &mut DockLayout, default: &DockLayout, new: &[PanelId]) -> Vec<
                 // gap — because he has run this build for two weeks and his
                 // layout predates it.
                 //
-                // ★ This function's own doc comment had already reasoned to the
+                // This function's own doc comment had already reasoned to the
                 // edge of it: *"a panel appended to the end of the first stack
                 // would land beside whatever happens to be there … the operator
                 // sees a tab bar grow by one and has no reason to think a
@@ -472,7 +472,7 @@ fn adopt(layout: &mut DockLayout, default: &DockLayout, new: &[PanelId]) -> Vec<
                 stacks: vec![Stack::new(id.clone())],
                 share: 1.0,
             });
-            // ★ **And the side has to be shown, or this whole function is a
+            // **And the side has to be shown, or this whole function is a
             // no-op the trace reports as a success.**
             //
             // Found by running the binary, not by a test: adopting Forms into
@@ -522,7 +522,7 @@ fn adopt(layout: &mut DockLayout, default: &DockLayout, new: &[PanelId]) -> Vec<
 /// 3. **No modes at all** — a manifest that failed to validate. `first()` is
 ///    `None` too, and nothing is adopted.
 ///
-/// ★ Note what is *not* checked: whether the stored mode is one this build
+/// Note what is *not* checked: whether the stored mode is one this build
 /// considers safe or sensible. It is the operator's own last choice, made in
 /// this program, and second-guessing it would be the program deciding it knows
 /// better than the person using it.
@@ -607,7 +607,7 @@ mod tests {
         modes.ids().iter().map(String::as_str).collect()
     }
 
-    /// ★ **The mode list comes from the manifest, not from this module.**
+    /// **The mode list comes from the manifest, not from this module.**
     ///
     /// `SHELL_FRAMEWORK.md` §4 makes Read/Review/Edit a configuration
     /// rather than a built-in, and `egui-shell`'s workspace store refuses
@@ -661,7 +661,7 @@ mod tests {
         );
     }
 
-    /// ★ **Read → Edit → Read restores YOUR Edit, not a default.**
+    /// **Read → Edit → Read restores YOUR Edit, not a default.**
     ///
     /// The behaviour the whole module exists for, and the one
     /// `MODES_AND_PANELS.md` Part 1 rule 3 states: *"Each mode remembers
@@ -707,7 +707,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// ★ **…and it survives a restart.**
+    /// **…and it survives a restart.**
     ///
     /// The round trip that makes the previous test worth anything: the same
     /// sequence, through a real file, across two `Startup`s. A rearrangeable
@@ -737,10 +737,10 @@ mod tests {
             layout: store,
             dock,
         } = start_in(&dir, Some(&shell), &registry);
-        // ★★ **The session opens in Edit, because that is where it was left.**
+        // **The session opens in Edit, because that is where it was left.**
         //
         //
-        // ★ Note what the assertion below now proves that it could not before:
+        // Note what the assertion below now proves that it could not before:
         // the arrangement is restored **without a mode change**, because the
         // right mode was already adopted at startup. The old version had to
         // call `on_mode_changed("edit")` to get there, which meant it could not
@@ -765,7 +765,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// ★★ **A stored mode this manifest no longer declares is declined**, and
+    /// **A stored mode this manifest no longer declares is declined**, and
     /// the application opens in the first mode rather than in none.
     ///
     /// The case is real rather than theoretical: the mode list comes from a
@@ -857,7 +857,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// ★ **Switching modes touches neither the document nor the
+    /// **Switching modes touches neither the document nor the
     /// selection.**
     ///
     /// `MODES_AND_PANELS.md` Part 1 rule 1: *"Switching modes never
@@ -972,7 +972,7 @@ mod tests {
     // A panel added in a new release reaches an operator who upgrades
     // -----------------------------------------------------------------
 
-    /// ★ **The regression test for the defect this was written for.**
+    /// **The regression test for the defect this was written for.**
     ///
     /// A layout written before a panel existed — no `known_panels` at all,
     /// which is every file any existing install has — must gain the panel,
@@ -1040,7 +1040,7 @@ mod tests {
         );
     }
 
-    /// ★ **…and a side the operator collapsed on purpose stays collapsed.**
+    /// **…and a side the operator collapsed on purpose stays collapsed.**
     ///
     /// The other half of the rule, and the reason `adopt` keys on
     /// `columns.is_empty()` rather than on `!visible`. `SideLayout::visible`'s
@@ -1151,14 +1151,14 @@ mod tests {
         assert_eq!(mounted, expected);
     }
 
-    /// ★★★ **An adopted panel arrives VISIBLE, not merely mounted.**
+    /// **An adopted panel arrives VISIBLE, not merely mounted.**
     ///
     /// The regression test for the defect that made the (since retired) Tool
     /// panel — built to answer *"no side bar area showing what tool is
     /// active"* — invisible to the operator who reported the gap, for its
     /// entire life, on the profile he had been running for two weeks.
     ///
-    /// ★ The panel in the assertion is now Layers, because the Tool panel was
+    /// The panel in the assertion is now Layers, because the Tool panel was
     /// dissolved by `OPERATOR_REQUESTS.md` O123. The property under test is
     /// `adopt`'s and has nothing to do with which panel arrives — but naming a
     /// panel that no longer exists would have made the test read as being
@@ -1169,7 +1169,7 @@ mod tests {
     /// tab strip, and never seen. For a panel whose whole purpose is
     /// discoverability that is identical to not shipping it.
     ///
-    /// ★ Found by a driven check asking *what does a first frame show* — not by
+    /// Found by a driven check asking *what does a first frame show* — not by
     /// any of the tests of `adopt`, every one of which asked whether the panel
     /// was PRESENT. Presence was never in doubt.
     #[test]

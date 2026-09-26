@@ -14,7 +14,7 @@ operator, in the *Open with* menu and in Windows Settings, and a catalog
 that held every string except the two with the widest audience would be a
 catalog with a hole in it.
 
-## ★★★ The sentence this module is written around
+## The sentence this module is written around
 
 > **Windows will ask you to confirm.**
 

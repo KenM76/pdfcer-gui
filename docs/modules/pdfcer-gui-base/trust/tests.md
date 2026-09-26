@@ -9,7 +9,7 @@ wrong, and — the important one — that every no-anchors situation produces a
 is the whole safety argument of the surface built on it, because the four
 states call for four different actions.
 
-## ★★ What a pass here does NOT prove
+## What a pass here does NOT prove
 
 1. **That any real signature verifies.** No fixture in this repository
    carries a signature whose signer chains to a real AATL anchor, and one
@@ -22,7 +22,7 @@ states call for four different actions.
    was drawn — and this project has a standing record of tests that passed
    while the feature was unreachable.
 
-## ★ Why the environment is not mocked
+## Why the environment is not mocked
 
 [`super::candidate_paths`] reads `%APPDATA%`, and a test that set it would
 be mutating process-global state that every other test in this binary shares
@@ -32,7 +32,7 @@ property that holds whatever `%APPDATA%` says: that the list is either empty
 or every entry ends in the address book's file name. A test that asserted
 *four* candidates would be a test about whichever machine ran it.
 
-★★ **The inner `#![cfg(test)]` below is load-bearing and is not a duplicate
+**The inner `#![cfg(test)]` below is load-bearing and is not a duplicate
 of the outer `#[cfg(test)] mod tests;`.** Without it,
 `tools/gates/check-ui-strings.sh` walks this file as ordinary source and
 reports every assertion message as a user-visible string that belongs in the

@@ -3,7 +3,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/dimension_groups/mod.md`.
 
-/// ★ Renaming a group and removing one.
+/// Renaming a group and removing one.
 ///
 /// Its header carries the interesting half: deleting a populated group is the
 /// **orphan question**, the engine refuses by default with the member count in
@@ -52,7 +52,7 @@ pub const REGION_ROW_PREFIX: &str = "dimension-groups.row."; // ui-text-exempt: 
 /// Existence is the "open" state, as everywhere in [`super`] — there is no
 /// `open: bool` that could disagree with whether the state exists.
 ///
-/// ★ **Almost nothing is held here**, and that is the design. The groups, their
+/// **Almost nothing is held here**, and that is the design. The groups, their
 /// scales, standards, styles and member counts are all read from
 /// `EditSession::dimension_model()` on every frame. A local copy would be a
 /// second source of truth for a model that this very window edits through an
@@ -74,7 +74,7 @@ pub const REGION_HEADING_PREFIX: &str = "dimension-groups.heading."; // ui-text-
 
 /// The Manage-dimension-groups panel's live state.
 ///
-/// ★ **Almost nothing is held here**, and that is the design. The groups, their
+/// **Almost nothing is held here**, and that is the design. The groups, their
 /// scales, standards, styles and member counts are all read from
 /// `EditSession::dimension_model()` on every frame. A local copy would be a
 /// second source of truth for a model that this very panel edits through an
@@ -86,7 +86,7 @@ pub const REGION_HEADING_PREFIX: &str = "dimension-groups.heading."; // ui-text-
 /// operator is configuring, what they have typed into the new-group fields, and
 /// the one-shot request that has to survive past the frame that raised it.
 ///
-/// # ★ Why `Default` rather than a constructor taking the authoring group
+/// # Why `Default` rather than a constructor taking the authoring group
 ///
 /// As a window this was built by `open(active)` and seeded its selection with
 /// the group the operator was drawing into — *"an operator who opens this while
@@ -105,7 +105,7 @@ pub struct DimensionGroupsUi {
     /// **How far the last frame's content ran past the dock column**, in
     /// points. Zero or negative is the healthy state.
     ///
-    /// ★ It exists because the defect it measures is **invisible**. A
+    /// It exists because the defect it measures is **invisible**. A
     /// `ScrollArea::vertical()` clips horizontally and offers no bar in that
     /// axis, so a row wider than the column is simply cut off: no overflow
     /// indicator, no scroll, nothing on screen to say a control is out there.
@@ -130,7 +130,7 @@ pub struct DimensionGroupsUi {
     new_name: String,
     /// The rename draft for [`Self::selected`], and which group it is for.
     ///
-    /// ★ The `GroupId` is held **with** the text, not inferred from
+    /// The `GroupId` is held **with** the text, not inferred from
     /// [`Self::selected`], and that is what stops a half-typed rename following
     /// the operator to a different row. Selecting another group makes the pair
     /// stale, [`Self::rename_draft_for`] notices, and the field re-seeds from
@@ -152,7 +152,7 @@ pub struct DimensionGroupsUi {
     new_unit: Unit,
     /// Set by the *Set scale…* button, drained by `crate::app::PdfcerApp`.
     ///
-    /// ★ **A request rather than a call**, and the reason changed shape when
+    /// **A request rather than a call**, and the reason changed shape when
     /// this became a panel without changing conclusion. As a window it was
     /// because both windows were fields of one `DialogsState` and neither could
     /// reach the other from inside its own `show`. As a panel it is because a
@@ -168,7 +168,7 @@ pub struct DimensionGroupsUi {
 }
 
 impl Default for DimensionGroupsUi {
-    /// ★ Hand-written, and `pdfcer_core::dimension::Unit` is why.
+    /// Hand-written, and `pdfcer_core::dimension::Unit` is why.
     ///
     /// `Unit` implements no `Default`, deliberately — the engine declines to
     /// have an opinion about which unit a drawing is in, which is exactly the
@@ -213,7 +213,7 @@ impl DimensionGroupsUi {
 
     /// The whole panel body.
     ///
-    /// # ★ One `ScrollArea` and nothing after it
+    /// # One `ScrollArea` and nothing after it
     ///
     /// The single most important line of layout in this file. **A control that
     /// must be reachable cannot be placed after an unbounded `ScrollArea`, and
@@ -227,7 +227,7 @@ impl DimensionGroupsUi {
     /// when its folded content is six lines high. Without it a fully folded
     /// panel would shrink to a stripe and the tab would look half-drawn.
     fn show(&mut self, ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) {
-        // ★ Read once per frame, and read from the SESSION rather than from any
+        // Read once per frame, and read from the SESSION rather than from any
         // cache. `dimension_model()` clones out of the `/PieceInfo` sidecar, so
         // this is the model as the document currently stands including every
         // unsaved edit — which is what the operator is looking at.
@@ -250,7 +250,7 @@ impl DimensionGroupsUi {
             self.selected = Some(DEFAULT_GROUP_ID);
         }
 
-        // ★★ **The overflow measurement, and why a panel takes one.**
+        // **The overflow measurement, and why a panel takes one.**
         //
         // A control wider than the dock column has part of itself hidden with
         // no scroll bar to show the part that is missing, and the mechanism is
@@ -282,7 +282,7 @@ impl DimensionGroupsUi {
                 ui.add_space(6.0);
                 self.group_list(ui, &ctx, &model, active);
                 ui.separator();
-                // ★ **Adding comes directly under the LIST, above the selected
+                // **Adding comes directly under the LIST, above the selected
                 // group's settings**, and that is the window's own hard-won
                 // lesson carried over rather than a fresh preference.
                 //
@@ -302,7 +302,7 @@ impl DimensionGroupsUi {
                 self.selected_group(ui, &model, actions);
             });
 
-        // ★ How far the content ran past the column, if it did. `<= 0` is the
+        // How far the content ran past the column, if it did. `<= 0` is the
         // healthy state and the only one this panel may ship in.
         self.overflow_x = output.content_size.x - output.inner_rect.width();
         crate::diag::trace_changed(OVERFLOW_SLOT, || {
@@ -335,7 +335,7 @@ impl DimensionGroupsUi {
         ui.label(t::draw_into_hint());
         ui.add_space(4.0);
 
-        // ★★ **A BLOCK PER GROUP, NOT A GRID ROW.**
+        // **A BLOCK PER GROUP, NOT A GRID ROW.**
         //
         // The four columns a group wants — radio | name | member count | scale
         // phrase — do not fit a dock column as an `egui::Grid` and cannot be
@@ -412,7 +412,7 @@ impl DimensionGroupsUi {
 
         // --- identity: rename, and delete -------------------------------
         //
-        // ★ Folded shut, and this is the one section where that is a *safety*
+        // Folded shut, and this is the one section where that is a *safety*
         // statement rather than a length one. The two verbs it carries are the
         // only destructive ones on the panel: a rename an operator did not mean
         // is an undo entry, a delete they did not mean moves or destroys every
@@ -439,7 +439,7 @@ impl DimensionGroupsUi {
 
             // --- unit -------------------------------------------------------
             //
-            // ★ Through `set_group_scale`, because a unit lives inside the group's
+            // Through `set_group_scale`, because a unit lives inside the group's
             // `NumberFormat` and there is no narrower verb. That is a
             // discoverability problem rather than a missing capability, and the
             // engine deliberately carries no sugar for it: the path works, it is
@@ -469,7 +469,7 @@ impl DimensionGroupsUi {
                     actions.push(Action::Dimension(DimensionAction::SetGroupScale {
                         group: group.id,
                         scale: group.scale,
-                        // ★ `default_format` rather than mutating the group's own
+                        // `default_format` rather than mutating the group's own
                         // `unit` field in place, because a `NumberFormat` is a unit
                         // AND how its fractional part is written — and those travel
                         // together for a reason. Millimetres in eighths, or inches
@@ -496,7 +496,7 @@ impl DimensionGroupsUi {
                     ui.radio_value(&mut standard, option, t::standard_name(option));
                 }
             });
-            // ★ The whole group moves, always — the standard has no per-ce-dimension
+            // The whole group moves, always — the standard has no per-ce-dimension
             // tier on `Group`, so no member can be following anything else. The
             // count is therefore the member count itself, and it is still shown,
             // because "all 40 will be redrawn" is exactly the sentence the operator
@@ -564,7 +564,7 @@ impl DimensionGroupsUi {
             egui::ComboBox::from_id_salt("dimension-groups-new-unit")
                 .selected_text(crate::text::scale::unit_name(self.new_unit))
                 .show_ui(ui, |ui| {
-                    // ★ `Unit::all()`, not a hand-written array. The engine's own
+                    // `Unit::all()`, not a hand-written array. The engine's own
                     // doc for it says *"the GUI unit dropdown and the CLI unit
                     // parser iterate this"*, and `NO_SURFACE.md`'s sweep found a
                     // local copy in `dialogs::scale` that happened to match —
@@ -589,7 +589,7 @@ impl DimensionGroupsUi {
             // instead would make the name field look like it does nothing.
             let response = ui.add_enabled(false, egui::Button::new(t::new_button()));
             crate::diag::ui_rect(REGION_ADD, response.rect);
-            // ★★★ **`on_disabled_hover_text`, never `on_hover_text`.**
+            // **`on_disabled_hover_text`, never `on_hover_text`.**
             //
             // In egui 0.35 `on_hover_text` builds `Tooltip::for_enabled`, which
             // opens only when `response.enabled()` — so on a response that is
@@ -634,7 +634,7 @@ impl DimensionGroupsUi {
 /// helper taking a prefix would be the tidier answer and is worth doing the day
 /// a third surface wants folds; two is not yet a pattern.
 ///
-/// ★ `ui_rect_visible`, not `ui_rect`, for the reason the settings window
+/// `ui_rect_visible`, not `ui_rect`, for the reason the settings window
 /// learned the hard way: these headings live in a `ScrollArea`, `egui` lays out
 /// the ones below the fold before clipping them, and publishing a rect for a
 /// heading nobody can see makes a contrast check measure whatever is genuinely
@@ -691,7 +691,7 @@ mod width_tests {
     /// the number `panels::pages`' own column test uses for the same reason.
     const NARROW: f32 = 250.0;
 
-    /// ★★ **No row in this panel outruns a narrow dock.**
+    /// **No row in this panel outruns a narrow dock.**
     ///
     /// A row wider than the side bar hides part of a control with no scroll bar
     /// to show the part that is missing, and the defect is **invisible by

@@ -16,19 +16,19 @@ use std::path::{Path, PathBuf};
 /// The same reduction `reach.rs` makes for its guard functions, for the same
 /// reason.
 ///
-/// ★ Each count is **exact**, not a ceiling, on this module's own fail-closed
+/// Each count is **exact**, not a ceiling, on this module's own fail-closed
 /// reasoning: a range would let a call be ADDED and a call be REMOVED in the
 /// same edit and report nothing, and *"the proof pipeline no longer calls the
 /// engine"* is the failure this file exists to catch. When a legitimate route
 /// lands or leaves, the number changes in the same commit as the route.
 ///
-/// ★★ Note that `apply_redactions_with` and `apply_redactions_deferred` are
+/// Note that `apply_redactions_with` and `apply_redactions_deferred` are
 /// separate rows and cannot be confused for one another: [`calls_in`] compares
 /// the identifier for **equality**, not by prefix, which is why the deferred
 /// verb needed a row of its own rather than being absorbed into the first
 /// one's count.
 ///
-/// ★★★ That same equality is why swapping a call for a **wider-signatured
+/// That same equality is why swapping a call for a **wider-signatured
 /// twin** of itself is a silent hole in this seal rather than a compile error.
 /// `apply_redactions` and `apply_redactions_with` are the same removal; the
 /// first hard-codes the engine's default residual scope. Moving the call from
@@ -236,7 +236,7 @@ mod tests {
     // THE CHECK
     // =====================================================================
 
-    /// ★★ **Every removal verb is called in exactly one file — the one that
+    /// **Every removal verb is called in exactly one file — the one that
     /// proves — and exactly as many times as [`SUBJECTS`] accounts for.**
     ///
     /// The assertion this module exists to make. A failure here means one of
@@ -246,7 +246,7 @@ mod tests {
     /// proving file; or a route has been added or deleted and this table has
     /// not been told.
     ///
-    /// ★ It sweeps once per subject rather than once, and pays four directory
+    /// It sweeps once per subject rather than once, and pays four directory
     /// walks for it. That is deliberate: a single sweep counting four
     /// identifiers together would report *"seven calls in one file"* and be
     /// satisfied by three of one and none of another, which is precisely the
@@ -321,7 +321,7 @@ mod tests {
         }
     }
 
-    /// ★ **Nothing in `redact/` reaches for the incremental writer.**
+    /// **Nothing in `redact/` reaches for the incremental writer.**
     ///
     /// [`super::super`] §1.1's *"there is no parameter anywhere that could make
     /// an apply write incrementally"*, restated as a property of the directory
@@ -334,7 +334,7 @@ mod tests {
     /// one directory where it would leave the un-redacted content in a prior
     /// revision of a file the operator has been told is redacted.
     ///
-    /// # ★★★ The exception
+    /// # The exception
     ///
     /// `redact/tests/` **does** call the forbidden verb, deliberately and
     /// repeatedly, and it must. It performs exactly the save the ban forbids
@@ -342,7 +342,7 @@ mod tests {
     /// because the un-redacted content is still live in the staged session, so
     /// the guarantee is a refusal rather than a property of the bytes.
     ///
-    /// ★ The shape survives a change of engine contract. Were a removal to
+    /// The shape survives a change of engine contract. Were a removal to
     /// collapse into the session instead of staying pending, the same call
     /// would be made and the assertion would become *the removed text is not in
     /// the result* — the measurement is a save that is actually made and looked

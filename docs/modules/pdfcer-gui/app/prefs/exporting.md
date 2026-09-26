@@ -38,7 +38,7 @@ So an operator who exports every drawing as an EMF at 600 dpi re-answered
 both questions on every single export, and an operator who works in
 millimetres re-picked millimetres every time the DXF window opened.
 
-## ★★★ The distinction that decides what is remembered
+## The distinction that decides what is remembered
 
 [`super::printing`]'s question, unchanged, because it is the right one:
 *would this value still be right for a **different document**?*
@@ -48,11 +48,11 @@ millimetres re-picked millimetres every time the DXF window opened.
 | The image format, the resolution, transparency, JPEG quality | The page index the window froze — it names a page of *this* document |
 | Which pages, as a **policy** (see below) | The typed page range, same reason |
 | The text separator, the line endings, the byte-order mark | The largest-page measurement — a measurement of *this* document |
-| The DXF units, arc fitting, whether text is written | ★★ **The DXF scale** — see below; this is the important one |
+| The DXF units, arc fitting, whether text is written | **The DXF scale** — see below; this is the important one |
 | | `DxfScaleSuggestion` — an inference about *this page's* ce dimension groups |
 | | `arc_tolerance` — no control exists for it; see below |
 
-### ★★★ The DXF scale is NOT remembered, and that is the whole point of the window
+### The DXF scale is NOT remembered, and that is the whole point of the window
 
 `ExportDxfDialog` exists because a DXF carries no scale of its own: the
 number in that box is the only thing standing between the operator and a
@@ -66,7 +66,7 @@ already in the box, belonging to yesterday's drawing.
 format is visible — the file has the wrong extension. A wrong scale is not:
 the DXF opens, the geometry is all there, and it is the wrong size.
 
-### ★★ The DXF ordering rule, which is the only way to get this wrong quietly
+### The DXF ordering rule, which is the only way to get this wrong quietly
 
 `ExportDxfDialog::open` seeds `units` from the *suggestion* when the page
 carries a calibrated ce dimension group, because — its own words —
@@ -131,7 +131,7 @@ truth that drifts. This module stores [`ImageFormat`], [`PageScope`],
 of them is a compile error here rather than a silent round-trip to the
 default.
 
-★ All six are `pub` and none is `#[non_exhaustive]`, which is why every
+All six are `pub` and none is `#[non_exhaustive]`, which is why every
 `*_key` function below is an exhaustive `match` with **no `_` arm**. That is
 deliberate and it is the difference from [`super::printing`]'s `scope_key`,
 which needs a catch-all because `AnnotationScope` is a foreign engine enum

@@ -6,7 +6,7 @@
 use super::Icon;
 use std::collections::HashSet;
 
-/// ★ [`Icon::ALL`] must really be all of them.
+/// [`Icon::ALL`] must really be all of them.
 ///
 /// Everything catalogue-wide — "every asset parses", "every asset
 /// rasterizes to something visible", "redaction is the only filled one"
@@ -35,26 +35,26 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // the set will ever be. THIS assertion is the only figure left, and it
     // is in a test, where drift fails the build instead of misinforming a
     // reader. Prefer that shape for any future count.
-    // ★ 137 → 139 later on 2026-09-04: `bold` and `italic`. Not new capability
+    // 137 → 139 later on 2026-09-04: `bold` and `italic`. Not new capability
     // and not a gap being filled — a **correction**. `format.bold` and
     // `format.italic` had been registered bare since 2026-08-27 on the ground
     // that *"Word draws `B` and `I` as glyphs; this build has no such art"*,
     // which is a statement about SUPPLY, and the operator's standing ruling
     // (2026-08-06, quoted in `Icon::Back`) is that a missing glyph is AUTHORED.
     // He asked for this pair by name. The two assets carry the account.
-    // ★ 139 → 140 on 2026-09-05: `line-weights`. O137 — the operator asked for
+    // 139 → 140 on 2026-09-05: `line-weights`. O137 — the operator asked for
     // the deleted "show all lines without their thickness" control by name, the
     // engine shipped the field it had been missing (`Pass 254.0`), and the
     // glyph was AUTHORED for it. The same correction shape as `bold`/`italic`
     // the day before: the absence was about supply, and supply is ours.
-    // ★ 140 → 141 on 2026-09-06: `sign`. The signing capability arrived and
+    // 140 → 141 on 2026-09-06: `sign`. The signing capability arrived and
     // the glyph was AUTHORED for it, on the same 2026-08-06 ruling — a missing
     // glyph is drawn, not worked around. `sign.svg` carries the constraint that
     // decided every line of it: NOT a seal, badge, shield or checkmark, because
     // every one of those reads as VALIDATED and this control makes a signature
     // rather than judging one.
     //
-    // ★★ It does NOT count as a build-dependent number even though the COMMAND
+    // It does NOT count as a build-dependent number even though the COMMAND
     // that names it is behind a Cargo feature. `Icon::ALL` is the art in this
     // binary, and art is not gated: the asset is a `include_str!` constant with
     // no dependency on `pdfcer-core`, so a `--no-default-features` build ships
@@ -62,7 +62,7 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // is deliberate — gating the art would put a `#[cfg]` in `icons`, which is
     // a second place that knows about a capability and is exactly what
     // `SHELL_FRAMEWORK.md` §5b forbids.
-    // ★ 141 → 142 on 2026-09-11: `off-page`, AUTHORED for `edit.offpage` —
+    // 141 → 142 on 2026-09-11: `off-page`, AUTHORED for `edit.offpage` —
     // the census that answers *"how do I view and edit objects that are off of
     // the page?"*. The reuse it declined was `redact`, and the reason is the
     // one the asset's own comment argues at length: the three redaction glyphs
@@ -92,7 +92,7 @@ fn every_name_is_distinct() {
     }
 }
 
-/// ★ The key vocabulary has exactly one definition.
+/// The key vocabulary has exactly one definition.
 ///
 /// [`Icon::from_key`] is documented as the inverse of [`Icon::name`].
 /// This is what keeps that true if `from_key` is ever rewritten as a
@@ -164,12 +164,12 @@ fn keys_are_lowercase_kebab_case() {
 /// band drew pictures and words side by side and the ribbon read as
 /// half-finished because it was."*
 ///
-/// ★ Drawing new art was never the option. `icons/assets/PROVENANCE.md`
+/// Drawing new art was never the option. `icons/assets/PROVENANCE.md`
 /// declares that directory the **operator's own work**, which is what
 /// exempts it from `check-shipped-assets`, and a machine-drawn SVG would
 /// make that note false.
 ///
-/// ★★ What was refused: keying it to `insert-pages` itself. A shared *key*
+/// What was refused: keying it to `insert-pages` itself. A shared *key*
 /// says *two controls about one thing*, and inserting pages and importing
 /// form data have nothing in common but a direction — a pages-named key on
 /// a form command is the near-miss reuse this catalog's refusal table
@@ -203,7 +203,7 @@ fn only_the_documented_assets_are_shared() {
     }
 }
 
-/// ★★★ …and every declared share is **still** a share.
+/// …and every declared share is **still** a share.
 ///
 /// # Why the other direction needs its own test
 ///

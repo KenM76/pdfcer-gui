@@ -10,7 +10,7 @@
 //! different reasons: a new ceiling or a new rung touches the parent, a new
 //! fitting mode touches this.
 //!
-//! ## ★★★ Why one file holds both the scale and the placement
+//! ## Why one file holds both the scale and the placement
 //!
 //! Because O28 proved they are one decision. [`fit_scale`] answers *how big*
 //! and [`FitMode::pinned_axes`] answers *where*, and the second is derived
@@ -52,7 +52,7 @@ impl FitMode {
     /// placed on** — `(horizontal, vertical)`, or `None` for a mode that
     /// places nothing.
     ///
-    /// # ★★★ Why a fit mode has to answer a question about POSITION
+    /// # Why a fit mode has to answer a question about POSITION
     ///
     /// `OPERATOR_REQUESTS.md` O28 — *"If I press the Fit width or fit page
     /// button the view should center to the width as well or center the
@@ -150,7 +150,7 @@ mod tests {
     /// O29's mirror of the test above, and it asserts the OVERFLOW as well as
     /// the ratio.
     ///
-    /// ★ The overflow is the point. A "fit height" that quietly refused to let
+    /// The overflow is the point. A "fit height" that quietly refused to let
     /// the page run off the side would be fit-page under a second name, and
     /// the operator asked for it precisely because fit-page leaves a landscape
     /// sheet as a band across the middle of a tall window.
@@ -171,7 +171,7 @@ mod tests {
     /// The three fitting modes pin the axes they fit, and actual size pins
     /// none — the table `canvas::show` places the view from. O28.
     ///
-    /// ★ Asserted as a table rather than four separate tests because the
+    /// Asserted as a table rather than four separate tests because the
     /// property that matters is the RELATIONSHIP between them: each
     /// single-axis fit must pin exactly the axis it names and leave the other
     /// alone, and a copy-paste slip that made `Height` pin the horizontal

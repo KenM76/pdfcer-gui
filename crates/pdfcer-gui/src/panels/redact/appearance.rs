@@ -32,7 +32,7 @@ pub const MAX_OVERLAY_CHARS: usize = 64;
 /// like `canvas::markup::Pen`. It is read at the moment a mark is created and
 /// never afterwards.
 ///
-/// # ★ Why the fill is an enum and not an `Option<Color>`
+/// # Why the fill is an enum and not an `Option<Color>`
 ///
 /// Because the engine's `Option<Color>` has three operator-facing meanings and
 /// only two of them are colours: *black*, *some other colour*, and *no box at
@@ -106,7 +106,7 @@ impl Fill {
 
     /// Whether a caption drawn over this fill would be legible.
     ///
-    /// # ★ This exists because the engine told us it would not be
+    /// # This exists because the engine told us it would not be
     ///
     /// `a7210a4`'s reply carries the warning verbatim:
     ///
@@ -196,7 +196,7 @@ impl Appearance {
 /// **document**, and this touches none: it sets what the *next* mark will be
 /// authored with. There is nothing to undo and nothing to order against.
 ///
-/// # ★ Collapsed by default
+/// # Collapsed by default
 ///
 /// The shipped appearance — a plain black box, no caption — is what almost
 /// every redaction wants, so these controls should cost nothing until an
@@ -226,7 +226,7 @@ fn controls(ui: &mut egui::Ui, appearance: &mut Appearance) {
             // that here.
             ui.selectable_value(&mut appearance.fill, option, t::fill_option_label(option));
         }
-        // ★ The custom colour is a SWATCH, not a fourth segment, because the
+        // The custom colour is a SWATCH, not a fourth segment, because the
         // only useful preview of a colour is the colour. Seeded from whatever
         // is currently chosen so that switching from Black to a custom colour
         // starts somewhere sensible rather than at an arbitrary hue.
@@ -271,7 +271,7 @@ fn controls(ui: &mut egui::Ui, appearance: &mut Appearance) {
         return;
     }
 
-    // ★ The legibility warning, and it is a DISCLOSURE rather than advice —
+    // The legibility warning, and it is a DISCLOSURE rather than advice —
     // `.small()` without `.weak()`, the same weight the settings window
     // reserves for something pdfcer owes the operator rather than something it
     // is explaining. The engine cannot colour this text and told us so; an
@@ -305,7 +305,7 @@ fn controls(ui: &mut egui::Ui, appearance: &mut Appearance) {
 mod tests {
     use super::*;
 
-    /// ★ **The shipped appearance is an explicit black box.**
+    /// **The shipped appearance is an explicit black box.**
     ///
     /// The regression test for the engine's default changing underneath this
     /// shell. `a705d14` made `RedactSpec::fill = None` mean **transparent**
@@ -376,7 +376,7 @@ mod tests {
         );
     }
 
-    /// ★ **A caption on a dark fill is flagged, including on the default.**
+    /// **A caption on a dark fill is flagged, including on the default.**
     ///
     /// The engine hard-codes black text in the `/DA` it authors and told us so
     /// when it shipped the feature. Black-on-black is the case an operator

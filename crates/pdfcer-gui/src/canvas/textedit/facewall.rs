@@ -10,7 +10,7 @@
 
 #![cfg(test)]
 // ---------------------------------------------------------------------------
-// ★ A deliberate duplicate of the `#![cfg(test)]` above, for
+// A deliberate duplicate of the `#![cfg(test)]` above, for
 // `tools/gates/check-ui-strings.sh` rather than for rustc — the same device
 // `proof.rs` uses and for the same reason: the gate reads modules line by line
 // and cannot see an inner attribute at the top of a file it is scanning for
@@ -146,7 +146,7 @@ fn page_text(session: &EditSession) -> String {
     text.runs.iter().map(|r| r.text.as_str()).collect()
 }
 
-/// ★★★ **The measurement, INVERTED on 2026-09-06 because the engine shipped the
+/// **The measurement, INVERTED on 2026-09-06 because the engine shipped the
 /// fix.** One session, `format_text` then `edit_text`, and the second call now
 /// **succeeds** — in both request shapes, with no save and no reopen between
 /// them.
@@ -234,7 +234,7 @@ fn the_engine_types_into_a_face_it_just_swapped_in() {
     );
 }
 
-/// ★★★ **How wide the defect is: a swap to a face the page ALREADY carries
+/// **How wide the defect is: a swap to a face the page ALREADY carries
 /// works in the same session.**
 ///
 /// This is the measurement that decides whether the shell has a remedy or only
@@ -269,7 +269,7 @@ fn the_engine_types_into_a_face_it_just_swapped_in() {
 /// `text::panels::face::refused_char_blocked`'s original wording — the wording
 /// that has now been struck; that function's doc comment records why.
 ///
-/// ★ The swap **back to the original subset face** was the first shape of this
+/// The swap **back to the original subset face** was the first shape of this
 /// test and it is not usable, which is worth recording so it is not tried again:
 /// `format_text` refuses it with `CoverageFailure … is an embedded SUBSET that
 /// does not already carry code 65 for … 'A'`, naming the face
@@ -316,7 +316,7 @@ fn a_face_the_page_already_carries_can_be_typed_into_at_once() {
     );
 }
 
-/// ★★★ **The control that makes the measurement evidence.** The same two verbs,
+/// **The control that makes the measurement evidence.** The same two verbs,
 /// with a save and a reopen between them — which is exactly what two runs of
 /// `pdfcer.exe` do — and the character lands.
 ///
@@ -348,7 +348,7 @@ fn two_sessions_do_what_one_session_will_not() {
     );
 }
 
-/// ★★★ **The words the operator typed survive the refusal that threw the draft
+/// **The words the operator typed survive the refusal that threw the draft
 /// away** — the round trip [`super::Committing`] promises, asserted rather than
 /// argued.
 ///
@@ -360,7 +360,7 @@ fn two_sessions_do_what_one_session_will_not() {
 /// and with an undo entry. That is a worse outcome than the two-gesture route
 /// this replaced.
 ///
-/// ★ Driven through the real `plan`, on this repository's own fixture, rather
+/// Driven through the real `plan`, on this repository's own fixture, rather
 /// than by poking the thread-local: the claim is about what `plan` does, and a
 /// test that set the slot itself would pass on a build where `plan` had stopped
 /// setting it.

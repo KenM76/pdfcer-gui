@@ -9,7 +9,7 @@
 
 /// The ProgID pdfcer registers itself under.
 ///
-/// ★ `pdfcer.pdf`, not `pdfcer-gui.pdf` and not `PDFCERFile`. The convention
+/// `pdfcer.pdf`, not `pdfcer-gui.pdf` and not `PDFCERFile`. The convention
 /// Windows expects is `Vendor.Type`, it must be globally unique on the machine,
 /// and it is the string that appears in `UserChoice` afterwards — so
 /// [`current_owner`] can compare against it and say, in one word, whether the
@@ -32,7 +32,7 @@ const CAPABILITIES_PATH: &str = r"Software\pdfcer\Capabilities";
 /// where nobody has ever chosen — Windows then falls back to the machine-wide
 /// association, and there is no honest single answer to report.
 ///
-/// ★ Read from `UserChoice` rather than from `HKCR\.pdf`, because `UserChoice`
+/// Read from `UserChoice` rather than from `HKCR\.pdf`, because `UserChoice`
 /// is what Explorer actually consults and the two disagree routinely.
 /// Reporting the wrong one would produce a state line saying pdfcer is the
 /// default while double-clicking still opened Edge — the exact confusion this
@@ -62,7 +62,7 @@ pub fn is_default() -> bool {
 /// **Where Windows' list of PDF programs points**, as far as this build is
 /// concerned.
 ///
-/// ★★ Three states rather than a bool, and the third is the load-bearing one. A
+/// Three states rather than a bool, and the third is the load-bearing one. A
 /// portable build gets unzipped somewhere new; the registration then still
 /// names the *old* folder, so Windows opens a build the operator thought they
 /// had replaced — or nothing at all, if the old folder is gone. That failure
@@ -81,7 +81,7 @@ pub enum Registration {
 
 /// **Everything the two surfaces need to know about the machine, read once.**
 ///
-/// ★★★ Why this is a struct probed on demand rather than three functions the
+/// Why this is a struct probed on demand rather than three functions the
 /// UI calls: a Settings pane redraws on **every frame**, and every one of these
 /// answers costs a `reg.exe` process. `dialogs::settings::acrobat`'s header
 /// states the same rule for the same reason — *"this module must not resolve,
@@ -100,7 +100,7 @@ pub struct Status {
 impl Status {
     /// Whether Windows currently opens PDFs with pdfcer.
     ///
-    /// ★ Derived from [`Self::owner`] — a reading of what Windows recorded —
+    /// Derived from [`Self::owner`] — a reading of what Windows recorded —
     /// and never from *"we pressed the button"*. Only the operator can make
     /// this true, in a dialog pdfcer does not own, so pdfcer's memory of its
     /// own actions is not evidence.
@@ -155,7 +155,7 @@ pub fn registration() -> Registration {
 /// | `Classes\Applications\<exe>` + `SupportedTypes` | *Open with ▸ Choose another app* does not offer it either |
 /// | `Software\pdfcer\Capabilities` + `RegisteredApplications` | Windows Settings' *Default apps* list does not contain pdfcer, so the deep link has nothing to land on |
 ///
-/// ★ All under `HKCU`. Nothing here needs administrator rights, nothing affects
+/// All under `HKCU`. Nothing here needs administrator rights, nothing affects
 /// another user of the machine, and an operator who changes their mind can
 /// delete one key. A portable build that wrote to `HKLM` would be a portable
 /// build that needed elevation and left something behind — the opposite of what
@@ -237,7 +237,7 @@ pub fn register() -> Result<(), String> {
 
 /// **Open Windows' own *Default apps* page, deep-linked to pdfcer.**
 ///
-/// ★★ `registeredAppUser=` and not `registeredAUMID=`. The first names an entry
+/// `registeredAppUser=` and not `registeredAUMID=`. The first names an entry
 /// in `HKCU\Software\RegisteredApplications` — which [`register`] has just
 /// written — and the second names a packaged (Store) app identity that a
 /// portable exe does not have and cannot get. Passing the wrong one lands on
@@ -266,7 +266,7 @@ pub fn open_settings_page() -> Result<(), String> {
 ///
 /// `value` is `None` for a key's default (`/ve`) and `Some` for a named one.
 ///
-/// ★ `/f` on every write: these are idempotent declarations, not a
+/// `/f` on every write: these are idempotent declarations, not a
 /// conversation. A prompt from a subprocess with no console is a hang with no
 /// symptom.
 fn set(key: &str, value: Option<&str>, data: &str) -> Vec<String> {
@@ -314,7 +314,7 @@ fn run(_args: &[&str]) -> Result<(), String> {
 
 /// Run `reg.exe` for its **output**, or `None` if it failed for any reason.
 ///
-/// ★ `None` rather than an error, because every caller is asking a question
+/// `None` rather than an error, because every caller is asking a question
 /// about the machine that has a legitimate *"cannot tell"* answer — a key that
 /// does not exist makes `reg query` exit non-zero, and on a fresh machine that
 /// is the normal case rather than a fault worth a sentence.
@@ -366,7 +366,7 @@ fn open_url(url: &str) -> Result<(), String> {
     use std::os::windows::process::CommandExt;
     /// See [`command`].
     const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-    // ★ `cmd /c start "" <url>` rather than `ShellExecute`: the same
+    // `cmd /c start "" <url>` rather than `ShellExecute`: the same
     // forbid-unsafe reasoning as the rest of this module. `start`'s first
     // quoted argument is the window TITLE — omitting the empty pair makes
     // `start` read the URL as a title and open a console instead.

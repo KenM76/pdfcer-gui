@@ -79,7 +79,7 @@ const UNDO_DECLINED_EVENT: &str = "undo-declined";
 /// `redo-declined reason=empty-stack`.
 const REDO_DECLINED_EVENT: &str = "redo-declined";
 
-/// ★ `objects n=… page=… …` — **the epoch oracle**.
+/// `objects n=… page=… …` — **the epoch oracle**.
 ///
 /// Emitted by `OpenDoc::trace_object_count` once per `(page index, edit epoch)`
 /// pair and suppressed for every repeat, so a *new* line means the epoch moved.
@@ -94,7 +94,7 @@ const OBJECTS_EVENT: &str = "objects";
 /// reason that has nothing to do with undo.
 const OBJECTS_UNAVAILABLE_EVENT: &str = "objects-unavailable";
 
-/// ★ `render-spawn gen=… page=… scale=…` — **the texture oracle**.
+/// `render-spawn gen=… page=… scale=…` — **the texture oracle**.
 ///
 /// A raster starting. Nothing else asks for one after an undo, because the
 /// texture's key carries only the page index and the raster scale and an undo
@@ -466,7 +466,7 @@ fn history_step(
     };
     report.note(format!("{}: the engine ran — `{}`", step.what, applied.raw));
 
-    // --- ★ the two invalidation signals ------------------------------------
+    // --- the two invalidation signals ------------------------------------
     let after = Invalidation::of(&session.trace()?);
     if after.objects <= before.objects {
         return Ok(Some(format!(
@@ -603,7 +603,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- ★ PHASE B: Undo is GREYED with an empty command log ---------------
+    // --- PHASE B: Undo is GREYED with an empty command log ---------------
     //
     // Nothing has been edited, so `undo.available` must be unset and the
     // control must take the click and emit nothing. The absence is admissible
@@ -719,7 +719,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         commit.raw, listed_after.listed
     ));
 
-    // --- ★ PHASE D: UNDO ---------------------------------------------------
+    // --- PHASE D: UNDO ---------------------------------------------------
     if let Some(failure) = history_step(
         &session,
         &driver,
@@ -737,7 +737,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(failure));
     }
 
-    // --- ★ PHASE E: REDO ---------------------------------------------------
+    // --- PHASE E: REDO ---------------------------------------------------
     if let Some(failure) = history_step(
         &session,
         &driver,
@@ -755,7 +755,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(failure));
     }
 
-    // --- ★ PHASE F: the redo stack emptied, and the control followed -------
+    // --- PHASE F: the redo stack emptied, and the control followed -------
     //
     // Phase E consumed the only entry, so `redo.available` must now be unset.
     // The same control that invoked one press ago must now take a click and
@@ -825,7 +825,7 @@ mod tests {
         let (region, id) = RECTANGLE;
         assert_eq!(region, format!("ribbon.item.{id}"));
         assert!(region.starts_with(ITEM_PREFIX), "{region}");
-        // ★ The two commands under test are on the QAT and on NO tab, which is
+        // The two commands under test are on the QAT and on NO tab, which is
         // why they are addressed under a different prefix. A build that moved
         // either onto a tab would break this — and it would also silently take
         // undo away from Read, which is what
@@ -839,7 +839,7 @@ mod tests {
         assert_eq!(MODE, "review");
     }
 
-    /// ★ **The two invalidation oracles are read as counts, and a count that
+    /// **The two invalidation oracles are read as counts, and a count that
     /// did not move is a failure.**
     ///
     /// [`Invalidation`] is three lines of arithmetic and exactly the kind of
@@ -871,7 +871,7 @@ pdfcer-diag render-spawn gen=2 page=0 scale=2\n";
         assert!(after.objects > before.objects, "the epoch moved");
         assert!(after.rasters > before.rasters, "the texture was dropped");
 
-        // ★ And the fixture is the hostile case on purpose: `n=812` is
+        // And the fixture is the hostile case on purpose: `n=812` is
         // IDENTICAL in both lines, because an annotation is not a content
         // object. A check that asserted on the count rather than on the line
         // would see nothing happen at all.
@@ -923,7 +923,7 @@ pdfcer-diag objects-unavailable page=0 reason=decompose-failed detail=\"bad stre
             .expect("the census line is in this capture");
         assert_eq!(census.listed, 12);
 
-        // ★ `objects` and `objects-unavailable` are two events, and the epoch
+        // `objects` and `objects-unavailable` are two events, and the epoch
         // oracle must not count the second as the first. `Trace::events`
         // matches the event name exactly, and this pins that it stays exact —
         // a prefix match would make a page that will not decompose look like an

@@ -71,7 +71,7 @@ impl VertexRun {
 /// `measure`'s `asking_whether_finish_is_available_creates_no_measure_state` is
 /// the test that caught the shape of it there.
 ///
-/// ★ `pub` for `crate::panels::tool`'s stage row — *"3 corners placed.
+/// `pub` for `crate::panels::tool`'s stage row — *"3 corners placed.
 /// Double-click the last one to finish."* That is the one place a live vertex
 /// count may be rendered: a number floated near the pointer would be
 /// pdfcer putting a surface over the drawing on its own initiative, which
@@ -228,7 +228,7 @@ pub(crate) fn click(
     let mut run = load(ctx, page_index, kind);
     if double {
         commit(&mut run, actions, pen);
-        // ★ Traced with *which* ending asked, which neither the engine's
+        // Traced with *which* ending asked, which neither the engine's
         // `add-markup` line nor a screenshot can distinguish.
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -306,7 +306,7 @@ fn pending(ctx: &egui::Context) -> Option<VertexRun> {
         run.kind,
         run.page_index,
         Geometry::Vertices(run.vertices.clone()),
-        // ★ The DEFAULT pen, and only here. This call is a *predicate* — it
+        // The DEFAULT pen, and only here. This call is a *predicate* — it
         // asks whether the run would commit at all, to decide whether to offer
         // Finish — and it throws the resulting action away. The pen changes no
         // refusal: every one of `action`'s guards is about geometry (finite
@@ -391,7 +391,7 @@ pub fn abandon(ctx: &egui::Context) -> bool {
 /// 2. **The rubber segment** from the last vertex to the pointer, which is what
 ///    the next click would add. Absent when the pointer has left the widget,
 ///    which is honest: there is no next click to describe.
-/// 3. **★ The closing segment, for a polygon only** — from the last vertex back
+/// 3. **The closing segment, for a polygon only** — from the last vertex back
 ///    to the first. §1.2: the closure is in the file and the operator never draws
 ///    it, so a preview that omitted it would describe a polyline while a polygon
 ///    was being authored, and the two tools would be visually identical until the
@@ -434,7 +434,7 @@ pub(in crate::canvas) fn preview(
             painter.line_segment([*a, *b], stroke);
         }
     }
-    // ★ Polygon AND Cloud close; PolyLine does not. The closing segment is the
+    // Polygon AND Cloud close; PolyLine does not. The closing segment is the
     // one thing the preview must say that the click run does not, because
     // `/Polygon` closes back to `/Vertices[0]` by specification rather than by
     // anything the operator did — see §1.2. A cloud is a `/Polygon` with `/BE`
@@ -565,10 +565,10 @@ mod tests {
     }
 
     // -----------------------------------------------------------------
-    // ★ The gesture
+    // The gesture
     // -----------------------------------------------------------------
 
-    /// ★ **Each click adds one vertex and authors nothing.**
+    /// **Each click adds one vertex and authors nothing.**
     ///
     /// The half a build that committed on every click would fail, and the half
     /// that makes the double-click mean anything: if a click already authored,
@@ -593,7 +593,7 @@ mod tests {
         assert!((run.vertices[0].1 - 290.0).abs() < 1e-3, "{run:?}");
     }
 
-    /// ★ **`click, click, double-click` places three vertices and commits.**
+    /// **`click, click, double-click` places three vertices and commits.**
     ///
     /// The reading §1's "order of the two questions" argues for, asserted as a
     /// count: a build that swallowed both clicks of the pair would place two and
@@ -633,7 +633,7 @@ mod tests {
         );
     }
 
-    /// ★ **The two endings author the same annotation from the same clicks.**
+    /// **The two endings author the same annotation from the same clicks.**
     ///
     /// The property the one-commit-path design exists for, asserted the only way
     /// that means anything: run *both* endings over identical runs and compare
@@ -688,7 +688,7 @@ mod tests {
         assert_eq!(click_actions.len(), 1, "exactly one annotation per ending");
     }
 
-    /// ★ **A polygon needs one more click than a polyline before Finish lights.**
+    /// **A polygon needs one more click than a polyline before Finish lights.**
     ///
     /// §1.2's third consequence, at the surface the operator reads: after two
     /// clicks the ribbon's Finish is live for a polyline and greyed for a
@@ -715,7 +715,7 @@ mod tests {
         }
     }
 
-    /// ★ **Finish is offered only while the tool is still armed**, and asking the
+    /// **Finish is offered only while the tool is still armed**, and asking the
     /// question does not manufacture a run.
     ///
     /// The fourth row is the one that is easy to miss: putting the pen down does
@@ -757,7 +757,7 @@ mod tests {
         assert!(!finishable(&ctx));
     }
 
-    /// ★ **A change of kind or of page discards the run** — §2's two
+    /// **A change of kind or of page discards the run** — §2's two
     /// synchronisations, at the entry point that applies them.
     ///
     /// The failure without them is the one `MeasureState::set_kind`'s docs name:
@@ -784,7 +784,7 @@ mod tests {
         assert_eq!(moved.page_index, 1);
     }
 
-    /// ★ **Escape abandons the run and reports that it took the key.**
+    /// **Escape abandons the run and reports that it took the key.**
     ///
     /// Both halves. The `false` with nothing in progress is the load-bearing one:
     /// without it Escape would be consumed by a tool that has nothing to abandon,

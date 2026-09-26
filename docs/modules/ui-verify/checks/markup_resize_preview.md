@@ -5,7 +5,7 @@
 > same size when I drag the handles — the items that I can resize do
 > resize."*
 
-## ★★★ What shipped, and why nothing here could see it
+## What shipped, and why nothing here could see it
 
 `canvas::overlay` has two sibling ghost painters, split apart deliberately
 (a move is one displacement applied to everything; a resize is a **map**
@@ -43,7 +43,7 @@ clean, the tests were green, and the operator watched nothing happen.
    than the body (a body hit is a MOVE, and would pass a sloppier check);
 3. **`canvas-resize-ghost` is published at all**, which is the half that was
    missing; and
-4. ★★★ **at least two published ghosts differ in size**, which is the half
+4. **at least two published ghosts differ in size**, which is the half
    that cannot be satisfied by a ghost that is drawn once at the selection's
    own dimensions and never updated. That is precisely *"the bounding box
    stays the same size"*, and a check asserting only (3) would pass on it.

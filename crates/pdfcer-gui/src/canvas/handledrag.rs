@@ -105,7 +105,7 @@ pub fn visible(
 
 /// The handle under a screen-space press, if any.
 ///
-/// # ★ Why the press is in SCREEN space and the handles are in canvas space
+/// # Why the press is in SCREEN space and the handles are in canvas space
 ///
 /// Because the grab radius is a **screen** distance — eight pixels is eight
 /// pixels at any zoom, which is what makes the target feel the same size on an
@@ -159,7 +159,7 @@ pub struct Frame<'a> {
 /// canvas-space position and the anchor it is tethered to, so the overlay can
 /// draw the tether moving with the pointer.
 ///
-/// # ★ Why the preview is the pointer position and not a ghost of the curve
+/// # Why the preview is the pointer position and not a ghost of the curve
 ///
 /// Because drawing the curve the drag *would* produce means evaluating the
 /// Bézier this shell does not own — and a preview curve that differed from what
@@ -198,7 +198,7 @@ pub fn drag(
             to.y
         )
     });
-    // ★★ Two verbs, one gesture — `OPERATOR_REQUESTS.md` O70. The address
+    // Two verbs, one gesture — `OPERATOR_REQUESTS.md` O70. The address
     // space decides which, and it is asked here rather than inside the action
     // because the two carry different index types and only this point knows
     // which one it is holding.
@@ -238,7 +238,7 @@ pub fn drag(
 /// the on-curve point it serves, so locking it to the *press* row would lock a
 /// quantity nobody thinks in.
 ///
-/// ★ It is a separate call, made only when Shift is down, because
+/// It is a separate call, made only when Shift is down, because
 /// [`ObjectModelProvider::subpath_node_points`] allocates over every anchor of
 /// the subpath. Folding it into the unconstrained path would put that
 /// allocation on every frame of every handle drag for a value nothing reads —
@@ -309,7 +309,7 @@ mod tests {
         assert!(at(&hs, &m, Pos2::new(100.0 + GRAB_PX + 2.0, 100.0)).is_none());
     }
 
-    /// ★★ **The nearest handle wins, not the first.**
+    /// **The nearest handle wins, not the first.**
     ///
     /// An anchor's two handles can be within a few pixels of each other on a
     /// shallow curve. "Whichever came first in the list" would make which one

@@ -49,7 +49,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ THE DOCUMENT AND THE AIM ARE PINNED, and `--pdf` / `--doc-point` are
+    // THE DOCUMENT AND THE AIM ARE PINNED, and `--pdf` / `--doc-point` are
     // read only to say they were ignored.
     //
     // This check's subject is a dialog, not a document: nothing it asserts is a
@@ -175,7 +175,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
     // The box in the window's own logical coordinates, WITH its border.
     //
-    // ★ A first cut inset past the border, reasoning that `spec` draws one
+    // A first cut inset past the border, reasoning that `spec` draws one
     // unconditionally so an empty box would pass a test that sampled the edge.
     // That was the wrong trade and it produced a false FAIL: at fit-page zoom on
     // a C-size sheet the whole annotation is 65 device pixels and its text is
@@ -218,7 +218,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note("the drag opened the dialog and it declared its text field");
 
-    // --- C: ★★ TYPE. NO CLICK ON THE FIELD. --------------------------------
+    // --- C: TYPE. NO CLICK ON THE FIELD. --------------------------------
     //
     // The one line that separates this check from the one beside it. The
     // pointer stays exactly where the drag left it — over the page, outside the
@@ -263,7 +263,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          annotation(s)"
     ));
 
-    // --- E: ★★ AND IT IS ON THE PAGE ---------------------------------------
+    // --- E: AND IT IS ON THE PAGE ---------------------------------------
     //
     // `add-text-annot` says the funnel ran. It does not say anything is
     // VISIBLE, and the operator's report — *"nothing gets added"* — is about

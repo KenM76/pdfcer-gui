@@ -11,7 +11,7 @@
 //! | **the diagnostic channel** | the fact is a number about a content stream. An operator cannot act on *"1,676 followers were repositioned"*; a driven check can, and a regression then names itself |
 //! | **nowhere** | it restates something already visible on the page |
 //!
-//! ★ The middle row is the one that earns this module. R8b rule 4 says a
+//! The middle row is the one that earns this module. R8b rule 4 says a
 //! disclosure must be in terms of what the operator can see — so a number about
 //! operator counts is not a disclosure, it is *evidence*, and evidence belongs
 //! where a check can read it.
@@ -19,7 +19,7 @@
 /// **The forms THIS PAGE invokes directly** — the set that decides whether the
 /// shared-content disclosure may name a remedy.
 ///
-/// # ★★★ Why this type exists, and why the remedy is conditional
+/// # Why this type exists, and why the remedy is conditional
 ///
 /// This module's header said, correctly and for eight days, that the operator's
 /// half of the shared-content report *"is already handled and is deliberately
@@ -28,7 +28,7 @@
 /// row verbatim.
 ///
 ///
-/// # ★★★ The nesting case, which is the whole reason this is a TYPE and not a
+/// # The nesting case, which is the whole reason this is a TYPE and not a
 /// # boolean
 ///
 /// The remedy is **not always available**, and offering it where it does not
@@ -115,7 +115,7 @@ impl PageLevelForms {
 
 /// **Which content stream the commit rewrote, and how many places paint it.**
 ///
-/// # ★★★ Shared content, and why this is worth a named function
+/// # Shared content, and why this is worth a named function
 ///
 /// `Pass 119.0` made form-XObject text editable, and a form XObject may
 /// legally be painted **from several pages and several times on one page** —
@@ -139,7 +139,7 @@ impl PageLevelForms {
 /// apply arm has always carried that list to the status row. Re-wording it here
 /// would be a second account of one fact, free to drift from the engine's.
 ///
-/// ★ It is **absent** on the ordinary single-paint case, by the engine's
+/// It is **absent** on the ordinary single-paint case, by the engine's
 /// design and this project's own rule: a warning that fires every time is one
 /// nobody reads, and this one is meant to be startling. That is also why there
 /// is no badge, tint or flag drawn into the page — R8b rule 4 as narrowed by
@@ -183,7 +183,7 @@ pub fn trace_target(page: usize, run: usize, report: &pdfcer_core::text_edit::Ed
                 .map_or_else(|| "none".to_owned(), |o| o.to_string()),
             report.form_invocations,
             report.form_pages.len(),
-            // ★★ THE REFLOW'S REACH, on the channel because the engine asked
+            // THE REFLOW'S REACH, on the channel because the engine asked
             // for it by name and because of what it caught.
             //
             //
@@ -192,7 +192,7 @@ pub fn trace_target(page: usize, run: usize, report: &pdfcer_core::text_edit::Ed
             // absolutely-placed content it should be `0`; a large number means
             // the edited "line" ran further than the line.
             //
-            // ★ It is on the trace and NOT on the status row, and that is a
+            // It is on the trace and NOT on the status row, and that is a
             // decision. The operator cannot act on "1,676 followers were
             // repositioned" — it is a number about a content stream, and rule 4
             // says a disclosure must be in terms of what he can see. What he
@@ -269,7 +269,7 @@ pub fn read_line(doc: &crate::app::state::OpenDoc, page: usize, run: usize) -> O
 /// **Did the edit move the line it corrected?** — `OPERATOR_REQUESTS.md` O213,
 /// on the channel a driven check can read.
 ///
-/// # ★★★ Why this number and not `followers_repositioned`
+/// # Why this number and not `followers_repositioned`
 ///
 /// [`trace_target`] already publishes the reflow's reach, and the engine asked
 /// for that one by name. It is the right number for *"how far did the edit
@@ -313,7 +313,7 @@ pub fn trace_left_edge(
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
-        // ★ `moved` is emitted rather than left to the reader's subtraction,
+        // `moved` is emitted rather than left to the reader's subtraction,
         // and only when both ends were measured. A harness that differenced
         // two fields itself would have to decide what `none - 812.4` means,
         // and the answer a parser reaches for is `0` — this check's PASS

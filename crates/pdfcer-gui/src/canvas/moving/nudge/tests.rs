@@ -6,7 +6,7 @@
 //! different subjects**, and a nudge is enumerated the way a ladder is — one
 //! case per refusal, plus a case per direction.
 //!
-//! ## ★★★ THE TEST THAT WOULD HAVE CAUGHT THE FOUNDING DEFECT
+//! ## THE TEST THAT WOULD HAVE CAUGHT THE FOUNDING DEFECT
 //!
 //! [`a_real_focused_text_field_keeps_its_arrow_keys`] builds an actual
 //! [`egui::TextEdit`], focuses it, and **asserts that
@@ -25,10 +25,10 @@
 //! reached the state, then prove the code answered it.** The first assertion is
 //! the one that makes the second mean anything.
 //!
-//! ## ★★ …and the SECOND claimant, which egui cannot see at all
+//! ## …and the SECOND claimant, which egui cannot see at all
 //!
 
-// ★★ The INNER attribute, not just the `mod tests;` in the parent.
+// The INNER attribute, not just the `mod tests;` in the parent.
 // `check-ui-strings.sh`'s exclusion 2b recognises a test file **from the file**
 // rather than from its name; without it every `assert!` message below is
 // reported as un-catalogued operator copy.
@@ -108,7 +108,7 @@ fn object_selection() -> SelectionState {
 
 /// `RawInput` carrying `count` presses of one key.
 ///
-/// ★ `count` rather than a `bool`, because a held arrow arrives as several
+/// `count` rather than a `bool`, because a held arrow arrives as several
 /// `Event::Key { pressed: true, repeat: true }` in one frame and *"one undo
 /// entry per keypress"* is a claim about exactly that.
 fn arrows(key: Key, modifiers: Modifiers, count: usize) -> RawInput {
@@ -168,7 +168,7 @@ fn one_move(actions: &[Action]) -> (f64, f64) {
 // The Y sign
 // ---------------------------------------------------------------------------
 
-/// ★★★ **Up moves the mark UP the page.**
+/// **Up moves the mark UP the page.**
 ///
 /// PDF user space has y increasing upward from the bottom-left (§8.3.2.3) and
 /// canvas space has it increasing downward, so this asserts a positive `dy` for
@@ -226,7 +226,7 @@ fn every_arrow_moves_one_point_in_its_own_direction() {
     }
 }
 
-/// ★★★ **A quarter-turned page nudges in the direction the operator pressed.**
+/// **A quarter-turned page nudges in the direction the operator pressed.**
 ///
 /// The claim that makes routing through [`super::super::page_delta`] worth the
 /// parameter: on a page carrying `/Rotate 90`, screen-up is page-**left**, so an
@@ -280,7 +280,7 @@ fn ctrl_gives_the_finer_step() {
         (dy - f64::from(FINE_STEP_PT)).abs() < 1e-6,
         "Ctrl is the FINE step, not a multiplier: dy={dy}"
     );
-    // ★ A `const` assertion, which is what clippy asks for and what this claim
+    // A `const` assertion, which is what clippy asks for and what this claim
     // actually is: the direction of the modifier is a decision baked into two
     // constants, not a run-time property. Acrobat's modifier makes the step
     // SMALLER; a bigger one would be Illustrator's Shift, which this canvas has
@@ -291,7 +291,7 @@ fn ctrl_gives_the_finer_step() {
     }
 }
 
-/// ★★★ **Shift and Alt raise nothing, and Alt is the one that would have been a
+/// **Shift and Alt raise nothing, and Alt is the one that would have been a
 /// live defect.**
 ///
 /// `Alt+Up` and `Alt+Down` are bound in the built-in keymap to
@@ -303,7 +303,7 @@ fn ctrl_gives_the_finer_step() {
 /// Shift is refused for a different reason and the same effect: it already means
 /// *constrain to one axis* on this canvas, three gestures over.
 ///
-/// ★ Falsified: deleting the `shift || alt` line in [`super::step_for`] turns
+/// Falsified: deleting the `shift || alt` line in [`super::step_for`] turns
 /// both halves of this red.
 #[test]
 fn shift_and_alt_are_not_this_gestures_to_take() {
@@ -361,10 +361,10 @@ fn a_held_arrow_raises_one_move_per_repeat() {
 }
 
 // ---------------------------------------------------------------------------
-// ★★★ The guard — both claimants, each proved reachable first
+// The guard — both claimants, each proved reachable first
 // ---------------------------------------------------------------------------
 
-/// ★★★ **A REAL focused text field keeps its arrow keys.**
+/// **A REAL focused text field keeps its arrow keys.**
 ///
 /// This is the test `DEFECTS.md` D1 did not have. It builds an actual
 /// [`egui::TextEdit`], focuses it, and asserts
@@ -373,7 +373,7 @@ fn a_held_arrow_raises_one_move_per_repeat() {
 /// `Context` with no widgets passes whatever the guard says, which is precisely
 /// how the founding defect shipped.
 ///
-/// ★ Falsified: replacing [`crate::canvas::textedit::composing`] with a
+/// Falsified: replacing [`crate::canvas::textedit::composing`] with a
 /// constant `false` in [`super::keys`] turns this red on the *second* assertion
 /// while the first stays green — which is the proof that the first assertion is
 /// doing its job.
@@ -438,7 +438,7 @@ fn a_real_focused_text_field_keeps_its_arrow_keys() {
     );
 }
 
-/// ★★★ **A canvas draft keeps its arrow keys, and egui cannot see it.**
+/// **A canvas draft keeps its arrow keys, and egui cannot see it.**
 ///
 /// The second claimant, and the one `text_edit_focused()` answers `false` for.
 /// The caret this shell paints sits in PDF space at the glyphs' own scale, so it

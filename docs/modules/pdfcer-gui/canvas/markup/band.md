@@ -4,7 +4,7 @@ Rectangle, Ellipse, Arrow and Highlight: **press, drag out a shape,
 release.** One of the four gesture families [`super`]'s header tabulates;
 [`super::vertex`] and [`super::ink`] own the other shapes.
 
-## ★ The seam against [`super`]
+## The seam against [`super`]
 
 [`super`] holds *what a markup is* — the kinds, the geometry, `spec`,
 `action`, the pen. This file holds *how this family is gestured*: the

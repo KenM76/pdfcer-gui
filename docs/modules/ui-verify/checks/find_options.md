@@ -13,7 +13,7 @@ a Find defect. Splitting them would leave two copies of the control-chord
 probe to drift apart. R2 has room: the shared machinery is about a hundred
 lines and each check's own assessment is well under that.
 
-# ★★★ Both preferences had a passing test suite and both were wrong in the
+# Both preferences had a passing test suite and both were wrong in the
 running program
 
 This is the project's founding defect shape and these two are its newest
@@ -33,7 +33,7 @@ precisely what it was asked. Nothing between the clipboard and
 `EditSession::search_text` had ever looked at the query, so a character that
 is invisible in a one-line text box decided the answer.
 
-# ★★ Both checks run a CONTROL launch, and that is not optional
+# Both checks run a CONTROL launch, and that is not optional
 
 An assertion that a trace line is absent is satisfied by every build in
 which the feature never ran at all — a fixture with no hits, a needle that

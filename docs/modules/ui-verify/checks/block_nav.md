@@ -14,7 +14,7 @@ It is **salvage**: the shell this project replaces did it, and this one had
 never bound Up or Down at all — its caret is a character index into one run,
 and a single run has no line above it.
 
-# ★★ Why the assertion is a CHANGE OF RUN and not a caret movement
+# Why the assertion is a CHANGE OF RUN and not a caret movement
 
 Because those are different facts and only one of them is the feature. A
 build that moved the caret within the run it was already in would look
@@ -25,7 +25,7 @@ So `text-caret-step` carries **both** run indices and this check asserts they
 differ. That is `DEFECTS.md` D14's rule applied to a navigation key: *a trace
 line must carry the number a wrong build would get wrong.*
 
-# ★ Why a real drawing, and why this check would pass vacuously on a fixture
+# Why a real drawing, and why this check would pass vacuously on a fixture
 
 The whole point is crossing from one recognised block to another, which needs
 a page with **more than one line of text in more than one place**. This

@@ -40,7 +40,7 @@ pub const ZOOM_SETTLE: Duration = Duration::from_millis(150);
 /// de-duplication is per slot, so two lines sharing one suppress each other and
 /// each appears only when the two happen to alternate.
 ///
-/// ★★ The line is emitted on the way OUT of the regime as well as into it, and
+/// The line is emitted on the way OUT of the regime as well as into it, and
 /// that is not decoration. The subject is an absence — no order, no refusal, no
 /// learned ceiling — and a run that cannot tell *"never entered it"* from
 /// *"still in it"* cannot assert an absence at all. Same argument as
@@ -60,7 +60,7 @@ const BEYOND_RASTER_SLOT: &str = "strip-beyond-raster";
 impl OpenDoc {
     /// How long this document's zoom must stop changing before it is committed.
     ///
-    /// ★ **The operator's, as of 2026-08-17.** [`ZOOM_SETTLE`] was the whole
+    /// **The operator's, as of 2026-08-17.** [`ZOOM_SETTLE`] was the whole
     /// answer and is now only the *default* — `manifest::DIRECTED` carried this
     /// as *"partial G — `ZOOM_SETTLE` is a compiled-in constant today"*, and
     /// that was accurate: the control was missing, not the value.
@@ -79,7 +79,7 @@ impl OpenDoc {
 }
 
 impl OpenDoc {
-    /// ★ **Move the current page's texture into the strip, and the incoming
+    /// **Move the current page's texture into the strip, and the incoming
     /// page's out of it.**
     ///
     /// Called when the scroll position has made a different page current. See
@@ -119,7 +119,7 @@ impl OpenDoc {
         match self.strip_rasters.take(
             self.view.page_index,
             wanted,
-            // ★ Per-page (O74).
+            // Per-page (O74).
             self.page_epochs.get(self.view.page_index),
         ) {
             Some(PageRaster::Ready(texture)) => {
@@ -137,7 +137,7 @@ impl OpenDoc {
                 // refused costs one more dead render before the hold takes.
                 self.render_refused = Some((wanted, self.page_epochs.get(self.view.page_index)));
             }
-            // ★ Nothing cached for the incoming page. That clears the OUTGOING
+            // Nothing cached for the incoming page. That clears the OUTGOING
             // page's sentence -- which is the whole reason this arm assigns at
             // all -- but it must not clear a sentence about the page now
             // current. A refusal nulls the texture, so this function stops
@@ -155,7 +155,7 @@ impl OpenDoc {
         }
     }
 
-    /// ★★★ **Can this strip page be ordered at all at this raster scale?** —
+    /// **Can this strip page be ordered at all at this raster scale?** —
     /// O186, 2026-09-12.
     ///
     /// A strip page is always handed `region: None`: `OpenDoc::region_for`
@@ -207,7 +207,7 @@ impl OpenDoc {
         })
     }
 
-    /// ★★★ **Is there anything a worker could actually fill for this page at
+    /// **Is there anything a worker could actually fill for this page at
     /// this raster scale?** — O186's THIRD route, measured 2026-09-12.
     ///
     /// [`Self::strip_page_orderable`] answers this for a page that is handed no
@@ -240,7 +240,7 @@ impl OpenDoc {
     /// for a raster, and a request with no region is a request for the whole
     /// sheet — 1,046,187 × 738,924 device pixels of it.
     ///
-    /// ★★ **And the damage is not the refusal, it is the ceiling learned from
+    /// **And the damage is not the refusal, it is the ceiling learned from
     /// it.** `absorb`'s `absorb_render` turns a refusal into a zoom ceiling, so a page that
     /// renders perfectly through the region tier at ten billion percent —
     /// measured, on `fixtures/four-pages.pdf` — had its zoom capped at 329×
@@ -282,7 +282,7 @@ impl OpenDoc {
     ///     not reaching the defect**, and a check that confused the two would
     ///     report coverage it does not have.
     ///
-    /// ★ **The check that will falsify this is O186 stage one's.** That stage
+    /// **The check that will falsify this is O186 stage one's.** That stage
     /// fixes the unclamped `canvas::deep` anchor, and its driven check has to
     /// reproduce the terminal `canvas-unavailable reason=nothing-visible` first
     /// in order to assert it is gone. That reproduction IS this guard's
@@ -298,13 +298,13 @@ impl OpenDoc {
     ///
     #[must_use]
     pub fn raster_order_fillable(&self, page: usize, raster_scale: f32) -> bool {
-        // ★ `region_for` and not `raster_region`: it is the one that checks the
+        // `region_for` and not `raster_region`: it is the one that checks the
         // region belongs to THIS page. A region computed for page 4 does not
         // make page 5's order fillable, and both rectangles are valid, so the
         // mistake would be silent. The same argument is on `region_for` itself.
         self.region_for(page).map_or_else(
             || self.strip_page_orderable(page, raster_scale),
-            // ★★★ A REGION IS NOT AUTOMATICALLY SMALL. See
+            // A REGION IS NOT AUTOMATICALLY SMALL. See
             // `strategy::region_raster_fits` for the two rectangles that arrive
             // here wearing one type: the visible-rect tier's box is a multiple
             // of the window and so the same size at every zoom, while the
@@ -343,7 +343,7 @@ impl OpenDoc {
     /// the requested page come to disagree.
     #[must_use]
     pub fn strip_page_state(&self, page: usize, key: RenderKey) -> Option<PageState> {
-        // ★ Per-page (O74): a page whose own revision has not moved keeps its
+        // Per-page (O74): a page whose own revision has not moved keeps its
         // raster through an edit made on another sheet.
         match self
             .strip_rasters
@@ -351,7 +351,7 @@ impl OpenDoc {
         {
             Some(PageRaster::Ready(_)) => None,
             Some(PageRaster::Failed(detail)) => Some(PageState::Refused(detail.clone())),
-            // ★★★ Asked FIRST among the empty cases, and from the key's own
+            // Asked FIRST among the empty cases, and from the key's own
             // scale rather than from a second reading of the view — see
             // [`Self::strip_page_orderable`]. `Drawing` cannot be true here
             // after `fill_strip` stopped ordering these pages, and `Waiting`
@@ -374,7 +374,7 @@ impl OpenDoc {
     /// The texture for a **strip** page, if there is a current one.
     #[must_use]
     pub fn strip_page_texture(&self, page: usize, key: RenderKey) -> Option<&PageTexture> {
-        // ★ Per-page (O74).
+        // Per-page (O74).
         match self
             .strip_rasters
             .get(page, key, self.page_epochs.get(page))
@@ -406,7 +406,7 @@ impl PdfcerApp {
         // cannot be forgotten beats three that can.
         doc.trace_object_count();
 
-        // ★★★ O23's "see" half needs to know where this page's ink actually
+        // O23's "see" half needs to know where this page's ink actually
         // reaches, and that answer comes from a decomposition — 469 ms on the
         // operator's benchmark sheet.
         //
@@ -456,13 +456,13 @@ impl PdfcerApp {
             viewer::raster_scale(doc.view.zoom, pixels_per_point, doc.prefs.render_quality);
         let wanted = doc.render_key(wanted_scale);
 
-        // ★ Step 2 of the priority (see the module header), and it runs before
+        // Step 2 of the priority (see the module header), and it runs before
         // anything is requested: a scroll that changed which page is current
         // changed no *picture*, so the textures are rehomed rather than
         // re-rendered.
         doc.rehome_current_page(wanted);
 
-        // ★ The staleness comparison, and why it is ONE key.
+        // The staleness comparison, and why it is ONE key.
         //
         // "Is the picture on screen still a picture of what the operator is
         // looking at?" is asked of the same `RenderKey` the worker labelled
@@ -471,7 +471,7 @@ impl PdfcerApp {
         let current = doc.page_texture.as_ref().map(|t| t.key);
         // No texture at all is "stale" in the discrete sense: there is nothing
         // on screen worth waiting to replace.
-        // ★ …and an EDIT is a discrete change too, even though it moves no
+        // …and an EDIT is a discrete change too, even though it moves no
         // field of the key.
         //
         // The key answers "is this a picture of the right page, at the right
@@ -480,7 +480,7 @@ impl PdfcerApp {
         // those. That third term is `page_texture_epoch`, and adding it here is
         // what lets `vector_edit` stop nulling the texture — which is what put
         // a blank page on screen after every edit.
-        // ★★★ Per-page since 2026-08-31 (O74). The third term still answers
+        // Per-page since 2026-08-31 (O74). The third term still answers
         // "is it a picture of the right REVISION" — it is now the revision of
         // *this page* rather than of the document, so an edit on sheet 3 no
         // longer re-rasterises the canvas while it is showing sheet 7.
@@ -488,7 +488,7 @@ impl PdfcerApp {
         let stale_discrete =
             stale_edit || current.is_none_or(|k| k.discrete_inputs() != wanted.discrete_inputs());
         let stale_scale = current.is_some_and(|k| k.scale_bits() != wanted.scale_bits());
-        // ★★★ …AND WHETHER IT IS A PICTURE OF THE RIGHT PART OF THE PAGE.
+        // …AND WHETHER IT IS A PICTURE OF THE RIGHT PART OF THE PAGE.
         //
         // `OPERATOR_REQUESTS.md` O25. Above the pixmap ceiling a raster covers
         // the visible region rather than the page, so two textures of the same
@@ -497,14 +497,14 @@ impl PdfcerApp {
         // correctly at its own region and slid off, leaving the newly exposed
         // area blank indefinitely. See `RenderKey::same_region`.
         //
-        // ★★ Grouped with the SCALE rather than with the discrete inputs, and
+        // Grouped with the SCALE rather than with the discrete inputs, and
         // the reason is the same debounce argument that put the scale there: a
         // region changes under a continuous gesture, and a render started on
         // every frame of a drag would be cancelled by the next one — the
         // worker is single-slot — so the operator would pan for a second and
         // receive nothing at the end of it.
         //
-        // ★ It is already rate-limited in a way the scale is not:
+        // It is already rate-limited in a way the scale is not:
         // `render::strategy::region_for` snaps to a half-viewport grid, so a
         // region changes at most once per half-screen of travel however
         // smoothly the pointer moves. The debounce is the second limiter, not
@@ -512,7 +512,7 @@ impl PdfcerApp {
         // zoom without making a pan feel slow.
         let stale_region = current.is_some_and(|k| !k.same_region(&wanted));
 
-        // ★★★ A PAGE WHOSE PREVIOUS RENDER FAILED MUST NOT BE RETRIED EVERY
+        // A PAGE WHOSE PREVIOUS RENDER FAILED MUST NOT BE RETRIED EVERY
         // FRAME: the failure is deterministic -- same bytes through the same
         // code -- so a retry can only reproduce it, and each one costs a
         // thread. Any genuinely different request is a different key or a
@@ -536,7 +536,7 @@ impl PdfcerApp {
         // internal mistake. The whole measurement, and why declining
         // withholds no picture, is on `OpenDoc::raster_order_fillable`.
         //
-        // ★ Gated on both spawn sites at once, by wrapping them, rather than
+        // Gated on both spawn sites at once, by wrapping them, rather than
         // repeated inside each: the two arms differ only in *when* they ask, and
         // a guard added to one of two call sites is the shape of defect this
         // project has now corrected more than once.
@@ -571,7 +571,7 @@ impl PdfcerApp {
         Self::fill_strip(ctx, doc, wanted_scale, now);
     }
 
-    /// ★ **Prune the strip's cache to what is visible, then start at most one
+    /// **Prune the strip's cache to what is visible, then start at most one
     /// render for it.**
     ///
     /// Step 3 of the priority. Does nothing at all when `strip_visible` is
@@ -598,7 +598,7 @@ impl PdfcerApp {
     /// wheel gesture over a continuous document costs the same one debounced
     /// render it costs over a single page.
     ///
-    /// # ★ And why it must ASK FOR A FRAME while it is waiting
+    /// # And why it must ASK FOR A FRAME while it is waiting
     ///
     /// **Found by driving the binary, not by a test.** Every gate was green and
     /// the strip did not fill: the trace showed `visible=2 drawn=1` and then
@@ -630,7 +630,7 @@ impl PdfcerApp {
             return;
         }
         let visible = std::mem::take(&mut doc.strip_visible);
-        // ★★ `retain` no longer takes the visible set, and that is the whole of
+        // `retain` no longer takes the visible set, and that is the whole of
         // the operator's *"they constantly redraw with larger files"*.
         //
         //
@@ -653,7 +653,7 @@ impl PdfcerApp {
         // visible neighbour sheets this frame declined to order is traced,
         // before the scan that skips them.
         //
-        // ★ `trace_changed`, and a COUNT rather than a list of page indices, so
+        // `trace_changed`, and a COUNT rather than a list of page indices, so
         // the cardinality is one line per transition instead of one line per
         // frame of a zoom gesture. Which pages they were is derivable: the
         // canvas already publishes the visible set through
@@ -671,7 +671,7 @@ impl PdfcerApp {
             .count();
         crate::diag::trace_changed(BEYOND_RASTER_SLOT, || {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            // ★ The SCALE is deliberately absent. Including it would make the
+            // The SCALE is deliberately absent. Including it would make the
             // line change on every wheel notch and defeat the de-duplication
             // this slot exists for; the zoom is already published by
             // `canvas-pos`, once per transition, from the canvas that decided
@@ -683,7 +683,7 @@ impl PdfcerApp {
             .iter()
             .copied()
             .filter(|&page| page != current)
-            // ★★★ **O186's raster error, at its source.** A strip page is
+            // **O186's raster error, at its source.** A strip page is
             // ordered whole-sheet — `OpenDoc::region_for` gives a region to the
             // current page only — so above the renderer's pixmap ceiling there
             // is no order to place. Asking anyway is what painted
@@ -691,7 +691,7 @@ impl PdfcerApp {
             // MAX_PIXMAP_EDGE"* across a neighbouring sheet of the operator's
             // drawing set while the sheet he was reading drew perfectly.
             //
-            // ★ A `filter`, deliberately, and not a check inside the `find`'s
+            // A `filter`, deliberately, and not a check inside the `find`'s
             // predicate or after it: the scan must CARRY ON to the next
             // candidate. A document whose visible pages are an unorderable A1
             // followed by an orderable letter sheet must still fill the letter
@@ -705,7 +705,7 @@ impl PdfcerApp {
                 !doc.strip_rasters.has(
                     page,
                     doc.render_key_for(page, raster_scale),
-                    // ★ Per-page (O74): this is the scan that decides which
+                    // Per-page (O74): this is the scan that decides which
                     // page the worker fills next, so a document-wide key here
                     // put every page back in the queue after every edit.
                     doc.page_epochs.get(page),
@@ -790,7 +790,7 @@ impl PdfcerApp {
 /// so that a reader who finds four green tests here does not conclude the route
 /// is covered.
 ///
-/// ## ★★ Why the fixture is this repository's and not the engine's
+/// ## Why the fixture is this repository's and not the engine's
 ///
 /// `open_local_fixture("four-pages.pdf")`, **not**
 /// `open_fixture(FOUR_PAGES)` — and the difference is not cosmetic. There are
@@ -802,7 +802,7 @@ impl PdfcerApp {
 /// | this repo's `fixtures/four-pages.pdf` | `2383.937 × 1683.78`, `612 × 792`, `612 × 792`, `306 × 396` |
 ///
 ///
-/// ★ Opened rather than hand-built, for the reason `app::status::rasterstop`'s
+/// Opened rather than hand-built, for the reason `app::status::rasterstop`'s
 /// tests give: [`Self::strip_page_orderable`] reaches `page_extent_pts`, which
 /// reads the real `/MediaBox` and `/Rotate`, so a synthesised page would check
 /// the arithmetic against a number this test invented rather than against a
@@ -854,7 +854,7 @@ mod tests {
         )
     }
 
-    /// ★★ **The half that must answer yes, and the half that must answer no.**
+    /// **The half that must answer yes, and the half that must answer no.**
     ///
     /// Asserted in one test because either alone is satisfied by a constant: a
     /// predicate hard-wired to `true` passes the first assertion and one
@@ -894,7 +894,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **A region makes the SHEET's size stop mattering — and puts the
+    /// **A region makes the SHEET's size stop mattering — and puts the
     /// REGION's size in its place.**
     ///
     /// The first half is why this predicate is not simply
@@ -960,7 +960,7 @@ mod tests {
         );
     }
 
-    /// ★ **A region belonging to another page is not a region.**
+    /// **A region belonging to another page is not a region.**
     ///
     /// This is the assertion that pins [`Self::region_for`] rather than the
     /// `raster_region` field inside the predicate. Both rectangles are valid, so

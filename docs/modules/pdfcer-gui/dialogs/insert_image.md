@@ -2,7 +2,7 @@
 
 ## The gap this closes
 
-`edit.insert_image` was registered, drawn on Edit ▸ Insert, carried a `★ P3`
+`edit.insert_image` was registered, drawn on Edit ▸ Insert, carried a `P3`
 mark in `shell::commands::reach`'s `SCAFFOLDED` list — and its recorded
 reason was, verbatim, **"No recorded reason for the missing arm."** One of
 only three entries in that list of which that was true.
@@ -11,7 +11,7 @@ only three entries in that list of which that was true.
 an optional `/SMask`, a `q…cm…Do…Q` overlay stream and the page patches, as
 **one undo entry**, additive, with the original bytes left verbatim.
 
-## ★ Why placement is numeric here, and not a drag on the canvas
+## Why placement is numeric here, and not a drag on the canvas
 
 Every other editor lets you drag a box, and the standing tie-breaker in this
 project is *"make it work the way other programs do"*. This one asks for a
@@ -39,7 +39,7 @@ rather than a shortcut:
 replacement for this window, and it is the natural next slice: `Action::
 InsertImage` already carries everything it would produce.
 
-## ★ What this window previews, and the one thing it does not
+## What this window previews, and the one thing it does not
 
 It previews **where the picture lands**, from `NewImage::placed_rect()` —
 the engine's own function, public for exactly this, whose doc says
@@ -52,7 +52,7 @@ and shipped the same day. `NewImage::effective_dpi()` and
 `add_image` now **calls** them rather than repeating the formula, so the
 preview and the outcome cannot disagree.
 
-★ The four-line version this window nearly computed would have been wrong.
+The four-line version this window nearly computed would have been wrong.
 Under `ImageFit::Contain` the placed rectangle is the *letterboxed*
 sub-rectangle, not the box the operator typed, so measuring `rect` reports a
 resolution low by exactly the letterbox ratio. The pure sibling was not

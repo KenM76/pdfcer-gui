@@ -21,7 +21,7 @@ the editing canvas differ from a screenshot of the same document saved and
 reopened. The grips vanish with the selection because they are the
 cursor's statement about the selection, not a property of the page.
 
-## ★ These are SCREEN-space rects, deliberately, and it is the one place
+## These are SCREEN-space rects, deliberately, and it is the one place
 
 Everything else in `canvas/` past [`crate::canvas::mapping`] is page
 space. A grip is the exception and must be: it is a **fixed number of

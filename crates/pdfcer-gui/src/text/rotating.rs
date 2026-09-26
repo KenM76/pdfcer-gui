@@ -11,7 +11,7 @@ use pdfcer_core::edit::RectDerivation;
 
 /// **Why a rotation did not happen**, in the shell's own reading of the cases.
 ///
-/// # ★★★ Five variants, and the founding rule they answer
+/// # Five variants, and the founding rule they answer
 ///
 /// > A REFUSAL MUST BE A SENTENCE, NEVER A SILENCE.
 ///
@@ -21,7 +21,7 @@ use pdfcer_core::edit::RectDerivation;
 /// A ninth handle shipped without this enum would have reproduced it on its
 /// first day.
 ///
-/// # ★★ Why a `Copy` enum rather than the engine's own `Display`
+/// # Why a `Copy` enum rather than the engine's own `Display`
 ///
 /// [`crate::text::status::TextStyleRefusal`]'s reason, adopted unchanged: a
 /// `format!` of an `EditError` would route **diagnostic prose into the UI**,
@@ -29,7 +29,7 @@ use pdfcer_core::edit::RectDerivation;
 /// An enum keeps `crate::app::status::decline::Declined` `Copy` and keeps every
 /// operator-visible word in this file, under **R1**.
 ///
-/// # ★ Two of the five are unreachable today, and they are kept
+/// # Two of the five are unreachable today, and they are kept
 ///
 /// [`Self::WrongVerb`] and [`Self::NoDimensionRecord`] describe **routing
 /// failures**, and this shell routes: `canvas::rotating` matches on
@@ -55,7 +55,7 @@ pub enum RotateRefusal {
     /// The document is **certified**, and its permissions forbid a change of
     /// this kind.
     ///
-    /// `EditError::CertificationForbidsChange`. ★ The one variant here that is
+    /// `EditError::CertificationForbidsChange`. The one variant here that is
     /// genuinely reachable on an ordinary file, and the one an operator has no
     /// way to guess at: a signed drawing looks exactly like an unsigned one on
     /// the canvas.
@@ -71,7 +71,7 @@ pub enum RotateRefusal {
     /// no page object on this page.
     ///
     ///
-    /// ★★ It is reachable, and by an ordinary route rather than a routing bug:
+    /// It is reachable, and by an ordinary route rather than a routing bug:
     /// `SelectionState::object_indices_on` keeps entries carrying a
     /// `page_object_index` and drops the ones carrying only a `leaf_index`, so
     /// an operator who has clicked **into** a form XObject has an outline, a
@@ -83,7 +83,7 @@ pub enum RotateRefusal {
     NothingSelected,
     /// Anything else the engine declined.
     ///
-    /// ★ A catch-all with a **hand-written** sentence, not a rendered error.
+    /// A catch-all with a **hand-written** sentence, not a rendered error.
     /// `TextStyleRefusal::Other` sets the precedent and the reasoning is the
     /// same: wording a decline is catalog work per refusal, and the honest
     /// fallback is a sentence that says *nothing changed and Ctrl+Z has nothing
@@ -100,7 +100,7 @@ impl RotateRefusal {
     #[must_use]
     pub const fn line(self) -> &'static str {
         match self {
-            // ★ It names what the operator can see — a form field, a dimension
+            // It names what the operator can see — a form field, a dimension
             // — rather than "the wrong verb", which is a fact about this
             // program's internals and would read as an internal error. The
             // second clause is the actionable half: nothing was changed, so
@@ -108,20 +108,20 @@ impl RotateRefusal {
             Self::WrongVerb => {
                 "pdfcer cannot turn that kind of item, and it changed nothing rather than turn part of it. Form fields and dimensions each need their own tool."
             }
-            // ★★ "Signed", not "certified": the operator's word for what
+            // "Signed", not "certified": the operator's word for what
             // happened to the file is that somebody signed it. And it says the
             // limit is the DOCUMENT's rather than pdfcer's, because an operator
             // told only "cannot" will look for a setting to change.
             Self::Certified => {
                 "This document has been signed, and the signature does not allow it to be changed this way. pdfcer turned nothing."
             }
-            // ★ It says the dimension is still usable, because the alternative
+            // It says the dimension is still usable, because the alternative
             // reading — "this dimension is broken" — would send somebody to
             // delete and redraw a perfectly good measurement.
             Self::NoDimensionRecord => {
                 "pdfcer could not find the measurement behind this dimension, so it turned nothing. The dimension itself is unchanged and still measures what it did."
             }
-            // ★★ It does NOT say "select something first" — the resize
+            // It does NOT say "select something first" — the resize
             // catalogue's wording for its own `NothingSelected`, and wrong
             // here. This fires when something IS selected: an operator who has
             // clicked into a form XObject is holding a piece of one, and being
@@ -131,7 +131,7 @@ impl RotateRefusal {
             Self::NothingSelected => {
                 "pdfcer turns whole shapes, and what is selected here is a piece of one. Press Escape to select the whole shape, then drag the round handle again."
             }
-            // ★ No cause named, because none is known. What it does say is the
+            // No cause named, because none is known. What it does say is the
             // one thing the operator needs: the page is exactly as it was.
             Self::Other => {
                 "pdfcer could not turn that, and it changed nothing — the page is exactly as it was, and there is nothing to undo."
@@ -177,7 +177,7 @@ impl RotateRefusal {
 /// **Disclosure: this mark has nowhere to record an orientation, so its box —
 /// and its ink — really does get bigger every time it is turned.**
 ///
-/// # ★★★ This replaces `rect_grew`, and it is a much better sentence
+/// # This replaces `rect_grew`, and it is a much better sentence
 ///
 /// The deleted one fired on **every** turn of **everything** that was not a
 /// quarter turn, and said the box had grown while the mark had not. It was
@@ -201,7 +201,7 @@ impl RotateRefusal {
 /// grip ignoring this *"re-introduces the operator's bug one level up, on
 /// exactly the annotations that cannot be fixed."*
 ///
-/// # ★★ Why it discloses rather than refusing
+/// # Why it discloses rather than refusing
 ///
 /// Because the turn is real and the operator asked for it, and a mark that
 /// silently declines to rotate is worse than one that rotates and says what it
@@ -210,7 +210,7 @@ impl RotateRefusal {
 /// so, which is a decision rather than an oversight. Baking an appearance is
 /// the better answer and is owed.
 ///
-/// ★ `None` for the two rules that compose, which is the whole point of taking
+/// `None` for the two rules that compose, which is the whole point of taking
 /// the enum rather than comparing rectangles: a sentence that fired on every
 /// rotation is a sentence nobody reads by the third time, and the previous one
 /// did exactly that.
@@ -227,7 +227,7 @@ pub fn rect_still_grows(rule: RectDerivation) -> Option<String> {
 /// **Disclosure: a dimension that was locked to horizontal or vertical is no
 /// longer locked.**
 ///
-/// ★★★ The engine commissioned this sentence by name, and its argument is the
+/// The engine commissioned this sentence by name, and its argument is the
 /// whole reason the disclosure exists rather than the relaxation being silent:
 ///
 /// > A `Linear` dimension locked to horizontal or vertical cannot stay locked
@@ -235,7 +235,7 @@ pub fn rect_still_grows(rule: RectDerivation) -> Option<String> {
 /// > `constraint_relaxed: true`. **Say so: an operator whose dimension silently
 /// > stopped being axis-locked will find out later and blame something else.**
 ///
-/// ★★ There were three options and two are wrong, which is worth carrying here
+/// There were three options and two are wrong, which is worth carrying here
 /// because the sentence has to sound like a *choice* rather than a failure:
 /// **refusing** makes rotation impossible for the most common constrained
 /// dimensions, which is most of a CAD drawing; **keeping** the constraint
@@ -243,7 +243,7 @@ pub fn rect_still_grows(rule: RectDerivation) -> Option<String> {
 /// worse than either alone and invisible until something regenerates from the
 /// constraint. Relaxing preserves exactly what is on the page.
 ///
-/// ★ **It says the measurement did not change**, in the same breath, and that
+/// **It says the measurement did not change**, in the same breath, and that
 /// clause is doing real work. An operator told *"the constraint was relaxed"*
 /// and nothing else will reasonably wonder whether the number moved too. It
 /// cannot: a rotation preserves every distance, so the value is identical by
@@ -281,7 +281,7 @@ mod tests {
 
     /// Every refusal has a sentence, and none of them is empty.
     ///
-    /// ★ The check that a variant added later cannot ship silent — the whole
+    /// The check that a variant added later cannot ship silent — the whole
     /// failure this enum exists to prevent, applied to the enum itself.
     #[test]
     fn every_refusal_is_a_sentence() {

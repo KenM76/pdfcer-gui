@@ -16,7 +16,7 @@ use crate::trace::Trace;
 
 /// Supplied at launch. **Nothing**, deliberately — see [`MODE`].
 ///
-/// ★★★ Two things were got wrong here in succession, a third was got wrong for
+/// Two things were got wrong here in succession, a third was got wrong for
 /// longer, and all three are worth keeping.
 ///
 /// **1. `view.panel_bookmarks` is a TOGGLE.** Invoking it does not "open the
@@ -34,7 +34,7 @@ use crate::trace::Trace;
 /// even the order `panel-then-mode` loses the panel — which is what the first
 /// version did, and its symptom was the same missing authoring row.
 ///
-/// **3. ★★★ And the conclusion drawn from 1 and 2 was FALSE — corrected
+/// **3. And the conclusion drawn from 1 and 2 was FALSE — corrected
 /// 2026-09-05, on the first sweep that ever ran this check.** It read: *"read is
 /// the mode whose default layout does not carry this panel, so the toggle
 /// reliably turns it on, and nothing this check does needs Edit — the panel
@@ -78,7 +78,7 @@ const PANEL_BODY: &str = "dock.body.view.panel_bookmarks";
 
 /// A row, so one can be clicked to select it.
 ///
-/// ★★ A trace **event**, not a `ui_rect` region — which is what the first
+/// A trace **event**, not a `ui_rect` region — which is what the first
 /// version of this check got wrong and what its own failure message could not
 /// tell it. The panel writes one `bookmark-row` line per row per frame carrying
 /// `row=[[x y] - [x y]]`, and publishes `ui_rect` only for its two authoring
@@ -96,7 +96,7 @@ const APPLIED: &str = "bookmark-paste-applied";
 
 /// The title typed for the bookmark this check authors: `HI`.
 ///
-/// ★ Two letters, because every character is a synthesised keystroke through
+/// Two letters, because every character is a synthesised keystroke through
 /// the OS and a longer title buys nothing. Letters rather than digits so the
 /// row is unmistakable in a trace beside page numbers.
 const TITLE_KEYS: &[u16] = &[vk::H, vk::F];
@@ -127,7 +127,7 @@ impl Check for ABookmarkSubtreeCanBeCopiedAndPasted {
 
 /// **Wait until `name` is a live region, polling rather than settling once.**
 ///
-/// ★★★ This replaced three fixed `settle` calls and is the difference between a
+/// This replaced three fixed `settle` calls and is the difference between a
 /// check that passes most times and one that passes.
 ///
 /// `declared` is not a snapshot. The application's `ui-rect` channel is a
@@ -208,7 +208,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
-    // ★★★ NORMALISE THE PERSISTED LAYOUT FIRST, or this check passes and skips
+    // NORMALISE THE PERSISTED LAYOUT FIRST, or this check passes and skips
     // in alternation.
     //
     // `view.panel_bookmarks` is a TOGGLE, and the dock layout is **saved to
@@ -224,7 +224,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // normalise at the start*; this is the second instance and the first where
     // the state was written by the APPLICATION rather than by the check.
     //
-    // ★ Safe because it is the **scratch** userdata beside the binary under
+    // Safe because it is the **scratch** userdata beside the binary under
     // test, never the operator's own: the standing rule is that this suite is
     // never pointed at a published build, for exactly this reason.
     if let Some(dir) = exe.parent() {
@@ -237,7 +237,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
-    // ★ 45 → 70. `INVOKE` runs TWO commands — a mode change and a panel open —
+    // 45 → 70. `INVOKE` runs TWO commands — a mode change and a panel open —
     // and the mode change reconfigures the dock, so the panel's first layout
     // lands several frames after a single-command run's would. At 45 this check
     // alternated between finding the authoring row and reporting it absent,
@@ -245,13 +245,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // defect.
     session.settle(70);
     let driver = Driver::new(session.window());
-    // ★★★ The mode that offers the authoring row. See [`MODE`].
+    // The mode that offers the authoring row. See [`MODE`].
     click_mode_segment(&session, &driver, ui_rect, MODE)?;
-    // ★★ The dock draws only the ACTIVE tab's body, and in this mode's default
+    // The dock draws only the ACTIVE tab's body, and in this mode's default
     // layout Bookmarks shares a stack with Pages. See
     // [`crate::checks::driving::raise_dock_tab`].
     driving::raise_dock_tab(&session, &driver, ui_rect, "view.panel_bookmarks")?;
-    // ★★ SETTLE BEFORE READING THE REGIONS, and this cost a run.
+    // SETTLE BEFORE READING THE REGIONS, and this cost a run.
     //
     // The mode click re-lays out the whole window, so the bookmarks panel
     // republishes its `ui_rect` regions on the frames *after* it. Reading
@@ -266,7 +266,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- author one, so the check does not depend on the fixture ------------
     let Some(title_box) = wait_for_region(&session, ui_rect, TITLE_BOX, 12)? else {
-        // ★ The region list is built HERE rather than inside an `ok_or_else`
+        // The region list is built HERE rather than inside an `ok_or_else`
         // closure, because building it needs `session.trace()?` and a closure
         // cannot carry the `?`. Worth the extra lines: a skip that says *"no
         // authoring row"* AND lists the regions that are live is the difference
@@ -301,12 +301,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- select it ----------------------------------------------------------
     //
-    // ★ Copy is drawn only when a bookmark is SELECTED — R9, an unavailable
+    // Copy is drawn only when a bookmark is SELECTED — R9, an unavailable
     // capability renders nothing — so this click is a precondition of the
     // subject, not part of it.
-    // ★ The LAST row, because the bookmark just authored is appended — and its
+    // The LAST row, because the bookmark just authored is appended — and its
     // rect comes off the row line itself rather than from a region.
-    // ★★ The FIRST row of the LAST frame, not the last row of the trace.
+    // The FIRST row of the LAST frame, not the last row of the trace.
     //
     // Two different mistakes, one line apart. `.last()` over the whole trace
     // returns the bottom-most row of the most recent frame — the one this check
@@ -318,7 +318,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ⇒ Authoring one is still worth doing: it makes the check independent of
     // what the fixture arrived with. What it must not do is then insist on
     // clicking the one it made.
-    // ★★★ A row that is ON SCREEN, filtered against the panel's own body —
+    // A row that is ON SCREEN, filtered against the panel's own body —
     // `bookmark_edit`'s technique, adopted verbatim after four attempts at
     // simpler rules failed for four different reasons.
     //
@@ -350,7 +350,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         };
         body.is_none_or(|b| r.min.y >= b.min.y && r.max.y <= b.max.y)
     };
-    // ★ ENABLED, too. A row whose destination pdfcer cannot resolve is drawn as a
+    // ENABLED, too. A row whose destination pdfcer cannot resolve is drawn as a
     // disabled `Button`, and a disabled button never reports a click — so it can
     // never be selected and the Copy control could never appear for it. That is
     // correct behaviour that would read here as the defect.
@@ -382,7 +382,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
     report.note(format!("the Copy control is at {copy:?}"));
-    // ★★ Up to three attempts, re-reading the rect each time.
+    // Up to three attempts, re-reading the rect each time.
     //
     // Not a tolerance widened to make a red check green — the assertion below
     // is unchanged and still fails if nothing ever happens. It is that this
@@ -422,7 +422,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    // ★★★ The Paste control appears at the BOTTOM of a list that has just grown
+    // The Paste control appears at the BOTTOM of a list that has just grown
     // by an authoring block, so on a short panel it is declared below the fold —
     // the whole of the incident recorded on
     // [`crate::checks::driving::bring_into_body`], which is where the argument

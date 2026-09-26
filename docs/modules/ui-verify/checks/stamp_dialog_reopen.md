@@ -23,7 +23,7 @@ Two facts in one sentence, and the second is the more important:
    finished, only abandoned.** It is not a cosmetic complaint. There is no
    keyboard route to Add, so the operator's only exit was the title bar's X.
 
-# ★★★ Why this can assert with no size arithmetic anywhere in the file
+# Why this can assert with no size arithmetic anywhere in the file
 
 Both buttons are published through `diag::ui_rect_visible`, which emits
 **nothing** when the rect falls outside its own clip rect. So:
@@ -45,7 +45,7 @@ Both buttons are published through `diag::ui_rect_visible`, which emits
 | F | read the answer row again | both regions declared — **this is O171** |
 | G | press Cancel | the check leaves the document as it found it, bar one stamp |
 
-★ Phase C is not redundant with phase F. If the row is missing on the *first*
+Phase C is not redundant with phase F. If the row is missing on the *first*
 open too then the defect is not the one the operator reported and the fix
 that was made would be the wrong fix — the message says so, rather than
 letting the same failure text stand for two different faults.

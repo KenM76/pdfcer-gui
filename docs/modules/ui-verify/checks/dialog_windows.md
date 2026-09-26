@@ -12,7 +12,7 @@ only the one the operator complained about.
 > up in its own window."*
 
 
-# ★★ Why one process per dialog
+# Why one process per dialog
 
 `PDFCER_DIAG_INVOKE` fires **once** per process, by design: an environment
 variable is not an event, and the latch that turns it into one is consumed
@@ -21,7 +21,7 @@ processes. That is slower and it is the honest shape — a dialog opened
 *after* another dialog is a different state from a dialog opened first, and
 this check is about the plain case.
 
-# ★★★ Why it needs no pointer, and why that matters
+# Why it needs no pointer, and why that matters
 
 Every dialog here is reachable by a command id, so the whole check runs
 through the diagnostic invoke seam: no clicks, no keystrokes, nothing that
@@ -29,7 +29,7 @@ takes the operator's cursor. It is therefore one of the few checks that is
 **safe to run on a machine somebody is using**, and it does not skip under
 `--no-input`.
 
-★ The price is stated rather than hidden: five dialogs in this directory are
+The price is stated rather than hidden: five dialogs in this directory are
 reachable only by a gesture — Insert image (needs a chosen file), Insert
 pages, Set scale, the text-annotation editor, and the unsaved-changes
 question. They are **not covered here**, and a regression in any of them

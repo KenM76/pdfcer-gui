@@ -68,7 +68,7 @@ pub const GRIP_GRAB_SLACK_PX: f32 = 2.0;
 /// small box — so nothing is unreachable, there is simply less on screen.
 pub const MIN_MID_GRIP_EXTENT_PX: f32 = GRIP_SIZE_PX * 3.0;
 
-/// ★★★ The smallest box, **across** an axis, that still gets that axis's
+/// The smallest box, **across** an axis, that still gets that axis's
 /// mid-edge grips — the rule that stops a grip swallowing the body.
 ///
 /// # The defect this closes, measured
@@ -128,7 +128,7 @@ pub enum Grip {
     /// Not drawn as a square: the whole interior *is* the target, which is
     /// what every drawing tool does and what an operator will try first.
     Move,
-    /// ★★ **The rotate handle**, offset above the top edge on a stem.
+    /// **The rotate handle**, offset above the top edge on a stem.
     ///
     /// # Why above, and why on a stem
     ///
@@ -142,7 +142,7 @@ pub enum Grip {
     /// belong together, without which the handle reads as an unrelated dot
     /// floating over the page.
     ///
-    /// # ★ It is drawn as a CIRCLE
+    /// # It is drawn as a CIRCLE
     ///
     /// Every square on this canvas resizes. A shape that resized in one place
     /// and rotated in another would be a private convention the operator has to
@@ -186,7 +186,7 @@ impl Grip {
             Self::North | Self::South => CursorIcon::ResizeVertical,
             Self::East | Self::West => CursorIcon::ResizeHorizontal,
             Self::Move => CursorIcon::Move,
-            // ★ egui 0.35 has no rotate cursor, so this is the nearest honest
+            // egui 0.35 has no rotate cursor, so this is the nearest honest
             // thing rather than the right thing: `Grab` says *"this is a handle
             // you take hold of"*, which is true, where `Default` would say
             // nothing and `Crosshair` would suggest precision placement.
@@ -200,7 +200,7 @@ impl Grip {
 
     /// Whether this grip resizes rather than moves or rotates.
     ///
-    /// ★★ This was `self != Self::Move`, and leaving it that way when
+    /// This was `self != Self::Move`, and leaving it that way when
     /// [`Self::Rotate`] arrived would have made the rotate handle **the ninth
     /// resize grip**: `gesture::meaning` asks exactly this question to decide
     /// between `DragKind::Resize` and everything else, so a press on the handle
@@ -251,7 +251,7 @@ impl Grip {
         }
     }
 
-    /// ★★ **The corner a drag on this grip must leave EXACTLY WHERE IT IS.**
+    /// **The corner a drag on this grip must leave EXACTLY WHERE IT IS.**
     ///
     /// [`Self::anchor`] answers where the grip *is*; this answers what it pivots
     /// about, and the two are opposite corners. Dragging the south-east grip moves
@@ -267,7 +267,7 @@ impl Grip {
     /// corner stayed still — an object that jumps on release by exactly the box's
     /// size.
     ///
-    /// ★ A mid-edge grip pivots about the **opposite edge**, keeping the axis it
+    /// A mid-edge grip pivots about the **opposite edge**, keeping the axis it
     /// does not scale centred. `East` returns the west edge at the same y, so the
     /// unscaled axis's factor of 1.0 leaves every point on it unmoved whatever y
     /// this returns — but returning the mid-point rather than a corner keeps the
@@ -280,7 +280,7 @@ impl Grip {
     /// The grip **diagonally opposite** this one — the one whose anchor is this
     /// grip's pivot.
     ///
-    /// ★ Factored out of [`Self::pivot`] rather than duplicated in
+    /// Factored out of [`Self::pivot`] rather than duplicated in
     /// [`GripFrame::pivot`], because "which grip stays still" is a fact about
     /// the *enum*, not about the frame it is laid out in. Spelling it twice is
     /// how a turned frame and an upright one end up disagreeing about which
@@ -318,7 +318,7 @@ impl Grip {
             Self::SouthWest => bounds.right_top(),
             Self::West => Pos2::new(bounds.right(), mid.y),
             Self::Move => mid,
-            // ★ The CENTRE, and for this grip it is the real answer rather than
+            // The CENTRE, and for this grip it is the real answer rather than
             // a harmless one. A rotation turns the selection about its middle —
             // which is what every drawing program does, and the only choice that
             // leaves the object where the operator can still see it. The eight
@@ -331,7 +331,7 @@ impl Grip {
 
 /// How far above the selection box the rotate handle's centre sits, in points.
 ///
-/// ★ Far enough that its grab area (the handle plus [`GRIP_GRAB_SLACK_PX`])
+/// Far enough that its grab area (the handle plus [`GRIP_GRAB_SLACK_PX`])
 /// cannot overlap the north grip's, or the two would fight for the same press
 /// and which one won would depend on the order they are checked in — the
 /// failure `handles.md` H5's corollary is about. With a 7 pt handle and 2 pt of
@@ -385,7 +385,7 @@ pub fn rotate_rect_in(frame: GripFrame) -> Rect {
 /// The box the **grips** are anchored to, which is the selection's own box
 /// grown outward when the selection is too small to hold them.
 ///
-/// # ★★★ The defect this closes, in the operator's own words
+/// # The defect this closes, in the operator's own words
 ///
 /// He asked, on 2026-09-04: *"zoom in on the atoms of the banana pdf file and
 /// see what happens when you try to draw a box around a molecule and move it,
@@ -428,7 +428,7 @@ pub fn rotate_rect_in(frame: GripFrame) -> Rect {
 /// push = max(0, (MIN_BODY_STRIP_PX - extent) / 2)     on each side
 /// ```
 ///
-/// ★ **Above the threshold the push is exactly zero and every grip lands byte
+/// **Above the threshold the push is exactly zero and every grip lands byte
 /// for byte where it did before.** That property is what makes this safe to
 /// apply unconditionally: there is no second layout to keep in step, no mode to
 /// be in, and no zoom at which behaviour changes discontinuously — the push
@@ -459,7 +459,7 @@ pub fn grip_bounds(bounds: Rect) -> Rect {
 
 /// **The frame the grips are laid out in** — an upright box, or a turned one.
 ///
-/// # ★★★ Why a type rather than an `Option<[Pos2; 4]>` parameter everywhere
+/// # Why a type rather than an `Option<[Pos2; 4]>` parameter everywhere
 ///
 ///
 /// # The upright case is bit-for-bit what it always was
@@ -477,7 +477,7 @@ pub enum GripFrame {
     /// artwork's own frame: `[lower-left, lower-right, upper-right, upper-left]`
     /// as [`crate::canvas::annotquad::OrientedBox::corners`] orders them.
     ///
-    /// ★ "Lower" and "upper" name the *artwork's* edges, not the page's, which
+    /// "Lower" and "upper" name the *artwork's* edges, not the page's, which
     /// is the whole content of this variant: after a 100° turn the artwork's
     /// lower-left corner is at the top of the screen, and a grip the operator
     /// grabs there must be the one that belongs to that corner of the mark.
@@ -503,7 +503,7 @@ impl GripFrame {
 
     /// This frame's corners rounded to whole points, for a diagnostic line.
     ///
-    /// ★ Rounded, and that is the point rather than tidiness: a trace is
+    /// Rounded, and that is the point rather than tidiness: a trace is
     /// compared by a driven check, and a float printed with full precision
     /// differs between a debug and a release build on the last digit. Whole
     /// screen points are the resolution the assertion is about anyway.
@@ -531,7 +531,7 @@ impl GripFrame {
     /// This frame grown outward until it can hold its own grips — the turned
     /// counterpart of [`grip_bounds`], and it must exist for the same reason.
     ///
-    /// # ★★ The defect it inherits, and why it could not simply be skipped
+    /// # The defect it inherits, and why it could not simply be skipped
     ///
     /// [`grip_bounds`]'s own header records it: a 0.85 pt cell's grips land on
     /// top of each other and on its body, so there is nothing to aim at. That
@@ -540,7 +540,7 @@ impl GripFrame {
     /// have re-opened the defect for precisely the annotations this change is
     /// about.
     ///
-    /// ★ The push is along the frame's **own** axes, not the page's, which is
+    /// The push is along the frame's **own** axes, not the page's, which is
     /// what keeps a pushed turned frame a rectangle. Expanding an axis-aligned
     /// bound instead would move the corners off the mark's diagonal and the
     /// grips would no longer sit on the outline they are drawn against.
@@ -647,7 +647,7 @@ pub fn grip_rects(bounds: Rect) -> Vec<(Grip, Rect)> {
 /// [`grip_rects`] in an arbitrary [`GripFrame`] — the general form, and what
 /// every painter and hit test now calls.
 ///
-/// # ★ The mid-edge omission test is taken on the frame's OWN edges
+/// # The mid-edge omission test is taken on the frame's OWN edges
 ///
 /// A turned box's screen width says nothing about whether its grips pile up:
 /// a 200 × 10 pt bar turned 45° has a screen bound of ~148 × 148, which would
@@ -677,13 +677,13 @@ pub fn grip_rects_in(frame: GripFrame) -> Vec<(Grip, Rect)> {
                 })
                 .collect();
         }
-        // ★ `pushed` is the identity on an upright frame, so this is the same
+        // `pushed` is the identity on an upright frame, so this is the same
         // `bounds` the caller handed in — matched rather than re-destructured
         // with an `unreachable!`, because a panic macro in a shipped painter is
         // a crash where a compiler-checked match is nothing.
         GripFrame::Upright(bounds) => bounds,
     };
-    // ★★★ Everything below anchors to the PUSHED box, never to `bounds`.
+    // Everything below anchors to the PUSHED box, never to `bounds`.
     //
     // [`grip_bounds`] grows the anchor box outward when the selection is too
     // small to hold its own grips, which is what makes the body of a 0.85 pt
@@ -709,7 +709,7 @@ pub fn grip_rects_in(frame: GripFrame) -> Vec<(Grip, Rect)> {
     // like one. The `debug_assert` above is what took over its job, and it names
     // the invariant instead of silently depending on it.
     //
-    // ★ The piling condition stays, and stays measured against the PUSHED box:
+    // The piling condition stays, and stays measured against the PUSHED box:
     // whether a mid-edge grip lands on top of its corner neighbours is a
     // question about the spacing it is actually drawn at.
     let wide = anchors.width() >= MIN_MID_GRIP_EXTENT_PX;
@@ -751,7 +751,7 @@ pub fn grip_rects_in(frame: GripFrame) -> Vec<(Grip, Rect)> {
 /// is the **visible control, silently inert** failure this project spends its
 /// time removing.
 ///
-/// ★★★ **AND IT EARNED THE SECOND FLAG THE SAME DAY, FROM THE OTHER SIDE.**
+/// **AND IT EARNED THE SECOND FLAG THE SAME DAY, FROM THE OTHER SIDE.**
 ///
 /// `Pass 155.0` gave the engine `rotate_annotation` and `Pass 159.0` gave it
 /// `rotate_dimension`, so within hours of this struct being written the two
@@ -778,13 +778,13 @@ pub struct GripSet {
     pub resize: bool,
     /// The rotate handle above the top edge.
     ///
-    /// ★ Deliberately not collapsed into [`Self::resize`]: *"can this be
+    /// Deliberately not collapsed into [`Self::resize`]: *"can this be
     /// scaled"* and *"can this be turned"* are two questions about the engine's
     /// verb list, and a shell that inferred one from the other would offer
     /// rotation to the next kind that gains a resize verb without anybody
     /// deciding.
     ///
-    /// ★★ That caution paid on the day it was written. Until 2026-08-28 this
+    /// That caution paid on the day it was written. Until 2026-08-28 this
     /// field's doc said *"never true without `resize` today"* — and
     /// [`GripSet::rotate_only`] now exists, because a ce dimension turns and
     /// does not scale. A struct that had collapsed the two would have had to be
@@ -799,7 +799,7 @@ impl GripSet {
     /// Everything — page **content** at the Object rung, and a **markup
     /// annotation**, which gained the second half on 2026-08-28.
     ///
-    /// ★ The annotation reached this set from `scale_only` when
+    /// The annotation reached this set from `scale_only` when
     /// `rotate_annotation` shipped, and the two callers now name the identical
     /// value for two different reasons. That is fine and is not a merge waiting
     /// to happen: content rotates through `transform_objects`, an annotation
@@ -814,7 +814,7 @@ impl GripSet {
 
     /// The eight scale grips and no rotate handle — a **form field's box**.
     ///
-    /// ★★★ **A widget is the one thing on this canvas that scales and cannot
+    /// **A widget is the one thing on this canvas that scales and cannot
     /// turn**, and the asymmetry is the PDF standard's rather than a gap in
     /// pdfcer. `edit_widget(… with_rect)` rebuilds a field's appearance into a
     /// new box, so a resize is expressible; a widget's *rotation* is `/MK /R`
@@ -829,7 +829,7 @@ impl GripSet {
     /// would be the *"visible control, silently inert"* failure wearing the
     /// costume of a fix.
     ///
-    /// ★ Until 2026-08-28 this said *"an annotation or a form field's box"*.
+    /// Until 2026-08-28 this said *"an annotation or a form field's box"*.
     /// The annotation moved to [`Self::all`] when `rotate_annotation` shipped;
     /// the widget stayed, and it is the only member left.
     pub const fn scale_only() -> Self {
@@ -839,7 +839,7 @@ impl GripSet {
         }
     }
 
-    /// ★★★ **Neither — a mark that can be MOVED and nothing else.**
+    /// **Neither — a mark that can be MOVED and nothing else.**
     ///
     ///
     /// # The one kind on this canvas whose box does not describe it
@@ -850,7 +850,7 @@ impl GripSet {
     /// and the body still drags, because moving one is exactly what its `/Rect`
     /// is for.
     ///
-    /// ★ This is R9 in the form this project keeps meeting it: *an unavailable
+    /// This is R9 in the form this project keeps meeting it: *an unavailable
     /// capability renders nothing.* Eight squares round a marker that cannot
     /// take a resize is the "visible control, silently inert" failure, and
     /// until today it was shipped — the operator grabbed a corner, dragged, and
@@ -869,7 +869,7 @@ impl GripSet {
 
     /// **The rotate handle alone** — a selected **ce dimension**.
     ///
-    /// ★★★ The combination that could not be spelled before this struct had two
+    /// The combination that could not be spelled before this struct had two
     /// fields, and the one that proves they had to be two.
     ///
     /// A ce dimension has **no scale verb and is never going to have one**.
@@ -887,7 +887,7 @@ impl GripSet {
     /// side of it *by construction*. That is what makes turning a dimension a
     /// legitimate drafting operation while scaling one is not.
     ///
-    /// ★★ If an operator wants a dimension to read a different number for the
+    /// If an operator wants a dimension to read a different number for the
     /// same drawn line, the operation they want is `set_group_scale` — points
     /// per unit — which already ships and lives on the Measure surface. This
     /// canvas deliberately offers no handle for it: a scale that is a property
@@ -909,7 +909,7 @@ pub fn grip_at(bounds: Rect, pointer: Pos2, offer: GripSet) -> Option<Grip> {
 /// [`grip_at`] in an arbitrary [`GripFrame`] — the general form, and the one
 /// the canvas calls.
 ///
-/// # ★★★ The body test stays on the UPRIGHT bound, and that is not an oversight
+/// # The body test stays on the UPRIGHT bound, and that is not an oversight
 ///
 /// The eight squares and the rotate handle move into the turned frame, because
 /// they are affordances the operator aims at and they must be where they are
@@ -926,7 +926,7 @@ pub fn grip_at(bounds: Rect, pointer: Pos2, offer: GripSet) -> Option<Grip> {
 pub fn grip_at_in(frame: GripFrame, pointer: Pos2, offer: GripSet) -> Option<Grip> {
     let bounds = frame.bounds();
     if offer.rotate {
-        // ★★ The rotate handle FIRST, and the reason is H7 rather than
+        // The rotate handle FIRST, and the reason is H7 rather than
         // geometry: it sits outside the box, so it collides with nothing and
         // the order could not matter for correctness. It is first because
         // **the same predicate decides painting and hit-testing**, and that
@@ -941,7 +941,7 @@ pub fn grip_at_in(frame: GripFrame, pointer: Pos2, offer: GripSet) -> Option<Gri
             return Some(Grip::Rotate);
         }
     }
-    // ★ The eight scale grips are gated separately from the rotate handle
+    // The eight scale grips are gated separately from the rotate handle
     // above, which is the whole reason `GripSet` has two fields. An annotation
     // offers these and not that one.
     if offer.resize {
@@ -1010,7 +1010,7 @@ mod tests {
             assert!(kinds.contains(&corner), "{corner:?} must always be offered");
         }
 
-        // …and symmetrically for a short one. ★ 22 rather than 10 for the same
+        // …and symmetrically for a short one. 22 rather than 10 for the same
         // reason the fixture above changed: a 10 px-tall box cannot hold its
         // North and South grips either, and this assertion is about the EAST
         // grip being dropped for piling, not about the body rule.
@@ -1068,7 +1068,7 @@ mod tests {
         }
     }
 
-    /// ★★ **`pivot` is the OPPOSITE of `anchor`, for every resize grip.**
+    /// **`pivot` is the OPPOSITE of `anchor`, for every resize grip.**
     ///
     /// The property the whole resize rests on, asserted as a relation rather
     /// than against a table of corners — a table would pass for a build whose
@@ -1109,7 +1109,7 @@ mod tests {
         }
     }
 
-    /// ★★ **An inner rung offers `Move` and none of the eight.**
+    /// **An inner rung offers `Move` and none of the eight.**
     ///
     /// The regression test for a defect found by driving: an anchor mark is
     /// centred on its point, so an anchor at a corner of the object's bounding
@@ -1151,7 +1151,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **A ce dimension's set: the ninth handle and NONE of the eight.**
+    /// **A ce dimension's set: the ninth handle and NONE of the eight.**
     ///
     /// The combination [`GripSet`] grew a second field for, asserted rather
     /// than assumed, because it is the one a build can get wrong in two

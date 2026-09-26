@@ -1,7 +1,7 @@
 //! # `shell::commands::catalog::view` — the View tab — what is on screen and how the page is laid out
 //!
 //!
-//! ## ★★★ The split is per TAB, and the reason it was refused before is gone
+//! ## The split is per TAB, and the reason it was refused before is gone
 //!
 //! [`super`]'s header argued against exactly this cut:
 //!
@@ -15,7 +15,7 @@ use crate::text::commands as t;
 /// This band's commands, in ribbon order.
 pub(super) fn band() -> Vec<Command> {
     vec![
-        // ★ **Page display — a radio, not four toggles.**
+        // **Page display — a radio, not four toggles.**
         //
         // Exactly one is active at a time, and which one is published as a
         // `selected:` condition by `PdfcerApp::conditions` so the active
@@ -30,7 +30,7 @@ pub(super) fn band() -> Vec<Command> {
         //
         // The tokens are contiguous (200-203) because they are one control.
         //
-        // ★ **All four carry an icon or none would.** These are the positions
+        // **All four carry an icon or none would.** These are the positions
         // of one radio, and a radio whose positions are three glyphs and one
         // bare word does not read as a radio — the eye groups by shape before
         // it reads. The four glyphs are drawn as a set for the same reason:
@@ -58,7 +58,7 @@ pub(super) fn band() -> Vec<Command> {
         // will be drawn with, and a setting you can only change while
         // something is open is a setting you cannot prepare.
         //
-        // ★ **No icons on any of the five, and that is a decision about the
+        // **No icons on any of the five, and that is a decision about the
         // whole group rather than five separate omissions.**
         //
         // Their labels ARE the control's content: "Strategy", "Raster scale",
@@ -135,7 +135,7 @@ pub(super) fn band() -> Vec<Command> {
         // nowhere for a third and fourth to join. A tool palette is the most
         // conventional object in this product class; not having one is the
         // invention.
-        // ★★ **The object clipboard, 2026-08-19** — the operator's report:
+        // **The object clipboard, 2026-08-19** — the operator's report:
         // *"also the standard copy/paste and I didn't try cut so possibly that
         // one too aren't implemented."* They were not.
         //
@@ -146,7 +146,7 @@ pub(super) fn band() -> Vec<Command> {
         // sentence when pressed. The refusals are `canvas::clipboard::Refusal`,
         // on the status row, which is the same posture the six resize refusals
         // take.
-        // ★★★ TWO conditions, so `edit.cut` is greyed over something the
+        // TWO conditions, so `edit.cut` is greyed over something the
         // clipboard cannot carry — asked for by `pdfcer-core` by name, because a
         // cut of an uncarryable thing is a deletion wearing a clipboard's
         // clothes.
@@ -156,12 +156,12 @@ pub(super) fn band() -> Vec<Command> {
         // Custom, because a grammar in a string is a parser and a parser is a
         // thing that has its own bugs"*. Two names ANDed is exactly that case.
         //
-        // ★ `selection.cut_permitted` defaults to TRUE, so this is `doc.pages`
+        // `selection.cut_permitted` defaults to TRUE, so this is `doc.pages`
         // on every ordinary document and every ordinary selection. It clears
         // only for a redaction mark and its two unreachable siblings. See
         // `canvas::cutgate`.
         //
-        // ★★ Greying does NOT make the refusal redundant. A chord is dispatched
+        // Greying does NOT make the refusal redundant. A chord is dispatched
         // through the keymap without consulting enablement, so `Ctrl+X` reaches
         // the handler whatever the ribbon shows — which is why
         // `dispatch::clipboard` still names the reason on the status row, and
@@ -178,7 +178,7 @@ pub(super) fn band() -> Vec<Command> {
             .with_icon("paste")
             .enabled_when("doc.pages"),
         //
-        // ★ Same `doc.pages` gate and same icon as its sibling. A second paste
+        // Same `doc.pages` gate and same icon as its sibling. A second paste
         // glyph would be a distinction the operator has to learn for no gain —
         // the two are told apart by their labels and by the chord in the
         // tooltip, which is how Word and Acrobat tell their paste variants
@@ -219,7 +219,7 @@ pub(super) fn band() -> Vec<Command> {
         //    it was not fixable by hiding them, because the Markup tab is in both
         //    Review and Edit and a command has one tab.
         //
-        // ★ **The reference applications disagree here and Inkscape won.**
+        // **The reference applications disagree here and Inkscape won.**
         // Acrobat and SolidWorks resolve text-versus-object *contextually*
         // inside one tool; only Inkscape uses a separate Text tool. The full
         // argument is at `crate::canvas::tool::CanvasTool::Text` and is not
@@ -248,7 +248,7 @@ pub(super) fn band() -> Vec<Command> {
         command("view.zoom_fit_width", t::view_zoom_fit_width(), 222)
             .with_icon("fit-width")
             .enabled_when("doc.pages"),
-        // ★ O29, "Adobe has fit height, so add that too." 227 is the next
+        // O29, "Adobe has fit height, so add that too." 227 is the next
         // free token in the View band; 223-226 are the zoom verbs and the two
         // pointer tools.
         command("view.zoom_fit_height", t::view_zoom_fit_height(), 227)
@@ -257,14 +257,14 @@ pub(super) fn band() -> Vec<Command> {
         command("view.show_annotations", t::view_show_annotations(), 230)
             .with_icon("comment")
             .enabled_when("doc.pages"),
-        // ★★★ `OPERATOR_REQUESTS.md` O70 — *"we should have a checkbox in
+        // `OPERATOR_REQUESTS.md` O70 — *"we should have a checkbox in
         // navigate for a Smart-Selector option"*. 258 is the next free token in
         // the View band — 257 is `view.close_other_documents`, which is at the
         // bottom of this file where a "next free" scan of the top of it does
         // not look. The uniqueness test caught it in one run, which is what
         // that test is for.
         //
-        // ★ **`enabled_when("mode.edit_content")`, not `doc.pages`.** The
+        // **`enabled_when("mode.edit_content")`, not `doc.pages`.** The
         // substitution it controls only happens where content is selectable at
         // all, so offering it in Read would be a control that reports a state
         // it does not currently govern — and R9 reserves greying for the
@@ -272,15 +272,15 @@ pub(super) fn band() -> Vec<Command> {
         command("view.smart_select", t::view_smart_select(), 258)
             .with_icon("show-points")
             .enabled_when("mode.edit_content"),
-        // ★ **The chunk boxes** — `OPERATOR_REQUESTS.md` O215 ask 3. Token 265,
+        // **The chunk boxes** — `OPERATOR_REQUESTS.md` O215 ask 3. Token 265,
         // the next free one in the View band.
         //
-        // ★ `enabled_when("mode.edit_content")`, matching its neighbour above
+        // `enabled_when("mode.edit_content")`, matching its neighbour above
         // and for that argument: the boxes exist to aim a content-edit gesture,
         // so a build in Read would be reporting the state of a switch that
         // governs nothing there.
         //
-        // ★ The icon is `pick-part`, shared with `format.select_text_line` —
+        // The icon is `pick-part`, shared with `format.select_text_line` —
         // literally the same subject, one chunk of text — and the two are never
         // drawn beside each other, which is the condition this file's reuse
         // notes turn on: one is a context-menu row and one is a ribbon button.
@@ -290,7 +290,7 @@ pub(super) fn band() -> Vec<Command> {
         command("view.show_points", t::view_show_points(), 231)
             .with_icon("show-points")
             .enabled_when("doc.pages"),
-        // ★ **The three chrome toggles**, and all three render pressed while
+        // **The three chrome toggles**, and all three render pressed while
         // they are on, through the `selected:` convention `view.tool_hand`
         // documents and the page-display radio uses.
         //
@@ -331,12 +331,12 @@ pub(super) fn band() -> Vec<Command> {
         command("view.guides", t::view_guides(), 234)
             .with_icon("guides")
             .enabled_when("doc.pages"),
-        // ★★★ **The OCR text layer** — `OPERATOR_REQUESTS.md` O226. Token 266,
+        // **The OCR text layer** — `OPERATOR_REQUESTS.md` O226. Token 266,
         // the next free one in the View band. Not contiguous with 232-234
         // because it is not part of that row of the specification; it arrived
         // after it.
         //
-        // ★★ **No `#[cfg(feature = "ocrs")]`, and that is not an oversight.**
+        // **No `#[cfg(feature = "ocrs")]`, and that is not an oversight.**
         // `file.ocr` is gated on the recogniser because it RUNS one. This draws
         // a layer that is already in the file — put there by pdfcer, by
         // Acrobat, by a scanner's own software, by anything — and reads it
@@ -347,7 +347,7 @@ pub(super) fn band() -> Vec<Command> {
         // registering its command; the capability present here is *reading*,
         // not *recognising*.
         //
-        // ★ `enabled_when("doc.pages")`, with the rest of the Display group,
+        // `enabled_when("doc.pages")`, with the rest of the Display group,
         // rather than on the page having invisible text. The second would grey
         // and ungrey as the operator pages through a mixed document — a control
         // flickering under a gesture that has nothing to do with it — and R9
@@ -357,14 +357,14 @@ pub(super) fn band() -> Vec<Command> {
         // says so in the status line rather than leaving the operator looking
         // at an unchanged page wondering whether the button worked.
         //
-        // ★ The icon is `recognise-text`, shared with `file.ocr` — literally
+        // The icon is `recognise-text`, shared with `file.ocr` — literally
         // the same subject — and the two are on different tabs, which is the
         // condition this file's reuse notes turn on: they are never drawn
         // beside each other.
         command("view.ocr_layer", t::view_ocr_layer(), 266)
             .with_icon("recognise-text")
             .enabled_when("doc.pages"),
-        // ★★★ **`view.line_weights` — O137, and it is the one entry in this
+        // **`view.line_weights` — O137, and it is the one entry in this
         // file that was DELETED and is now back.**
         //
         // Ken, 2026-09-05: *"awhile ago you told me you removed the button to
@@ -380,7 +380,7 @@ pub(super) fn band() -> Vec<Command> {
         // reported. Treating it as closing the question was not: **a capability
         // nobody can reach is not a capability nobody wants.**
         //
-        // ★★ It may exist now **because the field exists now**:
+        // It may exist now **because the field exists now**:
         // `RenderOptions::stroke_display: StrokeDisplay { Actual, Hairline }`,
         // engine `Pass 254.0` (`8f9fb3e`), in this repo's lock at `b1033ab`.
         // R8 again, in the other direction — registering the command is how
@@ -391,14 +391,14 @@ pub(super) fn band() -> Vec<Command> {
         // silently rebind whatever they had put on it. 235 is contiguous with
         // rulers/grid/guides (232-234), which is where this control belongs.
         //
-        // ★★★ **Which convention, because the two are opposites and shipping
+        // **Which convention, because the two are opposites and shipping
         // the wrong one is worse than shipping nothing.** Off means every
         // stroke is capped at ONE DEVICE PIXEL whatever the file declares —
         // AutoCAD `LWDISPLAY` off, **thick → thin**. It is NOT Acrobat's
         // *enhance thin lines*, which bumps sub-pixel strokes UP (**thin →
         // thick**). He said *"without their thickness"* and named CAD.
         //
-        // ★ **It is a toggle whose ON is the shipped behaviour**, unlike every
+        // **It is a toggle whose ON is the shipped behaviour**, unlike every
         // other member of this group — see
         // `crate::viewer::ViewState::line_weights` for why the label names the
         // weights rather than the hairline, and `t::view_line_weights` for why
@@ -416,12 +416,12 @@ pub(super) fn band() -> Vec<Command> {
         // > is, so it just goes back to looking before we added the view
         // > things that are off the page feature)."*
         //
-        // ★★ **Token 236**, contiguous with rulers/grid/guides (232-234)
+        // **Token 236**, contiguous with rulers/grid/guides (232-234)
         // and line weights (235), which is where a Display toggle belongs.
         // The retired tokens 210-214 stay retired — a token is an
         // operator's saved keybinding.
         //
-        // ★★★ **It NAMES `off-page`, the glyph drawn five hours earlier
+        // **It NAMES `off-page`, the glyph drawn five hours earlier
         // for `edit.offpage`, and this is the strongest shared-key case
         // this catalogue has recorded.** The convention (see
         // `catalog/edit.rs`) permits a reuse when two controls are about
@@ -459,14 +459,14 @@ pub(super) fn band() -> Vec<Command> {
         // toggle for a surface that is always drawn would be a control with
         // nothing to toggle, which R9 forbids.
         //
-        // ★ Recorded here rather than deleted silently, because the argument
+        // Recorded here rather than deleted silently, because the argument
         // for registering it was recorded here at length and a reader finding
         // a gap between 246 and 248 deserves to know it was an answer to a
         // real complaint rather than an oversight.
         command("view.panel_bookmarks", t::view_panel_bookmarks(), 241)
             .with_icon("bookmarks")
             .enabled_when("doc.open"),
-        // ★ **This carried a recorded "no icon" decision, and the decision
+        // **This carried a recorded "no icon" decision, and the decision
         // has expired.** It read: "There is no `document` (or `pages`) key in
         // `crate::icons::catalog`, and naming one would draw the catalogue's
         // deliberate visible slashed mark for an unknown key on a control an
@@ -497,7 +497,7 @@ pub(super) fn band() -> Vec<Command> {
         command("view.panel_objects", t::view_panel_objects(), 244)
             .with_icon("edit-objects")
             .enabled_when("doc.pages"),
-        // ★ Was `edit.form_fill`, token 430, until the operator answered the
+        // Was `edit.form_fill`, token 430, until the operator answered the
         // question `crate::app::modes` had been carrying: Read should fill
         // forms, because that is what Acrobat Reader does in its default
         // view. Read is shown `file` and `view` alone, and P1 gives a
@@ -554,7 +554,7 @@ pub(super) fn band() -> Vec<Command> {
         // anything whichever way it is set.
         //
         //
-        // ★★ **Neither renders PRESSED, and that is the convention rather than
+        // **Neither renders PRESSED, and that is the convention rather than
         // an omission.** Office's own ribbon-display control is a caret that
         // opens a three-item menu; it does not sit lit while *Show Tabs* is
         // chosen. The surface that carries the *state* is the Settings window,
@@ -576,14 +576,14 @@ pub(super) fn band() -> Vec<Command> {
         // dock?), and an invented operand is how a command comes to act on
         // something other than what the operator was pointing at.
         //
-        // ★★ Which of the three a menu offers is decided by `visible_when`
+        // Which of the three a menu offers is decided by `visible_when`
         // in the manifest, against conditions the tab handler sets per tab —
         // NOT by `enabled_when`. R9: an unavailable capability renders
         // nothing. "Dock" on a panel that is already docked is not
         // temporarily unavailable, it is meaningless, so it is absent rather
         // than greyed.
         //
-        // ★ `Enable::Always`, therefore, on all three. The condition that
+        // `Enable::Always`, therefore, on all three. The condition that
         // decides whether they make sense is a *visibility* condition, and
         // adding an enable predicate as well would grey a row that has
         // already been filtered out — one gate too many, in the place where
@@ -592,7 +592,7 @@ pub(super) fn band() -> Vec<Command> {
         command("view.panel_float", t::view_panel_float(), 259).with_icon("floating-panels"),
         command("view.panel_dock", t::view_panel_dock(), 260).with_icon("floating-panels"),
         //
-        // ★ The refusal it retires was FALSE AT SOURCE, which is why it is
+        // The refusal it retires was FALSE AT SOURCE, which is why it is
         // worth a comment rather than a silent edit. It read *"there is no
         // close art in this set"* — and `file.close` had worn `close` since the
         // set landed. An absence claim about art is checkable in one grep and
@@ -600,7 +600,7 @@ pub(super) fn band() -> Vec<Command> {
         // never against the document that asserts it.
         //
         command("view.panel_close", t::view_panel_close(), 261).with_icon("close"),
-        // ★★ **The recovery command**, and the one member of the family that
+        // **The recovery command**, and the one member of the family that
         // DOES belong on the ribbon — because it is the only one with no
         // operand. Greyed when nothing is floating: that is temporarily
         // unavailable, which is what R9 reserves greying for, and the tooltip
@@ -619,7 +619,7 @@ pub(super) fn band() -> Vec<Command> {
         // present: the chords in the manifest resolve against this registry,
         // so a build without them would have Ctrl+Tab bound to nothing rather
         // than bound to something that silently does nothing.
-        // ★★ **The chevron borrow ended 2026-09-04**, with art adopted from the
+        // **The chevron borrow ended 2026-09-04**, with art adopted from the
         // outside review of 2026-09-03, and this is the borrow whose cost is
         // easiest to state in one sentence: **"previous document" and "previous
         // page" drew the same picture.** `chevron-left` and `chevron-right` are
@@ -645,7 +645,7 @@ pub(super) fn band() -> Vec<Command> {
         // shafted left arrow, by that page: Back leaves a surface with nothing
         // else in frame, this one carries the thing being switched to.
         //
-        // ★ The two are the SAME drawing mirrored about x=24, and that is the
+        // The two are the SAME drawing mirrored about x=24, and that is the
         // convention every navigation pair in this set follows —
         // `chevron-right.svg`'s entire comment is "mirror of chevron-left.svg",
         // and `upload.svg`/`download.svg` are described as exact mirrors about
@@ -664,7 +664,7 @@ pub(super) fn band() -> Vec<Command> {
         // and the tooltip says *"the one you opened this on"* rather than
         // naming either, because that sentence is true from both routes.
         //
-        // ★ There is deliberately **no** `close_document` beside it. The
+        // There is deliberately **no** `close_document` beside it. The
         // conventional tab menu has three rows — Close, Close others, Close to
         // the right — and a Close here would be a second command with
         // `file.close`'s label and `file.close`'s behaviour from the ribbon,
@@ -685,7 +685,7 @@ pub(super) fn band() -> Vec<Command> {
         // are decoration, and a menu where some rows have one and some do not is
         // worse than a menu where none do.
         //
-        // ★ **What the refusal missed is that this command is on the ribbon
+        // **What the refusal missed is that this command is on the ribbon
         // too.** `manifest::view` places it on View ▸ Window, between two iconed
         // neighbours, and it is there because
         // `every_menu_command_is_also_reachable_from_the_ribbon` holds that a
@@ -706,7 +706,7 @@ pub(super) fn band() -> Vec<Command> {
         // and the glyph says only "this one stays, those go", which is true from
         // both, exactly as the tooltip's *"the one you opened this on"* is.
         //
-        // ★ **The distinction from [`crate::icons::Icon::Close`] is load-bearing
+        // **The distinction from [`crate::icons::Icon::Close`] is load-bearing
         // and getting it backwards closes the wrong documents.** `close` is a
         // bare full-frame ✕ and means *dismiss the thing in front of you*; this
         // means the opposite — the thing in front of you is the survivor. Scale

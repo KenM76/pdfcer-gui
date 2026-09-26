@@ -12,13 +12,13 @@ use crate::text::markup::AnnotDeleteRefusal;
 
 /// The section's rect, for `ui-verify`.
 ///
-/// ★ A published region name is a cross-repo stability contract: the harness
+/// A published region name is a cross-repo stability contract: the harness
 /// asserts on it by string, so renaming one turns a check into a skip rather
 /// than a failure.
 const REGION: &str = "properties.annot_delete"; // ui-text-exempt: trace region name, never displayed
 /// The **refusal** sentence's own rect, published only when a gate refuses.
 ///
-/// ★★★ "Only when refused" is the whole value of it. A driven check asserting
+/// "Only when refused" is the whole value of it. A driven check asserting
 /// that a certified document withholds Delete reads two things: this region
 /// **present**, and `properties.format.delete` — the ribbon control's region —
 /// **absent**. An absence is admissible evidence only because [`TRACE`] is
@@ -30,7 +30,7 @@ const REGION_REFUSED: &str = "properties.annot_delete.refused"; // ui-text-exemp
 const REGION_COLLATERAL: &str = "properties.annot_delete.collateral"; // ui-text-exempt: trace region name, never displayed
 /// The per-frame census of what the gate answered and what the preview found.
 ///
-/// ★ The name carries a verb suffix — `annot-delete-…` rather than
+/// The name carries a verb suffix — `annot-delete-…` rather than
 /// `delete-annotation-…` — because `tools/gates/check-trace-names.py` forbids a
 /// module's own summary line from sharing its first token with a `vector_edit`
 /// funnel label, and `delete-annotation` is exactly such a label. A harness
@@ -42,7 +42,7 @@ const TRACE: &str = "annot-delete-gates"; // ui-text-exempt: diagnostic trace na
 
 /// **Why the selected annotation cannot be deleted**, or `None` if it can.
 ///
-/// # ★★★ The one derivation, because there are two consumers
+/// # The one derivation, because there are two consumers
 ///
 /// This function is asked by [`section`], which draws the sentence, and by
 /// `crate::app::conditions`, which publishes `selection.delete_permitted` and
@@ -66,7 +66,7 @@ const TRACE: &str = "annot-delete-gates"; // ui-text-exempt: diagnostic trace na
 /// 3. Nothing else. There is no third source, and a check invented here would be
 ///    a second implementation of a rule the engine owns.
 ///
-/// ⇒ ★★ Locked is checked **first even though the engine would refuse a
+/// ⇒ Locked is checked **first even though the engine would refuse a
 /// certified document anyway**, because the two sentences are not
 /// interchangeable: an operator told *"this comment is marked as not to be
 /// changed"* can go and look at that comment, and an operator told *"the
@@ -94,7 +94,7 @@ pub fn gate(
 /// publishes `selection.delete_permitted`, and `crate::canvas::interact`, which
 /// fills in `canvas::keys::Keys::annot_delete_refused`.
 ///
-/// ★★ **`false` when nothing is selected, and when what is selected is not an
+/// **`false` when nothing is selected, and when what is selected is not an
 /// annotation.** This answers *would the engine refuse?* and not *is there
 /// anything to delete?* — the second question is `selection.actionable`'s, and
 /// conflating them here would make a content selection or an empty one look
@@ -103,13 +103,13 @@ pub fn gate(
 /// is the defect being fixed, and a control withheld where it would have worked
 /// is a worse one, because the operator has no gesture left that reports it.
 ///
-/// ★ It exists so that [`gate`]'s three-check ladder has exactly one spelling.
+/// It exists so that [`gate`]'s three-check ladder has exactly one spelling.
 /// `crate::canvas::interact` calls [`refuses`] in **one line** by deliberate
 /// necessity — that file sits ON R2's 1,500-line ceiling — and the argument that
 /// would otherwise have been a comment there is here instead, which is where a
 /// rule with four readers belongs anyway.
 ///
-/// # ★★★ WHY THIS IS NOT THE FUNCTION `canvas::interact` MAY CALL
+/// # WHY THIS IS NOT THE FUNCTION `canvas::interact` MAY CALL
 ///
 /// It reads `doc.selection`, and **inside a canvas frame `doc.selection` is
 /// empty**. `canvas::interact` opens with
@@ -199,7 +199,7 @@ impl Refusal {
 
 /// Which sentence an `EditError` from `annotation_deletion_refusal` earns.
 ///
-/// # ★★ A total match with a named catch-all, not a `_ =>` with a guess
+/// # A total match with a named catch-all, not a `_ =>` with a guess
 ///
 /// Every variant the query's own documentation names has an arm, **in the order
 /// the engine checks them**, so this function and
@@ -211,7 +211,7 @@ impl Refusal {
 /// comments from this document"* where they should have met the sentence about
 /// the signature.
 ///
-/// ★ A free function rather than a `From` impl, for the same reason that one is:
+/// A free function rather than a `From` impl, for the same reason that one is:
 /// a `From` invites the mapping to be reused for another verb's errors and it is
 /// not reusable. `DocumentEncrypted` earns *this* sentence because the subject
 /// is an annotation; the same variant out of `unshare_form` earns a sentence
@@ -232,13 +232,13 @@ fn refusal_for(error: &pdfcer_core::edit::EditError) -> AnnotDeleteRefusal {
 /// finished sentence, or `None` for the ordinary case where there is nothing to
 /// say.
 ///
-/// ★ The **sentence** is cached rather than the engine's `AnnotationDeletion`
+/// The **sentence** is cached rather than the engine's `AnnotationDeletion`
 /// record, deliberately. Caching the record would leave the wording to be
 /// re-derived every frame, which is cheap but pointless, and it would put a
 /// `pdfcer_core` type in `crate::panels::PanelsState` — a struct whose whole
 /// purpose is *the operator's own state*. What is stored here is what is drawn.
 ///
-/// ★★ A **failed** preview caches as `None` too, and that is not a bug being
+/// A **failed** preview caches as `None` too, and that is not a bug being
 /// papered over. `annotation_deletion_preview` returns `Err` for exactly the
 /// refusals [`gate`] has already asked about, plus a target that has gone; in
 /// every one of those cases the section either drew a refusal sentence instead
@@ -297,7 +297,7 @@ impl DeletionPreview {
 /// | the delete would work and carry collateral | the collateral sentence, and `true` |
 /// | the delete would work and carry none | nothing, and `false` — the overwhelmingly common case |
 ///
-/// ★ The last row is R9 rather than an omission. A line reading *"deleting this
+/// The last row is R9 rather than an omission. A line reading *"deleting this
 /// affects nothing else"* on every selection would be read three times and
 /// skipped for ever after, which is precisely what makes the row above it
 /// invisible when it matters.
@@ -307,7 +307,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, memo: &mut DeletionPreview) -> bool {
     };
     let target = &selection.target;
 
-    // ★★★ R83 — ASKED HERE, BEFORE ANYTHING IS DRAWN, THROUGH THE SAME FUNCTION
+    // R83 — ASKED HERE, BEFORE ANYTHING IS DRAWN, THROUGH THE SAME FUNCTION
     // `crate::app::conditions` ASKS. See [`gate`] on why there is one
     // derivation and not two.
     //
@@ -330,7 +330,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, memo: &mut DeletionPreview) -> bool {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI.
         //
-        // ★ Written EVERY frame this section runs, refused or not and collateral
+        // Written EVERY frame this section runs, refused or not and collateral
         // or not — which is what makes the two regions above readable as
         // evidence rather than as noise. See `REGION_REFUSED`.
         format!(
@@ -361,7 +361,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, memo: &mut DeletionPreview) -> bool {
         },
         ui.min_rect(),
     );
-    // ★★★ `ui.min_rect()`, AFTER drawing. `max_rect` is the space a `Ui` is
+    // `ui.min_rect()`, AFTER drawing. `max_rect` is the space a `Ui` is
     // *allowed* to use, not the space it took; published before anything is
     // drawn it names a different panel entirely, and `ui-verify` scrolls **at** a
     // region — so a wheel event aimed at that centre lands somewhere else and a
@@ -377,7 +377,7 @@ mod tests {
     use super::*;
     use pdfcer_core::edit::EditError;
 
-    /// ★★★ **Every refusal the query documents earns its own sentence**, and
+    /// **Every refusal the query documents earns its own sentence**, and
     /// none of them falls through to the catch-all.
     ///
     /// The failure this pins is the one that is invisible in a diff: somebody
@@ -416,7 +416,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The three sentences are three different sentences.**
+    /// **The three sentences are three different sentences.**
     ///
     /// An encrypted drawing and a certified one look identical on the canvas.
     /// If these collapsed to one wording the enum would be decoration, and an
@@ -437,7 +437,7 @@ mod tests {
         assert!(AnnotDeleteRefusal::Certified.line().contains("signature"));
     }
 
-    /// ★★★ **`Locked` beats the document's own refusal when both are true.**
+    /// **`Locked` beats the document's own refusal when both are true.**
     ///
     /// Asserted through [`Refusal::line`] rather than by re-reading the branch,
     /// because what is being pinned is the *operator's* outcome: the more
@@ -483,7 +483,7 @@ mod fixtures {
 
     /// A target naming the fixture's square, unlocked.
     ///
-    /// ★ `locked: false` matters. [`gate`] checks §12.5.3 bit 8 **first**, so a
+    /// `locked: false` matters. [`gate`] checks §12.5.3 bit 8 **first**, so a
     /// locked target would be refused by the older half of the ladder and the
     /// certification assertion below would pass without the certification being
     /// consulted at all.
@@ -497,7 +497,7 @@ mod fixtures {
         }
     }
 
-    /// ★★★ **An enforced certification withholds the Delete control, and the
+    /// **An enforced certification withholds the Delete control, and the
     /// sentence names the signature.**
     ///
     /// The end-to-end assertion for R83 on this surface: the engine's query is
@@ -524,7 +524,7 @@ mod fixtures {
         );
     }
 
-    /// ★★★ **The gate answers about the selection it is HANDED, not the one on
+    /// **The gate answers about the selection it is HANDED, not the one on
     /// the document** — the regression test for the defect of 2026-08-29.
     ///
     /// # What went wrong, in one sentence
@@ -538,7 +538,7 @@ mod fixtures {
     /// refused it into `vector_edit`'s silent `Err` arm, and the selection was
     /// cleared anyway, removing the panel sentence that explained the refusal.
     ///
-    /// # ★★ Why THIS shape of test, and why the old one could not have caught it
+    /// # Why THIS shape of test, and why the old one could not have caught it
     ///
     /// The assertion in `a_certified_document_withholds_the_delete_control`
     /// above is `refuses_selected(&doc) == doc.selection.annot().is_some()`,
@@ -587,7 +587,7 @@ mod fixtures {
         );
     }
 
-    /// ★★★ **The same document without the certification offers the control**,
+    /// **The same document without the certification offers the control**,
     /// which is what makes the test above evidence rather than a tautology.
     ///
     /// A `gate` that refused unconditionally would satisfy the certified
@@ -607,7 +607,7 @@ mod fixtures {
         );
     }
 
-    /// ★★★ **The collateral is stated before the click, with both clauses.**
+    /// **The collateral is stated before the click, with both clauses.**
     ///
     /// `annotation_deletion_preview` on the square must find the `/Popup`
     /// companion (§12.5.6.14 makes taking it a `shall`) and the one `/IRT`
@@ -615,7 +615,7 @@ mod fixtures {
     /// Two clauses rather than one, because one would not prove the joining is
     /// right.
     ///
-    /// ★ Asserted through [`DeletionPreview::line`] — the memo — rather than by
+    /// Asserted through [`DeletionPreview::line`] — the memo — rather than by
     /// calling the engine directly, so what is pinned is the string an operator
     /// would read on the frame the annotation is selected, stamp and all.
     #[test]
@@ -635,7 +635,7 @@ mod fixtures {
         );
     }
 
-    /// ★★ **The memo answers from the stamp on the second call.**
+    /// **The memo answers from the stamp on the second call.**
     ///
     /// The whole cost argument rests on this: `annotation_deletion_preview`
     /// walks the page's `/Annots` looking for `/IRT` referrers, and the panel
@@ -658,7 +658,7 @@ mod fixtures {
         );
     }
 
-    /// ★★ **A moved epoch re-asks**, which is the other half of the stamp.
+    /// **A moved epoch re-asks**, which is the other half of the stamp.
     ///
     /// Without the epoch term the panel would show the collateral of a document
     /// state that no longer exists — a reply deleted a moment ago would go on

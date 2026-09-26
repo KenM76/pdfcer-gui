@@ -77,7 +77,7 @@ mod tests {
     use super::*;
     use pdfcer_core::settings::{SettingNote, Settings};
 
-    /// ★ **The slider's range is the STORE's, and a hand-edited legal value
+    /// **The slider's range is the STORE's, and a hand-edited legal value
     /// survives opening this window.**
     ///
     /// The regression test for the silent-edit hazard both sliders in this

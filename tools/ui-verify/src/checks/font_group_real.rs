@@ -19,7 +19,7 @@ use crate::report::CheckReport;
 
 /// The Properties pane's tab header in the dock.
 ///
-/// ★★★ Clicked before anything is asserted about the panel, and the reason is
+/// Clicked before anything is asserted about the panel, and the reason is
 /// worth stating every time it appears: **a dock draws only its ACTIVE tab's
 /// body.** A pane that exists and is behind another publishes nothing at all, so
 /// a check reading the trace sees an absence that is indistinguishable from a
@@ -62,7 +62,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★★★ THE AIM IS REQUIRED, AND ITS ABSENCE IS A SKIP THAT SAYS WHAT TO PASS.
+    // THE AIM IS REQUIRED, AND ITS ABSENCE IS A SKIP THAT SAYS WHAT TO PASS.
     //
     // There is deliberately no default here and no fallback to the fixture. A
     // defaulted point would be a guess about where a document keeps a piece of
@@ -144,7 +144,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         exe.display(),
         session.pid()
     ));
-    // ★ A longer settle than the fixture checks use. This document is 1.8 MB of
+    // A longer settle than the fixture checks use. This document is 1.8 MB of
     // dense vector content across 36 sheets and its first page is 5,899 paths;
     // `BENCHMARK.md` measures the first full render of a sheet of that class in
     // the hundreds of milliseconds, and a harness that started clicking before
@@ -164,7 +164,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, target.page)?;
     let frame = session.frame()?;
-    // ★ Two points in and two points up from the named origin. `--doc-point`
+    // Two points in and two points up from the named origin. `--doc-point`
     // names the first glyph's origin, which is the bottom-left corner of the
     // first character and therefore a point on the very edge of the ink. On a
     // 5 pt title-block label that is a click which can land in the paper beside
@@ -178,7 +178,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(32);
 
     let trace = session.trace()?;
-    // ★★★ THE PRECONDITION, BEFORE ANY ORACLE. Shared with the twin, which is
+    // THE PRECONDITION, BEFORE ANY ORACLE. Shared with the twin, which is
     // the point of sharing it: a guard that skips on a bad aim is only useful if
     // every check that can be handed a bad aim uses the same one, and this is
     // the check most likely to be handed one, because its aim comes from the
@@ -202,7 +202,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         if crate::capture::window_to_png(&session, &shot).is_ok() {
             report.artifact(shot);
         }
-        // ★★★ Clipping FIRST. This is the shape O198 claim 4 actually had: the
+        // Clipping FIRST. This is the shape O198 claim 4 actually had: the
         // editor drew, and drew below the fold. See the module header.
         let clipped: Vec<String> = missing
             .iter()

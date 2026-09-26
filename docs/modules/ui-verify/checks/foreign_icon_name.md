@@ -17,7 +17,7 @@ around it by reading the raw dictionary beside the spec.
 The engine now carries the bytes (`StickyIcon::Other`), the workaround is
 deleted, and this check is what says the whole chain arrived.
 
-## ★★★ Why the in-process tests are not enough
+## Why the in-process tests are not enough
 
 `tests/engine_overlay_skew.rs`'s
 `a_foreign_icon_name_survives_a_colour_only_restyle` proves the **engine**
@@ -38,7 +38,7 @@ perfect and a panel that is broken produce the same empty trace. This check
 brings the tab forward before it reads anything, which is a lesson this
 project has paid for three times in one afternoon.
 
-## ★★ The oracle is a trace line, and it has to be
+## The oracle is a trace line, and it has to be
 
 A build that flattened `/Sparkle` to `Note` and one that carried it draw
 **the same rectangle, in the same place, with the same controls**, differing
@@ -47,7 +47,7 @@ a pixel comparison of rendered text at this size is not an assertion anybody
 should build on. `textannot-rows` carries `icon=` as the file spells it, so
 the check reads the name and not the layout.
 
-## ★ The fixture is PLANTED, and a weaker one would make this vacuous
+## The fixture is PLANTED, and a weaker one would make this vacuous
 
 `fixtures/foreign-icon-name.pdf` is `comment-note.pdf` with one `/Comment`
 rewritten to `/Sparkle` — the same length, so every byte offset in the file

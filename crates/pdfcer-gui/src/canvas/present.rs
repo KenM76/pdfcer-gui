@@ -3,7 +3,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/present.md`.
 
-// ★★ **A glob, deliberately, and it is the honest shape for a textual move.**
+// **A glob, deliberately, and it is the honest shape for a textual move.**
 //
 // Every item below was written inside `canvas/mod.rs`, where all 53 sibling
 // modules and every `use` at the top of that file were in scope by being in
@@ -47,7 +47,7 @@ use crate::viewer;
 /// read as two different ideas of what fitting means.
 pub const CANVAS_MARGIN: f32 = 16.0;
 
-/// ★★ **The three values the canvas samples once per frame**, bundled.
+/// **The three values the canvas samples once per frame**, bundled.
 ///
 ///
 /// > `tool` is *what* the operator armed, `caps` is *whether* the mode
@@ -77,7 +77,7 @@ pub struct Sampled {
     /// switching a class on here can never grant a capability the mode
     /// withholds. See [`pick`](mod@pick).
     pub pick: PickFilter,
-    /// ★ The operator's configured maximum zoom, as a percentage (O24).
+    /// The operator's configured maximum zoom, as a percentage (O24).
     pub max_zoom_percent: f32,
     /// The colour and width the next markup will be authored with.
     pub pen: crate::canvas::markup::pen::Pen,
@@ -108,7 +108,7 @@ pub struct Sampled {
 /// documented bookkeeping fields (see the module docs). The document itself
 /// is never touched.
 ///
-/// # ★ The rulers wrap this, and the wrapping is three statements
+/// # The rulers wrap this, and the wrapping is three statements
 ///
 /// [`rulers::reserve`] takes a **constant** bite out of `ui` before anything
 /// measures the viewport (rule R128 — see that module's header §3), the whole
@@ -195,7 +195,7 @@ fn show_in(
     // calling it always is what makes "Fit page" a mode rather than a
     // one-shot: resize the window and the page re-fits.
     //
-    // ★ Against the current **row**, not the current page, and the ceiling
+    // Against the current **row**, not the current page, and the ceiling
     // against the row's tightest page. Under Single and Continuous a row is
     // one page and both reduce to exactly what they were; under a facing mode
     // a row is the spread, and fitting one half of a spread would leave the
@@ -205,7 +205,7 @@ fn show_in(
     // produces, so it cannot be the source of it.
     let pixels_per_point = ui.ctx().pixels_per_point();
     //
-    // ★ `fit_metrics`, NOT `row_metrics`, and the difference is a closed
+    // `fit_metrics`, NOT `row_metrics`, and the difference is a closed
     // feedback loop. Under a continuous mode `page_index` is derived from the
     // scroll, so fitting the current row makes the zoom depend on the scroll
     // and the scroll depend on the zoom — measured oscillating between
@@ -222,7 +222,7 @@ fn show_in(
     );
     doc.view.apply_fit(row.extent, viewport, row.max_zoom);
 
-    // ★ The whole-canvas render failure is the **single-page** answer, and it
+    // The whole-canvas render failure is the **single-page** answer, and it
     // stays exactly that.
     //
     // With one page on screen, "this page would not draw" is the only thing
@@ -237,7 +237,7 @@ fn show_in(
         let text = crate::text::canvas_render_failed(message);
         let placeholder =
             ui.centered_and_justified(|ui| ui.colored_label(ui.visuals().error_fg_color, text));
-        // ★ **The sentence prescribes Ctrl+wheel, so Ctrl+wheel has to work on
+        // **The sentence prescribes Ctrl+wheel, so Ctrl+wheel has to work on
         // this frame.** Same exception, same two handlers and the same
         // reasoning as the `nothing-visible` return below — see [`escape`],
         // which carries the terms.
@@ -261,7 +261,7 @@ fn show_in(
         return (Vec::new(), None);
     }
 
-    // ★ **Where every page this view shows sits.** One page under `Single`,
+    // **Where every page this view shows sits.** One page under `Single`,
     // whose rect is `(0,0)..display_size` — so everything below is the
     // arithmetic it already was. See [`viewer::strip`].
     let layout = doc.strip();
@@ -275,7 +275,7 @@ fn show_in(
         .rect_of(current)
         .unwrap_or_else(|| Rect::from_min_size(Pos2::ZERO, display_size));
     let current_display = (current_rect.width(), current_rect.height());
-    // ★ **The ROW the acting page is in** — `OPERATOR_REQUESTS.md` O177.
+    // **The ROW the acting page is in** — `OPERATOR_REQUESTS.md` O177.
     //
     // Identical to `current_rect` under Single and Continuous, where a row IS
     // a page; the whole facing spread under either facing mode. The fit's
@@ -295,7 +295,7 @@ fn show_in(
     // the middle button, implemented below against the offset directly.
     let mut scroll_source = ScrollSource::ALL;
     scroll_source.drag = egui::scroll_area::DragScroll::Never;
-    // ★★★ AND THE WHEEL ITSELF, when it is a page turn — O30.
+    // AND THE WHEEL ITSELF, when it is a page turn — O30.
     //
     // The scroll area consumes a plain wheel, so a page-turning wheel has to
     // be taken away from it BEFORE it is built; reading the delta afterwards
@@ -305,7 +305,7 @@ fn show_in(
     // `paging::flips_pages`, so no frame both scrolls and pages. On a one-page
     // document the wheel does neither and the fitted page stays put (O239).
     //
-    // ★ Only the wheel. The scroll BARS keep working, which matters: with the
+    // Only the wheel. The scroll BARS keep working, which matters: with the
     // wheel turning pages, dragging the bar is how the operator moves within
     // a sheet that is larger than the window, and a mode that took both away
     // would have made a zoomed-in page unreachable.
@@ -316,7 +316,7 @@ fn show_in(
     let mut scroll_area = egui::ScrollArea::both()
         .id_salt("page-canvas") // ui-text-exempt: internal widget id, never displayed
         .scroll_source(scroll_source)
-        // ★ Always, not when needed. The content is the strip plus O23's
+        // Always, not when needed. The content is the strip plus O23's
         // pasteboard — a whole viewport each side — so it exceeds the viewport
         // on every frame below the deep tier and the bars would show anyway.
         // Saying so outright makes the space they take a CONSTANT of the
@@ -333,13 +333,13 @@ fn show_in(
     // and the disagreement would be a drag that panned AND marquee'd.
     let active_tool = tool::active(ui.ctx());
 
-    // ★ The INNER size — `inner_avail`, measured above with the bars taken
+    // The INNER size — `inner_avail`, measured above with the bars taken
     // off. `ui.available_size()` here is the outer, and every margin term in
     // `geometry` and every centre in `fit::placement` is derived against this
     // number, so it must be the room the content will actually get.
     let vp = inner_avail;
 
-    // ★★★ **WHERE THE VIEW SITS THIS FRAME** — the pasteboard's slack, the
+    // **WHERE THE VIEW SITS THIS FRAME** — the pasteboard's slack, the
     // deep-position tier, a pending fit's placement, and the ranked list of
     // six sources that decide the scroll offset.
     //
@@ -397,14 +397,14 @@ fn show_in(
                 geometry::content_extent(display_size.y, vp.y, overhang.y).max(avail.y),
             )
         };
-        // ★★ The response is KEPT, and Ctrl+wheel is gated on it —
+        // The response is KEPT, and Ctrl+wheel is gated on it —
         // `OPERATOR_REQUESTS.md` O26. It covers the whole scroll content:
         // every page, the gaps between them, and O23's pasteboard. See the
         // wheel block near the end of `show` for why the current page's own
         // response was the wrong gate.
         //
         //
-        // ★★ **Widening this does NOT steal clicks from the pages.** This
+        // **Widening this does NOT steal clicks from the pages.** This
         // rectangle is allocated BEFORE any page, and egui resolves an overlap
         // in favour of the widget registered later, so every page still wins
         // on its own sheet and this one only ever sees a pointer no page
@@ -421,7 +421,7 @@ fn show_in(
         // The strip's own rect on screen. Every page's rect is this origin
         // plus its strip-space placement, which is what makes the strip the
         // single owner of "where is page N".
-        // ★★★ WHERE THE STRIP SITS, and at tier 3 the anchor decides.
+        // WHERE THE STRIP SITS, and at tier 3 the anchor decides.
         //
         // Below: centred in the content, as it has always been, with the
         // scroll offset moving the viewport over it.
@@ -436,7 +436,7 @@ fn show_in(
         let strip_rect = if deep {
             deep::strip_placement(doc, &layout, current, outer_rect.min, display_size)
         } else {
-            // ★★★ PLACED FROM THE CONTENT'S ORIGIN, NOT FROM ITS CENTRE —
+            // PLACED FROM THE CONTENT'S ORIGIN, NOT FROM ITS CENTRE —
             // `OPERATOR_REQUESTS.md` O26g.
             //
             // `Rect::from_center_size(outer_rect.center(), display_size)` is
@@ -486,7 +486,7 @@ fn show_in(
         // this rect a whole pasteboard past the end of the strip — so
         // `layout.visible()` returns nothing and the canvas draws nothing at
         // all.
-        // ★ At tier 3 the scroll offset is not the position, so asking it
+        // At tier 3 the scroll offset is not the position, so asking it
         // which pages are visible would answer about the wrong place. The
         // strip's own placement on screen is the truth there: whatever of it
         // overlaps the viewport is what can be seen.
@@ -502,7 +502,7 @@ fn show_in(
             )
         };
 
-        // ★★★ **A PAGE IS VISIBLE WHEN ITS CONTENT IS, NOT WHEN ITS SHEET IS.**
+        // **A PAGE IS VISIBLE WHEN ITS CONTENT IS, NOT WHEN ITS SHEET IS.**
         //
         //
         // `Strip::visible` culls on the PAGE's rectangle, and that was the only
@@ -514,14 +514,14 @@ fn show_in(
         // `canvas-unavailable reason=nothing-visible`, dropped its `page` and
         // `canvas-viewport` rects, and went grey.
         //
-        // ★★ Measured, not reasoned: at 978 % on a 200 pt sheet with an object
+        // Measured, not reasoned: at 978 % on a 200 pt sheet with an object
         // 160 pt off its left edge, the page rect stood at x 1562…3486 against
         // a viewport of 288…1578 — sixteen points of overlap, then none — while
         // that object spanned x −4…1170, squarely inside it. The operator was
         // looking straight at his object and the shell had decided there was
         // nothing to draw.
         //
-        // ★ Expanding the VIEW by the overhang is exactly equivalent to
+        // Expanding the VIEW by the overhang is exactly equivalent to
         // expanding each page's rect by it, and is one operation instead of
         // one per page. It is also the conservative direction: the worst a too
         // generous bound can do is rasterize a page a fraction of a second
@@ -546,7 +546,7 @@ fn show_in(
         let sense = Sense::click_and_drag();
         let mut drawn: Vec<strip::DrawnPage> = Vec::new();
 
-        // ★★★ **Which picture this page needs** — the region / halo / whole
+        // **Which picture this page needs** — the region / halo / whole
         // decision, in `canvas::tier`. Decided here, from the canvas, because
         // only the canvas knows where the operator is looking; kept in its own
         // module because it is the only block in this file that decides what to
@@ -561,7 +561,7 @@ fn show_in(
             current,
             raster_scale,
             deep,
-            // ★ The TRUE viewport, deliberately, and not `visible_content`.
+            // The TRUE viewport, deliberately, and not `visible_content`.
             // The region tier already intersects this with
             // `halo::reach(place, ..)` — the page's box WIDENED to its
             // content — so it reaches off-page ink without help. Handing it
@@ -580,7 +580,7 @@ fn show_in(
             // page's lives in the strip cache. See `render::strip`'s header
             // for why the split exists and why the rule is enforced rather
             // than remembered.
-            // ★★★ THE TEXTURE AND THE REGION IT IS A PICTURE OF, TOGETHER.
+            // THE TEXTURE AND THE REGION IT IS A PICTURE OF, TOGETHER.
             //
             // `OPERATOR_REQUESTS.md` O24c. The current page's slot is served
             // WITHOUT a staleness check, on purpose — that is what shows the
@@ -598,7 +598,7 @@ fn show_in(
             let held = if placement.page == current {
                 doc.page_texture
                     .as_ref()
-                    // ★ And only if it is a picture of THIS page. The slot is
+                    // And only if it is a picture of THIS page. The slot is
                     // normally kept in step with the current page by
                     // `render::settle`, but a raster that lands in the same
                     // frame as a page change would otherwise be placed by a
@@ -612,18 +612,18 @@ fn show_in(
                 doc.strip_page_texture(placement.page, key)
                     .map(|t| (t.texture.clone(), t.key.region()))
             };
-            // ★ The texture's ID, taken while the handle is in hand. A later
+            // The texture's ID, taken while the handle is in hand. A later
             // layer draws a piece of this same picture — see
             // `canvas::overlay::draw_raster_ghost` — and asking the cache a
             // second time could answer with a DIFFERENT region's raster,
             // which is the O24c fault wearing a new coat.
             let raster = held.as_ref().map(|(texture, _)| texture.id());
-            // ★★ Where the texture goes. A whole-page raster fills the page's
+            // Where the texture goes. A whole-page raster fills the page's
             // rect; a REGION raster covers only part of the page and must be
             // drawn at that part's rect, or the operator sees the right pixels
             // in the wrong place — which reads as the page having jumped.
             //
-            // ★★★ The region read here is the HELD texture's, never
+            // The region read here is the HELD texture's, never
             // `doc.region_for(..)`. Those differ exactly while a new region's
             // raster is in flight, which under a pan is most of the time — and
             // using the wanted one is O24c, the backwards lurch at every grid
@@ -638,7 +638,7 @@ fn show_in(
             // the destination without cropping the source would stretch the
             // image, which is a subtler wrong than a misplaced one.
             let paint_rect = match held.as_ref().and_then(|(_, region)| *region) {
-                // ★★★ At tier 3 the placement comes from the ANCHOR, not from
+                // At tier 3 the placement comes from the ANCHOR, not from
                 // this page's screen rect.
                 //
                 // `rect` has a magnitude around 10^12 px at four billion
@@ -647,7 +647,7 @@ fn show_in(
                 // 1,400 px across. Deriving the small result from the huge
                 // intermediate inherits an error that never had to exist.
                 //
-                // ★ Which is why the answer to "32-bit strip or 64-bit strip?"
+                // Which is why the answer to "32-bit strip or 64-bit strip?"
                 // is neither: not forming the number beats carrying it more
                 // precisely, costs nothing, and leaves one code path.
                 Some(region) if deep => {
@@ -671,7 +671,7 @@ fn show_in(
                 ),
                 None => rect,
             };
-            // ★ The backdrop, and the coverage number that makes its absence
+            // The backdrop, and the coverage number that makes its absence
             // falsifiable. Both live in `canvas::backdrop`; see that module for
             // why a screenshot is the wrong oracle for this one thing.
             let backdrop = backdrop::paint(ui, doc, placement.page, current, rect);
@@ -686,7 +686,7 @@ fn show_in(
             );
             let response = match held {
                 Some((texture, _)) => {
-                    // ★ The IMAGE goes at `paint_rect`; the page's INTERACTION
+                    // The IMAGE goes at `paint_rect`; the page's INTERACTION
                     // stays at `rect`. Allocating the image's rect would give
                     // the page a hit area that reaches off the sheet and
                     // overlaps its neighbours in a continuous strip.
@@ -696,7 +696,7 @@ fn show_in(
                     // since a colour with no role in the palette is one a
                     // restyle cannot reach. This form has no colour at all.
                     egui::Image::from_texture(&texture).paint_at(ui, paint_rect);
-                    // ★★★ WHERE THE SHEET ENDS, when the picture is bigger
+                    // WHERE THE SHEET ENDS, when the picture is bigger
                     // than it.
                     //
                     // A halo raster covers the ground outside the page, and
@@ -713,7 +713,7 @@ fn show_in(
                     // boundary is a real fact about the document, so it is
                     // drawn at full strength rather than as a hint."*
                     //
-                    // ★ R8b rule 4 is satisfied and it is worth saying why,
+                    // R8b rule 4 is satisfied and it is worth saying why,
                     // because a line drawn near content usually is not: this
                     // marks the SHEET, not the object. Nothing about the
                     // off-page content is styled, tinted or flagged — it
@@ -721,7 +721,7 @@ fn show_in(
                     // reopened, and the only difference is that the operator
                     // can now see where the paper stops.
                     //
-                    // ★ The condition also picks up the region tier's
+                    // The condition also picks up the region tier's
                     // overscan, which has always bled a little white past the
                     // sheet edge at deep zoom with nothing to say so.
                     if !rect.contains_rect(paint_rect) {
@@ -767,7 +767,7 @@ fn show_in(
                     response
                 }
             };
-            // ★ The page becomes a keyboard focus owner here, which is what
+            // The page becomes a keyboard focus owner here, which is what
             // stops Tab falling through to the ribbon. See `pagefocus`.
             crate::canvas::pagefocus::seat(ui, placement.page, rect, &response);
             drawn.push(strip::DrawnPage {
@@ -794,7 +794,7 @@ fn show_in(
     doc.frame.last_scroll_offset = scroll_output.state.offset;
     let scroll_offset = scroll_output.state.offset;
 
-    // ★ **Which page this frame's input is about.** Decided by the strip
+    // **Which page this frame's input is about.** Decided by the strip
     // module, which owns the question and the two answers to it — the scroll
     // and a press. See `strip::track_current_page`.
     strip::track_current_page(
@@ -807,7 +807,7 @@ fn show_in(
         deep,
     );
 
-    // ★ **A page drag from somewhere else, landing here.**
+    // **A page drag from somewhere else, landing here.**
     //
     // Here rather than inside the scroll-area closure, because that is the
     // first point at which every visible page's *screen* rectangle is known —
@@ -837,7 +837,7 @@ fn show_in(
         // before the scroll area has settled. Say so, and let the next frame
         // sort it out rather than inventing a rect for a page nobody drew.
         //
-        // ★★★ AND IT IS NOT ALWAYS ONE FRAME -- `OPERATOR_REQUESTS.md` O186.
+        // AND IT IS NOT ALWAYS ONE FRAME -- `OPERATOR_REQUESTS.md` O186.
         //
         // The comment above was written for the transient case and the
         // transient case is real. It is not the only one: a view carried off
@@ -858,11 +858,11 @@ fn show_in(
         });
         return (Vec::new(), None);
     };
-    // ★★★ THE ACTING PAGE IS THE ONE WHOSE RECT WE ARE ABOUT TO USE —
+    // THE ACTING PAGE IS THE ONE WHOSE RECT WE ARE ABOUT TO USE —
     // `OPERATOR_REQUESTS.md` O26c.
     //
     //
-    // ★★ On a document whose sheets are all the same size that mismatch is
+    // On a document whose sheets are all the same size that mismatch is
     // invisible. `SW41177.pdf` mixes 1584 × 1224 sheets with 1224 × 792 ones,
     // and the trace caught it exactly:
     //
@@ -883,7 +883,7 @@ fn show_in(
     // what the operator described and exactly why it was intermittent: it
     // needs `drawn.first()` to be a *differently sized* page.
     //
-    // ★ Taking the page from `active` also makes the frame's whole downstream
+    // Taking the page from `active` also makes the frame's whole downstream
     // truthful rather than merely consistent: `interact`, the hit test, the
     // selection and `region_for` all describe the page whose rectangle is on
     // screen, instead of one the operator cannot see. Acting on an invisible
@@ -893,7 +893,7 @@ fn show_in(
     let image_rect = active.rect;
     let extent = viewer::page_extent_pts(&doc.pages[acting]);
 
-    // ★ **Publish what the renderer should work on**, nearest the viewport
+    // **Publish what the renderer should work on**, nearest the viewport
     // centre first — the order `render::settle` fills the strip in, and the
     // whole of why a scroll feels like it is keeping up rather than starting
     // from the top every time. Only knowable here, once the scroll area has
@@ -924,7 +924,7 @@ fn show_in(
         })
         .collect();
 
-    // ★ The guides' catch bands, registered AFTER every page widget and before
+    // The guides' catch bands, registered AFTER every page widget and before
     // the gesture layer runs. The order is the whole mechanism: a later widget
     // in the same layer is the topmost one under the pointer, so a press on a
     // guide never reaches the page's `Response` and therefore never reaches
@@ -933,7 +933,7 @@ fn show_in(
     // document has no guides.
     guides::canvas_drag(ui, doc, &page_views, actions);
 
-    // ★ Form filling on the page, registered in that same layer and for the
+    // Form filling on the page, registered in that same layer and for the
     // same reason: the focused field's editor must be topmost, and nothing is
     // registered for an unfocused one. See `forms`' header §4.
     forms::overlay(
@@ -946,31 +946,31 @@ fn show_in(
         actions,
     );
 
-    // ★★ **The pointing hand over a followable link**, registered after the
+    // **The pointing hand over a followable link**, registered after the
     // form widgets' own cursor pass and before the gesture layer runs — so
     // `canvas::tool::cursor_for` still has the last word, which is right: an
     // opinion it holds is about a gesture already under way and outranks a
     // hover. See `canvas::links`' header on why this is the WHOLE of the
     // pre-click affordance and why nothing is drawn into the page.
     //
-    // ★ After forms rather than before, deliberately. A `/Widget` and a `/Link`
+    // After forms rather than before, deliberately. A `/Widget` and a `/Link`
     // overlapping is a form control inside a table of contents; the control is
     // the more specific thing and its own cursor should survive.
     links::cursor(ui.ctx(), doc, &page_views, caps.edit_content);
 
-    // ★ The frame's geometry, recorded for the commands that arrive with none.
+    // The frame's geometry, recorded for the commands that arrive with none.
     // A zoom raised from a keyboard chord, the ribbon or the status bar has no
     // `Ui` and no page rect, and it must describe its anchor against the view
     // as it stands BEFORE the zoom is applied — which is exactly this. See
     // [`zoom::CanvasFrame`].
     //
-    // ★ The offset recorded is the **page-local** one, not the strip's. Every
+    // The offset recorded is the **page-local** one, not the strip's. Every
     // consumer of this record — the anchor rule, both framing verbs — is
     // written for a scroll area holding one page at the origin, and converting
     // here is what lets all of them keep working unchanged over a strip. Under
     // `Single` the conversion is the identity. See `geometry`'s header.
     //
-    // ★★★ MEASURED FROM THE DRAWN RECT, NOT RECONSTRUCTED FROM THE SCROLL
+    // MEASURED FROM THE DRAWN RECT, NOT RECONSTRUCTED FROM THE SCROLL
     // OFFSET — `OPERATOR_REQUESTS.md` O26e.
     //
     //
@@ -986,14 +986,14 @@ fn show_in(
             extent,
             display: (image_rect.width(), image_rect.height()),
             viewport: (viewport_size.x, viewport_size.y),
-            // ★ The OUTER size, measured before the scroll area — the one
+            // The OUTER size, measured before the scroll area — the one
             // `canvas::fit` places against on the next frame. See
             // `CanvasFrame::outer` for why measuring "before" against the inner
             // size and placing "after" against the outer lands the centre half
             // a scroll bar off. O78.
             outer: (vp.x, vp.y),
             viewport_rect: scroll_output.inner_rect,
-            // ★ The ACTING page, not `view.page_index`. They are the same on
+            // The ACTING page, not `view.page_index`. They are the same on
             // almost every frame and differ on exactly the frames that broke:
             // see `acting`'s own note, and `ZoomAnchor::page`.
             page: acting,
@@ -1009,7 +1009,7 @@ fn show_in(
         },
     );
 
-    // ★★★ **Which surface this frame's gesture belongs to — O23's off-page
+    // **Which surface this frame's gesture belongs to — O23's off-page
     // half.** The rule, and the argument for each of its four rows, is in
     // [`pasteboard`]; it is a pure function here so that the rows a running
     // window is awkward to put into a given state can still be held by a unit
@@ -1026,7 +1026,7 @@ fn show_in(
         || content_response.clicked()
         || content_response.secondary_clicked();
     let on_page = image_response.contains_pointer();
-    // ★★★ The page's own context menu, asked for by id rather than inferred.
+    // The page's own context menu, asked for by id rather than inferred.
     //
     let page_owns_open_popup =
         egui::Popup::is_id_open(ui.ctx(), egui::Popup::default_response_id(&image_response));
@@ -1079,7 +1079,7 @@ fn show_in(
         drawn.len(),
         drawn.iter().filter(|d| d.raster.is_some()).count(),
     );
-    // ★★ The pan position, in `f64`, from whichever tier owns it.
+    // The pan position, in `f64`, from whichever tier owns it.
     //
     // `OPERATOR_REQUESTS.md` O24: the operator reported that a small pan at a
     // high zoom either did nothing or snapped back. Neither symptom can be
@@ -1109,7 +1109,7 @@ fn show_in(
         .iter()
         .find(|d| d.page == acting)
         .map_or(image_rect, |d| d.paint_rect);
-    // ★ The region of the raster that was actually PAINTED, taken from the
+    // The region of the raster that was actually PAINTED, taken from the
     // held texture's own key — the same source the placement used, so the
     // harness's independent recomputation is checking the placement rather
     // than agreeing with itself. `None` for a whole-page raster.
@@ -1144,7 +1144,7 @@ fn show_in(
     }
     trace::pointer(ui, doc, image_rect, extent);
 
-    // ★ The plain wheel as a page turn — O30. Before the Ctrl+wheel block
+    // The plain wheel as a page turn — O30. Before the Ctrl+wheel block
     // rather than after it, so the two are read in the order egui produced
     // them; they cannot both fire on one gesture, because a modified wheel
     // event populates `zoom_delta` and contributes nothing to the scroll
@@ -1160,7 +1160,7 @@ fn show_in(
     // Ctrl+wheel aimed at some other surface does not zoom the page out from
     // under the operator.
     //
-    // ★★★ THE GATE IS THE CANVAS, NOT THE CURRENT PAGE — `OPERATOR_REQUESTS.md`
+    // THE GATE IS THE CANVAS, NOT THE CURRENT PAGE — `OPERATOR_REQUESTS.md`
     // O26.
     //
     //
@@ -1179,7 +1179,7 @@ fn show_in(
     // real egui `Response`, so it still respects layer order and a floating
     // window over the canvas still swallows the wheel; a `rect.contains`
     // test would not have.
-    // ★ The body is [`zoom::wheel_step`] and not a block here, because O186's
+    // The body is [`zoom::wheel_step`] and not a block here, because O186's
     // escape hatch needs the identical gesture on a frame that drew nothing.
     // The gate stays at this call site — it is the only part of this that is
     // about THIS frame's two responses — and the rule about arming the anchor
@@ -1190,7 +1190,7 @@ fn show_in(
         zoom::wheel_step(ui.ctx(), doc, actions);
     }
 
-    // ★ What the frame learned, handed outwards so the rulers can be drawn
+    // What the frame learned, handed outwards so the rulers can be drawn
     // against it. Only knowable here — after the scroll area has settled — for
     // the same reason `last_scroll_offset` is stored and `strip_visible` is
     // published during layout. See [`CanvasGeometry`].
@@ -1206,7 +1206,7 @@ fn show_in(
 
 /// The canvas's scroll-bar style: **solid, visible, and outside the page**.
 ///
-/// # ★★★ The defect this closes, measured on the real binary
+/// # The defect this closes, measured on the real binary
 ///
 /// egui's default `ScrollStyle` is [`egui::style::ScrollStyle::floating`]:
 /// the bars allocate no space, are drawn **over** the content, and are fully

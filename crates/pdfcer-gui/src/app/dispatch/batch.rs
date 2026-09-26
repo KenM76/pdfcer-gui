@@ -26,7 +26,7 @@ pub(crate) fn handles(id: &str) -> bool {
 
 /// Do whatever this build does about a Batch command.
 ///
-/// # ★ Both pickers run HERE, during dispatch, between frames
+/// # Both pickers run HERE, during dispatch, between frames
 ///
 /// The same position `file.open`'s does, and for the same reason: an `rfd`
 /// modal opened from inside an `egui` layout closure blocks the frame it is
@@ -54,7 +54,7 @@ pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, _actions: &mut [Action]) {
 
 /// `tools.merge_files` — ask for the sources, ask where it goes, write it.
 ///
-/// # ★★ Nothing is gated on a document being open, and that is deliberate
+/// # Nothing is gated on a document being open, and that is deliberate
 ///
 /// This is one of the handful of commands live with an empty window, and it
 /// belongs there: it produces a document **from files on disk**, so requiring
@@ -78,11 +78,11 @@ fn merge_files(app: &mut PdfcerApp) {
         return;
     }
 
-    // ★ The suggested destination sits **beside the first source**, which is
+    // The suggested destination sits **beside the first source**, which is
     // the only folder pdfcer has any evidence about. `Combined.pdf` names the
     // result rather than the verb, on `save_copy_suffix`'s rule.
     //
-    // ★★ And it can never be one of the sources, which is the guarantee
+    // And it can never be one of the sources, which is the guarantee
     // `pick_save_path`'s docs ask every caller for: `Combined.pdf` is a
     // constant, and a source that happens to be called `Combined.pdf` would
     // have to be chosen again by hand at the picker. That is the difference

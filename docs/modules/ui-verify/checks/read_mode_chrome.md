@@ -19,7 +19,7 @@ with the note that a chord that does nothing **cannot even be greyed**. The
 arm landed on 2026-08-15 (`app::window`), and this is the check that says so
 from outside the process.
 
-# ★ Why a unit test cannot cover it, which is the bar for being here
+# Why a unit test cannot cover it, which is the bar for being here
 
 [`crate::checks`]' rule: *"it must fail against a build where the wiring is
 absent, and the wiring must be something no unit test in the workspace can
@@ -55,7 +55,7 @@ because each covers the other's blind spot:
   satisfied by any global repaint — a hover, a theme change, a resize —
   which is why the rect is checked as well.
 
-# ★ It goes one way, and cannot come back
+# It goes one way, and cannot come back
 
 **The exit from read mode is `Ctrl+H`, and this machine cannot inject
 keystrokes reliably** — `find_bar`'s first run reported Find broken on a
@@ -72,7 +72,7 @@ covered by `app::window::tests::read_mode_starts_off_and_toggles_both_ways`
 as a state machine, and by nothing at all as a frame. If a way to inject
 `Ctrl+H` arrives, phase D is one more `settle` and one more rect read.
 
-# ★ Phase 0 drives `view.fullscreen`, and does it FIRST
+# Phase 0 drives `view.fullscreen`, and does it FIRST
 
 The two arms landed in the same change, in the same module, in the same
 ribbon group, and they share the one expensive precondition this check has

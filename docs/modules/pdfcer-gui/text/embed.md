@@ -3,7 +3,7 @@ anything
 
 The copy for [`crate::dialogs::embed`].
 
-## ★★★ This window exists to be READ, not to be filled in
+## This window exists to be READ, not to be filled in
 
 ⚠ **Corrected 2026-09-05.** This paragraph read *"It has no settings … there
 is no useful way to make it configurable either"*, and that sentence was
@@ -24,7 +24,7 @@ That shape is chosen because of what an embed is: it puts font **programs**
 into a document permanently, changes its size, and can invalidate a PDF/A
 claim. There is no honest way to offer that as a one-click ribbon verb.
 
-## ★★ The three things it must say, in this order
+## The three things it must say, in this order
 
 
 **1. What will be embedded**, because that is the operator's answer.

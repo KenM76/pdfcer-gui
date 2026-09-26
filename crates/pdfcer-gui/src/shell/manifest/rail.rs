@@ -20,7 +20,7 @@ pub fn groups() -> Vec<RailGroup> {
         // -------------------------------------------------------------------
         // GROUP 1 — THE PANEL TABS. The floor.
         //
-        // ★★ `RailFold::Never`, and it is the load-bearing choice on this
+        // `RailFold::Never`, and it is the load-bearing choice on this
         // strip. O123 part 5 put Pages, Bookmarks, Layers, Signatures and
         // Fonts into ONE dock, and Comments joined them here; the rail is what
         // makes every one of them simultaneously one click away, which a 280 pt
@@ -43,7 +43,7 @@ pub fn groups() -> Vec<RailGroup> {
                 Item::command("view.panel_bookmarks"),
                 Item::command("view.panel_layers"),
                 Item::command("view.panel_signatures"),
-                // ★★★ **COMMENTS — this row is Read's only route to the
+                // **COMMENTS — this row is Read's only route to the
                 // comment list.**
                 //
                 // The Comments panel's single command is `markup.comments`,
@@ -82,7 +82,7 @@ pub fn groups() -> Vec<RailGroup> {
                 // rail placement here is wanted either way; the rename would
                 // move only the second, tab-side control.
                 Item::command("markup.comments"),
-                // ★ `file.fonts`, NOT `view.panel_fonts` — the Fonts panel's command
+                // `file.fonts`, NOT `view.panel_fonts` — the Fonts panel's command
                 // is registered on the File tab and there is no second id for
                 // it. `crate::panels::Panel::command_id` is the source of
                 // truth, and inventing a symmetric-looking id here would give
@@ -99,7 +99,7 @@ pub fn groups() -> Vec<RailGroup> {
         // sequence on both surfaces. Two orders for one set of tools would be
         // worse than either.
         //
-        // ★ `view.tool_node` carries `shown_when("mode.edit_content")`, the
+        // `view.tool_node` carries `shown_when("mode.edit_content")`, the
         // same condition the ribbon item carries and for the same reason (O69,
         // R9): the Points tool edits the nodes of a path and Read cannot, so
         // in Read it renders NOTHING rather than greying. On a permanent
@@ -107,7 +107,7 @@ pub fn groups() -> Vec<RailGroup> {
         // for the mode would be wrong on screen for the whole session rather
         // than for one click.
         //
-        // ★★★ `view.smart_select` IS a member of this group, on the
+        // `view.smart_select` IS a member of this group, on the
         // operator's instruction: *"our smart selector should be visible with
         // the other navigate controls in our left rail."*
         //
@@ -124,7 +124,7 @@ pub fn groups() -> Vec<RailGroup> {
         // one member out would make the two surfaces disagree, which is the
         // thing the order note above this list exists to prevent.
         //
-        // ★★ **WHAT HAPPENS AT THE FOLD, stated rather than discovered.**
+        // **WHAT HAPPENS AT THE FOLD, stated rather than discovered.**
         // [`RailFold::PinArmed`] pins the row whose `selected:<id>` condition
         // holds, taking the FIRST such row in list order. `app::conditions::
         // armed` sets `selected:view.smart_select` whenever the preference is
@@ -138,13 +138,13 @@ pub fn groups() -> Vec<RailGroup> {
         // its state is still legible on View ▸ Navigate, which is on screen in
         // every mode that shows the row at all.
         //
-        // ★ It carries `shown_when("mode.edit_content")`, the same gate the
+        // It carries `shown_when("mode.edit_content")`, the same gate the
         // ribbon item carries, for `view.tool_node`'s reason two paragraphs
         // up: the command also carries `enabled_when("mode.edit_content")`, so
         // a rail row without the gate would be a permanently greyed control on
         // a permanent surface in Read.
         //
-        // ★★★ `RailFold::PinArmed`: at the floor of the ladder this group
+        // `RailFold::PinArmed`: at the floor of the ladder this group
         // becomes ONE row showing whatever is armed — including a tool armed
         // from a ribbon tab that is not open, because the pinning reads
         // `selected:<id>`, which is application state rather than a property
@@ -167,7 +167,7 @@ pub fn groups() -> Vec<RailGroup> {
         // -------------------------------------------------------------------
         // GROUP 3 — SELECT. His *"other related selection controls"*.
         //
-        // ★★★ THE LASSO GOES HERE, AND NOWHERE ELSE, WHEN IT EXISTS.
+        // THE LASSO GOES HERE, AND NOWHERE ELSE, WHEN IT EXISTS.
         //
         //     Item::command("edit.lasso"),
         //
@@ -226,7 +226,7 @@ mod tests {
         reg
     }
 
-    /// ★★ Every id in the rail is a registered command.
+    /// Every id in the rail is a registered command.
     ///
     /// `Shell::validate` enforces this at start-up and would refuse the whole
     /// manifest; this test says so at `cargo test` time instead, because a
@@ -248,7 +248,7 @@ mod tests {
         }
     }
 
-    /// ★★★ Every id in the rail names an icon.
+    /// Every id in the rail names an icon.
     ///
     /// The rail's row is a picture with an *optional* word under it, and at
     /// `Rung::Tight` and below there is no word left. A command with no icon
@@ -276,7 +276,7 @@ mod tests {
         }
     }
 
-    /// ★ The panel-tab group never folds, and it is the only one that does not.
+    /// The panel-tab group never folds, and it is the only one that does not.
     ///
     /// Pinned as data rather than trusted to the planner, because the planner
     /// honours whatever this file declares — a `fold` typo here would be a
@@ -319,7 +319,7 @@ mod tests {
         }
     }
 
-    /// ★★★ The smart selector is on the rail, in `navigate`, **last**.
+    /// The smart selector is on the rail, in `navigate`, **last**.
     ///
     /// His instruction of 2026-09-05 — *"our smart selector should be visible
     /// with the other navigate controls in our left rail"* — pinned as data.
@@ -376,7 +376,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **At the fold the pin goes to the TOOL, never to the toggle** —
+    /// **At the fold the pin goes to the TOOL, never to the toggle** —
     /// even when both are `selected`.
     ///
     /// This is the assertion that carries the decision recorded in the module
@@ -441,7 +441,7 @@ mod tests {
         assert_eq!(node.visible_condition(), Some("mode.edit_content"));
     }
 
-    /// ★ The lasso is absent, and this test is the tripwire for the day it is
+    /// The lasso is absent, and this test is the tripwire for the day it is
     /// added: R9 forbids drawing a capability the build does not have, so a
     /// `edit.lasso` id appearing here before the command is registered would
     /// otherwise be caught only by `Shell::validate` at start-up.

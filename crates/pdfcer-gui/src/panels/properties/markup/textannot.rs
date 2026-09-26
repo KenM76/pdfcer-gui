@@ -21,7 +21,7 @@ pub(super) const REGION: &str = "properties.markup.textannot"; // ui-text-exempt
 /// The **label-size spinner**'s own region, published only when the row is
 /// actually on screen.
 ///
-/// # ★★★ Why this constant exists at all
+/// # Why this constant exists at all
 ///
 /// The operator, twice, in the same words:
 ///
@@ -56,7 +56,7 @@ pub(super) const FIT_REGION: &str = "properties.markup.textannot.fit"; // ui-tex
 /// pdfcer-diag stamp-label-row size=24 source=declared-in-da fit=grow
 /// ```
 ///
-/// # ★★ Why a line, when the number is on the screen
+/// # Why a line, when the number is on the screen
 ///
 /// Because a driven check cannot read a number off a screenshot, and the
 /// alternative is a check that *describes* the absence it never measured — an
@@ -64,7 +64,7 @@ pub(super) const FIT_REGION: &str = "properties.markup.textannot.fit"; // ui-tex
 /// looking again. `stamp-size-chooser` is this line's twin on the placing
 /// dialog and exists for the identical reason.
 ///
-/// ★ It carries `source=` as well as `size=`, because the two answer different
+/// It carries `source=` as well as `size=`, because the two answer different
 /// questions. `size=` is what the operator sees. `source=` is where it came
 /// from, and it is the only way a check can tell *"the file declared 24"* from
 /// *"pdfcer read 24 off the picture because the file declares nothing"* — a
@@ -72,7 +72,7 @@ pub(super) const FIT_REGION: &str = "properties.markup.textannot.fit"; // ui-tex
 /// `StampSizeSource` has three variants rather than being an `Option`.
 const ROW_SLOT: &str = "stamp-label-row"; // ui-text-exempt: diagnostic trace slot, never displayed
 
-/// ★★★ **Which of `pdfcer-core`'s TWO annotation-style verbs reaches the
+/// **Which of `pdfcer-core`'s TWO annotation-style verbs reaches the
 /// selected mark** — the guard between them, as a `match` the compiler
 /// checks.
 ///
@@ -116,7 +116,7 @@ pub(super) enum Reach {
 /// **Which text-bearing face is selected** — the closed set
 /// `set_text_annot_style` is offered for by this shell.
 ///
-/// ★★ An enum rather than the `/Subtype` string, so that *which properties does
+/// An enum rather than the `/Subtype` string, so that *which properties does
 /// this face take?* is answered by a `match` the compiler checks. A `bool` pair
 /// (`takes_icon`, `takes_colour`) would let a third face arrive and be given
 /// both by whichever default the author typed first.
@@ -141,7 +141,7 @@ pub(super) enum Face {
 impl Face {
     /// Whether this face takes an icon.
     ///
-    /// ★ The same question `set_text_annot_style` asks before it writes
+    /// The same question `set_text_annot_style` asks before it writes
     /// anything (`style.icon.is_some() && target.subtype != b"Text"`), asked
     /// here so the chooser is **absent** rather than drawn-and-refused. Belt and braces:
     /// the engine's refusal is what catches a shell that drifted anyway, which
@@ -167,7 +167,7 @@ pub(super) struct Reading {
     pub(super) face: Face,
     /// `/C`, as a swatch can show it, and whether showing it cost a conversion.
     ///
-    /// ★ Through [`super::swatch_of`], the parent's function, rather than a
+    /// Through [`super::swatch_of`], the parent's function, rather than a
     /// second conversion written here. The CMYK narrowing disclosure is a
     /// property of *showing a `/C` in an sRGB button* and has nothing to do
     /// with which verb writes it back — two copies of that arithmetic would be
@@ -176,13 +176,13 @@ pub(super) struct Reading {
     /// `/Name`, for a `/Text` — **including a name pdfcer does not model**,
     /// which arrives as [`StickyIcon::Other`].
     ///
-    /// ★★★ **`None` means exactly one thing: this face has no icon** — i.e. a
+    /// **`None` means exactly one thing: this face has no icon** — i.e. a
     /// `/Stamp`, whose `/Name` is a stamp face from a different vocabulary
     /// altogether. It never means *"the `/Name` is one pdfcer does not model"*:
     /// the engine's reader is lossless, so such a name arrives as
     /// [`StickyIcon::Other`] and is a value like any other.
     pub(super) icon: Option<StickyIcon>,
-    /// ★★ **`true` when the file's `/Name` is a name pdfcer does not model.**
+    /// **`true` when the file's `/Name` is a name pdfcer does not model.**
     ///
     /// §12.5.6.4's seven are *"a standard set, not a closed one"*, so a
     /// producer's own icon name is conforming and this is a legitimate state,
@@ -202,7 +202,7 @@ pub(super) struct Reading {
     /// sentence would be false. See
     /// `text::panels::textannotstyle::markup_icon_foreign_note`.
     ///
-    /// ★ Derived from the **spec**, never from a second read of the dictionary:
+    /// Derived from the **spec**, never from a second read of the dictionary:
     /// a second reader of a structure `pdfcer-core` owns is a second chance to
     /// disagree with the engine about an operator's file.
     pub(super) foreign_icon: bool,
@@ -211,7 +211,7 @@ pub(super) struct Reading {
     /// and `None` for a stamp whose picture shows no text pdfcer can read a
     /// size off.
     ///
-    /// # ★★★ Why this is NOT filled by [`Reading::of`]
+    /// # Why this is NOT filled by [`Reading::of`]
     ///
     /// Because `of` is **pure** and takes the spec and nothing else, which is
     /// what lets six tests build a `Reading` in one expression. The label
@@ -248,7 +248,7 @@ impl Reading {
     /// [`Reach`] separates (2) from the other two, because
     /// only (2) has a sentence of its own to show.
     ///
-    /// ★★ It takes the spec the caller already read and **nothing else**, which
+    /// It takes the spec the caller already read and **nothing else**, which
     /// is what lets a test build a `Reading` in one expression. There is
     /// nothing to read beside the spec: the engine's reader is lossless
     /// (`StickyIcon::from_name_lossless`), so an unmodelled `/Name` is already
@@ -258,7 +258,7 @@ impl Reading {
             TextAnnotSpec::Sticky { color, icon, .. } => Some(Self {
                 face: Face::Sticky,
                 colour: super::swatch_of(Some(color)),
-                // ★ An ABSENT `/Name` is not foreign, and the engine's reader
+                // An ABSENT `/Name` is not foreign, and the engine's reader
                 // already draws that line for us: Table 172's default is
                 // `Note`, so a note carrying no `/Name` arrives as `Note` and
                 // showing `Note` for it is reporting the standard rather than
@@ -283,7 +283,7 @@ impl Reading {
             }),
             // (2) above. The verb would take it; this shell will not send it.
             TextAnnotSpec::FreeText { .. } => None,
-            // ★ `TextAnnotSpec` is `#[non_exhaustive]`. A fourth text-bearing
+            // `TextAnnotSpec` is `#[non_exhaustive]`. A fourth text-bearing
             // face this build does not know the shape of gets no rows and the
             // withheld sentence — the same answer a `/FreeText` gets, and for a
             // compatible reason: this shell cannot say what a control over it
@@ -296,7 +296,7 @@ impl Reading {
     /// **Carry the stamp's label parameters in**, read from the session by
     /// [`super::Reach::read`].
     ///
-    /// # ★★ Why a builder and not a second argument to [`Self::of`]
+    /// # Why a builder and not a second argument to [`Self::of`]
     ///
     /// Because a second argument on `of` would make the pure function impure
     /// for every caller, including the tests that build a `Reading` in one
@@ -327,7 +327,7 @@ impl Reading {
 /// else, on a mark the parent has already established is neither locked nor a
 /// ce dimension.
 ///
-/// # ★ The order: what it says, then what it looks like
+/// # The order: what it says, then what it looks like
 ///
 /// The colour first, because it is the property both faces have and the one an
 /// operator reaches for; the icon second, because it exists on one face only
@@ -340,7 +340,7 @@ pub(super) fn rows(
     actions: &mut Vec<Action>,
 ) {
     crate::diag::ui_rect(REGION, ui.max_rect());
-    // ★★★ **What this subsection is showing, on the trace channel.**
+    // **What this subsection is showing, on the trace channel.**
     //
     // The published region says *the rows drew*; it cannot say **what they
     // say**. That distinction is the whole reason this line exists: a build
@@ -349,7 +349,7 @@ pub(super) fn rows(
     // controls — and differ only in the words inside the combo, which no rect
     // carries.
     //
-    // ★ `icon=` is the NAME as the file spells it, lossily decoded, not a
+    // `icon=` is the NAME as the file spells it, lossily decoded, not a
     // variant label. A check reading `icon=Note` cannot tell the flattened case
     // from a note that genuinely says `Note`; reading `icon=Sparkle` on a
     // fixture planted with `/Sparkle` can. `foreign=` is the panel's own
@@ -368,7 +368,7 @@ pub(super) fn rows(
         )
     });
     colour_row(ui, current, target, actions);
-    // ★ The narrowing disclosure sits directly under the swatch it qualifies,
+    // The narrowing disclosure sits directly under the swatch it qualifies,
     // which is also the parent's placement. A caveat placed after the NEXT
     // control arrives once the operator has already drawn their conclusion, so
     // it must sit against its own subject and before anything else.
@@ -379,7 +379,7 @@ pub(super) fn rows(
                 .weak(),
         );
     }
-    // ★★ The size sits between the colour and the icon, and the two never
+    // The size sits between the colour and the icon, and the two never
     // appear together: a stamp takes a size and no icon, a sticky note takes an
     // icon and no size. It is placed here rather than last so that the ORDER a
     // reader sees is stable across the two faces — colour, then whatever the
@@ -406,7 +406,7 @@ pub(super) fn rows(
 /// above about a gross the box `GrowToText` produces is wider than a letter
 /// page, so the stamp leaves the sheet.
 ///
-/// ★★★ **And a range is a hazard, which [`size_row`] handles rather than
+/// **And a range is a hazard, which [`size_row`] handles rather than
 /// ignores.** A control narrower than the values its subject accepts *silently
 /// rewrites a value the operator never touched*: open a stamp declaring 200 pt
 /// under a spinner capped at 144, and the spinner shows 144 — then one
@@ -420,7 +420,7 @@ const MAX_LABEL_PT: f64 = 144.0;
 
 /// **The stamp's label size, and what to do when it stops fitting.**
 ///
-/// # ★★★ What this closes, in the operator's own words — asked TWICE
+/// # What this closes, in the operator's own words — asked TWICE
 ///
 /// ***"I STILL can't adjust the size of a stamp on the canvas, or by entering a
 /// different size in the properties box."***
@@ -431,7 +431,7 @@ const MAX_LABEL_PT: f64 = 144.0;
 /// picture. This row is the second half: the engine exposes a stamp's label
 /// size for reading and for writing, and this is the consuming side of it.
 ///
-/// # ★★ Why it is a size ROW and not another entry in the placing dialog's list
+/// # Why it is a size ROW and not another entry in the placing dialog's list
 ///
 /// Because the two controls answer different questions. `canvas::textannot::
 /// StampSize` offers a *list* — `Fit the box I drew`, then a ladder of stated
@@ -449,7 +449,7 @@ const MAX_LABEL_PT: f64 = 144.0;
 /// it would be a control whose press does nothing, which is the defect this
 /// panel already shipped once (*"live controls, every press refused"*).
 ///
-/// # ★ Absent, not greyed, when the stamp has no label pdfcer can describe
+/// # Absent, not greyed, when the stamp has no label pdfcer can describe
 ///
 /// `stamp_label_parameters` answers `None` for a stamp whose appearance shows
 /// no text — **Acrobat's own custom stamps are artwork**, not a laid-out
@@ -463,7 +463,7 @@ fn size_row(
     target: &crate::canvas::selection::annot::AnnotTarget,
     actions: &mut Vec<Action>,
 ) {
-    // ★ Two guards, and they are not the same guard twice. The first is about
+    // Two guards, and they are not the same guard twice. The first is about
     // the FACE — a sticky note draws an icon and has no label to size, which is
     // the refusal `set_text_annot_style` makes by name
     // (`StylePropertyNotApplicable`, property "a label font size"). The second
@@ -481,7 +481,7 @@ fn size_row(
     let ctx = ui.ctx().clone();
     let mut fit = crate::canvas::stampfit::read(&ctx);
 
-    // ★★ The row's own reading, before anything is pressed. `trace_changed`
+    // The row's own reading, before anything is pressed. `trace_changed`
     // rather than `trace`, so a panel drawn at sixty frames a second writes one
     // line per actual change; see [`ROW_SLOT`] for why the line exists at all
     // and why it carries `source=`.
@@ -501,26 +501,26 @@ fn size_row(
         ui.label(ts::stamp_text_size_label());
         let response = ui.add(
             egui::DragValue::new(&mut size)
-                // ★★★ The range ADMITS whatever the file said. See
+                // The range ADMITS whatever the file said. See
                 // [`MIN_LABEL_PT`] — a spinner that clamps a value it did not
                 // author is a spinner that edits documents nobody asked it to.
                 .range(MIN_LABEL_PT.min(read_size)..=MAX_LABEL_PT.max(read_size))
                 .speed(0.5)
                 .suffix(ts::stamp_text_size_suffix()),
         );
-        // ★ `drag_stopped` and `lost_focus`, never `changed` — the parent's
+        // `drag_stopped` and `lost_focus`, never `changed` — the parent's
         // `width_row` carries the full argument. A `DragValue` reports a change
         // on every pixel of a drag and each one here is an appearance re-bake
         // plus an undo entry, so one drag across the control would leave forty
         // entries on the stack.
         //
-        // ★★ **And `size != read_size` beside it**, which `width_row` does not
+        // **And `size != read_size` beside it**, which `width_row` does not
         // need and this one does. A `lost_focus` fires when the operator clicks
         // away having changed nothing, and on a stamp whose declared size lies
         // outside this shell's range the displayed number is not the file's
         // number — so an unconditional commit here would rewrite a `/DA` the
         // operator never touched, on a mark they only looked at.
-        // ★★★ `ui_rect_visible`, and the clip rect is the panel's — not the
+        // `ui_rect_visible`, and the clip rect is the panel's — not the
         // window's. A row scrolled below the properties panel's viewport is
         // still laid out and still has a rectangle; publishing it would hand a
         // driven check a coordinate that lands on whatever is drawn over it,
@@ -532,7 +532,7 @@ fn size_row(
         }
     });
 
-    // ★★★ The fit chooser sits UNDER the number it qualifies, because it is
+    // The fit chooser sits UNDER the number it qualifies, because it is
     // read at the moment the operator has just typed a larger one and is
     // wondering what will happen. The placement rule for a *caveat* cuts the
     // other way — a warning below the thing it warns about arrives after the
@@ -544,7 +544,7 @@ fn size_row(
         let combo = egui::ComboBox::from_id_salt("properties-stamp-fit") // ui-text-exempt: widget id salt, never displayed.
             .selected_text(ts::stamp_fit_option(fit))
             .show_ui(ui, |ui| {
-                // ★ `stampfit::FITS`, never a hand-written list here. A
+                // `stampfit::FITS`, never a hand-written list here. A
                 // completeness test keys on that constant, and a second list
                 // written out at a call site is invisible to it — the exact
                 // shape of defect this project has a standing rule about.
@@ -585,7 +585,7 @@ fn size_row(
 
 /// **Where the displayed label size came from**, as one word for the trace.
 ///
-/// # ★★ Why the shell writes this token and the engine does not
+/// # Why the shell writes this token and the engine does not
 ///
 /// `StampLabelFit` publishes `token()` because a *driven check reads it* and
 /// the engine tests that contract. `StampSizeSource` publishes no such thing —
@@ -613,7 +613,7 @@ pub(super) fn source_token(source: StampSizeSource) -> &'static str {
 
 /// Raise the restyle that carries a new label size — and **nothing else**.
 ///
-/// ★ Split out from [`size_row`] so the struct literal that names every field
+/// Split out from [`size_row`] so the struct literal that names every field
 /// of `TextAnnotStyle` sits in one place per act rather than inside a closure
 /// three levels deep. The `None`s are the contract, not a formality: *a field
 /// left `None` is left alone*, so a size change does not touch the colour and
@@ -628,7 +628,7 @@ fn push_size(
         id: target.id,
         style: TextAnnotStyle {
             font_size: Some(size),
-            // ★★ Named even though it equals the engine's default, because the
+            // Named even though it equals the engine's default, because the
             // operator has an opinion about it and a `None` here would hide
             // that the chooser above had been read at all. `stamp_fit` is
             // "ignored unless `font_size` is set" — which is exactly the call
@@ -642,7 +642,7 @@ fn push_size(
 
 /// The annotation's colour, `/C`.
 ///
-/// # ★★ A swatch and NO Clear, unlike [`super::colour_row`]
+/// # A swatch and NO Clear, unlike [`super::colour_row`]
 ///
 /// The one structural difference between this row and the parent's, and it is
 /// the engine's decision rather than a control left out: `TextAnnotStyle::color`
@@ -661,7 +661,7 @@ fn colour_row(
     target: &crate::canvas::selection::annot::AnnotTarget,
     actions: &mut Vec<Action>,
 ) {
-    // ★ The fallback is the mark's own default rather than black, and it
+    // The fallback is the mark's own default rather than black, and it
     // matters here in a way it does not in the parent: `text_spec_from_dict`
     // supplies a default `/C` when the key is absent (yellow for a note, black
     // for a stamp), so `current.colour.rgb` is `None` only when the value is
@@ -679,13 +679,13 @@ fn colour_row(
                         f64::from(rgb[1]) / 255.0,
                         f64::from(rgb[2]) / 255.0,
                     )),
-                    // ★★ Explicit `None` on EVERY other field, and it is
+                    // Explicit `None` on EVERY other field, and it is
                     // the contract rather than a formality: "a field left
                     // `None` is left alone", so a call that names only the
                     // colour does not touch the icon, the label size or the
                     // fit policy.
                     //
-                    // ★★★ **Spelt out rather than reached through
+                    // **Spelt out rather than reached through
                     // `..Default::default()`, and that is load-bearing rather
                     // than tidy.** When the engine grows a field on this
                     // struct, an exhaustive literal breaks the build here —
@@ -706,7 +706,7 @@ fn colour_row(
 
 /// **The sticky note's icon, `/Name`** (§12.5.6.4, Table 172).
 ///
-/// # ★★★ The row the request was filed for
+/// # The row the request was filed for
 ///
 /// > *the operator places a sticky and wants a different icon* → **delete it
 /// > and place another**
@@ -715,7 +715,7 @@ fn colour_row(
 /// icon: it was the object identity, the `/M` stamp and any reply thread hung
 /// off the note, all lost to a delete-and-replace.
 ///
-/// # ★ A combo, where the placing dialog uses radios
+/// # A combo, where the placing dialog uses radios
 ///
 /// Deliberately different, and the difference is the surface rather than the
 /// choice. The dialog is a **transaction** with room to spare and one question
@@ -725,7 +725,7 @@ fn colour_row(
 /// division of labour says the panel *carries everything*, which is an argument
 /// for the control existing, not for it being the tallest thing on screen.
 ///
-/// # ★ `/Text` only, and absent otherwise
+/// # `/Text` only, and absent otherwise
 ///
 /// [`Face::takes_icon`]. A `/Stamp`'s face comes from Table 181's own
 /// vocabulary and the engine refuses a `StickyIcon` on one **by name** rather
@@ -747,7 +747,7 @@ fn icon_row(
         let mut chosen = current.icon.clone();
         egui::ComboBox::from_id_salt("properties-textannot-icon") // ui-text-exempt: internal widget id, never displayed
             .selected_text(match &current.icon {
-                // ★★★ **The file's own name, shown as the file spells it.**
+                // **The file's own name, shown as the file spells it.**
                 // The engine's reader carries an unmodelled `/Name` through as
                 // [`StickyIcon::Other`], so this shell has the bytes and the
                 // honest thing is to print them rather than to show a
@@ -762,7 +762,7 @@ fn icon_row(
                 None => String::new(),
             })
             .show_ui(ui, |ui| {
-                // ★★ **The file's own name is the FIRST entry when it is not
+                // **The file's own name is the FIRST entry when it is not
                 // one of the seven**, and this is not decoration. A combo whose
                 // current value is absent from its own list is a one-way door:
                 // the operator opens it to look, picks something to see what it
@@ -802,13 +802,13 @@ fn icon_row(
             }));
         }
     });
-    // ★★★ The two sentences under the chooser, and they are about different
+    // The two sentences under the chooser, and they are about different
     // things.
     //
     // The first is always true and says the icon changes the FILE and not
     // pdfcer's own picture.
     //
-    // ★★ The second fires only for a name outside the seven, and it must NOT
+    // The second fires only for a name outside the seven, and it must NOT
     // promise that the name will be replaced: the reader is lossless and a
     // colour-only restyle carries an unmodelled `/Name` through untouched, so
     // such a sentence would describe a destruction that does not happen. What

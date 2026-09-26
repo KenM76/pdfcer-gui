@@ -16,7 +16,7 @@ use crate::sys::vk;
 /// dimension, which Review permits — the same mode `measure_linear` drives in,
 /// deliberately, so a mode-gating change breaks both together.
 const MODE: &str = "review";
-/// ★ The **Length** tool's ribbon item — the same gesture that never closes.
+/// The **Length** tool's ribbon item — the same gesture that never closes.
 ///
 /// Checked at the end of this run rather than in a second check, because the
 /// property worth asserting about it is a NEGATIVE one relative to Perimeter —
@@ -230,7 +230,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         };
         lengths.push(length);
     }
-    // ★★ THE PREVIEW, AND ONLY A SCREENSHOT CAN SAY IT DREW.
+    // THE PREVIEW, AND ONLY A SCREENSHOT CAN SAY IT DREW.
     //
     // Captured after the last vertex, with the pointer still on the page.
     // Everything asserted above reads the trace, and on 2026-08-20 all of it
@@ -257,7 +257,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             .join(" → ")
     ));
 
-    // ★ The total must RISE with every vertex after the first. A total that
+    // The total must RISE with every vertex after the first. A total that
     // stayed still would mean the vertex was recorded and the length function
     // is not summing it; a total that fell would mean the vertex list is being
     // replaced rather than appended. Both look identical on screen — the
@@ -283,7 +283,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
     }
 
-    // --- 3: ★★ click the first vertex again — the ring closes and commits --
+    // --- 3: click the first vertex again — the ring closes and commits --
     let before_commits = session.trace()?.events(COMMIT_EVENT).count();
     driver.click_at(aimed[0])?;
     session.settle(30);
@@ -327,7 +327,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         committed.raw
     ));
 
-    // ★ And the pick is EMPTIED. A second Finish must not author the same shape
+    // And the pick is EMPTIED. A second Finish must not author the same shape
     // again from a set the operator believes they have spent — the same rule
     // `circular::commit` states, and the one place a three-ending tool could
     // most easily get it wrong.
@@ -340,7 +340,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             CORNERS.len()
         )));
     }
-    // --- 4: ★★ the LENGTH tool is the same gesture and does NOT close ------
+    // --- 4: the LENGTH tool is the same gesture and does NOT close ------
     //
     // The operator, 2026-08-20: *"add a length tool that works like the
     // perimeter tool without needing to close the profile."*
@@ -369,7 +369,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     let before = session.trace()?.events(VERTEX_EVENT).count();
-    // ★ The finish count BEFORE this section, and the reason it is needed is a
+    // The finish count BEFORE this section, and the reason it is needed is a
     // harness defect this check produced on its first run: the Perimeter half
     // above ends with a `close-ring` finish, so asking for the LAST finish line
     // in the whole trace reported the Length tool as having closed when it had
@@ -406,7 +406,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note(format!(
         "★ the Length tool took all {taken} clicks as vertices, so the first-vertex click did not close it"
     ));
-    // --- 5: ★★ SELECT THE SHAPE AND DRAG A CORNER --------------------------
+    // --- 5: SELECT THE SHAPE AND DRAG A CORNER --------------------------
     //
     // The rest of the operator's ask: *"I want to be able to edit the endpoints
     // of the lines to adjust the shape."*
@@ -422,7 +422,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     //    deliberately changes what a dimension measures, so a drag that moved
     //    the shape and left the number alone would be the worst outcome
     //    available: a drawing whose caption disagrees with its own geometry.
-    // ★ PUT THE TOOL DOWN FIRST. With a measure tool armed a click on the page
+    // PUT THE TOOL DOWN FIRST. With a measure tool armed a click on the page
     // is a PICK, not a selection — `gesture::press_kind`'s highest rung — so
     // the shape would never become selected and the handles would never be
     // asked for. `V` is the select tool's chord.
@@ -441,7 +441,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // deleted; what changes is the order. A click does not depend on keyboard
     // focus and it has an oracle of its own.
     //
-    // ★ Keeping the fallback is deliberate and it is the difference from
+    // Keeping the fallback is deliberate and it is the difference from
     // `scale_switch`, which refuses one: a check whose subject sits inside a
     // panel it raised must SKIP rather than retry with a primitive measured not
     // to work there. Here the pen merely has to go down, and a route that has
@@ -454,7 +454,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         driver.press(vk::V)?;
         session.settle(10);
     }
-    // ★★ ON THE INK, not in the middle of the ring.
+    // ON THE INK, not in the middle of the ring.
     //
     //
     // So the click goes to the midpoint of the first edge — between corners 0
@@ -482,7 +482,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let frame = session.frame()?;
     let from = frame.declared_center(handle);
-    // ★ The destination is a DOCUMENT point, converted the same way the four
+    // The destination is a DOCUMENT point, converted the same way the four
     // corners were, rather than "the handle plus ninety pixels". Two reasons:
     // it survives a zoom change between runs, and it states where the corner is
     // going in the units the assertion is about. A pixel offset would be a
@@ -511,7 +511,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         trace.last(VERTEX_COMMIT).expect("just counted one").raw
     ));
 
-    // ★★ …and the shell ASKED whether the corner should snap.
+    // …and the shell ASKED whether the corner should snap.
     //
     // `ui-conventions/drag-moves.md` D6, and the gap the 2026-08-20 sweep
     // named: *"a vertex drag does not snap, while the tool that placed that

@@ -10,7 +10,7 @@ use crate::text::markup as t;
 /// **The border line style — `/BS` `/S` and `/D` (§12.5.4, Table 166)** — as
 /// the four choices this shell offers, on every surface that offers them.
 ///
-/// # ★★★ Why this type exists rather than a `BorderDash` on the pen
+/// # Why this type exists rather than a `BorderDash` on the pen
 ///
 /// `annot_author::BorderDash` owns a `Vec<f64>`, so it is
 /// `Clone` and **not** `Copy`. [`super::pen::Pen`] is `Copy` and is passed by
@@ -24,7 +24,7 @@ use crate::text::markup as t;
 /// So the choice is modelled as the choice, and the engine's value is built at
 /// the boundary by [`Self::dash`]. One `Copy` enum, three surfaces, one list.
 ///
-/// # ★★ `BorderDash::new` returns `Option`, and this shell REFUSES IN THE UI
+/// # `BorderDash::new` returns `Option`, and this shell REFUSES IN THE UI
 ///
 /// `pdfcer_core::BorderDash::new` refuses a pattern §8.4.3.6 does not admit: empty
 /// (which *is* the standard's solid line, so it is not a dash), negative,
@@ -49,7 +49,7 @@ use crate::text::markup as t;
 ///   would be this shell writing a pattern the operator did not pick, which is
 ///   the sneaky half of R8b.
 ///
-/// # ★ Where the four patterns come from, and where they DELIBERATELY do not
+/// # Where the four patterns come from, and where they DELIBERATELY do not
 ///
 /// [`Self::Dashed`] is **sourced**: `[3]` is Table 166's own default for `/D` —
 /// the pattern the standard gives an annotation that declares `/S /D` and no
@@ -83,7 +83,7 @@ pub enum LineStyle {
     /// No dash — Table 166's `/S /S`, and the border every mark this shell
     /// authored before 2026-09-06 carried.
     ///
-    /// ★ A **member of this enum** rather than the enum wrapped in an `Option`,
+    /// A **member of this enum** rather than the enum wrapped in an `Option`,
     /// because *solid* is a thing an operator picks from the same list with the
     /// same click as the three dashes. The engine models it the same way:
     /// `StyleEdit::Clear` is an arm of the edit, not the absence of one.
@@ -118,7 +118,7 @@ impl LineStyle {
 
     /// The `/D` run lengths this style writes, in points, or `None` for solid.
     ///
-    /// ★ Exhaustive with no `_` arm, deliberately: a fifth style must be taught
+    /// Exhaustive with no `_` arm, deliberately: a fifth style must be taught
     /// its pattern here or fail to compile, rather than falling into a catch-all
     /// and being authored as somebody else's dash.
     #[must_use]
@@ -159,7 +159,7 @@ impl LineStyle {
     /// *make it solid*, rather than the removal of a control's value — and
     /// `StyleEdit::Set` for a dash.
     ///
-    /// ★ The `None` is what the two restyle surfaces decline on: they park
+    /// The `None` is what the two restyle surfaces decline on: they park
     /// nothing and raise nothing, so an unbuildable pattern produces no write
     /// and no undo entry. It is unreachable for the four constants above, and it
     /// is *expressed* rather than `expect`ed because a paint-loop panic on a
@@ -177,7 +177,7 @@ impl LineStyle {
 
     /// Which offered style a `/D` array **is**, if it is one of them.
     ///
-    /// ★ Compared element by element with an exact `==` on `f64`, and that is
+    /// Compared element by element with an exact `==` on `f64`, and that is
     /// correct rather than sloppy: both sides came from the same four literals —
     /// this shell wrote the array, the file stored it, and a small decimal
     /// round-trips through `Object::Real` exactly. A tolerance would make
@@ -206,7 +206,7 @@ impl LineStyle {
 
 /// **What a mark's `/BS` currently says**, in the terms the choosers can show.
 ///
-/// # ★★★ Why a third variant exists, and why it is not selectable
+/// # Why a third variant exists, and why it is not selectable
 ///
 /// A producer's dash is not required to be one of the four this shell offers,
 /// and the engine now **preserves** it: a restyle that does not mention `dash`
@@ -262,7 +262,7 @@ impl DashReading {
 
     /// The text the closed chooser shows.
     ///
-    /// ★ For [`Self::Foreign`] it is a sentence about the **file**, not the name
+    /// For [`Self::Foreign`] it is a sentence about the **file**, not the name
     /// of an entry — see [`t::line_style_foreign`]. A combo whose closed state
     /// showed *Dashed* for a pattern that is not this shell's *Dashed* would be
     /// the quiet lie the swatch's CMYK arm was rewritten to stop telling.
@@ -277,7 +277,7 @@ impl DashReading {
 
 /// **Read `/BS` back as a [`DashReading`]** — Table 166, §12.5.4.
 ///
-/// # ★★★ Why this is a SECOND reader of a key the engine already reads
+/// # Why this is a SECOND reader of a key the engine already reads
 ///
 /// Because the engine's reader is not public. `annot_author::read_border_dash`
 /// is `pub(crate)`, and `spec_from_dict` does **not** carry the dash: a dash
@@ -374,7 +374,7 @@ pub fn read<G: pdfcer_core::graph::ObjectGraph + ?Sized>(
 /// merely looked at it — the same *nothing was invoked* contract
 /// `app::markupband`'s controls have.
 ///
-/// # ★ It never reports the style that is already showing
+/// # It never reports the style that is already showing
 ///
 /// Selecting the entry a mark already has must raise nothing: on the restyle
 /// surfaces that would be an undo entry the operator did not earn and a re-bake
@@ -383,7 +383,7 @@ pub fn read<G: pdfcer_core::graph::ObjectGraph + ?Sized>(
 /// [`DashReading::selected`], so a [`DashReading::Foreign`] mark reports on
 /// **every** pick — which is correct: none of the four is what it currently is.
 ///
-/// # ★★ `width` is the caller's, because the three surfaces have different room
+/// # `width` is the caller's, because the three surfaces have different room
 ///
 /// The ribbon band budgets `CUSTOM_ITEM_WIDTH` per custom item and a Properties
 /// panel row does not; passing it in is what lets one widget serve both without
@@ -425,7 +425,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **Every pattern this shell offers is one `BorderDash::new` accepts.**
+    /// **Every pattern this shell offers is one `BorderDash::new` accepts.**
     ///
     /// This is the assertion that makes *"refuse in the UI"* a real decision
     /// rather than a hope. §8.4.3.6 refuses an empty, negative, non-finite or
@@ -512,7 +512,7 @@ mod tests {
     /// The four entries are distinct in **both** the things that distinguish
     /// them — their patterns and their names.
     ///
-    /// ★ Two entries with one pattern would be a list that looks like a choice
+    /// Two entries with one pattern would be a list that looks like a choice
     /// and is not; two with one label would be a combo an operator cannot read.
     /// The order is asserted too, because it is argued in [`LineStyle::ALL`]'s
     /// doc and a reordering is a change to the control's shape rather than to
@@ -546,7 +546,7 @@ mod tests {
         assert_eq!(patterns.len(), total, "two styles share a pattern");
     }
 
-    /// ★★ **A pattern round-trips through [`LineStyle::of_pattern`], and a
+    /// **A pattern round-trips through [`LineStyle::of_pattern`], and a
     /// foreign one does not become one of ours.**
     ///
     /// The property the [`DashReading::Foreign`] variant rests on: a producer's
@@ -597,10 +597,10 @@ mod tests {
         }
     }
 
-    /// ★★★ **Table 166 read back, all four rows, including the two a literal
+    /// **Table 166 read back, all four rows, including the two a literal
     /// reading gets wrong.**
     ///
-    /// # ★ The graph is a **direct** one, and that is the right instrument
+    /// # The graph is a **direct** one, and that is the right instrument
     ///
     /// [`DirectGraph`] answers `None` for every id, so `resolve` returns each
     /// value unchanged. That is not a weakened test: reference-following is

@@ -71,13 +71,13 @@ pub mod render;
 // as rendering code. See SHELL_FRAMEWORK.md; this module is the sole
 // consumer of `text::{ribbon, commands}`.
 pub mod shell;
-/// ★★★ **Putting the operator's own digital signature on a document** — the
+/// **Putting the operator's own digital signature on a document** — the
 /// answer to this shell's request of 2026-09-03, *"a document cannot be
 /// signed"*, which `pdfcer-core` answered with `pdfcer_core::sign` and which
 /// this build then failed to compile in for three days because the manifest
 /// stripped the engine's default-on `signing` feature.
 ///
-/// ★★★ **THE ONE `#[cfg]` IN THIS FILE, AND IT IS WHERE R8 SAYS IT BELONGS.**
+/// **THE ONE `#[cfg]` IN THIS FILE, AND IT IS WHERE R8 SAYS IT BELONGS.**
 /// `SHELL_FRAMEWORK.md` §5b's rule is that *a capability's presence is
 /// expressed by registering its command, and by nothing else* — no `#[cfg]` in
 /// the ribbon, no panel asking whether signing exists. A module declaration is
@@ -88,7 +88,7 @@ pub mod shell;
 /// ordinary merge, with a `CapabilityAbsent` skip reason.
 #[cfg(feature = "signing")]
 pub mod sign;
-/// ★ **Acrobat-compatible custom stamp collections** — the shell half of
+/// **Acrobat-compatible custom stamp collections** — the shell half of
 /// engine `Pass 288.0`, and the answer to `OPERATOR_REQUESTS.md` **O169**.
 ///
 /// A stamp collection is an ordinary PDF — one file per category, one page
@@ -148,7 +148,7 @@ const MIN_WINDOW_SIZE: [f32; 2] = [640.0, 480.0];
 /// that could not be reached, a graphics backend that failed to initialise.
 /// The window's icon — title bar, Alt-Tab, and the taskbar button.
 ///
-/// # ★ Why this exists when the executable already carries an icon resource
+/// # Why this exists when the executable already carries an icon resource
 ///
 /// They are two different mechanisms answering two different questions, and
 /// doing only one of them leaves a visible gap.
@@ -244,7 +244,7 @@ pub fn run(initial: Option<PathBuf>) -> eframe::Result {
         Box::new(move |cc| {
             app::configure_context(&cc.egui_ctx);
             let mut app = app::PdfcerApp::new();
-            // ★ The window handle, captured once. See `PdfcerApp::window` for
+            // The window handle, captured once. See `PdfcerApp::window` for
             // what owns what, and why an unowned driver dialog is a state the
             // operator cannot get out of.
             app.window = app::window_handle(cc);

@@ -12,10 +12,10 @@ did not exist.**
 > it prompts, but also have a save all button that saves all changed
 > documents."*
 
-# ★★★ Why this check is worth more than the feature it guards
+# Why this check is worth more than the feature it guards
 
 
-★★ And a driven check had been pressing `Alt+F4` all day without noticing.
+And a driven check had been pressing `Alt+F4` all day without noticing.
 `checks::page_display_pref` closes the program that way on purpose, and it
 passed throughout, because it opens a document and never edits one. **A
 driven check only ever sees what it drives**, and the state this defect lived
@@ -31,12 +31,12 @@ constructed.
 3. assert the close was **held** (`quit-held`) and the question **asked**;
 4. press **Cancel**, and assert the program is **still running**.
 
-★★ It ends on Cancel deliberately. The alternative endings — Save, or Discard
+It ends on Cancel deliberately. The alternative endings — Save, or Discard
 — either write a file or destroy work, and a check that runs unattended on
 the operator's own machine should do neither. Cancel is the answer that
 proves the whole chain worked and leaves nothing behind.
 
-# ★★ The falsifying half, and why the count is asserted
+# The falsifying half, and why the count is asserted
 
 A build that popped the dialog on **every** close — dirty or not — would
 satisfy "a dialog appeared". So phase A drives a close on an **unedited**

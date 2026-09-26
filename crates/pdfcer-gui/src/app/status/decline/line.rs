@@ -34,7 +34,7 @@ impl Declined {
     /// every word an operator reads is [`crate::text::status`]'s, under rule
     /// R1.
     ///
-    /// # ★★★ Why this returns a [`Cow`] rather than `&'static str`
+    /// # Why this returns a [`Cow`] rather than `&'static str`
     ///
     /// Because exactly one decline in this enum has a **subject the operator can
     /// see** — `OPERATOR_REQUESTS.md` O141's *"pdfcer cannot type a `q` into
@@ -49,7 +49,7 @@ impl Declined {
     /// one refusal.
     #[must_use]
     pub(super) fn line(&self) -> std::borrow::Cow<'static, str> {
-        // ★ Bound through a `&'static str` so only the arms that interpolate
+        // Bound through a `&'static str` so only the arms that interpolate
         // carry machinery. They `return`; the catalog below is unchanged.
         let fixed: &'static str = match self {
             Self::NothingToFrame => t::zoom_declined_no_selection(),
@@ -59,12 +59,12 @@ impl Declined {
             Self::SettingsNotSaved => t::settings_not_saved(),
             Self::NothingToUndo => t::undo_declined_empty(),
             Self::NothingToRedo => t::redo_declined_empty(),
-            // ★★ Reaches across to `crate::text::fieldclip` on the rule this
+            // Reaches across to `crate::text::fieldclip` on the rule this
             // module's header states — *a string lives with the surface that
             // owns its subject* — and this sentence's subject is a field NAME,
             // which is the copy `fieldclip` already holds.
             //
-            // ★★★ And it INTERPOLATES, making it the second arm in this table
+            // And it INTERPOLATES, making it the second arm in this table
             // ever to need the `Cow`. That is worth a note because the arm
             // directly below argues the opposite for itself and both are right:
             // `FieldNameTaken` does not carry its name because the name is the
@@ -77,13 +77,13 @@ impl Declined {
                     terminal,
                 ));
             }
-            // ★★ The third interpolating arm, and the one whose payload is the
+            // The third interpolating arm, and the one whose payload is the
             // operator's OWN string rather than a fact the engine resolved.
             // Echoed back because the surface that can reach this refusal —
             // the Tab-order register panel's adopt rows — shows a name box per
             // unclaimed widget, and the bar has one sentence to spend.
             //
-            // ★★★ Worded by `fieldclip`, for the field surfaces only, and
+            // Worded by `fieldclip`, for the field surfaces only, and
             // there is deliberately NO sign-surface wording beside it. The
             // engine raises the same variant from `sign`, and this shell
             // cannot reach it there: the signature window offers a list of
@@ -102,7 +102,7 @@ impl Declined {
             Self::ResizeFixedSizeMarker { by_flag } => t::resize_fixed_size_marker(*by_flag),
             Self::FlattenCertified => t::flatten_declined_certified(),
             Self::FieldDeleteRefused => t::field_delete_declined_structural(),
-            // ★ Stays in `crate::text::status` rather than reaching across the
+            // Stays in `crate::text::status` rather than reaching across the
             // way the five arms below do, and the reach-across rule is what
             // decides it rather than what is bent for it: *a string lives with
             // the surface that owns its subject*, and this sentence's subject
@@ -113,23 +113,23 @@ impl Declined {
             // `field_delete_declined_structural` above is: `text::status`'
             // `mod.rs` stands two dozen lines from R2's ceiling.
             Self::EditRefused => t::edit_declined_by_engine(),
-            // ★ Reaches across to `crate::text::textedit` on the same rule the
+            // Reaches across to `crate::text::textedit` on the same rule the
             // arms below use: a string lives with the surface that owns its
             // subject, and every one of these eight sentences is about the text
             // caret and the paragraph under it. `ReflowRefusal::line` is the
             // one mapping, so the shell-side causes and the engine-side ones
             // cannot drift into two voices.
             Self::Reflow(why) => (*why).line(),
-            // ★ Same catalog and same subject as the reflow family above: the
+            // Same catalog and same subject as the reflow family above: the
             // text caret and what the page under it will accept.
             Self::EnterCannotSplit => crate::text::textedit::enter_cannot_split_existing_text(),
-            // ★ Reaches across to `crate::text::tool` rather than adding an
+            // Reaches across to `crate::text::tool` rather than adding an
             // entry to `crate::text::status`, on the precedent the two field
             // -group sentences below already set: a string lives with the
             // surface that owns its subject, and `text::status` is at 1,482
             // lines against R2's 1,500.
             Self::NodeToolNeedsEditMode => crate::text::tool::node_tool_needs_edit_mode(),
-            // ★ These two reach across to `text::forms::groups` rather than
+            // These two reach across to `text::forms::groups` rather than
             // adding entries here, and that is the catalog rule honoured rather
             // than bent: a string lives in `crate::text::…`, and the module
             // that owns this surface's other twenty sentences is the one that
@@ -142,11 +142,11 @@ impl Declined {
             Self::FieldGroupDeleteRefused => {
                 crate::text::forms::groups::field_group_delete_declined()
             }
-            // ★ Reaches across to `text::stamps` on the same catalog rule the
+            // Reaches across to `text::stamps` on the same catalog rule the
             // two above record: the module that owns this surface's other
             // sentences owns this one.
             Self::CustomStampUnavailable(why) => crate::text::stamps::place_declined(*why),
-            // ★ These two reach across to `text::panels::bookmarks` on the
+            // These two reach across to `text::panels::bookmarks` on the
             // identical argument the field-group pair above records: a string
             // lives in `crate::text::…`, and the module that owns this
             // surface's other sentences owns these. `crate::text::status` is
@@ -162,13 +162,13 @@ impl Declined {
             Self::Rotate(why) => (*why).line(),
             Self::Unshare(why) => (*why).line(),
             Self::RunMerge(why) => (*why).line(),
-            // ★ Reaches across to `crate::text::clipboard` on the same rule the
+            // Reaches across to `crate::text::clipboard` on the same rule the
             // arms above use: a string lives with the surface that owns its
             // subject, and this one's subject is the clipboard — where the
             // other three clipboard refusals already live, so a fourth wording
             // of "that did not happen" cannot grow up beside them.
             Self::ClipboardMode(why) => (*why).line(),
-            // ★★ Same catalog as `Reflow` and `EnterCannotSplit` above, and the
+            // Same catalog as `Reflow` and `EnterCannotSplit` above, and the
             // same rule: this enum owns which sentence, `crate::text::textedit`
             // owns the words. `EditRefusal::Unstated` forwards to
             // `t::edit_declined_by_engine` — the line `Self::EditRefused` shows
@@ -176,26 +176,26 @@ impl Declined {
             // and cannot drift into two voices for one condition.
             //
             Self::EditText(why) => return why.line(),
-            // ★ Reaches across to `crate::text::measure` on the same rule: a
+            // Reaches across to `crate::text::measure` on the same rule: a
             // string lives with the surface that owns its subject, and this
             // one's subject is what a ce dimension measures — where the
             // vertex-move disclosure it is the refusal twin of already lives.
             Self::VertexEditRefused(why) => (*why).line(),
-            // ★ Reaches across to `crate::text::markup` on the same rule
+            // Reaches across to `crate::text::markup` on the same rule
             // every arm above uses: a string lives with the surface that owns
             // its subject, and this one's subject is a markup shape — where the
             // other twenty sentences about markup already live, so a second
             // wording of "that shape did not change" cannot grow up beside
             // them.
             Self::MarkupNodeRefused(why) => (*why).line(),
-            // ★★ Reaches across to `crate::text::arrange` on the rule every arm
+            // Reaches across to `crate::text::arrange` on the rule every arm
             // above cites: a string lives with the surface that owns its
             // subject, and this one's subject is **something already on the
             // page that did not move** — which is that catalog's whole
             // definition, and was widened from *a mark* to *something on the
             // page* by this very sentence.
             //
-            // ★★★ It lands two screens below `arrange::not_a_markup`, which
+            // It lands two screens below `arrange::not_a_markup`, which
             // tells an operator whose ARROW KEY did nothing to *drag this with
             // the pointer instead* — false for exactly the selection this
             // sentence refuses. That contradiction is written down in

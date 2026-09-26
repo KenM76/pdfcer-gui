@@ -18,7 +18,7 @@ chair that is forgetting, and he was right.
 Three tiers now resolve it: **this document's own record**, then **his
 standing preference**, then the mode's rule.
 
-# ★★★ Why this is a TWO-PROCESS check, and why the close must be graceful
+# Why this is a TWO-PROCESS check, and why the close must be graceful
 
 Two separate defects sit behind that sentence and only a second launch can
 tell them apart.
@@ -40,7 +40,7 @@ slow run, false on a fast one, and not the property anybody cares about. So
 this check closes with **`Alt+F4`**, a real `WM_CLOSE`, and closes
 **immediately** after the click so the debounce is still holding.
 
-# ★★ The oracle, and the trace line that could not carry it until today
+# The oracle, and the trace line that could not carry it until today
 
 
 That is precisely the pair this check has to separate, so the disclosure was
@@ -48,7 +48,7 @@ fixed first. Second time in three days that writing a driven check found a
 trace which could not tell apart the two states the check existed for — the
 OCR tally and the marquee census were the others.
 
-# ★ Why the second document must be one the program has never seen
+# Why the second document must be one the program has never seen
 
 Because the per-document record would answer for any document that had been
 opened before, and it would answer *correctly* — hiding the missing tier
@@ -63,7 +63,7 @@ writes belongs to the binary under test. It deletes `page-display.txt`,
 `preferences.txt` and `layout.ron` before the first launch, so every run
 starts from the shipped defaults rather than from whatever the last run left.
 
-★★ Safe because the suite is **never** pointed at a published build — that is
+Safe because the suite is **never** pointed at a published build — that is
 the standing rule, and this check is one of the reasons for it. Pointed at
 `OneDrive\pdfcer-gui1`, it would delete the operator's own saved preferences.
 

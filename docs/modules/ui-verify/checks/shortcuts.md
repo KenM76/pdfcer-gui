@@ -3,7 +3,7 @@
 `shortcuts` — **the keyboard reference opens, and every chord it declares
 names a command this build has.**
 
-# ★ Why this window is worth driving, when its whole design is not to have
+# Why this window is worth driving, when its whole design is not to have
 a list
 
 `DEFECTS.md` D5 is *"the keyboard-shortcuts reference omits six live
@@ -23,7 +23,7 @@ The key is declared, the operator reads about it nowhere, presses it, and
 gets silence. That is R8's failure mode — capability presence is expressed
 by registration — arriving through the keymap instead of the ribbon.
 
-# ★★ Why `dropped == 0` is the assertion, and why it is not tautological
+# Why `dropped == 0` is the assertion, and why it is not tautological
 
 On a **full** build every chord's command is registered, so the number must
 be zero, and any other value means the manifest and the registry have

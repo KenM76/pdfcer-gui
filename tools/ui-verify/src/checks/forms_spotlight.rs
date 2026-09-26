@@ -28,7 +28,7 @@ const SPOTLIGHT: &str = "canvas-form-spotlight";
 /// The fixture — **this project's own**, not the engine's, and that is a
 /// finding rather than a preference.
 ///
-/// ★★★ Not one form fixture in `D:\Dev\pdfcer\fixtures\synthetic\forms\` carries a
+/// Not one form fixture in `D:\Dev\pdfcer\fixtures\synthetic\forms\` carries a
 /// plain text field with an `/AP` `/N` appearance stream. Measured 2026-09-02
 /// across all eighteen: `demo-form` and `radio-choice-form` have text fields
 /// with **no** appearance, `rich-field-form`'s one paint-ready text field is
@@ -128,7 +128,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let driver = Driver::new(session.window());
 
     crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
-    // ★ ONLY IF IT IS NOT ALREADY THERE — a panel toggle that is already on
+    // ONLY IF IT IS NOT ALREADY THERE — a panel toggle that is already on
     // CLOSES the thing this check needs. `crate::checks::pages_drag` carries the
     // same guard; `tab_order_drag` shipped without it and spent an afternoon
     // reporting a working feature as missing.
@@ -137,7 +137,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.settle(24);
     }
 
-    // ★★★ THE SELECT TOOL, EXPLICITLY — and this is a finding about the
+    // THE SELECT TOOL, EXPLICITLY — and this is a finding about the
     // feature, not merely a step.
     //
     //
@@ -162,7 +162,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note(format!("{} fillable row(s) on screen", rows.len()));
 
-    // ★ Assert the STARTING state, so the check cannot pass on a build that
+    // Assert the STARTING state, so the check cannot pass on a build that
     // spotlights something unconditionally. A run that begins where the defect
     // lands proves nothing — a lesson this project has paid for.
     let before = trace.last(SPOTLIGHT).map(|e| e.raw.clone());
@@ -179,7 +179,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- click a row's value box -------------------------------------------
     //
-    // ★★ THE FIRST ROW THAT IS ACTUALLY DECLARED, not `{ROW}0`, and resolved
+    // THE FIRST ROW THAT IS ACTUALLY DECLARED, not `{ROW}0`, and resolved
     // from the SAME trace snapshot the names came from.
     //
     // Hard-coding index 0 made this SKIP with the self-contradictory pair
@@ -227,7 +227,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★★ THE ASSERTION THAT SEPARATES WORKING FROM PLAUSIBLE.
+    // THE ASSERTION THAT SEPARATES WORKING FROM PLAUSIBLE.
     let drawn: usize = spot.get("drawn").and_then(|v| v.parse().ok()).unwrap_or(0);
     if drawn == 0 {
         let candidates = spot.get("candidates").unwrap_or("?");
@@ -253,7 +253,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 /// the consequence, and a missing ribbon item is a different finding from a
 /// spotlight that does not light.
 fn select_tool(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
-    // ★ The View tab has to be brought forward first. The panel guard above
+    // The View tab has to be brought forward first. The panel guard above
     // deliberately does NOT click it when the panel is already open — pressing
     // a panel toggle that is on closes it — and a ribbon item on a tab that is
     // not showing publishes no region at all. The first version of this helper

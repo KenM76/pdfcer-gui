@@ -1,7 +1,7 @@
 //! # `canvas::rightclick` — which menu a secondary click opens
 //!
 //!
-//! ## ★★★ The frame-ordering hazard, which is the whole reason this is subtle
+//! ## The frame-ordering hazard, which is the whole reason this is subtle
 //!
 //! **`egui` opens a popup ON the secondary click.** There is no later frame on
 //! which a wrong answer could be corrected — the menu that appears is the menu
@@ -20,7 +20,7 @@ use crate::shell::menus::MenuHost;
 
 /// Everything one frame's secondary-click decision needs.
 ///
-/// ★ A struct rather than eleven arguments, and it crossed clippy's threshold
+/// A struct rather than eleven arguments, and it crossed clippy's threshold
 /// on its way here — the same conversion `Press`, `Keys`, `Frame`, `Drag` and
 /// `Swept` all made in this crate. What it buys beyond satisfying a lint is
 /// that each field can carry its own note, which eleven positional arguments
@@ -56,11 +56,11 @@ pub struct Click<'a> {
 impl Click<'_> {
     /// **Is this right-click about a form field?**
     ///
-    /// ★★★ A **hit test**, not a read of `doc.selected_field`, and the module
+    /// A **hit test**, not a read of `doc.selected_field`, and the module
     /// header's table says why: the selection this very click raises is applied
     /// at the end of the frame, and the popup opens now.
     ///
-    /// ★ OR'd with the state, deliberately. A right-click on a field that is
+    /// OR'd with the state, deliberately. A right-click on a field that is
     /// *already* selected still opens its menu, and on that frame the two
     /// answers agree anyway. The disjunction is what keeps the menu available
     /// when the pointer is a few points outside the box of the field the
@@ -68,12 +68,12 @@ impl Click<'_> {
     /// [`menus::select_under_right_click`]'s rule 3 gives an object selection,
     /// where a mis-aimed right-click must not destroy work.
     fn field_menu(&self) -> bool {
-        // ★ Nothing is computed on a frame with no secondary click. `attach`
+        // Nothing is computed on a frame with no secondary click. `attach`
         // uses this only inside its own `if response.secondary_clicked()`, and
         // the hit test below is a linear scan over every widget on the page —
         // cheap once, wasteful sixty times a second on a form-heavy sheet.
         //
-        // ★★ `secondary_clicked` already carries the mode gate (it is `&&
+        // `secondary_clicked` already carries the mode gate (it is `&&
         // caps.edit_content` at its source), and `right_click_hits_a_field`
         // asks the same question again for its own callers. Two guards for one
         // rule is tolerable here because the second is the function's own
@@ -112,7 +112,7 @@ pub fn attach(click: Click<'_>) -> Vec<HandlerToken> {
         click.page_index,
     );
     let field_menu = click.field_menu();
-    // ★★★ The DOCUMENT's half of `selection.delete_permitted`, corrected here
+    // The DOCUMENT's half of `selection.delete_permitted`, corrected here
     // because the frame-top condition set could not have known.
     //
     // `field_menu()` above opens the field menu for a widget merely **under the
@@ -123,18 +123,18 @@ pub fn attach(click: Click<'_>) -> Vec<HandlerToken> {
     // Left stale, `format.delete` would be drawn on that frame over a certified
     // form: the *drawn and silently inert* control R83 exists to remove.
     //
-    // ★ `document_refuses_delete` and not `refuses_delete`, and the difference
+    // `document_refuses_delete` and not `refuses_delete`, and the difference
     // is the whole reason the scope-free entry point exists — see its doc.
     // `EditSession::deletion_refusal` names no field, so the honest question
     // about a widget that is not yet selected is the document's.
     //
-    // ★ Computed unconditionally rather than behind `field_menu`: it is one
+    // Computed unconditionally rather than behind `field_menu`: it is one
     // `Option` test over a census the session already holds, `attach` reads it
     // only inside its own `secondary_clicked` guard, and a `then()` here would
     // make the value's meaning depend on which of two booleans was false.
     let field_delete_permitted =
         !crate::panels::properties::formfield::document_refuses_delete(click.doc);
-    // ★★ **Whether this is a READER's right-click** — O71.
+    // **Whether this is a READER's right-click** — O71.
     //
     // Read from the same `Capabilities` every other gate in this frame reads,
     // rather than from a mode id: `edit_content` is derived from the mode's tab
@@ -147,14 +147,14 @@ pub fn attach(click: Click<'_>) -> Vec<HandlerToken> {
         selection: click.selection,
         page: click.page_index,
         object,
-        // ★ The same provider `right_clicked_object` was just handed, passed
+        // The same provider `right_clicked_object` was just handed, passed
         // on so the menu can ask one rung deeper — which LINE of a text block
         // the pointer is on (O188(A)). Nothing extra is computed here.
         targets: click.targets,
         field_selected: field_menu,
         field_delete_permitted,
         reading,
-        // ★★ **`author_markup`, and it is deliberately not `!reading`.**
+        // **`author_markup`, and it is deliberately not `!reading`.**
         //
         // Review has `edit_content == false` and `author_markup == true` — it
         // edits no page content and authors every comment there is. Gating the

@@ -17,7 +17,7 @@ the View tab, and **inert**; it was unregistered on 2026-08-17 because
 button never worked"* is precisely the sentence this check exists to prevent
 being true a second time.
 
-# ★★★ Why a driven check when five unit tests already pass
+# Why a driven check when five unit tests already pass
 
 Because every one of them is upstream of the screen.
 
@@ -35,7 +35,7 @@ arrives**, because the item is not on the band, or is in an overflow nothing
 opens, or is drawn in a mode this document is not in. Only driving the real
 window answers that.
 
-# ★★★ The pixel assertion is SIGNED, and that is the whole point
+# The pixel assertion is SIGNED, and that is the whole point
 
 The two display conventions routinely confused with each other are
 **opposites**:
@@ -52,7 +52,7 @@ it looks like the feature working while doing the reverse. So the assertion
 is **strictly less ink after the press**, counted as dark pixels inside the
 canvas rect.
 
-# ★★ The zoom is a PRECONDITION, not decoration
+# The zoom is a PRECONDITION, not decoration
 
 At page-fit a CAD sheet's strokes are already at or under one device pixel,
 the engine's §8.4.3.2 floor has them there, and a *ceiling* at one device
@@ -77,7 +77,7 @@ is a SKIP, not a pass.
 | E | capture again | **strictly less** ink; the `status-group:line-weights` line appears |
 | F | press it again | the disclosure goes away and the ink comes back |
 
-★ Phase F is not symmetry for its own sake. A mode that cannot be left is a
+Phase F is not symmetry for its own sake. A mode that cannot be left is a
 mode that follows the operator into the next thing he does, and the
 disclosure that says *"this is not what will print"* becoming permanent
 would be the worst version of that.

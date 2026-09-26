@@ -20,7 +20,7 @@ pub struct Modifiers {
     pub scale_stroke_width: bool,
     /// Leave `/RD` — the inset distances — **unscaled**.
     ///
-    /// ★ An opt-**out**, matching the engine's own spelling, so that
+    /// An opt-**out**, matching the engine's own spelling, so that
     /// `Default::default()` is the correct behaviour for every field. Naming it
     /// `scale_rect_differences` here would read better and would put an
     /// inversion between two structs that otherwise correspond exactly, which
@@ -58,12 +58,12 @@ impl Modifiers {
     /// exists, deriving the same flag from geometry **overrides them silently**
     /// on exactly the resizes where they were most likely to have an opinion.
     ///
-    /// ★ What replaced it is a **worded decline**: the engine's refusal is
+    /// What replaced it is a **worded decline**: the engine's refusal is
     /// caught and turned into a sentence naming both remedies, so the operator
     /// meets a choice rather than a nothing. `app::status::decline` carries it.
     #[must_use]
     pub fn to_options(self) -> pdfcer_core::edit::ResizeOptions {
-        // ★ Builders, not a struct literal: `ResizeOptions` is
+        // Builders, not a struct literal: `ResizeOptions` is
         // `#[non_exhaustive]`, so the struct form — including
         // `..Default::default()` — is a compile error outside `pdfcer-core`, and
         // the fields being `pub` makes that look like a mistake at this end.
@@ -78,7 +78,7 @@ impl Modifiers {
 mod tests {
     use super::*;
 
-    /// ★★★ **The shipped defaults are the ones O51 argued for.**
+    /// **The shipped defaults are the ones O51 argued for.**
     ///
     /// Not a tautology over `Default::default()`: it asserts the three engine
     /// fields, through `to_options`, which is where an inverted mapping would
@@ -102,7 +102,7 @@ mod tests {
         );
     }
 
-    /// ★★ **Every switch reaches the engine**, one for one.
+    /// **Every switch reaches the engine**, one for one.
     ///
     /// The failure this guards is a mapping that drops a field: three
     /// checkboxes on the Tool row, two of which do something, and no error
@@ -138,7 +138,7 @@ mod tests {
         assert!(distort.allow_appearance_distortion);
     }
 
-    /// ★ A round trip through `egui::Memory`, and the default on an empty one.
+    /// A round trip through `egui::Memory`, and the default on an empty one.
     #[test]
     fn the_store_round_trips_and_defaults() {
         let ctx = egui::Context::default();

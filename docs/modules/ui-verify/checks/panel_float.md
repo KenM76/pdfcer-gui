@@ -55,7 +55,7 @@ exactly the `moved=false` sweep, reproduced by nothing but running the
 check twice.
 
 **`docked=0` was a true statement about a state the check had put the
-application into.** ★★ This project keeps meeting *"a count that reads as
+application into.** This project keeps meeting *"a count that reads as
 success when nothing happened"*; this is its mirror — a count that reads
 as failure when nothing was there to count — and the defence is the same
 one: make the precondition an assertion instead of an assumption.
@@ -80,7 +80,7 @@ tag"*. Nothing published one, and nothing could have:
   has no layers"*, which publishes nothing.
 
 ⇒ So the check reported *"nothing is known to have been drawn in it"*
-about a window that was drawing the only thing there was to draw. ★★★
+about a window that was drawing the only thing there was to draw.
 **A measurement of the wrong surface looks exactly like a broken one** —
 and this one would have gone on failing against every future build,
 articulately, for ever.
@@ -102,7 +102,7 @@ the application from the `Ui` it drew into, one by the dock from the `Ui`
 it handed over. A regression that silenced one would have to silence the
 other separately.
 
-# ★★ The assertions, and why each is not vacuous
+# The assertions, and why each is not vacuous
 
 | assertion | what a green result would otherwise be compatible with |
 |---|---|
@@ -110,18 +110,18 @@ other separately.
 | `panel-float moved=true` | nothing; this half always worked |
 | a `viewport-inner` line | an embedded fallback window drawn inside the application's own — `dialog_windows`' reason for the same line |
 | `float.body.<panel>` tagged with **that same viewport id** | a rect published by the docked copy, or by another window entirely |
-| `float.content.<panel>` with a **positive area** | ★★★ an open window with nothing in it, which is the defect named in the check's own `defect()` string and which every other line here reports as a success |
+| `float.content.<panel>` with a **positive area** | an open window with nothing in it, which is the defect named in the check's own `defect()` string and which every other line here reports as a success |
 | `float-windows … empty=0` | the same, from the dock's own count |
 | the window's `viewport-inner` region **retires** on dock-back and on close | a window that stayed open after the panel went home — the panel drawn twice, or a leaked entry |
 | `panels-dock-all docked=1` | a recovery verb that answers cheerfully about nothing, having been handed nothing to recover |
 
-★ The retirement assertions read `ui-rect-gone` and **name the id from
+The retirement assertions read `ui-rect-gone` and **name the id from
 this run's own `viewport-inner` line** rather than a constant, because the
 id is a hash of the panel id and a check that hard-coded it would keep
 passing after a panel rename while asserting about a window that no longer
 exists.
 
-# ★★ Why no pointer is needed
+# Why no pointer is needed
 
 The three verbs act on *the panel the operator right-clicked*, and a
 harness has no pointer. `PDFCER_DIAG_INVOKE` therefore carries an

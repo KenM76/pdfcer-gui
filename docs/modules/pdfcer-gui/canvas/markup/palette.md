@@ -9,7 +9,7 @@ This module is the answer's data half: the ten colours Adobe Acrobat itself
 authors comments in, and the grid the Style swatch offers them from.
 [`super::pen`] is the answer's behaviour half.
 
-## ★★★ WHERE THESE NUMBERS COME FROM — the whole point of this header
+## WHERE THESE NUMBERS COME FROM — the whole point of this header
 
 A colour written into `/C` reaches the operator's saved file. Under this
 project's standing **claim-bearing copy** rule — *verify the source, don't
@@ -43,7 +43,7 @@ description of one.
 | every `ctextColor` | `0.000000, 0.000000, 0.000000` | `0, 0, 0` | [`BLACK`] |
 | `cFreeText\cfillColor` | `1.000000, 1.000000, 1.000000` | `255, 255, 255` | [`WHITE`] |
 
-### ★★ Why this is Acrobat's FACTORY default and not Ken's last click
+### Why this is Acrobat's FACTORY default and not Ken's last click
 
 `HKCU` is a per-user store, so the honest first question is whether these are
 the operator's own past choices rather than Adobe's shipped values. Three
@@ -61,7 +61,7 @@ doubts this table deserves the reasoning rather than an assurance:
    byte values a designer picked and a float store round-tripped, not values
    a colour wheel produced.
 
-### ★★★ THE SURPRISE, and it is the reason a measurement beat a memory
+### THE SURPRISE, and it is the reason a measurement beat a memory
 
 **Acrobat's highlighter is ORANGE, not yellow.** `1.0, 0.384308, 0.0` is
 `#FF6200`. Everything anyone "knows" about PDF highlighting says yellow, this

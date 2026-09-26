@@ -1,7 +1,7 @@
 # `dialogs::offpage` — **which of my drawings have marks outside the sheet?**
 
 
-## ★★★ The third of the operator's question that was still open
+## The third of the operator's question that was still open
 
 **Ken, 2026-09-10:** *"how do I view and edit objects that are off of the
 page? we added this feature but I didn't see how to enable it."*
@@ -17,7 +17,7 @@ and no amount of looking at a document discloses it. Before this window the
 only way to find it was to already suspect it and go hunting at 8 % zoom on
 every sheet of a thirty-six-sheet set.
 
-## ★★★ Why it is a PROTECT control and not a view option
+## Why it is a PROTECT control and not a view option
 
 Because off-page content is a **leak class**, and a textbook one. Every
 instance this project has seen on a real CAD export is a thing the sender
@@ -35,7 +35,7 @@ and still emailed. That is the same sentence the redaction panel exists for,
 which is why this window sits in the same ribbon group and marks with the
 same mechanism.
 
-## ★★★ The scan runs ONE PAGE PER FRAME, and that is the whole design
+## The scan runs ONE PAGE PER FRAME, and that is the whole design
 
 `crate::app::cache` records the measurement this is built around:
 
@@ -61,12 +61,12 @@ consequences are all good and all deliberate:
 | findings appear as they are found | the list is drawn from what has been scanned |
 | the rest of the program keeps drawing | one page of work per frame is ~½ a frame on the worst sheet measured |
 
-★ The one thing it costs: the answer is not instant on a large set. Hence
+The one thing it costs: the answer is not instant on a large set. Hence
 [`crate::text::offpage::scanning`], which exists so that "still working" and
 "found nothing" cannot look the same — the failure this window would
 otherwise have.
 
-## ★★ Why the window opens even when the answer is "nothing"
+## Why the window opens even when the answer is "nothing"
 
 [`crate::dialogs::unembed`] returns `None` rather than opening over a
 document with nothing to do, and that is right for a command that *offers an

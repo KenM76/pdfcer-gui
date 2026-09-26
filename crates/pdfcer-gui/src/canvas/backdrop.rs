@@ -14,7 +14,7 @@ use crate::app::state::OpenDoc;
 
 /// Paint the backdrop for `page`, and say whether anything was painted.
 ///
-/// ## ★★ It is drawn at the page's WHOLE rect, and that is the difference
+/// ## It is drawn at the page's WHOLE rect, and that is the difference
 ///
 /// The live texture above the pixmap ceiling is a picture of one region and
 /// must be placed at that region's rect or the operator sees the right pixels
@@ -22,7 +22,7 @@ use crate::app::state::OpenDoc;
 /// goes at the whole page's rect and has no gaps to leave. That asymmetry is
 /// the entire mechanism.
 ///
-/// ## ★ Order is the cheapest part of this
+/// ## Order is the cheapest part of this
 ///
 /// It is painted first and the sharp texture is painted on top, so wherever the
 /// sharp one reaches, it wins. No blending, no masking, no seam arithmetic —
@@ -42,7 +42,7 @@ use crate::app::state::OpenDoc;
 ///   operator zooms out far enough to make a small whole-page raster again — a
 ///   narrower gap than the one this closes, and an honest one.
 pub(super) fn paint(ui: &Ui, doc: &OpenDoc, page: usize, current: usize, rect: egui::Rect) -> bool {
-    // ★ Only for the CURRENT page. A strip neighbour has its own texture and
+    // Only for the CURRENT page. A strip neighbour has its own texture and
     // its own "no texture yet" state, which `render::strip::draw_page_state`
     // already answers honestly; giving it this page's pixels would be drawing
     // one page on another.
@@ -53,7 +53,7 @@ pub(super) fn paint(ui: &Ui, doc: &OpenDoc, page: usize, current: usize, rect: e
         .base_texture
         .as_ref()
         .filter(|t| t.key.page() == page)
-        // ★ Per-page (O74). The rule this enforces is unchanged and is rule
+        // Per-page (O74). The rule this enforces is unchanged and is rule
         // 4's — "a backdrop from before an edit would show content the document
         // no longer has" — but the question is now asked of the page the
         // backdrop is a picture of, rather than of the whole document.
@@ -67,18 +67,18 @@ pub(super) fn paint(ui: &Ui, doc: &OpenDoc, page: usize, current: usize, rect: e
 
 /// Publish how much of the visible page actually has a picture on it.
 ///
-/// ★★★ **The backdrop counts**, and counting it is what makes this number mean
+/// **The backdrop counts**, and counting it is what makes this number mean
 /// *"is the operator looking at the drawing?"* rather than *"is the sharp
 /// raster ready?"*. Those are different questions and only the first is the
 /// defect that was reported.
 ///
-/// ★ Traced on change rather than per frame, so what reaches the channel is the
+/// Traced on change rather than per frame, so what reaches the channel is the
 /// sequence of **distinct states** the canvas passed through. A blank held for
 /// twenty frames appears once, which is what makes a minimum over the series
 /// meaningful and what keeps this off the `canvas-pointer` list of traces that
 /// buried a capture in identical lines.
 ///
-/// # ★★★ TWO numbers, because one of them cannot see the second defect
+/// # TWO numbers, because one of them cannot see the second defect
 ///
 ///
 /// > *"the canvas does a fading around the edges on stuff shown at the edges of
@@ -99,18 +99,18 @@ pub(super) fn paint(ui: &Ui, doc: &OpenDoc, page: usize, current: usize, rect: e
 /// whole-page raster itself, with the backdrop excluded.
 ///
 ///
-/// ★★ The pair is what makes both falsifiable from one capture, and neither
+/// The pair is what makes both falsifiable from one capture, and neither
 /// could be derived from the other after the fact. It is the same argument this
 /// module's header makes about a camera: what the application knows and a
 /// screenshot does not is *which* of the two pictures it drew at any given
 /// pixel — a soft edge and a sharp one at low zoom are the same photograph.
 ///
-/// ★ `sharp` is the honest measure of `render::strategy::OVERSCAN`'s promise as
+/// `sharp` is the honest measure of `render::strategy::OVERSCAN`'s promise as
 /// the operator experiences it, and a capture whose minimum `sharp` sits well
 /// below `1.000` while `covered` holds at `1.000` is the signature of a starved
 /// margin rather than of a slow raster.
 ///
-/// ## ★★ …and adding it closed a hole in `covered` itself
+/// ## …and adding it closed a hole in `covered` itself
 ///
 /// `covered` used to be computed as *"the backdrop's rect if there is a
 /// backdrop, else `paint_rect`"* — with no reference to whether there was a
@@ -144,7 +144,7 @@ pub(super) fn publish_coverage(
             1.0
         }
     };
-    // ★ The REAL raster's reach, backdrop excluded, and it is the same
+    // The REAL raster's reach, backdrop excluded, and it is the same
     // `paint_rect` `canvas::present` drew the texture at — not a recomputation
     // of where it should have gone. A second derivation is how an instrument
     // comes to report on a rectangle nothing was painted at.
@@ -178,7 +178,7 @@ pub(super) fn publish_coverage(
     // instrument.** This is the better instrument, and it is the engine's own
     // count rather than a second inference from pixels.
     //
-    // ★ `trace_on_change`, like the coverage line above it, so a still canvas
+    // `trace_on_change`, like the coverage line above it, so a still canvas
     // does not fill the trace. It is keyed on the whole formatted line, so a
     // count that goes 10 → 0 → 10 across a pan is three events and not one.
     crate::diag::trace_on_change("canvas-hairline", || {

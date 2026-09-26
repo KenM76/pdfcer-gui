@@ -13,7 +13,7 @@ every other decision in this directory follows from:
 > printable RECTANGLE and not just the sheet, and why no keyboard chord
 > spools. (Enter **does** commit, from the affirmative button — see below.)
 
-## ★ The dialog IS the confirmation. There is no second gate.
+## The dialog IS the confirmation. There is no second gate.
 
 > The CLI defaults to a dry run and requires `--send`. That is right for a
 > scriptable tool whose operator is not watching, and wrong here: a GUI

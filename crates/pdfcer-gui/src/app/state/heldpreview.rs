@@ -12,7 +12,7 @@
 //! started; the object appears to **snap back** and then jump, which reads as
 //! the program having refused the edit and changed its mind.
 //!
-//! ★ Holding the picture is honest rather than optimistic: the edit **has**
+//! Holding the picture is honest rather than optimistic: the edit **has**
 //! happened, so the held shape is the true state of the document, drawn by the
 //! only path that can produce it in under a second. That is why every clause
 //! below keys on evidence that the commit landed, and why the one clause that
@@ -29,7 +29,7 @@ pub(crate) struct HeldPreview {
     pub shape: crate::canvas::shapes::ShapePreview,
     /// `edit_epoch` at the moment the gesture released — **before** the commit.
     ///
-    /// ★ The liveness test compares against this rather than against the epoch
+    /// The liveness test compares against this rather than against the epoch
     /// the commit produced, because the commit has not happened yet when this is
     /// stored: actions are drained *after* the frame that raised them.
     pub captured_at_epoch: u64,
@@ -53,7 +53,7 @@ const HELD_PREVIEW_MAX: std::time::Duration = std::time::Duration::from_secs(4);
 
 /// How long a hold may sit with the edit epoch **unmoved** before it is dropped.
 ///
-/// ★ This is the only thing separating *"not applied yet"* from *"refused"*.
+/// This is the only thing separating *"not applied yet"* from *"refused"*.
 /// Actions are drained after the frame that raised them, so there is a real
 /// window — one frame, ~16 ms — in which a hold is legitimate and the epoch has
 /// not moved; there is also a state in which the epoch never moves at all,
@@ -79,7 +79,7 @@ impl OpenDoc {
     /// | the raster has not caught up | a picture that is already correct — drawing over it would be strictly worse than the real thing |
     /// | it is younger than [`HELD_PREVIEW_MAX`] | a raster that will never arrive, leaving a preview nobody can clear |
     ///
-    /// ★ There is a fourth state that deliberately draws: the frame **between**
+    /// There is a fourth state that deliberately draws: the frame **between**
     /// the release and the commit. Actions are drained after the frame that
     /// raised them, so for exactly one frame `edit_epoch` still equals
     /// `captured_at_epoch`. Rejecting that frame would blink the preview off and
@@ -101,7 +101,7 @@ impl OpenDoc {
         // The raster carrying the edit has landed. The document's own picture is
         // correct now, and it is better than this one in every way.
         //
-        // ★ Compared against the PAGE's own epoch, never against `edit_epoch`:
+        // Compared against the PAGE's own epoch, never against `edit_epoch`:
         // the two are issued by independent counters and diverge permanently
         // (see [`Self::page_is_catching_up`]). Comparing the wrong pair makes
         // this early return stop firing for the rest of the session, leaving a
@@ -114,7 +114,7 @@ impl OpenDoc {
 
     /// Drop a held preview that has stopped being live.
     ///
-    /// ★ Separate from [`Self::held_preview_to_draw`] because that one takes
+    /// Separate from [`Self::held_preview_to_draw`] because that one takes
     /// `&self` — it is called from the painter, which holds the document
     /// immutably. This is called once a frame from `canvas::interact`, which
     /// does not, and it exists so a dead hold does not sit in memory carrying
@@ -153,7 +153,7 @@ impl OpenDoc {
 
 /// How far behind the picture must be before the program says so.
 ///
-/// # ★★★ Why a threshold rather than "whenever it is behind"
+/// # Why a threshold rather than "whenever it is behind"
 ///
 /// The picture is behind after **every** edit — for a few milliseconds on a
 /// simple page, for a second or two on a dense one. A sentence that appeared
@@ -186,7 +186,7 @@ impl OpenDoc {
     ///
     /// Deliberately silent under [`CATCHING_UP_AFTER`]: see that constant.
     ///
-    /// ★★★ **Both sides of the comparison must come from the same counter.**
+    /// **Both sides of the comparison must come from the same counter.**
     /// `edit_epoch` is incremented by the action modules; `page_texture_epoch`
     /// holds a `PageEpochs` value written by `render::settle`. They are issued
     /// independently, so an `EditScope::Page(other)` edit advances `edit_epoch`
@@ -197,7 +197,7 @@ impl OpenDoc {
     /// catching up"* stays on the status bar for the rest of the session over a
     /// picture that is perfectly correct.
     ///
-    /// ★ A unit test that sets both fields by hand cannot see this — equal or
+    /// A unit test that sets both fields by hand cannot see this — equal or
     /// adjacent values hold under either model. Only a test that edits a
     /// *different* page exercises the divergence.
     pub(crate) fn page_is_catching_up(&self) -> bool {

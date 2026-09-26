@@ -1,7 +1,7 @@
 # `shell::commands::catalog::measure` — the Measure tab — ce dimensions and the scale they are read at
 
 
-## ★★★ The split is per TAB, and the reason it was refused before is gone
+## The split is per TAB, and the reason it was refused before is gone
 
 [`super`]'s header argued against exactly this cut:
 

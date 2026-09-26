@@ -12,7 +12,7 @@ authors a resource the page does not carry. **Nothing connected the refusal
 to the chooser**, so the answer to his question lived in the last clause of
 an error message he never saw. This check drives the connection.
 
-## ★★★ HOW TO FALSIFY IT — read this before trusting a green run
+## HOW TO FALSIFY IT — read this before trusting a green run
 
 [`crate::checks`]' founding rule: *a check that has only ever been seen to
 pass is indistinguishable from one that cannot fail.* Seven separate
@@ -28,7 +28,7 @@ mutations must each turn it red, and each names the link it cuts:
 | send the restyle to the current selection instead of `runs: vec![refused.run]` | **FAIL** — *"THE FACE SWAP DID NOT REACH THE RUN THE REFUSAL NAMED"*: the retype comes back on the **same** subset floor |
 | make `RefusedCharUi::advance` return `true` unconditionally, or freeze `retried` at `false` | **FAIL** — the control point at step 0b, and the state walk at step 7 |
 
-★★ And two mutations that must **NOT** turn it red, because a check that
+And two mutations that must **NOT** turn it red, because a check that
 fires on them is asserting a limitation rather than a capability: swapping
 which of the fourteen is first in `Std14::ALL` (the check clicks the first
 addable row, whatever it is), and rewording any sentence in
@@ -36,7 +36,7 @@ addable row, whatever it is), and rewording any sentence in
 never rendered prose — `check-ui-strings.sh` and the unit tests own the
 words).
 
-## ★★★ THE DYNAMIC RANGE, and why it is two assertions rather than one
+## THE DYNAMIC RANGE, and why it is two assertions rather than one
 
 The oracle for most of this file is *"a region was published"*, and **a probe
 whose baseline has no dynamic range cannot produce a verdict.** A build that
@@ -56,7 +56,7 @@ Two assertions hold the two sides:
   cannot produce that sequence.
 
 
-★ The stronger classical control applies on top of it and is asserted in
+The stronger classical control applies on top of it and is asserted in
 step 6: the offer must be **gone** after a commit that succeeded, and its
 absence is made non-vacuous by first proving frames were painted after that
 commit.
@@ -95,7 +95,7 @@ so the name in the rewritten stream resolved to nothing. Filed as
 while it stood this check accepted the refusal **provided the block said so**
 — which asserted the shell's half of a route whose other half was owed.
 
-★★★ **`Pass 257.0` paid it** (engine `5e95805`, released in v0.41.0). Every
+**`Pass 257.0` paid it** (engine `5e95805`, released in v0.41.0). Every
 text-edit planner and helper takes `&DocumentView<'_>`, every `EditSession`
 verb passes `self.view()`, and with no `&Document → &DocumentView` coercion
 the class is a **compile error** rather than a latent refusal. `facewall`'s
@@ -120,7 +120,7 @@ the three send a reader to different files:
   engine regressed, green means the shell is handing it something stale);
 * a state sequence ending in **`blocked`** — the retype came back refused.
 
-★★ `state=blocked` and `text::panels::face::refused_char_blocked` were
+`state=blocked` and `text::panels::face::refused_char_blocked` were
 **deliberately not deleted** when the engine shipped, and `facewall`'s header
 records why the instruction to delete them was wrong: that arm is reached by
 arithmetic (*the retype was raised and `doc.edit_epoch` did not move*), which
@@ -128,7 +128,7 @@ is agnostic about the cause, so deleting it would convert every other cause
 into silence. It must not occur on **this** route on **this** fixture — which
 is asserted — but it is still the shell's voice when something else refuses.
 
-## ★★ Why `q` and not `€`
+## Why `q` and not `€`
 
 Because it is the operator's own example, and because it is the fact O141
 says is worth seeing: *"it is narrower than 'no accents and no symbols' …
@@ -144,7 +144,7 @@ non-ASCII half is covered where it belongs — by
 which asserts on `€` precisely so a build that formatted it as `\u{20ac}`
 goes red.
 
-## ★★★ The fixture is PINNED and any `--pdf` is ignored
+## The fixture is PINNED and any `--pdf` is ignored
 
 `fixtures/subset-font-floor.pdf`, aimed at **(115.2, 612.0) on page 1**.
 `fixtures/subset-font-floor.PROVENANCE.md` carries the four measured engine

@@ -11,7 +11,7 @@ use pdfcer_core::vector::ObjectClip;
 
 /// How many pixels the longer edge of the picture aims for.
 ///
-/// ★ 1,600 is chosen against where these end up: pasted into an email, a
+/// 1,600 is chosen against where these end up: pasted into an email, a
 /// report or a chat message, then usually scaled down. It is generous enough
 /// that a screen-sized paste is not visibly resampled and small enough that the
 /// clipboard payload for an ordinary selection stays in single-digit megabytes.
@@ -39,7 +39,7 @@ const MIN_SCALE: f32 = 1.0;
 /// clip is there, the picture is not"* and say nothing to the operator about
 /// it, because the copy they asked for did happen.
 ///
-/// ★★ `text` is not decoration. `egui-winit` only produces a paste event when
+/// `text` is not decoration. `egui-winit` only produces a paste event when
 /// the OS clipboard holds non-empty text, so writing a picture alone would stop
 /// `Ctrl+V` arriving in this application at all. The two travel together, in
 /// one clipboard transaction, and `native_window::clipboard`'s header carries
@@ -53,7 +53,7 @@ pub fn publish(clip: &ObjectClip, text: &str) -> Option<(u32, u32)> {
     let (w_pt, h_pt) = pdf.size;
     let scale = scale_for(w_pt, h_pt)?;
 
-    // ★ `render_page`, the three-argument form, rather than the one this shell
+    // `render_page`, the three-argument form, rather than the one this shell
     // uses for the canvas. That one takes a `DocumentView` and `RenderOptions`
     // because it renders an EDITING SESSION with the operator's annotation and
     // layer choices applied. This renders a freshly parsed standalone document
@@ -88,7 +88,7 @@ fn scale_for(w_pt: f64, h_pt: f64) -> Option<f32> {
     }
     let long = w.max(h);
     let scale = (TARGET_EDGE_PX / long).max(MIN_SCALE);
-    // ★ Clamped against BOTH edges, not the long one. A tall thin selection
+    // Clamped against BOTH edges, not the long one. A tall thin selection
     // scaled to hit the target on its long edge is fine; a wide one scaled by
     // the same factor could still exceed the ceiling on the other axis, and
     // the ceiling is about total pixels rather than about shape.
@@ -102,7 +102,7 @@ fn scale_for(w_pt: f64, h_pt: f64) -> Option<f32> {
 
 /// Composite premultiplied RGBA over white, returning straight RGBA.
 ///
-/// # ★ Why premultiplied is the input
+/// # Why premultiplied is the input
 ///
 /// Because that is `tiny_skia`'s contract and therefore `pdfcer-render`'s: the
 /// pixmap data is premultiplied RGBA8 and is handed over unchanged, which is
@@ -136,7 +136,7 @@ fn on_white(premultiplied: &[u8]) -> Vec<u8> {
 mod tests {
     use super::*;
 
-    /// ★★ **A small selection is scaled UP, and a huge one is capped.**
+    /// **A small selection is scaled UP, and a huge one is capped.**
     ///
     /// The two ends, asserted as magnitudes rather than as relations. A
     /// relational assertion — "the scale is bigger for a smaller clip" — is
@@ -171,7 +171,7 @@ mod tests {
         assert!(scale_for(f64::NAN, 10.0).is_none());
     }
 
-    /// ★★★ **Premultiplied over white, and the half-transparent case is the
+    /// **Premultiplied over white, and the half-transparent case is the
     /// one that matters.**
     ///
     /// A 50 %-alpha red pixel is `(128, 0, 0, 128)` premultiplied. Over white

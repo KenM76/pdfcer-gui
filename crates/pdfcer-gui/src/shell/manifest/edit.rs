@@ -19,7 +19,7 @@ pub(super) fn tab() -> Tab {
                 "content",
                 ribbon::group_edit_content(),
                 [
-                    // ★★★ FIRST in the group, and the position is the argument.
+                    // FIRST in the group, and the position is the argument.
                     //
                     // An operator reaches for this when something has gone
                     // wrong — an object dragged off the sheet, invisible and
@@ -29,7 +29,7 @@ pub(super) fn tab() -> Tab {
                     command("edit.select_all"),
                     command("edit.text"),
                     command("edit.add_text"),
-                    // ★ Beside the text verbs it belongs with, and after them:
+                    // Beside the text verbs it belongs with, and after them:
                     // an operator reflows a paragraph *because* they have just
                     // retyped a sentence in it, so it follows the tool that
                     // does the retyping.
@@ -46,7 +46,7 @@ pub(super) fn tab() -> Tab {
             //
             // `Shape ⌄` is **N**.
             // ---------------------------------------------------------------
-            // ★★ **`RIBBON_IA.md` names Attachments nowhere**, and this is the
+            // **`RIBBON_IA.md` names Attachments nowhere**, and this is the
             // group it lands in. Recorded here rather than in a commit message,
             // because a placement the IA did not make is the one a later reader
             // will want the argument for.
@@ -66,7 +66,7 @@ pub(super) fn tab() -> Tab {
             // precedent for a panel whose subject is what the document
             // permanently carries.
             //
-            // ★ **Insert rather than a new group**, and the group's own caption
+            // **Insert rather than a new group**, and the group's own caption
             // is what makes it fit: this band is *"new content onto an existing
             // page"* for the image and *"something that was not in this
             // document before"* for the attachment. The distinction — an
@@ -100,7 +100,7 @@ pub(super) fn tab() -> Tab {
                     icon_only("edit.cut"),
                     icon_only("edit.copy"),
                     icon_only("edit.paste"),
-                    // ★★ Four now, and the fourth is NOT the paste-in-place the
+                    // Four now, and the fourth is NOT the paste-in-place the
                     // note above rules out. It is `edit.paste_duplicate`, and it
                     // earns its place on the one ground that note demanded and
                     // paste-in-place could not meet: it does something Ctrl+V
@@ -108,7 +108,7 @@ pub(super) fn tab() -> Tab {
                     // field is a different act with a different result, not the
                     // same act in a different position.
                     //
-                    // ★ Labelled rather than icon-only would be better on
+                    // Labelled rather than icon-only would be better on
                     // discoverability grounds and is not offered, because the
                     // group is four icons wide and a single labelled member in a
                     // row of three icons reads as a mistake. The label is in the
@@ -116,7 +116,7 @@ pub(super) fn tab() -> Tab {
                     // that a group's members share a presentation.
                     icon_only("edit.paste_duplicate"),
                     //
-                    // ★★ **Clipboard, not File ▸ Export**, and the mockup's own
+                    // **Clipboard, not File ▸ Export**, and the mockup's own
                     // caption note is the argument: *"it is a clipboard verb —
                     // chord-reachable, and its result is pasted, not saved."*
                     // Export writes a file the operator then has to find and
@@ -125,7 +125,7 @@ pub(super) fn tab() -> Tab {
                     // legible — it reads as a variant of Copy, which is exactly
                     // what it is.
                     //
-                    // ★ **`icon_only`, and the approved mockup draws it
+                    // **`icon_only`, and the approved mockup draws it
                     // labelled.** The deviation is this group's own rule, stated
                     // one comment up when `edit.paste_duplicate` joined: *"a
                     // single labelled member in a row of three icons reads as a
@@ -138,7 +138,7 @@ pub(super) fn tab() -> Tab {
                     // which is where `edit.paste_duplicate` puts its own.
                     icon_only("edit.copy_as_vector"),
                     //
-                    // ★★ **That is exactly why it is in the Clipboard group.**
+                    // **That is exactly why it is in the Clipboard group.**
                     // The band is the operator's *"make another one of this"*
                     // cluster, and until today the only way to make another
                     // comment was Copy-then-Paste — which is to say, the
@@ -147,7 +147,7 @@ pub(super) fn tab() -> Tab {
                     // Putting the direct verb anywhere else would separate it
                     // from the two controls it replaces.
                     //
-                    // ★ **Placed LAST rather than beside `edit.copy`**, whose
+                    // **Placed LAST rather than beside `edit.copy`**, whose
                     // glyph it reuses. `edit.paste` and `edit.paste_duplicate`
                     // are adjacent and share `paste`, which is the precedent
                     // that makes a shared glyph admissible here at all; not
@@ -155,7 +155,7 @@ pub(super) fn tab() -> Tab {
                     // registration in `shell::commands::catalog::edit` carries
                     // the whole argument for the reuse.
                     //
-                    // ★★ `icon_only`, like its five neighbours —
+                    // `icon_only`, like its five neighbours —
                     // `RIBBON_SCALING.md`'s rule that a group's members share a
                     // presentation, and the same rule `edit.copy_as_vector`
                     // deviated from the mockup to honour one comment up.
@@ -174,7 +174,7 @@ pub(super) fn tab() -> Tab {
                 ],
             ),
             // ---------------------------------------------------------------
-            // ★ **Clipboard was here, and it is deleted rather than emptied.**
+            // **Clipboard was here, and it is deleted rather than emptied.**
             //
             //
             //     Clipboard — the two commands that moved off File.
@@ -232,13 +232,13 @@ pub(super) fn tab() -> Tab {
                 "forms",
                 ribbon::group_edit_forms(),
                 [
-                    // ★★★ FIVE FIELD TYPES, replacing the single
+                    // FIVE FIELD TYPES, replacing the single
                     // `edit.form_create_field` that was drawn and inert. Each
                     // arms a placement tool: click the page for a standard
                     // size, or drag out the exact one, and a dialog collects
                     // the details before anything is authored.
                     //
-                    // ★ The order is by how often a form uses them, not
+                    // The order is by how often a form uses them, not
                     // alphabetically and not by engine convenience. Text boxes
                     // outnumber everything else on a real form; the button
                     // comes last because it is the one that cannot yet do
@@ -247,7 +247,7 @@ pub(super) fn tab() -> Tab {
                     command("edit.form_check_box"),
                     command("edit.form_radio_button"),
                     command("edit.form_choice"),
-                    // ★★ Greyed, never absent — the operator's ruling. R9
+                    // Greyed, never absent — the operator's ruling. R9
                     // permits greying for a TEMPORARILY unavailable capability
                     // explained on hover, and this is exactly that: pdfcer can
                     // place a button and cannot yet run what one does. See
@@ -264,16 +264,16 @@ pub(super) fn tab() -> Tab {
                 "protect",
                 ribbon::group_edit_protect(),
                 [
-                    // ★ Large — the mockup's `Redact` big, with the two
+                    // Large — the mockup's `Redact` big, with the two
                     // qualified redaction verbs in a column beside it. First
                     // in the group already.
                     large("edit.redact"),
-                    // ★ Between mark-by-search and Apply, which is the order an
+                    // Between mark-by-search and Apply, which is the order an
                     // operator works in: find what you can find, mark what you
                     // cannot, then apply once. Putting it after Apply would put
                     // a marking verb on the far side of the destructive one.
                     command("edit.redact_selection"),
-                    // ★★★ The census, BETWEEN the marking verbs and Apply, and
+                    // The census, BETWEEN the marking verbs and Apply, and
                     // the position is the same argument as its neighbour's
                     // taken one step further. The operator's sequence is: find
                     // what you can find, mark what you cannot, **check what you
@@ -282,7 +282,7 @@ pub(super) fn tab() -> Tab {
                     // is the only one that can tell you the document was not
                     // yet clean.
                     //
-                    // ★ Not Large. `edit.redact` is the group's big button
+                    // Not Large. `edit.redact` is the group's big button
                     // because it is where an operator starts; this is where
                     // they finish, and a second large control in a three-deep
                     // column would make the group read as two features.

@@ -15,7 +15,7 @@ use crate::report::CheckReport;
 
 /// Edit mode, then arm the caret — both through the harness seam.
 ///
-/// ★ `edit.text` is rung here rather than clicked because arming the caret is
+/// `edit.text` is rung here rather than clicked because arming the caret is
 /// **not what this check is about**, and it already has its own driven check.
 /// A check that re-verifies its own preconditions through the slowest possible
 /// route fails for reasons that are not its subject.
@@ -26,7 +26,7 @@ const CARET_EVENT: &str = "text-edit-caret";
 const DECLINED_EVENT: &str = "text-edit-declined";
 /// The Reflow control, as (region, command id).
 ///
-/// ★ The pair is written once so the region and the id cannot drift apart: a
+/// The pair is written once so the region and the id cannot drift apart: a
 /// check that clicked one control and asserted about another would pass or fail
 /// for reasons unrelated to either.
 const REFLOW_ITEM: (&str, &str) = ("ribbon.item.edit.reflow_block", "edit.reflow_block");
@@ -39,7 +39,7 @@ const RESOLVED_EVENT: &str = "reflow-resolved";
 const DECLINE_EVENT: &str = "reflow-declined";
 /// `reflow-block-applied page=… block=… lines=A->B …` — the engine re-wrapped.
 ///
-/// ★ `-applied`, per the convention this project adopted after making the
+/// `-applied`, per the convention this project adopted after making the
 /// same-name mistake twice: `vector_edit` writes its own bare `reflow-block …`
 /// line for the identical edit, and `.last()` on the bare name reads that one.
 const APPLIED_EVENT: &str = "reflow-block-applied";
@@ -48,13 +48,13 @@ const PAGE_REGION: &str = "page";
 
 /// Where to put the caret, in PDF user space on the fixture.
 ///
-/// ★★ Inside **line 2** of the block — `x = 120`, baseline `y = 668` — rather
+/// Inside **line 2** of the block — `x = 120`, baseline `y = 668` — rather
 /// than in the first or last line. A first-line caret would pass on a build
 /// whose block lookup returned 0 unconditionally, and the last line is the one
 /// most likely to be split off by a recogniser that disagrees about the block's
 /// extent. The middle is the honest place to ask.
 ///
-/// ★ The numbers come from `tools/gen-reflow-fixture.py`, which prints the
+/// The numbers come from `tools/gen-reflow-fixture.py`, which prints the
 /// geometry it computed for exactly this reason. They are quoted, not derived
 /// twice.
 const CARET_AT: (f64, f64) = (120.0, 668.0);
@@ -100,7 +100,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★★★ The fixture is NOT overridable by `--pdf`, and that is deliberate
+    // The fixture is NOT overridable by `--pdf`, and that is deliberate
     // where every neighbouring check accepts one. The oracle is a line count
     // this specific document produces; run against another file the check
     // would still report `6->5` as its expectation and would fail on a healthy
@@ -241,7 +241,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let trace = session.trace()?;
     let Some(resolved) = trace.events(RESOLVED_EVENT).last() else {
-        // ★★★ The three-way message, because the three ways this fails are
+        // The three-way message, because the three ways this fails are
         // three different repairs and a single "it did not work" would send
         // somebody to the wrong one.
         let declined = trace
@@ -347,7 +347,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
 /// `A->B` from the trace's `lines=` field.
 ///
-/// ★ A parse rather than a `split` at the call site, so a malformed field is a
+/// A parse rather than a `split` at the call site, so a malformed field is a
 /// SKIP with a sentence instead of a silent `0->0` that would pass the
 /// `after >= before` test by arithmetic accident.
 fn parse_lines(field: &str) -> Option<(u32, u32)> {

@@ -8,7 +8,7 @@ use pdfcer_core::object::{ObjId, Object};
 /// Render a PDF name-like byte string the way an operator sees it in a file —
 /// `/PageMode`.
 ///
-/// ★ Lossy UTF-8 rather than a refusal. A PDF name is *raw bytes* (§7.3.5:
+/// Lossy UTF-8 rather than a refusal. A PDF name is *raw bytes* (§7.3.5:
 /// interpretation as UTF-8 applies only where a name is used as text), so a key
 /// that is not valid UTF-8 is legal and reachable. Refusing to name it would
 /// hide the one thing the row exists to say — *which* key was doubled — behind
@@ -45,7 +45,7 @@ pub fn key_name(key: &[u8]) -> String {
 /// * a **stream** reports its dictionary's size rather than the bare word
 ///   `a stream`.
 ///
-/// # ★ Why the function survived the arms
+/// # Why the function survived the arms
 ///
 /// Two reasons, and neither is sentiment.
 ///
@@ -67,7 +67,7 @@ pub fn value(object: &Object) -> String {
 
 /// How a row names the object an anomaly is about.
 ///
-/// ★ `None` is a real answer, not a missing one:
+/// `None` is a real answer, not a missing one:
 /// [`pdfcer_core::document::LoadAnomaly::DuplicateDictKey`] carries
 /// `object: None` when the contradicting dictionary is the **trailer**, which is
 /// not an indirect object and therefore has no id. Saying "the file's trailer"
@@ -84,7 +84,7 @@ pub fn subject(object: Option<ObjId>) -> String {
 /// The status bar's one line, built from the clause list
 /// [`crate::app::status::anomalies::clauses`] produced.
 ///
-/// # ★★ Why it names the panel
+/// # Why it names the panel
 ///
 /// The bar answers *"is there something I should know?"* and has room for
 /// nothing else — **R128** caps it at one elided row. The clause list is a
@@ -133,7 +133,7 @@ pub fn clause_missing_endobj(n: usize) -> String {
 
 /// *"2 objects it could not read"* — one clause of the census.
 ///
-/// ★ The gravest clause, and the wording says so without alarm: this is the one
+/// The gravest clause, and the wording says so without alarm: this is the one
 /// class where content is **absent from the document**, not merely chosen
 /// between. [`crate::app::status::anomalies::clauses`] orders it first so a
 /// truncating bar drops it last — see that function's ordering note.
@@ -149,7 +149,7 @@ pub fn clause_unreadable(n: usize) -> String {
 /// [`pdfcer_core::document::LoadAnomaly`] variant added after this shell was
 /// built.
 ///
-/// # ★★★ Why an unknown class is counted out loud instead of being skipped
+/// # Why an unknown class is counted out loud instead of being skipped
 ///
 /// `LoadAnomaly` is `#[non_exhaustive]`, so a newer engine can report a class
 /// this build cannot name, and the `_` arm that catches it is not decoration —
@@ -177,13 +177,13 @@ pub const fn heading() -> &'static str {
 
 /// The one line of context under the heading.
 ///
-/// ★★ It says the document is fine *as opened* and that the choices are pdfcer's
+/// It says the document is fine *as opened* and that the choices are pdfcer's
 /// documented defaults, because without that the list underneath reads as a list
 /// of damage the operator is expected to repair. There is nothing to repair
 /// here; saying so is what keeps the disclosure from behaving like a prompt,
 /// which decision 059 and the engine's own notice both forbid by name.
 ///
-/// ★★★ **Corrected 2026-09-10.** This doc used to end *"and no control that
+/// **Corrected 2026-09-10.** This doc used to end *"and no control that
 /// would repair it"*, which was true when it was written and stopped being true
 /// the day [`reread_first_button`] landed under these rows. The sentence itself
 /// did not need changing and has not changed — *"the document is complete and
@@ -206,13 +206,13 @@ pub const fn tooltip() -> &'static str {
 
 /// **The button that reads the file again, taking the FIRST of each pair.**
 ///
-/// # ★★★ The third of the operator's three obligations
+/// # The third of the operator's three obligations
 ///
 /// > *"...and if the user can intervene in a decision that should always be an
 /// > option along with them not having to intervene."*
 ///
 ///
-/// # ★★ Why it names the VALUE and not the policy
+/// # Why it names the VALUE and not the policy
 ///
 /// The engine's term is `DuplicateKeyPolicy::KeepFirst`, and *"keep first"* is
 /// meaningless to an operator looking at a titleblock. The rows above have just
@@ -231,7 +231,7 @@ pub const fn reread_first_button() -> &'static str {
 /// **The same button when the file is already open under the first values** —
 /// it offers pdfcer's ordinary reading back.
 ///
-/// ★★ **R9, and the reason there are two strings rather than one greyed
+/// **R9, and the reason there are two strings rather than one greyed
 /// control.** A re-read is not a toggle whose off state is unavailable: after
 /// re-reading, the *other* choice is exactly as available as this one was, so
 /// the honest control is one button whose label names whichever reading the
@@ -239,7 +239,7 @@ pub const fn reread_first_button() -> &'static str {
 /// on a document already read that way would be a placeholder describing a
 /// state the operator is standing in.
 ///
-/// ★ It says *usual* rather than *default*, and *last* rather than *KeepLast*,
+/// It says *usual* rather than *default*, and *last* rather than *KeepLast*,
 /// for [`reread_first_button`]'s reason: the operator is choosing between two
 /// values they can see, not between two settings.
 #[must_use]
@@ -249,7 +249,7 @@ pub const fn reread_last_button() -> &'static str {
 
 /// The hover sentence on either re-read button.
 ///
-/// # ★★★ It states the cost, because the button cannot show it
+/// # It states the cost, because the button cannot show it
 ///
 /// Pressing this closes the document and parses the bytes on disk again. The
 /// tab does not go away, the path does not change and the pages look identical
@@ -272,7 +272,7 @@ pub const fn reread_tooltip() -> &'static str {
 /// *"Object 57 0 named /PageMode twice. pdfcer kept /UseOutlines and left
 /// /UseOC."*
 ///
-/// # ★★★ The row the whole feature is for
+/// # The row the whole feature is for
 ///
 /// `kept` and `discarded` are both carried out of the engine — see
 /// [`pdfcer_core::document::LoadAnomaly::DuplicateDictKey`], whose own comment
@@ -281,7 +281,7 @@ pub const fn reread_tooltip() -> &'static str {
 /// *"what if it is the wrong one?"* — as far as this build can: he can see both
 /// values and judge.
 ///
-/// ★★★ **And, since 2026-09-10, take the other one.** Choosing it is a re-load
+/// **And, since 2026-09-10, take the other one.** Choosing it is a re-load
 /// rather than an edit — the engine is explicit that *"a decision made during
 /// parsing is not a value that can be edited afterwards"* — and the button that
 /// performs that re-load is drawn directly under these rows by
@@ -290,7 +290,7 @@ pub const fn reread_tooltip() -> &'static str {
 /// no basis to press. (This paragraph used to say the ask *"is filed in
 /// `ENGINE_BACKLOG.md`"*. It was, as rows 280 and 281; both are wired.)
 ///
-/// ★ "left" rather than "discarded" or "threw away". The discarded value is
+/// "left" rather than "discarded" or "threw away". The discarded value is
 /// still in the file and still visible to any other reader; pdfcer did not
 /// destroy anything, it declined to use one of two things the file offered.
 #[must_use]
@@ -312,7 +312,7 @@ pub fn duplicate_key_row(
 /// *"Object 12 0: the stream's stated length was unusable, so pdfcer measured
 /// the data to its end marker instead."*
 ///
-/// ★ No alternative is offered because there is none — the engine's own comment
+/// No alternative is offered because there is none — the engine's own comment
 /// on this variant says *"the alternative to the scanned extent is no object at
 /// all. The record exists so the operator learns the file is damaged, not so a
 /// decision can be re-taken."* The sentence therefore states what happened and
@@ -340,7 +340,7 @@ pub fn missing_endobj_row(object: ObjId) -> String {
 
 /// *"Object 12 0 could not be read at all, so the document opened without it."*
 ///
-/// # ★★ The one class where something is genuinely missing
+/// # The one class where something is genuinely missing
 ///
 /// The others are choices between two readings; this one is content the document
 /// does not contain. It is still not an error: §7.3.10 says a reference to an
@@ -366,7 +366,7 @@ pub fn unreadable_row(object: ObjId, reason: &str) -> String {
 /// The detail row for a [`pdfcer_core::document::LoadAnomaly`] variant this
 /// build does not know.
 ///
-/// ★★ It prints the engine's own stable token from
+/// It prints the engine's own stable token from
 /// [`pdfcer_core::document::LoadAnomaly::kind`], which is exactly what that
 /// method is documented for — *"a short stable token for machine-readable
 /// output"*. That token plus [`pdfcer_core::document::LoadAnomaly::object`] are

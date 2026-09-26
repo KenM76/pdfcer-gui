@@ -17,7 +17,7 @@
 //! 3. **The caps fire and say so**, so a big selection degrades to the bounding
 //!    outline instead of to a stall.
 
-// ★ The marker `check-ui-strings.sh` and `check-theme-colors.sh` both read: a
+// The marker `check-ui-strings.sh` and `check-theme-colors.sh` both read: a
 // whole file gated out of release builds. Every string below is an assertion
 // message, and the property that earns the exemption is "not in the shipped
 // binary" rather than anything about the filename.
@@ -45,7 +45,7 @@ fn first_path(doc: &OpenDoc) -> Option<usize> {
     (0..model.objects.len()).find(|i| matches!(model.objects.get(*i), Some(VectorObject::Path(_))))
 }
 
-/// ★★★ A node index means the same thing here as it does to `move_nodes`.
+/// A node index means the same thing here as it does to `move_nodes`.
 ///
 /// # Why this test is the important one in this file
 ///
@@ -117,7 +117,7 @@ fn the_walk_agrees_with_the_providers_anchor_numbering() {
     }
 }
 
-/// ★★ A transform must reach the geometry.
+/// A transform must reach the geometry.
 ///
 /// The failure this catches is a preview that builds, traces, paints, and shows
 /// the shape exactly where it already was — which looks like "the preview is not
@@ -160,7 +160,7 @@ fn a_translation_moves_every_point_by_exactly_the_translation() {
     }
 }
 
-/// ★ An identity transform is a preview of the object exactly as it is.
+/// An identity transform is a preview of the object exactly as it is.
 ///
 /// Not a tautology: it is the assertion that `page_subpaths()` and the
 /// provider's own numbers describe the same shape, so a preview built with no
@@ -196,7 +196,7 @@ fn an_identity_transform_lands_on_the_object() {
     }
 }
 
-/// ★★ Asking for more objects than the cap allows returns a **bounded** preview
+/// Asking for more objects than the cap allows returns a **bounded** preview
 /// that says it was bounded — never an unbounded one, and never nothing.
 ///
 /// Both halves matter. An unbounded preview turns the gesture this feature
@@ -235,7 +235,7 @@ fn a_selection_past_the_cap_is_bounded_and_says_so() {
 
 /// The stroke width follows a scale, and does not collapse under a rotation.
 ///
-/// ★ The rotation half is the one worth having. Reading `a` and `d` off the
+/// The rotation half is the one worth having. Reading `a` and `d` off the
 /// matrix — the obvious implementation — reports a shape rotated by 90° as
 /// having zero width, so the preview of a rotate gesture would fade out as it
 /// turned. `average_scale` uses the axis lengths instead.

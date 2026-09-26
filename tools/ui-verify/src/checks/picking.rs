@@ -177,7 +177,7 @@ mod tests {
     /// stop being the same behaviour and a reader comparing their traces is
     /// misled.
     ///
-    /// ★ It is keyed on the OTHER module's constant, not on a literal
+    /// It is keyed on the OTHER module's constant, not on a literal
     /// restatement of it here, so it measures the copy rather than measuring
     /// this test's own opinion.
     #[test]

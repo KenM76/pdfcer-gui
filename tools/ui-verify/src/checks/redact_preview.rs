@@ -89,7 +89,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     std::fs::write(&fixture, &source)
         .map_err(|e| Error::new(format!("cannot write {}: {e}", fixture.display())))?;
 
-    // ★ The falsifying phase. If the string this check measures against is not
+    // The falsifying phase. If the string this check measures against is not
     // in the file it just wrote, then `chars >= SECRET.len()` is an assertion
     // about nothing and would pass on a build that listed the wrong text.
     if !redaction::contains(&source, SECRET.as_bytes()) {
@@ -164,7 +164,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- ★ the assertion ---------------------------------------------------
+    // --- the assertion ---------------------------------------------------
     let Some(line) = drawn(&trace) else {
         return Ok(Some(format!(
             "★ THE REPORT DOES NOT SAY WHAT IT WILL REMOVE. The apply dialog is open and no \
@@ -223,7 +223,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- ★★ and it has to be somewhere he can read ------------------------
+    // --- and it has to be somewhere he can read ------------------------
     //
     // A region published means it was laid out; a region reported clipped means
     // it was laid out below the fold of a scrolling report, which is not a

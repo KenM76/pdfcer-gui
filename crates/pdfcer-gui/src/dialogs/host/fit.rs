@@ -1,7 +1,7 @@
 //! # `dialogs::host::fit` — growing a window to its body, without a loop
 //!
 //!
-//! ## ★★★ The defect this module is shaped by
+//! ## The defect this module is shaped by
 //!
 //! The first version of the grow-to-fit rule padded the measured content before
 //! comparing it to the window, so `want` was always larger than `inner`, every
@@ -64,7 +64,7 @@ const FIT_BUDGET: usize = 3;
 /// reachable headlessly … the growing branch is asserted by the driven check,
 /// which is the only place it can be."*
 ///
-/// ★ That was true of the *resize*, and it was never true of the *arithmetic*.
+/// That was true of the *resize*, and it was never true of the *arithmetic*.
 /// Splitting them costs one function and buys the convergence test that would
 /// have caught the print dialog's runaway before an operator did: feed this
 /// its own output and it must reach a fixed point.
@@ -81,7 +81,7 @@ const FIT_BUDGET: usize = 3;
 ///   would shrink a scrollable body to its own scroll viewport, which is
 ///   circular by construction.
 ///
-/// ★★ Note what this function cannot do, and why the budget in [`Host::fit`]
+/// Note what this function cannot do, and why the budget in [`Host::fit`]
 /// exists as well. Its answer is **idempotent** — feed it a window that has
 /// already been grown to its content and it returns `None` — but idempotence
 /// only holds if `content` stays put when the window changes. When the content
@@ -115,7 +115,7 @@ impl Host {
 
     /// **Grow the window until the body fits**, at most once per size.
     ///
-    /// # ★★ Why this exists: `.resizable(false)` was a SIZE, and an OS window
+    /// # Why this exists: `.resizable(false)` was a SIZE, and an OS window
     /// # has to be given one
     ///
     ///
@@ -130,7 +130,7 @@ impl Host {
     /// how big it actually is**, growing to fit. The stated size stops being a
     /// promise and becomes an opening bid.
     ///
-    /// # ★★★ It only ever GROWS, it grows by a MEANINGFUL amount, and it
+    /// # It only ever GROWS, it grows by a MEANINGFUL amount, and it
     /// # never asks twice for the same size
     ///
     /// Three guards, and every one of them is here because of R128 — the
@@ -157,12 +157,12 @@ impl Host {
     ///    respond to its window settles after one round trip instead of
     ///    oscillating for the life of the dialog.
     ///
-    /// ★ The content is measured RAW, with nothing added. A margin added here
+    /// The content is measured RAW, with nothing added. A margin added here
     /// is indistinguishable from real overflow, which is the whole of the bug
     /// above: the padding an eye would want belongs in the *layout*, not in the
     /// question "is the layout bigger than its window".
     ///
-    /// ★ A scrollable body cannot trigger this at all: a `ScrollArea` reports
+    /// A scrollable body cannot trigger this at all: a `ScrollArea` reports
     /// the size it was *given*, not the size of what is inside it. That is why
     /// the print dialog — the one dialog that already had a measured size and a
     /// scrollbar — is unaffected by a mechanism written for the other twelve.
@@ -177,11 +177,11 @@ impl Host {
             return;
         }
 
-        // ★★★ THE GROWTH BUDGET — the guard that turns a layout mistake into a
+        // THE GROWTH BUDGET — the guard that turns a layout mistake into a
         // stopped dialog instead of one that grows without limit.
         //
         //
-        // ★ The point that took three instances to learn: **a guard against
+        // The point that took three instances to learn: **a guard against
         // repetition is not a guard against monotonic creep.** Creep never
         // repeats. Anything that only asks *"have I asked for this before?"*
         // is blind to it by construction, and so is anything that only asks
@@ -199,7 +199,7 @@ impl Host {
         // stops resizing and keeps whatever size it reached — a window that is
         // slightly too small for its content is a nuisance the operator can
         // fix with the mouse, and a window that grows for ever is not.
-        // ★ It is also RECORDED rather than merely suppressed: silently
+        // It is also RECORDED rather than merely suppressed: silently
         // capping would leave the underlying layout defect invisible, which is
         // how a bounded bug survives to become somebody else's afternoon.
         let spent = child
@@ -242,7 +242,7 @@ mod tests {
     /// [`FIT_BUDGET`]; see the compile-time assertion below.
     const DIVERGENCE_ROUNDS: usize = 12;
 
-    /// ★★ **A window already big enough for its body is left alone**, which is
+    /// **A window already big enough for its body is left alone**, which is
     /// the guard that keeps [`Host::fit`] from being a feedback loop.
     ///
     /// Only the no-op half is reachable headlessly — issuing the resize needs a
@@ -260,7 +260,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **A reopened dialog is fitted from scratch** — the operator's
+    /// **A reopened dialog is fitted from scratch** — the operator's
     /// *"the second stamp's window is too small to show Add"*, 2026-09-10.
     ///
     /// Both of [`Host::fit`]'s guards live in `egui::Memory` keyed on the
@@ -337,7 +337,7 @@ mod tests {
         assert_eq!(want.y, 900.0);
     }
 
-    /// ★★★ **The print dialog's runaway, reproduced as arithmetic — and the
+    /// **The print dialog's runaway, reproduced as arithmetic — and the
     /// proof that no pure function could have stopped it.**
     ///
     /// Operator report, 2026-08-25: the print dialog *"keeps expanding its size

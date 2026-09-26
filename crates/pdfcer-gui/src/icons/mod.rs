@@ -126,7 +126,7 @@ pub fn image(ui: &egui::Ui, icon: Icon) -> egui::Image<'static> {
 /// standing "selected state is never colour alone" rule surviving the loss
 /// of a text label to embolden.
 ///
-/// # ★★★ WHICH BACKGROUND THIS GLYPH IS DRAWN ON, since it is not this
+/// # WHICH BACKGROUND THIS GLYPH IS DRAWN ON, since it is not this
 /// function that paints it
 ///
 /// The plate underneath is **`egui`'s selected-widget fill** — the theme's
@@ -142,7 +142,7 @@ pub fn image(ui: &egui::Ui, icon: Icon) -> egui::Image<'static> {
 /// asserts it equals `visuals.selection.stroke.color` in every preset — so the
 /// pairing is held by an assertion, not by this paragraph.
 ///
-/// # ★★ Why not `ui.visuals().selection.stroke.color`, which is the same value
+/// # Why not `ui.visuals().selection.stroke.color`, which is the same value
 ///
 /// Same value, different promise, and `check-selection-channel.sh` forbids the
 /// raw read here for that reason. `visuals.selection` is a raw `egui` channel
@@ -154,7 +154,7 @@ pub fn image(ui: &egui::Ui, icon: Icon) -> egui::Image<'static> {
 /// cannot drift that way: it is checked against the shipped style, and a
 /// re-pointing has to walk past a red test that names this call site.
 ///
-/// ★ Note the ink is deliberately NOT [`egui_shell::theme::Theme::accent_pair`]'s
+/// Note the ink is deliberately NOT [`egui_shell::theme::Theme::accent_pair`]'s
 /// `on_accent`. That pair is the *emphasised action* surface — the full accent
 /// at full strength — and a selected toggle is a quieter thing: a diluted plate
 /// with accent ink. Tinting this glyph `on_accent` would put a near-white mark
@@ -178,7 +178,7 @@ pub fn toggle_image(ui: &egui::Ui, icon: Icon, selected: bool) -> egui::Image<'s
 mod tests {
     use super::*;
 
-    /// ★ Every shipped asset must parse.
+    /// Every shipped asset must parse.
     ///
     /// This is the gate that makes the hand-rolled parser safe to rely on: a
     /// malformed or out-of-subset icon fails `cargo test` rather than
@@ -213,7 +213,7 @@ mod tests {
         }
     }
 
-    /// ★ The set's one style exception, asserted from both sides.
+    /// The set's one style exception, asserted from both sides.
     ///
     /// A future "style cleanup" must not quietly turn redaction's honest
     /// solid bar into an outline, and no other icon may drift into being
@@ -224,7 +224,7 @@ mod tests {
     /// "audit" that outlined it would silently delete a test as well as a
     /// meaning.
     ///
-    /// ★★ **The assertion is membership of a NAMED SET with a reason per
+    /// **The assertion is membership of a NAMED SET with a reason per
     /// member**, not `icon == Icon::Redact`. The rule it enforces is *fill is
     /// semantic, never decorative*, and the black-arrow / white-arrow pair is
     /// the purest available instance of it: `cursor` and `cursor-node` have
@@ -251,7 +251,7 @@ mod tests {
         ///   irreversible thing. An outline-only redaction glyph understates a
         ///   feature that removes content permanently, and that argument does
         ///   not weaken because the command is scoped to a selection or is the
-        ///   apply step. ★ Adding them was a decision, not a formality: the
+        ///   apply step. Adding them was a decision, not a formality: the
         ///   honest alternative was to outline these two and leave the fill to
         ///   the parent tool, and it was rejected because it would make the
         ///   family's most destructive member — Apply, the one that cannot be
@@ -275,7 +275,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **Look at them.** Writes a contact sheet of every icon in the set to
+    /// **Look at them.** Writes a contact sheet of every icon in the set to
     /// `target/icon-contact-sheet.png`, at the 16 px they actually ship at and
     /// again at 32 px.
     ///
@@ -327,7 +327,7 @@ mod tests {
                 }
             }
         }
-        // ★ Absolute, from the manifest dir. `cargo test` runs with the CRATE
+        // Absolute, from the manifest dir. `cargo test` runs with the CRATE
         // as cwd, not the workspace root, so a relative "target/…" resolves to
         // a directory that does not exist and the write fails with a bare
         // "cannot find the path specified" — which reads like a permissions
@@ -405,7 +405,7 @@ mod tests {
         diff as f32 / union as f32
     }
 
-    /// ★★★ **No two icons may render as the same picture.**
+    /// **No two icons may render as the same picture.**
     ///
     /// # Why it is a raster comparison
     ///
@@ -427,7 +427,7 @@ mod tests {
     /// [`Icon::Layers`] vs [`Icon::Combine`]. This is the enforcement behind
     /// those warnings.
     ///
-    /// # ★★ Same-asset pairs are excluded, deliberately and by construction
+    /// # Same-asset pairs are excluded, deliberately and by construction
     ///
     /// Two roles pointing at one asset render identically **on purpose** and
     /// are already governed by their own test, which names them and fails if a
@@ -436,7 +436,7 @@ mod tests {
     /// a correct state is one people learn to ignore. So the comparison is over
     /// distinct SOURCES, not distinct variants.
     ///
-    /// # ★★★ The threshold and the exemptions are MEASURED, not chosen
+    /// # The threshold and the exemptions are MEASURED, not chosen
     ///
     /// `closest_pairs` ranks every pair at 16 px. Over the current set it
     /// produces, in order:
@@ -458,13 +458,13 @@ mod tests {
     /// rather than the threshold being lowered to 0.09 to swallow them, which
     /// would make the test assert almost nothing.
     ///
-    /// ★ `new-document ~ new-from-template` at 0.211 is the tightest genuine
+    /// `new-document ~ new-from-template` at 0.211 is the tightest genuine
     /// pair, and it is also [`svg`]'s dash support working: the ONLY difference
     /// between those two glyphs is a `stroke-dasharray` placeholder box.
     /// Without dashes they measure far closer than the threshold, which is why
     /// the pair is kept as the floor rather than exempted.
     ///
-    /// ★★ 16 px and not 32: the raster the operator sees is the one that must
+    /// 16 px and not 32: the raster the operator sees is the one that must
     /// discriminate. Two glyphs that separate cleanly at 32 and collapse at 16
     /// are a defect, and measuring at 32 would hide precisely that case.
     #[test]
@@ -494,7 +494,7 @@ mod tests {
             ("zoom-in", "zoom-out"),
             ("zoom-in", "zoom-region"),
             ("zoom-out", "zoom-region"),
-            // ★ No `("insert-pages", "export")` entry: `insert-pages` has art
+            // No `("insert-pages", "export")` entry: `insert-pages` has art
             // of its own rather than wearing `upload`, so that pair measures
             // well clear of the floor. An exemption with nothing behind it is a
             // hole waiting for a future pair to fall into silently.
@@ -511,7 +511,7 @@ mod tests {
         let mut worst: Option<(f32, &str, &str)> = None;
         for (index, (ia, ma)) in sheets.iter().enumerate() {
             for (ib, mb) in &sheets[index + 1..] {
-                // ★ Two roles on ONE asset are governed by their own test, and
+                // Two roles on ONE asset are governed by their own test, and
                 // the division of labour is exact: `only_the_documented_assets_are_shared`
                 // buckets `Icon::ALL` by `source()` CONTENT and fails on any
                 // undocumented bucket of more than one. So byte-identical art —
@@ -551,7 +551,7 @@ mod tests {
         );
     }
 
-    /// ★ CRLF line endings must not change a single pixel.
+    /// CRLF line endings must not change a single pixel.
     ///
     /// The assets are ordinary text files, so a repository with
     /// `* text=auto` converts them to CRLF on checkout under
@@ -587,7 +587,7 @@ mod tests {
         }
     }
 
-    /// ★ Every icon key a shell command names has an icon behind it.
+    /// Every icon key a shell command names has an icon behind it.
     ///
     /// This is the mismatch that puts blank boxes back in the ribbon, and it
     /// is invisible to the compiler: `Command::with_icon` takes a `String`,

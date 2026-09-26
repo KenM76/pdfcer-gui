@@ -7,7 +7,7 @@
 //! members of `impl OpenDoc` that name `RenderKey`, `RenderRequest` or a raster
 //! scale.
 //!
-//! ★★★ **The key and the request must change together.** A new input that
+//! **The key and the request must change together.** A new input that
 //! affects the picture has to enter the **key** — or a stale texture survives an
 //! edit — *and* the **request** — or the new picture is drawn without it.
 //! Splitting the two across files is how a toggle ships that visibly does
@@ -59,7 +59,7 @@ impl OpenDoc {
             raster_scale,
             self.annotations,
             self.layers.generation,
-            // ★★★ O137. Through `ViewState::stroke_display`, which is also what
+            // O137. Through `ViewState::stroke_display`, which is also what
             // `render_request_for` hands the worker — one conversion, so "what
             // I want" and "what I have" cannot disagree about whether line
             // weights were on. Omit it and the toggle looks inert: the cache
@@ -73,7 +73,7 @@ impl OpenDoc {
     /// The region to rasterize for `page_index`, if the canvas set one **for
     /// that page**.
     ///
-    /// ★ The page check is the whole of this method's job. Without it a
+    /// The page check is the whole of this method's job. Without it a
     /// region computed for page 4 would be applied to page 5 as well, and
     /// both rectangles are valid — so the wrong part of the neighbour would
     /// be rasterized with nothing reporting an error.
@@ -101,7 +101,7 @@ impl OpenDoc {
     ) -> Option<RenderRequest> {
         let page = self.pages.get(page_index)?;
         Some(RenderRequest {
-            // ★ O24's region tier. `None` below the pixmap ceiling — which is
+            // O24's region tier. `None` below the pixmap ceiling — which is
             // every zoom that can render whole-page, so panning there is
             // unchanged — and `Some` above it, where the alternative is the
             // operator's `MAX_PIXMAP_EDGE` failure.
@@ -113,7 +113,7 @@ impl OpenDoc {
             page_index,
             raster_scale,
             annotations: self.annotations,
-            // ★★★ O137 — `view.line_weights`, canvas only. The same conversion
+            // O137 — `view.line_weights`, canvas only. The same conversion
             // the key above uses; see `ViewState::stroke_display` for why it is
             // a function and not two `if`s. `render_on_worker` is the only
             // place this is read, and no export or print path builds a
@@ -121,7 +121,7 @@ impl OpenDoc {
             stroke_display: self.view.stroke_display(),
             layers: self.layer_visibility(),
             layers_generation: self.layers.generation,
-            // ★ The SNAPSHOT, not a live read — see the field's own docs.
+            // The SNAPSHOT, not a live read — see the field's own docs.
             //
             // The worker runs on another thread and may finish after the
             // operator has changed a setting, so what it must be given is the

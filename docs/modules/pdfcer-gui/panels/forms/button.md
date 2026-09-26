@@ -2,7 +2,7 @@
 change it**
 
 
-## ★★★ Why this row did not exist until the reader did
+## Why this row did not exist until the reader did
 
 
 A button **already in the document** does not. `pdfcer-core` could write an
@@ -23,7 +23,7 @@ request said so:
 ⇒ Filed as `request_a_buttons_action_can_be_written_and_not_read.md`,
 answered by `Pass 212.0`, and this file is the consumption.
 
-## ★★ The engine shipped FOUR states where three were asked for
+## The engine shipped FOUR states where three were asked for
 
 And the fourth is the one that makes the row honest.
 
@@ -41,7 +41,7 @@ Three states would have forced a wrong answer in one direction: a
 not author"*, because pdfcer authors submits happily, and calling it `Foreign`
 would have greyed a row that should be live.
 
-★ R9 is what makes `Foreign` render *nothing* rather than a greyed Change
+R9 is what makes `Foreign` render *nothing* rather than a greyed Change
 button. A greyed control says *"not now"*; the truth here is *"not ever, by
 decision"*, and greying would advertise a capability pdfcer has chosen not to
 have.

@@ -11,7 +11,7 @@ use crate::app::state::Status;
 
 /// The prefix every key in this family shares: `off_page.<mode>`.
 ///
-/// ★ It is a **prefix**, not three fixed keys, and that is deliberate. Ribbon
+/// It is a **prefix**, not three fixed keys, and that is deliberate. Ribbon
 /// modes come from the shell manifest, which an operator may customize (see
 /// `crate::shell::manifest`), so this family cannot be closed over the three
 /// modes that ship. A build whose manifest grows a fourth mode remembers that
@@ -83,7 +83,7 @@ impl OffPagePrefs {
 
     /// Remember `on` as the answer for `mode`.
     ///
-    /// ★ The answer is stored **even when it equals the shipped default**, and
+    /// The answer is stored **even when it equals the shipped default**, and
     /// that is not redundancy. An operator who turns off-page display off in
     /// Review has expressed an intent about Review; if a later build changed
     /// its mind about Review's default, the operator's own answer must win
@@ -247,7 +247,7 @@ pub fn remember(chrome: ViewChrome, on: bool, prefs: &mut super::Prefs, mode: Op
 /// Writing them all now costs one bool per open file and makes activation
 /// inert, which is what the operator already believes it is.
 ///
-/// ★ `parked` is taken as a slice rather than the app, so this function cannot
+/// `parked` is taken as a slice rather than the app, so this function cannot
 /// reach anything else and the caller's three field borrows stay disjoint.
 pub fn apply_mode(prefs: &super::Prefs, mode: &str, status: &mut Status, parked: &mut [Status]) {
     let on = prefs.off_page.for_mode(mode);

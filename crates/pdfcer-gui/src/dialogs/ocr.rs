@@ -23,7 +23,7 @@ use crate::text::ocr as t;
 // LITERALLY by `tools/ui-verify/src/checks/ocr.rs`, so renaming one silently
 // un-aims the check that measures it.
 //
-// ★ Why a dialog needs them at all, when the ribbon's controls get theirs for
+// Why a dialog needs them at all, when the ribbon's controls get theirs for
 // free: `egui_shell::ribbon` declares a rect per band control centrally, and
 // nothing does that for a window this crate draws itself. Without these, the
 // only way a harness could reach the Recognise button would be to guess a
@@ -51,13 +51,13 @@ const REGION_ENGINE: &str = "ocr-engine"; // ui-text-exempt: trace region name, 
 /// evidence that the run could not have been started rather than that the
 /// harness missed it.
 ///
-/// ★ There is deliberately no region for a save control. Recognition is an edit
+/// There is deliberately no region for a save control. Recognition is an edit
 /// to the open session, so there is no transaction to complete and nothing for
 /// a second button to do.
 const REGION_RUN: &str = "ocr-run"; // ui-text-exempt: trace region name, never displayed
 /// The live progress line, drawn once a page has finished.
 ///
-/// ★ Published so a driven check can assert the operator can SEE the run
+/// Published so a driven check can assert the operator can SEE the run
 /// moving. A feature whose entire purpose is to show that the program has
 /// not frozen needs an oracle that is about visibility.
 const REGION_PROGRESS: &str = "ocr-progress"; // ui-text-exempt: trace region name
@@ -78,7 +78,7 @@ enum Phase {
     Ready,
     /// A thread is recognising.
     Working(Job),
-    /// ★★ Recognition finished and **the words are in the open document.**
+    /// Recognition finished and **the words are in the open document.**
     ///
     /// `EditSession::add_ocr_layer` puts the layer straight into the session as
     /// one undoable edit, so this phase carries no bytes and there is no
@@ -95,7 +95,7 @@ enum Phase {
         words: usize,
         /// `Some((attempted, of))` when the operator pressed **Stop**.
         ///
-        /// ★★★ The whole reason this field exists: a stopped run is a success
+        /// The whole reason this field exists: a stopped run is a success
         /// with a caveat, and the caveat must be SAID. Without it, somebody who
         /// ended a 200-page recognition at page 40 is left believing the
         /// document is done — and finds out months later, searching for a word
@@ -104,7 +104,7 @@ enum Phase {
     },
     /// **The operator pressed Cancel.** Nothing was kept and nothing written.
     ///
-    /// ★ Its own phase rather than a `Refused`, because it is not a refusal:
+    /// Its own phase rather than a `Refused`, because it is not a refusal:
     /// nothing went wrong and there is nothing to diagnose. The sentence it
     /// draws says what was discarded and offers to start again, where a refusal
     /// explains why the run could not happen.
@@ -122,28 +122,28 @@ enum Phase {
 pub struct OcrDialog {
     /// The page this transaction is about, captured when the dialog opened.
     ///
-    /// ★ **Captured, not read per frame**, and that is a correctness
+    /// **Captured, not read per frame**, and that is a correctness
     /// requirement rather than an optimisation. The operator can page the
     /// document while the dialog is open; a `Save` that read the *current*
     /// page index would label bytes recognised from page 3 as belonging to
     /// whatever page they had scrolled to. The recognition is of one page and
     /// the dialog remembers which.
     page_index: usize,
-    /// ★★★ **Which pages to recognise.**
+    /// **Which pages to recognise.**
     ///
     /// Recognising only [`Self::page_index`] is not an engine limitation:
     /// `add_ocr_layer`'s output is a complete PDF that can be fed back in, so
     /// pages chain. That was measured before this was built, because a wrong
     /// answer would have corrupted a file.
     scope: Scope,
-    /// ★★★ **The rail's page selection, captured when the dialog opened** —
+    /// **The rail's page selection, captured when the dialog opened** —
     /// `OPERATOR_REQUESTS.md` O79.
     ///
     /// Zero-based, ascending, and possibly empty — empty is a defined answer
     /// meaning *nothing is picked*, in which case [`Scope::Picked`] is not
     /// offered at all (R9: an option with no operand renders nothing).
     ///
-    /// # ★★ Captured rather than read live, and this is the decision worth
+    /// # Captured rather than read live, and this is the decision worth
     /// arguing
     ///
     /// The rail is on screen beside this window and the operator can work it
@@ -186,7 +186,7 @@ pub struct OcrDialog {
     traced_scope: Vec<usize>,
     /// The `attempted` count the last `ocr-progress` line reported.
     ///
-    /// ★★★ **Why the numbers are traced at all, when the rect already is.**
+    /// **Why the numbers are traced at all, when the rect already is.**
     ///
     /// `crate::diag::ui_rect(REGION_PROGRESS, …)` says *a label was drawn
     /// there*. That is enough to prove something is on screen and is **not**
@@ -201,7 +201,7 @@ pub struct OcrDialog {
     /// carry one. This line does: `ocr-progress attempted=… of=… words=…
     /// chars=…`, and a check asserts that two of them differ.
     ///
-    /// ★ Traced on **change**, for the reason [`Self::traced_scope`] already
+    /// Traced on **change**, for the reason [`Self::traced_scope`] already
     /// gives at length: an identical line per frame for twenty seconds is a
     /// haystack, not a diagnostic. `usize::MAX` is the "nothing traced yet"
     /// sentinel rather than `0`, because `attempted == 0` is a real state the
@@ -230,12 +230,12 @@ pub(super) enum Scope {
     All,
     /// Only the page the operator was looking at when the dialog opened.
     ///
-    /// ★ **When it opened**, not now — the operator can page the document while
+    /// **When it opened**, not now — the operator can page the document while
     /// this window is up, and a run that read the *current* index would
     /// recognise a page they were no longer thinking about. That capture is the
     /// same argument [`OcrDialog::page_index`] already carries.
     CurrentPage,
-    /// ★★★ **The pages picked in the thumbnail rail** —
+    /// **The pages picked in the thumbnail rail** —
     /// `OPERATOR_REQUESTS.md` O79.
     ///
     /// The operator: *"the pages I have selected in the thumbnails."*
@@ -255,7 +255,7 @@ pub(super) enum Scope {
     /// selection when there is one"*. OCR was the one page-scoped verb that
     /// ignored it.
     ///
-    /// # ★ Captured at OPEN, like [`Self::CurrentPage`], and for the same reason
+    /// # Captured at OPEN, like [`Self::CurrentPage`], and for the same reason
     ///
     /// The operator can work the rail while this window is up. A run that read
     /// the selection as it is *now* would recognise a set they were no longer
@@ -283,7 +283,7 @@ impl Scope {
         match self {
             Self::All => (count > 0).then(|| (0..count).collect()),
             Self::CurrentPage => (current < count).then(|| vec![current]),
-            // ★ Filtered against the page count rather than trusted (O79). The
+            // Filtered against the page count rather than trusted (O79). The
             // selection was captured when the dialog opened and the document
             // can be edited underneath it — a page deleted from the rail while
             // this window is up would otherwise hand the engine an index past
@@ -314,10 +314,10 @@ impl OcrDialog {
     pub(super) fn open(doc: &OpenDoc, picked: Vec<usize>, preferred: Option<EngineId>) -> Self {
         Self {
             page_index: doc.view.page_index,
-            // ★ The rail's selection, captured once — see `Self::picked` for
+            // The rail's selection, captured once — see `Self::picked` for
             // why it is a snapshot rather than a live read (O79).
             picked,
-            // ★ **All pages by default**, which is what every surveyed OCR tool
+            // **All pages by default**, which is what every surveyed OCR tool
             // defaults to and what the operator was asking for. The old
             // behaviour — this page only — is still one click away and is the
             // right answer when he is checking one sheet, but it is the
@@ -344,12 +344,12 @@ impl OcrDialog {
     ) -> bool {
         self.poll_worker(actions);
 
-        // ★ ITS OWN OS WINDOW. OCR is the longest-running thing in this program
+        // ITS OWN OS WINDOW. OCR is the longest-running thing in this program
         // — a job an operator starts and then goes back to work while it runs —
         // and a progress window locked inside the application frame is a window
         // that has to be closed to keep working.
         //
-        // ★ The dialog region is published from INSIDE the callback, because
+        // The dialog region is published from INSIDE the callback, because
         // there is no `egui::Window` response rect to take it from;
         // `ui.max_rect()` is the same rectangle in the coordinates the harness
         // converts, and `dialogs::host` tags it with this viewport.
@@ -395,7 +395,7 @@ impl OcrDialog {
         let Some(outcome) = job.poll() else {
             return;
         };
-        // ★★★ Three endings, and the shell must keep them apart.
+        // Three endings, and the shell must keep them apart.
         //
         // `Complete` is the run finishing on its own. `Stopped` is the operator
         // asking for what had been done so far, which is a SUCCESS with a
@@ -429,7 +429,7 @@ impl OcrDialog {
                     format!(
                         // ui-text-exempt: diagnostic trace, never displayed.
                         //
-                        // ★ `recognised=` beside the page counts, because a
+                        // `recognised=` beside the page counts, because a
                         // count of pages alone is not an ink trail: a
                         // build whose placement silently dropped every word
                         // would emit an otherwise identical line, and the pair
@@ -448,13 +448,13 @@ impl OcrDialog {
                     written: recognised.pages_written,
                     skipped: recognised.pages_skipped,
                     words: recognised.words_recognised,
-                    // ★ Carried into the outcome so the sentence the operator
+                    // Carried into the outcome so the sentence the operator
                     // reads afterwards can say the run ended early. A partial
                     // layer reported as a whole one is the failure this whole
                     // pair of buttons has to avoid.
                     stopped_at,
                 };
-                // ★★ **The edit is raised here, in the poll, rather than in the
+                // **The edit is raised here, in the poll, rather than in the
                 // window body.**
                 //
                 // Two reasons, and the second is the one that matters. A dialog
@@ -488,7 +488,7 @@ impl OcrDialog {
         ui.separator();
         ui.add_space(6.0);
 
-        // ★ Filled by the `Working` arm and consumed after the match, rather
+        // Filled by the `Working` arm and consumed after the match, rather
         // than traced where it is read.
         //
         // The match borrows `self.phase` immutably for the whole of its body,
@@ -502,7 +502,7 @@ impl OcrDialog {
         match &self.phase {
             Phase::Ready => self.ready(ui, doc),
             Phase::Working(job) => {
-                // ★★★ **Ask for the next frame explicitly, and do not rely on
+                // **Ask for the next frame explicitly, and do not rely on
                 // the spinner to do it.**
                 //
                 // The worker is on another thread and nothing it does generates
@@ -513,7 +513,7 @@ impl OcrDialog {
                 // progress line reading `Page 1 of 8`, which is a **pixel-exact
                 // rendition of the frozen application he asked us to rule out.**
                 //
-                // ★ It works today without this line, and that is the trap.
+                // It works today without this line, and that is the trap.
                 // `egui::Spinner` calls `ui.request_repaint()` itself because
                 // it is animated (`egui-0.35.0/src/widgets/spinner.rs:40`). So the
                 // whole visibility of this feature currently rests on a
@@ -526,7 +526,7 @@ impl OcrDialog {
                 // Stating the dependency is the point.
                 ui.ctx().request_repaint();
                 ui.horizontal(|ui| {
-                    // ★★★ **A BARE `ui.spinner()` IS INVISIBLE IN ALL THREE
+                    // **A BARE `ui.spinner()` IS INVISIBLE IN ALL THREE
                     // PRESETS — A15f, which the widened contrast gate catches,
                     // and it is the funniest defect in the tree because this
                     // control exists to prove the program has not frozen.**
@@ -541,12 +541,12 @@ impl OcrDialog {
                     // readable floor of 90. Airy is white on white to within
                     // five levels.
                     //
-                    // ★★ Those are the same three numbers as `DEFECTS.md` D2,
+                    // Those are the same three numbers as `DEFECTS.md` D2,
                     // because it is the same pair: a plate colour used against
                     // a background nobody paired it with. The fourth
                     // recurrence.
                     //
-                    // ★ And `check-strong-text.sh` structurally cannot see it.
+                    // And `check-strong-text.sh` structurally cannot see it.
                     // That gate greps for a `.strong()` or a colour named at a
                     // call site; **a bare `ui.spinner()` names no colour at
                     // all**. It took a gate that enumerates what a `Style` will
@@ -562,7 +562,7 @@ impl OcrDialog {
                     );
                     ui.label(t::working());
                 });
-                // ★★★ **WHAT IT IS DOING** — so the operator can see that the
+                // **WHAT IT IS DOING** — so the operator can see that the
                 // program is doing something and has not frozen on a large
                 // document.
                 //
@@ -585,7 +585,7 @@ impl OcrDialog {
                     progress_seen = Some((tally.attempted, tally.of, tally.words, tally.chars));
                 }
                 ui.add_space(8.0);
-                // ★★ STOP FIRST, and the order is the argument. It is the
+                // STOP FIRST, and the order is the argument. It is the
                 // non-destructive one, and this project's standing rule for a
                 // row of controls is least-destructive-first — the same reading
                 // that orders the Format tab's group. An operator reaching in a
@@ -611,20 +611,20 @@ impl OcrDialog {
                 words,
                 stopped_at,
             } => {
-                // ★★★ **What this says now, and what it no longer has to.**
+                // **What this says now, and what it no longer has to.**
                 //
                 // Everything about choosing a destination is gone: the words
                 // are in the document, `Ctrl+Z` takes them out and `Ctrl+S`
                 // writes them. What is left is the outcome and the one
                 // disclosure this surface owes.
                 //
-                // ★ The engine's per-page report is NOT re-rendered here. It
+                // The engine's per-page report is NOT re-rendered here. It
                 // goes through `crate::app::actions`' edit-disclosure channel
                 // with every other edit's, which is where the operator already
                 // looks — a second, differently-worded copy on this window
                 // would be two accounts of one run that could drift.
                 ui.label(t::pages_outcome(*written, *skipped));
-                // ★★★ THE CAVEAT, before the reassurance.
+                // THE CAVEAT, before the reassurance.
                 //
                 // A stopped run is a success and an incomplete one, and the
                 // order these two sentences appear in decides which the
@@ -651,7 +651,7 @@ impl OcrDialog {
                     format!("ocr-applied written={written} skipped={skipped} words={words}")
                 });
             }
-            // ★ Cancelled draws its own sentence rather than a refusal's.
+            // Cancelled draws its own sentence rather than a refusal's.
             // Nothing went wrong, so there is nothing to diagnose — the
             // sentence says what was discarded and the ordinary Recognise
             // button below is the way to start again.
@@ -663,7 +663,7 @@ impl OcrDialog {
             }
         }
 
-        // ★★ The progress line's CONTENT, traced on change. See
+        // The progress line's CONTENT, traced on change. See
         // [`Self::traced_progress`] for why a rect alone is not an oracle for
         // *"the user can see it is doing something"*.
         if let Some((attempted, of, words, chars)) = progress_seen
@@ -688,7 +688,7 @@ impl OcrDialog {
     /// The pre-run state: one button, and the refusals that can be answered
     /// without running anything.
     ///
-    /// ★ The order of the checks is the order of the questions, and it is not
+    /// The order of the checks is the order of the questions, and it is not
     /// arbitrary. *Can this build look at all* comes before *are the files
     /// there to look with*, because asking them the other way round would
     /// report a missing model directory in a build that has no recogniser to
@@ -706,7 +706,7 @@ impl OcrDialog {
         self.scope_group(ui, count);
         ui.add_space(10.0);
 
-        // ★★ **The button is unavailable when the scope names no page** —
+        // **The button is unavailable when the scope names no page** —
         // greyed, not hidden, because this is R9's *temporarily* unavailable
         // case: the operator is mid-way through typing a range and the control
         // will come back on its own. Hiding it would make the dialog jump under
@@ -724,7 +724,7 @@ impl OcrDialog {
         }
     }
 
-    /// ★★★ **Which pages.**
+    /// **Which pages.**
     ///
     /// # Why radios and not a dropdown
     ///
@@ -754,7 +754,7 @@ impl OcrDialog {
                     Scope::CurrentPage,
                     t::scope_current(self.page_index + 1),
                 );
-                // ★★★ **The pages picked in the rail** — `OPERATOR_REQUESTS.md`
+                // **The pages picked in the rail** — `OPERATOR_REQUESTS.md`
                 // O79 — drawn only when there ARE some.
                 //
                 // R9: with an empty rail selection this option has no operand,
@@ -764,7 +764,7 @@ impl OcrDialog {
                 // surface — it is *go and pick some pages* — so there is
                 // nothing a hover could usefully say either.
                 //
-                // ★ Positioned THIRD, between "this page" and a typed range,
+                // Positioned THIRD, between "this page" and a typed range,
                 // which is the order of how much the operator had to do to
                 // express the operand: nothing, one page, a set they picked, a
                 // set they typed.
@@ -805,7 +805,7 @@ impl OcrDialog {
         // confirmed to have been understood, and it is off in a status line
         // rather than in the field, per rule 4's disclosure clause.
         //
-        // ★ Traced on CHANGE, not every frame. A line per frame for as long as
+        // Traced on CHANGE, not every frame. A line per frame for as long as
         // the dialog is open is 90 of the 400 lines in a driven capture, all
         // identical — which is not a diagnostic, it is a haystack. The ink-trail
         // rule cuts both ways: a line nobody can find is the same as a line
@@ -837,7 +837,7 @@ impl OcrDialog {
         if !engine.compiled_in() {
             return Some(Refusal::EngineAbsent);
         }
-        // ★★ **There is no unsaved-edits guard, and its absence is the design.**
+        // **There is no unsaved-edits guard, and its absence is the design.**
         //
         // `EditSession::add_ocr_layer` plans against the **session graph**, so a
         // recognised copy taken over unsaved edits carries those edits. The
@@ -930,7 +930,7 @@ impl OcrDialog {
     /// The disclosure block: the confidence statement, then the engine's own
     /// lines.
     ///
-    /// ★ **The confidence sentence is drawn first and separately, above the
+    /// **The confidence sentence is drawn first and separately, above the
     /// list.** `OcrLayerReport::disclosures()` already contains a sentence
     /// making the same point, and this is deliberate duplication rather than an
     /// oversight: the engine's version sits fourth in a list of counts, and the
@@ -978,14 +978,14 @@ const LIST_FLOOR: f32 = 48.0;
 /// thing that has to be read to know what pdfcer says when OCR declines.
 fn sentence(refusal: &Refusal) -> String {
     match refusal {
-        // ★★ Unreachable from the dialog, which turns a cancellation into
+        // Unreachable from the dialog, which turns a cancellation into
         // `Phase::Cancelled` before it ever reaches here — and worded anyway,
         // because a `match` arm that cannot be hit today is one line, while a
         // catch-all that swallowed a real refusal would be silent. Named so a
         // future caller that DOES reach it says something true.
         Refusal::Cancelled { attempted } => t::cancelled(*attempted),
         Refusal::EngineAbsent => t::engine_absent().to_owned(),
-        // ★ The paths go to the catalog as a LIST, not as a pre-joined string.
+        // The paths go to the catalog as a LIST, not as a pre-joined string.
         //
         // The separator between them is copy: it is punctuation an operator
         // reads, and `tools/gates/check-ui-strings.sh` caught a `", "` sitting
@@ -1014,7 +1014,7 @@ fn sentence(refusal: &Refusal) -> String {
 
 /// The name to suggest for the recognised copy.
 ///
-/// ★ **Never the file that was opened.** The suffix is what makes the default
+/// **Never the file that was opened.** The suffix is what makes the default
 /// answer a new document, so an operator who accepts the suggestion without
 /// reading it cannot overwrite their scan. That is the standing rule expressed
 /// as a default rather than as a warning — a warning is something to click
@@ -1088,7 +1088,7 @@ pub(super) fn open_for(
 
 #[cfg(test)]
 mod tests {
-    /// ★★★ **An edited, unsaved document may be recognised**, and the
+    /// **An edited, unsaved document may be recognised**, and the
     /// absence of a guard against it is the thing pinned here.
     ///
     /// # Why refusing would be the defect, not the safeguard
@@ -1104,7 +1104,7 @@ mod tests {
     /// **session graph** instead, which removes the divergence rather than
     /// policing it.
     ///
-    /// ★ So this test now pins the *absence* of the guard, and it is worth
+    /// So this test now pins the *absence* of the guard, and it is worth
     /// having as a test rather than as a deletion: the trap was re-introduced
     /// once already, in a different spelling, and a named assertion is what
     /// makes a third spelling fail rather than ship.
@@ -1141,7 +1141,7 @@ mod tests {
 
     use super::*;
 
-    /// ★ **The suggested name is never the file that was opened.**
+    /// **The suggested name is never the file that was opened.**
     ///
     /// The standing rule as a default. An operator who accepts the suggestion
     /// without reading it must not overwrite their scan, and this is the
@@ -1181,7 +1181,7 @@ mod tests {
         );
     }
 
-    /// ★ **Every refusal produces a different sentence.**
+    /// **Every refusal produces a different sentence.**
     ///
     /// The property the whole `Refusal` enum exists for: `pdfcer-core`'s error
     /// types refuse by name because "OCR failed" is unactionable, and a shell
@@ -1243,7 +1243,7 @@ mod scope_tests {
         );
     }
 
-    /// ★ **This page only means the page the dialog OPENED on.**
+    /// **This page only means the page the dialog OPENED on.**
     ///
     /// The operator can page the document while the window is up. A scope that
     /// resolved against the live index would recognise a page they had moved
@@ -1254,7 +1254,7 @@ mod scope_tests {
         assert_eq!(Scope::CurrentPage.pages(2, 5, "", &[]), Some(vec![2]));
     }
 
-    /// ★★★ **The rail's picked pages are the operand** —
+    /// **The rail's picked pages are the operand** —
     /// `OPERATOR_REQUESTS.md` O79.
     ///
     /// The operator: *"the pages I have selected in the thumbnails."*
@@ -1277,7 +1277,7 @@ mod scope_tests {
         );
     }
 
-    /// ★★ **A picked page the document no longer has is dropped**, and an
+    /// **A picked page the document no longer has is dropped**, and an
     /// empty result resolves to nothing.
     ///
     /// The selection is captured when the dialog opens and the document can be
@@ -1324,7 +1324,7 @@ mod scope_tests {
         );
     }
 
-    /// ★★ **The range field speaks the PRINT dialog's dialect, not its own.**
+    /// **The range field speaks the PRINT dialog's dialect, not its own.**
     ///
     /// Two page-range parsers in one program would accept different things on
     /// two surfaces and the operator would have to learn which one they were

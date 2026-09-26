@@ -26,7 +26,7 @@ and an action queue, so the window **physically could not see the document
 it was editing**, and `dialogs::open` destructured `status` only to prove a
 document existed and then threw it away.
 
-# ★★ Why every part of this needs DRIVING, and unit tests cannot stand in
+# Why every part of this needs DRIVING, and unit tests cannot stand in
 
 `ScaleEntryFields::for_group` — the inversion that makes O192 possible — has
 five unit tests including an independently calibrated one, and they would
@@ -49,7 +49,7 @@ frame-level:
 Every one of those is an edge read once per frame. Only a running window
 sees them.
 
-# ★★★ The assertion that carries the whole thing: ONE `scale-open`
+# The assertion that carries the whole thing: ONE `scale-open`
 
 Step 7 counts `scale-open` trace lines across the entire session and
 requires exactly one. That is the difference between *hidden* and *closed*

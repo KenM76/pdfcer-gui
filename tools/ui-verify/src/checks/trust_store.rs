@@ -101,14 +101,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // testing Read the day the default moves.
     click_mode_segment(&session, &driver, ui_rect, "read")?;
 
-    // ★ Only if it is not already showing. The ribbon control is a TOGGLE, and
+    // Only if it is not already showing. The ribbon control is a TOGGLE, and
     // pressing it over an open panel closes the thing under test — which is how
     // a sibling check produced a SKIP on one run and a FAIL on the next from
     // the same build.
     if declared(&session.trace()?, ui_rect, PANEL_TAB).is_none() {
         open_signatures(&session, &driver, ui_rect)?;
     }
-    // ★★ …and then SELECT it. A dock tab is declared whether or not it is the
+    // …and then SELECT it. A dock tab is declared whether or not it is the
     // one in front, and the dock draws only the selected tab's body. A panel
     // behind another tab publishes nothing, which reads exactly like a panel
     // with nothing to say — `RESUME.md` records that misdiagnosis costing a
@@ -127,7 +127,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&trace, ui_rect, "dock.tab"))
         )));
     }
-    // ★★★ The panel's BODY, not only its tab. The tab proves the dock knows
+    // The panel's BODY, not only its tab. The tab proves the dock knows
     // about the panel; the body region proves the panel's own code ran and laid
     // itself out somewhere visible. Two different claims, and only the second
     // is what an operator experiences.
@@ -149,7 +149,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ---------------------------------------------------------------------
     // The report ran at all
     // ---------------------------------------------------------------------
-    // ★ Read as parsed EVENTS rather than by substring. `Trace::events` matches
+    // Read as parsed EVENTS rather than by substring. `Trace::events` matches
     // the event NAME, so a `report.note` that happened to quote the word
     // `trust-report` cannot be mistaken for the application having emitted one
     // — which is the class of false green this harness has recorded twice.
@@ -212,7 +212,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
 
     // ---------------------------------------------------------------------
-    // ★★★ The default is `not-checked`, and it is SAID
+    // The default is `not-checked`, and it is SAID
     // ---------------------------------------------------------------------
     // `Settings::acrobat_trust_store` ships as `Off`, so on any machine and in
     // any checkout this run must produce `trust=not-checked`. That makes the
@@ -307,7 +307,7 @@ fn open_signatures(session: &Session, driver: &Driver, ui_rect: &str) -> Result<
 /// **Resolve this check's pinned fixture**, via
 /// [`crate::checks::driving::repo_fixture`].
 ///
-/// ★ The discarded `&CheckContext` parameter is gone; see `protect`'s note for
+/// The discarded `&CheckContext` parameter is gone; see `protect`'s note for
 /// why keeping one was a hazard rather than a harmless leftover.
 fn repo_fixture() -> Result<PathBuf> {
     crate::checks::driving::repo_fixture(

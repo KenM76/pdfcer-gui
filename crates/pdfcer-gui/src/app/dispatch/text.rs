@@ -15,7 +15,7 @@ use crate::app::state::Status;
 
 /// Whether this file owns `id`.
 ///
-/// ★ `edit.reflow_block` is the only id here that can fail after the mode has
+/// `edit.reflow_block` is the only id here that can fail after the mode has
 /// allowed it — the arming pair can only be declined by the mode, and arming a
 /// tool cannot fail once it is.
 ///
@@ -29,7 +29,7 @@ pub(crate) fn handles(id: &str) -> bool {
 
 /// Route one caret command.
 ///
-/// ★★ The mode check is here for the arming pair and NOT for the reflow, and
+/// The mode check is here for the arming pair and NOT for the reflow, and
 /// the asymmetry is deliberate. `edit.text` is reachable from the tool row as
 /// well as the Edit tab — `view.tool_text`, the `T` chord — so it can be
 /// invoked in a stance whose ribbon never drew it, and [`super::navigate`]'s
@@ -59,7 +59,7 @@ fn arm(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id: &str) {
                 crate::canvas::textedit::TextEditKind::Edit
             };
             if app.capabilities().edit_content {
-                // ★ Both ids arm the caret directly — two doors into one
+                // Both ids arm the caret directly — two doors into one
                 // room. `edit.text` is the one an operator finds on the Edit
                 // tab; `view.tool_text` (T) is the one they find in the tool
                 // row. **The CLICK decides edit-versus-add**, so the `kind`
@@ -94,7 +94,7 @@ fn reflow(ctx: &egui::Context, status: &Status, actions: &mut Vec<Action>) {
     use crate::text::textedit::ReflowRefusal;
 
     let Status::Open(doc) = status else {
-        // ★★ Unreachable in practice — the control is `enabled_when("doc.pages")`
+        // Unreachable in practice — the control is `enabled_when("doc.pages")`
         // — and still not a bare `return`. A dispatch arm that can leave without
         // a word is the shape this whole function exists against, and *"there is
         // no document"* is a cause like any other.
@@ -128,11 +128,11 @@ fn reflow(ctx: &egui::Context, status: &Status, actions: &mut Vec<Action>) {
 
 /// Say why, in the status line and in the trace, and change nothing.
 ///
-/// ★ One helper for all of them, so a further refusal cannot be added that
+/// One helper for all of them, so a further refusal cannot be added that
 /// traces but does not tell the operator — the asymmetry that makes a feature
 /// look broken while the log says it declined politely.
 ///
-/// # ★★★ It writes to the DECLINE slot, and that is not interchangeable with
+/// # It writes to the DECLINE slot, and that is not interchangeable with
 /// the disclosure one
 ///
 /// `crate::app::actions::record_note` draws under **`⚑ About your last edit:`**.

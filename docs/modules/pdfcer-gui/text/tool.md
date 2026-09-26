@@ -1,6 +1,6 @@
 # `text::tool` — the words the tools say, wherever they are said
 
-## ★★★ This file OUTLIVED the panel it was written for
+## This file OUTLIVED the panel it was written for
 
 
 | what | who says it now |
@@ -18,13 +18,13 @@ control, and the operator's instruction was *"its buttons duplicate the
 ribbon and go."* They are gone rather than left orphaned, because an unused
 catalog entry is a sentence nobody can find and nobody can retire.
 
-★ Worth naming what that cost: those rows were the answer to a
+Worth naming what that cost: those rows were the answer to a
 discoverability defect — *"The feature works. He could not find it."* The
 strip that replaced them cannot list what is NOT armed. That is a real
 subtraction and it is the operator's own call; it is recorded in
 `crate::app::toolstatus`'s header rather than argued here.
 
-## ★ The three rules the whole file follows, unchanged
+## The three rules the whole file follows, unchanged
 
 **1. No label is written here that the command registry already owns.**
 The armed tool's name comes from `CommandRegistry` through

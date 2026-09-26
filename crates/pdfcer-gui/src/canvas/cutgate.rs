@@ -36,7 +36,7 @@ pub struct Blocker {
 pub fn blocker(doc: &OpenDoc) -> Option<Blocker> {
     let selected = doc.selection.annot()?;
     let Some(Object::Dict(dict)) = doc.session.value(selected.target.id) else {
-        // ★ An unreadable dictionary is NOT a blocker. It is a fact about a
+        // An unreadable dictionary is NOT a blocker. It is a fact about a
         // document that is already broken, and the engine will refuse the cut
         // on its own with a better sentence than a guess made here. Permissive,
         // per the header.
@@ -59,7 +59,7 @@ pub fn blocker(doc: &OpenDoc) -> Option<Blocker> {
 mod tests {
     use super::*;
 
-    /// ★★★ The mirror is PERMISSIVE, and this test states the rule that keeps
+    /// The mirror is PERMISSIVE, and this test states the rule that keeps
     /// it that way.
     ///
     ///
@@ -104,7 +104,7 @@ mod tests {
 
     /// The three the engine refuses by policy, named exactly as it names them.
     ///
-    /// ★ Asserted as strings rather than by building a document, because the
+    /// Asserted as strings rather than by building a document, because the
     /// claim under test is that this shell's spelling matches the engine's
     /// `CutWouldNotSurvive { subtype }` — a wording agreement across a crate
     /// boundary, which no fixture can check and a typo would silently break.

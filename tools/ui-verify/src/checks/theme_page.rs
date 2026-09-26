@@ -16,7 +16,7 @@ use crate::launch::{LaunchSpec, Session};
 
 /// **Every preset the shell ships, in the order the picker draws them.**
 ///
-/// ★ This is `egui_shell::theme::Preset::ALL` restated as strings, and the
+/// This is `egui_shell::theme::Preset::ALL` restated as strings, and the
 /// restatement is the point rather than a duplication to be apologised for:
 /// `ui-verify` does not compile against `egui-shell`, so the *only* way this
 /// crate can know the set is to write it down — and writing it down is what
@@ -29,7 +29,7 @@ const PRESETS: [&str; 3] = ["quiet", "airy", "dark"];
 
 /// The canvas's page raster — `canvas::trace::REGION_PAGE`.
 ///
-/// ★ **The sheet itself, not the area around it.** Its sibling
+/// **The sheet itself, not the area around it.** Its sibling
 /// [`CANVAS_VIEWPORT`] is the scroll area the sheet sits in, and that module's
 /// own comment says why confusing the two is a real error rather than a
 /// pedantic one: at fit-page the two rects differ by the centring margin, and a
@@ -51,7 +51,7 @@ const CANVAS_VIEWPORT: &str = "canvas-viewport";
 /// How far apart two presets' canvas surrounds must measure before the two are
 /// **different presets** rather than one preset measured twice.
 ///
-/// # ★★ The derivation, and the wrong one it replaced
+/// # The derivation, and the wrong one it replaced
 ///
 /// This constant was first written as 10, derived from `Palette::content_backdrop`
 /// — the role whose own doc comment says it exists for exactly this surface:
@@ -77,7 +77,7 @@ const CANVAS_VIEWPORT: &str = "canvas-viewport";
 /// nothing happened produces — which is **0**, not a small number, because two
 /// identically painted regions in a lossless capture are identical.
 ///
-/// ★ Seven is a thinner margin than this file would choose, which is why colour
+/// Seven is a thinner margin than this file would choose, which is why colour
 /// is not the only witness: [`MIN_METRIC_SHIFT_PTS`] gives the `quiet`↔`airy`
 /// pair a second, independent one, and the two are combined with an `or`.
 const MIN_PRESET_DISTINCTION: u16 = 4;
@@ -85,7 +85,7 @@ const MIN_PRESET_DISTINCTION: u16 = 4;
 /// How far a layout edge must move before it counts as a **different set of
 /// metrics**.
 ///
-/// ★ The second witness, and it is the one that makes the Airy assertion solid.
+/// The second witness, and it is the one that makes the Airy assertion solid.
 ///
 /// Airy is the only preset that changes `Metrics` as well as `Palette` —
 /// `control_height` 24 → 28, `gutter` 4 → 8, `panel_padding` 6 → 12,
@@ -98,7 +98,7 @@ const MIN_PRESET_DISTINCTION: u16 = 4;
 /// colour instead. Between them the two witnesses cover all three pairs with a
 /// wide margin each, which no single one of them does.
 ///
-/// ★★ And the first live run gave this constant a second job nobody planned.
+/// And the first live run gave this constant a second job nobody planned.
 /// Under Airy the canvas surround measured **249, 249, 250** and the sheet
 /// measured **249, 249, 249** — the paper and the surface it sits on are the
 /// same colour to within one level, which is the very outcome
@@ -122,7 +122,7 @@ const MIN_METRIC_SHIFT_PTS: f32 = 2.0;
 /// panel) is white, and its darkest (`dark`'s `#16171A`) is 22, so there is no
 /// near-miss to worry about.
 ///
-/// ★ This is the ABSOLUTE half of the page assertion and it is the weaker half.
+/// This is the ABSOLUTE half of the page assertion and it is the weaker half.
 /// The one that carries the argument is [`MAX_PAGE_DRIFT`]: *the paper is the
 /// document's colour and the theme has no vote on it*, which is a claim about
 /// **movement** and needs no opinion about what colour the fixture's paper is.
@@ -163,7 +163,7 @@ const MIN_BAND_PTS: f32 = 16.0;
 // `every_theme_preset_keeps_the_page_white`
 // ===========================================================================
 
-/// ★★★ **The sheet stays white, under every preset the shell ships.**
+/// **The sheet stays white, under every preset the shell ships.**
 ///
 /// # The invariant, and why it is the one that matters
 ///
@@ -194,7 +194,7 @@ const MIN_BAND_PTS: f32 = 16.0;
 /// | the sheet | `page` | it did not move, and it is white |
 /// | the surround | a band of [`CANVAS_VIEWPORT`] outside `page` | it DID move |
 ///
-/// ★★ The second is not decoration; it is what stops the first being vacuous.
+/// The second is not decoration; it is what stops the first being vacuous.
 /// *"The page stayed white"* is trivially true of a build in which the click
 /// never landed, the radio does nothing, the theme is not installed, or the
 /// window never opened. A check asserting only the page would pass on all four
@@ -203,13 +203,13 @@ const MIN_BAND_PTS: f32 = 16.0;
 /// evidence, and a run where it did not is a SKIP naming
 /// [`SettingsThemeTakesEffect`] as the place that diagnosis lives.
 ///
-/// ★ And the surround is the right witness rather than a convenient one: it is
+/// And the surround is the right witness rather than a convenient one: it is
 /// the pixel **immediately adjacent to the sheet**, in the same capture. A theme
 /// that reached the page would have had to reach it through there. Sampling the
 /// dialog instead would prove the theme changed *somewhere*; this proves it
 /// changed at the page's own edge and the page did not follow.
 ///
-/// ★★ Measuring it also found something nobody had looked for.
+/// Measuring it also found something nobody had looked for.
 /// `Palette::content_backdrop` exists precisely for this surface and says so —
 /// *"deliberately its own role rather than reusing `surface`, because the
 /// content must read as an object ON something, and a backdrop equal to the
@@ -220,7 +220,7 @@ const MIN_BAND_PTS: f32 = 16.0;
 /// does not assert on it: it is a finding about the theme, not about the
 /// invariant under test, and the fix is a call site in another crate.
 ///
-/// # ★★ It drives all three presets, and Airy is the point
+/// # It drives all three presets, and Airy is the point
 ///
 /// [`SettingsThemeTakesEffect`] clicks Dark and nothing else, so without this
 /// check **nothing in this repository clicks Airy** — and Airy is the preset
@@ -368,7 +368,7 @@ fn backdrop_band(viewport: LRect, page: LRect) -> Option<LRect> {
             viewport.max.x - page.max.x,
         ),
     ];
-    // ★ The FIRST strict maximum, not the last, and the candidate order above
+    // The FIRST strict maximum, not the last, and the candidate order above
     // is therefore load-bearing: above, below, left, right. A fit-page view in
     // a maximised window leaves the two flanks EXACTLY equal — 585.5 points
     // each, measured — and `Iterator::max_by` would hand back the later one.
@@ -419,7 +419,7 @@ fn page_stays_white(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opti
             ctx.profile.default_exe
         ))
     })?;
-    // ★ A DOCUMENT IS THE SUBJECT HERE, unlike its sibling. That check launches
+    // A DOCUMENT IS THE SUBJECT HERE, unlike its sibling. That check launches
     // with nothing open on purpose, because `file.settings` is
     // application-scoped; this one is about the SHEET, and there is no sheet
     // without a document. The two live in one file and disagree about the
@@ -458,7 +458,7 @@ fn page_stays_white(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opti
     ));
     report.artifact(session.trace_path().to_path_buf());
 
-    // ★ Maximised for the same reason its sibling is — `file.settings` is in
+    // Maximised for the same reason its sibling is — `file.settings` is in
     // the File tab's LAST group and lives in the ribbon's overflow at the
     // window's opening width, where a control publishes no rect. It also gives
     // the fit-page view a generous margin, which is the backdrop this check
@@ -479,7 +479,7 @@ fn page_stays_white(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opti
     let driver = Driver::new(session.window());
     let ui_rect = ctx.profile.vocab.ui_rect_event.unwrap_or("ui-rect");
 
-    // ★★ THE SHEET MUST BE ON SCREEN BEFORE THE WINDOW THAT WILL COVER IT IS
+    // THE SHEET MUST BE ON SCREEN BEFORE THE WINDOW THAT WILL COVER IT IS
     // OPENED. A document that failed to render publishes `canvas-message`
     // instead of `page`, and every reading below would then be taken off an
     // explanatory sentence on a grey field — a confident colour about the wrong
@@ -516,7 +516,7 @@ fn page_stays_white(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opti
 
     // --- 1. the run is not vacuous ------------------------------------------
     //
-    // ★★★ ASKED FIRST, AND IT IS THE WHOLE HONESTY OF THIS CHECK. "The page
+    // ASKED FIRST, AND IT IS THE WHOLE HONESTY OF THIS CHECK. "The page
     // stayed white" is true of a build in which nothing happened at all, so the
     // surround has to be shown to have moved before a page reading means
     // anything. Every pair, not just one: three presets that all measured the
@@ -525,7 +525,7 @@ fn page_stays_white(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opti
         for b in readings.iter().skip(i + 1) {
             let moved = delta(a.backdrop, b.backdrop);
             let shifted = (a.viewport_top - b.viewport_top).abs();
-            // ★ EITHER witness suffices, and neither is redundant: `quiet` and
+            // EITHER witness suffices, and neither is redundant: `quiet` and
             // `dark` share their metrics exactly and are separated by 206
             // levels of colour, while `quiet` and `airy` are 7 levels apart and
             // separated by 31.7 points of layout. One preset measured twice
@@ -548,7 +548,7 @@ fn page_stays_white(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opti
 
     // --- 2. the fixture is white paper --------------------------------------
     //
-    // ★ Read off the FIRST preset, which is `quiet` — a light theme, which
+    // Read off the FIRST preset, which is `quiet` — a light theme, which
     // cannot be the thing that darkened a sheet. So a non-white reading here is
     // a fact about the document, not about the build, and the honest outcome is
     // a SKIP naming the file. Asserting it as a failure would file a defect
@@ -613,7 +613,7 @@ fn page_stays_white(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opti
 /// The outer `Result` is the SKIP channel; the inner one is FAIL (`Err`) versus
 /// a measurement (`Ok`).
 ///
-/// # ★★ Every rect is re-read after the click, and none is carried in
+/// # Every rect is re-read after the click, and none is carried in
 ///
 /// `airy` changes the shell's METRICS as well as its colours — `control_height`
 /// 24 → 28, `panel_padding` 6 → 12, `gutter` 4 → 8 — so the ribbon is taller,
@@ -633,7 +633,7 @@ fn measure_preset(
     let region = format!("{THEME_PREFIX}{preset}");
     let trace = session.trace()?;
     let Some(radio) = declared(&trace, ui_rect, &region) else {
-        // ★ A FAILURE, not a skip, and this is the row that closes the Airy
+        // A FAILURE, not a skip, and this is the row that closes the Airy
         // hole. The window is open and publishing; a preset the shell ships and
         // the picker does not offer is a preset an operator cannot choose.
         return Ok(Err(format!(
@@ -646,14 +646,14 @@ fn measure_preset(
     };
     let dialog_frame = frame_of(session, &trace, ui_rect, DIALOG)?;
     driver.click_at(dialog_frame.declared_center(radio))?;
-    // ★ Generous, and for the reason its sibling states: the theme is installed
+    // Generous, and for the reason its sibling states: the theme is installed
     // at the TOP of the next frame and `Theme::apply` rewrites both of egui's
     // styles. Airy additionally re-lays the whole shell out, and the canvas
     // re-rasterises the page at the new metrics — so this settle covers a
     // re-render, not just a repaint.
     session.settle(30);
 
-    // ★★ THE APPLICATION'S OWN WINDOW, and `frame_to_png` raises it — which
+    // THE APPLICATION'S OWN WINDOW, and `frame_to_png` raises it — which
     // puts the Settings dialog behind it, exactly as intended. A screen grab
     // reads the COMPOSITED desktop, so a capture taken with the dialog in front
     // would sample the dialog's panel through the page's rectangle and report a
@@ -721,7 +721,7 @@ mod tests {
         LRect::new(Pt::new(x0, y0), Pt::new(x1, y1))
     }
 
-    /// ★★ **The widest side wins, and this test is the bug it was written
+    /// **The widest side wins, and this test is the bug it was written
     /// after.**
     ///
     #[test]

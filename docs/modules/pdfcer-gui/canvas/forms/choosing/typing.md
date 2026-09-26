@@ -16,7 +16,7 @@ matches nothing (`edit.rs`, `editable_combo`). So a typed string and a
 picked row are one verb, and nothing here has to decide which the operator
 meant — the engine decides, from the file.
 
-## ★★★ Why this is a separate surface rather than a flag on [`super::choose`]
+## Why this is a separate surface rather than a flag on [`super::choose`]
 
 A plain combo box is a **focus ring plus a popup**: it draws nothing over
 the widget, reads the vertical arrows to move a highlight, and every value
@@ -34,7 +34,7 @@ What *is* shared is shared by call: [`super::list`] draws the popup,
 text box — so an editable combo's list looks exactly like a plain one's and
 its text box honours `/Q` and `/MK` `/BG` exactly as a `/Tx` field does.
 
-## ★★ The measured behaviour this reproduces
+## The measured behaviour this reproduces
 
 Photographed in Acrobat Pro on `fixtures/all-field-kinds.pdf`, which carries
 `ComboEdit` for the purpose (`tools/acrobat-form-study.ps1`):

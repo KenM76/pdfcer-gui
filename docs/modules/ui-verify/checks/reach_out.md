@@ -25,7 +25,7 @@ stopped at the crate boundary: pdfcer could tell an operator that the drawing
 somebody just sent them will post data to a web server, and nothing on
 screen said so.
 
-# ★★★ Why this needs its own fixture, and why that is the finding
+# Why this needs its own fixture, and why that is the finding
 
 
 That absence is worth stating rather than routing around: **the one document
@@ -47,9 +47,9 @@ it fails.
 | the status row carries the disclosure | the shell asked and said so |
 | the sentence names **submitting**, not just "actions" | a disclosure too vague to act on |
 | it says pdfcer **does not** do it | an alarm about something that cannot happen here |
-| ★ a **clean** document says **nothing** | the failure that costs every future disclosure |
+| a **clean** document says **nothing** | the failure that costs every future disclosure |
 
-★★ The last one is a second launch, on an ordinary drawing, and it is the
+The last one is a second launch, on an ordinary drawing, and it is the
 assertion this check would be worthless without. A build that warned on
 every document would pass every positive assertion above and train the
 operator to ignore the status row — after which the sentence that matters is

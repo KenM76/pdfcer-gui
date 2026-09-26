@@ -9,7 +9,7 @@ use crate::text::placing as t;
 
 /// A dialog's offer to step aside, and its one piece of state.
 ///
-/// ★ One field, and it is the **request** rather than the hiding. The request
+/// One field, and it is the **request** rather than the hiding. The request
 /// is a genuine edge — the operator pressed a button on this frame and
 /// `app::frame` has not seen it yet — so it has to be stored somewhere and
 /// read-and-cleared. Being hidden is not an edge; it is a standing
@@ -32,7 +32,7 @@ impl std::fmt::Debug for PlaceHandoff {
 impl PlaceHandoff {
     /// Draw the offer: a button, its tooltip, and the note under it.
     ///
-    /// ★ A plain button, never a greyed one. R9 reserves greying for the
+    /// A plain button, never a greyed one. R9 reserves greying for the
     /// *temporarily* unavailable, and this is not unavailable at all — it is
     /// the second of two live routes to the same answer, which is the argument
     /// `dialogs::scale`'s own "Measure it on the drawing…" button already
@@ -76,7 +76,7 @@ impl PlaceHandoff {
 mod tests {
     use super::*;
 
-    /// ★★★ **Clearing the pending record un-hides the window, whatever
+    /// **Clearing the pending record un-hides the window, whatever
     /// cleared it.**
     ///
     /// The property the whole design rests on, and the one a stored flag would

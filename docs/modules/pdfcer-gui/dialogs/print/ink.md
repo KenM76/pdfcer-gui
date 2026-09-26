@@ -14,13 +14,13 @@ the page box exceeds the printable rectangle — and on a CAD sheet printed
 1:1 the part that exceeds it is empty paper. So the hatch shouted about
 losing something on every drawing, and nothing was being lost.
 
-★★★ **That is a disclosure which is technically true and practically
+**That is a disclosure which is technically true and practically
 false, which is the worst kind.** An operator who sees the same red band on
 every 1:1 drawing learns to ignore it, and then does not see it on the one
 sheet where the border really does have a title block in it. A warning that
 fires on the common harmless case trains the operator out of reading it.
 
-## ★★ Why the raster, and NOT an engine content bounding box
+## Why the raster, and NOT an engine content bounding box
 
 `OPERATOR_REQUESTS.md`'s O113 row offers two routes and leans toward the
 first: an engine verb returning a page's ink extent (a real content bbox,
@@ -55,7 +55,7 @@ A real engine content-extent verb would still be worth having for other
 questions (auto-crop, fit-to-content, trim detection). It is not the better
 answer to *this* one.
 
-## ★★★ What "ink" turned out to MEAN, measured rather than assumed
+## What "ink" turned out to MEAN, measured rather than assumed
 
 This was the one thing in the change that could be silently backwards, so
 it was verified against real rasters before a line of the algorithm was

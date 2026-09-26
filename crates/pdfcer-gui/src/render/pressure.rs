@@ -7,7 +7,7 @@ use crate::render::worker::RenderKey;
 
 /// Which surface ordered an upload.
 ///
-/// ★ Not derivable from the pixels: a page thumbnail and the canvas raster are
+/// Not derivable from the pixels: a page thumbnail and the canvas raster are
 /// built from the same [`RenderKey`] type, by the same function, and differ
 /// only in what they are *for*. Passed in at the call site so that adding a
 /// fourth surface is a compile error rather than a silent miscount.
@@ -313,7 +313,7 @@ mod tests {
         );
     }
 
-    /// ★ The only shape that may be blamed: one upload, the canvas's, whole.
+    /// The only shape that may be blamed: one upload, the canvas's, whole.
     #[test]
     fn one_whole_page_canvas_upload_is_blamed() {
         assert_eq!(
@@ -322,7 +322,7 @@ mod tests {
         );
     }
 
-    /// ★★★ A thumbnail is NOT the canvas, even though it is a whole page.
+    /// A thumbnail is NOT the canvas, even though it is a whole page.
     ///
     /// The two share [`crate::render::raster::texture_from_pixels`] and are
     /// built from the same key type, so a rule keyed on the pixels alone
@@ -342,7 +342,7 @@ mod tests {
         );
     }
 
-    /// ★★ Two uploads is a refusal, not a guess at the bigger one.
+    /// Two uploads is a refusal, not a guess at the bigger one.
     ///
     /// The tempting rule — blame whichever was largest — is how a failed icon
     /// sheet becomes a lowered zoom ceiling on a page that was fine.
@@ -395,7 +395,7 @@ mod tests {
         );
     }
 
-    /// ★ A drained set with no OOM in it still produces a verdict.
+    /// A drained set with no OOM in it still produces a verdict.
     ///
     /// `attribute` keys on `is_clean`, deliberately: a frame that raised an
     /// `INVALID_OPERATION` had something happen, and a trace reporting nothing
@@ -433,7 +433,7 @@ mod tests {
         assert!(first[0].raster.is_some_and(|r| r.whole_page));
         assert_eq!(first[1].raster, None);
 
-        // ★ And is GONE — a record read twice would be attributed to two
+        // And is GONE — a record read twice would be attributed to two
         // frames, the second of which uploaded nothing.
         assert!(take(&ctx).is_empty());
     }

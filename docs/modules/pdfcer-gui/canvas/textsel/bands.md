@@ -26,7 +26,7 @@ band grow"* is answered from the band's own frame — and merging them would
 mean the second question could be asked of a glyph whose band was never
 settled.
 
-## ★ The invariant this file is built around
+## The invariant this file is built around
 
 **Only equal bands are merged, and a band's identity fixes its variant.** A
 [`Band::Engine`] glyph always produces an [`Accum::Page`] and a

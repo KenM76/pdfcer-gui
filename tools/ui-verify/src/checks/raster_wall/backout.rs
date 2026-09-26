@@ -72,7 +72,7 @@ fn standing(trace: &Trace) -> Option<Standing> {
     })
 }
 
-/// ★★★ Part C. The operator's O220 clause: Ctrl+wheel still zooms **out** from
+/// Part C. The operator's O220 clause: Ctrl+wheel still zooms **out** from
 /// the state the wall put him in.
 ///
 /// Returns `Some(failure)` when the gesture is dead or the canvas never comes
@@ -99,7 +99,7 @@ pub(super) fn part_c(
         return Ok(None);
     };
 
-    // ★ The canvas centre, not the page rect's. At the wall the page is far
+    // The canvas centre, not the page rect's. At the wall the page is far
     // larger than the window, so its midpoint is a window-logical coordinate a
     // long way outside the window — and a Ctrl+wheel posted there goes to
     // whatever owns that pixel, which is the operator's desktop. Same reasoning
@@ -136,7 +136,7 @@ pub(super) fn part_c(
             continue;
         };
 
-        // ★ The first batch is the one that answers the operator's sentence
+        // The first batch is the one that answers the operator's sentence
         // when he was never blank: *"it prevents me from … zoom back out"*
         // describes a gesture that does nothing NOW, not one that is slow. A
         // check content to say "it came down within two hundred notches" would
@@ -215,7 +215,7 @@ pub(super) fn part_c(
 /// Split out so the success path above reads as one sentence. Returns
 /// `Some(failure)` exactly as the caller's own arms do.
 fn finish(trace: &Trace, ui_rect: &str, spent: usize) -> Option<String> {
-    // ★ The sentence the operator was told to act on has to go when he acts on
+    // The sentence the operator was told to act on has to go when he acts on
     // it. `declared` answers by line number, so a region that was published and
     // later retired reads as absent here — which is the question being asked.
     if let Some(rect) = declared(trace, ui_rect, MESSAGE_REGION) {

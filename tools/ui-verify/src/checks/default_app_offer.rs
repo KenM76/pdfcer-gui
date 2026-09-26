@@ -62,7 +62,7 @@ impl Check for TheDefaultAppOfferIsAskedOnce {
 /// precondition that is not stated is one nobody thinks of when the check later
 /// reports that nothing opened.
 ///
-/// ★ A missing file is success, not failure. This check is also runnable
+/// A missing file is success, not failure. This check is also runnable
 /// against a profile that was never seeded — `--no-isolate`, or a hand-pointed
 /// `--exe` — and refusing to run there would make the coverage depend on how
 /// the harness happened to be invoked.
@@ -73,7 +73,7 @@ fn clear_seed(exe: &std::path::Path) -> Option<std::path::PathBuf> {
 
 /// Launch the binary with the diagnostic trace on and **no document open**.
 ///
-/// ★ No `--pdf`, in either phase. The launch this offer fires on is
+/// No `--pdf`, in either phase. The launch this offer fires on is
 /// overwhelmingly a launch with nothing open: the operator has just installed
 /// pdfcer and started it from the Start menu, *because* double-clicking a
 /// drawing is the thing they cannot yet do. Driving it with a document open
@@ -138,7 +138,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // --- B: the regions ----------------------------------------------------
     let trace = session.trace()?;
     if declared(&trace, ui_rect, BODY).is_none() {
-        // ★★ One legitimate reason for this, and it is worth distinguishing
+        // One legitimate reason for this, and it is worth distinguishing
         // from a defect: the machine running the sweep may ALREADY open PDFs
         // with pdfcer, in which case the shell correctly answers no and there
         // is nothing to drive. Reported as a skip, because a check that went
@@ -154,7 +154,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("the offer opened and declared its body");
 
-    // ★★★ These three are published through `diag::ui_rect_visible`, which
+    // These three are published through `diag::ui_rect_visible`, which
     // stays silent when the rect has been clipped out of its own viewport — so
     // a declaration IS the visibility assertion, and no size has to be guessed
     // at anywhere in this file. That is the whole of the operator's rule of
@@ -182,7 +182,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("the action, the decline and the checkbox are all declared, so none is clipped");
 
     // --- C: the picture ----------------------------------------------------
-    // ★ Layout and legibility have exactly one oracle and it is a rendered
+    // Layout and legibility have exactly one oracle and it is a rendered
     // pixel. The trace above proves the rects exist; only this shows whether
     // the window reads as a question.
     let shot = ctx.out("default-app-offer.png");
@@ -239,7 +239,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("the answer was written to the profile's preferences file");
 
-    // ★ The session must DIE before the next one starts, or two copies of the
+    // The session must DIE before the next one starts, or two copies of the
     // program race for the same preferences file and phase E measures which of
     // them wrote last. `Session`'s `Drop` kills the child.
     drop(session);

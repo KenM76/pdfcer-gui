@@ -17,7 +17,7 @@ use crate::text::dimension_groups as t;
 pub const REGION: &str = "dimension-groups.appearance"; // ui-text-exempt: trace region name, never displayed
 /// The region the text-height control publishes.
 ///
-/// ★ One driveable, non-popup control is named deliberately.
+/// One driveable, non-popup control is named deliberately.
 /// `NO_SURFACE.md` §4 records what a colour picker costs a harness: *"the
 /// picker's popup publishes no regions, so a check can assert the swatch was
 /// drawn and driven but cannot aim at a hue inside it."* Any group of controls
@@ -34,7 +34,7 @@ const POINT_SPEED: f64 = 0.05;
 
 /// The legal range for a text height, in points.
 ///
-/// ★ Bounded here rather than in the engine because the engine does not bound
+/// Bounded here rather than in the engine because the engine does not bound
 /// it: `GroupStyle::text_height` is a bare `Option<f64>`. The floor is the
 /// smallest size that survives a 1:100 plot; the ceiling is where a label stops
 /// fitting between its own witness lines on an A3 sheet. Neither is a hard
@@ -62,7 +62,7 @@ const ARROW_LENGTH_RANGE: std::ops::RangeInclusive<f64> = 1.0..=30.0;
 /// tier computed from the same starting point, so the second would silently
 /// undo the first. The queue drains in order and the last writer would win.
 ///
-/// # ★ Why tolerance is not drawn here
+/// # Why tolerance is not drawn here
 ///
 /// `GroupStyle` carries `tolerance` and `tolerance_places`, so a group *can*
 /// default them — and a group-level tolerance is the rarer half of the feature.
@@ -155,7 +155,7 @@ pub fn show(ui: &mut Ui, model: &DimensionModel, group: &Group, actions: &mut Ve
             egui::ComboBox::from_id_salt("dimension-group-arrow-form")
                 .selected_text(t::arrow_form_name(*value))
                 .show_ui(ui, |ui| {
-                    // ★ `ArrowForm::ALL` rather than a local list. Its own doc
+                    // `ArrowForm::ALL` rather than a local list. Its own doc
                     // comment says why it exists — *"must not drift from the
                     // enum"* — and a form the engine gains appears here without
                     // a shell change, which is the same reason the New-document
@@ -319,7 +319,7 @@ mod tests {
         }
     }
 
-    /// ★ **The trap, asserted.** A member that has never been given a value
+    /// **The trap, asserted.** A member that has never been given a value
     /// anywhere still follows the group.
     ///
     /// This is the test that would have caught a hand-rolled
@@ -389,7 +389,7 @@ mod tests {
 
     /// The colour round-trips exactly, including both ends of the range.
     ///
-    /// ★ `255 → 1.0 → 255` is the case the `/ 255.0` divisor exists for. With
+    /// `255 → 1.0 → 255` is the case the `/ 255.0` divisor exists for. With
     /// `256.0` a pure red would be written as `0.996` and the swatch an operator
     /// reopened would not be the one they chose — a difference small enough to
     /// dismiss and permanent once it is in the file.

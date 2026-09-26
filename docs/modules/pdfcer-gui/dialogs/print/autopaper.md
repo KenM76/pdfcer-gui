@@ -19,7 +19,7 @@ see the chain in front of it — so the arithmetic is asserted here and the
 chain from the combo entry to the spooled `dmPaperSize` is asserted by
 driving the binary (`tools/ui-verify/src/checks/print_paper.rs`).
 
-## ★ The rule, stated once
+## The rule, stated once
 
 > **The chosen sheet is the smallest enumerated sheet that contains every
 > page in the job, with each page free to lie either way round on it. If no

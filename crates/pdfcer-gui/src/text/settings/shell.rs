@@ -147,7 +147,7 @@ pub const fn ui_scale_silence() -> &'static str {
 
 /// UI scale: what changing it costs.
 ///
-/// ★ Two disclosures in one line, and both are needed. It takes effect
+/// Two disclosures in one line, and both are needed. It takes effect
 /// immediately — the exception to the whole window's draft-until-Save contract
 /// that this setting shares with the theme — and it does **not** resize the
 /// page, which is the thing an operator will most reasonably expect it to do
@@ -199,7 +199,7 @@ pub const fn ui_scale_note() -> &'static str {
 // Display — how pdfcer draws (the SHELL's own preferences)
 // ===========================================================================
 //
-// ★ These two are not spec ambiguities and their `_silence` lines say so
+// These two are not spec ambiguities and their `_silence` lines say so
 // rather than inventing a clause. That distinction is the window's whole
 // framing — its opening paragraph promises that everything below exists
 // because the standard declines to have an opinion — so a group that does not
@@ -322,7 +322,7 @@ pub const fn settle_note() -> &'static str {
 // Display — what you see when a document FIRST OPENS
 // ===========================================================================
 //
-// ★ Two settings, both `look` radius, and both saying the same thing in their
+// Two settings, both `look` radius, and both saying the same thing in their
 // radius line: **they apply to the next document, not to this one.**
 //
 // That sentence is not padding and it is not a limitation being apologised
@@ -414,7 +414,7 @@ pub const fn wheel_paging_silence() -> &'static str {
 
 /// What it costs, and what it does not affect.
 ///
-/// ★ The second sentence is the one that matters. Under a continuous display
+/// The second sentence is the one that matters. Under a continuous display
 /// mode the wheel scrolls the whole document by definition, so this setting
 /// has nothing to change — and an operator who tried it there and saw no
 /// difference would reasonably conclude it was broken.
@@ -435,7 +435,7 @@ pub const fn wheel_paging_label(paging: crate::app::prefs::WheelPaging) -> &'sta
 
 /// One wheel-paging option's description.
 ///
-/// ★ The first names the case where today's behaviour is a **dead control**,
+/// The first names the case where today's behaviour is a **dead control**,
 /// which is the whole reason the choice exists: this shell opens documents at
 /// fit page, and a page that already fits has nothing to scroll.
 #[must_use]
@@ -453,7 +453,7 @@ pub const fn wheel_paging_note(paging: crate::app::prefs::WheelPaging) -> &'stat
 
 /// Which paste chord means which, for a form field: the setting's name.
 ///
-/// ★ It names the SUBJECT, not the keys. An operator scanning the pane for
+/// It names the SUBJECT, not the keys. An operator scanning the pane for
 /// *"why did my copied field come out linked?"* is thinking about fields, not
 /// about `V`.
 #[must_use]
@@ -469,7 +469,7 @@ pub const fn paste_chords_silence() -> &'static str {
 
 /// What it costs, and what it does not affect.
 ///
-/// ★★ Three things, and the second is the one that stops the support question.
+/// Three things, and the second is the one that stops the support question.
 /// Both pastes always exist — this only exchanges the keys — so an operator who
 /// picks the Acrobat order has lost nothing and can still reach either from the
 /// Edit tab. The third sentence forestalls the other reasonable worry: it is a
@@ -481,7 +481,7 @@ pub const fn paste_chords_radius() -> &'static str {
 
 /// One paste-order option's name.
 ///
-/// ★ The pdfcer entry does not say *"pdfcer's default"* the way `wheel_paging`'s
+/// The pdfcer entry does not say *"pdfcer's default"* the way `wheel_paging`'s
 /// does, because here the alternative is named after a **product** and the pair
 /// would read as an endorsement contest. Each names what its Ctrl+V does, which
 /// is the fact being chosen between.
@@ -496,12 +496,12 @@ pub const fn paste_chords_label(order: crate::app::prefs::PasteChords) -> &'stat
 
 /// One paste-order option's description.
 ///
-/// ★★★ Both notes lead with the CONSEQUENCE — whether typing in one box shows
+/// Both notes lead with the CONSEQUENCE — whether typing in one box shows
 /// in the other — because that is the only difference an operator can observe,
 /// and it is invisible on the page. Two linked boxes and two independent boxes
 /// are pixel-identical until somebody types.
 ///
-/// ★ The Acrobat note says *why* Acrobat does it, rather than only that it does.
+/// The Acrobat note says *why* Acrobat does it, rather than only that it does.
 /// An operator picking a compatibility setting deserves to know it is a real
 /// convention with a purpose — repeated page-number and date fields that must
 /// agree — and not merely a quirk being mimicked.
@@ -552,7 +552,7 @@ pub const fn chrome_rulers_label() -> &'static str {
 
 /// What turning the rulers on costs.
 ///
-/// ★ It states the cost, and the cost is real rather than rhetorical: the
+/// It states the cost, and the cost is real rather than rhetorical: the
 /// gutters come off the drawing area, on every document, for as long as the
 /// preference is set. `ViewState::default`'s own comment calls this *"the one
 /// default that has a measurable cost"*, which is why it ships off — and an
@@ -585,7 +585,7 @@ pub const fn chrome_guides_label() -> &'static str {
 
 /// What the guides switch does, and what it does not.
 ///
-/// ★ **The second sentence is the whole reason this control has notes at all.**
+/// **The second sentence is the whole reason this control has notes at all.**
 /// `canvas::guides::ruler_drag` registers nothing when the rulers are hidden,
 /// so an operator who switches guides on and cannot place one has met a
 /// coupling the program never told them about. Saying it here costs one line
@@ -639,7 +639,7 @@ pub const fn page_cache_silence() -> &'static str {
 
 /// Page cache: what changing it costs.
 ///
-/// ★ Names the direction that can actually hurt. Too small is slow, which is
+/// Names the direction that can actually hurt. Too small is slow, which is
 /// recoverable and obvious; too large is an allocation failure, which is not.
 #[must_use]
 pub const fn page_cache_radius() -> &'static str {
@@ -649,10 +649,10 @@ pub const fn page_cache_radius() -> &'static str {
 
 /// One cache size's name — the step, and what it actually costs.
 ///
-/// ★★ The megabyte figure is **computed from the budget**, never written beside
+/// The megabyte figure is **computed from the budget**, never written beside
 /// it. Two spellings of one quantity drift, and the drift here would be a
 /// settings window promising 512 MB while the cache spent 2 GB —
-/// `NO_SURFACE.md` §1's ★★ finding with a number instead of a colour.
+/// `NO_SURFACE.md` §1's finding with a number instead of a colour.
 ///
 /// "Large" is not something anybody can budget against. An operator with 8 GB
 /// and one with 64 GB are making different decisions and neither can make theirs
@@ -696,7 +696,7 @@ pub const fn page_cache_note(cache: crate::app::prefs::PageCache) -> &'static st
 
 /// Title for the mesh patch-padding setting.
 ///
-/// ★ Filed by the SYMPTOM, not the mechanism. Nobody goes looking for
+/// Filed by the SYMPTOM, not the mechanism. Nobody goes looking for
 /// *"type 6/7 mesh shading patch record byte alignment"*. Somebody whose
 /// gradient came out as garbage goes looking for *gradient*, so that is the
 /// first word.
@@ -741,7 +741,7 @@ pub const fn preset_title() -> &'static str {
 
 /// What the presets row is for.
 ///
-/// ★ States the two facts an operator needs before clicking something that
+/// States the two facts an operator needs before clicking something that
 /// changes several settings at once: what it will do, and that it is not a
 /// lock. The second is the one that makes it safe to try.
 pub const fn preset_silence() -> &'static str {
@@ -755,7 +755,7 @@ pub const fn preset_pdfcer_label() -> &'static str {
 
 /// Note for the same.
 ///
-/// ★ Worded for the operator who has been experimenting and wants out. That is
+/// Worded for the operator who has been experimenting and wants out. That is
 /// the reported use — *"touching some of our presets caused some test to show
 /// up as failed"* — and it is a person looking for a way back, not a person
 /// choosing a philosophy.
@@ -763,7 +763,7 @@ pub const fn preset_pdfcer_note() -> &'static str {
     "What pdfcer ships with, including the two answers you chose personally: neutral black for line art, and smoothing pictures that are shrunk to fit. Use this to get back after experimenting."
 }
 
-/// ★★★ **This standard's render answers are the same as N others'.**
+/// **This standard's render answers are the same as N others'.**
 ///
 ///
 /// It exists because the operator asked for the control in order to *"see how
@@ -772,13 +772,13 @@ pub const fn preset_pdfcer_note() -> &'static str {
 /// will change nothing on screen. Finding that out by comparing two identical
 /// renders costs an hour and reads as the setting being broken.
 ///
-/// ★★ It says **why**, and the why is the part that stops it sounding like a
+/// It says **why**, and the why is the part that stops it sounding like a
 /// bug: the standards differ in what they demand of a *file* — fonts embedded,
 /// an output intent present, transparency allowed or not — and those are
 /// preflight questions. What they ask of a **renderer** is the same, so pdfcer
 /// giving them the same answers is agreement rather than laziness.
 ///
-/// ★ The number is counted at the moment of drawing, so if a standard's answers
+/// The number is counted at the moment of drawing, so if a standard's answers
 /// ever diverge this sentence corrects itself. See
 /// `crate::dialogs::settings::preset`'s `identical_siblings`.
 #[must_use]
@@ -793,7 +793,7 @@ pub fn preset_same_as_others(others: usize) -> String {
 
 /// What a standard does NOT specify, listed by name.
 ///
-/// ★ Named rather than left blank. Roughly a third of the grid is axes a
+/// Named rather than left blank. Roughly a third of the grid is axes a
 /// standard does not reach — no PDF/X part contains a shading clause at all —
 /// and a blank cell reads as missing data, while a value would assert a
 /// requirement that does not exist.
@@ -804,7 +804,7 @@ pub fn preset_leaves_alone(keys: &str) -> String {
 
 /// How much weight a standard's answers can bear.
 ///
-/// ★★★ The sentence that stops this feature being a dropdown. The engine grades
+/// The sentence that stops this feature being a dropdown. The engine grades
 /// every value it supplies, and its own framing is that *the interesting column
 /// is not the value, it is how much weight the value can bear.* For PDF/X-4,
 /// exactly one of six answers is a claim about the standard at all.
@@ -815,7 +815,7 @@ pub fn preset_leaves_alone(keys: &str) -> String {
 /// not change that answer for a reason the standard requires.
 #[must_use]
 pub fn preset_weight(sourced: usize, inferred: usize, chosen: usize) -> String {
-    // ★★★ A standard that specifies NOTHING gets a sentence, not three zeroes.
+    // A standard that specifies NOTHING gets a sentence, not three zeroes.
     //
     // PDF/UA is the case: nine rendering terms across all 197 of its rules,
     // zero hits, and it hands colour contrast explicitly to WCAG. "Of its
@@ -840,13 +840,13 @@ pub fn preset_weight(sourced: usize, inferred: usize, chosen: usize) -> String {
 /// until we hover over top of it… left rail should also have the option to auto
 /// hide as well."*
 ///
-/// ★★ The radius line carries the fact that decides whether an operator dares
+/// The radius line carries the fact that decides whether an operator dares
 /// turn this on: **the drawing does not move.** Every program in the class that
 /// gets this wrong reflows the document as the strip comes and goes, and an
 /// operator who has met that once will not try it again. Saying it here is what
 /// makes the setting choosable.
 ///
-/// ★ The title says *"getting out of the way"* rather than *"auto-hide"*,
+/// The title says *"getting out of the way"* rather than *"auto-hide"*,
 /// because the operator is looking for room on their drawing, not for a feature
 /// name.
 #[must_use]

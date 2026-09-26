@@ -18,7 +18,7 @@ asserted.
 
 # 1. The three properties carried across from the source
 
-## ★★★ 1.0 There are THREE routes, and the third one STAGES
+## 1.0 There are THREE routes, and the third one STAGES
 
 There is deliberately no route that applies the removal into the open
 session by collapsing it onto a clean redacted base: that clears the undo
@@ -39,7 +39,7 @@ The measurement still has to exist *before* the confirmation on every path
 of consent are measurements rather than predictions. The confirm click
 commits nothing: it arms a save.
 
-### ★★★ 1.0.1 The proof MOVED, because the bytes moved
+### 1.0.1 The proof MOVED, because the bytes moved
 
 `apply_redactions_deferred` runs the removal to produce its preview report
 and **discards the bytes**. There is therefore nothing for [`proof`] to
@@ -50,7 +50,7 @@ earned at the save, by [`save_applying_pending`], over the exact buffer that
 is one statement from the file system — which is §2.2's own rule arriving at
 the only place the deferred route can still keep it.
 
-### ★★★ 1.0.2 The §4.1 guard is REAL now, and it is a refusal
+### 1.0.2 The §4.1 guard is REAL now, and it is a refusal
 
 A staged redaction leaves the un-redacted content **live in the session** —
 that is the whole point of preserving undo — so every ordinary write out of
@@ -67,7 +67,7 @@ and on `fixtures/a1-titleblock.pdf`: the two ordinary save modes refuse **by
 name**, and the bytes `save_applying_redaction` produces carry no `/Prev`
 and none of the removed text, with a positive control on each.
 
-### ★ 1.0.3 What a staged redaction does NOT do, and it is the one
+### 1.0.3 What a staged redaction does NOT do, and it is the one
 surprising thing about it
 
 **It does not change the page.** The session is untouched, so the content is
@@ -115,7 +115,7 @@ this file, and no fallback that could introduce one: a redaction that
 silently degraded to an incremental save would produce a file the operator
 has been told is redacted and which is not.
 
-★ That is worth restating in this shell's terms, because this shell has an
+That is worth restating in this shell's terms, because this shell has an
 incremental writer and the old one's *"there is no parameter anywhere that
 could make an apply write incrementally"* has to stay true here.
 [`crate::app::save::save_copy`] is incremental **by a promise printed on a
@@ -144,7 +144,7 @@ each class of survivor means.
 
 ---
 
-# 2. ★ How the proof is made **unskippable**, rather than merely available
+# 2. How the proof is made **unskippable**, rather than merely available
 
 The salvage brief's second requirement, and the one that is not satisfied by
 copying the file across. The old shell's own module docs end with *"Nothing
@@ -205,7 +205,7 @@ that each of the engine's removal verbs is *called* in exactly one FILE —
 this one — and exactly the number of times this module accounts for. A call
 from anywhere else is a test failure naming the file.
 
-★★★ The monopoly is *one file*, not *one call*, and it has **four
+The monopoly is *one file*, not *one call*, and it has **four
 subjects**. The removal is split across a verb that stages it, a verb that
 performs it at save time, and a verb that un-stages it, so a monopoly pinned
 to one identifier would watch three quarters of the feature walk out of the
@@ -218,11 +218,11 @@ module:
 | `save_applying_redaction` | 1 | [`save_applying_pending`] |
 | `cancel_pending_redaction` | 1 | [`cancel_staged_redaction`] |
 
-★ The counts are exact and not ceilings, because a ceiling lets a *removed*
+The counts are exact and not ceilings, because a ceiling lets a *removed*
 call site pass unremarked. An exact count makes any movement in either
 direction an edit somebody has to write down.
 
-★ `cancel_pending_redaction` is in the table even though it removes nothing
+`cancel_pending_redaction` is in the table even though it removes nothing
 — it *disarms* a removal, which is the same surface seen from behind, and a
 second caller that un-staged a redaction the operator had confirmed would be
 the quietest possible way to ship a file he believes is redacted. The reader
@@ -260,7 +260,7 @@ It does not decide **where** the file goes. [`PreparedRedaction::write_to`]
 takes a path; asking the operator for one is [`crate::dialogs::redact`]'s
 job. See §4.
 
-★★★ **It does not mutate the open document, and that is an observation, not
+**It does not mutate the open document, and that is an observation, not
 a principle.** [`stage_into_session`] sets one flag; base, overlay, undo and
 redo are left exactly as they were. The distinction matters because the
 sentence reads like a safety rule and is not one: it describes the engine
@@ -270,7 +270,7 @@ protects the operator from an irreversible write — is §4.
 
 ---
 
-# 4. ★★★ The rule is *warn at the overwrite*, not *never overwrite*
+# 4. The rule is *warn at the overwrite*, not *never overwrite*
 
 The source file **is** the only remaining copy of the content being removed,
 and it does not follow from that that the shell must refuse to overwrite it.

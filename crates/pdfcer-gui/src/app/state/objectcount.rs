@@ -79,7 +79,7 @@ impl OpenDoc {
     /// expensive part is the count itself, so the gate has to sit in front of
     /// it.
     ///
-    /// # ★ It counts the SHARED decomposition, never one of its own
+    /// # It counts the SHARED decomposition, never one of its own
     ///
     /// It reads [`Self::page_objects`], so `n=` is by construction the count of
     /// the objects the Objects panel lists and the canvas hit-tests. A private
@@ -124,7 +124,7 @@ impl OpenDoc {
             // Read out before the closure so the `Ref` is not held across it.
             let (n, paths, text, images, forms) =
                 (model.objects.len(), d.paths, d.text, d.images, d.forms);
-            // ★★ **`leaves=` — how many objects are painted from INSIDE the
+            // **`leaves=` — how many objects are painted from INSIDE the
             // form XObjects `forms=` counts.**
             //
             // `n=` counts `PageObjects::objects`: the page's own content stream
@@ -135,7 +135,7 @@ impl OpenDoc {
             // harness reading `n=28` on a page with hundreds of selectable
             // things reads a number that does not mean what its name suggests.
             //
-            // ★ `depth_overflow=` and `cycles=` stop `leaves=` becoming its own
+            // `depth_overflow=` and `cycles=` stop `leaves=` becoming its own
             // half-truth: either one non-zero means the walk did NOT reach
             // everything, so `leaves` is a floor rather than a total. A consumer
             // that ignored them would present an incomplete list as complete.

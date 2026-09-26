@@ -11,7 +11,7 @@ that edits text.**
 know *which show operator a glyph came from* pay for that answer once
 between them instead of six times each.
 
-# ★★★ Why this exists — it is a measured cost, not a tidiness
+# Why this exists — it is a measured cost, not a tidiness
 
 Provenance is the substrate for editing text: it is what turns *"the
 operator clicked run 41"* into *"byte span 8210..8263 of content stream
@@ -43,7 +43,7 @@ Two of those run **in the same gesture**: a click on a text run calls
 open, `pin::inspect` (extraction two) — 784 ms on the benchmark sheet for
 one click, to compute the same `PageText` twice and throw one of them away.
 
-# ★★ Why the cached value is the `PageText` and not the model
+# Why the cached value is the `PageText` and not the model
 
 `EditableTextModel::recognize` borrows the `PageText` it describes, so a
 cache holding the model would have to hold both together and hand out a
@@ -57,7 +57,7 @@ That is the correct split on cost as well as on correctness. Recognition
 walks runs that are already decoded and laid out; extraction resolves
 `/Contents`, inflates, tokenizes, resolves fonts and decodes every string.
 
-# ★★★ Why the handle is [`CachedText`] and not `Ref<'_, PageText>`
+# Why the handle is [`CachedText`] and not `Ref<'_, PageText>`
 
 Every other cache in [`crate::app::cache`] hands out a `Ref`, and that
 module's header sets out the three-part argument for why that is sound.

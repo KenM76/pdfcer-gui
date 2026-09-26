@@ -16,7 +16,7 @@ use crate::report::CheckReport;
 const SELECTION: &str = "selection-set"; // ui-text-exempt: a trace event name, never displayed
 /// The line a text sweep writes.
 ///
-/// ★★★ `canvas-text-selection`, and the first three drafts said `text-selection`
+/// `canvas-text-selection`, and the first three drafts said `text-selection`
 /// — which is a SUBSTRING of it. Every `grep` used to confirm the name matched,
 /// the trace looked right, and the check reported *"selected no characters"*
 /// through a settle, a longer settle and a poll loop, because `events()` is an
@@ -36,7 +36,7 @@ const FIXTURE: &str = "KEN-recognised.pdf";
 
 /// Where the recognised words are, in page points.
 ///
-/// ★ Measured off the engine's own extraction rather than guessed: the first
+/// Measured off the engine's own extraction rather than guessed: the first
 /// run's box is `[9.6, 4.46, 15.84, 10.42]`, so its middle is about
 /// `(12.7, 7.4)`. A point picked by eye from a raster would be a point in
 /// raster space, which is not this space and is a coordinate-space error this
@@ -111,7 +111,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
-    // ★ No mode command. Read is the default and is the mode this is about —
+    // No mode command. Read is the default and is the mode this is about —
     // in Edit the image arm does not run at all and the check would pass
     // without exercising anything.
     spec.allow_stale = ctx.allow_stale;
@@ -144,7 +144,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         },
         DocPoint::new(0, ON_A_WORD.0, ON_A_WORD.1),
     )?;
-    // ★★ A DOUBLE-click, not a single one. A single click on text places a
+    // A DOUBLE-click, not a single one. A single click on text places a
     // caret and traces `chars=0` — which proves text took the press but is
     // indistinguishable from a click that landed on nothing. A double-click
     // selects the word, so `chars>0` is a positive statement about the OCR
@@ -153,7 +153,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(20);
     driver.double_click_at(at)?;
 
-    // ★★★ **POLLED, not settled** — `D:/dev/rag/egui/` records this exact rule
+    // **POLLED, not settled** — `D:/dev/rag/egui/` records this exact rule
     // under `a_multi_step_gesture_needs_a_polled_verdict_not_a_settle`, and
     // this check reproduced it twice before applying it.
     //
@@ -163,7 +163,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // existed and reported *"selected no characters"* — the harness's commonest
     // false negative, and one that reads exactly like the defect under test.
     //
-    // ★ The loop asks for the ANSWER rather than for time. It ends the moment
+    // The loop asks for the ANSWER rather than for time. It ends the moment
     // the line appears, so the ordinary case costs a frame or two, and its
     // bound is what turns "the feature is missing" into a claim worth making.
     let mut trace = session.trace()?;
@@ -209,7 +209,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- C: off the words, the picture still wins ---------------------------
     //
-    // ★★★ THE CONTROL POINT. Making text win everywhere would take the image
+    // THE CONTROL POINT. Making text win everywhere would take the image
     // feature away again — the same defect facing the other way — and a check
     // asserting only step B would pass against exactly that.
     let off = aim(

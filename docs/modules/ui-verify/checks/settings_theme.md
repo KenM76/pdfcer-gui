@@ -16,7 +16,7 @@ way to choose a preset** — and either half alone leaves the operator looking
 at `egui`'s stock style. Both are wired now; this is the check that says so,
 in pixels, every run.
 
-# ★ What this measures, and why nothing cheaper would do
+# What this measures, and why nothing cheaper would do
 
 **A rendered pixel, before and after, from the running program.**
 
@@ -70,7 +70,7 @@ changes what it verifies is not a verification tool.
 It closes the window with the ✕, which the application treats as a Cancel,
 so the session ends on whatever the operator had.
 
-# ★★★ The third assertion, and why it is in this file
+# The third assertion, and why it is in this file
 
 Three holes sit in this file's subject. Two are about the presets
 themselves and are answered next door in [`super::theme_page`], whose
@@ -127,7 +127,7 @@ the same `frame.closed`, which the host turns into `settings_draft = None` —
 the identical assignment `Outcome::Cancel` makes. So the coupling under test
 is the one that ships.
 
-★ What this does **not** cover, stated plainly so nobody reads more into a
+What this does **not** cover, stated plainly so nobody reads more into a
 green run than is there: a future edit that made `Outcome::Cancel` alone
 behave differently — saving, or adopting the theme — would pass this check.
 Closing that requires one line in the application:

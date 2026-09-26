@@ -16,7 +16,7 @@ carry `&& !draft.text.is_empty()`, so an emptied chunk raised **no action at
 all**: no plan, no `edit_text`, no refusal to classify and no sentence
 anywhere. Nothing failed to save because nothing was ever requested.
 
-## ★★ Which is why this check's subject is an ABSENCE, and why that is hard
+## Which is why this check's subject is an ABSENCE, and why that is hard
 
 The defect's whole signature is that nothing happened. Four other things
 produce exactly the same trace:
@@ -76,7 +76,7 @@ ui-verify --exe target/release/pdfcer-gui.exe \
           --check emptying_a_chunk_commits_the_emptying
 ```
 
-## ★ Falsified in both directions, which is what the calibration is for
+## Falsified in both directions, which is what the calibration is for
 
 Planting the old `!draft.text.is_empty()` guard turns this row **red** with
 the O216 sentence — and the three calibration notes still pass, so the

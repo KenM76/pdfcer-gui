@@ -10,7 +10,7 @@ They were requested that day and shipped the next
 (`EditSession::rename_dimension_group`, `delete_dimension_group_with`), so
 the sentence is gone and these are the controls that replace it.
 
-## ★ Deleting a populated group is the ORPHAN question, and it is asked
+## Deleting a populated group is the ORPHAN question, and it is asked
 
 `pdfcer-core` refuses a populated group by default and puts the **count** in
 the refusal — `EditError::DimensionGroupNotEmpty { id, members }` — and its
@@ -37,7 +37,7 @@ rather than discovered afterwards:
   `/Annots` removal, and looping the existing verb would make undo take one
   press per member and be able to stop halfway.
 
-## ★ Why the rename draft carries its own `GroupId`
+## Why the rename draft carries its own `GroupId`
 
 A half-typed name must not follow the operator to a different row. Holding
 the id **with** the text makes a stale pair detectable, so selecting another

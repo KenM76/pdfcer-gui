@@ -24,7 +24,7 @@ the byte length of the string a copy would put on the clipboard, read from
 the same field the copy reads — so a passing check here is a statement about
 what would be copied, not merely about what was painted.
 
-# ★ The four-link chain, and which link no unit test observes
+# The four-link chain, and which link no unit test observes
 
 | # | Link | Where | Its own test |
 |---|---|---|---|
@@ -67,7 +67,7 @@ direction: a build where `takes_the_press` ignored its capabilities would
 pass phase A perfectly and would have silently replaced Edit's marquee — the
 only content-selection gesture the product has — with a text sweep.
 
-# ★ `quads` > 0 as well as `chars` > 0, and why both
+# `quads` > 0 as well as `chars` > 0, and why both
 
 They are the two halves of the one-derivation promise
 (`canvas::textsel` §5): the same pass produces the string and the boxes. A

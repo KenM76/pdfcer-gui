@@ -47,7 +47,7 @@ const TOGGLE_EVENT: &str = "fullscreen-toggle";
 /// How many times a full-screen press is retried before the harness gives up
 /// on it.
 ///
-/// # ★★★ Why a retry and not a longer settle
+/// # Why a retry and not a longer settle
 ///
 ///
 /// A click that is not delivered is not delivered no matter how long the
@@ -56,7 +56,7 @@ const TOGGLE_EVENT: &str = "fullscreen-toggle";
 /// cost of a wasted press here is a fraction of a second and the cost of
 /// giving up too early is the operator's whole display staying filled.
 ///
-/// ★ It is safe to retry precisely BECAUSE the count is read between attempts:
+/// It is safe to retry precisely BECAUSE the count is read between attempts:
 /// each landed press toggles once, so pressing again after a press that landed
 /// would undo it. [`press_until_invoked`] returns the moment the count moves.
 const PRESS_TRIES: usize = 3;
@@ -172,7 +172,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     ));
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
-    // ★ **The only check in the suite that places its own window, and the
+    // **The only check in the suite that places its own window, and the
     // reason is a finding rather than a convenience.**
     //
     // At the shipped default of 1100 × 800 the View tab's band overflows after
@@ -520,7 +520,7 @@ fn fullscreen_round_trip(
     // display as it found it.
     //
     let restored_press = press_until_invoked(session, driver, ui_rect, control)?;
-    // ★ **Three seconds, and the asymmetry with the 1 s above is measured
+    // **Three seconds, and the asymmetry with the 1 s above is measured
     // rather than cautious.** Entering full screen was complete inside 1 s on
     // this machine; *leaving* it was not, and the first run of this phase failed
     // with `asked=false` traced, the click confirmed in the shell trace, and the
@@ -577,7 +577,7 @@ fn fullscreen_round_trip(
         before.w, before.h, filled.w, filled.h
     ));
 
-    // ★★★ THE PRESS BEFORE THE VERDICT. Nothing below may be read as a
+    // THE PRESS BEFORE THE VERDICT. Nothing below may be read as a
     // statement about the application until the application has been shown to
     // have heard the press it is being judged on — `checks/mod.rs` rule 3, and
     // the reason this whole phase re-reads the shell trace rather than trusting
@@ -604,7 +604,7 @@ fn fullscreen_round_trip(
     // back only the height, so `restored.w` stays equal to `filled.w` and an
     // `&&` of two `>=` would call a correct restore a failure. Area again.
     if u64::from(restored.w) * u64::from(restored.h) >= u64::from(filled.w) * u64::from(filled.h) {
-        // ★ The application's own account of the press, quoted rather than
+        // The application's own account of the press, quoted rather than
         // paraphrased. `fullscreen-toggle` carries BOTH the viewport's report
         // and this shell's outstanding request — the two whose disagreement was
         // the original defect — so a reader of a red run can tell "it asked for
@@ -644,7 +644,7 @@ fn fullscreen_round_trip(
 /// with no new line. It never presses again after a press that landed, so the
 /// toggle is moved exactly once whatever happens.
 ///
-/// # ★★★ Why phase 0 cannot use a bare `click_at`, and the day that cost
+/// # Why phase 0 cannot use a bare `click_at`, and the day that cost
 ///
 /// `Driver::click_at` answers `Ok(())` when the **pointer input was sent**. It
 /// raises the owning window, refuses if the foreground could not be taken, and
@@ -672,7 +672,7 @@ fn fullscreen_round_trip(
 /// > press is shown to have arrived.** The application's own invocation log
 /// > says so; `Ok(())` from the input layer does not.
 ///
-/// ★ Re-reading the control's rectangle each attempt is not defensive padding.
+/// Re-reading the control's rectangle each attempt is not defensive padding.
 /// The window changes size between the two presses, and a ribbon is laid out
 /// from the window's width — `ui-rect` is a change log, so an unmoved control
 /// simply publishes nothing and [`declared`] answers with the rect that still

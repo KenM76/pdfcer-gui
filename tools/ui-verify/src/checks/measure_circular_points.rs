@@ -23,7 +23,7 @@ const TAB_ID: &str = "measure";
 const SUBJECT: &str = "ribbon.item.measure.radius_diameter";
 /// The Properties panel's body compartment, as the DOCK reports it.
 ///
-/// ★★★ **The pick list moved on 2026-09-04** — `OPERATOR_REQUESTS.md` O123
+/// **The pick list moved on 2026-09-04** — `OPERATOR_REQUESTS.md` O123
 /// dissolved the Tool panel and sent its live controls to Properties, on the
 /// operator's own argument: *"I never understood why there is a tool dock when
 /// everything can be in object and properties."*
@@ -57,7 +57,7 @@ const HOLE: (f64, f64, f64) = (306.0, 500.0, 30.0);
 
 /// How far the fitted radius may be from the hole's, in points.
 ///
-/// ★ Two points, not two per cent, and the difference matters. The failure this
+/// Two points, not two per cent, and the difference matters. The failure this
 /// separates from a pass is an order of magnitude — the broken build fits a
 /// radius in the **hundreds** — so any threshold between "a few points" and
 /// "half the page" tells the two apart. Two points is the loosest value that
@@ -112,7 +112,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
 
-    // ★ The fixture is PINNED, and any `--pdf` is ignored. See the module
+    // The fixture is PINNED, and any `--pdf` is ignored. See the module
     // header: on a document whose circles are their own objects the defect
     // under test cannot occur, so a sweep's fixture would make this check
     // unable to fail.
@@ -264,7 +264,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 n + 1
             ));
         }
-        // ★★ THE assertion, on the last click. See the module header: A alone
+        // THE assertion, on the last click. See the module header: A alone
         // is satisfied by a build that accepts three clicks and fits them to
         // the wrong geometry.
         if n + 1 == aimed.len() {
@@ -296,7 +296,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- C: the panel lists them -------------------------------------------
     //
-    // ★ Brought to the FRONT before it is read. A docked pane behind another
+    // Brought to the FRONT before it is read. A docked pane behind another
     // tab publishes nothing, which is indistinguishable from a panel with
     // nothing to say — the finding `RESUME.md` records after a check spent an
     // evening being reported as a defect in the Properties pane.
@@ -422,11 +422,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 ///
 /// 1. **Already the active tab** — the dock publishes its body; nothing to do.
 /// 2. **Mounted, behind a sibling** — the dock publishes the tab header while
-///    its body does not. Clicking the header raises it. ★ A ribbon toggle must
+///    its body does not. Clicking the header raises it. A ribbon toggle must
 ///    NOT be used here: it would *unmount* a panel that is already there, and
 ///    the check would then report an absent list about a panel it closed
 ///    itself.
-/// 3. **Not mounted at all** — the check SKIPs. ★ Deliberately a skip rather
+/// 3. **Not mounted at all** — the check SKIPs. Deliberately a skip rather
 ///    than a ribbon hunt: `file.properties` is mounted by every mode's default
 ///    arrangement, so its absence means the operator's persisted layout removed
 ///    it, and a check that re-mounted somebody's closed panel would be

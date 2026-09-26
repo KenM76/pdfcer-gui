@@ -57,7 +57,7 @@ impl Check for ThePrintPreviewPopsIntoItsOwnWindow {
 
 /// How many times a region has been retired so far.
 ///
-/// ★ A COUNT, compared before and after, rather than "is there a `ui-rect-gone`
+/// A COUNT, compared before and after, rather than "is there a `ui-rect-gone`
 /// line for it anywhere". The column legitimately retires on its own during a
 /// launch — the dialog's first frames, a device re-read — so the mere presence
 /// of one such line proves nothing about the click. The count going **up
@@ -201,7 +201,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★★★ THE ASSERTION THE CHECK EXISTS FOR.
+    // THE ASSERTION THE CHECK EXISTS FOR.
     let gone_after = retirements(&trace, COLUMN);
     if gone_after <= gone_before {
         return Ok(Some(format!(
@@ -245,7 +245,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    // ★ A RELATIONSHIP, not a value. See the module header.
+    // A RELATIONSHIP, not a value. See the module header.
     let (Some(options_w), Some(content_w)) = (
         after.get("options_w").and_then(|v| v.parse::<f32>().ok()),
         after.get("content_w").and_then(|v| v.parse::<f32>().ok()),

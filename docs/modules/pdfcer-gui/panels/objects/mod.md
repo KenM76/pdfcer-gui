@@ -62,7 +62,7 @@ Deferred, not overlooked.
 (Do not conflate this with the ce-dimension group OCGs, which are an
 annotation-layer visibility mechanism and have their own surface.)
 
-## ★ Two properties of a row, and why each is the way it is
+## Two properties of a row, and why each is the way it is
 
 ### 1. Row text ellipsises rather than clipping
 
@@ -111,11 +111,11 @@ disclosure mark — while [`row_description`] hands the **full** description
 to the row's hover, on every object row, elided or not. The widest headline
 on that sheet is **207.6 pt**, 70 % of the room.
 
-★ That is what *master–detail* means: the detail pane is on screen, in the
+That is what *master–detail* means: the detail pane is on screen, in the
 same column, an inch below. A master row that restated it would spend the
 width twice on one fact and elide the identity only the master carries.
 
-★ **R128 is not engaged.** Nothing here feeds a measurement back into a
+**R128 is not engaged.** Nothing here feeds a measurement back into a
 size: the widths are constants, the elision reads the pane it is given, and
 the row is what changed. A build that made the dock follow its content
 would be the feedback loop that rule forbids.
@@ -172,7 +172,7 @@ Part and point rows are **not clickable**. A row that responded to a click
 by selecting its parent object instead would be a control answering a
 different question from the one it was asked.
 
-## ★ The row's right-click, and the one command it deliberately does not
+## The row's right-click, and the one command it deliberately does not
 offer
 
 An **object** row carries the `objects.row` context menu

@@ -13,7 +13,7 @@ use pdfcer_core::dimension::{
 use pdfcer_core::vector::linepick::{ParallelPolicy, PickedLine};
 use pdfcer_core::vector::{AxisConstraint, Point, constrained_second_point, measured_length};
 
-/// ★ The circular pick set lives in [`super::circpick`] and is re-exported
+/// The circular pick set lives in [`super::circpick`] and is re-exported
 /// here.
 ///
 /// Not a compatibility shim to be deleted: `pick` is the module every measure
@@ -255,7 +255,7 @@ pub enum LinearPickMode {
 /// linear dimension between them like SolidWorks would, if they are at an
 /// angle it makes an angle dimension."*
 ///
-/// # ★ Nothing here classifies anything
+/// # Nothing here classifies anything
 ///
 /// This struct holds two picks and a checkbox. Every geometric question — are
 /// these parallel, which of the four angles did the operator mean, is the apex
@@ -271,7 +271,7 @@ pub enum LinearPickMode {
 /// The GUI owes a gesture and a disclosure surface, not a second reading of
 /// the geometry.
 ///
-/// # ★ Why this is NOT stored in `MeasureState::pending`
+/// # Why this is NOT stored in `MeasureState::pending`
 ///
 /// `pending` looks like the obvious home — it is already documented as "the
 /// linear tool's completed-but-not-yet-authored dimension". It is the wrong
@@ -290,7 +290,7 @@ pub enum LinearPickMode {
 /// sibling field keeps that rule correct without teaching it a new
 /// distinction.
 ///
-/// # ★ Why the verdict is DERIVED on every read instead of cached
+/// # Why the verdict is DERIVED on every read instead of cached
 ///
 /// The ui-spec proposed a `verdict` field recomputed "whenever `second` or
 /// `force_parallel` changes". This implementation deliberately has no such
@@ -471,7 +471,7 @@ const ARC_PREVIEW_STEPS: usize = 24;
 ///
 /// Returns page-space pairs; the caller supplies the projection to screen.
 ///
-/// # ★ Why the circular arm draws the fitted circle
+/// # Why the circular arm draws the fitted circle
 ///
 /// Outlining the picked objects says **which objects are in the fit**; it
 /// cannot say **what circle those objects imply**, and the circle is the
@@ -489,7 +489,7 @@ const ARC_PREVIEW_STEPS: usize = 24;
 /// circle in the file are one derivation, not two that agree.
 #[must_use]
 pub fn dimension_preview_segments(kind: &DimensionKind) -> Vec<(Point, Point)> {
-    // ★★ The PERIMETER arm is the shortest in this function for a reason
+    // The PERIMETER arm is the shortest in this function for a reason
     // worth stating: **a perimeter's notation is its own shape.**
     //
     // Every other kind here draws something that is not the geometry — a
@@ -507,7 +507,7 @@ pub fn dimension_preview_segments(kind: &DimensionKind) -> Vec<(Point, Point)> {
     // illustration.
     if let Some((points, closed)) = kind.polyline() {
         let mut segments: Vec<(Point, Point)> = points.windows(2).map(|w| (w[0], w[1])).collect();
-        // ★ The closing segment is supplied HERE, and that is the hazard the
+        // The closing segment is supplied HERE, and that is the hazard the
         // spec corpus names by name: a `/Polygon`'s `/Vertices` does not repeat
         // the first point, so a routine that forgets to close it draws — and
         // measures — a shape one segment short of what the operator picked.
@@ -573,7 +573,7 @@ pub fn dimension_preview_segments(kind: &DimensionKind) -> Vec<(Point, Point)> {
         // The fitted circle, plus the one mark that says which of the two
         // dimensions this is.
         //
-        // ★ `show_diameter` is a *display* toggle on one fit (decision 011:
+        // `show_diameter` is a *display* toggle on one fit (decision 011:
         // `diameter = 2 × radius`, the same stored geometry), so it must not
         // change the circle — only what is drawn across it. A radius draws one
         // spoke from the centre to the rim; a diameter draws the whole chord
@@ -873,7 +873,7 @@ mod tests {
         assert_eq!(result, Err(TwoLineRefusal::Collinear));
     }
 
-    /// ★ The whole reason the verdict is derived rather than cached: ticking
+    /// The whole reason the verdict is derived rather than cached: ticking
     /// the override AFTER both picks must change the answer immediately, with
     /// no re-pick and no cache to invalidate.
     #[test]
@@ -905,7 +905,7 @@ mod tests {
         assert!((measured - 5.0).abs() < 0.01, "got {measured}");
     }
 
-    /// ★ Changing the epsilon SETTING re-reads the same two lines too — the
+    /// Changing the epsilon SETTING re-reads the same two lines too — the
     /// second state transition a cached verdict would have had to chase.
     #[test]
     fn changing_the_epsilon_setting_re_reads_the_same_pair() {
@@ -927,7 +927,7 @@ mod tests {
         assert!(!strict.is_linear(), "the same pair is angled under 0.1");
     }
 
-    /// ★ A third pick is IGNORED while a valid verdict is under review — an
+    /// A third pick is IGNORED while a valid verdict is under review — an
     /// inference awaiting Accept must not be swapped out by a stray click.
     /// Mirrors `pending`'s own documented "further picks are ignored" rule.
     #[test]
@@ -948,7 +948,7 @@ mod tests {
         );
     }
 
-    /// ★ A REFUSED pair does yield: the new line replaces line B, so "try a
+    /// A REFUSED pair does yield: the new line replaces line B, so "try a
     /// different second line" costs one click and keeps line A.
     #[test]
     fn a_new_pick_replaces_line_b_when_the_pair_was_refused() {
@@ -977,7 +977,7 @@ mod tests {
         assert!(authored.is_linear());
     }
 
-    /// ★ The override SURVIVES a clear, like `snap_master` and the group.
+    /// The override SURVIVES a clear, like `snap_master` and the group.
     ///
     /// The instinct is the opposite — it is an assertion about two specific
     /// lines. What settles it is the friction the override exists to remove:
@@ -1046,7 +1046,7 @@ mod tests {
         }
     }
 
-    /// ★ A wedge whose arms straddle the ±π discontinuity takes the SHORT way
+    /// A wedge whose arms straddle the ±π discontinuity takes the SHORT way
     /// round. Without the fold the preview sweeps the long way and draws a
     /// reflex arc — the correct angle illustrated by the wrong picture, which
     /// no unit on the value side would catch.
@@ -1081,7 +1081,7 @@ mod tests {
         );
     }
 
-    /// ★ **A circular preview is the fitted circle itself**, and every point
+    /// **A circular preview is the fitted circle itself**, and every point
     /// of it lies on that circle.
     ///
     /// The assertion is on the **radius of every drawn point**, not on the
@@ -1129,7 +1129,7 @@ mod tests {
         // The radius mark runs centre → rim.
         assert_eq!(segs[ARC_PREVIEW_STEPS].0, fit.center);
 
-        // ★ …and the diameter draws the SAME circle with the mark across it.
+        // …and the diameter draws the SAME circle with the mark across it.
         // `show_diameter` is a display toggle on one fit, so a build that
         // re-fitted or re-sized for it would contradict decision 011 — and an
         // operator toggling between the two would see the circle move.

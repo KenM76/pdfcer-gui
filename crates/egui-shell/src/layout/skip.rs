@@ -421,7 +421,7 @@ mod tests {
         assert!(text.contains("layers"), "{text}");
     }
 
-    /// ★ **A first run is not news.**
+    /// **A first run is not news.**
     ///
     /// An application that surfaced every skip would tell every operator,
     /// on the first launch of a fresh profile, that their layout could

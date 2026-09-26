@@ -17,7 +17,7 @@ asked for immediately. `OPERATOR_REQUESTS.md` O168 records that as a debt in
 those words rather than folding it into a green report. This file is the
 payment.
 
-# ★★★ Why unit tests could not have closed it, in this project's own words
+# Why unit tests could not have closed it, in this project's own words
 
 *"Unit tests cannot see the chain in front of the verb"* — the standing
 lesson from the day eight green tests sat in front of a feature that did 1
@@ -38,7 +38,7 @@ asserts the window grew — it does not assert the control inside it can be
 hit. This project has shipped a panel that was unreachable in a real build
 with every gate green.
 
-# ★★ The oracle, and why the application grew a trace line for it
+# The oracle, and why the application grew a trace line for it
 
 
 ```text
@@ -54,7 +54,7 @@ fail to build, and a check that cannot find `size=24` reports *"the
 operator's choice did not reach the engine"* — a defect report about the
 application, written by a defect in the harness.
 
-# ★★★ The falsification, which is the part that makes this a test
+# The falsification, which is the part that makes this a test
 
 **The size pressed is deliberately not the default.**
 
@@ -83,7 +83,7 @@ through git.
 | 1 | `dialogs::textannot` puts `DEFAULT_STAMP_SIZE` on the action instead of `self.stamp_size` — the dialog→action hop drops the pick | the exact silent decline the feature was built against | **FAIL**, at step 7, reporting `size=derived` and naming the hop |
 | 2 | `TextAnnotDialog::open` starts the chooser at `StampSize::Points(12)` — the engine's flat default adopted | every stamp on his drawings shrinks, nobody presses anything | **FAIL**, at step 5, before any control is touched |
 
-★★ **Defect 1 is the one that proves the check is not merely watching
+**Defect 1 is the one that proves the check is not merely watching
 itself.** The chooser still reported `24` under it — step 6 was green — and
 only the commit disagreed. A check that had asserted the control's own state
 and stopped there would have passed on a build that dropped the operator's

@@ -30,7 +30,7 @@ settled — and the engine says that is correct rather than approximate:
 > a point drag moves exactly the two segments either side of it, and a
 > front end that previews with a polyline is exactly right.
 
-## ★★★ Two index spaces, one anchor list
+## Two index spaces, one anchor list
 
 `/InkList` (§12.5.6.13, Table 182) is an array **of** arrays — one point
 list per stroke — so the engine addresses a point as `(stroke, point)` and
@@ -54,7 +54,7 @@ table remembers where each stroke starts so that
   is what a test uses to prove the round trip and what a driven check will
   use to aim.
 
-## ★★ Stroke boundaries are load-bearing in two places
+## Stroke boundaries are load-bearing in two places
 
 A flat list loses one fact a list of lists carries — *where one stroke ends
 and the next begins* — and two things go wrong the moment it is lost:
@@ -79,7 +79,7 @@ Both rules are tested in `super::tests` against a two-stroke `/Ink`
 authored through the real engine, at the first point of the second stroke
 — the one place a flat-minus-one or a flat-plus-one error is visible.
 
-## ★ Anchor density — every point is drawn, and that is a known follow-up
+## Anchor density — every point is drawn, and that is a known follow-up
 
 A freehand stroke can hold hundreds of points; `canvas::markup::ink`
 simplifies on authoring, but a stroke from another producer arrives as it

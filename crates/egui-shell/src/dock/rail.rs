@@ -17,7 +17,7 @@
 //! [`crate::manifest::Rail`] — data — and what a row looks like is the
 //! application's, drawn through a handler.
 //!
-//! ## ★★★ The width is a CONSTANT, and that is the whole safety argument
+//! ## The width is a CONSTANT, and that is the whole safety argument
 //!
 //! [`WIDTH_PTS`] is `52.0` at every rung, and nothing in this module can make
 //! it anything else. What shrinks under pressure is the **row budget**, never
@@ -57,7 +57,7 @@
 //! rail that simply cut its last entry off the bottom edge of a short window
 //! would be the unreachable-control defect with a different cause.
 //!
-//! ## ★★ Two things never fold, and each has a reason that is not symmetry
+//! ## Two things never fold, and each has a reason that is not symmetry
 //!
 //! * **A [`RailFold::Never`] group.** An application marks its panel switches
 //!   this way, because *"every panel one click away"* is the rail's entire
@@ -69,7 +69,7 @@
 //!   [`RailRow::Chevron`] is appended after the ladder has run and is never a
 //!   candidate for folding.
 //!
-//! ## ★ R7 — this module does not know what is in the rail
+//! ## R7 — this module does not know what is in the rail
 //!
 //! `tools/gates/check-shell-purity.sh` forbids this crate depending on the
 //! application's. Everything here is a command id, a rectangle, a row height
@@ -109,7 +109,7 @@ pub type RailHandler<'a> = dyn FnMut(&mut egui::Ui) + 'a;
 /// **Which panels the rail can raise** — the predicate an application supplies
 /// through [`Dock::with_rail_reach`].
 ///
-/// ★★★ R7, in one line: the dock cannot answer this itself. It is handed
+/// R7, in one line: the dock cannot answer this itself. It is handed
 /// opaque [`PanelId`]s and a [`crate::manifest::Rail`] of opaque command ids,
 /// and **the map between them is application knowledge** — an application is
 /// free to name a panel's switch `file.fonts` or `markup.comments`, neither of
@@ -146,7 +146,7 @@ pub const PADDING_PTS: f32 = 12.0;
 /// **The sliver reserved in the rail's place when its auto-hide is on** — the
 /// trigger, in [`crate::peek`]'s terms.
 ///
-/// ★★★ Ten points, and the number is chosen against two floors rather than for
+/// Ten points, and the number is chosen against two floors rather than for
 /// looks. [`crate::peek::Peek::MIN_TRIGGER_PTS`] is 8 and is the point below
 /// which `Peek` refuses to hide the surface at all; Windows gives a window's
 /// resize border 8 and VS Code's collapsed sidebar edge about the same. Ten
@@ -172,7 +172,7 @@ pub enum Rung {
     /// Everything, with captions and words. The resting state.
     #[default]
     Roomy,
-    /// ★ **The words go first.** Captions and labels are dropped; every
+    /// **The words go first.** Captions and labels are dropped; every
     /// control is still exactly where it was and still one click away.
     ///
     /// This is `RIBBON_SCALING.md` §3.1's *item size* mechanism — Word's
@@ -226,7 +226,7 @@ pub enum RailRow {
         with_label: bool,
         /// Whether `selected:<id>` is set — the ribbon's own convention.
         selected: bool,
-        /// ★ True when this row is a [`RailFold::PinArmed`] group collapsed to
+        /// True when this row is a [`RailFold::PinArmed`] group collapsed to
         /// one entry. The application draws it differently — it stands for a
         /// group rather than for itself — and a test can assert the pinning
         /// happened without re-deriving which tool was armed.
@@ -236,7 +236,7 @@ pub enum RailRow {
     Caption(String),
     /// The rule between two groups.
     Rule,
-    /// ★ The overflow chevron. Always last, never folded.
+    /// The overflow chevron. Always last, never folded.
     Chevron {
         /// How many entries are behind it.
         folded: usize,
@@ -290,7 +290,7 @@ impl RailPlan {
 
 /// The visible command ids of one group, after `visible_when` is applied.
 ///
-/// ★ Filtering happens **before** the ladder runs, exactly as
+/// Filtering happens **before** the ladder runs, exactly as
 /// [`crate::ribbon::trailing`] filters before it measures, and for the same
 /// reason: a hidden item that was counted would make the rail fold a group to
 /// make room for a control nobody can see.
@@ -332,7 +332,7 @@ pub fn build(rail: &Rail, conditions: &ConditionSet, rung: Rung) -> RailPlan {
     for group in rail.groups() {
         let ids = visible_ids(&group.items, conditions);
         if ids.is_empty() {
-            // ★ R9 in the layout: a group whose every member is hidden by the
+            // R9 in the layout: a group whose every member is hidden by the
             // mode draws no caption and no rule. An empty captioned run is a
             // heading offering nothing — the same call `SideLayout::is_empty`
             // makes for a side with no columns.
@@ -355,7 +355,7 @@ pub fn build(rail: &Rail, conditions: &ConditionSet, rung: Rung) -> RailPlan {
                 if rung.keeps_pinned_groups_entire() {
                     ids.iter().map(|id| (id.clone(), false)).collect()
                 } else {
-                    // ★★★ The pinned row is whatever is ARMED — and the
+                    // The pinned row is whatever is ARMED — and the
                     // fallback when nothing is, deliberately, is the group's
                     // FIRST member rather than no row at all. A pinned group
                     // that vanished when nothing was armed would be a strip
@@ -393,7 +393,7 @@ pub fn build(rail: &Rail, conditions: &ConditionSet, rung: Rung) -> RailPlan {
         drawn_a_group = true;
     }
 
-    // ★ The chevron is appended AFTER the ladder has run and is drawn only
+    // The chevron is appended AFTER the ladder has run and is drawn only
     // when it holds something. A chevron over an empty overflow is the dead
     // control R9 forbids.
     if !folded.is_empty() {
@@ -502,7 +502,7 @@ impl<'a> super::Dock<'a> {
 /// resolved to zero, so the no-rail path costs one comparison and changes no
 /// geometry — which is what keeps every existing dock layout test valid.
 ///
-/// # ★★ The region is published against the SIDE's `Ui`, not the child's
+/// # The region is published against the SIDE's `Ui`, not the child's
 ///
 /// [`report::Reporter::report`]'s own doc states the rule: reporting a region
 /// against a clip derived from itself is *"the tautology `visible == 1.0`
@@ -510,7 +510,7 @@ impl<'a> super::Dock<'a> {
 /// `dock.<side>.toolrail` is *can the operator reach this strip*, and only the
 /// side's clip can answer it.
 ///
-/// # ★ Why the region is not called `dock.<side>.rail`
+/// # Why the region is not called `dock.<side>.rail`
 ///
 /// That name is taken, by [`report::rail`], for a **different feature**: the
 /// sliver a *collapsed* side leaves behind as the way back. The mockup's
@@ -539,7 +539,7 @@ pub(super) fn draw(
         return area;
     }
 
-    // ★★★ AUTO-HIDE — the operator's ask, *"left rail should also have the
+    // AUTO-HIDE — the operator's ask, *"left rail should also have the
     // option to auto hide as well"*. Same model as the ribbon's; see
     // [`crate::peek`].
     //
@@ -571,7 +571,7 @@ pub(super) fn draw(
     let show = peek.resolve(trigger, ui.ctx().pointer_latest_pos(), false);
     ctx.rail_show = show;
 
-    // ★★ The TRIGGER is published whether the rail is hiding or not, and it is
+    // The TRIGGER is published whether the rail is hiding or not, and it is
     // the region a driven check asks *"is the way back on screen, and big
     // enough to hit"* of. When the rail is inline the trigger and the strip are
     // the same rectangle, which is the truthful answer: the way back is the
@@ -580,7 +580,7 @@ pub(super) fn draw(
         .report(ui, trigger, || report::rail_trigger(side));
 
     if show == crate::peek::Show::Hidden {
-        // ★ R9 in a ten-point column. The sliver is not a placeholder for a
+        // R9 in a ten-point column. The sliver is not a placeholder for a
         // rail — the rail exists and is one pointer-move away — so it draws the
         // one thing it can honestly say: a chevron pointing at where the strip
         // will come from. A blank stripe would be indistinguishable from a
@@ -602,7 +602,7 @@ pub(super) fn draw(
         return rest;
     }
 
-    // ★★★ WHERE THE STRIP IS PAINTED, and why the two cases differ.
+    // WHERE THE STRIP IS PAINTED, and why the two cases differ.
     //
     // Inline: into the `Ui` the side owns, inside the reservation it took.
     // Revealed: into an `Area` at [`egui::Order::Foreground`], anchored to the
@@ -730,7 +730,7 @@ mod tests {
     // The ladder
     // ---------------------------------------------------------------------
 
-    /// ★★★ **The fold ladder, rung by rung, in the order the mockup shows.**
+    /// **The fold ladder, rung by rung, in the order the mockup shows.**
     ///
     /// Roomy has words; Tight drops them and keeps every control; Snug folds
     /// the `Whole` group; Cramped pins the navigate group to one row.
@@ -800,7 +800,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The `Never` group is drawn entire at every rung.**
+    /// **The `Never` group is drawn entire at every rung.**
     ///
     /// The five panel tabs are the rail's whole argument for existing.
     #[test]
@@ -828,7 +828,7 @@ mod tests {
         }
     }
 
-    /// ★ **The chevron never folds itself, and never draws over nothing.**
+    /// **The chevron never folds itself, and never draws over nothing.**
     #[test]
     fn the_chevron_is_last_present_only_when_it_holds_something_and_never_folded() {
         let rail = pdfcer_rail();
@@ -859,7 +859,7 @@ mod tests {
     // The armed tool
     // ---------------------------------------------------------------------
 
-    /// ★★★ **The pinned row is whatever is armed** — including a tool armed
+    /// **The pinned row is whatever is armed** — including a tool armed
     /// from a ribbon tab that is not open, which is exactly what the
     /// `selected:` condition already reports and this planner reads.
     #[test]
@@ -911,7 +911,7 @@ mod tests {
     // Mode gating
     // ---------------------------------------------------------------------
 
-    /// ★★ **Read drops Points**, and it is absent rather than folded.
+    /// **Read drops Points**, and it is absent rather than folded.
     ///
     /// R9: an unavailable capability renders nothing. Folding it would put it
     /// behind the chevron, where the operator could reach a control the
@@ -933,7 +933,7 @@ mod tests {
         }
     }
 
-    /// ★ **Rotate is in the rail in every mode, Read included** — O126.
+    /// **Rotate is in the rail in every mode, Read included** — O126.
     #[test]
     fn rotate_is_present_in_read_mode() {
         let rail = pdfcer_rail();
@@ -969,7 +969,7 @@ mod tests {
     // The width
     // ---------------------------------------------------------------------
 
-    /// ★★★ **The width is the same constant at every rung and every budget.**
+    /// **The width is the same constant at every rung and every budget.**
     ///
     /// The R128 argument in a test: nothing about the content, the rung, the
     /// number of folded entries or the length of a caption can move it. A

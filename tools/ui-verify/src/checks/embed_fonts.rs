@@ -14,7 +14,7 @@ use crate::report::CheckReport;
 
 /// The command, invoked through the harness seam.
 ///
-/// ★ `mode.edit` first. The command is drawn on the Tools tab, which every mode
+/// `mode.edit` first. The command is drawn on the Tools tab, which every mode
 /// shows, but embedding is a content edit and driving from a known mode makes
 /// the run reproducible rather than dependent on whatever mode the last session
 /// left behind.
@@ -24,7 +24,7 @@ const FONT_DIR_ENV: &str = "PDFCER_DIAG_FONT_DIR";
 /// The operating system's own font directory — the one folder that certainly
 /// exists on the platform this ships for.
 ///
-/// ★ Deliberately not what the product searches. `Prefs::font_folders` starts
+/// Deliberately not what the product searches. `Prefs::font_folders` starts
 /// empty and pdfcer never adds to it, for the licensing reason `app::fonts`
 /// records: which font goes into somebody's document is the operator's call. A
 /// harness may look where a product may not.
@@ -37,7 +37,7 @@ const BUTTON: &str = "embed.commit";
 const REQUESTED: &str = "embed-fonts-requested";
 /// The line the apply arm writes when the engine has embedded.
 ///
-/// ★ `-applied`, and the suffix is why this constant has a doc comment.
+/// `-applied`, and the suffix is why this constant has a doc comment.
 /// `vector_edit` writes a **second** line for the same edit under the bare name
 /// — `embed-fonts page=0 n=3 epoch=1 disclosures=…` — and trace matching is on
 /// the exact event name, so `.last()` on the bare name would read the funnel's
@@ -47,7 +47,7 @@ const REQUESTED: &str = "embed-fonts-requested";
 const APPLIED: &str = "embed-fonts-applied";
 /// The line the window writes when it opens, carrying its plan's counts.
 ///
-/// ★★ The check reads `targets=` off this to tell a GREYED button from a broken
+/// The check reads `targets=` off this to tell a GREYED button from a broken
 /// one. Both look identical from outside - no click reaches anything - and
 /// exactly one of them is a fact about the fixture rather than about the
 /// program.
@@ -143,7 +143,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let trace = session.trace()?;
 
-    // ★ A decline is reported as ITSELF and as a SKIP. *"This document's fonts
+    // A decline is reported as ITSELF and as a SKIP. *"This document's fonts
     // are all embedded"* is a statement about the `--pdf` the harness was aimed
     // at, and a check that failed on it would be blaming the feature for the
     // fixture.
@@ -157,7 +157,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★★ The same fixture guard `unembed_fonts` documents at length - but here
+    // The same fixture guard `unembed_fonts` documents at length - but here
     // it is a FAILURE, not a skip, and the asymmetry is the point.
     //
     // "Nothing removable" is a fact about the document alone. "Nothing
@@ -193,7 +193,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
 
-    // ★ `stable_rect`, not `declared`, for the button: the window lays out over
+    // `stable_rect`, not `declared`, for the button: the window lays out over
     // several frames as the scroll area measures its rows, and a coordinate
     // read before it stops moving is a number rather than an error. See
     // `driving::stable_rect`'s own header, which is a defect report.
@@ -207,7 +207,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
 
-    // ★★ `frame_of`, never `session.frame()`. This window is a child viewport
+    // `frame_of`, never `session.frame()`. This window is a child viewport
     // and its coordinates are its own; asking the main window for them yields a
     // point on the ribbon, and the click lands somewhere plausible and wrong.
     let trace = session.trace()?;
@@ -287,7 +287,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         applied.get("substituted").unwrap_or("?")
     ));
 
-    // ★ Reported, never asserted. A stand-in was used here because this fixture
+    // Reported, never asserted. A stand-in was used here because this fixture
     // asks for Helvetica and this platform has none — but a machine with a real
     // Helvetica installed would answer `substituted=false` and be equally
     // correct, so pinning it would pin the check to a font folder.

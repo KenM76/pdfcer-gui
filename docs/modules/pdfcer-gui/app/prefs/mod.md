@@ -1,6 +1,6 @@
 # `app::prefs` — the shell's own preferences, as distinct from the engine's settings
 
-## ★ Why this is not `pdfcer_core::settings`
+## Why this is not `pdfcer_core::settings`
 
 That store has a stated purpose and this is not it. Its own window says so
 in its first paragraph: *"The PDF standard leaves some things genuinely
@@ -32,7 +32,7 @@ falls back for that key alone, and one bad line never discards the rest.
 The file is meant to be hand-editable, and a parser that fails a whole
 document over one typo punishes the operator for using it.
 
-## ★ Why there are two render preferences and not seven
+## Why there are two render preferences and not seven
 
 `RIBBON_IA.md` §5.2 commissions a View ▸ Render group of five, plus two
 behaviour settings. Only two of the seven name something this shell and
@@ -53,7 +53,7 @@ here: an absent preference is not always a gap. A setting that exists only
 to switch off a behaviour pdfcer does not have would mean building the
 behaviour first.
 
-## ★ …and two more, from the opposite direction
+## …and two more, from the opposite direction
 
 [`opening`]'s two preferences — how the first page is fitted, and which
 overlays are already on — are **not** commissioned by `RIBBON_IA.md`. They

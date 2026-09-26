@@ -130,13 +130,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- B: hover over real geometry, WITHOUT clicking ---------------------
     //
-    // ★ No click anywhere in this check. The whole subject is the state before
+    // No click anywhere in this check. The whole subject is the state before
     // a commit, and a check that clicked would be asserting the same thing
     // `measure_linear` already asserts while destroying the state under test.
     let page_rect = declared(&trace, ui_rect, PAGE)
         .ok_or_else(|| Error::new(format!("no `{PAGE}` region — no sheet is being drawn.")))?;
 
-    // ★★ SWEPT, not aimed, and the reason is that a single --doc-point
+    // SWEPT, not aimed, and the reason is that a single --doc-point
     // cannot know where ink is.
     //
     //
@@ -180,7 +180,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let last = entities.last().expect("non-empty by the sweep above");
     report.note(format!("hovering reported: `{}`", last.raw));
     if last.get("segment") != Some("1") {
-        // ★★ SKIP, not fail. This branch already SAID the case was legitimate
+        // SKIP, not fail. This branch already SAID the case was legitimate
         // and then fell through to a snap-marker assertion that only a straight
         // run can satisfy — so on a fixture whose middle is a curve, a text run
         // or an image, the check reported a defect it had just finished
@@ -192,7 +192,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // that fails on correct behaviour is worse than an absent one, because
         // its red gets quoted.
         //
-        // ★ Reported as SKIPPED with the finding named, so the run says "this
+        // Reported as SKIPPED with the finding named, so the run says "this
         // sheet could not answer the question" rather than "the application is
         // broken" — and a suite run against a drawing full of straight lines
         // still exercises it fully.
@@ -238,7 +238,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "the snap marker sits {drift:.1} pt from the pointer, tolerance {tol:.1}"
     ));
 
-    // --- D: ★★ and it FOLLOWS the pointer -----------------------------
+    // --- D: and it FOLLOWS the pointer -----------------------------
     //
     // The half that stops this passing on a build that highlights something
     // permanently. A highlight which never changes is a decoration, and it

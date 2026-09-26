@@ -17,7 +17,7 @@ pub(crate) const OPEN_INSET_PT: f32 = 48.0;
 /// How far below the application window's top edge a **chosen** opening
 /// position may be honoured, in points.
 ///
-/// # ★★ What it protects, and why it is generous
+/// # What it protects, and why it is generous
 ///
 /// The application's own chrome lives in that band: the native title bar, the
 /// quick-access strip, the ribbon's tab row and the two-row band beneath it.
@@ -33,7 +33,7 @@ pub(crate) const OPEN_INSET_PT: f32 = 48.0;
 /// `min-height:86px` and which this shell renders from the theme's own metrics
 /// so it varies with the preset.
 ///
-/// ★★ It is a **constant and not a measurement**, and that is the decision
+/// It is a **constant and not a measurement**, and that is the decision
 /// rather than a shortcut. The real band height is `ribbon::band::band_height`,
 /// which needs a live `Ui` and changes with the theme preset — so reading it
 /// would make where a dialog opens depend on how tall the ribbon laid itself
@@ -42,7 +42,7 @@ pub(crate) const OPEN_INSET_PT: f32 = 48.0;
 /// dialog that opens a few points lower than it asked for; under-estimating
 /// costs the operator the control they just pressed.
 ///
-/// ★ In the common case this floor is never reached. The note dialog's chosen
+/// In the common case this floor is never reached. The note dialog's chosen
 /// position on an 800 pt window is roughly 290 pt down, and only a window
 /// squeezed to a few hundred points brings the two into contact.
 pub(crate) const CHROME_RESERVE_PTS: f32 = 180.0;
@@ -50,7 +50,7 @@ pub(crate) const CHROME_RESERVE_PTS: f32 = 180.0;
 /// Everything the placement arithmetic knows about the application window,
 /// read once from the live viewport by `Host::show`.
 ///
-/// ★ A struct rather than three loose arguments, because the three are only
+/// A struct rather than three loose arguments, because the three are only
 /// ever meaningful together and two of them are rectangles in **different
 /// coordinate spaces** — a pair that is very easy to swap at a call site and
 /// impossible to notice afterwards, since both are plausible-looking numbers
@@ -82,7 +82,7 @@ pub(crate) struct AppWindow {
 /// **Read the application window's geometry** out of the live viewport, or
 /// `None` when the platform has not reported it.
 ///
-/// ★ All three rectangles are read in **one** `input` closure. Reading them
+/// All three rectangles are read in **one** `input` closure. Reading them
 /// separately would take three locks and — much worse — could straddle a frame
 /// boundary during a resize, producing an outer rect from before the drag and a
 /// client rect from after it. The clamp would then be computed against a window
@@ -126,14 +126,14 @@ pub(crate) fn app_window(ctx: &egui::Context) -> Option<AppWindow> {
 ///   then clamped by [`onto_window`], because a caller's arithmetic knows the
 ///   application window's size and nothing about the desktop's.
 ///
-/// ★ The conversion is `inner.min + (at - screen_min)` and not
+/// The conversion is `inner.min + (at - screen_min)` and not
 /// `outer.min + at`. The application's egui coordinates start at its **client**
 /// area, so measuring from the outer corner would slide every chosen position
 /// down and right by the window's decoration — about thirty points on Windows,
 /// which is exactly the size of the discrepancy nobody notices and everybody
 /// blames on something else.
 ///
-/// ★★ The result positions the dialog's **outer** corner while the caller was
+/// The result positions the dialog's **outer** corner while the caller was
 /// thinking about its content, so the dialog lands one title bar higher than
 /// the caller's arithmetic imagined. That is accepted rather than corrected: a
 /// child window's decoration height is not knowable before the window exists,
@@ -163,7 +163,7 @@ pub(crate) fn opening(app: AppWindow, size: Vec2, preferred: Option<Pos2>) -> Po
 /// dialog they cannot get back behind. An overhanging bottom edge costs a
 /// scroll or a drag; a hidden ribbon costs the way out.
 ///
-/// ★ Both `max` calls exist to keep the clamp total. `Pos2::clamp` panics on an
+/// Both `max` calls exist to keep the clamp total. `Pos2::clamp` panics on an
 /// inverted range, and an inverted range here is not a programming error — it
 /// is the ordinary consequence of a dialog larger than the window that raised
 /// it, which every one of these dialogs can be on a window dragged small.
@@ -202,7 +202,7 @@ mod tests {
         assert_eq!(at, Pos2::new(1920.0 + OPEN_INSET_PT, 100.0 + OPEN_INSET_PT));
     }
 
-    /// ★★ **A chosen position reaches the desktop, measured from the CLIENT
+    /// **A chosen position reaches the desktop, measured from the CLIENT
     /// area.**
     ///
     /// The regression test for A16c itself. A caller computed 390, 290 in the
@@ -274,7 +274,7 @@ mod tests {
         );
     }
 
-    /// ★ **On a window too short to hold the dialog below its chrome, the
+    /// **On a window too short to hold the dialog below its chrome, the
     /// chrome still wins**, and the clamp does not panic.
     ///
     /// The conflicting case named in [`onto_window`]'s doc comment. It is not a

@@ -7,7 +7,7 @@ says so, because an operator changing how Tab behaves or how big the
 buttons are drawn has every reason to wonder whether they are also changing
 the document.
 
-## ★ Why this is a module and not a section of [`super::look`]
+## Why this is a module and not a section of [`super::look`]
 
 The window's opening paragraph promises that everything in it exists
 *because the standard declines to have an opinion*. That promise is true of

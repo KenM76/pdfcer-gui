@@ -22,7 +22,7 @@ const FILTER_NONE: &str = "status-filter-none";
 
 /// The canvas's own report of how many things are selected.
 ///
-/// ★★ **The first version of this check asked whether the selection's
+/// **The first version of this check asked whether the selection's
 /// `ui-rect` region had been published, and it produced a confident, wrong
 /// FAIL on a build that was working.** The `ui-rect` channel is a **change
 /// log**: it emits when a rect moves, so the last rect of a region that has
@@ -142,7 +142,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 0: NORMALISE, because the filter is PERSISTED ----------------------
     //
-    // ★★ This step exists because its absence made the check poison its own
+    // This step exists because its absence made the check poison its own
     // next run, and the second run's failure accused the fixture.
     //
     // The filter is an operator preference and is written to
@@ -235,7 +235,7 @@ fn selected(session: &Session) -> Result<bool> {
 
 /// Open the Select popup, click one of its two whole-set buttons, and close it.
 ///
-/// ★ The popup is opened fresh each time rather than left open between steps.
+/// The popup is opened fresh each time rather than left open between steps.
 /// It closes on a click outside itself, and the canvas clicks in steps 2 and 3
 /// are outside it — so a version that assumed it stayed open would be reading a
 /// popup that had already gone, and would click the canvas at the button's

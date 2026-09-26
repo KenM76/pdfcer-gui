@@ -29,7 +29,7 @@ the operator's 36-sheet SolidWorks set measure 666 ms of UI-thread work per
 edit, 282 ms worst frame), and a full-size strip raster on the benchmark CAD
 drawing is ~950 ms *per page*.
 
-## ★★★ Why the default is `bump_all` and precision is opt-in
+## Why the default is `bump_all` and precision is opt-in
 
 Because getting this wrong is **worse than the slowness it fixes.**
 

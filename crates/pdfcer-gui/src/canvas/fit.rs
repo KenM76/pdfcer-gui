@@ -26,7 +26,7 @@ use crate::canvas::geometry;
 /// opens the placement is exact.
 const RESIZE_FLOOR_PT: f32 = 0.5;
 
-/// ★★★ **Where the view should go, AND which layout unit that offset is
+/// **Where the view should go, AND which layout unit that offset is
 /// relative to** — `OPERATOR_REQUESTS.md` O177, second half.
 ///
 /// The operator:
@@ -83,7 +83,7 @@ pub(super) enum Placed {
 /// offset plus the unit it is measured against, or `None` on the overwhelming
 /// majority of frames where nothing is pending.
 ///
-/// ★ The request is **taken** whatever happens — including on a frame at the
+/// The request is **taken** whatever happens — including on a frame at the
 /// deep-zoom tier, and on one where something else wins the scroll offset. A
 /// request left pending would fire on whatever frame the caller's chain next
 /// reached it, which the operator experiences as the view jumping for a button
@@ -99,7 +99,7 @@ pub(super) fn placement(
     row_rect: Rect,
     display_size: Vec2,
     vp: Vec2,
-    // ★ The PREVIOUS frame's geometry — `zoom::last_frame` — which is the
+    // The PREVIOUS frame's geometry — `zoom::last_frame` — which is the
     // whole "before" state the centre measurement needs: the page-local
     // offset it settled on, the size the page was drawn at, and the viewport
     // it was measured against. `None` on the first frame of a document, which
@@ -130,18 +130,18 @@ pub(super) fn placement(
     // scale every frame and the position once is the inconsistency the
     // operator was looking at.
     //
-    // ## ★★ Why the one-shot survives rather than being replaced
+    // ## Why the one-shot survives rather than being replaced
     //
     // Because it is still the thing that fires on a frame where the mode was
     // *already* active — pressing **Fit page** while already fitted to page
     // must still recentre a view the operator has panned away, and the mode
     // alone cannot distinguish that frame from the sixty before it.
     //
-    // ★ It is `take`n whatever happens, for the reason this function's own
+    // It is `take`n whatever happens, for the reason this function's own
     // note gives: a request left pending fires on some later frame and reads
     // as the view jumping for a button pressed seconds ago.
     let pending = doc.fit_placement.take();
-    // ★★★ **The other one-shot: the operator changed the page arrangement** —
+    // **The other one-shot: the operator changed the page arrangement** —
     // `OPERATOR_REQUESTS.md` O177, first half.
     //
     // > *"when switching the view from scroll pages to show one page at a time
@@ -153,12 +153,12 @@ pub(super) fn placement(
     // funnel, and the new layout's drawn size is not known until the canvas
     // next lays the strip out.
     //
-    // ★ Taken **unconditionally**, on the same argument as `pending` above and
+    // Taken **unconditionally**, on the same argument as `pending` above and
     // in the same breath so the two cannot drift: a request left pending fires
     // on whatever frame the chain next reaches it, which the operator
     // experiences as the view jumping for a button pressed seconds ago.
     let recentre = std::mem::take(&mut doc.recentre);
-    // ★★★ **A RESIZE, NOT A FRAME**, and the difference is a regression that
+    // **A RESIZE, NOT A FRAME**, and the difference is a regression that
     // was written, run and caught the same hour.
     //
     // Re-placing on **every** frame while a fit is active is the obvious
@@ -175,11 +175,11 @@ pub(super) fn placement(
     // failing, which is the shape a precondition is supposed to have and the
     // reason that check was written to establish its own.
     //
-    // ★ The operator's sentence says it exactly: *"if the canvas window is
+    // The operator's sentence says it exactly: *"if the canvas window is
     // **resized** the pdf should resize to match"*. Resized, not redrawn.
     //
     //
-    // ★★★ Somebody has, and it was measured rather than argued: the central
+    // Somebody has, and it was measured rather than argued: the central
     // panel's width oscillates by **0.1–0.5 pt from frame to frame** with no
     // dock, ribbon or window change (`central-panel rect max.x` 732.0 / 732.3
     // / 732.4 … in a driven trace; 1072.0 / 1072.2 in an off-screen smoke
@@ -210,13 +210,13 @@ pub(super) fn placement(
     // Recorded on EVERY frame that clears the floor, whatever this function
     // goes on to decide.
     //
-    // ★ Including the frames it declines — no previous frame, a different
+    // Including the frames it declines — no previous frame, a different
     // document, a degenerate viewport. A frame that declined without recording
     // would leave the NEXT frame reading as a resize and moving the view for
     // nothing, which is the one way this can produce a jump the operator did
     // not cause.
     //
-    // ★ And NOT on a frame under the floor: re-recording a jittered value
+    // And NOT on a frame under the floor: re-recording a jittered value
     // would let a 0.3 pt wobble walk the reference one step per frame, which
     // is exactly the creep the floor exists to stop.
     if changed {
@@ -231,7 +231,7 @@ pub(super) fn placement(
     // deliberately discards the operator's position, because pressing the
     // button is them asking for it.
     //
-    // ★ Solved against the **row** as of O177, not the page. Under every
+    // Solved against the **row** as of O177, not the page. Under every
     // non-facing mode the row IS the page and this is the arithmetic it always
     // was; under a facing mode it is the fix — the scale was already fitting
     // two pages, and this is the half that puts both of them on screen.
@@ -331,7 +331,7 @@ pub(super) fn placement(
     // as its own decline rather than folded into the guard above, because it
     // is a different fact with a different lifetime.
     let before = before?;
-    // ★★ …and a previous frame describing a DIFFERENT PAGE is declined rather
+    // …and a previous frame describing a DIFFERENT PAGE is declined rather
     // than corrected. `zoom::remember_frame` writes one global `egui::Id`, so
     // on the first frame after a document-tab switch it still describes the
     // other document. A tab switch alone does not change the viewport, so this
@@ -379,7 +379,7 @@ mod tests {
     /// [`crate::canvas::offset::SEED_FRAME`], and the resize arm declines
     /// outright below it (see the guard).
     ///
-    /// ★ Spelled as its own call in each test rather than folded into
+    /// Spelled as its own call in each test rather than folded into
     /// [`place_at`], deliberately. Folding it in would make every test in this
     /// module unable to observe the guard at all, and
     /// [`the_resize_arm_declines_until_the_seed_has_placed_the_view`] — the
@@ -412,7 +412,7 @@ mod tests {
         place_at(doc, 0.5, vp, before)
     }
 
-    /// ★ A **single** page, so the row and the page are the same rect — these
+    /// A **single** page, so the row and the page are the same rect — these
     /// tests are about the resize gate, not about O177's layout unit, and
     /// passing the page rect twice is the truthful modelling of Single rather
     /// than a convenience. A facing spread is exercised by driving the real
@@ -437,7 +437,7 @@ mod tests {
         )
     }
 
-    /// ★★★ **The jitter that fed R128.** A viewport that wobbles by less than
+    /// **The jitter that fed R128.** A viewport that wobbles by less than
     /// the floor from frame to frame is not a resize, and must not re-place
     /// the view on every frame — that is the gate that stood open while the
     /// page crept 7.4 px per frame on 2026-09-08.
@@ -446,7 +446,7 @@ mod tests {
     #[test]
     fn a_sub_pixel_wobble_is_not_a_resize() {
         let mut doc = crate::app::state::open_local_fixture(FIXTURE);
-        // ★ Past the seed, or every `None` below would be the seed guard's
+        // Past the seed, or every `None` below would be the seed guard's
         // answer rather than the wobble gate's and this test would pass
         // without ever exercising its subject.
         settled(&mut doc);
@@ -508,7 +508,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The regression of 2026-09-13, in the smallest world that has it.**
+    /// **The regression of 2026-09-13, in the smallest world that has it.**
     ///
     /// A freshly opened document reaches its second canvas frame with a
     /// `before` frame available — `zoom::remember_frame` ran on frame 0 the

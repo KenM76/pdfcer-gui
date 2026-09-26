@@ -83,7 +83,7 @@ pub(super) fn position(
     // on the two-frame handshake, and on why an unconditional `take()` here
     // made every *command*-driven zoom silently unanchored.
     //
-    // ★ Three sources of a forced scroll offset, and the order between them is
+    // Three sources of a forced scroll offset, and the order between them is
     // a precedence rather than a coincidence:
     //
     // 1. **a zoom anchor**, because a zoom has just landed and the whole point
@@ -94,13 +94,13 @@ pub(super) fn position(
     //    LAST here for the reason it wins anyway: it re-arms itself on the next
     //    frame, while both of the others are spent once.
     //
-    // ★ A **fourth** source arrives with Phase 4 — a page *command* under a
+    // A **fourth** source arrives with Phase 4 — a page *command* under a
     // continuous mode, which has to scroll the strip to the page it named —
     // and it sits third, below the two one-shots and above the live gesture,
     // by the same reasoning: it is a one-shot the operator asked for, and a
     // live gesture re-arms itself while the one-shots are spent once.
     //
-    // ★ Two of the three offsets below are solved by code this work does not
+    // Two of the three offsets below are solved by code this work does not
     // own — `canvas::zoom`'s anchor handshake and `find::reveal`'s two-frame
     // reveal — and both are written for a scroll area whose content is **one
     // page at the origin**. Rather than teach either about a strip, the canvas
@@ -109,7 +109,7 @@ pub(super) fn position(
     // The conversion is exact, and under `Single` it is the identity. See
     // `geometry`'s header for the whole argument.
 
-    // ★★★ **THE PASTEBOARD'S OVERHANG, PUBLISHED ONCE FOR THE WHOLE FRAME.**
+    // **THE PASTEBOARD'S OVERHANG, PUBLISHED ONCE FOR THE WHOLE FRAME.**
     //
     // O23's third and last part. Parts A and B gave the operator slack to
     // scroll into and made a press out there a gesture; this is what makes the
@@ -125,7 +125,7 @@ pub(super) fn position(
     // and above a few hundred per cent an object placed off the sheet could no
     // longer be brought to the middle of the screen at all.
     //
-    // ★ Written to the document rather than threaded as an argument because
+    // Written to the document rather than threaded as an argument because
     // eight call sites below hand it to `geometry`, and two spellings of the
     // pasteboard is the exact defect O23 spent three attempts on — see the
     // field's own documentation.
@@ -141,7 +141,7 @@ pub(super) fn position(
     let anchor_display = layout
         .rect_of(anchor_page)
         .map_or(current_display, |r| (r.width(), r.height()));
-    // ★★★ TIER 3 — the `f64` anchor takes over the POSITION.
+    // TIER 3 — the `f64` anchor takes over the POSITION.
     //
     // `OPERATOR_REQUESTS.md` O24. Below this the scroll offset says where the
     // view is, and it is an `f32` over a content space of `page × zoom` where
@@ -158,7 +158,7 @@ pub(super) fn position(
     // the scroll area stops being asked to hold it. Its content becomes the
     // viewport, so egui has nothing to scroll and nothing to round.
     //
-    // ★ Everything below the threshold is untouched, deliberately. This
+    // Everything below the threshold is untouched, deliberately. This
     // canvas has twice been broken by a change that meant to affect only deep
     // zoom, so the tier is a hard branch rather than a re-parameterisation.
     let deep =
@@ -175,7 +175,7 @@ pub(super) fn position(
         deep,
     );
 
-    // ★ Where a fit command puts the view — `OPERATOR_REQUESTS.md` O28, and
+    // Where a fit command puts the view — `OPERATOR_REQUESTS.md` O28, and
     // the whole of it is in `canvas::fit` because it is a rule about fitting
     // rather than about this frame's geometry.
     //
@@ -183,7 +183,7 @@ pub(super) fn position(
     // something else wins the offset: a request left pending would fire on
     // whatever frame the chain next reached it, which is a view that jumps for
     // a button pressed some seconds ago.
-    // ★ `zoom::last_frame` is read HERE and handed in, rather than read inside
+    // `zoom::last_frame` is read HERE and handed in, rather than read inside
     // `fit::placement`, so the "before" state is fetched once per frame at the
     // point that already owns the frame's geometry — and so the function stays
     // a pure decision over its arguments, which is what makes its arithmetic
@@ -204,7 +204,7 @@ pub(super) fn position(
         // misplace one.
         current,
     );
-    // ★★★ WHO DECIDES WHERE THE VIEW IS THIS FRAME, in one ranked list.
+    // WHO DECIDES WHERE THE VIEW IS THIS FRAME, in one ranked list.
     //
     // Six sources, and the ranking is the whole of the subject — see
     // `canvas::offset`'s header for each one's argument. It returns an offset
@@ -229,7 +229,7 @@ pub(super) fn position(
         },
     );
 
-    // ★ Published BEFORE the frame counter moves, so `frames=` on the line is
+    // Published BEFORE the frame counter moves, so `frames=` on the line is
     // the value `offset::decide` actually branched on rather than the value the
     // next frame will see. An off-by-one here would make the open-seed arm look
     // as though it fired on the wrong frame, which is the single question this

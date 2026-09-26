@@ -12,7 +12,7 @@ use egui::{RichText, Ui};
 
 /// One collapsible subject group.
 ///
-/// ## ★ Plain text, not `.strong()` — `DEFECTS.md` D11
+/// ## Plain text, not `.strong()` — `DEFECTS.md` D11
 ///
 /// Both this and [`header`] used `RichText::strong()` in their first draft, and
 /// both were **near-invisible on screen**: pale grey on pale grey, while the
@@ -68,13 +68,13 @@ pub fn group(
 
 /// [`group`], and whether this is the group the window was opened **for**.
 ///
-/// ★★★ `focused` forces it open and scrolls the window to it, once, on the
+/// `focused` forces it open and scrolls the window to it, once, on the
 /// frame the dialog is built. See [`super::Draft::focus`] for the argument: a
 /// route that exists because of one setting must land on that setting, and
 /// Tools ▸ Font folders was dropping the operator at the top of ten collapsed
 /// headings.
 ///
-/// ★★ `open(Some(true))` **only when focused**, never `Some(false)` otherwise.
+/// `open(Some(true))` **only when focused**, never `Some(false)` otherwise.
 /// `CollapsingHeader::open` overrides the operator's own click for as long as it
 /// is passed, so a group forced open every frame is one they cannot collapse —
 /// and the fix for a discoverability problem must not take away a control.
@@ -92,7 +92,7 @@ pub fn group_focused(
     }
     let response = header.default_open(open_by_default).show(ui, body);
     if focused {
-        // ★ The HEADER's response, so the window lands with the heading at the
+        // The HEADER's response, so the window lands with the heading at the
         // top of the view rather than the body's last row. `Align::TOP` for the
         // same reason — the operator asked for this group and wants to read it
         // downward, not to arrive at its end.
@@ -100,14 +100,14 @@ pub fn group_focused(
             .header_response
             .scroll_to_me(Some(egui::Align::TOP));
     }
-    // ★ The HEADER's rect, not the whole collapsible's.
+    // The HEADER's rect, not the whole collapsible's.
     //
     // `CollapsingHeaderResponse::header_response` is the row carrying the text;
     // the outer rect would include the expanded body, and a contrast check
     // measuring that would sample a hundred lines of prose and average the
     // heading away. D2 was a defect in one row of pixels, and it measured about
     // 1.1:1 — a figure only obtainable from the row itself.
-    // ★ `ui_rect_visible`, not `ui_rect` — these headings live in a
+    // `ui_rect_visible`, not `ui_rect` — these headings live in a
     // `ScrollArea` and `egui` lays out the ones below the fold before clipping
     // them. Publishing a rect for a heading nobody can see makes a contrast
     // check measure whatever is genuinely at those coordinates, which on the
@@ -135,7 +135,7 @@ pub fn group_focused(
 /// rather than the choice, and at the same weight as the title they would make
 /// every setting look like three settings.
 ///
-/// ★ The title is **plain text**, not `.strong()` — see [`group`] for the
+/// The title is **plain text**, not `.strong()` — see [`group`] for the
 /// screenshot that found the difference and `DEFECTS.md` D11 for why no theme
 /// this project ships can render `.strong()` legibly on a panel. Being the only
 /// one of the three lines that is not small and weak is the whole of its
@@ -175,7 +175,7 @@ pub fn option<T: PartialEq>(
 
 /// One switch, with an optional gloss under it.
 ///
-/// # ★ The fourth shape, and why a two-option radio group was refused
+/// # The fourth shape, and why a two-option radio group was refused
 ///
 /// This module's header opens *"the three shapes every setting is made of"*,
 /// and a fourth arriving needs a better reason than convenience. It has one: a
@@ -213,7 +213,7 @@ pub fn toggle(ui: &mut Ui, value: &mut bool, label: &str, note: Option<&str>) {
     }
 }
 
-/// ★★ **A free-text setting, with the parse shown rather than enforced.**
+/// **A free-text setting, with the parse shown rather than enforced.**
 ///
 ///
 /// > *"can the size of the buffer be increased? Allow the user to set the size
@@ -232,7 +232,7 @@ pub fn toggle(ui: &mut Ui, value: &mut bool, label: &str, note: Option<&str>) {
 /// * **does not parse** → the draft is left ALONE and the field says so. The
 ///   last good value stands, so Apply cannot commit a half-typed string.
 ///
-/// ★ There is no upper bound and that is the operator's ruling, the same one
+/// There is no upper bound and that is the operator's ruling, the same one
 /// that governs the maximum zoom. A ceiling the machine cannot honour is not a
 /// crash — the engine allocates fallibly and refuses down its ordinary disclosed
 /// path — so this states the cost and does not prevent the choice.

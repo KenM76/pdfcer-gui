@@ -38,7 +38,7 @@ spans"*, so a `find` sent beside a pin is confined to the one operator the
 pin names — which on his line holds a single character. The engine was
 answering the question it was asked, correctly, every time.
 
-## ★★★ What is asserted, and why it is TWO gestures and not one
+## What is asserted, and why it is TWO gestures and not one
 
 | gesture | what must happen |
 |---|---|
@@ -49,11 +49,11 @@ The second row is the whole reason this file is long. The oracle for the
 decline half is *"a region was published"*, and a probe whose baseline has no
 dynamic range **cannot produce a verdict**. It is the contrast the operator
 noticed — text pdfcer authored commits, text that arrived does not — so the
-check's two rows and his two sentences are the same two facts. ★ Since the
+check's two rows and his two sentences are the same two facts. Since the
 inversion **both** rows now succeed, which is the point: his complaint was
 that they differed.
 
-## ★★★ THE ASSERTION THAT CARRIES THE VERDICT IS NOT "THE EDIT LANDED"
+## THE ASSERTION THAT CARRIES THE VERDICT IS NOT "THE EDIT LANDED"
 
 It is `edit-text-pin … pinned=true`, and the distinction is the difference
 between a working program and a dangerous one.
@@ -95,7 +95,7 @@ reader and no OCR — so this check asserts that the slot **did not draw**, not
 what it would have said. The wording is held by unit tests in
 `app::status::decline` and `text::textedit`, and by `check-ui-strings.sh`.
 
-★ Ordering is load-bearing and is asserted by `lineno`. A whole-capture
+Ordering is load-bearing and is asserted by `lineno`. A whole-capture
 `last(...)` is a fossil finder; every region read here is anchored to a cause
 that must precede it — the successful commit for both arms.
 
@@ -110,7 +110,7 @@ with. For the operator's own file:
 
 — the centre of *"Final quality walkthrough with clien"*, whose box
 `extract-text --pages 2 --json` reports as `[33.47, 526.22, 367.26, 547.90]`.
-★ `PAGE` is **0-based**; his page 2 is `1`.
+`PAGE` is **0-based**; his page 2 is `1`.
 
 ⚠ **Copy his file to scratch and drive the copy.** The edit under test writes
 to the document; never point this at OneDrive.
@@ -130,12 +130,12 @@ a fixture of exactly his shape:
 `find-text` box `[72.00, 697.36, 96.67, 710.20]`. Two occurrences is the point:
 it is the page on which dropping the pin would edit the wrong one.
 
-★ The driven check can only read the trace, so it asserts the *decision*
+The driven check can only read the trace, so it asserts the *decision*
 (`pinned=true`, in one of the three shapes below). Which occurrence actually
 changed is asserted
 by `canvas::textedit::glyphwall` against the same fixture, by position.
 
-## ★★ Why the caret is expected to be OFFERED, not withheld
+## Why the caret is expected to be OFFERED, not withheld
 
 R9 argues that a control which fails on press is worse than one that is not
 there, and the obvious reading of this defect is *"do not offer a caret on

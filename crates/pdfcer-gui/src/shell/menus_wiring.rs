@@ -68,7 +68,7 @@ mod tests {
         registry
     }
 
-    /// **★★★ How many menu rows this wiring actually lit up.**
+    /// **How many menu rows this wiring actually lit up.**
     ///
     /// The value of the change, asserted rather than claimed. Every count
     /// below is derived from the shipped menu documents and the shipped
@@ -85,13 +85,13 @@ mod tests {
     /// * **absent** — no command in that menu has an icon; the menu is
     ///   laid out exactly as it was before the column existed.
     ///
-    /// ★ Note what the blank count is for. It is the cost of the rule, and
+    /// Note what the blank count is for. It is the cost of the rule, and
     /// it is the number to watch: if it ever exceeds the glyph count in a
     /// menu, that menu is an icon column that is more than half empty, and
     /// the right answer at that point is to argue about *that menu* rather
     /// than to weaken the rule for all of them.
     ///
-    /// # ★★★ What the numbers were on the day the painter was wired
+    /// # What the numbers were on the day the painter was wired
     ///
     /// **25 glyph, 2 blank, 0 absent, and all nine menus reserve.** Every
     /// one of those 25 rows was already carrying a resolved, catalogued,
@@ -122,7 +122,7 @@ mod tests {
     ///   a numeral read at a glance is clearer than any glyph substitute,
     ///   and both add a decode step a bare percentage does not need.
     ///
-    /// ⇒ ★★ The two blanks looked alike in this list for weeks and were not
+    /// ⇒ The two blanks looked alike in this list for weeks and were not
     /// alike at all. One named a **wrong picture** — an argument no amount
     /// of drawing answers — and the other named a **missing picture**,
     /// which under the operator's standing rule is not a reason but a work
@@ -132,7 +132,7 @@ mod tests {
     /// credibility. **When a list of exceptions shares a justification,
     /// check that they share a KIND.**
     ///
-    /// ★ The counts are of the **documents'** rows, not of one frame's.
+    /// The counts are of the **documents'** rows, not of one frame's.
     /// A `shown_when` row is counted whether or not its condition holds, so
     /// `dock.tab` contributes both `view.panel_float` and
     /// `view.panel_dock` although an operator is only ever shown one. That
@@ -175,7 +175,7 @@ mod tests {
 
         //
         //
-        // ★ `blank` stays at 1 and `absent` stays at 0, and both are the
+        // `blank` stays at 1 and `absent` stays at 0, and both are the
         // load-bearing halves of this tuple. A new row that had refused a
         // glyph would have moved `blank` to 2 — which is legal, argued at the
         // registration, and would have to be argued here too.
@@ -191,7 +191,7 @@ mod tests {
         );
     }
 
-    /// **★ No menu is an icon column that is mostly empty.**
+    /// **No menu is an icon column that is mostly empty.**
     ///
     /// The rule this wiring rests on is *"reserve the column iff any row in
     /// this menu has a glyph"*, and the argument against the alternatives

@@ -13,7 +13,7 @@ live in this build.
 | **working** | *Recognising…* | a thread |
 | **answered** | the disclosure, then a Save-as button — or a named refusal | bytes, in memory |
 
-## ★ Why the recognition is disclosed BEFORE it is written, not after
+## Why the recognition is disclosed BEFORE it is written, not after
 
 This is the whole reason the dialog has a third state instead of running
 OCR and immediately opening a file picker.
@@ -33,13 +33,13 @@ to write it. The operator reads the disclosure while holding the one thing
 that gives it force — the ability to not save. That is not a nicety; it is
 the difference between a disclosure and a receipt.
 
-## ★ Why the write is a Save-as, in every mode
+## Why the write is a Save-as, in every mode
 
 The standing rule is *Read may produce a new document; it may not modify
 this one*, with the enforcement at the **save** rather than at the
 operation.
 
-★ The rule is **vacuous** in this shell, and that is worth saying rather
+The rule is **vacuous** in this shell, and that is worth saying rather
 than leaving as an apparent guarantee: `file.save_copy` asks for a
 destination too, and `crate::app::save::suggested_path` guarantees the
 *suggestion* is never the file that was opened, exactly as
@@ -58,7 +58,7 @@ no `Save`-labelled control anywhere. The day in-place `Save` lands it will
 need its own Read-mode gate, and that gate belongs beside it rather than
 being invented here in advance against a command that does not exist.
 
-## ★ Why OCR is available in Read, with no capability flag
+## Why OCR is available in Read, with no capability flag
 
 `app::modes::capability` governs **gestures** — what a press on the canvas
 means. OCR is not a gesture; it is a command with a dialog, and it changes

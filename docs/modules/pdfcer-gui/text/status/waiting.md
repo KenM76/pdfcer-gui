@@ -15,7 +15,7 @@ answer yet* — which is live for as long as its condition holds, needs no
 retirement rule, and can appear for one edit and not the next depending only
 on how hard the page was to draw.
 
-★ Filed apart so that the second sentence of this species, when it comes, is
+Filed apart so that the second sentence of this species, when it comes, is
 written beside the first and under the same rules rather than filed by
 whichever group looked closest.
 

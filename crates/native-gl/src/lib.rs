@@ -21,7 +21,7 @@
 //!
 //! ⇒ This crate is the instrument. It reads the flag, and that is all it does.
 //!
-//! ## ★★ Why `unsafe` is here rather than at the call site
+//! ## Why `unsafe` is here rather than at the call site
 //!
 //! `crates/pdfcer-gui/src/lib.rs` and `main.rs` both open with
 //! `#![forbid(unsafe_code)]`. `forbid` cannot be relaxed by an inner `allow` —
@@ -44,7 +44,7 @@ use glow::HasContext as _;
 
 /// How many times [`drain`] will call `glGetError` before giving up.
 ///
-/// ★ **A drain loop must be bounded, and this is not defensive
+/// **A drain loop must be bounded, and this is not defensive
 /// decoration.** The specified contract is that the flag set empties and
 /// `glGetError` then returns `GL_NO_ERROR` — but this runs once per frame on
 /// the UI thread against a third-party driver, and a context that has been
@@ -65,7 +65,7 @@ const MAX_DRAIN: usize = 16;
 pub struct Drained {
     /// `GL_OUT_OF_MEMORY` was among the codes drained.
     ///
-    /// ★★ **This is the only field a caller should branch on.** It is the one
+    /// **This is the only field a caller should branch on.** It is the one
     /// failure that presents as a blank picture rather than as a crash or a
     /// wrong picture, and therefore the one a user reports as *"the view went
     /// blank"* with nothing in any log to corroborate it.
@@ -181,7 +181,7 @@ mod tests {
         assert!(!Drained::CLEAN.truncated());
     }
 
-    /// ★ `truncated` must be true exactly at the bound, not one short of it.
+    /// `truncated` must be true exactly at the bound, not one short of it.
     ///
     /// An off-by-one here is a false "the flag was fully read", which is the
     /// one wrong answer this field exists to prevent.

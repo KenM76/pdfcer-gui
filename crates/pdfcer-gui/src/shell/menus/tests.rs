@@ -1,7 +1,7 @@
 //! # `shell::menus::tests` — the sweeps that keep the menu document honest
 //!
 //!
-//! ## ★ The seam, and why it is a subject rather than a cut
+//! ## The seam, and why it is a subject rather than a cut
 //!
 //! [`super`] is a **document**: one function returning the menus pdfcer
 //! defines, plus the prose arguing every row of every one of them. It changes
@@ -9,7 +9,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/shell/menus/tests.md`.
 
-// ★ The marker `tools/gates/check-ui-strings.sh` reads, and it is the FILE that
+// The marker `tools/gates/check-ui-strings.sh` reads, and it is the FILE that
 // has to carry it rather than the `mod tests;` in the parent: that scanner is
 // awk over one file at a time, so it cannot see the `#[cfg(test)]` next door,
 // and without this line all 26 assertion messages below are reported as
@@ -40,7 +40,7 @@ fn everything_open() -> ConditionSet {
         .with("doc.open")
         .with("doc.pages")
         .with(manifest::SELECTION_ANY)
-        // ★★ 2026-08-28. Without it `canvas.object` stopped opening, and
+        // 2026-08-28. Without it `canvas.object` stopped opening, and
         // the failure was correct: `format.delete` and `format.properties`
         // moved to the wider `selection.actionable` when a form field
         // became something they can act on, and this fixture's name
@@ -57,7 +57,7 @@ fn everything_open() -> ConditionSet {
         .with(manifest::SELECTION_ACTIONABLE)
 }
 
-/// **★ Every command every menu names is registered.**
+/// **Every command every menu names is registered.**
 ///
 /// The check nothing else performs. `Shell::validate_against` walks
 /// `command_references()`, which covers tab groups, the QAT and the
@@ -148,7 +148,7 @@ fn the_built_in_menu_document_is_valid() {
         .expect("the built-in menu layer must satisfy every structural rule");
 }
 
-/// **★ No menu names a command that does not exist — stated as the
+/// **No menu names a command that does not exist — stated as the
 /// no-placeholders rule, by name.**
 ///
 /// `every_command_every_menu_names_is_registered` proves the positive.
@@ -188,7 +188,7 @@ fn no_menu_offers_a_command_this_build_does_not_have() {
     // list, and a command that lands leaves it.
 }
 
-/// **★ Every menu opens when the application is at its liveliest.**
+/// **Every menu opens when the application is at its liveliest.**
 ///
 /// The other half of the empty-menu rule, and the half that would
 /// otherwise be satisfied by defining no menus at all. A menu that never
@@ -212,7 +212,7 @@ fn every_menu_offers_something_when_a_document_is_open_and_selected() {
     }
 }
 
-/// ★★★ **The field menu opens on a field selection ALONE.**
+/// **The field menu opens on a field selection ALONE.**
 ///
 /// The state the operator is actually in when they right-click a text box:
 /// `doc.selected_field` is set and `SelectionState` is **empty**, because a
@@ -226,7 +226,7 @@ fn every_menu_offers_something_when_a_document_is_open_and_selected() {
 /// menu never opened. A right-click on a form field would have done nothing
 /// at all — `DEFECTS.md` D1's shape, arrived at through a new door.
 ///
-/// ★ `everything_open()` is deliberately not used: it sets both conditions
+/// `everything_open()` is deliberately not used: it sets both conditions
 /// and would pass on a build where the two are confused. The whole point is
 /// that only the wider one holds here.
 #[test]
@@ -241,7 +241,7 @@ fn the_field_menu_opens_with_a_field_selected_and_nothing_else() {
         host.would_open(CANVAS_FIELD),
         "a selected form field offers no menu, so right-clicking one does nothing"
     );
-    // ★★ And the object menu opens here TOO, which is correct and is worth
+    // And the object menu opens here TOO, which is correct and is worth
     // asserting rather than leaving as a surprise: both its items can act
     // on a field, so the menus differ by their CONTEXT ID rather than by
     // what is enabled. `canvas::menus::attach` picks Field first when a
@@ -249,7 +249,7 @@ fn the_field_menu_opens_with_a_field_selected_and_nothing_else() {
     assert!(host.would_open(CANVAS_OBJECT));
 }
 
-/// **★ …and an empty menu never opens.**
+/// **…and an empty menu never opens.**
 ///
 /// The engine's rule 2, asserted through the seam this application
 /// actually uses rather than against the engine's own unit tests.
@@ -305,7 +305,7 @@ fn a_menu_with_nothing_to_offer_does_not_open() {
     }
 }
 
-/// **★ A corrected condition changes the answer.**
+/// **A corrected condition changes the answer.**
 ///
 /// [`MenuHost::with_condition`] exists for one frame-ordering hazard,
 /// and this is that hazard reduced to two assertions: with the stale
@@ -326,7 +326,7 @@ fn correcting_the_selection_condition_is_what_opens_the_object_menu() {
 
     // The canvas has since selected the object under the pointer.
     //
-    // ★ BOTH conditions, because `attach` corrects both — see
+    // BOTH conditions, because `attach` corrects both — see
     // `MenuHost::with_conditions`. Correcting only `selection.any` here
     // would have this test passing on a build where `attach` forgot the
     // second, which is the exact hazard the test exists for one level up.
@@ -342,7 +342,7 @@ fn correcting_the_selection_condition_is_what_opens_the_object_menu() {
     // …and the correction goes both ways, so a menu cannot be opened by
     // a condition the caller has just found to be false.
     //
-    // ★★ BOTH have to be cleared, and the reason is worth a sentence
+    // BOTH have to be cleared, and the reason is worth a sentence
     // because the first version of this line cleared only `selection.any`
     // and the assertion failed. `canvas.object`'s two items now take
     // `selection.actionable`, so clearing the narrower condition alone
@@ -410,7 +410,7 @@ fn the_menu_document_round_trips_through_ron() {
     );
     // And the shapes an operator would search for are legible in it.
     //
-    // ★ The command spelling is checked on the COMPACT form. RON's pretty
+    // The command spelling is checked on the COMPACT form. RON's pretty
     // printer breaks a struct variant across three lines, and `Item::Command`
     // became one when `ItemSize` landed — so a `contains` for the one-line
     // spelling fails on a pretty document that is perfectly correct. The
@@ -533,7 +533,7 @@ fn each_menu_holds_exactly_the_documented_items() {
     }
 }
 
-/// **★★★ R9, resolved: an absent row, a greyed row and a live row from the
+/// **R9, resolved: an absent row, a greyed row and a live row from the
 /// same menu definition.**
 ///
 /// The markup menu's two node rows are the only place in this document where a
@@ -550,7 +550,7 @@ fn each_menu_holds_exactly_the_documented_items() {
 /// | offered, not enabled | **greyed** | a three-corner polygon, on a corner: the vertex floor |
 /// | offered and enabled | **live** | a five-corner polygon, on a corner |
 ///
-/// ★ Falsified three ways, each independently: dropping `shown_when` from the
+/// Falsified three ways, each independently: dropping `shown_when` from the
 /// item makes case 1 fail (the row is drawn where it can never work); dropping
 /// `enabled_when` from the command makes case 2 fail (a floor-breaching remove
 /// is offered as pressable); and setting `enabled` without `offered` — which no

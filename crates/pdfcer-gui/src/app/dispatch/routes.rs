@@ -24,7 +24,7 @@ pub(crate) fn handles(id: &str) -> bool {
 fn target(id: &str) -> Option<&'static str> {
     // ui-text-exempt: registered command ids, never displayed.
     match id {
-        // ★★ Its tooltip promises *"list every form field … rename, retype or
+        // Its tooltip promises *"list every form field … rename, retype or
         // remove them"*, and every one of those is already reachable: the Forms
         // panel lists and fills, the Properties pane renames and removes.
         // **Retyping is reachable nowhere and never will be** — Acrobat has
@@ -33,7 +33,7 @@ fn target(id: &str) -> Option<&'static str> {
         // field's type, so there is not even a control to grey. The tooltip
         // must not promise it.
         "edit.form_manage_fields" => Some("view.panel_forms"),
-        // ★★★ **A route's target is derived from what the operator will SEE
+        // **A route's target is derived from what the operator will SEE
         // HAPPEN, not from what the source command is called.** Nothing in a
         // route table can catch a mismatch — only reading the entry and the
         // target's own tooltip side by side can.
@@ -56,7 +56,7 @@ fn target(id: &str) -> Option<&'static str> {
 
 /// Raise the command this route points at.
 ///
-/// ★ It does **not** re-check the target's guards. `dispatch_command` is the
+/// It does **not** re-check the target's guards. `dispatch_command` is the
 /// choke point and the raised id goes through it exactly as a ribbon click
 /// would — which is the entire point of routing rather than performing. A
 /// guard applied here would be a second copy of the target's rule, in the file
@@ -71,7 +71,7 @@ pub(crate) fn dispatch(id: &str, actions: &mut Vec<Action>) {
 mod tests {
     use super::*;
 
-    /// ★★ **Every route points at a registered command, and never at itself.**
+    /// **Every route points at a registered command, and never at itself.**
     ///
     /// Two failures in one assertion, and both are silent. A route to an
     /// unregistered id raises an `Action::Command` that `dispatch_command`

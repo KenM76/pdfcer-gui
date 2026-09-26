@@ -31,7 +31,7 @@ consumer did not change — only the file did.
 | several things | `3 objects selected` |
 | anything, with more underneath | `… · 1 of 5 here` |
 
-★ **The containment clause is [rule 4](R8b) disclosure and it is
+**The containment clause is [rule 4](R8b) disclosure and it is
 off-canvas.** A form-interior object is drawn on the page exactly as it
 will be drawn when saved — no badge, no tint, no dashed outline. What
 pdfcer had to do to find it is reported here, in words, on a bar; never by

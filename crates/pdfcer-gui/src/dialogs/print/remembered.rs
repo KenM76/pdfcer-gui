@@ -62,7 +62,7 @@ impl PrintDialog {
     /// error dialog; the job is the operator's actual errand and it proceeds
     /// unchanged.
     ///
-    /// ★ The swallowed failure is nevertheless **reported**, off-canvas, by the
+    /// The swallowed failure is nevertheless **reported**, off-canvas, by the
     /// trace this returns into and by `print-dismissed saved=` at the window's
     /// single return. Rule 4 is *fuzzy, never sneaky*: not raising a modal is a
     /// decision about interruption, not a licence to be silent.
@@ -81,7 +81,7 @@ impl PrintDialog {
     /// Put the preferences back to [`super::PrintDialog::opened_with`] — the
     /// undoing half of `OPERATOR_REQUESTS.md` **O185**.
     ///
-    /// # ★★ It returns both facts, because Cancel's disclosure needs both
+    /// # It returns both facts, because Cancel's disclosure needs both
     ///
     /// [`Written::changed`] answers the operator's question — *were my changes
     /// undone?* — and is `false` for a Cancel on a window nobody touched, which
@@ -95,7 +95,7 @@ impl PrintDialog {
     /// false`, and that pair is the honest account — the operator's *session*
     /// genuinely has been reverted, and the next launch will not agree.
     ///
-    /// # ★★★ Why this is not a `bool`, said here because it was one for an hour
+    /// # Why this is not a `bool`, said here because it was one for an hour
     ///
     /// The single boolean was `changed`. That left [`super::dismissal`]'s Revert
     /// arm with nothing to report `saved=` from, so it passed a hard-coded
@@ -123,7 +123,7 @@ impl PrintDialog {
     /// a Keep from a Cancel, because the two are identical in every other field
     /// whenever the window opened on the settings it is being asked to keep.
     ///
-    /// # ★★★ Why it returns two booleans rather than one
+    /// # Why it returns two booleans rather than one
     ///
     /// Because the two callers are asking different questions and only one of
     /// them is about the write:
@@ -162,7 +162,7 @@ impl PrintDialog {
                 saved.is_ok(),
                 prefs.print.orientation,
                 prefs.print.duplex,
-                // ★ Stable lowercase tokens, never `{:?}`, for the two fields a
+                // Stable lowercase tokens, never `{:?}`, for the two fields a
                 // driven check reads back. This project's standing lesson:
                 // never `Debug`-format a field a machine reads — a `{:?}` on a
                 // payload-carrying variant prints the payload too, and a check

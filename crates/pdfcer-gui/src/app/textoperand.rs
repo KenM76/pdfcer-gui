@@ -42,7 +42,7 @@ pub(crate) struct Operand {
 /// state, including the ones that are perfectly ordinary — nothing selected, an
 /// annotation selected, two objects selected, a path selected.
 ///
-/// # ★ Why an annotation is excluded first
+/// # Why an annotation is excluded first
 ///
 /// An annotation is not page text. `format_text` addresses content-stream show
 /// operators; a `/FreeText` annotation's appearance is a separate stream with
@@ -50,7 +50,7 @@ pub(crate) struct Operand {
 /// pressing Bold would then decline on an operand the control had promised —
 /// which is R9 inverted: a control that is live must act.
 ///
-/// # ★ Why exactly one, and not "the first of several"
+/// # Why exactly one, and not "the first of several"
 ///
 /// The rule the geometry section states and this shares: a multi-object
 /// selection has no single subject, and picking one of them is the shell
@@ -71,7 +71,7 @@ pub(crate) fn selected_text_object(doc: &OpenDoc) -> Option<(usize, usize)> {
 
 /// Is the object at this index page text?
 ///
-/// ★ Asked through [`crate::panels::objects::summary::object_kind`], which is
+/// Asked through [`crate::panels::objects::summary::object_kind`], which is
 /// the same classification the Objects panel row and the read-only object
 /// section use — so what this module calls text and what the panel beside it
 /// calls text cannot disagree.
@@ -107,7 +107,7 @@ pub(crate) fn swept(doc: &OpenDoc) -> Option<Operand> {
 
 /// **The whole answer**, paying the extraction when the operand is an object.
 ///
-/// # ★★★ Do NOT call this from a paint loop or a condition
+/// # Do NOT call this from a paint loop or a condition
 ///
 /// Rung 2 runs one page extraction with provenance capture on, plus one block
 /// recognition — **392 ms on the operator's benchmark sheet**. Every per-frame
@@ -140,7 +140,7 @@ pub(crate) fn resolve(doc: &OpenDoc) -> Option<Operand> {
 /// **A stamped memory of the object rung**, so a surface that asks every frame
 /// pays the extraction once per selection instead of once per frame.
 ///
-/// # ★★★ Why this is a type and not a `HashMap` somewhere
+/// # Why this is a type and not a `HashMap` somewhere
 ///
 /// [`resolve`] is honest about costing 392 ms on the operator's benchmark
 /// sheet, and that sentence is only survivable because the callers who ask it

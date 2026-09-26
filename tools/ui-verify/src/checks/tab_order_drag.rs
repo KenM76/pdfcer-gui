@@ -104,7 +104,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
 
-    // ★ Its OWN fixture, not `--pdf`, and this is not a convenience.
+    // Its OWN fixture, not `--pdf`, and this is not a convenience.
     //
     // The harness's usual fixture is a CAD drawing with no `/AcroForm` at all,
     // on which the Tab-order list is legitimately empty — so a run against it
@@ -141,7 +141,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     report.artifact(session.trace_path().to_path_buf());
     session.settle(40);
-    // ★ MAXIMISED, before anything is aimed at. The Forms panel is a docked
+    // MAXIMISED, before anything is aimed at. The Forms panel is a docked
     // pane, and at the default window width its sections collapse — which is
     // how the OCR check spent a week SKIPping over a working command. A
     // published region that does not exist because its group folded is
@@ -153,7 +153,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
 
     // --- 1: the Forms panel, then the Tab-order section --------------------
-    // ★★★ ONLY IF IT IS NOT ALREADY THERE — a panel toggle that is already on
+    // ONLY IF IT IS NOT ALREADY THERE — a panel toggle that is already on
     // CLOSES the thing this check needs.
     //
     // `crate::checks::pages_drag` carries the same guard and the same sentence,
@@ -167,10 +167,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         open_from_tab(&session, &driver, ui_rect, "view", PANEL_ITEM)?;
         session.settle(24);
     }
-    // ★★★ GIVE THE PANE ROOM BEFORE OPENING THE SECTION.
+    // GIVE THE PANE ROOM BEFORE OPENING THE SECTION.
     //
     //
-    // ★★ Scrolling was tried first and failed twice, each time for a different
+    // Scrolling was tried first and failed twice, each time for a different
     // and instructive reason — the panel's centre lands on the fill list's OWN
     // nested scroll area, so the wheel moved that instead; and the section
     // header publishes through plain `ui_rect`, so a stale rectangle sent the
@@ -184,11 +184,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     enlarge_forms_pane(&session, &driver, ui_rect)?;
     open_tab_order(&session, &driver, ui_rect)?;
 
-    // ★★★ SCROLL THE PANEL UNTIL THE ROWS ARE ON SCREEN, and this is not
+    // SCROLL THE PANEL UNTIL THE ROWS ARE ON SCREEN, and this is not
     // housekeeping — it is the precondition the whole check rests on.
     //
     //
-    // ★★ Until the rows published through `ui_rect_visible` this was INVISIBLE.
+    // Until the rows published through `ui_rect_visible` this was INVISIBLE.
     // They published a rectangle regardless of the clip, the harness converted
     // it to a screen point below the window, pressed there, and reported *"the
     // row does not sense a drag"* — a confident, specific, entirely wrong defect
@@ -265,7 +265,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("gesture began: `{}`", began.raw));
 
-    // --- 4: ★ the marker was drawn -----------------------------------------
+    // --- 4: the marker was drawn -----------------------------------------
     let Some(caret) = declared_since(&trace, ui_rect, CARET, began.lineno) else {
         return Ok(Some(format!(
             "the drag was sensed (`{DRAG_BEGIN}` was traced) and NO `{CARET}` region was ever \
@@ -316,7 +316,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             release.raw
         )));
     }
-    // ★ Cross-check: the caret the operator was looking at and the boundary the
+    // Cross-check: the caret the operator was looking at and the boundary the
     // field actually went to must be the SAME decision. They are computed once,
     // in the layout pass, and carried together — which is exactly the kind of
     // claim that is true when written and false after a refactor.
@@ -351,7 +351,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★★ THE ASSERTION THAT IS ABOUT CORRECTNESS RATHER THAN ABOUT THE GESTURE.
+    // THE ASSERTION THAT IS ABOUT CORRECTNESS RATHER THAN ABOUT THE GESTURE.
     //
     // `non_widgets` counts annotations that are NOT form widgets whose index
     // changed. This route must always report zero, by construction: the widgets
@@ -439,7 +439,7 @@ fn scroll_rows_into_view(session: &Session, driver: &Driver, ui_rect: &str) -> R
         if declared_names(&trace, ui_rect, ROW).len() >= MIN_ROWS {
             return Ok(());
         }
-        // ★★★ THE WHEEL GOES OVER THE SECTION HEADER, NOT THE PANEL'S CENTRE —
+        // THE WHEEL GOES OVER THE SECTION HEADER, NOT THE PANEL'S CENTRE —
         // because the panel contains NESTED scroll areas.
         //
         // The Forms panel's body is one `ScrollArea`; the fill list and the

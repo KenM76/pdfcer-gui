@@ -11,7 +11,7 @@ not numbers in a trace.
 > screenshots here to confirm. start with the full page first to confirm it
 > renders."*
 
-# ★★★ Why the existing checks do not answer this
+# Why the existing checks do not answer this
 
 `zooming_does_not_throw_away_where_the_operator_panned` proves the view
 stays where it was put to a trillion percent, and
@@ -40,7 +40,7 @@ being wrong:
 | the canvas traced `drawn ≥ 1` | a page reserving space with no raster in it |
 | no `outcome=failed` render | a refused rasterization the shell swallowed |
 
-★ All three, because any two can hold while the third fails. A page that
+All three, because any two can hold while the third fails. A page that
 draws its *state message* is not near-uniform; a page whose raster completed
 can still be drawn off-screen; a shell that stopped asking cannot report a
 failure.
@@ -71,11 +71,11 @@ makes that hand-written test permanent and free. The rule is now:
 | uniform | no field | the old, weaker verdict, and the message says the field was missing |
 | not uniform | — | the rung passes, as before |
 
-★★ The blank-document case is deliberately not a pass. A rung that measured
+The blank-document case is deliberately not a pass. A rung that measured
 nothing is a third state, and collapsing it into either verdict is how a
 check comes to look green while seeing nothing.
 
-# ★ The captures are evidence, kept on pass as well as fail
+# The captures are evidence, kept on pass as well as fail
 
 Written to the output directory and named by zoom, because the question
 being answered is *"show me"* and the answer is a file the operator can

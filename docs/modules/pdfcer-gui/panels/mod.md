@@ -19,7 +19,7 @@ rules that every one of them has to get right.
 | [`comments`] | `markup.comments` — **not** a `view.panel_*` id; see that variant | `main.rs::comments_panel` |
 | [`redact`] | `edit.redact` — the reversible half of redaction; its irreversible twin is [`crate::dialogs::redact`] | `main.rs::redact_panel` |
 
-## ★ These panels once had no way in
+## These panels once had no way in
 
 Recorded here because this is now the file someone reads when they touch
 them. The old shell's `panels_structure.rs` header:
@@ -66,7 +66,7 @@ own module docs say which control is missing and what it is waiting for,
 because a control with no action behind it is an affordance for something
 that cannot work (`RIBBON_IA.md` P3, R83).
 
-### ★ A note for whoever restores one of the remaining controls
+### A note for whoever restores one of the remaining controls
 
 The Layers checkbox is the worked example, and its three preconditions are
 written up in [`layers`]' own header. In summary: the renderer had to

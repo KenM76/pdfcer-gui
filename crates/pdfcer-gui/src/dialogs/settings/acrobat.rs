@@ -9,7 +9,7 @@ use crate::text::acrobat as t;
 
 /// The region the resolved-state line publishes.
 ///
-/// ★ Named, because the whole value of that line is that it is **on screen and
+/// Named, because the whole value of that line is that it is **on screen and
 /// legible**, and `ui-verify` can only assert that about a rect the
 /// application published. A driven check that read the trace would learn what
 /// pdfcer resolved and nothing about whether the operator can see it.
@@ -21,13 +21,13 @@ pub const REGION_BROWSE: &str = "settings:acrobat.browse"; // ui-text-exempt: tr
 /// Where Acrobat is — the field, its Browse button, and the line that says
 /// what pdfcer currently resolves.
 ///
-/// ★ `text_value` with an identity parse, exactly as [`super::comments`] uses
+/// `text_value` with an identity parse, exactly as [`super::comments`] uses
 /// it and for its stated reason: the helper exists to hold a half-typed
 /// *number* apart from a parsed value, and a path has no invalid intermediate
 /// state. Every keystroke reaches the draft, so Save writes exactly what is on
 /// screen.
 ///
-/// ★★ **No validation as you type, and no red field.** A path that does not
+/// **No validation as you type, and no red field.** A path that does not
 /// exist is not a typing error — it is a path to something that is not there
 /// yet, or on a drive that is not mounted, or typed from memory and about to
 /// be corrected. Marking it wrong mid-word would be the field arguing with
@@ -59,7 +59,7 @@ pub fn path(
         let browse = ui.button(t::path_browse());
         crate::diag::ui_rect_visible(REGION_BROWSE, browse.rect, ui.clip_rect());
         let browse = browse.on_hover_text(t::path_browse_hover());
-        // ★ A picker as well as a field, because the value is a full path to a
+        // A picker as well as a field, because the value is a full path to a
         // program file and typing one from memory is how a letter goes
         // missing. `super::fonts`' Add-folder button is the same shape.
         if browse.clicked()
@@ -70,7 +70,7 @@ pub fn path(
     });
 
     ui.add_space(6.0);
-    // ★★ The state line. `notice` rather than the body ink, because it is a
+    // The state line. `notice` rather than the body ink, because it is a
     // report about the machine rather than part of the setting — and a theme
     // role rather than a colour, per `tools/gates/check-theme-colors.sh`.
     let line = ui.label(

@@ -22,13 +22,13 @@ const BUTTON: &str = "unembed.commit";
 const REQUESTED: &str = "unembed-fonts-requested";
 /// The line the apply arm writes when the engine has removed.
 ///
-/// ★ `-applied`, per the convention this project adopted after making the
+/// `-applied`, per the convention this project adopted after making the
 /// same-name mistake twice: `vector_edit` writes its own `unembed-fonts …` line
 /// for the identical edit, and `.last()` on the bare name reads the funnel's.
 const APPLIED: &str = "unembed-fonts-applied";
 /// The line the window writes when it opens, carrying its plan's counts.
 ///
-/// ★★ The check reads `targets=` off this to tell a GREYED button from a broken
+/// The check reads `targets=` off this to tell a GREYED button from a broken
 /// one. Both look identical from outside - no click reaches anything - and
 /// exactly one of them is a fact about the fixture rather than about the
 /// program.
@@ -113,7 +113,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let trace = session.trace()?;
 
-    // ★ A decline is a statement about the `--pdf`, not about the program.
+    // A decline is a statement about the `--pdf`, not about the program.
     if let Some(declined) = trace.events(DECLINED).last() {
         return Err(Error::new(format!(
             "the command declined: `{}`. SKIPPED rather than failed: it says the --pdf carries no \
@@ -124,7 +124,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★★★ The fixture check, BEFORE the click, and it is a SKIP.
+    // The fixture check, BEFORE the click, and it is a SKIP.
     //
     // A document whose embedded fonts are all identity-encoded has nothing
     // removable, draws this window to say so, and greys the button. That is
@@ -162,7 +162,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★ `stable_rect`, because the window lays out over several frames as the
+    // `stable_rect`, because the window lays out over several frames as the
     // scroll area measures its rows, and a coordinate read before it stops
     // moving is a number rather than an error.
     let Some(button) = stable_rect(&session, ui_rect, BUTTON, 8)? else {
@@ -175,7 +175,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
 
-    // ★★ `frame_of`, never `session.frame()`. This window is a child viewport
+    // `frame_of`, never `session.frame()`. This window is a child viewport
     // and its coordinates are its own; asking the main window yields a point on
     // the ribbon, and the click lands somewhere plausible and wrong.
     let trace = session.trace()?;
@@ -249,7 +249,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         applied.get("renamed").unwrap_or("?")
     ));
 
-    // ★ Reported, never asserted. Whether subset tags were stripped depends on
+    // Reported, never asserted. Whether subset tags were stripped depends on
     // whether the fixture's fonts carried any, which is a fact about the
     // producer that made it and not about this program.
     Ok(None)

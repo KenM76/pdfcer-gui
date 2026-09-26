@@ -10,7 +10,7 @@ use pdfcer_render::FontEnvironment;
 
 /// The largest font file this will read, in bytes.
 ///
-/// ★ Sixteen mebibytes, matching `pdfcer`'s own ceiling. It is not about
+/// Sixteen mebibytes, matching `pdfcer`'s own ceiling. It is not about
 /// memory — it is that a "font file" above this size is nearly always
 /// something else that happens to have a font extension, and reading it costs
 /// an operator a visible pause for an answer that will be *"not a usable
@@ -19,7 +19,7 @@ pub const MAX_FONT_FILE_BYTES: u64 = 16 * 1024 * 1024;
 
 /// The extensions this will attempt.
 ///
-/// ★ `.ttc` and `.otc` are **deliberately absent**. A collection holds several
+/// `.ttc` and `.otc` are **deliberately absent**. A collection holds several
 /// faces in one file and the engine refuses one outright
 /// (`EmbedBlocker::ProgramIsCollection`), so offering one as a donor would be
 /// resolving a face to a file that is then refused by name — a press that
@@ -35,7 +35,7 @@ const FONT_EXTENSIONS: [&str; 4] = ["ttf", "otf", "pfb", "cff"];
 pub struct Donor<'a> {
     /// The file it came from, or `None` for one of pdfcer's **own** faces.
     ///
-    /// ★★ `Option`, and the `None` is not an absence of information — it is a
+    /// `Option`, and the `None` is not an absence of information — it is a
     /// different KIND of donor. A bundled face has no path because it was never
     /// on this machine's disk; it is compiled into the program. Reporting an
     /// empty string, or the executable's own path, would both be answers to a
@@ -45,7 +45,7 @@ pub struct Donor<'a> {
     /// The name that matched — the document's own, an equivalent family's, the
     /// file's stem, or a bundled face's own label.
     ///
-    /// ★ Owned, unlike the rest of this struct, and the reason is the bundled
+    /// Owned, unlike the rest of this struct, and the reason is the bundled
     /// rung: the engine returns that name in a value that dies with the lookup,
     /// so there is nothing for a borrow to point at. One `String` per missing
     /// font, a handful of times per embed — measured against the alternative,
@@ -59,7 +59,7 @@ pub struct Donor<'a> {
 
 /// How a donor was matched to a face.
 ///
-/// ★ `pdfcer_render::font::EmbedMatch`'s three rungs minus its bundled one, plus
+/// `pdfcer_render::font::EmbedMatch`'s three rungs minus its bundled one, plus
 /// a distinction of this shell's own. See the module header for why `Stem`
 /// exists here and not there.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -69,7 +69,7 @@ pub enum Match {
     /// **One of the faces pdfcer itself ships**, used because nothing the
     /// operator pointed pdfcer at could answer.
     ///
-    /// ★★★ The most inferred rung, and the engine says so in as many words:
+    /// The most inferred rung, and the engine says so in as many words:
     /// *"nothing on the operator's machine was consulted."* Offered only
     /// because the operator asked for it — `OPERATOR_REQUESTS.md` **O47**,
     /// answered *"yes"* on 2026-08-28 — and disclosed loudly wherever it fires,
@@ -91,7 +91,7 @@ impl<'a> Donor<'a> {
     /// Where this donor came from, for the engine's `SuppliedFont::source` and
     /// for the operator's row.
     ///
-    /// ★★ A path, or the words for a bundled face. `pdfcer` writes
+    /// A path, or the words for a bundled face. `pdfcer` writes
     /// `"bundled: FoxitSans"` for the same value and the engine's own field doc
     /// says the string is *"never parsed; only reported"* — so it is prose, and
     /// prose the operator reads belongs in [`crate::text`]. This is the join,
@@ -115,7 +115,7 @@ impl Match {
 
 /// Everything the configured folders offer.
 ///
-/// ★ The names live in a `FontEnvironment` — which owns the bytes and answers
+/// The names live in a `FontEnvironment` — which owns the bytes and answers
 /// the three-rung question — and the **paths** live here, because the
 /// environment has no notion of where a face came from and the operator is owed
 /// exactly that.
@@ -125,18 +125,18 @@ pub struct Library {
     env: FontEnvironment,
     /// Every registered name → the file it came from.
     ///
-    /// ★ A `BTreeMap` rather than a `HashMap`: iteration order is stable, and
+    /// A `BTreeMap` rather than a `HashMap`: iteration order is stable, and
     /// this is read to build a report an operator compares between runs.
     paths: BTreeMap<String, PathBuf>,
     /// The names that came **only** from a filename stem. See the header.
     stems: BTreeSet<String>,
     /// Whether pdfcer's **own** standard-14 faces may answer.
     ///
-    /// ★★★ `false` unless the operator asked. See [`Library::scan`].
+    /// `false` unless the operator asked. See [`Library::scan`].
     allow_bundled: bool,
     /// Files that were skipped and why, in the order they were met.
     ///
-    /// ★ Kept rather than discarded, because *"pdfcer could not embed
+    /// Kept rather than discarded, because *"pdfcer could not embed
     /// HelveticaNeue"* and *"pdfcer skipped HelveticaNeue.ttf because it is 40
     /// MB"* are the same event to the program and completely different events
     /// to the operator. The second is actionable.
@@ -146,7 +146,7 @@ pub struct Library {
 impl Library {
     /// Read every font file in `folders`, in order, and index what they offer.
     ///
-    /// # ★★ Later folders do NOT win
+    /// # Later folders do NOT win
     ///
     /// The first folder holding a name keeps it, which is the opposite of the
     /// renderer environment's own precedence (*"duplicate-name precedence: last
@@ -156,7 +156,7 @@ impl Library {
     /// *"searched in the order they appear here"*. First-wins is what makes
     /// that sentence true.
     ///
-    /// ★ Enforced by [`Self::offer`] rather than by registration order, because
+    /// Enforced by [`Self::offer`] rather than by registration order, because
     /// `FontEnvironment::insert_named` is last-wins and would silently reverse
     /// it.
     #[must_use]
@@ -167,7 +167,7 @@ impl Library {
     /// [`Self::scan`], and whether pdfcer's **own** faces may answer when the
     /// folders cannot.
     ///
-    /// # ★★★ The operator asked for this, and the licensing argument survives
+    /// # The operator asked for this, and the licensing argument survives
     ///
     /// `OPERATOR_REQUESTS.md` **O47**, answered *"yes"* on 2026-08-28. The
     /// module header's argument — that pdfcer must not choose a font program on
@@ -175,14 +175,14 @@ impl Library {
     /// not overruled by this. It is satisfied the same way **O50**'s checkbox
     /// satisfies it: the operator decided, once, explicitly.
     ///
-    /// ★★ And it is the **last** rung, which is what makes it safe to leave on.
+    /// And it is the **last** rung, which is what makes it safe to leave on.
     /// `resolve_for_embedding` consults the bundled table only after an exact
     /// name match and after a standard-14 family equivalence have both failed,
     /// so a machine with real fonts configured reaches a real face first and
     /// this never fires. It is a floor, not a preference.
     #[must_use]
     pub fn scan_with(folders: &[PathBuf], allow_bundled: bool) -> Self {
-        // ★ `bundled()` rather than an empty environment, and it is safe: the
+        // `bundled()` rather than an empty environment, and it is safe: the
         // bundled faces live in the FALLBACK table, which
         // `resolve_for_embedding` consults only when it is passed
         // `allow_bundled`. It is passed `false` in [`Self::donor_for`], every
@@ -203,7 +203,7 @@ impl Library {
         let entries = match std::fs::read_dir(folder) {
             Ok(entries) => entries,
             Err(error) => {
-                // ★ A folder that will not open is a **note, not a failure**.
+                // A folder that will not open is a **note, not a failure**.
                 // A removable drive that is not mounted is still where the
                 // operator's fonts live — `prefs::fonts::add`'s stated position
                 // — so the honest response is to say so and search the rest.
@@ -237,7 +237,7 @@ impl Library {
             self.skipped.push(crate::text::fonts::file_unreadable(path));
             return;
         };
-        // ★ Parsed ONCE, and the borrow ends before the bytes are stored —
+        // Parsed ONCE, and the borrow ends before the bytes are stored —
         // `pdfcer` notes the same discipline against R21. A second parse to
         // re-read a name would double the cost of a scan over a system font
         // folder, which is the case this is most likely to meet.
@@ -254,7 +254,7 @@ impl Library {
             self.skipped.push(crate::text::fonts::no_name(path));
             return;
         }
-        // ★★ The bytes are wrapped ONCE and every `FontData` clone below is an
+        // The bytes are wrapped ONCE and every `FontData` clone below is an
         // `Arc` clone. A file advertising four names would otherwise be four
         // full copies of one face in memory, and a system font folder holds
         // thousands of files.
@@ -262,7 +262,7 @@ impl Library {
         for name in &names {
             self.offer(name, path, &data, false);
         }
-        // ★★ The filename stem, as a FALLBACK and recorded as one.
+        // The filename stem, as a FALLBACK and recorded as one.
         // `pdfcer` registers it too — *"so a match works even when the
         // internal name is odd or absent"* — and the difference here is that
         // this shell has to tell an operator which happened, because a stem
@@ -288,14 +288,14 @@ impl Library {
 
     /// The donor for a document's `/BaseFont`, if the folders hold one.
     ///
-    /// ★★ The subset tag is handled by the engine — `resolve_for_embedding`
+    /// The subset tag is handled by the engine — `resolve_for_embedding`
     /// strips it on its second rung — and it has to be: a §9.6.4 tag is six
     /// uppercase letters and a `+`, minted per subset, so `ABCDEF+ArialMT` and
     /// `GHIJKL+ArialMT` are the same face and neither is a name any font file
     /// advertises. Matching without stripping would find nothing, ever, on
     /// exactly the documents that need embedding most.
     ///
-    /// ★ Whether pdfcer's own faces may answer is [`Self::scan_with`]'s
+    /// Whether pdfcer's own faces may answer is [`Self::scan_with`]'s
     /// argument, carried on the library rather than passed here — the decision
     /// is the operator's and belongs to the whole scan, not to one lookup.
     #[must_use]
@@ -303,7 +303,7 @@ impl Library {
         let hit = self
             .env
             .resolve_for_embedding(base_font, self.allow_bundled)?;
-        // ★★★ A bundled face has no entry here and that is how it is
+        // A bundled face has no entry here and that is how it is
         // RECOGNISED, rather than by matching on `hit.quality`.
         //
         // The two agree today and the map is the safer of the two to ask,
@@ -322,7 +322,7 @@ impl Library {
             });
         };
         let matched = match hit.quality {
-            // ★ The re-grade the header explains. The engine says `Exact` for a
+            // The re-grade the header explains. The engine says `Exact` for a
             // stem hit because to a renderer the two are the same question; to
             // a disclosure they are not.
             pdfcer_render::font::EmbedMatch::Exact if self.stems.contains(name) => Match::Stem,
@@ -364,12 +364,12 @@ fn has_font_extension(path: &Path) -> bool {
 
 /// A `/BaseFont` without its §9.6.4 subset tag.
 ///
-/// ★ Exactly six uppercase letters and a `+`, per the standard. Anything else
+/// Exactly six uppercase letters and a `+`, per the standard. Anything else
 /// before a `+` is part of the name and is kept — `Foo+Bar` is a legal, if
 /// unusual, font name, and treating it as a tag would look for a face called
 /// `Bar`.
 ///
-/// ★★ Kept even though [`Library::donor_for`] no longer calls it: the
+/// Kept even though [`Library::donor_for`] no longer calls it: the
 /// **display** side needs it, because a row reading `ABCDEF+ArialMT` shows an
 /// operator a tag that is an artefact of subsetting and means nothing to them.
 /// Resolution and presentation happen to want the same rule, and only one of
@@ -388,7 +388,7 @@ mod tests {
 
     /// A four-byte non-font, for the tests that only exercise the index.
     ///
-    /// ★ `FontEnvironment::insert_named` does not parse, so a donor can be
+    /// `FontEnvironment::insert_named` does not parse, so a donor can be
     /// registered without a real face. What that does **not** buy is coverage
     /// of the parse — see [`real_files`], which exists precisely because every
     /// test in this module would pass on a build whose parser was dead.
@@ -398,7 +398,7 @@ mod tests {
 
     /// **A subset tag is stripped and nothing else is.**
     ///
-    /// ★ The negative cases are the point. A five-letter prefix, a lowercase
+    /// The negative cases are the point. A five-letter prefix, a lowercase
     /// one, and a name that simply contains a `+` are all names in their own
     /// right, and treating any of them as a tag would search for a face that
     /// does not exist — silently, since the result is just "no donor".
@@ -413,7 +413,7 @@ mod tests {
 
     /// **Only real font extensions are attempted.**
     ///
-    /// ★★ `.ttc` and `.otc` must stay out, and that is a capability decision
+    /// `.ttc` and `.otc` must stay out, and that is a capability decision
     /// rather than an oversight: the engine refuses a collection by name
     /// (`EmbedBlocker::ProgramIsCollection`), so offering one as a donor would
     /// resolve a face to a file guaranteed to be rejected — a press that always
@@ -428,7 +428,7 @@ mod tests {
         assert!(!has_font_extension(Path::new("C:/f/Arial")));
     }
 
-    /// ★★★ **The first folder holding a name keeps it.**
+    /// **The first folder holding a name keeps it.**
     ///
     /// The opposite of the renderer environment's last-wins, and the assertion
     /// is load-bearing rather than decorative **now that this delegates to that
@@ -457,7 +457,7 @@ mod tests {
         assert!(library.donor_for("Wingdings").is_none());
     }
 
-    /// ★★★ **`Helvetica` resolves to Arial, and it is graded as a substitute.**
+    /// **`Helvetica` resolves to Arial, and it is graded as a substitute.**
     ///
     #[test]
     fn helvetica_finds_arial_and_says_it_is_a_substitute() {
@@ -469,7 +469,7 @@ mod tests {
         assert!(donor.matched.is_inferred());
     }
 
-    /// ★★ **A stem match is re-graded, where the engine calls it exact.**
+    /// **A stem match is re-graded, where the engine calls it exact.**
     ///
     /// The engine registers a filename stem beside a file's advertised names
     /// and reports either as `Exact`, which is right for a renderer and not
@@ -491,7 +491,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **A bundled face is offered ONLY when it was asked for.**
+    /// **A bundled face is offered ONLY when it was asked for.**
     ///
     /// `FontEnvironment::bundled()` is what this scans into, so pdfcer's own
     /// standard-14 substitutes sit in the table the whole time and one `true`
@@ -499,7 +499,7 @@ mod tests {
     /// yes on 2026-08-28 (`OPERATOR_REQUESTS.md` **O47**) — and *"yes"* is a
     /// decision that has to be carried, not a reason to stop checking.
     ///
-    /// ★★ Both halves in one test on purpose: an assertion that only proved the
+    /// Both halves in one test on purpose: an assertion that only proved the
     /// `true` case would pass on a build that ignored the flag entirely, which
     /// is the exact defect the licensing argument is about.
     #[test]
@@ -531,7 +531,7 @@ mod tests {
         assert!(!donor.program.is_empty(), "the bundled bytes are real");
     }
 
-    /// ★★★ **A real folder still beats a bundled face.**
+    /// **A real folder still beats a bundled face.**
     ///
     /// The property that makes it safe to leave the bundled rung on. It is the
     /// LAST rung — reached only after an exact name match and a family
@@ -554,7 +554,7 @@ mod tests {
 
     /// **A folder that will not open is a note, not a panic and not a stop.**
     ///
-    /// ★ The remaining folders are still searched. An operator with a removable
+    /// The remaining folders are still searched. An operator with a removable
     /// drive in their list has one folder that comes and goes, and a scan that
     /// abandoned the rest of the list when it met one would make the feature
     /// unreliable in a way they could not diagnose.
@@ -578,7 +578,7 @@ mod tests {
 mod real_files {
     use super::*;
 
-    /// ★★★ **The scan reads a real font folder and finds real faces.**
+    /// **The scan reads a real font folder and finds real faces.**
     ///
     /// Every test above is about the INDEX — the tag rule, first-wins, which
     /// extensions are attempted — and every one of them would pass on a build
@@ -587,7 +587,7 @@ mod real_files {
     /// cannot fake, and *"the folders yielded nothing"* is indistinguishable
     /// from *"the folders were empty"* without a folder that is not.
     ///
-    /// ★ It uses the operating system's own font directory, which is the one
+    /// It uses the operating system's own font directory, which is the one
     /// folder that certainly exists on the machine this ships for — and is
     /// deliberately **not** what the product searches: `Prefs::font_folders`
     /// starts empty and this module never adds to it, for the licensing reason
@@ -609,7 +609,7 @@ mod real_files {
              Skips: {:?}",
             library.skipped.iter().take(5).collect::<Vec<_>>()
         );
-        // ★ Printed rather than asserted on. Measured on the development
+        // Printed rather than asserted on. Measured on the development
         // machine at **3,359 indexed names from one skip**, which is the number
         // that made this test evidence rather than a green tick — a build whose
         // parser was dead would index the filename stems alone and still be
@@ -620,7 +620,7 @@ mod real_files {
             library.len(),
             library.skipped.len()
         );
-        // ★ A name every Windows machine carries, matched the way a document
+        // A name every Windows machine carries, matched the way a document
         // would spell it. Asserting a SPECIFIC face rather than a count is what
         // makes this a test of the join rather than of `read_dir`.
         assert!(
@@ -628,7 +628,7 @@ mod real_files {
             "neither `Arial` nor a subsetted `ArialMT` resolved out of {} indexed name(s)",
             library.len()
         );
-        // ★★★ **The claim this whole rewrite rests on, on a real machine.**
+        // **The claim this whole rewrite rests on, on a real machine.**
         //
         // `Helvetica` is what the fixture asks for and what every CAD exporter
         // writes; nothing on Windows advertises that name. If the alias rung

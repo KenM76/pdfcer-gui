@@ -58,7 +58,7 @@ impl PendingSave {
 /// The type [`disclosure_for`] returns, and the reason that function can be
 /// unit-tested without a `Ui`, a `Context`, an `OpenDoc` or an `EditSession`.
 ///
-/// ★ Three variants and not an `Option`, because *"say nothing"* and *"say it
+/// Three variants and not an `Option`, because *"say nothing"* and *"say it
 /// afterwards"* are different answers that a two-state type would collapse —
 /// and the collapse would go in the dangerous direction, since the cheapest
 /// way to make an `Option<Dialog>` compile is to return `None` for both.
@@ -119,7 +119,7 @@ pub fn disclosure_for(impact: SignatureImpact, basis: ImpactBasis) -> Disclosure
 /// re-taking a census to get it would be a second walk of the field tree for a
 /// number the first walk already had.
 ///
-/// ★ `SaveMode::Incremental` is not a parameter, and that is a statement about
+/// `SaveMode::Incremental` is not a parameter, and that is a statement about
 /// this shell rather than a simplification. `crate::app::save`'s §1 records
 /// that the save mode was *"decided by a shipped promise rather than by this
 /// module"* — `file.save_copy`'s tooltip has promised an appended update since
@@ -212,7 +212,7 @@ impl SignatureDialog {
 
     /// **Whether a confirmation is parked here and has not been drained.**
     ///
-    /// # ★★★ Why this predicate exists, and it is a defect fix
+    /// # Why this predicate exists, and it is a defect fix
     ///
     /// [`Self::show`] answers `false` on the very frame the proceed button is
     /// pressed — that is what closes the window, and it is correct. Its owner
@@ -226,7 +226,7 @@ impl SignatureDialog {
     /// ```
     ///
     ///
-    /// ★ It is invisible to every test that does not run a whole frame. The
+    /// It is invisible to every test that does not run a whole frame. The
     /// dialog is correct in isolation (`take_confirmation` returns the answer),
     /// the drain is correct in isolation (it acts on whatever it is given), and
     /// the defect lives entirely in the *lifetime* between them.
@@ -302,7 +302,7 @@ impl SignatureDialog {
         ui.add_space(10.0);
 
         ui.horizontal(|ui| {
-            // ★ Cancel FIRST, which inverts `dialogs::unsaved`'s order, and
+            // Cancel FIRST, which inverts `dialogs::unsaved`'s order, and
             // the inversion is the point rather than a slip.
             //
             // There, the reading order runs from the answer that loses nothing
@@ -372,7 +372,7 @@ pub fn ask_for(status: &Status, pending: PendingSave) -> Option<SignatureDialog>
 mod tests {
     use super::*;
 
-    /// ★★★ **An unsigned document adds no friction at all.**
+    /// **An unsigned document adds no friction at all.**
     ///
     /// The engine's instruction for `SignatureImpact::None`, asserted as the
     /// property it is. Every other row of §2's table is a disclosure this
@@ -399,7 +399,7 @@ mod tests {
         }
     }
 
-    /// ★★ **A preserved byte range is disclosed, and it is disclosed
+    /// **A preserved byte range is disclosed, and it is disclosed
     /// afterwards.**
     ///
     /// Both halves are load-bearing and they fail in opposite directions.
@@ -420,7 +420,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **An invalidating save asks first, and the question knows which
+    /// **An invalidating save asks first, and the question knows which
     /// footing it is on.**
     ///
     /// The conventional interaction — every document application that can
@@ -457,7 +457,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The window's wording follows the footing, all three strings
+    /// **The window's wording follows the footing, all three strings
     /// together.**
     ///
     /// [`SignatureDialog::spec_sourced`] is one predicate for exactly this
@@ -486,7 +486,7 @@ mod tests {
         assert!(!approval.spec_sourced());
     }
 
-    /// ★ **An unreadable footing gets the cautious wording.**
+    /// **An unreadable footing gets the cautious wording.**
     ///
     /// `ImpactBasis` is `#[non_exhaustive]`, so a future variant compiles into
     /// [`SignatureDialog::spec_sourced`]'s wildcard. It must land on the
@@ -512,7 +512,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The two save routes say different things about the operator's
+    /// **The two save routes say different things about the operator's
     /// file, and only one of them names it.**
     ///
     /// The distinction an operator is actually deciding on: *is the file I
@@ -533,7 +533,7 @@ mod tests {
         );
     }
 
-    /// ★ **The answer fires once and carries its save.**
+    /// **The answer fires once and carries its save.**
     ///
     /// `dialogs::unsaved`'s one-shot property, and the failure it prevents is
     /// the same one: an answer read every frame would re-enter the save on
@@ -554,7 +554,7 @@ mod tests {
         assert_eq!(d.take_confirmation(), None, "it must not repeat");
     }
 
-    /// ★★★ **A parked answer is visible to the owner for exactly as long as it
+    /// **A parked answer is visible to the owner for exactly as long as it
     /// is undrained — which is what keeps the window alive long enough to hand
     /// it over.**
     ///
@@ -591,7 +591,7 @@ mod tests {
         );
     }
 
-    /// ★★ **A cancelled window is holding nothing**, which is what lets it be
+    /// **A cancelled window is holding nothing**, which is what lets it be
     /// retired on the frame it closes.
     ///
     /// The other half of [`crate::dialogs::retire`]'s input: `answered()` must
@@ -609,7 +609,7 @@ mod tests {
         assert!(!d.answered());
     }
 
-    /// ★ **Cancelling answers nothing.**
+    /// **Cancelling answers nothing.**
     ///
     /// The ✕ and the Cancel button must be separable from an answer, or the
     /// control an operator presses reflexively to dismiss a surprise becomes
@@ -626,7 +626,7 @@ mod tests {
         assert_eq!(d.take_confirmation(), None);
     }
 
-    /// ★★★ **The fixture really is signed, really is an approval signature,
+    /// **The fixture really is signed, really is an approval signature,
     /// and really does move between the two surfaces when a page goes.**
     ///
     /// The one test here that goes through the **engine** rather than over the
@@ -691,7 +691,7 @@ mod tests {
         );
         assert_eq!(count, 1);
 
-        // ★ And the guard really raises a window for it — the join between the
+        // And the guard really raises a window for it — the join between the
         // decision and the surface, asserted through the same call the
         // `Action::Save` arm makes. Every step above could be right with
         // `ask_for` still answering `None`, and the operator would see nothing.
@@ -711,7 +711,7 @@ mod tests {
         );
     }
 
-    /// ★ **A document with no session cannot be asked about.**
+    /// **A document with no session cannot be asked about.**
     ///
     /// The `Status::Empty` guard, asserted for `ask_for`'s stated contract:
     /// `None` means *proceed unchanged*, and the save arms that reach here

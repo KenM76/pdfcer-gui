@@ -13,7 +13,7 @@ program in the class for thirty years. An operator who holds Shift and gets
 a free-form resize does not conclude that pdfcer chose differently; they
 conclude it is broken.
 
-# ★★ Why this is a PAIR of drags and not one
+# Why this is a PAIR of drags and not one
 
 Because the only trustworthy oracle for a constraint is a **comparison**.
 
@@ -42,7 +42,7 @@ to dominate. The check therefore drags **x-dominant** and asserts the kept
 factor equals the x factor of the *unconstrained* run, which is a number the
 wrong build has no way to produce for a y-dominant travel.
 
-## ★★★ "Dominant" means RELATIVE travel, and getting that wrong cost a run
+## "Dominant" means RELATIVE travel, and getting that wrong cost a run
 
 `aspect` keeps the factor further from unity, and
 `canvas::constrain`'s header derives why that metric *is* relative
@@ -60,7 +60,7 @@ factor"*. The shell was right; the constant was wrong. It is now a fraction
 of the shape, so the premise assertion 3 rests on is true by construction on
 any fixture. See [`DRAG_X_OF_SHAPE`] for the measured numbers.
 
-# ★ Why the trace and not the pixels
+# Why the trace and not the pixels
 
 This project's standing rule is that *a trace can say the verb ran and
 cannot say the screen changed*, and that every layout, repaint or clipping

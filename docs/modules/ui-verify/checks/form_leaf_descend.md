@@ -11,7 +11,7 @@ past the object, into its parts, and drag one.**
 > click reaches the bottom and lets me edit the nodes."*
 
 
-## ★★ What had to change together, and why the order was forced
+## What had to change together, and why the order was forced
 
 Four things, and doing any one alone would have made the shell worse:
 
@@ -37,7 +37,7 @@ existed for the day between the two halves, and why this check exists now.
 | B | double-click again | `canvas-selection … level=Part` |
 | C | drag | `move-subpath-in-form page=0 n=1` |
 
-★ Step B's oracle is the **rung**, not the trace of a click. `level=Part`
+Step B's oracle is the **rung**, not the trace of a click. `level=Part`
 on a `first=leaf:` selection is the one statement that says the ladder went
 deeper in the space that had no deeper rung — and a build with the descent
 guard back in place reports `level=Object` while every other line looks

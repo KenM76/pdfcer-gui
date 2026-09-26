@@ -23,7 +23,7 @@ pub(super) fn tab() -> Tab {
             // set, and the choice persists per document so opening a
             // drawing set does not inherit a report's setting.
             //
-            // ★ **All four are present as of Phase 4**, and the note that
+            // **All four are present as of Phase 4**, and the note that
             // used to sit here — *"the build behind them is larger than it
             // looks: the viewer holds a single page index, and the object
             // provider returns nothing for any page but the current one"* —
@@ -47,7 +47,7 @@ pub(super) fn tab() -> Tab {
             // would be four buttons with no indication of which one you are
             // in, which for a radio is the whole of the control.
             // ---------------------------------------------------------------
-            // ★ **Two rows**, `OPERATOR_REQUESTS.md` O97. Four square icon
+            // **Two rows**, `OPERATOR_REQUESTS.md` O97. Four square icon
             // buttons in a row is a strip; as a 2 × 2 block they are half the
             // width and read as the single four-position choice they are —
             // which is also what Acrobat's own view controls look like.
@@ -76,7 +76,7 @@ pub(super) fn tab() -> Tab {
             // taken on it: pressing Hand changes what every later drag
             // means, while pressing Fit page happens once and is over.
             //
-            // ★ **`view.tool_text` joined it**, and this group is where it
+            // **`view.tool_text` joined it**, and this group is where it
             // belongs for two reasons that are each sufficient. It is the
             // group that already holds a pointer-tool toggle, so the two
             // controls that answer *"what does a drag on the page do?"* are
@@ -106,7 +106,7 @@ pub(super) fn tab() -> Tab {
             group(
                 "navigate",
                 ribbon::group_view_navigate(),
-                // ★ **The order is the order a tool palette is always in**:
+                // **The order is the order a tool palette is always in**:
                 // the arrow, the white arrow, the type tool, the hand. Every
                 // program in this class puts them in that sequence, which means
                 // the operator's eye already knows where to go before they have
@@ -127,7 +127,7 @@ pub(super) fn tab() -> Tab {
                     // definition, and the exact silent decline this project
                     // keeps removing.
                     //
-                    // ★★ It is the ONE authoring tool parked on a tab that
+                    // It is the ONE authoring tool parked on a tab that
                     // every mode shows. Markup and Measure tools are gated the
                     // same way and are never wrong, because their whole TAB
                     // disappears outside the modes that can use them — the
@@ -135,7 +135,7 @@ pub(super) fn tab() -> Tab {
                     // is in every mode by design, so it cannot do that, and
                     // this item has to carry the condition itself.
                     //
-                    // ★ `shown_when`, not `enabled_when`, and R9 is the
+                    // `shown_when`, not `enabled_when`, and R9 is the
                     // reason: greying is for a capability that is
                     // *temporarily* unavailable and is explained on hover.
                     // "This mode does not edit page content" is not temporary
@@ -154,11 +154,11 @@ pub(super) fn tab() -> Tab {
                     icon_only("view.tool_node").shown_when("mode.edit_content"),
                     icon_only("view.tool_text"),
                     icon_only("view.tool_hand"),
-                    // ★★★ **Smart select** — `OPERATOR_REQUESTS.md` O70, and
+                    // **Smart select** — `OPERATOR_REQUESTS.md` O70, and
                     // the operator asked for it here by name: *"we should have
                     // a checkbox in navigate for a Smart-Selector option."*
                     //
-                    // ★ It is a **toggle among tools**, and that is not a
+                    // It is a **toggle among tools**, and that is not a
                     // category error: it changes what the arrow at the head of
                     // this row selects when you click with it. Putting it in
                     // View ▸ Display beside the chrome switches would file it
@@ -172,12 +172,12 @@ pub(super) fn tab() -> Tab {
                     // so a keyboard route cannot reach it where the item is
                     // hidden.
                     icon_only("view.smart_select").shown_when("mode.edit_content"),
-                    // ★★★ **Text chunks** — `OPERATOR_REQUESTS.md` O215,
+                    // **Text chunks** — `OPERATOR_REQUESTS.md` O215,
                     // and the operator named this row for it too: *"a new
                     // selector option we can turn on or off in the sidebar,
                     // navigate, and content edit tools."*
                     //
-                    // ★ Beside the smart selector rather than in View ▸
+                    // Beside the smart selector rather than in View ▸
                     // Display, on that item's argument applied a second time:
                     // it changes which piece a click picks up. The boxes it
                     // draws are the visible half of that, not the point of it.
@@ -212,7 +212,7 @@ pub(super) fn tab() -> Tab {
                 ],
             ),
             //
-            // ★ **Rulers, grid and guides were N and are now built**, which
+            // **Rulers, grid and guides were N and are now built**, which
             // completes `RIBBON_IA.md` §5.2's Display row and the last unbuilt
             // line of `FEATURES.md`'s Phase 3. The note that used to sit here
             // is discharged rather than reworded, and the three entries are
@@ -241,7 +241,7 @@ pub(super) fn tab() -> Tab {
                     icon_only("view.rulers"),
                     icon_only("view.grid"),
                     icon_only("view.guides"),
-                    // ★★★ **O137, and the one entry here that changes the
+                    // **O137, and the one entry here that changes the
                     // RASTER rather than drawing over it.** Every toggle above
                     // paints a mark on a finished page texture; this one asks
                     // the renderer for a different texture
@@ -255,7 +255,7 @@ pub(super) fn tab() -> Tab {
                     // the order puts the most consequential switch where a
                     // reader arrives at it having understood the cheap ones.
                     icon_only("view.line_weights"),
-                    // ★★★ **LAST, and it is the only member of this
+                    // **LAST, and it is the only member of this
                     // group that changes the LAYOUT.** The three overlays
                     // add furniture; `view.line_weights` changes the
                     // texture; this one changes how much canvas there is,
@@ -265,7 +265,7 @@ pub(super) fn tab() -> Tab {
                     // the end.
                     //
                     icon_only("view.off_page"),
-                    // ★★★ **O226's X-ray, and it is the only member of this
+                    // **O226's X-ray, and it is the only member of this
                     // group whose subject is CONTENT the page already carries
                     // and does not draw.**
                     //
@@ -279,7 +279,7 @@ pub(super) fn tab() -> Tab {
                     // cheapest-first with one more rung on the end: furniture,
                     // texture, layout, then the content nobody can see.
                     icon_only("view.ocr_layer"),
-                    // ★★★ **The blend, drawn only while the switch beside it
+                    // **The blend, drawn only while the switch beside it
                     // is pressed** — O226's slider, in the words he used.
                     //
                     // Its condition is the TOGGLE'S OWN selected-condition,
@@ -338,7 +338,7 @@ pub(super) fn tab() -> Tab {
                     // There is no sidebar rail in this build — there is a
                     // dock, and every dock panel below already has its own
                     // command. So the group loses nothing.
-                    // ★ Pages is a panel like any other in this build. The
+                    // Pages is a panel like any other in this build. The
                     // note above described the OLD shell's sidebar rail, in
                     // which thumbnails were the rail's first pane rather than
                     // an independently toggleable panel; this build has no
@@ -408,7 +408,7 @@ pub(super) fn tab() -> Tab {
                 "window",
                 ribbon::group_view_window(),
                 [
-                    // ★ **Which document am I looking at** comes first, before
+                    // **Which document am I looking at** comes first, before
                     // the two verbs that change the shape of the window.
                     //
                     // `RIBBON_IA.md` §3 gives this group the question *"what
@@ -422,7 +422,7 @@ pub(super) fn tab() -> Tab {
                     // navigation pair in this manifest is.
                     command("view.previous_document"),
                     command("view.next_document"),
-                    // ★ On the ribbon as well as on a tab's context menu, and
+                    // On the ribbon as well as on a tab's context menu, and
                     // the ribbon entry is not decoration: `menus`'
                     // `every_menu_command_is_also_reachable_from_the_ribbon`
                     // holds that *a command reachable by right-click alone is
@@ -431,7 +431,7 @@ pub(super) fn tab() -> Tab {
                     command("view.close_other_documents"),
                     command("view.read_mode"),
                     command("view.fullscreen"),
-                    // ★★ **Dock all panels**, immediately before Reset
+                    // **Dock all panels**, immediately before Reset
                     // layout, and the order is the two-tier shape
                     // `MODES_AND_PANELS.md` singles out: the cheap remedy
                     // first, the destructive one after it. Docking every

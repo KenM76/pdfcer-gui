@@ -36,7 +36,7 @@ const BECAME_ADD_EVENT: &str = "text-edit-became-add";
 /// The draft's own account of its selection, as `canvas::textedit::keys`
 /// publishes it: `from=… to=… n=…`, or `none caret=…`.
 ///
-/// ★ Emitted by `trace_on_change`, so it appears once per change rather than
+/// Emitted by `trace_on_change`, so it appears once per change rather than
 /// once per frame — which is what makes counting the lines meaningful and what
 /// makes the *last* one the current state.
 const SELECT_EVENT: &str = "text-select";
@@ -224,7 +224,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 2c: ★★ IS THERE ANYTHING TO EMPTY? The calibration, not a formality.
+    // --- 2c: IS THERE ANYTHING TO EMPTY? The calibration, not a formality.
     //
     // Emptying a run of zero characters is a no-op the shell is RIGHT to drop:
     // `draft.text != *original` is false, no action is raised, and this check
@@ -302,7 +302,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(30);
     let trace = session.trace()?;
 
-    // --- 6: ★★★ THE ASSERTION, and its order is the whole point -------------
+    // --- 6: THE ASSERTION, and its order is the whole point -------------
     //
     // Was an action raised at all? That is O216's question and nothing else
     // answers it: the plan line is written before the engine is called, so its

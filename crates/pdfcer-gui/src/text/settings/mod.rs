@@ -9,12 +9,12 @@
 pub mod bytes;
 pub mod extract;
 pub mod look;
-/// ★ The colour the recognised text is drawn in over a scan — O229. Its own
+/// The colour the recognised text is drawn in over a scan — O229. Its own
 /// file because it is the copy for a *feature*, where this module's neighbours
 /// are copy for answers to a silent standard.
 pub mod ocrlayer;
 pub mod overprint;
-/// ★ The two print-ready colour controls and the field wash. Its header says
+/// The two print-ready colour controls and the field wash. Its header says
 /// which of the three is there for a weak reason and should move out first if
 /// the module grows.
 pub mod print_colour;
@@ -198,7 +198,7 @@ pub const fn group_colour() -> &'static str {
 /// The group holding the one control about the PERSON rather than the document
 /// or the program.
 ///
-/// ★ *"Comments"*, not *"Annotations"* or *"Markup"*. Every reviewer UI the
+/// *"Comments"*, not *"Annotations"* or *"Markup"*. Every reviewer UI the
 /// operator has used calls them comments; *annotation* is the PDF's word for
 /// the object and *markup* is ours for the tool. The heading is where somebody
 /// looks, so it takes their word.
@@ -226,7 +226,7 @@ pub const fn group_images() -> &'static str {
 
 /// The Fonts group's caption.
 ///
-/// ★ *"Fonts"*, not *"Font folders"*. A group caption names the subject and the
+/// *"Fonts"*, not *"Font folders"*. A group caption names the subject and the
 /// control inside it names the property — the same call `text::ribbon`'s
 /// `group_format_font` makes, and it leaves room for a second font setting to
 /// join without the caption becoming a list.
@@ -241,7 +241,7 @@ pub const fn font_folders_label() -> &'static str {
     "Folders to take fonts from"
 }
 
-/// ★★ The hint states the **consequence of leaving it empty**, which is the
+/// The hint states the **consequence of leaving it empty**, which is the
 /// one fact an operator cannot discover from an empty list.
 ///
 /// pdfcer does not search the system font directory and will not: embedding
@@ -257,7 +257,7 @@ pub const fn font_folders_hint() -> &'static str {
 
 /// Shown in place of an empty list.
 ///
-/// ★★ Its wording changed on 2026-08-28 when the OS-fonts checkbox landed:
+/// Its wording changed on 2026-08-28 when the OS-fonts checkbox landed:
 /// "no folders" stopped meaning "nothing to embed from", because the box may be
 /// ticked. An empty-state sentence that contradicts a control four rows below it
 /// is worse than none -- an operator who has ticked the box and reads *"nowhere
@@ -269,7 +269,7 @@ pub const fn font_folders_none() -> &'static str {
 
 /// The same empty state when the OS-fonts box is **not** ticked either.
 ///
-/// ★ Two sentences for two states rather than one that hedges. This is the only
+/// Two sentences for two states rather than one that hedges. This is the only
 /// configuration in which embedding genuinely cannot take a font from anywhere,
 /// and it is worth saying plainly at the moment it is true -- not at the far end
 /// of an embed, which is where the operator would otherwise meet it.
@@ -281,7 +281,7 @@ pub const fn font_folders_none_at_all() -> &'static str {
 
 /// The checkbox the operator asked for, in his own words.
 ///
-/// ★★★ `OPERATOR_REQUESTS.md` **O50**: *"just a simple checkbox to include fonts
+/// `OPERATOR_REQUESTS.md` **O50**: *"just a simple checkbox to include fonts
 /// from the OS installed font folders."* "Installed on this computer" rather
 /// than "system fonts" or "OS fonts", because that is what the thing IS to the
 /// person ticking it -- they installed them, or their IT did, and either way
@@ -293,7 +293,7 @@ pub const fn use_os_fonts_label() -> &'static str {
 
 /// What ticking it means, including the part pdfcer cannot answer for them.
 ///
-/// ★★ It states the **licensing** consequence, and that is not legal throat-
+/// It states the **licensing** consequence, and that is not legal throat-
 /// clearing: it is the reason this is a checkbox and not the default. The
 /// operator is being handed a decision, and a control that hands somebody a
 /// decision without saying what the decision is about is a control that took it
@@ -306,7 +306,7 @@ pub const fn use_os_fonts_hint() -> &'static str {
 
 /// The heading over the folders the checkbox resolves to.
 ///
-/// ★★ The folders are DRAWN, greyed, under the tick. A checkbox whose effect is
+/// The folders are DRAWN, greyed, under the tick. A checkbox whose effect is
 /// invisible is one nobody can verify -- and the per-user folder in particular
 /// is somewhere most operators do not know exists, so listing it is the
 /// difference between a setting they trust and one they re-tick to see if it
@@ -318,7 +318,7 @@ pub const fn use_os_fonts_folders() -> &'static str {
 
 /// Shown when the box is ticked and the machine reports no font folder at all.
 ///
-/// ★ A real state and not a defensive one: `%WINDIR%` and `%LOCALAPPDATA%` are
+/// A real state and not a defensive one: `%WINDIR%` and `%LOCALAPPDATA%` are
 /// read from the environment rather than assumed, and a stripped or unusual
 /// image can leave both unset. Saying so beats a tick with nothing under it,
 /// which reads as the list still loading.
@@ -341,7 +341,7 @@ pub const fn font_folder_add_hover() -> &'static str {
 
 /// The per-row remove button.
 ///
-/// ★ A word rather than a `×`. This list is at most sixteen rows and every row
+/// A word rather than a `×`. This list is at most sixteen rows and every row
 /// is a path an operator typed or picked; a glyph that means *delete* on a row
 /// whose other content is a file path is one mis-click from removing the wrong
 /// one, and the word is two characters wider.
@@ -376,7 +376,7 @@ pub const fn group_text() -> &'static str {
 
 /// Group 5.
 ///
-/// ★ **New in this port.** In the old shell `parallel_epsilon_degrees` sat
+/// **New in this port.** In the old shell `parallel_epsilon_degrees` sat
 /// under *Copying and extracting text* — where it has nothing to do with
 /// either — purely because it happened to be a slider like the word-gap one
 /// beside it. The operator symptom is *"my dimension came out as an angle"*,
@@ -405,7 +405,7 @@ pub const fn group_saving() -> &'static str {
 
 /// Group 8 — the only one that is not about the PDF standard.
 ///
-/// ★ **Named for what it is about, not for where its values are stored.** These
+/// **Named for what it is about, not for where its values are stored.** These
 /// two settings live in `preferences.txt` rather than `settings.txt`, which is
 /// an implementation fact the operator has no business meeting: they opened one
 /// window, they press one Save, and one Cancel discards the lot.
@@ -436,25 +436,25 @@ mod tests {
     ///
     ///
     ///
-    /// ★★★ It caught something larger that time. The same engine Pass changed
+    /// It caught something larger that time. The same engine Pass changed
     /// what `format_text` DOES by default — a synthesis request that used to be
     /// refused is now applied — and that silently removed this shell's Bold
     /// button, which was built on the refusal. `cargo update` brought both in
     /// together, and the settings test and one face-by-name assertion were the
     /// only two things that noticed.
-    // ★ 28 → 29 on 2026-09-02: `spot_colorant_device_model`, new in
+    // 28 → 29 on 2026-09-02: `spot_colorant_device_model`, new in
     // `pdfcer-core 0.20`. Ken: *"the engine I think has a couple of new options
     // for colour rendering that we might need to surface."* He was right, and
     // the coverage gate two files away fired on the same `cargo update` — the
     // pair working as designed, one demanding the control and one demanding
     // the copy.
-    // ★ 29 → 30 on 2026-09-02: `shade_form_fields`. Ken: *"in our display
+    // 29 → 30 on 2026-09-02: `shade_form_fields`. Ken: *"in our display
     // section we should have an option to shade the form fields like acrobat
     // does."* Note this one is a SHELL preference rather than an engine
     // setting, so the sibling coverage test in `dialogs::settings` — which
     // enumerates the engine's store — could never have demanded it. This
     // catalog is the only instrument that covers both.
-    // ★ 30 → 31 on 2026-09-04: `acrobat_path` — O122, *"have a setting where
+    // 30 → 31 on 2026-09-04: `acrobat_path` — O122, *"have a setting where
     // people can change it."* The second SHELL preference in this count and the
     // first setting in the window about **another program on this machine**, so
     // neither the engine-store coverage test nor anything else could have
@@ -462,7 +462,7 @@ mod tests {
     // because O122's four surfaces are one conversation and were filed
     // together; this list reaches across for it, which is what keeps the count
     // honest about a group whose words live elsewhere.
-    // ★★★ 31 → 33 on 2026-09-05, and it is the only entry in this list
+    // 31 → 33 on 2026-09-05, and it is the only entry in this list
     // that moved the count by TWO. The trust-store work adds one ENGINE setting
     // (`acrobat_trust_store`, which the sibling completeness test in
     // `dialogs::settings` demanded — it was red before this control existed)
@@ -470,13 +470,13 @@ mod tests {
     // test could have demanded, because the engine deliberately does not model
     // where the file is: *"locating the file is the shell's job"*).
     //
-    // ★★ They are two headers rather than one on purpose. A permission and a
+    // They are two headers rather than one on purpose. A permission and a
     // location have different blast radii — one governs the pdfcer command line
     // as well, the other changes only which file is read — and a single
     // `radius` line covering both would have to be vague about the one that
     // matters. `dialogs::settings::signatures`' header carries the argument.
     //
-    // ★★ 33 → 34 on 2026-09-05: **one** header over the two auto-hide
+    // 33 → 34 on 2026-09-05: **one** header over the two auto-hide
     // toggles, and the singular is the decision rather than a shortcut. They
     // are one question the operator answers twice — *"how much of the window
     // do I want the drawing to have?"* — and the sentence that makes the
@@ -486,7 +486,7 @@ mod tests {
     // and answered the other way: those two have different blast radii, these
     // two have the same one.
     //
-    // ★ 38 → 39: the colour the recognised text is drawn in over a scan —
+    // 38 → 39: the colour the recognised text is drawn in over a scan —
     // O229, and the third SHELL preference in this count that no engine-store
     // coverage test could have demanded. It is one header rather than a colour
     // row folded under the field wash, because the two settings share only the
@@ -516,7 +516,7 @@ mod tests {
     fn triples() -> Vec<(&'static str, &'static str, &'static str)> {
         vec![
             (theme_title(), theme_silence(), theme_radius()),
-            // ★ O122's triple, reached across into `crate::text::acrobat`. See
+            // O122's triple, reached across into `crate::text::acrobat`. See
             // `SETTINGS_COUNT` on why that module holds it.
             (
                 crate::text::acrobat::path_title(),
@@ -540,7 +540,7 @@ mod tests {
                 blend_space_radius(),
             ),
             (zero_tint_title(), zero_tint_silence(), zero_tint_radius()),
-            // ★ Beside its sibling, because they are the same subject from two
+            // Beside its sibling, because they are the same subject from two
             // sides: that one is what OVERPRINTS a spot colour, this one is
             // what a spot colour IS. New in pdfcer-core 0.20 (O100).
             (
@@ -548,13 +548,13 @@ mod tests {
                 spot_model_silence(),
                 spot_model_radius(),
             ),
-            // ★ A shell preference, not an engine setting — see SETTINGS_COUNT.
+            // A shell preference, not an engine setting — see SETTINGS_COUNT.
             (
                 field_shade_title(),
                 field_shade_silence(),
                 field_shade_radius(),
             ),
-            // ★ A shell preference, not an engine setting — see
+            // A shell preference, not an engine setting — see
             // SETTINGS_COUNT. Beside the field wash because both are colours
             // pdfcer draws over a page and neither reaches the file.
             (
@@ -575,7 +575,7 @@ mod tests {
             (mask_title(), mask_silence(), mask_radius()),
             (minify_title(), minify_silence(), minify_radius()),
             (word_gap_title(), word_gap_silence(), word_gap_radius()),
-            // ★ A shell preference, not an engine setting — see
+            // A shell preference, not an engine setting — see
             // SETTINGS_COUNT. Beside `word_gap` because both are about what
             // comes out of the page as text.
             (find_trim_title(), find_trim_silence(), find_trim_radius()),
@@ -611,7 +611,7 @@ mod tests {
                 trailing_eol_silence(),
                 trailing_eol_radius(),
             ),
-            // ★ The one setting in this window whose SILENCE line does not
+            // The one setting in this window whose SILENCE line does not
             // describe a silence. §12.5.6.10 states a corner order and almost
             // no producer follows it, so the sentence says that instead — see
             // `dialogs::settings::saving::quad_point_order`.
@@ -620,7 +620,7 @@ mod tests {
                 quad_order_silence(),
                 quad_order_radius(),
             ),
-            // ★ The four in the *Drawing the page* group — the shell's own
+            // The four in the *Drawing the page* group — the shell's own
             // preferences rather than answers to a silent standard. They are
             // in this list for exactly the same reason the thirteen above are:
             // the obligation is a property of a **control in this window**, not
@@ -642,7 +642,7 @@ mod tests {
                 wheel_paging_silence(),
                 wheel_paging_radius(),
             ),
-            // ★ O58 — the paste-order choice. It sits beside wheel paging
+            // O58 — the paste-order choice. It sits beside wheel paging
             // because both are the same shape of question: what should a
             // familiar input mean in this program.
             (
@@ -662,7 +662,7 @@ mod tests {
                 tab_tolerance_radius(),
             ),
             (auto_hide_title(), auto_hide_silence(), auto_hide_radius()),
-            // ★★★ The two trust-store settings, reached across into
+            // The two trust-store settings, reached across into
             // `crate::text::trust` for the reason `crate::text::acrobat`'s
             // triple is reached across for: the subject's copy is one
             // conversation and lives in one module, and this list reaching for
@@ -698,7 +698,7 @@ mod tests {
         ]
     }
 
-    /// ★ Every setting answers all three obligations, and none of the answers
+    /// Every setting answers all three obligations, and none of the answers
     /// is empty.
     ///
     /// The mechanical half of the window's stated contract. A setting added
@@ -720,7 +720,7 @@ mod tests {
         }
     }
 
-    /// ★ **The window draws exactly the settings this catalog describes.**
+    /// **The window draws exactly the settings this catalog describes.**
     ///
     ///
     /// So this counts from the **other** end: it parses the dialog's own source
@@ -836,7 +836,7 @@ mod tests {
         );
     }
 
-    /// ★★★ EVERY GROUP MODULE IS IN THE LIST ABOVE — checked, not remembered.
+    /// EVERY GROUP MODULE IS IN THE LIST ABOVE — checked, not remembered.
     ///
     /// # The gap this closes, which had already been found once and left open
     ///
@@ -896,7 +896,7 @@ mod tests {
         }
     }
 
-    /// ★ Every setting that changes SAVED BYTES says so, and no other does.
+    /// Every setting that changes SAVED BYTES says so, and no other does.
     ///
     /// The distinction the window exists to make legible: a setting whose blast
     /// radius is the file on disk is a different kind of decision from one that
@@ -921,7 +921,7 @@ mod tests {
             xref_eol_radius(),
             trailing_eol_radius(),
             polarity_radius(),
-            // ★ The least obvious member of this list, which is why it is in
+            // The least obvious member of this list, which is why it is in
             // it. A faked weight looks like a rendering choice and is written
             // into the content stream — see `style_policy_radius`.
             style_policy_radius(),
@@ -929,7 +929,7 @@ mod tests {
             assert!(touches_bytes(radius), "a byte setting hides it: {radius:?}");
         }
 
-        // ★ The theme is checked against BOTH its lines, and it is the only one.
+        // The theme is checked against BOTH its lines, and it is the only one.
         //
         // Every other setting makes its "and the file is untouched" promise in
         // its radius line. The theme makes it in its **silence** line —
@@ -959,7 +959,7 @@ mod tests {
             unmappable_radius(),
             actual_text_radius(),
             missing_as_radius(),
-            // ★ All four of the shell's own preferences are preview-only, and
+            // All four of the shell's own preferences are preview-only, and
             // they are listed here rather than exempted. A preference file is
             // still a file, so "does not change the file" is a claim worth
             // pinning: it means *your PDF*, and an operator reading it needs it
@@ -1004,7 +1004,7 @@ mod tests {
         }
     }
 
-    /// ★ Every default that is a GUESS admits it, in its own note.
+    /// Every default that is a GUESS admits it, in its own note.
     ///
     /// Obligation 1, mechanised — and the test that would have failed on the
     /// old shell for five of these. `pdfcer-core` grades `image_minify`,
@@ -1041,7 +1041,7 @@ mod tests {
         }
     }
 
-    /// ★ The one SOURCED default says it is sourced, and says it differently.
+    /// The one SOURCED default says it is sourced, and says it differently.
     ///
     /// The counterpart to the test above, and the reason that one is not
     /// enough. If every note hedged, the operator would have no way to tell
@@ -1061,7 +1061,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The colour section offers two options and neither is the deleted
+    /// **The colour section offers two options and neither is the deleted
     /// third.**
     ///
     /// This replaces `the_acrobat_divergence_names_the_option_that_matches`,
@@ -1070,7 +1070,7 @@ mod tests {
     /// matches Acrobat (`OPERATOR_REQUESTS.md` O52), so a sentence saying pdfcer
     /// deliberately differs is backwards rather than redundant.
     ///
-    /// ★★ The replacement asserts the **absence**, which is the harder half. A
+    /// The replacement asserts the **absence**, which is the harder half. A
     /// deleted string leaves no test behind it, so nothing would notice a
     /// future edit reinstating either one — and *"the old pdfcer formula"* is
     /// exactly the kind of option somebody restores while looking for
@@ -1093,7 +1093,7 @@ mod tests {
             !section.contains("deliberately differs"),
             "the divergence note is back, and the default no longer diverges: {section:?}"
         );
-        // ★ The two that remain still say what they are for, so this cannot
+        // The two that remain still say what they are for, so this cannot
         // pass by the whole section having been emptied.
         assert!(cmyk_intent_calibrated_label().contains("Match other PDF viewers"));
         assert!(cmyk_intent_neutral_note().contains("CAD"));

@@ -38,7 +38,7 @@ pub enum Status {
     NeedsPassword {
         /// Where the file is. The prompt is keyed on it, and so is the tab.
         path: PathBuf,
-        /// ★★ **The reading the operator had already asked for**, carried
+        /// **The reading the operator had already asked for**, carried
         /// across the password prompt so the retry does not quietly drop it.
         ///
         /// Almost always [`LoadOptions::new()`] — the ordinary open. It is
@@ -61,7 +61,7 @@ pub enum Status {
 /// **The stable name for one duplicate-key reading**, for a trace a machine
 /// reads.
 ///
-/// # ★★ Why this exists rather than `{:?}` on the engine's enum
+/// # Why this exists rather than `{:?}` on the engine's enum
 ///
 /// Because a `Debug` rendering belongs to `pdfcer-core`, and a driven check
 /// keyed on one is asserting a formatting detail of somebody else's crate. This
@@ -112,7 +112,7 @@ mod renderreq;
 pub use identity::{Origin, SelectedField};
 /// One open document and everything the shell knows about looking at it.
 pub struct OpenDoc {
-    /// ★ **The operator's configuration, as this document's derived data was
+    /// **The operator's configuration, as this document's derived data was
     /// computed under it.**
     ///
     /// # Why a snapshot lives here at all, when the live answer is on `PdfcerApp`
@@ -141,7 +141,7 @@ pub struct OpenDoc {
     /// `PdfcerApp::tests::opening_a_document_gives_it_the_operators_settings`
     /// is what stops a fourth open path forgetting to.
     pub(crate) settings: pdfcer_core::settings::Settings,
-    /// ★ The shell's own preferences, snapshotted for the same reason
+    /// The shell's own preferences, snapshotted for the same reason
     /// [`Self::settings`] is and updated in the same one function.
     ///
     /// `render_quality` multiplies the raster scale, so it is baked into every
@@ -160,7 +160,7 @@ pub struct OpenDoc {
     /// succeeded. Still also what the window title becomes (`<file> — pdfcer`)
     /// and what a document switcher will need.
     ///
-    /// ★ **It is not always a location.** `file.new` sets it to a name, and
+    /// **It is not always a location.** `file.new` sets it to a name, and
     /// [`Self::origin`] is what says which of the two this is. Every consumer
     /// that treats it as an *identity* or a *label* — the forms cache key, the
     /// Pages panel caption, the trace — is correct either way. Every consumer
@@ -186,7 +186,7 @@ pub struct OpenDoc {
     pub session: Arc<EditSession>,
     /// The flattened page vector, resolved once at open.
     pub pages: Vec<Page>,
-    /// ★★★ **Which reading of the file this is** — the [`LoadOptions`] the
+    /// **Which reading of the file this is** — the [`LoadOptions`] the
     /// bytes were parsed under.
     ///
     /// # Why an `OpenDoc` has to remember this at all
@@ -198,7 +198,7 @@ pub struct OpenDoc {
     /// list offers **the other value**, and to write a label saying which value
     /// is on offer it has to know which one is in force.
     ///
-    /// ★★ **It cannot be re-derived from the document**, and that is the
+    /// **It cannot be re-derived from the document**, and that is the
     /// engine's design rather than an omission. Its own header: *"a decision
     /// made during parsing is not a value that can be edited afterwards,
     /// because the discarded one was never built into the document"*. The
@@ -234,7 +234,7 @@ pub struct OpenDoc {
     pub page_texture: Option<PageTexture>,
     /// The [`Self::edit_epoch`] [`Self::page_texture`] is a picture of.
     ///
-    /// # ★ Why this exists: the blank flash after every edit
+    /// # Why this exists: the blank flash after every edit
     ///
     ///
     /// Nulling it is also what put a **blank page on screen between the edit
@@ -258,7 +258,7 @@ pub struct OpenDoc {
     /// `actions::pages::resync` drops it on exactly that condition, beside the
     /// strip cache and the selection it drops for the same reason.
     pub page_texture_epoch: u64,
-    /// ★★★ **The preview that outlives the gesture**, held until the page
+    /// **The preview that outlives the gesture**, held until the page
     /// catches up (`OPERATOR_REQUESTS.md` O63, third piece).
     ///
     /// The whole argument — what it removes, why holding a picture of a
@@ -269,7 +269,7 @@ pub struct OpenDoc {
     pub(crate) held_preview: Option<HeldPreview>,
     /// When the last edit bumped [`Self::edit_epoch`].
     ///
-    /// ★ For one question and one only: **has the picture been behind long
+    /// For one question and one only: **has the picture been behind long
     /// enough to be worth saying so?** See
     /// [`page_is_catching_up`](Self::page_is_catching_up); the argument is in
     /// [`heldpreview`](super::state::heldpreview)'s header beside the rest of
@@ -321,7 +321,7 @@ pub struct OpenDoc {
     /// Only ever non-zero while [`crate::app::prefs::WheelPaging::FlipPages`]
     /// is on and the display mode is not continuous.
     ///
-    /// ★ An accumulator rather than "one event, one page", because the two
+    /// An accumulator rather than "one event, one page", because the two
     /// devices that produce a wheel do not agree on what an event is. A mouse
     /// delivers one detent as one large delta; a trackpad delivers a swipe as
     /// dozens of small ones. Counting events would turn a single trackpad
@@ -357,7 +357,7 @@ pub struct OpenDoc {
     /// [`Self::render_error`] when a *current-page* render comes back `Err`,
     /// cleared the moment one comes back `Ok`.
     ///
-    /// # ★★★ Why a separate field, when `render_error` already exists
+    /// # Why a separate field, when `render_error` already exists
     ///
     ///
     /// `render::settle`'s spawn gate did have a hold, spelled
@@ -418,7 +418,7 @@ pub struct OpenDoc {
     /// **How many fonts the last mark-by-search in this document could not
     /// read**, or 0 — Pass 127.1's disclosure.
     ///
-    /// ★★★ Why a redaction owes this. An empty match list has two causes with
+    /// Why a redaction owes this. An empty match list has two causes with
     /// one appearance: the term is not in the document, or the document's text
     /// was never recoverable as Unicode so no term could ever have matched it.
     /// For a search that ambiguity wastes a minute. **For a redaction it fails
@@ -427,14 +427,14 @@ pub struct OpenDoc {
     /// still contains it, and then they send it. Both populations render
     /// perfectly, which is exactly what makes it invisible.
     ///
-    /// ★ On the DOCUMENT rather than on the redact panel, and that placement is
+    /// On the DOCUMENT rather than on the redact panel, and that placement is
     /// the decision rather than a convenience. It is a fact about *this file's
     /// fonts*, so it must follow the file: parked with it, restored with it,
     /// and — the case that decides it — **not shown against a different
     /// document** when the operator switches tabs. Panel state would have
     /// leaked one document's warning onto another's.
     pub last_redaction_unreadable_fonts: u64,
-    /// ★★★ **The strings a redaction ARMED on this document claims it will
+    /// **The strings a redaction ARMED on this document claims it will
     /// remove** — `RedactionReport::redacted_text`, empty on every document
     /// that has no removal armed.
     ///
@@ -444,7 +444,7 @@ pub struct OpenDoc {
     /// any of them survives in a decoded stream. That is the shell's
     /// independent absence proof, kept alive on the deferred route.
     ///
-    /// ★ Why it has to be carried rather than re-derived. The write-now routes
+    /// Why it has to be carried rather than re-derived. The write-now routes
     /// prove the buffer inside `crate::redact::PreparedRedaction::write_to`,
     /// one statement from the syscall. The deferred route has no such buffer at
     /// arming time — the bytes are built minutes later, by whichever save verb
@@ -453,7 +453,7 @@ pub struct OpenDoc {
     /// removed*. `EditSession::has_pending_redaction()` says **that** a removal
     /// is armed and cannot say **what**, which is not enough to prove anything.
     ///
-    /// ★★ On the DOCUMENT rather than in a global, for
+    /// On the DOCUMENT rather than in a global, for
     /// [`Self::last_redaction_unreadable_fonts`]'s reason and more sharply: it
     /// is a fact about this file's content, and proving one document's claims
     /// against another document's bytes would be a refusal to save a perfectly
@@ -482,7 +482,7 @@ pub struct OpenDoc {
     /// [`ZoomAnchor`] uses, and for the same reason: the new zoom is not
     /// known when the command is raised.
     ///
-    /// ★ It is a **separate** one-shot from the zoom anchor rather than an
+    /// It is a **separate** one-shot from the zoom anchor rather than an
     /// anchor of its own, because the two are answering different questions.
     /// An anchor says *"hold this page point where it is"*; a fit says
     /// *"decide where the page goes"*, and on a pinned axis there is no
@@ -490,12 +490,12 @@ pub struct OpenDoc {
     /// it into `ZoomAnchor` would need a per-axis "ignore the anchor" flag,
     /// which is a second mechanism wearing the first one's name.
     ///
-    /// ★★ It **outranks** a pending zoom anchor and spends it. A fit is the
+    /// It **outranks** a pending zoom anchor and spends it. A fit is the
     /// operator's most recent explicit instruction about the view, and a
     /// wheel anchor armed a frame earlier describes a position the fit has
     /// just superseded. See the offset-decision chain in `canvas::show`.
     pub fit_placement: Option<crate::viewer::FitMode>,
-    /// ★ **The page arrangement just changed, so the view must snap back to
+    /// **The page arrangement just changed, so the view must snap back to
     /// the middle** — `OPERATOR_REQUESTS.md` O177, first half.
     ///
     /// > *"when switching the view from scroll pages to show one page at a
@@ -510,13 +510,13 @@ pub struct OpenDoc {
     /// funnel, which cannot see the viewport, so the new layout's drawn size is
     /// not known until the canvas next lays the strip out.
     ///
-    /// ★★ A `bool` rather than an `Option<PageDisplay>` because nothing that
+    /// A `bool` rather than an `Option<PageDisplay>` because nothing that
     /// spends it needs to know *which* arrangement was asked for: by the time
     /// it is read, `view.display` already IS that arrangement and the strip has
     /// been laid out from it. Carrying the mode here would be a second copy of
     /// a fact that cannot disagree with itself today and could tomorrow.
     ///
-    /// ★★★ Set only for a **non-continuous** target, and that is not a
+    /// Set only for a **non-continuous** target, and that is not a
     /// simplification — see the guard in `Action::SetPageDisplay`. Under a
     /// continuous mode `canvas::strip::page_scroll_offset` is the thing that
     /// owns where the strip sits, and it is already suppressed for one frame by
@@ -558,7 +558,7 @@ pub struct OpenDoc {
     /// can re-place the page and nothing else can — `OPERATOR_REQUESTS.md`
     /// O55.
     ///
-    /// ★ The argument for a remembered SIZE rather than re-placing every frame
+    /// The argument for a remembered SIZE rather than re-placing every frame
     /// lives in [`crate::canvas::fit::placement`], beside the comparison that
     /// reads it: re-placing per frame pins the wheel under Fit page and makes
     /// a continuous document unscrollable, which is a fact about that
@@ -612,7 +612,7 @@ pub struct OpenDoc {
     ///
     /// `(page, edit_epoch_at_the_time, generation)`.
     ///
-    /// # ★★★ Why all three, and why the middle one is the safety property
+    /// # Why all three, and why the middle one is the safety property
     ///
     ///
     /// ⇒ So it is measured once per frame at a `&mut` point and read from here.
@@ -629,7 +629,7 @@ pub struct OpenDoc {
     /// before any of this existed. Slow is the safe direction, and it is the
     /// only direction reachable when the measurement is missed.
     pub content_generation: std::cell::Cell<Option<(usize, u64, u64)>>,
-    /// ★ **The same question, asked per page** — `OPERATOR_REQUESTS.md` O74.
+    /// **The same question, asked per page** — `OPERATOR_REQUESTS.md` O74.
     ///
     /// [`edit_epoch`](Self::edit_epoch) above says *something changed*; this
     /// says *what changed*, for the caches that hold one entry per page and
@@ -646,7 +646,7 @@ pub struct OpenDoc {
     /// *this revision*, so paging away and back must re-trace (the count is
     /// different) and an edit must re-trace (the count may be different).
     pub objects_traced_for: Option<(usize, u64)>,
-    /// ★★★ **How far the drawn content reaches past the sheet, in LOGICAL
+    /// **How far the drawn content reaches past the sheet, in LOGICAL
     /// SCREEN POINTS** — the pasteboard's overhang term, published once per
     /// canvas frame.
     ///
@@ -672,7 +672,7 @@ pub struct OpenDoc {
     /// frame's zoom, because the geometry functions work in screen points
     /// while the overhang is a fact about the drawing.
     ///
-    /// ★ It is read from [`Self::content_bounds_if_known`], which **peeks and
+    /// It is read from [`Self::content_bounds_if_known`], which **peeks and
     /// never builds**: a canvas that forced a decomposition would pay 469 ms
     /// on the operator's benchmark sheet after every content edit. So on the
     /// first frame after opening a large drawing this is zero and one frame
@@ -680,7 +680,7 @@ pub struct OpenDoc {
     /// the same reason.
     pub pasteboard_overhang: egui::Vec2,
 
-    /// ★★ **Which page-space rectangle to rasterize, and for which page** —
+    /// **Which page-space rectangle to rasterize, and for which page** —
     /// `OPERATOR_REQUESTS.md` O24's region tier.
     ///
     /// `None` is the whole-page path this shell has always taken. `Some` is
@@ -690,18 +690,18 @@ pub struct OpenDoc {
     /// > *"requested raster size 14580x18868 is empty or exceeds
     /// > MAX_PIXMAP_EDGE"*
     ///
-    /// ★ Written by the canvas rather than derived here, for the same reason
+    /// Written by the canvas rather than derived here, for the same reason
     /// [`ViewFrame::last_scroll_offset`] is: only the canvas knows where the
     /// operator is looking, and that is what decides the rectangle.
     ///
-    /// ★★ It carries its **page index**, and that is not decoration. A
+    /// It carries its **page index**, and that is not decoration. A
     /// region is in one page's own coordinate space, so applying it to a
     /// neighbouring page in a continuous strip would rasterize the wrong
     /// part of it — silently, because both are valid rectangles. The index
     /// makes the mismatch impossible rather than merely unlikely.
     pub raster_region: Option<(usize, pdfcer_core::page_tree::Rect)>,
 
-    /// ★ **What the operator has selected on the canvas.**
+    /// **What the operator has selected on the canvas.**
     ///
     /// # Why it is a field of the document rather than a value in `egui::Memory`
     ///
@@ -729,7 +729,7 @@ pub struct OpenDoc {
     /// cost. So `DocumentToken` and `SelectionState::sync_document` were
     /// deleted rather than repaired.
     ///
-    /// # ★ Public, and why that does not breach actions-not-mutations
+    /// # Public, and why that does not breach actions-not-mutations
     ///
     /// `crate::app::actions`' invariant is that **no code path runs from a
     /// widget to a *document***. A selection is not the document: it names
@@ -755,14 +755,14 @@ pub struct OpenDoc {
     /// selection model, which is precisely what
     /// `panels::PanelsState::focus`'s docs refuse to become.
     pub selection: SelectionState,
-    /// ★★ **The form field selected for editing its properties**, if any.
+    /// **The form field selected for editing its properties**, if any.
     ///
     /// The operator, 2026-08-26: *"when I click on an existing form field on
     /// the page its properties should come up in our side pane for editing its
     /// properties."* This is what a click on a widget in Edit mode sets, and
     /// what `panels::properties::formfield` reads.
     ///
-    /// # ★ Why it is NOT part of [`SelectionState`]
+    /// # Why it is NOT part of [`SelectionState`]
     ///
     /// Because it is not the same kind of thing, and merging them would make
     /// three surfaces lie. `SelectionState` holds a **page object or an
@@ -778,14 +778,14 @@ pub struct OpenDoc {
     /// `selection.any` true for something none of the selection-scoped commands
     /// can act on. Separate field, separate surface, no overlap.
     ///
-    /// # ★★ It is cleared by an edit, not merely allowed to go stale
+    /// # It is cleared by an edit, not merely allowed to go stale
     ///
     /// The handle is a fully-qualified name, and a rename or a delete changes
     /// which field that name reaches — or whether it reaches one at all. See
     /// `app::actions::forms`'s selection arm: every verb that touches the form
     /// clears this, so the panel cannot go on describing a field that no longer
     /// exists under that name.
-    /// ★★★ **The backdrop — the last small whole-page raster, kept so the page
+    /// **The backdrop — the last small whole-page raster, kept so the page
     /// is never blank while a sharper one is on its way.**
     ///
     /// The operator, 2026-08-26: *"the screen should never be blank while
@@ -798,7 +798,7 @@ pub struct OpenDoc {
     /// texture is a picture of a small region of a big sheet, and once the view
     /// moves off that region there is nothing behind it.
     ///
-    /// # ★★ Why this costs no extra render, which is the whole design
+    /// # Why this costs no extra render, which is the whole design
     ///
     /// It is not a new rasterisation. It is **the whole-page texture the shell
     /// already made**, kept instead of dropped when a sharper one replaces it.
@@ -813,7 +813,7 @@ pub struct OpenDoc {
     /// and cost nothing at all, and they diverge only once the operator has
     /// zoomed past it.
     ///
-    /// # ★ Why it is dropped on an edit rather than shown stale
+    /// # Why it is dropped on an edit rather than shown stale
     ///
     /// A backdrop is a stand-in and staleness in *sharpness* is exactly what it
     /// is for. Staleness in *content* is a different thing: showing an object
@@ -829,7 +829,7 @@ pub struct OpenDoc {
     pub base_texture: Option<crate::render::raster::PageTexture>,
     /// The edit epoch [`Self::base_texture`] was rasterised under.
     pub base_texture_epoch: u64,
-    /// ★★ **Which pages have been SEEN compositing in ink**, by page index.
+    /// **Which pages have been SEEN compositing in ink**, by page index.
     ///
     /// The observation `crate::render::strategy::Ink` rests on, and that type's
     /// docs carry the argument for why it is observed rather than assumed —
@@ -856,14 +856,14 @@ pub struct OpenDoc {
     /// virtually every document, since about 0.4 % of real files declare a
     /// subtractive page group.
     pub ink_pages: std::collections::HashSet<usize>,
-    /// ★★★ **Which pages have been ASKED**, as opposed to
+    /// **Which pages have been ASKED**, as opposed to
     /// [`Self::ink_pages`], which is which pages answered *yes*.
     ///
     ///
     /// # Why an ask exists at all now
     ///
     ///
-    /// # ★★ The gap the observation left, which is small and real
+    /// # The gap the observation left, which is small and real
     ///
     /// [`crate::render::strategy::Ink`]'s doc argues that a document opens at
     /// a fit zoom and renders once before any zoom is possible, so the
@@ -907,7 +907,7 @@ pub struct OpenDoc {
     /// reader must be prepared for that - which is R9: a fact this shell does
     /// not have renders **nothing**, never a guess and never a stub.
     pub ink_source: std::collections::HashMap<usize, pdfcer_render::interpret::BlendSpaceFrom>,
-    /// ★★★ **The [`Self::edit_epoch`] the file on disk currently holds** — i.e.
+    /// **The [`Self::edit_epoch`] the file on disk currently holds** — i.e.
     /// the revision a successful *Save* last wrote over the operator's own file.
     ///
     ///
@@ -939,12 +939,12 @@ pub struct OpenDoc {
     /// record that nothing changed, which is the argument `app::save` §3.1 makes
     /// and it is still correct. Two numbers, one question each.
     ///
-    /// ★ Moved by exactly one thing: a successful `save::save_in_place`.
+    /// Moved by exactly one thing: a successful `save::save_in_place`.
     /// Save-a-copy does not touch it, for the reason above — the copy is not
     /// this document.
     pub saved_epoch: u64,
     pub selected_field: Option<SelectedField>,
-    /// ★ **The operator's guide lines**, per page, in canvas space.
+    /// **The operator's guide lines**, per page, in canvas space.
     ///
     /// View state, not document content — a guide changes nothing a save would
     /// write — so it sits here beside [`Self::selection`] rather than anywhere
@@ -1057,11 +1057,11 @@ impl OpenDoc {
     /// would drift the moment one of them gained a field, and the drift would
     /// be invisible: the compiler is satisfied by both.
     fn assemble(path: PathBuf, origin: Origin, session: EditSession, pages: Vec<Page>) -> Self {
-        // ★ The one field read from disk here rather than started empty, and
+        // The one field read from disk here rather than started empty, and
         // the one `ViewState` default it overrides. `canvas::guides::opening`
         // owns both halves and the rule joining them.
         //
-        // ★ …and it is read only for a document that **has** a file. A created
+        // …and it is read only for a document that **has** a file. A created
         // document's `path` is a name, so `guides::recall` would absolutize it
         // against the working directory and look up a location nothing is at —
         // usually finding nothing, and finding somebody else's guides on the
@@ -1083,7 +1083,7 @@ impl OpenDoc {
             // an argument for this would mean every test constructing an
             // `OpenDoc` had to state a configuration it does not care about.
             settings: pdfcer_core::settings::Settings::default(),
-            // ★ The ordinary reading, for the same reason `settings` above
+            // The ordinary reading, for the same reason `settings` above
             // takes the shipped defaults: `assemble` cannot see which load
             // produced this document, and requiring an argument would make
             // every test that builds an `OpenDoc` state a policy it does not
@@ -1091,7 +1091,7 @@ impl OpenDoc {
             // site that knows, and it assigns this one line later.
             load_options: LoadOptions::new(),
             prefs: crate::app::prefs::Prefs::default(),
-            // ★ Default rather than sized to `pages.len()` here: an empty set
+            // Default rather than sized to `pages.len()` here: an empty set
             // answers the same floor for every index (see `PageEpochs::get`),
             // so a document is uniform before `resync` first sizes it — which
             // is the correct starting state and needs no argument at the two
@@ -1276,7 +1276,7 @@ impl OpenDoc {
 mod fixtures;
 #[cfg(test)]
 pub(crate) use fixtures::{
-    // ★ The fixture NAMES are re-exported from here rather than moved in the
+    // The fixture NAMES are re-exported from here rather than moved in the
     // callers' `use` lines, and that is deliberate: forty test modules write
     // `use crate::app::state::{FOUR_PAGES, open_fixture}`, and an R2 split is
     // a change to where code LIVES, not to what the crate offers. A split that
@@ -1294,11 +1294,11 @@ pub(crate) use fixtures::{
     open_local_fixture,
 };
 
-/// ★ **The object count the harness reads** — `PROJECT_PLAN.md` §4.3 req 3.
+/// **The object count the harness reads** — `PROJECT_PLAN.md` §4.3 req 3.
 ///
 mod objectcount;
 
-/// ★★★ **The preview that outlives the gesture** — `OPERATOR_REQUESTS.md` O63.
+/// **The preview that outlives the gesture** — `OPERATOR_REQUESTS.md` O63.
 ///
 mod heldpreview;
 pub(crate) use heldpreview::HeldPreview;

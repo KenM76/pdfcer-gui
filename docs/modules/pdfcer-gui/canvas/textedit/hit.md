@@ -6,7 +6,7 @@ One fact, published once a frame by [`super::paint`] and read by everything
 that needs to know whether a pointer event belongs to the draft: **the
 editor box's rectangle, and the galley that was drawn inside it.**
 
-## ★★★ Why the galley has to be shared rather than re-derived
+## Why the galley has to be shared rather than re-derived
 
 Because *"which character is under the pointer"* and *"where is the caret
 drawn"* must be the **same** derivation, and this module exists to make that
@@ -24,7 +24,7 @@ So the galley that was **drawn** is the galley that is **hit-tested**, and
 `Galley::cursor_from_pos` is the inverse of the `Galley::pos_from_cursor`
 the caret is painted with. One layout, two questions.
 
-## ★★ Why a frame late is not a bug here
+## Why a frame late is not a bug here
 
 `paint` runs after `interact` in the frame, so a pointer handler reads the
 rectangle and galley **the previous frame** produced. That is correct rather

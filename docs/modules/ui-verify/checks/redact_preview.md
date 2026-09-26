@@ -18,7 +18,7 @@ part number, description and quantity into one selectable thing. An operator
 who marks the quantity has marked the row, R8b forbids saying so on the
 canvas, and this list is the only place he can be told.
 
-# ★★★ What the oracle is, and the two things it cannot see
+# What the oracle is, and the two things it cannot see
 
 The dialog publishes one trace line and one region:
 
@@ -50,7 +50,7 @@ fixture's page 1 carries exactly one known string, so a build that listed
 fails here. That is the strongest content assertion available without
 putting content in the log.
 
-# ★★ Why a whole-page mark rather than a selection
+# Why a whole-page mark rather than a selection
 
 The selection route has its own check
 (`a_selected_object_can_be_marked_for_redaction`). This one wants a mark

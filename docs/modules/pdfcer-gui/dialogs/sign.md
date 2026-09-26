@@ -6,7 +6,7 @@ every rule this window enforces is argued there and none of it is repeated
 here. What this file adds is the **order things are asked in**, and that
 order is the design.
 
-## ★★★ 1. THE IDENTITY IS OPENED BEFORE ANYTHING ELSE IS OFFERED
+## 1. THE IDENTITY IS OPENED BEFORE ANYTHING ELSE IS OFFERED
 
 The window has two states while it is being filled in, and they are not
 cosmetic:
@@ -36,11 +36,11 @@ file. A form that let them fill in a reason, choose a destination and press
 *Sign* with the certificate still unopened would put the identity check
 **after** the decision, where it is a formality.
 
-★ It is also the passphrase check, and it costs nothing extra: a wrong
+It is also the passphrase check, and it costs nothing extra: a wrong
 passphrase is `Pkcs12Error::MacMismatch`, arriving at the moment the
 operator is looking at the passphrase box rather than three fields later.
 
-## ★★ 2. Why the write is an `Action` and not a call
+## 2. Why the write is an `Action` and not a call
 
 `EditSession::sign` takes **`&mut EditSession`** and a dialog body is handed
 `&OpenDoc`. That is not an inconvenience to route around — it is the rule
@@ -55,7 +55,7 @@ inside `commit` — and the difference is real rather than inconsistency:
 `set_encryption` takes `&self`. Every verb that takes `&mut` reaches the
 session through [`crate::app::actions::Action`], and this one does too.
 
-## ★★★ 3. THE PRIVATE KEY DOES NOT TRAVEL IN THE ACTION QUEUE
+## 3. THE PRIVATE KEY DOES NOT TRAVEL IN THE ACTION QUEUE
 
 [`Action`] derives `Debug`, `Clone` and `PartialEq`. Every one of those is
 wrong for a private key:
@@ -80,7 +80,7 @@ derives three traits it must not have — and the second read is not
 redundant: it is the read that actually signs, so a file that changed under
 the operator between the two is caught rather than assumed away.
 
-## ★ The section headings are NOT `.strong()`
+## The section headings are NOT `.strong()`
 
 `crate::dialogs::protect`'s §6, taken rather than re-argued and caught by
 `tools/gates/check-strong-text.sh` on the first draft of this file exactly

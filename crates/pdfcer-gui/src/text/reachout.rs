@@ -4,7 +4,7 @@
 //! seriously without being alarming**, because pdfcer runs none of these and
 //! nothing is about to happen.
 //!
-//! ## ★★★ The two ways to get this wrong, and they are opposite
+//! ## The two ways to get this wrong, and they are opposite
 //!
 //! **Too alarming** and it is a warning about a thing that cannot occur here —
 //! pdfcer recognises actions and never executes one — so the operator learns
@@ -34,7 +34,7 @@ use crate::app::reachout::ReachOut;
 /// Only called when [`ReachOut::worth_saying`] is true, so there is always
 /// something in it.
 ///
-/// # ★★ The truncation clause comes FIRST when it applies
+/// # The truncation clause comes FIRST when it applies
 ///
 /// Because it changes what every other clause means. *"pdfcer could not finish
 /// checking"* followed by *"and found a submit action"* is honest; the same two
@@ -58,7 +58,7 @@ pub fn disclosure(reach: ReachOut) -> String {
         parts.push("run a script as soon as it is opened".to_owned());
     }
 
-    // ★ The truncation-only case. No counts, so no claim about what is or is
+    // The truncation-only case. No counts, so no claim about what is or is
     // not in the file — just the honest report that the check did not finish.
     if parts.is_empty() {
         return "pdfcer could not finish checking this document for submit, launch and script \
@@ -67,7 +67,7 @@ pub fn disclosure(reach: ReachOut) -> String {
     }
 
     let what = join_and(&parts);
-    // ★★★ The clause that carries the tone. It is the reassurance (pdfcer will
+    // The clause that carries the tone. It is the reassurance (pdfcer will
     // not do any of this) and the warning (something else might) in one breath,
     // and removing either half makes the sentence wrong in one of the two
     // directions this module's header describes.
@@ -107,7 +107,7 @@ mod tests {
         }
     }
 
-    /// ★★★ A truncated scan that found nothing must NOT read as an all-clear.
+    /// A truncated scan that found nothing must NOT read as an all-clear.
     ///
     /// The engine's own words about why this is the urgent case: *"a check that
     /// under-reports reads as a clean bill of health, because silence and
@@ -125,7 +125,7 @@ mod tests {
         );
     }
 
-    /// ★★ Truncation leads when there are findings too.
+    /// Truncation leads when there are findings too.
     #[test]
     fn truncation_comes_before_the_findings_it_qualifies() {
         let s = disclosure(reach(1, 0, false, true));
@@ -138,7 +138,7 @@ mod tests {
         );
     }
 
-    /// ★★★ Every sentence says pdfcer does not do it AND that something else might.
+    /// Every sentence says pdfcer does not do it AND that something else might.
     ///
     /// Both halves, always. Drop the first and it is an alarm about a thing
     /// that cannot happen here; drop the second and it is a shrug about a thing

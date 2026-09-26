@@ -61,7 +61,7 @@ pub struct PageGeometry {
 ///   box" — which reads as a typo in the check, not as a defect in the mapping;
 /// * a check that then found nothing there would have blamed the application.
 ///
-/// ★★ This is the same defect, in the harness, that O174 was in the renderer:
+/// This is the same defect, in the harness, that O174 was in the renderer:
 /// one `height - y` subtraction standing in for a rotation. Finding it twice in
 /// one afternoon is the argument for this type existing at all — the mapping is
 /// now written once, in terms the PDF actually uses, instead of open-coded as
@@ -121,7 +121,7 @@ impl PageFrame {
 
     /// PDF user space → canvas space.
     ///
-    /// ★ The coefficients mirror `pdfcer-render`'s own region geometry table,
+    /// The coefficients mirror `pdfcer-render`'s own region geometry table,
     /// which is the only authority on how this application draws a turned page.
     /// They are the *inverse* of the shell's `render::region::PageFrame::
     /// canvas_to_user`, and the pair is falsified together by that module's
@@ -239,7 +239,7 @@ pub struct CanvasMapping {
     pub scroll: Pt,
     /// The page's own size, from the document.
     ///
-    /// ★ Retained as the **fallback** geometry only. When [`Self::frame`] is
+    /// Retained as the **fallback** geometry only. When [`Self::frame`] is
     /// present it is the authority and this is not consulted, because a
     /// `/MediaBox` scanned out of the file cannot see `/Rotate`, cannot see a
     /// `/CropBox` that differs from it, and — on a file carrying an incremental
@@ -307,7 +307,7 @@ impl CanvasMapping {
         // itself. A tautology wearing a guard's clothing.
         //
         //
-        // ★ This is the third time this project has recorded the same shape: a
+        // This is the third time this project has recorded the same shape: a
         // **proxy condition** standing in for the real one, where the stand-in
         // is derived from the thing it is meant to be checking. The rule it
         // keeps re-learning: *ask what the mechanism READS.* A guard reads a
@@ -368,7 +368,7 @@ impl CanvasMapping {
             .and_then(|field| line.get_vec2(field))
             .unwrap_or(Pt::new(0.0, 0.0));
 
-        // ★ Read together or not at all. A crop box without its rotation is
+        // Read together or not at all. A crop box without its rotation is
         // three-quarters of a measurement, and defaulting the missing quarter
         // to zero is precisely how the upright assumption got in.
         let frame = match (vocab.canvas_crop_field, vocab.canvas_rotate_field) {
@@ -448,7 +448,7 @@ impl CanvasMapping {
     /// window = image_rect.min + canvas * zoom - scroll
     /// ```
     ///
-    /// ★ This doc comment used to state the first step inline, as
+    /// This doc comment used to state the first step inline, as
     /// `canvas_x = doc.x; canvas_y = page_height - doc.y`, and called it *"the
     /// whole conversion"*. That was true for every fixture in this repository
     /// and false for the operator's `A-591.pdf`, whose `/Rotate` is 270 — see
@@ -525,7 +525,7 @@ impl CanvasMapping {
     /// **A second point `span_pt` away from `from` along x, on whichever side
     /// of it is actually reachable.**
     ///
-    /// # ★★★ The defect that bought this: two checks that never ran, ever
+    /// # The defect that bought this: two checks that never ran, ever
     ///
     ///
     /// ```text
@@ -548,7 +548,7 @@ impl CanvasMapping {
     /// assertion downstream is on the measured LENGTH, which is unsigned. So
     /// there was never a reason to demand the right-hand side specifically; the
     /// `+` was an assumption that the page continues, not a requirement of the
-    /// gesture. ★ **An aim that suits 224 checks and starves 2 is not a bad
+    /// gesture. **An aim that suits 224 checks and starves 2 is not a bad
     /// aim** — it is a check asking more of its input than it needs.
     ///
     /// Reachability is decided by calling [`Self::doc_to_window`] rather than by
@@ -597,7 +597,7 @@ impl CanvasMapping {
 
     /// **The same conversion, for a point deliberately OUTSIDE the page box.**
     ///
-    /// \ ★★★ Why this exists, and why it is a second entry point rather than a flag
+    /// # Why this exists, and why it is a second entry point rather than a flag
     ///
     /// `OPERATOR_REQUESTS.md` O92: *"we should be able to select things offside
     /// of the page, especially since I sometimes drop objects there, and when I
@@ -611,20 +611,20 @@ impl CanvasMapping {
     /// those land somewhere plausible and wrong. **This is the narrow, named
     /// exception**, and a caller has to say the words to get it.
     ///
-    /// \ ★★ What is NOT relaxed
+    /// # What is NOT relaxed
     ///
-    /// A bound stays, and it is the **viewport's**, passed in — see the ★★★
+    /// A bound stays, and it is the **viewport's**, passed in — see the
     /// comment in the body for why bounding against `image_rect` instead
     /// rejects the entire class this function exists for. A point off the page
     /// can still be clicked, because the grey margin is part of the canvas
     /// widget; a point off the *viewport* cannot be clicked by anybody, and
     /// clamping it would land on an edge and hit-test nothing.
     ///
-    /// ★ Coordinates may be negative. The flip is the same one line, and a
+    /// Coordinates may be negative. The flip is the same one line, and a
     /// negative `x` produces a window position left of the page's own origin,
     /// which is exactly where a dropped object sits.
     ///
-    /// \ Errors
+    /// # Errors
     ///
     /// Wrong page, or a point that is off the **viewport** rather than merely
     /// off the page.
@@ -638,7 +638,7 @@ impl CanvasMapping {
         let (canvas_x, canvas_y) = self.user_to_canvas(p);
         let wx = self.image_rect.min.x + canvas_x * self.zoom - self.scroll.x;
         let wy = self.image_rect.min.y + canvas_y * self.zoom - self.scroll.y;
-        // ★★★ **THE VIEWPORT, NOT `image_rect`** — and getting this wrong was
+        // **THE VIEWPORT, NOT `image_rect`** — and getting this wrong was
         // the first thing that happened.
         //
         // `image_rect` is the **page's** rectangle. Every off-page point is
@@ -787,7 +787,7 @@ impl WindowFrame {
     #[must_use]
     /// A point a fixed number of screen pixels from another one.
     ///
-    /// # ★ Why this is on `Frame` and not a method on `ScreenPoint`
+    /// # Why this is on `Frame` and not a method on `ScreenPoint`
     ///
     /// `coords`' standing rule is that **a coordinate is produced by a
     /// conversion and never assembled**, and a bare `ScreenPoint::offset` would
@@ -854,7 +854,7 @@ impl WindowFrame {
     /// The client area in **logical points**, which is the space `ui-rect`
     /// publishes in.
     ///
-    /// # ★ Why this is not [`Self::client_pixels`] divided by the scale
+    /// # Why this is not [`Self::client_pixels`] divided by the scale
     ///
     /// It is, arithmetically — and the point of having it as its own accessor
     /// is that a caller comparing a published rect against the window must not
@@ -960,7 +960,7 @@ mod tests {
 
     /// The legacy mapping: no traced frame, so the historical single flip.
     ///
-    /// ★ Deliberately left frameless. These tests are the record of what the
+    /// Deliberately left frameless. These tests are the record of what the
     /// fallback does, and a build whose profile names no crop field still takes
     /// this path — so it has to keep being measured.
     fn mapping() -> CanvasMapping {
@@ -1050,7 +1050,7 @@ mod tests {
     /// **Every corner of the crop box lands on the matching corner of the
     /// canvas, on every rotation.**
     ///
-    /// ★★★ This is the falsifiable form of the whole fix. A mapping that
+    /// This is the falsifiable form of the whole fix. A mapping that
     /// ignored `/Rotate` — the one that shipped — sends the crop box's four
     /// corners to the canvas's four corners on `/Rotate 0` and to a transposed
     /// set on every other, so the upright case alone proves nothing. Looping

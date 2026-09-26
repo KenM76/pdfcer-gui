@@ -24,7 +24,7 @@ const STRIP_REGION: &str = "canvas-strip";
 /// Where and how large the window is placed, as `PDFCER_DIAG_VIEWPORT` takes
 /// it: `x,y,w,h`.
 ///
-/// ★ Fixed rather than maximised so the numbers below mean the same thing on
+/// Fixed rather than maximised so the numbers below mean the same thing on
 /// every machine, and wide enough that a two-page spread at a readable zoom is
 /// a shape the fit can actually produce. `PDFCER_DIAG_VIEWPORT` switches
 /// `with_active` off, so the window lays out fully without taking the desktop.
@@ -33,7 +33,7 @@ const VIEWPORT: &str = "0,0,1600,1000";
 /// How far the drawn strip's centre may sit from the viewport's, in logical
 /// points, and still count as centred.
 ///
-/// ★ Generous on purpose. The page rect is rounded to the pixel grid, the fit
+/// Generous on purpose. The page rect is rounded to the pixel grid, the fit
 /// divides in `f32`, and a scroll bar appearing or disappearing moves the
 /// viewport by its own width. The defect this check is about moves the strip by
 /// **half a page** — 300-plus points at the zoom this run reaches — so a
@@ -50,7 +50,7 @@ const CONTAIN_TOLERANCE_PT: f32 = 4.0;
 /// How far the acting page's rect must move for the wheel to have established
 /// the displaced state this check needs.
 ///
-/// ★ A precondition that is ASSERTED, not assumed. A run whose scroll did
+/// A precondition that is ASSERTED, not assumed. A run whose scroll did
 /// nothing would switch display modes from an already-centred start and pass
 /// while measuring nothing — the exact shape `fit_places_the_view`'s own pan
 /// precondition exists to prevent.
@@ -69,7 +69,7 @@ const SCROLL_AT: (f32, f32) = (0.5, 0.5);
 /// The narrowest a two-page row may be, as a multiple of one page's width,
 /// before this check believes it is looking at a spread.
 ///
-/// ★ 1.5 rather than 2.0: the row is two pages **plus** a gap, so the true
+/// 1.5 rather than 2.0: the row is two pages **plus** a gap, so the true
 /// ratio is a little over 2, and a floor at 1.5 is unambiguous against the
 /// thing it has to exclude — a row of one page, ratio exactly 1.
 const SPREAD_RATIO: f32 = 1.5;
@@ -432,7 +432,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         one_page.width()
     ));
 
-    // ★ The precondition, asserted. A row that is one page wide is not a
+    // The precondition, asserted. A row that is one page wide is not a
     // spread, and every claim below would be a claim about single-page fitting
     // — which already works and is checked elsewhere.
     if page_now.width() > 1.0 && strip.width() < page_now.width() * SPREAD_RATIO {

@@ -22,7 +22,7 @@ would:
 The only thing that separates it from a correct build is **what is in the
 bytes on disk**, read by something that is not the program that wrote them.
 
-# ★ The falsification, and where it is
+# The falsification, and where it is
 
 A test that checks a relation rather than a magnitude is satisfied by any
 absurdity in the right direction. An absence check is the extreme case — it
@@ -40,7 +40,7 @@ the actual verdict:
 | 3 | the **output** | `SECRET` **absent** | **the verdict** |
 
 
-# ★ …and a fourth oracle, in a second process
+# …and a fourth oracle, in a second process
 
 A raw byte scan is the harness's own reading of the file. The other honest
 question is what **pdfcer** makes of it, and `checks::save_copy` established

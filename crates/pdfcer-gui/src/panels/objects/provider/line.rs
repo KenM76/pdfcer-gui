@@ -347,7 +347,7 @@ mod tests {
     /// **first** fragment is the one with no position, which for horizontal
     /// text can only be run 0 of the whole object.
     ///
-    /// ★ Built by declaring run 0 `Inherited`. That is what a text object
+    /// Built by declaring run 0 `Inherited`. That is what a text object
     /// whose first show operator relies on the text-state carried in from
     /// before `BT` looks like, and the engine refuses to move it for the same
     /// reason it refuses any other: there is no operand to rewrite.
@@ -450,7 +450,7 @@ mod tests {
     /// that knows nothing about `runs_share_a_line` — and asserts the table in
     /// that generator's header.
     ///
-    /// ★★ **The rotated pair is the load-bearing half.** An inherited run
+    /// **The rotated pair is the load-bearing half.** An inherited run
     /// advances along the text direction, so a HORIZONTAL one always lands on
     /// its predecessor's baseline and is always inside its predecessor's line
     /// group. Rotation is the only way a line can BEGIN with an inherited run,
@@ -458,7 +458,7 @@ mod tests {
     /// no document could produce at line granularity — which would leave a
     /// build that had deleted them passing every check.
     ///
-    /// ★ Line 1 is the CONTROL. Without an answer of `None` somewhere on the
+    /// Line 1 is the CONTROL. Without an answer of `None` somewhere on the
     /// page, a build that refused every line move would satisfy the other
     /// three assertions.
     #[test]
@@ -502,7 +502,7 @@ mod tests {
     /// The four points `move_line_of_text::AIMS` presses at land on the four
     /// lines it says they do — one each, and no point inside two boxes.
     ///
-    /// # ★★★ Why a unit test owns the harness's coordinates
+    /// # Why a unit test owns the harness's coordinates
     ///
     /// `AIMS` asserts an ANSWER per aim, never a line index, because
     /// `canvas-selection` carries no part index for it to read back. That
@@ -517,7 +517,7 @@ mod tests {
     /// assertion while aiming at whichever of the two the hit test happened
     /// to return first.
     ///
-    /// ★ PDF user space, y-up, straight off the engine's decomposition. No
+    /// PDF user space, y-up, straight off the engine's decomposition. No
     /// canvas transform is involved: `AIMS` is in page coordinates and the
     /// harness maps it at drive time, so converting here would introduce the
     /// one step this is meant to hold still.

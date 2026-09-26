@@ -1,7 +1,7 @@
 //! # `canvas::dimdrag` tests — the placement arithmetic and the corner verbs
 //!
 //!
-//! ## ★★ Two kinds of test live here and they cost very different things
+//! ## Two kinds of test live here and they cost very different things
 //!
 //! The **placement** tests below are pure — [`super::placed`] takes a
 //! `DimensionKind` and two `f64`s — so they are four lines each and assert
@@ -17,7 +17,7 @@
 //! only shape of test that can fail when the engine's ruling changes, which is
 //! the property that makes it worth the second or two it costs.
 //!
-//! ## ★★★ The vacuous shape this module was written to avoid
+//! ## The vacuous shape this module was written to avoid
 //!
 //! A vertex test on a shape with **three** corners where insert and remove
 //! cannot produce a degenerate case proves nothing. Both of the shapes here are
@@ -27,7 +27,7 @@
 //! The same shape, closed or not, gives opposite answers — which is the whole
 //! of the rule, and a test on a square would have exercised neither side of it.
 
-// ★★ The INNER attribute, not just the `mod tests;` declaration in the parent.
+// The INNER attribute, not just the `mod tests;` declaration in the parent.
 // `check-ui-strings.sh`'s exclusion 2b recognises a whole test file **from the
 // file** rather than from its name, and without it every assertion message here
 // is reported as operator-facing copy.
@@ -64,7 +64,7 @@ fn a_delta_splits_into_standoff_and_slide_along_the_axis() {
     );
 }
 
-/// ★ The property the whole design rests on: **placement never touches what
+/// The property the whole design rests on: **placement never touches what
 /// is measured.** Whatever the drag, `a` and `b` come out unchanged, so the
 /// printed number cannot move.
 #[test]
@@ -132,7 +132,7 @@ fn square_perimeter() -> DimensionKind {
     }
 }
 
-/// ★★ **A perimeter's label goes where it is dropped**, in both axes.
+/// **A perimeter's label goes where it is dropped**, in both axes.
 ///
 /// The property that separates it from a linear dimension, and the one the
 /// engine went out of its way to point out: a perimeter's placement is in
@@ -146,7 +146,7 @@ fn a_perimeter_label_takes_the_delta_in_both_axes() {
     assert!((offset + 40.0).abs() < 1e-9, "y goes to offset");
 }
 
-/// ★ And the same guarantee the linear case has, which is the whole reason
+/// And the same guarantee the linear case has, which is the whole reason
 /// this gesture is safe to be the default: **the measured shape is never
 /// touched**, so the number cannot change no matter where the label lands.
 #[test]
@@ -173,7 +173,7 @@ fn no_drag_moves_a_perimeter_vertex() {
 
 /// A real document with one perimeter ce dimension authored into it.
 ///
-/// ★★ **Through the engine, not through a hand-built model**, and that is what
+/// **Through the engine, not through a hand-built model**, and that is what
 /// makes every assertion below mean something. `count_edit` asks
 /// `EditSession::vertex_edit_preview`, which reads the sidecar record the
 /// session holds — so a test that faked the record would be asking the engine
@@ -254,7 +254,7 @@ fn open_three() -> (crate::app::state::OpenDoc, DimensionId, Vec<Point>) {
     )
 }
 
-/// ★★★ **The boundary, and the whole reason this pair of tests exists.**
+/// **The boundary, and the whole reason this pair of tests exists.**
 ///
 /// A closed ring may not go below three corners — two closed vertices trace a
 /// line there and back and print twice the distance between two points — so
@@ -324,7 +324,7 @@ fn a_refused_removal_previews_the_shape_that_is_already_there() {
     );
 }
 
-/// ★★★ **The same three corners, open, and the answer is the opposite one.**
+/// **The same three corners, open, and the answer is the opposite one.**
 ///
 /// An open path keeps two, so this removal is legal and what it leaves is a
 /// straight line: one segment, from the first corner to the last. That is the
@@ -430,7 +430,7 @@ fn a_corner_is_added_after_the_one_that_was_grabbed() {
     );
 }
 
-/// ★★ **`after == len - 1` is the CLOSING segment, not an out-of-range index.**
+/// **`after == len - 1` is the CLOSING segment, not an out-of-range index.**
 ///
 /// The engine went out of its way to make that meaningful and a shell that
 /// clamped it would silently put the corner on the wrong side of the shape. A
@@ -492,7 +492,7 @@ const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
     mac_cmd: false,
 };
 
-/// ★★★ **The safety, and the assertion worth more than the two below it.**
+/// **The safety, and the assertion worth more than the two below it.**
 ///
 /// Ctrl already means *take this out of the selection* everywhere else on this
 /// canvas (`OPERATOR_REQUESTS.md` O104, `canvas::marquee::Combine`), so an
@@ -525,7 +525,7 @@ fn the_points_tool_gives_ctrl_and_ctrl_shift_their_meanings() {
     );
 }
 
-/// ★★★ **The mode gate, entered EXPLICITLY.**
+/// **The mode gate, entered EXPLICITLY.**
 ///
 ///
 /// The three rows are the whole of the Node arm's rule:

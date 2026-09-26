@@ -21,7 +21,7 @@ pub const REGION_PASTE: &str = "bookmark-paste";
 
 /// **Copy and Cut**, drawn only when a bookmark is selected.
 ///
-/// # ★ Why cut is copy-then-`Delete` and not `cut_outline_item`
+/// # Why cut is copy-then-`Delete` and not `cut_outline_item`
 ///
 /// `app::dispatch::pageclip`'s reason, unchanged: the clipboard lives in
 /// `egui::Memory` and the action applier has no `egui::Context`, so a
@@ -40,7 +40,7 @@ pub fn copy_row(ui: &mut Ui, doc: &OpenDoc, selected: &OutlineItem, actions: &mu
         let copy = ui.button(t::bookmark_copy_button());
         crate::diag::ui_rect(REGION_COPY, copy.rect);
         let cut = ui.button(t::bookmark_cut_button());
-        // ★ ONE take for both buttons, and the cut's delete is conditional on
+        // ONE take for both buttons, and the cut's delete is conditional on
         // it succeeding. That is `canvas::clipboard::cut`'s ordering rule: a
         // cut whose copy half failed must not go on to delete, because a cut
         // that silently became a delete is a different verb wearing the
@@ -94,11 +94,11 @@ fn take(ui: &Ui, doc: &OpenDoc, selected: &OutlineItem) -> bool {
 
 /// **Paste**, drawn whenever the clipboard holds bookmarks.
 ///
-/// ★ Drawn only then — R9: an unavailable capability renders **nothing**, and a
+/// Drawn only then — R9: an unavailable capability renders **nothing**, and a
 /// Paste button on a program that has never had a bookmark copied is a control
 /// whose only possible outcome is a refusal.
 ///
-/// # ★★★ The warning is beside the button, not after the press
+/// # The warning is beside the button, not after the press
 ///
 /// See the module header. A pasted bookmark whose page does not exist here is
 /// **silently dead** — it shows, it has its title, and clicking does nothing —
@@ -117,7 +117,7 @@ pub fn paste_row(
     ui.separator();
     ui.label(t::bookmark_paste_heading(clip.len()));
 
-    // ★★ The pre-press disclosure. `deepest_page` is 0-based, so a clip whose
+    // The pre-press disclosure. `deepest_page` is 0-based, so a clip whose
     // deepest destination is page index 11 needs twelve pages here.
     let short = deepest_page.is_some_and(|deepest| deepest >= doc.pages.len());
     if short {
@@ -135,7 +135,7 @@ pub fn paste_row(
     let response = ui.button(t::bookmark_paste_button());
     crate::diag::ui_rect(REGION_PASTE, response.rect);
     if response.clicked() {
-        // ★ `LastChild` of the selection, or of the root when nothing is
+        // `LastChild` of the selection, or of the root when nothing is
         // selected — `add`'s placement rule verbatim, so an operator who knows
         // where a new bookmark appears knows where a pasted one will.
         let to = pdfcer_core::edit::OutlinePlacement::LastChild {

@@ -34,7 +34,7 @@ pub fn properties_nothing_focused() -> &'static str {
     "Pick a row in the Objects panel to see what it is made of."
 }
 
-// ★★★ **The document's own copy MOVED to [`super::docprops`] on 2026-09-05**,
+// **The document's own copy MOVED to [`super::docprops`] on 2026-09-05**,
 // with the section it belongs to — the operator: *"the document properties are
 // still always visible in the properties tab. it needs to get out of there and
 // be in its own document properties tab."*
@@ -44,12 +44,12 @@ pub fn properties_nothing_focused() -> &'static str {
 // facts about the file (name, size, version, page count, sheet size,
 // encryption, and its note). The three `recovered_*` functions went with them.
 //
-// ★ Moved rather than re-exported. A `pub use` here would have kept
+// Moved rather than re-exported. A `pub use` here would have kept
 // `t::properties_document_heading()` resolving from a module that no longer
 // draws it, which is precisely the stale route this project keeps finding — and
 // there was exactly one caller of each, so the move cost one import line.
 //
-// ★★ It also bought R2 headroom that was about to be needed anyway: this file
+// It also bought R2 headroom that was about to be needed anyway: this file
 // stood at **1,469 lines against the 1,500 ceiling** on the day of the move,
 // and `super::textobject` records having been split off at 1,446 for the same
 // gate. The seam is a subject boundary rather than an arithmetic one — what is
@@ -283,7 +283,7 @@ pub fn value_font_embedded_no() -> &'static str {
 
 /// pdfcer could not decide whether the font is embedded.
 ///
-/// ★ **The honest answer to a name-matching problem, and it is disclosed
+/// **The honest answer to a name-matching problem, and it is disclosed
 /// rather than resolved.**
 ///
 /// A text object records the `/BaseFont` in effect; the document's font
@@ -321,7 +321,7 @@ mod runtext;
 pub use runtext::*;
 
 // ===========================================================================
-// ★ The selected object's geometry — X, Y, W, H typed rather than dragged
+// The selected object's geometry — X, Y, W, H typed rather than dragged
 //
 // Every string here names a **PDF user-space point**, and none of them says
 // so more than once. The units live in one note under the heading rather than
@@ -343,7 +343,7 @@ pub const fn geometry_heading() -> &'static str {
 
 /// The units line under the heading.
 ///
-/// ★ It names the corner as well as the unit, and that is the load-bearing
+/// It names the corner as well as the unit, and that is the load-bearing
 /// half. PDF's Y axis points **up**, so a panel showing `Y` without saying
 /// which edge it measures is ambiguous in the one direction that matters — an
 /// operator who reads it as a top edge and types a smaller number to move the
@@ -400,7 +400,7 @@ pub const fn geometry_angle() -> &'static str {
 
 /// The unit suffix on the angle field, and the direction it counts in.
 ///
-/// ★ The direction is stated, and it has to be. PDF user space measures
+/// The direction is stated, and it has to be. PDF user space measures
 /// anticlockwise from the positive x axis (§8.3.3), which is the mathematical
 /// convention and the **opposite** of what a CAD operator reading a compass
 /// bearing expects. A field labelled only *"Angle"* showing `30` is ambiguous
@@ -435,7 +435,7 @@ pub const fn geometry_nothing_typed() -> &'static str {
 
 /// Why Apply is greyed when a typed extent would collapse the object.
 ///
-/// ★ It says what the floor IS rather than only that one was hit, because
+/// It says what the floor IS rather than only that one was hit, because
 /// *"too small"* leaves the operator guessing at a threshold, and the whole
 /// point of a typed field is that they can hit an exact number.
 #[must_use]
@@ -444,7 +444,7 @@ pub const fn geometry_too_small() -> &'static str {
      value would collapse the object onto a line."
 }
 
-// ★ `recovered_heading`, `recovered_detail` and `recovered_tooltip` were here
+// `recovered_heading`, `recovered_detail` and `recovered_tooltip` were here
 // and are now in [`super::docprops`]. A rebuilt cross-reference table is a fact
 // about the FILE, so it moved with the rest of the file's own copy; see the
 // note above the read-only line for the whole move.
@@ -466,7 +466,7 @@ pub const fn text_heading() -> &'static str {
 
 /// How much of the page the restyle will act on.
 ///
-/// ★ It says *"pieces of text"* rather than *"runs"*. A run is a show operator,
+/// It says *"pieces of text"* rather than *"runs"*. A run is a show operator,
 /// which is a fact about the file's structure that no operator asked to learn;
 /// what they need to know is that their one press will change more than one
 /// thing, and how many.
@@ -481,7 +481,7 @@ pub fn text_covers(count: usize) -> String {
 
 /// The section's own refusal: the selection is real and cannot be pinned.
 ///
-/// ★ It draws the heading and this sentence rather than drawing nothing,
+/// It draws the heading and this sentence rather than drawing nothing,
 /// deliberately. An operator with text selected who saw the section vanish
 /// would conclude the feature is missing; an operator who sees it say why is
 /// told the truth about one selection.
@@ -490,7 +490,7 @@ pub const fn text_unreadable() -> &'static str {
     "pdfcer cannot tell exactly which piece of text this is, so it will not offer to change it — a change might land on different text that reads the same."
 }
 
-// ★★★ `text_object_route` WAS HERE, AND IT IS DELETED RATHER THAN MOVED
+// `text_object_route` WAS HERE, AND IT IS DELETED RATHER THAN MOVED
 //
 // It read: *"To change the font, size, bold or italic of these words, press T
 // for the Text tool and sweep across them. Clicking picks the shape they are
@@ -518,7 +518,7 @@ pub const fn text_unreadable() -> &'static str {
 // then the largest single subject in this file, on a surface that is drawn by
 // `crate::panels::properties::face` and consumed by two separate callers.
 //
-// ★ Moved rather than duplicated, and the doc comments moved with them. This
+// Moved rather than duplicated, and the doc comments moved with them. This
 // project's salvage rule is that a doc comment is usually the record of a
 // defect the wording was changed to fix — `text_face_ambiguous`'s 87 % survey
 // is exactly that — so a re-typed copy would be a second wording with none of
@@ -545,14 +545,14 @@ pub const fn text_size_suffix() -> &'static str {
 /// rendered **`1.0 pt`**. The driven check saw a region at the right place and
 /// passed, correctly: it was asserting that the control is drawn, and it was.
 ///
-/// ★★ A greyed control showing a **false value** is worse than one showing
+/// A greyed control showing a **false value** is worse than one showing
 /// none. Greyed says *"not right now"*; `1.0 pt` says *"this text is one point
 /// tall"*, which is a claim about the operator's document and it is wrong. The
 /// same argument the Properties panel's `text_colour_not_plain` makes about a
 /// converted swatch: a control that shows an approximation invites a press that
 /// writes it back.
 ///
-/// ★ An em dash, and the convention is the reason. Word leaves its font-size
+/// An em dash, and the convention is the reason. Word leaves its font-size
 /// box **blank** with nothing selected; every property grid in this class —
 /// Acrobat, SolidWorks, Figma — shows a blank or a dash for *no value* and for
 /// *mixed values*, which are the same state as far as a single field is
@@ -578,7 +578,7 @@ pub const fn text_bold() -> &'static str {
 
 /// The bold button's hover text.
 ///
-/// ★★ It promises the *outcome* and names the fallback, because the fallback is
+/// It promises the *outcome* and names the fallback, because the fallback is
 /// the thing the operator would otherwise discover as a surprise. Both routes
 /// are honest: a page carrying a real Bold gets the real face, and one that does
 /// not gets a thickened version of what is there. Neither is greyed, because
@@ -609,7 +609,7 @@ pub const fn text_colour_label() -> &'static str {
 /// Shown where the swatch would be, for a run painted in a space this control
 /// cannot round-trip.
 ///
-/// ★★ The sentence protects the operator's ink. A swatch showing DeviceCMYK as
+/// The sentence protects the operator's ink. A swatch showing DeviceCMYK as
 /// its nearest RGB would write that RGB back on the next press, moving the run
 /// out of its original space for ever on a document heading for a printer that
 /// cares. pdfcer deliberately stores the space it was given rather than
@@ -658,7 +658,7 @@ pub const fn text_colour_not_plain() -> &'static str {
 // `request_the_style_ladder_has_no_read_only_preview.md`; delivered in
 // `Pass 295.0`.
 //
-// # ★★ The passed-over clause, and why it lives HERE and not on the status line
+// # The passed-over clause, and why it lives HERE and not on the status line
 //
 // A ladder that lands on rung 2 or rung 4 usually got there by stepping over a
 // face that claimed the style and could not show the text. The engine
@@ -671,7 +671,7 @@ pub const fn text_colour_not_plain() -> &'static str {
 // [`text_hint_faces_tried`] fills. It is the same information one gesture
 // earlier, where it can still change what the operator does.
 //
-// # ★★★ NONE of these greys a button, and the engine's ruling is why
+// # NONE of these greys a button, and the engine's ruling is why
 //
 // `pdfcer-core`, verbatim and unchanged: *"Do not grey out a bold button. Offer
 // it, and surface the disclosure when synthesis fires."*
@@ -689,7 +689,7 @@ pub const fn text_colour_not_plain() -> &'static str {
 // unavailable and demands the reason on hover, and the reason here is *"you
 // told pdfcer never to fake it"*, which is a sentence by nature.
 //
-// ★ The pair this block replaces, `text_bold_hint_face_cannot_cover` and its
+// The pair this block replaces, `text_bold_hint_face_cannot_cover` and its
 // italic twin, is **deleted rather than retargeted**. Its subject is gone: a
 // face that claims the style and cannot show the run is no longer an outcome
 // at all, it is an entry in `passed_over` on the way to a rung that works. The
@@ -722,7 +722,7 @@ pub const fn text_italic_hint_already() -> &'static str {
 /// ladder has: nothing is added to the file, nothing is embedded, and the
 /// letterforms are the ones the document already uses.
 ///
-/// ★ It names the face *and* the relationship. *"pdfcer will use Arial-Bold"*
+/// It names the face *and* the relationship. *"pdfcer will use Arial-Bold"*
 /// is checkable; *"the bold form of this text's own typeface"* is the part that
 /// tells the operator the result will look like the rest of their drawing. The
 /// shell does not work that relationship out — `same_family` is the engine's
@@ -736,7 +736,7 @@ pub fn text_bold_hint_sibling_face(face: &str) -> String {
 
 /// The italic button's twin of [`text_bold_hint_sibling_face`].
 ///
-/// ★ *"Slant"*, not *"thicken"* — the two synthetic operations are different
+/// *"Slant"*, not *"thicken"* — the two synthetic operations are different
 /// and an operator who has read one sentence should not have to guess that the
 /// other means something else.
 #[must_use]
@@ -754,7 +754,7 @@ pub fn text_italic_hint_sibling_face(face: &str) -> String {
 /// run, and that is a visible change the operator should be able to expect
 /// rather than discover.
 ///
-/// ★★ It says *"the letters will be shaped differently"*, which is the thing
+/// It says *"the letters will be shaped differently"*, which is the thing
 /// that distinguishes this from the sibling case. Both sentences would
 /// otherwise read *"pdfcer will use a real bold face"* and the operator would
 /// have no way to tell from the hover which of two quite different results is
@@ -783,7 +783,7 @@ pub fn text_italic_hint_other_family(face: &str) -> String {
 /// is the one that fires on the commonest CAD page there is: a title block set
 /// in `Helvetica` carrying no bold resource.
 ///
-/// ★★ *"the file does not grow"* is in the sentence deliberately. The
+/// *"the file does not grow"* is in the sentence deliberately. The
 /// operator's standing worry about font work is what it does to a drawing they
 /// have to email, and a rung that adds a resource but not a font program is
 /// exactly the reassurance that worry wants — and it is true, which is the
@@ -837,7 +837,7 @@ pub const fn text_italic_hint_synthetic() -> &'static str {
     "Set this text in italic. No real italic face can show this text, so pdfcer will slant the letters instead — and it will tell you it did."
 }
 
-/// ★★★ The bold button's hover text when **the press will be refused, because
+/// The bold button's hover text when **the press will be refused, because
 /// the operator said so**.
 ///
 /// `FormatError::SynthesisRefusedByPosture` — the ladder reached rung 4, and
@@ -845,7 +845,7 @@ pub const fn text_italic_hint_synthetic() -> &'static str {
 /// it is the setting working, and the sentence says which setting so the
 /// operator can change it in one move if this is the run they want it for.
 ///
-/// ★ It names the setting rather than describing it, because a hover that says
+/// It names the setting rather than describing it, because a hover that says
 /// *"your settings prevent this"* sends the operator hunting through a
 /// preferences dialog for a phrase that may not be there. Matching the words on
 /// the control is the difference between a disclosure and a riddle.
@@ -860,7 +860,7 @@ pub const fn text_italic_hint_declined() -> &'static str {
     "Italic will be refused for this text. No real italic face can show it, and you have set pdfcer never to fake a style, so it will not slant the letters. Change that setting to allow it."
 }
 
-/// ★★ The clause appended to any style hint when **the ladder will step over
+/// The clause appended to any style hint when **the ladder will step over
 /// faces on the way**.
 ///
 /// `StyleLadder::passed_over` — each entry a face that claimed the style and
@@ -869,7 +869,7 @@ pub const fn text_italic_hint_declined() -> &'static str {
 /// ladder can pass over faces on its way to any rung, including the one that
 /// ends in a refusal.
 ///
-/// # ★★★ The character, and why it earns its own parenthesis
+/// # The character, and why it earns its own parenthesis
 ///
 /// The engine's own `reason` string is accurate and technical —
 /// *"R-INV-1: character U+006F 'o' has no code in font 'Times-Bold'"*. On a
@@ -879,12 +879,12 @@ pub const fn text_italic_hint_declined() -> &'static str {
 /// its prose — the distinction decision 058 turns on, and the reason
 /// `PassedOver` was asked for as a struct instead of a `Vec<String>`.
 ///
-/// ★ A face with no character named gets no parenthesis rather than an empty
+/// A face with no character named gets no parenthesis rather than an empty
 /// one. `Refusal::character` is `Option`, and a refusal about the whole run
 /// rather than one glyph is a real case; *"Times-Bold ()"* would be this shell
 /// rendering an absence as a presence.
 ///
-/// ★ Leading space, and it is not an oversight. The clause is pushed onto a
+/// Leading space, and it is not an oversight. The clause is pushed onto a
 /// sentence that already ends in a full stop, and owning the separator here is
 /// what keeps the call sites from each getting it right independently.
 #[must_use]

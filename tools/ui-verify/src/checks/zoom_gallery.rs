@@ -29,7 +29,7 @@ const POS_EVENT: &str = "canvas-pos";
 
 /// The zooms to photograph, as multipliers.
 ///
-/// # ★★ Chosen against what the fixture actually contains
+/// # Chosen against what the fixture actually contains
 ///
 /// `banana.pdf`'s own generator prints the scale chain, and these are its
 /// tiers rather than round numbers picked for the look of them:
@@ -45,7 +45,7 @@ const POS_EVENT: &str = "canvas-pos";
 /// | 350,000 × | ATP synthase heads — the 10 nm features |
 /// | 10,000,000,000 × | the configured ceiling |
 ///
-/// ★ The last rung is not a feature tier. It is there because the operator
+/// The last rung is not a feature tier. It is there because the operator
 /// asked whether rendering *still happens* at the maximum, and a gallery that
 /// stopped where the detail stops would not have answered him.
 const TIERS: &[f32] = &[
@@ -56,7 +56,7 @@ const TIERS: &[f32] = &[
     4_000.0,
     26_000.0,
     350_000.0,
-    // ★ The decade between the fixture tiers and the ceiling. Added when the
+    // The decade between the fixture tiers and the ceiling. Added when the
     // gallery was pointed at a molecule drawn at true scale: a benzene ring is
     // 1.4e-6 pt across, so it frames a window at about 1.4e8x, and jumping
     // 350,000x -> 1e10x skipped straight past the zoom at which the subject is
@@ -71,7 +71,7 @@ const TIERS: &[f32] = &[
 
 /// How many notches to roll before re-checking against the target.
 ///
-/// ★ A small batch rather than a computed count. A Ctrl+wheel notch multiplies
+/// A small batch rather than a computed count. A Ctrl+wheel notch multiplies
 /// by about 1.22, but the ladder's rungs are not a pure geometric series near
 /// the bottom, so the number of notches to reach a given zoom is not something
 /// a check should predict. It rolls, reads what the application says, and stops
@@ -120,7 +120,7 @@ fn zoom_now(session: &Session) -> Result<f32> {
 
 /// Where a page point is on screen **right now**, from the `f64` position line.
 ///
-/// # ★★★ Why the climb has to re-aim, and why `CanvasMapping` cannot do it
+/// # Why the climb has to re-aim, and why `CanvasMapping` cannot do it
 ///
 /// Zoom-to-cursor holds the point under the pointer, and it holds it to about
 /// half a per-notch tolerance — which is excellent per notch and still
@@ -132,7 +132,7 @@ fn zoom_now(session: &Session) -> Result<f32> {
 /// So the pointer is re-aimed at the target between tiers, which is what a
 /// person does — magnify, see it drifting, nudge.
 ///
-/// ★★ `CanvasMapping` cannot be used for it. That converts through the `canvas`
+/// `CanvasMapping` cannot be used for it. That converts through the `canvas`
 /// line's `rect=`, an `f32` whose magnitude at a trillion percent is 5 × 10¹²
 /// where the representable spacing is half a million pixels — so it would aim
 /// the pointer anywhere within half a million points of the target. The
@@ -144,7 +144,7 @@ fn zoom_now(session: &Session) -> Result<f32> {
 ///
 /// with `at` the pan distance from the page's corner. Both terms are around
 /// 5 × 10¹⁴ at the ceiling and their difference is a few hundred, which `f64`
-/// resolves to a hundredth of a point. ★ The subtraction is done in `f64` and
+/// resolves to a hundredth of a point. The subtraction is done in `f64` and
 /// only the small result is narrowed — the same technique, and the same reason,
 /// as `render::region::region_on_screen_deep`.
 fn on_screen_now(
@@ -224,7 +224,7 @@ fn photograph(
     let zoom = zoom_now(session)?;
     let path = ctx.out(&format!("zoom-gallery-{label}.png"));
 
-    // ★ `capture::window_to_png` refuses a near-uniform grab itself, with the
+    // `capture::window_to_png` refuses a near-uniform grab itself, with the
     // three causes it has actually seen. Its refusal is an Error and therefore
     // a SKIP — right for "the display is asleep", wrong for "the canvas is
     // blank", so the uniformity verdict is re-stated as a FAILURE below rather
@@ -242,7 +242,7 @@ fn photograph(
     };
     report.artifact(path.clone());
 
-    // ★★★ UNIFORMITY IS ASKED OF THE CANVAS, NOT OF THE WINDOW.
+    // UNIFORMITY IS ASKED OF THE CANVAS, NOT OF THE WINDOW.
     //
     // `capture::window_to_png` refuses a near-uniform *window*, and a window
     // always contains a ribbon, a status bar and two panels — so it is never
@@ -257,7 +257,7 @@ fn photograph(
     let region = frame.logical_to_capture_pixels(canvas);
     let uniformity = crate::pixels::region_not_uniform(&image, region);
     if uniformity.is_uniform() {
-        // ★★★ A BLANK CANVAS HAS TWO CAUSES AND THIS IS WHERE THEY PART.
+        // A BLANK CANVAS HAS TWO CAUSES AND THIS IS WHERE THEY PART.
         //
         //
         //   1. the engine drew ink and the shell failed to show it — a defect,
@@ -280,7 +280,7 @@ fn photograph(
         // was given, instead of inferred about.
         let ink = last_ink(session)?;
         if ink == Some(1) {
-            // ★★ Deliberately an Error, which is a SKIP, which makes the run
+            // Deliberately an Error, which is a SKIP, which makes the run
             // INCOMPLETE (exit 3) rather than FAILED (exit 1) — and NOT a pass.
             //
             // A rung that photographed blank paper measured nothing, and
@@ -428,7 +428,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .ok_or_else(|| Error::new(format!("no `{CANVAS_REGION}`; is a document open?")))?;
     let frame = session.frame()?;
 
-    // ★★ The pointer is aimed ONCE, in document coordinates, and then left
+    // The pointer is aimed ONCE, in document coordinates, and then left
     // there. Ctrl+wheel is zoom-about-the-pointer, so the target stays under it
     // for the whole climb — which is both what makes the gallery show the same
     // structure at every magnification and what removes any need to re-aim as
@@ -480,7 +480,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             )));
         }
 
-        // ★★ RE-AIM. Zoom-to-cursor holds the point to about half a per-notch
+        // RE-AIM. Zoom-to-cursor holds the point to about half a per-notch
         // tolerance, which accumulates over the hundred-odd notches this climb
         // takes; without this the run wanders off a 3 µm mitochondrion and
         // photographs blank cytoplasm. See `on_screen_now`.
@@ -489,7 +489,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             && sy.is_finite()
         {
             let (wx, wy) = (sx as f32, sy as f32);
-            // ★ Only if the target is still ON the canvas. Off it, the pointer
+            // Only if the target is still ON the canvas. Off it, the pointer
             // would leave the page — and Ctrl+wheel outside the canvas is not a
             // zoom at all, so the climb would stop dead rather than merely
             // drift. A margin, so it is never on the very edge.
@@ -499,7 +499,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 && wy > canvas.min.y + m
                 && wy < canvas.max.y - m
             {
-                // ★ Expressed as fractions of the canvas rather than built as
+                // Expressed as fractions of the canvas rather than built as
                 // a `WindowPoint`. That type's fields are private on purpose —
                 // `coords`' whole enforcement mechanism is that a screen point
                 // can only come from a trace-derived mapping — and
@@ -511,7 +511,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             }
         }
 
-        // Let the raster for this depth actually arrive. ★ Generous, and the
+        // Let the raster for this depth actually arrive. Generous, and the
         // reason is in `deep_zoom`'s own note: a settle that is too short does
         // not fail the check, it makes its evidence ambiguous — `drawn=0` from
         // a render still in flight is indistinguishable from a page that cannot

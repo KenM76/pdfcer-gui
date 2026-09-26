@@ -44,7 +44,7 @@ pub const CANVAS_EMPTY: &str = "canvas.empty";
 /// `canvas::menus::CanvasMenu::ReadObject` carries the argument.
 pub const CANVAS_READ_OBJECT: &str = "canvas.read-object";
 
-/// ★★★ Right-click on the page **with a caret placed in existing text**.
+/// Right-click on the page **with a caret placed in existing text**.
 ///
 ///
 /// ⇒ **Without this, reflow would be reachable only from the ribbon**, and the
@@ -53,7 +53,7 @@ pub const CANVAS_READ_OBJECT: &str = "canvas.read-object";
 /// caret; its right-click is this.
 pub const CANVAS_TEXT: &str = "canvas.text";
 
-/// ★★★ Right-click on the page **over a form field**.
+/// Right-click on the page **over a form field**.
 ///
 /// The fourth canvas menu, added 2026-08-28. Keyed on `doc.selected_field`,
 /// which is neither a `SelectionState` entry nor a caret — a `/Widget` is
@@ -67,10 +67,10 @@ pub const CANVAS_TEXT: &str = "canvas.text";
 /// drag and Delete.
 pub const CANVAS_FIELD: &str = "canvas.field";
 
-/// ★★★ Right-click on the page **over a selected markup shape**.
+/// Right-click on the page **over a selected markup shape**.
 ///
 ///
-/// # ★★ Why not just widen [`CANVAS_OBJECT`]
+/// # Why not just widen [`CANVAS_OBJECT`]
 ///
 /// Because four of that menu's five rows are about **page content**, and an
 /// annotation is not page content:
@@ -119,7 +119,7 @@ pub const NODE_REMOVE_OFFERED: &str = "markup.node_remove_offered";
 /// **…and removing it would not breach the shape's vertex floor** — the
 /// `enabled_when` of `markup.remove_node`.
 ///
-/// ★ This is the one condition in the pair that is genuinely *temporary*: a
+/// This is the one condition in the pair that is genuinely *temporary*: a
 /// closed shape keeps three points and an open one keeps two, and drawing
 /// another corner makes the row live again. That is precisely why the row is
 /// greyed rather than hidden, and why the command's tooltip states the floor.
@@ -128,7 +128,7 @@ pub const NODE_REMOVABLE: &str = "markup.node_removable";
 /// **The right-click landed on one line of a MULTI-LINE text object** — the
 /// `visible_when` of `format.select_text_line`, and its `enabled_when` too.
 ///
-/// ★★★ O188(A). The Part rung on text — the rung at which *one line* is the
+/// O188(A). The Part rung on text — the rung at which *one line* is the
 /// operand, and therefore the only rung at which `delete_text_run` can be
 /// reached — was reachable by exactly one gesture: arm the Points tool by
 /// chord, *then* click. No surface named it. This condition is what lets a row
@@ -140,7 +140,7 @@ pub const NODE_REMOVABLE: &str = "markup.node_removable";
 /// about *one click on one line*, and the frame's condition set describes the
 /// frame.
 ///
-/// ★★ **One name, carried on both the item and the command**, where the node
+/// **One name, carried on both the item and the command**, where the node
 /// pair above needs two each. That is not an inconsistency — it is R9 applied
 /// to a question with no recoverable state. A node can be un-removable *for
 /// now* (the shape is at its vertex floor; draw another corner and the row
@@ -246,7 +246,7 @@ pub fn built_in() -> Menus {
         // -------------------------------------------------------------------
         // canvas.object — the selection menu.
         //
-        // ★ ONE item, and the three that `RIBBON_IA.md` §6 also asks for are
+        // ONE item, and the three that `RIBBON_IA.md` §6 also asks for are
         // ABSENT rather than greyed.
         //
         // §6: "carrying the same commands as its Format tab section plus
@@ -272,7 +272,7 @@ pub fn built_in() -> Menus {
         // stale document degrades into a clean menu rather than into two
         // horizontal lines above one row.)
         // -------------------------------------------------------------------
-        // ★ **Zoom to selection is here because that is where two of the three
+        // **Zoom to selection is here because that is where two of the three
         // reference applications put it.**
         //
         // Operator instruction, 2026-08-14: *"make your best educated guesses
@@ -371,7 +371,7 @@ pub fn built_in() -> Menus {
             // do nothing.
             Item::command("format.select_text_line").shown_when(RUN_SELECT_OFFERED),
             Item::command("format.select_form"),
-            // ★★★ The right-click route to *"give this page its own copy"*,
+            // The right-click route to *"give this page its own copy"*,
             // added 2026-08-28 with the form-XObject unshare.
             //
             // **O53's ruling is why it is here at all**: a command must not
@@ -383,7 +383,7 @@ pub fn built_in() -> Menus {
             // contextual tab three inches away is the correct second home; the
             // pointer is the first.
             //
-            // ★★ It is also the only surface that can reach them in time. The
+            // It is also the only surface that can reach them in time. The
             // engine's SHARED CONTENT disclosure fires **after** an edit has
             // fanned out to every sheet; this row is the one place the choice
             // is offered while it is still a choice.
@@ -398,7 +398,7 @@ pub fn built_in() -> Menus {
             // same `selection.in_form` predicate as the row above it.
             Item::command("format.unshare_form"),
             Item::command("format.merge_text_runs").shown_when(TEXT_MERGE_OFFERED),
-            // ★★★ **Mark what was pointed at for redaction**, at the pointer —
+            // **Mark what was pointed at for redaction**, at the pointer —
             // `OPERATOR_REQUESTS.md` O217, whose requirement is that redaction
             // address *the same unit, by the same gestures* as everything else
             // the operator aims at.
@@ -451,7 +451,7 @@ pub fn built_in() -> Menus {
             // A second statement of that fact here would be a second thing to
             // keep in step.
             Item::command("edit.redact_selection"),
-            // ★★★ **Absent, not greyed, where the engine would refuse it.** The
+            // **Absent, not greyed, where the engine would refuse it.** The
             // same condition and the same constant the Format tab's Delete
             // carries — `manifest::format::DELETE_VISIBLE_WHEN` — so this menu
             // and that ribbon group cannot disagree about whether the operator
@@ -468,7 +468,7 @@ pub fn built_in() -> Menus {
         // -------------------------------------------------------------------
         // canvas.read-object — a picture, while reading.
         //
-        // ★★★ `OPERATOR_REQUESTS.md` O71: *"In read mode the regular pointer
+        // `OPERATOR_REQUESTS.md` O71: *"In read mode the regular pointer
         // should also allow us to select images so we can copy and paste them
         // … outside of the pdfcergui."*
         //
@@ -528,12 +528,12 @@ pub fn built_in() -> Menus {
         // -------------------------------------------------------------------
         // canvas.field — the form field's menu.
         //
-        // ★★ TWO items, and the pair is chosen by what an operator does to a
+        // TWO items, and the pair is chosen by what an operator does to a
         // field they have just placed: they check its settings, or they got rid
         // of it. Properties first, destructive last — the ordering rule every
         // menu in this file follows.
         //
-        // ★★★ **Rename is absent and its absence is not an oversight.** It
+        // **Rename is absent and its absence is not an oversight.** It
         // lives in the Properties panel as a draft box with an explicit commit,
         // because renaming a field on every keystroke would author one real,
         // separately-undoable rename per character. A menu item cannot ask for
@@ -541,11 +541,11 @@ pub fn built_in() -> Menus {
         // and honest about it, rather than a second half-implemented rename
         // that could disagree with the first.
         //
-        // ★ `format.delete` removes THIS BOX, not the whole field. A field with
+        // `format.delete` removes THIS BOX, not the whole field. A field with
         // two widgets on two pages is one field selectable from either place,
         // and the panel offers both deletions labelled. See `dispatch::format`.
         //
-        // ★★★ **`shown_when` — and its absence here was the second half of the
+        // **`shown_when` — and its absence here was the second half of the
         // R83 forms defect, left open for a day by the fix that closed the
         // first.**
         //
@@ -600,7 +600,7 @@ pub fn built_in() -> Menus {
         // permanently greyed row is a promise the build cannot keep; when
         // zoom-to-selection learns to frame an annotation it belongs here, first.
         //
-        // ## ★★ The order, and the two rules it obeys
+        // ## The order, and the two rules it obeys
         //
         // 1. **Describe, then act, then destroy** — the same progression
         //    `canvas.object` uses and for the same reason.
@@ -610,7 +610,7 @@ pub fn built_in() -> Menus {
         // why this menu exists · the clipboard · Delete.
         //
         //
-        // ## ★★★ The two node rows: `shown_when` AND greying, on one row
+        // ## The two node rows: `shown_when` AND greying, on one row
         //
         // This is the only pair in the file that uses both halves of R9 at once,
         // and it has to, because the same command is permanently inapplicable on
@@ -634,13 +634,13 @@ pub fn built_in() -> Menus {
         // ## The clipboard rows
         //
         //
-        // ★ `edit.paste_duplicate` is deliberately absent even though it is
+        // `edit.paste_duplicate` is deliberately absent even though it is
         // registered: over a markup clipboard `dispatch::clipboard` falls it
         // through to plain paste, so the row would be a second Paste under a
         // different name. Its subject is a form field, and `canvas.field` is
         // where it would belong the day that menu grows a clipboard group.
         //
-        // ★★ `edit.cut` carries no `shown_when` here, unlike `format.delete`
+        // `edit.cut` carries no `shown_when` here, unlike `format.delete`
         // below it, and the asymmetry is the registry's rather than this file's:
         // cut is gated by `selection.cut_permitted`, an `Enable::Custom` on the
         // command that clears for the things the clipboard cannot carry, so it
@@ -657,7 +657,7 @@ pub fn built_in() -> Menus {
             Item::command("edit.copy"),
             Item::command("edit.paste"),
             Item::Separator,
-            // ★★★ The same condition and the same constant `canvas.object`'s
+            // The same condition and the same constant `canvas.object`'s
             // and `canvas.field`'s Deletes carry. `app::conditions` publishes it
             // from a ladder whose annotation rung is guarded by `author_markup`,
             // which is what keeps this row alive in Review — deleting a comment
@@ -667,7 +667,7 @@ pub fn built_in() -> Menus {
         // -------------------------------------------------------------------
         // canvas.text — the caret's menu.
         //
-        // ★★ ONE item, and it is the one that has no other canvas route. Cut,
+        // ONE item, and it is the one that has no other canvas route. Cut,
         // Copy and Paste are conspicuously absent and their absence is
         // deliberate: `edit.cut`/`edit.copy` act on the OBJECT selection, not
         // on a text draft's selected characters, so offering them here would
@@ -682,7 +682,7 @@ pub fn built_in() -> Menus {
         // -------------------------------------------------------------------
         // dock.tab — a panel tab.
         //
-        // ★ Defined, valid, merged and NOT ATTACHED. The dock owns its tabs'
+        // Defined, valid, merged and NOT ATTACHED. The dock owns its tabs'
         // secondary click inside `egui-shell` and offers no seam; the module
         // header carries the full account and what would close it.
         //
@@ -700,13 +700,13 @@ pub fn built_in() -> Menus {
         // floating panel's header strip offers Dock and Close; and neither
         // ever shows a row that would do nothing.
         //
-        // ★★ `shown_when` and not `enabled_when`, which is R9 exactly: an
+        // `shown_when` and not `enabled_when`, which is R9 exactly: an
         // unavailable capability renders NOTHING. "Dock" on a panel that is
         // already docked is not temporarily unavailable — it is meaningless —
         // and a greyed row would make the operator wonder what they had to do
         // to earn it.
         //
-        // ★ Order: the two verbs that MOVE the panel first, the one that
+        // Order: the two verbs that MOVE the panel first, the one that
         // takes it away last, and Reset layout below them because its
         // operand is the whole dock rather than this panel. Close is not
         // adjacent to Float, deliberately, so a mis-aimed click on the row
@@ -729,7 +729,7 @@ pub fn built_in() -> Menus {
         // `file.properties`' own tooltip commissions exactly that: "…and the
         // properties of whatever is selected on the page."
         //
-        // ★ `format.delete` is NOT here. It was kept off while an Objects row
+        // `format.delete` is NOT here. It was kept off while an Objects row
         // click wrote a panel-local focus rather than a selection: a Delete
         // gated on `selection.any` would then have removed whatever was
         // selected on the CANVAS rather than the row under the pointer. The row
@@ -740,7 +740,7 @@ pub fn built_in() -> Menus {
         // -------------------------------------------------------------------
         // document.tab — the strip under the ribbon.
         //
-        // ★ TWO rows, where the conventional menu has three.
+        // TWO rows, where the conventional menu has three.
         //
         // Every browser and every editor offers *Close*, *Close others* and
         // *Close tabs to the right*.
@@ -757,7 +757,7 @@ pub fn built_in() -> Menus {
         // From here it closes the tab you right-clicked; from the ribbon and
         // from `Ctrl+W` it closes the one on screen.
         //
-        // ★ It is also what stops this menu being **empty with one document
+        // It is also what stops this menu being **empty with one document
         // open**. `view.close_other_documents` waits on `docs.multiple`, so a
         // menu of it alone would never open for the commonest state there is —
         // and `every_menu_offers_something_when_a_document_is_open_and_selected`
@@ -780,7 +780,7 @@ pub fn built_in() -> Menus {
         // -------------------------------------------------------------------
         // pages.row — a page tile in the Pages panel.
         //
-        // ★ Unlike `objects.row`, this menu carries **destructive** verbs, and
+        // Unlike `objects.row`, this menu carries **destructive** verbs, and
         // that is right rather than inconsistent. The distinction is what the
         // right-click is *about*:
         //
@@ -880,7 +880,7 @@ impl<'a> MenuHost<'a> {
     /// **The operator-visible label of `id`, from the one registry the ribbon
     /// reads.**
     ///
-    /// # ★ Why a panel is given this rather than a string of its own
+    /// # Why a panel is given this rather than a string of its own
     ///
     /// `crate::panels::tool` names the armed tool, and the only honest name for
     /// it is **the name on the control that armed it**. A second string would
@@ -927,7 +927,7 @@ impl<'a> MenuHost<'a> {
         self.conditions
     }
 
-    /// **★ This frame's conditions, with one condition corrected.**
+    /// **This frame's conditions, with one condition corrected.**
     ///
     /// # The frame-ordering hazard this exists for, in full
     ///
@@ -1018,7 +1018,7 @@ impl<'a> MenuHost<'a> {
         context_id: &str,
         conditions: &ConditionSet,
     ) -> Vec<HandlerToken> {
-        // ★★★ The two optional capabilities every pdfcer context menu is
+        // The two optional capabilities every pdfcer context menu is
         // built with — the rect sink that makes a row clickable by a driven
         // check, and the icon painter that makes a row draw the glyph its
         // command already names — live in [`super::menus_wiring`], with the

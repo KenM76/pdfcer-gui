@@ -19,7 +19,7 @@ someone holding a binary, not someone reading a repository. A
 The full argument, the catalog, and the sources every field was lifted
 from are in [`crate::text::about`]. This module is only the drawing.
 
-## ★ Why this dialog is exempt from "a closed document closes the dialogs"
+## Why this dialog is exempt from "a closed document closes the dialogs"
 
 [`super::DialogsState::show`] drops every open dialog the moment the
 document goes away, and the reason is sound: a print job configured
@@ -34,7 +34,7 @@ closed when the document closes, and this one is drawn either way. That
 distinction is a property of the module rather than of this file; see
 [`super::DialogsState::show`].
 
-## ★ The title bar and this window answer different questions
+## The title bar and this window answer different questions
 
 The window title carries the local build time **to the minute**, from
 `PDFCER_BUILD_TIME`. This window carries the **release version**, from the

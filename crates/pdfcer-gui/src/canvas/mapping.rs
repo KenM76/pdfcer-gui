@@ -39,7 +39,7 @@ use crate::viewer;
 /// that test, restored.
 pub const SELECT_SCREEN_TOLERANCE_PX: f32 = 6.0;
 
-/// ★★★ **The catch radius for an ANCHOR**, in egui logical points —
+/// **The catch radius for an ANCHOR**, in egui logical points —
 /// `OPERATOR_REQUESTS.md` O69: *"the nodes are hard to see and click on."*
 ///
 /// Eight rather than six, and both halves of that are borrowed rather than
@@ -53,7 +53,7 @@ pub const SELECT_SCREEN_TOLERANCE_PX: f32 = 6.0;
 /// * it is Inkscape's *grab sensitivity* default, which is the operator's
 ///   stated tie-breaker for this family of decisions.
 ///
-/// # ★★ A SIBLING of [`SELECT_SCREEN_TOLERANCE_PX`], not a change to it
+/// # A SIBLING of [`SELECT_SCREEN_TOLERANCE_PX`], not a change to it
 ///
 /// Widening the shared constant would have widened **object picking** too, on
 /// a sheet this project has measured at 129,758 objects — where a larger catch
@@ -173,7 +173,7 @@ impl PageMapping {
 
     /// **Canvas → screen for a DISPLACEMENT**, not a position.
     ///
-    /// # ★★★ Why a vector needs its own conversion, and what it cost not to have one
+    /// # Why a vector needs its own conversion, and what it cost not to have one
     ///
     /// A point conversion carries the page's origin on screen; a displacement
     /// must not. `to_screen(a) - to_screen(b)` is correct and says the origin
@@ -197,7 +197,7 @@ impl PageMapping {
     /// one place in `canvas/` that divides by it."* The same must be true of
     /// multiplying, or the two drift.
     ///
-    /// ★ It is deliberately **not** called `to_screen_vec`. `to_screen` and
+    /// It is deliberately **not** called `to_screen_vec`. `to_screen` and
     /// `to_page` are a matched pair over positions, and a name one character
     /// away from them is how a caller reaches for the wrong one; this one says
     /// *page vector* in its name so the space is at the call site rather than
@@ -211,7 +211,7 @@ impl PageMapping {
     /// [`Self::page_vec_to_screen`]; see that method for why a displacement is
     /// not a position.
     ///
-    /// ★ A non-finite or non-positive zoom answers `Vec2::ZERO` rather than a
+    /// A non-finite or non-positive zoom answers `Vec2::ZERO` rather than a
     /// NaN, on the same argument [`screen_tolerance_to_page`] makes: a
     /// degenerate zoom is reachable (a page drawn at zero size for one frame),
     /// and a NaN displacement reaching a content stream is a corrupted file,
@@ -283,7 +283,7 @@ impl PageMapping {
     /// `SNAP_SCREEN_TOLERANCE_PX` and did the division at its call site would
     /// be exactly that second place.
     ///
-    /// # ★ Why it is a different number from the selection radius
+    /// # Why it is a different number from the selection radius
     ///
     /// They are both screen-pixel radii converted the same way, but they
     /// answer different questions and the salvaged constant is the wider of
@@ -307,7 +307,7 @@ impl PageMapping {
 /// Project an annotation's `/Rect` — **PDF user space, y-up, un-rotated**,
 /// as `[llx, lly, urx, ury]` — into canvas space.
 ///
-/// # ★ Why this lives here rather than with the forms code that wrote it
+/// # Why this lives here rather than with the forms code that wrote it
 ///
 ///
 /// It moved when annotation **selection** arrived and needed the same answer
@@ -357,7 +357,7 @@ pub fn annot_canvas_rect(rect: [f64; 4], page: &pdfcer_core::page_tree::Page) ->
 /// The four **placed corners** of an annotation's artwork, projected into canvas
 /// space, preserving their order.
 ///
-/// # ★★★ Why this cannot reuse [`annot_canvas_rect`], which does the same
+/// # Why this cannot reuse [`annot_canvas_rect`], which does the same
 /// projection
 ///
 /// Because that function **bounds** its four mapped corners into an upright
@@ -417,7 +417,7 @@ mod tests {
     /// A 200x20 rectangle near the top of that page.
     const PROJECTED_RECT: [f64; 4] = [100.0, 700.0, 300.0, 720.0];
 
-    /// ★ **A degenerate rectangle produces no box**, whichever corner order it
+    /// **A degenerate rectangle produces no box**, whichever corner order it
     /// is written in.
     ///
     /// The corner-order half matters on its own: §7.9.5 permits `/Rect` either
@@ -445,7 +445,7 @@ mod tests {
         assert!(forward.is_some());
     }
 
-    /// ★ **The box lands where the page draws it, at every rotation.**
+    /// **The box lands where the page draws it, at every rotation.**
     ///
     /// The half of the geometry a unit test can actually hold. `/Rect` is
     /// y-**up** from the CropBox's lower-left and canvas space is y-**down**
@@ -498,7 +498,7 @@ mod tests {
         PageMapping::new(rect, extent, zoom)
     }
 
-    /// ★ **The law this module exists for**, restored from the old shell.
+    /// **The law this module exists for**, restored from the old shell.
     ///
     /// `panels::objects::provider`'s salvage note §4 records that this test
     /// could not come across with the provider, because asserting it there
@@ -581,7 +581,7 @@ mod tests {
         }
     }
 
-    /// ★ **A canvas coordinate does not move when the view does.**
+    /// **A canvas coordinate does not move when the view does.**
     ///
     /// The arithmetic half of the "selection survives navigation" invariant:
     /// the *same object point* has the same canvas coordinate at every zoom
@@ -628,7 +628,7 @@ mod tests {
         assert!(page.contains(m.to_page(Pos2::new(200.0, 300.0))));
     }
 
-    /// ★ **Each page of a strip gets its OWN mapping, and they are not
+    /// **Each page of a strip gets its OWN mapping, and they are not
     /// interchangeable.**
     ///
     /// The failure this pins is the one Phase 4 was most likely to ship
@@ -741,7 +741,7 @@ mod vector_tests {
         )
     }
 
-    /// ★★★ **A displacement does not carry the page's origin.**
+    /// **A displacement does not carry the page's origin.**
     ///
     /// `DEFECTS.md` D18's root: two quantities in two spaces, both `Vec2`, and
     /// nothing to notice. The rect above starts at (316, 580) precisely so a
@@ -754,7 +754,7 @@ mod vector_tests {
         assert!((screen.y - 11.82).abs() < 0.01, "{screen:?}");
     }
 
-    /// ★★ The round trip, at the operator's own fitted zoom.
+    /// The round trip, at the operator's own fitted zoom.
     ///
     /// The number that matters: at 29.55 % a 60 px drag is 203 page units, and
     /// handing those 203 to a function expecting 60 is what inflated every
@@ -769,7 +769,7 @@ mod vector_tests {
         assert!((back - screen).length() < 0.001, "{back:?} vs {screen:?}");
     }
 
-    /// ★ A degenerate zoom answers ZERO, never NaN.
+    /// A degenerate zoom answers ZERO, never NaN.
     ///
     /// Reachable: a page drawn at zero size for one frame. A NaN displacement
     /// reaching a content stream is a corrupted file; a zero one is a gesture
@@ -787,7 +787,7 @@ mod vector_tests {
 mod o69_tolerance_tests {
     use super::*;
 
-    /// ★★★ **An anchor is easier to hit than an object, and exactly as easy
+    /// **An anchor is easier to hit than an object, and exactly as easy
     /// as its own control point** — `OPERATOR_REQUESTS.md` O69.
     ///
     /// Both halves are asserted because both are the argument. The first says
@@ -796,7 +796,7 @@ mod o69_tolerance_tests {
     /// it was the concrete absurdity the row is about.
     #[test]
     fn an_anchor_is_caught_more_easily_than_an_object_and_as_easily_as_a_handle() {
-        // ★ Bound through locals rather than compared as literals, so clippy
+        // Bound through locals rather than compared as literals, so clippy
         // reads them as values rather than as a constant assertion. The
         // property is about the RELATIONSHIP between two constants, which is
         // exactly what a `const` block would hide from a reader looking for
@@ -815,7 +815,7 @@ mod o69_tolerance_tests {
         );
     }
 
-    /// ★★ **Widening the anchor radius did NOT widen object picking.**
+    /// **Widening the anchor radius did NOT widen object picking.**
     ///
     /// The assertion that pins the scoping. On a sheet this project has
     /// measured at 129,758 objects a larger catch radius means more candidates

@@ -54,7 +54,7 @@ they had just taken back.
 | E | click **Redo** | `redo kind=AddAnnotation`, `listed=N+1`, and the same two invalidation signals again |
 | F | click **Redo** again | **no** `ribbon-command-invoked`: the stack emptied and the condition followed |
 
-# ★ The falsifying phases, and the build each one catches
+# The falsifying phases, and the build each one catches
 
 `crate::checks`' rule for a new check is that *"it must fail against a build
 where the wiring is absent"*. The counts alone do not satisfy that, and

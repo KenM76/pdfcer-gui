@@ -203,7 +203,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         mapping.zoom
     ));
     let span = mapping.span_from(target, SPAN_PT)?;
-    // ★★★ `picking::resolve_pick`, NOT a bare `click_at`. One click is not
+    // `picking::resolve_pick`, NOT a bare `click_at`. One click is not
     // always one pick: a click that lands on a DERIVED snap candidate — a
     // centreline pdfcer inferred rather than one the file states — is announced
     // and not acted on, and the operator confirms it with a second click on the

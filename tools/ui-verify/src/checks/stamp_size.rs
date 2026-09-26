@@ -23,7 +23,7 @@ const BOX_PT: f64 = 220.0;
 
 /// The size the check asks for, as the operator would read it.
 ///
-/// ★ **24, and the choice of number is load-bearing.** It must not be the
+/// **24, and the choice of number is load-bearing.** It must not be the
 /// default (`derived`) or the check passes on a build that ignores the chooser;
 /// it must not be `12` either, because that is `StampStyle::default()`'s flat
 /// size — a build that threw the operator's choice away and adopted the
@@ -196,7 +196,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 4: the chooser must EXIST and be reachable -------------------------
     //
-    // ★★ A separate failure from "the size did not travel", and it is worth its
+    // A separate failure from "the size did not travel", and it is worth its
     // own message. A combo drawn below the window's bottom edge, or under the
     // Accept button, produces a check that presses nothing and an operator who
     // cannot use the feature — and the unit test asserting the window grew is
@@ -221,7 +221,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
 
-    // ★★ **Declared is not the same as WHOLLY on screen**, and the difference is
+    // **Declared is not the same as WHOLLY on screen**, and the difference is
     // 40 % of the control.
     //
     // `diag::ui_rect_visible` publishes the FULL rectangle once
@@ -252,7 +252,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("the stamp dialog drew a Size chooser");
 
-    // --- 5: ★★★ the default, ASSERTED before anything is pressed ------------
+    // --- 5: the default, ASSERTED before anything is pressed ------------
     //
     // The other direction of the same feature, and the one that would cost the
     // operator silently. `StampStyle::default()` is a flat 12 pt; a typical
@@ -261,7 +261,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // drawings **without anybody pressing anything**, and a check that only
     // looked at the end state after an explicit selection would never see it.
     //
-    // ★★ This is an assertion and not a note. A note describing the default
+    // This is an assertion and not a note. A note describing the default
     // would be read by whoever greps this file as "the default is covered",
     // which is the shape of claim this suite exists to stop being made without
     // a measurement behind it.
@@ -308,7 +308,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.click_at(frame_of(&session, &trace, ui_rect, WANTED_REGION)?.declared_center(entry))?;
     session.settle(14);
 
-    // ★★ The control must now REPORT its own state, and this is a **separate
+    // The control must now REPORT its own state, and this is a **separate
     // defect** from the size not travelling. A combo that stores the pick and
     // goes on displaying the previous one leaves the operator unable to tell an
     // accepted choice from an ignored click; the document comes out right for a
@@ -382,7 +382,7 @@ fn wanted_token() -> String {
 
 /// What the Size chooser currently reports about **itself**.
 ///
-/// # ★★★ Why this reads a purpose-built line and not the `ui-rect` line
+/// # Why this reads a purpose-built line and not the `ui-rect` line
 ///
 /// The first draft of this check read the selection out of `ui-rect`, which
 /// carries a **name** and a **rect** and no text whatsoever. It would have
@@ -412,7 +412,7 @@ fn chooser_reads(session: &Session) -> Option<String> {
 mod tests {
     use super::{WANTED_PT, WANTED_REGION, wanted_token};
 
-    /// ★★ **The region this check presses and the token it matches are the same
+    /// **The region this check presses and the token it matches are the same
     /// word**, and nothing else in the repository enforces it.
     ///
     /// `dialogs::textannot::sizes` builds the region name by interpolating
@@ -431,7 +431,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The size pressed is not a value any indifferent build produces.**
+    /// **The size pressed is not a value any indifferent build produces.**
     ///
     /// The whole check turns on this. `derived` is what a build that ignores
     /// the chooser emits — `font_size: None` compiles and means *"work it out

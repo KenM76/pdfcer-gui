@@ -242,7 +242,7 @@ fn a_release_over_another_stacks_strip_is_a_caret_between_its_tabs() {
     h.frame(press(from));
     h.frame(drag_to(onto));
 
-    // ★ The origin strip must have let go. Every strip in the dock sits at
+    // The origin strip must have let go. Every strip in the dock sits at
     // the same y, so a reorder bounded by y alone claims this gesture — drawing
     // a caret four hundred points from the pointer and never offering the drop.
     assert_eq!(
@@ -270,7 +270,7 @@ fn a_release_over_another_stacks_strip_is_a_caret_between_its_tabs() {
     assert_eq!(tabs(&h, RIGHT), ["properties", "pages"]);
 }
 
-/// ★ **The zones and the outcome are published as regions, and they go.**
+/// **The zones and the outcome are published as regions, and they go.**
 ///
 /// The visible form of this affordance is a wash of colour over a
 /// quadrilateral: precise to look at, and nothing a harness can assert on. So
@@ -314,7 +314,7 @@ fn the_armed_zone_and_the_outcome_are_published_and_then_go() {
     assert_eq!(h.rect(&outcome), None);
 }
 
-/// ★ **The zones divide the body, not the whole compartment.**
+/// **The zones divide the body, not the whole compartment.**
 ///
 /// The tab strip is not part of the compass — it answers a better question, and
 /// [`super::compass::body_of`] subtracts it before dividing. A compass laid over
@@ -372,7 +372,7 @@ fn the_zones_divide_the_compartment_less_its_strip() {
     );
 }
 
-/// ★★ **The outcome is the layout after the take, not the target as it
+/// **The outcome is the layout after the take, not the target as it
 /// stands.**
 ///
 /// `layers` is alone in the second left column, so removing it prunes that
@@ -499,7 +499,7 @@ fn a_release_over_a_splitter_docks_nothing() {
     assert_eq!(columns(&h, DockSide::Left), 2);
 }
 
-/// ★ **A drag pulled out over the document is not a dock, and ends.**
+/// **A drag pulled out over the document is not a dock, and ends.**
 ///
 /// The canvas is where [`super::tear`] attaches, and what happens there is
 /// asserted in its own file. What must not happen is anything from *this* one:

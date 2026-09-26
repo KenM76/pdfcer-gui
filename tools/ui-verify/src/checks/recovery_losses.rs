@@ -106,7 +106,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     report.artifact(session.trace_path().to_path_buf());
     session.settle(40);
-    // ★★ MAXIMISE — at the harness's default 1,100 pt window the File tab's
+    // MAXIMISE — at the harness's default 1,100 pt window the File tab's
     // last two groups fold away entirely and a check reports a lost command.
     // `about.rs` holds the measurement; several checks already share it.
     session.maximize();
@@ -116,7 +116,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     open_properties(&session, &driver, ui_rect)?;
 
     let trace = session.trace()?;
-    // ★ The document has to be OPEN before the presence or absence of a
+    // The document has to be OPEN before the presence or absence of a
     // disclosure means anything. A launch that opened nothing traces no
     // `status` line at all, and every region on a document-dependent surface is
     // then legitimately missing. Two sweeps in this project produced confident,
@@ -165,7 +165,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("the damaged file discloses both that it was rebuilt and what the rebuild lost");
     drop(session);
 
-    // --- 2: ★★ THE CONTROL, and it is the half that makes this a check -----
+    // --- 2: THE CONTROL, and it is the half that makes this a check -----
     let session = launch(ctx, &exe, CONTROL, "recovery_losses.control.trace.txt")?;
     report.note(format!(
         "control launch on fixtures/{CONTROL} as pid {} — the same damage, nothing dropped",
@@ -193,7 +193,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              absence of the whole panel, and proves nothing."
         )));
     }
-    // ★★★ The positive witness. Without this line the assertion below would be
+    // The positive witness. Without this line the assertion below would be
     // satisfied by a build where the entire recovery disclosure had stopped
     // drawing, which is a worse defect wearing the same green tick.
     if declared(&trace, ui_rect, RECOVERY_REGION).is_none() {
@@ -258,7 +258,7 @@ fn launch(ctx: &CheckContext, exe: &Path, fixture: &str, trace_name: &str) -> Re
 
 /// Bring the Document properties panel to the front, if it is not already.
 ///
-/// ★ Reuses `properties_metadata`'s opener rather than spelling the two clicks
+/// Reuses `properties_metadata`'s opener rather than spelling the two clicks
 /// again. It is the same ribbon item and the same toggle hazard — pressing
 /// `file.document_properties` while the panel is up CLOSES it — and a second
 /// copy of that guard would be a second place for the next ribbon move to have

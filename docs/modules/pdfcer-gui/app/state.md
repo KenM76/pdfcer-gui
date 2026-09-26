@@ -61,7 +61,7 @@ The branch between them is made on **structured error data** from
 makes the distinction reliable rather than a heuristic that decays as error
 prose is edited.
 
-★ The branch itself now lives in [`crate::app::lifecycle`], with
+The branch itself now lives in [`crate::app::lifecycle`], with
 `is_unsupported_structure` and the two methods that move `Status` between
 these variants. This file kept the **shape** of the answer (the enum, and
 why it has these variants); that one has *when each one is produced*. See

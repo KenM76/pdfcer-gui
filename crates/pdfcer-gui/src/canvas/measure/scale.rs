@@ -207,14 +207,14 @@ impl ScaleEntryFields {
     /// | [`ScaleState::OneToOne`] | `1 : 1` on the unit's own basis | `1:1` back-calculates to `baseline_per_point(unit)`, which is exactly what `effective_scale` answers for this arm |
     /// | [`ScaleState::Calibrated`] | `1 : scale / bpp(unit)` | the inversion above |
     ///
-    /// ★ The `NeverSet` arm deliberately does **not** invent a ratio. A group
+    /// The `NeverSet` arm deliberately does **not** invent a ratio. A group
     /// that has never been calibrated is a real state with a disclosure
     /// sentence the engine owns (`NO_SCALE_DISCLOSURE`), and pre-filling
     /// `1:100` over it would convert *"nobody has said what this drawing is
     /// at"* into *"this drawing is at 1:100"* -- which is the one thing the
     /// tri-state exists to keep distinguishable.
     ///
-    /// ★★ A degenerate stored scale (zero, infinite, NaN -- unreachable
+    /// A degenerate stored scale (zero, infinite, NaN -- unreachable
     /// through this application, reachable through a hand-edited
     /// `/PieceInfo`) falls back to the `NeverSet` seed rather than writing a
     /// non-finite number into a `DragValue`. An `egui::DragValue` holding a
@@ -288,7 +288,7 @@ impl ScaleEntryFields {
     /// Re-express an engine preview in the unit the operator asked to **see**
     /// dimensions in.
     ///
-    /// # ★★★ Why this exists: "Show dimensions in" was a dead control
+    /// # Why this exists: "Show dimensions in" was a dead control
     ///
     ///
     /// The mechanism, in one paragraph. [`Self::entry`] builds a
@@ -302,7 +302,7 @@ impl ScaleEntryFields {
     /// controls sit at their defaults on every open from the ribbon, which is
     /// why it survived: the two agree until somebody touches one.
     ///
-    /// # ★★ Why the conversion is here and not a request to the engine
+    /// # Why the conversion is here and not a request to the engine
     ///
     /// It looked like one. `NumberFormat.unit` might have *converted* the value
     /// or merely *labelled* it, and guessing between those is how a drawing
@@ -328,13 +328,13 @@ impl ScaleEntryFields {
     /// 1:1, so one `from` is `bpp(to) / bpp(from)` of a `to`. `scale` is
     /// `from`-per-point; multiplying by that factor makes it `to`-per-point.
     ///
-    /// ★ On the **real-length** path this is the identity, because `entry`
+    /// On the **real-length** path this is the identity, because `entry`
     /// passes `self.unit` straight through and `raw.unit == self.unit`. It is
     /// applied uniformly anyway rather than branching on the path: a branch
     /// here would be a second place that has to know which variant carries a
     /// unit, and that knowledge going stale is exactly how the defect arrived.
     ///
-    /// ★★ `ratio_label` is left alone. On the ratio path it is `1:100` — a
+    /// `ratio_label` is left alone. On the ratio path it is `1:100` — a
     /// pure ratio, true in any unit. On the real-length path it is
     /// `25 ft = 42.3 pt`, and that path is the identity, so it is never a
     /// sentence about a unit that has been converted underneath it.
@@ -507,7 +507,7 @@ impl ScalePick {
 )]
 mod tests {
 
-    /// ★★★ **A6: "Show dimensions in" reaches the scale on the ratio path.**
+    /// **A6: "Show dimensions in" reaches the scale on the ratio path.**
     ///
     /// The strongest available assertion, and it is deliberately not *"the
     /// preview says metres"*. A build that set `format.unit = Metre` and left
@@ -587,7 +587,7 @@ mod tests {
         );
     }
 
-    /// ★ The preview the operator READS and the value that gets COMMITTED are
+    /// The preview the operator READS and the value that gets COMMITTED are
     /// the same number, because `commit` goes through `preview`.
     ///
     /// Pinned because the defect this pair replaces was exactly a divergence
@@ -724,7 +724,7 @@ mod tests {
         assert_eq!(format.unit, Unit::DecimalFeet);
     }
 
-    /// ★★★ **This test used to pin the defect**, and the correction is worth
+    /// **This test used to pin the defect**, and the correction is worth
     /// more than the assertion.
     ///
     ///
@@ -734,7 +734,7 @@ mod tests {
     /// and it does so with all the authority of a green suite. The number here
     /// is now derived from what the operator asked for.
     ///
-    /// ★ 1:100 on an inch basis is `100/72` inch per point; the same scale in
+    /// 1:100 on an inch basis is `100/72` inch per point; the same scale in
     /// metres is that times `0.0254`, i.e. `2.54/72`. Both spellings appear
     /// below on purpose — the first is the engine's own arithmetic and the
     /// second is the conversion, and writing them as one collapsed constant

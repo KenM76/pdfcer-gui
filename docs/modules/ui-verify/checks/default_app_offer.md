@@ -7,7 +7,7 @@ answers are reachable, and it does not come back once it has been answered.**
 an easy way to make pdfce-gui our default opener for pdfs. Ask once with a (old-name-exempt: HIS words, quoted verbatim from O173 — correcting an operator's own sentence would stop this being a quotation)
 don't show me again check box option."*
 
-# ★★★ The one thing this check must do before it launches anything
+# The one thing this check must do before it launches anything
 
 **Delete the preference the sandbox seeds.**
 
@@ -29,7 +29,7 @@ appear"* about a build in which the offer works perfectly. A fixture that
 defeats a default does not defeat a starting state; the starting state has
 to be planted.
 
-# ★★ What this check will NOT do, deliberately
+# What this check will NOT do, deliberately
 
 **It never presses the affirmative button.** That button writes ten values
 under `HKCU` on the machine running the sweep and then opens Windows' own
@@ -56,7 +56,7 @@ declared, rather than as a failure. A check that went red on a
 correctly-behaving build would be edited away inside a week, and the edit
 would take the four real assertions with it.
 
-★ It is worth knowing that this makes the check's coverage a function of the
+It is worth knowing that this makes the check's coverage a function of the
 machine it runs on: the day the operator accepts the offer for real, this
 check stops exercising anything on his desktop and keeps exercising
 everything on a clean one. The standing lesson *a SKIP is not red, so a
@@ -74,7 +74,7 @@ sweep covered O173.
 | D | tick the box, press *Not now* | `default-app-settled dont_ask=true saved=true` |
 | E | relaunch the same profile | **no** `defaultapp.body` this time |
 
-★ Phase E is the half of *"ask once"* that no unit test can reach. The unit
+Phase E is the half of *"ask once"* that no unit test can reach. The unit
 tests assert that the dialog **writes** the preference. Only a second launch
 against the same profile directory proves the written preference is **read
 back** on the path that decides whether to ask — and two files and a round

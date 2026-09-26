@@ -3,7 +3,7 @@
 //!
 //! ## Two things here are load-bearing rather than cosmetic
 //!
-//! **★★ [`shares_the_line_note`] is a DISCLOSURE, and it was a refusal until
+//! **[`shares_the_line_note`] is a DISCLOSURE, and it was a refusal until
 //! 2026-08-19.** `DEFECTS.md` D4a records that the old shell handled a
 //! cross-run selection by setting a flag that *"silently disables the whole
 //! typing loop"* — the operator pressed keys and nothing happened. This shell
@@ -63,7 +63,7 @@ pub const fn refusal(reason: Refusal) -> &'static str {
         // provenance itself, so the day the capability landed the cost was one
         // deleted arm that a `#[deprecated]` attribute pointed straight at.
         //
-        // ★ What replaces it is a genuinely different fact and therefore needs
+        // What replaces it is a genuinely different fact and therefore needs
         // genuinely different words. `/ActualText` is a producer-supplied
         // replacement string standing in for a span of glyphs — a ligature
         // written out, a logo given a name, a table cell given a reading. There
@@ -116,7 +116,7 @@ pub const fn refusal(reason: Refusal) -> &'static str {
     }
 }
 
-/// ★★ The multi-run **disclosure** — what `spans_runs()` used to refuse.
+/// The multi-run **disclosure** — what `spans_runs()` used to refuse.
 ///
 /// Until 2026-08-19 this sentence's ancestor was a *refusal*: a click whose
 /// visual line was made of more than one show operator placed no caret at all,
@@ -156,7 +156,7 @@ pub fn pinned_tail_disclosure(reason: Reason) -> String {
         Reason::Rotated => {
             "this text is rotated, so moving what follows it sideways would move it the wrong way"
         }
-        // ★ The commonest reason on this operator's documents by a wide margin,
+        // The commonest reason on this operator's documents by a wide margin,
         // and the one whose wording matters most: he is looking at what appears
         // to be one line and pdfcer has just edited one piece of it.
         Reason::SharesTheLine => {
@@ -187,31 +187,31 @@ pub fn pinned_tail_disclosure(reason: Reason) -> String {
 
 /// Why reflow declined on a page carrying text this session ADDED.
 ///
-/// ★★★ The remedy is the sentence, not the refusal. `reflow_block` re-emits the
+/// The remedy is the sentence, not the refusal. `reflow_block` re-emits the
 /// page's FIRST content stream and its commit sweep empties every other one,
 /// so a page carrying a non-empty EXTRA stream is refused by name rather than
 /// having the text in that stream silently deleted.
 ///
-/// ★★ **Re-measured 2026-09-14; what stood here was two revisions out of
+/// **Re-measured 2026-09-14; what stood here was two revisions out of
 /// date.** It said `reflow_block` is planned against the **base** document and
 /// that *"one typed character is enough to trip it"*. Engine `Pass 257.0`
 /// (2026-09-06) moved the planner onto the session view and both clauses went
 /// with it: an ordinary text EDIT no longer trips this, because that edit's own
 /// sweep has already consolidated the page. Adding text does.
 ///
-/// ★ The guard is also structural rather than provenance-based, so it fires on
+/// The guard is also structural rather than provenance-based, so it fires on
 /// a page NOBODY edited if the producer split its content across streams —
 /// `request_G015`, O198, measured on a sheet carrying eight. The sentence below
 /// is then false about the cause and its remedy does not work. It is still the
 /// engine's sentence and this shell will not invent a better one; see
 /// `app::actions::textstyle::reflow` for why a second predicate here is refused.
 ///
-/// ★★ It says **save and reopen**, in those words, because that is the whole of
+/// It says **save and reopen**, in those words, because that is the whole of
 /// what an operator has to do and it is not guessable from *"cannot reflow"*.
 /// A refusal naming a cause with no remedy is a sentence that leaves somebody
 /// trying things — the rule `text::embed`'s blocker rows already follow.
 ///
-/// ★ It does not apologise or call it a limitation. It is a correctness
+/// It does not apologise or call it a limitation. It is a correctness
 /// property: the alternative to refusing is splicing base-relative byte offsets
 /// into a stream that has moved, which corrupts the page silently.
 #[must_use]
@@ -222,7 +222,7 @@ pub const fn reflow_after_edit() -> &'static str {
 
 /// A reflow that ran and produced the same number of lines.
 ///
-/// ★★ A correct outcome that reads as a failure without a sentence: the
+/// A correct outcome that reads as a failure without a sentence: the
 /// paragraph already fitted its box, so re-wrapping it changed nothing visible.
 /// Silence here is indistinguishable from a command that did not work, which is
 /// the shape this project keeps finding.
@@ -233,13 +233,13 @@ pub const fn reflow_unchanged() -> &'static str {
 
 /// A reflow asked for with no caret placed.
 ///
-/// ★★★ **The three reflow refusals below are one design decision**: a
+/// **The three reflow refusals below are one design decision**: a
 /// paragraph command whose operand is the caret has three ways to find no
 /// operand, and each of them leaves the operator in a different place. Merging
 /// them into one *"nothing to reflow"* would be shorter and would tell somebody
 /// with the text tool armed but unclicked exactly nothing.
 ///
-/// ★ It names the tool by the word on its button — *Edit text* — because
+/// It names the tool by the word on its button — *Edit text* — because
 /// "place the caret" is our language and not theirs.
 #[must_use]
 pub const fn reflow_needs_caret() -> &'static str {
@@ -249,7 +249,7 @@ pub const fn reflow_needs_caret() -> &'static str {
 
 /// A reflow asked for while the caret is placing NEW text.
 ///
-/// ★★ `Anchor::Origin` and `Anchor::Box` mean the operator clicked bare page:
+/// `Anchor::Origin` and `Anchor::Box` mean the operator clicked bare page:
 /// they are composing text that is not on the page yet, so there is no
 /// paragraph to re-wrap and there will not be one until they commit. The
 /// sentence says that rather than implying they mis-clicked — they did not.
@@ -261,12 +261,12 @@ pub const fn reflow_needs_existing_text() -> &'static str {
 
 /// A caret on a run the block recogniser does not place in a paragraph.
 ///
-/// ★★★ The honest one, and the one most likely to be met on the drawings this
+/// The honest one, and the one most likely to be met on the drawings this
 /// program is for. A CAD title block is isolated cells, not prose: pdfcer finds
 /// no paragraph because there is none, and a re-wrap of a two-word cell would
 /// be meaningless even if it ran.
 ///
-/// ★ It says what pdfcer concluded about the text rather than that something
+/// It says what pdfcer concluded about the text rather than that something
 /// failed, because nothing did.
 #[must_use]
 pub const fn reflow_no_block() -> &'static str {
@@ -274,7 +274,7 @@ pub const fn reflow_no_block() -> &'static str {
      there is nothing to re-wrap."
 }
 
-/// ★★★ **Every way a reflow can decline, as ONE type** — `OPERATOR_REQUESTS.md`
+/// **Every way a reflow can decline, as ONE type** — `OPERATOR_REQUESTS.md`
 /// **O127**, defect 3.
 ///
 /// # Why this enum exists, when five `&'static str` functions already did
@@ -300,7 +300,7 @@ pub const fn reflow_no_block() -> &'static str {
 /// `⊗` and means *nothing happened*. A sixth cause added tomorrow cannot pick
 /// the wrong slot, because there is no longer a slot to pick.
 ///
-/// # ★★ The two halves, and why both are here
+/// # The two halves, and why both are here
 ///
 ///
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -322,7 +322,7 @@ pub enum ReflowRefusal {
     ///
     /// UNREACHABLE-FROM: pdfcer_core::text_edit::ReflowApplyError::PageEditedThisSession @ 025d703d
     ///
-    /// # ★★★ The chain, because the unreachability is two links long
+    /// # The chain, because the unreachability is two links long
     ///
     ///
     /// ⇒ So the arm stays (`ReflowDecline` is exhaustive and compiler-proved,
@@ -330,7 +330,7 @@ pub enum ReflowRefusal {
     /// sentence stays and is still tested — and **no operator can see any of
     /// it at this pin.**
     ///
-    /// # ★★ Why it is written down rather than merely true
+    /// # Why it is written down rather than merely true
     ///
     /// This is the **third** unreachable-but-kept refusal in this one enum
     /// ([`Self::PageSetChanged`] is the second) and each of the first two was
@@ -346,7 +346,7 @@ pub enum ReflowRefusal {
     /// the day this paragraph must be deleted. *A tripwire keyed on your own
     /// intention is not a tripwire.*
     ///
-    /// # ★ The hazard the variant was written for is real and has not gone
+    /// # The hazard the variant was written for is real and has not gone
     ///
     /// `reflow_block` re-emits the page's first content object and the commit
     /// sweep empties every other one. What changed is that the engine's
@@ -360,7 +360,7 @@ pub enum ReflowRefusal {
     /// streams and was refused with *"text was added to this page this
     /// session"* on a freshly opened file.
     ///
-    /// ★ Earlier history, kept because the shape recurs: until 2026-09-14
+    /// Earlier history, kept because the shape recurs: until 2026-09-14
     /// this comment described the SHELL's `edit_epoch != 0` forecast and
     /// called it *"the only thing standing between the operator and losing
     /// work he can see on the page"*. That forecast was deleted on 2026-09-05,
@@ -373,7 +373,7 @@ pub enum ReflowRefusal {
     PageSetChanged,
     /// The engine declined and gave no cause this shell may act on.
     ///
-    /// ★★★ **Added 2026-09-07 for the causes `ReflowApplyError` does not
+    /// **Added 2026-09-07 for the causes `ReflowApplyError` does not
     /// discriminate, and it has narrowed twice since.**
     /// `ReflowApplyError::Unsupported(String)` packs the remainder into one
     /// variant with no discriminant — from *"the block's CTM has a degenerate
@@ -386,7 +386,7 @@ pub enum ReflowRefusal {
     /// when it sent the operator hunting for a page reordering that never
     /// happened.
     ///
-    /// ★★ **The two narrowings, because this paragraph asked for them and then
+    /// **The two narrowings, because this paragraph asked for them and then
     /// did not notice they arrived** (corrected 2026-09-14). It used to say the
     /// engine carries *"ten distinct refusals in one variant"* and to promise
     /// that *"when a discriminant lands, the one recoverable case gets
@@ -400,7 +400,7 @@ pub enum ReflowRefusal {
     /// * `Refused(encoding::Refusal)` — carrying an `RInvTrigger`, which is how
     ///   [`Self::FontIsComposite`] tells `R-INV-4` from the other seven.
     ///
-    /// ★ The forecast was right and the count is stale, which is the ordinary
+    /// The forecast was right and the count is stale, which is the ordinary
     /// way a doc comment goes wrong: it described the other crate's shape, the
     /// other crate changed shape, and nothing in this one failed to compile.
     EngineDeclined,
@@ -408,7 +408,7 @@ pub enum ReflowRefusal {
     /// within-block reflow of composite text is a deferred engine feature
     /// (`R-INV-4`, FF-E).
     ///
-    /// # ★★★ Why this earns its own variant instead of the honest general one
+    /// # Why this earns its own variant instead of the honest general one
     ///
     /// Because the engine named it, and because on a real drawing it is not the
     /// exception. `SW41177.pdf` — the 36-sheet SOLIDWORKS set `O198` is about
@@ -418,7 +418,7 @@ pub enum ReflowRefusal {
     /// sentence that vague, shown that consistently, reads as the feature being
     /// broken rather than as one font class being out of scope.
     ///
-    /// ★★ **The engine hands this over structurally, so no prose is parsed.**
+    /// **The engine hands this over structurally, so no prose is parsed.**
     /// `ReflowApplyError::Refused` carries an `encoding::Refusal` whose
     /// `trigger` is an `RInvTrigger`, and `reflow_apply`'s `refuse_if_composite`
     /// is the ONLY site in that module that constructs one — always with
@@ -428,7 +428,7 @@ pub enum ReflowRefusal {
     /// *A tripwire keyed on the other side's data survives the other side
     /// changing; one keyed on our reading of it does not.*
     ///
-    /// ★ **It offers no remedy because there is none.** Not "choose another
+    /// **It offers no remedy because there is none.** Not "choose another
     /// font" — re-setting the face of a whole CAD paragraph to make a re-wrap
     /// possible would change how the drawing looks, which is a far larger act
     /// than the one that was asked for. R9's rule holds: say what happened and
@@ -453,7 +453,7 @@ impl ReflowRefusal {
     /// [`refusal`]'s reason: a variant added without a sentence is a compile
     /// error rather than a control that declines silently.
     ///
-    /// ★ The first four forward to the free functions that already existed and
+    /// The first four forward to the free functions that already existed and
     /// are already tested, so no sentence is written twice. What changed for
     /// them is the **channel**, not the words.
     #[must_use]
@@ -468,7 +468,7 @@ impl ReflowRefusal {
             // Kept for the same reason `PageSetChanged` below is kept, and
             // watched by `check-unreachable-refusals` rather than by a reader.
             Self::PageAlreadyEdited => reflow_after_edit(),
-            // ★ Deliberately the same remedy as `PageAlreadyEdited` and
+            // Deliberately the same remedy as `PageAlreadyEdited` and
             // deliberately not the same sentence: the operator did something
             // different to get here, and a sentence that named the wrong cause
             // would send them looking for an edit they did not make.
@@ -486,7 +486,7 @@ impl ReflowRefusal {
                  pages have been added, removed or reordered since. Save this file and open it \
                  again, then reflow."
             }
-            // ★★ The honest general refusal. See `ReflowRefusal::EngineDeclined`
+            // The honest general refusal. See `ReflowRefusal::EngineDeclined`
             // for why it names no cause and offers no remedy: the engine packs
             // ten causes into one `Unsupported(String)` with no discriminant,
             // and one invented cause shown ten times is what this replaced.
@@ -514,7 +514,7 @@ impl ReflowRefusal {
     }
 }
 
-/// ★★★ **Why Enter did not make a new line in text that is already on the
+/// **Why Enter did not make a new line in text that is already on the
 /// page** — `OPERATOR_REQUESTS.md` **O127**, defect 2.
 ///
 /// The operator: *"can the enter key create new lines when we are editing or
@@ -532,7 +532,7 @@ impl ReflowRefusal {
 /// position, so splitting a line in two is not an edit, it is authoring a
 /// second line somewhere.
 ///
-/// ★★ So this is a **decline with a route**, not an apology. It says what
+/// So this is a **decline with a route**, not an apology. It says what
 /// cannot happen, why, and the two things that can: finish the edit, or place
 /// new text in a box that wraps. Silence here — which is what the shell did
 /// before, by quietly committing instead — is the founding defect class of this
@@ -547,7 +547,7 @@ pub const fn enter_cannot_split_existing_text() -> &'static str {
 /// The disclosure owed when a **clicked** text draft turns out to be
 /// multi-line.
 ///
-/// # ★★★ Rule 4: an inference the operator cannot see owes an off-canvas report
+/// # Rule 4: an inference the operator cannot see owes an off-canvas report
 ///
 /// A click has no extent, so a point text has no width to wrap against — which
 /// is why dragging a box was the multi-line gesture in the first place. Once
@@ -561,7 +561,7 @@ pub const fn enter_cannot_split_existing_text() -> &'static str {
 /// is not drawn. What they *can* see is the consequence: a line long enough
 /// will wrap at the sheet edge rather than running off it.
 ///
-/// ★ It is shown once, at the commit, and not while typing: the draft is still
+/// It is shown once, at the commit, and not while typing: the draft is still
 /// a draft until then, and a sentence about how something will be placed is
 /// noise until it has been placed.
 #[must_use]
@@ -575,7 +575,7 @@ pub const fn point_text_became_a_block() -> &'static str {
 mod tests {
     use super::*;
 
-    /// ★★ **The multi-run note says what pdfcer WILL DO, not what it refuses.**
+    /// **The multi-run note says what pdfcer WILL DO, not what it refuses.**
     ///
     /// Its ancestor asserted `s.contains("Click directly on the word")` — advice
     /// that could not work, because the refusal was about the *line* and not
@@ -601,7 +601,7 @@ mod tests {
         assert!(!s.contains("run"), "'run' is a PDF term, not an operator's");
     }
 
-    /// ★ **Sharing the line PINS**, and that is the property the whole fix
+    /// **Sharing the line PINS**, and that is the property the whole fix
     /// rests on.
     ///
     /// If this reason ever reflowed, editing one cell of a SolidWorks parts
@@ -617,7 +617,7 @@ mod tests {
         assert!(s.contains("several separate pieces"), "{s:?}");
     }
 
-    /// ★ **Each pinning reason gets its own explanation.**
+    /// **Each pinning reason gets its own explanation.**
     ///
     /// A single generic sentence would be the cheaper implementation and would
     /// be wrong for both cases: "right-aligned" is something the operator's
@@ -635,7 +635,7 @@ mod tests {
         assert_ne!(right, centre);
     }
 
-    /// ★★★ **Every reflow cause has its own sentence, and no two are the
+    /// **Every reflow cause has its own sentence, and no two are the
     /// same.**
     ///
     /// The property the enum exists for. Before O127 the four shell-side causes
@@ -672,7 +672,7 @@ mod tests {
         }
     }
 
-    /// ★★ **The two "save and reopen" causes both carry the remedy**, and it is
+    /// **The two "save and reopen" causes both carry the remedy**, and it is
     /// the whole of what the operator has to do.
     ///
     /// A refusal naming a cause with no route is half a sentence — the rule
@@ -688,7 +688,7 @@ mod tests {
     /// retained sentence with no test is how a retained sentence rots. What it
     /// is NOT is evidence that either refusal can be produced.
     ///
-    /// ★ **The two have DIFFERENT instruments for that question, and saying
+    /// **The two have DIFFERENT instruments for that question, and saying
     /// "the gate covers it" would be wrong about one of them.**
     ///
     /// * `PageAlreadyEdited` is dead because of something in the ENGINE —
@@ -718,7 +718,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **Enter's refusal names the remedy, and names BOTH halves of it.**
+    /// **Enter's refusal names the remedy, and names BOTH halves of it.**
     ///
     /// The sentence has to carry the keyboard route as well as the gesture
     /// route, because O127's brief is explicit that commit must not be reachable
@@ -740,7 +740,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The point-text disclosure says where the width came from.**
+    /// **The point-text disclosure says where the width came from.**
     ///
     /// Rule 4's obligation, and the reason the sentence is longer than *"placed
     /// as a block"*: the operator can see two lines of text and cannot see the
@@ -769,13 +769,13 @@ mod tests {
         );
     }
 
-    /// ★ **Every refusal has a sentence, and none of them is empty.**
+    /// **Every refusal has a sentence, and none of them is empty.**
     ///
     /// The whole point of the module: the old shell's answer to the cross-run
     /// case was no sentence at all.
     ///
     ///
-    /// ★ It is tolerable here for the same one reason [`EditRefusal`]'s
+    /// It is tolerable here for the same one reason [`EditRefusal`]'s
     /// `EVERY` gives: [`refusal`]'s own `match` is exhaustive, so a fifth
     /// variant is a **compile error** in the catalog before it can be a silent
     /// gap in this list. The list is a convenience over a closed set, not the

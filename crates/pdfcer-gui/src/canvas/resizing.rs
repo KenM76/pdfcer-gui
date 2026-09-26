@@ -1,6 +1,6 @@
 //! # `canvas::resizing` — what the eight resize grips commit
 //!
-//! ## ★★★ The verb is `transform_objects`, and it is kind-agnostic
+//! ## The verb is `transform_objects`, and it is kind-agnostic
 //!
 //! `EditSession::transform_objects` wraps each object's operator run in
 //! `q <cm> … Q`. **That never looks at an operand**, which is what makes it
@@ -73,7 +73,7 @@ pub enum Refusal {
     Degenerate,
 }
 
-// ★★ THE PREFLIGHT IS NOT BUILT, AND THIS IS THE NOTE THAT SAYS SO.
+// THE PREFLIGHT IS NOT BUILT, AND THIS IS THE NOTE THAT SAYS SO.
 // `DEFECTS.md` D44.
 //
 // `transform_preview` is `&self`, side-effect-free, and shares one body with
@@ -95,7 +95,7 @@ pub enum Refusal {
 // y cm`, which is rare — but it is named here rather than left to be
 // discovered.
 //
-// ★ Why it is not built: **the preview decomposes the page.** Measured by the
+// Why it is not built: **the preview decomposes the page.** Measured by the
 // engine on the benchmark drawing, 129,758 objects, **~4 s in a debug build**
 // — and both the verb and the preview pay it. The engine's own advice is
 // *"call `transform_preview` on selection change and on gesture start, not per
@@ -103,14 +103,14 @@ pub enum Refusal {
 // piece of work rather than a line. `app::cache::FormRunCache` is the shape it
 // should take.
 //
-// ★★ A [`Refusal`] variant must not be added ahead of the call site that
+// A [`Refusal`] variant must not be added ahead of the call site that
 // raises it: `every_refusal_is_still_raised_somewhere` fails on a variant with
 // a sentence and no caller, and inventing a call site to satisfy that test
 // would be the failure it exists to catch.
 
 /// The scale factors a grip's drag implies, about the anchor opposite it.
 ///
-/// # ★ Why the anchor is the OPPOSITE corner and not the centre
+/// # Why the anchor is the OPPOSITE corner and not the centre
 ///
 /// Because that is what every drawing application does, and the standing
 /// tie-breaker for anything an operator compares against the tools they already
@@ -144,7 +144,7 @@ pub fn factors(grip: Grip, bounds: egui::Rect, delta: Vec2) -> Option<(f32, f32)
         Grip::NorthWest | Grip::West | Grip::SouthWest => -delta.x,
         _ => 0.0,
     };
-    // ★ Screen y is DOWN and the box is a screen rect, so a south grip dragged
+    // Screen y is DOWN and the box is a screen rect, so a south grip dragged
     // downward (positive dy) grows the box. The PDF-space flip happens once, in
     // `canvas::mapping`, and must not be applied a second time here — doing the
     // conversion twice is `canvas::mapping`'s own "classic silent defect".
@@ -180,7 +180,7 @@ pub fn is_usable(sx: f32, sy: f32) -> bool {
 /// object model, the anchor in PDF space and the two factors go in, and one
 /// `VectorAction::MoveNodes.into()` or one named refusal comes out.
 ///
-/// # ★ The anchor arrives in PDF user space, already converted
+/// # The anchor arrives in PDF user space, already converted
 ///
 /// The caller converts once, through `canvas::mapping`, for the reason
 /// `canvas::textedit::resolve_run` records about its own two hops: a second
@@ -196,7 +196,7 @@ pub fn action(
     if !is_usable(sx, sy) {
         return Err(Refusal::Degenerate);
     }
-    // ★ The provider is asked FOR and asked nothing.
+    // The provider is asked FOR and asked nothing.
     //
     // A transform needs no node positions and no kind check — that is the whole
     // point of the mechanism. What the model is still needed for is the same
@@ -208,7 +208,7 @@ pub fn action(
     if objects.is_empty() {
         return Err(Refusal::NothingSelected);
     }
-    // ★★ The computed scale, on the trace channel, from the ONE place that
+    // The computed scale, on the trace channel, from the ONE place that
     // computes it — so the gesture route and the typed route report the same
     // fact in the same words. `resize-commit` below is the *gesture's* line and
     // carries the grip, which the typed route has no equivalent of; this one is
@@ -227,7 +227,7 @@ pub fn action(
             objects.len()
         )
     });
-    // ★★ `scale(...).about(anchor)` — the whole arithmetic, in the engine's own
+    // `scale(...).about(anchor)` — the whole arithmetic, in the engine's own
     // `Matrix`, in PAGE space.
     //
     // `about` is `translate(a) × M × translate(-a)`, which is
@@ -236,7 +236,7 @@ pub fn action(
     // once here per point. A shell keeping its own copy would be a second
     // derivation of one answer in coordinate space.
     //
-    // ★ Page space, not the object's. See the module header: the engine
+    // Page space, not the object's. See the module header: the engine
     // conjugates by each object's own CTM, and a caller that "helpfully"
     // pre-multiplied would be right only where that CTM is the identity.
     let matrix = pdfcer_core::vector::Matrix::scale(f64::from(sx), f64::from(sy)).about(anchor);
@@ -264,7 +264,7 @@ pub fn action(
 pub struct Frame<'a> {
     /// Which grip the press landed on, sampled at the press.
     pub grip: Grip,
-    /// ★★★ How far the pointer has travelled since then, **in PAGE space**.
+    /// How far the pointer has travelled since then, **in PAGE space**.
     ///
     /// # ⚠ The unit is load-bearing, and [`Self::bounds`] is in the other one
     ///
@@ -280,7 +280,7 @@ pub struct Frame<'a> {
     /// convention (*"the grabbed corner tracks the pointer"*) broken by the
     /// module that states it. `DEFECTS.md` **D18**.
     ///
-    /// ★★ So the conversion is in [`drag`], where the two meet, rather than at
+    /// So the conversion is in [`drag`], where the two meet, rather than at
     /// the call site — one consumer and three would-be converters, and the
     /// honest contract is the one every caller already satisfies. Two `Vec2`s
     /// in two spaces are indistinguishable to the compiler; the only defence is
@@ -296,7 +296,7 @@ pub struct Frame<'a> {
     /// **Whether Shift is down THIS FRAME**, sampled live rather than at the
     /// press.
     ///
-    /// ★ Live, unlike `gesture::Drag::shift`, and the two are different facts
+    /// Live, unlike `gesture::Drag::shift`, and the two are different facts
     /// that happen to read the same key. That one asks *"what did this gesture
     /// MEAN"* — extend the selection or replace it — and must be sampled at the
     /// press, because the meaning of a gesture cannot change half-way through
@@ -307,7 +307,7 @@ pub struct Frame<'a> {
     pub constrain: bool,
     /// **The operator's Tool-row scale switches**, sampled at the commit.
     ///
-    /// ★ Carried on the [`Frame`] rather than read from `egui::Memory` inside
+    /// Carried on the [`Frame`] rather than read from `egui::Memory` inside
     /// this module, so `resizing` stays a pure decision over its inputs and
     /// stays testable without a `Context`. Every other live fact on this struct
     /// arrives the same way, including `constrain`.
@@ -318,7 +318,7 @@ pub struct Frame<'a> {
     pub page: Option<&'a pdfcer_core::page_tree::Page>,
     /// The selected form field, when one is selected.
     ///
-    /// ★★ Carried rather than looked up, because a resize has THREE
+    /// Carried rather than looked up, because a resize has THREE
     /// destinations and only one of them is on `SelectionState`: page content
     /// and a markup annotation both live there, and a form field's selection
     /// lives on the document — `canvas::selection::annot` excludes `/Widget`
@@ -335,7 +335,7 @@ pub struct Frame<'a> {
 /// one has understood both. What it hands back is the **scale factors** for the
 /// ghost, where the move drag hands back a displacement.
 ///
-/// # ★ A refusal is worded ONCE, on `Complete`
+/// # A refusal is worded ONCE, on `Complete`
 ///
 /// Not on every frame of the drag. `moving::drag` makes the same choice and its
 /// reason applies unchanged: an in-flight gesture is a question, and answering a
@@ -376,17 +376,17 @@ pub fn drag(
         // the harness rather than the document.
         return None;
     };
-    // ★★★ THE ONE PLACE THE TWO SPACES ARE RECONCILED. See [`Frame::delta`].
+    // THE ONE PLACE THE TWO SPACES ARE RECONCILED. See [`Frame::delta`].
     //
     // `bounds` is screen space (`pressing::grabbable` → `overlay::grip_box`,
     // the same rectangle the outline is drawn from) and `delta` is page space,
     // so `factors` — which divides one by the other — needs them in one space.
     //
-    // ★ Screen rather than page, because `factors` also receives `bounds` and
+    // Screen rather than page, because `factors` also receives `bounds` and
     // converting the rectangle would mean converting the grip, the pivot and
     // the anchor with it. One vector is the smaller crossing.
     //
-    // ★★ When there is no mapping the delta passes through unchanged, which is
+    // When there is no mapping the delta passes through unchanged, which is
     // the zoom-1.0 identity — and is exactly what every unit test in this
     // module supplies. ⚠ **A green suite is therefore no evidence that the two
     // spaces agree**: at zoom 1.0 a mismatch is arithmetically invisible,
@@ -399,7 +399,7 @@ pub fn drag(
         }
         return None;
     };
-    // ★★ The aspect lock is applied HERE — above the `InFlight` return, below
+    // The aspect lock is applied HERE — above the `InFlight` return, below
     // the one place the factors are derived — so the ghost and the commit are
     // the same pair of `f32`s and cannot disagree.
     //
@@ -414,7 +414,7 @@ pub fn drag(
         (sx, sy)
     };
     if phase == Phase::InFlight {
-        // ★ D5's second clause — *the constraint is announced* — is answered by
+        // D5's second clause — *the constraint is announced* — is answered by
         // the CALLER, not here. This module takes no `egui::Context` and that
         // is deliberate: everything in it is a pure function of its `Frame`,
         // which is what lets the whole resize be unit-tested without a window.
@@ -422,7 +422,7 @@ pub fn drag(
         // is in flight, and cannot affect what commits — so it belongs where
         // those three facts already are, in `canvas::interact`.
         //
-        // ★ The ghost is offered even for factors that will be REFUSED on
+        // The ghost is offered even for factors that will be REFUSED on
         // release, and that is deliberate: an operator dragging a corner past
         // the opposite one can see the shape collapsing, which is how they
         // learn to stop. Hiding the preview at the moment it becomes invalid
@@ -435,7 +435,7 @@ pub fn drag(
         decline(Refusal::NoObjectModel);
         return None;
     };
-    // ★★ The anchor is converted ONCE, here, through the same mapping the
+    // The anchor is converted ONCE, here, through the same mapping the
     // outline was drawn with — the same TWO hops `canvas::textedit::resolve_run`
     // takes, in the same order, through the same two functions: screen → canvas
     // → PDF user space. The canvas is Y-down from the page's top-left with
@@ -444,7 +444,7 @@ pub fn drag(
     // conversion *the classic silent defect*: the ghost and the commit would
     // disagree about which corner stayed still, and the object would jump by
     // whatever the two conversions differed by on release.
-    // ★★ `pivot`, NOT `anchor`. `anchor` is where the grip IS; the point that
+    // `pivot`, NOT `anchor`. `anchor` is where the grip IS; the point that
     // must stay still is the OPPOSITE corner. Using `anchor` here would scale
     // the object about the very corner the operator is dragging, so the shape
     // would grow away from their hand instead of towards it — a resize that
@@ -457,7 +457,7 @@ pub fn drag(
         return None;
     };
     let anchor = Point::new(f64::from(pdf.x), f64::from(pdf.y));
-    // ★★★ An ANNOTATION takes a different verb, and the branch is here — after
+    // An ANNOTATION takes a different verb, and the branch is here — after
     // the factors and the anchor, before the content action.
     //
     // Everything above this line is shared and must be: the eight grips, the
@@ -465,7 +465,7 @@ pub fn drag(
     // degenerate-drag refusal and the screen->page conversion are the same
     // gesture whatever is under it. What differs is one call.
     //
-    // ★★ `resize_annotation` takes **anchor + factors**, which is not a
+    // `resize_annotation` takes **anchor + factors**, which is not a
     // coincidence: this shell asked for that shape rather than a target `/Rect`
     // precisely so it would match `transform_objects`, and the engine took the
     // reasoning unchanged -- *"the anchor is a decision the shell makes from
@@ -496,7 +496,7 @@ pub fn drag(
                 anchor: (anchor.x, anchor.y),
                 sx: f64::from(sx),
                 sy: f64::from(sy),
-                // ★★ Whether the drag was PROPORTIONAL, sent because the engine
+                // Whether the drag was PROPORTIONAL, sent because the engine
                 // asked for it by name: *"if your grips can report whether a drag
                 // was proportional, that distinction is worth having."*
                 //
@@ -506,7 +506,7 @@ pub fn drag(
                 // that case rather than silently producing an oval border, which is
                 // what the parity reference does. A uniform scale is always safe.
                 uniform: (sx - sy).abs() <= f32::EPSILON,
-                // ★★★ **What the operator asked to ride along** — O51's switches.
+                // **What the operator asked to ride along** — O51's switches.
                 //
                 // `uniform` above and this are different facts and both travel:
                 // the first is a measurement of the drag, the second is a
@@ -517,7 +517,7 @@ pub fn drag(
         ));
         return Some((sx, sy));
     }
-    // ★★★ A FORM FIELD's box, and it is the third destination this one gesture
+    // A FORM FIELD's box, and it is the third destination this one gesture
     // reaches. `OPERATOR_REQUESTS.md` **O53**.
     //
     // The verb differs from the annotation one and the engine says why: a
@@ -526,7 +526,7 @@ pub fn drag(
     // command"* -- a check box's tick and a text field's border have to be
     // redrawn at the new size, which `resize_annotation` would not do.
     //
-    // ★★ So this one takes a RECTANGLE where the annotation takes anchor and
+    // So this one takes a RECTANGLE where the annotation takes anchor and
     // factors, and the conversion happens here rather than in the engine
     // because it is the same arithmetic the eight grips already did: the ghost
     // the operator was watching IS `bounds` scaled about the pivot, and
@@ -542,7 +542,7 @@ pub fn drag(
             decline(Refusal::Degenerate);
             return None;
         };
-        // ★ `from_corners`, not a literal: §7.9.5 lets a `/Rect`'s corners
+        // `from_corners`, not a literal: §7.9.5 lets a `/Rect`'s corners
         // arrive in any order and normalises them, and a grip dragged past its
         // anchor produces exactly that — a mirrored box, which is a supported
         // gesture rather than an error to guard against.
@@ -558,7 +558,7 @@ pub fn drag(
             crate::app::actions::forms::FieldAction::EditWidget {
                 field: selected.field,
                 widget: selected.widget,
-                // ★★★ **AND THE OPERATOR'S SWITCHES** —
+                // **AND THE OPERATOR'S SWITCHES** —
                 // `OPERATOR_REQUESTS.md` O76: *"Form shape outlines of
                 // checkboxes and such scale when I drag them larger."*
                 //
@@ -569,7 +569,7 @@ pub fn drag(
                 // and nothing else would leave the Tool-row switches reaching
                 // an annotation and stopping at a form field.
                 //
-                // ★ `to_options()` is the same call `annots::resize` makes,
+                // `to_options()` is the same call `annots::resize` makes,
                 // from the same `modifiers` value captured on the same frame.
                 // Deriving them separately is exactly how the two paths would
                 // drift, and `canvas::scaling`'s header records what that cost
@@ -588,7 +588,7 @@ pub fn drag(
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 //
-                // ★ Carries the FACTORS and the anchor, which is what a wrong
+                // Carries the FACTORS and the anchor, which is what a wrong
                 // build would get wrong. A line saying only "resize committed"
                 // would be identical for a build that scaled about the centre,
                 // mirrored an axis, or applied the same factor to both.
@@ -643,7 +643,7 @@ pub(crate) fn decline(reason: Refusal) {
 /// The rectangle `bounds` becomes when both its corners are scaled about
 /// `pivot` by `(sx, sy)`.
 ///
-/// # ★★★ Both corners, because a pivot is not always a corner
+/// # Both corners, because a pivot is not always a corner
 ///
 /// This is the identical map `overlay::draw_resize_ghost` paints —
 /// `pivot + (p - pivot) * s` — so the box that is written is the box the
@@ -675,7 +675,7 @@ mod tests {
         egui::Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(100.0, 50.0))
     }
 
-    /// ★★★ **An edge grip's scaled box keeps its cross-axis extent.**
+    /// **An edge grip's scaled box keeps its cross-axis extent.**
     ///
     /// The regression O209 names: *"only the corner drag handles work."* An
     /// east or west drag leaves the height alone and a north or south drag
@@ -706,7 +706,7 @@ mod tests {
         }
     }
 
-    /// ★ **A corner grip is unchanged by the fix.**
+    /// **A corner grip is unchanged by the fix.**
     ///
     /// The two spellings agree wherever the pivot is itself a corner, and that
     /// is the half that kept working — so this is the control that says the
@@ -724,7 +724,7 @@ mod tests {
         );
     }
 
-    /// ★ **Dragging the south-east grip right and down grows both axes.**
+    /// **Dragging the south-east grip right and down grows both axes.**
     ///
     /// The base case, and the one whose y sign is easy to get backwards: screen
     /// y is down, so a positive `dy` on a *south* grip is growth. Getting it
@@ -747,7 +747,7 @@ mod tests {
         assert!((sy - 1.5).abs() < 1e-6, "sy={sy}");
     }
 
-    /// ★★ **A mid-edge grip scales ONE axis**, which is the whole reason the
+    /// **A mid-edge grip scales ONE axis**, which is the whole reason the
     /// four of them are offered separately from the corners.
     ///
     /// A build that treated them as corners would let an operator aiming at
@@ -774,7 +774,7 @@ mod tests {
         assert_eq!(factors(Grip::East, flat, Vec2::new(10.0, 0.0)), None);
     }
 
-    /// ★ **A collapse or a mirror is refused, not clamped.**
+    /// **A collapse or a mirror is refused, not clamped.**
     ///
     /// Clamping would silently substitute a different edit for the one the
     /// operator made — and a mirrored path is a legal, plausible-looking
@@ -788,7 +788,7 @@ mod tests {
         assert!(is_usable(0.5, 2.0));
     }
 
-    /// ★★ **The map is anchored**: the anchor point does not move, and
+    /// **The map is anchored**: the anchor point does not move, and
     /// everything else moves in proportion to its distance from it.
     ///
     /// Asserted as the two properties rather than against a table of

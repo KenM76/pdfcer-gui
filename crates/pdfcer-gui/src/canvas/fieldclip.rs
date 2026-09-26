@@ -31,7 +31,7 @@ pub enum PasteAs {
 /// A sentence on the status row, never a silence — the same posture
 /// [`crate::canvas::clipboard::Refusal`] takes, for the same D4a reason.
 ///
-/// ★ Two variants went when `formclip` landed: `KindCannotBeAuthored` (a
+/// Two variants went when `formclip` landed: `KindCannotBeAuthored` (a
 /// signature field, now copyable) and `RadioNeedsItsOwnExportValue` (the engine
 /// refuses the collision itself, with a better message).
 /// [`EngineRefused`](Self::EngineRefused) carries both now, in the engine's
@@ -47,7 +47,7 @@ pub enum Refusal {
     NoGeometry,
     /// The clipboard holds no form field.
     NothingCopied,
-    /// ★★ **The engine declined, in its own words.**
+    /// **The engine declined, in its own words.**
     ///
     /// A `String` rather than a mirror of `EditError`'s taxonomy, for the
     /// reason `canvas::clipboard::Refusal::EngineRefused`'s doc gives about the
@@ -66,7 +66,7 @@ pub enum Refusal {
 /// after copying a field replaces it, which is what every program in the class
 /// does and what makes `Ctrl+V` mean one thing at a time.
 ///
-/// # ★ Why the BYTES and not the live `FieldClip`
+/// # Why the BYTES and not the live `FieldClip`
 ///
 /// The same three reasons `Clipped::Selection` carries bytes, and here the third
 /// is decisive rather than merely convenient:
@@ -80,7 +80,7 @@ pub enum Refusal {
 ///    representation loses nothing, and it is the same one a private OS
 ///    clipboard format will take.
 ///
-/// ★ This used to add *"unlike `ObjectClip`, whose `to_bytes` drops its
+/// This used to add *"unlike `ObjectClip`, whose `to_bytes` drops its
 /// annotations"*, and **that stopped being true on 2026-08-29** — clip format
 /// version 2 carries them, and `annotations_survive_serialisation()` now
 /// answers `true` for every clip. Corrected here rather than deleted, because
@@ -111,13 +111,13 @@ pub struct ClippedField {
     pub rect: Rect,
     /// How many widgets the clip carries.
     ///
-    /// ★ `> 1` means a radio group, and it changes what a paste rectangle
+    /// `> 1` means a radio group, and it changes what a paste rectangle
     /// *means* — see the module header. Carried so a caller can ask without
     /// deserialising.
     pub widgets: usize,
     /// Whether the field brings a calculation or format script with it.
     ///
-    /// ★★ The one thing worth knowing **before** the press, and the operator
+    /// The one thing worth knowing **before** the press, and the operator
     /// cannot see it: a field in a calculation chain looks identical to one
     /// that is not. The engine can say a script is coming and deliberately does
     /// **not** resolve the field names inside it — Acrobat is documented
@@ -139,7 +139,7 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<ClippedField, Refusal>
         ctx,
         crate::canvas::clipboard::Clipped::FormField(Box::new(clipped.clone())),
     );
-    // ★★★ AND THE OS CLIPBOARD, WITHOUT WHICH CTRL+V DOES NOT ARRIVE AT ALL.
+    // AND THE OS CLIPBOARD, WITHOUT WHICH CTRL+V DOES NOT ARRIVE AT ALL.
     //
     // Not a courtesy to other applications: `egui-winit` pushes `Event::Paste`
     // **only if the OS clipboard holds non-empty text**, and swallows the
@@ -208,7 +208,7 @@ pub fn cut(
 /// original is invisible, and a cross-page paste that offset would move the
 /// copy away from the position that was the reason for copying it.
 ///
-/// ★ A [`PasteAs::Duplicate`] onto the same page offsets too. Two widgets of one
+/// A [`PasteAs::Duplicate`] onto the same page offsets too. Two widgets of one
 /// field stacked exactly on each other is a form the operator cannot separate,
 /// and the fact that they share a value does not make them one box.
 ///
@@ -221,7 +221,7 @@ pub fn paste(
     doc: &OpenDoc,
     page: usize,
     mode: PasteAs,
-    // ★ Where the pointer is, in PDF user space, or `None` when the canvas has
+    // Where the pointer is, in PDF user space, or `None` when the canvas has
     // never drawn. `OPERATOR_REQUESTS.md` O73; resolved once by
     // `app::dispatch::clipboard::paste` so all three paste kinds land in the
     // same place for the same reason.
@@ -238,7 +238,7 @@ pub fn paste(
     let policy = match mode {
         PasteAs::NewField => FieldPastePolicy::NewField {
             name: unique_name(doc, &clipped.name),
-            // ★★ `Carry` — reuse the source's `/TU`, which R105 accepts as an
+            // `Carry` — reuse the source's `/TU`, which R105 accepts as an
             // explicit decision because it is the operator's own field rather
             // than an invented name. The engine refuses `Undecided` outright
             // and discloses the reuse, because two fields announcing themselves
@@ -249,7 +249,7 @@ pub fn paste(
             // the interruption this whole gesture exists to avoid. Four boxes
             // down a column should be four keystrokes.
             tooltip: PasteTooltip::Carry,
-            // ★★★ A new field starts EMPTY, and this is the one place the shell
+            // A new field starts EMPTY, and this is the one place the shell
             // overrides "reproduce what was copied".
             //
             // A value is content, not a property. Copying the title-block box
@@ -258,18 +258,18 @@ pub fn paste(
             // that is wrong on paper the moment it is printed. The engine's own
             // `field_defaults` excludes `/V` for the same reason.
             //
-            // ★ `/DV` travels **regardless** — the engine carries it whether or
+            // `/DV` travels **regardless** — the engine carries it whether or
             // not this is set, and it is right to: a default is the *reset
             // target*, not content, and dropping it makes Reset restore the
             // wrong thing silently.
             copy_value: false,
-            // ★ Actions DO travel. A copied field in a calculation chain that
+            // Actions DO travel. A copied field in a calculation chain that
             // arrives inert is a defect nothing on the page reveals, which is
             // the worst kind. `carries_actions` is disclosed before the press
             // and the engine discloses the `/CO` registration after it.
             copy_actions: true,
         },
-        // ★ Addressed by the SOURCE's name, which is what makes the two widgets
+        // Addressed by the SOURCE's name, which is what makes the two widgets
         // one field. The engine refuses with `FieldNotFound` when that name is
         // not in this document — a duplicate paste across documents is
         // meaningless and must not fall back to creating a field, because the
@@ -311,7 +311,7 @@ pub fn carries_actions(ctx: &egui::Context) -> Option<bool> {
 
 /// Where the pasted box goes. See [`paste`]'s header for the two rules.
 fn placed_rect(source: Rect, from_page: usize, to_page: usize, target: Option<egui::Pos2>) -> Rect {
-    // ★★★ **The pointer wins where there is one** — `OPERATOR_REQUESTS.md`
+    // **The pointer wins where there is one** — `OPERATOR_REQUESTS.md`
     // O73. The field keeps its size and is **centred** on the cursor, which is
     // the same rule `canvas::clipboard` applies to a markup and to page
     // content: three paste kinds, one answer to *"where does it land"*.
@@ -349,13 +349,13 @@ fn placed_rect(source: Rect, from_page: usize, to_page: usize, target: Option<eg
 /// operator-facing text — and the *numbering* is [`split_trailing_number`]'s,
 /// which is logic and belongs here.
 ///
-/// ★★ The convention is Acrobat's, sourced rather than invented: its bulk
+/// The convention is Acrobat's, sourced rather than invented: its bulk
 /// duplication auto-names copies `Date1`, `Date2`, `Date3`, and the separator is
 /// load-bearing rather than cosmetic. `candidate_name`'s header carries both the
 /// scripting rationale and the reason a **dot** is refused even though one
 /// Acrobat account uses it.
 ///
-/// ★ The name is generated here rather than by the engine, at the engine's own
+/// The name is generated here rather than by the engine, at the engine's own
 /// insistence: *"an engine-invented name is a name nobody chose."* `paste_field`
 /// refuses a taken name with `FieldNameTaken` and never auto-suffixes, so this
 /// is the only place a candidate comes from.
@@ -388,7 +388,7 @@ fn unique_name(doc: &OpenDoc, base: &str) -> String {
 
 /// Split a field name into its stem and the number to try first.
 ///
-/// ★★ `Text1` → `("Text", 2)`, not `("Text1", 2)`. **Continuing an existing
+/// `Text1` → `("Text", 2)`, not `("Text1", 2)`. **Continuing an existing
 /// number is the whole point**, and getting it wrong is what produced `Text1 2`.
 ///
 /// This shell's own placement dialog names a new text field `Text1` — Acrobat's
@@ -413,7 +413,7 @@ fn split_trailing_number(base: &str) -> (&str, u32) {
         .map(|(i, _)| i)
         .last();
     match digits_start {
-        // ★ `Some(0)` means the name is ALL digits — a field called `12`. The
+        // `Some(0)` means the name is ALL digits — a field called `12`. The
         // stem is empty and the paste is named `13`, which is a legal field name
         // and a terrible one, but it is exactly what the operator's own scheme
         // implies. Left alone deliberately.
@@ -468,7 +468,7 @@ fn read_selected(doc: &OpenDoc) -> Result<ClippedField, Refusal> {
 mod tests {
     use super::*;
 
-    /// ★★★ The naming convention, which was WRONG until 2026-08-29.
+    /// The naming convention, which was WRONG until 2026-08-29.
     ///
     /// It produced `Text1 2` from `Text1`: a space separator and no awareness
     /// that the base was already numbered. Both halves are fixed here and both
@@ -533,7 +533,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The pointer outranks both older rules, and keeps the size.**
+    /// **The pointer outranks both older rules, and keeps the size.**
     ///
     /// `OPERATOR_REQUESTS.md` O73. Asserted against BOTH fallback cases —
     /// same page and cross page — because the target arm has to win in each,

@@ -17,7 +17,7 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
 
-/// ★ **Edit, and only Edit** — the one mode where this tool changes anything.
+/// **Edit, and only Edit** — the one mode where this tool changes anything.
 ///
 /// Read and Review already sweep text with the select tool, so arming the tool
 /// there is a no-op an operator cannot see; the two gaps it closes are both in
@@ -544,7 +544,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // PHASE D — and Underline comes alive, in Edit
     // ==================================================================
     //
-    // ★ The P3 tension closing, observed rather than argued: the same control,
+    // The P3 tension closing, observed rather than argued: the same control,
     // in the same mode, in the same run, that phase A found dead.
     click_tab(&session, &driver, ui_rect, MARKUP_TAB, MARKUP_TAB_ID)?;
     let frame = session.frame()?;
@@ -634,7 +634,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // PHASE E — retire the tool, and Edit is a content marquee again
     // ==================================================================
     //
-    // ★ The falsifier. Everything above would pass against a build that had
+    // The falsifier. Everything above would pass against a build that had
     // simply deleted `takes_the_press`'s `!caps.edit_content` clause — text
     // would sweep in Edit unconditionally, the tool would arm and change
     // nothing, and the marquee (the ONLY content-selection gesture the product
@@ -733,7 +733,7 @@ mod tests {
             assert!(name.starts_with(ITEM_PREFIX), "{name}");
         }
         assert_ne!(TOOL_ITEM, TOOL_SIBLING);
-        // ★ Edit, and the constant is where that finding is enforced. Aimed at
+        // Edit, and the constant is where that finding is enforced. Aimed at
         // Read the Markup tab would not exist; aimed at Review the select tool
         // already sweeps text, so phase C would pass against a build where
         // `view.tool_text` did nothing at all.
@@ -744,7 +744,7 @@ mod tests {
         assert_ne!(TOOL_TAB, MARKUP_TAB);
     }
 
-    /// ★ **The two halves of the toggle are read from the same field and are not
+    /// **The two halves of the toggle are read from the same field and are not
     /// the same value** — the arithmetic phase B and phase E rest on.
     ///
     /// `canvas::tool::toggle_text` traces the tool it moved *to*, so arming and

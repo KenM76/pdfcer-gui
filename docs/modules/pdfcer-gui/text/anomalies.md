@@ -8,7 +8,7 @@ detail beneath it ([`crate::panels::docprops`]). Both read the **same**
 derivation in [`crate::app::status::anomalies`], so the words here are
 written once and cannot drift between the glance and the answer.
 
-## ★★★ What this catalog is actually about, and why the wording is careful
+## What this catalog is actually about, and why the wording is careful
 
 Engine `Pass 283.0`, decision 145 — *"fail-clean never meant refuse"* — was
 written against a real file of the operator's. A 46 KB drawing that opens in
@@ -42,7 +42,7 @@ by them:
    thing that is damaged, and the operator's next question is about the
    file.*
 
-## ★★ Why there is no "this file opened cleanly" string
+## Why there is no "this file opened cleanly" string
 
 There is a true one available — `load_anomalies()` is empty for a sound file
 and the engine tests that control — and it is deliberately not written.

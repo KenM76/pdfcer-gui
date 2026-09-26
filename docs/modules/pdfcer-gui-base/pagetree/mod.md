@@ -5,7 +5,7 @@
 > there are blank pages at the end of the document equalling the number of
 > pages I deleted."*
 
-## ★★★ 1. The lesson this module exists to carry: **a GUI that checks its
+## 1. The lesson this module exists to carry: **a GUI that checks its
 own work with its own parser cannot see this class of defect at all**
 
 This is the sentence to read before changing anything below, because every
@@ -42,7 +42,7 @@ rewrite of this module that starts by calling `pages()` and comparing its
 length to something would be **vacuous** — it would compare the walked
 structure against itself and pass on every corrupt file in existence.
 
-## ★★★ 2. And it must be a NESTED tree, or the question is unfalsifiable
+## 2. And it must be a NESTED tree, or the question is unfalsifiable
 
 The second reason the defect shipped. On a **flat** page tree — one root
 whose `/Kids` are all `/Page` leaves — the immediate parent *is* the root,
@@ -84,7 +84,7 @@ whose closing offer stands: *"If `pdfcer-core` would rather own that check —
 a `validate_page_tree()` a writer calls before it commits — we would use it
 and delete ours the same day."*
 
-## 4. ★★ Why the raw-dictionary read is legitimate here, and where it drifts
+## 4. Why the raw-dictionary read is legitimate here, and where it drifts
 
 Reading `/Count` off a dictionary through [`ObjectGraph`] is a seam, and
 this project has one standing precedent for it — `canvas::notepopup::model`'s
@@ -97,7 +97,7 @@ that it is a workaround. The same admission is owed here and is made:
 graph**. Nothing is guessed and nothing is written. The day `pdfcer-core`
 models a page-tree node, [`audit`] becomes a loop over that type.
 
-## 5. ★ Why it walks itself instead of using `PageSlot::ancestors`
+## 5. Why it walks itself instead of using `PageSlot::ancestors`
 
 `page_slots` would have been fewer lines, and
 `panels::forms::tab_order::tabs` sets the precedent for reading a raw key
@@ -112,7 +112,7 @@ that does:
 * It answers the wrong shape: a per-leaf ancestor list has to be inverted
   into a per-node tally anyway, and the inversion is the same recursion.
 
-★★ Worth recording, because it is the engine stating the very contract it
+Worth recording, because it is the engine stating the very contract it
 then broke: `PageSlot::ancestors`' own doc comment
 reads *"Every ancestor `Pages` node, root first,
 excluding the page itself. **A delete must decrement `/Count` on all of
@@ -186,14 +186,14 @@ later. `redact::prove_saved_bytes` sits at the same boundary for the
 same reason and its argument is the precedent: *"the proof has to be made
 here or not at all."*
 
-★ And **which** sentence a refusal owes is decided here too, by
+And **which** sentence a refusal owes is decided here too, by
 [`refusal_origin`], rather than at the save. That is not tidiness: the
 choice depends on a **second audit** — of the file the document was opened
 from, to answer *"was it already like this when he opened it?"* — and this
 module is the only place equipped to take one. `pdfcer-gui`'s `text::pagetree`
 owns every word.
 
-## 9. ★★ What it costs, measured rather than asserted
+## 9. What it costs, measured rather than asserted
 
 
 | document | size | the walk itself | [`audit_saved_bytes`] end to end | `to_incremental_bytes` on the same document |
@@ -202,7 +202,7 @@ owns every word.
 | `D:/Dev/pdfTests/ncored-benchmark-cad-drawing.pdf` — 129,758 objects | 5,724,699 B | **0.6 µs** | **3.51 ms** | 5.41 ms |
 | `fixtures/nested-page-tree.pdf` | 5,026 B | 4.2 µs | — | — |
 
-★★★ **A first draft of this paragraph claimed the guard was "beneath"
+**A first draft of this paragraph claimed the guard was "beneath"
 `to_incremental_bytes`, and that was wrong.** It was written from the shape
 of the code rather than from a measurement, which is the exact error
 `BENCHMARK.md` commemorates — written into the very paragraph citing it. The
@@ -218,7 +218,7 @@ millisecond inside a gesture that takes a second is not a cost he can
 observe. The number that would change this decision is tens of milliseconds,
 and it is an order of magnitude away.
 
-★ **The walk is not where the time goes; the re-parse is.** The walk barely
+**The walk is not where the time goes; the re-parse is.** The walk barely
 moves with file size — the benchmark sheet is three times the bytes and
 *faster*, because it has one page — since it is bounded by the page tree
 rather than by the document. So a future engine that let the guard read the

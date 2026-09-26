@@ -24,16 +24,16 @@ pub struct CompactDialog {
     bytes: Vec<u8>,
     /// What the document occupies on disk now.
     ///
-    /// ★ Read from the **file**, not from the session's own byte count, because
+    /// Read from the **file**, not from the session's own byte count, because
     /// the number the operator compares against is the one Explorer shows them.
     ///
-    /// ★★ `0` for a document that has never been saved — a blank one — and that
+    /// `0` for a document that has never been saved — a blank one — and that
     /// falls out correctly rather than by accident: `size_change` compares
     /// `after >= before`, so a zero `before` takes the *"no smaller"* branch and
     /// says the honest thing. A file that does not exist yet cannot be shrunk,
     /// and the alternative — an `Option` and a fourth sentence — would be a
     /// branch for a case the arithmetic already answers.
-    /// ★ Read from the **file** each time the window opens, never cached: the
+    /// Read from the **file** each time the window opens, never cached: the
     /// operator may have saved since, and a stale `before` would quote a saving
     /// against a file that is no longer there.
     before: u64,
@@ -50,7 +50,7 @@ impl CompactDialog {
     /// turns that into a sentence rather than into silence.
     pub fn open(doc: &OpenDoc) -> Result<Self, String> {
         use crate::app::settings::SettingsExt;
-        // ★ The SAME `SaveOptions` the ordinary save uses. Two settings ride on
+        // The SAME `SaveOptions` the ordinary save uses. Two settings ride on
         // it — the cross-reference entry line ending and the trailing newline —
         // and both change the bytes of the file the operator receives. A
         // `::default()` here would produce a compacted copy that differed from
@@ -94,7 +94,7 @@ impl CompactDialog {
                     self.signatures
                 )
             });
-            // ★★ The measured bytes travel with the action. They are the operand
+            // The measured bytes travel with the action. They are the operand
             // — see the header — and rebuilding them in the apply arm would put
             // a second serialisation between what the window promised and what
             // the operator receives.
@@ -115,7 +115,7 @@ impl CompactDialog {
         ui.label(t::size_change(self.before, self.bytes.len() as u64));
         ui.add_space(8.0);
         ui.small(t::revisions_line());
-        // ★★★ The signature warning LAST of the three and drawn full-size, not
+        // The signature warning LAST of the three and drawn full-size, not
         // `small`, when it applies. It is the only irreversible loss in the
         // window and the only one most documents do not have — so it is
         // conditional, and where it appears it is the thing the eye lands on.
@@ -127,7 +127,7 @@ impl CompactDialog {
         ui.add_space(12.0);
         ui.separator();
         ui.horizontal(|ui| {
-            // ★ Never greyed. Every state this window can be in is one an
+            // Never greyed. Every state this window can be in is one an
             // operator may legitimately proceed from — including "no smaller",
             // which is an accurate answer about a tidy file and not a reason to
             // refuse them a copy they asked for.
@@ -145,14 +145,14 @@ impl CompactDialog {
 
 /// Build it for the current document, or answer why not.
 ///
-/// ★★ `Err` carries a sentence rather than a flag, because the one thing that
+/// `Err` carries a sentence rather than a flag, because the one thing that
 /// can go wrong here is the engine refusing by name — a hybrid file whose
 /// `/XRefStm` does not parse, or one whose object numbering is too sparse for
 /// §7.5.4's single-section table. Both are facts about the operator's file
 /// that they can act on, and collapsing them to *"could not"* would waste the
 /// only useful thing the refusal carries.
 ///
-/// ★ The first of those read *"a hybrid-reference file"* until 2026-09-11.
+/// The first of those read *"a hybrid-reference file"* until 2026-09-11.
 /// `Pass 281.0` narrowed the engine's refusal to the unparseable case, so
 /// compacting an ordinary hybrid now succeeds where this comment said it
 /// could not. The sentence the operator reads is the engine's own and was

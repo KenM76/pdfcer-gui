@@ -30,7 +30,7 @@ const PAN_NOTCHES: i32 = 30;
 
 /// How far a fitted edge may miss the viewport's, in logical points.
 ///
-/// ★ Not a tolerance on the DEFECT, which moves the page by a whole viewport
+/// Not a tolerance on the DEFECT, which moves the page by a whole viewport
 /// or more. This absorbs the `f32` fit division and the pixel-grid rounding of
 /// the page's drawn rect, and nothing else: a build that placed the page one
 /// tenth of a viewport out would still fail by a wide margin.
@@ -39,7 +39,7 @@ const EDGE_TOLERANCE: f32 = 4.0;
 /// The gap the canvas deliberately leaves between the page and the panel
 /// edges, in logical points — `canvas::CANVAS_MARGIN`.
 ///
-/// ★★ Read once, from the application's own reason for existing rather than
+/// Read once, from the application's own reason for existing rather than
 /// from an observation. `canvas`'s comment: the margin is subtracted from the
 /// viewport BEFORE the fit divides, *"so 'fit page' really does fit with the
 /// gap visible instead of fitting exactly and then being clipped by the
@@ -54,7 +54,7 @@ const CANVAS_MARGIN: f32 = 16.0;
 /// How much smaller the window is made, in **physical pixels**, to test that a
 /// fit survives a resize.
 ///
-/// ★ Large enough that the change dwarfs [`EDGE_TOLERANCE`] — a resize the
+/// Large enough that the change dwarfs [`EDGE_TOLERANCE`] — a resize the
 /// check cannot distinguish from noise would make the phase vacuous — and
 /// small enough that the ribbon still lays out, since a window too narrow to
 /// draw the ribbon fails for a reason that is not the subject.
@@ -62,7 +62,7 @@ const RESIZE_BY_PX: i32 = 160;
 
 /// The window chrome either side of the client area, in physical pixels.
 ///
-/// ★★ Approximate on purpose, and the check does not depend on the number
+/// Approximate on purpose, and the check does not depend on the number
 /// being right: it resizes by a delta and asserts the CANVAS changed, then
 /// restores by the same arithmetic. An error here makes the window a few
 /// pixels different from where it started and is invisible to every claim —
@@ -134,7 +134,7 @@ pub(super) fn invoke(session: &Session, driver: &Driver, ui_rect: &str, item: &s
 
 /// What one fit mode promises about where the page ends up.
 ///
-/// ★ Three claims rather than a pair of `fill` booleans, because the three
+/// Three claims rather than a pair of `fill` booleans, because the three
 /// modes do not differ by a flag — they differ by **what they promise**, and
 /// fit-page's promise is the odd one: it does not fill either axis in general
 /// (a landscape sheet in a tall window fills the width and floats in the
@@ -185,7 +185,7 @@ fn verdict(label: &str, page: LRect, canvas: LRect, claim: Claim) -> Option<Stri
             {
                 faults.push("part of the page is outside the canvas".to_owned());
             }
-            // ★ THE claim of O28, stated directly: equal margins. A page can
+            // THE claim of O28, stated directly: equal margins. A page can
             // be entirely inside the viewport and still jammed against one
             // edge with a viewport of pasteboard on the other, which is what
             // a fit that set only the scale produced.
@@ -285,7 +285,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ] {
         // --- throw the view away ----------------------------------------
         //
-        // ★ The precondition, established and ASSERTED rather than assumed —
+        // The precondition, established and ASSERTED rather than assumed —
         // rule 3 for a new check. A run whose pan did nothing would press the
         // button from a centred start and pass while measuring nothing.
         let before = page_rect(&session)?;
@@ -339,7 +339,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             return Ok(Some(failure));
         }
 
-        // --- ★★★ AND THE SAME CLAIM AFTER A RESIZE — `O55` ----------------
+        // --- AND THE SAME CLAIM AFTER A RESIZE — `O55` ----------------
         //
         // > *"if the canvas window is resized the pdf should resize to match"*
         //
@@ -359,7 +359,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // phase.** Nothing new is being measured; the same three claims are
         // being asked again in the state the operator reported.
         //
-        // ★★ It resizes and then resizes BACK, so each loop iteration hands
+        // It resizes and then resizes BACK, so each loop iteration hands
         // the next one the window it was given. A check that shrank the window
         // three times would be measuring an ever-smaller viewport and would
         // eventually assert against one too small to lay the ribbon out.
@@ -369,7 +369,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ));
         };
         let start = session.frame()?;
-        // ★ `client_size` is the CLIENT area and `resize_window` takes the
+        // `client_size` is the CLIENT area and `resize_window` takes the
         // whole window, so the borders are added back. Getting this wrong
         // shrinks the window a little more each iteration rather than
         // restoring it, which is the quiet kind of harness bug.

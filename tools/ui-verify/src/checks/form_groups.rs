@@ -21,14 +21,14 @@ const NESTED: &str = "forms/nested-form.pdf";
 /// The `/P 2` certified form **over that same two-level tree**, in *this*
 /// repository. See the module header's fixture table.
 ///
-/// ★★★ **Relative to `CARGO_MANIFEST_DIR`, which is `tools/ui-verify`** — two
+/// **Relative to `CARGO_MANIFEST_DIR`, which is `tools/ui-verify`** — two
 /// levels up, not three, and resolved by [`local_fixture`] rather than by
 /// [`engine_fixture`]. `annot_delete_gate` and `field_delete_gate` both record
 /// the same trap: written as `../../../fixtures/…` it resolves to a
 /// `D:/Dev/fixtures/` that does not exist, and the check SKIPs on every run
 /// while telling the reader to run a generator that writes somewhere else.
 ///
-/// ★ It is in this repository and not the engine's because `D:/Dev/pdfcer` is
+/// It is in this repository and not the engine's because `D:/Dev/pdfcer` is
 /// READ-ONLY for this project — see the workspace manifest — so a fixture this
 /// project needs and that project does not have is authored here, by
 /// `tools/gen-certified-nested-fixture.py`.
@@ -38,7 +38,7 @@ const PANEL_TAB: &str = "view";
 const PANEL_ITEM: &str = "ribbon.item.view.panel_forms";
 /// The command that shows the **Properties** panel, and the tab it lives on.
 ///
-/// ★★★ **Needed because the two panels share one tabbed dock stack, and a
+/// **Needed because the two panels share one tabbed dock stack, and a
 /// tabbed stack draws only its active tab.** Edit's default arrangement puts
 /// Properties, Comments, Forms, Redact, Dimension groups and Attachments in one
 /// stack (`app::modes::defaults`), so phase F's own `ribbon.item.view.panel_forms` click — the
@@ -52,7 +52,7 @@ const PANEL_ITEM: &str = "ribbon.item.view.panel_forms";
 /// trace) and the pane that would have written the census was a background tab
 /// the check had itself put there. Phase H now brings it back before reading.
 ///
-/// ★ `file.properties` is `show_panel`, not a toggle, so it is idempotent and
+/// `file.properties` is `show_panel`, not a toggle, so it is idempotent and
 /// scrolls the tab into view — which matters, because the dock publishes a
 /// `dock.tab.*` rect only for tabs its bar is currently showing, and clicking
 /// that rect directly would work only when the bar happened to be scrolled
@@ -88,7 +88,7 @@ const ROW: &str = "form-group-row";
 const PREVIEWED: &str = "form-group-preview";
 /// What the confirm button raises, before the funnel sees it.
 const REQUESTED: &str = "form-group-delete-requested";
-/// ★★★ The module's own summary line for the deletion — **`-applied`**, not the
+/// The module's own summary line for the deletion — **`-applied`**, not the
 /// bare `delete-field-group` the `vector_edit` funnel writes for the same edit.
 ///
 /// Two lines sharing a name is how a check taking `.last()` reads the wrong one
@@ -106,7 +106,7 @@ const TARGETS: &str = "form-target";
 /// A window tall enough that the Forms panel's third section is on screen
 /// without a scroll hunt.
 ///
-/// ★ The same remedy `form_field` applies for the same measured reason: the
+/// The same remedy `form_field` applies for the same measured reason: the
 /// harness's default window gives a dock slot a few hundred points, and the
 /// Forms panel now draws a header, two disclosure blocks, three whole-form
 /// controls, a Tab-order section and a Field-groups section above its fill
@@ -380,7 +380,7 @@ fn drive_groups(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
              the preview exists to prevent."
         )));
     }
-    // ★ `widgets=` and `nodes=`, not `epoch=`: `delete-field-group-applied`
+    // `widgets=` and `nodes=`, not `epoch=`: `delete-field-group-applied`
     // carries the three counts and no epoch — the epoch lives on the funnel's
     // own `delete-field-group` line, which this check deliberately does not
     // read. Asking for a key the line does not carry printed "at epoch " with
@@ -476,7 +476,7 @@ fn drive_refusals(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
             session.trace_path().display()
         )));
     };
-    // ★★ `refused` is asserted on EVERY fixture, nodes or no nodes, and that is
+    // `refused` is asserted on EVERY fixture, nodes or no nodes, and that is
     // sound rather than convenient: `groups::section` calls
     // `deletion_refusal()` and traces the census **above** its
     // `form.groups.is_empty()` early return, so this line is the document's own
@@ -492,7 +492,7 @@ fn drive_refusals(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
              tell the two gates apart.",
         )));
     }
-    // ★★★ THE PRECONDITION FOR THE ARM ASSERTION, ASSERTED RATHER THAN
+    // THE PRECONDITION FOR THE ARM ASSERTION, ASSERTED RATHER THAN
     // ASSUMED — and it is a FAILURE now, not a note.
     //
     // `groups::section` returns before laying out a single control when
@@ -530,7 +530,7 @@ fn drive_refusals(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
              to withhold and would pass having tested nothing."
         )));
     }
-    // ★★★ THE HEADER MUST BE OPENED BEFORE THE ABSENCE IS READ, and this is the
+    // THE HEADER MUST BE OPENED BEFORE THE ABSENCE IS READ, and this is the
     // SECOND level of the same vacuity trap.
     //
     // The Field-groups header ships **closed** — phase A clicks it for exactly
@@ -557,7 +557,7 @@ fn drive_refusals(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
     session.settle(24);
     let trace = session.trace()?;
 
-    // ★★★ THE ASSERTION THIS PHASE WAS PASSING WITHOUT, now live on every run.
+    // THE ASSERTION THIS PHASE WAS PASSING WITHOUT, now live on every run.
     //
     // R9: a permanently-refused capability renders NOTHING. Three things are
     // true at this point and all three are needed:
@@ -569,7 +569,7 @@ fn drive_refusals(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
     // Any `forms.groups.arm.*` region declared now is therefore a Delete-group
     // button offered on a document that will refuse every press.
     //
-    // ★★ And the CONTROL for this absence is phase B, in this same module:
+    // And the CONTROL for this absence is phase B, in this same module:
     // there, on `nested-form.pdf` — the same field tree without the
     // certification — the identical gesture produces arm controls and the check
     // fails if it does not. So "no arm control here" is a difference caused by
@@ -640,7 +640,7 @@ fn drive_refusals(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
 
     // --- H: the Properties pane, and the two absences ----------------------
     //
-    // ★★★ BRING THE PROPERTIES PANEL BACK TO THE FRONT FIRST. See
+    // BRING THE PROPERTIES PANEL BACK TO THE FRONT FIRST. See
     // `PROPERTIES_ITEM` for the whole reason: phase F put the **Forms** panel
     // at the front of the tabbed stack that also holds Properties, and a
     // tabbed stack draws only its active tab, so the section whose census this
@@ -649,7 +649,7 @@ fn drive_refusals(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
     // exact vacuity `crate::checks` rule 4 forbids, one surface along from the
     // two instances phases E and F already guard against.
     //
-    // ★ It is done AFTER the selection rather than before, because phase F–G's
+    // It is done AFTER the selection rather than before, because phase F–G's
     // work is all on the Forms panel and swapping the tabs twice is one more
     // gesture than swapping them once. The selection survives it: showing a
     // panel touches the dock, never `doc.selected_field`.
@@ -685,7 +685,7 @@ fn drive_refusals(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
         )));
     }
 
-    // ★★ The absences, admissible because the section itself is declared and
+    // The absences, admissible because the section itself is declared and
     // the gate census above was written this same frame. A build that failed to
     // draw the section at all would be caught by the first of these, not
     // reported as a correct refusal.
@@ -762,7 +762,7 @@ fn launch(
     ));
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
-    // ★ Through the PROFILE rather than by name. The env var is a property of
+    // Through the PROFILE rather than by name. The env var is a property of
     // the binary under test, not of this check, and the legacy profile's binary
     // does not have one — a hard-coded name would silently do nothing there
     // while reading as though the window had been sized. See `VIEWPORT`.
@@ -828,7 +828,7 @@ fn census(trace: &Trace) -> Option<Census> {
 /// The first selectable widget the canvas named, as `(page, canvas_x,
 /// canvas_y)` at its centre.
 ///
-/// ★ The application's numbers, not the fixture's. `canvas/forms.rs` publishes
+/// The application's numbers, not the fixture's. `canvas/forms.rs` publishes
 /// one line per widget precisely so a harness can aim at where the program says
 /// the box is; a check that computed the rect from the PDF would be asserting
 /// that two independent derivations agree and would report a disagreement as a
@@ -874,7 +874,7 @@ fn engine_fixture(rel: &str) -> Option<std::path::PathBuf> {
 
 /// A fixture from **this** repository's `fixtures/`.
 ///
-/// ★ Resolved from `CARGO_MANIFEST_DIR` — `tools/ui-verify` — rather than from
+/// Resolved from `CARGO_MANIFEST_DIR` — `tools/ui-verify` — rather than from
 /// the process's working directory, which is whatever the operator happened to
 /// be in. `reflow`, `text_edit`, `annot_delete_gate` and `field_delete_gate` all
 /// do the same, and two of those record having got the *depth* wrong first:

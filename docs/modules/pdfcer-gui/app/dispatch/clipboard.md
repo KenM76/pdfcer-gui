@@ -4,7 +4,7 @@ Four ids — `edit.cut`, `edit.copy`, `edit.paste`, `edit.paste_duplicate` —
 over **three kinds of operand**, and the whole subject of this module is the
 fork that decides which of them a keystroke is about.
 
-★ Six now. `edit.copy_as_vector` joined on 2026-09-04 (the copy-OUT) and
+Six now. `edit.copy_as_vector` joined on 2026-09-04 (the copy-OUT) and
 `edit.duplicate` on 2026-09-06 (`Ctrl+D`) — and the second of those is the
 one that stretches the module's name, because **it never touches the
 clipboard at all**. It is here because *"make another one of this"* is what
@@ -23,7 +23,7 @@ three-way fork below is the *entire* logic here, and a reader trying to
 answer *"what does Ctrl+C do?"* should find it in one screen rather than
 interleaved with tool arming and zoom.
 
-## ★★★ The fork, in priority order, and why each rung is where it is
+## The fork, in priority order, and why each rung is where it is
 
 | rung | operand | who answers | why it is above the next |
 |---|---|---|---|
@@ -35,14 +35,14 @@ Rung 1 is `text_owns_the_chord`, and its full argument — including why a
 focused Find box counts even with no selection in it — lives on that
 function beside the claim it enforces.
 
-★★ **Rung 2 is the one that was missing**, and its absence was not a lossy
+**Rung 2 is the one that was missing**, and its absence was not a lossy
 path but *no path at all*. `canvas::clipboard::copy` reads `doc.selection`;
 a selected form field lives on `doc.selected_field`; so `Ctrl+C` over a
 field with visible grips around it fell through to the content copy and
 refused with *"nothing is selected"*. `DEFECTS.md` D4a's shape exactly: a
 sentence describing a different world than the one on screen.
 
-## ★★ The two pastes are two commands, not one command with a modifier
+## The two pastes are two commands, not one command with a modifier
 
 **Ken, 2026-08-29:** *"ctrl v for paste as new. ctrl shift v for paste as
 duplicate."* — `OPERATOR_REQUESTS.md` **O58**.
@@ -55,7 +55,7 @@ put in the Edit menu beside Paste, nothing to grey out with an explanation
 when the clipboard holds a markup rather than a field, and nothing for the
 keymap editor to rebind.
 
-★ `edit.paste_duplicate` over a **non-field** clipboard is not an error and
+`edit.paste_duplicate` over a **non-field** clipboard is not an error and
 not a silent no-op: it falls through to the ordinary paste. A markup has no
 second sense to duplicate into, so the honest answer to *"paste that as a
 duplicate"* is the paste. Refusing would punish an operator for pressing the

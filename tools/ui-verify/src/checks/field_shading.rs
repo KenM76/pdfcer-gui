@@ -108,7 +108,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 2: the fixture really does carry fields ---------------------------
     //
-    // ★ Asserted rather than assumed, and it guards the check itself rather
+    // Asserted rather than assumed, and it guards the check itself rather
     // than the feature: if `demo-form.pdf` ever loses its widgets, every
     // assertion below becomes vacuous and this run would report PASS while
     // having tested nothing.
@@ -123,7 +123,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 3: ★ and they were actually painted -------------------------------
+    // --- 3: and they were actually painted -------------------------------
     let drawn: usize = line.get("drawn").and_then(|v| v.parse().ok()).unwrap_or(0);
     if drawn == 0 {
         return Ok(Some(format!(

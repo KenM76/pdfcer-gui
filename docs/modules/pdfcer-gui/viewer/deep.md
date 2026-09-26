@@ -9,7 +9,7 @@ He is right that something has to take over, and this is it — but it is not
 about how pixels are made. **It is about where the viewport's position is
 stored.**
 
-## ★★★ The measurement that makes this necessary
+## The measurement that makes this necessary
 
 Today the position is an `egui::ScrollArea` offset into a content rectangle
 of `page × zoom`, and those offsets are `f32`. A screen pixel is exactly one
@@ -29,7 +29,7 @@ sheet. So the scroll offset stops being able to say where the operator is at
 about a million percent, and by ten million the view moves in sixteen-pixel
 jumps — it judders, then sticks.
 
-★ **That is the whole justification for this module**, and it is worth
+**That is the whole justification for this module**, and it is worth
 having in numbers because the first attempt at deriving it was wrong: an
 earlier table divided by the zoom twice and concluded the error stayed
 sub-pixel for ever, which would have made step 2 unnecessary. It is not. The
@@ -45,7 +45,7 @@ a statement whose precision does not decay with the zoom: `f64` carries 53
 bits of mantissa, so a page coordinate stays exact to far beyond any zoom a
 person will type.
 
-★ It is the same shape the engine reached for the same problem — its own
+It is the same shape the engine reached for the same problem — its own
 commit says *"the fix is one subtraction moved into `f64`"*, and its region
 renderer takes a page-space rectangle rather than a device offset. This is
 that idea carried one layer up, into the shell's own position model.

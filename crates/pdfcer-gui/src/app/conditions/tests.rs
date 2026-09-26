@@ -4,7 +4,7 @@
 //! # Why the tests are a file of their own
 //!
 //!
-//! ★ It matters more here than in most modules. These tests are the only place
+//! It matters more here than in most modules. These tests are the only place
 //! the published facts are written down as a **table** rather than as a
 //! traversal, and a table is what a reader needs to answer *"what does the
 //! ribbon see in Review?"*. Burying it under nine hundred lines of derivation
@@ -15,7 +15,7 @@
 
 use super::*;
 
-/// ★ **`undo.available` and `redo.available` follow the session, in both
+/// **`undo.available` and `redo.available` follow the session, in both
 /// directions, through the real verbs.**
 ///
 /// # The defect this exists for
@@ -56,7 +56,7 @@ fn the_history_conditions_follow_the_session() {
             .is_enabled(&app.conditions(ctx))
     };
 
-    // ★ A freshly opened document has an empty command log, so BOTH controls
+    // A freshly opened document has an empty command log, so BOTH controls
     // are greyed. This is the assertion an unconditional publication fails,
     // and it is the reason the pair below is not enough on its own.
     assert!(
@@ -108,7 +108,7 @@ fn the_history_conditions_follow_the_session() {
     assert!(!live(&app, &ctx, "edit.redo"));
 }
 
-/// ★ **Every armable tool kind reports a pressed state** — asserted over
+/// **Every armable tool kind reports a pressed state** — asserted over
 /// `ALL` for both families rather than over a list written here.
 ///
 /// # The defect this exists for, which shipped
@@ -166,7 +166,7 @@ fn every_armable_tool_kind_reports_a_pressed_state() {
         );
     }
 
-    // ★ …and the two tools that carry **no** kind, which is why they cannot
+    // …and the two tools that carry **no** kind, which is why they cannot
     // be reached by walking an `ALL`. They are the ones this test's own
     // mechanism would silently miss, so they are named — and naming them is
     // exactly the "list of ids that has to be remembered" this test's header
@@ -234,7 +234,7 @@ fn every_armable_tool_kind_reports_a_pressed_state() {
     }
 }
 
-/// ★ **The three Text markup controls are live exactly when there is a
+/// **The three Text markup controls are live exactly when there is a
 /// live text selection**, and are asserted through the **registry's own
 /// enable machinery** rather than by reading the condition name.
 ///
@@ -311,7 +311,7 @@ fn the_text_markup_controls_need_a_live_text_selection() {
     }
 }
 
-/// ★★★ **`selection.formattable` is the UNION, and the two halves are
+/// **`selection.formattable` is the UNION, and the two halves are
 /// asserted separately because each on its own is a shipped defect.**
 ///
 /// It is the contextual Format tab's `visible_when`, and the tab now
@@ -404,7 +404,7 @@ fn the_formattable_condition_is_the_union_of_the_two_selections() {
     );
 }
 
-/// ★★★ **A mode that cannot edit must not offer Delete** — the regression
+/// **A mode that cannot edit must not offer Delete** — the regression
 /// test for the data-loss defect found on 2026-09-03.
 ///
 /// # What was wrong
@@ -421,7 +421,7 @@ fn the_formattable_condition_is_the_union_of_the_two_selections() {
 ///
 /// # Why the table has a Review row for annotations
 ///
-/// ★★ Row 4 is the load-bearing one. It is what stops a future
+/// Row 4 is the load-bearing one. It is what stops a future
 /// simplification collapsing this ladder to `caps.edit_content` and
 /// silently taking **Review's markup Delete** off the ribbon while the
 /// Delete key kept working. One predicate per capability: `author_markup`
@@ -458,7 +458,7 @@ fn delete_is_not_offered_in_a_mode_that_cannot_perform_it() {
     );
 }
 
-/// ★★★ **The Font group's five commands are drawn in Edit and ABSENT in
+/// **The Font group's five commands are drawn in Edit and ABSENT in
 /// Read and Review**, which is R9 split across two conditions.
 ///
 /// `mode.edit_content` is **visibility** — a mode that cannot change page
@@ -467,7 +467,7 @@ fn delete_is_not_offered_in_a_mode_that_cannot_perform_it() {
 /// **enablement** — inside Edit the capability is present and only the
 /// operand is missing, which greys and explains itself on hover.
 ///
-/// # ★★ Why both are needed, stated as the two one-condition builds
+/// # Why both are needed, stated as the two one-condition builds
 ///
 /// With only `selection.text`, sweeping text in **Read** — which Read does
 /// with the plain select tool, because copying is not authoring — would
@@ -476,7 +476,7 @@ fn delete_is_not_offered_in_a_mode_that_cannot_perform_it() {
 /// swept: a control that does nothing on almost every press, which is the
 /// placeholder shape P3 forbids.
 ///
-/// ★ Asserted through `Capabilities::for_mode` and the shipped manifest,
+/// Asserted through `Capabilities::for_mode` and the shipped manifest,
 /// not through a hand-made `Capabilities` value, so a mode taxonomy edit
 /// that gave Read `edit_content` fails here as well as wherever else it is
 /// wrong.
@@ -548,7 +548,7 @@ fn the_font_groups_visibility_follows_the_mode_and_its_enablement_the_sweep() {
     }
 }
 
-/// ★ **THE P3 TENSION, CLOSED** — in Edit, with the text tool armed and a
+/// **THE P3 TENSION, CLOSED** — in Edit, with the text tool armed and a
 /// live text selection, the three text-markup controls come alive and their
 /// press authors an annotation.
 ///
@@ -668,7 +668,7 @@ fn in_edit_the_text_tool_makes_the_text_markup_controls_reachable() {
     );
 }
 
-/// ★ **`measure.finishable` needs a document, not merely a pick set.**
+/// **`measure.finishable` needs a document, not merely a pick set.**
 ///
 /// The one condition published from inside the `Status::Open` arm that is
 /// about a gesture rather than about the document, and this is the reason
@@ -709,7 +709,7 @@ fn finish_is_not_offered_with_no_document_open() {
     );
 }
 
-/// ★ **`markup.finishable` is the same fact for the vertex tools, and it is
+/// **`markup.finishable` is the same fact for the vertex tools, and it is
 /// scoped the same way** — plus the one thing that is genuinely different
 /// about it.
 ///
@@ -755,7 +755,7 @@ fn markup_finish_needs_a_document_and_enough_corners_for_its_kind() {
     // one tab's Finish from the other tab's gesture.
     assert!(!app.conditions(&ctx).is_set("measure.finishable"));
 
-    // ★ The polygon/polyline difference, at the control. Two vertices is a
+    // The polygon/polyline difference, at the control. Two vertices is a
     // polyline and is not a polygon.
     vertex::plant_short_run_for_test(&ctx, 0, MarkupKind::Polygon);
     assert!(
@@ -770,7 +770,7 @@ fn markup_finish_needs_a_document_and_enough_corners_for_its_kind() {
     );
 }
 
-/// ★★★ **`selection.delete_permitted` follows the FORMS gate when a form
+/// **`selection.delete_permitted` follows the FORMS gate when a form
 /// field is selected**, which is the arm this condition did not have.
 ///
 /// # The defect, and why it is invisible without the second document
@@ -791,7 +791,7 @@ fn markup_finish_needs_a_document_and_enough_corners_for_its_kind() {
 /// absent where it would have worked leaves the operator no gesture that
 /// reports it.
 ///
-/// ★ Driven through `app.conditions()` and `open_path` rather than by
+/// Driven through `app.conditions()` and `open_path` rather than by
 /// calling the derivation, for this module's standing reason one test up:
 /// what is under test is the **join** between the query and the published
 /// name, and a test that read the derivation would prove `set.set` works.
@@ -848,7 +848,7 @@ fn a_certified_document_withholds_delete_for_a_selected_form_field() {
     );
 }
 
-/// ★★★ **The Format ▸ Markup group is published for a markup annotation, in a
+/// **The Format ▸ Markup group is published for a markup annotation, in a
 /// mode that may author markup, and for nothing else** — the condition that
 /// makes the group appear at all.
 ///
@@ -875,7 +875,7 @@ fn a_certified_document_withholds_delete_for_a_selected_form_field() {
 /// does, so a rename on either side fails here rather than silently withholding
 /// a control forever.
 ///
-/// # ★ Rule 15 — a ce dimension must not light it
+/// # Rule 15 — a ce dimension must not light it
 ///
 /// A ce dimension is also an annotation and is also selectable, and its verb is
 /// `set_dimension_style`. Handing one to `set_markup_style` regenerates it as a
@@ -926,7 +926,7 @@ fn the_markup_style_group_follows_the_kind_of_annotation_and_the_mode() {
                 page: 0,
                 id: ObjId::new(9_001, 0),
                 kind,
-                // ★ The SAME `/Subtype` for both kinds, deliberately. A ce
+                // The SAME `/Subtype` for both kinds, deliberately. A ce
                 // dimension is a `/Line` carrying `/IT /LineDimension`, so a
                 // guard written as a string comparison would pass this test
                 // for the wrong reason. Only the `AnnotKind` differs.
@@ -967,7 +967,7 @@ fn the_markup_style_group_follows_the_kind_of_annotation_and_the_mode() {
          like an arrow's, so only a `match` on `AnnotKind` tells them apart"
     );
 
-    // ★★ The LOCK is deliberately NOT in this condition. §12.5.3 Table 165 bit
+    // The LOCK is deliberately NOT in this condition. §12.5.3 Table 165 bit
     // 8 is a fact about one annotation rather than about the build or the
     // mode, which is R9's textbook greying case — so the group stays DRAWN and
     // `app::markupband` greys it with `markup_locked`'s sentence. Folding the

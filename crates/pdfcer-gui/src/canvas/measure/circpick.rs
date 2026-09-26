@@ -1,7 +1,7 @@
 //! # `canvas::measure::circpick` — the radius/diameter tool's point set
 //!
 //!
-//! ## ★ What makes this a different subject from the picks beside it
+//! ## What makes this a different subject from the picks beside it
 //!
 //! `LinearPick`, `TwoLinePick` and `ScalePick` are **fixed-arity state
 //! machines**: two points, or two lines, and the machine knows when it is
@@ -41,7 +41,7 @@ use pdfcer_core::vector::snap::SnapKind;
 /// * a **free** point is the operator's own judgement of where an edge is,
 ///   which is the only thing available on a scanned or raster drawing.
 ///
-/// ★★ Both are legitimate and neither is marked on the canvas as provisional —
+/// Both are legitimate and neither is marked on the canvas as provisional —
 /// rule 4 forbids that, and applied content renders exactly as saved content
 /// will. The disclosure lives **off-canvas**, in the Tool panel's list, where
 /// the operator can see that three of their five points were guesses and decide
@@ -106,7 +106,7 @@ pub struct CircPoint {
 /// already working in — his own sentence says *"selecting more points around a
 /// hole"*.
 ///
-/// ★ What is lost is *"click the circle once and be done"*. That is worth
+/// What is lost is *"click the circle once and be done"*. That is worth
 /// having back at **subpath** granularity, because a subpath is the drawn
 /// entity and an object is not; it is recorded on O105 as a decision rather
 /// than an omission, and is not built here.
@@ -132,7 +132,7 @@ impl CircularPick {
     /// point**; otherwise the point is appended. Returns `true` when the set
     /// grew, `false` when it shrank.
     ///
-    /// # ★ Why proximity rather than equality
+    /// # Why proximity rather than equality
     ///
     /// `OPERATOR_REQUESTS.md` O107: *"we should be able to unselect
     /// points/clicked locations"*. An operator taking a point back out aims at
@@ -250,7 +250,7 @@ mod tests {
         Point::new(x, y)
     }
 
-    /// ★ **A click adds a point; a click within the removal radius of one
+    /// **A click adds a point; a click within the removal radius of one
     /// already in the set takes that one out.**
     #[test]
     fn circular_toggle_adds_then_removes_points() {
@@ -264,7 +264,7 @@ mod tests {
         assert_eq!(cp.points()[0].at, p(10.0, 10.0));
     }
 
-    /// ★★ **A zero or non-finite tolerance ADDS rather than silently eating
+    /// **A zero or non-finite tolerance ADDS rather than silently eating
     /// the point.**
     ///
     /// The degenerate-mapping case, and the direction of the failure is the
@@ -281,7 +281,7 @@ mod tests {
         assert_eq!(cp.point_count(), 4);
     }
 
-    /// ★ **A row's index removes that row's point, and an out-of-range index
+    /// **A row's index removes that row's point, and an out-of-range index
     /// is refused** — the Tool panel's route (`OPERATOR_REQUESTS.md` O107).
     #[test]
     fn a_point_can_be_removed_by_index() {
@@ -295,7 +295,7 @@ mod tests {
         assert!(cp.remove(9).is_none(), "an out-of-range row is refused");
     }
 
-    /// ★★ **The origin is carried, because a free position and a snapped node
+    /// **The origin is carried, because a free position and a snapped node
     /// are not the same evidence.**
     ///
     /// The disclosure `OPERATOR_REQUESTS.md` O106 rests on: five free positions

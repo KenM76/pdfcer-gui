@@ -21,7 +21,7 @@ exactly the state this shell shipped in for the day between the two:
 `Refusal::InsideForm`, a worded decline, honest and useless.
 
 
-## ★★★ The oracle, and why `n=` is half of it
+## The oracle, and why `n=` is half of it
 
 ```text
 move-leaves-in-form page=0 n=1 epoch=2 disclosures=0
@@ -50,7 +50,7 @@ an index sent to the wrong space is out of range rather than plausible.
 | C | drag the leaf's body | `move-leaves-in-form page=0 n=1` |
 | D | press Delete | `delete-leaves-in-form page=0 n=1` |
 
-★ Step C presses the **bar itself**, not the middle of its bounding box.
+Step C presses the **bar itself**, not the middle of its bounding box.
 The fixture's strokes cross, so a press at the box centre could be on a
 different one — and `canvas::pressing::body_under` requires the press to
 land on the selected object's own geometry before a drag is a move rather

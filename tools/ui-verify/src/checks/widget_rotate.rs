@@ -13,7 +13,7 @@ use crate::report::CheckReport;
 
 /// Edit mode, the text-field tool armed, and the Properties panel open.
 ///
-/// ★★★ The properties panel is **not** opened here, and the first version's
+/// The properties panel is **not** opened here, and the first version's
 /// attempt to is why.
 ///
 /// `view.panel_properties` is a TOGGLE, and opening it re-docks the canvas
@@ -37,7 +37,7 @@ const BOX_LINE: &str = "form-target";
 
 /// The **Turn right** button's own region.
 ///
-/// ★★ Its own, not a fraction of the row's. The first version took the row's
+/// Its own, not a fraction of the row's. The first version took the row's
 /// rect and aimed 78 % across it — coordinate arithmetic the harness already
 /// has `declared_center` for — and landed outside the window entirely, which
 /// surfaced as *"the window could not be brought to the front"* three runs
@@ -62,7 +62,7 @@ const APPLIED: &str = "rotate-widget-applied";
 /// the same mistake produced three false defect reports in one day.
 // ui-text-exempt: trace region name, never displayed
 //
-/// ★ `file.properties`, NOT `view.panel_properties`. The properties panel is
+/// `file.properties`, NOT `view.panel_properties`. The properties panel is
 /// the one command in the ribbon whose id names the *File* group rather than
 /// the View group, because it is the document's own properties surface; the
 /// dock body takes the command id verbatim. `app::panels` records the same
@@ -151,7 +151,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
-    // ★ Normalise the saved dock layout: `view.panel_properties` is a TOGGLE and
+    // Normalise the saved dock layout: `view.panel_properties` is a TOGGLE and
     // the layout persists, so without this the panel alternates open and closed
     // across runs. Same rule, same file, as the bookmark clipboard check.
     if let Some(dir) = exe.parent() {
@@ -180,7 +180,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    // ★ The field authored here is left SELECTED (O53), so the properties panel
+    // The field authored here is left SELECTED (O53), so the properties panel
     // is already showing its widget section — no selecting click is needed, and
     // adding one would place a second field because the tool stays armed.
     report.note("★ placed a field; it is selected, so the widget section is showing");
@@ -231,7 +231,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let now = applied.get("now").unwrap_or("?");
     report.note(format!("★ the engine reports now={now}"));
 
-    // ★★★ THE ASSERTION. `Some(270)`, because right is clockwise is −90, and
+    // THE ASSERTION. `Some(270)`, because right is clockwise is −90, and
     // −90 normalised into 0..360 is 270. A missing negation gives `Some(90)` —
     // legal, successful, and the wrong way round.
     if !now.contains("270") {

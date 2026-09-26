@@ -74,7 +74,7 @@ pub mod trust;
 /// `tools/gates/check-unit-conversion.sh` fails the build when a second copy
 /// of the constant appears anywhere under either crate's `src/`.
 ///
-/// ★ It exists because of a measured defect, not for tidiness: a sheet of
+/// It exists because of a measured defect, not for tidiness: a sheet of
 /// exactly 210.5 mm rendered `210` in the page-thumbnail tooltip and `211`
 /// in the print dialogue. Both surfaces computed the same value; they disagreed
 /// on the ROUNDING RULE, because half the program wrote `.round()` (half away

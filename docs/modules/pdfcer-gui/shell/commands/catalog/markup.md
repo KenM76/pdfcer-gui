@@ -1,7 +1,7 @@
 # `shell::commands::catalog::markup` — the Markup tab — what is added for somebody else to read
 
 
-## ★★★ The split is per TAB, and the reason it was refused before is gone
+## The split is per TAB, and the reason it was refused before is gone
 
 [`super`]'s header argued against exactly this cut:
 

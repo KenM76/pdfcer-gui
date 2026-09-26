@@ -20,7 +20,7 @@ The in-progress constructions — a guide drag, a circle fit, a vertex run —
 each get a pair of their own, because each is abandoned *before* the rung
 below it and a second press then reaches that rung.
 
-## ★ Not to be confused with `canvas::escape`
+## Not to be confused with `canvas::escape`
 
 That module is the keyboard route **out of a canvas that drew nothing**,
 and has no rungs. This one is the Escape key's precedence over the canvas's

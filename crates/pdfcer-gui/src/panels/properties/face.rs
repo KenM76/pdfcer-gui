@@ -1,7 +1,7 @@
 //! # `panels::properties::face` — the face chooser, once, for both surfaces
 //!
 //!
-//! ★ That divergence is the reason this module exists at all, and it is worth
+//! That divergence is the reason this module exists at all, and it is worth
 //! stating as a rule rather than as a tidy-up: **a control drawn twice is a
 //! control that will be built twice**, and the second build is always the one
 //! that misses the disclosure. The two callers now differ in exactly two
@@ -16,7 +16,7 @@ use crate::text::panels::face as t;
 
 /// The minimum width the popup is given, in points.
 ///
-/// ★ The ribbon's chooser button is **78** points wide
+/// The ribbon's chooser button is **78** points wide
 /// ([`crate::app::fontband`]'s `FACE_WIDTH`, sized to fit inside the band's
 /// custom-item budget), and an `egui` combo popup is otherwise no wider than its
 /// button. The disclosure is a three-clause sentence; wrapped to 78 points it
@@ -32,7 +32,7 @@ const POPUP_MIN_WIDTH: f32 = 320.0;
 /// Where a row in the face chooser comes from, and therefore what choosing it
 /// does to the operator's file.
 ///
-/// ★ Two variants and not a `bool`, because the call sites read as prose this
+/// Two variants and not a `bool`, because the call sites read as prose this
 /// way and because a third origin is foreseeable: `Pass 142.0` would let pdfcer
 /// subset and embed a face from the operating system, which is a third act with
 /// a third set of consequences (a real font program in the file, and a face that
@@ -63,7 +63,7 @@ pub(crate) enum FaceOrigin {
 pub(crate) struct FaceChoice {
     /// **The string to pass to `set_font`** to reach this face.
     ///
-    /// ★ Not always the `/BaseFont`. For a page face it is normally the
+    /// Not always the `/BaseFont`. For a page face it is normally the
     /// subset-stripped base font, and it is the **resource key** instead when
     /// the page carries two dictionaries sharing one base font — which the Fonts
     /// panel's own survey found in 87 % of embedding files. A chooser that sent
@@ -114,7 +114,7 @@ pub(crate) struct FaceChoice {
 /// keeps the row out of the list entirely, which is the same answer the page
 /// half gives for the same face.
 ///
-/// ★ The name comparison strips the §9.6.4 subset tag ([`super::text::shorten`])
+/// The name comparison strips the §9.6.4 subset tag ([`super::text::shorten`])
 /// before matching, because a page carrying `ABCDEF+Helvetica` is a page that
 /// carries Helvetica as far as `set_font`'s own `/BaseFont` match is concerned.
 ///
@@ -172,7 +172,7 @@ pub(crate) fn choices(
     // ⇒ So all three re-derivations are deleted, and the rows are now as exact
     // as the `accepted()` half above them.
     //
-    // ★★ `is_accepted()` rather than a `match`. `FontAcceptance` is
+    // `is_accepted()` rather than a `match`. `FontAcceptance` is
     // `#[non_exhaustive]` and the engine added that accessor precisely so a
     // shell need not pattern-match it — *"a yes/no that does not require
     // pattern-matching a `#[non_exhaustive]` enum"*. Matching here would give
@@ -187,7 +187,7 @@ pub(crate) fn choices(
     // known here**. It can now, and R9 is unambiguous once it can: a control
     // that cannot work should not be drawn.
     //
-    // ★ The `presence` filter also subsumes the old `carried` check, and more
+    // The `presence` filter also subsumes the old `carried` check, and more
     // exactly. `carried` compared *shortened* names against the page's entries;
     // `OnPage` is the engine answering the same question from the resource
     // dictionary it actually resolved. A face already on the page is offered by
@@ -203,7 +203,7 @@ pub(crate) fn choices(
             .map(|entry| FaceChoice {
                 selector: entry.base_font.clone(),
                 label: super::text::shorten(&entry.base_font).to_owned(),
-                // ★ Never ambiguous. `base_font_ambiguous` means two page
+                // Never ambiguous. `base_font_ambiguous` means two page
                 // resources answer to one `/BaseFont`, and a face that is not
                 // on the page has no resource to be ambiguous with.
                 ambiguous: false,
@@ -224,14 +224,14 @@ pub(crate) fn choices(
 /// other frame — including the frames the operator spends reading the list,
 /// which is most of them.
 ///
-/// # ★★ Nothing is held between frames, because the document is the state
+/// # Nothing is held between frames, because the document is the state
 ///
 /// `selectable_label`, never `selectable_value`. A press here is an **edit**,
 /// not a choice to be committed later, and a widget holding a pending value
 /// would be a second place the current face is recorded — which is how a control
 /// comes to disagree with the file it is about.
 ///
-/// # ★★★ The disclosure is drawn once, visibly, and only when it is owed
+/// # The disclosure is drawn once, visibly, and only when it is owed
 ///
 /// Not a hover, and not a hover repeated on fourteen rows. It is owed to every
 /// operator who opens this list — including the one who reads it and chooses
@@ -249,7 +249,7 @@ pub(crate) fn popup_body(
     faces: &[FaceChoice],
     current: &str,
 ) -> Option<String> {
-    // ★ See [`POPUP_MIN_WIDTH`]: the ribbon's button is 78 points wide and the
+    // See [`POPUP_MIN_WIDTH`]: the ribbon's button is 78 points wide and the
     // disclosure is a sentence. Stated here rather than at the two call sites so
     // the two surfaces cannot be legible in one place and not the other.
     ui.set_min_width(POPUP_MIN_WIDTH);
@@ -285,10 +285,10 @@ pub(crate) fn popup_body(
                     heading.rect,
                     ui.clip_rect(),
                 );
-                // ★★★ The disclosure. Once, here, before any addable row can be
+                // The disclosure. Once, here, before any addable row can be
                 // clicked — see this function's own header.
                 //
-                // ★★ Both the `set_max_width` and the explicit `.wrap()` are
+                // Both the `set_max_width` and the explicit `.wrap()` are
                 // load-bearing, and neither is a style choice. `ComboBox`'s own
                 // popup body sets `wrap_mode = Extend` inside its scroll area,
                 // with the comment *"often the button is very narrow … so that
@@ -319,7 +319,7 @@ pub(crate) fn popup_body(
 
         let selected = face.label == current;
         let row = ui.selectable_label(selected, &face.label);
-        // ★ The FIRST addable row gets its own region, so a driven check has a
+        // The FIRST addable row gets its own region, so a driven check has a
         // deterministic target for *"choose a face this document does not
         // contain"*. Per-row regions for all fourteen would publish fourteen
         // trace lines per frame the popup is open, on a surface that redraws at
@@ -328,7 +328,7 @@ pub(crate) fn popup_body(
             published_first_addable = true;
             crate::diag::ui_rect_visible(&format!("{prefix}.new"), row.rect, ui.clip_rect());
         }
-        // ★ The twin disclosure. Two rows reading identically is otherwise
+        // The twin disclosure. Two rows reading identically is otherwise
         // indistinguishable from a bug, and the operator has a real choice to
         // make between them.
         let row = if face.ambiguous {
@@ -337,7 +337,7 @@ pub(crate) fn popup_body(
             row
         };
         if row.clicked() && !selected {
-            // ★★★ `selector`, NOT the label. On a page with two subsets of one
+            // `selector`, NOT the label. On a page with two subsets of one
             // `/BaseFont` the name reaches one of them arbitrarily; the selector
             // reaches the one this row is about. For an addable row the two
             // happen to be equal, and it is still the selector that is sent,
@@ -377,7 +377,7 @@ mod tests {
             .expect("the fixture's page 1 carries the words `its box.` in one run")
     }
 
-    /// ★★★ **Every standard-14 face the page does not carry is offered, and the
+    /// **Every standard-14 face the page does not carry is offered, and the
     /// list is the ENGINE'S survey rather than a local walk of `Std14::ALL`.**
     ///
     /// `fixtures/paragraph.pdf` carries `Helvetica` and nothing else, and its
@@ -385,7 +385,7 @@ mod tests {
     /// answer is the whole fourteen: one through `accepted()` as a page face,
     /// thirteen as addable.
     ///
-    /// ★ Asserted as `>= 13` addable rather than `== 13` on purpose. The
+    /// Asserted as `>= 13` addable rather than `== 13` on purpose. The
     /// standard 14 contains `Symbol` and `ZapfDingbats`, whose acceptance for
     /// ASCII text is the engine's ruling and not this shell's to pin — if the
     /// engine decides a font-specific encoding cannot hold `its box.`, that is
@@ -423,7 +423,7 @@ mod tests {
                  plain ASCII, so it must be offered as addable. Got {addable:?}"
             );
         }
-        // ★★★ AND THE TWO THE ENGINE REFUSES ARE ABSENT. This is the
+        // AND THE TWO THE ENGINE REFUSES ARE ABSENT. This is the
         // assertion that makes the coverage test falsifiable, and it took a
         // measurement to find: a first draft asserted `addable.len() >= 11`,
         // which is satisfied whether or not `choices` filters on acceptance at
@@ -459,7 +459,7 @@ mod tests {
         );
     }
 
-    /// ★★ **A standard face the page already carries is offered ONCE, as a page
+    /// **A standard face the page already carries is offered ONCE, as a page
     /// face — never a second time as an addable one.**
     ///
     /// The duplicate would be the visible defect. The invisible one is worse:
@@ -492,7 +492,7 @@ mod tests {
         );
     }
 
-    /// ★ **The engine's survey is what is read** — not a local `Std14::ALL`
+    /// **The engine's survey is what is read** — not a local `Std14::ALL`
     /// walk that happens to agree with it today.
     ///
     /// A rewrite that quietly reverted to walking the constant would satisfy
@@ -529,7 +529,7 @@ mod tests {
         }
     }
 
-    /// ★ **An absent pre-flight offers nothing at all**, not the fourteen on
+    /// **An absent pre-flight offers nothing at all**, not the fourteen on
     /// their own.
     ///
     /// The tempting shape — *"we could not ask the page, so offer the standard
@@ -542,7 +542,7 @@ mod tests {
         assert!(choices(None).is_empty());
     }
 
-    /// ★★ **The two origins are distinguishable**, which is the whole of what
+    /// **The two origins are distinguishable**, which is the whole of what
     /// the operator is being shown.
     ///
     /// A `FaceChoice` that lost its origin would render under whichever heading

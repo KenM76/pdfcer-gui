@@ -14,7 +14,7 @@ was documented, and **no control in this shell had ever raised it**. That is
 the failure mode this check exists at: not a broken verb, an unreachable
 one.
 
-## ★★★ Why a unit test cannot see what this sees
+## Why a unit test cannot see what this sees
 
 Because every link in front of the verb is wiring, and wiring is what this
 project keeps shipping broken with a green suite:
@@ -27,12 +27,12 @@ project keeps shipping broken with a green suite:
 | 4 | the draft's `Anchor::Run` resolves to a **block index** | partly |
 | 5 | the action reaches `reflow_block` and the engine re-wraps | yes |
 
-★ Link 3 is the one with no other instrument. The operand is not a
+Link 3 is the one with no other instrument. The operand is not a
 selection the application holds — it is a caret in `egui`'s temporary data,
 written by a click and read by a command, and nothing but a driven run puts
 a real one there.
 
-## ★★ The oracle is the LINE COUNT, and it is a real one
+## The oracle is the LINE COUNT, and it is a real one
 
 `reflow-block-applied … lines=6->5`. The fixture is built so a correct
 reflow **must** change that number: six deliberately short ragged lines,
@@ -46,4 +46,4 @@ paragraph at all, and `tail-alignment.pdf`'s blocks are placed flush by
 measurement, so re-wrapping them has nothing to do. **A check driven against
 either would report the feature broken about a build whose reflow works.**
 
-## ★★★ What this check deliberately does NOT do, and what it CANNOT see
+## What this check deliberately does NOT do, and what it CANNOT see

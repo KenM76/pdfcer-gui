@@ -36,20 +36,20 @@ pub mod defaultapp;
 /// elided line does not have.
 pub mod diagnostics;
 pub mod embed;
-/// ★ The Insert-image window — a picture placed on the page as content, by a
+/// The Insert-image window — a picture placed on the page as content, by a
 /// rectangle in millimetres.
 ///
 /// Its header carries the decision a reader will question first: why placement
 /// is numeric rather than a drag, and why a drag is a second **route** to the
 /// same action rather than the one that should have shipped.
-/// ★ The Export-DXF window — the page's vector geometry, at a scale somebody
+/// The Export-DXF window — the page's vector geometry, at a scale somebody
 /// can defend.
 ///
 /// Its header carries the sentence the whole feature turns on, quoted from
 /// `pdfcer-core`: every generic PDF-to-DXF converter exports at paper scale and
 /// says nothing, so a 1:2 detail arrives at half size **looking plausible**.
 pub mod export_dxf;
-/// ★★★ The Export-image window — a picture of the page in a format that can
+/// The Export-image window — a picture of the page in a format that can
 /// actually hold what is on it. `OPERATOR_REQUESTS.md` O120.
 pub mod export_image;
 /// The WRITING half of what the three export windows remember --
@@ -59,19 +59,19 @@ pub mod export_image;
 /// projection differs, and that stays in each window beside the fields it
 /// reads.
 mod export_remembered;
-/// ★★★ The Export-text window. Its header carries the record of what the
+/// The Export-text window. Its header carries the record of what the
 /// return journey — a text file back into a PDF — demanded of the engine,
 /// which is what that engine request was argued from. [`import_text`] is the
 /// other half.
 pub mod export_text;
 pub mod formfield;
-/// ★★ **A dialog is an OS window** — the operator's report, and
+/// **A dialog is an OS window** — the operator's report, and
 /// `ui-conventions/dialogs.md` G1. One host, so the path of least resistance
 /// and the right answer are the same call; its header carries what an OS
 /// window actually buys, how it degrades on the web target, and the two rows
 /// (G3 ownership, G5 focus trapping) that eframe 0.35 cannot express.
 pub mod host;
-/// ★ **A text file becomes pages** — the return journey. Its header records
+/// **A text file becomes pages** — the return journey. Its header records
 /// what it needs from `pdfcer-core` that reading a PDF does not (the ability to
 /// CREATE a page, not only to copy one) and why it is a CHOOSER where its
 /// export sibling is a warning.
@@ -80,7 +80,7 @@ pub mod insert_image;
 pub mod insert_pages;
 pub mod new_document;
 pub mod ocr;
-/// ★ How a window offers to step aside so the operator can point at the page —
+/// How a window offers to step aside so the operator can point at the page —
 /// `OPERATOR_REQUESTS.md` O66. The dialog half of `canvas::placing`.
 /// The box that lets an encrypted document be opened. Its header records the
 /// defect it closes: the shell detected `NeedsPassword` perfectly and had no way
@@ -91,7 +91,7 @@ pub mod ocr;
 /// and *how their answers reach the app*. Two different callers, two different
 /// sets of invariants, one receiver.
 pub mod open;
-/// ★★★ **The question that comes before pdfcer lets go of the file** —
+/// **The question that comes before pdfcer lets go of the file** —
 /// `OPERATOR_REQUESTS.md` O122. Three shapes of one window: save-then-hand-over,
 /// confirm-and-hand-over, and the refusal for a document that has never been
 /// written anywhere.
@@ -99,14 +99,14 @@ pub mod open;
 /// Its header carries why there is no third *"open without saving"* button,
 /// which is the one place it deliberately departs from [`unsaved`]'s shape.
 pub mod open_in_acrobat;
-/// ★★★ **Changing the paper an open drawing sits on** — `pages.resize`. Its
+/// **Changing the paper an open drawing sits on** — `pages.resize`. Its
 /// header carries the design decision the window is built around: a
 /// `/MediaBox` change crops, it does not shrink, so the window's real product
 /// is a *measurement* of how far the drawing would run past the paper being
 /// chosen — computed before the operator commits, from a facility the engine
 /// itself names as a residual it does not have.
 pub mod page_size;
-/// ★★★ The Save-as-stamp-collection window — this document's pages, named, in
+/// The Save-as-stamp-collection window — this document's pages, named, in
 /// the file Acrobat reads its custom stamps out of. `OPERATOR_REQUESTS.md`
 /// O169.
 ///
@@ -116,7 +116,7 @@ pub mod page_size;
 /// — it was a way to author one of those files.
 pub mod stamp_collection;
 
-/// ★★ The census of everything drawn OUTSIDE a page boundary — the half of
+/// The census of everything drawn OUTSIDE a page boundary — the half of
 /// "view and edit objects that are off the page" that no amount of looking at a
 /// document could answer, because off-page content does not render.
 pub mod offpage;
@@ -142,7 +142,7 @@ pub mod redact;
 /// through the ordinary merge with a `CapabilityAbsent` skip reason.
 #[cfg(feature = "signing")]
 pub mod sign;
-/// ★★ The question Save has never asked about a **signed** document — the
+/// The question Save has never asked about a **signed** document — the
 /// warning that stands between a structural edit and a revision written over a
 /// legal artifact.
 ///
@@ -153,7 +153,7 @@ pub mod signature;
 /// The Remove-fonts confirmation - the destructive twin of `embed`, and the
 /// disclosure surface its own scaffold entry named as the thing blocking it.
 pub mod unembed;
-/// ★★ The question `file.close` promised in its own tooltip and never asked —
+/// The question `file.close` promised in its own tooltip and never asked —
 /// the confirmation that stands between an operator's afternoon of markup and
 /// `Status::Empty`.
 ///
@@ -161,12 +161,12 @@ pub mod unembed;
 /// and must not become the fix, and why the first button says *Save a copy…*
 /// rather than *Save*.
 pub mod unsaved;
-/// ★ Raising and draining the unsaved question. Its header carries the
+/// Raising and draining the unsaved question. Its header carries the
 /// three-answer shape that makes it a real seam, and what the middle answer
 /// costs.
 mod unsaved_host;
 
-/// ★ The Set-scale dialog — what a dimension's number *means*.
+/// The Set-scale dialog — what a dimension's number *means*.
 ///
 /// Phase 7 shipped three tools that place dimensions and no way to say what
 /// scale they are at, so every label read in PDF points: a measurement of the
@@ -177,7 +177,7 @@ pub mod scale;
 /// place-then-type gesture. Its header argues why it is a dialog.
 pub mod textannot;
 
-/// ★ The Settings window — the thirteen questions the PDF standard declines to
+/// The Settings window — the thirteen questions the PDF standard declines to
 /// answer, and the operator's answers to them.
 ///
 /// **Application-scoped and not held in [`DialogsState`]**, which is the one
@@ -187,7 +187,7 @@ pub mod textannot;
 /// immediately — you cannot judge a theme from a radio label. So the draft
 /// lives on `PdfcerApp` as `settings_draft`, and this module is a renderer with
 /// no state of its own.
-/// ★ The keyboard reference, **derived from the keymap that dispatches**.
+/// The keyboard reference, **derived from the keymap that dispatches**.
 ///
 /// Application-scoped, beside [`about`]: a keyboard reference is meaningful
 /// with nothing open, and is one of the two things a new operator reaches for
@@ -208,7 +208,7 @@ use crate::app::state::{OpenDoc, Status};
 /// not collected yet. A dialog is retired only when **both** say no: it is off
 /// screen *and* it has nothing left to hand over.
 ///
-/// # ★★★ WHY THIS IS NOT `!open`
+/// # WHY THIS IS NOT `!open`
 ///
 /// `!open`, expressed at each call site as
 /// `if …map(|d| d.show(ctx)) == Some(false) { self.slot = None; }`, is exactly
@@ -237,7 +237,7 @@ use crate::app::state::{OpenDoc, Status};
 /// at all by any route the guard covers, which is worse than having no guard:
 /// it stops the save and never lets it through.
 ///
-/// ★ Neither half is wrong on its own, which is why no unit test can see it. The
+/// Neither half is wrong on its own, which is why no unit test can see it. The
 /// dialog returns its answer when asked; the drain performs whatever it is
 /// given; the defect lives entirely in the **lifetime between them**, and a
 /// lifetime is not a value any assertion over either half can name. That is the
@@ -266,7 +266,7 @@ const fn retire(open: bool, answered: bool) -> bool {
 /// "closing forgets the job" true by construction rather than by remembering
 /// to reset fields.
 ///
-/// ## ★ The fields are in two groups, and the split is load-bearing
+/// ## The fields are in two groups, and the split is load-bearing
 ///
 /// A **document-scoped** dialog is about the open file: a print job is a job
 /// on *these* pages. An **application-scoped** dialog is about pdfcer itself
@@ -291,7 +291,7 @@ pub struct DialogsState {
     /// The Recognise-text dialog, when one is open.
     ///
     /// Document-scoped, and firmly so: a recognition is of one page of one
-    /// file. ★ It is the first dialog here that can hold **unsaved bytes**, and
+    /// file. It is the first dialog here that can hold **unsaved bytes**, and
     /// closing the document discards them — which is the right answer rather
     /// than a loss. Writing them afterwards would produce a file derived from a
     /// document the operator has already put away, and offering to do that is
@@ -315,14 +315,14 @@ pub struct DialogsState {
     /// document, which is an undoable edit — see
     /// `crate::app::actions::Action::SetGroupScale`.
     ///
-    /// ★ It is not the only one any more: `dialogs::redact` edits through the
+    /// It is not the only one any more: `dialogs::redact` edits through the
     /// funnel too, on its default destination of three.
     ///
     /// That is why [`Self::show`] takes an action queue at all: this module's
     /// header says a dialog that edits the document *"must use the funnel"*,
     /// and this is the first one that does.
     scale: Option<scale::ScaleDialog>,
-    /// ★★★ The sheet-size window, when one is open.
+    /// The sheet-size window, when one is open.
     ///
     /// **Document-scoped**, and pointedly not application-scoped like its
     /// sibling [`new_document`]: that window exists to produce a document and
@@ -348,7 +348,7 @@ pub struct DialogsState {
 
     /// The Apply-redactions dialog, when one is open.
     ///
-    /// Document-scoped, and more emphatically than any of its neighbours. ★ It
+    /// Document-scoped, and more emphatically than any of its neighbours. It
     /// is the second dialog here that holds **unsaved bytes** and the first
     /// whose bytes are a *destructive* transformation of the open file, so
     /// closing the document discards them — which is the right answer rather
@@ -363,7 +363,7 @@ pub struct DialogsState {
     ///
     /// Document-scoped for [`Self::redact`]'s reason at its sharpest: it holds
     /// the document's protection **as it stood when the window opened**, and
-    /// every control on it is seeded from that reading. ★ ONE field for the two
+    /// every control on it is seeded from that reading. ONE field for the two
     /// ribbon controls — see [`Self::open_protect`].
     protect: Option<protect::ProtectDialog>,
     /// The Sign window — `file.sign`. Holds the loaded signing identity for as
@@ -373,7 +373,7 @@ pub struct DialogsState {
     sign: Option<sign::SignDialog>,
 
     // --- application-scoped: survives an empty canvas ---------------------
-    /// ★★ **The stamp he placed most recently** -- O172's *"and it remembers
+    /// **The stamp he placed most recently** -- O172's *"and it remembers
     /// the last one used"*.
     ///
     /// Application-scoped rather than document-scoped, and that is the point:
@@ -400,7 +400,7 @@ pub struct DialogsState {
 
     /// Whether the offer has already been considered this run.
     ///
-    /// ★★ A separate flag from the dialog itself, and it is set whether or
+    /// A separate flag from the dialog itself, and it is set whether or
     /// not the dialog opens. [`defaultapp::should_offer`] costs two `reg.exe`
     /// processes; without this it would run on **every frame**, which is
     /// sixty subprocess pairs a second for the life of the session. The
@@ -434,7 +434,7 @@ pub struct DialogsState {
 
     /// The password prompt, when a document is waiting on one.
     ///
-    /// ★★ **Application-scoped, not document-scoped**, and the distinction is
+    /// **Application-scoped, not document-scoped**, and the distinction is
     /// the whole of why it works: the document it is about is **not open** —
     /// that is its premise — so a guard that closed it when nothing was open
     /// would close it exactly when it is needed. It sits beside About and the
@@ -455,7 +455,7 @@ pub struct DialogsState {
     /// makes pages *in the open document*, so a dialog configuring an import
     /// into a file that is no longer open is configuring nothing.
     ///
-    /// ★ It holds a **path**, not the file's bytes — unlike the Insert-image
+    /// It holds a **path**, not the file's bytes — unlike the Insert-image
     /// window beneath it, which holds what it imported. The window never reads
     /// the file (its header says why at length), so there is nothing to
     /// discard when the document closes and no reason for closing to feel
@@ -544,7 +544,7 @@ pub struct DialogsState {
 
     /// The Open-in-Acrobat confirmation, when one is open — O122.
     ///
-    /// ★★ **Document-scoped**, and it is the one classification here worth
+    /// **Document-scoped**, and it is the one classification here worth
     /// arguing. The window is about handing *this file* to Acrobat: its
     /// sentences name the file and count its unsaved edits, and both facts stop
     /// being true the moment the document closes. A window left up over a
@@ -560,7 +560,7 @@ pub struct DialogsState {
     /// outcome outlives the document it was asked about.
     open_in_acrobat: Option<open_in_acrobat::OpenInAcrobatDialog>,
 
-    /// ★ Set when the Open-in-Acrobat question was answered with Cancel.
+    /// Set when the Open-in-Acrobat question was answered with Cancel.
     ///
     /// The twin of [`Self::unsaved_cancelled`] and it exists for the same
     /// reason: a Cancel parks no outcome, so a drain reports nothing, which is
@@ -572,12 +572,12 @@ pub struct DialogsState {
     /// **The operator answered Cancel**, parked because the window is dropped
     /// on that answer and the answer must outlive it.
     ///
-    /// ★★★ `UnsavedDialog::answered` reports whether an OUTCOME is parked, and
+    /// `UnsavedDialog::answered` reports whether an OUTCOME is parked, and
     /// a Cancel parks none — it closes the window and nothing else. So the
     /// retire rule correctly drops the dialog on a Cancel, and without this the
     /// fact that the operator said *no* went with it.
     ///
-    /// ★★ Invisible until O102's quit cycle needed it. Every previous caller
+    /// Invisible until O102's quit cycle needed it. Every previous caller
     /// treats a Cancel as *"nothing happened"* — true for a tab close, where the
     /// tab simply stays. The cycle has to STOP, and *"they cancelled"* and
     /// *"they have not answered yet"* are the two states it must tell apart or
@@ -663,7 +663,7 @@ pub struct Frame<'a> {
 
     /// The preferences file, mutable.
     ///
-    /// ★ Here for **O166**: the Print window persists the operator's last-used
+    /// Here for **O166**: the Print window persists the operator's last-used
     /// print settings the moment they press Print.
     ///
     /// **Five dialogs write to it**: Print (O166), the default-app offer (O173,
@@ -684,7 +684,7 @@ pub struct Frame<'a> {
     /// closes. That can be checked by reading a call site.
     pub prefs: &'a mut crate::app::prefs::Prefs,
 
-    /// ★★ **The redaction panel's chosen mark appearance**, for the
+    /// **The redaction panel's chosen mark appearance**, for the
     /// off-the-sheet census window among others.
     ///
     /// Passed in rather than defaulted, and this is the same ruling
@@ -694,7 +694,7 @@ pub struct Frame<'a> {
     /// fill to grey in the panel must not get a black mark from any of them.
     /// One look, however the mark was asked for.
     ///
-    /// ★ Resolved at the call site each frame rather than snapshotted when a
+    /// Resolved at the call site each frame rather than snapshotted when a
     /// window opens, so the appearance that travels is the one the operator had
     /// **when they pressed the button** — `actions::RedactAction::BySearch`'s
     /// rule, and the reason it is a rule is that the mark's colour is baked into
@@ -720,7 +720,7 @@ impl DialogsState {
 
     /// **Hand a placed rectangle back to the window that asked for it.**
     ///
-    /// ★ The window is not reopened, because it was never closed — see
+    /// The window is not reopened, because it was never closed — see
     /// `dialogs::placing`. It simply starts drawing again on the next frame,
     /// with the numbers this writes into it.
     pub fn deliver_placement(
@@ -739,7 +739,7 @@ impl DialogsState {
 
     /// **Is the window that asked for this placement still here?**
     ///
-    /// ★★ The one guard that closes every exit route nobody enumerated. If the
+    /// The one guard that closes every exit route nobody enumerated. If the
     /// document is closed under a pending placement the dialog is dropped
     /// (`forget_document`), and without this the canvas would sit in a
     /// placement tool waiting for a window that no longer exists. `app::frame`
@@ -774,7 +774,7 @@ impl DialogsState {
     /// longer exist, and the honest response is to close it rather than to
     /// freeze it or to let it act on whatever is opened next.
     ///
-    /// # ★ …and why About is drawn either way
+    /// # …and why About is drawn either way
     ///
     /// It is about pdfcer, not about a document. Closing it when the document
     /// closes would make `file.about` — a command every mode offers, with no
@@ -790,7 +790,7 @@ impl DialogsState {
     /// answer arrives out of the same call that needs `&mut` on the state
     /// being dropped.
     pub fn show(&mut self, cx: Frame<'_>) {
-        // ★ Destructured immediately, and deliberately: [`Frame`] exists to
+        // Destructured immediately, and deliberately: [`Frame`] exists to
         // stop this function's parameter list growing without a thought (see
         // its own header), NOT to make every use site downstream read
         // `cx.ctx`. Below this line the body is written against the same seven
@@ -814,7 +814,7 @@ impl DialogsState {
         if self.about.as_mut().map(|d| d.show(ctx)) == Some(false) {
             self.about = None;
         }
-        // ★★★ O173's *"ask once"*, and the ONE place in this function that
+        // O173's *"ask once"*, and the ONE place in this function that
         // opens a dialog nobody asked for. Above the no-document guard with
         // About, and for a stronger reason than any of its neighbours: the
         // launch this fires on is usually a launch with nothing open, because
@@ -822,7 +822,7 @@ impl DialogsState {
         // menu rather than by double-clicking a drawing - which is precisely
         // the thing they cannot yet do.
         //
-        // ★ `considered` is set BEFORE the condition is evaluated, not after,
+        // `considered` is set BEFORE the condition is evaluated, not after,
         // so a `should_offer` that returns false still costs its two
         // subprocesses exactly once. See the field's own note.
         if !self.default_app_considered {
@@ -841,7 +841,7 @@ impl DialogsState {
         if self.new_document.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.new_document = None;
         }
-        // ★★★ Beside them, and ABOVE the no-document guard, for the sharpest
+        // Beside them, and ABOVE the no-document guard, for the sharpest
         // version of the same reason in this function: the document this window
         // is about is **not open**. That is its entire premise. A guard that
         // required an open document would close the password prompt in exactly
@@ -866,7 +866,7 @@ impl DialogsState {
             return;
         };
         let doc: &OpenDoc = doc;
-        // ★ The Print window is why this function takes `&mut Prefs` at all —
+        // The Print window is why this function takes `&mut Prefs` at all —
         // O166, the operator's last-used print settings, persisted the moment
         // they press Print; see `print::PrintDialog::remember`. It is not the
         // only writer; `Frame::prefs` lists them and says why that list cannot
@@ -880,7 +880,7 @@ impl DialogsState {
         if self.diagnostics.as_mut().map(|d| d.show(ctx, doc)) == Some(false) {
             self.diagnostics = None;
         }
-        // ★ `actions`: the apply dialog's default destination edits the OPEN
+        // `actions`: the apply dialog's default destination edits the OPEN
         // document, so it pushes through the funnel — §5.
         if self.redact.as_mut().map(|d| d.show(ctx, doc, actions)) == Some(false) {
             self.redact = None;
@@ -888,7 +888,7 @@ impl DialogsState {
         if self.protect.as_mut().map(|d| d.show(ctx, doc)) == Some(false) {
             self.protect = None;
         }
-        // ★ `actions` because signing needs `&mut EditSession` and a dialog
+        // `actions` because signing needs `&mut EditSession` and a dialog
         // body is handed `&OpenDoc` — `crate::dialogs::sign`'s §2.
         #[cfg(feature = "signing")]
         if self.sign.as_mut().map(|d| d.show(ctx, doc, actions)) == Some(false) {
@@ -903,7 +903,7 @@ impl DialogsState {
         if self.insert_image.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.insert_image = None;
         }
-        // ★★★ `prefs` on all three export windows — O196, *"the export windows
+        // `prefs` on all three export windows — O196, *"the export windows
         // forget everything. every time I export a dxf I have to set it up
         // again."* Each writes its own group at its own Export press; the
         // guard against rewriting the file when nothing changed, and the
@@ -945,7 +945,7 @@ impl DialogsState {
         if self.unembed.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.unembed = None;
         }
-        // ★ Takes `doc` AND an appearance, unlike every other window here. The
+        // Takes `doc` AND an appearance, unlike every other window here. The
         // `doc` is what it scans, one page per frame (see its header); the
         // appearance is the redaction panel's own chosen look, passed in rather
         // than defaulted so that a mark authored from this window cannot be a
@@ -960,7 +960,7 @@ impl DialogsState {
         {
             self.offpage = None;
         }
-        // ★ Managing dimension groups is a DOCK PANEL and not a window
+        // Managing dimension groups is a DOCK PANEL and not a window
         // (`crate::panels::Panel::DimensionGroups`), because a window taller
         // than the screen can push its own title bar off the desktop, leaving
         // the operator no way to close it.
@@ -971,9 +971,9 @@ impl DialogsState {
         // `crate::app::PdfcerApp::docks` drains it into [`Self::open_scale`]
         // the moment the dock releases its borrows. One-shot, same guards, one
         // layer out.
-        // ★ Takes the action queue, unlike its four neighbours. See the field.
+        // Takes the action queue, unlike its four neighbours. See the field.
         //
-        // ★★ **And it takes `doc`.** The tempting reading is that the scale it
+        // **And it takes `doc`.** The tempting reading is that the scale it
         // sets belongs to a group, which is document-scoped but not
         // page-scoped, so the entry fields need nothing from the open document
         // — and the operator reported both counter-examples to that: without
@@ -984,7 +984,7 @@ impl DialogsState {
         if self.scale.as_mut().map(|d| d.show(ctx, doc, actions)) == Some(false) {
             self.scale = None;
         }
-        // ★ Beside `scale`, below the no-document guard, and taking no `doc` —
+        // Beside `scale`, below the no-document guard, and taking no `doc` —
         // for `scale`'s own reason. Everything this window says about the
         // document was read when it opened (`PageSizeDialog::open`), so its
         // controls need nothing from the open document per frame. What it DOES
@@ -998,7 +998,7 @@ impl DialogsState {
             self.form_field = None;
         }
         if self.text_annot.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
-            // ★★ Read on the frame the window closes and only then -- see
+            // Read on the frame the window closes and only then -- see
             // `TextAnnotDialog::remembered`. A Cancel answers `None`, so
             // dismissing the window cannot set the memory to a stamp he
             // declined to place.
@@ -1011,7 +1011,7 @@ impl DialogsState {
             }
             self.text_annot = None;
         }
-        // ★ LAST, and the position is load-bearing in a way none of its
+        // LAST, and the position is load-bearing in a way none of its
         // neighbours' are.
         //
         // This window's answer destroys or replaces the open document. Drawing
@@ -1024,7 +1024,7 @@ impl DialogsState {
         // reorder away and its failure mode is a surface describing a document
         // nobody has any more.
         //
-        // ★★★ [`retire`] rather than `== Some(false)`, and the difference is a
+        // [`retire`] rather than `== Some(false)`, and the difference is a
         // defect: this window PARKS its answer for `resume_after_unsaved` and
         // pressing a button is what makes `show` say `false`. Dropping it on
         // that `false` threw the answer away with it.
@@ -1033,7 +1033,7 @@ impl DialogsState {
             .as_mut()
             .is_some_and(|d| retire(d.show(ctx), d.answered()))
         {
-            // ★★★ **Park the cancellation before the window goes.** A Cancel
+            // **Park the cancellation before the window goes.** A Cancel
             // parks no outcome, so `retire` correctly drops the dialog and the
             // fact that the operator said *no* would go with it. The field's own
             // doc comment carries why that was invisible until O102's quit cycle
@@ -1047,7 +1047,7 @@ impl DialogsState {
             }
             self.unsaved = None;
         }
-        // ★★ O122 — beside the unsaved question rather than among the
+        // O122 — beside the unsaved question rather than among the
         // document-scoped windows above, because it belongs to the same
         // family: it PARKS an answer that the application acts on, and the act
         // is a close. `retire` rather than `== Some(false)`, for the reason its
@@ -1068,7 +1068,7 @@ impl DialogsState {
             }
             self.open_in_acrobat = None;
         }
-        // ★ LAST of all, one place beyond the unsaved question, and the
+        // LAST of all, one place beyond the unsaved question, and the
         // position is argued the same way its neighbour's is.
         //
         // This window's answer WRITES — over the operator's own file, on the
@@ -1085,7 +1085,7 @@ impl DialogsState {
         // if a future change ever makes both live at once the destructive-est
         // question should be the one on top.
         //
-        // ★★★ [`retire`] rather than `== Some(false)`, for its neighbour's
+        // [`retire`] rather than `== Some(false)`, for its neighbour's
         // reason: `== Some(false)` destroys the dialog the answer is sitting
         // in, so *Save anyway* closes the window and `signature-confirmed`
         // never appears. `an_invalidating_save_is_warned_about` is the check
@@ -1108,7 +1108,7 @@ impl DialogsState {
     /// could call `save_in_place` would be a second route to the one operation
     /// in this shell that can destroy the operator's file.
     ///
-    /// ★ **It clears the window on the way out.** The answer and the window's
+    /// **It clears the window on the way out.** The answer and the window's
     /// lifetime are one fact, and separating them is how a confirmation gets
     /// answered once and acted on every frame — which here means writing the
     /// operator's file sixty times a second.
@@ -1124,7 +1124,7 @@ impl DialogsState {
     /// **stop** — the save is now this window's to authorise. `false` means
     /// there was nothing to ask about and the caller saves as before.
     ///
-    /// # ★ The return value is "did I interrupt you", exactly as
+    /// # The return value is "did I interrupt you", exactly as
     /// [`Self::ask_unsaved`]'s is
     ///
     /// And for the identical reason, restated because it is the property that
@@ -1156,7 +1156,7 @@ impl DialogsState {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             //
-            // ★ The pending save is IN the line. A reader of a trace from a
+            // The pending save is IN the line. A reader of a trace from a
             // machine they cannot see needs to know which write was held: an
             // in-place save held at this question is the operator's own file
             // still carrying its previous bytes, and a copy held here is
@@ -1176,7 +1176,7 @@ impl DialogsState {
     /// dialog, and a window that could call `close_document` would be a second
     /// route to the most destructive operation this shell has.
     ///
-    /// ★ **It clears the window on the way out.** The answer and the window's
+    /// **It clears the window on the way out.** The answer and the window's
     /// lifetime are one fact, and separating them is how a confirmation gets
     /// asked twice — or, worse, answered once and acted on every frame.
     pub fn take_unsaved_answer(&mut self) -> Option<(unsaved::PendingIntent, unsaved::Outcome)> {
@@ -1190,7 +1190,7 @@ impl DialogsState {
     /// Returns `true` when the question was raised and the caller must
     /// **stop**: the handover is now this window's to authorise.
     ///
-    /// # ★ The return value is "did I interrupt you", exactly as
+    /// # The return value is "did I interrupt you", exactly as
     /// [`Self::ask_unsaved`]'s and [`Self::ask_signature`]'s are
     ///
     /// And for the identical reason, which is worth restating because this is
@@ -1221,7 +1221,7 @@ impl DialogsState {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             //
-            // ★ The prompt shape is IN the line. A reader of a trace from a
+            // The prompt shape is IN the line. A reader of a trace from a
             // machine they cannot see needs to know which of the three
             // questions was asked: `SaveFirst` means the operator had unsaved
             // work at that moment, and `NoFileOnDisk` means nothing was ever
@@ -1244,7 +1244,7 @@ impl DialogsState {
     /// that could spawn a process would be the only place in the crate that
     /// did.
     ///
-    /// ★ **It clears the window on the way out**, so a confirmation cannot be
+    /// **It clears the window on the way out**, so a confirmation cannot be
     /// answered once and acted on every frame — which here would mean starting
     /// Acrobat sixty times a second.
     pub fn take_open_in_acrobat_answer(
@@ -1257,7 +1257,7 @@ impl DialogsState {
 
     /// **Was the Open-in-Acrobat question cancelled?** Drains the flag.
     ///
-    /// ★ Draining rather than peeking, so one cancel produces one trace line.
+    /// Draining rather than peeking, so one cancel produces one trace line.
     /// A flag that stayed set would have the application reporting a
     /// cancellation on every frame until the next question was asked.
     pub fn take_open_in_acrobat_cancelled(&mut self) -> bool {
@@ -1271,7 +1271,7 @@ impl DialogsState {
     /// Application-scoped dialogs are deliberately absent — see
     /// [`Self::show`].
     fn close_document_scoped(&mut self) {
-        // ★★★ The Sign window is document-scoped, and closing it also DROPS
+        // The Sign window is document-scoped, and closing it also DROPS
         // THE LOADED PRIVATE KEY, which is the strongest reason it belongs on
         // this list rather than merely a consistent one. `crate::sign::Identity`
         // holds the key material for as long as the window is open; a window
@@ -1281,7 +1281,7 @@ impl DialogsState {
         {
             self.sign = None;
         }
-        // ★★★ DROPPED, NOT DISMISSED — and that is a decision about
+        // DROPPED, NOT DISMISSED — and that is a decision about
         // `OPERATOR_REQUESTS.md` **O185**, not an oversight.
         //
         // The print window gained three exits at O185, two of which WRITE: the
@@ -1290,7 +1290,7 @@ impl DialogsState {
         // runs no exit at all, so the preferences file is left exactly as it
         // was found.
         //
-        // ★ Why that is right: the document's close is not a sentence about the
+        // Why that is right: the document's close is not a sentence about the
         // printer. The operator did not press anything in this window; they
         // pressed something several rooms away, and inventing an answer on
         // their behalf would put a setting on disk nobody chose — or take one
@@ -1313,14 +1313,14 @@ impl DialogsState {
         self.redact = None;
         self.protect = None;
         self.scale = None;
-        // ★ On this list because it holds a SNAPSHOT — the picked sheets' sizes
+        // On this list because it holds a SNAPSHOT — the picked sheets' sizes
         // and the drawing's extent, read when it opened. A window that survived
         // its document would keep describing sheets nobody has open, and every
         // number in it would still look authoritative.
         self.page_size = None;
         self.insert_image = None;
         self.export_dxf = None;
-        // ★ On this list because it holds a SNAPSHOT: the page count it built
+        // On this list because it holds a SNAPSHOT: the page count it built
         // its rows from, and the names it read out of the file's name tree.
         // A window that outlived its document would show one document's names
         // over another document's pages.
@@ -1329,7 +1329,7 @@ impl DialogsState {
         self.export_text = None;
         self.embed = None;
         self.unembed = None;
-        // ★ On this list for `stamp_collection`'s reason in its strongest form:
+        // On this list for `stamp_collection`'s reason in its strongest form:
         // see the field. A part-finished scan of a closed document is not a
         // window that merely goes stale — it is one that keeps working.
         self.offpage = None;
@@ -1344,7 +1344,7 @@ impl DialogsState {
     /// it safe to drive from a state rather than from an event, and is why the
     /// prompt survives the operator clicking away and coming back.
     ///
-    /// ★ Re-asking for a **different** document replaces the prompt. One
+    /// Re-asking for a **different** document replaces the prompt. One
     /// password box at a time is the convention everywhere, and two would leave
     /// the operator guessing which file each belonged to — the prompt names its
     /// file for the same reason.

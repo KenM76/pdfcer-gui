@@ -104,7 +104,7 @@ pub const fn separator_marker() -> &'static str {
     "A line saying which page follows"
 }
 
-/// ★ The marker's hint, and it discloses that this is pdfcer's own text.
+/// The marker's hint, and it discloses that this is pdfcer's own text.
 ///
 /// The operator is asking for something readable and getting something the
 /// document does not contain. That is worth one clause, because a later reader
@@ -119,7 +119,7 @@ pub const fn separator_marker_hint() -> &'static str {
 
 /// The marker line itself, written into the exported file.
 ///
-/// ★ Catalogued rather than formatted at the call site even though it lands in
+/// Catalogued rather than formatted at the call site even though it lands in
 /// a file rather than on screen, because it is **prose an operator reads** and
 /// the whole point of the catalog is that such prose lives in one place. The
 /// blank line before it is part of the string: without it the marker runs on
@@ -139,7 +139,7 @@ pub const fn file_heading() -> &'static str {
     "The file"
 }
 
-/// ★ The encoding, stated rather than assumed.
+/// The encoding, stated rather than assumed.
 ///
 /// A CAD drawing carries degree signs, diameter marks, plus-or-minus and
 /// occasionally a Greek letter, and every one of those is multi-byte in UTF-8
@@ -189,7 +189,7 @@ pub const fn loses_heading() -> &'static str {
     "What a text file cannot carry"
 }
 
-/// ★ Layout. The loss an operator is most likely to be surprised by.
+/// Layout. The loss an operator is most likely to be surprised by.
 ///
 #[must_use]
 pub const fn loses_layout() -> &'static str {
@@ -198,7 +198,7 @@ pub const fn loses_layout() -> &'static str {
      not, and the file gives no sign that it used to have one."
 }
 
-/// ★ Line and word breaks are pdfcer's, not the document's.
+/// Line and word breaks are pdfcer's, not the document's.
 ///
 /// `text_extract`'s negative result S5: line breaks are **always** derived,
 /// even in Tagged PDF, because a PDF content stream records where glyphs were
@@ -246,7 +246,7 @@ pub const fn save_dialog_title() -> &'static str {
 // The receipt — off-canvas, after the fact (rule 4 / decision 059)
 // ---------------------------------------------------------------------------
 
-/// ★★★ **Nothing on any requested page carries readable text, so nothing was
+/// **Nothing on any requested page carries readable text, so nothing was
 /// written.**
 ///
 /// The most important string in this catalog, and the reason the export refuses
@@ -269,7 +269,7 @@ pub fn no_text_at_all(pages: usize) -> String {
     } else {
         format!("None of those {pages} pages carries any text pdfcer can read")
     };
-    // ★ "Recognise text, on the File tab" rather than the ribbon-path
+    // "Recognise text, on the File tab" rather than the ribbon-path
     // spelling with a `▸` in it. `crate::text::dropped` records the same
     // refusal and the reason binds hardest here: `icons::glyphs` proves the
     // font stack cannot draw that codepoint, so it renders as a substitution
@@ -314,7 +314,7 @@ pub fn wrote_with(bom: bool, windows_line_endings: bool) -> Option<String> {
 
 /// The page markers were pdfcer's own words, and the file does not say so.
 ///
-/// ★ Repeated here even though the window said it, because the window is gone
+/// Repeated here even though the window said it, because the window is gone
 /// and the file is not. This is the one added-text disclosure that survives the
 /// act — an operator who sends the file on has sent lines pdfcer wrote.
 #[must_use]
@@ -325,7 +325,7 @@ pub fn marker_lines_added(count: usize) -> String {
     )
 }
 
-/// ★ Some of the pages asked for produced nothing, and they are named.
+/// Some of the pages asked for produced nothing, and they are named.
 ///
 /// Named rather than counted, because *which* page came out empty is the whole
 /// of what the operator does next with this sentence: an empty page 4 in a
@@ -362,7 +362,7 @@ pub fn pages_without_text(page_numbers: &[usize]) -> String {
     )
 }
 
-/// ★★ Text that exists, renders perfectly, and was never recoverable as
+/// Text that exists, renders perfectly, and was never recoverable as
 /// Unicode.
 ///
 /// `text_extract`'s two dead ends, and the engine is emphatic that neither is a
@@ -393,7 +393,7 @@ pub fn unreadable_fonts(identity: u64, type3: u64) -> String {
 /// export and 40 out of 400,000 is a stray glyph, and the two need different
 /// reactions from the operator.
 ///
-/// ★ It **describes** the replacement character rather than printing one.
+/// It **describes** the replacement character rather than printing one.
 /// `icons::glyphs` proves the font stack cannot draw U+FFFD, so a literal one
 /// here would render as a substitution box — and a sentence explaining that
 /// unreadable characters became a box, in which the box is itself unreadable,
@@ -424,7 +424,7 @@ pub fn pages_unreadable(count: usize) -> String {
 
 /// Pages that named no resources of their own, so pdfcer supplied an empty set.
 ///
-/// # ★★ Why this is one of the few `TextDiagnostics` counters worth a sentence
+/// # Why this is one of the few `TextDiagnostics` counters worth a sentence
 ///
 /// [`honesty_notes`](crate::app::actions::export) takes three of roughly
 /// thirty, on the test *"does it change what the operator should do next?"*.
@@ -465,7 +465,7 @@ pub fn export_failed(detail: &str) -> String {
 mod tests {
     use super::*;
 
-    /// ★★★ **The scan sentence names the remedy, by its ribbon label.**
+    /// **The scan sentence names the remedy, by its ribbon label.**
     ///
     /// This is the assertion the whole feature's honesty rests on. A refusal
     /// that says *"nothing to export"* and stops is a dead end; one that names
@@ -496,7 +496,7 @@ mod tests {
         assert!(no_text_at_all(6).starts_with("None of those 6 pages carries any text"));
     }
 
-    /// ★ The empty-page list is capped, and the cap is **disclosed** rather
+    /// The empty-page list is capped, and the cap is **disclosed** rather
     /// than silent.
     #[test]
     fn a_long_empty_page_list_says_how_many_it_did_not_show() {
@@ -527,7 +527,7 @@ mod tests {
         assert!(said.contains("40 of 400000"), "{said}");
     }
 
-    /// ★ The page marker is surrounded by blank lines, so it cannot run on from
+    /// The page marker is surrounded by blank lines, so it cannot run on from
     /// the previous page's last line.
     #[test]
     fn the_page_marker_stands_alone() {

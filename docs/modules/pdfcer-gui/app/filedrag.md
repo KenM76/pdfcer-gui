@@ -15,7 +15,7 @@ drop on the Pages panel and a drop on the ribbon are the same event, so
 This module supplies the missing coordinate and the protocol that lets a
 surface claim a drop that landed on it.
 
-## ★★★ The coordinate does not exist in the toolkit, at all
+## The coordinate does not exist in the toolkit, at all
 
 Not "is awkward to get" — is **discarded**, twice, on the way up:
 
@@ -37,7 +37,7 @@ frame, through [`native_window::cursor_position`]. That is the same
 argument `native-window` was created for: the toolkit will not say
 something the platform knows and the operator can see.
 
-## ★★ The protocol: a surface CLAIMS a drop; the fallback runs last
+## The protocol: a surface CLAIMS a drop; the fallback runs last
 
 A dropped file is recorded at the top of the frame with the point it landed
 on, and then sits there:
@@ -48,14 +48,14 @@ on, and then sits there:
 | during the frame | any surface | [`aim`] to see if the point is over it, [`claim`] to take it |
 | end of frame | [`crate::app::frame`] | [`unclaimed`] — whatever is left means what it always meant |
 
-★ The **fallback is unconditional**, and that is the property worth
+The **fallback is unconditional**, and that is the property worth
 protecting. A drop that no surface claims still opens the document, or
 inserts the image, or explains the refusal — exactly as before this module
 existed. So a surface forgetting to claim costs a *feature*, never the
 drop: the failure mode is "it opened in a new tab instead of inserting",
 which an operator can see and undo, rather than a file that vanished.
 
-## ★ One accessor for both phases, deliberately
+## One accessor for both phases, deliberately
 
 [`aim`] answers *"where is the file-drag pointer?"* whether the file is
 still hovering or has just landed. That is what lets a surface draw its

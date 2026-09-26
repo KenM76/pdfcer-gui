@@ -19,7 +19,7 @@ Thirteen answers are now written to `userdata/preferences.txt` the moment
 check is the evidence that the *reading* half works in a running process,
 which is the half the operator experiences as *"it remembered."*
 
-# ★★★ What this check deliberately CANNOT establish, said first
+# What this check deliberately CANNOT establish, said first
 
 **It never presses Print, and no future edit may make it.** Committing is
 how a print job reaches a real device, and this suite runs unattended on the
@@ -37,7 +37,7 @@ because closing without printing is how a person says *"not this"* — so the
 | every field of `PrintPrefs` is written | `habits()` builds the struct with **no** `..Default::default()`, so a fourteenth field is a compile error |
 | every field is read back by `open` | `every_remembered_field_is_read_back_by_the_print_dialog`, which parses the struct's fields out of its own source |
 | the file survives a round trip | `every_preference_round_trips_through_the_file` and `the_writer_emits_no_key_the_parser_rejects` |
-| the file the operator gets is the file this check writes | ★ **this check**, below — the seed is written in the writer's own token vocabulary |
+| the file the operator gets is the file this check writes | **this check**, below — the seed is written in the writer's own token vocabulary |
 
 So: *"press Print and the file is written"* is held by the compiler and
 three unit tests. *"the file is read and the window opens on it"* is held
@@ -66,7 +66,7 @@ Two things prevent it:
    SKIP naming it, rather than a pass — because that field's result would be
    the same whether the file was read or ignored.
 
-★ The second rule is what makes the seed maintainable. When a shipped
+The second rule is what makes the seed maintainable. When a shipped
 default changes — and `MIN_PRINT_DPI` moved 50 → 36 the day this feature
 landed — the check does not silently become decorative. It goes yellow and
 says which value to change.
@@ -83,7 +83,7 @@ print-open printers=4 selected=1 remembered=matched unavailable=None page=0
 ```
 
 
-★★★ **And then it was wrong a second time, in a way that looked
+**And then it was wrong a second time, in a way that looked
 finished.** As first written the twelve fields were formatted from
 `remembered.*` — the parsed `PrintPrefs` handed *into* the constructor —
 and the dialog's own fields were assigned forty lines further down in a
@@ -139,7 +139,7 @@ check re-run green.
 two release builds and about six minutes, and it is the only thing that
 has ever caught an oracle pointed at its own input.
 
-# ★★ Why `print-plan` is read as well
+# Why `print-plan` is read as well
 
 Because `print-open` reports what the dialog's **fields** were set to, and a
 build that stored the preferences into fields the job planner never consults

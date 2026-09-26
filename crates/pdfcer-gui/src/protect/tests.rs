@@ -51,7 +51,7 @@ fn passwords(current_owner: &[u8], user: &[u8], owner: &[u8]) -> Passwords {
 /// A scratch path in the system temp directory, unique per caller **and per
 /// process**.
 ///
-/// ★ Named per test rather than shared, because `cargo test` runs these in
+/// Named per test rather than shared, because `cargo test` runs these in
 /// parallel and two tests writing one path is a flake that reproduces about a
 /// third of the time — the worst kind.
 ///
@@ -109,7 +109,7 @@ fn bit(grants: &[(PermissionBit, Option<bool>)], want: PermissionBit) -> Option<
 
 // ---------------------------------------------------------------------------
 
-/// ★★★ **What the operator ticks is what the file says.**
+/// **What the operator ticks is what the file says.**
 ///
 /// The whole permission model, end to end: a chosen subset goes into
 /// [`prepare`], through `EditSession::set_encryption`, out as bytes, back in
@@ -156,7 +156,7 @@ fn the_permission_model_round_trips() {
     }
 }
 
-/// ★★★ **The build brief's own sentence, asserted.**
+/// **The build brief's own sentence, asserted.**
 ///
 /// > *"A permissions dialog that opens with everything ticked, on a document
 /// > that forbids printing, has told the operator a falsehood before he touches
@@ -165,7 +165,7 @@ fn the_permission_model_round_trips() {
 /// So: make a document that forbids printing, read it the way the dialog reads
 /// it, and assert the box for Print comes back **unticked**.
 ///
-/// ★ It also asserts the unencrypted case in the same test, because the two
+/// It also asserts the unencrypted case in the same test, because the two
 /// answers are what make each other meaningful: all-ticked is the *truth* about
 /// a plaintext document and a *lie* about this one, and a `Standing::read` that
 /// returned a constant would pass either assertion alone.
@@ -216,7 +216,7 @@ fn a_document_that_forbids_printing_does_not_open_with_everything_ticked() {
     let _ = std::fs::remove_file(&doc.path);
 }
 
-/// ★★★ **O119's second disclosure: a signed document is refused, and it is
+/// **O119's second disclosure: a signed document is refused, and it is
 /// refused before anything is offered.**
 ///
 /// R9: *no placeholders — the control is absent or explained, never a button
@@ -224,7 +224,7 @@ fn a_document_that_forbids_printing_does_not_open_with_everything_ticked() {
 /// engine verbs returns `EncryptError::SignedDocument` and there is no answer
 /// the operator could type that would change it.
 ///
-/// ★ The count is carried, because *"this document carries 1 signature"* and
+/// The count is carried, because *"this document carries 1 signature"* and
 /// *"…carries 5"* are different problems and the operator is the one who knows
 /// which is theirs.
 #[test]
@@ -268,7 +268,7 @@ fn permissions_on_an_unprotected_document_is_refused_by_name() {
     assert!(standing.jobs(Task::Permissions).is_empty());
 }
 
-/// ★★★ **Changing the password does not quietly unlock the drawing.**
+/// **Changing the password does not quietly unlock the drawing.**
 ///
 /// `set_permissions` re-derives `/O`, `/U`, `/OE`, `/UE` and `/Perms` from a
 /// whole `EncryptionSettings`, so a caller that did not pass the document's
@@ -372,7 +372,7 @@ fn removing_the_password_produces_a_file_that_opens_with_none() {
         "the /Encrypt dictionary is gone, not merely un-prompted"
     );
 
-    // ★ And the OPEN document is untouched — the whole of §2. The session the
+    // And the OPEN document is untouched — the whole of §2. The session the
     // operator is still looking at must still report itself as encrypted, or
     // its next incremental save would append plaintext to an encrypted base.
     let after = Standing::read(&doc.session, &doc.path);
@@ -384,7 +384,7 @@ fn removing_the_password_produces_a_file_that_opens_with_none() {
     let _ = std::fs::remove_file(&doc.path);
 }
 
-/// ★★★ **O119's third disclosure, enforced rather than merely printed: the
+/// **O119's third disclosure, enforced rather than merely printed: the
 /// USER password will not authorise a change.**
 ///
 /// And it comes back naming which password *did* open the file, which is the

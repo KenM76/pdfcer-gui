@@ -59,7 +59,7 @@ fn page_text(session: &EditSession) -> Vec<String> {
     .collect()
 }
 
-/// ★★★ **What does a `\n` inside a BOXED add-text become?**
+/// **What does a `\n` inside a BOXED add-text become?**
 ///
 /// Three outcomes are possible and they want three different responses from
 /// this shell, which is why the probe prints rather than asserts:
@@ -115,7 +115,7 @@ fn what_does_a_newline_become_in_a_boxed_add_text() {
 
 /// The control: the same box with a **space** where the newline was.
 ///
-/// ★ Without it, a failure above could be the fixture, the box, the origin or
+/// Without it, a failure above could be the fixture, the box, the origin or
 /// the size rather than the newline — and the report would name the wrong
 /// subject. This is the same control `glyphwall` and `facewall` both carry,
 /// for the same reason.
@@ -146,7 +146,7 @@ fn the_same_box_with_a_space_instead_of_a_newline() {
     }
 }
 
-/// ★★★ **THE RIGHT VERB — and the two probes above were aimed at the wrong one.**
+/// **THE RIGHT VERB — and the two probes above were aimed at the wrong one.**
 ///
 /// He said the **Markup** tool's Text box. That is not `add_text`, which
 /// appends a page-content run; it is `add_text_annotation` with a
@@ -161,7 +161,7 @@ fn the_same_box_with_a_space_instead_of_a_newline() {
 /// actually proved is that **the Edit-tab text box is fine and the Markup-tab
 /// one is not**, which narrows the subject rather than clearing it.
 ///
-/// ★ It also shows the extraction trap: a `"\n"` run appears between lines in
+/// It also shows the extraction trap: a `"\n"` run appears between lines in
 /// BOTH cases, including the control that contains no newline at all. That is
 /// extraction marking a line boundary, not a glyph. A probe that had only run
 /// the newline case would have read those as the defect.
@@ -192,7 +192,7 @@ fn what_does_a_newline_become_in_a_freetext_annotation() {
         match session.add_text_annotation(0, &spec) {
             Ok(id) => {
                 println!("\n=== {label}: ACCEPTED as {id:?} ===");
-                // ★★★ **The APPEARANCE stream, not the page text.**
+                // **The APPEARANCE stream, not the page text.**
                 //
                 use pdfcer_core::graph::ObjectGraph as _;
                 let graph = session.graph();

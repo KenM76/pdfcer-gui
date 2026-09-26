@@ -17,7 +17,7 @@ here. That is what confined "make printing work" to one module in
 August 2026, and it is worth keeping: see [`super`]'s header for the full
 reasoning, including why no arithmetic is ever mirrored.
 
-## ★ The rule that governs every capability query here
+## The rule that governs every capability query here
 
 **A query that answers "I do not know" is not a query that answered
 "no".** `pdfcer-print` was explicit about this when it declined this

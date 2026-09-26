@@ -4,7 +4,7 @@ and after it writes
 The copy for [`crate::dialogs::signature`] and for the two status-bar notes
 [`crate::app::save`] records once a file has been written.
 
-## ★★★ THE RULE THAT GOVERNS EVERY STRING IN THIS FILE
+## THE RULE THAT GOVERNS EVERY STRING IN THIS FILE
 
 **Nothing here may be invented.** This is claim-bearing copy about a
 security property of a legal artifact, and the engine that computes the
@@ -45,7 +45,7 @@ documentation forbids the second in terms: *"A front end that renders this
 as a reassurance is committing precisely the error §12.8.2.2.2's two-stage
 split exists to prevent. Pair it with the uncertainty, or say nothing."*
 
-## ★★ Why there are TWO wordings for one verdict
+## Why there are TWO wordings for one verdict
 
 `SignatureImpact::Invalidated` is reached on two different footings, and
 `SignatureImpact::documentation_basis` exists — in the engine's own words —
@@ -66,7 +66,7 @@ under-reporting is pdfcer making a silent claim about the integrity of a
 legal artifact.** So the copy must report the verdict *and* say whose
 verdict it is. [`basis_approval`] does both in one sentence.
 
-## ★★ Three things no string in this file is allowed to say
+## Three things no string in this file is allowed to say
 
 1. **That any other reader agrees.** The widely-repeated claim that Acrobat
    and the PAdES family report such a document as *"signed, but altered
@@ -76,7 +76,7 @@ verdict it is. [`basis_approval`] does both in one sentence.
    a real temptation — it is the most useful thing an operator could be
    told — and it is unsourced, which under the claim-bearing-copy rule
    settles it.
-2. **That a signature is valid, or verified, or checked.** ★★★ **The
+2. **That a signature is valid, or verified, or checked.** **The
    REASON changed on 2026-09-05 and the RULE did not, which is the only
    reason this entry is still here.** It used to rest on the engine's own
    opening line, *"This module verifies nothing"* — and that stopped being
@@ -90,7 +90,7 @@ verdict it is. [`basis_approval`] does both in one sentence.
    footnote that says so, and since 2026-09-05 it also names the surface
    that has the other answer instead of implying there is none.
 
-   ⇒ ★★ *This is the seventh recurrence of the project's most expensive
+   ⇒ *This is the seventh recurrence of the project's most expensive
    pattern.* The prohibition was right; its stated justification was a
    dated citation of another crate, and it expired silently. A rule that
    outlives its reason keeps passing its own tests.

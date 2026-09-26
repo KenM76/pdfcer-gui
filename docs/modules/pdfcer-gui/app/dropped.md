@@ -11,7 +11,7 @@ Only the first half was true. The Insert-image button works —
 did nothing, silently, with no cursor feedback on the way in. This module is
 the reading.
 
-## ★★ Why "does nothing" is worse here than almost anywhere else
+## Why "does nothing" is worse here than almost anywhere else
 
 Because drag-and-drop is the one gesture with **no discoverable
 alternative**. A missing menu item can be looked for; a missing chord can be
@@ -33,14 +33,14 @@ of them tells the operator anything.
 | a raster image with **no** document open | say so, and say what to do about it |
 | anything else | say what pdfcer accepts |
 
-★ **A dropped PDF opens rather than being inserted**, and that is the
+**A dropped PDF opens rather than being inserted**, and that is the
 decision most worth stating because the opposite is defensible. Every viewer
 in this class opens a dropped PDF; `pages.insert` is a deliberate act with a
 position and a page range, and inferring it from a drag would make the
 commonest gesture in the product do the rarer of two things. The operator who
 wants to insert has a command that asks them where.
 
-## ★ Why the drop is read where the ribbon is, and not in the canvas
+## Why the drop is read where the ribbon is, and not in the canvas
 
 `egui` reports drops on the **`Context`**, not on a widget — `RawInput`
 carries `dropped_files` for the whole window and nothing narrows it to a
@@ -49,7 +49,7 @@ the canvas would be reading a window-scoped fact in a page-scoped place: a
 drop on the ribbon or on a dock panel would be missed, and the operator would
 learn that the program accepts drops *sometimes*, which is worse than never.
 
-## ★★ This module is the FALLBACK, and it is handed its files
+## This module is the FALLBACK, and it is handed its files
 
 `OPERATOR_REQUESTS.md` O67 asks for a drop onto the **thumbnails** to
 import pages, which needs the one thing the paragraph above says does not
@@ -62,7 +62,7 @@ of the frame after every surface has had its chance, and it does not read
 `egui`'s input itself — it is handed the paths. Two readers of one
 `dropped_files` would each see it and each act.
 
-★ The fallback is unconditional, which is the safety property: a surface
+The fallback is unconditional, which is the safety property: a surface
 that forgets to claim costs a feature and never a file — the failure is
 *"it opened in a tab instead of inserting"*, which the operator can see and
 undo.

@@ -28,7 +28,7 @@ either block is **connected to a running window** — whether the panel draws
 them where an operator can read them. That is this file's whole subject, and
 it is standing rule R1.
 
-# ★★★ The control launch is the check, and it is a RECOVERED file
+# The control launch is the check, and it is a RECOVERED file
 
 The obvious control would have been a document with a sound index, which is
 what the neighbouring `load_anomalies` checks use. It would have been wrong

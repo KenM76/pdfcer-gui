@@ -14,7 +14,7 @@ never built, so the Style group rendered an empty caption.
 > The `Style` group sets defaults for the next markup. … Both must exist;
 > today only the first does, **which is why a placed markup feels final**.
 
-## ★ The seam was already named, and this took it
+## The seam was already named, and this took it
 
 `MarkupKind::rgb`'s doc comment predicted this module almost exactly:
 
@@ -46,7 +46,7 @@ belongs with the ribbon layout and the keymap, under the same `userdata/`
 roof and in their own file, which is `SHELL_FRAMEWORK.md`'s subject rather
 than this one's.
 
-## ★★★ EIGHT PENS, NOT TWO — and the argument that said otherwise is kept
+## EIGHT PENS, NOT TWO — and the argument that said otherwise is kept
 ## here, superseded rather than deleted
 
 
@@ -72,7 +72,7 @@ were sound at the time:
    Also true. Nothing about a per-kind palette makes an underline more
    legible over a drawing than the pen colour would.
 
-### ★★ Why it is superseded anyway
+### Why it is superseded anyway
 
 Because it answered the wrong question. It asked *"can this shell justify
 inventing eight colours?"* — and the answer to that is still no. The
@@ -90,7 +90,7 @@ the pen has to have. The style decision is not being made in code — it is
 being **transcribed from the program the operator compares against**, which
 is this project's standing tie-breaker for anything of this kind.
 
-★ Half of the old argument survives intact and is worth keeping: the values
+Half of the old argument survives intact and is worth keeping: the values
 must still be the operator's to override, and every slot below is. What
 changed is only where the *shipped* value comes from.
 

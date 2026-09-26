@@ -8,7 +8,7 @@ operator pressed Ctrl+S and the window disappeared.**
 Ken, 2026-09-01: *"can you try doing an edit and save? I did this and
 pressed ctrl+s to save and it closed."*
 
-## ★★★ Why the existing coverage could not see this
+## Why the existing coverage could not see this
 
 Three things already test parts of this and none of them tests **the thing
 that happened**:
@@ -23,7 +23,7 @@ that happened**:
 something to write. Each half was covered and the pair was not, which is the
 shape of nearly every defect this project has found by driving.
 
-## ★★ The oracle is that the process is ALIVE
+## The oracle is that the process is ALIVE
 
 Unusual, and the reason is what was reported. Every other check in this
 harness asks *"did the right trace line appear?"*; a program that has exited
@@ -38,7 +38,7 @@ diagnosis unambiguous:
 2. the process is still running **after** the chord;
 3. the save committed (`save-in-place outcome=ok`).
 
-★ If (2) fails, (3)'s absence is explained and must not be reported as
+If (2) fails, (3)'s absence is explained and must not be reported as
 *"the save did nothing"*. Getting that order wrong would turn a crash into a
 silent-verb report and send a reader to the wrong module entirely.
 

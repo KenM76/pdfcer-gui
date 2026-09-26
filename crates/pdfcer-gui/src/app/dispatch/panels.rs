@@ -9,7 +9,7 @@ use crate::app::PdfcerApp;
 
 /// The command ids this module claims.
 ///
-/// ★★ A **free function** taking `id`, and that shape is required rather
+/// A **free function** taking `id`, and that shape is required rather
 /// than preferred. `shell::commands::reach` parses `dispatch.rs`'s syntax
 /// tree to work out which commands each guard arm claims, and it can only
 /// read a guard that calls a named function with `id` — a method call on
@@ -67,7 +67,7 @@ impl PdfcerApp {
     /// a fixed list of literals rather than a predicate.
     pub(in crate::app) fn dispatch_panel_layout(&mut self, id: &str) -> bool {
         match id {
-            // ★★ **Float** — tear the right-clicked panel out into a
+            // **Float** — tear the right-clicked panel out into a
             // window.
             //
             // `DockLayout::float` answers `false` for a panel that is not
@@ -112,7 +112,7 @@ impl PdfcerApp {
                 });
                 true
             }
-            // ★ **Close** — one verb for both states.
+            // **Close** — one verb for both states.
             //
             // `DockLayout::close` handles a floating panel by removing its
             // float entry, and a docked one by removing its tab and
@@ -138,7 +138,7 @@ impl PdfcerApp {
                 });
                 true
             }
-            // ★★★ **Dock all** — the recovery verb, and it takes no
+            // **Dock all** — the recovery verb, and it takes no
             // operand.
             //
             // It takes none deliberately: the state it exists to recover
@@ -164,18 +164,18 @@ impl PdfcerApp {
                 });
                 true
             }
-            // ★★★ THE TWO AUTO-HIDE TOGGLES. See `egui_shell::peek` for the
+            // THE TWO AUTO-HIDE TOGGLES. See `egui_shell::peek` for the
             // interaction model and for the R128 bound that keeps it out of a
             // feedback loop.
             //
-            // ★★ Each writes the PREFERENCE and lets the frame loop push it
+            // Each writes the PREFERENCE and lets the frame loop push it
             // into the shell, rather than calling `set_auto_hide` here. The two
             // routes would otherwise disagree the moment a preferences file is
             // reloaded: `RibbonState::sync_auto_hide` runs every frame and
             // would immediately undo a shell-only change. One source of truth,
             // and it is the one that survives a restart.
             //
-            // ★ `save_prefs` rather than a dirty flag, for the reason
+            // `save_prefs` rather than a dirty flag, for the reason
             // `view.smart_select`'s arm gives: a setting the operator changed
             // from a control and lost on a crash is a control that reports
             // having done something it did not do.
@@ -233,7 +233,7 @@ mod tests {
         )
     }
 
-    /// ★★★ **The guard and the dispatcher claim exactly the same ids.**
+    /// **The guard and the dispatcher claim exactly the same ids.**
     ///
     /// Two lists, one obligation. `claims` is what
     /// `shell::commands::reach` reads out of `dispatch.rs` to decide these
@@ -260,7 +260,7 @@ mod tests {
         }
     }
 
-    /// ★★ **Every panel this build can draw can be floated and docked
+    /// **Every panel this build can draw can be floated and docked
     /// back**, and the round trip is the identity.
     ///
     /// A sweep rather than one case, because the failure this guards
@@ -296,7 +296,7 @@ mod tests {
                 "{} could not be docked back",
                 panel.command_id()
             );
-            // ★ Every panel's ADDRESS, not the whole value. The one field
+            // Every panel's ADDRESS, not the whole value. The one field
             // that legitimately differs is `Stack::active`: `dock_back`
             // activates the panel it just returned, because docking a window
             // into a stack and leaving it behind another tab is a command
@@ -324,7 +324,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **A floated panel is still reported as on screen**, which is
+    /// **A floated panel is still reported as on screen**, which is
     /// what `PdfcerApp::toggle_panel` reads to decide whether choosing it
     /// from View ▸ Panels should open it or put it away.
     ///
@@ -358,7 +358,7 @@ mod tests {
         );
     }
 
-    /// ★★ **Closing the last panel on a side leaves no dead column and no
+    /// **Closing the last panel on a side leaves no dead column and no
     /// unreachable state.**
     ///
     /// The right dock holds exactly one panel in this sample. Closing it

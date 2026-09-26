@@ -434,7 +434,7 @@ pub struct DockLayout {
     pub left: SideLayout,
     /// The trailing-edge dock.
     pub right: SideLayout,
-    /// ★★★ **The panels that are not in either dock, because the operator
+    /// **The panels that are not in either dock, because the operator
     /// floated them.**
     ///
     /// A floated panel is **removed from its side** and listed here. It is
@@ -445,7 +445,7 @@ pub struct DockLayout {
     /// a size, and the place it came from — is exactly
     /// [`super::float::FloatingPanel`], and nothing else.
     ///
-    /// ★★ **The invariant that makes the two representations safe to hold
+    /// **The invariant that makes the two representations safe to hold
     /// at once: a panel is in exactly one of them.** A panel both mounted
     /// on a side and listed here would be drawn twice in one frame, in two
     /// windows, from two `Ui`s that each believe they own it — and
@@ -454,7 +454,7 @@ pub struct DockLayout {
     /// [`Self::panels`] counts both lists so that `contains`, `mount` and
     /// `unregistered_panels` cannot be fooled by a panel that is floating.
     ///
-    /// ★ `#[serde(default)]` on the struct is what makes this field
+    /// `#[serde(default)]` on the struct is what makes this field
     /// backward-compatible with every `layout.ron` written before it
     /// existed: an old file simply has no floats, which is the truth.
     pub floating: Vec<super::float::FloatingPanel>,
@@ -507,7 +507,7 @@ impl DockLayout {
     /// Every panel this layout holds — **docked or floating** — in layout
     /// order, floats last.
     ///
-    /// ★★ The floats are included, and that is the whole reason this is
+    /// The floats are included, and that is the whole reason this is
     /// worth a doc comment. Three consumers depend on it and all three
     /// would be wrong without it:
     ///
@@ -612,7 +612,7 @@ impl DockLayout {
     /// meaning "select its tab inside a dock you cannot see" is a command
     /// that from the operator's side did nothing at all.
     pub fn activate(&mut self, panel: &PanelId) -> bool {
-        // ★★ A floating panel is already the only thing in its window, so
+        // A floating panel is already the only thing in its window, so
         // there is no tab to select and no side to reveal — but the answer
         // is `true`, not `false`. `false` means *"not mounted, fall back
         // to mounting it"*, and falling back here would put a second copy
@@ -639,7 +639,7 @@ impl DockLayout {
     /// what becomes active afterwards is [`DockLayout::take_panel`], which
     /// carries that rule; this verb is that plus the pruning.
     pub fn close(&mut self, panel: &PanelId) -> bool {
-        // ★★★ **Closing a FLOATING panel is a close, not a dock-and-close.**
+        // **Closing a FLOATING panel is a close, not a dock-and-close.**
         //
         // The operator pressed a close control on a window; the panel goes
         // away and its float entry goes with it. A leaked entry would be
@@ -667,7 +667,7 @@ impl DockLayout {
     ///
     /// Returns whether the tab order actually changed.
     ///
-    /// # ★ `gap` is a boundary, and the conversion to an index is the whole
+    /// # `gap` is a boundary, and the conversion to an index is the whole
     /// body
     ///
     /// `0` is before the first tab; `tabs.len()` is after the last. The tab is
@@ -678,7 +678,7 @@ impl DockLayout {
     /// correctly and a tab dragged rightwards stops one short — which reads as
     /// a sticky drag rather than as a bug in arithmetic.
     ///
-    /// # ★ The active tab is preserved by IDENTITY, not by index
+    /// # The active tab is preserved by IDENTITY, not by index
     ///
     /// [`Stack::active`] is an index, so reordering moves it under the panel it
     /// names. Remembering the active `PanelId` across the move and looking it up
@@ -804,7 +804,7 @@ impl DockLayout {
             }
             s.columns.retain(|c| !c.stacks.is_empty());
         }
-        // ★ AFTER the sides, and the order is load-bearing: the duplicate
+        // AFTER the sides, and the order is load-bearing: the duplicate
         // rule below drops a float whose panel is also docked, and "also
         // docked" has to be asked of the tree *after* the tree has had its
         // own duplicates removed. Asking first would let a panel mounted
@@ -1049,7 +1049,7 @@ mod tests {
         layout.reorder_tab(DockSide::Left, 0, 0, from, gap)
     }
 
-    /// ★ **A gap is a boundary, and a rightward move loses one to it.**
+    /// **A gap is a boundary, and a rightward move loses one to it.**
     ///
     /// Dropping tab 0 at gap 3 lands it at index 2, not 3, because removing it
     /// shifts every tab to its right down by one. Testing both directions in
@@ -1093,7 +1093,7 @@ mod tests {
         }
     }
 
-    /// ★★ **The visible panel is preserved by identity, not by index.**
+    /// **The visible panel is preserved by identity, not by index.**
     ///
     /// The bug this refuses is silent and looks like the dock switching panels
     /// on its own: leave `Stack::active` as an integer across a reorder and
@@ -1229,7 +1229,7 @@ mod tests {
         assert!(layout.is_active(&PanelId::new("b")));
     }
 
-    /// ★ **A panel cannot be mounted twice.**
+    /// **A panel cannot be mounted twice.**
     ///
     /// Two live copies of one surface each have their own scroll position
     /// and their own idea of which tab is active, and `activate` raises

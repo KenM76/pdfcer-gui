@@ -1,10 +1,10 @@
 //! # `pagetree::tests` — and the one shape that would make all of them vacuous
 //!
-//! ★★★ **A test on a FLAT page tree defeats this entire module.**
+//! **A test on a FLAT page tree defeats this entire module.**
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/pagetree/tests.md`.
 
-// ★ The INNER `#![cfg(test)]` is redundant — the module is declared
+// The INNER `#![cfg(test)]` is redundant — the module is declared
 // `#[cfg(test)] mod tests;` — and it is here for two gates that recognise a
 // test-only FILE by exactly this attribute rather than by its name:
 // `tools/gates/check-ui-strings.sh` exclusion 2, and
@@ -117,7 +117,7 @@ fn a_healthy_nested_tree_is_consistent() {
     assert!(audit.is_consistent(), "{audit:?}");
 }
 
-/// ★★★ **A stale ROOT above a CORRECT immediate parent is caught.**
+/// **A stale ROOT above a CORRECT immediate parent is caught.**
 ///
 /// The single assertion this module exists for, and the one a flat fixture is
 /// structurally incapable of making. `A1` declares 1 and holds 1 — correct, as
@@ -251,7 +251,7 @@ fn a_kids_cycle_terminates() {
     assert_eq!(audit.reachable_pages, 1);
 }
 
-/// ★★ **A node whose whole subtree was removed is caught** — the case §5 says
+/// **A node whose whole subtree was removed is caught** — the case §5 says
 /// `PageSlot::ancestors` structurally cannot see.
 ///
 /// `A1` has an empty `/Kids` and still declares 2. It appears in no
@@ -300,7 +300,7 @@ fn the_real_clean_file_is_consistent() {
     assert_eq!(audit.reachable_pages, 12);
     assert_eq!(audit.declared_pages, Some(12));
     assert!(audit.is_consistent(), "{audit:?}");
-    // ★★★ THE FIXTURE MUST BE NESTED. Seven `/Pages` nodes, three levels. A
+    // THE FIXTURE MUST BE NESTED. Seven `/Pages` nodes, three levels. A
     // flat replacement would leave every positive control in this file passing
     // against a build whose walk never goes above the immediate parent, which
     // is the exact defect. Asserted here rather than trusted from the
@@ -334,7 +334,7 @@ fn nodes_walked(doc: &Document) -> usize {
     n
 }
 
-/// ★★★ **The real corrupt file is caught** — the positive control that is not
+/// **The real corrupt file is caught** — the positive control that is not
 /// a hand-made imitation.
 ///
 /// The bytes under test are produced here, at test time, by
@@ -343,7 +343,7 @@ fn nodes_walked(doc: &Document) -> usize {
 /// reaches. So this test asserts that the guard catches what the writer
 /// actually does, not what this module's author believed it does.
 ///
-/// ★★ It is written to **skip loudly rather than fail** if the engine is ever
+/// It is written to **skip loudly rather than fail** if the engine is ever
 /// fixed. The day `pdfcer-core` walks the ancestor chain, this document comes
 /// out consistent and the assertion below would go red on a *repaired* engine —
 /// turning the fix into a broken build. The skip prints the fact instead, and

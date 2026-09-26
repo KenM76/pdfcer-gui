@@ -23,7 +23,7 @@
 //! both are pure functions over a manifest — no `Ui`, no window, fully
 //! testable.
 //!
-//! # ★ Why the active-tab fallback is a correctness rule, not a nicety
+//! # Why the active-tab fallback is a correctness rule, not a nicety
 //!
 //! Switching from Edit to Read removes five tabs. If the operator was on
 //! Measure, the active tab no longer exists. Three things could happen:
@@ -41,7 +41,7 @@
 //! same frame. `an_active_tab_that_disappears_falls_back_to_the_first`
 //! pins both cases.
 //!
-//! # ★ R84: colour is never the only cue
+//! # R84: colour is never the only cue
 //!
 //! The project's standing rule is that state is never carried by colour
 //! alone. An active tab that differs only by fill is invisible to a
@@ -181,21 +181,21 @@ pub fn tab_cues(active: bool) -> TabCues {
 ///   presence is decided by application state rather than by
 ///   configuration, which is exactly why [`Shell::contextual_tabs`] is a
 ///   separate field.
-/// - **★★★ A tab with nothing left to show is not shown.** The rule that
+/// - **A tab with nothing left to show is not shown.** The rule that
 ///   comes with [`crate::manifest::Item`]'s `visible_when`, and the symmetric
 ///   completion of the band's own — *a group with nothing left is not drawn at
 ///   all*. Without it the two halves disagree: hide every item on a tab and
 ///   the groups all vanish, leaving a tab an operator can click and an empty
 ///   band beneath it.
 ///
-///   ★ It is also what makes a **generous tab list** safe, which is the point.
+///   It is also what makes a **generous tab list** safe, which is the point.
 ///   A mode can name a tab it only sometimes needs, hide the items that do not
 ///   apply, and the tab appears exactly when it has something to offer. That
 ///   turns `Mode::tabs` from *"which tabs exist here"* into *"which tabs may
 ///   appear here"*, and it is the mechanism by which a command can live on the
 ///   tab it belongs on rather than the tab a mode happened to be granted.
 ///
-///   ★★ A tab whose items carry **no conditions at all** is never affected:
+///   A tab whose items carry **no conditions at all** is never affected:
 ///   the question asked is *"is every item conditioned away?"*, and an
 ///   unconditioned item answers no. So this cannot hide a tab that a manifest
 ///   written before conditions existed would have shown.
@@ -245,7 +245,7 @@ pub(crate) fn visible_tabs<'a>(
 
 /// Whether any item on `tab` is visible under `conditions`.
 ///
-/// ★ **A tab with no groups, or groups with no items, is `true`.** That is
+/// **A tab with no groups, or groups with no items, is `true`.** That is
 /// deliberate and is not the case this rule is about: an empty tab is a
 /// manifest under construction, and hiding it would make a half-written
 /// manifest look like a working one with a missing feature. What this
@@ -362,7 +362,7 @@ fn draw_tab(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, tab: &Tab, is_active: bool) ->
     let cues = tab_cues(is_active);
     let label = tab_label(tab);
 
-    // ★ The active tab's plate and label are painted from the CHROME roles,
+    // The active tab's plate and label are painted from the CHROME roles,
     // not from `egui`'s selection visuals. See `DEFECTS.md` D10's second
     // half.
     //
@@ -388,7 +388,7 @@ fn draw_tab(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, tab: &Tab, is_active: bool) ->
     // rather than hand-painting preserves the inactive tab's *unplated* look,
     // the truncation promise, the sizing and the `Response`; only the two
     // colours are taken back.
-    // ★ WEIGHT AND COLOUR ARE ONE DECISION, and `.strong()` is unreachable
+    // WEIGHT AND COLOUR ARE ONE DECISION, and `.strong()` is unreachable
     // without the colour that makes it legible.
     //
     // Written as two independent `if`s — one on `emphasised_text`, one on
@@ -436,7 +436,7 @@ fn draw_tab(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, tab: &Tab, is_active: bool) ->
     }
     let response = ui.add(button);
 
-    // ★ R84's non-colour cue. Painted rather than themed, because a
+    // R84's non-colour cue. Painted rather than themed, because a
     // fill is a colour and a rule under the label is a shape — the
     // whole reason both exist. Drawn at the bottom of the tab's own
     // rect so it moves with the tab and cannot drift out of
@@ -522,14 +522,14 @@ pub(crate) fn strip_underline(ui: &mut egui::Ui, ctx: &Ctx<'_>) {
 #[cfg(test)]
 mod tests {
     use crate::manifest::Item;
-    /// ★★★ **A tab every one of whose items is conditioned away is not
+    /// **A tab every one of whose items is conditioned away is not
     /// shown at all.**
     ///
     /// The symmetric completion of the band's *"a group with nothing left is
     /// not drawn"*. Without it the two disagree, and the operator gets a tab
     /// they can click with an empty band beneath it.
     ///
-    /// ★ This is also the rule that makes a **generous tab list** safe, which
+    /// This is also the rule that makes a **generous tab list** safe, which
     /// is the point of having it: a mode can name a tab it only sometimes
     /// needs and the tab appears exactly when it has something to offer. It is
     /// what lets a command live on the tab it belongs on rather than on the tab
@@ -570,7 +570,7 @@ mod tests {
         );
     }
 
-    /// ★★ A manifest that never uses conditions is untouched by the rule.
+    /// A manifest that never uses conditions is untouched by the rule.
     ///
     /// The guard that makes it safe to add to a shipped shell: the question
     /// asked is *"is every item conditioned away?"*, and an unconditioned item
@@ -744,7 +744,7 @@ mod tests {
         );
     }
 
-    /// **★ An active tab that disappears falls back to the first visible
+    /// **An active tab that disappears falls back to the first visible
     /// one, in the same frame.**
     ///
     /// Two ways a tab disappears while active: the operator switches to a
@@ -797,7 +797,7 @@ mod tests {
         );
     }
 
-    /// **★ R84: the active tab differs from an inactive one by more than
+    /// **R84: the active tab differs from an inactive one by more than
     /// colour.**
     ///
     /// A fill-only cue is invisible to a colour-blind operator, invisible

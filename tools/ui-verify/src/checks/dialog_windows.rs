@@ -15,7 +15,7 @@ const INVOKE_ENV: &str = "PDFCER_DIAG_INVOKE";
 /// Every dialog reachable by a command id, as `(command, what the operator
 /// calls it)`.
 ///
-/// ★ The second element is for the failure message and is deliberately the
+/// The second element is for the failure message and is deliberately the
 /// operator's word rather than the module name: a report that says *"Export to
 /// DXF opened inside the application window"* is actionable to whoever reads
 /// it, and `export_dxf.rs` is not.
@@ -110,7 +110,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             }
             None => failures.push((*name).to_owned()),
         }
-        // ★ Also reported: a fit that ran. `Host::fit` grows a window whose
+        // Also reported: a fit that ran. `Host::fit` grows a window whose
         // body overflowed it, and a dialog that needs one on every open is a
         // dialog whose declared size is wrong — worth knowing even though it
         // is not a failure, because the operator sees the window jump.

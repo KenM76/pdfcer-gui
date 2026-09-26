@@ -10,7 +10,7 @@ the whole life of the project**, behind a `SCAFFOLDED` entry whose stated
 premise had expired and whose real blocker was in no register at all. It was
 wired on 2026-08-28, and this is the check that keeps it wired.
 
-## ★★★ The oracle is `missing_after=0`, not "a dialog appeared"
+## The oracle is `missing_after=0`, not "a dialog appeared"
 
 Almost every link in this chain can be satisfied by a build that does
 nothing. The window opens on a plan; a plan can be empty; an empty plan
@@ -28,7 +28,7 @@ engine's own `missing_after` — *"the end state the whole feature exists to
 reach"*, in `EmbedPlan`'s own words. This check drives the real gesture and
 asserts that it reaches zero.
 
-## ★★★ Why `PDFCER_DIAG_FONT_DIR` exists, and why it APPENDS
+## Why `PDFCER_DIAG_FONT_DIR` exists, and why it APPENDS
 
 Embedding needs a folder of font files, and in the product that folder comes
 from a preference an operator sets in Settings and pdfcer stores in
@@ -42,14 +42,14 @@ half: a variable that replaced the preference would let this check pass on a
 build whose preference plumbing was broken end to end, because the harness
 would then be testing its own environment variable.
 
-## ★★ Why the fixture is `a1-titleblock.pdf`, and what it proves that a
+## Why the fixture is `a1-titleblock.pdf`, and what it proves that a
 synthetic one would not
 
 It asks for `Helvetica`, `Helvetica-Bold` and `Helvetica` again, on three
 surfaces, with no program for any of them — which is what every CAD exporter
 writes and is the exact case this feature exists for.
 
-★ **No Windows machine has a font called Helvetica.** So this fixture cannot
+**No Windows machine has a font called Helvetica.** So this fixture cannot
 be embedded at all unless the resolver's *alias* rung works, and a passing
 run is therefore evidence for a claim no unit test in this project can make:
 that `pdfcer_render::FontEnvironment`'s standard-14 equivalence is reached

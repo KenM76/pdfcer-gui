@@ -28,7 +28,7 @@ photographed.
 | 4 | is it a COPY rather than the content? | the same, destination against source |
 | 5 | did it come from the right part of the texture? | [`pixels::ink_run_into`], coverage compared |
 
-★★ **The order of 3 and 4 is load-bearing, and it was got wrong first.**
+**The order of 3 and 4 is load-bearing, and it was got wrong first.**
 Question 4 measures the copy against the source, so it is only meaningful
 while the source is what it was. A build that washed the un-moved line
 while a move was in flight was caught — but by question 4, which named it
@@ -44,7 +44,7 @@ the strict interior separates lettering from a box. Every region here is
 inset by [`INSET_PX`] on all four edges for that reason, and the source
 region is inset by the same amount so the two are comparable.
 
-★ **Question 3 is the R8b assertion and it is the reason this check
+**Question 3 is the R8b assertion and it is the reason this check
 measures the source twice.** *Fuzzy, never sneaky* forbids marking applied
 content: a document being dragged must render exactly as the saved document
 will render, with no tint, dashed outline or provisional layer over the

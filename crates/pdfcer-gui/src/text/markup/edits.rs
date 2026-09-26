@@ -10,7 +10,7 @@
 //!
 //! Re-exported by [`super`], so a caller names `crate::text::markup::<item>` for
 //! both halves and the split is invisible to it.
-/// ★ **What went with it** — the collateral of deleting one annotation.
+/// **What went with it** — the collateral of deleting one annotation.
 ///
 /// # Why a deletion needs to say anything at all
 ///
@@ -29,7 +29,7 @@
 /// Rule 4, in its second clause: pdfcer did something the operator did not ask
 /// for, so pdfcer says so, off-canvas, in words.
 ///
-/// # ★ What this deliberately does NOT say
+/// # What this deliberately does NOT say
 ///
 /// **That the content is gone from the file.** It is not: deleting an
 /// annotation removes an entry from `/Annots` and does not touch page content,
@@ -78,7 +78,7 @@ pub fn deleted_collateral(
 
 /// Disclosure: the annotation moved and its pop-up note did not.
 ///
-/// ★★★ **The one consequence of a move that this program cannot show.** §12.5.6.14
+/// **The one consequence of a move that this program cannot show.** §12.5.6.14
 /// makes a pop-up a separate annotation with its own placement and leaves to the
 /// reader whether it follows; `pdfcer-core` reports the object it left behind and
 /// says the decision is the shell's.
@@ -87,7 +87,7 @@ pub fn deleted_collateral(
 /// perfectly visible in Acrobat — which is Rule 4's surviving half in its
 /// purest form: render normally, report separately, both.
 ///
-/// ★ It says pdfcer did **not** move it, rather than offering to. Moving it
+/// It says pdfcer did **not** move it, rather than offering to. Moving it
 /// would be a second undo entry for something the operator cannot see, and a
 /// gesture that produces two entries is one `Ctrl+Z` away from a state nobody
 /// can explain.
@@ -100,12 +100,12 @@ pub fn popup_left_behind() -> String {
 
 /// Disclosure: the border width did not scale with the shape.
 ///
-/// ★★★ The engine asks for this sentence by name — *"an operator who scaled a
+/// The engine asks for this sentence by name — *"an operator who scaled a
 /// square 3× and expected a heavier border needs telling it stayed"* — and it is
 /// Rule 4's surviving half in its purest form: the shape grew around the border
 /// and **nothing on the canvas says the border did not grow with it**.
 ///
-/// ★★ It states the default as a **choice**, not as a limitation, because it is
+/// It states the default as a **choice**, not as a limitation, because it is
 /// one: on a CAD drawing a line weight is a drafting standard rather than
 /// decoration, which is this project's own argument and the one the engine
 /// promoted into the rule that decides every future case — *is the property a
@@ -120,13 +120,13 @@ pub fn stroke_width_unchanged() -> String {
 /// Disclosure: a foreign appearance was scaled unevenly and its stroke is now
 /// anisotropic.
 ///
-/// ★★★ Not a defect and not pdfcer's choice — an arithmetic limit. **Neither PDF
+/// Not a defect and not pdfcer's choice — an arithmetic limit. **Neither PDF
 /// nor SVG has a per-axis stroke width**: both are scalars, so a stroke drawn
 /// through a matrix applied *after* stroking cannot keep an even thickness under
 /// a non-uniform scale. Inkscape closed the identical report **Invalid** and
 /// silently produces the distorted stroke.
 ///
-/// ★★ pdfcer says so instead, which is the whole difference. The operator can see
+/// pdfcer says so instead, which is the whole difference. The operator can see
 /// the result — a border thicker on one axis — and cannot see *why*, so the
 /// sentence names the cause and the remedy: drag a corner with Shift held, or
 /// accept it.
@@ -137,7 +137,7 @@ pub fn appearance_distorted() -> String {
         .to_owned()
 }
 
-/// ★★★ **A SECOND COPY OF THE COMMENT WAS REMOVED** — the disclosure for
+/// **A SECOND COPY OF THE COMMENT WAS REMOVED** — the disclosure for
 /// `MarkupNoteChange::rich_text_dropped` (`pdfcer-core`, 2026-09-08).
 ///
 /// # What actually happened, because the operator cannot possibly guess it
@@ -173,11 +173,11 @@ pub fn appearance_distorted() -> String {
 /// so. A sentence that opened *"pdfcer removed something"* would read as a
 /// loss.
 ///
-/// ★ It names the **formatting**, not the keys. `/RC` and `/DS` mean nothing
+/// It names the **formatting**, not the keys. `/RC` and `/DS` mean nothing
 /// to a drawing-office reviewer, and the only consequence they can act on is
 /// that a comment they had styled somewhere else is now plain.
 ///
-/// ★★ `None` on the ordinary case, which is nearly every comment: pdfcer's own
+/// `None` on the ordinary case, which is nearly every comment: pdfcer's own
 /// annotations never carry `/RC`, so this fires only on a note that arrived
 /// from Acrobat or another rich-text editor. A disclosure that fired on every
 /// edit is one nobody reads by the third time — the same rule
@@ -199,7 +199,7 @@ pub fn rich_text_dropped(keys: &[String]) -> Option<String> {
 /// **Disclosure: the words this note used to carry, on the case where a save
 /// overwrote them.**
 ///
-/// ★★★ Rule 4's surviving half, and `pdfcer-core` commissioned this sentence
+/// Rule 4's surviving half, and `pdfcer-core` commissioned this sentence
 /// itself: *"those words are gone from the document and nothing on the page
 /// shows that they were ever there"*. A shape does not change when its note
 /// does. A sticky's words live in a pop-up window this shell does not draw. So
@@ -207,14 +207,14 @@ pub fn rich_text_dropped(keys: &[String]) -> Option<String> {
 /// with **no visible consequence at all** — which is precisely the class this
 /// project's disclosure rule exists for.
 ///
-/// ★★ It carries **the text, not a count**, because the engine chose to return
+/// It carries **the text, not a count**, because the engine chose to return
 /// the text and said why: a count lets a shell *mention* the loss, and the text
 /// lets it *offer the words back*. They are on the status line for as long as
 /// the edit epoch holds, so an operator who overwrote the wrong comment can
 /// read what was there and retype it — `Ctrl+Z` restores it outright, and this
 /// is the surface that tells them there is something to undo.
 ///
-/// ★ `None` when the annotation had no note, which is the ordinary case for
+/// `None` when the annotation had no note, which is the ordinary case for
 /// every shape this shell draws: a disclosure that fires on every save is one
 /// nobody reads by the third time. Same rule as [`deleted_collateral`].
 ///
@@ -252,7 +252,7 @@ pub fn note_replaced(previous: &str) -> Option<String> {
 /// the markup on the page looking exactly as it did — so this fires even for a
 /// short note and never returns `None` for a note that had words.
 ///
-/// ★ It says the markup itself stayed, because that is the thing an operator
+/// It says the markup itself stayed, because that is the thing an operator
 /// pressing a button labelled *Remove note* most reasonably fears they have
 /// just done, and the canvas cannot answer it: a shape with a note and the same
 /// shape without one are the same picture.
@@ -280,7 +280,7 @@ pub fn note_removed(previous: &str) -> Option<String> {
 // BEFORE the click: why Delete is not offered, and what it would take with it
 // ---------------------------------------------------------------------------
 
-/// ★★★ **Why the Delete control is absent for the selected annotation** —
+/// **Why the Delete control is absent for the selected annotation** —
 /// `EditSession::annotation_deletion_refusal` answered `Some` (R83).
 ///
 /// # The defect this closes, stated as it was found
@@ -299,7 +299,7 @@ pub fn note_removed(previous: &str) -> Option<String> {
 /// annotation kind along, and it was found the same way: by asking what the
 /// engine offers rather than by re-reading this shell.
 ///
-/// # ★★ Why an enum rather than one sentence
+/// # Why an enum rather than one sentence
 ///
 /// Because the two reachable causes are **different facts about the operator's
 /// file** and only one of them is about a signature. An encrypted drawing and a
@@ -312,7 +312,7 @@ pub fn note_removed(previous: &str) -> Option<String> {
 /// the same reason: a `_ =>` that silently swallows a mistyped variant name
 /// turns an instruction back into a dead end and the compiler stays happy.
 ///
-/// # ★★★ What none of these sentences does is offer a remedy it cannot back
+/// # What none of these sentences does is offer a remedy it cannot back
 ///
 /// The forms twin ends *"the values in it can still be filled in and changed"*,
 /// which is true and checkable: `fill_refusal` allows at `/P 2` where
@@ -330,21 +330,21 @@ pub enum AnnotDeleteRefusal {
     /// The document carries `/Encrypt` (§7.6) — `EditError::DocumentEncrypted`,
     /// the engine's first guard.
     ///
-    /// ★ Reachable on an entirely ordinary file: plenty of drawing sets ship
+    /// Reachable on an entirely ordinary file: plenty of drawing sets ship
     /// with an owner password set for printing, and nothing on the canvas says
     /// so.
     Encrypted,
     /// An enforced certification signature whose `/P` is below 3 (§12.8.2.2
     /// Table 254) — `EditError::CertificationForbidsChange`.
     ///
-    /// ★ Table 254 makes `/P` **Optional with default 2**, so a certified
+    /// Table 254 makes `/P` **Optional with default 2**, so a certified
     /// document that states no permission at all lands here — absence is
     /// permissive relative to `P = 1` and not relative to `P = 3`. The
     /// permission number is deliberately **not** carried into the wording:
     /// `1` and `2` refuse for the same reason and leave the operator nothing to
     /// do differently, so printing it would be jargon in place of a fact.
     ///
-    /// ★★ `P = 3` is the row this query exists for and it does **not** land
+    /// `P = 3` is the row this query exists for and it does **not** land
     /// here: that is the comment-review certification, where a document was
     /// signed precisely so reviewers could annotate it, and the annotation gate
     /// allows it where the general structural gate would not.
@@ -383,7 +383,7 @@ impl AnnotDeleteRefusal {
 /// **Why the Delete control is absent for THIS annotation** — §12.5.3 Table 165
 /// bit 8, the `Locked` flag.
 ///
-/// # ★★ Why this is a free function and not a fourth [`AnnotDeleteRefusal`]
+/// # Why this is a free function and not a fourth [`AnnotDeleteRefusal`]
 /// variant
 ///
 /// Because it comes from a different place and has a different scope. Every
@@ -393,7 +393,7 @@ impl AnnotDeleteRefusal {
 /// `crate::panels::properties::annotdelete::refusal_for` — a total match over
 /// `EditError` — answerable for a variant no `EditError` produces.
 ///
-/// # ★★★ It is the more actionable of the two facts, and that is why it wins
+/// # It is the more actionable of the two facts, and that is why it wins
 ///
 /// A certified document and a locked annotation can both be true at once, and
 /// the gate checks this one **first**. An operator told *"this comment is marked
@@ -403,7 +403,7 @@ impl AnnotDeleteRefusal {
 /// both are true, the sentence that leaves the operator with a next step is the
 /// one worth saying.
 ///
-/// ★ It says *"the file marks"*, not *"pdfcer will not"*. §12.5.3's `Locked` is a
+/// It says *"the file marks"*, not *"pdfcer will not"*. §12.5.3's `Locked` is a
 /// statement the **producer** wrote into the annotation, and this shell honours
 /// it rather than imposing it. Wording it as pdfcer's decision would send an
 /// operator looking for a pdfcer setting to turn it off.
@@ -413,7 +413,7 @@ pub const fn annot_delete_locked() -> &'static str {
      offer to delete it. Other comments on this page may still be deleted."
 }
 
-/// ★★★ **What deleting the selected annotation would take with it**, said
+/// **What deleting the selected annotation would take with it**, said
 /// *before* the click — `EditSession::annotation_deletion_preview`.
 ///
 /// # The future-tense twin of [`deleted_collateral`], and why they live together
@@ -428,7 +428,7 @@ pub const fn annot_delete_locked() -> &'static str {
 /// `annotation_deletion_preview` and `delete_annotation` precisely so that
 /// *"the warning cannot disagree with the act."*
 ///
-/// # ★★ Why this is worth showing at all, in the engine's own words
+/// # Why this is worth showing at all, in the engine's own words
 ///
 ///
 /// A reply three rows down a scrolled Comments list is not visible, and this
@@ -438,7 +438,7 @@ pub const fn annot_delete_locked() -> &'static str {
 /// is while the annotation is selected and before the key goes down, which is
 /// where the panel puts it.
 ///
-/// # ★ It returns `None` far more often than not, and that is the design
+/// # It returns `None` far more often than not, and that is the design
 ///
 /// The overwhelmingly common annotation has no pop-up, no replies and no group,
 /// and there is nothing whatever to say about deleting it. A sentence that
@@ -446,7 +446,7 @@ pub const fn annot_delete_locked() -> &'static str {
 /// for ever after — which is the failure mode that makes the *interesting* case
 /// invisible. R9: nothing to say renders nothing.
 ///
-/// ★★ **It does not say "removed" and it does not mention the file.** Deleting
+/// **It does not say "removed" and it does not mention the file.** Deleting
 /// an annotation takes an entry out of `/Annots`; it does not touch page
 /// content, and an incremental save leaves the previous revision in the file.
 /// `docs/core-api/03-capabilities.md` §3.4 — *"delete is not redaction"* — and
@@ -494,7 +494,7 @@ pub fn deletion_would_take(
 
 /// **The operator's word for a shape**, which is not always the PDF name.
 ///
-/// ★★ A mapping and not a passthrough, and each row is a place the file's
+/// A mapping and not a passthrough, and each row is a place the file's
 /// vocabulary and the operator's disagree:
 ///
 /// | `/Subtype` | what pdfcer's own ribbon calls it |
@@ -529,7 +529,7 @@ pub enum ShapeWord {
 
 /// **Why a node edit did not happen**, in the shell's own vocabulary.
 ///
-/// ★ `Copy` and fieldless-payloaded, because [`crate::app::status`]'s decline
+/// `Copy` and fieldless-payloaded, because [`crate::app::status`]'s decline
 /// store is `Copy` and its `line()` returns `&'static str`. That constraint is
 /// the reason no sentence here quotes a *number* — a floor of 3 for a polygon
 /// and 2 for a polyline would each need their own static string, and the
@@ -540,7 +540,7 @@ pub enum ShapeWord {
 /// and one enum serving both would have to say something vague enough to be
 /// true of either.
 ///
-/// ★★ The engine offers a `reason: &'static str` on
+/// The engine offers a `reason: &'static str` on
 /// `EditError::GeometryNotReshapable` and says a shell may show it verbatim.
 /// It is deliberately not shown: those sentences name PDF keys and engine verbs
 /// (*"author a PolyLine instead"*, *"use resize_annotation"*, *"/QuadPoints are
@@ -671,13 +671,13 @@ impl NodeEditRefusal {
 impl ShapeWord {
     /// **Why this kind of mark shows no node anchors.**
     ///
-    /// ★★ Every one of these says what the operator *can* do instead, because
+    /// Every one of these says what the operator *can* do instead, because
     /// each of them can do something: a rectangle and an ellipse resize, a
     /// freehand mark moves and resizes as a whole, a line's two ends drag. A
     /// sentence that only said "no" would leave them looking for a control that
     /// does not exist.
     ///
-    /// ★★★ **The freehand sentence changed meaning on 2026-09-09, and the old
+    /// **The freehand sentence changed meaning on 2026-09-09, and the old
     /// one is recorded here so it is never written back.** Until `pdfcer-core`
     /// `Pass 278.0` it read *"A freehand mark has no corners to edit — it is a
     /// recorded pen stroke"*, on the engine's then-ruling that per-point ink
@@ -763,7 +763,7 @@ pub const fn measure_stale() -> &'static str {
 /// once per mark in practice: after the first re-bake the appearance is
 /// pdfcer's own and the flag is `true` for every later edit.
 ///
-/// ★ Said at **apply** time, on the same disclosure list as
+/// Said at **apply** time, on the same disclosure list as
 /// [`measure_stale`], rather than before the first drag as the engine
 /// suggests. The before-the-drag moment is `canvas::annotnodes::
 /// explain_unreshapable`'s shape — once per (shape, tool) — and is a known
@@ -780,7 +780,7 @@ pub const fn ink_redrawn_straight() -> &'static str {
 mod tests {
     use super::*;
 
-    /// ★★★ **The rich-text disclosure fires when a copy was dropped, and stays
+    /// **The rich-text disclosure fires when a copy was dropped, and stays
     /// silent when none was.**
     ///
     /// Both directions, because either alone is satisfiable by a broken build:
@@ -789,7 +789,7 @@ mod tests {
     /// shipped the second shape — a disclosure wired to a field nobody set —
     /// and the only symptom was silence.
     ///
-    /// ★ The silent case is the *common* one and that is why it is asserted at
+    /// The silent case is the *common* one and that is why it is asserted at
     /// all: pdfcer's own annotations never carry `/RC`, so every comment this
     /// operator writes and then edits takes the empty path. A sentence that
     /// fired on all of them would be read once and skipped thereafter,
@@ -815,14 +815,14 @@ mod tests {
         );
     }
 
-    /// ★★ **It says what was lost, and it does not say `/RC`.**
+    /// **It says what was lost, and it does not say `/RC`.**
     ///
     /// The wording rule this catalog follows everywhere: name the thing in the
     /// operator's vocabulary. A drawing-office reviewer has no idea what `/RC`
     /// or `/DS` are, and the only fact they can act on is that a comment they
     /// had styled elsewhere is now plain text.
     ///
-    /// ★ It must also **not open with an apology or a loss**, because the net
+    /// It must also **not open with an apology or a loss**, because the net
     /// effect of this change is that their document stopped contradicting
     /// itself. Before it, `/Contents` held the new words while `/RC` held the
     /// old ones and some readers showed the old ones — on a `/FreeText`, on the
@@ -841,7 +841,7 @@ mod tests {
             "★★ it must name what was actually lost — the formatting — or the operator cannot \
              tell whether their WORDS survived. Got: {said}"
         );
-        // ★★★ THE REASON AND THE OUTCOME ARE TWO CLAIMS, ASSERTED SEPARATELY.
+        // THE REASON AND THE OUTCOME ARE TWO CLAIMS, ASSERTED SEPARATELY.
         //
         // This was one `||` of the two until a falsification run caught it:
         // deleting *"two different things"* from the sentence left the test
@@ -866,7 +866,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **Nothing to say says nothing.**
+    /// **Nothing to say says nothing.**
     ///
     /// The overwhelmingly common annotation has no pop-up, no replies and no
     /// group. A sentence that appeared on every selection would be read the
@@ -877,7 +877,7 @@ mod tests {
         assert_eq!(deletion_would_take(false, false, 0, 0), None);
     }
 
-    /// ★★ **The preview and the disclosure describe the SAME act in two
+    /// **The preview and the disclosure describe the SAME act in two
     /// tenses**, and they must not drift into describing two.
     ///
     /// Pinned by counting: for one set of counts each function names every
@@ -905,7 +905,7 @@ mod tests {
         }
     }
 
-    /// ★ Singular and plural are separate sentences, in both tenses.
+    /// Singular and plural are separate sentences, in both tenses.
     ///
     /// *"1 replies"* is the kind of thing that gets noticed and remembered as
     /// evidence that nobody read the output.
@@ -919,7 +919,7 @@ mod tests {
         assert!(two.contains("2 grouped annotations will be"), "{two}");
     }
 
-    /// ★★★ **Neither tense says "removed", and neither mentions the file.**
+    /// **Neither tense says "removed", and neither mentions the file.**
     ///
     /// Deleting an annotation takes an entry out of `/Annots`; it does not touch
     /// page content, and an incremental save leaves the previous revision in the
@@ -940,7 +940,7 @@ mod tests {
         }
     }
 
-    /// ★ The locked sentence blames the FILE, not pdfcer.
+    /// The locked sentence blames the FILE, not pdfcer.
     ///
     /// §12.5.3's `Locked` is a statement the producer wrote into the annotation.
     /// Wording it as pdfcer's own decision would send an operator looking for a

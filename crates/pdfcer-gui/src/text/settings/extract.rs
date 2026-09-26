@@ -1,7 +1,7 @@
 //! # `text::settings::extract` — what changing it makes you GET OUT
 //!
 //!
-//! ## ★ The split is by BLAST RADIUS, which is the window's own taxonomy
+//! ## The split is by BLAST RADIUS, which is the window's own taxonomy
 //!
 //! Not by dialog group, and not alphabetically. Every setting in this window
 //! carries a `*_radius` line stating *which way costs what*, and that line is
@@ -68,7 +68,7 @@ pub const fn word_gap_note() -> &'static str {
 // ===========================================================================
 // Copying and extracting text — blanks at the ends of a search
 //
-// ★ Filed in THIS module rather than in `look`, and the taxonomy in the
+// Filed in THIS module rather than in `look`, and the taxonomy in the
 // header is why: this setting changes what a search FINDS. It is the only
 // entry in the group that is a shell preference rather than an engine
 // setting, which it shares with `field_shade` two groups up.
@@ -129,7 +129,7 @@ pub const fn unmappable_silence() -> &'static str {
 
 /// Unmappable codes: what changing it costs.
 ///
-/// ★ Names **redaction**, which the source's radius line did not. R35 is
+/// Names **redaction**, which the source's radius line did not. R35 is
 /// explicit that a redaction built under one value is not equivalent under
 /// another: the sentinel changes character offsets, which changes which runs a
 /// pattern matches. An operator who redacts by pattern needs to know that
@@ -176,7 +176,7 @@ pub const fn unmappable_omit_label() -> &'static str {
     "Leave it out"
 }
 
-/// ★ **The disappearing-run consequence, which the old note omitted.**
+/// **The disappearing-run consequence, which the old note omitted.**
 ///
 /// The source warned that extracted text reads as complete when characters are
 /// missing. True, and the smaller half. The larger one is documented in
@@ -273,7 +273,7 @@ pub const fn actual_text_glyphs_note() -> &'static str {
      merely different."
 }
 
-/// ★ **A bound that is not a setting, disclosed because it is a fact.**
+/// **A bound that is not a setting, disclosed because it is a fact.**
 ///
 /// New in this port; the old window disclosed it nowhere despite `pdfcer-core`
 /// documenting it and calling it *"a fact to disclose, not a direction to

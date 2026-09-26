@@ -3,7 +3,7 @@
 One subject: **the open/closed state of every note pop-up**, and the rule
 that the file gets the first word and the operator gets the last.
 
-## ★★★ The model: overrides, not a set of open windows
+## The model: overrides, not a set of open windows
 
 The obvious implementation holds a `BTreeSet<ObjId>` of open pop-ups and
 seeds it from the document. **Do not**, and the reason is the requirement
@@ -67,7 +67,7 @@ with its own control. `crate::canvas::notepopup::open_default` is that
 control and carries the full undo argument, including the two alternatives
 (coalescing, and accepting the entries as honest) and why each was rejected.
 
-★★ The two interact in exactly one place and it is deliberate: writing the
+The two interact in exactly one place and it is deliberate: writing the
 document also **pins the override to what is currently on screen**, so
 recording *"closed by default"* does not make the window the operator is
 reading vanish under their hand.
@@ -80,7 +80,7 @@ store `crate::canvas::interact`'s gesture machine and
 is per-frame interface state with no place in the document model, and
 `crate::app::state::OpenDoc` belongs to no track this session.
 
-★ **Keyed by path, so two open documents do not share a state.** Without
+**Keyed by path, so two open documents do not share a state.** Without
 that, opening a second drawing in a new tab would show its notes with the
 first document's pop-ups open — object ids collide across files freely, so
 the collision is not a rare case, it is the normal one.

@@ -23,7 +23,7 @@ impl Secret {
 
     /// The bytes, for the one caller entitled to them.
     ///
-    /// ★ Named `expose` rather than `as_bytes` or `get` on purpose: a call site
+    /// Named `expose` rather than `as_bytes` or `get` on purpose: a call site
     /// reading `password.expose()` says at the point of use that a boundary is
     /// being crossed, and a reviewer scanning for "where does the password
     /// actually go" has one word to grep for. There are two legitimate callers
@@ -36,7 +36,7 @@ impl Secret {
 
     /// **The value, as a string slice.**
     ///
-    /// ★ A second accessor rather than a caller writing
+    /// A second accessor rather than a caller writing
     /// `std::str::from_utf8(secret.expose())`, and the difference is not
     /// ergonomic: that expression cannot fail here (the buffer is a `String`)
     /// and a caller who wrote it would have to decide what to do with an
@@ -55,7 +55,7 @@ impl Secret {
 
     /// Whether anything was typed.
     ///
-    /// ★ An **empty** password is not the same as no password at all, and the
+    /// An **empty** password is not the same as no password at all, and the
     /// engine's own doc says so: `load_with_password(path, None)` means *"try
     /// the empty user password, then give up"*, which every conforming reader
     /// does silently before prompting. Supplying `Some(b"")` is a different
@@ -77,7 +77,7 @@ impl Secret {
 
     /// Whether the value contains anything outside ASCII.
     ///
-    /// ★★ Not idle curiosity: `pdfcer-core` reports
+    /// Not idle curiosity: `pdfcer-core` reports
     /// `DocError::PasswordRequiresNormalisation` for a `/R` 5 document when the
     /// supplied password is non-ASCII, because the spec's own step 1 applies
     /// **SASLprep** (RFC 4013) before hashing and the engine does not implement
@@ -95,7 +95,7 @@ impl Secret {
     }
 }
 
-/// ★★★ **The whole point of the type.** Reports the length and nothing else.
+/// **The whole point of the type.** Reports the length and nothing else.
 impl std::fmt::Debug for Secret {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // ui-text-exempt: a Debug rendering, never displayed in the UI.
@@ -108,7 +108,7 @@ impl std::fmt::Debug for Secret {
 mod tests {
     use super::*;
 
-    /// ★★★ **The assertion this type exists for**, and it is written as a test
+    /// **The assertion this type exists for**, and it is written as a test
     /// rather than as a comment because a comment cannot fail.
     ///
     /// Formatting a `Secret` must not produce the value, at any width, through
@@ -126,7 +126,7 @@ mod tests {
         }
     }
 
-    /// ★★ **…and nesting it inside another `Debug` type does not defeat it**,
+    /// **…and nesting it inside another `Debug` type does not defeat it**,
     /// which is the shape it will actually be formatted in: a `Secret` reaches a
     /// trace as a field of an `Action`, never on its own.
     #[test]

@@ -92,7 +92,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
 
-    // ★ The fixture is NOT `--pdf`. This check's oracle is a count of objects
+    // The fixture is NOT `--pdf`. This check's oracle is a count of objects
     // beside the sheet, and a count is only an oracle against a file whose
     // answer is known — an arbitrary `--pdf` would make a clean census
     // indistinguishable from a blind one, which is this harness's
@@ -155,7 +155,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- the walk ------------------------------------------------------------
     //
-    // ★★ A settle loop rather than one long settle, because the subject is a
+    // A settle loop rather than one long settle, because the subject is a
     // window that does work AFTER it opens, one page per frame, and the number
     // of frames is a property of the document. A fixed wait long enough for a
     // thirty-six sheet set would be dead time on every run; one short enough
@@ -217,7 +217,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- the press -----------------------------------------------------------
     //
-    // ★ `stable_rect`, because the list lays out over several frames as the
+    // `stable_rect`, because the list lays out over several frames as the
     // scroll area measures its rows and the button sits below them. A
     // coordinate read while the rows are still arriving is a number rather than
     // an error, which is worse.
@@ -231,7 +231,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
 
-    // ★★ `frame_of`, never `session.frame()`. This window is a child viewport
+    // `frame_of`, never `session.frame()`. This window is a child viewport
     // and its coordinates are its own; asking the main window yields a point on
     // the ribbon, and the click lands somewhere plausible and wrong.
     let trace = session.trace()?;
@@ -278,7 +278,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         applied.raw
     ));
 
-    // ★ Reported, never asserted. How many bands a sheet needs is a property of
+    // Reported, never asserted. How many bands a sheet needs is a property of
     // where the content sits — a mark off one edge alone needs one band, one
     // off a corner needs two — and asserting a number here would pin this check
     // to the fixture's geometry rather than to the feature.

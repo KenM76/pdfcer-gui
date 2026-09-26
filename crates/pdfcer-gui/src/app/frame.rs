@@ -33,7 +33,7 @@ use super::{PdfcerApp, REGION_CENTRAL_PANEL, keyboard, modes, window};
 /// Consumed on the first frame that reads it and `None` for ever after, so a
 /// scripted invocation happens exactly once rather than sixty times a second.
 ///
-/// # ★★★ Why this seam exists, and it is R1 rather than convenience
+/// # Why this seam exists, and it is R1 rather than convenience
 ///
 /// R1 says a phase is not done until its behaviour is asserted by **driving the
 /// running binary**. `tools/ui-verify` does that by moving the operator's real
@@ -62,7 +62,7 @@ use super::{PdfcerApp, REGION_CENTRAL_PANEL, keyboard, modes, window};
 /// about a second viewport that no unit test can observe and no screenshot of
 /// the main window contains.
 ///
-/// # ★ It reaches the same choke point an operator's chord does
+/// # It reaches the same choke point an operator's chord does
 ///
 /// Deliberately. `dispatch_command` is where mode gating, the decline
 /// retirement and the command registry all live, and a seam that went round it
@@ -83,7 +83,7 @@ use super::{PdfcerApp, REGION_CENTRAL_PANEL, keyboard, modes, window};
 /// machine whose desktop is occupied, and one command id is the whole of that.
 fn scripted_invoke() -> Option<String> {
     use std::sync::atomic::{AtomicUsize, Ordering};
-    /// ★ How many of the listed commands have been rung.
+    /// How many of the listed commands have been rung.
     ///
     /// A counter rather than a flag, and the header's *"one command and not a
     /// script"* argument survives that intact: **a list of doorbells is not a
@@ -106,7 +106,7 @@ fn scripted_invoke() -> Option<String> {
     let list = std::env::var("PDFCER_DIAG_INVOKE")
         .ok()
         .filter(|s| !s.is_empty())?;
-    // ★ ONE PER FRAME, not all at once. The commands are ordered because they
+    // ONE PER FRAME, not all at once. The commands are ordered because they
     // depend on each other — mode, then the tool the mode permits — and a mode
     // change is applied by draining the action queue, which happens at the end
     // of the frame that raised it. Ringing both in one frame would ask the
@@ -123,7 +123,7 @@ fn scripted_invoke() -> Option<String> {
 }
 
 impl eframe::App for PdfcerApp {
-    /// ★★★ **Flush what the debounce is still holding, before the process
+    /// **Flush what the debounce is still holding, before the process
     /// goes** — `OPERATOR_REQUESTS.md` O80.
     ///
     /// The operator: *"it should remember my page display preferences from my
@@ -144,7 +144,7 @@ impl eframe::App for PdfcerApp {
     /// silently thrown away.** The debounce was correct, the ceiling was
     /// correct, and the last write of every session was a coin toss.
     ///
-    /// ★★ It reaches the operator through page display, which is why it lands
+    /// It reaches the operator through page display, which is why it lands
     /// under O80 rather than as a housekeeping note. The active ribbon **mode**
     /// rides in `layout.ron`, and the mode is what picks
     /// `PageDisplay::default_for_mode` for a document with no remembered
@@ -165,7 +165,7 @@ impl eframe::App for PdfcerApp {
     /// workspace's `eframe` features select. The parameter is unused: this
     /// flushes a file, it does not touch the GPU.
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
-        // ★ `flush` is a no-op when nothing is pending, so this costs an
+        // `flush` is a no-op when nothing is pending, so this costs an
         // `Option` read on the common exit and writes only when the debounce
         // was genuinely still holding something.
         let wrote = self.layout.flush();
@@ -210,7 +210,7 @@ impl eframe::App for PdfcerApp {
     /// needs it after the panel closure has ended, and `Ui::ctx()` borrows.
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
-        // ★★★ FIRST — read the OpenGL error flag, before this frame does any
+        // FIRST — read the OpenGL error flag, before this frame does any
         // GL work of its own.
         //
         // The ordering is the whole of why this is the first statement.
@@ -228,7 +228,7 @@ impl eframe::App for PdfcerApp {
         // an empty rectangle at full frame rate. That is O219.
         crate::render::pressure::poll(&ctx, frame.gl().map(std::sync::Arc::as_ref));
         crate::render::pressure::trace_texture_limit(&ctx);
-        // ★ The window every dialog is owned BY, published once a frame.
+        // The window every dialog is owned BY, published once a frame.
         // See `dialogs::host::set_owner` for why it travels this way, and the
         // host's G3 section for what ownership buys.
         crate::dialogs::host::set_owner(&ctx, self.window);
@@ -237,7 +237,7 @@ impl eframe::App for PdfcerApp {
             format!("focused={:?}", ctx.input(|i| i.viewport().focused))
         });
 
-        // ★ Step 0 — install the theme. See `DEFECTS.md` D10.
+        // Step 0 — install the theme. See `DEFECTS.md` D10.
         //
         //
         // Two things are installed, and the second is the one whose absence
@@ -263,7 +263,7 @@ impl eframe::App for PdfcerApp {
         // > wired, the preset is whatever the code picks until that dialog
         // > lands.
         //
-        // # ★ The DRAFT wins over the live settings, and only for the theme
+        // # The DRAFT wins over the live settings, and only for the theme
         //
         // Every other setting in that window is draft-until-Save. A theme
         // cannot be judged from a radio label — you choose it by *seeing* it —
@@ -293,7 +293,7 @@ impl eframe::App for PdfcerApp {
         let preset = egui_shell::theme::Preset::from_key(theme_token).unwrap_or_default();
         let theme = egui_shell::theme::Theme::new(preset);
         theme.apply(&ctx);
-        // ★ Step 0a-bis — publish the application's own colour roles.
+        // Step 0a-bis — publish the application's own colour roles.
         //
         // Beside `apply` rather than in `configure_context`, for `apply`'s own
         // reason: the operator can change the preset from the Settings window,
@@ -312,7 +312,7 @@ impl eframe::App for PdfcerApp {
         // Same reason the theme is: the operator can change it, so a one-time
         // call at start-up would mean a restart to see the effect.
         //
-        // # ★ Why the epsilon guard, given that egui already guards
+        // # Why the epsilon guard, given that egui already guards
         //
         // `Context::set_zoom_factor` (`egui-0.35.0/src/context.rs:2269-2280`) does test
         // before acting — but on **exact float equality**. A bit-identical
@@ -336,7 +336,7 @@ impl eframe::App for PdfcerApp {
         // frame?" wants, and is why a set-then-read-back within one frame would
         // prove nothing.
         //
-        // # ★ The draft wins, exactly as it does for the theme
+        // # The draft wins, exactly as it does for the theme
         //
         // These two are the only settings in the window that take effect
         // before Save, and the argument is identical in both cases: **you
@@ -379,7 +379,7 @@ impl eframe::App for PdfcerApp {
             ctx.set_zoom_factor(ui_scale);
         }
 
-        // ★★★ Step 0b¹ — **publish the root window's size in POINTS, and the
+        // Step 0b¹ — **publish the root window's size in POINTS, and the
         // pixels-per-point it was drawn at.**
         //
         // ```text
@@ -426,7 +426,7 @@ impl eframe::App for PdfcerApp {
             )
         });
 
-        // ★★ Step 0b² — **carry the persisted Smart-Selector answer into the
+        // Step 0b² — **carry the persisted Smart-Selector answer into the
         // canvas's live copy** — `OPERATOR_REQUESTS.md` O70.
         //
         // One direction only, and written every frame rather than seeded once:
@@ -437,18 +437,18 @@ impl eframe::App for PdfcerApp {
         // reaches the canvas on the next frame without that surface having to
         // know this mechanism exists.
         //
-        // ★ `sync`, not `set_enabled`: the latter also LEAVES whatever
+        // `sync`, not `set_enabled`: the latter also LEAVES whatever
         // container the operator is inside, which is right for a deliberate
         // press and wrong for a mirror that runs sixty times a second.
         crate::canvas::smart::sync(&ctx, self.prefs.smart_select);
 
-        // ★★ Step 0b³ — **the same mirror for the chunk boxes** —
+        // Step 0b³ — **the same mirror for the chunk boxes** —
         // `OPERATOR_REQUESTS.md` O215. One direction, every frame, for the
         // reason stated immediately above; `crate::canvas::chunks` carries why
         // that switch has two homes at all.
         crate::canvas::chunks::sync(&ctx, self.prefs.text_chunks);
 
-        // ★★ Step 0b⁴ — **the same mirror for the recognised-text colour** —
+        // Step 0b⁴ — **the same mirror for the recognised-text colour** —
         // `OPERATOR_REQUESTS.md` O229. One direction, every frame, for the
         // reason stated above; `crate::canvas::ocrlayer::COLOUR_KEY` carries
         // why the painter needs a copy it can reach with a context alone.
@@ -462,18 +462,18 @@ impl eframe::App for PdfcerApp {
             .map_or(self.prefs.colour_icons, |d| d.working_prefs.colour_icons);
         crate::icons::accent::sync(&ctx, colour_icons);
 
-        // ★★ Step 0b² bis — **measure the page's content digest**, on the one
+        // Step 0b² bis — **measure the page's content digest**, on the one
         // frame-level `&mut` this shell has.
         //
         //
-        // ★ Silent when a render is in flight and the `Arc` is shared. That is
+        // Silent when a render is in flight and the `Arc` is shared. That is
         // safe rather than lucky: the digest is stored with the epoch it was
         // measured at, and is ignored once that epoch is stale.
         if let Status::Open(doc) = &mut self.status {
             doc.refresh_content_generation();
         }
 
-        // ★ Step 0b³ — **publish whether this mode edits page content**, for
+        // Step 0b³ — **publish whether this mode edits page content**, for
         // the canvas helpers that have no `Capabilities` to hand (O71).
         //
         // Before anything draws, so no surface can read last frame's answer.
@@ -504,7 +504,7 @@ impl eframe::App for PdfcerApp {
         // that gating was written to remove, surviving in the one state an
         // operator always starts in.
         //
-        // ★★ The lesson is not "publish more". It is that a value stored **on
+        // The lesson is not "publish more". It is that a value stored **on
         // change** has no value **before the first change**, and a permissive
         // fallback turns that gap into a silently-ungated surface. A gate whose
         // default is "allow" must be published unconditionally or not read at
@@ -520,7 +520,7 @@ impl eframe::App for PdfcerApp {
         // run every frame.
         crate::canvas::tool::store_capabilities(&ctx, caps);
 
-        // ★ Step 0c — clear any bitmap cursor, BEFORE anything draws.
+        // Step 0c — clear any bitmap cursor, BEFORE anything draws.
         //
         // `egui::PlatformOutput::take` keeps `cursor_image` across frames —
         // *"sticky between frames"*, in its own comment — and `egui-winit`'s
@@ -540,7 +540,7 @@ impl eframe::App for PdfcerApp {
         // application supplies its own crosshair at all.
         ctx.set_cursor_image(None);
 
-        // ★ Step 0d — **publish which document every surface is drawing**,
+        // Step 0d — **publish which document every surface is drawing**,
         // before any of them draws.
         //
         // One writer, at a known point in the frame, before anything reads —
@@ -563,7 +563,7 @@ impl eframe::App for PdfcerApp {
             }
         }
 
-        // ★ Step 0e — rotate the page drag's landing slots, before any
+        // Step 0e — rotate the page drag's landing slots, before any
         // surface can write one.
         //
         // `crate::pagedrag::begin_frame` is the single owner of the clear, and
@@ -572,7 +572,7 @@ impl eframe::App for PdfcerApp {
         // belong to a surface at all.
         crate::pagedrag::begin_frame(&ctx);
 
-        // ★ Step 0f — **the window title**, from what is open.
+        // Step 0f — **the window title**, from what is open.
         //
         // The only surface that reaches an operator who is not looking at the
         // application: Alt-Tab, the taskbar and the accessibility window list
@@ -580,7 +580,7 @@ impl eframe::App for PdfcerApp {
         // `crate::text::doctabs::window_title` for the three forms and for why
         // the count is in it.
         //
-        // ★★★ Step 0f′ — **the way out of read mode, resolved once**, before
+        // Step 0f′ — **the way out of read mode, resolved once**, before
         // either surface that states it draws.
         //
         // `OPERATOR_REQUESTS.md` O115: *"I didn't see a way to get back out of
@@ -588,7 +588,7 @@ impl eframe::App for PdfcerApp {
         // turns it off is on the ribbon — so the mode hides its own exit and the
         // chord is the whole of what is left.
         //
-        // ★ One writer, here, from `self.shell` — which is the same map
+        // One writer, here, from `self.shell` — which is the same map
         // `keyboard::commands` dispatches from twenty lines below. The title and
         // the status bar then both read `window::exit_chord`, so the two
         // statements cannot disagree with each other, and neither can disagree
@@ -605,7 +605,7 @@ impl eframe::App for PdfcerApp {
 
         // Sent only when it changes — see `last_window_title`.
         //
-        // ★ The read-mode statement is threaded in rather than appended by this
+        // The read-mode statement is threaded in rather than appended by this
         // caller: `crate::text::doctabs::window_title` owns where it goes (the
         // front, so the taskbar's ellipsis cannot eat it) and R1 puts the joined
         // string an operator reads in the catalog, not in a `format!` here.
@@ -629,7 +629,7 @@ impl eframe::App for PdfcerApp {
             self.last_window_title = title;
         }
 
-        // ★★ Step 0½ — THE SCRIPTED KEYSTROKE, for a window OS input cannot
+        // Step 0½ — THE SCRIPTED KEYSTROKE, for a window OS input cannot
         // reach.
         //
         // Before `collect` and before `commands`, because it is delivering a
@@ -647,7 +647,7 @@ impl eframe::App for PdfcerApp {
         };
         let mut actions = keyboard::collect(&ctx, page_count);
 
-        // ★★ Step 1 — **files dragged onto the window**, read before anything
+        // Step 1 — **files dragged onto the window**, read before anything
         // is drawn.
         //
         // `egui` reports drops on the CONTEXT, not on a widget: `RawInput`
@@ -674,7 +674,7 @@ impl eframe::App for PdfcerApp {
 
         // Step 1a — the chords the MANIFEST binds.
         //
-        // ★ This is the second half of the one-owner-per-chord fix. The
+        // This is the second half of the one-owner-per-chord fix. The
         // keymap is data — `egui-shell` deliberately does not dispatch it,
         // because "the application owns the question of what has focus and
         // what a chord means" — so until now every binding in it was a
@@ -721,7 +721,7 @@ impl eframe::App for PdfcerApp {
             self.dispatch_command(&ctx, &id, &mut actions);
         }
 
-        // ★★★ Step 1a½ — THE SCRIPTED INVOCATION, once, for a headless run.
+        // Step 1a½ — THE SCRIPTED INVOCATION, once, for a headless run.
         //
         // See [`scripted_invoke`]. It is here rather than earlier because it
         // must reach the SAME choke point a chord reaches, one line above:
@@ -739,7 +739,7 @@ impl eframe::App for PdfcerApp {
             // do nothing — which is symptom-identical to the feature being
             // broken.
             //
-            // ★★ `D:/dev/rag/egui/a_harness_seam_that_fires_one_command_cannot_reach_anything_behind_a_mode.md`
+            // `D:/dev/rag/egui/a_harness_seam_that_fires_one_command_cannot_reach_anything_behind_a_mode.md`
             // is the same finding one turn earlier: that one added the comma
             // list because a capability could take two commands to reach; this
             // adds the operand because a capability can take a command **and a
@@ -781,7 +781,7 @@ impl eframe::App for PdfcerApp {
         // surface follows. A token with no arm yet is not an error; at S2
         // most of the ribbon is scaffolding for behaviour that lands later,
         // and `dispatch_token` says so per token rather than silently.
-        // ★ Read mode's whole effect is here: the ribbon and the docks are not
+        // Read mode's whole effect is here: the ribbon and the docks are not
         // added to the frame. Why it is not `mode.read`, why the status bar
         // below stays and how the operator gets back out are all in [`window`];
         // a composition step deciding any of that would be a second rule.
@@ -790,7 +790,7 @@ impl eframe::App for PdfcerApp {
             self.ribbon_band(ui, &mut actions);
         }
 
-        // ★ Step 1b¹ — the DOCUMENT TAB STRIP, under the ribbon and over
+        // Step 1b¹ — the DOCUMENT TAB STRIP, under the ribbon and over
         // everything else.
         //
         // Composition order, not preference, and the same rule the ribbon and
@@ -842,7 +842,7 @@ impl eframe::App for PdfcerApp {
                 // writes the Find toggle's and the selection filter's own
                 // state.
                 //
-                // ★ The filter is compared before and after rather than
+                // The filter is compared before and after rather than
                 // reporting its own change. `PickFilter` is `Copy` and
                 // eleven bytes wide, so a snapshot costs less than the
                 // dirty flag it replaces — and, more to the point, it
@@ -850,11 +850,11 @@ impl eframe::App for PdfcerApp {
                 // A control that mutated the filter without setting a flag
                 // would persist nothing and look completely correct.
                 let filter_before = self.pick_filter;
-                // ★ Same comparison seam as the filter, for the same reason:
+                // Same comparison seam as the filter, for the same reason:
                 // a snapshot of a `Copy` value cannot be forgotten by a future
                 // control added to the popup, where a dirty flag can.
                 let max_zoom_before = self.prefs.max_zoom_percent;
-                // ★ And the wheel-paging choice, snapshotted for the same
+                // And the wheel-paging choice, snapshotted for the same
                 // reason and saved by the same branch — O30. Two preferences
                 // reachable from one bar, and the file is written whole, so
                 // one comparison and one save covers both. Adding a second
@@ -871,7 +871,7 @@ impl eframe::App for PdfcerApp {
                     &mut actions,
                 );
                 let wheel_now = self.prefs.wheel_paging;
-                // ★★★ THE WHEEL CHOICE REACHES THE OPEN DOCUMENTS AT ONCE —
+                // THE WHEEL CHOICE REACHES THE OPEN DOCUMENTS AT ONCE —
                 // O30, and it is the one preference that must not wait for a
                 // Settings apply.
                 //
@@ -949,7 +949,7 @@ impl eframe::App for PdfcerApp {
             self.docks(ui, &mut actions);
         }
 
-        // Step 1c² — the debounced workspace write, dock drawn or not. ★ Moved
+        // Step 1c² — the debounced workspace write, dock drawn or not. Moved
         // out of `Self::docks` when read mode landed; [`window`] §3 has why the
         // debounce belongs to the frame and what quitting from read mode would
         // otherwise lose.
@@ -970,7 +970,7 @@ impl eframe::App for PdfcerApp {
 
         // Step 2a² — the FIND OVERLAY, over the page.
         //
-        // ★ After the canvas, and the order IS the placement. The box is an
+        // After the canvas, and the order IS the placement. The box is an
         // `egui::Area` positioned from the CANVAS VIEWPORT's rect, which
         // `canvas::show` records through `zoom::remember_frame` as the last
         // thing it does — so drawing it before the canvas would position this
@@ -989,7 +989,7 @@ impl eframe::App for PdfcerApp {
         // Step 2a³ — drain any `Action::Command` raised by a surface that is
         // not the ribbon, and route it through the one dispatch choke point.
         //
-        // ★ Here, and not in the apply phase, and the position is the design.
+        // Here, and not in the apply phase, and the position is the design.
         //
         // The Find bar's OCR offer is the first control outside the ribbon that
         // means an existing *command* rather than a document change. Wiring it
@@ -1028,12 +1028,12 @@ impl eframe::App for PdfcerApp {
         // content it is modal over. It takes `&self.status` so it can close
         // itself when the document does — a print dialog outliving its
         // document would offer to print pages that are gone.
-        // ★ The keymap and the registry are threaded in for ONE window: the
+        // The keymap and the registry are threaded in for ONE window: the
         // keyboard reference derives every row from them rather than holding a
         // list. That is `DEFECTS.md` D5 made unrepresentable — see
         // `dialogs::shortcuts` — and it is why this call takes two arguments
         // that no other dialog reads.
-        // ★★★ The password prompt is driven by the document's STATE, not by an
+        // The password prompt is driven by the document's STATE, not by an
         // event, and that is what makes it robust.
         //
         // `Status::NeedsPassword` is a state a document sits in until it is
@@ -1051,7 +1051,7 @@ impl eframe::App for PdfcerApp {
             self.dialogs.ask_for_password(&path);
         }
         let keymap = self.shell.as_ref().and_then(|s| s.keymap.as_ref());
-        // ★★ Read out BEFORE `self.dialogs` is borrowed, which is the whole
+        // Read out BEFORE `self.dialogs` is borrowed, which is the whole
         // reason it is a local rather than a field access in the literal below:
         // `panels` and `dialogs` are sibling fields, and taking one mutably
         // while the other is mutably borrowed is what the borrow checker exists
@@ -1075,7 +1075,7 @@ impl eframe::App for PdfcerApp {
             redact_appearance,
         });
 
-        // ★★★ **Step 4a — the FLOATING PANELS' own windows.**
+        // **Step 4a — the FLOATING PANELS' own windows.**
         //
         // The dock's second per-frame call, and it is here rather than
         // inside `Self::docks` for the reason `egui_shell::dock::floatwin`'s
@@ -1085,7 +1085,7 @@ impl eframe::App for PdfcerApp {
         // layout depend on what a different window did. The dialogs are
         // hosted from this same point, for this same reason.
         //
-        // ★★ After the dialogs, deliberately. A modal dialog takes the
+        // After the dialogs, deliberately. A modal dialog takes the
         // frame; a panel window is a peer surface the operator can work in
         // while a dialog is up. Drawing the panels first would put them
         // above a modal in the composition order for no benefit and one
@@ -1094,7 +1094,7 @@ impl eframe::App for PdfcerApp {
         //
         self.floating_panels(&ctx, &mut actions);
 
-        // ★★ The unsaved-edits answer, drained IMMEDIATELY after the dialogs
+        // The unsaved-edits answer, drained IMMEDIATELY after the dialogs
         // draw and before anything else in this frame reads the document.
         //
         // Here rather than in `dispatch` for the reason the calibration round
@@ -1109,7 +1109,7 @@ impl eframe::App for PdfcerApp {
         // and this line may have just replaced it.
         self.resume_after_unsaved();
 
-        // ★★ The signature warning's answer, drained on the same line of
+        // The signature warning's answer, drained on the same line of
         // reasoning and immediately after — a frame-level observation that a
         // window has been answered, whose act (a write, possibly over the
         // operator's own file) belongs to the application rather than to a
@@ -1123,13 +1123,13 @@ impl eframe::App for PdfcerApp {
         // ever changes.
         self.resume_after_signature();
 
-        // ★★ O122's answer, drained on the same line of reasoning as its two
+        // O122's answer, drained on the same line of reasoning as its two
         // neighbours and immediately after them — a frame-level observation
         // that a window has been answered, whose acts (a write, a process
         // launch and a close) belong to the application rather than to a
         // dialog.
         //
-        // ★ LAST of the three, and the order is real rather than incidental.
+        // LAST of the three, and the order is real rather than incidental.
         // This drain can **close the document**, and both of the drains above
         // read it: running it first would let a signature warning resume over a
         // document that had already been handed to Acrobat and closed. The
@@ -1137,7 +1137,7 @@ impl eframe::App for PdfcerApp {
         // in the direction that stays correct if that ever changes.
         self.resume_after_open_in_acrobat();
 
-        // ★★★ **THE WINDOW'S ✕, AND THE QUIT CYCLE** —
+        // **THE WINDOW'S ✕, AND THE QUIT CYCLE** —
         // `OPERATOR_REQUESTS.md` O102. Read here, after both drains, because
         // an answer given this frame may have cleaned or closed the very
         // document the cycle would otherwise ask about next — and asking twice
@@ -1145,7 +1145,7 @@ impl eframe::App for PdfcerApp {
         // this cycle must not do.
         self.step_quit_cycle(&ctx);
 
-        // ★ The calibration round trip: dialog -> canvas gesture -> dialog.
+        // The calibration round trip: dialog -> canvas gesture -> dialog.
         //
         // Two edges, read once per frame, in this order.
         //
@@ -1162,12 +1162,12 @@ impl eframe::App for PdfcerApp {
         // one is a button inside a dialog and the other is the canvas noticing
         // its own state machine finished. Both are frame-level observations,
         // which is what this function is for.
-        // ★★★ **The placement round trip** — `OPERATOR_REQUESTS.md` O66, and
+        // **The placement round trip** — `OPERATOR_REQUESTS.md` O66, and
         // it is THREE edges where the scale round trip below has two. The third
         // is the difference that matters: a placement can be abandoned, and the
         // window has to come back when it is.
         //
-        // ★ Edge 3 is an explicit no-op arm rather than an absent one, because
+        // Edge 3 is an explicit no-op arm rather than an absent one, because
         // the sentence it carries is the whole design: **nothing happens on a
         // cancel, because the dialog un-hides itself.** Being hidden is derived
         // from the pending record, so clearing that record IS the un-hide.
@@ -1186,7 +1186,7 @@ impl eframe::App for PdfcerApp {
                 // Deliberately nothing. See above.
                 let _ = kind;
             }
-            // ★★ …and the invariant that closes every route nobody enumerated:
+            // …and the invariant that closes every route nobody enumerated:
             // a placement pending for a window that has gone. Closing the
             // document drops the dialog, and without this the canvas would wait
             // in a placement tool for a window that no longer exists. One
@@ -1211,12 +1211,12 @@ impl eframe::App for PdfcerApp {
             });
         }
         if let Some(measured) = crate::canvas::measure::take_completed_scale_line(&ctx) {
-            // ★ Delivery FIRST, and the fallback only if there is nowhere to
+            // Delivery FIRST, and the fallback only if there is nowhere to
             // deliver to. The ordinary case is a window that is merely hidden,
             // still holding everything the operator entered before they went
             // to point at the page.
             //
-            // ★★ It also fixes a bug nobody reported, by construction. The
+            // It also fixes a bug nobody reported, by construction. The
             // fallback resolves the group from `active_group` — the *canvas's*
             // authoring group — and that was the only path. Since O193 gave the
             // window its own group picker the two can differ, so an operator
@@ -1254,7 +1254,7 @@ impl eframe::App for PdfcerApp {
         // installed. See `crate::dialogs::settings`' header.
         self.settings_window(&ctx);
 
-        // ★★ Step 2b½ — **the drop nobody claimed**, which is every drop that
+        // Step 2b½ — **the drop nobody claimed**, which is every drop that
         // is not a document landing on the thumbnails.
         //
         // Last among the surfaces on purpose: a claim is a statement that some
@@ -1298,7 +1298,7 @@ impl eframe::App for PdfcerApp {
             crate::canvas::zoom::arm_for_actions(&ctx, doc, &actions);
         }
 
-        // ★★★ Step 2d — **a text draft the operator has navigated away from is
+        // Step 2d — **a text draft the operator has navigated away from is
         // written, not dropped**, and the rule is derived rather than spelled
         // at each exit. `OPERATOR_REQUESTS.md` O222 and O223.
         //
@@ -1313,7 +1313,7 @@ impl eframe::App for PdfcerApp {
         // canvas resurrects it. Settling here is what makes the ribbon press
         // mean what it looks like it means.
         //
-        // ## ★★ Why it is one statement here and not one per exit
+        // ## Why it is one statement here and not one per exit
         //
         // Step 2c's argument exactly, and it has already been paid once: the
         // tool changes from the Navigate row, from `tool::disarm_any`, from
@@ -1347,7 +1347,7 @@ impl eframe::App for PdfcerApp {
         // state that was just updated, and start a render if not.
         self.settle_and_rasterize(&ctx, pixels_per_point);
 
-        // ★ LAST — close the frame's region census.
+        // LAST — close the frame's region census.
         //
         // Every `diag::ui_rect` call for this frame has happened by now, so
         // this is the first moment at which "which regions were NOT drawn this

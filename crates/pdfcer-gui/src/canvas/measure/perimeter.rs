@@ -168,7 +168,7 @@ impl PerimeterPick {
             .windows(2)
             .map(|w| (w[1].x - w[0].x).hypot(w[1].y - w[0].y))
             .sum::<f64>();
-        // ★ The closing segment is added HERE, and forgetting it is the hazard
+        // The closing segment is added HERE, and forgetting it is the hazard
         // the PDF spec corpus names by name for `/Polygon`: `/Vertices` does
         // not repeat the first point, so a perimeter routine that does not
         // close the ring reports a total one segment short of the shape on
@@ -185,7 +185,7 @@ impl PerimeterPick {
 
 /// **End the gesture: author the dimension and empty the pick.**
 ///
-/// ★ The one commit path, reached by all three endings — closing the ring,
+/// The one commit path, reached by all three endings — closing the ring,
 /// double-clicking, and the `measure.finish` command. That is the same argument
 /// [`super::circular::commit`] makes and it matters more here, because there
 /// are three doors rather than two: three places each building a
@@ -282,7 +282,7 @@ pub(super) fn click(st: &mut MeasureState, c: Click<'_>, actions: &mut Vec<Actio
         return;
     }
 
-    // ★★ **The Length tool never closes**, and the guard is here rather than
+    // **The Length tool never closes**, and the guard is here rather than
     // inside `closes_the_ring` on purpose: that function answers a geometric
     // question - *did this click land on the first vertex?* - and the answer is
     // the same for both tools. What differs is what the click MEANS, which is a
@@ -360,7 +360,7 @@ fn closes_the_ring(
     let Some(first_canvas) = crate::viewer::pdf_space_to_canvas(as_pos, page) else {
         return false;
     };
-    // ★★ **The SNAP tolerance, not the click tolerance** - and this was wrong
+    // **The SNAP tolerance, not the click tolerance** - and this was wrong
     // on the first driven run.
     //
     // The check reported `distance=23.1 tolerance=15.3` on the benchmark sheet:
@@ -390,7 +390,7 @@ fn closes_the_ring(
     let distance = first_canvas
         .distance(canvas_point)
         .min(first_page.distance(resolved));
-    // ★ Traced on every click, because "the ring did not close" has two
+    // Traced on every click, because "the ring did not close" has two
     // completely different causes and no screenshot can tell them apart: the
     // click was too far away (the operator missed), or the conversion is wrong
     // (the first vertex is not where it is drawn). The distance and the
@@ -418,7 +418,7 @@ mod tests {
         p
     }
 
-    /// ★★ **The closing segment is counted.** An open trace of the four
+    /// **The closing segment is counted.** An open trace of the four
     /// corners of a square is three sides; closing it is four. Forgetting the
     /// closing segment is the exact hazard the PDF spec corpus names for
     /// `/Polygon`, and it would print a number one side short of the shape on
@@ -464,7 +464,7 @@ mod tests {
         assert!(!closed);
     }
 
-    /// ★ The preview is never drawn closed, because the click it is previewing
+    /// The preview is never drawn closed, because the click it is previewing
     /// does not close it. Showing the closing segment early would promise a
     /// shape one segment longer than the one about to be committed.
     #[test]

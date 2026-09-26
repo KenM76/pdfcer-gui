@@ -14,7 +14,7 @@ A `/Redact` annotation is a **pending destructive operation**. Pasting one
 arms a redaction nobody reviewed, so the engine refuses to carry it — and
 therefore refuses to cut it, before anything is removed.
 
-# ★★★ Why greying the button is not enough, and this check is about the gap
+# Why greying the button is not enough, and this check is about the gap
 
 `edit.cut` is greyed on `selection.cut_permitted`, so a **pointer** cannot
 reach the verb. **A chord can.** `Ctrl+X` is dispatched through the keymap
@@ -36,7 +36,7 @@ refused and the mark is still there.**
 | `clipboard-cut-refused reason=would-not-survive subtype=Redact` | did the gate fire, and did it name the right thing? |
 | the **absence** of `clipboard-copy` | did it refuse *before* the copy, or after? |
 
-★ The second is the one that matters and it is easy to leave out. A cut that
+The second is the one that matters and it is easy to leave out. A cut that
 refused *after* copying would leave the mark on the page **and a copy of it
 on the clipboard** — so the next `Ctrl+V` arms a redaction somewhere else,
 which is precisely the outcome the refusal exists to prevent. The order is

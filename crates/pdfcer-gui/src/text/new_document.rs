@@ -105,7 +105,7 @@ pub fn size_entry(name: &str, size_pt: (f64, f64)) -> String {
 
 /// **Is this sheet DEFINED in inches?**
 ///
-/// ★★ Operator request, 2026-08-20: *"please add imperial sizes too — we use
+/// Operator request, 2026-08-20: *"please add imperial sizes too — we use
 /// imperial units — then select B size."*
 ///
 /// The sizes were already there. `PaperSize::ALL` has carried Letter, Legal,
@@ -141,12 +141,12 @@ fn imperial(name: &str) -> bool {
 /// A dimension in inches, to the nearest sixteenth, with the fraction spelled
 /// the way a drawing office writes it.
 ///
-/// ★ Not a decimal. `8.5 in` is what a programmer writes and `8 1/2"` is what
+/// Not a decimal. `8.5 in` is what a programmer writes and `8 1/2"` is what
 /// is on every title block in the operator's own corpus; the sizes that matter
 /// here are 8½ × 11 and 11 × 17, and a list reading *"8.5 × 11 in"* is a list
 /// that has been translated rather than written.
 fn inches(pt: f64) -> String {
-    // ★★★ Round ONCE, in sixteenths, then split — rather than truncating to a
+    // Round ONCE, in sixteenths, then split — rather than truncating to a
     // whole inch and rounding the remainder separately.
     //
     //
@@ -241,7 +241,7 @@ pub const fn custom_height() -> &'static str {
 /// unit the decision was made in.
 #[must_use]
 ///
-/// ★ **Both units, since 2026-08-20**, and points after them. The list above
+/// **Both units, since 2026-08-20**, and points after them. The list above
 /// shows each sheet in the unit it is *defined* in, which makes it findable;
 /// this line is the one place an operator checks what they are about to get, so
 /// it says the size in millimetres AND in inches whatever was picked. An
@@ -260,7 +260,7 @@ pub fn sheet_summary(width_pt: f64, height_pt: f64) -> String {
     )
 }
 
-/// ★ Why a custom size is being refused, shown in place of [`sheet_summary`].
+/// Why a custom size is being refused, shown in place of [`sheet_summary`].
 ///
 /// # The refusal is the shell's, and it is made BEFORE the engine's
 ///
@@ -278,7 +278,7 @@ pub fn sheet_summary(width_pt: f64, height_pt: f64) -> String {
 /// than clamping a custom `DEVMODE` sheet, arrived at independently on the
 /// other side of the application.
 ///
-/// # ★ Where the ceiling comes from, and the caveat on it
+/// # Where the ceiling comes from, and the caveat on it
 ///
 /// **14,400 default user space units = 200 inches = 5,080 mm**, from
 /// ISO 32000-1 Annex C.2: *"The minimum page size should be 3 by 3 units in
@@ -339,7 +339,7 @@ mod imperial_tests {
     use super::{size_entry, size_name};
     use pdfcer_core::paper::PaperSize as P;
 
-    /// ★★ **Every US and ANSI sheet reads in inches, and every ISO one in
+    /// **Every US and ANSI sheet reads in inches, and every ISO one in
     /// millimetres.**
     ///
     /// The operator's report of 2026-08-20 was *"please add imperial sizes
@@ -397,7 +397,7 @@ mod imperial_tests {
 mod tests {
     use super::*;
 
-    /// ★ The millimetre conversion agrees with the engine's own table.
+    /// The millimetre conversion agrees with the engine's own table.
     ///
     /// Not a tautology: [`size_entry`] and [`sheet_summary`] each convert
     /// points to millimetres, and `pdfcer_core::paper` builds its points *from*
@@ -427,7 +427,7 @@ mod tests {
         );
     }
 
-    /// ★ The refusal names the ceiling.
+    /// The refusal names the ceiling.
     ///
     /// An operator told only that their number is wrong has to guess. The
     /// number is what turns a refusal into an instruction, and it is the
@@ -439,7 +439,7 @@ mod tests {
         assert!(message.contains('1'), "no lower limit in {message}");
     }
 
-    /// ★ No size in the list reads like an identifier.
+    /// No size in the list reads like an identifier.
     ///
     /// [`size_name`]'s wildcard exists so a size added to `PaperSize` after
     /// this build still appears in the list, under `id().to_uppercase()`. This
@@ -476,7 +476,7 @@ mod tests {
         assert_eq!(size_name(pdfcer_core::paper::PaperSize::AnsiD), "ANSI D");
     }
 
-    /// ★★★ A sheet just under a whole inch used to read `9 1/1`.
+    /// A sheet just under a whole inch used to read `9 1/1`.
     ///
     ///
     /// ```text
@@ -511,7 +511,7 @@ mod tests {
         // Below one inch there is no whole part to print.
         assert_eq!(inches(18.0), "1/4");
 
-        // ★ The carry at the top of the sub-inch range: 71.9 pt is 0.9986 in,
+        // The carry at the top of the sub-inch range: 71.9 pt is 0.9986 in,
         // which rounds to 16 sixteenths — one inch, not "0 1/1".
         assert_eq!(inches(71.9), "1");
     }

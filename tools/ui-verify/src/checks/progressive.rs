@@ -28,14 +28,14 @@ const ZOOM_OUT_NOTCHES: usize = 24;
 const COVERAGE_EVENT: &str = "canvas-coverage";
 /// The least of the view that may be left undrawn at any moment.
 ///
-/// ★ Not 100 %. A gesture legitimately passes through frames where the held
+/// Not 100 %. A gesture legitimately passes through frames where the held
 /// picture is being re-placed, and demanding perfection would fail on rounding.
 /// Half the view is far above anything a working stand-in produces and far
 /// below the measured failure, which was **0.000**.
 const MIN_COVERED: f64 = 0.5;
 /// How far to zoom in before the gestures.
 ///
-/// ★★ Deep enough that a raster is slow — which is what creates the interval
+/// Deep enough that a raster is slow — which is what creates the interval
 /// under test — and no deeper. The first run climbed to 3590 %% and found 52 ink
 /// pixels on the whole canvas: at that magnification a technical drawing is
 /// mostly the space BETWEEN lines, so there was nothing whose disappearance
@@ -95,7 +95,7 @@ fn zoom_now(trace: &Trace) -> f64 {
 
 /// Every coverage ratio the application has published, in order.
 ///
-/// ★ `trace_on_change` collapses runs of identical values, so this is the
+/// `trace_on_change` collapses runs of identical values, so this is the
 /// sequence of DISTINCT states the canvas passed through rather than one entry
 /// per frame. That is what makes a minimum over it meaningful: a blank held for
 /// twenty frames appears once, and so does a blank held for one.
@@ -117,7 +117,7 @@ fn capture(session: &Session, ctx: &CheckContext, name: &str) -> Result<crate::i
 /// How many sampled canvas pixels carry **ink** — anything appreciably darker
 /// than paper.
 ///
-/// ## ★★★ Why ink and not uniformity, and what the first version got wrong
+/// ## Why ink and not uniformity, and what the first version got wrong
 ///
 ///
 /// So "blank" here does not mean "uniform", it means **the drawing is not
@@ -189,7 +189,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let frame = session.frame()?;
     let driver = Driver::new(session.window());
 
-    // ★★★ **The wheel is aimed at CONTENT, not at the canvas centre**, and the
+    // **The wheel is aimed at CONTENT, not at the canvas centre**, and the
     // first run of this check is why. Ctrl+wheel is zoom-about-the-pointer, so
     // whatever is under the cursor is what stays on screen; aiming at the
     // middle of the canvas zoomed a dense CAD sheet to 3590 % over a patch of
@@ -236,7 +236,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- A: climb until region rendering is in force -----------------------
     //
-    // ★ The target is expressed as a zoom rather than as a strategy, because
+    // The target is expressed as a zoom rather than as a strategy, because
     // the strategy is not traced. What matters for this check is only that the
     // rasters have become slow and partial, which is true well before the
     // formal region tier.

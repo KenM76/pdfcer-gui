@@ -30,7 +30,7 @@ pub(super) fn seam_y(state: &CanvasState) -> f32 {
 /// `(usable bottom - seam) / ROW_GAP_PT`. [`BOTTOM_DEAD_BAND_PT`] is what makes
 /// "usable" different from "published".
 ///
-/// ★ Deliberately an UNDER-estimate. The real rate measured nearer `10.7 ×
+/// Deliberately an UNDER-estimate. The real rate measured nearer `10.7 ×
 /// zoom`, because the pointer's document point slides down the screen a little as
 /// the zoom rises, so dividing by 12 predicts the window closing earlier than it
 /// does. An optimistic prediction here would let a run start a climb it cannot
@@ -89,7 +89,7 @@ pub(super) fn park_on_the_seam(
             let x = ((state.rect.min.x + state.rect.max.x) * 0.5)
                 .clamp(canvas.min.x + EDGE_MARGIN_PT, canvas.max.x - EDGE_MARGIN_PT);
             let at = aim_at(session, canvas, x, y)?;
-            // ★★★ The window is computed and REPORTED before a notch is spent.
+            // The window is computed and REPORTED before a notch is spent.
             // See the module header: a run whose window is empty climbs the whole
             // budget and then reports an absence it was never in a position to
             // observe, which reads exactly like a passing measurement.

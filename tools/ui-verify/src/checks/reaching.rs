@@ -57,7 +57,7 @@ use super::driving::declared;
 /// have left the fourth and fifth callers — and every future one — holding
 /// the same loaded bool.
 ///
-/// # ★★ Why route 2 must be tried BEFORE route 3
+/// # Why route 2 must be tried BEFORE route 3
 ///
 ///
 /// `dock.body.<id>` is published only while the panel is the drawn, active
@@ -86,7 +86,7 @@ pub fn raise_dock_tab(
     // Route 1 — the dock tab. What this function was built for, and what
     // it still uses whenever a tab strip is drawn at all.
     let region = format!("dock.tab.{panel_command_id}");
-    // ★ One condition, not two: `declared` also hands back fossil
+    // One condition, not two: `declared` also hands back fossil
     // `ui-rect-gone` entries, and a zero-sized rect is exactly how one of
     // those presents. A tab entry that is not substantial is not a tab we
     // declined to press — it is not a tab.
@@ -184,7 +184,7 @@ pub fn raise_dock_tab(
 /// [`raise_dock_tab`] is: the next check to read a control near the bottom of a
 /// scrolling panel should get the right behaviour from a function call.
 ///
-/// ★ It is **not** a substitute for the application publishing the gated form.
+/// It is **not** a substitute for the application publishing the gated form.
 /// That remains the better fix and it is product code: `panels::bookmarks::clip`
 /// calls `crate::diag::ui_rect`, where `panels::layers` and the rotation row
 /// call `ui_rect_visible`. Reported, not changed, from here.
@@ -240,7 +240,7 @@ pub fn bring_into_body(
             ));
             break;
         }
-        // ★★★ THE WHEEL GOES IN THE LOWER PART OF THE BODY, NOT ITS CENTRE.
+        // THE WHEEL GOES IN THE LOWER PART OF THE BODY, NOT ITS CENTRE.
         //
         // A dock body is not all scroll area. The Bookmarks panel draws its
         // authoring row, a hint and a separator ABOVE its `ScrollArea`, and on
@@ -270,7 +270,7 @@ pub fn bring_into_body(
 
 /// **Scroll a pane until `wanted` is on screen, and answer where it is.**
 ///
-/// # ★★★ Why this is a helper and not two copies of a loop
+/// # Why this is a helper and not two copies of a loop
 ///
 /// It was two copies for about ten minutes, and the second copy is what forced
 /// the extraction: the field-scoped controls sit below the fold of the
@@ -280,7 +280,7 @@ pub fn bring_into_body(
 /// because the message it produced was confident and wrong (*"the section is
 /// not being called"*, about a section that was in the same trace).
 ///
-/// ★★★ **It scrolls at the DOCK PANE, not at the content**, and that took three
+/// **It scrolls at the DOCK PANE, not at the content**, and that took three
 /// wrong anchors to arrive at.
 ///
 /// A wheel event has to land inside the scroll area, so the anchor's centre has
@@ -305,7 +305,7 @@ pub fn bring_into_body(
 /// Returns `None` when the region never appears — the caller decides whether
 /// that is a failure or a skip, because only the caller knows what it means.
 ///
-/// # ★★ `attempts` is the caller's, and it is not a tuning knob
+/// # `attempts` is the caller's, and it is not a tuning knob
 ///
 /// It is *how far the caller is willing to say it looked*, and it belongs in
 /// the caller because the failure message does. A properties pane is a few
@@ -342,7 +342,7 @@ pub fn scroll_to(
         let point = session.frame()?.declared_center(at);
         driver.scroll_at(point, -1)?;
         session.settle(12);
-        // ★ Instrumentation, kept rather than removed. When this loop fails the
+        // Instrumentation, kept rather than removed. When this loop fails the
         // question is always the same — *did the wheel move anything?* — and a
         // note answering it is the difference between "the controls are
         // missing" and "the wheel landed somewhere that does not scroll".

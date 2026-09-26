@@ -105,7 +105,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
     let frame = session.frame()?;
 
-    // ★ The `+` is the RIGHTMOST control of the group — the layout is
+    // The `+` is the RIGHTMOST control of the group — the layout is
     // right-to-left and zoom-in is added first. Aiming at the middle would hit
     // the readout, which now opens the maximum-zoom popup instead of zooming.
     let plus = frame.declared_at(zoom_group, 0.93, 0.5);
@@ -115,7 +115,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.settle(10);
     }
     // The raster is debounced, and a deep-zoom region render re-interprets the
-    // whole content stream — so the wait is generous. ★ At 90 frames the run
+    // whole content stream — so the wait is generous. At 90 frames the run
     // ended with the top rung's raster still in flight, which reads in the
     // trace as `drawn=0` and is indistinguishable from a page that cannot be
     // drawn at all. A settle that is too short does not fail the check; it

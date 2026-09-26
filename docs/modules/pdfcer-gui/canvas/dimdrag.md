@@ -13,7 +13,7 @@ module is the second half, *after the fact*, and it reuses that same
 preview function for the same reason: a preview derived a second way is a
 preview that can disagree with what commits.
 
-## ★★ What "move a dimension" means, and why it is NOT `move_dimension`
+## What "move a dimension" means, and why it is NOT `move_dimension`
 
 `pdfcer-core` offers two verbs and picking the wrong one is the whole design
 decision here:
@@ -98,7 +98,7 @@ faked; see the TODO note on [`placed`].
 * **Undo granularity.** `place_dimension` is one command, so one drag is one
   undo entry, decided by the engine.
 
-## ★★★ ADDING AND REMOVING A CORNER — 2026-09-05, the operator's report
+## ADDING AND REMOVING A CORNER — 2026-09-05, the operator's report
 
 > *"I also can't edit or delete nodes of a markup shape once it is drawn."*
 
@@ -122,7 +122,7 @@ geometry the engine owns.
 | **Points tool armed** + `Ctrl` + drag | **add** a corner immediately after it, dropped where the pointer lands |
 | **Points tool armed** + `Ctrl`+`Shift` + drag | **remove** that corner |
 
-★★ **A click cannot reach this module, and that is a fact about the gesture
+**A click cannot reach this module, and that is a fact about the gesture
 machine rather than a preference.** [`crate::canvas::gesture::GestureState::update`]
 starts a drag on `frame.drag_started` — egui's drag recognition, past its
 travel threshold — and a press released before that threshold never becomes
@@ -133,7 +133,7 @@ vertex offers"*) describes a surface that lives in `canvas::menus`, and the
 drag is what this module can actually be handed. The right-click menu is the
 discoverable form and is **reported rather than faked**.
 
-★★★ **The Points tool is the safety, and that is what earns it its place in
+**The Points tool is the safety, and that is what earns it its place in
 Review.** Ctrl alone, with the Select tool, still moves the corner. An
 operator has to have deliberately armed the tool whose whole subject is
 points before a drag can change how many there are — so a mis-held modifier
@@ -142,7 +142,7 @@ answer to *"what does the Points tool do in a mode that cannot edit page
 content"*, which is the question [`crate::canvas::tool::retire_forbidden`]'s
 Node arm now answers with `edit_content || author_measure`.
 
-### ★★ The modifiers are read LIVE, and here that is the honest form
+### The modifiers are read LIVE, and here that is the honest form
 
 Every *sampled* property of this drag — which vertex, which grip, which
 marquee intent — is fixed at the press, because a gesture means what it
@@ -155,7 +155,7 @@ when the button came up. That is the identical argument Alt (snap suspend)
 already ships under, six rows above, and it is why neither needs a
 per-drag memory slot that an Escape-cancelled drag could leave stale.
 
-### ★★ The preflight, and why the shell asks before it acts
+### The preflight, and why the shell asks before it acts
 
 `EditSession::vertex_edit_preview` is the engine's own refusal predicate —
 *"`vertex_edit_preview(id, edit).err()` is `Option<EditError>`: exactly the

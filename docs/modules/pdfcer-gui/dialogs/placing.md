@@ -25,13 +25,13 @@ self.place.button(ui, PlaceKind::MyThing, REGION_PLACE);
 if self.place.hidden(ctx, PlaceKind::MyThing) { return true; }
 ```
 
-★ Note what the third line does: it returns *"still open"* while drawing
+Note what the third line does: it returns *"still open"* while drawing
 nothing. The dialog is not closed — its drafts, its half-typed numbers and
 its position are all exactly where they were — it simply is not built this
 frame. That is the difference between stepping aside and being dismissed,
 and it is the whole reason the operator's numbers survive the trip.
 
-## ★★★ `hidden` is DERIVED, and that is the safety property
+## `hidden` is DERIVED, and that is the safety property
 
 [`PlaceHandoff`] has **one** field, and it is not the hidden flag. Whether
 the window is on screen is computed from

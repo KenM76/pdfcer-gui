@@ -19,7 +19,7 @@ step is `shell::commands`' `KNOWN` list and the test that walks it.
 ## Why this is its own file
 
 
-## ★ Two sources, one convention
+## Two sources, one convention
 
 Conditions come from two different places and it matters that they arrive
 the same way:

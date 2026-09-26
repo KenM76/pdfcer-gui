@@ -11,7 +11,7 @@ who wants their comments in a different colour after the fact — has to
 delete the mark and place another, losing its `/M` stamp, its object id and
 any reply thread hung off it.
 
-## ★★★ Why a SECOND verb, and why the guard between them is a `match`
+## Why a SECOND verb, and why the guard between them is a `match`
 
 `pdfcer-core` has two annotation-style verbs, and the split is not a
 tidiness decision anybody took. `set_markup_style` reaches its annotation
@@ -28,7 +28,7 @@ operator live controls whose every press is refused, and the fix for a
 mis-route is not a better string comparison — it is making the wrong turn
 fail to compile.
 
-## ★★★ The three things this module does NOT offer, each for its own reason
+## The three things this module does NOT offer, each for its own reason
 
 Every one of these is **absent**, not greyed. R9 reserves greying for a
 capability that is *temporarily* unavailable and can explain itself on

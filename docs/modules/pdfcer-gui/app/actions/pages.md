@@ -8,7 +8,7 @@ them — [`Action::RotatePages`], [`Action::DeletePages`],
 function every *other* edit in the application now calls as well,
 [`resync`].
 
-## ★ Why these four are not four more arms in `apply.rs`
+## Why these four are not four more arms in `apply.rs`
 
 Rule R2's own justification decides it, exactly as it decided the
 `apply.rs` split from `actions.rs`: *"the value of the limit is that the
@@ -32,7 +32,7 @@ and `crate::canvas::interact`'s header states the measured half of it:
 renumbers."* A page delete is that sentence one structure up, and a page
 **reorder** is a third case neither of them names.
 
-## ★★ The table this whole file exists to implement
+## The table this whole file exists to implement
 
 | | page vector | rasters | canvas selection | panel picks | `view.page_index` |
 |---|---|---|---|---|---|
@@ -47,7 +47,7 @@ Every row of that table is asserted below or in
 application to end up drawing the wrong sheet or aiming a destructive verb
 at one nobody chose — and none of them fails loudly.
 
-## ★ [`resync`] is called from `vector_edit`, not from these four arms
+## [`resync`] is called from `vector_edit`, not from these four arms
 
 That placement is the one design decision in this file worth arguing: it is
 the one-choke-point rule applied to a *consequence* rather than to a

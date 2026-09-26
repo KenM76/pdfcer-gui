@@ -10,7 +10,7 @@ protocol: the panel resolves the gap under the pointer with the same code
 that resolves it for a page drag, and this module decides whether the file
 that landed there is one it can act on.
 
-## ★★★ Every refusal here is a FALL-THROUGH, never a message
+## Every refusal here is a FALL-THROUGH, never a message
 
 There are four reasons this module declines, and not one of them tells the
 operator anything:
@@ -32,7 +32,7 @@ a parser that will.
 whole reason the claim protocol exists rather than this module deciding what
 every drop means.
 
-## ★★ Why the whole panel accepts, not only the tiles
+## Why the whole panel accepts, not only the tiles
 
 The operator wrote *"into the thumbnails section"* — a region, not a
 target. A drop on the grid's empty space below the last row, or on the
@@ -46,7 +46,7 @@ the pointer when there is one and from the end of the document when there
 is not. That is also the conventional answer: a file dropped past the last
 page goes after the last page.
 
-## ★ Several files at once, and why the positions are computed up front
+## Several files at once, and why the positions are computed up front
 
 *"documents"*, plural. Each file becomes its own
 [`PageAction::InsertPagesFromFile`] — one undoable command each, which is

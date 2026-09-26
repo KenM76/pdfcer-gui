@@ -1,7 +1,7 @@
 //! # `canvas::markup::route` — which markup gesture one drag reaches
 //!
 //!
-//! ## ★★★ The seam, and it is the same one `canvas::dragroute` draws
+//! ## The seam, and it is the same one `canvas::dragroute` draws
 //!
 //! One outcome — a drag with a markup tool armed — reaches **three** different
 //! gesture modules, and which one is decided by the kind and by what is under
@@ -14,7 +14,7 @@
 //! | Highlight | blank paper | [`super::band`] | a rectangle |
 //! | everything else | anything | [`super::band`] | two points |
 //!
-//! ★★ **Highlight is the row that made this a router.** It was two branches —
+//! **Highlight is the row that made this a router.** It was two branches —
 //! freehand or band — until the operator pointed out that dragging the
 //! highlighter along text should follow the text, as Acrobat does
 //! (`OPERATOR_REQUESTS.md` **O54**). A third destination on one gesture is what
@@ -22,7 +22,7 @@
 //! whose branches can all decline eats the gesture, and the way to keep that
 //! visible is to put the alternatives side by side.
 //!
-//! ★ The fallback ordering matters and is stated once here rather than inferred
+//! The fallback ordering matters and is stated once here rather than inferred
 //! from the nesting: **text first, band second.** A drag that finds no text is
 //! not a failure — over a scan it is the common case, and an area highlight
 //! there is what a drawing office wants and is more than the reference
@@ -46,7 +46,7 @@ pub struct Previews {
 
 /// One frame of a markup drag.
 ///
-/// ★ A struct because the list reached nine, and this module's whole subject is
+/// A struct because the list reached nine, and this module's whole subject is
 /// keeping three alternatives legible side by side — a nine-argument call would
 /// undo that at the one place a reader looks first. `gesture::Press`,
 /// `resizing::Frame` and `dragroute::Frame` all took the same shape.
@@ -108,7 +108,7 @@ pub fn drag(frame: Drag<'_>, actions: &mut Vec<Action>) -> Previews {
         },
         actions,
     ) {
-        // ★★★ THE HIGHLIGHT FOLLOWED TEXT. `OPERATOR_REQUESTS.md` O54.
+        // THE HIGHLIGHT FOLLOWED TEXT. `OPERATOR_REQUESTS.md` O54.
         //
         // *"we should be able to drag it along to just highlight text
         // too like it works in adobe."* Both halves already existed and
@@ -123,7 +123,7 @@ pub fn drag(frame: Drag<'_>, actions: &mut Vec<Action>) -> Previews {
         // first, which reads as missing because it is.
         out.text_marks = Some(marks);
     } else {
-        // ★ The band, and it is the FALLBACK rather than the default
+        // The band, and it is the FALLBACK rather than the default
         // now — a drag that found no text under it. That case is worth
         // keeping and is better than the reference: Acrobat's highlight
         // draws nothing over a scan with no text layer, and an area

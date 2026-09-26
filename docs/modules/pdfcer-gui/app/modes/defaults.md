@@ -41,7 +41,7 @@ upgrade"* never needs the taxonomy. And the dependency runs one way only:
 `super` calls [`layout_for_build`], while this file calls nothing in
 `super` at all.
 
-## ★ What `egui-shell` cannot supply
+## What `egui-shell` cannot supply
 
 `SHELL_FRAMEWORK.md` §4 and `egui-shell`'s workspace store between them
 make Read/Review/Edit a *configuration* rather than a built-in — see
@@ -63,7 +63,7 @@ information architecture.
 | **Review** | Pages, Bookmarks | Comments, Properties, Forms, Dimension groups, **Document properties** |
 | **Edit** | Pages, Bookmarks, Layers, Signatures, Fonts | Objects / Properties, Comments, Forms, Redact, Dimension groups, Attachments, **Document properties** |
 
-★★★ **Document properties is in all three, and it is the only panel besides
+**Document properties is in all three, and it is the only panel besides
 Pages that is** — the operator: *"the document properties are
 still always visible in the properties tab. it needs to get out of there and
 be in its own document properties tab."* Reading a document's title is
@@ -87,7 +87,7 @@ A mode this module has never heard of gets the **full** arrangement: a
 mode with no opinion recorded about it should not have panels taken
 away, because removing is the opinionated act.
 
-## ★ Panels this build does not have
+## Panels this build does not have
 
 **None — [`ABSENT_PANELS`] is empty.** The list is kept anyway, because
 there are two opposite ways to get it wrong and the same mechanism catches

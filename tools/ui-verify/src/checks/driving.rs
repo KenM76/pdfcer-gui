@@ -57,7 +57,7 @@ pub const ITEM_PREFIX: &str = "ribbon.item.";
 /// would aim a check's clicks at it.
 #[must_use]
 pub fn declared(trace: &Trace, ui_rect: &str, name: &str) -> Option<LRect> {
-    // ★ A region that was RETIRED after its last declaration is not declared.
+    // A region that was RETIRED after its last declaration is not declared.
     //
     // The application's `ui-rect` channel is a CHANGE LOG — it emits only when
     // a rect moves — so a control that stops being drawn leaves its last rect
@@ -138,7 +138,7 @@ pub const VIEWPORT_OUTER_EVENT: &str = "viewport-outer";
 /// window, which is every region that existed before this — that is
 /// `session.frame()`, unchanged, so no existing call site changes behaviour.
 ///
-/// # ★ Why an absent `viewport-inner` is an ERROR and not a fallback
+/// # Why an absent `viewport-inner` is an ERROR and not a fallback
 ///
 /// Because falling back to the main window's frame would produce a **click at
 /// a plausible wrong place**, which is precisely the failure this exists to
@@ -165,7 +165,7 @@ pub fn frame_for(session: &Session, trace: &Trace, viewport: Option<&str>) -> Re
                  `dialogs::host::Host::show`, which publishes it."
             ))
         })?;
-    // ★ The dialog's own client origin, in DESKTOP PIXELS.
+    // The dialog's own client origin, in DESKTOP PIXELS.
     //
     // `viewport-inner` is in egui's logical points of monitor space, and
     // `WindowFrame::client_origin` is in pixels — the same relationship
@@ -233,7 +233,7 @@ pub fn declared_in(trace: &Trace, ui_rect: &str, name: &str) -> Option<(LRect, O
 /// driver.click_at(frame_of(&session, &trace, ui_rect, NAME)?.declared_center(button))?;
 /// ```
 ///
-/// ★ It is **safe on a main-window region** and that is the point: an untagged
+/// It is **safe on a main-window region** and that is the point: an untagged
 /// region answers with `session.frame()`, unchanged. So a call site converted
 /// pre-emptively costs nothing and survives its surface being moved into a
 /// dialog later — which is the direction this shell keeps moving.
@@ -257,7 +257,7 @@ pub fn frame_of(
 /// Reads the region, settles, reads it again, and repeats until two consecutive
 /// reads agree — or until it gives up and returns the last one it saw.
 ///
-/// # ★★ Why this exists, and it is a defect report
+/// # Why this exists, and it is a defect report
 ///
 /// `ui-rect` is a **change log**: the application emits a line when a rect
 /// moves, so [`declared`] answers *where that control was as of the last frame
@@ -300,7 +300,7 @@ pub fn stable_rect(
 /// The last rect a region was published with **after** a given trace line,
 /// whether or not it has since been retired.
 ///
-/// # ★★ Why [`declared`] is the wrong question for a gesture-only overlay
+/// # Why [`declared`] is the wrong question for a gesture-only overlay
 ///
 /// `declared` asks *"is this on screen now?"*, and it is right to: a region
 /// retired after its last declaration is a fossil, and reading one produced a
@@ -358,7 +358,7 @@ pub const UI_RECT_CLIPPED_EVENT: &str = "ui-rect-clipped";
 /// clip it was tested against, the fraction that survived and the floor it
 /// failed - or `None` when no such line stands.
 ///
-/// # ★★★ What this is for, and it is a fix for a failure MESSAGE
+/// # What this is for, and it is a fix for a failure MESSAGE
 ///
 ///
 /// Measured that day: `restyling_selected_text_reaches_the_document` reported
@@ -398,7 +398,7 @@ pub fn clipped_away(trace: &Trace, ui_rect: &str, name: &str) -> Option<String> 
 
 /// Every region name beginning with `prefix` that is **on screen now**.
 ///
-/// # ★★ Why this exists beside [`declared_names`], which counts fossils
+/// # Why this exists beside [`declared_names`], which counts fossils
 ///
 /// [`declared_names`]'s own documentation says *"used only for SKIP reasons"*,
 /// and it means it: it collects every name that has **ever** appeared, because
@@ -482,7 +482,7 @@ const MAX_BAND_SCROLLS: usize = 32;
 
 /// **Find a ribbon item wherever the responsive band has put it.**
 ///
-/// ★ The fix for a whole class of false SKIPs, and it is worth understanding
+/// The fix for a whole class of false SKIPs, and it is worth understanding
 /// why they were false rather than treating this as a convenience.
 ///
 /// The harness drives a **1100 pt** window. At that width the ribbon correctly
@@ -494,7 +494,7 @@ const MAX_BAND_SCROLLS: usize = 32;
 /// written up as a harness gap and left, and it would have cost `about` the
 /// same.
 ///
-/// # ★★★ The overflow is a SCROLL, not a menu — and this helper did not know
+/// # The overflow is a SCROLL, not a menu — and this helper did not know
 ///
 ///
 ///
@@ -510,7 +510,7 @@ const MAX_BAND_SCROLLS: usize = 32;
 ///    there — the overwhelmingly common case, and it costs one trace read.
 /// 2. Otherwise **rewind** the band to its first group, so the search covers
 ///    the whole row rather than the part of it to the right of wherever a
-///    previous call left it. ★ This is what makes the helper *idempotent*:
+///    previous call left it. This is what makes the helper *idempotent*:
 ///    without it, a check that asks for an item in the last group and then for
 ///    one in the first would be told the second does not exist.
 /// 3. Walk left to right one stop at a time. At each stop, look on the band,
@@ -541,7 +541,7 @@ pub fn declared_or_in_overflow(
 
 /// **How far [`search_the_band`] had to go** to answer.
 ///
-/// # ★★★ Why the search is instrumented at all
+/// # Why the search is instrumented at all
 ///
 /// Because otherwise the fix to the one-click bug is **unfalsifiable from
 /// outside**. Every existing caller asks a yes/no question — *is the command
@@ -566,7 +566,7 @@ pub struct BandSearch {
     /// Whether the item only became visible when a **collapsed group's popup**
     /// was opened, as opposed to being on the band at that stop.
     ///
-    /// ★★★ With [`Self::scrolls`], this is the pair that says *"the old
+    /// With [`Self::scrolls`], this is the pair that says *"the old
     /// single-click search could not have completed this run"*, and it is the
     /// pair rather than either half. Measured 2026-09-03: at 1,100 pt the File
     /// tab's About sits **one** scroll away and **inside a collapsed group** —
@@ -651,7 +651,7 @@ pub fn search_the_band(
 /// be, and the window the harness opens is 1,100 pt wide — precisely the width
 /// at which the Export group collapses.
 ///
-/// ★ It is checked at **every scroll stop**, not once, because collapsing
+/// It is checked at **every scroll stop**, not once, because collapsing
 /// happens before scrolling: a group that scrolls into view can arrive already
 /// collapsed, and looking for its items on the band would find nothing.
 ///
@@ -692,7 +692,7 @@ fn at_this_stop(
 /// termination condition rather than a count this helper would have to keep in
 /// step with the application's.
 ///
-/// ★ On a band that is already at position zero this costs one trace read and
+/// On a band that is already at position zero this costs one trace read and
 /// no clicks, which is why `declared_or_in_overflow` can call it
 /// unconditionally.
 ///
@@ -732,7 +732,7 @@ pub fn shell_trace(session: &Session) -> Result<Trace> {
 /// The event name under which a ribbon control publishes **whether it was drawn
 /// pressable**, in both crates.
 ///
-/// ★★★ **Until 2026-09-14 this harness could not measure greying at all**, and
+/// **Until 2026-09-14 this harness could not measure greying at all**, and
 /// the gap had a shape: `ui_rect` publishes a rectangle for every control,
 /// enabled or not, deliberately, because the consumer's question is *where is
 /// this control* and a greyed control is still drawn somewhere. So a check
@@ -740,7 +740,7 @@ pub fn shell_trace(session: &Session) -> Result<Trace> {
 /// any one of them could be pressed. `font_group` said so in its own header and
 /// then wrote the word *"greyed"* into a note it had not measured.
 ///
-/// ★★ That is the exact sentence `OPERATOR_REQUESTS.md` O198 claim 3 makes —
+/// That is the exact sentence `OPERATOR_REQUESTS.md` O198 claim 3 makes —
 /// *"get the font selector and editing tools like [bold] and italic working.
 /// That entire area is always greyed out in the menu"* — reported against a
 /// build in which every published condition passes and every region is present.
@@ -750,7 +750,7 @@ pub const ENABLEMENT_EVENT: &str = "ribbon-item-enablement";
 
 /// What the last enablement line said about one control.
 ///
-/// ★★ **Two predicates, because one renderer has two.** `enabled` is the
+/// **Two predicates, because one renderer has two.** `enabled` is the
 /// registered command's own `enabled_when` evaluated against the published
 /// conditions — the thing every ordinary control on the band is greyed by.
 /// `live` is present only when the renderer applies a SECOND test of its own
@@ -758,7 +758,7 @@ pub const ENABLEMENT_EVENT: &str = "ribbon-item-enablement";
 /// re-reads the document to resolve the selection's actual face, and greys on
 /// whether that read-back produced anything.
 ///
-/// ★ So `enabled: true, live: Some(false)` is a control greyed while every
+/// So `enabled: true, live: Some(false)` is a control greyed while every
 /// condition says it should not be. That state has a name here,
 /// [`Enablement::disagrees`], because a check that merely asserts *"pressable"*
 /// reports it identically to an honest refusal — and the two want opposite
@@ -786,7 +786,7 @@ impl Enablement {
 
     /// Whether the two predicates DISAGREE about this control.
     ///
-    /// ★★ The interesting failure, and the one a bare `pressable()` assertion
+    /// The interesting failure, and the one a bare `pressable()` assertion
     /// hides. An `enabled=0` control is a surface honestly reporting that its
     /// precondition is unmet, which R9 requires it to explain on hover. An
     /// `enabled=1 live=0` control is a surface saying one thing in its
@@ -800,7 +800,7 @@ impl Enablement {
 
 /// Every control's LAST enablement line, from both crates' traces at once.
 ///
-/// ★★★ **Both prefixes, merged by physical line number.** The two crates write
+/// **Both prefixes, merged by physical line number.** The two crates write
 /// to the same stderr under different markers ([`SHELL_TRACE_PREFIX`] and the
 /// application's own), and [`Trace::parse`] filters on one. A check that asked
 /// only the shell would see two of the Font group's five controls and miss the
@@ -808,7 +808,7 @@ impl Enablement {
 /// other three. Either answer is worse than none, because a partial group reads
 /// exactly like a measured group.
 ///
-/// ★★ Merged on [`crate::trace::TraceLine::lineno`], which is the line's
+/// Merged on [`crate::trace::TraceLine::lineno`], which is the line's
 /// position in the shared file, so "last" means last **in the run** rather than
 /// last within whichever prefix happened to be read second. The event is
 /// emitted on change, so the last line is the current state — with the change
@@ -861,7 +861,7 @@ pub fn list_str(names: &[&str]) -> String {
 
 /// **Resolve a fixture from this repository, refusing to guess.**
 ///
-/// # ★★★ Why it is resolved at COMPILE time and never from `--source-root`
+/// # Why it is resolved at COMPILE time and never from `--source-root`
 ///
 ///
 /// ```text
@@ -1037,7 +1037,7 @@ pub fn click_mode_segment(
     Ok(())
 }
 
-// ★ The reachability family lives in [`super::reaching`] and is re-exported
+// The reachability family lives in [`super::reaching`] and is re-exported
 // here so `driving::scroll_to`, `driving::raise_dock_tab` and
 // `driving::bring_into_body` keep resolving at every call site. See that
 // module's header for the seam and for R2.
@@ -1053,7 +1053,7 @@ pub const VIEW_TAB: (&str, &str) = ("ribbon.tab.view", "view");
 /// **Put the pen down with the POINTER, not with a key.** Answers whether the
 /// ribbon route delivered the command.
 ///
-/// # ★★★ Why this exists: a keystroke is not a harness primitive with a raised
+/// # Why this exists: a keystroke is not a harness primitive with a raised
 /// panel on screen
 ///
 ///
@@ -1075,7 +1075,7 @@ pub const VIEW_TAB: (&str, &str) = ("ribbon.tab.view", "view");
 /// primitive, and it has an oracle — the shell writes
 /// `ribbon-command-invoked id=view.tool_select`.
 ///
-/// # ★★ Why `view.tool_select` specifically, and not its neighbours
+/// # Why `view.tool_select` specifically, and not its neighbours
 ///
 /// `app::dispatch`'s arm calls `canvas::tool::arm::select`, a plain write into
 /// tool memory. Its two neighbours on the same band — `view.tool_hand` and
@@ -1084,7 +1084,7 @@ pub const VIEW_TAB: (&str, &str) = ("ribbon.tab.view", "view");
 /// cannot be wrong about its own state, which is what makes the step
 /// deterministic rather than merely more reliable.
 ///
-/// # ★ Why it returns `bool` rather than failing
+/// # Why it returns `bool` rather than failing
 ///
 /// Because what an unavailable route *means* is the caller's to say, and the
 /// two callers disagree. A check whose subject sits inside a raised panel must
@@ -1180,7 +1180,7 @@ fn select_invokes(session: &Session) -> Result<usize> {
 /// How many times [`press_until_traced`] will send a keystroke before
 /// concluding it is not arriving.
 ///
-/// ★ Four rather than two, and the number comes from a measurement rather than
+/// Four rather than two, and the number comes from a measurement rather than
 /// from taste: `scale_switch`'s header records a bare `V` **arriving zero times
 /// in six runs** with a dock panel raised. A non-arrival on this machine is not
 /// a rare coincidence to be papered over with one retry — it is a routine
@@ -1200,7 +1200,7 @@ pub const PRESS_TRIES: usize = 4;
 /// there before the first press, and `false` after [`PRESS_TRIES`] presses with
 /// no new line.
 ///
-/// # ★★★ THE RULE THIS ENCODES
+/// # THE RULE THIS ENCODES
 ///
 /// > **Nothing measured after a press is evidence about the program until the
 /// > press is shown to have arrived.**
@@ -1221,7 +1221,7 @@ pub const PRESS_TRIES: usize = 4;
 /// all"* about a keystroke whose effect was four lines further up the same
 /// trace). ⇒ A press that cannot be shown to have landed is a **SKIP**.
 ///
-/// # ★★ The caller owes two things, and both are contracts rather than advice
+/// # The caller owes two things, and both are contracts rather than advice
 ///
 /// 1. **`evidence` must name every line the key could produce**, including the
 ///    ones that mean the program is wrong. A list containing only the

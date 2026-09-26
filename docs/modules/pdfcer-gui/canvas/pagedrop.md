@@ -27,7 +27,7 @@ vertical caret; the page view flows top to bottom, so it splits on the
 vertical half and draws a horizontal one. An operator who has used one
 knows the other without being told, which is the property worth having.
 
-### ★ The facing modes get the same rule, and it is right there too
+### The facing modes get the same rule, and it is right there too
 
 Under `PageDisplay::Facing` a row holds two pages side by side, so the
 left/right split would also carry meaning. It is **not** used, and the

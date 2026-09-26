@@ -33,7 +33,7 @@ use crate::canvas::target::{CanvasTargetProvider, TargetId};
 
 /// The whole of the canvas's selection state.
 ///
-/// # ★ Where this lives, and why that is the whole of its document scoping
+/// # Where this lives, and why that is the whole of its document scoping
 ///
 /// It is a field of `crate::app::state::OpenDoc` — the open document itself.
 /// That is not filing: it is the mechanism.
@@ -46,7 +46,7 @@ use crate::canvas::target::{CanvasTargetProvider, TargetId};
 /// nothing to compare. `panels::DocKey` and the decomposition cache are scoped
 /// the same way for the same reason.
 ///
-/// ★ The alternative — living in `egui::Memory`, which outlives documents, and
+/// The alternative — living in `egui::Memory`, which outlives documents, and
 /// *detecting* the change against a token built from the `Arc<EditSession>`'s
 /// allocation address and the page count — cannot be made correct: an address
 /// is not an identity, so a reused allocation with a matching page count
@@ -84,7 +84,7 @@ pub struct SelectionState {
     resolved_for: Option<(usize, u64)>,
     /// The selected **annotation**, if one is selected instead of content.
     ///
-    /// # ★ Why it is a field here rather than a second selection elsewhere
+    /// # Why it is a field here rather than a second selection elsewhere
     ///
     /// Because the two are **mutually exclusive**, and that has to be enforced
     /// somewhere rather than remembered everywhere. Putting it on
@@ -96,7 +96,7 @@ pub struct SelectionState {
     /// Here, [`Self::select_annot`] and the content paths are the only writers
     /// and each clears the other. One canvas, one selection.
     ///
-    /// # ★★★ Why it needs a `resolved_for` twin
+    /// # Why it needs a `resolved_for` twin
     ///
     /// An annotation's outline is its `/Rect`, four numbers in a dictionary,
     /// and reading it costs one `/Annots` walk with no decomposition. **That
@@ -111,7 +111,7 @@ pub struct SelectionState {
     /// as [`Self::resolve`] is. Being cheap is what makes re-running it the fix
     /// rather than invalidating more aggressively.
     ///
-    /// ★ *"It is cheap to read"* and *"it does not need re-reading"* are
+    /// *"It is cheap to read"* and *"it does not need re-reading"* are
     /// different claims, and only the first is true here. See [`annot`]'s
     /// header table for the four ways content and annotation selections
     /// differ.
@@ -200,7 +200,7 @@ impl SelectionState {
     /// in [`crate::canvas::menus::select_under_right_click`] as something that
     /// must *not* destroy a set the operator spent five clicks building.
     ///
-    /// # ★ It clears CONTENT only, and that is deliberate
+    /// # It clears CONTENT only, and that is deliberate
     ///
     /// An annotation selection is governed by a different capability —
     /// `author_markup`, which **Review grants and Read does not**, where
@@ -285,7 +285,7 @@ impl SelectionState {
     /// that happened to resolve. Handing it a clean list is the difference
     /// between "delete refused" and "delete did half of what I asked".
     ///
-    /// # ★★★ TARGETS INSIDE A FORM XOBJECT ARE NOT IN THIS LIST
+    /// # TARGETS INSIDE A FORM XOBJECT ARE NOT IN THIS LIST
     ///
     /// A selection can hold two kinds of thing —
     /// [`TargetId::Object`](crate::canvas::target::TargetId::Object), an index
@@ -318,7 +318,7 @@ impl SelectionState {
     /// The indices into `PageObjects::leaves` selected on `page`, ascending
     /// and unique — the half [`Self::object_indices_on`] drops.
     ///
-    /// ★ **This exists so a refusal can be worded.** Its one job is to let a
+    /// **This exists so a refusal can be worded.** Its one job is to let a
     /// caller tell *"you selected nothing"* from *"you selected something this
     /// verb cannot reach"*, which are the two states an operator most needs
     /// kept apart: the first is their mistake and the second is the program's
@@ -356,7 +356,7 @@ impl SelectionState {
             .collect()
     }
 
-    /// ★ The **Object-rung** indices on `page` — empty at the Part and Node
+    /// The **Object-rung** indices on `page` — empty at the Part and Node
     /// rungs.
     ///
     /// # ⚠ This is not the Delete rule any more
@@ -372,7 +372,7 @@ impl SelectionState {
     /// narrower question and the right one for a caller that means the
     /// whole-object verb specifically.
     ///
-    /// # ★ Why the distinction is destructive rather than pedantic
+    /// # Why the distinction is destructive rather than pedantic
     ///
     /// At the Part or Node rung the selection names a subpath or an anchor
     /// *inside* one object, while `EditSession::delete_objects` removes
@@ -429,7 +429,7 @@ impl SelectionState {
     ///   strands an operator who has forgotten they descended, which is the
     ///   failure a depth model must avoid above all.
     pub fn click(&mut self, page: usize, hit: ClickHit, shift: bool, double: bool) {
-        // ★ A content click drops an annotation selection — HERE, in the type
+        // A content click drops an annotation selection — HERE, in the type
         // that owns the exclusion, not at the call site.
         //
         // `canvas::interact` also clears it when a click misses every
@@ -454,7 +454,7 @@ impl SelectionState {
 
     /// **The Node tool's click** — direct selection, with no descent ritual.
     ///
-    /// # ★★ Why it is a separate entry point from the ladder
+    /// # Why it is a separate entry point from the ladder
     ///
     /// [`Self::click`] implements a *ladder*: a click selects an object, a
     /// double-click descends to its part, another descends to a node. That
@@ -497,7 +497,7 @@ impl SelectionState {
         self.annot = None;
 
         let Some(object) = hit.object else {
-            // ★ Shift over empty paper clears too, and that is deliberate.
+            // Shift over empty paper clears too, and that is deliberate.
             // Shift means "add to what I have", and there is nothing there to
             // add; preserving the selection would make an aimless Shift-click a
             // no-op the operator cannot distinguish from a missed anchor.
@@ -549,7 +549,7 @@ impl SelectionState {
         self.level = if hit.node.is_some() {
             SelectionLevel::Node
         } else if hit.part.is_some() {
-            // ★ The Part rung, NOT the Object rung, and this single line is most
+            // The Part rung, NOT the Object rung, and this single line is most
             // of the fix. It is what makes the anchors appear on the very first
             // click — `painting::draw_anchors` draws the entered subpath's
             // anchors from the Part rung up, so entering it *is* showing them.
@@ -569,7 +569,7 @@ impl SelectionState {
     /// shift-click it precisely — which on a CAD sheet of overlapping strokes
     /// is often not practical.
     ///
-    /// ★ An empty `hits` is a no-op rather than a clear, and the asymmetry with
+    /// An empty `hits` is a no-op rather than a clear, and the asymmetry with
     /// [`Self::marquee`] is deliberate. A band that encloses nothing means
     /// "replace the selection with nothing" when it is a plain band — that is
     /// how every editor cancels a selection — but "remove nothing from the
@@ -577,7 +577,7 @@ impl SelectionState {
     /// mis-aimed Ctrl-band destroy the very selection the operator was trying
     /// to refine, which is the opposite of what they asked for.
     ///
-    /// ★★ The level is left alone. Subtracting is a change to WHICH objects are
+    /// The level is left alone. Subtracting is a change to WHICH objects are
     /// picked, never to how deep the selection has descended, and resetting it
     /// to `Object` would silently throw away an operator's descent into a form.
     pub fn marquee_remove(&mut self, page: usize, hits: &[TargetId]) {
@@ -599,7 +599,7 @@ impl SelectionState {
     /// contains objects; there is no sensible reading of "every subpath of
     /// some other object that this box happens to cover".
     ///
-    /// ★ That argument is about a band over the **page**, and one case is
+    /// That argument is about a band over the **page**, and one case is
     /// outside it: a band drawn while the operator is inside a text block whose
     /// chunk boxes are on the canvas names a region over *visible rectangles of
     /// the one thing being worked on*. [`crate::canvas::marquee::on_release`]
@@ -626,7 +626,7 @@ impl SelectionState {
         self.normalise();
     }
 
-    /// ★★★ **Select one object outright**, because the program just put it
+    /// **Select one object outright**, because the program just put it
     /// there.
     ///
     /// # The complaint this closes
@@ -664,7 +664,7 @@ impl SelectionState {
         self.select_only(page, object, "placed");
     }
 
-    /// ★★ **Select exactly one object, from somewhere that is not the canvas.**
+    /// **Select exactly one object, from somewhere that is not the canvas.**
     ///
     /// The shared body of [`Self::select_placed`] and of the Objects panel's
     /// row click, and it exists as one function because the two are the same
@@ -674,7 +674,7 @@ impl SelectionState {
     /// `&'static str` rather than an enum because nothing branches on it —
     /// the moment something does, it should become one.
     ///
-    /// # ★★★ Why the Objects panel writes the SELECTION and not a focus
+    /// # Why the Objects panel writes the SELECTION and not a focus
     ///
     /// A panel-local focus is a second notion of *"the thing I am working on"*
     /// that the canvas knows nothing about, and it produces the operator's
@@ -692,7 +692,7 @@ impl SelectionState {
         self.normalise();
         crate::diag::trace(move || {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            // ★ The list is named as well as the index. `object=7` was
+            // The list is named as well as the index. `object=7` was
             // unambiguous while a page had one index space; it has two now,
             // and a trace that cannot tell `objects[7]` from `leaves[7]` is a
             // trace that cannot be read back — which is how a wrong aim goes
@@ -708,7 +708,7 @@ impl SelectionState {
     /// **Select ONE PART of one object, and stand at the Part rung** —
     /// [`Self::select_only`]'s sibling, one rung down.
     ///
-    /// # ★★★ Why this exists as its own verb
+    /// # Why this exists as its own verb
     ///
     /// `OPERATOR_REQUESTS.md` O188(A). The ladder's own entrance to the Part
     /// rung is [`Self::click_direct`], reached only by arming the Points tool
@@ -745,7 +745,7 @@ impl SelectionState {
     ///   it because it *happens* not to need it today is the seam the next
     ///   caller falls through.
     ///
-    /// ★ **The caller is responsible for `part` being in range.** This type
+    /// **The caller is responsible for `part` being in range.** This type
     /// holds no document and cannot check. `canvas::runmenu::resolve` re-asks
     /// the provider immediately before calling — see its header for why a
     /// condition that answered *for a frame* is not enough for a press that
@@ -761,7 +761,7 @@ impl SelectionState {
         self.normalise();
         crate::diag::trace(move || {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            // ★ Names the list as well as the index, for `select_only`'s
+            // Names the list as well as the index, for `select_only`'s
             // reason one function up: a page has two index spaces, and a trace
             // that cannot tell `objects[7]` from `leaves[7]` cannot be read
             // back.
@@ -838,7 +838,7 @@ impl SelectionState {
     /// Every selected **anchor** on one object of one page, object-scoped,
     /// ascending and unique.
     ///
-    /// # ★ Why this exists as its own accessor
+    /// # Why this exists as its own accessor
     ///
     /// Because a multi-node selection has been *representable* since the Node
     /// rung landed — [`Self::pick_within`] adds a Shift-clicked anchor as its
@@ -943,7 +943,7 @@ impl SelectionState {
         }
     }
 
-    /// ★ **Re-resolve against a fresh decomposition** — invariant 3.
+    /// **Re-resolve against a fresh decomposition** — invariant 3.
     ///
     /// Called every frame; does real work only when `(page, epoch)` has
     /// moved, because that is the only time the answer can have changed. A
@@ -1003,7 +1003,7 @@ impl SelectionState {
             .collect();
     }
 
-    /// ★★★ **Re-read the selected annotation's geometry from the document** —
+    /// **Re-read the selected annotation's geometry from the document** —
     /// the annotation half of invariant 3.
     ///
     /// Called every frame from `canvas::interact`'s step 7, beside
@@ -1048,7 +1048,7 @@ impl SelectionState {
         if self.annot_resolved_for == Some((page_index, epoch)) {
             return;
         }
-        // ★ The key is recorded even when there is nothing to do, on
+        // The key is recorded even when there is nothing to do, on
         // `resolve`'s own argument: a page with no annotation selected must not
         // re-walk `/Annots` on every frame merely because it found nothing to
         // update the first time.
@@ -1077,7 +1077,7 @@ impl SelectionState {
             return;
         };
         selected.outline = outline;
-        // ★★ The `/F` bit 8 flag is re-read too. A lock applied while the mark
+        // The `/F` bit 8 flag is re-read too. A lock applied while the mark
         // is selected must take the grips away on the next frame, not on the
         // next click — `Grabbable`'s annotation arm reads `target.locked` and
         // would otherwise go on offering nine handles the file forbids.
@@ -1109,7 +1109,7 @@ impl SelectionState {
     /// exists, and a correct action with no feedback is indistinguishable
     /// from a broken one.
     fn outline_rect(&self, targets: &dyn CanvasTargetProvider, entry: &Selection) -> Option<Rect> {
-        // ★ A leaf has no page paint-order index, so it has no *part* box
+        // A leaf has no page paint-order index, so it has no *part* box
         // either — the part rung is not offered for one. Its object box is,
         // and that is what gets outlined: `bounds` answers for both lists.
         entry
@@ -1125,7 +1125,7 @@ impl SelectionState {
 
     /// A plain or shift click while at the Object rung.
     ///
-    /// # ★★★ The second click on a text block narrows to the chunk under it
+    /// # The second click on a text block narrows to the chunk under it
     ///
     /// `OPERATOR_REQUESTS.md` **O215** ask 1, in his words: *"sometimes it moves
     /// the chunk and sometimes it takes the whole block."* Selection has always
@@ -1144,7 +1144,7 @@ impl SelectionState {
     /// | this object is **already** the whole selection | a click on a different block, which selects it whole |
     /// | `hit.part` is `Some` | a click in the white inside the block's box, which keeps the block |
     ///
-    /// ★★ *"Already the whole selection"* is not enough on its own, and the
+    /// *"Already the whole selection"* is not enough on its own, and the
     /// hazard is the reason [`crate::canvas::presspick::changed_selection`]
     /// exists: the press of this very click may be what selected the block, and
     /// the state it leaves is identical. The click path folds that answer into
@@ -1254,7 +1254,7 @@ impl SelectionState {
     /// so carrying a part or node index across would address an index in a
     /// different object's space.
     fn descend(&mut self, page: usize, hit: ClickHit) {
-        // ★★★ **A LEAF DESCENDS TOO** — `OPERATOR_REQUESTS.md` O70.
+        // **A LEAF DESCENDS TOO** — `OPERATOR_REQUESTS.md` O70.
         //
         // A leaf is painted from inside a form XObject, and the ladder may
         // descend into one only because every rung below it is addressable:

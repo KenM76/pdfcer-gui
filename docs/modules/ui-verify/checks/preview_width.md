@@ -22,7 +22,7 @@ Two rulings, and they are not the same ruling:
 | 1 | the preview may take its width from the object's own line width, but **zoom must not enter** | phases **A** and **B**: the same drag at two zooms produces the **same** preview width |
 | 2 | the one-pixel line-weight view governs the preview too | phase **C**: with `view.line_weights` off, the preview is **1.00 px** |
 
-# ★★★ Why this cannot be a screenshot, and why it needs the trace
+# Why this cannot be a screenshot, and why it needs the trace
 
 Zoom-invariance is **a claim about two frames at two zooms.** No single
 capture can carry it: a 12-pixel outline at 100 % and a 12-pixel outline at
@@ -42,12 +42,12 @@ than an independent measurement of the pixels. That is a deliberate and
 stated limitation: the alternative — counting blue pixels across a stroke in
 a capture — cannot separate the preview from the erase band beneath it,
 which is *supposed* to scale. What this check owns is the decision; what a
-human owns is that the decision is drawn. ★ The `zoom=` field on the same
+human owns is that the decision is drawn. The `zoom=` field on the same
 line is the guard against the degenerate reading: if `zoom` did not move
 either, the check SKIPs rather than passing, because two readings at one
 zoom assert nothing at all.
 
-# ★★ Why phase C can SKIP, and why that is honest rather than weak
+# Why phase C can SKIP, and why that is honest rather than weak
 
 [`StrokeRule::preview_px`] floors the width at one device pixel — a hairline
 (`0 w`, PDF 32000-1 §8.4.3.2) is one device pixel and a zero-width egui
@@ -73,7 +73,7 @@ reach [`super::super`]'s stroke rule by different routes.
 
 # Fixture requirements
 
-`--pdf` and `--doc-point PAGE,X,Y` (★ **0-based page**) naming a point on a
+`--pdf` and `--doc-point PAGE,X,Y` (**0-based page**) naming a point on a
 **stroked vector object**. The sweep's default aim,
 `fixtures/a1-titleblock.pdf` at `0,2000,320`, is the title block's linework
 and is what this was measured on. A point on an image or on text selects

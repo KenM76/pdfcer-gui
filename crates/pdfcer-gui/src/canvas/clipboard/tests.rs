@@ -5,7 +5,7 @@
 //! header says what the assertion would miss if it were written the obvious
 //! way, and that is the part a future session needs.
 
-// ★★★ **THE INNER `#![cfg(test)]` IS LOAD-BEARING, not decoration.**
+// **THE INNER `#![cfg(test)]` IS LOAD-BEARING, not decoration.**
 //
 // `tools/gates/check-ui-strings.sh` scans every `.rs` file for operator-facing
 // string literals outside the `ui_text` catalog, and it skips a test module by
@@ -15,12 +15,12 @@
 // was split out.
 //
 // `canvas::selection::tests` carries the identical line for the identical
-// reason and is the precedent. ★ It also means a non-test item added to this
+// reason and is the precedent. It also means a non-test item added to this
 // file would be invisible to the gate — so do not add one; this file is
 // assertions and nothing else.
 #![cfg(test)]
 
-/// ★★★ **A cut that cannot delete must not copy either.**
+/// **A cut that cannot delete must not copy either.**
 ///
 ///
 /// # What this asserts, and why each half is needed
@@ -35,7 +35,7 @@
 ///    failure rather than a delete failure. A build that degraded the cut to
 ///    a copy would satisfy 1 and 2 and still hand the operator a duplicate.
 ///
-/// ★ `certified-comments.pdf` and `threaded-comments.pdf` differ in exactly
+/// `certified-comments.pdf` and `threaded-comments.pdf` differ in exactly
 /// one dictionary — the catalog's `/Perms` — so the pair tells *"withheld
 /// here"* from *"offered there"* while varying one thing. This test drives
 /// the refusing half; the offering half is the driven check's.
@@ -88,7 +88,7 @@ use super::*;
 
 /// The offset is applied on a same-page paste and not on a cross-page one.
 ///
-/// ★ Asserted as arithmetic rather than by driving, because the *decision*
+/// Asserted as arithmetic rather than by driving, because the *decision*
 /// is the thing worth pinning: whether the copy is visible when it lands on
 /// top of its original is a property of this one comparison, and a driven
 /// check would prove it for one pair of pages.
@@ -103,7 +103,7 @@ fn the_offset_is_same_page_only() {
     );
 }
 
-/// ★ **Down the page is negative.** The one-line property that would
+/// **Down the page is negative.** The one-line property that would
 /// otherwise ship inverted and never be reported, because a paste that
 /// drifts up-and-right looks like a decision rather than a bug.
 #[test]
@@ -142,7 +142,7 @@ fn with_annot_selected(index: usize) -> crate::app::state::OpenDoc {
     doc
 }
 
-/// ★★★ **A STICKY NOTE CAN BE COPIED**, and until 2026-09-05 it could not.
+/// **A STICKY NOTE CAN BE COPIED**, and until 2026-09-05 it could not.
 ///
 /// This is the operator-facing whole of the change. `Ctrl+C` over a `/Text`
 /// annotation used to answer *"that annotation is not one pdfcer authors …
@@ -192,7 +192,7 @@ fn a_sticky_note_reaches_the_clipboard() {
     );
 }
 
-/// ★★★ **A SQUARE STILL KEEPS ITS AUTHOR, NOTE AND OPACITY** — the property
+/// **A SQUARE STILL KEEPS ITS AUTHOR, NOTE AND OPACITY** — the property
 /// held, while the route under it changed.
 ///
 ///
@@ -210,7 +210,7 @@ fn a_sticky_note_reaches_the_clipboard() {
 /// start: the operator cannot see which route ran, and a route assertion goes
 /// red on an improvement.
 ///
-/// ★ `/CA 0.4` rather than `/CA 1` in the fixture is deliberate and is the
+/// `/CA 0.4` rather than `/CA 1` in the fixture is deliberate and is the
 /// difference between this test working and being vacuous — an opacity of 1
 /// is what an absent `/CA` renders as, so a build that dropped the key would
 /// look identical on screen and identical to a sloppier assertion.
@@ -275,7 +275,7 @@ fn a_modelled_markup_keeps_what_a_spec_cannot_say() {
     );
 }
 
-/// ★★ **A cut of an annotation is ONE undo entry**, and it deletes the
+/// **A cut of an annotation is ONE undo entry**, and it deletes the
 /// annotation it copied rather than the one now at that position.
 ///
 /// Two assertions and the second is the one worth the test. A cut raises the
@@ -315,7 +315,7 @@ fn cutting_a_sticky_note_deletes_the_one_it_copied() {
     }
 }
 
-/// ★★★ **The paste raised for an annotation clip is the ONE verb that plants
+/// **The paste raised for an annotation clip is the ONE verb that plants
 /// both halves**, carrying the annotation count so a driven check can see it.
 ///
 /// A build whose serialiser dropped the annotation payload would still park a

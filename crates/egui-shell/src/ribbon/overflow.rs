@@ -129,7 +129,7 @@ pub(crate) fn set_first(ui: &egui::Ui, ctx: &Ctx<'_>, tab_id: &str, at: usize) {
 
 /// **The furthest left index that still fills the band**, given the widths.
 ///
-/// # ★★★ Why this is a pure function and why it runs every frame
+/// # Why this is a pure function and why it runs every frame
 ///
 /// A remembered scroll position is an input to layout. Widen the window and a
 /// position that was correct becomes one that leaves blank space at the right

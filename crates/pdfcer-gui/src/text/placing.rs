@@ -11,7 +11,7 @@
 
 /// The button inside the dialog.
 ///
-/// ★ The **ellipsis** means *this window steps aside*, which is the same
+/// The **ellipsis** means *this window steps aside*, which is the same
 /// promise `Save a copy…` and `Open…` make about a picker. Without it the
 /// button reads as one that does something immediately, and what it actually
 /// does is make the window disappear — the most alarming thing on this surface
@@ -25,7 +25,7 @@ pub fn place_button() -> &'static str {
 
 /// The tooltip, and the only place the RETURN is promised before it is needed.
 ///
-/// ★★ The last clause is the one that matters. An operator about to press a
+/// The last clause is the one that matters. An operator about to press a
 /// button that makes their window vanish needs to know it is coming back
 /// *before* they press it, not afterwards — and afterwards the tooltip is off
 /// screen with the window.
@@ -37,7 +37,7 @@ pub fn place_tooltip() -> &'static str {
 
 /// The note under the button, saying when the pointer beats the keyboard.
 ///
-/// ★ It ends by saying the numbers are still editable, because the button
+/// It ends by saying the numbers are still editable, because the button
 /// otherwise reads as a mode you commit to. Both routes stay live and neither
 /// is the real one.
 #[must_use]
@@ -46,7 +46,7 @@ pub fn place_note() -> &'static str {
      still correct the numbers here afterwards."
 }
 
-/// ★★★ **The instruction on the Tool panel while a placement is armed, and it
+/// **The instruction on the Tool panel while a placement is armed, and it
 /// is not optional.**
 ///
 /// Every other armed-tool sentence in this shell is a convenience: the ribbon
@@ -69,7 +69,7 @@ pub fn armed_instruction() -> &'static str {
 mod tests {
     use super::*;
 
-    /// ★★ The return is promised in BOTH places an operator can be.
+    /// The return is promised in BOTH places an operator can be.
     ///
     /// Before they press, in the tooltip; and after they press — when the
     /// tooltip is off screen with the window — on the Tool panel. A version
@@ -89,7 +89,7 @@ mod tests {
         );
     }
 
-    /// ★★★ The armed instruction names the way OUT, which is the sentence that
+    /// The armed instruction names the way OUT, which is the sentence that
     /// stops an operator being stranded.
     ///
     /// `canvas::placing`'s header records that the precedent this arm
@@ -113,7 +113,7 @@ mod tests {
     /// the form-field instruction.
     #[test]
     fn both_gestures_are_offered_wherever_the_gesture_is_described() {
-        // ★ Case-insensitively: one of the two sentences begins with the
+        // Case-insensitively: one of the two sentences begins with the
         // word, and asserting the lower-case spelling would be testing
         // capitalisation rather than the property. Caught by this test's own
         // first run, which is the cheapest place to find it.

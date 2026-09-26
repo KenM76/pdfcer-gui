@@ -1,6 +1,6 @@
 //! # `dialogs::password` — the box that lets an encrypted document be opened
 //!
-//! ## ★★★ The defect this closes, and it is the shape this project keeps finding
+//! ## The defect this closes, and it is the shape this project keeps finding
 //!
 //!
 //! **An encrypted PDF could not be opened at all.** The shell detected the case
@@ -30,7 +30,7 @@ pub const REGION_CANCEL: &str = "password.cancel"; // ui-text-exempt: trace regi
 
 /// Why the last attempt did not open the document.
 ///
-/// ★ Two variants, not one, because `pdfcer-core` reports two errors and its own
+/// Two variants, not one, because `pdfcer-core` reports two errors and its own
 /// doc comment says why: `PasswordRequiresNormalisation` exists *"so that
 /// failure does not masquerade as `PasswordRequired`'s 'you typed it wrong',
 /// which would send the operator to re-check a password that was correct."*
@@ -106,7 +106,7 @@ impl PasswordDialog {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI.
             //
-            // ★ The REASON and the attempt number, never the password. See the
+            // The REASON and the attempt number, never the password. See the
             // module header and `crate::secret`.
             format!(
                 "password-rejected attempt={} reason={}",
@@ -124,7 +124,7 @@ impl PasswordDialog {
     /// Returns `false` when the dialog should close — cancelled, or dismissed by
     /// the window's own ✕.
     ///
-    /// ★ The ✕ is a **Cancel**. The window's close control must mean the
+    /// The ✕ is a **Cancel**. The window's close control must mean the
     /// non-destructive answer, which is the rule `dialogs::unsaved` states: it is
     /// the control an operator presses reflexively to make a surprise go away.
     /// Here nothing is destroyed either way, and the tab stays in the document
@@ -154,7 +154,7 @@ impl PasswordDialog {
 
         ui.horizontal(|ui| {
             ui.label(t::password_label());
-            // ★ `password(true)` — the field renders dots. Not a nicety: this
+            // `password(true)` — the field renders dots. Not a nicety: this
             // window is opened in an office and read over a shoulder, and the
             // one thing a password field must do is not display the password.
             let field = ui.add(
@@ -166,7 +166,7 @@ impl PasswordDialog {
                     .desired_width(ui.available_width() - 8.0),
             );
             crate::diag::ui_rect(REGION_FIELD, field.rect);
-            // ★★ Focus on the first frame, so the operator can type straight
+            // Focus on the first frame, so the operator can type straight
             // away. The prompt is modal in intent and there is exactly one
             // thing to do in it; making them click the box first is a step that
             // exists only because nobody asked for the focus.
@@ -182,7 +182,7 @@ impl PasswordDialog {
 
         ui.add_space(6.0);
 
-        // ★ The reason the last attempt failed, if there was one. Drawn ABOVE
+        // The reason the last attempt failed, if there was one. Drawn ABOVE
         // the buttons so it is between the field and the control that repeats
         // the mistake, rather than below where a short window can hide it.
         if self.empty_refused {
@@ -220,7 +220,7 @@ impl PasswordDialog {
 
     /// Hand the typed password to the application, or refuse an empty one.
     ///
-    /// ★★ The empty case is refused **here** rather than sent on, and the reason
+    /// The empty case is refused **here** rather than sent on, and the reason
     /// is [`Secret::is_empty`]'s: `Document::load(path)` already tried the empty
     /// password before this prompt existed — every conforming reader does that
     /// silently — so submitting it again asks the engine a question it has
@@ -237,7 +237,7 @@ impl PasswordDialog {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI.
             //
-            // ★★★ The LENGTH and whether it is ASCII, never the value. Those two
+            // The LENGTH and whether it is ASCII, never the value. Those two
             // facts are what a trace reader needs — "a password of 11 characters
             // was supplied and it was non-ASCII" explains a
             // `needs-normalisation` rejection completely — and neither carries
@@ -260,7 +260,7 @@ impl PasswordDialog {
 mod tests {
     use super::*;
 
-    /// ★★★ **An empty box raises no action.**
+    /// **An empty box raises no action.**
     ///
     /// The whole of [`PasswordDialog::submit`]'s argument, asserted: pdfcer has
     /// already tried the empty password, so sending it again would produce a
@@ -291,7 +291,7 @@ mod tests {
         assert_eq!(password.len(), 7);
     }
 
-    /// ★★★ **The action carrying the password cannot print it**, asserted on
+    /// **The action carrying the password cannot print it**, asserted on
     /// the real `Action` rather than on `Secret` alone.
     ///
     /// `crate::secret` proves the type is safe; this proves the type is the one
@@ -312,7 +312,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The field is cleared on a rejection**, and the attempt count rises.
+    /// **The field is cleared on a rejection**, and the attempt count rises.
     ///
     /// A wrong password left in the box is one an operator re-submits by
     /// reflex; and without the count, a second rejection is indistinguishable
@@ -327,7 +327,7 @@ mod tests {
         assert_eq!(d.rejection, Some(Rejection::Wrong));
     }
 
-    /// ★ **The two rejection reasons stay distinct**, because the engine went
+    /// **The two rejection reasons stay distinct**, because the engine went
     /// to the trouble of separating them so an operator is not sent to re-check
     /// a password that was correct.
     #[test]

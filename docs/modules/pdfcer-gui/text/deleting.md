@@ -3,7 +3,7 @@
 Four of them, for [`crate::canvas::deleting`], plus the rule that decides
 which refusals get one at all.
 
-## ★★ Why four and not eleven
+## Why four and not eleven
 
 [`crate::canvas::deleting::Refusal`] has eleven variants and seven of them
 describe a state the operator put themselves in and can **see** on screen:
@@ -32,12 +32,12 @@ they cannot see a "show operator", a "subpath", an "anchor" or a "form
 XObject". A refusal phrased in the file format's vocabulary reads as an
 internal error.
 
-★ And **never a bare "dimension"** — R8b Rule 15. The labels on the
+And **never a bare "dimension"** — R8b Rule 15. The labels on the
 operator's drawings are *pdf dimensions*: page content pdfcer reads and must
 not silently alter. The word on screen is **label**, which is what he calls
 them and what he can see.
 
-## ★ Where they are shown
+## Where they are shown
 
 The status bar's disclosure row, through
 `crate::app::actions::disclosure::record_notes`, stamped with the epoch

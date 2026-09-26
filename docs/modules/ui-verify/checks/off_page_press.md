@@ -13,7 +13,7 @@ half of O23 that had nothing to enable.**
 > feature but I didn't see how to enable it."*
 
 
-# ★★★ How this differs from `off_page_marquee`, and why that is not a
+# How this differs from `off_page_marquee`, and why that is not a
 duplicate
 
 `off_page_marquee` is the sibling check for O92, and it drags a band **from
@@ -76,7 +76,7 @@ every clause of that paragraph against the fixture's own coordinates, so the
 argument fails at build time if the geometry is ever edited out from under
 it.
 
-# ★★ Why the origin is at y = 190 rather than beside the square
+# Why the origin is at y = 190 rather than beside the square
 
 `canvas::presspick`'s rule is that a press on *ink* starts a move and a press
 on empty paper starts a band. The pick tolerance is several page points wide

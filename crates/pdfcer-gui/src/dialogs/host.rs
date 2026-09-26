@@ -13,7 +13,7 @@ use egui::{Pos2, Vec2, ViewportBuilder, ViewportClass, ViewportId};
 /// **Where a dialog's window opens.** See that module's header for the seam and
 /// for A16c, the defect it was split out to fix.
 ///
-/// ★ Declared here rather than in `dialogs/mod.rs`, so it lives at
+/// Declared here rather than in `dialogs/mod.rs`, so it lives at
 /// `dialogs/host/placement.rs`. That is not a stylistic choice: `dialogs/mod.rs`
 /// stands at 1,496 lines against R2's limit of 1,500 and has no room for a
 /// module declaration and its doc comment.
@@ -32,7 +32,7 @@ const OWNER_KEY: &str = "dialog-host-owner"; // ui-text-exempt: a memory key, ne
 /// **Tell the dialog host which window owns its dialogs.** Called once a frame
 /// by the application, before any dialog draws.
 ///
-/// # ★★ Why a channel through `egui::Memory` and not an argument
+/// # Why a channel through `egui::Memory` and not an argument
 ///
 /// Because the alternative is a fourteenth argument on thirteen call sites to
 /// carry one fact that never varies. `eframe` hands the application window's
@@ -41,7 +41,7 @@ const OWNER_KEY: &str = "dialog-host-owner"; // ui-text-exempt: a memory key, ne
 /// opportunities to pass `None` and one dialog that quietly kept G3's
 /// symptoms.
 ///
-/// ★ It is safe as a hidden channel for the reason most hidden channels are
+/// It is safe as a hidden channel for the reason most hidden channels are
 /// not: **it has exactly one writer**, `app::frame`, on the frame path, and the
 /// value is a constant for the life of the process. There is no ordering to get
 /// wrong and no second producer to disagree with.
@@ -62,7 +62,7 @@ fn owner(ctx: &egui::Context) -> Option<isize> {
 
 /// How many passes from opening a dialog goes on asking for the keyboard.
 ///
-/// # ★★★ Measured, twice, and the second measurement moved it
+/// # Measured, twice, and the second measurement moved it
 ///
 /// One request on the opening pass was **granted** — the dialog traced
 /// `focused=Some(true)` — and then lost again. Eight passes was tried next, on
@@ -83,7 +83,7 @@ fn owner(ctx: &egui::Context) -> Option<isize> {
 /// back to the owner-less main window about a third of a second after the child
 /// appears.
 ///
-/// # ★★★ THE NUMBER STAYED AT EIGHT, AND THE HUNT THAT NEARLY CHANGED IT IS
+/// # THE NUMBER STAYED AT EIGHT, AND THE HUNT THAT NEARLY CHANGED IT IS
 /// # THE LESSON
 ///
 /// A driven check reported that a note dialog *"does not take the keyboard
@@ -100,7 +100,7 @@ fn owner(ctx: &egui::Context) -> Option<isize> {
 /// check pass **with this constant back at eight**, which is how the raises
 /// were shown to have bought nothing.
 ///
-/// ★ Two things are worth carrying out of that:
+/// Two things are worth carrying out of that:
 ///
 /// - **A knob must not sit at a value chosen to fix something it does not
 ///   fix.** Left at a hundred and twenty, a future reader would have believed
@@ -110,7 +110,7 @@ fn owner(ctx: &egui::Context) -> Option<isize> {
 ///   subject.** Focus really did follow the requests; the requests really were
 ///   irrelevant to the failure. Both were true at once.
 ///
-/// ★ The bound is not the only guard, and on its own it would be a bad one —
+/// The bound is not the only guard, and on its own it would be a bad one —
 /// see [`ENGAGED`]. A dialog stops asking the instant the operator touches it,
 /// so the only case this can fight is *clicking away within half a second of a
 /// dialog appearing without having interacted with it*, whose worst outcome is
@@ -119,7 +119,7 @@ const FOCUS_FRAMES: u64 = 8;
 
 /// Marker written when a dialog first receives input of its own.
 ///
-/// ★★ **The real terminator of the focus request**, with [`FOCUS_FRAMES`] as
+/// **The real terminator of the focus request**, with [`FOCUS_FRAMES`] as
 /// its backstop rather than the other way round. *"Keep asking for the keyboard
 /// until the operator has used this window"* is the rule that matches intent;
 /// a pass count is only there so a dialog nobody touches stops asking.
@@ -139,7 +139,7 @@ const ENGAGED: bool = true;
 pub struct Host {
     /// The viewport id, stable for this dialog across frames.
     ///
-    /// ★ Derived from a caller-supplied string rather than counted, because
+    /// Derived from a caller-supplied string rather than counted, because
     /// `ViewportId` is what egui keys the OS window on: two dialogs sharing one
     /// would be two dialogs sharing one window, and a counter would give a
     /// dialog a different window depending on what else was open when it was
@@ -185,7 +185,7 @@ pub struct Host {
     /// application window's own egui screen coordinates. See
     /// [`Host::opening_near`].
     ///
-    /// ★ `Option`, and the `None` case is not "no opinion, use zero" — it is
+    /// `Option`, and the `None` case is not "no opinion, use zero" — it is
     /// *"place it the way every dialog without an opinion is placed"*.
     /// Collapsing the two into a `Pos2` with a sentinel would make "the corner"
     /// and "somebody asked for the corner" the same value, and the whole of
@@ -263,13 +263,13 @@ impl Host {
     /// One number, owned here, so that fourteen dialogs cannot pick fourteen
     /// values and so that nobody has to remember to pad theirs.
     ///
-    /// ★ 12 pt rather than egui's default 8: this shell's own `Metrics` use
+    /// 12 pt rather than egui's default 8: this shell's own `Metrics` use
     /// `panel_padding` of 8-12 depending on preset, and a **dialog** is the one
     /// surface where the window edge is a hard boundary rather than a seam onto
     /// the next panel. Windows' own dialogs are roomier at the frame than at
     /// internal gutters for the same reason.
     ///
-    /// ★★ It is deliberately NOT read from `Theme::of(ctx).metrics`, and that
+    /// It is deliberately NOT read from `Theme::of(ctx).metrics`, and that
     /// is a real decision. This value is fed into [`Self::fit`], which sizes the
     /// window; a metric that changes with the preset would change the window
     /// size on a theme switch, and `fit` is the function whose doc comment
@@ -315,7 +315,7 @@ impl Host {
     /// screen coordinates, the space `ctx.input(InputState::content_rect)`
     /// reports and every `ui_rect` in the main window is published in.
     ///
-    /// # ★★★ Why this exists: A16c
+    /// # Why this exists: A16c
     ///
     ///
     /// # What the host promises about the position, and what it does not
@@ -332,7 +332,7 @@ impl Host {
     ///   imagines. This is a "roughly here" placement; a child window's
     ///   decoration height is not knowable before the window exists.
     ///
-    /// ★ A builder method rather than a fifth argument to [`Host::new`],
+    /// A builder method rather than a fifth argument to [`Host::new`],
     /// because having an opinion about where you open is the rare case: a
     /// dialog raised from a menu has no reason to, and only one raised by a
     /// gesture on the page does. Every dialog that does not care should not
@@ -383,7 +383,7 @@ impl Host {
     /// a dialog that computes something while drawing does not need a field to
     /// carry it out.
     ///
-    /// # ★ Why the close signal comes back rather than through an `&mut bool`
+    /// # Why the close signal comes back rather than through an `&mut bool`
     ///
     /// `egui::Window::open(&mut bool)` is the idiom this replaces, and it has a
     /// property worth losing: the flag is written *during* the draw, so a
@@ -416,14 +416,14 @@ impl Host {
         // the first ten minutes: `pdfcer ▸ Keyboard shortcuts` panicked
         // instantly, on a fresh launch, taking the open documents with it.
         //
-        // ★★ The choice between "blank" and "crash" was a FALSE ONE. The third
+        // The choice between "blank" and "crash" was a FALSE ONE. The third
         // option is the correct one and it is what egui means: **draw again.**
         // A second pass exists precisely because the first is being discarded,
         // so re-running the body is not a workaround, it is the contract. The
         // result of the last call is the one returned, exactly as egui's own
         // `*out = Some(...)` keeps the last.
         //
-        // ★ What this costs: a body must now be re-runnable within a frame.
+        // What this costs: a body must now be re-runnable within a frame.
         // That is already true of every dialog here — they draw from state they
         // borrow rather than consume — and it is the same requirement
         // immediate mode places on every other widget in the process. If a
@@ -433,7 +433,7 @@ impl Host {
             .with_title(self.title.clone())
             .with_inner_size(self.default_size)
             .with_min_inner_size(self.min_size)
-            // ★ No minimize, and no maximize unless `maximizable` asked for it.
+            // No minimize, and no maximize unless `maximizable` asked for it.
             // A dialog is one transaction; the
             // operator finishes it or abandons it, and a minimised dialog is a
             // transaction that has been left open with no surface saying so.
@@ -446,7 +446,7 @@ impl Host {
             // unavailable (see the module header) this is the only route back
             // to a dialog that has fallen behind the parent.
             .with_taskbar(true);
-        // ★★ A SHORT WINDOW, not a single frame, and the reason is measured.
+        // A SHORT WINDOW, not a single frame, and the reason is measured.
         //
         // One `Focus` on the opening frame was sent, granted — the dialog
         // traced `focused=Some(true)` — and **lost again a few frames later**,
@@ -464,7 +464,7 @@ impl Host {
         let now = ctx.cumulative_pass_nr();
         let opened_at = ctx.data(|d| d.get_temp::<(u64, u64)>(self.seen_key));
         let (opened_at, last) = match opened_at {
-            // ★ A gap means it was closed and reopened: a fresh opening. The
+            // A gap means it was closed and reopened: a fresh opening. The
             // gap is measured against a couple of passes rather than against
             // `FOCUS_FRAMES`, which is a different quantity and would make a
             // dialog reopened within half a second look like a continuation.
@@ -475,7 +475,7 @@ impl Host {
         if opened_at == now {
             // A fresh opening has not been engaged with yet.
             ctx.data_mut(|d| d.remove::<bool>(self.engaged_key));
-            // ★★★ AND IT HAS NOT BEEN FITTED YET EITHER — the operator's
+            // AND IT HAS NOT BEEN FITTED YET EITHER — the operator's
             // *"the second time I place a stamp the window is too small to
             // show the Add button"*, 2026-09-10, and it was this line's
             // absence.
@@ -499,7 +499,7 @@ impl Host {
             //     [`FIT_BUDGET`] growths across the whole session, no opening
             //     of that dialog ever grows again.
             //
-            // ★★ The guards were right and their SCOPE was wrong. Both exist
+            // The guards were right and their SCOPE was wrong. Both exist
             // to stop a measurement feeding the size it measures **within one
             // opening** (R128, met three times here). A new window is a new
             // measurement of a new window; carrying the old answer into it is
@@ -515,7 +515,7 @@ impl Host {
         // The very first pass of this opening. See the position clause below.
         let placing = now == opened_at;
 
-        // ★★★ A POSITION IS ASSERTED ONCE, ON THE PASS THE DIALOG OPENS, and
+        // A POSITION IS ASSERTED ONCE, ON THE PASS THE DIALOG OPENS, and
         // never again while it is open.
         //
         // `show_viewport_immediate` DIFFS the builder against the previous
@@ -526,7 +526,7 @@ impl Host {
         // `outer_rect` inside the callback, one frame behind. Any wobble in
         // that round trip is a `SetWindowPos` per frame at the platform.
         //
-        // ★ Two things that costs, and the second is the one that was hunted
+        // Two things that costs, and the second is the one that was hunted
         // for an hour. It is G6's original defect in a new form — the window
         // being dragged back toward where the program thinks it is rather than
         // where the operator put it — and, because `SetWindowPos` participates
@@ -539,7 +539,7 @@ impl Host {
         // it feeds is the *next* opening.
         if placing {
             builder = match self.remembered(ctx) {
-                // G6: back where it was left, including across a close. ★ This
+                // G6: back where it was left, including across a close. This
                 // arm is FIRST and stays first: a position the operator dragged
                 // the window to outranks any position the program computed,
                 // including one a caller asked for through
@@ -567,7 +567,7 @@ impl Host {
             };
         }
 
-        // ★★★ A DIALOG THAT OPENS TAKES THE KEYBOARD, and it stopped doing
+        // A DIALOG THAT OPENS TAKES THE KEYBOARD, and it stopped doing
         // that the day it became an OS window.
         //
         // In the embedded era a dialog drew inside the application's window, so
@@ -586,7 +586,7 @@ impl Host {
         // The operator's version of that is *"I dragged out a note box and
         // typing did nothing."*
         //
-        // ★ ONLY ON THE FRAME IT OPENS. A `Focus` command sent every frame
+        // ONLY ON THE FRAME IT OPENS. A `Focus` command sent every frame
         // would seize the foreground back from anything the operator switched
         // to while the dialog was open — including another application — which
         // is the behaviour of the worst software on the machine. The pass
@@ -595,7 +595,7 @@ impl Host {
         // reopened.
 
         let mut frame = Frame {
-            // ★ `EmbeddedWindow`, not `Root`, as the value before egui
+            // `EmbeddedWindow`, not `Root`, as the value before egui
             // answers. It is the CONSERVATIVE default: it claims the fallback
             // rather than the OS window, so a path that somehow never reaches
             // the callback reports "G1 did not happen" instead of asserting it
@@ -608,7 +608,7 @@ impl Host {
             frame.class = class;
             let child = ui.ctx().clone();
 
-            // ★ Remember where the OS has put it, every frame, so a drag is
+            // Remember where the OS has put it, every frame, so a drag is
             // captured without a drag handler. `inner_rect` is desktop
             // coordinates; `with_position` takes the OUTER position, so the
             // outer rect is what is stored — using the inner one would walk the
@@ -619,7 +619,7 @@ impl Host {
                 if let Some(outer) = outer {
                     self.remember(&child, outer.min);
                 }
-                // ★★ The child's own client rectangle, in DESKTOP coordinates,
+                // The child's own client rectangle, in DESKTOP coordinates,
                 // for the harness. See the module header: every `ui-rect` this
                 // dialog publishes is relative to THIS origin and not to the
                 // application window's, and the two are plausible-looking
@@ -629,7 +629,7 @@ impl Host {
                 }
             }
 
-            // ★★ Every `ui-rect` this dialog publishes is tagged with THIS
+            // Every `ui-rect` this dialog publishes is tagged with THIS
             // viewport for the rest of the callback. See
             // `crate::diag::ViewportScope`: without it the harness reads the
             // dialog's rectangles as if they were the application window's,
@@ -637,12 +637,12 @@ impl Host {
             // desktop.
             let _regions = crate::diag::ViewportScope::enter(self.id);
 
-            // ★★★ OWNED BY THE APPLICATION WINDOW. See the module header's G3
+            // OWNED BY THE APPLICATION WINDOW. See the module header's G3
             // section: this is what makes the dialog stay in front of the
             // window it belongs to AND keep the keyboard, neither of which a
             // request can guarantee.
             //
-            // ★ Attempted every frame, deliberately, and cheap by construction:
+            // Attempted every frame, deliberately, and cheap by construction:
             // the call is idempotent and returns early when the relationship
             // already holds. There is no "the viewport was just created" event
             // to hang it on — the platform window comes into existence DURING a
@@ -661,7 +661,7 @@ impl Host {
 
             // See the note above `opening`, and [`ENGAGED`].
             if class == ViewportClass::Immediate {
-                // ★ ONLY AN OPERATOR'S OWN EVENTS COUNT, and the first
+                // ONLY AN OPERATOR'S OWN EVENTS COUNT, and the first
                 // version of this test said `!i.events.is_empty()` — which is
                 // true on almost every pass, because a viewport receives
                 // `WindowFocused`, pointer motion and screen-rect changes it
@@ -684,7 +684,7 @@ impl Host {
                     child.data_mut(|d| d.insert_temp(self.engaged_key, ENGAGED));
                 } else if opening {
                     child.send_viewport_cmd_to(self.id, egui::ViewportCommand::Focus);
-                    // ★ THE ASK, which is a different fact from the grant the
+                    // THE ASK, which is a different fact from the grant the
                     // `dialog-focus` line below reports. One line per frame for as long
                     // as the window is inside its opening grace period and the operator
                     // has not yet touched it, so the two read together say whether the
@@ -702,7 +702,7 @@ impl Host {
                     });
                 }
             }
-            // ★ Whether the PLATFORM has given this window the keyboard, which
+            // Whether the PLATFORM has given this window the keyboard, which
             // is a different fact from whether it was asked to and the only one
             // a driven check can act on. A dialog that never reports `true` is
             // a dialog an operator has to click before typing — the thing the
@@ -719,7 +719,7 @@ impl Host {
             // window, which is a different window and, once G3 lands, a
             // different focus.
             //
-            // ★★★ **The question is asked of the PREVIOUS pass, because egui has
+            // **The question is asked of the PREVIOUS pass, because egui has
             // already destroyed the answer by the time this line runs.**
             // `Focus::begin_pass` clears `focused_widget` on Escape before any
             // widget code executes, so `child.text_edit_focused()` is `false`
@@ -764,7 +764,7 @@ impl Host {
             // rendered its controls over the **clear colour**: dark text on
             // near-black, legible only as an outline.
             //
-            // ★ It is invisible to every non-pixel oracle. `viewport-inner` was
+            // It is invisible to every non-pixel oracle. `viewport-inner` was
             // published, every `ui-rect` was declared, the driven check that
             // asserts *"a dialog opens in its own OS window"* passed on all
             // eight — and a screenshot showed a black rectangle. That is
@@ -788,19 +788,19 @@ impl Host {
             // did. The background paint above was added when that difference
             // was first noticed; it fixed the colour and left the geometry.
             //
-            // ★★ It is applied HERE rather than in each dialog, because
+            // It is applied HERE rather than in each dialog, because
             // fourteen dialogs applying their own margin is fourteen chances to
             // pick a different number and one guarantee that somebody forgets.
             // The host already owns the window, the background and the button
             // pair for exactly that reason.
             //
-            // ★ `Frame::NONE` with only an inner margin, not
+            // `Frame::NONE` with only an inner margin, not
             // `Frame::window` or `central_panel`: those bring a fill and a
             // stroke, and the fill would paint over the background this function
             // just established while the stroke would draw a second border
             // inside the OS window's own. The margin is the only part wanted.
             //
-            // ★★ AND IT MUST NOT REACH `fit`. `Self::fit` grows the window to
+            // AND IT MUST NOT REACH `fit`. `Self::fit` grows the window to
             // its content, and its doc comment records a run in which an added
             // margin turned that into an unbounded growth loop — R128's shape,
             // met three times in this project. A `Frame`'s `inner_margin`
@@ -812,14 +812,14 @@ impl Host {
             // is the distinction that makes it safe.
             let margin = Self::BODY_MARGIN_PTS;
             let framed = egui::Frame::NONE.inner_margin(egui::Margin::same(margin as i8));
-            // ★ Called directly. See this function's signature for why there is
+            // Called directly. See this function's signature for why there is
             // no longer an `Option` and a `take()` here: egui may run this
             // callback more than once per frame, and the right answer to a
             // second run is to draw again.
             let inner = framed.show(ui, |ui| (add(ui), ui.min_rect().size()));
             let (out, content) = inner.inner;
 
-            // ★ Recorded for the NEXT pass's Escape, per the rung above. Asked
+            // Recorded for the NEXT pass's Escape, per the rung above. Asked
             // after the body has drawn, which is the only moment in an
             // immediate-mode toolkit at which a field that has the keyboard has
             // said so. Read `field_focused` out before taking the write lock:
@@ -836,11 +836,11 @@ impl Host {
                 child.data_mut(|d| d.insert_temp(self.field_focus_key(), field_focused));
             }
 
-            // ★ Measured AFTER the body has drawn, which is the only moment
+            // Measured AFTER the body has drawn, which is the only moment
             // the answer exists in an immediate-mode toolkit. See [`Self::fit`]
             // for the two guards that keep this from becoming a feedback loop.
             if class == ViewportClass::Immediate {
-                // ★ The CONTENT's own size plus the margin twice, as a
+                // The CONTENT's own size plus the margin twice, as a
                 // constant. NOT `ui.min_rect()` of the outer ui, which already
                 // includes the margin and would therefore be a measurement
                 // containing the thing being added — see above.
@@ -864,7 +864,7 @@ impl Host {
     /// under this project's standing *"use the conventional interaction, never
     /// invent one"* rule makes it the spec and not a preference.
     ///
-    /// # ★★ Why this is the structural fix and [`Host::fit`] is not
+    /// # Why this is the structural fix and [`Host::fit`] is not
     ///
     /// `fit` grows a window to its content, and it is a good mechanism, but it
     /// is a **negotiation with the window manager** — it can be refused, it is
@@ -884,14 +884,14 @@ impl Host {
     /// enough that the scrollbar never appears in the ordinary case, and this
     /// guarantees the outcome when it does.
     ///
-    /// # ★ Why `state` is threaded rather than captured
+    /// # Why `state` is threaded rather than captured
     ///
     /// Both closures nearly always want `&mut self` of the calling dialog, and
     /// two closures capturing the same `&mut` cannot coexist even though they
     /// run one after the other. Passing the state through as a parameter is the
     /// borrow-checker-shaped way to say *"sequentially, not simultaneously"*.
     ///
-    /// # ★ A note for `fit`
+    /// # A note for `fit`
     ///
     /// A `ScrollArea` reports the size it was GIVEN, not the size of what is
     /// inside it, so a dialog converted to this shape stops asking to grow.
@@ -906,12 +906,12 @@ impl Host {
         body: impl FnOnce(&mut egui::Ui, &mut S),
         footer: impl FnOnce(&mut egui::Ui, &mut S) -> R,
     ) -> R {
-        // ★ The footer FIRST. `Panel::bottom` takes its height out of
+        // The footer FIRST. `Panel::bottom` takes its height out of
         // the ui's rectangle before anything else is laid out, which is the
         // whole of the guarantee: whatever the body does afterwards, it is
         // working inside what is left over.
         //
-        // ★ `id_salt` from the ui rather than a constant: two dialogs are two
+        // `id_salt` from the ui rather than a constant: two dialogs are two
         // viewports, but a panel id must still be unique within the context
         // that hosts them, and a constant here would collide the day two
         // dialogs are open at once — which this shell allows.
@@ -933,7 +933,7 @@ impl Host {
             })
             .inner;
         egui::ScrollArea::vertical()
-            // ★ `auto_shrink` on the Y axis so a short body does not leave the
+            // `auto_shrink` on the Y axis so a short body does not leave the
             // footer floating halfway down an over-tall window; off on X so the
             // body still gets the full width to wrap into.
             .auto_shrink([false, true])
@@ -967,14 +967,14 @@ impl Host {
     /// they are three different rectangles and Enter belongs to exactly one of
     /// them.
     ///
-    /// # ★ The order is Cancel then Accept, right-aligned
+    /// # The order is Cancel then Accept, right-aligned
     ///
     /// Which is Windows' order and the order every dialog on this operator's
     /// machine uses. It is not a preference: a button's meaning is learned by
     /// position long before it is read, and a dialog that reverses the pair is
     /// a dialog whose Cancel gets clicked by muscle memory aimed at OK.
     ///
-    /// # ★★ Enter is refused while a text field wants it
+    /// # Enter is refused while a text field wants it
     ///
     /// `ctx.text_edit_focused()` — the same predicate `canvas::textedit`
     /// enforces one copy of, and `tools/gates/check-typing-guard.sh` fails the
@@ -989,7 +989,7 @@ impl Host {
     /// **the first Enter commits the field, the second accepts**, read from
     /// the flag [`Self::show`] carries across the pass.
     ///
-    /// # ★★★ The third button, and why it is LEFTMOST rather than beside the default
+    /// # The third button, and why it is LEFTMOST rather than beside the default
     ///
     /// Added for **O185**, the print window's *Keep and close*. `dialogs.md`
     /// G4 makes the OS close button, Escape and the cancel button deliberately
@@ -1007,7 +1007,7 @@ impl Host {
     /// place muscle memory expects: adding a route out must not move the two
     /// routes that were already there.
     ///
-    /// ★ It is deliberately NOT bound to a key. Enter is the default's and
+    /// It is deliberately NOT bound to a key. Enter is the default's and
     /// Escape is Cancel's; a third chord would be a gesture with no affordance
     /// naming it, and the one thing worse than an undiscoverable button is an
     /// undiscoverable key that means something different from the button
@@ -1043,7 +1043,7 @@ impl Host {
         keep: Option<(&str, &str)>,
     ) -> (bool, bool, bool) {
         let ctx = ui.ctx().clone();
-        // ★ THIS ASKS WHETHER A WIDGET IN THIS DIALOG HOLDS THE KEYBOARD, not
+        // THIS ASKS WHETHER A WIDGET IN THIS DIALOG HOLDS THE KEYBOARD, not
         // whether the operator is composing anywhere in the application, and
         // the two genuinely differ here.
         //
@@ -1098,7 +1098,7 @@ impl Host {
             // solid than the Cancel button beside it** — which is exactly what
             // a disabled control looks like.
             //
-            // ★★ THIS IS DEFECT D2 AGAIN, in the one place its fix did not
+            // THIS IS DEFECT D2 AGAIN, in the one place its fix did not
             // reach. When the active ribbon tab had the identical bug it was
             // moved to `accent` + `on_accent`; `FEATURES.md` records that fix
             // and even says the mode selector beside it "always did" paint the
@@ -1106,7 +1106,7 @@ impl Host {
             // nobody noticed, because a *dialog* button is not a *ribbon* tab
             // and no test compares the two.
             //
-            // ★ `on_accent` rather than `strong_text_color()` is not a detail.
+            // `on_accent` rather than `strong_text_color()` is not a detail.
             // `accent` is a saturated blue in the light presets and a lighter
             // blue in the dark one, and `strong_text_color()` follows
             // `override_text_color` — which is the body text colour, near-black
@@ -1149,7 +1149,7 @@ impl Host {
 mod tests {
     use super::*;
 
-    /// ★ **Two dialogs get two windows**, which is the whole reason the id is
+    /// **Two dialogs get two windows**, which is the whole reason the id is
     /// derived from a caller-supplied string rather than counted.
     ///
     /// A shared `ViewportId` is a shared OS window: the second dialog would
@@ -1177,7 +1177,7 @@ mod tests {
         assert_eq!(a.id, b.id, "the id must key on the NAME, not on the size");
     }
 
-    /// ★ **A host with nothing remembered reports nothing**, so the first open
+    /// **A host with nothing remembered reports nothing**, so the first open
     /// is placed rather than restored.
     ///
     #[test]
@@ -1190,7 +1190,7 @@ mod tests {
     /// …and once it has been told, it answers with what it was told — for
     /// **that dialog only**.
     ///
-    /// ★ The second half is the one worth a test. Two dialogs sharing a memory
+    /// The second half is the one worth a test. Two dialogs sharing a memory
     /// key would drag each other around the desktop, and the key is derived
     /// from the same string as the viewport id, so a mistake there is a
     /// mistake in both places at once and invisible in either.
@@ -1207,7 +1207,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The layout half of the print dialog's runaway, measured in a real
+    /// **The layout half of the print dialog's runaway, measured in a real
     /// laid-out frame — and it fails on the old ordering.**
     ///
     /// The test above models the consequence; this one reproduces the CAUSE,
@@ -1223,12 +1223,12 @@ mod tests {
     /// first overflows; the status label first does not. That difference is the
     /// entire fix, and this is where it is proved rather than argued.
     ///
-    /// ★ Run it against the pre-fix ordering — swap the two blocks in
+    /// Run it against the pre-fix ordering — swap the two blocks in
     /// [`super::super::print`]'s `footer` — and the first assertion fails. That
     /// is the falsification, and without it this test would only be describing
     /// the code it sits next to.
     ///
-    /// ★ Measured, so the size of the thing is on the record: in a 400 pt row
+    /// Measured, so the size of the thing is on the record: in a 400 pt row
     /// the pre-fix ordering produces **481.9 pt** and the fixed ordering
     /// produces **exactly 400.0**. That 81.9 pt is the step the window grew by
     /// on every single frame the dialog was open after a print — which is what

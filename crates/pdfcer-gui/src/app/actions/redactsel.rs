@@ -72,7 +72,7 @@ pub fn mark_selection(doc: &mut OpenDoc, appearance: &RedactAppearance) {
     }
 
     let count = quads.len();
-    // ★★★ **`bbox` is what makes this line able to name the UNIT that was
+    // **`bbox` is what makes this line able to name the UNIT that was
     // marked**, and without it the line cannot.
     //
     // `quads=1` is written whether the operator marked one chunk of a text

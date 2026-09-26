@@ -15,7 +15,7 @@ use crate::report::CheckReport;
 
 /// The form whose pages are inserted to manufacture the orphans.
 ///
-/// # ★ `demo-form.pdf`, and the first choice was wrong for a reason worth
+/// # `demo-form.pdf`, and the first choice was wrong for a reason worth
 /// keeping
 ///
 /// It was `multi-widget-form.pdf`, picked because the engine's measurement
@@ -208,7 +208,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note(format!("{before} unclaimed widget(s) listed"));
 
-    // --- C: ★ the preview was ASKED, per row -------------------------------
+    // --- C: the preview was ASKED, per row -------------------------------
     let rows: Vec<_> = trace.events(ROW).collect();
     if rows.is_empty() {
         return Ok(Some(format!(
@@ -247,7 +247,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&trace, ui_rect, "tab-order"))
         )));
     };
-    // ★★ SCROLLED INTO VIEW before it is clicked.
+    // SCROLLED INTO VIEW before it is clicked.
     //
     // The rows sit inside the panel's scroll area, and a dock panel is a few
     // hundred points tall. A region below the fold is published at its
@@ -343,7 +343,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
 /// Resolve a fixture under the engine repository's synthetic corpus.
 ///
-/// ★ The path is derived, not configured. `D:\Dev\pdfcer` is READ-ONLY to this
+/// The path is derived, not configured. `D:\Dev\pdfcer` is READ-ONLY to this
 /// project and its corpus is the only place these shapes exist, so the check
 /// reads from it and writes nowhere near it. Returning `None` rather than
 /// panicking is what turns a missing corpus into a SKIP with a reason instead
@@ -355,7 +355,7 @@ fn engine_fixture(rel: &str) -> Option<std::path::PathBuf> {
 
 /// Every page's unclaimed count, summed.
 ///
-/// ★ Summed across the pages of the **latest** frame rather than taken from one
+/// Summed across the pages of the **latest** frame rather than taken from one
 /// page. The insert puts the form's sheets somewhere in the middle of the
 /// document, and which page they land on is the insert's business, not this
 /// check's — a check that hard-coded a page index would break on a change to

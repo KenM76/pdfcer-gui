@@ -3,7 +3,7 @@
 `ribbon_matches_the_mockup_geometry` — the band, measured against
 `mockups/pdfcer-shell.html`.
 
-# ★★★ Why this check exists, and why it was written UNRUN
+# Why this check exists, and why it was written UNRUN
 
 
 > *"there are still a lot of things that still look like our old layout
@@ -48,8 +48,8 @@ finding.
 | 1 | the band's first control sits clear of the tab strip | `.ribbon { padding: 6px … }` | yes — `egui-shell`'s `the_band_draws_clear_space_above_its_first_control` |
 | 2 | a Large control is 56 pt, not the full row area | `.rb.big { height: 56px }` | yes — `a_large_control_is_shorter_than_the_row_area_it_sits_in` |
 | 3 | the caption hangs at the bottom of the row area | `.grp .cap { margin-top: auto }` | yes — `every_caption_in_a_band_shares_one_baseline` |
-| 4 | **a resting control paints no frame** | `.rb { border: 1px solid transparent }` | ★★★ **NO** |
-| 5 | **every control draws a glyph** | `svg.g` | ★★★ **NO** |
+| 4 | **a resting control paints no frame** | `.rb { border: 1px solid transparent }` | **NO** |
+| 5 | **every control draws a glyph** | `svg.g` | **NO** |
 
 Rows 1–3 are re-asserted here anyway, and that is not duplication: a unit
 test measures what the layout code *computed*, and this measures what the
@@ -58,7 +58,7 @@ have disagreed before in this codebase — `sizing::render_large`'s
 zero-height overflow-menu defect passed every unit test and was found by
 this harness — and when they disagree, this one is right.
 
-★★★ **Rows 4 and 5 are the reason the file exists.** Both are questions
+**Rows 4 and 5 are the reason the file exists.** Both are questions
 about ink, and a rect cannot answer either:
 
 * A frame is `weak_bg_fill` plus `bg_stroke` painted into a rectangle the
@@ -78,7 +78,7 @@ differs on both counts — a fill that is not the band's, and a stroke on the
 boundary. A frameless one is the band's own colour right up to and across
 its edge, because nothing was painted there at all.
 
-★ It samples the **corners' neighbourhoods rather than the whole ring**,
+It samples the **corners' neighbourhoods rather than the whole ring**,
 and skips any sample that lands on ink: a control's icon and label are
 inside its rect and are supposed to be different from the background. The
 corners of a ribbon button are the one part reliably empty of content in

@@ -19,7 +19,7 @@ const CARET_EVENT: &str = "text-edit-caret";
 const BECAME_ADD_EVENT: &str = "text-edit-became-add";
 /// `canvas-anchors total=… selected=… unselected_drawn=…`.
 ///
-/// ★★★ **Written even when `total=0`, since 2026-08-29** — and the two checks
+/// **Written even when `total=0`, since 2026-08-29** — and the two checks
 /// below are the reason. `overlay::draw_anchors` used to return before this line
 /// when there was nothing to draw, so *"this object has no points"* and *"the
 /// draw never ran"* were the same trace: nothing. Both checks have a `total == 0`
@@ -28,7 +28,7 @@ const ANCHORS_EVENT: &str = "canvas-anchors";
 /// `canvas-anchors-declined reason=…` — the enumeration stopped before it had a
 /// count, and why.
 ///
-/// ★★ The suffix is load-bearing twice over. It keeps `last(ANCHORS_EVENT)` from
+/// The suffix is load-bearing twice over. It keeps `last(ANCHORS_EVENT)` from
 /// ever returning one of these — which reads `total=`, and these carry no
 /// `total` — and it is the convention `tools/gates/check-trace-names.py`
 /// enforces against `vector_edit`'s funnel labels, for exactly that failure.
@@ -36,7 +36,7 @@ const DECLINED_EVENT: &str = "canvas-anchors-declined";
 /// The decline reasons that are facts about **the aim or the fixture**, not
 /// about the program, and therefore SKIP rather than FAIL.
 ///
-/// ★★★ This list is the whole difference between the sweep of 2026-08-29 and an
+/// This list is the whole difference between the sweep of 2026-08-29 and an
 /// honest one. Four checks read anchors on that run — these two plus
 /// `multi_node` and `bezier_handle` — all four aimed at the same
 /// `--doc-point 0,1140,62` on `SW41177.pdf`, all four saw no `canvas-anchors`
@@ -170,7 +170,7 @@ impl Check for TheTextToolTypesOnOneClick {
 fn drive_text(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     let (session, driver, mapping, target) = open_in_edit(ctx, report, "tool_text")?;
 
-    // ★ ONE key. Not a ribbon click, not a chord — the bare letter, through the
+    // ONE key. Not a ribbon click, not a chord — the bare letter, through the
     // OS, which is the convention being adopted and the one that a stray focus
     // could silently break.
     driver.press(VK_T)?;
@@ -211,7 +211,7 @@ fn drive_text(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
     // that cannot go red is not evidence, and a check that explains an absence
     // without measuring it is worse than one that says nothing.
     //
-    // ★ Nothing about the second gesture is asserted from this function any
+    // Nothing about the second gesture is asserted from this function any
     // more, deliberately. Two places asserting one behaviour is how the weaker
     // one comes to be the only one that ever runs.
     Ok(None)
@@ -262,7 +262,7 @@ fn drive_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
             .events(NODE_CLICK_EVENT)
             .filter(|l| l.raw.contains("node-tool"))
             .count();
-        // ★★★ The decline reason first, because it is the only thing here that
+        // The decline reason first, because it is the only thing here that
         // knows whose fault this is. See `AIM_REASONS`.
         if let Some(reason) = decline_reason(&trace)
             && AIM_REASONS.contains(&reason.as_str())
@@ -319,7 +319,7 @@ fn drive_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
 /// `show_points_draws_an_objects_points_without_descending` — **switch the View
 /// toggle on, click once, and the anchors are there.**
 ///
-/// # ★★★ Why this check exists, and it is not "one more toggle"
+/// # Why this check exists, and it is not "one more toggle"
 ///
 /// `view.show_points` was registered, drawn on View ▸ Display and **inert for
 /// the whole life of the project**, behind a reason that said *"there is
@@ -327,7 +327,7 @@ fn drive_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
 /// was true on 2026-08-15 and false four days later. Re-derived on 2026-08-28
 /// as one of six stale blockers in eleven.
 ///
-/// ★★ **The first wiring of it was ALSO inert, and no test could have caught
+/// **The first wiring of it was ALSO inert, and no test could have caught
 /// that.** The toggle was added as a disjunct to `draw_anchors`' rung guard —
 /// which is correct — and the function then fell out two lines later on
 /// `entered_object()`, which answers `None` at the Object rung *by
@@ -396,12 +396,12 @@ fn drive_show_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opt
 
     // --- 2: switch the toggle on and click again ----------------------------
     //
-    // ★ Through the ribbon rather than the harness's invoke seam, deliberately.
+    // Through the ribbon rather than the harness's invoke seam, deliberately.
     // `PDFCER_DIAG_INVOKE` runs before the document is open and would prove the
     // dispatch arm rather than the control; what is under test is a toggle an
     // operator presses, and the whole defect class here is *the control changes
     // state and nothing happens*.
-    // ★ The View TAB first. `open_in_edit` leaves the Edit tab active, and a
+    // The View TAB first. `open_in_edit` leaves the Edit tab active, and a
     // ribbon control only publishes a rect on the tab that is drawn — so
     // hunting for the toggle without switching tabs finds nothing and reports
     // it as absent, which is what the first run of this check did. The band
@@ -439,7 +439,7 @@ fn drive_show_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opt
 
     let trace = session.trace()?;
     let Some(anchors) = trace.last(ANCHORS_EVENT) else {
-        // ★★★ Same three-way split as `drive_points`, and it matters more here,
+        // Same three-way split as `drive_points`, and it matters more here,
         // because this check's control case has already established that the
         // click lands and selects. If the enumeration declines for an aim
         // reason, what this run measured is the aim.
@@ -485,7 +485,7 @@ fn drive_show_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opt
              of which has points. That is a fact about the aim point, so it is SKIPPED.",
         ));
     }
-    // ★★ `drawn == 0` is NOT a failure here, and that is the difference from
+    // `drawn == 0` is NOT a failure here, and that is the difference from
     // the points-tool check above. Above the cap, `overlay::draw_anchors`
     // suppresses the unselected marks deliberately — and at the Object rung the
     // list is the WHOLE object, which on a CAD path is thousands. That is
@@ -527,7 +527,7 @@ fn drive_show_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opt
 /// `Refusal::NoRun` and `place::click`'s fall-through arm converts it into an
 /// `Anchor::Origin` at the click point.
 ///
-/// # ★★★ Why this is a separate check, and it is a story about instruments
+/// # Why this is a separate check, and it is a story about instruments
 ///
 /// It used to be six lines at the end of `drive_text`, and those six lines let
 /// `O142` sit undetected for **two days**. They read
@@ -560,12 +560,12 @@ fn drive_show_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opt
 /// | `text-edit-caret … run=N` | **SKIP** — the aim landed in real text |
 /// | nothing at all | **FAIL** — the click reached no caret code at all |
 ///
-/// ★★ The SKIP arm is the old excuse **with its evidence attached**: it can
+/// The SKIP arm is the old excuse **with its evidence attached**: it can
 /// only be reached by a trace line that names the run it hit, so it is a
 /// measurement of the aim rather than a story about it. That is the whole
 /// difference, and it is why the arm is allowed to exist at all.
 ///
-/// ★★★ And `origin=` is checked against **where the pointer actually went**,
+/// And `origin=` is checked against **where the pointer actually went**,
 /// not merely observed to exist. `place.rs`'s own trace comment sets this
 /// standard — *"a trace line must carry the number a wrong build would get
 /// wrong"* — and an origin anchor that ignored the click and used, say, the
@@ -573,7 +573,7 @@ fn drive_show_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opt
 /// putting the operator's text somewhere he did not point. The tolerance is
 /// [`ORIGIN_TOLERANCE_PT`].
 ///
-/// # ★★ All three arms were FALSIFIED before this check was believed
+/// # All three arms were FALSIFIED before this check was believed
 ///
 ///
 /// | planted | outcome | proves |
@@ -594,7 +594,7 @@ pub struct AClickOnBlankPaperStartsNewText;
 /// How far the reported `origin=` may sit from the point the driver clicked,
 /// in PDF points, before this check calls it a different place.
 ///
-/// ★ Generous on purpose, and the generosity has a source: the driver clicks a
+/// Generous on purpose, and the generosity has a source: the driver clicks a
 /// **whole screen pixel**, and at the fit zoom this shell opens at, one screen
 /// pixel is a little under two PDF points on a D-size sheet. Rounding the
 /// window point to an integer, converting back through the renderer's inverse
@@ -651,7 +651,7 @@ fn drive_blank_paper(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opt
     let corner = mapping.doc_to_window(DocPoint::new(target.page, aim_x, aim_y))?;
     let frame = session.frame()?;
 
-    // ★★★ The anchor is taken HERE — after the tool is armed, immediately
+    // The anchor is taken HERE — after the tool is armed, immediately
     // before the gesture whose effect is being read. Anchoring any earlier
     // would let a line emitted during launch, mode entry or arming satisfy a
     // question about the click.
@@ -714,7 +714,7 @@ fn drive_blank_paper(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opt
         )));
     };
 
-    // ★★ Presence was never the assertion. WHERE is.
+    // Presence was never the assertion. WHERE is.
     let (dx, dy) = ((got_x - aim_x).abs(), (got_y - aim_y).abs());
     if dx > ORIGIN_TOLERANCE_PT || dy > ORIGIN_TOLERANCE_PT {
         return Ok(Some(format!(

@@ -12,7 +12,7 @@
 
 use super::*;
 
-/// ★★★ **The centre of a short, wide selection is the BODY, not a grip.**
+/// **The centre of a short, wide selection is the BODY, not a grip.**
 ///
 /// The measured case: a 160 × 20 pt form field at the operator's fitted
 /// 29.55 % zoom is 47.3 × 5.9 px. Before this rule, dead centre answered
@@ -20,7 +20,7 @@ use super::*;
 /// resize the engine then refused, and the operator's field did not move
 /// and did not say why.
 ///
-/// ★ The numbers are the real ones from `widget-move.trace.txt` rather than
+/// The numbers are the real ones from `widget-move.trace.txt` rather than
 /// round ones, because the defect is a threshold and a rounded fixture can
 /// sit on the comfortable side of it without anybody noticing.
 #[test]
@@ -33,7 +33,7 @@ fn the_centre_of_a_short_field_is_the_body() {
     );
 }
 
-/// ★★ …and on a short box **no grip's grab region reaches into the body at
+/// …and on a short box **no grip's grab region reaches into the body at
 /// all**, which is the promise that replaced "the mid-edge pair is withheld".
 ///
 ///
@@ -69,7 +69,7 @@ fn a_short_box_keeps_its_whole_body_and_its_grips_sit_outside_it() {
         "East/West would pile onto the corners at 20 pt of pushed height: {names:?}"
     );
 
-    // ★ The load-bearing assertion. Every grip's GRAB region — the drawn
+    // The load-bearing assertion. Every grip's GRAB region — the drawn
     // square plus its slack, which is what `grip_at` tests — must miss the
     // horizontal strip through the middle of the field. Sampled across the
     // width rather than at the centre alone, because the old defect left a
@@ -86,7 +86,7 @@ fn a_short_box_keeps_its_whole_body_and_its_grips_sit_outside_it() {
     }
 }
 
-/// ★★★ **His banana. An object 0.85 pt across can be moved.**
+/// **His banana. An object 0.85 pt across can be moved.**
 ///
 /// The report, verbatim: *"zoom in on the atoms of the banana pdf file and
 /// see what happens when you try to draw a box around a molecule and move
@@ -121,7 +121,7 @@ fn the_smallest_object_the_shell_can_draw_is_still_grabbable() {
     }
 }
 
-/// ★ …and the grips are still *there*, outside it, so the cell can be
+/// …and the grips are still *there*, outside it, so the cell can be
 /// resized as well as moved.
 ///
 /// Asserted because the cheap way to pass the test above is to stop offering
@@ -151,7 +151,7 @@ fn the_smallest_object_still_offers_grips_to_resize_it_by() {
     }
 }
 
-/// ★★ **The push is exactly zero above the threshold**, which is what makes
+/// **The push is exactly zero above the threshold**, which is what makes
 /// applying it unconditionally safe.
 ///
 /// If this ever fails, every comfortable selection in the product has moved
@@ -173,7 +173,7 @@ fn a_box_with_a_body_is_not_pushed_at_all() {
     }
 }
 
-/// ★ The push reaches the threshold and stops there, and never runs
+/// The push reaches the threshold and stops there, and never runs
 /// backwards as the box shrinks — so there is no zoom at which the
 /// affordance jumps.
 #[test]
@@ -197,7 +197,7 @@ fn the_push_reaches_the_threshold_and_stops_there() {
     }
 }
 
-/// ★ A comfortable box is unchanged, which is what says the rule is a floor
+/// A comfortable box is unchanged, which is what says the rule is a floor
 /// and not a redesign.
 #[test]
 fn a_comfortable_box_still_gets_all_eight() {

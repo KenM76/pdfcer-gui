@@ -32,7 +32,7 @@ const REQUESTED: &str = "export-image-requested";
 /// The value [`REQUESTED`] carries in its `format=` field when the EMF radio
 /// is the one selected.
 ///
-/// ★★★ **Lowercase, and sourced rather than chosen.** It is the FILE TOKEN,
+/// **Lowercase, and sourced rather than chosen.** It is the FILE TOKEN,
 /// `pdfcer_gui::app::prefs::exporting::image_format_key(ImageFormat::Emf)` —
 /// the same string the preferences file stores, which is exactly why the
 /// emitter uses it: a check reading this trace and a check reading
@@ -48,14 +48,14 @@ const REQUESTED: &str = "export-image-requested";
 /// sweep to run it, on 2026-09-14, duly reported *"the radio drew and did not
 /// bind"* while quoting `format=emf` in the same sentence.
 ///
-/// ★ The lesson generalises past this file: **changing a trace field's
+/// The lesson generalises past this file: **changing a trace field's
 /// spelling is an edit to every reader of that field**, and an unrun check is
 /// a reader that cannot object to it.
 const EMF_KEY: &str = "emf";
 /// What the `format=` field held *before* 2026-09-13, i.e. `Debug` on the
 /// enum.
 ///
-/// ★★ Kept as a SEPARATE diagnosis rather than folded into the comparison.
+/// Kept as a SEPARATE diagnosis rather than folded into the comparison.
 /// Seeing this spelling again would mean the emitter had regressed to
 /// `{:?}` — a real defect, with a real one-line remedy, and **not remotely
 /// the same thing as a radio that failed to bind**. An assertion that lumps
@@ -142,7 +142,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
 
-    // ★ Removed before the run rather than merely named. A metafile left by an
+    // Removed before the run rather than merely named. A metafile left by an
     // earlier run would let a build that writes NOTHING pass every assertion
     // below — `a_driven_check_that_does_not_establish_its_preconditions_measures_the_previous_run`
     // in the Rust RAG, and `export_dxf` clears its own target for the same
@@ -231,7 +231,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         report.note(format!("window opened: `{}`", opened.raw));
     }
 
-    // --- 3: ★★ the EMF radio EXISTS ----------------------------------------
+    // --- 3: the EMF radio EXISTS ----------------------------------------
     //
     // The first thing this check is for. `ImageFormat::ALL` is four long in a
     // unit test whatever the window draws; whether a fourth radio reached the
@@ -259,7 +259,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.click_at(frame_of(&session, &trace, ui_rect, EXPORT)?.declared_center(button))?;
     session.settle(40);
 
-    // --- 5: ★★ the PRESS carried the format the radio selected -------------
+    // --- 5: the PRESS carried the format the radio selected -------------
     //
     // Link 2 of the module header. A build whose radio drew and did not bind
     // its value would trace `format=png` here, write PNG bytes, and name the
@@ -324,7 +324,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("wrote: `{}`", wrote.raw));
 
-    // --- 6: ★ the file is on disk ------------------------------------------
+    // --- 6: the file is on disk ------------------------------------------
     if !target.exists() {
         return Ok(Some(format!(
             "the shell traced a successful export and {} does not exist. The disclosure and \
@@ -348,7 +348,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 7: ★★★ the bytes ARE a metafile ------------------------------------
+    // --- 7: the bytes ARE a metafile ------------------------------------
     let record_type = u32_at(&bytes, 0).unwrap_or_default();
     let signature = u32_at(&bytes, OFF_SIGNATURE).unwrap_or_default();
     if record_type != EMR_HEADER || signature != ENHMETA_SIGNATURE {
@@ -367,7 +367,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 8: ★★★ the metafile agrees with ITSELF -----------------------------
+    // --- 8: the metafile agrees with ITSELF -----------------------------
     //
     // `nBytes` is a placeholder back-patched after every record is written. A
     // value that disagrees with the file's length means the header and the body
@@ -397,7 +397,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         bytes.len()
     ));
 
-    // --- 9: ★★ the disk agrees with what the shell SAID --------------------
+    // --- 9: the disk agrees with what the shell SAID --------------------
     //
     // The cross-check that makes this worth more than a smoke test, and the
     // same shape as `export_dxf`'s count comparison: two values that are

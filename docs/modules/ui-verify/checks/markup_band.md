@@ -9,7 +9,7 @@ from a drawn shape all the way to a thicker line on the page.
 Six controls now sit there. This check drives **one** of them end to end and
 asserts the presence and the *absence* of the rest.
 
-# ★★★ Seven links, and no test in the workspace observes two of them joined
+# Seven links, and no test in the workspace observes two of them joined
 
 | # | link | why a unit test cannot see it |
 |---|---|---|
@@ -21,7 +21,7 @@ asserts the presence and the *absence* of the rest.
 | 6 | the commit reaches `EditSession::set_markup_style` | `app::actions::apply`'s routing, over a parked operand the renderer put down |
 | 7 | the regenerated `/AP` is **repainted** | the page raster's invalidation, then `pdfcer-render`, then the compositor |
 
-★★ **Link 4 is the one with no other oracle at all.** `visible_when` in a
+**Link 4 is the one with no other oracle at all.** `visible_when` in a
 *menu* did nothing for the whole of this project's life until 2026-09-06 —
 `menu::plan::resolve` never read `Item::visible_condition()`, so every row
 meant to vanish was **greyed** instead, R9 inverted, with prose at each site
@@ -44,7 +44,7 @@ from a greyed one is to ask how much space it took.
 6. Assert `set-markup-style` reached the engine — *and* photograph the same
    strip again with nothing selected: **the line is thicker**.
 
-★★★ **Step 6 is two assertions because they fail separately.** A build whose
+**Step 6 is two assertions because they fail separately.** A build whose
 parked operand never reaches `apply` traces nothing and paints nothing. A
 build that restyles the dictionary and never re-bakes the appearance — or
 bakes it and never invalidates the page raster — traces `set-markup-style`

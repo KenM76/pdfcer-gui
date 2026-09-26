@@ -90,7 +90,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note(format!("· the panel drew {rows} layer row(s)"));
 
-    // ★ And enough of them to have earned a field. Fewer than two is correct
+    // And enough of them to have earned a field. Fewer than two is correct
     // behaviour (`search::MIN_LAYERS_FOR_SEARCH`), so it is an ERROR about the
     // fixture rather than a failure of the program.
     if rows < 2 {

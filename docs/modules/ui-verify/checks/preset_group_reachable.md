@@ -22,7 +22,7 @@ for: **can the operator actually get to it?**
 
 
 
-★★ That is the second time in one session a check I wrote was wrong rather
+That is the second time in one session a check I wrote was wrong rather
 than the code, and both had the same shape: **a measurement aimed at the
 wrong surface looks exactly like a broken feature.** The rule that catches
 it is to ask what a failing assertion actually *sampled* before asking what
@@ -34,7 +34,7 @@ away by design, and opening it needs the pointer — there is no command that
 focuses this group the way `tools.font_folders` focuses Fonts, so a no-input
 route to the row does not exist. Named rather than left as a silence.
 
-# ★★★ Why "reachable" needs its own check, and it is a named hazard here
+# Why "reachable" needs its own check, and it is a named hazard here
 
 `D:/dev/rag/egui/` records this project shipping **panels that were
 unreachable in real builds with every gate green**. A control inside a
@@ -48,7 +48,7 @@ Both the heading and the row publish through `crate::diag::ui_rect_visible`
 nothing at all. This check asserts the region exists, which is therefore a
 claim about **visibility** and not merely about layout.
 
-★★ The same reasoning already burned this suite once in the other direction:
+The same reasoning already burned this suite once in the other direction:
 `settings_headings_legible` measured three headings that were laid out below
 the fold and sampled the Pages panel and the drawing behind the dialog,
 reporting three illegible headings in a dialog whose visible headings

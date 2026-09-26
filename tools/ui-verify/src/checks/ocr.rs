@@ -58,7 +58,7 @@ use crate::report::CheckReport;
 
 /// The mode the check runs in.
 ///
-/// ★ **Read, deliberately, and it is half of what this check is for.** The
+/// **Read, deliberately, and it is half of what this check is for.** The
 /// operator's instruction is that OCR be available in Read, and the first
 /// implementation of this feature put the command on the **Tools** tab —
 /// `RIBBON_IA.md` §5.7's placement — where Read cannot reach it at all, Read
@@ -91,7 +91,7 @@ const APPLIED_EVENT: &str = "ocr-applied";
 /// `ocr-layer page=… n=… epoch=… disclosures=…` — `vector_edit`'s record that
 /// the **session** took it.
 ///
-/// ★ Both are asserted, and the pair is the point. The dialog's line says *I
+/// Both are asserted, and the pair is the point. The dialog's line says *I
 /// asked*; this one says *it happened*. A build where the action was raised and
 /// dropped emits the first and not the second, and that is a state with a
 /// dialog claiming the text is in the operator's document while the document
@@ -269,7 +269,7 @@ pub(super) fn click_region(
             "`{name}` was declared at {rect:?}, which has no usable area to click."
         )));
     }
-    // ★★★ **`frame_of`, never `session.frame()`.**
+    // **`frame_of`, never `session.frame()`.**
     //
     //
     driver.click_at(driving::frame_of(session, &trace, ui_rect, name)?.declared_center(rect))?;
@@ -302,7 +302,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
 
-    // ★ `--pdf` first, the repository default second — and the ORDER is a
+    // `--pdf` first, the repository default second — and the ORDER is a
     // repair rather than a preference.
     //
     // The first version of this check resolved the fixture from
@@ -326,10 +326,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // fixture resolved to `crates/fixtures/...` and the check SKIPped; and a
     // bare `.` depends on where the harness was invoked from, which is how the
     // planted-build run came to aim at the repository's own copy.
-    // ★★★ **This check pins its own fixture and IGNORES `--pdf`.**
+    // **This check pins its own fixture and IGNORES `--pdf`.**
     //
     //
-    // ★ A check whose subject is *"did the recogniser read this page"* cannot
+    // A check whose subject is *"did the recogniser read this page"* cannot
     // take an arbitrary document, because on a document that already has text
     // the honest answer is *"it declined to look"* and that is neither a pass
     // nor a defect. The fixture is the only kind of document on which the
@@ -375,7 +375,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     report.artifact(session.trace_path().to_path_buf());
     session.settle(40);
-    // ★★★ **MAXIMIZE, and this line is a repair.**
+    // **MAXIMIZE, and this line is a repair.**
     //
     // Found on 2026-09-01 by writing `checks::ocr_progress` and watching it
     // SKIP for a reason that turned out to apply to THIS check too: at the
@@ -386,7 +386,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // the command having been removed, and is in fact the ribbon doing exactly
     // what a ribbon is for.
     //
-    // ★★ This check had therefore been reporting **SKIP** rather than PASS, and
+    // This check had therefore been reporting **SKIP** rather than PASS, and
     // a SKIP is not a failure, so nothing was red and nothing prompted a look.
     // `Session::maximize`'s own doc comment describes this precise symptom —
     // *"would have been handed ten controls ending at `file.print`, and would
@@ -503,7 +503,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- phase D: the layer reached the OPEN DOCUMENT -----------------------
     //
-    // ★★★ **This phase used to click a Save control.** Until 2026-08-27 the
+    // **This phase used to click a Save control.** Until 2026-08-27 the
     // only way out of this dialog was Save-a-copy, because
     // `ocr::layer::add_ocr_layer` took an immutable `&Document` and returned a
     // whole PDF — there was nothing to put the layer *into*. The operator's
@@ -540,7 +540,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("the session took the edit: `{}`", edit.raw));
 
-    // --- ★ phase E: the falsifying one --------------------------------------
+    // --- phase E: the falsifying one --------------------------------------
     //
     //
     // This is still a genuinely falsifying assertion rather than a confirming
@@ -594,7 +594,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 mod tests {
     use super::*;
 
-    /// ★ **The digest changes when one byte does, and the length is part of it.**
+    /// **The digest changes when one byte does, and the length is part of it.**
     ///
     /// Phase E's whole verdict rests on this function, so a digest that answered
     /// "unchanged" for a modified file would turn the check's most important

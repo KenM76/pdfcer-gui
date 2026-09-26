@@ -1,6 +1,6 @@
 # `canvas::markup` — what a markup annotation IS, and the pen it is drawn with
 
-## ★ The defect this module exists so that we never ship again
+## The defect this module exists so that we never ship again
 
 The old shell's `canvas.rs` records it in the doc comment of the tool
 variant this one is modelled on, and it is worth carrying across verbatim
@@ -96,7 +96,7 @@ below) — while three genuinely different gestures feed it.
    decision in the module that a reader will be tempted to "tidy up", and
    tidying it up silently reverses half of all arrows the operator draws.
 
-## ★ A click with no drag places NOTHING for the band kinds, and that is a
+## A click with no drag places NOTHING for the band kinds, and that is a
 ## decision
 
 The old shell answered the other way: `default_markup_at`
@@ -132,7 +132,7 @@ gesture — a drag — does what they asked. The cost is that a click is a
 no-op; the alternative is authoring a shape nobody chose the size of and
 cannot change.
 
-★ **The two vertex kinds are the exception, and it is not an inconsistency**:
+**The two vertex kinds are the exception, and it is not an inconsistency**:
 for them a click is the *whole* gesture, so of course it does something. The
 rule above is about a gesture that has a drag and did not get one. See
 [`vertex`]'s header, and [`crate::canvas::gesture::press_kind`], which gives
@@ -167,7 +167,7 @@ than one blanket "later":
 | Plain line | The engine has `MarkupSpec::Line` and this shell spends it on Arrow. A second command differing only in its `/LE` is a Style question, not a kind. |
 | Note · text box · sticky · stamp | Text-bearing, not geometric. A different gesture (place, then type) and a different spec type (`TextAnnotSpec`). |
 
-### ★ The boundary this enum draws was RESTATED when the three new kinds
+### The boundary this enum draws was RESTATED when the three new kinds
 ### arrived, and the restatement is the useful part
 
 It used to read: *"a variant belongs in this enum when this rubber band can
@@ -195,7 +195,7 @@ above rather than deleted, because the mistake it guards against — variants
 nothing can reach — is real, and the next reader adding a kind should be made
 to show which control arms it.
 
-## ★ The three text-markup kinds live in [`text`], and the boundary holds
+## The three text-markup kinds live in [`text`], and the boundary holds
 
 
 [`text`]'s own header carries the interaction decision — *select first, then
@@ -211,7 +211,7 @@ trace and the code disagree about the name of the same thing for no benefit;
 the mapping to the subtype lives in exactly one place, [`spec`], where the
 dictionary is built.
 
-★ **`PolyLine` and `Polygon` are the exception, and they are the exception
+**`PolyLine` and `Polygon` are the exception, and they are the exception
 because the operator's word and the specification's word are the same word.**
 Bluebeam, Acrobat and every drafting office say "polyline" and "polygon";
 there is no plainer name to prefer, so the rule above simply does not bite.

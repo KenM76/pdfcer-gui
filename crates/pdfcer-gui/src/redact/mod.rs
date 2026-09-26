@@ -61,7 +61,7 @@ pub enum RedactApplyRefusal {
         /// subject is a specific damaged structure in the operator's file
         /// rather than a general inability to rewrite.
         ///
-        /// # ★★★ A `bool` here replaced a substring match on the engine's prose
+        /// # A `bool` here replaced a substring match on the engine's prose
         ///
         /// Selecting the sentence in `crate::text::redact::refusal_message`
         /// with `reason.contains("hybrid-reference")` would put a locator for
@@ -99,7 +99,7 @@ pub enum RedactApplyRefusal {
     /// The apply completed in memory, but the absence proof found redacted text
     /// **still present in a decoded stream** of the output. Nothing is written.
     ///
-    /// ★ This is raised only for a survivor the operator was **never shown**:
+    /// This is raised only for a survivor the operator was **never shown**:
     /// every drawn-content hit the preparation proof finds is disclosed at
     /// `ResidualSite::DrawnContent` and acknowledged through the residual gate,
     /// so only a hit that appears between the proof and the write — the bytes
@@ -109,14 +109,14 @@ pub enum RedactApplyRefusal {
         /// The strings that survived AND were not in the acknowledged list.
         survivors: Vec<String>,
     },
-    /// ★★★ **A redaction is already STAGED on this session.**
+    /// **A redaction is already STAGED on this session.**
     ///
     /// Reachable two ways, and both are ordinary rather than
     /// exceptional: the operator opens *Review & apply* a second time on a
     /// document he has already staged, or a second `Stage` action arrives
     /// before the first frame after the first one.
     ///
-    /// ★ It is a **named refusal in the pipeline** rather than a condition the
+    /// It is a **named refusal in the pipeline** rather than a condition the
     /// dialog checks, and the difference is the one this project keeps paying
     /// for. Without it the second open would reach
     /// [`prepare_redaction_apply`]'s `to_full_bytes`, which the engine refuses
@@ -182,7 +182,7 @@ pub enum WriteRefusal {
     FileSystem(std::io::Error),
     /// The redaction succeeded and its result will not re-parse.
     ///
-    /// ★★★ Reachable only from [`PreparedRedaction::into_verified_document`],
+    /// Reachable only from [`PreparedRedaction::into_verified_document`],
     /// and it is **not** an I/O failure wearing a different name: nothing was
     /// written. The removal happened, the proof passed, and the bytes the
     /// engine produced cannot be read back as a document.
@@ -194,7 +194,7 @@ pub enum WriteRefusal {
     /// removal must go to a new file instead, where the bytes are written
     /// rather than re-read.
     ///
-    /// ★ It should be unreachable. `write_to` has produced these same bytes for
+    /// It should be unreachable. `write_to` has produced these same bytes for
     /// every redaction this program has ever written, and a PDF pdfcer just
     /// serialised failing to re-parse would be an engine defect worth a request
     /// rather than a shrug — which is why the reason is carried verbatim.
@@ -240,7 +240,7 @@ impl std::fmt::Display for WriteRefusal {
 /// reads are measurements rather than predictions. It also removes the window
 /// in which the document could change between the report and the write.
 ///
-/// ★ [`Self::bytes`] is **private and has no accessor** — see §2.1. Everything
+/// [`Self::bytes`] is **private and has no accessor** — see §2.1. Everything
 /// a surface needs in order to describe this value is public; the buffer itself
 /// leaves only through [`Self::write_to`].
 pub struct PreparedRedaction {
@@ -307,7 +307,7 @@ impl PreparedRedaction {
     /// shaped like [`Self::write_to`] rather than like a getter — `&self`, two
     /// gates, same order.
     ///
-    /// # ★★★ Why this is not `pub fn bytes()`
+    /// # Why this is not `pub fn bytes()`
     ///
     /// [`Self::bytes`]' own doc forbids exactly that: a `pub fn bytes()` here
     /// would restore the surface an unverified writer needs. Cloning the buffer
@@ -322,7 +322,7 @@ impl PreparedRedaction {
     /// pdfcer disagree about whether the text is gone"* is a defect and not a
     /// state.
     ///
-    /// # ★★ Why re-proving matters MORE here than for a file
+    /// # Why re-proving matters MORE here than for a file
     ///
     /// A failed write leaves a file that can be deleted. This replaces the
     /// operator's open document, and the session it replaces is the last thing
@@ -331,7 +331,7 @@ impl PreparedRedaction {
     /// that it had been removed — which is the one outcome this whole module
     /// exists to make impossible.
     ///
-    /// ★ No atomicity question arises: nothing is written. The document on disk
+    /// No atomicity question arises: nothing is written. The document on disk
     /// is untouched until the operator saves, which is what
     /// `crate::text::redact::destination_open_document_now_tooltip` promises.
     ///
@@ -352,7 +352,7 @@ impl PreparedRedaction {
         if residuals > 0 && acknowledgement == ResidualAcknowledgement::Withheld {
             return Err(WriteRefusal::ResidualsNotAcknowledged { residuals });
         }
-        // ★ Only a survivor the operator was NOT shown refuses:
+        // Only a survivor the operator was NOT shown refuses:
         // every drawn-content hit `prove` found at preparation is in
         // `verification.residuals` at `DrawnContent`, and the gate above has
         // already required its acknowledgement. Anything else here means the
@@ -370,7 +370,7 @@ impl PreparedRedaction {
                 });
             }
         }
-        // ★ `clone()` and it stays INSIDE this module. The parser takes an
+        // `clone()` and it stays INSIDE this module. The parser takes an
         // owned buffer; `&self` is what makes this mirror `write_to`, which
         // also does not consume the preparation — an operator whose parse fails
         // still has a dialog with a working *Save to a new file* row.
@@ -399,7 +399,7 @@ impl PreparedRedaction {
     /// the document each time an operator opened the dialog with a residual
     /// pending.
     ///
-    /// # ★★★ Why the write IS atomic
+    /// # Why the write IS atomic
     ///
     /// A plain `std::fs::write` is defensible only while `target` can never be
     /// the source file: a torn write to `sheet-redacted.pdf` costs a file that
@@ -407,7 +407,7 @@ impl PreparedRedaction {
     /// already-redacted buffer rather than introduce un-redacted content, and a
     /// truncated PDF does not open, so the failure is loud.
     ///
-    /// ★ **Every clause of that depends on `target` never being the source
+    /// **Every clause of that depends on `target` never being the source
     /// file, and [`crate::dialogs::redact`] can be asked for exactly that
     /// destination.** A torn write to `sheet.pdf` destroys the **only remaining
     /// copy of the content being removed**, and leaves neither the original nor
@@ -426,7 +426,7 @@ impl PreparedRedaction {
     /// different writers, which is the arrangement in which somebody later
     /// "simplifies" the wrong one.
     ///
-    /// ★ The temporary file is removed if the rename fails, so a refusal leaves
+    /// The temporary file is removed if the rename fails, so a refusal leaves
     /// no half-written PDF beside the operator's document — and it carries the
     /// redacted bytes, which is one more reason not to leave it lying about.
     ///
@@ -444,8 +444,8 @@ impl PreparedRedaction {
         if residuals > 0 && acknowledgement == ResidualAcknowledgement::Withheld {
             return Err(WriteRefusal::ResidualsNotAcknowledged { residuals });
         }
-        // ★ §2.2 — the proof between the buffer and the syscall.
-        // ★ Only a survivor the operator was NOT shown refuses:
+        // §2.2 — the proof between the buffer and the syscall.
+        // Only a survivor the operator was NOT shown refuses:
         // every drawn-content hit `prove` found at preparation is in
         // `verification.residuals` at `DrawnContent`, and the gate above has
         // already required its acknowledgement. Anything else here means the
@@ -463,7 +463,7 @@ impl PreparedRedaction {
                 });
             }
         }
-        // ★ Temp-then-rename. See the "Why the write IS atomic" section: the
+        // Temp-then-rename. See the "Why the write IS atomic" section: the
         // destination may now be the source document, and a torn write there
         // would destroy the last copy of the content being removed.
         let temporary = target.with_extension("pdfcer-tmp");
@@ -481,7 +481,7 @@ impl PreparedRedaction {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed.
                 //
-                // ★ `glyphs=` beside `marks=`, because a count of marks alone
+                // `glyphs=` beside `marks=`, because a count of marks alone
                 // is not an ink trail: a build that applied every mark and
                 // removed no character would emit an otherwise identical line,
                 // and `glyphs=0` on a non-zero `marks=` is the shape of exactly
@@ -521,7 +521,7 @@ impl PreparedRedaction {
 /// [`PreparedRedaction::write_to`] after the operator confirms, and that method
 /// proves the bytes again on the way past.
 ///
-/// # ★ This is the one call site of [`pdfcer_core::redact::apply_redactions_with`]
+/// # This is the one call site of [`pdfcer_core::redact::apply_redactions_with`]
 /// in this crate
 ///
 /// Asserted, not asked for: `redact::sealed` parses every `.rs` file in the crate and
@@ -549,7 +549,7 @@ pub fn prepare_redaction_apply(
     session: &EditSession,
     reach: RedactionReach,
 ) -> Result<PreparedRedaction, RedactApplyRefusal> {
-    // ★★★ Asked FIRST — before the mark census — and the ORDER is load-bearing
+    // Asked FIRST — before the mark census — and the ORDER is load-bearing
     // twice over.
     //
     // 1. While a redaction is staged the engine refuses `to_full_bytes` by
@@ -557,7 +557,7 @@ pub fn prepare_redaction_apply(
     //    operator would read *"this document cannot be rewritten in full"* on
     //    a document that can.
     //
-    // 2. ★★★ **It is what stops the operator being trapped.** Ask the mark
+    // 2. **It is what stops the operator being trapped.** Ask the mark
     //    census first and a staged document with **no marks left** — he took
     //    them off in the panel after arming the removal — answers
     //    `NothingToApply`, which the dialog draws as a refusal with no control
@@ -601,7 +601,7 @@ pub fn prepare_redaction_apply(
     // anything else, which is the property that makes "apply is never
     // incremental" structural rather than a convention.
     //
-    // ★ The `_with` form rather than the bare one, and it is not a preference
+    // The `_with` form rather than the bare one, and it is not a preference
     // for the longer name: the bare `apply_redactions` hard-codes the engine's
     // default reach, so calling it would make the setting in the window a
     // promise this route breaks. The two are otherwise the same function.
@@ -621,7 +621,7 @@ pub fn prepare_redaction_apply(
             },
         )?;
 
-    // ★★★ A survivor in drawn content does NOT refuse here. `prove` lists it as
+    // A survivor in drawn content does NOT refuse here. `prove` lists it as
     // a `ResidualSite::DrawnContent` residual, the window shows it with the
     // sentence that says *outside the area you marked*, and the acknowledgement
     // gate decides — the operator is allowed to override and redact what the
@@ -646,7 +646,7 @@ pub fn prepare_redaction_apply(
 }
 
 // ===========================================================================
-// ★★★ THE DEFERRED REDACTION
+// THE DEFERRED REDACTION
 //
 // This is the only route that touches the open session, and there is
 // deliberately no collapsing sibling beside it. See §1.0; the short form is
@@ -663,7 +663,7 @@ pub fn prepare_redaction_apply(
 /// the one operation in this program that cannot be undone once it reaches a
 /// file.
 ///
-/// ★ It lives in this module rather than beside the `Action` enum because the
+/// It lives in this module rather than beside the `Action` enum because the
 /// vocabulary is this module's. `crate::app::actions::action` carries the
 /// variant and points here, which is that file's own R2 rule — it is 1,500
 /// lines of one enum and the reasoning goes next to the mechanism.
@@ -674,7 +674,7 @@ pub enum Staging {
     Stage,
     /// Disarm it. [`cancel_staged_redaction`].
     ///
-    /// ★★★ This exists because **a stageable operation that cannot be
+    /// This exists because **a stageable operation that cannot be
     /// un-staged is a trap.** The collapsing route it replaces had no Cancel
     /// and needed none — there was nothing to cancel, the removal had already
     /// happened — and the moment the removal became a thing the document
@@ -695,14 +695,14 @@ pub struct StagedRedaction {
     /// The engine's **preview** report — what a save would remove, per carrier,
     /// plus its own disclosed residuals.
     ///
-    /// ★ A preview and not a receipt, and the distinction is load-bearing
+    /// A preview and not a receipt, and the distinction is load-bearing
     /// enough that the engine states it in `apply_redactions_deferred`'s own
     /// doc comment: the actual removal re-runs at save over the **then**-current
     /// state, so an edit made in between changes what is removed. That is why
     /// [`save_applying_pending`] proves the bytes against the report the SAVE
     /// produced rather than against this one.
     pub report: RedactionReport,
-    /// ★★★ **How many undo steps this did NOT destroy.**
+    /// **How many undo steps this did NOT destroy.**
     ///
     /// `EditSession::undo_depth()`, read **after** the call, and the order is
     /// the assertion. A route that emptied the log would have to be read
@@ -728,7 +728,7 @@ pub struct StagedRedaction {
 /// engine refuses both ordinary save modes by name and
 /// [`save_applying_pending`] is the only way bytes leave.
 ///
-/// # ★★★ 1. What this buys, stated as the cost it removes
+/// # 1. What this buys, stated as the cost it removes
 ///
 /// The alternative — `EditSession::apply_redactions`, which collapses the
 /// session onto a clean redacted base — **finalizes**: it clears the whole undo
@@ -742,7 +742,7 @@ pub struct StagedRedaction {
 /// the moment he pressed the button, and [`cancel_staged_redaction`] takes the
 /// staging off without touching anything else.
 ///
-/// # ★★ 2. Why nothing is proven here, and where the proof went
+/// # 2. Why nothing is proven here, and where the proof went
 ///
 /// `apply_redactions_deferred` runs the removal only to compute its preview
 /// and **discards the bytes**. There is therefore no buffer for [`proof`] to
@@ -759,7 +759,7 @@ pub struct StagedRedaction {
 /// and [`crate::text::redact::saved_applying_redaction`] is the sentence that
 /// earns the word, after the sweep, about a file that exists.
 ///
-/// # ★ 3. The page does not change, and the operator is told so
+/// # 3. The page does not change, and the operator is told so
 ///
 /// §1.0.3. A screenshot one frame after this returns is identical to one taken
 /// a frame before it: the content is still drawn, the `/Redact` marks are still
@@ -791,7 +791,7 @@ pub fn stage_into_session(
         return Err(RedactApplyRefusal::NothingToApply);
     }
 
-    // ★★★ Set BEFORE the staging verb, and it stays on the session afterwards.
+    // Set BEFORE the staging verb, and it stays on the session afterwards.
     // That is what makes `save_applying_pending` — which takes `&EditSession`
     // and therefore cannot be told anything — perform the removal at the same
     // reach the preview below was computed at and the operator acknowledged.
@@ -799,7 +799,7 @@ pub fn stage_into_session(
     // the correct answer: the operator confirmed a specific preview.
     session.set_residual_scope(reach.scope());
 
-    // ★★★ The engine's staging verb — one of the four calls `sealed` pins to
+    // The engine's staging verb — one of the four calls `sealed` pins to
     // this file. See §2.4.
     let report = session.apply_redactions_deferred().map_err(map_refusal)?;
 
@@ -816,7 +816,7 @@ pub fn stage_into_session(
         "the staging verb reset the redaction reach the operator chose"
     );
 
-    // ★ Read AFTER the call, and that is the assertion rather than an
+    // Read AFTER the call, and that is the assertion rather than an
     // afterthought. The route this replaces had to read the depth before,
     // because the call destroyed it; a build that had silently gone back to
     // collapsing would report 0 here, and `tests` would say so.
@@ -866,7 +866,7 @@ pub fn stage_into_session(
 /// which is the right shape for a control a caller may reach from a stale
 /// frame.
 ///
-/// ★ **The caller owes one thing beside this call**: clearing
+/// **The caller owes one thing beside this call**: clearing
 /// `OpenDoc::redaction_absence_claims`. Those strings are the shell's statement
 /// that *every file it writes for this document has this text removed from it*,
 /// and after a cancel that statement is false — leaving them set would make the
@@ -886,7 +886,7 @@ pub const fn cancel_staged_redaction(session: &mut EditSession) {
 /// of this shell's save verbs from failing by name the moment a redaction is
 /// armed.
 ///
-/// # ★★★ 1. This is the boundary, and the proof is at it
+/// # 1. This is the boundary, and the proof is at it
 ///
 /// The engine's `save_applying_redaction(&self, ..)` runs the removal over the
 /// session's **current** state and returns single-revision bytes with the
@@ -896,14 +896,14 @@ pub const fn cancel_staged_redaction(session: &mut EditSession) {
 /// how the value was constructed. So the decoded-stream sweep runs here, over
 /// the buffer the caller is about to write, before the caller can see it.
 ///
-/// ★ **Against the report the SAVE produced, not the one staging predicted.**
+/// **Against the report the SAVE produced, not the one staging predicted.**
 /// The engine is explicit that the removal re-runs over the then-current state,
 /// so if the operator edited between the staging and the save, the two reports
 /// differ — and the claims that are true of a set of bytes are the ones the
 /// removal that produced *those* bytes made. Proving against the stale preview
 /// would refuse a legitimate save the day an operator undid one mark of three.
 ///
-/// # ★★ 2. It takes `&self`, and that is the feature
+/// # 2. It takes `&self`, and that is the feature
 ///
 /// The session is not mutated, so the operator's undo history survives the
 /// save: he can save, keep editing, undo back past the save, and save again.
@@ -925,14 +925,14 @@ pub fn save_applying_pending(
     session: &EditSession,
     options: &SaveOptions,
 ) -> Result<(Vec<u8>, RedactionReport), RedactApplyRefusal> {
-    // ★★★ The engine's save-applying verb — one of the four calls `sealed`
+    // The engine's save-applying verb — one of the four calls `sealed`
     // pins to this file, and the only one that produces bytes anybody writes.
     let (bytes, report) = session
         .save_applying_redaction(options)
         .map_err(map_refusal)?;
-    // ★ §2.2's proof, moved to the only place the deferred route can still make
+    // §2.2's proof, moved to the only place the deferred route can still make
     // it: between the buffer and the caller's syscall.
-    // ★ Survivors in drawn content at save time are the same drawn-content hits
+    // Survivors in drawn content at save time are the same drawn-content hits
     // the arming window disclosed and the operator acknowledged before the
     // removal could be staged (the staging route goes through
     // `ready_to_confirm`'s residual gate like the immediate one), so they are
@@ -1003,7 +1003,7 @@ fn map_refusal(err: RedactError) -> RedactApplyRefusal {
 /// geometry it could not cut, clips whose outline had to be kept, and the
 /// proof's own raw-byte residuals.
 ///
-/// ★ **Promotion is deliberately NOT counted here**, and that is the one place
+/// **Promotion is deliberately NOT counted here**, and that is the one place
 /// the two lists differ. Objects promoted out of an object stream are a
 /// leftover of *this shell's* materialisation step
 /// ([`prepare_redaction_apply`]'s full rewrite #1) and are reported by it; the
@@ -1013,7 +1013,7 @@ fn map_refusal(err: RedactError) -> RedactApplyRefusal {
 /// `crate::dialogs::redact`'s own test pins the two together so the difference
 /// stays exactly one item and cannot drift.
 ///
-/// # ★★★ `verification` is an `Option`, and the `None` is a statement rather
+/// # `verification` is an `Option`, and the `None` is a statement rather
 /// than a convenience
 ///
 /// A route that produces bytes proves its own output and has an
@@ -1069,7 +1069,7 @@ pub fn residual_count(
 /// staged on this document) and returns `Ok` without decoding anything, so an
 /// ordinary save pays nothing.
 ///
-/// # ★ Why the DECODED-stream sweep and not a raw byte scan
+/// # Why the DECODED-stream sweep and not a raw byte scan
 ///
 /// Both were considered and the split is [`proof`]'s standing one. A raw byte
 /// run that survives outside every decoded stream is a *disclosure*, not a
@@ -1104,7 +1104,7 @@ thread_local! {
     /// The document an *apply now* has just produced, waiting for the action
     /// funnel to install it.
     ///
-    /// # ★★★ Why a slot rather than a payload on the action
+    /// # Why a slot rather than a payload on the action
     ///
     /// `RedactAction` derives `Clone` and `PartialEq`, and
     /// [`PreparedRedaction`] is deliberately neither — cloning a redacted
@@ -1119,7 +1119,7 @@ thread_local! {
     /// rather than smuggled — this is not document state, it is a value in
     /// flight between one frame and the action drained after it.
     ///
-    /// ★ Single-slot and take-on-read. Two applies cannot be in flight: the
+    /// Single-slot and take-on-read. Two applies cannot be in flight: the
     /// dialog closes on the press, and a second press would need it reopened.
     /// A queue would model a concurrency this surface does not have.
     static APPLIED: std::cell::RefCell<Option<Document>> = const { std::cell::RefCell::new(None) };
@@ -1132,7 +1132,7 @@ pub(crate) fn park_applied_document(doc: Document) {
 
 /// Take it, exactly once.
 ///
-/// ★ `take`, not `borrow`. If the action ran twice the second would find
+/// `take`, not `borrow`. If the action ran twice the second would find
 /// nothing and do nothing, which is the right failure: re-installing the same
 /// document over a session the operator has since edited would silently discard
 /// that work.

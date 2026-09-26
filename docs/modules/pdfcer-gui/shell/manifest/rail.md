@@ -44,7 +44,7 @@ a view-only rotation in Read and a real one elsewhere — *"two behaviours
 wearing one button, which is worse than either"*. If he wants view-only
 rotation, that is a different control and it should say so on its face.
 
-## ★★ The lasso is NOT here, and the empty-group question was decided
+## The lasso is NOT here, and the empty-group question was decided
 
 He named the lasso himself — *"lasso tool when we implement one"* — and it
 does not exist: no command, no handler, no icon asset. The mockup draws it
@@ -62,7 +62,7 @@ skips it — so it would be data that renders nothing, and the next reader
 would have to run the code to discover that. (2) is what ships, and it is
 possible only because of the second finding below.
 
-## ★★★ Every rail row needs an icon, and that is what admits `edit.select_all`
+## Every rail row needs an icon, and that is what admits `edit.select_all`
 
 A rail row is a picture with an *optional* word under it: at `Rung::Tight`
 and below there is no word left, so a command with no icon would draw a

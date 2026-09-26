@@ -23,7 +23,7 @@ reaches it* and *whether the ring test converts screen pixels to the right
 vertex* are properties of call sites and of a coordinate conversion, and
 both are only observable in a running process.
 
-# ★ The assertion that matters most is the CLOSING one
+# The assertion that matters most is the CLOSING one
 
 `closes_the_ring` compares the click against the first vertex **in canvas
 space**, which means it crosses the page→canvas bridge — the conversion

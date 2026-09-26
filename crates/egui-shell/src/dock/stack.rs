@@ -33,7 +33,7 @@ impl<'a> Dock<'a> {
         report: &mut DockFrameReport,
         body: &mut impl FnMut(&PanelId, &mut egui::Ui),
     ) {
-        // ★★★ The tab strip is suppressed when the rail is the switch.
+        // The tab strip is suppressed when the rail is the switch.
         // [`Self::with_rail_reach`] holds the conditions and the
         // reachability argument, which is the load-bearing half: a strip
         // may only be dropped while something else can still reach every
@@ -58,7 +58,7 @@ impl<'a> Dock<'a> {
             }
         }
 
-        // ★ ONE body, the active tab's. *Size a container to its active
+        // ONE body, the active tab's. *Size a container to its active
         // child* is honoured here by there being nothing else to size it
         // to: an inactive tab's body is never constructed, so it can
         // neither impose a width nor consume a frame's work.
@@ -78,7 +78,7 @@ impl<'a> Dock<'a> {
             return;
         }
 
-        // ★★★ `new_child`, NOT `scope_builder`. A body that draws more than
+        // `new_child`, NOT `scope_builder`. A body that draws more than
         // fits is truncated, never accommodated: accommodating it is what
         // makes a panel content-driven, and a content-driven panel next to a
         // fit-to-viewport zoom is the R128 feedback loop. The clip below

@@ -45,7 +45,7 @@
 //! pairs to check would have needed somebody to think of the missing one
 //! — which is precisely what did not happen.
 //!
-//! # ★★★ Why ten pairs is not enough
+//! # Why ten pairs is not enough
 //!
 //! The obvious matrix is **ten**: `egui`'s five widget states × two
 //! background fills, foreground always `fg_stroke.color`. That is a good
@@ -85,7 +85,7 @@
 //! carries, on its [`Origin::why`], the `egui` source line that renders it.
 //! Twenty-seven pairs now, ten of them the original matrix.
 //!
-//! ★★ **The one thing that must not happen to this list.** A widened gate
+//! **The one thing that must not happen to this list.** A widened gate
 //! that fails on a *correct* state is worse than a narrow one, because
 //! people learn to ignore it and then ignore it on the day it is right.
 //! Every pair below was measured across all three shipped presets before
@@ -109,7 +109,7 @@
 //! every time, with no colour-science dependency and no argument about
 //! which standard applies to a 1 px stroke.
 //!
-//! ★ The crude measure has one known bias worth stating, because it cost a
+//! The crude measure has one known bias worth stating, because it cost a
 //! judgement call during the widening: Rec. 709 weights red at 0.2126, so
 //! a saturated red foreground scores far lower here than a human reads it
 //! as. The Dark preset's `danger` on `window_fill` measured **89.7**
@@ -297,7 +297,7 @@ impl Ground {
 /// A text colour `egui` resolves through a [`egui::Visuals`] accessor
 /// rather than storing in a `WidgetVisuals`.
 ///
-/// # ★ Why these are invisible to the widget matrix
+/// # Why these are invisible to the widget matrix
 ///
 /// Every one of them is computed at paint time from something other than
 /// the state's own `fg_stroke`. Reading the five `WidgetVisuals` back
@@ -328,7 +328,7 @@ pub enum TextRole {
     /// group captions — which makes it the single most likely place for
     /// the next defect of this family, and it was outside the gate.
     ///
-    /// ★ The value is *translucent* (a premultiplied 60 % of the body
+    /// The value is *translucent* (a premultiplied 60 % of the body
     /// colour), so it must be composited before it is measured. Its gap is
     /// therefore exactly 0.6 × the body gap on the same ground, which is
     /// worth knowing when reading a failure: if `Weak` fails and `Body`
@@ -364,7 +364,7 @@ pub enum TextRole {
     /// `visuals.error_fg_color` — the same shape as [`Self::Warn`], for
     /// the case where the operator must act.
     ///
-    /// ★ This is the pair that the widening actually caught in a shipped
+    /// This is the pair that the widening actually caught in a shipped
     /// preset: Dark measured **89.7** on [`Ground::WindowFill`] against a
     /// floor of 90. See the module header on the red bias, and
     /// `Theme::dark` for the fix.
@@ -396,7 +396,7 @@ impl TextRole {
 
     /// The grounds this role is **actually drawn on**.
     ///
-    /// ★★ Deliberately not the full cross product. A gate is only worth
+    /// Deliberately not the full cross product. A gate is only worth
     /// what its reader believes, and a pair nobody renders is a line in a
     /// failure list that sends somebody to look for a surface that does
     /// not exist. So each role names the grounds it has a renderer for:
@@ -433,7 +433,7 @@ impl TextRole {
 
 /// Where a [`Pair`] comes from — the thing a failure message has to name.
 ///
-/// # ★★ Why this replaced two plain fields
+/// # Why this replaced two plain fields
 ///
 ///
 /// The alternative — a parallel list of "other" pairs with their own
@@ -634,7 +634,7 @@ impl std::fmt::Display for ContrastFailure {
     /// the shell has no business deciding how another project words a
     /// message to its operator.
     ///
-    /// ★ The line keeps the ten-pair version's wording word for word for a
+    /// The line keeps the ten-pair version's wording word for word for a
     /// widget pair, because that message was good and the widening had no
     /// licence to spend it. Two things were added, both because the
     /// widening produced a failure the old wording served badly:
@@ -664,7 +664,7 @@ impl std::fmt::Display for ContrastFailure {
 
 /// A pair that is measured, is allowed to fail, and says why in writing.
 ///
-/// # ★★★ Why an exemption rather than a narrower list or a lower floor
+/// # Why an exemption rather than a narrower list or a lower floor
 ///
 /// Both of the easy answers are worse:
 ///
@@ -680,7 +680,7 @@ impl std::fmt::Display for ContrastFailure {
 /// So the pair stays in [`pairs`], is measured on every run, and is
 /// skipped by [`check`] with a reason attached.
 ///
-/// # ★★ And the exemption expires
+/// # And the exemption expires
 ///
 /// An allow-list entry outliving its subject is a defect this project has
 /// paid for twice in one week: a gate exemption whose premise expired
@@ -707,7 +707,7 @@ pub struct Exemption {
 
 /// Every pair allowed to fail, with its argument.
 ///
-/// ★ Two entries, one role, one argument. Keep it that way: an exemption
+/// Two entries, one role, one argument. Keep it that way: an exemption
 /// list is a budget, not a mechanism, and the moment it grows a third
 /// unrelated entry the honest move is to ask whether the pair being
 /// exempted should be in [`pairs`] at all.
@@ -808,7 +808,7 @@ pub fn luma(c: Color32) -> f32 {
 /// exactly the case where that error is largest. A gate that got this
 /// wrong would be wrong specifically about the defect it exists to catch.
 ///
-/// ★ The widening added two more translucent things to measure and it did
+/// The widening added two more translucent things to measure and it did
 /// not have to add any arithmetic for either: `weak_text_color()` is a
 /// premultiplied 60 % of the body colour, and `selection.bg_fill` may be a
 /// wash. Both go through this function.
@@ -895,7 +895,7 @@ pub fn pairs(style: &Style) -> Vec<Pair> {
 
     // Group 3 — the two roles `egui` drives from `visuals.selection`.
     //
-    // ★ The selected-widget plate is composited over the ground BEFORE it
+    // The selected-widget plate is composited over the ground BEFORE it
     // is used as a background, because a wash in that channel is exactly
     // the defect this covers (T2) and a wash has no luminance of its own.
     // The focus ring needs no such compositing: `text_edit_bg_color()` is
@@ -1202,7 +1202,7 @@ mod tests {
     /// has told the reader to go and re-derive what this function already
     /// knew.
     ///
-    /// ★ The widget case's wording is asserted verbatim, because the
+    /// The widget case's wording is asserted verbatim, because the
     /// widening had no licence to spend a message that was already good.
     /// The only deliberate change is the gap's decimal place; see
     /// [`ContrastFailure`]'s `Display`.

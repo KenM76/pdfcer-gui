@@ -15,7 +15,7 @@ switch turns them back on.**
 — with the switch his own sentence asks for: *"a new selector option we can
 turn on or off in the sidebar, navigate, and content edit tools."*
 
-★★★ **The boxes are not decoration and the row records why.** Selection
+**The boxes are not decoration and the row records why.** Selection
 already descends to the chunk; what decides whether a drag moves the chunk
 or the whole block is `canvas::presspick::covers`, asking on **press**
 whether the pointer is inside the current selection's outline — a rectangle
@@ -24,7 +24,7 @@ sometimes takes the whole block"* is what aiming at an invisible target
 feels like. Drawing the boxes is what makes ask 1 — a repeatable gesture —
 possible at all.
 
-# ★★★ Why a unit test cannot stand in for this
+# Why a unit test cannot stand in for this
 
 `canvas::chunks::tests` asserts the switch remembers its answer and that the
 decline reasons are distinct. Both are true and neither is evidence (**R1**):
@@ -46,14 +46,14 @@ app      text-chunks enabled=false                      the dispatch arm ran
 app      canvas-chunks-declined reason=switched-off     the painter honoured it
 ```
 
-★★ Each line is written by a different subsystem, separated by the exact
+Each line is written by a different subsystem, separated by the exact
 boundaries the wiring crosses. A build whose ribbon item is missing writes
 none of them; one whose dispatch arm is missing writes the first only; one
 that reads the persisted home rather than the live one writes the first two
 and not the third — and that third failure is invisible until tomorrow,
 which is why it is asserted today.
 
-# ★★ Reading the chunk state: anchored after a gesture, unanchored before
+# Reading the chunk state: anchored after a gesture, unanchored before
 
 `canvas-chunks` and `canvas-chunks-declined` are written through
 `diag::trace_changed` under **one** slot, so the channel is a change log:
@@ -68,7 +68,7 @@ and this check depends on both.
   every frame from launch, so the newest of the two lines **is** the current
   state — this is the one case where `last` is right rather than a fossil.
 
-# ★★ Why it reads the state before it starts
+# Why it reads the state before it starts
 
 The toggle is **persisted**, and the preference lives beside the exe:
 `settings::resolve_store` prefers a writable `userdata/` next to
@@ -83,7 +83,7 @@ whatever the previous run left: a run that ended with the boxes off would
 make the next run's first assertion fail for a reason with nothing to do
 with the build.
 
-★ So the starting state is **read rather than assumed**, turned on with a
+So the starting state is **read rather than assumed**, turned on with a
 note if it is found off, and left **on** however this check ends. That costs
 one trace read in the common case and removes an entire class of articulate
 failure about the wrong subject in the other.
@@ -96,12 +96,12 @@ operators, each with its own `Tm` on its own baseline: **one text object of
 six chunks**, which is the shape this check needs and the reason the count
 below is an equality rather than a floor.
 
-★ A floor would pass on a build that had lost five of the six. The number is
+A floor would pass on a build that had lost five of the six. The number is
 a property of the committed document, so it is assertable exactly, and a run
 that reports a different one has found either a broken box walk or an engine
 whose line granularity has moved — both worth a red line rather than a pass.
 
-★★ A one-chunk object is declined by design (`single-chunk`: its one box
+A one-chunk object is declined by design (`single-chunk`: its one box
 would sit on the selection outline already drawn there), so a fixture whose
 text object held a single line would measure nothing while looking green.
 
@@ -115,7 +115,7 @@ answers with the number of rectangles it handed to the painter, from inside
 its own loop, and `draw_chunks` traces that — so a build that never calls it
 does not compile, and one that enters it and draws nothing traces `drawn=0`.
 
-★ What it cannot see: a stroke made transparent, a colour equal to the page,
+What it cannot see: a stroke made transparent, a colour equal to the page,
 or a mapping that puts every box off-screen. Those count as drawn and have
 one oracle, which is a rendered screenshot.
 
@@ -129,7 +129,7 @@ one oracle, which is a rendered screenshot.
    loop `for page_rect in boxes.iter().take(0)`. It compiles, every unit test
    stays green, and the canvas gets nothing. Step B goes red on `drawn=0`.
 
-   ★ The plant that would NOT be caught is returning `boxes.len()` instead
+   The plant that would NOT be caught is returning `boxes.len()` instead
    of the loop's own tally — a deliberate lie, and the single change that
    would quietly disarm this check. It is why the count is taken inside the
    loop, and why that is argued where the count is produced.

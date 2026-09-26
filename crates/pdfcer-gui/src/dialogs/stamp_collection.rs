@@ -25,7 +25,7 @@ pub const REGION_SAVE: &str = "stamp-collection.save"; // ui-text-exempt: trace 
 
 /// Height reserved below the scroll area for the separator and button row.
 ///
-/// ★ A named constant used **both** by the opening-height calculation and by
+/// A named constant used **both** by the opening-height calculation and by
 /// the scroll area's `max_height`, which is `dialogs::formfield`'s recorded
 /// finding: those were a literal `40.0` in one place and nothing at all in the
 /// other, which is how the two halves of one reservation drift apart.
@@ -40,7 +40,7 @@ const HEADER_PTS: f32 = 150.0;
 
 /// How many rows the window opens tall enough to show.
 ///
-/// ★ A **constant inventory**, never a measurement from inside the scroll area
+/// A **constant inventory**, never a measurement from inside the scroll area
 /// — R128's feedback loop. A document of eighty sheets must not open a window
 /// eighty rows tall; it opens at eight and scrolls, which is a decision made
 /// here rather than a number egui arrives at by growing.
@@ -81,7 +81,7 @@ impl StampCollectionDialog {
     /// answer that only changes when the operator types — and, worse, would
     /// throw away every name he had typed on the frame after he typed it.
     ///
-    /// # ★ Where the seeded category comes from, in order
+    /// # Where the seeded category comes from, in order
     ///
     /// 1. The collection's own category, when this document already is one.
     ///    Re-opening a collection to fix one typo must not retype the heading.
@@ -93,7 +93,7 @@ impl StampCollectionDialog {
     /// written is on screen, in the box, before anything is written.
     #[must_use]
     pub fn open(doc: &OpenDoc) -> Self {
-        // ★ `session.document()`, which is the document as loaded. There is no
+        // `session.document()`, which is the document as loaded. There is no
         // edit verb in this shell that writes a stamp name tree, so the base
         // document and the session agree about the only thing being read here.
         // The *page count* comes from the live `doc.pages`, because inserting
@@ -193,7 +193,7 @@ impl StampCollectionDialog {
 
         ui.label(t::stamps_heading(self.plan.included()));
 
-        // ★ The solid, foreground-coloured scrollbar `dialogs::formfield`
+        // The solid, foreground-coloured scrollbar `dialogs::formfield`
         // records: a default handle is `widgets.inactive.bg_fill`, which in a
         // light preset is a near-white on near-white — measured elsewhere in
         // this shell as *present, opaque, correctly sized and invisible*.
@@ -229,7 +229,7 @@ impl StampCollectionDialog {
 
     /// One row per page: tick, page number, name.
     ///
-    /// # ★★ Why every keystroke re-derives the WHOLE list
+    /// # Why every keystroke re-derives the WHOLE list
     ///
     /// Uniqueness is a property of the **set**, not of a row. Renaming row 1
     /// can free the name row 4 was renumbered away from, and a per-row update
@@ -280,7 +280,7 @@ impl StampCollectionDialog {
     /// Everything pdfcer had to change about a hidden identifier — and nothing
     /// when it changed nothing.
     ///
-    /// ★ Drawn only when the list is non-empty. A permanently-present box
+    /// Drawn only when the list is non-empty. A permanently-present box
     /// reading *"no adjustments"* trains an operator to stop reading the place
     /// adjustments appear, which costs exactly the one time it matters.
     fn adjustments_group(&self, ui: &mut Ui) {
@@ -308,7 +308,7 @@ impl StampCollectionDialog {
 
     /// Save and Cancel.
     ///
-    /// ★ Greyed with the reason on hover, which is the one situation **R9**
+    /// Greyed with the reason on hover, which is the one situation **R9**
     /// reserves greying for: *temporarily* unavailable, and one keystroke or
     /// one tick makes it live. The blocker's sentence is also drawn beside the
     /// button rather than only on hover, because a hover tooltip is a thing you

@@ -8,7 +8,7 @@ go of the file
 > changed it will note the file will be closed when opened in acrobat with
 > and ok button to continue - there will be a cancel button as well."*
 
-## ★★★ Why there is a dialog at all
+## Why there is a dialog at all
 
 Because pressing this button **closes the operator's document**, and closing
 somebody's document is not something to do quietly on one click.
@@ -22,7 +22,7 @@ program to have the file at a time — so pdfcer gives it up. That is the
 operator's own instruction and it is the right call; the window exists to
 say so before it happens.
 
-## ★★★ The button that is deliberately NOT here
+## The button that is deliberately NOT here
 
 [`crate::dialogs::unsaved`] offers *Save a copy… · Close without saving ·
 Cancel*, and it is right to: there, the document is merely being closed, and
@@ -55,7 +55,7 @@ in step. The [`crate::acrobat::Prompt`] that decides which shape is a pure
 function of two booleans, so *which* shape appears is asserted in
 `crate::acrobat::tests` without a window.
 
-★ The third row has **one** button and no Cancel. There is nothing to
+The third row has **one** button and no Cancel. There is nothing to
 cancel: nothing is going to happen either way, and a Cancel beside a
 refusal invites the reading that the other button would have proceeded.
 

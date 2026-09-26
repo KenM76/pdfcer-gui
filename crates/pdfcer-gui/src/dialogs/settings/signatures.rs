@@ -11,7 +11,7 @@ use crate::text::trust as t;
 
 /// The region the resolved-state line publishes.
 ///
-/// ★ Named for [`super::acrobat::REGION_RESOLVED`]'s reason: the whole value of
+/// Named for [`super::acrobat::REGION_RESOLVED`]'s reason: the whole value of
 /// that line is that it is **on screen and legible**, and `ui-verify` can only
 /// assert that about a rect the application published. A driven check that read
 /// the trace would learn what pdfcer resolved and nothing about whether the
@@ -23,7 +23,7 @@ pub const REGION_BROWSE: &str = "settings:signatures.browse"; // ui-text-exempt:
 
 /// The inspect button's region.
 ///
-/// ★★★ **Its absence is the assertion.** R9 says an unavailable capability
+/// **Its absence is the assertion.** R9 says an unavailable capability
 /// renders nothing, and "renders nothing" is only checkable if the thing that
 /// would have rendered has a name. A driven check on a machine with no trust
 /// store asserts this region is **not** published; on a machine with one it
@@ -41,7 +41,7 @@ pub const REGION_STORE_LINE: &str = "settings:signatures.store"; // ui-text-exem
 /// *"at my own risk"* is a phrase the operator is agreeing to rather than a
 /// state they are switching.
 ///
-/// ★★ The at-own-risk disclosure is a [`super::widgets::disclosure`] rather
+/// The at-own-risk disclosure is a [`super::widgets::disclosure`] rather
 /// than an option note, and that is the widget's own documented distinction:
 /// it belongs to the **setting**, not to either option, and greying it — which
 /// an option note does — would be the quiet version of not saying it. It is the
@@ -73,13 +73,13 @@ pub fn use_store(ui: &mut Ui, draft: &mut super::Draft) {
 /// Setting 2 — where the trust list is, what pdfcer currently resolves, and
 /// (when there is one to read) what is in it.
 ///
-/// ★ `text_value` with an identity parse, exactly as [`super::acrobat::path`]
+/// `text_value` with an identity parse, exactly as [`super::acrobat::path`]
 /// uses it and for its stated reason: the helper exists to hold a half-typed
 /// *number* apart from a parsed value, and a path has no invalid intermediate
 /// state. Every keystroke reaches the draft, so Save writes exactly what is on
 /// screen.
 ///
-/// ★★ **No validation as you type and no red field.** A path that does not
+/// **No validation as you type and no red field.** A path that does not
 /// exist is not a typing error — it is a path to something not there yet, or on
 /// a drive that is not mounted, or typed from memory and about to be corrected.
 /// Marking it wrong mid-word would be the field arguing with somebody who has
@@ -116,7 +116,7 @@ pub fn store_path(ui: &mut Ui, draft: &mut super::Draft) {
     });
 
     ui.add_space(6.0);
-    // ★★ Located from the DRAFT, not from the live preferences. The window
+    // Located from the DRAFT, not from the live preferences. The window
     // edits a working copy and nothing reaches the configuration until Save —
     // so a resolved line read from the live value would answer a question about
     // the path the operator has just replaced, and would keep answering it
@@ -162,7 +162,7 @@ fn resolved_note(located: &crate::trust::Located) -> String {
 
 /// The **import** control: read the store now and report what is in it.
 ///
-/// ## ★★★ Why "import" is a read and not a copy
+/// ## Why "import" is a read and not a copy
 ///
 /// Because pdfcer keeps no anchor file of its own. Nothing is copied out of
 /// Acrobat's store into pdfcer's configuration, at any point, and this button
@@ -270,7 +270,7 @@ mod tests {
         );
     }
 
-    /// ★★ **`Configured` and `Discovered` deliberately say the same thing.**
+    /// **`Configured` and `Discovered` deliberately say the same thing.**
     ///
     /// Recorded as an assertion rather than as a comment, because it is the one
     /// place in this module where two states SHARE a sentence and a reader

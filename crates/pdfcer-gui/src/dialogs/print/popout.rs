@@ -10,7 +10,7 @@ use super::{PrintDialog, preview, verdicts};
 
 /// The popped window's viewport key, and the string a driven check names.
 ///
-/// ★ Stable and distinct from `"print"`. `Host::new` turns it into a
+/// Stable and distinct from `"print"`. `Host::new` turns it into a
 /// `ViewportId` by hashing, and two dialogs sharing one id would be two
 /// dialogs sharing one OS window — so this string is as load-bearing as any
 /// code in the file.
@@ -51,7 +51,7 @@ impl PrintDialog {
     /// Called from [`PrintDialog::show`] *before* the print dialog's own host,
     /// and the order is deliberate rather than incidental.
     ///
-    /// # ★★ Why before, and not after
+    /// # Why before, and not after
     ///
     /// The commit button's label carries how many sheets will lose content, and
     /// that number is corrected by what the preview has actually **examined** —
@@ -99,14 +99,14 @@ impl PrintDialog {
             crate::diag::ui_rect(REGION_POPPED_BODY, ui.max_rect());
             match job.zip(context) {
                 Some((job, context)) => {
-                    // ★ The available space MINUS nothing, handed straight to
+                    // The available space MINUS nothing, handed straight to
                     // the column — and the direction bound in this module's
                     // header is what makes that safe. `column` allocates
                     // exactly what it is given and clamps the canvas at both
                     // ends, so the content is never larger than the window and
                     // `Host::fit`, which only grows, has nothing to chase.
                     //
-                    // ★★ The width is read once, before the height, because
+                    // The width is read once, before the height, because
                     // `available_height` is affected by anything already laid
                     // out in this `Ui` and nothing has been. Reading them in
                     // the other order would work today and would silently stop
@@ -133,7 +133,7 @@ impl PrintDialog {
                 // own description of itself, and a guessed rectangle is the
                 // confidently wrong preview this feature exists to prevent.
                 //
-                // ★ It is a sentence rather than an empty window, and that is
+                // It is a sentence rather than an empty window, and that is
                 // not a placeholder: the operator asked for this window and it
                 // owes them an answer, and *"the printer would not describe
                 // itself"* is one. R9 forbids a stub standing in for a feature,
@@ -144,7 +144,7 @@ impl PrintDialog {
             }
         });
 
-        // ★★★ THE RETURN PATH, AND IT IS ONE LINE BECAUSE IT WAS ALREADY BUILT.
+        // THE RETURN PATH, AND IT IS ONE LINE BECAUSE IT WAS ALREADY BUILT.
         //
         // `Frame::closed` is the OS close button **and** Escape, together,
         // because G4 says those are one gesture and a caller that told them

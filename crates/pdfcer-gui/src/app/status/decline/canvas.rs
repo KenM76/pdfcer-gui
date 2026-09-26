@@ -34,7 +34,7 @@
 /// Two arms, and the arity is the point rather than an accident of how many
 /// have been written so far.
 ///
-/// # ★★★ Why this type exists when [`super::Declined`] is right there
+/// # Why this type exists when [`super::Declined`] is right there
 ///
 /// The canvas holds `&OpenDoc` and not `&mut`, so a gesture with something to
 /// declare cannot write the store; it raises an action and the apply phase
@@ -61,7 +61,7 @@
 /// sentence the canvas is allowed to say, in a type whose whole documented
 /// purpose is to stay short, and then answering [`super::Declined::still_true`]
 /// for it. That friction is what this type is for.
-/// # ★★ Why `pub`, when everything around it is `pub(crate)`
+/// # Why `pub`, when everything around it is `pub(crate)`
 ///
 /// Because it is half of [`crate::app::actions::Action::DeclineOnCanvas`]'s
 /// signature and `Action` is `pub` and genuinely reachable. A `pub(crate)`
@@ -83,7 +83,7 @@
 /// unchanged. What crossed the boundary is one **type**, through one named
 /// re-export at `crate::app::actions::CanvasDecline`.
 ///
-/// ★★★ That distinction is the whole justification. The rule
+/// That distinction is the whole justification. The rule
 /// `pub(super)` enforces is *“a decline is written by the one dispatcher and
 /// read by the one bar”* — a rule about **who may write**. A two-armed list
 /// of which sentence a refused gesture may ask for is vocabulary, and asking
@@ -94,13 +94,13 @@ pub enum CanvasDecline {
     /// A part or a node was entered inside a form XObject whose kind is not a
     /// path, so no geometry verb applies.
     ///
-    /// ★ [`record_canvas`] maps this to
+    /// [`record_canvas`] maps this to
     /// [`crate::text::status::InsideFormRefusal::NotAPath`] as a **constant**,
     /// because the canvas only ever meets that one of the two arms. The other,
     /// `NoContainingForm`, is written directly by `app::dispatch::format` from a
     /// place that has established a fact the canvas cannot.
     InsideFormNotAPath,
-    /// ★★★ **A drag on one line whose position this file does not state** —
+    /// **A drag on one line whose position this file does not state** —
     /// O188.
     ///
     /// [`super::Declined::TextRunHasNoPositionOfItsOwn`] carries the argument
@@ -108,7 +108,7 @@ pub enum CanvasDecline {
     /// `canvas::moving::Refusal` do not.
     ///
     TextRunHasNoPositionOfItsOwn,
-    /// ★★★ **A drag on a line that the NEXT line's position is measured from**
+    /// **A drag on a line that the NEXT line's position is measured from**
     /// — O188.
     ///
     /// Twin of [`Self::TextRunHasNoPositionOfItsOwn`], and the one that reports
@@ -120,7 +120,7 @@ pub enum CanvasDecline {
 impl CanvasDecline {
     /// The stable identifier this decline is **traced** under.
     ///
-    /// # ★★★ Why a token and not `{self:?}`
+    /// # Why a token and not `{self:?}`
     ///
     /// Because [`record_canvas`]'s trace line is read by a machine, and a
     /// `Debug` rendering is a property of how the variant is **spelled**. Rename
@@ -134,7 +134,7 @@ impl CanvasDecline {
     /// `status-group:decline` itself. Changing one is changing an interface;
     /// `tools/ui-verify/src/checks/move_line_of_text.rs` matches them literally.
     ///
-    /// ★★ Twin of `canvas::moving::Refusal::token`, written the same day and
+    /// Twin of `canvas::moving::Refusal::token`, written the same day and
     /// for the same reason. The pair is deliberate: the canvas names the cause,
     /// this names the sentence, and a driven check that reads both can tell a
     /// refusal that reached the store from one that was raised and dropped.
@@ -156,7 +156,7 @@ impl CanvasDecline {
 /// The one writer behind [`crate::app::actions::Action::DeclineOnCanvas`], and
 /// the only place [`CanvasDecline`]'s arms become [`super::Declined`]s.
 ///
-/// # ★★ Why this is an apply arm, when [`super::record_inside_form`] argues
+/// # Why this is an apply arm, when [`super::record_inside_form`] argues
 /// # at length for the dispatcher
 ///
 /// Because the canvas is not the dispatcher and cannot be made into one. That
@@ -166,17 +166,17 @@ impl CanvasDecline {
 /// it happens under `&OpenDoc`, the store is written under `&mut`, and the
 /// action is how a read-only surface asks. This is where the ask lands.
 ///
-/// ★ Deliberately not folded into [`super::record_inside_form`], which keeps
+/// Deliberately not folded into [`super::record_inside_form`], which keeps
 /// both of its callers. One of them is `app::dispatch::format` writing directly
 /// from a place that has established `NoContainingForm`; the canvas cannot
 /// establish that, and folding the two would put a dispatcher's write behind a
 /// name that says *canvas*.
 ///
-/// ★ **A selection is still not an edit** — no `vector_edit`, no epoch bump,
+/// **A selection is still not an edit** — no `vector_edit`, no epoch bump,
 /// no cache invalidation. Nothing about the document changed; a sentence was
 /// written down.
 ///
-/// # ★★★ It traces, and the trace is the middle link of a three-stage chain
+/// # It traces, and the trace is the middle link of a three-stage chain
 ///
 /// The status bar publishes one region for every decline in the application,
 /// `status-group:decline`. A driven check that asserted only *that region
@@ -194,13 +194,13 @@ impl CanvasDecline {
 /// status bar   ui-rect name=status-group:decline
 /// ```
 ///
-/// ★★ That is not the application agreeing with itself. The first line is
+/// That is not the application agreeing with itself. The first line is
 /// written by `crate::canvas` holding `&OpenDoc`; this one by the apply phase
 /// holding `&mut`, on the far side of the `Action` boundary the design exists
 /// to keep; the third by the status bar on a later frame. A shell that raised
 /// the action and never applied it writes the first and not the second.
 ///
-/// ★ Once per decline, not once per frame. [`super::show`] runs 60 times a
+/// Once per decline, not once per frame. [`super::show`] runs 60 times a
 /// second and a line there would bury the channel — the lesson `canvas-pointer`
 /// taught, and the reason `canvas::moving::drag` traces its refusal only on
 /// release.

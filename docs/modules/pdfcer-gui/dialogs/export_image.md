@@ -20,7 +20,7 @@ ribbon was specified, and `shell::manifest::registers`' `PLANNED` entry said
 neither was a gate, so it stayed unbuilt for a day after it had been asked
 for out loud.
 
-★ **Two departures from that IA row, stated rather than made quietly:**
+**Two departures from that IA row, stated rather than made quietly:**
 
 * **TIFF is not offered.** `pdfcer-render::export` encodes PNG and JPEG and
   nothing else. The IA row predates the export module; offering a format
@@ -52,13 +52,13 @@ the lockfile, neither in this crate's manifest) and one `unsafe` block that
 raster formats makes Word's paste a flat picture — so half of it is worse
 than none of it.
 
-★ **The EMF work here is not a consolation prize for that.** It is the same
+**The EMF work here is not a consolation prize for that.** It is the same
 bytes the clipboard's second entry will carry, produced by the same call,
 disclosed by the same sentences. When the placement half is built it reuses
 `app::actions::export::emf_bytes`'s options and `text::export_image::
 emf_fidelity`'s wording without re-deriving either.
 
-## ★★★ The sentence the whole window is arranged around
+## The sentence the whole window is arranged around
 
 *"full support (including transparency where supported!)"* — **the
 parenthesis is the instruction.** It concedes that one of the four cannot
@@ -72,7 +72,7 @@ impossible` then refuses the same combination a second time at the writer,
 because a guard that lives only in a window is a guard that a keymap, a
 restored plan or a later window can walk past.
 
-## ★★ Everything the window can be wrong about, it says BEFORE the picker
+## Everything the window can be wrong about, it says BEFORE the picker
 
 `export_dxf`'s ordering rule — *"the operator is never asked where to put a
 file that turns out to be empty"* — generalises here into four live
@@ -85,7 +85,7 @@ disclosures, each drawn beside the control that causes it:
 | a typed range naming no page | fixable in the box in front of them |
 | the multi-file naming pattern | a save dialog cannot say *"the name you type is a stem"* |
 
-## ★ Why the render is not previewed
+## Why the render is not previewed
 
 `dialogs::print::preview` draws the page because a print job **places**
 it — margins, scaling, a clip that will happen — and the preview is the only

@@ -16,7 +16,7 @@
 //! | `visible_when` | should it be drawn right now? | every frame — this document, this mode, this selection |
 //! | `capability` | is it in this build at all? | once, at start-up, and it cannot change while the program runs |
 //!
-//! ★★★ The last two are the pair worth keeping apart, and the reason is R9:
+//! The last two are the pair worth keeping apart, and the reason is R9:
 //! *an unavailable capability renders nothing; greying is reserved for
 //! **temporarily** unavailable and is always explained on hover.* A
 //! per-frame condition standing in for a link-time fact would be asking a
@@ -34,7 +34,7 @@ use serde::{Deserialize, Serialize};
 /// band, which a band of uniformly Medium controls cannot approach, because
 /// nothing in it can be narrower than a label.
 ///
-/// ★ [`Self::Medium`] is the default, so a manifest that states no size
+/// [`Self::Medium`] is the default, so a manifest that states no size
 /// renders exactly as one written before sizes existed. A vocabulary whose
 /// default is the status quo can be introduced in one change rather than
 /// behind a flag.
@@ -46,7 +46,7 @@ pub enum ItemSize {
     Medium,
     /// **Icon only.**
     ///
-    /// ★★ Earned, not asserted. A control renders icon-only only when it names
+    /// Earned, not asserted. A control renders icon-only only when it names
     /// an icon, carries a tooltip **and** a painter is installed — the rule
     /// [`crate::ribbon::qat`] already applies to the quick-access toolbar,
     /// applied here unchanged. The tooltip is the icon's accessible name;
@@ -89,7 +89,7 @@ pub enum Item {
         id: String,
         /// How much room it asks for. See [`ItemSize`].
         ///
-        /// ★ Ignored by menus, which have one row shape and no use for a
+        /// Ignored by menus, which have one row shape and no use for a
         /// size. `Item` is the shared vocabulary for ribbon groups and menus
         /// both; the alternative — a second item type for menus — would
         /// duplicate `visible_when`, which they genuinely do share.
@@ -100,7 +100,7 @@ pub enum Item {
         /// **before measurement**, so the group re-flows and a group with
         /// nothing left is not drawn at all.
         ///
-        /// ★★★ This is visibility, not enablement, and the difference is R9:
+        /// This is visibility, not enablement, and the difference is R9:
         /// *an unavailable capability renders nothing; greying is reserved for
         /// **temporarily** unavailable and is always explained on hover.*
         /// [`crate::commands::Command::enable`] is the greying; this is the
@@ -114,7 +114,7 @@ pub enum Item {
         /// **The name of a capability this item is CONDITIONAL on**, when the
         /// application can be built without it.
         ///
-        /// ★★★ THIS IS NOT `visible_when`, AND CONFUSING THE TWO IS THE WHOLE
+        /// THIS IS NOT `visible_when`, AND CONFUSING THE TWO IS THE WHOLE
         /// REASON IT IS A SECOND FIELD.
         ///
         /// `visible_when` is about **this document, this mode, this moment** —
@@ -135,14 +135,14 @@ pub enum Item {
         /// | **conditional** (this field is `Some`) | no | dropped, [`merge::SkipReason::CapabilityAbsent`] — informational |
         /// | either | yes | rendered |
         ///
-        /// ★★ The distinction exists so the two never get confused **in a
+        /// The distinction exists so the two never get confused **in a
         /// log**: one says *"this build does not include that"*, the other
         /// says *"someone made a mistake"*. Without it, modularity and a typo
         /// are the same event, and the only ways to handle them are to block
         /// start-up on a legitimate lite build or to swallow a real bug on
         /// every machine that runs it.
         ///
-        /// # ★★★ It carries no meaning to the shell beyond its presence
+        /// # It carries no meaning to the shell beyond its presence
         ///
         /// The string is **never matched against anything**. The shell does
         /// not hold a list of known capability names, does not ask an
@@ -184,7 +184,7 @@ pub enum Item {
         /// holds, and its space is reclaimed **before measurement** when it
         /// does not.
         ///
-        /// # ★★ Why this is a second copy of the field rather than a wrapper
+        /// # Why this is a second copy of the field rather than a wrapper
         ///
         /// Copying a field onto a second variant is normally the wrong shape:
         /// two copies of a rule are two chances for it to drift, and a wrapper
@@ -237,7 +237,7 @@ impl Item {
     /// stays the short one and a sized item reads as *"this command, but
     /// large"* — which is what it is.
     ///
-    /// ★ A separator and a custom item have no size to set, and this returns
+    /// A separator and a custom item have no size to set, and this returns
     /// them untouched rather than panicking. A manifest is **data**, and the
     /// honest response to nonsense in data is that it does nothing, not that
     /// the application stops.
@@ -272,7 +272,7 @@ impl Item {
     /// precondition the shell checks, and the shell checks nothing — see the
     /// field's *"carries no meaning beyond its presence"*.
     ///
-    /// ★ A separator and a custom item are returned untouched, for
+    /// A separator and a custom item are returned untouched, for
     /// [`Self::sized`]'s reason: a manifest is data, and the honest response to
     /// nonsense in data is that it does nothing. A custom item drawn by the
     /// application is the application's to omit; it has no command id, so there
@@ -310,7 +310,7 @@ impl Item {
                 visible_when: Some(condition.into()),
                 capability,
             },
-            // ★ A custom item takes one too. A separator does not, and
+            // A custom item takes one too. A separator does not, and
             // returns untouched, for the reason [`Self::visible_condition`]
             // gives: a divider's visibility is a fact about its neighbours,
             // not about itself.
@@ -354,10 +354,10 @@ impl Item {
 
     /// The condition this item is shown under, if any.
     ///
-    /// ★ `None` means *always*, which is what the overwhelming majority of
+    /// `None` means *always*, which is what the overwhelming majority of
     /// items are.
     ///
-    /// ★★ **This function is where the rule lives**, which is what makes it
+    /// **This function is where the rule lives**, which is what makes it
     /// safe for two variants to declare the field. [`Item::Custom`]'s
     /// `visible_when` carries that argument in full, and names the trigger
     /// that would move the field onto a wrapper instead.

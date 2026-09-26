@@ -9,7 +9,7 @@ The thumbnail grid — `FEATURES.md`'s Phase 3 row, and one of the surfaces
 | Acts on the document | [`Action::GoToPage`], and **nothing else** |
 | Owns | [`select::PageSelection`] — the operand list the ribbon's Pages tab already promises |
 
-## ★ Why a page panel sits in **Review**, and not only in Edit
+## Why a page panel sits in **Review**, and not only in Edit
 
 It is in all three default arrangements (`crate::app::modes::defaults::spec`), and
 Review is the placement that needed an argument. `README.md` records the
@@ -42,7 +42,7 @@ rectangle the colour of paper is a picture of an *empty page*, which is a
 thing a real PDF contains, so drawing one would assert something false
 about the document rather than merely look unfinished.
 
-## ★ Two ways this panel can go silently missing, and what holds each shut
+## Two ways this panel can go silently missing, and what holds each shut
 
 Neither failure is this module's to make: both live in `shell/`, and both
 are **invisible rather than broken**, which is the expensive kind.
@@ -90,7 +90,7 @@ The reading path is through that accessor and through [`ops::operands`],
 which is the single place the *"with nothing picked, act on the current
 page"* rule is written down.
 
-## ★ What an edit does to this panel's own state
+## What an edit does to this panel's own state
 
 Nothing here has to remember anything, and that is by construction rather
 than by discipline:

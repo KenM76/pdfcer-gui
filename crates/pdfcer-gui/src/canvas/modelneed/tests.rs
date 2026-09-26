@@ -1,6 +1,6 @@
 //! # `canvas::modelneed::tests` — the tripwire the compiler cannot be
 //!
-//! ## ★★★ What these are actually guarding
+//! ## What these are actually guarding
 //!
 //! The gesture half is guarded by the **compiler**:
 //! [`super::gesture_needs_model`] is an exhaustive `match` with no wildcard, so
@@ -101,7 +101,7 @@ fn quiet<'a>(selection: &'a SelectionState, idle: &'a GestureOutcome) -> Need<'a
     }
 }
 
-/// ★★★ **THE TRIPWIRE.** Delete at a deeper rung must ask for the model.
+/// **THE TRIPWIRE.** Delete at a deeper rung must ask for the model.
 ///
 /// This is the fourth recurrence of one defect, and the first that could not
 /// have been fixed by adding a variant to a list of gesture outcomes — Delete
@@ -137,7 +137,7 @@ fn a_delete_at_a_deeper_rung_asks_for_the_object_model() {
 /// The Object rung answers from the selection alone and must NOT pay for a
 /// decomposition.
 ///
-/// ★ The other half of the tripwire above, and it is what stops a future
+/// The other half of the tripwire above, and it is what stops a future
 /// session "fixing" the first one by asking unconditionally. On the operator's
 /// benchmark drawing a decomposition is **531 ms / 129,758 objects**, and
 /// `canvas::deleting`'s Object arm never reads it.
@@ -160,7 +160,7 @@ fn a_delete_at_the_object_rung_pays_for_nothing() {
 
 /// A deeper rung on its own — with no key pressed — asks for nothing.
 ///
-/// ★ This is the choice the measurement decided. *"Ask whenever a deeper rung
+/// This is the choice the measurement decided. *"Ask whenever a deeper rung
 /// is selected"* would be correct and would pay 531 ms, after each content
 /// edit, on frames nothing reads the model — while the operator merely holds
 /// the selection. See the module header.
@@ -250,7 +250,7 @@ fn the_gestures_that_read_the_page_ask_for_it() {
 /// A **zoom** marquee decomposes nothing, and an in-flight select marquee has
 /// resolved nothing yet.
 ///
-/// ★ The zoom half is the concrete payoff for carrying the intent on the
+/// The zoom half is the concrete payoff for carrying the intent on the
 /// outcome: a region zoom over a 129,758-object drawing costs one scroll
 /// offset, not 531 ms.
 #[test]

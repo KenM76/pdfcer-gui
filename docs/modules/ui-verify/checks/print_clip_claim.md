@@ -18,7 +18,7 @@ The fix — `crates/pdfcer-gui/src/dialogs/print/verdicts.rs` — remembers the
 blank/not-blank verdict per sheet as the preview renders it, and labels the
 button with `geometric − known_blank`, with unexamined sheets still counted.
 
-# ★★★ Why no unit test in the workspace can observe this
+# Why no unit test in the workspace can observe this
 
 Two links, and neither is reachable from a test:
 
@@ -54,7 +54,7 @@ Three assertions, in increasing strength:
 | 2 | `clipped=Some(0)` | `claim=none:0` — nothing clipped, nothing said |
 | 3 | `overhang=blank-band` | `claim` state is **not** `geometric` — the verdict landed and moved the number |
 
-★ Assertion 3 is the one the request is about, and it is stated as "not
+Assertion 3 is the one the request is about, and it is stated as "not
 geometric" rather than as "none" on purpose: a multi-sheet job in which one
 blank sheet has been examined and four have not is correctly `at-most`, not
 `none`. Requiring `none` would fail a correct build on any job longer than

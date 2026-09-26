@@ -30,7 +30,7 @@ pub enum Origin {
 
 /// Which form field the operator clicked, and which of its widgets.
 ///
-/// ★ Both halves are needed and neither is redundant. The **name** is what
+/// Both halves are needed and neither is redundant. The **name** is what
 /// every field verb takes — `rename_field`, `delete_field` — because a field is
 /// identified by name and not by object id. The **widget index** is what
 /// `delete_widget` takes, and is the only way to say *"the box on page 3"* when

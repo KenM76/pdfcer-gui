@@ -23,7 +23,7 @@ elsewhere and named here so a reader can find them:
 | the button touches the window edge | `dialogs::host::Host::BODY_MARGIN_PTS`, and the margin is visible in any capture |
 | the button looks disabled | `egui_shell::Theme::accent_pair` and its unit tests |
 
-# ★★★ Why this is a check and not a unit test
+# Why this is a check and not a unit test
 
 Because the quantity that decides whether a scrollbar appears is
 **egui's**, not ours, and it exists only in a laid-out frame. The previous
@@ -53,7 +53,7 @@ assertion is an **inequality**, never a value: the widths depend on the
 theme preset's font and button padding, so any constant would be a claim
 that decays — which this project has spent six corrections on.
 
-★ It is driven at **several window sizes**, not one. The defect was
+It is driven at **several window sizes**, not one. The defect was
 *inverted* — bars present at 1000x760 and 1300x900 where nothing needed
 scrolling, and **absent** at 700x520 where the Paper section was clipped and
 unreachable. Two samples either side of that would have looked like no

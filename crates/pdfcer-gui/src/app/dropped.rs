@@ -30,7 +30,7 @@ pub enum Dropped {
 /// The extensions the image picker offers, which is the list this must agree
 /// with.
 ///
-/// ★ Kept in step with `app::files::pick_image_source`'s filter **by this
+/// Kept in step with `app::files::pick_image_source`'s filter **by this
 /// comment and a test**, not by sharing a constant, because the two lists mean
 /// different things: that one is what the OS dialog shows, this one is what a
 /// drop is willing to try. They happen to be equal and should stay equal, and a
@@ -40,7 +40,7 @@ const IMAGE_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "bmp", "tif", "tiff"];
 
 /// Classify one dropped path by its extension.
 ///
-/// # ★ Why the extension and not the bytes
+/// # Why the extension and not the bytes
 ///
 ///
 /// A `.pdf` that is not a PDF therefore produces the *parser's* error, which is
@@ -71,7 +71,7 @@ pub fn classify(path: &Path) -> Dropped {
 /// the picker-and-dialog path and this module deliberately does not reach into
 /// it.
 ///
-/// ★ It is handed the files rather than reading them. See the header: the
+/// It is handed the files rather than reading them. See the header: the
 /// position-aware half of the feature has to read the input first, and two
 /// readers of one `dropped_files` would each see it and each act.
 pub fn resolve(
@@ -85,7 +85,7 @@ pub fn resolve(
         format!("dropped n={} first={:?}", files.len(), first.file_name())
     });
 
-    // ★ Every extra file is NAMED, not silently ignored. An operator who drags
+    // Every extra file is NAMED, not silently ignored. An operator who drags
     // four drawings and gets one open has been told something false by the
     // silence — that the other three failed, or that they missed the window.
     if files.len() > 1 {
@@ -104,7 +104,7 @@ pub fn resolve(
             if has_document {
                 Some(path)
             } else {
-                // ★★ The one refusal that has to say what to DO. There is no
+                // The one refusal that has to say what to DO. There is no
                 // page to put a picture on, and the remedy — make or open a
                 // document first — is not something the operator can guess from
                 // "cannot insert".
@@ -138,7 +138,7 @@ mod tests {
         ));
     }
 
-    /// ★ **Case-insensitive**, which is the property that would ship broken on
+    /// **Case-insensitive**, which is the property that would ship broken on
     /// Windows and be reported as "it works with some files".
     ///
     /// A camera writes `IMG_0001.JPG`; a scanner writes `.TIF`. Both are what an
@@ -170,7 +170,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The drop list and the picker's filter must agree.**
+    /// **The drop list and the picker's filter must agree.**
     ///
     /// They are two lists in two files, and this is the test that stops them
     /// drifting — the day someone adds `webp` to the file dialog and an operator

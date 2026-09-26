@@ -18,7 +18,7 @@ egui::Key::Home      => model.line_range_at(cur).map_or(cur, |(s, _)| s),
 egui::Key::End       => model.line_range_at(cur).map_or(cur, |(_, e)| e),
 ```
 
-★★ **The reassembly is `pdfcer-core`'s and always was.**
+**The reassembly is `pdfcer-core`'s and always was.**
 `EditableTextModel::recognize` groups a page's show operators into lines and
 lines into `Block`s by column band, and `caret_up` / `caret_down` walk
 *lines* rather than runs — so a caret at the end of one paragraph's last line
@@ -29,7 +29,7 @@ This shell had not been asking. Its caret is a character index into a
 one-run draft, so Up and Down had no meaning and were not bound at all: there
 is no line above a single run.
 
-## ★ Why a page-space model rather than the draft's own string
+## Why a page-space model rather than the draft's own string
 
 Because *"the next block of text"* is a fact about the **page**, not about
 what is being typed. A draft knows one run's characters and nothing about

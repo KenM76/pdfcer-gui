@@ -1,6 +1,6 @@
 //! # `app::settings` — the live configuration, and the funnel that makes it real
 //!
-//! ## ★ Why this module exists, and it is not "to hold a struct"
+//! ## Why this module exists, and it is not "to hold a struct"
 //!
 //! `pdfcer_core::settings::Settings` is the operator's answers to questions
 //! the PDF standard declines to answer. Loading them is easy; **honouring**
@@ -28,7 +28,7 @@ pub trait SettingsExt {
     fn render_options(&self) -> RenderOptions;
     /// Writing, configured.
     fn save_options(&self) -> SaveOptions;
-    /// ★★★ **A new editing session, configured** — the fourth funnel, and the
+    /// **A new editing session, configured** — the fourth funnel, and the
     /// one whose absence was a live defect for the whole life of this shell.
     ///
     /// See the implementation for what it applies and for the finding that
@@ -73,7 +73,7 @@ impl SettingsExt for Settings {
         options
     }
 
-    /// ★★★ **Every editing session in the application starts here.**
+    /// **Every editing session in the application starts here.**
     ///
     /// # The finding this exists for, and it is the defect this module was
     /// written to prevent — one channel later
@@ -95,7 +95,7 @@ impl SettingsExt for Settings {
     /// > **A setting is a promise.** Storing one that does nothing breaks it
     /// > silently, which is worse than not offering the choice.
     ///
-    /// ⇒ ★★ The lesson is about the SHAPE of the guard, not about this field.
+    /// ⇒ The lesson is about the SHAPE of the guard, not about this field.
     /// A funnel keyed on *constructors* cannot see a setting delivered by a
     /// setter, and the check that enforced it reported green throughout. The
     /// check now forbids `EditSession::new` outside this file for exactly that
@@ -123,7 +123,7 @@ impl SettingsExt for Settings {
     /// would skip a guard the engine wrote for a real failure, since a `NaN`
     /// tolerance makes no two annotations ever share a row.
     ///
-    /// # ★ What the setting actually changes, so the disclosure can be honest
+    /// # What the setting actually changes, so the disclosure can be honest
     ///
     /// Only the `/QuadPoints` **array**. The baked `/AP` appearance stream is
     /// byte-identical under both orders, so no reader that honours the
@@ -206,7 +206,7 @@ impl SettingsExt for Settings {
     /// chosen here: it is not a setting, and changing what pdfcer writes into
     /// `/Producer` is a decision about attribution rather than about bytes.
     ///
-    /// # ★ Redaction does not use this, and must not
+    /// # Redaction does not use this, and must not
     ///
     /// `redact::apply_redactions` is handed `SaveOptions::identity()` directly,
     /// and the [`tests::no_call_site_builds_its_own_options`] check exempts
@@ -241,16 +241,16 @@ impl SettingsExt for Settings {
 mod tests {
     use super::*;
 
-    /// ★★★ **A fresh install opens on *Match other PDF viewers*.**
+    /// **A fresh install opens on *Match other PDF viewers*.**
     ///
     /// `OPERATOR_REQUESTS.md` **O52**, and it is the assertion that says the
     /// operator got what he asked for rather than that a function exists.
     ///
-    /// ★★ It asserts on the value a fresh install actually receives — the
+    /// It asserts on the value a fresh install actually receives — the
     /// engine's default put through `colour_default` — which is the only claim
     /// worth making while two crates disagree about what the default is. A test
     /// that checked `Settings::default()` would be testing `pdfcer-core`, and a
-    /// ★★★ **This test outlived the function it was written for, and that is
+    /// **This test outlived the function it was written for, and that is
     /// the point rather than an accident.**
     ///
     /// It was written on 2026-08-28 against `app::settings::colour_default`, a
@@ -302,16 +302,16 @@ mod tests {
         s
     }
 
-    /// ★★★ **The session funnel applies the operator's quad-point order.**
+    /// **The session funnel applies the operator's quad-point order.**
     ///
     ///
-    /// ★★ It asserts **both** values, and that is not symmetry for its own
+    /// It asserts **both** values, and that is not symmetry for its own
     /// sake. Asserting only `Counterclockwise` would pass on an implementation
     /// that hard-coded it, which is the same defect wearing the other value;
     /// asserting only the default would pass on the broken build this replaced.
     /// The pair is what makes it a test of the *wire* rather than of a value.
     ///
-    /// ★ The document is the blank template rather than a fixture from disk,
+    /// The document is the blank template rather than a fixture from disk,
     /// because the subject is the session's configuration and not its content —
     /// and a test that read a file would fail for reasons that have nothing to
     /// do with what it asserts.
@@ -337,7 +337,7 @@ mod tests {
         }
     }
 
-    /// ★ **The regression test for the defect this module exists to prevent.**
+    /// **The regression test for the defect this module exists to prevent.**
     ///
     /// Nine of thirteen settings in the old shell were persisted, shown, edited
     /// and never read. This asserts that every field the funnel is responsible
@@ -380,7 +380,7 @@ mod tests {
             "Smooth",
             "InvertOnApp14",
             "FirstEntry",
-            // ★★ The CMYK ceiling, and this is the assertion that stops the
+            // The CMYK ceiling, and this is the assertion that stops the
             // Colour group's control being a number that changes nothing.
             //
             // The setting reaches `CmykBuffer::new` through
@@ -427,7 +427,7 @@ mod tests {
         assert_eq!(save.trailing_eol, identity.trailing_eol);
     }
 
-    /// ★ **No call site in this crate builds its own option struct.**
+    /// **No call site in this crate builds its own option struct.**
     ///
     /// The rule that keeps the funnel from being a suggestion. Without it, one
     /// new `ExtractOptions::default()` written in good faith next year silently
@@ -464,7 +464,7 @@ mod tests {
     ///   default behaviour must be able to name it, or it is testing the
     ///   operator's configuration instead of the engine's contract.
     ///
-    /// # ★★★ The fourth constructor, and the finding that added it
+    /// # The fourth constructor, and the finding that added it
     ///
     ///
     /// ⇒ The lesson is not about the field. **A guard shaped around one
@@ -510,7 +510,7 @@ mod tests {
                 }
             }
 
-            /// ★ Skip a `#[cfg(test)]` **function**, for the module rule's
+            /// Skip a `#[cfg(test)]` **function**, for the module rule's
             /// reason and not as a widening of it.
             ///
             /// A test-gated free function compiles to nothing in a release
@@ -645,7 +645,7 @@ mod tests {
                     || name.ends_with("ocr/fixture.rs")
                     || name.contains("/redact/")
                     //
-                    // ★ Why a session is built here at all, rather than reusing
+                    // Why a session is built here at all, rather than reusing
                     // the open one: `prepare` answers *"was this file opened
                     // with the OWNER password"* against the document on disk,
                     // and the engine's own version of that answer requires a
@@ -656,7 +656,7 @@ mod tests {
                 {
                     continue;
                 }
-                // ★★★ A file whose PARENT declares it `#[cfg(test)] mod x;`
+                // A file whose PARENT declares it `#[cfg(test)] mod x;`
                 // is test-only, and the scan cannot see that from inside the
                 // file.
                 //
@@ -688,7 +688,7 @@ mod tests {
                 let Ok(parsed) = syn::parse_file(&text) else {
                     continue;
                 };
-                // ★ A whole file gated out of release builds is exempt, and it
+                // A whole file gated out of release builds is exempt, and it
                 // must be recognised from the AST rather than from the path.
                 //
                 // `#![cfg(test)]` as an INNER attribute is how this crate marks
@@ -726,7 +726,7 @@ mod tests {
         let mut violations = Vec::new();
         walk(&root, &mut violations);
 
-        // ★★★ Calibrate the exemption before trusting the emptiness below.
+        // Calibrate the exemption before trusting the emptiness below.
         //
         // `violations.is_empty()` is a green light whether the scan is working
         // or has been silently switched off, and `declared_test_only` is
@@ -775,7 +775,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **ONLY THE CANVAS WORKER MAY SET `stroke_display`** — the mechanism
+    /// **ONLY THE CANVAS WORKER MAY SET `stroke_display`** — the mechanism
     /// behind O137's one non-negotiable constraint.
     ///
     /// > **Canvas only.** Print, print preview and every export — PDF, DXF,
@@ -789,7 +789,7 @@ mod tests {
     /// hairline export would be an unfaithful file, the one outcome the request
     /// forbids"*.
     ///
-    /// # ★★★ Why this is a check and not a paragraph
+    /// # Why this is a check and not a paragraph
     ///
     /// Because the paragraph already exists, at four sites, and this project
     /// has spent several corrections proving that a rule written next to the
@@ -865,14 +865,14 @@ mod tests {
         /// Assignments in `path`, or `0` for a file gated out of release
         /// builds.
         ///
-        /// ★★★ **The `#![cfg(test)]` exemption is recognised from the AST, not
+        /// **The `#![cfg(test)]` exemption is recognised from the AST, not
         /// from a filename** — the same rule [`no_call_site_builds_its_own_options`]
         /// writes for itself, and for the same stated reason: the property that
         /// earns the exemption is *"not in the shipped binary"*, and a filename
         /// is a restatement of that which goes stale the moment a second such
         /// module is written.
         ///
-        /// ★★ It went stale within the hour. This check was written, run green,
+        /// It went stale within the hour. This check was written, run green,
         /// and then `render::hairline` — the `#![cfg(test)]` file that measures
         /// whether the mode actually thins a drawing — was added, and the check
         /// **immediately reported it as a violation**. It has to set
@@ -941,7 +941,7 @@ mod tests {
             violations.join("\n")
         );
 
-        // ★★ And the other half, so this cannot pass on a build where the
+        // And the other half, so this cannot pass on a build where the
         // legitimate assignment was deleted along with the illegitimate ones —
         // which would leave every export correct and the toggle inert, i.e. a
         // green test over a dead feature. That is the exact failure O137
@@ -961,7 +961,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **Every export and every print renders the document's real widths,
+    /// **Every export and every print renders the document's real widths,
     /// while the canvas is showing hairlines** — O137, asserted rather than
     /// promised.
     ///
@@ -980,7 +980,7 @@ mod tests {
     /// render key must agree with it. Without those this test would also pass
     /// on a build where the feature does nothing at all.
     ///
-    /// ★ It also runs the two builders the print and export paths actually
+    /// It also runs the two builders the print and export paths actually
     /// chain onto the funnel's output — `with_annotation_scope` and
     /// `with_backdrop` — because a builder that reset the field would defeat
     /// everything above and is invisible from this side otherwise.

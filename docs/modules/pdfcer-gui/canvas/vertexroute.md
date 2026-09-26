@@ -12,14 +12,14 @@ reaches**
 | a **ce dimension** | `move_dimension_vertex`, `insert_dimension_vertex`, `remove_dimension_vertex` | a sidecar `DimensionId` | `vertex_edit_preview` (count edits only) |
 | a **markup shape** | `reshape_annotation` and its three wrappers | a stable `ObjId` | `reshape_annotation_preview` (**every** edit) |
 
-★ R8b rule 15 is enforced by the type here rather than by care: a **ce
+R8b rule 15 is enforced by the type here rather than by care: a **ce
 dimension** is the thing pdfcer authors and measures with, a **markup
 shape** is a comment somebody drew, and [`Subject`] makes the two a `match`
 the compiler checks. **pdf dimensions** — CAD page content — are neither and
 are nowhere near this module; a content path's anchors are
 [`super::handledrag`]'s.
 
-## ★★ Why they are two variants rather than one call with a flag
+## Why they are two variants rather than one call with a flag
 
 Because the one thing that must never happen on this canvas is a gesture
 aimed at the wrong verb, and a ce dimension arriving at
@@ -30,7 +30,7 @@ engine refuses it by name (`EditError::AnnotationIsCeDimension`) as the
 exists to make the routing decidable before the engine is asked, and this
 module is where that decision is spent.
 
-## ★ What is applied here, above both branches
+## What is applied here, above both branches
 
 **Shift**, and **Alt**, once each:
 

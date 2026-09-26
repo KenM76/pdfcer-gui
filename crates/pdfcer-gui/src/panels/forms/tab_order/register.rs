@@ -16,7 +16,7 @@ use super::model::{Listing, PageTabs};
 /// What the operator has typed into the name boxes, and which document
 /// revision it describes.
 ///
-/// # ★ Keyed on `(path, edit_epoch)`, which is what makes undo correct
+/// # Keyed on `(path, edit_epoch)`, which is what makes undo correct
 ///
 /// Exactly `super::super::FormsUi`'s rule, for exactly its reason, and it is
 /// worth restating because the consequence here is the opposite of what a
@@ -87,7 +87,7 @@ impl Drafts {
 /// the re-raster, not for the engine, which edits the document-level
 /// `/AcroForm` and never asks which page.
 ///
-/// # ★ At most one registration per frame, and it is not an accident
+/// # At most one registration per frame, and it is not an accident
 ///
 /// The loop `break`s after a press. Two presses in one frame would queue two
 /// `AdoptWidget`s against a listing computed **before** either ran, and the
@@ -104,7 +104,7 @@ impl Drafts {
 /// is added. It costs the operator nothing: physically, one press per frame is
 /// all there is.
 pub(super) fn rows(ui: &mut egui::Ui, doc: &OpenDoc, listing: &Listing, actions: &mut Vec<Action>) {
-    // ★★ EVERY page's unclaimed widgets, at the TOP of the section, and that
+    // EVERY page's unclaimed widgets, at the TOP of the section, and that
     // placement is the fix for a remedy nobody could reach.
     //
     // These rows used to be drawn inside each page's block, immediately under
@@ -142,7 +142,7 @@ pub(super) fn rows(ui: &mut egui::Ui, doc: &OpenDoc, listing: &Listing, actions:
         .flat_map(|p| p.unclaimed.iter().map(move |w| (p.page_index, w)))
     {
         let page_index: usize = page_index;
-        // ★★ TWO LINES, not one, because this is a DOCK PANEL and not a dialog.
+        // TWO LINES, not one, because this is a DOCK PANEL and not a dialog.
         //
         //
         // A **label wraps and a button does not**, which is what decides the
@@ -161,7 +161,7 @@ pub(super) fn rows(ui: &mut egui::Ui, doc: &OpenDoc, listing: &Listing, actions:
             // printed on the control.
             let draft = drafts.names.entry(widget.id.num).or_default();
             let typed_now = draft.trim().to_owned();
-            // ★★ ASKED before the press, which is what makes the two shapes
+            // ASKED before the press, which is what makes the two shapes
             // visibly different instead of discoverable by pressing.
             //
             // `adopt_preview` is `&self` and writes nothing — the engine split
@@ -178,7 +178,7 @@ pub(super) fn rows(ui: &mut egui::Ui, doc: &OpenDoc, listing: &Listing, actions:
                 widget.id,
                 (!typed_now.is_empty()).then_some(typed_now.as_str()),
             );
-            // ★ The name it WILL use, on the wrapping line, for a blank box that
+            // The name it WILL use, on the wrapping line, for a blank box that
             // is a name **in the file and not on screen** — the engine's own
             // words for the thing the pre-flight request was for. *"will
             // register as `Address`"* is a decision; a bare *"Register"* is a
@@ -223,7 +223,7 @@ pub(super) fn rows(ui: &mut egui::Ui, doc: &OpenDoc, listing: &Listing, actions:
                         }
                     }
                 };
-                // ★★ One region per row, and a trace line saying what the preview
+                // One region per row, and a trace line saying what the preview
                 // decided.
                 //
                 // The region is what lets a driven check press a SPECIFIC row
@@ -319,7 +319,7 @@ fn refusal_kind(error: &pdfcer_core::edit::EditError) -> &'static str {
 
 /// The hover on a Register control the preview says would refuse.
 ///
-/// # ★ Three named arms and a catch-all that does NOT guess
+/// # Three named arms and a catch-all that does NOT guess
 ///
 /// `pdfcer_core::edit::EditError` is `#[non_exhaustive]`, so this needs a
 /// wildcard whatever it does. The question is what the wildcard says, and the
@@ -339,7 +339,7 @@ fn refusal_hint(error: &pdfcer_core::edit::EditError) -> &'static str {
         E::WidgetHasNoFieldIdentity { .. } => t::tab_order_register_needs_a_name(),
         E::FieldNameTaken { .. } => t::tab_order_register_name_taken(),
         //
-        // ★★ Which makes these two arms necessary rather than decorative: the
+        // Which makes these two arms necessary rather than decorative: the
         // refusal that would have been a status-bar sentence after a press is a
         // hover before one, and without them it fell into the catch-all saying
         // *the reason is not one this panel expects*. The rule was being
@@ -404,7 +404,7 @@ mod tests {
             t::tab_order_unclaimed_row(3, 3),
             "two boxes on one page must be distinguishable"
         );
-        // ★ And two boxes at the same tab position on DIFFERENT pages, which
+        // And two boxes at the same tab position on DIFFERENT pages, which
         // is the case the page number was added for: these rows are gathered
         // from the whole document now, so a bare "Box 3" would name three
         // different boxes on a drawing with three affected sheets.
@@ -445,7 +445,7 @@ mod tests {
         assert_ne!(Drafts::id(), egui::Id::new("pdfcer-forms-ui"));
     }
 
-    /// ★★ The catch-all refusal does not invent a reason.
+    /// The catch-all refusal does not invent a reason.
     ///
     /// The two the operator can act on get their own sentence. Everything else
     /// gets one that says pdfcer cannot and does not say why — because reaching
@@ -486,7 +486,7 @@ mod tests {
 
     /// The button names the field it will create, and the two labels differ.
     ///
-    /// ★ The blank-box case is the one that matters: the name comes out of the
+    /// The blank-box case is the one that matters: the name comes out of the
     /// FILE, and it is a string the operator has never seen — nothing in the
     /// panel could have shown it, because the widget belongs to no field and so
     /// no field row names it.
@@ -504,7 +504,7 @@ mod tests {
     /// The typeless-field hover says the registration will WORK and still not
     /// be enough.
     ///
-    /// ★★ Rule 4's half that survives: an inference the operator cannot
+    /// Rule 4's half that survives: an inference the operator cannot
     /// see. Both halves have to be in the sentence — a hover that only said
     /// "this will register" would be true and useless, and one that only said
     /// "no viewer can fill it" would read as a refusal for something that is
@@ -529,7 +529,7 @@ mod tests {
         assert_eq!(names.get(&12).map(String::as_str), Some("Agree"));
     }
 
-    /// ★★★ **The dotted name never reaches a press here, and the table that
+    /// **The dotted name never reaches a press here, and the table that
     /// said it did was measuring the wrong gate.**
     ///
     /// [`crate::app::actions::forms::correctable`]'s reachability table marks
@@ -568,7 +568,7 @@ mod tests {
             "the hover must name the period rule. The catch-all says the reason is not one this panel expects, which is the program apologising for a rule it is enforcing correctly. Refusal was: {refusal:?}"
         );
 
-        // ★ The control, and it is not ceremony: without it the assertion above
+        // The control, and it is not ceremony: without it the assertion above
         // would be green on a fixture that can never be adopted for some other
         // reason entirely, and would then be measuring nothing about periods.
         doc.session
@@ -602,7 +602,7 @@ mod tests {
 
     /// The fixture's single unclaimed `/Widget`, by object id.
     ///
-    /// ★★ Derived through [`super::super::model::collect`] rather than typed as
+    /// Derived through [`super::super::model::collect`] rather than typed as
     /// a literal `ObjId`, and that is not fastidiousness about magic numbers:
     /// **it is the derivation the row the operator presses uses**, so the tests
     /// above drive the id this surface would hand to `FieldAction::Adopt`. A

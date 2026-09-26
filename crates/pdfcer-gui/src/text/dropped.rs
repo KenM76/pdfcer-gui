@@ -1,13 +1,13 @@
 //! # `text::dropped` — the three sentences a drop can answer with
 //!
 //!
-//! ★ Two of the three say **what to do next**, because the operator's remedy is
+//! Two of the three say **what to do next**, because the operator's remedy is
 //! not guessable from the refusal. The third names what pdfcer takes, which is
 //! the only useful thing to say about a file it does not.
 
 /// More than one file was dropped and only the first was acted on.
 ///
-/// ★ Said rather than swallowed: an operator who drags four drawings and gets
+/// Said rather than swallowed: an operator who drags four drawings and gets
 /// one open has been told something false by the silence — that the other three
 /// failed, or that they missed the window with them.
 #[must_use]
@@ -19,14 +19,14 @@ pub fn only_the_first(count: usize) -> String {
 
 /// An image was dropped with no document open.
 ///
-/// ★★ The one refusal here that **must** name the remedy. There is no page to
+/// The one refusal here that **must** name the remedy. There is no page to
 /// put a picture on, and *"cannot insert"* leaves the operator to work out for
 /// themselves that a document is the missing ingredient — which is exactly the
 /// deduction they are least likely to make, because they were thinking about the
 /// picture.
 #[must_use]
 pub const fn image_needs_a_document() -> &'static str {
-    // ★ "the File tab" rather than the ribbon-path spelling with a
+    // "the File tab" rather than the ribbon-path spelling with a
     // ▸ in it: `icons::glyphs` refused that codepoint here and was right
     // to. It runs through this project's COMMENTS and appears in no
     // operator-visible string, because the font stack cannot draw it — it
@@ -58,7 +58,7 @@ pub fn not_accepted(ext: &str) -> String {
 mod tests {
     use super::*;
 
-    /// ★ Every sentence names either a remedy or the accepted set.
+    /// Every sentence names either a remedy or the accepted set.
     ///
     /// Asserted by length and terminal stop rather than by matching words: the
     /// property is *"this is an explanation, not a label"*, and a four-word

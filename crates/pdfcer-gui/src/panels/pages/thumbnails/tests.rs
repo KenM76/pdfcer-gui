@@ -1,7 +1,7 @@
 //! Tests for [`super`] — the page-thumbnail cache and its policy.
 //!
 //!
-//! ★ One assertion changed as a consequence and it is the interesting one.
+//! One assertion changed as a consequence and it is the interesting one.
 //! `only_the_operator_may_untick_previews` scans the parent's source through
 //! `include_str!`, and it used to cut the file at `#[cfg(test)]` to avoid
 //! reading its own assertion strings. With the harness in a *different file*
@@ -30,7 +30,7 @@ fn settled(pages: &[usize]) -> ThumbnailCache {
     cache
 }
 
-/// **★ The current page is drawn first when it is on screen.**
+/// **The current page is drawn first when it is on screen.**
 ///
 /// It carries the highlight ring, so it is the tile the operator is using
 /// to answer "where am I" — and a ring around a tile reading "not drawn
@@ -67,7 +67,7 @@ fn a_fully_drawn_viewport_asks_for_nothing() {
     assert_eq!(cache.next_to_render(&[4, 5, 6], 5), None);
 }
 
-/// **★★★ A SKIPPED PAGE DOES NOT STOP THE GRID — O151, the operator:**
+/// **A SKIPPED PAGE DOES NOT STOP THE GRID — O151, the operator:**
 ///
 /// > *"the drawing page previews checkbox should never automatically turn
 /// > off."*
@@ -113,7 +113,7 @@ fn a_skipped_page_leaves_the_feature_on_and_its_neighbours_drawn() {
     );
 }
 
-/// **★★ Raising the limit gives the skipped page another go.**
+/// **Raising the limit gives the skipped page another go.**
 ///
 /// The trap this avoids: a dial that can only ever remove pictures. The
 /// operator's sole reason for touching the box is the tile reading "Not
@@ -155,7 +155,7 @@ fn raising_the_limit_retries_what_it_skipped_and_nothing_else() {
     );
 }
 
-/// **★ The limit is clamped on the VALUE, not only on the control.**
+/// **The limit is clamped on the VALUE, not only on the control.**
 ///
 /// A control narrower than what the value may legally hold silently
 /// rewrites it — the argument `canvas::markup::swatch` makes for taking
@@ -177,7 +177,7 @@ fn the_limit_cannot_be_set_outside_what_is_useful() {
     assert_eq!(cache.budget(), Some(MAX_PAGE_BUDGET));
 }
 
-/// **★★★ Zero milliseconds is `None`, and `None` is not a small number.**
+/// **Zero milliseconds is `None`, and `None` is not a small number.**
 ///
 ///
 /// The round trip is asserted in both directions: what the file holds
@@ -231,7 +231,7 @@ fn zero_milliseconds_means_no_limit_and_survives_the_clamp() {
     );
 }
 
-/// **★ Setting the same limit twice is free.**
+/// **Setting the same limit twice is free.**
 ///
 /// `DragValue` reports a change on every pixel of a drag. If `set_budget`
 /// dropped the abandoned entries unconditionally, a drag across the box
@@ -256,7 +256,7 @@ fn setting_the_same_limit_again_changes_nothing() {
     assert_eq!(cache.skipped().map(|s| s.page_index), Some(2));
 }
 
-/// **★ Turning previews off by hand stops the grid, and stops explaining.**
+/// **Turning previews off by hand stops the grid, and stops explaining.**
 ///
 /// The tick is now the only thing that stops the grid, and when it is
 /// clear the skip note must go quiet: every tile is blank for a reason the
@@ -284,7 +284,7 @@ fn turning_previews_off_by_hand_stops_explaining_a_skip() {
     assert_eq!(cache.skipped().map(|s| s.page_index), Some(2));
 }
 
-/// **★★★ Nothing in this module writes the operator's tick.**
+/// **Nothing in this module writes the operator's tick.**
 ///
 /// The tripwire for O151 rather than a test of behaviour, and it is
 /// written as a source scan because the defect it guards against is a
@@ -295,7 +295,7 @@ fn turning_previews_off_by_hand_stops_explaining_a_skip() {
 /// `force_on` is the one sanctioned writer. Any other assignment to
 /// `self.on` is pdfcer deciding on the operator's behalf again.
 ///
-/// ★ What this test does NOT constrain is how many places CALL `force_on`,
+/// What this test does NOT constrain is how many places CALL `force_on`,
 /// and that distinction is load-bearing. There are three (see its own doc),
 /// and all three carry the operator's instruction rather than forming one.
 /// The sentence here used to say *"called from exactly one place — the
@@ -342,7 +342,7 @@ fn only_the_operator_may_untick_previews() {
     );
 }
 
-/// **★ Every not-ready state has its own tile word.**
+/// **Every not-ready state has its own tile word.**
 ///
 /// The no-placeholders rule for pictures. Four distinct states must map
 /// to four distinct sentences, or the tile is guessing on the operator's
@@ -383,7 +383,7 @@ fn a_recorded_outcome_is_not_scheduled_again() {
     );
 }
 
-/// **★ Eviction keeps the neighbourhood the operator is in.**
+/// **Eviction keeps the neighbourhood the operator is in.**
 ///
 /// The property LRU gets wrong: scrolling down and back must not
 /// re-render the whole way home.
@@ -419,7 +419,7 @@ fn eviction_never_chooses_the_incoming_page_or_an_empty_cache() {
     );
 }
 
-/// **★ A page change must not drop a single picture.**
+/// **A page change must not drop a single picture.**
 ///
 /// The invalidation key is the edit epoch, not the page index. Keying on
 /// the page would re-rasterize the visible grid on every Page Down — a
@@ -455,7 +455,7 @@ fn navigating_keeps_the_cache_and_editing_drops_it() {
     assert_eq!(cache.state(7), TileState::NotDrawnYet);
 }
 
-/// ★★★ **The O74 assertion, and the one that would have caught the
+/// **The O74 assertion, and the one that would have caught the
 /// original defect**: an edit on one page leaves every other page's
 /// picture alone.
 ///
@@ -490,7 +490,7 @@ fn an_edit_on_one_page_leaves_the_other_pages_pictures_alone() {
     }
 }
 
-/// ★★ …and the safety half, which matters more: a **document-wide** bump
+/// …and the safety half, which matters more: a **document-wide** bump
 /// still drops everything.
 ///
 /// Without this, the test above passes on a build that never invalidates
@@ -578,7 +578,7 @@ fn the_operators_settings_survive_an_edit() {
     assert_eq!(cache.next_to_render(&[0, 1], 0), Some(0));
 }
 
-/// **★ The shipped defaults are previews ON with no time limit.**
+/// **The shipped defaults are previews ON with no time limit.**
 ///
 /// Asserted because `#[derive(Default)]` was removed to get them, and a
 /// hand-written `Default` that drifts from its own doc comment is the kind

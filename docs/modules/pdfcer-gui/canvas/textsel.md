@@ -17,7 +17,7 @@ authoring lives in [`crate::canvas::markup::text`], and §6 says why.
 
 ---
 
-## 1. ★ The interaction decisions, and which application each came from
+## 1. The interaction decisions, and which application each came from
 
 The operator's standing instruction is to *"make your best educated guesses
 to match what inkscape, acrobat, and SolidWorks do"*, recording which one was
@@ -125,7 +125,7 @@ above.
 
 ---
 
-## 3. ★ THE MODE GATE
+## 3. THE MODE GATE
 
 **[`gate`], and its header is the whole argument** — why text selection needs
 no capability, why it still has to be told apart from the content marquee,
@@ -174,7 +174,7 @@ geometric reading order here would be a third derivation on top of two.
 
 ---
 
-## 5. ★ One derivation: what is highlighted IS what is copied
+## 5. One derivation: what is highlighted IS what is copied
 
 The requirement, and the defect it names: the highlight is drawn from the
 same quads the copy uses — **one derivation, so what is shown and what is
@@ -195,7 +195,7 @@ existing selection runs no extraction, builds no model and does no
 geometry — the same property `canvas::selection` relies on for its outlines
 and `crate::find::Hit::canvas` for its wash.
 
-### 5.1 ★ The same pass produces a THIRD output, and that is why
+### 5.1 The same pass produces a THIRD output, and that is why
 
 [`TextSelection`] carries its boxes twice: [`TextSelection::quads`] in
 **canvas space**, which is what the overlay paints, and
@@ -296,7 +296,7 @@ whole thing is dropped — [`TextSelection::epoch`] records the revision it was
 resolved against, [`TextSelection::live`] answers `false` the instant that
 moves, and the overlay is handed nothing.
 
-★ **Authoring a text markup is itself an edit**, so marking a selection
+**Authoring a text markup is itself an edit**, so marking a selection
 makes that selection stale on the very next frame: `add_markup` goes through
 `vector_edit`, which bumps `edit_epoch`, and the wash disappears. Acrobat
 keeps its selection across a markup and this does not, which is a real
@@ -307,7 +307,7 @@ the epoch is the only signal there is, and refining it into kinds of edit is
 a mechanism, not a line. What the operator loses is one re-sweep to underline
 *and* strike out the same words.
 
-## 8. ★★ Text that does not run along the page's x axis
+## 8. Text that does not run along the page's x axis
 
 A vertical file-path stamp in a CAD title block is the case that names the
 two failures, in the operator's words: *"the I cursor doesn't reorient and it
@@ -327,13 +327,13 @@ is banding: which frame a glyph's cell is measured in.
 | box shape | a rotated line's glyph cells are accumulated **in the line's own frame** (`bands::Band::Rotated`) and emitted as one banded [`Quad`]; a horizontal line's are accumulated in page axes |
 | the copied string | unfiltered. Every run the extraction emits is copied, because the extraction emits no derived break inside a rotated line for this module to have to skip |
 
-★ **A page with no rotated text never reaches any of it.** `is_rotated`
+**A page with no rotated text never reaches any of it.** `is_rotated`
 answers `false` for every line, every glyph takes the page-axis branch, and
 no line frame is ever built. That is deliberate and structural: one grouping
 rule handling both cases would put every ordinary document's selection
 through the rotated code to serve a minority of drawing sheets.
 
-★ The canvas wash is a `Rect`, so for a **quadrant** rotation (90°, 180°,
+The canvas wash is a `Rect`, so for a **quadrant** rotation (90°, 180°,
 270° — every rotated stamp a CAD exporter emits) the band is axis-aligned in
 page space and the wash covers it exactly. At an arbitrary angle the band is
 a parallelogram and the wash is its bounding box, which over-covers at the

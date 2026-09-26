@@ -125,7 +125,7 @@ pub fn tab_order_row_where(page_number: usize, widget: usize, widgets: usize) ->
 
 /// The page carries no `/Tabs`, and neither does any ancestor.
 ///
-/// ★ **Reported as absent, and given no mode name** — not "manual", not
+/// **Reported as absent, and given no mode name** — not "manual", not
 /// "unspecified". `D:\Dev\pdfcer`'s roadmap records what Acrobat's "Unspecified"
 /// tab-order state mechanically denotes as **unsourced after two attempts**, so
 /// a label here would assert what nobody has been able to support. What is said
@@ -190,7 +190,7 @@ pub fn tab_order_tabs_unrecognised(name: &str) -> String {
 
 /// A `/Tabs` on an ancestor page-tree node, which does **not** reach the page.
 ///
-/// ★ The correction argued in `crate::panels::forms::tab_order::model`'s §4:
+/// The correction argued in `crate::panels::forms::tab_order::model`'s §4:
 /// ISO 32000-2 Table 31 marks `Rotate` "(Optional; inheritable)" and `Tabs`
 /// merely "(Optional; PDF 1.5)", and the table's preamble makes every unmarked
 /// attribute non-inheritable.
@@ -271,7 +271,7 @@ pub fn tab_order_unclaimed_row(page_number: usize, position: usize) -> String {
 
 /// The hint over the name box beside an unclaimed widget.
 ///
-/// ★ Says what an empty box means, because empty is the common and correct
+/// Says what an empty box means, because empty is the common and correct
 /// answer and a blank field with no hint reads as "required".
 ///
 /// Most unclaimed widgets are **merged field-widgets** (§12.7.3.1): one
@@ -317,7 +317,7 @@ pub fn tab_order_other_annots(count: usize) -> String {
 
 /// The Register button when pdfcer knows what name it will use.
 ///
-/// # ★ The name is in the FILE and not on screen, which is the whole point
+/// # The name is in the FILE and not on screen, which is the whole point
 ///
 /// A merged field-widget (SS12.7.3.1) carries its own `/T`. Registering it with
 /// a blank name box recovers that name — a string the operator has never seen,
@@ -334,7 +334,7 @@ pub fn tab_order_register_as(name: &str) -> String {
 /// Hover on a Register control pdfcer already knows would refuse, because the
 /// widget carries no name and none has been typed.
 ///
-/// ★ Says what typing a name will **produce**, not that one is required. The
+/// Says what typing a name will **produce**, not that one is required. The
 /// distinction is the whole of it: this box was a bare kid, its name, field
 /// type, radio flags and value all lived in a dictionary that is not in this
 /// document, and a name typed here **creates a new field**. It does not recover
@@ -359,7 +359,7 @@ pub const fn tab_order_register_name_taken() -> &'static str {
 
 /// Hover on a Register control refused because the typed name is a PATH.
 ///
-/// # ★★★ This hover exists because a guard moved, not because a rule changed
+/// # This hover exists because a guard moved, not because a rule changed
 ///
 /// `FormAuthorError::DottedPartialName` was described in this shell as
 /// reachable from this surface *after a press*, on the grounds that this box
@@ -375,7 +375,7 @@ pub const fn tab_order_register_name_taken() -> &'static str {
 /// panel expects. The rule was being enforced correctly and the operator was
 /// being told the program was confused.
 ///
-/// ★★ The long form is [`crate::text::fieldclip::name_is_a_path`], which spells
+/// The long form is [`crate::text::fieldclip::name_is_a_path`], which spells
 /// out that the field would be clickable and never fillable. This one is read
 /// while the operator is still looking at the box, so it states the rule and
 /// the remedy and stops.
@@ -389,7 +389,7 @@ pub const fn tab_order_register_name_is_a_path() -> &'static str {
 /// `a..b`, `.x`, `x.` — `FormAuthorError::EmptyNameSegment`, a period that
 /// starts, ends or doubles up and so names a level with nothing in it.
 ///
-/// ★★ Worth a sentence of its own rather than folding into
+/// Worth a sentence of its own rather than folding into
 /// [`tab_order_register_name_is_a_path`], because the remedies differ: there,
 /// remove the dot; here, remove it **or** put a name beside it. Telling an
 /// operator who typed `Address..City` to use no dots would be a true sentence
@@ -415,7 +415,7 @@ pub const fn tab_order_register_unavailable() -> &'static str {
 
 /// Hover on a Register control that will succeed and produce a typeless field.
 ///
-/// # ★★ The disclosure that would otherwise arrive too late
+/// # The disclosure that would otherwise arrive too late
 ///
 /// `/FT` is inheritable. A widget that was a field's kid could inherit its
 /// type; once it is registered as a **top-level** field there is nothing left
@@ -439,7 +439,7 @@ pub const fn tab_order_register_no_type() -> &'static str {
 /// One unclaimed widget's line when pdfcer already knows the name it would
 /// register under.
 ///
-/// # ★ Why the name is here and not on the button
+/// # Why the name is here and not on the button
 ///
 /// A label wraps to the pane width; a button does not. These rows live in a
 /// dock panel about 314 pt wide, and a button reading *"Register as
@@ -457,7 +457,7 @@ pub fn tab_order_unclaimed_row_named(page_number: usize, position: usize, name: 
 /// **A reorder moved things that are not form fields** — `OPERATOR_REQUESTS.md`
 /// O99.
 ///
-/// ★★★ The disclosure the operator would never predict. `/Annots` order is
+/// The disclosure the operator would never predict. `/Annots` order is
 /// **paint order** as well as tab order, so arranging a tab sequence can change
 /// which annotation is drawn on top where two overlap. They asked to reorder a
 /// list of fields and got a z-order change; the sentence says so in their terms
@@ -473,7 +473,7 @@ pub fn reorder_moved_non_widgets(count: usize) -> String {
 
 /// **Some entries could not be moved** — O99.
 ///
-/// ★ A list that did not fully take, said rather than discovered. These are
+/// A list that did not fully take, said rather than discovered. These are
 /// entries written into the page as direct dictionaries: they have no object id
 /// to be named by, so they stay where they are and the rest flow around them.
 /// Rare, and produced by a handful of writers.
@@ -488,7 +488,7 @@ pub fn reorder_pinned(count: usize) -> String {
 
 /// **The page's annotation list was shared and had to be copied** — O99.
 ///
-/// ★ Nothing is wrong and nothing is lost. It is a structural change to the file
+/// Nothing is wrong and nothing is lost. It is a structural change to the file
 /// the operator did not ask for, which is the whole reason it is disclosed: this
 /// project's rule is that a side effect they cannot see still owes a sentence
 /// off-canvas.

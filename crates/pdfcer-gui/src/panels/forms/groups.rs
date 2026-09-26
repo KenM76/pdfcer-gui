@@ -12,13 +12,13 @@ use crate::text::forms as t;
 
 /// The region the collapsing header publishes, so a driven check can open it.
 ///
-/// ★ A published region name is a cross-repo stability contract: the harness
+/// A published region name is a cross-repo stability contract: the harness
 /// asserts on it by string, so renaming one turns a check into a skip rather
 /// than a failure.
 const REGION_HEADER: &str = "forms.groups.header"; // ui-text-exempt: trace region name, never displayed
 /// The prefix each row's **Delete group…** control publishes under.
 ///
-/// ★★ Suffixed with the grouping node's **object number**, not its index in
+/// Suffixed with the grouping node's **object number**, not its index in
 /// `AcroForm::groups` and not its name.
 ///
 /// - Not the index: deleting one node renumbers every node after it, so a check
@@ -54,7 +54,7 @@ const MAX_TRACED_ROWS: usize = 200;
 /// no benefit and because a second parse could in principle disagree with the
 /// one the rows above came from.
 ///
-/// # ★ It renders NOTHING on a flat form, and that is R124 rather than an
+/// # It renders NOTHING on a flat form, and that is R124 rather than an
 /// oversight
 ///
 /// `AcroForm::groups` is empty for a flat form, *"which is every file in the
@@ -72,7 +72,7 @@ pub(super) fn section(
     form: &AcroForm,
     actions: &mut Vec<Action>,
 ) {
-    // ★★★ R83, asked once, before a single control is drawn. `deletion_refusal`
+    // R83, asked once, before a single control is drawn. `deletion_refusal`
     // is a pure query — it reads the signature census and the trailer and
     // mutates nothing — so it is safe to call every frame from a UI, and core
     // says so in as many words.
@@ -94,7 +94,7 @@ pub(super) fn section(
         return;
     }
 
-    // ★ Before the header, so the listing is in the trace whether or not the
+    // Before the header, so the listing is in the trace whether or not the
     // operator opened it. See `trace_rows`.
     trace_rows(doc, form);
 
@@ -106,14 +106,14 @@ pub(super) fn section(
         // through `REGION_HEADER`.
         .default_open(false)
         .show(ui, |ui| {
-            // ★ EVERY DISCLOSURE ABOVE THE LIST, without exception — the rule
+            // EVERY DISCLOSURE ABOVE THE LIST, without exception — the rule
             // four other surfaces in this panel follow, for one reason: an
             // operator who reads a short list and stops has drawn their
             // conclusion by the time a footnote would reach them.
             ui.label(t::field_groups_explainer());
 
             match &refusal {
-                // ★★★ A refusal is a SENTENCE, never a silence — and never a
+                // A refusal is a SENTENCE, never a silence — and never a
                 // greyed button either. See the module header for why R9 sends
                 // a permanently-refused capability to prose rather than to
                 // greying, and why the sentence has to name the actual cause
@@ -160,7 +160,7 @@ pub(super) fn section(
 /// go quiet exactly when a reader most wants to know what it decided — behind a
 /// closed header, off the bottom of a scroll, inside a collapsed tree.
 ///
-/// ★ Capped at [`MAX_TRACED_ROWS`], and the summary line above carries the real
+/// Capped at [`MAX_TRACED_ROWS`], and the summary line above carries the real
 /// total, so a truncated listing can never be mistaken for a short one.
 fn trace_rows(doc: &OpenDoc, form: &AcroForm) {
     if !crate::diag::enabled() {
@@ -189,7 +189,7 @@ fn trace_rows(doc: &OpenDoc, form: &AcroForm) {
 
 /// One row per grouping node, and the armed block under whichever row owns it.
 ///
-/// # ★ At most one press per frame, and it is not an accident
+/// # At most one press per frame, and it is not an accident
 ///
 /// The loop stops raising after the first press. Two presses in one frame would
 /// queue two actions against a form parsed **before** either ran, and the
@@ -200,7 +200,7 @@ fn trace_rows(doc: &OpenDoc, form: &AcroForm) {
 /// mechanically rather than re-deriving each time a queued verb is added. It
 /// costs the operator nothing: physically, one press per frame is all there is.
 ///
-/// # ★★ Order is core's, deepest-first, and is deliberately not re-sorted
+/// # Order is core's, deepest-first, and is deliberately not re-sorted
 ///
 /// `AcroForm::groups` is post-order — a child appears before its parent — and
 /// core states it because *"it is the opposite of what DFS order suggests and a
@@ -215,7 +215,7 @@ fn rows(ui: &mut egui::Ui, doc: &OpenDoc, form: &AcroForm, actions: &mut Vec<Act
 
     for node in form.groups.iter() {
         let name = &node.fully_qualified_name;
-        // ★★ CORE'S walk, not a prefix match written here.
+        // CORE'S walk, not a prefix match written here.
         //
         // `FieldGroupDeletion::nodes`' doc comment forbids a shell re-deriving
         // core's notion of descendant — *"the same argument applies with more
@@ -231,11 +231,11 @@ fn rows(ui: &mut egui::Ui, doc: &OpenDoc, form: &AcroForm, actions: &mut Vec<Act
         let fields = form.descendants_of(name).count();
         let armed_here = live.as_ref().is_some_and(|a| a.preview.group_name == *name);
 
-        // ★ `push_id` per node, or two rows' buttons share one egui id and the
+        // `push_id` per node, or two rows' buttons share one egui id and the
         // wrong one responds to a hover — the collision `crate::panels::comments`
         // keys its rows against.
         ui.push_id(node.id.num, |ui| {
-            // ★★ TWO LINES, not one, because this is a DOCK PANEL and not a
+            // TWO LINES, not one, because this is a DOCK PANEL and not a
             // dialog. A fully-qualified name is unbounded and a button is
             // fixed-width; on one `horizontal` at the dock's default 320 points
             // the label would push the button off the right-hand edge, where a
@@ -268,7 +268,7 @@ fn rows(ui: &mut egui::Ui, doc: &OpenDoc, form: &AcroForm, actions: &mut Vec<Act
 
 /// **What the operator is about to lose**, drawn under the row they armed.
 ///
-/// # ★★★ This block is the whole point of the preview existing
+/// # This block is the whole point of the preview existing
 ///
 /// The engine's own words for why: *"an operator looking at a collapsed tree
 /// row cannot see how many that is or what they are called. This answers that
@@ -284,7 +284,7 @@ fn rows(ui: &mut egui::Ui, doc: &OpenDoc, form: &AcroForm, actions: &mut Vec<Act
 /// the names decide *which*, and a control above either would be a button
 /// offered before its own justification.
 ///
-/// # ★ Cancel is a real control and not an implicit click-away
+/// # Cancel is a real control and not an implicit click-away
 ///
 /// A destructive confirmation the operator can only escape by pressing
 /// something else in the panel is one they can dismiss by accident and cannot

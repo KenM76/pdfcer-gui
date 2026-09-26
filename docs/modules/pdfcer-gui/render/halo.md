@@ -23,7 +23,7 @@ Until B2 the operator could select an object he could not see and watch its
 properties change — honest, and useless. B1's own header says so verbatim so
 that nobody reading it mistakes reach for sight.
 
-## ★★★ Why the object was invisible, in one sentence
+## Why the object was invisible, in one sentence
 
 `pdfcer_render::render_page` sizes its pixmap to the page's `/CropBox`.
 Nothing culls the *content* — [`crate::render::offpage`] proves that against
@@ -34,7 +34,7 @@ an arbitrary page-space rectangle and never intersects it with the crop box,
 which `render::offpage`'s three tests assert directly because the engine's
 own suite has never exercised a region outside the page.
 
-## ★★ The box, and the two things it is NOT
+## The box, and the two things it is NOT
 
 [`region`] returns the **crop box unioned with the drawn content's bounding
 box** — in PDF user space, which is the space `render_page_region` and
@@ -55,7 +55,7 @@ because the visible rect moves continuously; this box moves only when the
 document is edited, and growing it would make the raster bigger than it has
 to be for no cache benefit at all.
 
-## ★★ The ceiling, and why exceeding it returns `None` rather than a clamp
+## The ceiling, and why exceeding it returns `None` rather than a clamp
 
 A halo box is at least as large as the crop box and can be far larger — an
 object dragged 5,000 pt off a 200 pt page makes it 26 times the sheet. Past
@@ -76,7 +76,7 @@ A clamp would have been the wrong answer for the reason
 different rectangle: shrinking the box without telling the destination is
 how the right pixels end up in the wrong place.
 
-## ★ The tolerance, and the case it deliberately drops
+## The tolerance, and the case it deliberately drops
 
 Content bounding boxes poke a hair outside the crop box all the time — half
 a stroke width on a border line is enough, and a CAD title block draws one

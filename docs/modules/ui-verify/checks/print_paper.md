@@ -45,10 +45,10 @@ choosing an entry from the list, and requires both to move:
 | `paper=` | `sheet=` | verdict |
 |---|---|---|
 | unchanged | unchanged | the click did not reach the entry — harness failure, reported as a skip with the rect it aimed at |
-| changed | unchanged | ★ **the defect** — the request was recorded and the plan ignored it |
+| changed | unchanged | **the defect** — the request was recorded and the plan ignored it |
 | changed | changed | pass |
 
-## ★ Why the second row needs more than one click before it is believed
+## Why the second row needs more than one click before it is believed
 
 A driver is entitled to enumerate a form whose size **equals the sheet the
 device already defaults to** — `dmPaperSize` naming Letter on a
@@ -66,7 +66,7 @@ driver's list can run to forty entries, five clicks is enough to settle the
 question, and a report that said "tried the list" while trying an eighth of
 it would read as coverage it did not have.
 
-# ★ What it deliberately does NOT do
+# What it deliberately does NOT do
 
 **It never presses Properties….** That button opens the *driver's own*
 modal dialog — a nested Win32 message loop owned by a vendor's print

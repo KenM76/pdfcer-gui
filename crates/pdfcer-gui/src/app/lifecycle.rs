@@ -28,7 +28,7 @@ impl PdfcerApp {
     /// by *structured* error data, never by inspecting a message. See the
     /// module docs on the three-way failure distinction.
     pub fn open_path(&mut self, path: PathBuf) {
-        // ★ **Already open? Show that tab instead of opening it twice.**
+        // **Already open? Show that tab instead of opening it twice.**
         //
         // `crate::app::documents` §3 carries the argument, and it is a
         // correctness one rather than a convenience: two tabs over one path
@@ -44,7 +44,7 @@ impl PdfcerApp {
             self.activate_slot(slot);
             return;
         }
-        // ★ `LoadOptions::new()`, spelled rather than defaulted. It is the
+        // `LoadOptions::new()`, spelled rather than defaulted. It is the
         // ordinary open: decide the contradictions, report them, do not ask.
         // See `Self::reread_active_document` for the one caller that passes
         // something else, and `crate::app::state::OpenDoc::load_options` for
@@ -58,7 +58,7 @@ impl PdfcerApp {
     /// its only caller is the dispatch of the action
     /// [`crate::dialogs::password::PasswordDialog`] raises.
     ///
-    /// # ★★ Why the two are one function underneath
+    /// # Why the two are one function underneath
     ///
     /// Because everything after the load is identical — the page-tree check, the
     /// three-way failure branch, the settings funnel, the new tab, the adopt —
@@ -68,7 +68,7 @@ impl PdfcerApp {
     /// claimants (`text_edit_focused`, which cost the Delete key and then the
     /// space bar).
     ///
-    /// # ★★★ `Some(pw)` and `None` are different requests, not a defaulted one
+    /// # `Some(pw)` and `None` are different requests, not a defaulted one
     ///
     /// `Document::load(path)` means *"try the empty user password, then give
     /// up"* — which every conforming reader does silently before prompting.
@@ -86,7 +86,7 @@ impl PdfcerApp {
         path: PathBuf,
         password: &crate::secret::Secret,
     ) -> Option<crate::dialogs::password::Rejection> {
-        // ★★ The `NeedsPassword` TAB is closed first, and it must be.
+        // The `NeedsPassword` TAB is closed first, and it must be.
         //
         // `slot_of_path` matches `NeedsPassword` deliberately — a failed open
         // still occupies a tab so the operator can see why — and
@@ -96,7 +96,7 @@ impl PdfcerApp {
         // here for the same reason: it would find that tab and "activate" it,
         // which shows the operator the failure they are trying to get past.
         //
-        // ★★ The slot's own [`LoadOptions`] are read BEFORE it is closed, and
+        // The slot's own [`LoadOptions`] are read BEFORE it is closed, and
         // that is the whole of how the operator's chosen reading survives a
         // password prompt. `Status::NeedsPassword` carries them for exactly
         // this step; its field doc has the argument.
@@ -121,7 +121,7 @@ impl PdfcerApp {
     /// the second half of `Pass 283.0`, and this shell's answer to the middle
     /// clause of the operator's own ruling.
     ///
-    /// # ★★★ The ruling, and which third of it was missing
+    /// # The ruling, and which third of it was missing
     ///
     /// > *"We should be making pdfcer so that it opens pdfs that have errors,
     /// > and have a way that it manages those errors such that they aren't
@@ -137,7 +137,7 @@ impl PdfcerApp {
     /// difference between being told and being asked, and the engine went to
     /// the trouble of carrying **both** values precisely so this could exist.
     ///
-    /// # ★★ Why it is a re-load rather than an edit, in the engine's words
+    /// # Why it is a re-load rather than an edit, in the engine's words
     ///
     /// > *"A decision made during parsing is not a value that can be edited
     /// > afterwards, because the discarded one was never built into the
@@ -176,7 +176,7 @@ impl PdfcerApp {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI.
             //
-            // ★ The policy is spelled as a STABLE token rather than left to
+            // The policy is spelled as a STABLE token rather than left to
             // `{:?}` on the engine's enum. A driven check keys on this line,
             // and a `Debug` rendering is a formatting detail of somebody
             // else's crate — this project has already shipped one
@@ -216,7 +216,7 @@ impl PdfcerApp {
     /// not. `None` on success **and** on every failure that is not about the
     /// password, because the prompt has nothing to say about a damaged file.
     ///
-    /// ★★ The two password failures are carried out separately rather than
+    /// The two password failures are carried out separately rather than
     /// collapsed into "it did not open", and `pdfcer-core` went to some trouble
     /// to make that possible: `PasswordRequiresNormalisation` exists, in its own
     /// words, *"so that failure does not masquerade as `PasswordRequired`'s 'you
@@ -224,7 +224,7 @@ impl PdfcerApp {
     /// that was correct."* Flattening them here would undo that on the last
     /// step, which is the only step the operator sees.
     ///
-    /// ★★★ **`options` is not a defaulted argument and must never become
+    /// **`options` is not a defaulted argument and must never become
     /// one.** It is *which reading of a self-contradicting file this is*, and
     /// both call sites state it: `open_path` writes `LoadOptions::new()`
     /// because the ordinary open takes pdfcer's documented choices, and
@@ -267,7 +267,7 @@ impl PdfcerApp {
             Ok(doc) => match pdfcer_core::page_tree::pages(&doc) {
                 Ok(pages) => {
                     let mut open = OpenDoc::new(path, self.settings.open_session(doc), pages);
-                    // ★ Assigned here and nowhere else. `OpenDoc::assemble`
+                    // Assigned here and nowhere else. `OpenDoc::assemble`
                     // starts it at `LoadOptions::new()` for the two dozen test
                     // constructors that neither know nor care; this is the one
                     // site that knows, and it is one line from the load that
@@ -286,7 +286,7 @@ impl PdfcerApp {
             // §7.6: pdfcer CAN decrypt this one and has not been told how.
             // Neither damaged nor unsupported — a third thing.
             Err(DocError::PasswordRequired | DocError::PasswordRequiresNormalisation) => {
-                // ★ The reading travels with the tab. See the field's doc: an
+                // The reading travels with the tab. See the field's doc: an
                 // encrypted file re-read under `KeepFirst` must not come back
                 // under `KeepLast` because the password prompt forgot.
                 Status::NeedsPassword { path, options }
@@ -358,7 +358,7 @@ impl PdfcerApp {
     /// what kind. Reached from [`crate::dialogs::new_document`], which is where
     /// the size, the orientation and the custom-size validation live.
     ///
-    /// # ★ It is not "New, then resize"
+    /// # It is not "New, then resize"
     ///
     /// [`blank::document_sized`] serializes and re-parses, so what arrives here
     /// is an ordinary freshly-parsed document that simply is that size —
@@ -432,7 +432,7 @@ impl PdfcerApp {
     /// keeping them after an Open, and it would have been found later and by an
     /// operator.
     fn adopt(&mut self) {
-        // ★ Give the document the operator's settings — FIRST, before anything
+        // Give the document the operator's settings — FIRST, before anything
         // below can cause a render or an extraction.
         //
         // `OpenDoc::assemble` starts every document on the *shipped defaults*,
@@ -454,7 +454,7 @@ impl PdfcerApp {
         // effect is to make the next reader check what it guards.
         self.adopt_settings();
 
-        // ★ Apply the OPENING preferences — how this page is fitted, and which
+        // Apply the OPENING preferences — how this page is fitted, and which
         // overlays are already on.
         //
         // Here rather than inside `adopt_settings`, and the distinction is the
@@ -496,7 +496,7 @@ impl PdfcerApp {
                 )
             });
 
-            // ★★★ **DOES THIS DOCUMENT REACH OUTSIDE ITSELF?** — asked once,
+            // **DOES THIS DOCUMENT REACH OUTSIDE ITSELF?** — asked once,
             // here, because this is the moment the operator has the file and
             // has not yet acted on it.
             //
@@ -506,13 +506,13 @@ impl PdfcerApp {
             // dialog. What the operator can do is KNOW, before they hand the
             // drawing on or press a button in a viewer that does run them.
             //
-            // ★ Silent on the overwhelming majority of documents. See
+            // Silent on the overwhelming majority of documents. See
             // `reachout::ReachOut::worth_saying` for why an ordinary
             // calculating form must produce nothing at all.
             let reach = crate::app::reachout::scan(&doc.session);
             if reach.worth_saying() {
                 let sentence = crate::text::reachout::disclosure(reach);
-                // ★★ The SENTENCE is traced, not merely the fact that one was
+                // The SENTENCE is traced, not merely the fact that one was
                 // recorded. `record_note` puts prose on the status bar and
                 // traces nothing, so without this a driven check could prove
                 // the scan ran and could not prove the operator was told —
@@ -530,7 +530,7 @@ impl PdfcerApp {
             }
         }
 
-        // ★ Forget the panels' own view state, because a NEW DOCUMENT is
+        // Forget the panels' own view state, because a NEW DOCUMENT is
         // open and none of it describes anything any more.
         //
         //
@@ -545,7 +545,7 @@ impl PdfcerApp {
         // gone either way, and stale expansion state over a document that
         // could not be read is the worse of the two states to leave behind.
         self.panels.forget_document();
-        // ★ …and the search results, for a stronger version of the same
+        // …and the search results, for a stronger version of the same
         // reason.
         //
         // A hit carries a page index and a page-space rectangle, both of which
@@ -557,7 +557,7 @@ impl PdfcerApp {
         // options survive; see `crate::find::FindState::forget_document`.
         self.find.forget_document();
 
-        // ★ Remember the file — but only if it actually opened.
+        // Remember the file — but only if it actually opened.
         //
         // The recent list is a list of documents the operator has *read*, and
         // offering one that cannot be opened invites the same failure again
@@ -574,7 +574,7 @@ impl PdfcerApp {
         // `remember` absolutizes, de-duplicates, caps and writes; re-opening
         // what is already at the front of the list writes nothing at all.
         //
-        // ★ …and only if the document HAS a file. `stored_under` is what says
+        // …and only if the document HAS a file. `stored_under` is what says
         // so. A document made by `file.new` is called `Untitled 1.pdf` and
         // nothing is at that name, so a row for it would be a Recent entry
         // that cannot be reopened — on a menu whose entire promise is *"this
@@ -588,7 +588,7 @@ impl PdfcerApp {
             self.recent.remember(&path);
         }
 
-        // ★ **The page-display mode this document opens in.**
+        // **The page-display mode this document opens in.**
         //
         //
         // 1. **what this document was last shown in**, from
@@ -609,7 +609,7 @@ impl PdfcerApp {
         // `&mut self.status` borrow below does not have to be interleaved with
         // a read of a sibling field inside a trace closure.
         //
-        // ★ A **created** document reaches the second source every time, and
+        // A **created** document reaches the second source every time, and
         // that is the third consequence of it having no file: `stored_under`
         // answers `None`, so nothing is recalled and the mode's default
         // applies. That is the correct answer rather than a fallback — nobody
@@ -618,7 +618,7 @@ impl PdfcerApp {
         // continuous while `file.new` in Edit shows it single-page, with no
         // code here saying anything about `file.new` at all.
         let ribbon_mode = self.ribbon.mode().unwrap_or_default().to_owned();
-        // ★★★ **The middle tier, added 2026-08-31** — `OPERATOR_REQUESTS.md`
+        // **The middle tier, added 2026-08-31** — `OPERATOR_REQUESTS.md`
         // O80: *"it should remember my page display preferences from my last
         // closing of the program."*
         //
@@ -631,7 +631,7 @@ impl PdfcerApp {
         // than from `doc.prefs`, because `doc.prefs` is a snapshot taken when
         // the document opened and this decision is being made AS it opens.
         let default_display = self.prefs.default_page_display;
-        // ★★★ **Off-page display, resolved for the mode this document opens
+        // **Off-page display, resolved for the mode this document opens
         // in** — the operator's request of 2026-09-11: *"by default, read
         // doesn't show off page items, review and edit do show off page
         // items … their preference is remembered for each read review edit
@@ -669,7 +669,7 @@ impl PdfcerApp {
                     // came from the STANDING PREFERENCE was reported as having
                     // come from the mode's rule.
                     //
-                    // ★★ That is not cosmetic. The standing preference is the
+                    // That is not cosmetic. The standing preference is the
                     // whole of O80 — *"it should remember my page display
                     // preferences from my last closing of the program"* — and
                     // its two possible states are "the preference was honoured"
@@ -678,7 +678,7 @@ impl PdfcerApp {
                     // check of the feature had no oracle and would have passed
                     // against a build where the middle tier was never read.
                     //
-                    // ★ Found while writing that check, which is the second
+                    // Found while writing that check, which is the second
                     // time in three days: a trace that cannot separate the two
                     // states a check must tell apart is a trace that has not
                     // finished being written.
@@ -691,7 +691,7 @@ impl PdfcerApp {
                     },
                 )
             });
-            // ★ Seeded here rather than in `ViewState::default`, because the
+            // Seeded here rather than in `ViewState::default`, because the
             // answer depends on the ribbon mode and a `ViewState` does not
             // know one. The default stays `false` so that a state built in a
             // test is the plain one; every state the OPERATOR sees passes
@@ -720,7 +720,7 @@ impl PdfcerApp {
             let kind = match &self.status {
                 Status::Empty => "empty",
                 Status::Open(d) => {
-                    // ★ The recovery counters ride along with the open line, so
+                    // The recovery counters ride along with the open line, so
                     // a trace records that this file's index was REBUILT rather
                     // than read. Without it the only evidence a document was
                     // repaired lives in a panel the operator may never open,
@@ -821,7 +821,7 @@ impl PdfcerApp {
     /// `crate::dialogs::unsaved`'s header carries the defect this closes; this
     /// function is the half that acts.
     ///
-    /// # ★ Why the resume calls the lifecycle functions directly rather than
+    /// # Why the resume calls the lifecycle functions directly rather than
     /// re-raising the `Action`
     ///
     /// Re-raising would be the tidier-looking answer and it does not work:
@@ -855,7 +855,7 @@ impl PdfcerApp {
         };
         use crate::dialogs::unsaved::{Outcome, PendingIntent};
 
-        // ★★★ **Two writing outcomes now, and BOTH gate the intent on a real
+        // **Two writing outcomes now, and BOTH gate the intent on a real
         // write** — `OPERATOR_REQUESTS.md` O65.
         //
         // The argument is the one this function's header already makes about
@@ -866,7 +866,7 @@ impl PdfcerApp {
         // destroy a document`, and now also: *a failed overwrite must never be
         // one either*.
         //
-        // ★ `write_in_place` grew its `bool` for exactly this caller, which is
+        // `write_in_place` grew its `bool` for exactly this caller, which is
         // the same shape `save_copy` already had and for the same reason. It
         // had the value in hand and was discarding it.
         let written = match outcome {
@@ -879,18 +879,18 @@ impl PdfcerApp {
                 // satisfy a `match`.
                 _ => false,
             }),
-            // ★★★ **Save all** — `OPERATOR_REQUESTS.md` O102. Every dirty
+            // **Save all** — `OPERATOR_REQUESTS.md` O102. Every dirty
             // document that has a file, written in place, then this one's
             // question is answered too.
             //
-            // ★★ `Some(false)` when ANY of them failed, so the guard below
+            // `Some(false)` when ANY of them failed, so the guard below
             // abandons the whole resume. That is the conservative direction and
             // it is the one this arm's neighbours already take: a save that did
             // not happen must never be a route to discarding the work it was
             // supposed to preserve, and on a quit the thing being resumed is
             // *closing the program*.
             //
-            // ★ Documents with no file are NOT written and are not failures:
+            // Documents with no file are NOT written and are not failures:
             // they need a destination, which is a question only the operator
             // can answer, so the cycle asks about them individually afterwards.
             // That is Word's behaviour and the only honest one.
@@ -919,7 +919,7 @@ impl PdfcerApp {
             format!("unsaved-resume outcome={outcome:?} intent={intent:?}")
         });
 
-        // ★ Taken unconditionally, and consulted only on the `Close` arm.
+        // Taken unconditionally, and consulted only on the `Close` arm.
         //
         // Taking it here rather than inside the arm is what bounds how long a
         // parked sequence can live: at most until the next answer of any kind.
@@ -940,7 +940,7 @@ impl PdfcerApp {
             } => self.new_document_sized(pdfcer_core::page_tree::Rect::from_corners(
                 0.0, 0.0, width_pt, height_pt,
             )),
-            // ★★ The reading travels the whole way. It was chosen in
+            // The reading travels the whole way. It was chosen in
             // `crate::panels::docprops`, carried through `Action`, parked in
             // the intent while the operator answered about their edits, and is
             // handed to the loader here — with no step in between able to
@@ -959,7 +959,7 @@ impl PdfcerApp {
             }
         }
 
-        // ★★ **And carry on closing, if this answer was one of a sequence.**
+        // **And carry on closing, if this answer was one of a sequence.**
         //
         // `Close others` over four marked-up drawings asks four questions, and
         // the loop that asks them cannot run across a frame boundary — the
@@ -996,7 +996,7 @@ impl PdfcerApp {
     /// So there is one implementation with two callers, and what the second
     /// caller skips is exactly the guard it has just answered.
     ///
-    /// # ★★★ The defect the move surfaced: `Action::Save` never returned
+    /// # The defect the move surfaced: `Action::Save` never returned
     ///
     /// Worth recording where the body now lives, because nothing about it is
     /// visible from the arm any more.
@@ -1024,7 +1024,7 @@ impl PdfcerApp {
     /// cannot see, because both halves type-check and the panic is reached
     /// only at run time on one input.
     ///
-    /// # ★★ The `bool` is READ here, where [`Self::write_copy_somewhere`]'s is
+    /// # The `bool` is READ here, where [`Self::write_copy_somewhere`]'s is
     /// discarded
     ///
     /// And the difference is the whole point: an in-place save that succeeded
@@ -1070,7 +1070,7 @@ impl PdfcerApp {
     /// The body of the `Action::SaveCopy` arm, lifted out for
     /// [`Self::write_in_place`]'s reason and at the same time.
     ///
-    /// ★ The `bool` is DISCARDED here, deliberately, and that is not the same
+    /// The `bool` is DISCARDED here, deliberately, and that is not the same
     /// as ignoring it. `crate::app::save::save_copy` answers *"did a file get
     /// written"* for exactly one caller — `crate::dialogs::unsaved`, which must
     /// not destroy a document on the strength of a save that did not happen.
@@ -1091,7 +1091,7 @@ impl PdfcerApp {
 
     /// **Save As** — write the document somewhere new and rebind it there.
     ///
-    /// # ★★★ The rebinding is the command, and it is four statements
+    /// # The rebinding is the command, and it is four statements
     ///
     /// `save::save_as` writes the bytes; everything that makes this a *move*
     /// rather than a copy is below, in one place, on purpose. A document whose
@@ -1112,12 +1112,12 @@ impl PdfcerApp {
     /// 4. **a receipt**, because the rebinding is otherwise **invisible until
     ///    the next save**, and by then the surprise has already happened.
     ///
-    /// ★★ What is deliberately NOT here: any form of close or reopen. The
+    /// What is deliberately NOT here: any form of close or reopen. The
     /// session, its undo history and the operator's selection all continue —
-    /// see [`crate::app::save::save_as`]'s own ★★ on why a round trip would be
+    /// see [`crate::app::save::save_as`]'s own on why a round trip would be
     /// an unannounced data loss.
     ///
-    /// ★ And nothing is written to `viewer::remembered` for the new path. The
+    /// And nothing is written to `viewer::remembered` for the new path. The
     /// per-document page display belongs to a document the operator has
     /// *looked at*; inventing an entry for a file that has existed for a
     /// millisecond would put a record in that store for every Save As, and the
@@ -1161,7 +1161,7 @@ impl PdfcerApp {
     /// answered, and the act it authorises — a write over their own file —
     /// belongs to the application rather than to a dialog.
     ///
-    /// # ★ Why it runs AFTER the unsaved drain and not before
+    /// # Why it runs AFTER the unsaved drain and not before
     ///
     /// The two questions cannot be live at once — `crate::dialogs::signature`'s
     /// §7 records why the unsaved window's *Save a copy…* button deliberately
@@ -1196,7 +1196,7 @@ impl PdfcerApp {
             format!("signature-confirmed pending={pending:?}")
         });
         match pending {
-            // ★ The `bool` is discarded here, and the asymmetry with
+            // The `bool` is discarded here, and the asymmetry with
             // `resume_after_unsaved` is the point rather than an omission:
             // nothing is waiting on this answer. A signature save that failed
             // has reported its own failure and the next thing that happens is

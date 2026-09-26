@@ -32,7 +32,7 @@ const COMMIT_EVENT: &str = "add-dimension";
 const VERTEX_REGION: &str = "canvas.dimension-vertex";
 /// `command-declined id=view.tool_node reason=…` — the chord was refused.
 ///
-/// ★★★ **The Points tool's arming is asserted as the ABSENCE of this line, and
+/// **The Points tool's arming is asserted as the ABSENCE of this line, and
 /// that is forced by the instrument rather than chosen.** `canvas::tool::select`
 /// writes no trace at all — it is a two-line memory write, and the four tools
 /// that DO trace (`text-tool`, `markup-tool`, `measure-tool`,
@@ -49,7 +49,7 @@ const VERTEX_REGION: &str = "canvas.dimension-vertex";
 /// — without it a build with the old gate would fail at step 5 with a message
 /// about modifiers.
 ///
-/// ★ Reported rather than worked around: a one-line trace in
+/// Reported rather than worked around: a one-line trace in
 /// `canvas::tool::select` would make this a positive assertion and would serve
 /// every future tool check. The session that wrote this owned only that file's
 /// Node capability arm.
@@ -64,7 +64,7 @@ const SHELL_REMOVE: &str = "dimension-vertex-remove";
 /// `insert-dimension-vertex page=0 n=1 epoch=… disclosures=…` — the **funnel's**
 /// line, which is the engine's acknowledgement.
 ///
-/// ★★ Distinct from [`SHELL_INSERT`] deliberately, and the distinction is the
+/// Distinct from [`SHELL_INSERT`] deliberately, and the distinction is the
 /// whole reason both are asserted: one says the gesture was understood and the
 /// other says the document changed. A check that read only the first could not
 /// tell a shell that never asked from an engine that refused — which is
@@ -110,7 +110,7 @@ impl Check for ACornerCanBeAddedAndTakenAway {
 
 /// Drag from `from` to `to` with `modifiers` held down for the whole gesture.
 ///
-/// ★★★ **The modifier is held ACROSS the press, the walk and the release, and
+/// **The modifier is held ACROSS the press, the walk and the release, and
 /// that is not politeness.** `Driver::press_held`'s own note records the
 /// finding: a modifier that goes down and up inside one frame's event batch can
 /// be applied and undone before the event it was meant to carry is dispatched,
@@ -306,7 +306,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // reading it. **A step copied from a passing sibling must copy its
     // preconditions, not only its clicks.**
     //
-    // ★★ The POINTER first, the chord as the fallback — `arm_select_from_ribbon`
+    // The POINTER first, the chord as the fallback — `arm_select_from_ribbon`
     // carries the measurements (`V` observed arriving zero times in six runs
     // with a dock panel raised, and failing *silently*). This check raises no
     // panel, so the chord stays a legitimate second route rather than a flake
@@ -320,7 +320,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         driver.press(vk::V)?;
         session.settle(12);
     }
-    // ★ The click goes to the MIDPOINT OF AN EDGE, not to the middle of the
+    // The click goes to the MIDPOINT OF AN EDGE, not to the middle of the
     // square. `dimdrag::annot_shapes` hit-tests the drawn INK rather than the
     // `/Rect`, deliberately — a perimeter traced round a building whose box was
     // clickable would make the drawing underneath unselectable — so the middle
@@ -351,10 +351,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
 
-    // --- 4: ★★★ arm the Points tool — IN REVIEW ---------------------------
+    // --- 4: arm the Points tool — IN REVIEW ---------------------------
     //
     //
-    // ★ The `A` chord and not a ribbon press, and that is forced rather than
+    // The `A` chord and not a ribbon press, and that is forced rather than
     // chosen: `view.tool_node`'s ribbon and rail items both carry
     // `shown_when("mode.edit_content")`, so in Review there is no control to
     // click. A chord is filtered by TAB visibility and View is in every mode,
@@ -385,7 +385,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          note for why that is a weak signal on its own, and why step 5 is the real evidence",
     );
 
-    // --- 5: ★★★ Ctrl-drag corner 1 — a corner is ADDED --------------------
+    // --- 5: Ctrl-drag corner 1 — a corner is ADDED --------------------
     let frame = session.frame()?;
     let from = frame.declared_center(handle_one);
     // A document point rather than "the handle plus n pixels", for
@@ -444,7 +444,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         report.artifact(shot);
     }
 
-    // --- 6: ★★★ Ctrl+Shift-drag the new corner — it is TAKEN AWAY ---------
+    // --- 6: Ctrl+Shift-drag the new corner — it is TAKEN AWAY ---------
     //
     // The new corner is index 2 (it was inserted after index 1), and its handle
     // is re-published from the sidecar every frame, so it is aimed at by its
@@ -511,7 +511,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         shell.raw
     ));
 
-    // ★★ …and the operator was TOLD, which is the other half of his report.
+    // …and the operator was TOLD, which is the other half of his report.
     //
     // Both verbs re-measure, so both owe the disclosure `MoveVertex` owes plus
     // the corner count. `disclosures=` is the funnel's own field and a zero
@@ -524,7 +524,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     //
     //
-    // ★ The standing lesson, and this is another instance of it: **a check
+    // The standing lesson, and this is another instance of it: **a check
     // that cannot fail is not evidence.** Falsify a new condition against a real
     // trace line before quoting it as green.
     if funnel.get("disclosures") == Some("none") {

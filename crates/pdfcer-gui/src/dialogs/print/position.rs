@@ -77,7 +77,7 @@ pub(crate) enum Axes {
 
 /// What the primary button took hold of when a preview drag began.
 ///
-/// ★ **Latched at `drag_started_by`, never re-derived mid-gesture.** The page
+/// **Latched at `drag_started_by`, never re-derived mid-gesture.** The page
 /// rectangle moves under the pointer while the page is being dragged, so a
 /// per-frame hit test would classify the same gesture differently from one
 /// frame to the next: drag the page far enough and the pointer leaves it, the
@@ -122,7 +122,7 @@ impl Cropped {
 
     /// The off-canvas sentence, in whole millimetres.
     ///
-    /// # ★ Reported at the dialog's resolution, deliberately
+    /// # Reported at the dialog's resolution, deliberately
     ///
     /// An overhang that rounds to zero millimetres on all four edges is
     /// reported as fitting. That is not a rounding error being hidden: whole
@@ -228,7 +228,7 @@ impl Positions {
     /// **Centre the page on the printable area** — and this is not
     /// [`Self::reset`].
     ///
-    /// # ★★ Why the two commands differ, which is the whole feature
+    /// # Why the two commands differ, which is the whole feature
     ///
     /// `pdfcer_print::place_page` centres a page that fits and then clamps:
     /// `offset_x_pt: ((aw - w) / 2.0).max(0.0)`, *"clamped at zero so an
@@ -282,7 +282,7 @@ impl Positions {
     /// before any reader. Takes the job by value and hands it back so there is
     /// no window in which a caller could hold the undisplaced one.
     ///
-    /// # ★ `clipped` is recomputed, but only for a page that moved
+    /// # `clipped` is recomputed, but only for a page that moved
     ///
     /// The flag is a geometric verdict and a displacement changes the geometry,
     /// so leaving it alone would leave the hatch, the caption and the commit
@@ -557,7 +557,7 @@ pub(super) fn group(
         ui.label(egui::RichText::new(scope).small().weak());
     });
 
-    // ★ The disclosure, OFF-CANVAS and never in the warning colour — rule 4.
+    // The disclosure, OFF-CANVAS and never in the warning colour — rule 4.
     // It states geometry (*the page extends past the printable area*) and never
     // loss, because on a 1:1 CAD drawing the overhang is usually empty paper
     // and the ink verdict beside the preview is the surface entitled to make a
@@ -848,7 +848,7 @@ mod tests {
         );
     }
 
-    /// ★★ **A tripwire on the engine, not on this module.**
+    /// **A tripwire on the engine, not on this module.**
     ///
     /// Every sentence in [`Positions::centre`] about why Reset and Centre
     /// differ rests on one measured fact: `place_page` clamps an oversized

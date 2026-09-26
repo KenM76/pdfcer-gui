@@ -28,7 +28,7 @@ const HELD: &str = "canvas-held-preview";
 
 /// How far to drag the anchor, in screen pixels.
 ///
-/// ★ Far enough that the shape visibly changes and the move is not mistaken for
+/// Far enough that the shape visibly changes and the move is not mistaken for
 /// a click, and short enough to stay on the page. `multi_node` uses the same
 /// figure for the same reasons.
 const DRAG_PX: f32 = 25.0;
@@ -144,7 +144,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- aim at a published anchor and descend onto it ----------------------
     //
-    // ★ The aim comes from the application's own published anchor rect, never
+    // The aim comes from the application's own published anchor rect, never
     // from arithmetic here. An anchor's screen position is a fact about the
     // page's decomposition, and a test tool that re-derived it could be wrong in
     // the same direction as the thing it is testing.
@@ -165,7 +165,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(16);
 
     // --- drag it ------------------------------------------------------------
-    // ★ The destination is produced by `WindowFrame::offset_from`, never by
+    // The destination is produced by `WindowFrame::offset_from`, never by
     // arithmetic on a `ScreenPoint`'s fields — `coords` keeps those private
     // precisely so a check cannot invent a desktop coordinate. One conversion,
     // one place.
@@ -196,7 +196,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 2: did it reach the PAINTER? --------------------------------------
     //
-    // ★★★ The assertion that makes this check worth having. A preview built and
+    // The assertion that makes this check worth having. A preview built and
     // never painted reads identically to one never built, from outside the
     // program — and this project has shipped that shape of defect before.
     let drawn = trace
@@ -243,7 +243,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
 /// The overlay's published anchor marks, by index.
 ///
-/// ★ A local copy of `multi_node`'s, deliberately rather than a shared helper:
+/// A local copy of `multi_node`'s, deliberately rather than a shared helper:
 /// the list is the OVERLAY's contract about what it publishes, and two checks
 /// naming it independently is what would catch a rename in one of them. A
 /// shared constant would make both agree with each other and neither with the

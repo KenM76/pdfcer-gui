@@ -5,7 +5,7 @@
 //! platform work: eleven imported functions across three libraries, two RAII
 //! types, one private entry point, and no state that outlives a call.
 //!
-//! ## ★ Why the declarations are hand-written rather than a crate
+//! ## Why the declarations are hand-written rather than a crate
 //!
 //! `crates/native-window/src/win32.rs` sets the precedent and states the
 //! reason: *"four symbols is not worth a dependency"*, and `tools/ui-verify`
@@ -20,7 +20,7 @@
 //! Each declaration below is copied from the SDK signature. Each call site
 //! carries a `SAFETY` comment naming the invariant it upholds.
 //!
-//! ## ★★ Three libraries, named explicitly
+//! ## Three libraries, named explicitly
 //!
 //! `native_window::win32` names none, because all four of its symbols are in
 //! `user32`, which the toolchain links by default. This file's symbols are
@@ -32,7 +32,7 @@
 //! see which DLL each call crosses into, and a symbol that moves libraries in a
 //! future SDK fails at link time here rather than at run time somewhere else.
 //!
-//! ## ★★★ The two invariants this file exists to hold
+//! ## The two invariants this file exists to hold
 //!
 //! **1. `SetClipboardData` takes ownership on success.** A handle it accepts
 //! belongs to the clipboard; freeing it afterwards is a double free, and
@@ -77,7 +77,7 @@ const OPEN_ATTEMPTS: u32 = 10;
 
 /// How long to wait between attempts.
 ///
-/// ★ Ten milliseconds rather than the fifty a background tool would use,
+/// Ten milliseconds rather than the fifty a background tool would use,
 /// because this runs on a GUI thread: the worst case is a tenth of a second of
 /// unresponsiveness, which is below the threshold at which a window is
 /// perceived to have stalled. Half a second would not be.
@@ -118,7 +118,7 @@ unsafe extern "system" {
     /// Build a memory metafile from [MS-EMF] bytes, returning an
     /// `HENHMETAFILE` or null.
     ///
-    /// ★★ Note the argument order: **size first, then the pointer**. The
+    /// Note the argument order: **size first, then the pointer**. The
     /// reverse would compile — both are integers to the linker — and would
     /// hand GDI a length of whatever the pointer's low 32 bits happen to be.
     fn SetEnhMetaFileBits(size: u32, bits: *const u8) -> Handle;
@@ -126,7 +126,7 @@ unsafe extern "system" {
     fn DeleteEnhMetaFile(hemf: Handle) -> i32;
 }
 
-/// ★★★ **A handle that has been created but not yet given away.**
+/// **A handle that has been created but not yet given away.**
 ///
 /// The type that holds invariant 1 from the module header. It owns whatever it
 /// created; `Drop` frees it; [`Self::surrender`] hands it to the clipboard and
@@ -163,7 +163,7 @@ enum Kind {
 impl Staged {
     /// Copy `bytes` into moveable global memory, ready to place under `format`.
     fn global(name: &'static str, format: u32, bytes: &[u8]) -> Result<Self, PlaceError> {
-        // ★ A zero-byte allocation is refused rather than attempted.
+        // A zero-byte allocation is refused rather than attempted.
         // `GlobalAlloc(GMEM_MOVEABLE, 0)` returns a handle that cannot be
         // locked, and `SetClipboardData` would accept it — producing a format
         // that is advertised on the clipboard and yields nothing when read.
@@ -177,7 +177,7 @@ impl Staged {
         if handle.is_null() {
             return Err(PlaceError::Stage(name));
         }
-        // ★ Constructed BEFORE the lock, so that every failure below is a
+        // Constructed BEFORE the lock, so that every failure below is a
         // plain `return` and the handle is freed by this value's `Drop`. An
         // explicit `GlobalFree` on each error path is the version of this
         // function that eventually grows a path without one.
@@ -210,7 +210,7 @@ impl Staged {
     /// Turn [MS-EMF] bytes into a GDI metafile handle, ready to place under
     /// `CF_ENHMETAFILE`.
     ///
-    /// ★★ This is where a malformed metafile is caught, and catching it *here*
+    /// This is where a malformed metafile is caught, and catching it *here*
     /// — before the clipboard is opened — is the whole reason staging is
     /// separate from placement. `SetEnhMetaFileBits` parses the record
     /// structure and returns null for bits it will not accept, so a bad
@@ -244,7 +244,7 @@ impl Staged {
         })
     }
 
-    /// ★★★ **Hand the handle to the clipboard**, and stop owning it if that
+    /// **Hand the handle to the clipboard**, and stop owning it if that
     /// worked.
     ///
     /// Returns whether the clipboard took it. The `surrendered` write is the
@@ -278,7 +278,7 @@ impl Staged {
 impl Drop for Staged {
     fn drop(&mut self) {
         if self.surrendered {
-            // ★★★ THE CLIPBOARD OWNS IT. Freeing here would be a double free,
+            // THE CLIPBOARD OWNS IT. Freeing here would be a double free,
             // and the symptom would appear in another process, on a later
             // paste, with nothing pointing back to this line.
             return;
@@ -302,7 +302,7 @@ impl Drop for Staged {
     }
 }
 
-/// ★★★ **The open clipboard, closed by `Drop` on every path including a
+/// **The open clipboard, closed by `Drop` on every path including a
 /// panic.**
 ///
 /// The type that holds invariant 2 from the module header. There is exactly one
@@ -331,7 +331,7 @@ impl OpenGuard {
             if unsafe { OpenClipboard(std::ptr::null_mut()) } != 0 {
                 return Some(Self);
             }
-            // ★ No sleep after the LAST attempt: the budget is a wait for
+            // No sleep after the LAST attempt: the budget is a wait for
             // somebody else to finish, and there is nothing left to wait for
             // once this loop is going to give up anyway.
             if attempt + 1 < OPEN_ATTEMPTS {
@@ -353,7 +353,7 @@ impl Drop for OpenGuard {
 
 /// Register a clipboard format name, or `None`.
 fn register(name: &str) -> Option<u32> {
-    // ★ UTF-16 with an explicit terminator. `RegisterClipboardFormatW` reads
+    // UTF-16 with an explicit terminator. `RegisterClipboardFormatW` reads
     // until a NUL; a `Vec<u16>` built from `encode_utf16` alone has none, and
     // the call would read past the end of the allocation.
     let wide: Vec<u16> = name.encode_utf16().chain(std::iter::once(0)).collect();
@@ -372,7 +372,7 @@ pub(crate) fn place(entries: &[Entry<'_>]) -> Result<Vec<&'static str>, PlaceErr
 
     // ---- STAGE: everything that can fail, before anything is destroyed -----
     //
-    // ★★★ On any `?` below, `staged` is dropped and every handle created so
+    // On any `?` below, `staged` is dropped and every handle created so
     // far is freed. The clipboard has not been opened, let alone emptied, so
     // the operator still has whatever they copied last. This is the property
     // that makes the transaction all-or-nothing in the direction that matters.
@@ -390,7 +390,7 @@ pub(crate) fn place(entries: &[Entry<'_>]) -> Result<Vec<&'static str>, PlaceErr
 
     // ---- PLACE: open, empty, hand over, close ------------------------------
     //
-    // ★ `_guard` is declared AFTER `staged`, so it drops FIRST (locals drop in
+    // `_guard` is declared AFTER `staged`, so it drops FIRST (locals drop in
     // reverse declaration order). The clipboard is therefore closed before any
     // un-surrendered handle is freed, which is the order Win32 wants: a handle
     // the clipboard refused is ours again the moment `SetClipboardData`

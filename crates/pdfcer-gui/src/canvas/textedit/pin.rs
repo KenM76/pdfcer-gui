@@ -21,7 +21,7 @@ pub(super) fn target_of(
         pdfcer_core::text_extract::ContentStreamRef::Form { object } => {
             pdfcer_core::text_edit::EditTarget::Form { object }
         }
-        // ★ `ContentStreamRef` is `#[non_exhaustive]`, so a buffer
+        // `ContentStreamRef` is `#[non_exhaustive]`, so a buffer
         // kind added later lands here. `Auto` is the right fallback
         // and not merely the compiling one: it is the engine's own
         // default, it searches everywhere including whatever the new
@@ -63,7 +63,7 @@ pub struct Pinned {
 #[must_use]
 pub fn of_run(model: &EditableTextModel<'_>, run: usize) -> Option<Pinned> {
     let p = model.provenance(GlyphRef::new(run, 0))?;
-    // ★★★ NAME THE BUFFER THE PIN INDEXES. `Pass 119.0`, and this
+    // NAME THE BUFFER THE PIN INDEXES. `Pass 119.0`, and this
     // is the line that makes form editing SAFE rather than merely
     // possible.
     //
@@ -104,7 +104,7 @@ pub fn of_run(model: &EditableTextModel<'_>, run: usize) -> Option<Pinned> {
 
 /// **Do all of this run's glyphs come from ONE show operator?**
 ///
-/// ## ★★★ Why this question is worth its own function
+/// ## Why this question is worth its own function
 ///
 /// Because the answer decides whether the run can be addressed as a *whole
 /// operator* — `EditRequest::whole_operator`, `Pass 152.0` — and getting it
@@ -125,12 +125,12 @@ pub fn of_run(model: &EditableTextModel<'_>, run: usize) -> Option<Pinned> {
 /// whole-operator form is taken **only** when this answers `true`, and the
 /// find-based form — with its clean refusal — is what a split run keeps.
 ///
-/// ★ It walks the glyphs rather than trusting a count, because
+/// It walks the glyphs rather than trusting a count, because
 /// [`EditableTextModel::provenance`] answers `None` one past the end and that
 /// is the same termination a length would give with one fewer thing to keep in
 /// step.
 ///
-/// ★★ `false` when there is no provenance at all. A caller with no pin is not
+/// `false` when there is no provenance at all. A caller with no pin is not
 /// entitled to the whole-operator form in the first place — the engine refuses
 /// an empty `find` without a pin, by name — and answering `true` here would
 /// build a request it would then reject.
@@ -166,7 +166,7 @@ pub fn resolve(doc: &OpenDoc, page: usize, run: usize) -> Option<Pinned> {
 /// What a run currently **looks like** — the three facts a properties panel
 /// shows and a restyle changes.
 ///
-/// # ★ Why this is separate from [`Pinned`] and returned beside it
+/// # Why this is separate from [`Pinned`] and returned beside it
 ///
 /// [`Pinned`] is a *locator*: it names an operand, and every field on it is
 /// consumed by the engine. This is a *reading*: every field on it is consumed
@@ -184,13 +184,13 @@ pub struct RunStyle {
     pub size: f32,
     /// The `/Resources /Font` **key** in force — `F1`, not `Helvetica`.
     ///
-    /// ★ Not the `/BaseFont`, and the difference is why a caller showing this
+    /// Not the `/BaseFont`, and the difference is why a caller showing this
     /// to an operator has to join it against the document's font inventory
     /// first. `GlyphProvenance` records what the content stream said, which is
     /// a resource key; the human-readable name lives in the font dictionary the
     /// key resolves to.
     pub font_resource: Option<String>,
-    /// ★★ **The run's own characters** — and they are not decoration.
+    /// **The run's own characters** — and they are not decoration.
     ///
     /// `format_text` needs a non-empty `find` **even on a pinned request**, and
     /// that surprised this shell: the pin names the show OPERATOR, and `find`
@@ -202,11 +202,11 @@ pub struct RunStyle {
     /// would have to re-extract to get it, and this function has just paid for
     /// an extraction.
     ///
-    /// ★ It stays valid across a restyle: `format_text` changes how characters
+    /// It stays valid across a restyle: `format_text` changes how characters
     /// look and never which characters they are, so a text captured before a
     /// multi-run gesture is still the right `find` for the runs still to come.
     ///
-    /// ★★★ **It is NOT the show operator's decoded text**, and assuming it was
+    /// **It is NOT the show operator's decoded text**, and assuming it was
     /// cost this project a driven run. See [`Self::find`].
     pub text: String,
     //
@@ -263,7 +263,7 @@ pub struct Inspected {
 /// [`operators_in_run`] for why the two are not the same thing.
 #[must_use]
 pub fn operators(doc: &OpenDoc, page: usize, run: usize) -> Vec<Operator> {
-    // ★ The shared extraction — see `crate::app::cache::provenance`. `None`
+    // The shared extraction — see `crate::app::cache::provenance`. `None`
     // covers both "no such page" and "the text could not be read", which are
     // one answer here: there are no operators to restyle either way.
     let Some(text) = doc.provenance_page_text(page) else {
@@ -293,7 +293,7 @@ pub fn operators(doc: &OpenDoc, page: usize, run: usize) -> Vec<Operator> {
 /// with no code for `o` — was offered, pressed, and refused. A control whose
 /// entries may not work is what this project spends its time removing.
 ///
-/// **2. ★★ The wrong twin, silently.** One page can carry **two font
+/// **2. The wrong twin, silently.** One page can carry **two font
 /// dictionaries sharing one `/BaseFont`** — two subsets of one face — which the
 /// survey behind the Fonts panel found in **87 % of embedding files**. A name
 /// match reaches exactly one of them, arbitrarily, and the operator is given no
@@ -349,24 +349,24 @@ pub fn font_preflight(
     read: &Inspected,
     candidate: Option<&str>,
 ) -> Option<pdfcer_core::text_edit::FontPreflight> {
-    // ★★★ An EMPTY find, since `Pass 147.0`. The pre-flight resolves the
+    // An EMPTY find, since `Pass 147.0`. The pre-flight resolves the
     // pinned operator's own characters through `effective_find` — the same
     // function the commit path calls — so the preview and the commit cannot
     // disagree about what was tested.
     //
-    // ★★ It was `&read.style.find` for one day, and that field existed for one
+    // It was `&read.style.find` for one day, and that field existed for one
     // day longer than it should have because of it. Passing `""` before `147.0`
     // would have tested **zero characters** and reported every face on the page
     // as accepted — silently, and worse than the superset it replaced. That was
     // filed as a trap rather than worked around; see `Reading`'s own note for
     // the whole story.
     //
-    // ★ An empty find with **no** pin is refused by name, which the engine
+    // An empty find with **no** pin is refused by name, which the engine
     // added in the same Pass after a test showed `s.text.contains("")` is true
     // of every string — so a caller who forgets to pin gets an error rather
     // than the first operator on the page.
     match candidate {
-        // ★ The engine's own two entry points, chosen here rather than by
+        // The engine's own two entry points, chosen here rather than by
         // passing `None` through one of them — so a reader of this function
         // sees which question was asked.
         None => doc
@@ -413,7 +413,7 @@ pub fn inspect(doc: &OpenDoc, page: usize, run: usize) -> Option<Inspected> {
     })
 }
 
-/// ★★★ **Every show operator a run is made of**, in content order, each with
+/// **Every show operator a run is made of**, in content order, each with
 /// the `find` text that names all of it.
 ///
 /// # Why a run is not an operator, which is the thing this function exists to say
@@ -467,7 +467,7 @@ pub fn operators_in_run(
             glyph.text_start as usize,
             glyph.text_start as usize + glyph.text_len as usize,
         );
-        // ★★★ The per-operator `find` text was built HERE until 2026-08-27,
+        // The per-operator `find` text was built HERE until 2026-08-27,
         // by walking the glyphs and extending a byte cursor over the run's
         // text — *"but only over bytes a glyph actually covers. A gap here is a
         // derived character and must not join the two halves."*
@@ -477,7 +477,7 @@ pub fn operators_in_run(
         // empty `find` mean *the whole operator*, so the pin alone is the whole
         // address and there is nothing left to slice.
         //
-        // ★★ The measurement that made deleting it safe rather than hopeful:
+        // The measurement that made deleting it safe rather than hopeful:
         // the engine probed 4,289 fixture files, 18,559 runs, 669,436 glyphs,
         // **29,246 distinct operator spans, zero non-contiguous groups and zero
         // groups whose slice did not index the run's text cleanly** — and
@@ -485,7 +485,7 @@ pub fn operators_in_run(
         // invariant this walk was quietly relying on is now a documented
         // guarantee with a test that re-runs on every `cargo test`.
         //
-        // ★ The same probe settled the other question: **2,420 of 18,559 runs
+        // The same probe settled the other question: **2,420 of 18,559 runs
         // (13 %) carry glyphs from more than one show operator.** This function
         // is not an edge case; it is the ordinary shape of real typeset text.
         if out
@@ -515,7 +515,7 @@ pub struct Operator {
 }
 
 // ===========================================================================
-// ★★★ FROM A CLICKED TEXT OBJECT TO THE RUNS A RESTYLE CAN ADDRESS
+// FROM A CLICKED TEXT OBJECT TO THE RUNS A RESTYLE CAN ADDRESS
 //
 // `OPERATOR_REQUESTS.md` **O89**, and the half that had no route:
 //
@@ -528,7 +528,7 @@ pub struct Operator {
 // index spaces are unrelated and that **an inference between them would
 // restyle text the operator did not select**.
 //
-// ★★★ THIS IS NOT AN INFERENCE. It is the one exact join the two models share:
+// THIS IS NOT AN INFERENCE. It is the one exact join the two models share:
 // a `TextObject` carries the `BT`…`ET` **byte span** in the decoded content
 // buffer (`pdfcer_core::vector::VectorObject::bytes`), and every glyph's
 // `pdfcer_core::text_extract::GlyphProvenance` carries the byte span of the
@@ -555,7 +555,7 @@ pub struct ObjectText {
     pub first_run: usize,
     /// The last run of the object, in content order.
     ///
-    /// ★ A **range**, not a set, and the difference is the operand. The runs
+    /// A **range**, not a set, and the difference is the operand. The runs
     /// between `first_run` and `last_run` are exactly what a hand sweep from
     /// the object's first character to its last would cover —
     /// `TextSelection::runs` is literally `(start.run..=end.run)` — so taking
@@ -578,7 +578,7 @@ pub struct ObjectText {
 
 /// **What one run of a text object is painted in.**
 ///
-/// ★★★ Three states, and collapsing the first two is a real defect with no
+/// Three states, and collapsing the first two is a real defect with no
 /// symptom on the page it is written against.
 ///
 /// `GlyphProvenance::fill_color` is an `Option`, and its `None` means *"no
@@ -619,7 +619,7 @@ pub enum RunFill {
 ///   object's span — a text object whose every string failed to decode, which
 ///   is a real state on a drawing with a broken font.
 ///
-/// # ★★ The cost, stated because a caller must not put this in a paint loop
+/// # The cost, stated because a caller must not put this in a paint loop
 ///
 /// One `extract_page_view` with `capture_provenance` **on**, plus one block
 /// recognition. That is 392 ms on the operator's benchmark sheet. Every caller
@@ -651,7 +651,7 @@ pub fn object_text(doc: &OpenDoc, page: usize, object: usize) -> Option<ObjectTe
         }
     };
 
-    // ★ The shared extraction — see `crate::app::cache::provenance`.
+    // The shared extraction — see `crate::app::cache::provenance`.
     let text = doc.provenance_page_text(page)?;
     // Borrowed after the extraction, never across it (see the span above).
     use crate::canvas::target::CanvasTargetProvider as _;
@@ -687,7 +687,7 @@ pub fn object_text(doc: &OpenDoc, page: usize, object: usize) -> Option<ObjectTe
     let fills = (first_run..=last)
         .map(|run| match model.provenance(GlyphRef::new(run, 0)) {
             None => RunFill::NoGlyphs,
-            // ★ §8.6.8: no colour operator in force means black, and black is a
+            // §8.6.8: no colour operator in force means black, and black is a
             // colour. See [`RunFill`] for the flattening this distinction
             // prevents.
             Some(p) => p.fill_color.map_or(RunFill::DefaultBlack, RunFill::Painted),

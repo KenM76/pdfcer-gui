@@ -16,7 +16,7 @@ Text is where the chain means something else: the thing below a text object
 is not a smaller shape, it is *the words*, and a double-click that descended
 to a show-operator run would be technically consistent and useless.
 
-## ★★ The tool is armed, and that is the convention rather than a side
+## The tool is armed, and that is the convention rather than a side
 ## effect
 
 Inkscape's selector switches to the text tool on this gesture; Illustrator's
@@ -37,7 +37,7 @@ carets is the one now pressed.
 | B | double-click it | `text-edit-caret kind=Edit page=0 …` |
 | C | …and the caret tool is armed | the Tool panel draws its `tool.armed` block |
 
-★ Step C reads a **dock region**, not the ribbon's pressed state, and the
+Step C reads a **dock region**, not the ribbon's pressed state, and the
 first run is why: the ribbon shows one tab at a time, so `view.tool_text`
 was simply not on screen and the check SKIPPED on a build where the feature
 worked. A region absent because it is on another tab looks exactly like one

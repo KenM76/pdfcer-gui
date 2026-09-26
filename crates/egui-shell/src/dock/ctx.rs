@@ -14,7 +14,7 @@
 //! [`crate::ribbon::ctx`] deliberately, so a reader who has understood one
 //! has understood the other.
 //!
-//! # ★ Why the layout is read-only while it is drawn
+//! # Why the layout is read-only while it is drawn
 //!
 //! This is the design decision in this file that matters most, and it is
 //! not a style preference — it is what makes failure mode #6 (*restore,
@@ -74,7 +74,7 @@ pub(crate) enum Intent {
     Activate(PanelId),
     /// Remove a panel from the layout.
     Close(PanelId),
-    /// ★★★ **Tear a panel out into a window of its own.**
+    /// **Tear a panel out into a window of its own.**
     ///
     /// An intent rather than a direct write for the same reason every
     /// other one here is — the layout is mutated in exactly one place,
@@ -83,7 +83,7 @@ pub(crate) enum Intent {
     /// mid-frame would pull a compartment out from under a body that had
     /// already been laid out into it.
     ///
-    /// ★ `at` is where the window should open, in **desktop** points, or
+    /// `at` is where the window should open, in **desktop** points, or
     /// `None` for *"wherever an unplaced window goes"* — the cascade of
     /// [`crate::dock::float::opening_position`]. The two routes to this
     /// verb differ in exactly that: a drag out of the dock ended somewhere
@@ -117,7 +117,7 @@ pub(crate) enum Intent {
         /// Its window's inner size in points.
         size: [f32; 2],
     },
-    /// ★★ **Collapse a side, or bring it back.**
+    /// **Collapse a side, or bring it back.**
     ///
     /// The operator's ask: *"add the little tabs that allow the left and right
     /// panels to be minimized."*
@@ -291,7 +291,7 @@ pub(crate) struct Ctx<'a> {
     /// **Whether this side's rail was actually drawn this frame**, set by
     /// [`super::rail::draw`] before any stack on the side is laid out.
     ///
-    /// ★★★ It exists for exactly one consumer — [`super::Dock::tabs_suppressed`]
+    /// It exists for exactly one consumer — [`super::Dock::tabs_suppressed`]
     /// — and the reason it is a *fact* rather than a *configuration* is the
     /// whole safety argument for suppressing a dock's tab strip. The rail is
     /// **absent rather than squeezed**: `rail::resolve_width` returns zero when

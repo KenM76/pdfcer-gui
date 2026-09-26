@@ -24,7 +24,7 @@ test suite, turned into the tests that would have caught them:
 | [`ribbon_captions`] | group captions rendering illegibly, or not at all | the pixels |
 | [`ribbon_mockup`] | the band drawn to different proportions from the mockup, and a resting control drawn in a box | the pixels |
 
-★ A check may also assert that a control is correctly **DISABLED**, reading
+A check may also assert that a control is correctly **DISABLED**, reading
 the *absence* of `ribbon-command-invoked` as its evidence — admissible only
 where the same control is then shown to invoke, in the same run, once its
 operand exists. [`text_markup`] is the worked example.

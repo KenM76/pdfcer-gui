@@ -31,7 +31,7 @@ const RIBBON_MODE: &str = "edit";
 /// canvas, correctly and with a message naming the geometry, and the run ends
 /// SKIPPED.
 ///
-/// ★★ **A SKIP is not red.** Nothing in the suite summary distinguished "this
+/// **A SKIP is not red.** Nothing in the suite summary distinguished "this
 /// check held" from "this check has not run in weeks", and the feature it
 /// guards — O92, *"I sometimes drop objects there, and when I do I can't get
 /// them back"* — was unattended the whole time.
@@ -42,7 +42,7 @@ const RIBBON_MODE: &str = "edit";
 /// the margin — `geometry::content_extent` does that, at any zoom — it was only
 /// what happened to leave some.
 ///
-/// ★★★ `mode.edit` is named FIRST, and it is not decoration. Since
+/// `mode.edit` is named FIRST, and it is not decoration. Since
 /// 2026-09-11 the display of off-sheet content is a per-mode preference and
 /// **Read ships with it OFF** — the operator's request: *"by default, read
 /// doesn't show off page items, review and edit do show off page items."*
@@ -67,7 +67,7 @@ const PAGE_REGION: &str = "page"; // ui-text-exempt: a trace region name, never 
 /// **The scroll area the page is drawn inside**, whose grey margin is where a
 /// dropped object lives.
 ///
-/// ★ Not the page's own rect. That is `image_rect`, and every off-page point is
+/// Not the page's own rect. That is `image_rect`, and every off-page point is
 /// outside it by construction — bounding against it rejects this whole check.
 const VIEWPORT_REGION: &str = "canvas-viewport"; // ui-text-exempt: a trace region name
 
@@ -82,7 +82,7 @@ const FIXTURE_PAGE: PageGeometry = PageGeometry {
 
 /// Blank paper in the top-right of the sheet — the band's origin.
 ///
-/// ★ On the page and on nothing. `canvas::presspick` selects whatever is under
+/// On the page and on nothing. `canvas::presspick` selects whatever is under
 /// a press, and a press on ink starts a *move* rather than a band; the nearest
 /// mark to this point is square A's corner at (100, 100), about 92 pt away,
 /// which clears the pick tolerance at any zoom this check could be driven at.
@@ -216,7 +216,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let frame = session.frame()?;
     let from =
         frame.to_screen(mapping.doc_to_window(DocPoint::new(0, BAND_FROM.0, BAND_FROM.1))?);
-    // ★ The off-page conversion, named, and bounded by the canvas VIEWPORT
+    // The off-page conversion, named, and bounded by the canvas VIEWPORT
     // rather than by the page. See its own doc comment for why the ordinary
     // conversion refuses this point and why that refusal is right everywhere
     // else — and for why bounding it against `image_rect` would reject the
@@ -317,7 +317,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 mod tests {
     use super::*;
 
-    /// ★★★ **The band must touch the off-page square without enclosing it.**
+    /// **The band must touch the off-page square without enclosing it.**
     ///
     /// The property the whole check rests on. If the band could enclose it, the
     /// check would pass under `MarqueeMode::Enclosed` too — which is the
@@ -347,7 +347,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The band must miss the on-page square**, or `hits == 1` proves nothing.
+    /// **The band must miss the on-page square**, or `hits == 1` proves nothing.
     #[test]
     fn the_band_misses_the_on_page_square() {
         // A: x 40–100, y 40–100.
@@ -363,7 +363,7 @@ mod tests {
 
     /// The origin is on the page and the destination is off it.
     ///
-    /// ★ Pinned because the two corners go through two *different* conversions —
+    /// Pinned because the two corners go through two *different* conversions —
     /// `doc_to_window` refuses off-page points and `doc_to_window_off_page`
     /// permits them — and swapping them produces an error at run time rather
     /// than a wrong result, which is the good failure. This states the intent so

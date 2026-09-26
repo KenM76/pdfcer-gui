@@ -3,7 +3,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/text/panels/textannotstyle.md`.
 
-/// ★★★ **Why a text box's appearance is not changed here — and it is NOT
+/// **Why a text box's appearance is not changed here — and it is NOT
 /// because no verb exists.**
 ///
 ///
@@ -20,12 +20,12 @@
 /// control, silently destructive** — one worse than the *visible control,
 /// silently inert* case this panel already fixed once.
 ///
-/// ★ The copy does not say *"pdfcer cannot"*, because it can and the claim
+/// The copy does not say *"pdfcer cannot"*, because it can and the claim
 /// would be false the moment the engine measures the value. It says what would
 /// happen, which stays true either way and is the thing the operator would
 /// actually care about. Claim-bearing copy is verified, not softened.
 ///
-/// ★ It names the note as still editable for [`markup_not_restylable`]'s
+/// It names the note as still editable for [`markup_not_restylable`]'s
 /// reason and on the same check: `set_markup_note` refuses a ce dimension and a
 /// widget and nothing else, and on a `/FreeText` it is the verb that **does**
 /// measure `multiline`, so the words can be corrected without the box being
@@ -39,13 +39,13 @@ pub const fn markup_text_box_not_restylable() -> &'static str {
 
 /// The sentence under the sticky-note and stamp style rows.
 ///
-/// ★★ It names the **two** things absent from those rows that are present a
+/// It names the **two** things absent from those rows that are present a
 /// few pixels away on every other mark — no way back to no colour, and no
 /// opacity — because an operator who has just restyled a rectangle and then
 /// selects a note will read their absence as a bug rather than as a limit. R9
 /// makes them absent; this makes the absence legible.
 ///
-/// ★ *"the colour cannot be taken away again"* rather than *"there is no Clear
+/// *"the colour cannot be taken away again"* rather than *"there is no Clear
 /// button"*: the operator is being told about the **file**, not about this
 /// panel's furniture. `TextAnnotSpec`'s variants each carry a required colour,
 /// so no-colour is not a state a sticky note can be in — which is a fact about
@@ -58,7 +58,7 @@ pub const fn markup_text_annot_note() -> &'static str {
 
 /// What the icon chooser shows for a note whose `/Name` pdfcer does not model.
 ///
-/// ★ *"Not one of these"* rather than a blank or the first entry. §12.5.6.4's
+/// *"Not one of these"* rather than a blank or the first entry. §12.5.6.4's
 /// seven names are a standard set and not a closed one, so a producer's own
 /// icon name is **conforming** — the file is not broken and the word must not
 /// suggest it is. What the chooser cannot do is show it as selected, because it
@@ -71,7 +71,7 @@ pub const fn markup_icon_foreign() -> &'static str {
 /// **The file's own icon name, shown as the entry it is** — for a `/Name`
 /// §12.5.6.4 permits and pdfcer does not model.
 ///
-/// # ★★★ Why the name itself and not a category word
+/// # Why the name itself and not a category word
 ///
 /// This replaced *"Not one of these"* on 2026-09-07. That phrase was the
 /// honest answer while the name could not be carried: the engine's reader
@@ -82,11 +82,11 @@ pub const fn markup_icon_foreign() -> &'static str {
 /// of these"** cannot: which of his notes it is, and that pdfcer is going to
 /// keep it.
 ///
-/// ★ Quoted, because it is a value out of his file rather than a word this
+/// Quoted, because it is a value out of his file rather than a word this
 /// program chose, and the quotes are what make a name like *Note 2* read as a
 /// name rather than as an instruction.
 ///
-/// ★★ `String::from_utf8_lossy` at the call site, not here: a `/Name` is a
+/// `String::from_utf8_lossy` at the call site, not here: a `/Name` is a
 /// sequence of bytes (§7.3.5) and there is no encoding declared for it, so a
 /// producer may legally write one this program cannot decode. Replacement
 /// characters in the chooser are the correct outcome — the operator sees that
@@ -96,7 +96,7 @@ pub fn markup_icon_foreign_named(name: &str) -> String {
     format!("\"{name}\"")
 }
 
-/// ★★★ **The note under a foreign icon** — and it says something different
+/// **The note under a foreign icon** — and it says something different
 /// from what it said yesterday.
 ///
 ///
@@ -131,7 +131,7 @@ pub fn markup_icon_foreign_named(name: &str) -> String {
 /// annotation, and is entitled to know that pdfcer chose the picture and the
 /// file chose the name.
 ///
-/// ★ Shown **before** he touches a control rather than as a hover. Nothing is
+/// Shown **before** he touches a control rather than as a hover. Nothing is
 /// destroyed any more, so this is no longer a warning — but it is still an
 /// explanation, and an explanation that arrives after the conclusion has been
 /// drawn is not one.
@@ -144,7 +144,7 @@ pub const fn markup_icon_foreign_note() -> &'static str {
 
 /// The label on the stamp's label-size control.
 ///
-/// # ★★ Why *"Text size"* and not *"Font size"*
+/// # Why *"Text size"* and not *"Font size"*
 ///
 /// The operator's own words, twice: *"still can't adjust the size of a stamp
 /// on the canvas, or by entering a different size in the properties box."* He
@@ -160,7 +160,7 @@ pub const fn stamp_text_size_label() -> &'static str {
 
 /// The unit suffix inside the stamp label-size spinner.
 ///
-/// ★ A suffix rather than a second word, because a point size is a number an
+/// A suffix rather than a second word, because a point size is a number an
 /// operator already reads with its unit attached, and the row lives in a
 /// narrow column shared with every other properties section.
 #[must_use]
@@ -171,7 +171,7 @@ pub const fn stamp_text_size_suffix() -> &'static str {
 /// The label on the chooser for what happens when the resized label no longer
 /// fits the stamp's box.
 ///
-/// ★ *"If it does not fit"* rather than *"Fit policy"*. The operator meets
+/// *"If it does not fit"* rather than *"Fit policy"*. The operator meets
 /// this control at the moment he has typed a larger number, so the words that
 /// help are the ones naming the situation he is about to be in — not the
 /// engine's term for the family of answers.
@@ -182,7 +182,7 @@ pub const fn stamp_fit_label() -> &'static str {
 
 /// `StampFit::GrowToText`, for the chooser.
 ///
-/// ★ *"Make the stamp wider"* names what the operator will SEE. The engine's
+/// *"Make the stamp wider"* names what the operator will SEE. The engine's
 /// own doc for this variant makes the same point from the other side — the
 /// drawn box becomes *"a position and a minimum size rather than a cage"* —
 /// and it is the default here for the reason that doc gives: a wider stamp is
@@ -194,7 +194,7 @@ pub const fn stamp_fit_grow() -> &'static str {
 
 /// `StampFit::ShrinkToBox`, for the chooser.
 ///
-/// ★★ It says *"shrink"* in the option itself, because this is the variant
+/// It says *"shrink"* in the option itself, because this is the variant
 /// that changes the number the operator just typed. The disclosure after the
 /// fact ([`stamp_label_shrunk`]) says by how much; this says that it can
 /// happen at all, before he chooses it.
@@ -205,7 +205,7 @@ pub const fn stamp_fit_shrink() -> &'static str {
 
 /// `StampFit::ClipToBox`, for the chooser.
 ///
-/// # ★★★ Why the option that hides characters is offered at all
+/// # Why the option that hides characters is offered at all
 ///
 /// Because it is the behaviour every build before `Pass 287.0` had, it is the
 /// one that produced the operator's original complaint, and — in the engine's
@@ -213,7 +213,7 @@ pub const fn stamp_fit_shrink() -> &'static str {
 /// than one that can be requested"*. Somebody reproducing an existing
 /// document's appearance needs it.
 ///
-/// ★ The wording carries the consequence rather than the mechanism. *"Cut the
+/// The wording carries the consequence rather than the mechanism. *"Cut the
 /// words off"* is what happens; *"clip to the bounding box"* is how. An
 /// operator who picks this one has been told what he is picking.
 #[must_use]
@@ -224,7 +224,7 @@ pub const fn stamp_fit_clip() -> &'static str {
 /// **One policy, as the chooser lists it** — the dispatcher the two surfaces
 /// share.
 ///
-/// # ★★★ Why a dispatcher and not three call sites picking their own string
+/// # Why a dispatcher and not three call sites picking their own string
 ///
 /// Because there are **two** surfaces that ask this question — the placing
 /// dialog and the properties panel — and a policy labelled *"Make the stamp
@@ -253,7 +253,7 @@ pub const fn stamp_fit_option(fit: pdfcer_core::annot_author::StampFit) -> &'sta
 
 /// A fit policy this build has no words for. See [`stamp_fit_option`].
 ///
-/// ★ It names the situation rather than guessing: an operator who sees this
+/// It names the situation rather than guessing: an operator who sees this
 /// is looking at a build older than the file or older than the engine it was
 /// linked against, and *"this build does not know"* is the only true thing
 /// that can be said about it.
@@ -276,7 +276,7 @@ pub const fn stamp_fit_unknown() -> &'static str {
 /// | `RecoveredFromAppearance` | no `/DA` at all; read off the baked `Tf` | **nothing** |
 /// | `DaUnreadable` | a `/DA` is there and yields no size | this sentence |
 ///
-/// ★★ The middle row is the one a shell gets wrong. It is tempting to warn
+/// The middle row is the one a shell gets wrong. It is tempting to warn
 /// that a recovered number is *"less certain"*, and it is not: the engine's
 /// own doc says it is *"not an anomaly and owes no warning — every stamp
 /// authored before `Pass 287.0` is in this state, and so is anything another
@@ -284,7 +284,7 @@ pub const fn stamp_fit_unknown() -> &'static str {
 /// there would fire on the majority of stamps in the world and teach the
 /// operator to ignore the one that matters.
 ///
-/// ★ The last clause is the actionable half. The operator is about to
+/// The last clause is the actionable half. The operator is about to
 /// overwrite a `/DA` string pdfcer could not parse, and that is a thing he is
 /// entitled to know **before** he presses, not after.
 #[must_use]
@@ -294,7 +294,7 @@ pub const fn stamp_size_da_unreadable() -> &'static str {
      declares."
 }
 
-/// ★ **The stamp's label was drawn smaller than asked for** —
+/// **The stamp's label was drawn smaller than asked for** —
 /// `StampLabelFit::LabelShrunk`.
 ///
 /// Off-canvas, in the status line: R8b rule 4's surviving half. The stamp
@@ -302,7 +302,7 @@ pub const fn stamp_size_da_unreadable() -> &'static str {
 /// is tinted, badged or outlined — and the fact that a size was decided for
 /// the operator reaches him in words instead.
 ///
-/// ★ Both numbers, because the size alone cannot answer the question the
+/// Both numbers, because the size alone cannot answer the question the
 /// disclosure exists to answer. *"12 pt"* is the same sentence whether he
 /// asked for 12 and got it or asked for 24 and the box took half of it away;
 /// the pair is what makes it an inference report rather than a readout.
@@ -322,7 +322,7 @@ pub fn stamp_label_shrunk(drawn: f64, requested: f64) -> String {
 /// *"some of the words"* is a sentence somebody can look at a stamp and
 /// disagree with.
 ///
-/// ★ *"the words are centred, so the loss is split between both ends"* is not
+/// *"the words are centred, so the loss is split between both ends"* is not
 /// padding: the engine counts a character as hidden when its advance is not
 /// **entirely** inside the box, and the label is drawn centred. An operator
 /// counting the missing letters at the right-hand edge alone would otherwise
@@ -338,7 +338,7 @@ pub fn stamp_label_clipped(hidden: usize) -> String {
 /// **The stamp's box was widened to hold the label** —
 /// `StampLabelFit::BoxGrown`.
 ///
-/// ★★ Reported, but as the mildest of the three, and the engine says why:
+/// Reported, but as the mildest of the three, and the engine says why:
 /// growing *"is disclosed by the canvas itself — the operator drew a rectangle
 /// and got a wider one, which is visible as itself and cannot be quietly
 /// wrong."* So this sentence is a courtesy rather than an obligation, and it
@@ -353,7 +353,7 @@ pub fn stamp_label_box_grown(width: f64) -> String {
 /// a `StampLabelFit` variant added to `pdfcer-core` after this build was
 /// linked.
 ///
-/// # ★★★ Why an unknown inference gets a sentence rather than silence
+/// # Why an unknown inference gets a sentence rather than silence
 ///
 /// Because the three named outcomes are disclosed, and an operator who has
 /// learnt that pdfcer says when it changed something will read silence as

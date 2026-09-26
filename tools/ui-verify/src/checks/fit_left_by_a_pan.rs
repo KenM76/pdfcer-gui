@@ -20,7 +20,7 @@ const CANVAS_REGION: &str = "canvas-viewport";
 const FIT_ITEM: &str = "ribbon.item.view.zoom_fit_page";
 /// How far the pan drags, as a fraction of the canvas on each axis.
 ///
-/// ★★ A fraction, not a distance. `the_line_weight_switch_reaches_the_resize`
+/// A fraction, not a distance. `the_line_weight_switch_reaches_the_resize`
 /// got the same class of constant wrong three times in one evening — page
 /// fractions, then points, then fractions of the operand — and the lesson
 /// generalises: **the space a travel is expressed in has to be the space the
@@ -38,7 +38,7 @@ const BORDER_PX: i32 = 16;
 const TITLEBAR_PX: i32 = 39;
 /// How far a margin may differ and still count as "centred", in points.
 ///
-/// ★ The same role as the sibling's `EDGE_TOLERANCE`: it absorbs the `f32` fit
+/// The same role as the sibling's `EDGE_TOLERANCE`: it absorbs the `f32` fit
 /// division and pixel-grid rounding, and nothing else. The pan moves the page
 /// by [`PAN_BY`], which is thirty times this.
 const CENTRED_TOLERANCE: f32 = 4.0;
@@ -131,7 +131,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- B: pan away, and assert it moved -----------------------------------
     let frame = session.frame()?;
-    // ★ Both ends expressed as FRACTIONS of the canvas rather than as a point
+    // Both ends expressed as FRACTIONS of the canvas rather than as a point
     // plus a pixel offset, so the drag scales with whatever viewport the window
     // happens to have — the same reason `PAN_BY` below is a fraction and not a
     // distance. A fixed pixel travel is a distance in the screen's space, and
@@ -222,7 +222,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- E: …AND THE FIT IS STILL LIVE, which is O78's reversal -----------
     //
-    // ★★★ The assertion that makes this check a FALSIFIER for the change
+    // The assertion that makes this check a FALSIFIER for the change
     // rather than a survivor of it.
     //
     // Step D alone passes on both builds: the old one dropped the fit on the

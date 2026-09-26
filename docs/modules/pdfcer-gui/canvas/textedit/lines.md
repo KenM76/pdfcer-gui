@@ -22,7 +22,7 @@ a thing that does not happen, and nothing saying so. Adding the line break
 without these four would have shipped a multi-line editor you cannot move
 around in.
 
-## ★★★ Why this is not `blocks`, which already walks lines
+## Why this is not `blocks`, which already walks lines
 
 Because they walk **different lines**, and confusing the two would move the
 caret to another part of the sheet mid-word.
@@ -38,11 +38,11 @@ is for text that does not exist yet, where the only lines that exist are the
 ones the operator typed — so the answer is arithmetic on a string, costs
 nothing, and needs no document at all.
 
-★ That is also why every function here is a **pure function of `(&str,
+That is also why every function here is a **pure function of `(&str,
 usize)`**. The same discipline as [`super::caret`] and for the same payoff:
 every rule below is proved without a window, a document or a decomposition.
 
-## ★★ The unit is a CHARACTER, everywhere, and it is not a detail
+## The unit is a CHARACTER, everywhere, and it is not a detail
 
 `super::Draft::caret` is documented as a character index because a keystroke
 moves the caret by one character and `é` is one keystroke and two bytes.

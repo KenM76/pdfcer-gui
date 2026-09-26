@@ -29,7 +29,7 @@ impl CommandText {
     }
 }
 
-/// ★ The File tab's Save As copy, a module of its own under R2 — the same seam
+/// The File tab's Save As copy, a module of its own under R2 — the same seam
 /// [`annotate`] and [`view`] are drawn on. Re-exported, so callers keep
 /// spelling it `text::commands::file_save_as`.
 mod file;
@@ -44,7 +44,7 @@ mod view;
 
 pub use view::*;
 
-/// ★ The **Format tab's** command copy, a module of its own under R2 — the
+/// The **Format tab's** command copy, a module of its own under R2 — the
 /// same seam [`file`], [`view`], [`annotate`], [`markupstyle`] and [`arrange`]
 /// are drawn on.
 ///
@@ -79,7 +79,7 @@ pub const fn file_open() -> CommandText {
 /// what the three reference applications do, and from this operator's own
 /// A-series drawings — rather than an accident to be hidden.
 ///
-/// ★★ **The last sentence is about the SHAPE of saving, not about what this
+/// **The last sentence is about the SHAPE of saving, not about what this
 /// build cannot do**, and the difference is the whole reason it is worded the
 /// way it is. It once read *"this build cannot yet write a document to disk"*
 /// — accurate while `file.save_copy` had no dispatch arm, and a lie to the
@@ -108,7 +108,7 @@ pub const fn file_new() -> CommandText {
 
 /// `file.new_from_template`
 ///
-/// # ★ The label follows `RIBBON_IA.md` and the tooltip corrects for it
+/// # The label follows `RIBBON_IA.md` and the tooltip corrects for it
 ///
 /// §5.1 specifies the row as `New from template… (page size)`, following
 /// Inkscape's `Ctrl+Alt+N`. What this shell offers is page sizes and not a
@@ -131,7 +131,7 @@ pub const fn file_new_from_template() -> CommandText {
 
 /// `file.close`
 ///
-/// ★★ **This tooltip is a SPECIFICATION that sat on the ribbon for weeks
+/// **This tooltip is a SPECIFICATION that sat on the ribbon for weeks
 /// unmet.** *"You are asked what to do about unsaved edits first"* — and
 /// nothing asked: `Action::Close` consulted `save_pending`, permanently
 /// `false` by design, then dropped the `EditSession`. Every edit since the file
@@ -178,7 +178,7 @@ pub const fn file_recent() -> CommandText {
 
 /// `file.save`
 ///
-/// ★★★ **Save. In place. On the operator's instruction:** *"can I please have
+/// **Save. In place. On the operator's instruction:** *"can I please have
 /// a save button like every other program in existence has? We're on week two
 /// of this and just have a save as button."*
 ///
@@ -243,12 +243,12 @@ pub const fn file_save_copy() -> CommandText {
 
 /// `file.save_compacted`
 ///
-/// ★★★ **The name is the disclosure**, and it is the first line of defence
+/// **The name is the disclosure**, and it is the first line of defence
 /// against a press nobody meant. `OPERATOR_REQUESTS.md` **O48** asked for it
 /// *"named so it cannot be pressed by accident"*, and *Save a compacted copy…*
 /// is a phrase nobody reaches for while looking for Save.
 ///
-/// ★★ The tooltip names **both losses before the gain**. That inverts the usual
+/// The tooltip names **both losses before the gain**. That inverts the usual
 /// order and it is deliberate: an operator scanning tooltips reads the first
 /// clause, and the first clause of this one has to be the part they cannot see.
 /// A smaller file needs no advocacy — it is why they are hovering.
@@ -266,7 +266,7 @@ pub const fn file_save_compacted() -> CommandText {
 
 /// `edit.reflow_block`
 ///
-/// ★★★ **The label says what it does to a paragraph, and the tooltip says the
+/// **The label says what it does to a paragraph, and the tooltip says the
 /// one thing that will otherwise surprise.** `OPERATOR_REQUESTS.md` **O54**.
 ///
 /// A reflow is planned against the document *as opened* — it needs position
@@ -277,7 +277,7 @@ pub const fn file_save_compacted() -> CommandText {
 /// so both are in the tooltip where an operator meets them before the refusal
 /// rather than after it.
 ///
-/// ## ★★★ Why it leads with the preconditions — `OPERATOR_REQUESTS.md` **O127**
+/// ## Why it leads with the preconditions — `OPERATOR_REQUESTS.md` **O127**
 ///
 /// > *"I also haven't seen the reflow option actually work with anything when I
 /// > press it."*
@@ -293,7 +293,7 @@ pub const fn file_save_compacted() -> CommandText {
 /// control which requires something says so before it is pressed; this is that
 /// sentence, and the `⊗` decline is the one after.
 ///
-/// ★ The third fact — that it only works on prose, not on a title-block cell or
+/// The third fact — that it only works on prose, not on a title-block cell or
 /// an isolated label — is deliberately here too. It is the most likely refusal
 /// on the drawings this program is for, and an operator who reads it here stops
 /// pressing the control on a dimension label and wondering.
@@ -322,7 +322,7 @@ pub const fn file_export_dxf() -> CommandText {
 
 /// `file.stamp_collection` — `OPERATOR_REQUESTS.md` **O169**.
 ///
-/// ★★ **The label and the tooltip are NOT written here.** They are
+/// **The label and the tooltip are NOT written here.** They are
 /// [`crate::text::stamps::command_label`] and
 /// [`crate::text::stamps::command_tooltip`], and this function only pairs them
 /// into the shape the registry takes.
@@ -346,7 +346,7 @@ pub const fn file_stamp_collection() -> CommandText {
 
 /// `file.import_form_data`
 ///
-/// ★★ The tooltip says **what it overwrites**, because that is the fact an
+/// The tooltip says **what it overwrites**, because that is the fact an
 /// operator needs before pressing rather than after. An import sets values in
 /// the document they have open; a data file that names a field they have
 /// already filled replaces what is in it. One `Ctrl+Z` takes the whole import
@@ -372,7 +372,7 @@ pub const fn file_export_form_data() -> CommandText {
 
 /// `file.copy_page_text`
 ///
-/// ★ **It lives under FILE, not EDIT, because copying is not authoring** and
+/// **It lives under FILE, not EDIT, because copying is not authoring** and
 /// the File tab is the one tab every mode shows. ⚠ This file is ordered by
 /// tab, and a command's text sitting under the wrong heading is how the next
 /// reader concludes the command is somewhere it is not — so moving a command
@@ -399,7 +399,7 @@ pub const fn file_copy_page_text() -> CommandText {
 
 /// `file.copy_document_text`
 ///
-/// Under File for [`file_copy_page_text`]'s reason. ★ The warning about the
+/// Under File for [`file_copy_page_text`]'s reason. The warning about the
 /// window not responding is the honest description of a synchronous extraction
 /// over every page, and is exactly the kind of sentence a re-parenting must not
 /// quietly lose.
@@ -423,7 +423,7 @@ pub const fn file_print() -> CommandText {
 
 /// `file.properties`
 ///
-/// ## ★★★ ONE COMMAND, ONE SUBJECT — and this tooltip names only one panel
+/// ## ONE COMMAND, ONE SUBJECT — and this tooltip names only one panel
 ///
 /// It once read *"The document's own title, author, subject and keywords, AND
 /// the properties of whatever is selected on the page"* — two subjects in one
@@ -437,7 +437,7 @@ pub const fn file_print() -> CommandText {
 /// promises on this control what a different control does — which is why the
 /// wording was replaced rather than shortened.
 ///
-/// ★ It names the three kinds of thing that can be selected, because the panel
+/// It names the three kinds of thing that can be selected, because the panel
 /// is empty until one of them is and an operator hovering an empty panel's
 /// control deserves to know what would fill it.
 #[must_use]
@@ -451,13 +451,13 @@ pub const fn file_properties() -> CommandText {
 
 /// `file.document_properties`
 ///
-/// ★★★ **The operator's own words for the surface**: *"it needs to get out of
+/// **The operator's own words for the surface**: *"it needs to get out of
 /// there and be in its own **document properties** tab."* The label
 /// is what names the dock tab — `PdfcerApp::new` builds every `PanelInfo` from
 /// its command's label — so this string is the tab he asked for, spelled the
 /// way he asked for it.
 ///
-/// ★ *"Document properties"* rather than *"This document"* (the panel's own
+/// *"Document properties"* rather than *"This document"* (the panel's own
 /// heading) or *"Metadata"* (the format's word). A tab has to be recognisable
 /// in a strip of five and legible out of context; a heading sits under a tab
 /// that has already said which document. The two are deliberately different
@@ -507,7 +507,7 @@ pub const fn file_shortcuts() -> CommandText {
 
 /// `file.about`
 ///
-/// ★ **No ellipsis, deliberately.** This catalog's `…` means *you will be
+/// **No ellipsis, deliberately.** This catalog's `…` means *you will be
 /// asked something before anything happens* — the reading `view_reset_layout`
 /// had its ellipsis taken away for getting wrong. About asks nothing; it
 /// shows. Its neighbour `file_shortcuts` is the same kind of window and is
@@ -530,7 +530,7 @@ pub const fn file_about() -> CommandText {
 
 /// `file.ocr`
 ///
-/// ★ **The tooltip states the uncertainty, and that is not optional here.**
+/// **The tooltip states the uncertainty, and that is not optional here.**
 /// OCR is the single largest inference pdfcer makes — `pdfcer-core`'s own
 /// `ocr::layer` header says *"every word here is a guess"* — and rule 4 asks
 /// that an inherently uncertain inference say so rather than imply otherwise.
@@ -675,7 +675,7 @@ pub const fn pages_rotate_right() -> CommandText {
 
 /// `pages.resize`
 ///
-/// ★★★ **The tooltip says what the command does NOT do**, and that is the
+/// **The tooltip says what the command does NOT do**, and that is the
 /// whole reason it is worded this way. Every other "page size" control an
 /// operator has met — Word, LibreOffice, a print dialog's Fit-to-page —
 /// reflows or scales, and this one changes the paper and leaves the drawing
@@ -730,14 +730,14 @@ pub const fn edit_insert_image() -> CommandText {
 
 /// `edit.attachments`
 ///
-/// ★★ **The tooltip says what the panel SHOWS as well as what it does**, which
+/// **The tooltip says what the panel SHOWS as well as what it does**, which
 /// is [`view_panel_bookmarks`]' shape and is the right one here for a reason of
 /// its own: an operator has no way to discover that a PDF can carry whole files
 /// inside it, because nothing on the page ever shows one. A tooltip reading
 /// only *"Manage attachments"* would name a capability to somebody who does not
 /// know the capability exists.
 ///
-/// ★ It does **not** promise a description edit. `attach_file` takes a
+/// It does **not** promise a description edit. `attach_file` takes a
 /// description at attach time and `pdfcer-core` has no verb that changes one
 /// afterwards, and `view_reset_layout`'s recorded defect is exactly this — a
 /// tooltip that promised a choice the build did not offer. The panel discloses
@@ -771,7 +771,7 @@ pub const fn edit_form_check_box() -> CommandText {
 
 /// **Radio button** — one of a group.
 ///
-/// ★ The tooltip names the grouping rule, because it is the only one of the
+/// The tooltip names the grouping rule, because it is the only one of the
 /// five whose behaviour depends on another field: two radios sharing a name are
 /// one control. An operator who does not know that places two buttons that both
 /// stay on and reasonably calls it a bug.
@@ -792,13 +792,13 @@ pub const fn edit_form_choice() -> CommandText {
     )
 }
 
-/// ★★★ **Select everything on this page, including what has slid off it.**
+/// **Select everything on this page, including what has slid off it.**
 ///
 /// The tooltip names the RECOVERY rather than the mechanism, because that is
 /// what sends an operator looking for it — *"I sometimes drop objects there,
 /// and when I do I can't get them back."*
 ///
-/// ★ "Select all" is the label because it is the phrase every hand already
+/// "Select all" is the label because it is the phrase every hand already
 /// knows and a ribbon group competes for width. The off-the-sheet half — the
 /// thing that makes this a rescue rather than a convenience — is in the
 /// tooltip, where there is room to say it properly.
@@ -818,14 +818,14 @@ pub const fn edit_form_push_button() -> CommandText {
 
 /// Why the push button is greyed.
 ///
-/// ★★★ R9 permits greying only for a **temporarily** unavailable capability
+/// R9 permits greying only for a **temporarily** unavailable capability
 /// that is **always explained on hover**, and this is the explanation. It draws
 /// the distinction that matters: pdfcer can *place* a button perfectly well —
 /// what it cannot do is *run* what the button would do, because it executes no
 /// PDF actions. Placing one would give the operator a control that looks
 /// finished and does nothing, which is worse than not offering it.
 ///
-/// ★ It says what is missing rather than apologising, so an operator can judge
+/// It says what is missing rather than apologising, so an operator can judge
 /// whether it matters to them and can ask for it if it does.
 #[must_use]
 pub const fn edit_form_push_button_unavailable() -> &'static str {
@@ -842,7 +842,7 @@ pub const fn edit_form_create_field() -> CommandText {
 #[must_use]
 /// `edit.form_manage_fields`
 ///
-/// ★★ **The tooltip must not offer to "retype" a field**, because that is a
+/// **The tooltip must not offer to "retype" a field**, because that is a
 /// promise nothing can keep. Acrobat has offered no field-type conversion
 /// since Acrobat 6, and
 /// `pdfcer-core` models the same limit by making the request **unrepresentable**
@@ -850,7 +850,7 @@ pub const fn edit_form_create_field() -> CommandText {
 /// control to grey. A tooltip is a contract, and this clause had been offering
 /// an operator something no route in either crate provides.
 ///
-/// ★ The label keeps *"Manage fields"* and the command now opens the **Forms
+/// The label keeps *"Manage fields"* and the command now opens the **Forms
 /// panel**, which is where listing, renaming and removing already live.
 pub const fn edit_form_manage_fields() -> CommandText {
     CommandText::new(
@@ -872,7 +872,7 @@ pub const fn edit_form_flatten() -> CommandText {
 
 /// `edit.find`
 ///
-/// ★ **The one command in this catalog whose only control is on the status
+/// **The one command in this catalog whose only control is on the status
 /// bar.** `RIBBON_IA.md` §6 puts the Find toggle there rather than on the
 /// ribbon, so this label and tooltip are what that toggle's *command* says —
 /// reachable from a keymap, from a customized quick-access toolbar, and from
@@ -900,7 +900,7 @@ pub const fn edit_find() -> CommandText {
 
 /// `edit.redact`
 ///
-/// ★★★ **The closing clause must NOT read *"Marking is reversible; applying is
+/// **The closing clause must NOT read *"Marking is reversible; applying is
 /// not."*** On the default destination, applying arms the next save rather
 /// than rewriting at the click: the undo log survives, the page does not
 /// change, and a Cancel disarms it.
@@ -910,7 +910,7 @@ pub const fn edit_find() -> CommandText {
 /// *when*, never *whether*.
 ///
 /// ⚠ This tooltip and `crate::text::redact::panel_intro` describe the same
-/// staging to the same operator, and are worded to match on purpose — ★ **a
+/// staging to the same operator, and are worded to match on purpose — **a
 /// change to one is a change to both**, or an operator comparing them is
 /// comparing two accounts. A change to the panel's catalog that leaves this
 /// one alone is precisely how they last came apart.
@@ -926,7 +926,7 @@ pub const fn edit_redact() -> CommandText {
 
 /// `edit.redact_apply`
 ///
-/// ★★★ **It must not say *"This cannot be undone."*** — see [`edit_redact`]
+/// **It must not say *"This cannot be undone."*** — see [`edit_redact`]
 /// above for the whole account. On the default destination the click stages
 /// the removal into the next save
 /// (`crate::redact::stage_into_session`), which is undoable and cancellable;
@@ -945,7 +945,7 @@ pub const fn edit_redact_apply() -> CommandText {
 
 /// `edit.undo`
 ///
-/// # ★ Why this does NOT name the operation, and what it would take to
+/// # Why this does NOT name the operation, and what it would take to
 ///
 /// The engine supplies everything a named one would need:
 /// `EditSession::undo_kind` answers *what would be undone* without undoing it,
@@ -999,7 +999,7 @@ pub const fn edit_redo() -> CommandText {
 // ===========================================================================
 // MARKUP AND MEASURE — in `annotate`
 //
-// ★ **A module of its own under R2**, at the seam that module's header argues
+// **A module of its own under R2**, at the seam that module's header argues
 // for: these two tabs are what an operator *adds on top of* the page,
 // which is the line `app::modes::Capabilities` already draws between
 // `edit_content` and the two authoring flags, and the line `shell::manifest`
@@ -1022,7 +1022,7 @@ pub use annotate::{
     measure_two_line,
 };
 
-/// ★ The five Format ▸ Markup controls, a module of their own under **R2**.
+/// The five Format ▸ Markup controls, a module of their own under **R2**.
 /// The seam is [`annotate`]'s, one step along the same line — that module
 /// holds the strings of the commands that
 /// **place** a mark, and this one the strings of the commands that **restyle
@@ -1035,7 +1035,7 @@ pub use markupstyle::{
     format_opacity,
 };
 
-/// ★ The four Markup ▸ Arrange controls, a module of their own under **R2**
+/// The four Markup ▸ Arrange controls, a module of their own under **R2**
 /// for [`markupstyle`]'s reason and along the same seam one step further:
 /// [`annotate`] holds the strings of the commands that **place** a mark,
 /// `markupstyle` those that **restyle** one already placed, and this one those

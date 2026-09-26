@@ -14,7 +14,7 @@ use crate::text::clipboard::ModeRefusal;
 /// [`super::record`]'s call site, not [`super::record_save_failure`]'s, and the
 /// distinction is the one those two functions' docs already draw.
 ///
-/// ★ It takes the [`ModeRefusal`] rather than deriving one from a command id
+/// It takes the [`ModeRefusal`] rather than deriving one from a command id
 /// and a `Capabilities`, because the caller is the only place that knows
 /// **both** the verb and the operand — the dispatcher has just matched on what
 /// is on the clipboard in order to choose the gate, and asking it to hand over

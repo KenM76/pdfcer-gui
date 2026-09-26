@@ -27,7 +27,7 @@ pub(super) fn tab() -> Tab {
             // away.
             //
             //
-            // ★ `Recent ⌄` is an `Item::Custom`, not a command item, and that
+            // `Recent ⌄` is an `Item::Custom`, not a command item, and that
             // is the only structural oddity on this tab.
             //
             // §5.1 specifies it as `Recent ⌄` — a *gallery*, not a button —
@@ -61,7 +61,7 @@ pub(super) fn tab() -> Tab {
             // ---------------------------------------------------------------
             // Recognise — OCR.
             //
-            // ★ `RIBBON_IA.md` §5.7 puts this on **Tools**, and it is here
+            // `RIBBON_IA.md` §5.7 puts this on **Tools**, and it is here
             // instead. The whole argument is in `super::tools`'s header, where a
             // reader looking for it in the specified place will find it; the
             // short version is that Read's tab list is `["file", "view"]`, so a
@@ -88,13 +88,13 @@ pub(super) fn tab() -> Tab {
             group(
                 "save",
                 ribbon::group_file_save(),
-                // ★★ Third and last in the group, which is the order of
+                // Third and last in the group, which is the order of
                 // increasing consequence: overwrite what you have, write
                 // another one beside it, write another one that has dropped
                 // things. A destructive-adjacent command at the bottom of a
                 // group is one an operator arrives at deliberately.
                 [
-                    // ★ Large — the mockup's `Save` big, with the three
+                    // Large — the mockup's `Save` big, with the three
                     // qualified saves in a column beside it. First in the
                     // group already, so the hoist is a no-op.
                     large("file.save"),
@@ -165,7 +165,7 @@ pub(super) fn tab() -> Tab {
                     command("file.export_dxf"),
                     command("file.export_image"),
                     //
-                    // ★ Its natural neighbours are the two copy-text verbs at
+                    // Its natural neighbours are the two copy-text verbs at
                     // the end of this band, and it is deliberately NOT beside
                     // them. Those two write to the **clipboard**; this writes a
                     // file, which is what every control from `export_dxf` to
@@ -177,7 +177,7 @@ pub(super) fn tab() -> Tab {
                     command("file.export_text"),
                     command("file.import_text"),
                     //
-                    // ★ **No import twin beside it, and none is missing.** The
+                    // **No import twin beside it, and none is missing.** The
                     // three pairs above are pairs because their formats are not
                     // PDF and something has to convert. A stamp collection is a
                     // PDF, so its import is `file.open` on the File tab's first
@@ -186,7 +186,7 @@ pub(super) fn tab() -> Tab {
                     // about controls that promise nothing new applies.
                     command("file.stamp_collection"),
                     command("file.export_form_data"),
-                    // ★ Import directly after export, in that order, because
+                    // Import directly after export, in that order, because
                     // the pair is a round trip and an operator meets the half
                     // they will do first. It is also the order of increasing
                     // consequence: exporting reads, importing writes.
@@ -196,7 +196,7 @@ pub(super) fn tab() -> Tab {
                 ],
             ),
             // ---------------------------------------------------------------
-            // ★★★ SECURITY — `OPERATOR_REQUESTS.md` **O119**, approved and
+            // SECURITY — `OPERATOR_REQUESTS.md` **O119**, approved and
             // wired 2026-09-04: *"yes add encryption and permissions"*.
             //
             // # Placement: immediately after Export, and it is the mockup's
@@ -233,7 +233,7 @@ pub(super) fn tab() -> Tab {
             // of them is an undoable content edit, and all three produce a new
             // document rather than changing the one on screen.
             //
-            // ★★ **NOT beside the Signatures PANEL, which is the other
+            // **NOT beside the Signatures PANEL, which is the other
             // candidate and is wrong twice over.** `view.panel_signatures` is
             // on View ▸ Panels, and `RIBBON_IA.md` P1 — enforced by
             // `Shell::validate` — allows a command on at most one tab; a second
@@ -244,7 +244,7 @@ pub(super) fn tab() -> Tab {
             // panel is where a signature is READ; this is where one is MADE,
             // and the two are one tab apart on purpose.
             //
-            // # ★★★ `capability: "signing"` — the whole of R8, in one field
+            // # `capability: "signing"` — the whole of R8, in one field
             //
             // The item is here **unconditionally**: there is no `#[cfg]` in
             // this file, and there must never be one. The string tells the
@@ -284,7 +284,7 @@ pub(super) fn tab() -> Tab {
             // cannot tell you whether a document is encrypted is doing
             // half its job, and the status bar carries that fact today.
             //
-            // ★★★ **THREE controls since 2026-09-05, and the new one is first**
+            // **THREE controls since 2026-09-05, and the new one is first**
             // — the operator: *"the document properties are still always
             // visible in the properties tab. it needs to get out of there and
             // be in its own document properties tab."*
@@ -303,7 +303,7 @@ pub(super) fn tab() -> Tab {
             // is on my screen'"*), and this is the same claim about a smaller
             // dictionary.
             //
-            // # ★ FIRST in the band, ahead of the control it was cut out of
+            // # FIRST in the band, ahead of the control it was cut out of
             //
             // Two reasons, and the second is the one that decided it.
             //
@@ -357,7 +357,7 @@ pub(super) fn tab() -> Tab {
                 "pdfcer",
                 ribbon::group_file_pdfcer(),
                 [
-                    // ★ Large — the mockup's `Settings…` big. First in the
+                    // Large — the mockup's `Settings…` big. First in the
                     // group already.
                     large("file.settings"),
                     command("file.shortcuts"),

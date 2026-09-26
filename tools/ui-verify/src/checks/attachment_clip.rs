@@ -12,7 +12,7 @@ use crate::report::CheckReport;
 
 /// Edit mode, then the panel, through the harness seam.
 ///
-/// ★★ NOT `click_mode_segment` plus a ribbon click. The ribbon shows one tab at
+/// NOT `click_mode_segment` plus a ribbon click. The ribbon shows one tab at
 /// a time and this check leaves the operator on whichever tab the mode selector
 /// last drew — which on the first run was File, so
 /// `ribbon.item.edit.attachments` was simply not on screen and the check
@@ -28,9 +28,9 @@ const PANEL_ITEM: &str = "ribbon.item.edit.attachments";
 const CENSUS: &str = "attachments-panel"; // ui-text-exempt: a trace event name, never displayed
 /// The line the attach writes when it has read the file.
 const ATTACHED: &str = "attach-file"; // ui-text-exempt: a trace event name, never displayed
-/// ★ The line the Copy button writes.
+/// The line the Copy button writes.
 const COPIED: &str = "attachment-copied"; // ui-text-exempt: a trace event name, never displayed
-/// ★ The line this check exists to read.
+/// The line this check exists to read.
 const PASTED: &str = "paste-attachment-requested"; // ui-text-exempt: a trace event name
 /// The Attach control, used to put a file in document 1 in the first place.
 const ATTACH_REGION: &str = "attachments.attach"; // ui-text-exempt: a trace region name
@@ -38,7 +38,7 @@ const ATTACH_REGION: &str = "attachments.attach"; // ui-text-exempt: a trace reg
 const COPY_REGION: &str = "attachments.copy"; // ui-text-exempt: a trace region name
 /// The Paste control — absent, per R9, when the clipboard holds nothing.
 const PASTE_REGION: &str = "attachments.paste"; // ui-text-exempt: a trace region name
-/// ★★★ The paste's verdict about replacement, as ONE of a pair.
+/// The paste's verdict about replacement, as ONE of a pair.
 ///
 /// The first version of this check asserted `attachments.paste.replaces` was
 /// **absent** in the second document, and FAILED against a correct build —
@@ -157,7 +157,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // --- open the Attachments panel ----------------------------------------
     //
     //
-    // ★ The ribbon item may also be absent from THIS tab: the ribbon shows one
+    // The ribbon item may also be absent from THIS tab: the ribbon shows one
     // tab at a time, so `ribbon.item.edit.attachments` is not declared unless
     // the Edit tab is the one showing. Absence is therefore not a failure, and
     // the census below is the real precondition.
@@ -178,7 +178,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★★★ THE CONTROL POINT. With nothing on the clipboard the Paste control
+    // THE CONTROL POINT. With nothing on the clipboard the Paste control
     // must be ABSENT — R9's rule that an unavailable capability renders nothing
     // rather than a greyed stub. Without this, a build that drew the button
     // unconditionally would satisfy every step below.
@@ -302,7 +302,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    // ★★ WHICHEVER CAME LAST, never "is one absent". See `REPLACES_REGION`.
+    // WHICHEVER CAME LAST, never "is one absent". See `REPLACES_REGION`.
     let verdict = declared_names(&trace, ui_rect, "attachments.paste.")
         .into_iter()
         .rfind(|n| n == REPLACES_REGION || n == FRESH_REGION);
@@ -380,7 +380,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
 /// The panel's `count=`, or `None` when the panel has not drawn.
 ///
-/// ★ `None` and `Some(0)` are different answers and the distinction is the
+/// `None` and `Some(0)` are different answers and the distinction is the
 /// whole of the ask-then-toggle rule above: *"the panel is not on screen"* and
 /// *"the panel is on screen and this document has no attachments"* look
 /// identical to any check that collapses them, and the remedies are opposite.

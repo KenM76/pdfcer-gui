@@ -20,7 +20,7 @@ The same failure at two scales, and the same shape at both: a zoom
 | at fit-page zoom | `geometry::zoom_anchor_offset` clamped to `display - viewport`, which is **zero or negative** when the page is no larger than the viewport — so the offset was forced to 0, the centred position |
 | at ~2,100,000 % | the `f64` tier's anchor was seeded from the **previous frame's** scroll offset, and then never moved on a zoom at all |
 
-# ★★ Why this is not the same check as O24c's
+# Why this is not the same check as O24c's
 
 `panning_at_deep_zoom_stays_where_it_was_put` asks whether a **pan** moves
 the view and whether the pixels land in the right place. This asks whether a
@@ -34,7 +34,7 @@ after each zoom. Zoom-to-cursor holds the point under the *pointer*, and
 this check puts the pointer at the centre, so a correct build keeps that
 page point fixed however deep it goes.
 
-★ Measured in page units rather than screen pixels, deliberately. Screen
+Measured in page units rather than screen pixels, deliberately. Screen
 pixels are what the defect happens in, but page units are what "the same
 place on the drawing" means — and the tolerance has to shrink with the zoom,
 or a check at a million percent would quietly accept a metre of drift.

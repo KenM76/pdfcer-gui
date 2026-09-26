@@ -8,7 +8,7 @@ The whole of Find, across three files:
 | [`bar`] | the floating box: where it sits, the field, the step buttons, the readout, the options menu, and the three keys the field owns |
 | [`reveal`] | how one hit reaches the operator's eye — the two-frame handshake, the scroll solve, and the projection out of PDF space |
 
-## ★ The trap, stated first because it is the whole reason this module
+## The trap, stated first because it is the whole reason this module
 is written the way it is
 
 `EditSession` has two search verbs and they are **not** interchangeable:
@@ -48,7 +48,7 @@ wildcards off for its own search or refuse while they are on;
 two match literally-versus-not, so the words exist and only the control
 is missing.
 
-## ★ Where the bar is, and why
+## Where the bar is, and why
 
 **A compact box floating over the top-right of the page**, drawn as an
 `egui::Area` positioned from the canvas viewport's own rect — not from the
@@ -85,7 +85,7 @@ of its own: it is anchored by its top-right corner, so a width that changed
 with the readout's text would move every control on it. [`bar`]'s header
 carries that argument.
 
-## ★ What happens to stale results
+## What happens to stale results
 
 **An edit clears the highlights, keeps the query, and says so.**
 
@@ -120,7 +120,7 @@ places `crate::panels::PanelsState::forget_document` is
 naming pages of a file that is no longer open is not stale, it is
 nonsense.
 
-## ★ Searching is not free, and nothing here searches on a keystroke
+## Searching is not free, and nothing here searches on a keystroke
 
 [`pdfcer_core::edit::EditSession::find_text_with`] runs
 `text_extract::extract_document_view` over the **whole document** on

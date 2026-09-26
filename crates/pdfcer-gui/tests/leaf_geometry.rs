@@ -11,7 +11,7 @@
 //! index space. This is what says they answer *correctly* for the space that
 //! had no answer before.
 //!
-//! ## ★★★ Why an integration test on a real file, not a unit test on a stub
+//! ## Why an integration test on a real file, not a unit test on a stub
 //!
 //! Because the thing under test is a **geometry mapping**, and the stub
 //! (`canvas::target::StubTargets`) carries rectangles rather than paths: it can
@@ -24,7 +24,7 @@
 //! one form, at coordinates its generator states — and checks the numbers that
 //! come back against the numbers the generator wrote.
 //!
-//! ## ★★ The number that matters, and why it is a MAGNITUDE
+//! ## The number that matters, and why it is a MAGNITUDE
 //!
 //! A `FormLeaf`'s geometry is *"already mapped into page space"* — the engine's
 //! phrase — so the placement offset the fixture applies (`1 0 0 1 40 40 cm`)
@@ -52,7 +52,7 @@ fn provider() -> ObjectModelProvider {
 
 /// The fixture's shape, asserted before anything is asked of it.
 ///
-/// ★ A precondition rather than a subject: every test below indexes leaf 0, and
+/// A precondition rather than a subject: every test below indexes leaf 0, and
 /// on a file that decomposed differently they would all fail with messages
 /// about geometry when the truth was that the fixture had changed.
 #[test]
@@ -67,7 +67,7 @@ fn the_fixture_is_one_container_over_three_strokes() {
     assert_eq!(model.leaves.len(), 3, "three strokes inside it");
 }
 
-/// ★★★ **A leaf's anchors come back in PAGE space, placement included.**
+/// **A leaf's anchors come back in PAGE space, placement included.**
 ///
 /// The horizontal bar is drawn at `20,110 → 300,110` inside a form placed at
 /// `(40, 40)`, so its anchors are at `y = 150` and `x` from 60 to 340.
@@ -97,7 +97,7 @@ fn a_leafs_anchors_carry_the_forms_placement() {
     );
 }
 
-/// ★★ **The anchor indices are object-scoped and start at zero per object.**
+/// **The anchor indices are object-scoped and start at zero per object.**
 ///
 /// The node verbs take an index in that space, so a leaf whose anchors were
 /// numbered from somewhere else would move the wrong point — and the numbers
@@ -119,7 +119,7 @@ fn the_anchor_indices_are_object_scoped() {
 
 /// A leaf that is a path has a Part rung; the container above it does not.
 ///
-/// ★ The second half is the interesting one. `TargetId::Object(0)` is the form
+/// The second half is the interesting one. `TargetId::Object(0)` is the form
 /// XObject, which the decomposition reports as an `Image`-family object with no
 /// subpaths — so a double-click on the container must not offer a Part rung,
 /// and this is where that answer comes from.
@@ -142,7 +142,7 @@ fn a_path_leaf_has_parts_and_the_container_does_not() {
     );
 }
 
-/// ★ **An index the page does not have answers empty, not a panic.**
+/// **An index the page does not have answers empty, not a panic.**
 ///
 /// The contract every accessor on this provider inherits: a selection can
 /// outlive an edit that removed what it named, and the frame that is trying to

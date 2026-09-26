@@ -11,7 +11,7 @@ it.**
 > dialogue box to place it with the mouse instead of by positional
 > co-ordinates."*
 
-## ★★★ Why this needs a DRIVEN check and not only unit tests
+## Why this needs a DRIVEN check and not only unit tests
 
 Every piece of this arm is unit-tested and every piece passes in isolation:
 `canvas::placing`'s arm/cancel/result cycle, `dialogs::placing`'s derived
@@ -25,7 +25,7 @@ That is the shape this project has shipped broken before: every part tested,
 the join untested, the join wrong. Eight green unit tests once sat under a
 feature that did one of its fourteen steps.
 
-## ★★ The oracle is the REGION'S ABSENCE, and that is deliberate
+## The oracle is the REGION'S ABSENCE, and that is deliberate
 
 `dialogs::insert_image` publishes `insert-image.place` on every frame it
 draws. While a placement is pending it draws nothing at all — its `show`
@@ -48,12 +48,12 @@ line, ask what else happened.
 | C | click the page | `place-result kind=Image llx=… lly=…` |
 | D | the window is back | `insert-image.place` declared again |
 
-★ Step C asserts the **result**, not an inserted image, because the button
+Step C asserts the **result**, not an inserted image, because the button
 places nothing: it fills the numbers in and the operator still presses
 Insert. Asserting an insert here would assert a different feature, and would
 pass against a build that bypassed the dialog entirely.
 
-## ★★ What this check deliberately does NOT drive: Escape
+## What this check deliberately does NOT drive: Escape
 
 The other half of O66 is that Escape abandons a placement and brings the
 window back. It is not driven here, and the reason is not laziness:

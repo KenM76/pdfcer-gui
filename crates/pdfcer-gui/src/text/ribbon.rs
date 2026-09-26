@@ -233,7 +233,7 @@ pub fn group_view_navigate() -> &'static str {
     "Navigate"
 }
 
-/// ★ The left rail's **Select** group caption — `OPERATOR_REQUESTS.md` O123.
+/// The left rail's **Select** group caption — `OPERATOR_REQUESTS.md` O123.
 ///
 /// *"the navigate selectors and some other related selection controls (lasso
 /// tool when we implement one, etc)"*. His word for the group, and the group
@@ -247,7 +247,7 @@ pub fn group_rail_select() -> &'static str {
     "Select"
 }
 
-/// ★ The left rail's **Rotate** group caption — `OPERATOR_REQUESTS.md` O126.
+/// The left rail's **Rotate** group caption — `OPERATOR_REQUESTS.md` O126.
 ///
 /// *"also add rotate pages to that area, and those should be available in
 /// every mode including read."*
@@ -292,7 +292,7 @@ pub fn group_pages_insert() -> &'static str {
 
 /// Pages ▸ Clipboard.
 ///
-/// ★ The same caption as Edit ▸ Clipboard, deliberately. Two bands on two tabs
+/// The same caption as Edit ▸ Clipboard, deliberately. Two bands on two tabs
 /// with one name is normally a smell; here it is the point — an operator
 /// looking for a clipboard finds a band called Clipboard on whichever tab they
 /// happen to be on, and the tab tells them what it acts on.
@@ -335,7 +335,7 @@ pub fn group_edit_insert() -> &'static str {
 
 /// Edit ▸ Clipboard.
 ///
-/// ★★ **Back on 2026-08-19**, and the note below — which explains why it was
+/// **Back on 2026-08-19**, and the note below — which explains why it was
 /// deleted — is kept verbatim because its reasoning was right and only its
 /// premise expired. It ends *"the next author of an object clipboard needs the
 /// word — which is right here"*, and that is exactly what happened: the word was
@@ -471,7 +471,7 @@ pub fn group_tools_diagnostics() -> &'static str {
 
 /// Format ▸ Font.
 ///
-/// ★★ **"Font", not "Text" and not "Type"**, and the choice is the operator's
+/// **"Font", not "Text" and not "Type"**, and the choice is the operator's
 /// rather than this file's. Word calls this group *Font*; so does every office
 /// suite that copied Word, which is all of them. `RIBBON_IA.md` §5.8 lists the
 /// controls individually — *Font · Size · Colour · Spacing · Alignment* —
@@ -479,7 +479,7 @@ pub fn group_tools_diagnostics() -> &'static str {
 /// convention of the product class is the specification wherever the
 /// specification is silent.
 ///
-/// ★ It is deliberately **not** disambiguated to something like *"Text style"*
+/// It is deliberately **not** disambiguated to something like *"Text style"*
 /// on the grounds that the first control inside it is also called Font. Word
 /// has exactly that repetition, has had it since 2007, and nobody has ever
 /// been confused by it: the caption names the subject and the control names
@@ -498,7 +498,7 @@ pub fn group_format_font() -> &'static str {
 /// will until `EditSession` grows a verb are named in `manifest::PLANNED`. So
 /// this band carries what can be done to any selection, whatever it is.
 ///
-/// ★ It stopped being the tab's **only** band on 2026-08-27, when the text
+/// It stopped being the tab's **only** band on 2026-08-27, when the text
 /// run's row of §5.8's table shipped as [`group_format_font`]. That is worth
 /// noting here rather than only there, because this caption's own doc comment
 /// used to assert *"the tab ships with the one band whose content is real"* —
@@ -517,7 +517,7 @@ pub fn group_format_selection() -> &'static str {
 /// `manifest::PLANNED`, and Delete is the [`group_format_selection`] band's,
 /// which is where §5.8 puts it for **every** selection type.
 ///
-/// # ★★ "Markup", not "Mark", "Annotation", "Shape" or "Style"
+/// # "Markup", not "Mark", "Annotation", "Shape" or "Style"
 ///
 /// - **"Annotation"** is the PDF word. `crate::text::paint`'s rule for this
 ///   catalog — *"'Fill' and 'Line', not 'fill' and 'stroke'; stroke is the PDF
@@ -545,7 +545,7 @@ pub fn group_format_markup() -> &'static str {
 // ---------------------------------------------------------------------------
 // FORMAT ▸ MARKUP — the words inside the band's own controls
 //
-// ★★★ **Only the strings with no Properties-panel twin live here.** The
+// **Only the strings with no Properties-panel twin live here.** The
 // panel's *This mark* section (`panels::properties::markup`) already names the
 // width suffix, the opacity suffix, the Clear button and the locked sentence,
 // and `app::markupband` reads all four from `crate::text::panels::properties`
@@ -562,7 +562,7 @@ pub fn group_format_markup() -> &'static str {
 /// The fill swatch's *no fill* state — `MarkupStyle::interior` set to
 /// `StyleEdit::Clear`.
 ///
-/// # ★★★ Why this is a named state and not an absent control
+/// # Why this is a named state and not an absent control
 ///
 /// `canvas::markup::spec` authors every shape with `interior: None`, and its
 /// reason is quoted in `panels::properties::markup`'s header: *"a filled
@@ -572,7 +572,7 @@ pub fn group_format_markup() -> &'static str {
 /// set one would be a one-way door: try a fill on a drawing, decide against it,
 /// and there is no way back to the mark you had.
 ///
-/// ★ *"No fill"*, not [`crate::text::panels::properties::markup_clear`]'s
+/// *"No fill"*, not [`crate::text::panels::properties::markup_clear`]'s
 /// *"Clear"*, although both raise `StyleEdit::Clear`. "Clear" is honest about
 /// the **act** — it removes the key, and what applies afterwards is the
 /// standard's default rather than anything pdfcer remembers — and that is the
@@ -587,7 +587,7 @@ pub fn markup_no_fill() -> &'static str {
 
 /// The four positions the arrowhead chooser offers, in the order it draws them.
 ///
-/// # ★★★ Positions, not pairs
+/// # Positions, not pairs
 ///
 /// `/LE` is two independent endings (§12.5.6.7, Table 176) over three shapes
 /// each — nine combinations, which is not a list anybody reads on a ribbon
@@ -596,14 +596,14 @@ pub fn markup_no_fill() -> &'static str {
 /// arrowhead stays closed and an open one stays open. These are the names of
 /// those four positions.
 ///
-/// ★ The order is *fewest endings first*, which is also increasing commitment
+/// The order is *fewest endings first*, which is also increasing commitment
 /// and is the same reading order §5.8's menu rule gives a group. It puts the
 /// state pdfcer authors — a head at the end only, `(None, OpenArrow)` in
 /// `canvas::markup` — third rather than first, and that is correct: the list is
 /// ordered by what it does, not by what is common, because an operator scanning
 /// four entries for "both" should find it at the end every time.
 ///
-/// ★★ *"Start"* and *"end"*, not *"first point"* and *"last point"* and not
+/// *"Start"* and *"end"*, not *"first point"* and *"last point"* and not
 /// *"tail"* and *"head"*. The first pair is the file's vocabulary (`/L` is
 /// `[x1 y1 x2 y2]`), the second is a draughtsman's, and the operator's is the
 /// direction they dragged: an arrow points where the drag finished.

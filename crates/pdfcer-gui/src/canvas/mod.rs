@@ -16,7 +16,7 @@
 pub mod form_marks;
 pub mod formfield;
 pub mod forms;
-/// ★ Pointing at the page instead of typing coordinates — `OPERATOR_REQUESTS.md`
+/// Pointing at the page instead of typing coordinates — `OPERATOR_REQUESTS.md`
 /// O66. A shared arm, not a feature of one dialog: his sentence was about
 /// *"anything we are inserting"*.
 pub mod placing;
@@ -41,7 +41,7 @@ pub mod gesture;
 mod viewpos;
 // Draggable alignment lines: what a guide belongs to, where it lives on disk,
 // and why grabbing one cannot also start a marquee.
-/// ★★★ **The annotation half of the canvas clipboard** — split out of
+/// **The annotation half of the canvas clipboard** — split out of
 /// `clipboard` on 2026-09-05 under R2, along the annotation-versus-content
 /// seam. Its header carries the finding that made the split worth making:
 /// `pdfcer-core`'s lossless annotation route is **lossy for exactly the
@@ -64,7 +64,7 @@ pub mod guides;
 // drag that moves, adds or removes one. The operator's *"I also can't edit or
 // delete nodes of a markup shape once it is drawn."*
 pub mod annotnodes;
-/// ★ **Where an annotation's artwork ACTUALLY sits** — its four page-space
+/// **Where an annotation's artwork ACTUALLY sits** — its four page-space
 /// corners, at whatever angle its appearance `/Matrix` puts them, plus the
 /// angle itself when the matrix is one. The operator's *"the box outlined when
 /// an object is selected should be in the same angled orientation as the
@@ -73,35 +73,35 @@ pub mod annotnodes;
 /// **A declared workaround** — its header says what is filed at the engine and
 /// carries the tripwire that fires when the answer arrives.
 pub mod annotquad;
-/// ★ **The boxes that show what a text block is made of** — one outline per
+/// **The boxes that show what a text block is made of** — one outline per
 /// chunk of the selected text, so the unit a click is aiming at is visible
 /// before the click. `OPERATOR_REQUESTS.md` O215 ask 3; its header carries why
 /// that is a prerequisite for ask 1 rather than decoration.
 pub mod chunks;
-/// ★ Dragging a **Bézier handle** — the last Phase 1 row, and one `pdfcer`'s
+/// Dragging a **Bézier handle** — the last Phase 1 row, and one `pdfcer`'s
 /// own `gui` column ticked `[x]` while nothing here drew a handle at all.
 /// `EditSession::move_handle` had existed since Pass 30.1; what was missing was
 /// a way to see one and a way to grab one.
-/// ★ **Cut, copy and paste on the canvas** — the operator's report of
+/// **Cut, copy and paste on the canvas** — the operator's report of
 /// 2026-08-19. Implements the row the engine can express (markup) and records
 /// the one it cannot (page content) as a dated citation rather than a promise.
-/// ★ **What a click MEANS** — the eight-rung ladder that decides whether a
+/// **What a click MEANS** — the eight-rung ladder that decides whether a
 /// completed click places an anchor, a caret, a vertex, a sticky, a dimension
 /// pick, a text sweep, an annotation selection or a content selection. Split
 /// out of `interact` under R2 on 2026-08-20; its header carries the order and
 /// why each rung sits where it does.
 pub mod clicking;
 pub mod clipboard;
-/// ★ **What Shift does to a drag** - the axis lock and the aspect lock, written
+/// **What Shift does to a drag** - the axis lock and the aspect lock, written
 /// down once for the five drags that share them. `ui-conventions/drag-moves.md`
 /// D5, found absent from every one of them by the conventions sweep of
 /// 2026-08-20. Its header carries why one module rather than five call sites.
 pub mod constrain;
-/// ★ **Would a cut survive?** — the pre-press gate the engine asked for, asked
+/// **Would a cut survive?** — the pre-press gate the engine asked for, asked
 /// from the cheap side. Its header carries why it mirrors their rule instead of
 /// calling it, and why the mirror is deliberately permissive.
 pub mod cutgate;
-/// ★★★ **Which delete verb the rung the operator is on reaches** — the twin of
+/// **Which delete verb the rung the operator is on reaches** — the twin of
 /// [`moving`]'s `eligible`, and the answer to a Delete that traced
 /// `no-verb-for-rung` and did nothing at all for the whole life of this shell.
 ///
@@ -126,13 +126,13 @@ pub mod dimdrag;
 /// under R2; its header carries the argument that a fork whose branches can
 /// all answer "not mine" eats the gesture.
 pub mod dragroute;
-/// ★ **The FORM-FIELD clipboard** (O58) — separate from [`clipboard`] because a
+/// **The FORM-FIELD clipboard** (O58) — separate from [`clipboard`] because a
 /// `/Widget` is not an annotation selection here, so nothing there can see one.
 pub mod fieldclip;
 pub mod grid;
 pub mod handledrag;
 pub mod handles;
-/// ★ **What a press would land on, and what it would mean.** Split out of
+/// **What a press would land on, and what it would mean.** Split out of
 /// `interact` under R2; its header carries the four-way precedence between a
 /// Bézier handle, an anchor, a resize grip and the selection body — the single
 /// most bug-prone rule on this canvas, learned three separate times in one day.
@@ -149,7 +149,7 @@ pub mod widgetdrag;
 pub mod input;
 pub mod interact;
 pub mod keys;
-/// ★★ **Following a `/Link`** — the hit test, the pointing hand, and the
+/// **Following a `/Link`** — the hit test, the pointing hand, and the
 /// four sentences for the four destinations this program cannot perform.
 /// New on 2026-09-01: until the engine shipped `DestinationReader` a
 /// link's destination could not be READ at all, so there was no
@@ -158,7 +158,7 @@ pub mod keys;
 /// defect, and why the affordance is a cursor and never a mark on the page.
 pub mod links;
 pub mod mapping;
-/// ★★ **What a rubber-band takes, and why the DIRECTION decides it** —
+/// **What a rubber-band takes, and why the DIRECTION decides it** —
 /// `OPERATOR_REQUESTS.md` O88. Left to right encloses, right to left
 /// touches; AutoCAD's window / crossing-window rule. Split out of
 /// [`interact`] on 2026-09-02 under R2. Its header carries the operator's
@@ -175,7 +175,7 @@ pub mod menus;
 /// O204's reveal. A one-shot parked on the document and spent by [`offset`]'s
 /// ranked chain; its header carries why it cannot be `destscroll` with a flag.
 pub mod minreveal;
-// ★★★ The frame's ONE question about the page's object model: does anything
+// The frame's ONE question about the page's object model: does anything
 // this frame does need a decomposition? It was four lines inside
 // `canvas::interact` — a hand-maintained `matches!` over `GestureOutcome` that
 // had been the defect four separate times, most recently for a subject a list
@@ -188,12 +188,12 @@ pub mod modelneed;
 // module is already 1,352 lines and owns *what is selected*, while this owns
 // *what happens when you drag it*.
 pub mod moving;
-/// ★★ **Tab walks the objects on the page** — `OPERATOR_REQUESTS.md`
+/// **Tab walks the objects on the page** — `OPERATOR_REQUESTS.md`
 /// O204, the canvas half. Pure over a provider and a pick filter; its
 /// header carries why the ring is scoped to whatever the selection is
 /// standing in rather than to the page’s own paint order.
 pub mod objring;
-/// ★★ **The invisible text a scan carries, drawn** — `OPERATOR_REQUESTS.md`
+/// **The invisible text a scan carries, drawn** — `OPERATOR_REQUESTS.md`
 /// O226 and O229. Two layers at two places in `painting`'s order: a paper veil
 /// that fades the raster without re-rendering it, and the recognised runs laid
 /// out as vector text in a colour the operator chooses. Its header carries why
@@ -201,7 +201,7 @@ pub mod objring;
 /// than a smudge.
 pub mod ocrlayer;
 pub mod overlay;
-/// ★ The application's own colour ROLES — `preview` and `dimension_selected` —
+/// The application's own colour ROLES — `preview` and `dimension_selected` —
 /// built from the resolved theme's palette and published per frame.
 ///
 /// `egui_shell::theme::Overlays` is a generic role map because **R7** forbids
@@ -219,7 +219,7 @@ pub mod overlays;
 /// panel — possibly in another document — end here.
 pub mod pagedrop;
 
-/// ★★★ **Reading a comment where the comment is** — the pop-up window a click
+/// **Reading a comment where the comment is** — the pop-up window a click
 /// on a note opens, and the tooltip a hover shows.
 ///
 /// The operator, 2026-09-05: *"I could add a yellow sticky note but even in
@@ -238,7 +238,7 @@ mod paging;
 // run above `present`'s early return -- O186. Its header carries why the
 // return is not simply moved, and which handlers are deliberately absent.
 mod escape;
-/// ★★★ **Reaching an object that is off the page** — which of the canvas's
+/// **Reaching an object that is off the page** — which of the canvas's
 /// two interactive rectangles owns this frame's gesture.
 ///
 /// O23's second half. The operator, 2026-09-10: *"how do I view and edit
@@ -257,11 +257,11 @@ pub mod pasteboard;
 /// decision 2. One keyboard-only widget per drawn page, so `Memory::focused`
 /// names a page instead of nothing and Tab stops falling to the ribbon.
 mod pagefocus;
-/// ★ Everything the canvas draws, once everything is decided — lifted out of
+/// Everything the canvas draws, once everything is decided — lifted out of
 /// [`interact`] when that file crossed R2's ceiling. Its header carries the
 /// layer order and the argument for each position in it.
 mod painting;
-/// ★★ **What a click is ALLOWED to land on** — the operator's selection
+/// **What a click is ALLOWED to land on** — the operator's selection
 /// filter, and the eleven classes it switches.
 ///
 /// `OPERATOR_REQUESTS.md` O17. This is the replacement for Edit ▸ Content's
@@ -277,13 +277,13 @@ mod painting;
 pub mod pick;
 pub mod resizing;
 pub mod rightclick;
-/// ★★ **The ninth grip** — the rotate handle above the selection box, and the
+/// **The ninth grip** — the rotate handle above the selection box, and the
 /// one gesture the eight could never express. `ui-conventions/handles.md` H2,
 /// and the third word of the operator's *"reposition, resize, or rotate"*. Its
 /// header carries why a rotation is not a resize with different arithmetic:
 /// the pointer's DISTANCE from the centre must mean nothing.
 pub mod rotating;
-/// ★★ **The discoverable route to ONE LINE of a text block** — the
+/// **The discoverable route to ONE LINE of a text block** — the
 /// right-click row that descends to the Part rung on a multi-line text
 /// object. O188(A): that rung was reachable by exactly one chord-armed
 /// gesture and was announced on no surface. Its header carries the operand
@@ -294,7 +294,7 @@ pub mod rotating;
 pub mod runmenu;
 /// The operand and preflight of `format.merge_text_runs`.
 pub mod runmerge;
-/// ★★ The eight resize grips, finally committing — built out of `move_nodes`
+/// The eight resize grips, finally committing — built out of `move_nodes`
 /// because `pdfcer-core` has no scale verb, which was re-derived against its
 /// source rather than taken from a note.
 /// **Which of the four canvas menus a secondary click opens.** Its header
@@ -323,7 +323,7 @@ pub mod selection;
 pub mod smart;
 // The GUI half of snapping: the zoom-invariant catch radius, the master/Alt
 // gates, the Tab cycle, the two-click confirm, and the indicator glyph.
-/// ★★★ **The shape itself, following your hand** — the live geometry preview
+/// **The shape itself, following your hand** — the live geometry preview
 /// (`OPERATOR_REQUESTS.md` O63).
 ///
 /// Its header carries the convention it **reverses** by operator ruling —
@@ -349,7 +349,7 @@ mod backdrop;
 /// intent and a per-stamp control would be showing a value it invented.
 pub mod stampfit;
 pub mod strip;
-/// ★★ **Tab moves through what the operator clicked on, not through the
+/// **Tab moves through what the operator clicked on, not through the
 /// ribbon** — `OPERATOR_REQUESTS.md` O204. The seam that takes the press
 /// off `egui` before its focus walk latches, and the pure ring step both
 /// canvas rings share. Its header carries why no other seam can work.
@@ -384,7 +384,7 @@ pub mod vertexroute;
 // paths that route through it.
 pub mod zoom;
 
-/// ★ **Drawing the canvas** — the scroll area, the pages in it and the
+/// **Drawing the canvas** — the scroll area, the pages in it and the
 /// geometry a frame hands back. Split out on 2026-08-29 when this file hit
 /// R2's ceiling for the second time in one day; its header carries why the
 /// seam is here and not in a shorter doc comment.
@@ -392,7 +392,7 @@ mod present;
 
 pub use present::{CANVAS_MARGIN, Sampled, show};
 
-// ★ `canvas::viewer` was a path before the split, because `canvas/mod.rs` had
+// `canvas::viewer` was a path before the split, because `canvas/mod.rs` had
 // `use crate::viewer;` at its top and `canvas::measure::resolve` reaches for it
 // by that name. Preserved as a re-export rather than fixing the caller: the
 // split was meant to move code, not to rename anything anybody says.

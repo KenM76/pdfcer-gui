@@ -46,7 +46,7 @@ whole of why zoom feels smooth:
   through `ViewFrame::zoom_commanded`: there is no gesture in flight, so
   waiting would just feel unresponsive.
 
-## ★ The strip, and the priority that keeps it affordable
+## The strip, and the priority that keeps it affordable
 
 Under a continuous mode several pages are visible at once, and
 [`crate::render::strip`]'s header sets out the whole scheduling rule. This

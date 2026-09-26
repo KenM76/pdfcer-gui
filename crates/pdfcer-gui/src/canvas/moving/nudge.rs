@@ -82,7 +82,7 @@ pub(crate) const FINE_STEP_PT: f32 = 0.25;
 
 /// The trace line a nudge writes.
 ///
-/// ★ Suffixed rather than bare, per `tools/gates/check-trace-names.py`: the edit
+/// Suffixed rather than bare, per `tools/gates/check-trace-names.py`: the edit
 /// funnel writes `move-annotation …` for the same edit, and two lines sharing a
 /// first token means `ui-verify`'s `last(name)` returns the wrong one.
 // ui-text-exempt: diagnostic trace name, never displayed
@@ -91,7 +91,7 @@ const TRACE: &str = "annot-nudge";
 /// **Which step this frame's modifiers ask for**, or `None` for a modifier
 /// shape this module does not claim.
 ///
-/// # ★★★ Why the modifiers are read rather than matched by `consume_key`
+/// # Why the modifiers are read rather than matched by `consume_key`
 ///
 /// [`egui::InputState::consume_key`] matches with
 /// [`egui::Modifiers::matches_logically`], whose documented behaviour is that
@@ -163,7 +163,7 @@ pub(crate) struct Frame<'a> {
 /// frame that carries no arrow — the overwhelmingly common case, and it costs
 /// one modifier read and four event scans.
 ///
-/// # ★★★ The guard, and it is the worst key in the application to get wrong
+/// # The guard, and it is the worst key in the application to get wrong
 ///
 /// `DEFECTS.md` D1 is *"I can't even click on an object and delete it by hitting
 /// the delete key"*, and its cause was a guard that asked **"is any widget
@@ -184,7 +184,7 @@ pub(crate) struct Frame<'a> {
 /// and **not** `text_edit_focused`, which would be the founding defect's
 /// spelling and would answer `false` for an operator who is visibly mid-word.
 ///
-/// ★ It is asked here rather than relied on from the caller even though
+/// It is asked here rather than relied on from the caller even though
 /// `canvas_keys` has already returned for the *widget* half. The two halves are
 /// different questions with different answers, the caller's guard is
 /// deliberately the narrow one so that Escape can still reach the draft-abandon
@@ -196,7 +196,7 @@ pub(crate) fn keys(
     selection: &SelectionState,
     actions: &mut Vec<Action>,
 ) -> usize {
-    // ★ The canvas caret owns the arrow keys while a draft is in flight. See
+    // The canvas caret owns the arrow keys while a draft is in flight. See
     // this function's own table for why the predicate is `composing` and not
     // `text_edit_focused`, and why asking it here is not a second copy of the
     // caller's guard.
@@ -209,7 +209,7 @@ pub(crate) fn keys(
         return 0;
     };
 
-    // ★ Counted per key rather than answered yes/no, because `key_pressed`
+    // Counted per key rather than answered yes/no, because `key_pressed`
     // includes key-repeat events and a held arrow must walk the mark rather
     // than move it once. `count_and_consume_key` does both halves in one call:
     // it reports how many presses arrived and takes them out of the queue, so
@@ -227,7 +227,7 @@ pub(crate) fn keys(
         let Some((ux, uy)) = direction(key) else {
             continue;
         };
-        // ★ The pattern is the modifiers actually held, not a constant. See
+        // The pattern is the modifiers actually held, not a constant. See
         // `step_for` for why a constant `NONE` would have matched `Alt+Up`.
         let count = ctx.input_mut(|i| i.count_and_consume_key(modifiers, key));
         if count == 0 {
@@ -259,7 +259,7 @@ fn nudge_once(
     actions: &mut Vec<Action>,
 ) -> bool {
     let Some(annot) = selection.annot() else {
-        // ★★ Two states share this branch and only one of them is silent, which
+        // Two states share this branch and only one of them is silent, which
         // is the split `crate::text::arrange::NudgeRefusal`'s own doc argues:
         //
         // * **nothing selected** — silent. The arrow keys are pressed
@@ -280,7 +280,7 @@ fn nudge_once(
         return false;
     };
 
-    // ★ Rule 15, guarded by the `AnnotKind` match the compiler checks rather
+    // Rule 15, guarded by the `AnnotKind` match the compiler checks rather
     // than by a `/Subtype` string. A **ce dimension** is pdfcer-authored, it is
     // a `/Line` carrying `/IT /LineDimension` with a record in `/PieceInfo`, and
     // moving one may have to RE-MEASURE it — which `move_annotation` does not do
@@ -310,7 +310,7 @@ fn nudge_once(
         return false;
     }
 
-    // ★ The mode gate, and it is `author_markup` rather than `edit_content`.
+    // The mode gate, and it is `author_markup` rather than `edit_content`.
     //
     // **Review** is the markup stance — `edit_content: false, author_markup:
     // true` — and it is the mode an operator is in *because* they are working on
@@ -325,7 +325,7 @@ fn nudge_once(
         return false;
     }
 
-    // ★ The coordinate crossing, through the one function that owns it. See the
+    // The coordinate crossing, through the one function that owns it. See the
     // module header on the Y sign: everything about the flip and the page's
     // `/Rotate` is inside `page_delta`, and a page whose transform will not
     // invert declines here exactly as a drag on it declines.
@@ -351,14 +351,14 @@ fn nudge_once(
 
 /// Say why a nudge did nothing — on the status row **and** on the trace.
 ///
-/// ★ Both, not one. The trace is what a driven check reads and what a harness on
+/// Both, not one. The trace is what a driven check reads and what a harness on
 /// a machine nobody can see reports from; the status row is what the operator
 /// reads. They carry the same fact in two registers, and neither substitutes for
 /// the other — `crate::canvas::deleting::decline` is the same shape and states
 /// the same reason.
 fn refuse(frame: &Frame<'_>, selection: &SelectionState, why: NudgeRefusal) {
     if let Some(sentence) = crate::text::arrange::nudge_refusal(why) {
-        // ★ The CURRENT epoch, not a new one. The sentence stands from now until
+        // The CURRENT epoch, not a new one. The sentence stands from now until
         // the next real edit moves past it, and is retired without anything
         // having to remember to — `app::actions::disclosure::record_note`'s
         // contract for a non-edit.

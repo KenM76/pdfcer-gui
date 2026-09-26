@@ -9,7 +9,7 @@
 //! behaving unexpectedly on a print-ready drawing. Keeping their copy adjacent is
 //! the same argument that puts their controls adjacent in the window.
 //!
-//! ★ The third, the **field wash**, is here because it arrived in the same
+//! The third, the **field wash**, is here because it arrived in the same
 //! commit and pushed the same file over the line. That is an honest reason and a
 //! weak one, and it is stated rather than dressed up: if this module grows, the
 //! wash is the entry to move out, because it is a *display* preference and has
@@ -23,7 +23,7 @@
 
 /// **Shading the fillable fields** — `OPERATOR_REQUESTS.md` O96.
 ///
-/// ★ The copy leads with what the operator gains, not with what is drawn: they
+/// The copy leads with what the operator gains, not with what is drawn: they
 /// are not looking for *"a wash over rectangles"*, they are looking for *"which
 /// of these boxes can I type in"*. The radius line carries the fact that matters
 /// most and is the one nobody would assume — **it never reaches the file.**
@@ -58,7 +58,7 @@ pub const fn field_shade_note() -> &'static str {
 
 /// **Whether a spot ink keeps its own plate, or is mixed down first.**
 ///
-/// # ★★★ Why this is a real choice and not a bug with a switch
+/// # Why this is a real choice and not a bug with a switch
 ///
 /// `SpotColorantDeviceModel`, new in `pdfcer-core 0.20`. The two values are
 /// **both conformant** and they disagree about what a spot colour is:
@@ -71,13 +71,13 @@ pub const fn field_shade_note() -> &'static str {
 ///   transform the moment its space is set and is ordinary process ink from then
 ///   on. ISO 32000-1 §8.6.6.4's `shall`, and what Acrobat's default view shows.
 ///
-/// ★★ The visible difference is narrow and sharp: a **white object over a spot
+/// The visible difference is narrow and sharp: a **white object over a spot
 /// colour knocks the ink out** under one model and **preserves it** under the
 /// other. That is the whole of it, it only happens under overprint, and it is
 /// the difference between a proof that matches the press and one that matches
 /// the screen.
 ///
-/// ★ The copy below leads with the SYMPTOM rather than the standard, because
+/// The copy below leads with the SYMPTOM rather than the standard, because
 /// the operator arriving here got here by seeing white behave unexpectedly on a
 /// print-ready drawing — not by reading §10.8.3.
 #[must_use]
@@ -106,7 +106,7 @@ pub const fn spot_model_label(
     match model {
         M::SimulateSeparations => "Keep the ink on its own plate (pdfcer's default)",
         M::AlternateSpaceSubstitution => "Mix it down, the way a screen viewer does",
-        // ★ `#[non_exhaustive]`, so a newer engine may add a model. Named as
+        // `#[non_exhaustive]`, so a newer engine may add a model. Named as
         // unknown rather than folded onto a neighbour — `blend_space_label`
         // makes that argument once and it is the same one.
         _ => "A newer pdfcer added this option; this build cannot describe it",

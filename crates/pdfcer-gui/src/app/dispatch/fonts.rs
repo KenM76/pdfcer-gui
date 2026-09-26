@@ -1,6 +1,6 @@
 //! # `app::dispatch::fonts` — the Tools tab's font commands
 //!
-//! ## ★★ The seam, and why it is a subject rather than a size
+//! ## The seam, and why it is a subject rather than a size
 //!
 //! Both commands here open a **confirmation window over a plan**, and both can
 //! answer *"there is nothing to do"* — which is what gives them a dispatch shape
@@ -10,7 +10,7 @@
 //! decline that is not recorded is an operator pressing a button and seeing
 //! nothing happen.
 //!
-//! ★ They are otherwise mirror images, and the asymmetry is worth stating
+//! They are otherwise mirror images, and the asymmetry is worth stating
 //! because it explains why only one of them depends on a preference:
 //! **embedding needs an operand from outside the document** — a font file on
 //! the operator's disk, found through a folder list they maintain, because
@@ -18,7 +18,7 @@
 //! never searches a disk itself — and **removal needs none**, since it deletes
 //! what the document already carries.
 //!
-//! ## ★ The harness seam lives here, not in the preference
+//! ## The harness seam lives here, not in the preference
 //!
 //! [`folders`] appends a directory named by an environment variable, so
 //! `ui-verify` can supply the one input an operator supplies through Settings
@@ -36,7 +36,7 @@ use crate::dialogs::DialogsState;
 
 /// A font folder supplied by the harness, in addition to the operator's.
 ///
-/// ★ **Additional, never a replacement.** A variable that *replaced* the
+/// **Additional, never a replacement.** A variable that *replaced* the
 /// preference would let a check pass on a build whose preference plumbing was
 /// broken end to end — the harness would be testing its own environment
 /// variable. Appending means the operator's folders are still read on the same
@@ -64,7 +64,7 @@ pub(crate) fn handles(id: &str) -> bool {
 /// ordering that keeps a driven run honest about what a real one would do.
 #[must_use]
 pub(crate) fn folders(prefs: &Prefs) -> Vec<PathBuf> {
-    // ★★★ The operator's own folders, then this computer's if they asked for
+    // The operator's own folders, then this computer's if they asked for
     // them (`OPERATOR_REQUESTS.md` O50), then anything the harness named.
     //
     // `search_path` owns the second step, including the rule that a folder
@@ -87,7 +87,7 @@ pub(crate) fn folders(prefs: &Prefs) -> Vec<PathBuf> {
 
 /// Dispatch a font command.
 ///
-/// ★★ **`tools.embed_fonts` depends on the font-folder preference, not on the
+/// **`tools.embed_fonts` depends on the font-folder preference, not on the
 /// engine verb.** The verb exists; what it will not do is find a donor. Read
 /// [`folders`] before concluding this command is blocked on `pdfcer-core`.
 ///
@@ -96,7 +96,7 @@ pub(crate) fn folders(prefs: &Prefs) -> Vec<PathBuf> {
 /// verb exists.** A command can be unreachable because an operand has no
 /// source in this shell, and nothing about the verb's signature says so.
 ///
-/// ## ★ It can decline with a sentence, and the sentence is recorded
+/// ## It can decline with a sentence, and the sentence is recorded
 ///
 /// A document whose fonts are all embedded is the **normal** case, not an
 /// error, and opening a window to say so would be a modal an operator has to
@@ -123,7 +123,7 @@ pub(crate) fn dispatch(id: &str, dialogs: &mut DialogsState, status: &Status, pr
                 format!("embed-fonts-declined folders={}", folders.len()),
             )
         }
-        // ★★ **`tools.unembed_fonts` needs its confirmation window**, because
+        // **`tools.unembed_fonts` needs its confirmation window**, because
         // most of what unembedding costs is invisible on the canvas — a broken
         // PDF/A claim, an invalidated signature, a renamed font, and a byte
         // saving an incremental save will not actually deliver.

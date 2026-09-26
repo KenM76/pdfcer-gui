@@ -1,7 +1,7 @@
 //! # `text::redact::tests` — the three wording rules, enforced
 //!
 //!
-//! ★ The seam is the one R2 asks for, and on this catalog it is sharper than
+//! The seam is the one R2 asks for, and on this catalog it is sharper than
 //! usual. `mod.rs` holds *sentences*; this holds the **rules those sentences
 //! obey**, quoted in [`super`]'s header:
 //!
@@ -15,7 +15,7 @@
 //! rules do not reach. That is why every test below enumerates rather than
 //! sampling, and why adding copy to `mod.rs` means adding a row here.
 
-// ★ The INNER `#![cfg(test)]` is redundant — the module is declared
+// The INNER `#![cfg(test)]` is redundant — the module is declared
 // `#[cfg(test)] mod tests;` — and it is here anyway, because
 // `tools/gates/check-ui-strings.sh` exclusion 2 recognises a test-only FILE by
 // exactly this attribute.
@@ -23,7 +23,7 @@
 
 use super::*;
 
-/// ★★ **No marking string ever claims content was removed.**
+/// **No marking string ever claims content was removed.**
 ///
 /// Rule 1 of the module header, asserted rather than trusted. The failure
 /// this catches is a copy pass tightening *"marked for redaction"* into
@@ -55,7 +55,7 @@ fn nothing_on_the_marking_surface_claims_a_removal() {
     }
 }
 
-/// ★★ **"Verified" appears in exactly one place.**
+/// **"Verified" appears in exactly one place.**
 ///
 /// Rule 2, and it is a test rather than a doc comment because the word is
 /// the single most valuable one on this surface: it is the difference
@@ -158,7 +158,7 @@ fn only_the_verification_line_and_the_clean_outcome_say_verified() {
         ("residual_carrier_line(xfa)", residual_carrier_line("xfa")),
         ("engine_notes_heading", engine_notes_heading(4)),
         ("engine_notes_lead", engine_notes_lead().to_owned()),
-        // ★★ Every sentence below is drawn into the report BODY, which
+        // Every sentence below is drawn into the report BODY, which
         // is where rule 2 is easiest to break and hardest to notice: the body
         // is prose about what happened, and "verified" reads as a natural
         // word there. This list is hand-written and therefore goes stale
@@ -185,7 +185,7 @@ fn only_the_verification_line_and_the_clean_outcome_say_verified() {
              AbsenceVerification earns: {line}"
         );
     }
-    // ★★★ `verification_limit_line` is DELIBERATELY not in the sweep above, and
+    // `verification_limit_line` is DELIBERATELY not in the sweep above, and
     // this is the narrower assertion that covers it instead.
     //
     // It contains the word "verify" — *"so pdfcer could not verify those"* —
@@ -216,7 +216,7 @@ fn only_the_verification_line_and_the_clean_outcome_say_verified() {
              less informative one"
         );
     }
-    // ★★★ And the deferred route's SAVE outcome earns it — but its STAGING
+    // And the deferred route's SAVE outcome earns it — but its STAGING
     // outcome must not, and that inversion is the whole of what `Pass 250.2`
     // did to this rule.
     //
@@ -243,10 +243,10 @@ fn only_the_verification_line_and_the_clean_outcome_say_verified() {
     );
 }
 
-/// ★★ **The staged outcome obeys rule 1, and says the two things only it has
+/// **The staged outcome obeys rule 1, and says the two things only it has
 /// to say.**
 ///
-/// ★★★ **REWRITTEN 2026-09-05.** Its predecessor asserted that both forms
+/// **REWRITTEN 2026-09-05.** Its predecessor asserted that both forms
 /// said *"Nothing is on disk yet"*, which was the deferred route's own hazard
 /// under `Pass 250.1`: the content had been removed from the document, the
 /// file had not been written, and an operator who handed over the original had
@@ -293,7 +293,7 @@ fn the_staged_outcome_names_its_residuals_and_says_nothing_has_happened_yet() {
              complaint rather than an instruction: {line}"
         );
     }
-    // ★ And no undo clause anywhere. `Pass 250.2` discards nothing, so a
+    // And no undo clause anywhere. `Pass 250.2` discards nothing, so a
     // sentence about discarded steps would be a false claim about the
     // operator's work — the exact claim the predecessor of this test asserted
     // was PRESENT.
@@ -305,7 +305,7 @@ fn the_staged_outcome_names_its_residuals_and_says_nothing_has_happened_yet() {
     }
 }
 
-/// ★★★ **The staged-save outcome says the three things nothing else on
+/// **The staged-save outcome says the three things nothing else on
 /// screen can.**
 ///
 ///
@@ -345,7 +345,7 @@ fn the_staged_save_outcome_says_the_window_is_stale_and_the_removal_is_still_arm
     );
 }
 
-/// ★ **A cancel says what survives, not merely that it happened.**
+/// **A cancel says what survives, not merely that it happened.**
 ///
 /// The one misreading available at this control is *"never mind, that is
 /// dealt with"* — and it is not: the marks are still on the document and the
@@ -362,7 +362,7 @@ fn the_cancel_sentence_says_the_marks_are_still_there() {
     );
 }
 
-/// ★ **No sentence about content that has reached a FILE offers Undo.**
+/// **No sentence about content that has reached a FILE offers Undo.**
 ///
 ///
 /// The distinction that replaced it: undo reaches the **arming**, and never
@@ -379,7 +379,7 @@ fn no_post_apply_sentence_mentions_undo_as_a_way_back() {
     for line in [
         permanence_statement(false).to_owned(),
         permanence_statement(true).to_owned(),
-        // ★ The deferred permanence statement stays IN the sweep even though
+        // The deferred permanence statement stays IN the sweep even though
         // its route preserves undo, because the clause it shares with its two
         // siblings is about the content once the save has happened — and that
         // is precisely the state rule 3′ governs.
@@ -411,7 +411,7 @@ fn no_post_apply_sentence_mentions_undo_as_a_way_back() {
     }
 }
 
-/// ★★★ **…and the staging sentences are ALLOWED to say undo works, because
+/// **…and the staging sentences are ALLOWED to say undo works, because
 /// it does.**
 ///
 ///
@@ -441,7 +441,7 @@ fn the_staging_copy_says_undo_still_works() {
     );
 }
 
-/// ★ **A residual outcome and a clean one do not share a sentence.**
+/// **A residual outcome and a clean one do not share a sentence.**
 ///
 /// Rule 1 mechanically: the residual form must name the leftover count in
 /// the same sentence as the success, and must not be reachable by softening
@@ -486,7 +486,7 @@ fn the_suggested_name_differs_from_the_original() {
 /// exercised the GENERIC arm and the specific one was never called by any
 /// test — while the fixture's own word made it read as though it were.
 ///
-/// ★ That is the shape worth remembering: a payload chosen because it was
+/// That is the shape worth remembering: a payload chosen because it was
 /// short and evocative, in a test whose subject is which sentence comes
 /// out. The word `hybrid` was doing the reader's convincing and none of
 /// the assertion's work.
@@ -532,7 +532,7 @@ fn each_named_refusal_says_something_different() {
         refusal_message(&all[4]).contains("page 2 is an image"),
         "the engine's own diagnosis is the actionable half and must survive"
     );
-    // ★★ And the one that is not a failure does not read as one. It is the
+    // And the one that is not a failure does not read as one. It is the
     // ordinary state of a document whose removal is armed, and a sentence
     // beginning "Redaction refused" there would send an operator looking for
     // a fault in a document that has none.
@@ -558,7 +558,7 @@ fn the_census_changes_shape_rather_than_only_its_number() {
 
 /// Every carrier key `pdfcer_core::redact` can emit or documents.
 ///
-/// ★ Hand-written, and it has to be: the engine's keys are `&'static str`
+/// Hand-written, and it has to be: the engine's keys are `&'static str`
 /// literals passed to a private `add_carrier`, with no exported list to
 /// enumerate. That makes this exactly the shape the project's own note warns
 /// about — *a hand-written list inside a completeness test is the gap* — so it
@@ -589,7 +589,7 @@ const EVERY_CARRIER: &[&str] = &[
     "overlapping_annotations",
 ];
 
-/// ★★★ **No residual line ever prints an engine key.**
+/// **No residual line ever prints an engine key.**
 ///
 /// The fourth wording rule, asserted over the whole vocabulary rather than over
 /// a sample. Until 2026-09-09 the sentence the operator read was literally
@@ -597,7 +597,7 @@ const EVERY_CARRIER: &[&str] = &[
 /// documents as being *"for the carrier"*, i.e. for a program, printed into a
 /// report written for a person.
 ///
-/// ★★ **The assertion is "no underscore", not "does not contain the key", and
+/// **The assertion is "no underscore", not "does not contain the key", and
 /// the difference is a measurement.** The blunt substring form was written
 /// first and went red on `thumbnails`, whose English name is *"the page
 /// thumbnails stored in the file"* — the key and the operator's own word for
@@ -609,7 +609,7 @@ const EVERY_CARRIER: &[&str] = &[
 /// without forcing a perfectly good English word out of a sentence to satisfy
 /// a test.
 ///
-/// ★ The second assertion covers the two-word-free remainder from the other
+/// The second assertion covers the two-word-free remainder from the other
 /// side: an identity mapping — the failure mode where somebody deletes an arm
 /// and the `other => other` fallback silently takes over — leaves the sentence
 /// *equal* to the key, which no translated name ever is.
@@ -633,7 +633,7 @@ fn no_residual_line_shows_the_operator_an_engine_key() {
     }
 }
 
-/// ★★★ **An engine key nobody has translated is still disclosed.**
+/// **An engine key nobody has translated is still disclosed.**
 ///
 /// The open-vocabulary case, and the one an over-tidy edit would break: the
 /// obvious "fix" for the test above is to return an empty string for an unknown
@@ -654,7 +654,7 @@ fn a_carrier_this_shell_has_never_heard_of_is_still_named() {
     );
 }
 
-/// ★★★ **The whole-file sweep gets its own sentence, because the generic one is
+/// **The whole-file sweep gets its own sentence, because the generic one is
 /// false about it.**
 ///
 /// Every other carrier is a *place that holds content*, and the generic
@@ -665,7 +665,7 @@ fn a_carrier_this_shell_has_never_heard_of_is_still_named() {
 /// is a false sentence, in the residual list, on the one surface where rule 1
 /// forbids a comfortable one.
 ///
-/// ★ The last assertion is the load-bearing half. Without it the test would
+/// The last assertion is the load-bearing half. Without it the test would
 /// pass on a build where **both** sentences had been rewritten into the sweep's
 /// wording, which discloses nothing about the other twelve carriers.
 #[test]
@@ -689,7 +689,7 @@ fn the_whole_file_sweep_does_not_get_the_generic_carrier_sentence() {
     );
 }
 
-/// ★★ **The sweep's residual sentence points at the notes, and the notes
+/// **The sweep's residual sentence points at the notes, and the notes
 /// section exists.**
 ///
 /// A promise kept across two modules: [`super::residual_sweep_line`] tells the
@@ -708,7 +708,7 @@ fn the_sweep_sentence_points_somewhere_that_exists() {
     );
 }
 
-/// ★★★ **The content-stream clause appears only when content streams were
+/// **The content-stream clause appears only when content streams were
 /// blanked.**
 ///
 /// The engine counts `residual_content_streams_blanked` apart from the sweep's
@@ -726,7 +726,7 @@ fn the_drawing_instruction_clause_is_conditional() {
         !without.contains("drawing instruction"),
         "a sweep that touched no content stream must not mention them: {without}"
     );
-    // ★ Both counts survive into the sentence either way. The numbers are the
+    // Both counts survive into the sentence either way. The numbers are the
     // whole content of the line, and a `format!` that dropped one would still
     // read fluently.
     for line in [&with, &without] {
@@ -738,7 +738,7 @@ fn the_drawing_instruction_clause_is_conditional() {
     assert!(with.contains('6') && with.contains('2'));
 }
 
-/// ★★ **The clean census counts what it lists.**
+/// **The clean census counts what it lists.**
 ///
 /// The number and the list come from one argument, so they cannot disagree —
 /// this pins that both are actually derived from it, which a `format!` that
@@ -754,7 +754,7 @@ fn the_clean_census_number_matches_its_list() {
     }
 }
 
-/// ★★★ **The clean census never reads as an all-clear.**
+/// **The clean census never reads as an all-clear.**
 ///
 /// Rule 1's hardest case: this is the only sentence in the report that exists
 /// to reassure, and the report's whole purpose is to prevent a comfortable one.

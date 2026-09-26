@@ -1,6 +1,6 @@
 //! [`Ribbon`] — the builder and the one entry point that draws a frame.
 //!
-//! # ★ THE SEAM: the shell reports intent; the application dispatches
+//! # THE SEAM: the shell reports intent; the application dispatches
 //!
 //! [`Ribbon::show`] returns `Vec<HandlerToken>` — the tokens of the
 //! commands the operator invoked this frame, in the order the controls
@@ -45,7 +45,7 @@
 //! # }
 //! ```
 //!
-//! # ★ `entitled`: the one line of this file that is load-bearing
+//! # `entitled`: the one line of this file that is load-bearing
 //!
 //! ```text
 //! let entitled = ui.max_rect();   // BEFORE a single widget is drawn
@@ -222,7 +222,7 @@ impl<'a> Ribbon<'a> {
         let active_id = active.map(|t| t.id.clone());
         state.active_tab = active_id.clone();
 
-        // ★ The width the ribbon was actually given, read BEFORE a single
+        // The width the ribbon was actually given, read BEFORE a single
         // widget is drawn into `ui`. See this module's header — this line
         // is why both rows take a rectangle rather than asking for one.
         let entitled = ui.max_rect();
@@ -230,7 +230,7 @@ impl<'a> Ribbon<'a> {
         let mut band_outcome = band::BandOutcome::default();
         let mut strip_outcome = strip::StripOutcome::default();
 
-        // ★★★ AUTO-HIDE. Office's *Show Tabs*, and an explicit operator
+        // AUTO-HIDE. Office's *Show Tabs*, and an explicit operator
         // request. See [`crate::peek`] for the model, for which product it was
         // taken from, and for the R128 direction bound that stops "visible
         // because the pointer is here" from becoming a loop.
@@ -241,7 +241,7 @@ impl<'a> Ribbon<'a> {
         // compile. It is put back at the end of this function, unconditionally.
         let mut peek = std::mem::take(&mut state.peek);
         let mut show = crate::peek::Show::Inline;
-        // ★ The TRIGGER, and the one property that matters about it: it is the
+        // The TRIGGER, and the one property that matters about it: it is the
         // tab strip, whose height is decided by the theme's control metrics and
         // by the mode selector, and **not by the band**. Nothing the band does
         // — appearing, disappearing, changing tab, growing a row — can move it.
@@ -281,7 +281,7 @@ impl<'a> Ribbon<'a> {
             }
         });
 
-        // ★★ THE OVERLAY. Drawn as an `egui::Area` **after** the vertical
+        // THE OVERLAY. Drawn as an `egui::Area` **after** the vertical
         // closure has ended, so it is outside the layout entirely: it allocates
         // nothing, so the application's top panel is exactly as tall as the tab
         // strip, so the canvas beneath does not move when the band comes and
@@ -305,7 +305,7 @@ impl<'a> Ribbon<'a> {
                 .show(ui.ctx(), |ui| {
                     ui.set_min_width(width);
                     ui.set_max_width(width);
-                    // ★ A fill and a stroke, from the theme's own roles rather
+                    // A fill and a stroke, from the theme's own roles rather
                     // than from numbers — `check-theme-colors.sh`. The stroke
                     // is what says "this is floating over the document"; an
                     // unstroked panel-filled rectangle over a white page reads
@@ -371,7 +371,7 @@ impl<'a> Ribbon<'a> {
 /// withdrawn from under the focus is the same defect class as one that is drawn
 /// and unclickable.
 ///
-/// # ★ Why it is answered geometrically rather than by id
+/// # Why it is answered geometrically rather than by id
 ///
 /// The obvious implementation asks whether the focused `egui::Id` is one the
 /// ribbon derived from [`super::ctx::Ctx::id`]. It cannot: an `Id` is a hash
@@ -381,7 +381,7 @@ impl<'a> Ribbon<'a> {
 /// overlay occupied last frame. The overlay is the only thing drawn there, so
 /// containment answers the question exactly.
 ///
-/// ★★ It reads **last frame's** overlay, which is the only one that exists at
+/// It reads **last frame's** overlay, which is the only one that exists at
 /// the moment the question is asked, and that is not a staleness bug: it is the
 /// same rectangle this frame will draw unless the theme changed, and the term
 /// is a *keep* rather than a *start*, so the worst a stale rectangle can do is

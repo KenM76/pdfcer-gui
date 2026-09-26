@@ -1,6 +1,6 @@
 //! # `text::shortcuts` — the words the keyboard reference shows
 //!
-//! ## ★ The shortest catalog in this crate, and that is the design
+//! ## The shortest catalog in this crate, and that is the design
 //!
 //! Six strings, and **none of them is a shortcut**. Every chord and every
 //! command name in that window comes from the live keymap and the command
@@ -36,7 +36,7 @@ pub const fn intro() -> &'static str {
 
 /// Joins the chords of a command bound to more than one.
 ///
-/// ★ A comma and a space rather than a slash or a pipe: `Ctrl+Y` and
+/// A comma and a space rather than a slash or a pipe: `Ctrl+Y` and
 /// `Ctrl+Shift+Z` are two *alternatives*, not a sequence, and a slash between
 /// keys reads as "press these together" to anyone who has met `Ctrl+Alt+Del`.
 #[must_use]
@@ -46,7 +46,7 @@ pub const fn chord_separator() -> &'static str {
 
 /// How many shortcuts are listed, and where the number came from.
 ///
-/// ★ The count is here **because it is checkable**. An operator who suspects a
+/// The count is here **because it is checkable**. An operator who suspects a
 /// key is missing can compare it against nothing useful — but a *future* build
 /// whose count drops has told them something, and the number is the cheapest
 /// form that fact can take.
@@ -57,7 +57,7 @@ pub fn derived_note(commands: usize) -> String {
 
 /// Chords bound to a command this build does not have.
 ///
-/// ★ **Disclosed rather than absorbed.** R8's convention is that a capability's
+/// **Disclosed rather than absorbed.** R8's convention is that a capability's
 /// absence is expressed by its command not being registered, and a customized
 /// or stripped build can therefore carry a keymap naming commands that are not
 /// there. Those keys do nothing, so they are not listed — and *"this build has
@@ -106,7 +106,7 @@ pub const fn none_bound() -> &'static str {
 mod tests {
     use super::*;
 
-    /// ★ **No string in this catalog names a key or a command.**
+    /// **No string in this catalog names a key or a command.**
     ///
     /// The rule this module exists to hold, asserted rather than trusted. A
     /// hand-written `"Ctrl+S — Save a copy"` added here for convenience would

@@ -7,7 +7,7 @@
 panel, not a menu item. This row is the writing half of the surface that
 closes it, and `super` is the reading half.
 
-## ★★★ Why this row is drawn ABOVE the list, and it is not a style choice
+## Why this row is drawn ABOVE the list, and it is not a style choice
 
 `panels::bookmarks` paid for this lesson in a driven run and wrote it down
 as a rule; this module obeys the rule rather than rediscovering it:
@@ -24,7 +24,7 @@ control in a toolbar **above** the list for the same reason every list in
 every application does: a control's position is a claim about what it acts
 on, and this one acts on the document that owns the list.
 
-## ★★ The description can only be set now, and the row says so
+## The description can only be set now, and the row says so
 
 `attach_file` takes `description: Option<&str>` and writes `/Desc` on the
 file specification (Table 44, whose row for it says `/Desc` *"shall be used

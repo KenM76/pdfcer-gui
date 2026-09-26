@@ -194,7 +194,7 @@ pub(super) fn mark_through_the_menu(
             line.raw
         )));
     };
-    // ★ The absence of `quads=` is a failure rather than a zero. A caller
+    // The absence of `quads=` is a failure rather than a zero. A caller
     // asserting `quads == 2` against a defaulted zero would report "the verb
     // built one region" about a line that never said how many it built, and
     // send the next reader to `mark_selection`'s geometry instead of to the

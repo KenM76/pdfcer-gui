@@ -11,7 +11,7 @@ for the whole life of the project**, behind a `SCAFFOLDED` entry claiming
 have since `Pass 7.1`. It was wired on 2026-08-27, and this is the check
 that keeps it wired.
 
-## ★★★ Why the oracle is a FILE and not a trace line
+## Why the oracle is a FILE and not a trace line
 
 Every other link in this chain can be asserted from the trace, and asserting
 only those would leave the one that matters untested. An export's whole
@@ -26,14 +26,14 @@ FDF, and it must contain the field the check itself just filled. The
 second half is what distinguishes *"a file was written"* from *"the
 operator's data was written"*, and they are not the same claim.
 
-## ★★ The picker is answered, not clicked
+## The picker is answered, not clicked
 
 `PDFCER_DIAG_SAVE_PATH` supplies the save dialog's result. That is the same
 seam `save_copy` uses and its header carries the argument: a native modal
 blocks the thread, so a harness that tried to drive it would be automating
 the operating system's file dialog rather than this program.
 
-★ What that costs is stated rather than hidden: **the dialog itself is not
+What that costs is stated rather than hidden: **the dialog itself is not
 covered here.** Its title, its suggested filename and its extension filter
 are unasserted, and a build whose picker opened in the wrong directory would
 pass. That is the same gap `save_copy` records, for the same reason, and it

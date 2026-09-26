@@ -15,7 +15,7 @@ clipped"* over a picture showing nothing lost.
 Both sentences were true. They read as contradicting each other, and the
 button is the louder surface.
 
-## ★★★ The wording was NOT weakened, because that is how the next defect
+## The wording was NOT weakened, because that is how the next defect
 ## gets built
 
 The obvious fix — soften the button to *"1 sheet may be clipped"* — takes a
@@ -48,7 +48,7 @@ Every clipped sheet is in exactly one of three states:
 displayed = geometric − known_blank = known_inked + unexamined
 ```
 
-### ★★ The displayed number is a CEILING, not a floor
+### The displayed number is a CEILING, not a floor
 
 The request that authorised this work called it *"a floor rather than a
 total."* That is the wrong way round, and the direction decides the
@@ -73,7 +73,7 @@ rather than a weakening*: it is added at the same moment the number stops
 being a count of anything measured. See [`ClipClaim`], where each of the
 four states carries the strongest sentence that state can support.
 
-## ★★★ The key: a cached verdict is a CLAIM ABOUT PIXELS, and it must not
+## The key: a cached verdict is a CLAIM ABOUT PIXELS, and it must not
 ## outlive them
 
 `preview::PreviewKey`'s doc comment states the discipline this module

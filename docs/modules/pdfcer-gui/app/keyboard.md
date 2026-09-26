@@ -1,6 +1,6 @@
 # `app::keyboard` — the keyboard map, and the guard that must not be wrong
 
-## ★ `DEFECTS.md` D1 — read this before touching the guard
+## `DEFECTS.md` D1 — read this before touching the guard
 
 The old GUI's keyboard map guarded its unmodified-key bindings with:
 

@@ -16,12 +16,12 @@ including the four properties this control is judged on and the R128
 fixed-height argument. What follows is the part that only concerns the
 box.
 
-## ★ Why an editable box at all
+## Why an editable box at all
 
 `GUI_ROADMAP.md` 3.3: *"Reaching page 37 of 42 currently means the
 thumbnail rail or 36 keystrokes."* Type `37`, press Enter, arrive.
 
-## ★ The commit rule
+## The commit rule
 
 **Enter or focus loss. Never a keystroke.** Someone typing `42` passes
 through `4`; a box that navigated per keystroke would take them to page
@@ -36,7 +36,7 @@ the box goes back to showing the current page. Without it, an operator
 who started typing a page number has no way out but to retype the one
 they were already on.
 
-## ★ The three outcomes, and why none of them is silent
+## The three outcomes, and why none of them is silent
 
 | typed | outcome | what the operator sees |
 |---|---|---|
@@ -50,7 +50,7 @@ control. A refusal that *also* wiped the field would destroy the evidence
 of what they meant — which is why the draft outlives a failed commit and
 never outlives a successful one.
 
-## ★ Defect D1, from the other end
+## Defect D1, from the other end
 
 `crate::app::keyboard` guards the unmodified bindings — PageUp, PageDown,
 Home, End, Delete — with `ctx.text_edit_focused()`, **not**

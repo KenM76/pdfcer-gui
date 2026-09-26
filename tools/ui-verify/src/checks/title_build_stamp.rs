@@ -50,7 +50,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
 
     let mut spec = LaunchSpec::new(&exe, ctx.out("title_build_stamp.trace.txt"));
-    // ★★★ NO DOCUMENT, and deliberately not `ctx.pdf`.
+    // NO DOCUMENT, and deliberately not `ctx.pdf`.
     //
     // The stamp is a property of the BINARY, not of what is open, so a document
     // adds nothing to the assertion — and taking one adds a way to fail that
@@ -131,7 +131,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 2: ★ AND A TIME, which is the whole of O101 ---------------------
+    // --- 2: AND A TIME, which is the whole of O101 ---------------------
     let rest = tail[10..].trim();
     let time_ok = rest.len() >= 5
         && rest.as_bytes()[..5].iter().enumerate().all(|(i, b)| {
@@ -150,7 +150,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note(format!("the stamp carries a date and a time: `{tail}`"));
 
-    // --- 3: ★★ and never a raw offset ------------------------------------
+    // --- 3: and never a raw offset ------------------------------------
     let zone = rest[5..].trim();
     if zone.starts_with('+') || zone.starts_with('-') {
         return Ok(Some(format!(

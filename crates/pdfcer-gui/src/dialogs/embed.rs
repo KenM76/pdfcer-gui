@@ -17,7 +17,7 @@ pub const REGION_BODY: &str = "embed.body";
 pub const REGION_EMBED: &str = "embed.commit";
 /// The "use pdfcer's own copy" checkbox.
 ///
-/// ★ Declared so a driven check can tick it. It is the whole of O47's answer
+/// Declared so a driven check can tick it. It is the whole of O47's answer
 /// and, being off by default, a check that never presses it measures the other
 /// position of the switch — which is why `ui-verify`'s
 /// `embedding_works_with_no_font_folder_at_all` now drives **both**.
@@ -39,14 +39,14 @@ const FOOTER_RESERVE_PTS: f32 = 132.0;
 /// **One planned embed: an operand, its consequence, and the rows worth
 /// drawing.**
 ///
-/// # ★★★ Why there are two of these and not one recomputed on demand
+/// # Why there are two of these and not one recomputed on demand
 ///
 /// Because building one costs a folder scan — every font file in every
 /// configured folder, read and parsed, measured at **3,359 face names** on an
 /// ordinary Windows font directory. A checkbox that re-scanned on each click
 /// would put a visible pause on a toggle.
 ///
-/// ★★ And it is not only speed. Two plans built from **one** scan cannot
+/// And it is not only speed. Two plans built from **one** scan cannot
 /// disagree about what is on the disk. A plan rebuilt later could resolve a
 /// different donor — a file dropped into a folder while the window was open —
 /// so the operator would tick a box that said one thing and commit another.
@@ -59,7 +59,7 @@ struct Planned {
     /// The request the plan came from, carried so the commit sends the
     /// identical one.
     ///
-    /// ★★ Carried rather than rebuilt. Rebuilding would re-scan the folders and
+    /// Carried rather than rebuilt. Rebuilding would re-scan the folders and
     /// could resolve a *different* donor — a file added to a folder while the
     /// window was open — so the operator would confirm one thing and commit
     /// another. The request is the operand; the plan is its consequence; they
@@ -67,13 +67,13 @@ struct Planned {
     request: pdfcer_core::font_embed_missing::EmbedRequest,
     /// The blocked rows worth drawing, by index into `plan.blocked`.
     ///
-    /// ★★ NOT the whole list. Under `EmbedSelection::AllMissing` the engine
+    /// NOT the whole list. Under `EmbedSelection::AllMissing` the engine
     /// reports *"every other font in the document, including the ones that are
     /// simply already embedded"* as blocked — which on an ordinary drawing is
     /// most of them. A window that listed those would put twenty rows of *"it
     /// is already embedded"* in front of the two the operator can act on.
     ///
-    /// ★ Everything else is kept, including `ProgramDeclaredButUnreadable`,
+    /// Everything else is kept, including `ProgramDeclaredButUnreadable`,
     /// which the engine's own `missing_program` flag also excludes. That one is
     /// not a font the operator has to find a file for, and it **is** a finding
     /// about their document — so it is drawn and not counted, which is exactly
@@ -116,7 +116,7 @@ pub struct EmbedDialog {
     /// What happens when pdfcer's own standard-14 faces are allowed to answer
     /// as the last rung.
     ///
-    /// ★★★ `None` when it would change **nothing**, and that is the condition
+    /// `None` when it would change **nothing**, and that is the condition
     /// that decides whether the checkbox is drawn at all. On a machine with the
     /// OS font folders switched on (O50) a real Arial answers the document's
     /// `Helvetica` before the bundled rung is ever reached, so this is `None`
@@ -128,7 +128,7 @@ pub struct EmbedDialog {
     with_own_fonts: Option<Planned>,
     /// The document's own spelling of every font pdfcer would stand in for.
     ///
-    /// ★★★ **The consequence, by name, before it happens.** Not a count — a
+    /// **The consequence, by name, before it happens.** Not a count — a
     /// list. *"3 fonts would be substituted"* is a number an operator cannot
     /// act on; *"Helvetica, Helvetica-Bold, Times-Roman"* is one they can look
     /// at and say *"not the title block"*. Empty exactly when
@@ -148,27 +148,27 @@ pub struct EmbedDialog {
 impl EmbedDialog {
     /// Build the plan and open, or answer `None` when there is nothing to show.
     ///
-    /// ★ `None` for a document with no missing fonts is deliberate: opening a
+    /// `None` for a document with no missing fonts is deliberate: opening a
     /// window to say *"there is nothing to do"* is a modal an operator has to
     /// dismiss to learn they did not need it. The disclosure line says it
     /// instead — see [`open_for`]'s caller.
     #[must_use]
     pub fn open(doc: &OpenDoc, folders: &[std::path::PathBuf]) -> Option<Self> {
-        // ★★★ ONE SCAN, TWO REQUESTS, and `true` here is not the decision.
+        // ONE SCAN, TWO REQUESTS, and `true` here is not the decision.
         //
         // The library is scanned with pdfcer's own faces **available**, because
         // the window has to be able to say what they would answer for before
         // the operator decides whether to use them. Which of the two requests
         // is committed is [`Self::use_own_fonts`], and that is off.
         //
-        // ★ Splitting the two donor maps out of one scan rather than scanning
+        // Splitting the two donor maps out of one scan rather than scanning
         // twice is the whole reason the checkbox is free: a second
         // `scan_with(folders, false)` would read and parse every font file on
         // the machine a second time — 3,359 faces, measured — to learn
         // something this pass already knows, and two scans of a directory that
         // is being written to can disagree.
         let library = crate::app::fonts::Library::scan_with(folders, true);
-        // ★ Every font whose program is absent, which is what the operator
+        // Every font whose program is absent, which is what the operator
         // means by "embed the fonts". `EmbedSelection::AllMissing` is the
         // engine's own spelling of it, so this shell is not deciding what
         // "missing" means.
@@ -178,7 +178,7 @@ impl EmbedDialog {
         let mut own_only_request = pdfcer_core::font_embed_missing::EmbedRequest::all_missing();
         let mut own_font_faces: Vec<String> = Vec::new();
 
-        // ★★ TWO passes, and the first one exists because `supplied` is keyed
+        // TWO passes, and the first one exists because `supplied` is keyed
         // by `/BaseFont` *exactly as the file spells it* — subset tag included.
         // Only the engine knows which spellings a document carries, so the
         // shell cannot build the donor map without asking first. The probe is a
@@ -202,7 +202,7 @@ impl EmbedDialog {
                 donor.face_name.to_owned(),
                 donor.source(),
                 if is_own_copy {
-                    // ★★★ `Bundled`, reported as itself and not folded into
+                    // `Bundled`, reported as itself and not folded into
                     // `Alias`.
                     //
                     // The engine's three rungs are three materially
@@ -215,7 +215,7 @@ impl EmbedDialog {
                     // pdfcer.
                     pdfcer_core::font_embed_missing::FontMatch::Bundled
                 } else if donor.matched.is_inferred() {
-                    // ★★★ `Alias` for both inferred rungs, and reporting
+                    // `Alias` for both inferred rungs, and reporting
                     // either as `Exact` would be a CORRECTNESS defect
                     // rather than a cosmetic one.
                     //
@@ -231,13 +231,13 @@ impl EmbedDialog {
                     pdfcer_core::font_embed_missing::FontMatch::Exact
                 },
             );
-            // ★★★ THE SPLIT, AND IT IS THE WHOLE OF THE FEATURE.
+            // THE SPLIT, AND IT IS THE WHOLE OF THE FEATURE.
             //
             // `request` gets every donor; `own_only_request` gets only the ones
             // that came off the operator's own disk. Which of the two is drawn
             // and committed is the checkbox.
             //
-            // ★ The test is `Match::Bundled`, which `Library::donor_for`
+            // The test is `Match::Bundled`, which `Library::donor_for`
             // decides by asking **its own path map** rather than by matching on
             // the engine's rung — a name the folder walk never registered
             // cannot have come off a folder, whatever the engine calls the rung
@@ -260,7 +260,7 @@ impl EmbedDialog {
         // Re-plan with the donors in hand: these are the plans the operator
         // sees and one of them is the plan the commit will run.
         let own_only = Planned::of(&doc.session, own_only_request);
-        // ★★★ `None` WHEN IT WOULD CHANGE NOTHING, and the emptiness of the
+        // `None` WHEN IT WOULD CHANGE NOTHING, and the emptiness of the
         // face list is the right test rather than comparing the two plans.
         //
         // A plan comparison would be a proxy: two `EmbedPlan`s can differ in a
@@ -277,7 +277,7 @@ impl EmbedDialog {
         {
             return None;
         }
-        // ★★ The window's own plan counts, traced when it opens - see
+        // The window's own plan counts, traced when it opens - see
         // `dialogs::unembed`'s equivalent for the argument. A window with
         // `targets=0` is correct for a document nothing on the machine can
         // answer for, and is indistinguishable from a broken button without
@@ -302,7 +302,7 @@ impl EmbedDialog {
             own_only,
             with_own_fonts,
             own_font_faces,
-            // ★★★ OFF. See the module header: the letters change, and the
+            // OFF. See the module header: the letters change, and the
             // licence travels with the file. `pdfcer`'s own CLI spells the same
             // decision `--use-bundled-fonts`, absent by default.
             use_own_fonts: false,
@@ -319,7 +319,7 @@ impl EmbedDialog {
     /// a window comes to show one thing and do another, and is the property
     /// `embed_preview` was designed to give this dialog for free.
     ///
-    /// ★ The `unwrap_or` is not defensive noise: [`Self::use_own_fonts`] can
+    /// The `unwrap_or` is not defensive noise: [`Self::use_own_fonts`] can
     /// only be `true` if the checkbox was drawn, and the checkbox is only drawn
     /// when [`Self::with_own_fonts`] is `Some`. The fallback exists so that a
     /// future caller that sets the flag some other way degrades to the **safe**
@@ -348,7 +348,7 @@ impl EmbedDialog {
         let open = !frame.closed;
 
         if std::mem::take(&mut self.embed_requested) {
-            // ★ Both the plan being sent AND the position of the switch that
+            // Both the plan being sent AND the position of the switch that
             // chose it. A line carrying only the counts cannot distinguish
             // "the operator declined pdfcer's own faces" from "this build has
             // no such faces", and those need different next actions.
@@ -377,7 +377,7 @@ impl EmbedDialog {
         ui.label(t::intro());
         ui.add_space(8.0);
 
-        // ★ The whole report below is drawn from `active()`, so the list the
+        // The whole report below is drawn from `active()`, so the list the
         // operator reads is by construction the plan the button would send. The
         // borrow is taken once, for the read-only half of the body, and
         // released before the checkbox — which is the only thing here that
@@ -386,7 +386,7 @@ impl EmbedDialog {
         let plan = &active.plan;
         let shown = &active.shown;
 
-        // ★★ The PDF/A line FIRST when there is one, above the lists. It is the
+        // The PDF/A line FIRST when there is one, above the lists. It is the
         // only sentence here about the document as a whole rather than about
         // one font, and an operator scanning a list of twenty faces should meet
         // it before the list rather than under it.
@@ -397,7 +397,7 @@ impl EmbedDialog {
 
         let own_font_faces = &self.own_font_faces;
         egui::ScrollArea::vertical()
-            // ★ 56 pt was the buttons; the checkbox and its sentence sit under
+            // 56 pt was the buttons; the checkbox and its sentence sit under
             // this area too, so the reservation grew with them. It stays a
             // constant rather than a measurement for the reason the print
             // preview's strip height is a constant: a body sized from what is
@@ -420,7 +420,7 @@ impl EmbedDialog {
                     ui.add_space(8.0);
                 }
 
-                // ★★★ The END-STATE number, and its wording is GATED.
+                // The END-STATE number, and its wording is GATED.
                 //
                 // `unexplained_missing`'s own docs are explicit that a window
                 // saying *"each one is listed below"* is making a claim it
@@ -447,7 +447,7 @@ impl EmbedDialog {
                     for &index in shown {
                         let blocked = &plan.blocked[index];
                         let face = blocked.base_font.as_deref().unwrap_or_default();
-                        // ★★★ THE PER-FONT REMEDY HAD TO LEARN ABOUT THE BOX.
+                        // THE PER-FONT REMEDY HAD TO LEARN ABOUT THE BOX.
                         //
                         // With the box unticked, a standard-14 face pdfcer
                         // carries is now a `NoSourceFont` row — and that row's
@@ -470,7 +470,7 @@ impl EmbedDialog {
                     ui.small(t::unmatched(&plan.unmatched));
                     ui.add_space(8.0);
                 }
-                // ★ The folder scan's skips, last. They explain a missing donor
+                // The folder scan's skips, last. They explain a missing donor
                 // — *"none of your font folders holds it"* is the blocker, and
                 // *"that file is 40 MB"* is why — so they belong after the
                 // blockers they account for rather than before them.
@@ -486,7 +486,7 @@ impl EmbedDialog {
         // at the top would make it a setting to be configured before reading;
         // putting it beside the button would make it a modifier on a press.
         //
-        // ★ Drawn ONLY when it would change something — see
+        // Drawn ONLY when it would change something — see
         // [`Self::with_own_fonts`]. On a machine with the OS font folders on,
         // a real face answers first and this whole block is absent, so the
         // window is exactly what it was for anybody whose fonts are configured.
@@ -494,7 +494,7 @@ impl EmbedDialog {
         if self.with_own_fonts.is_some() {
             ui.add_space(8.0);
             ui.separator();
-            // ★★★ THE CONSEQUENCE IS STATED BEFORE THE BOX, AND IT NAMES THE
+            // THE CONSEQUENCE IS STATED BEFORE THE BOX, AND IT NAMES THE
             // FONTS.
             //
             // Not *"3 fonts would be substituted"* — the actual list, in the
@@ -522,7 +522,7 @@ impl EmbedDialog {
         ui.add_space(8.0);
         ui.separator();
         ui.horizontal(|ui| {
-            // ★ Greyed when there is nothing to embed, with the reason on
+            // Greyed when there is nothing to embed, with the reason on
             // hover: R9's temporarily-unavailable case. The window still opens
             // in that state, because the BLOCKED list is then the entire answer
             // the operator came for — *"here is what is missing and here is
@@ -548,7 +548,7 @@ impl EmbedDialog {
 
 /// The engine's provenance, back in this shell's own terms.
 ///
-/// ★★ The two enums exist because the crate boundary is load-bearing —
+/// The two enums exist because the crate boundary is load-bearing —
 /// `pdfcer-core` must not depend on `pdfcer-render`, so neither can name the
 /// other's type and *"a shell converts between them in one line."* This is the
 /// return leg of that conversion, and it is exhaustive rather than
@@ -561,7 +561,7 @@ fn rung(matched: pdfcer_core::font_embed_missing::FontMatch) -> crate::app::font
         FontMatch::Exact => crate::app::fonts::Match::Exact,
         FontMatch::Alias => crate::app::fonts::Match::Alias,
         FontMatch::Bundled => crate::app::fonts::Match::Bundled,
-        // ★ The catch-all reports the LOUDEST row, not the quietest. A rung
+        // The catch-all reports the LOUDEST row, not the quietest. A rung
         // this build cannot name is one it cannot vouch for, and the honest
         // rendering of "pdfcer chose this and I do not know how" is the sentence
         // that says it is a stand-in.
@@ -580,7 +580,7 @@ pub fn open_for(status: &Status, folders: &[std::path::PathBuf]) -> Option<Embed
 
 /// **Which of the two plans the switch selects.**
 ///
-/// # ★★★ Why this is a free generic function and not three lines inside
+/// # Why this is a free generic function and not three lines inside
 /// # [`EmbedDialog::active`]
 ///
 /// Because the decision it makes is the whole of O47 and there is no other way
@@ -596,7 +596,7 @@ pub fn open_for(status: &Status, folders: &[std::path::PathBuf]) -> Option<Embed
 /// the switch entirely.** Both positions are asserted below, against the same
 /// function the dialog uses.
 ///
-/// ★ `with_own` being `None` wins over `use_own` being `true`, deliberately and
+/// `with_own` being `None` wins over `use_own` being `true`, deliberately and
 /// in that order. The checkbox is only drawn when there is something to choose,
 /// so that combination should be unreachable — and if a future caller makes it
 /// reachable, the safe answer is the operator's own fonts. A `panic!` or an
@@ -617,11 +617,11 @@ mod tests {
 
     /// **Both positions of the switch, against the function the dialog calls.**
     ///
-    /// ★★★ The two assertions are worthless apart and are written as one test
+    /// The two assertions are worthless apart and are written as one test
     /// so that they cannot be separated:
     ///
     ///
-    /// ★ Strings stand in for the two plans. What is under test is the
+    /// Strings stand in for the two plans. What is under test is the
     /// **selection**, and a selection is the same function whatever it selects
     /// between — see [`chosen`] for why the real type cannot be constructed in
     /// a unit test at all.

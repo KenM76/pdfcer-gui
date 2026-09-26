@@ -10,7 +10,7 @@ where a surface lives, and getting it wrong is not cosmetic — a print
 configuration that persisted across documents would let a range typed for
 one file silently apply to another.
 
-## ★ Every dialog here is screen-anchored, never page-anchored
+## Every dialog here is screen-anchored, never page-anchored
 
 Made in response to a specific operator objection: **controls whose position
 is derived from the page move on every zoom and scroll.** A surface an operator is reading and
@@ -18,7 +18,7 @@ typing into must stay where they put their eyes. Each dialog therefore
 anchors to the viewport rather than being positioned relative to the
 canvas, and none of them is drawn inside the canvas's coordinate space.
 
-## ★ Where dialog state lives, and why it is one field
+## Where dialog state lives, and why it is one field
 
 [`DialogsState`] is the whole dock-side surface of this module: one field
 on `PdfcerApp`, one `open_*` call per dialog from the command dispatcher,

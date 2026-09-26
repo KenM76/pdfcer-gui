@@ -6,7 +6,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/textsel/fixture.md`.
 
 #![cfg(test)]
-// ★ The INNER attribute, beside the `#[cfg(test)] pub mod fixture;` that
+// The INNER attribute, beside the `#[cfg(test)] pub mod fixture;` that
 // declares this file, for the reason `tests.rs` gives at the same line: the
 // string gates recognise it as "nothing here reaches the shipped binary", and
 // the twelve string literals below are PDF SYNTAX — `/Type /Catalog`, `xref`,
@@ -106,7 +106,7 @@ pub fn bytes() -> Vec<u8> {
 mod tests {
     use super::*;
 
-    /// ★ **Rewrite `fixtures/rotated-text.pdf`.**
+    /// **Rewrite `fixtures/rotated-text.pdf`.**
     ///
     /// `#[ignore]`d: it writes into the repository, and a test that edits the
     /// tree it is run from should be an act rather than a side effect. Run it

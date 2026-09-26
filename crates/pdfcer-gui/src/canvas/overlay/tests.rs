@@ -8,7 +8,7 @@ use egui::{Pos2, pos2};
 
 use super::raster::blit_of;
 
-/// ★★★ **A SELECTED ANNOTATION HAS A GHOST BOX** — `OPERATOR_REQUESTS.md`
+/// **A SELECTED ANNOTATION HAS A GHOST BOX** — `OPERATOR_REQUESTS.md`
 /// O154, and this is the assertion whose absence let the defect ship.
 ///
 /// > *"the Markup Items don't have a live preview — the bounding box stays
@@ -25,7 +25,7 @@ use super::raster::blit_of;
 /// would satisfy the first; the second pins that it is the *annotation's*
 /// rectangle and not some other box that happens to exist.
 ///
-/// ★ And `grip_box`'s own behaviour is asserted **unchanged**, because the
+/// And `grip_box`'s own behaviour is asserted **unchanged**, because the
 /// tempting fix was to widen it instead — which would have altered what
 /// `pressing::grabbable` measures and what the published `canvas-grip-box`
 /// rect means to a driven check. Two callers wanting the content box is
@@ -77,7 +77,7 @@ fn an_annotations_ghost_box_is_its_own_rect_and_grip_box_is_left_alone() {
     );
 }
 
-/// ★★ **With nothing selected there is no ghost**, which is the half a
+/// **With nothing selected there is no ghost**, which is the half a
 /// blanket `Some` would break.
 ///
 /// A ghost box for an empty selection would put a preview rectangle on
@@ -95,7 +95,7 @@ fn nothing_selected_has_no_ghost_box() {
     assert_eq!(ghost_box(&map, &SelectionState::default(), None), None);
 }
 
-/// ★ A zero-height rule gets a visible band rather than nothing.
+/// A zero-height rule gets a visible band rather than nothing.
 #[test]
 fn a_degenerate_outline_is_grown_until_it_can_be_seen() {
     // The measured case: `100 200 m 300 200 l S`, projected to screen.
@@ -197,7 +197,7 @@ fn the_move_ghost_is_translucent_and_keeps_the_themes_hue() {
     );
 }
 
-/// ★ **The current find hit is distinguished by emphasis, not by hue.**
+/// **The current find hit is distinguished by emphasis, not by hue.**
 ///
 /// Both halves are asserted because both are the design:
 ///
@@ -231,7 +231,7 @@ fn the_current_find_hit_differs_by_emphasis_and_keeps_the_themes_hue() {
         }
     }
 
-    // ★ The three relations between the two alphas are checked at
+    // The three relations between the two alphas are checked at
     // COMPILE time rather than here.
     //
     // They are properties of two constants, so a run-time assertion would
@@ -250,7 +250,7 @@ fn the_current_find_hit_differs_by_emphasis_and_keeps_the_themes_hue() {
         // ui-text-exempt: compile-error text, never displayed in the UI
         "a highlight that hides the text it is highlighting defeats its own purpose"
     );
-    // ★ The bound that came from a screenshot rather than from reasoning.
+    // The bound that came from a screenshot rather than from reasoning.
     // At 168 the current hit was a solid block over its own word; see
     // `CURRENT_ALPHA`'s docs. 112 is the ceiling that keeps ordinary black
     // text legible through the theme's selection blue in both presets.
@@ -262,7 +262,7 @@ fn the_current_find_hit_differs_by_emphasis_and_keeps_the_themes_hue() {
     );
 }
 
-/// ★ **The text-selection wash is readable through** — the bound the
+/// **The text-selection wash is readable through** — the bound the
 /// current-hit defect established, applied to the surface that needs it
 /// most.
 ///
@@ -320,7 +320,7 @@ fn a_translucent_theme_colour_keeps_its_hue_through_the_ghost() {
     }
 }
 
-/// ★★★ **THE TRAVELLING COPY IS TAKEN FROM THE RECTANGLE THE TEXTURE IS A
+/// **THE TRAVELLING COPY IS TAKEN FROM THE RECTANGLE THE TEXTURE IS A
 /// PICTURE OF, AND IT KEEPS ITS SCALE** — `OPERATOR_REQUESTS.md` O215 ask 5.
 ///
 /// Every number below is worked out from the definition of the projection
@@ -438,7 +438,7 @@ fn a_preview_with_geometry_in_it() -> crate::canvas::shapes::ShapePreview {
     }
 }
 
-/// ★★★ **THE GHOST IS WITHHELD ONLY WHERE SOMETHING BETTER IS ON SCREEN** —
+/// **THE GHOST IS WITHHELD ONLY WHERE SOMETHING BETTER IS ON SCREEN** —
 /// `OPERATOR_REQUESTS.md` O63 and O215 ask 5.
 ///
 /// The gate [`ghost_is_owed`] replaced read *is this an inner rung*, which is
@@ -478,7 +478,7 @@ fn the_ghost_is_withheld_only_for_a_preview_that_has_something_in_it() {
         "the object rung is always owed a ghost, whatever the preview says"
     );
 
-    // ★★ The FALSE case. Without it every assertion above is satisfied by a
+    // The FALSE case. Without it every assertion above is satisfied by a
     // function that returns `true` and reads nothing.
     let travelling = a_preview_with_geometry_in_it();
     assert!(
@@ -493,7 +493,7 @@ fn the_ghost_is_withheld_only_for_a_preview_that_has_something_in_it() {
     );
 }
 
-/// ★★★ **THE TRAVELLING COPY IS WITHHELD ONLY WHERE THE GEOMETRY ITSELF
+/// **THE TRAVELLING COPY IS WITHHELD ONLY WHERE THE GEOMETRY ITSELF
 /// MOVES** — `OPERATOR_REQUESTS.md` O215 ask 5.
 ///
 /// [`raster_ghost_is_owed`] decides whether a translucent copy of the page's

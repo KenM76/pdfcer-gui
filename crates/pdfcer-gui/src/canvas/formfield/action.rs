@@ -14,7 +14,7 @@ use pdfcer_core::edit::{ButtonAction, NamedAction, PageView, ResetScope};
 /// variant reaches the operator by existing. No count is stated here: the
 /// array's own length is the claim, and it is one the compiler checks.
 ///
-/// ★ `Nothing` is first and is the default, because that is what
+/// `Nothing` is first and is the default, because that is what
 /// `add_push_button` authors and this shell does not change a document's
 /// meaning by having a dialog open. Choosing anything else is a deliberate act.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -39,7 +39,7 @@ pub enum ButtonDoesKind {
 impl ButtonDoesKind {
     /// Every kind, in the order the chooser offers them.
     ///
-    /// ★★ Ordered by **reach**, not by the standard's section numbers: the four
+    /// Ordered by **reach**, not by the standard's section numbers: the four
     /// that cannot leave the document come first, then the two that write an
     /// address into the file. An operator scanning the list meets the safe ones
     /// first and the two that need a sentence of disclosure last, which is the
@@ -91,7 +91,7 @@ pub struct ButtonDoes {
     /// One string rather than a `Vec`, for the same reason a choice field's
     /// options are: it is what the operator edits.
     ///
-    /// ★★ These must be **terminal** field names. Table 210 states nothing
+    /// These must be **terminal** field names. Table 210 states nothing
     /// about descendant expansion — the phrase *"all descendants of the
     /// specified fields"* appears twice per edition of ISO 32000 and never on
     /// this row — so a grouping name is a button that either hides a subtree or
@@ -101,7 +101,7 @@ pub struct ButtonDoes {
     pub targets: String,
     /// **Show or hide** — `true` hides the named fields, `false` shows them.
     ///
-    /// ★ Not a toggle, and the standard chose that: Table 210's action works
+    /// Not a toggle, and the standard chose that: Table 210's action works
     /// *"by setting or clearing their `Hidden` flags"*, so a second press does
     /// not reverse it. A genuinely toggling button needs JavaScript and is
     /// therefore out of pdfcer's scope rather than merely unbuilt.
@@ -182,7 +182,7 @@ impl NamedChoice {
 
 /// Why a draft action cannot be authored yet.
 ///
-/// ★ Returned rather than rendered, so the caller decides where the sentence
+/// Returned rather than rendered, so the caller decides where the sentence
 /// goes — the dialog puts it under the chooser and greys Add; a driven check
 /// reads the discriminant. A function that drew the message itself would make
 /// the condition untestable except by screenshot.
@@ -201,7 +201,7 @@ pub enum ActionBlocker {
     /// An address `pdfcer-core` will refuse because it cannot state it
     /// unambiguously: relative, or carrying a non-ASCII character.
     ///
-    /// ★★ Checked here as well as in the engine, and that is not duplication
+    /// Checked here as well as in the engine, and that is not duplication
     /// for its own sake: the engine's refusal arrives when the action drains,
     /// which is **after the dialog has closed**. An operator who typed a
     /// relative URL would see the dialog accept it and a status line contradict
@@ -276,7 +276,7 @@ impl ButtonDoes {
         match self.kind {
             ButtonDoesKind::Nothing => None,
             ButtonDoesKind::ResetForm => Some(ButtonAction::ResetForm {
-                // ★ `All`, and only `All`. The panel offers no field picker for
+                // `All`, and only `All`. The panel offers no field picker for
                 // a reset because the reset it can preview is the whole-form
                 // one — the same reasoning `FormEdit::Reset` carries. `Only`
                 // and `Except` exist in the engine and are reachable from the
@@ -287,7 +287,7 @@ impl ButtonDoes {
             ButtonDoesKind::GoToPage => {
                 let n = self.page_number.trim().parse::<usize>().ok()?;
                 Some(ButtonAction::GoToPage {
-                    // ★ 1-based in the box, 0-based in the file. `blocker`
+                    // 1-based in the box, 0-based in the file. `blocker`
                     // refuses `0` precisely so this subtraction cannot wrap.
                     page_index: n - 1,
                     view: self.view.to_core(),
@@ -314,7 +314,7 @@ impl ButtonDoes {
 
 /// Whether an address is one pdfcer can state unambiguously.
 ///
-/// # ★★ The two refusals are the engine's, restated, and each has a reason
+/// # The two refusals are the engine's, restated, and each has a reason
 /// that is about READERS rather than about safety
 ///
 /// - **Relative** — §7.11.2.2 resolves it against the document's own location,
@@ -325,7 +325,7 @@ impl ButtonDoes {
 ///   `/URI` as an `ASCII string` in one column and *"encoded in UTF-8"* in the
 ///   next.
 ///
-/// ★ **`http://` is allowed and is not a refusal.** Destination policy is open
+/// **`http://` is allowed and is not a refusal.** Destination policy is open
 /// by operator ruling — *"we'll allow a submit to send filled data wherever the
 /// document's author said"* — and `https` appears **zero times** in ISO 32000-1.
 /// Blocking it would be pdfcer inventing a conformance requirement. It is
@@ -357,7 +357,7 @@ fn url_blocker(url: &str) -> Option<ActionBlocker> {
 
 /// Whether the address is unencrypted, for the disclosure line.
 ///
-/// ★ A **statement**, never a refusal. See [`url_blocker`] for why: the standard
+/// A **statement**, never a refusal. See [`url_blocker`] for why: the standard
 /// states no TLS rule, and pdfcer does not invent one. What it does is say so.
 #[must_use]
 pub fn url_is_unencrypted(url: &str) -> bool {
@@ -369,7 +369,7 @@ pub fn url_is_unencrypted(url: &str) -> bool {
 mod tests {
     use super::*;
 
-    /// ★★★ **THE TRIPWIRE FIRED, AND THIS IS WHAT IT LEFT BEHIND.**
+    /// **THE TRIPWIRE FIRED, AND THIS IS WHAT IT LEFT BEHIND.**
     ///
     /// It read *"a tripwire that names its own deletion"* and asserted that
     /// `pdfcer-core` could write a button's action and not read one — so this
@@ -377,7 +377,7 @@ mod tests {
     /// for a button already in the document.
     ///
     ///
-    /// ★★ Kept as a headstone rather than deleted outright, because the shape
+    /// Kept as a headstone rather than deleted outright, because the shape
     /// paid out for the fifth time in three days and the count is the
     /// argument: a test that ASSERTS a limitation goes red on the first build
     /// after `cargo update` that lifts it, and names the code to change while
@@ -419,7 +419,7 @@ mod tests {
         ));
     }
 
-    /// ★ Zero is refused rather than clamped, and this is the test that says
+    /// Zero is refused rather than clamped, and this is the test that says
     /// why: `page_index: n - 1` would wrap, and a clamp to page 1 would author
     /// a destination the operator did not type.
     #[test]
@@ -461,7 +461,7 @@ mod tests {
         assert_eq!(does.blocker(), Some(ActionBlocker::UrlNotStatable));
     }
 
-    /// ★★ `http://` is **allowed**. If this test ever inverts, someone has made
+    /// `http://` is **allowed**. If this test ever inverts, someone has made
     /// pdfcer enforce a rule the standard does not state — see [`url_blocker`].
     #[test]
     fn plain_http_is_allowed_and_disclosed_rather_than_blocked() {
@@ -493,7 +493,7 @@ mod tests {
         assert_eq!(empty.blocker(), Some(ActionBlocker::NoTargets));
     }
 
-    /// ★ Every kind that reaches outside the document must say so, and no kind
+    /// Every kind that reaches outside the document must say so, and no kind
     /// that cannot may claim to. This is the predicate a disclosure block is
     /// drawn on, so getting it wrong in either direction is a rule-4 defect:
     /// too narrow hides a statement the operator cannot otherwise see, too wide

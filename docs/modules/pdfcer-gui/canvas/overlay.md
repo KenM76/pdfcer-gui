@@ -1,6 +1,6 @@
 # `canvas::overlay` — what the selection looks like, and what it must never look like
 
-## ★ Rule 4 is the whole design constraint of this file
+## Rule 4 is the whole design constraint of this file
 
 `D:\Dev\FeatureRequests\pdfce_FeatureRequests\README.md`, second and fourth
 clauses of the disclosure rule:
@@ -35,7 +35,7 @@ other, and `panels`' scroll-bar note records that exact failure already
 measured once in this project: a control that was present, opaque,
 correctly sized and invisible in a capture.
 
-★★★ **Never `visuals.selection.stroke` or `visuals.selection.bg_fill`.**
+**Never `visuals.selection.stroke` or `visuals.selection.bg_fill`.**
 `egui::Visuals::selection` is `egui`'s channel for styling **selected
 widgets**, not a canvas role. Point it at the canvas and every selected
 chrome control in the application — nineteen `selectable_label` and

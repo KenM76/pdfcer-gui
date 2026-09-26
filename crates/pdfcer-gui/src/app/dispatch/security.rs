@@ -7,14 +7,14 @@ use crate::protect::Task;
 
 /// Whether `id` is one of the Security commands this module dispatches.
 ///
-/// ★ Paired with [`PdfcerApp::dispatch_security`] over the same list, and the
+/// Paired with [`PdfcerApp::dispatch_security`] over the same list, and the
 /// two are pinned together by a test — [`super::panels::claims`]' arrangement
 /// and its reason: a guard and a dispatcher that disagree turn a registered
 /// command into one that traces `command-unimplemented`, which looks from the
 /// outside exactly like a command nobody wired.
 #[must_use]
 pub(crate) fn claims(id: &str) -> bool {
-    // ★ `file.sign` is behind the `signing` feature, so a build without it
+    // `file.sign` is behind the `signing` feature, so a build without it
     // registers no such command and this arm can never be reached — but the
     // predicate names it unconditionally, deliberately. `SHELL_FRAMEWORK.md`
     // §5b's rule binds the RIBBON and the registry; a `#[cfg]` here would put
@@ -37,7 +37,7 @@ impl PdfcerApp {
     /// [`crate::dialogs::DialogsState::open_protect`] rather than here, so a
     /// chord and a ribbon click are gated by one expression.
     pub(in crate::app) fn dispatch_security(&mut self, id: &str) {
-        // ★★★ Signing is its own window, not a third `Task`. The two encryption
+        // Signing is its own window, not a third `Task`. The two encryption
         // commands share a window because they differ in exactly one value; a
         // signature shares nothing with them — no password fields, no
         // permission list, a private key it must hold and drop, and a different
@@ -49,7 +49,7 @@ impl PdfcerApp {
         }
         let task = match id {
             "file.permissions" => Task::Permissions,
-            // ★ `file.encrypt` and — by construction — nothing else, because
+            // `file.encrypt` and — by construction — nothing else, because
             // `claims` is the only gate that reaches here. Written as the
             // fall-through rather than as a third arm with an `unreachable!`,
             // on this project's standing preference against panicking on a
@@ -64,7 +64,7 @@ impl PdfcerApp {
 mod tests {
     use super::*;
 
-    /// ★★ **The guard and the dispatcher claim the same ids.**
+    /// **The guard and the dispatcher claim the same ids.**
     ///
     /// [`super::panels`]' test by the same name and for its reason: the two
     /// lists are written separately and a command added to one and not the
@@ -76,7 +76,7 @@ mod tests {
     /// passing a test that lists the same ids again.
     #[test]
     fn the_guard_and_the_dispatcher_claim_the_same_ids() {
-        // ★ Built here rather than reaching for a shared helper: the
+        // Built here rather than reaching for a shared helper: the
         // catalogue's own `all()` is `pub(super)` to its module and the test
         // registry there is private to that module's tests. Registering into a
         // fresh `CommandRegistry` is the same act `crate::shell::commands`
@@ -89,7 +89,7 @@ mod tests {
             .filter(|id| reg.get(id).is_some())
             .map(str::to_owned)
             .collect();
-        // ★ Build-dependent: `file.sign` is registered only with the `signing`
+        // Build-dependent: `file.sign` is registered only with the `signing`
         // feature, which is `SHELL_FRAMEWORK.md` §5b's whole mechanism. Written
         // as arithmetic over `cfg!` rather than as a number, because both
         // answers are correct and one literal would fail one of the two
@@ -124,7 +124,7 @@ mod tests {
 
     /// The mapping [`PdfcerApp::dispatch_security`] applies, without an app.
     ///
-    /// ★ A second spelling of the mapping, and it is the honest cost of
+    /// A second spelling of the mapping, and it is the honest cost of
     /// asserting a decision that is otherwise only reachable through a
     /// `&mut PdfcerApp`. It is pinned to the real one by
     /// [`each_command_reaches_its_own_task`] reading the same ids the registry

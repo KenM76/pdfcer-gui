@@ -8,7 +8,7 @@ Three switches, on the Tool row, for the operator to set before a drag.
 > should be an option that they do scale with resize. Inkscape has options
 > for this and I want the same."*
 
-## ★★★ The correction this module IS, because it is about reasoning
+## The correction this module IS, because it is about reasoning
 
 This project told `pdfcer-core` that a resize must **not** scale stroke
 width, with three arguments: a CAD line weight is a drafting standard rather
@@ -23,10 +23,10 @@ against an **option**.* The third argument contained its own refutation —
 and it was walked straight past. Inkscape puts four of them on the selector
 tool's control bar.
 
-★ So the defaults here are exactly what was argued for, and every one of
+So the defaults here are exactly what was argued for, and every one of
 them is now something the operator can change.
 
-## ★★ Why the Tool row and not Settings
+## Why the Tool row and not Settings
 
 Because it is a **per-drag modifier, not a preference**. Inkscape puts them
 on the selector tool's control bar for the same reason: an operator decides
@@ -34,7 +34,7 @@ on the selector tool's control bar for the same reason: an operator decides
 whether to hold Shift. A settings dialog is where you say what pdfcer should
 usually do; this is where you say what this gesture does.
 
-## ★★★ Why the third switch exists, and why it is NOT an Inkscape parity item
+## Why the third switch exists, and why it is NOT an Inkscape parity item
 
 Because of a fact the engine established and neither program handles well:
 **no per-axis stroke width exists**, in PDF or in SVG. `/BS /W` and `w` are
@@ -53,7 +53,7 @@ honest options are refuse, or proceed and state the residual distortion —
 *"never silently pick a fudge factor, which is the one thing the parity
 reference does."*
 
-★ It applies only where pdfcer did **not** author the appearance. An
+It applies only where pdfcer did **not** author the appearance. An
 appearance pdfcer built is rebuilt from the scaled geometry at the new size,
 and both stroke-toggle states are then exactly satisfiable.
 
@@ -65,12 +65,12 @@ and both stroke-toggle states are then exactly satisfiable.
 | [`Modifiers::keep_rect_differences`] | **off**, i.e. `/RD` *does* scale | an inset **is** a length in the space being scaled; leaving it fixed while `/Rect` doubles changes the proportions |
 | [`Modifiers::allow_distortion`] | **off** | a refusal that names its remedy beats artwork silently going oval |
 
-★★ The first two look inconsistent and are the same rule applied twice. The
+The first two look inconsistent and are the same rule applied twice. The
 engine promoted the discriminator out of this shell's own CAD argument:
 **is the property a length in the space being transformed?** An inset is; a
 line weight is not. Two opposite defaults, one question.
 
-## ★ Memory-backed, like the text pen
+## Memory-backed, like the text pen
 
 Same mechanism and same reason as [`crate::canvas::textedit::pen`]: the
 value is read by the canvas and written by a panel, neither of which owns

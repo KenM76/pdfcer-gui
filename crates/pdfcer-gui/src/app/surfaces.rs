@@ -289,7 +289,7 @@ impl PdfcerApp {
 
         // The blend the slider reported, written to the view it is about.
         //
-        // ★ `Some(..)` and never `None`: the control is drawn only while the
+        // `Some(..)` and never `None`: the control is drawn only while the
         // layer is on, so a report from it can only ever be a NEW POSITION for
         // a mode that is already on. Writing `None` here would turn the mode
         // off from a control whose whole travel is inside it, and the operator

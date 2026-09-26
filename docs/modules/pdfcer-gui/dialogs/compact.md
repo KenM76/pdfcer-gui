@@ -3,7 +3,7 @@
 `file.save_compacted`, wired 2026-08-28. `OPERATOR_REQUESTS.md` **O48**,
 answered *"yes to all three"*.
 
-## ★★★ It writes the file BEFORE it opens, and that is the design
+## It writes the file BEFORE it opens, and that is the design
 
 The window's headline number is *"a compacted copy would be 1.0 MB instead of
 4.2 MB"*, and it is a **measurement of this document**, obtained by actually
@@ -20,13 +20,13 @@ way to give it back.
 ⇒ **When a window asks somebody to trade something irreversible for a
 benefit, the benefit must be measured rather than predicted.**
 
-★★ The bytes are then **kept** and written to whatever the picker names, so
+The bytes are then **kept** and written to whatever the picker names, so
 the file the operator receives is byte-for-byte the one the window measured.
 Re-serialising after the picker would be a second computation of the same
 answer, and the two could differ — the session is not editable behind this
 window, but that is a property of today's shell rather than of the code.
 
-## ★★ Why the picker opens AFTER this window and not instead of it
+## Why the picker opens AFTER this window and not instead of it
 
 `app::save`'s `save_copy` opens a picker straight away, correctly: a copy
 costs nothing and the only question is where. This costs three things, and a

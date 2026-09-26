@@ -30,7 +30,7 @@ apply phase  move-text-lines page=0 n=3 epoch=1 disclosures=none
 history      undo kind=MoveTextRun undo_depth=1
 ```
 
-★★★ `marquee-mode` is the **object-rung** band's own line, and the defective
+`marquee-mode` is the **object-rung** band's own line, and the defective
 build writes it where this check requires `marquee-parts`. The two are
 mutually exclusive — `take_chunks` returns before `select_with` is reached —
 so the trace says which of the two bands ran, in one word, and a failure
@@ -70,7 +70,7 @@ takes lines 0, 1 and 2 and no others.
 [`NARROW_BAND`] runs from (400, 644) to (60, 634), 5.2 pt clear of line 3
 below and 5.6 pt clear of line 5 above, so it reaches line 4 alone.
 
-★★ Crossing rather than enclosing on purpose. An enclosing band would have
+Crossing rather than enclosing on purpose. An enclosing band would have
 to discriminate on the lines' **right edges**, which are a claim about what
 `ObjectModelProvider::text_line_bounds_canvas_of` counts as the end of a
 line — trailing space, the text object's own width, the advance past the
@@ -79,7 +79,7 @@ bands are aimed along the axis whose numbers are known. The enclosing arm is
 covered where it can be measured exactly, in `canvas::chunks`' own test of
 the direction rule.
 
-★★★ Both bands **begin at x = 400**, which is past the right edge of the
+Both bands **begin at x = 400**, which is past the right edge of the
 longest line and past the text object's box. That is a requirement, not a
 margin: `canvas::pressing::body_under` claims a press inside the block's box
 but on no line of it as a move of the selection — deliberately, so the white

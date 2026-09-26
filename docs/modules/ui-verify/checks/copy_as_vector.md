@@ -22,12 +22,12 @@ feature that leaves the machine's clipboard alone, and pretending otherwise
 would mean not checking the thing the operator asked for. Said here so it is
 a known cost of running `ui-verify` rather than a surprise.
 
-★ It is also why **no unit test anywhere in this project touches the real
+It is also why **no unit test anywhere in this project touches the real
 clipboard**: `crate::clipboard` and `crates/native-clipboard` assert on the
 bytes that *would* be placed, so a `cargo test` run cannot destroy anything.
 The destructive act is confined to a harness the operator starts on purpose.
 
-# ★★★ Why the ORDER is the assertion, and availability is not enough
+# Why the ORDER is the assertion, and availability is not enough
 
 A pasting application "typically retrieves … the first format it
 recognizes". So the design of this feature *is* an order, measured by the
@@ -41,7 +41,7 @@ nothing anywhere says so. `sys::clipboard_formats` walks
 `EnumClipboardFormats`, which enumerates in placement order, precisely so
 this check can assert on the *prefix* rather than on the *set*.
 
-★★ **Windows synthesises formats, and they come after.** A placed
+**Windows synthesises formats, and they come after.** A placed
 `CF_DIBV5` makes `CF_DIB` and `CF_BITMAP` appear too. That is why this
 asserts a prefix and ignores the tail: a build that placed all four
 correctly will show more than four entries, and demanding exactly four would

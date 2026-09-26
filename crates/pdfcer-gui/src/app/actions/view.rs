@@ -2,7 +2,7 @@
 //! document**
 //!
 //!
-//! ## ★★ Why that distinction is worth a file
+//! ## Why that distinction is worth a file
 //!
 //! `apply`'s whole discipline is built around edits — the funnel, the epoch
 //! bump, the render-worker cancel, the disclosure channel. None of it applies
@@ -10,7 +10,7 @@
 //! invitation to give it some by accident. A reader asking *"does this bump the
 //! epoch?"* gets the answer from the file name.
 //!
-//! ## ★ The destination is PARKED, not performed
+//! ## The destination is PARKED, not performed
 //!
 //! Landing on a bookmark's destination needs the canvas rectangle, the page's
 //! drawn extent and the scroll offset. None of those exists here, so this
@@ -28,7 +28,7 @@ use super::Action;
 /// `app::dispatch::format` states for its own guarded fall-through.
 pub(super) fn apply(doc: &mut OpenDoc, action: Action, page_count: usize, max_zoom: f32) {
     match action {
-        // ★ A fit sets the scale AND asks for the view to be placed --
+        // A fit sets the scale AND asks for the view to be placed --
         // `OPERATOR_REQUESTS.md` O28. The placement cannot happen here:
         // the re-fitted zoom is computed by `ViewState::apply_fit` from a
         // viewport this code cannot see, so the page's new drawn size is
@@ -70,7 +70,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: Action, page_count: usize, max_zo
                 why,
             },
         ),
-        // ★★ **A bookmark's destination**, parked rather than performed:
+        // **A bookmark's destination**, parked rather than performed:
         // the landing needs a viewport, which this phase has none of.
         // `canvas::destination` drains it and carries the argument.
         Action::GoToDestination(to) => {

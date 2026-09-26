@@ -14,7 +14,7 @@ use egui::Rect;
 
 /// Cells across the mask's **longer** side.
 ///
-/// # ★ What this number buys, and what it costs, as arithmetic rather than a
+/// # What this number buys, and what it costs, as arithmetic rather than a
 /// # guess
 ///
 /// The mask is a downsample of the preview raster, whose longest side is
@@ -48,7 +48,7 @@ const CELLS_LONG_SIDE: u32 = 256;
 
 /// The lightest `min(R, G, B)` a pixel may have and still count as **ink**.
 ///
-/// # ★★★ This constant is the whole change, and it is set from a MEASUREMENT
+/// # This constant is the whole change, and it is set from a MEASUREMENT
 ///
 /// The intuitive test is `min(R, G, B) < 255` — "anything that is not pure
 /// white is ink". It is wrong, and wrong on exactly the document class O113 is
@@ -124,7 +124,7 @@ pub(super) struct InkMask {
 impl InkMask {
     /// Build a mask from a rendered page's **premultiplied** RGBA8 bytes.
     ///
-    /// # ★ Premultiplied, and why it does not complicate the test here
+    /// # Premultiplied, and why it does not complicate the test here
     ///
     /// `tiny-skia` stores pixels premultiplied — `[R·A, G·A, B·A, A]` — and
     /// `crate::render::raster`'s header is emphatic that reading them as
@@ -178,7 +178,7 @@ impl InkMask {
         let rows = (h * cells_long).div_ceil(long).max(1);
         let mut cells = vec![false; cols * rows];
 
-        // ★★ A PIXEL IS AN AREA, NOT A POINT, and this is where that stopped
+        // A PIXEL IS AN AREA, NOT A POINT, and this is where that stopped
         // being a pedantic distinction.
         //
         // The obvious mapping is `cell = pixel * cells / length`, which assigns
@@ -247,7 +247,7 @@ impl InkMask {
     /// The **ink extent within `region`**, in normalised 0..1 page space, or
     /// `None` when no cell touching `region` carries ink.
     ///
-    /// ★ `None` is the whole point of O113. *"No ink in the band ⇒ no hatch at
+    /// `None` is the whole point of O113. *"No ink in the band ⇒ no hatch at
     /// all"* — the 1:1 CAD sheet whose overhang is empty paper gets no red
     /// pattern, because there is nothing to warn about.
     ///
@@ -390,7 +390,7 @@ mod tests {
         Rect::from_min_max(egui::pos2(1.0 - fraction, 0.0), egui::pos2(1.0, 1.0))
     }
 
-    /// ★★★ **The operator's own case: a 1:1 drawing whose overhang is empty
+    /// **The operator's own case: a 1:1 drawing whose overhang is empty
     /// paper gets NO hatch.**
     ///
     /// > *"Our drawing get drawn 1:1 and the area that isn't printed is just
@@ -425,7 +425,7 @@ mod tests {
         );
     }
 
-    /// ★ **One inked cell in the overhang is hatched, and nothing else is.**
+    /// **One inked cell in the overhang is hatched, and nothing else is.**
     ///
     /// The same page as the test above with a single small mark added out in
     /// the border — a stray revision stamp, a pdf-dimension leader that ran
@@ -473,7 +473,7 @@ mod tests {
         );
     }
 
-    /// ★ **Ink that is entirely inside the printable rectangle hatches
+    /// **Ink that is entirely inside the printable rectangle hatches
     /// nothing**, which is the case where the placement reports no clip at all
     /// and is the sanity check on the other two.
     #[test]
@@ -492,7 +492,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **Near-white CAD paper is not ink**, and this is the measurement
+    /// **Near-white CAD paper is not ink**, and this is the measurement
     /// [`INK_MAX_LEVEL`] exists for.
     ///
     /// `fixtures/a1-titleblock.pdf` renders its paper as `(249, 249, 249)` —
@@ -546,7 +546,7 @@ mod tests {
         );
     }
 
-    /// ★ **A transparency test would find nothing**, which is the failure this
+    /// **A transparency test would find nothing**, which is the failure this
     /// module's header warns is silent.
     ///
     /// Every pixel the preview renders is alpha 255 — measured on three
@@ -583,7 +583,7 @@ mod tests {
         }
     }
 
-    /// ★★ **The extent is never SMALLER than the ink**, checked at every pixel
+    /// **The extent is never SMALLER than the ink**, checked at every pixel
     /// of a row, which is where a top-left-corner mapping quietly fails.
     ///
     /// A pixel is an area. Assigning it to the single cell its top-left corner

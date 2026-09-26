@@ -244,7 +244,7 @@ mod tear_tests;
 #[cfg(test)]
 mod width_tests;
 
-// ★ The synthetic proportional face, borrowed rather than duplicated.
+// The synthetic proportional face, borrowed rather than duplicated.
 //
 // `crate::ribbon::testfont` is `mod testfont;` — private to the ribbon —
 // so it cannot be reached by a path from here, and `ribbon/` is not this
@@ -339,7 +339,7 @@ impl<'a> Dock<'a> {
     /// **Tell the dock which panels the rail can raise**, so a stack whose
     /// every panel is on the rail draws no tab strip of its own.
     ///
-    /// # ★★★ The measurement that produced this
+    /// # The measurement that produced this
     ///
     /// The operator: *"we also don't need tabs in the left side bar when the
     /// left rail is visible."* A live trace says why, in three lines:
@@ -373,13 +373,13 @@ impl<'a> Dock<'a> {
     ///    for the active one, not for most of them — the one that is behind is
     ///    precisely the one that needs the second route.
     ///
-    /// ★★ **The rail's auto-hide does not weaken this**, and the reason is
+    /// **The rail's auto-hide does not weaken this**, and the reason is
     /// [`rail::PEEK_WIDTH_PTS`]: a hiding rail still reserves a permanent
     /// sliver wider than [`crate::peek::Peek::MIN_TRIGGER_PTS`], publishes it
     /// as `dock.<side>.railtrigger` on every frame, and draws a chevron in it.
     /// There is no state in which the rail is *gone*.
     ///
-    /// ★ **Closing** a panel is reachable too, and by the same control. The
+    /// **Closing** a panel is reachable too, and by the same control. The
     /// rail's entries are the application's panel commands, which are toggles:
     /// pressing the row of a panel that is in front closes it. The tab's own ✕
     /// is a second route to a verb that has one, not the only one.
@@ -408,7 +408,7 @@ impl<'a> Dock<'a> {
         let Some(reach) = self.rail_reach.as_deref_mut() else {
             return false;
         };
-        // ★ An EMPTY stack is not suppressed. `all` over an empty list is
+        // An EMPTY stack is not suppressed. `all` over an empty list is
         // `true`, which would be the wrong answer for the wrong reason — and
         // although `DockLayout::normalize` forbids an empty stack, a predicate
         // whose correctness depends on a normalization performed somewhere
@@ -556,7 +556,7 @@ impl<'a> Dock<'a> {
         state: &mut DockState,
         mut body: impl FnMut(&PanelId, &mut egui::Ui),
     ) -> DockFrameReport {
-        // ★ Read the entitlement BEFORE anything lays out.
+        // Read the entitlement BEFORE anything lays out.
         //
         // `D:/dev/rag/egui/a_sibling_row_that_overflows_grows_the_parent_max_rect_...md`:
         // a child that lays out past its parent's `max_rect` GROWS it,
@@ -607,7 +607,7 @@ impl<'a> Dock<'a> {
 
         for side in DockSide::ALL {
             let s = snapshot.side(side);
-            // ★ A side with no panels in it draws nothing at all — not even a
+            // A side with no panels in it draws nothing at all — not even a
             // rail. There is nothing to bring back, and a control that opened
             // an empty compartment would be the no-placeholders rule broken:
             // an affordance for something that cannot happen.
@@ -628,7 +628,7 @@ impl<'a> Dock<'a> {
                     &mut body,
                 );
             } else {
-                // ★★ The RAIL — the way back from a collapsed side.
+                // The RAIL — the way back from a collapsed side.
                 //
                 // A hidden side that drew nothing would leave the only route
                 // back a ribbon command the operator has to know exists. A
@@ -638,7 +638,7 @@ impl<'a> Dock<'a> {
             }
         }
 
-        // ★ Both the offer and the settlement come AFTER both sides have
+        // Both the offer and the settlement come AFTER both sides have
         // drawn: the offer because resolving a drop needs the whole geometry
         // (see [`overlay`]), and the settlement so a release lands whatever
         // became of the strip it began on (see [`drag`]).
@@ -655,7 +655,7 @@ impl<'a> Dock<'a> {
 
         // Phase 3: apply. The one place the layout is mutable.
         report.layout_changed = apply(&mut state.layout, &ctx.intents, &mut report);
-        // ★★ The float census, taken from the layout AFTER the intents have
+        // The float census, taken from the layout AFTER the intents have
         // been applied — so a panel floated on this very frame is already in
         // the claim, and `show_floating` (which runs later in the same frame)
         // draws it immediately rather than a frame behind. `floats_drawn`
@@ -694,12 +694,12 @@ impl<'a> Dock<'a> {
             DockSide::Right => egui::Panel::right(egui::Id::new(("egui-shell-dock", side.key()))),
         };
 
-        // ★ The parent's `available_rect_before_wrap` is CONSTANT on frames
+        // The parent's `available_rect_before_wrap` is CONSTANT on frames
         // where `.frame` below moves 0.3–0.4 pt, so the movement comes from
         // inside egui's `Panel::show` and not from the space this call is
         // handed.
         let shown = panel
-            // ★ `exact_size`, and only `exact_size`. See the module
+            // `exact_size`, and only `exact_size`. See the module
             // header's R128 section: this is the one API that makes the
             // dock's outer width content-independent, and therefore the
             // one that keeps a fit-to-viewport zoom next door from
@@ -729,7 +729,7 @@ impl<'a> Dock<'a> {
 
                 let area = ui.max_rect();
                 ctx.reporter.report(ui, area, || report::side(side));
-                // ★ The banner is reserved off the TOP before the columns are
+                // The banner is reserved off the TOP before the columns are
                 // resolved, so a side with one takes its height from the
                 // stacks once rather than painting over them. See
                 // [`banner`]'s header for why it is chrome and not a stack.
@@ -737,7 +737,7 @@ impl<'a> Dock<'a> {
                 // Reserved off the OUTER edge, for the banner's reason.
                 let area = rail::draw(ui, ctx, side, area, self.rail.as_mut(), rail_peek);
                 self.draw_side_contents(ui, ctx, layout, side, area, report, body);
-                // ★ The collapse chevron, drawn LAST and OVER the columns.
+                // The collapse chevron, drawn LAST and OVER the columns.
                 //
                 // Over rather than inside, because inserting it into the column
                 // layout would take height from a panel body on every frame —
@@ -749,7 +749,7 @@ impl<'a> Dock<'a> {
                     format!("{}.body_min", report::side(side))
                 });
             });
-        // ★ The rect egui ALLOCATED for this side, and — on a frame where it
+        // The rect egui ALLOCATED for this side, and — on a frame where it
         // crosses the window's edge — the widgets that pushed it there. See
         // [`overflow_probe`] for the mechanism and the retirement plan.
         overflow_probe::publish(ui, ctx, side, shown.response.rect);
@@ -812,7 +812,7 @@ impl<'a> Dock<'a> {
 
         let side_layout = layout.side(side);
         let shares: Vec<f32> = side_layout.columns.iter().map(|c| c.share).collect();
-        // ★ The same walk a drop preview replays. See [`preview`].
+        // The same walk a drop preview replays. See [`preview`].
         let rects = preview::columns_across(columns_rect, &shares);
 
         for (i, rect) in rects.iter().copied().enumerate() {
@@ -865,7 +865,7 @@ impl<'a> Dock<'a> {
     ) {
         let stacks = &layout.side(side).columns[column].stacks;
         let shares: Vec<f32> = stacks.iter().map(|s| s.share).collect();
-        // ★ The same walk a drop preview replays. See [`preview`].
+        // The same walk a drop preview replays. See [`preview`].
         let rects = preview::stacks_down(rect, &shares);
 
         for (i, stack_rect) in rects.iter().copied().enumerate() {
@@ -963,7 +963,7 @@ mod tests {
         (report, bodies)
     }
 
-    /// ★ **Only the ACTIVE tab's body is drawn.**
+    /// **Only the ACTIVE tab's body is drawn.**
     ///
     /// Failure mode #3's design rule — *size a container to its active
     /// child* — stated as behaviour rather than as arithmetic. Four
@@ -985,7 +985,7 @@ mod tests {
         assert_eq!(report.panels_drawn.len(), 4);
     }
 
-    /// ★★ **A collapsed side draws NO PANELS and still leaves a rail.**
+    /// **A collapsed side draws NO PANELS and still leaves a rail.**
     ///
     /// The operator's ask — *"add the little tabs that allow the left and
     /// right panels to be minimized."* — is an affordance in both directions,
@@ -1022,7 +1022,7 @@ mod tests {
         );
     }
 
-    /// ★ **An EMPTY side draws no rail either**, and the distinction from a
+    /// **An EMPTY side draws no rail either**, and the distinction from a
     /// collapsed one is the whole of why this is a separate test.
     ///
     /// A collapsed side has panels waiting behind it, so a rail is a promise it
@@ -1056,7 +1056,7 @@ mod tests {
         assert_eq!(report.sides_drawn, vec![DockSide::Left]);
     }
 
-    /// ★ **Failure mode #6, end to end: a round trip through a narrow
+    /// **Failure mode #6, end to end: a round trip through a narrow
     /// window changes nothing.**
     ///
     /// The observed defect is that un-maximising and re-maximising loses
@@ -1148,7 +1148,7 @@ mod tests {
         assert!((layout.left.width_pts - plan::MIN_SIDE_WIDTH).abs() < 0.01);
     }
 
-    /// ★ **Failure mode #7 through the whole apply path: a column drag
+    /// **Failure mode #7 through the whole apply path: a column drag
     /// leaves a third column untouched.**
     ///
     /// [`plan::drag_boundary`]'s own test proves the slice arithmetic;
@@ -1253,7 +1253,7 @@ mod tests {
         assert!(report.activated.is_none());
     }
 
-    /// ★ **Panel bodies inherit a scroll style whose handle is visible.**
+    /// **Panel bodies inherit a scroll style whose handle is visible.**
     ///
     /// `D:/dev/rag/egui/scrollstyle_solid_draws_the_handle_in_bg_fill_...md`
     /// records two independent reasons a working `ScrollArea` shows no

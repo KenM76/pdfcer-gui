@@ -33,7 +33,7 @@ operating system.
 Six passing tests, six joins, and no test anywhere observes two adjacent
 links being connected.
 
-# ★ Link 6 is the assertion this check exists for, and it is not link 5
+# Link 6 is the assertion this check exists for, and it is not link 5
 
 A `measure-pick … committed=true` line proves the **shell** raised
 `Action::CommitDimension`. It says nothing whatever about whether the
@@ -80,7 +80,7 @@ about the gesture, not about the harness.
    clicking a second time at the same point whenever the application says
    the pick it found needs confirming (see the rule-4 section below).
 
-# ★ The assertions, split by oracle
+# The assertions, split by oracle
 
 ## Trace evidence — that the arm happened
 
@@ -137,7 +137,7 @@ on the **second** line, and this check is what would say so.
 regression: a tool that committed a zero-length dimension on pick A would
 otherwise satisfy "a dimension was placed" perfectly.
 
-### ★ A pick is not always one click, and that is rule 4 rather than a
+### A pick is not always one click, and that is rule 4 rather than a
 wobble
 
 Snapping landed after this check was first written, and it changes the

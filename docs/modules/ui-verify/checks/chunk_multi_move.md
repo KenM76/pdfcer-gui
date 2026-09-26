@@ -10,7 +10,7 @@ together, and come back together on one press of undo.**
 four labels of a note and expects the next drag to take all four, the way
 every drawing program he uses takes them.
 
-# ★★★ The two halves, and why a check that drives only the first is worthless
+# The two halves, and why a check that drives only the first is worthless
 
 A multi-chunk selection was **representable and reachable** before any of
 this: `SelectionState::pick_within` has pushed a Shift-clicked part in as
@@ -27,7 +27,7 @@ four outlined lines.
 | the set is built | Shift-click a second chunk | `pick_within` replacing instead of pushing |
 | the set is **honoured** | drag it, then undo it | a consumer reading `entries[0]` and moving one line of four |
 
-# ★★★ The gap press — the assertion the narrowing exists for
+# The gap press — the assertion the narrowing exists for
 
 Step G presses on the line **between** the two selected ones, which is not
 selected, and drags.
@@ -64,18 +64,18 @@ press pick  selection-set page=0 object=0 part=1 level=part via=press
 | `undo … undo_depth=1` | did N engine calls fold into **one** undo entry? |
 | `selection-set … via=press` | did the gap press re-pick the line under it? |
 
-★★★ The last row is on a **different channel** from the first, and it has to
+The last row is on a **different channel** from the first, and it has to
 be. `canvas-selection` is written by the click path, which runs on the
 release; a chunk chosen on the press and then dragged never produces a click
 and never appears there. Reading the gap press off `canvas-selection` sees
 silence, and reports the fix as missing on the build that has it.
 
-★★ `move-text-lines` and `move-text-line` are distinct event names and the
+`move-text-lines` and `move-text-line` are distinct event names and the
 trace matches them exactly, so *"the set moved"* and *"the first entry
 moved"* cannot be confused. A build that collapsed the set mid-gesture
 writes the singular line, and this check quotes it.
 
-★★★ `undo_depth=` is read on the press **before** the pop, so it is the
+`undo_depth=` is read on the press **before** the pop, so it is the
 depth the operator is acting on. Step C establishes that the log is empty
 before the drag — without that control, `undo_depth=1` would be satisfied
 by a build that left one entry of four behind and had four on the log all

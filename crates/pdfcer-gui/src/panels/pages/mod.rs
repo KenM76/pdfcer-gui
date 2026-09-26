@@ -118,7 +118,7 @@ pub fn body(
     if !pages.selection.is_empty() {
         ui.label(t::pages_selected(pages.selection.len()));
     }
-    // ★★★ **THE DRAG CAPTION IS NOT DRAWN HERE, AND THAT IS A MEASURED
+    // **THE DRAG CAPTION IS NOT DRAWN HERE, AND THAT IS A MEASURED
     // CONSTRAINT RATHER THAN A PREFERENCE.**
     //
     // A label above the grid saying where the drop would land is the obvious
@@ -189,7 +189,7 @@ pub fn body(
             paint_caret(ui, drop.as_ref());
         });
 
-    // ★ The release is read from RAW POINTER INPUT, not from the tile's own
+    // The release is read from RAW POINTER INPUT, not from the tile's own
     // `Response`.
     //
     // The same discipline `canvas::guides::release` uses, and for the same
@@ -228,7 +228,7 @@ pub fn body(
     }
     settle_drag(ui, doc, pages, drop.as_ref(), &here, actions);
 
-    // ★★ **A file dropped on this panel imports its pages** —
+    // **A file dropped on this panel imports its pages** —
     // `OPERATOR_REQUESTS.md` O67. Immediately after the page drag settles,
     // because the two are the same gesture with different operands and a
     // reader comparing them should find them together.
@@ -251,14 +251,14 @@ pub fn body(
     crate::diag::ui_rect("panel-pages", ui.min_rect());
     crate::diag::ui_rect("panel-pages-grid", grid.inner_rect);
 
-    // ★ One page per frame, chosen from what is on screen. See `thumbnails`'
+    // One page per frame, chosen from what is on screen. See `thumbnails`'
     // header for why this is one and not two, and why it is here rather than
     // on the render worker.
     //
     // AFTER the grid rather than during it: the scheduling rule wants the
     // whole visible set, and rendering mid-layout would hold the frame in the
     // middle of a scroll area with half its rows placed.
-    // ★★★ **AND NOT WHILE THE OPERATOR IS DOING SOMETHING** —
+    // **AND NOT WHILE THE OPERATOR IS DOING SOMETHING** —
     // `OPERATOR_REQUESTS.md` O74, in his words:
     //
     // > *"The last thing that should matter is updating the preview."*
@@ -288,7 +288,7 @@ pub fn body(
     //    after field — and re-rendering between two keystrokes is work thrown
     //    away before it is looked at.
     //
-    // ★ It cannot stall the rail. `request_repaint_after` below wakes the
+    // It cannot stall the rail. `request_repaint_after` below wakes the
     // window when the quiet period expires, so a document left alone fills
     // itself; and an operator who keeps working keeps the deferral, which is
     // exactly the trade he asked for.
@@ -349,7 +349,7 @@ pub fn body(
             visible.len(),
             pages.cache.ready_count(),
             u8::from(pages.cache.previews_on()),
-            // ★ `0` for *no limit*, which is the operator's own notation and
+            // `0` for *no limit*, which is the operator's own notation and
             // the one the preferences file uses — so a harness reading this
             // field and a reader opening the file meet the same number
             // (`OPERATOR_REQUESTS.md` O187).
@@ -373,7 +373,7 @@ const PANEL_SLOT: &str = "pages-panel"; // ui-text-exempt: trace slot name, neve
 /// panel is showing, this says why it is not rendering.
 const DEFER_SLOT: &str = "pages-thumbnail-deferred"; // ui-text-exempt: trace slot name, never displayed
 
-/// ★★★ **How long after an edit the page rail stays out of the way** — O74.
+/// **How long after an edit the page rail stays out of the way** — O74.
 ///
 /// The operator: *"The last thing that should matter is updating the
 /// preview."*
@@ -392,7 +392,7 @@ const DEFER_SLOT: &str = "pages-thumbnail-deferred"; // ui-text-exempt: trace sl
 /// defer for the same period as a fast one, because the quantity being waited
 /// for is the OPERATOR settling, not the renderer finishing.
 ///
-/// ★ It is a constant rather than a literal so the next person to tune it does
+/// It is a constant rather than a literal so the next person to tune it does
 /// so once, with a paper trail — the same argument `render::settle`'s
 /// `ZOOM_SETTLE` makes, and this is its sibling on the other end of the frame.
 const SETTLE_AFTER_EDIT: std::time::Duration = std::time::Duration::from_millis(250);
@@ -446,7 +446,7 @@ const CARET_PTS: f32 = 2.0;
 
 /// How much of the caret's colour survives when the drop would change nothing.
 ///
-/// ★ **Dimmed, not hidden.** Drawing no caret over a boundary that would not
+/// **Dimmed, not hidden.** Drawing no caret over a boundary that would not
 /// land cannot be told apart from the panel having stopped tracking the
 /// pointer — and the no-op boundary is where *every* drag begins, because a
 /// block starts out hovering over itself. This is the same full-strength /
@@ -546,7 +546,7 @@ fn settle_drag(
     {
         return;
     }
-    // ★ Ends the drag AND clears the landing, in one call, which is what stops
+    // Ends the drag AND clears the landing, in one call, which is what stops
     // a landing sentence outliving the gesture that produced it by a frame.
     // See `pagedrag::end`.
     crate::pagedrag::end(ui.ctx());
@@ -561,7 +561,7 @@ fn settle_drag(
         return;
     };
 
-    // ★★ **The branch that makes this two features.**
+    // **The branch that makes this two features.**
     //
     // Released in the document the pages came from, this is the reorder it has
     // always been — one `reorder_pages`, one undo entry, nothing copied.
@@ -573,7 +573,7 @@ fn settle_drag(
     // reverse it.
     if drag.source_slot != here.slot {
         let position = crate::pagedrag::insert_position(target.gap, page_count);
-        // ★ Sampled HERE, at the release, not at the press. Windows reads the
+        // Sampled HERE, at the release, not at the press. Windows reads the
         // drag modifiers at the drop — which is why Explorer's cursor badge
         // changes under your hand as you press and release the key mid-drag —
         // and it is what lets an operator start a drag, read the caption, and
@@ -722,7 +722,7 @@ fn tile(
     drop: &mut Option<DropTarget>,
 ) {
     let id = ui.id().with(("pages-tile", page_index));
-    // ★ `click_and_drag`, not `click`. A click-only tile senses nothing of the
+    // `click_and_drag`, not `click`. A click-only tile senses nothing of the
     // gesture every operator tries first, and reordering is then two ribbon
     // buttons that move one place at a time.
     let response = ui.interact(rect, id, egui::Sense::click_and_drag());
@@ -734,7 +734,7 @@ fn tile(
         painter.rect_filled(
             rect.expand(SELECTION_MAT_PTS),
             2.0,
-            // ★ The content-area selection wash by its role name, never
+            // The content-area selection wash by its role name, never
             // `visuals.selection.bg_fill`. That is `egui`'s selected-WIDGET
             // fill, this theme points it at the accent plate, and painting a
             // thumbnail mat with it would flood the tile. A thumbnail is
@@ -761,7 +761,7 @@ fn tile(
             }
         }
         state => {
-            // ★ Words, never a blank rectangle. See this module's header and
+            // Words, never a blank rectangle. See this module's header and
             // `crate::text::pages`': paper-coloured emptiness is a picture of
             // an empty page, and an empty page is a thing a PDF can contain.
             let words = match state {
@@ -783,7 +783,7 @@ fn tile(
         }
     }
 
-    // ★ Every visible tile publishes its rectangle, so a driven check can aim
+    // Every visible tile publishes its rectangle, so a driven check can aim
     // at a page rather than at a guess. Without it only the container regions
     // (`panel-pages`, `panel-pages-grid`) and the one current tile are
     // addressable, and a drag needs two arbitrary tiles — one to lift and one
@@ -842,7 +842,7 @@ fn tile(
         f64::from(height_pts),
     ));
 
-    // ★ A drag begins here, and it begins by settling the OPERAND SET.
+    // A drag begins here, and it begins by settling the OPERAND SET.
     //
     // The same rule the context menu already follows
     // (`PageSelection::right_click`): a gesture's verbs must apply to the tile
@@ -858,7 +858,7 @@ fn tile(
     // one replaces.
     if response.drag_started_by(egui::PointerButton::Primary) {
         pages.selection.right_click(page_index);
-        // ★★ The operand set is CAPTURED HERE, not resolved at release;
+        // The operand set is CAPTURED HERE, not resolved at release;
         // `crate::pagedrag`'s header carries the argument in full.
         //
         // The one-line form: a drag that crosses into another document
@@ -880,7 +880,7 @@ fn tile(
     // While a drag is in flight, every tile the pointer is over offers itself
     // as a landing boundary. The nearer vertical edge wins, which is what makes
     // a caret feel like it snaps to a gap rather than to a tile.
-    // ★★ **TWO drags reach this block, and they resolve the same geometry.**
+    // **TWO drags reach this block, and they resolve the same geometry.**
     //
     // A page drag from a thumbnail (possibly in another document), and **a FILE
     // dragged in from Explorer** (`OPERATOR_REQUESTS.md` O67). They differ in
@@ -888,7 +888,7 @@ fn tile(
     // not differ in what a gap *is*, so they share this code rather than
     // growing a second copy of the nearer-edge rule.
     //
-    // ★ The file drag's pointer comes from `crate::app::filedrag` because the
+    // The file drag's pointer comes from `crate::app::filedrag` because the
     // toolkit does not have one: `winit` discards the OLE drop point and no
     // mouse-move message arrives during a drag, so `pointer_latest_pos` is
     // stale from before the drag began. Its header carries the citation.
@@ -910,7 +910,7 @@ fn tile(
     {
         let after = pointer.x > rect.center().x;
         let gap = if after { page_index + 1 } else { page_index };
-        // ★ ONE spelling of the nearer-edge rule above, and one of the
+        // ONE spelling of the nearer-edge rule above, and one of the
         // no-op rule here. The file drag has no operands of its own in this
         // document, so every gap accepts it.
         let lands = drag.is_none_or(|d| {
@@ -927,7 +927,7 @@ fn tile(
                 egui::pos2(caret_x, rect.top() - SELECTION_MAT_PTS),
                 egui::pos2(caret_x, rect.bottom() + SELECTION_MAT_PTS),
             ),
-            // ★ Two different questions, because a drop from ELSEWHERE is a
+            // Two different questions, because a drop from ELSEWHERE is a
             // different verb from a drop from here — resolved above, where the
             // pointer is, because the answer depends on which drag this is.
             //
@@ -942,7 +942,7 @@ fn tile(
             // the no-op question of a cross-document drag would dim the caret
             // over exactly the pages the operator was aiming between.
             //
-            // ★ The set is built from the drag's own captured operands rather
+            // The set is built from the drag's own captured operands rather
             // than from `pages.selection`. They agree today — a drag starts by
             // selecting the tile it began on — and they would stop agreeing the
             // moment a drag could cross a document, because activating another
@@ -1144,7 +1144,7 @@ mod tests {
         }
     }
 
-    /// **★ A tile is the shape of its page before any picture exists.**
+    /// **A tile is the shape of its page before any picture exists.**
     ///
     /// The property that keeps the scroll bar honest while the grid fills:
     /// the aspect ratio comes from the page tree, which is free, so each row
@@ -1180,7 +1180,7 @@ mod tests {
         );
     }
 
-    /// **★ The menu context this panel attaches is spelled once, and is
+    /// **The menu context this panel attaches is spelled once, and is
     /// now defined.**
     ///
     /// `crate::shell::menus`' own rule: *"a context id is used in exactly two
@@ -1209,7 +1209,7 @@ mod tests {
         );
     }
 
-    /// **★ Every page verb this panel means to offer is a registered
+    /// **Every page verb this panel means to offer is a registered
     /// command.**
     ///
     /// The rule `crate::shell::menus`' header states — *only real commands* —
@@ -1240,14 +1240,14 @@ mod tests {
         // verb that acts on the whole file rather than on the sheets pointed
         // at. It stays on the ribbon's Pages tab.
         //
-        // ★★★ `pages.split` is deliberately absent from this list and is
+        // `pages.split` is deliberately absent from this list and is
         // UNREGISTERED — `OPERATOR_REQUESTS.md` O68. R9: a capability that is
         // not built renders nothing rather than a drawn, enabled control with
         // no dispatch arm. What it needs first is a boundary chooser, a
         // destination directory and a name template, and it returns with
         // `tools.split_files` when those exist.
         //
-        // ★ A single assertion rather than a one-element loop — clippy
+        // A single assertion rather than a one-element loop — clippy
         // refuses the loop and is right to. It becomes a loop again when a
         // second id joins it.
         let id = "pages.merge_into";
@@ -1258,7 +1258,7 @@ mod tests {
         );
     }
 
-    /// **★ The measurement behind this panel's policy, on the real
+    /// **The measurement behind this panel's policy, on the real
     /// documents.**
     ///
     /// Ignored by default: it rasterizes whole pages and takes seconds, which

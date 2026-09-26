@@ -57,7 +57,7 @@ reflow-**apply** path does guard — `check_uniform_axis_aligned` refuses when
 ports that predicate ([`is_upright`]) rather than inventing a second
 tolerance.
 
-## ★ Why the rotation answer is `Pin` and not a refusal
+## Why the rotation answer is `Pin` and not a refusal
 
 `reflow_apply` *refuses* rotated text. This module does not, and the
 asymmetry is deliberate rather than a relaxation.

@@ -9,7 +9,7 @@ says so on the rare occasion it cannot.**
 > references don't match, but they do when I am zoomed in. up to 474% they
 > are mismatched, but at 579% they match."*
 
-# ★★★ What is actually happening, measured before this check was written
+# What is actually happening, measured before this check was written
 
 `pdfcer-render` composites a page containing transparency in a **subtractive
 CMYK buffer**, which is the correct space for it. That buffer has a
@@ -27,7 +27,7 @@ box-averaging **every pixel** of both renders into a common grid — so that
 resampling could not masquerade as the effect — the transparency patches
 move by up to **16 levels out of 255**.
 
-★★ Two earlier measurements got this wrong in opposite directions and are
+Two earlier measurements got this wrong in opposite directions and are
 recorded because both are tempting. Sampling a sparse lattice reported
 358 of 576 cells differing, all of it text sampled at two pixel sizes.
 Excluding every cell that was not flat removed that noise correctly — and
@@ -54,7 +54,7 @@ raster-blend-space cmyk_buffer=true refused=0 wrong_space=0 scale=8.013
 ```
 
 
-★ So the primary assertion is now the **stronger** one — *the ink survives*
+So the primary assertion is now the **stronger** one — *the ink survives*
 — and the disclosure assertion has become a fallback for the cases where it
 genuinely cannot: an operator who sets a very small ceiling, a very large
 display whose region raster plus overscan exceeds the ceiling on its own
@@ -62,7 +62,7 @@ display whose region raster plus overscan exceeds the ceiling on its own
 the 256 MiB default), or a page opened directly at a high zoom before the
 shell has observed that it is blended in ink.
 
-★★ **The three outcomes are told apart by the trace, and the difference
+**The three outcomes are told apart by the trace, and the difference
 matters.** Before this, a page with no transparency and a page whose ink
 survived were indistinguishable to this check — both reach the ceiling zoom
 with no disclosure — and it reported FAIL for both. It did exactly that on

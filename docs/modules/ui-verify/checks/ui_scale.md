@@ -14,7 +14,7 @@ to the tests that cover the other two.
    tests and **not one of them can see the chain joined**: the parser's
    tests build strings, the control's tests build a `Prefs`, and the frame
    hook has no test at all because it needs a live `egui::Context` inside a
-   real window. ★★ It is the same shape as a flag defaulting off in front
+   real window. It is the same shape as a flag defaulting off in front
    of a correct decision function: every part right, the **join**
    unobserved, and no unit test positioned to see it.
 
@@ -57,7 +57,7 @@ once at [`LARGE`]. The slider's live preview is a separate property and is
 deliberately not covered here; it wants its own check and its own dialog
 step.
 
-# ★ The oracle: a control's SHARE of the window, not its size in points
+# The oracle: a control's SHARE of the window, not its size in points
 
 This is the subtle part and the first version of this check got it wrong,
 so the reasoning is written out rather than assumed.

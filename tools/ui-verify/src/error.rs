@@ -28,7 +28,7 @@ pub struct Error {
     /// Whether this is a **failure of the thing under test** rather than a
     /// missing precondition.
     ///
-    /// # ★★★ Why an `Error` needs to say which it is
+    /// # Why an `Error` needs to say which it is
     ///
     /// Every check in this harness returns `Result` and, by long convention,
     /// turns `Err` into **SKIPPED** — because almost every error here really is

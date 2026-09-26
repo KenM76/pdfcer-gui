@@ -14,7 +14,7 @@ use super::{Current, DASH_WIDTH, MAX_WIDTH_PT, MIN_WIDTH_PT};
 
 /// The border colour.
 ///
-/// ★ A **swatch plus a Clear**, not a swatch alone. `StyleEdit` has two arms
+/// A **swatch plus a Clear**, not a swatch alone. `StyleEdit` has two arms
 /// and they mean different things in the file: `Set` writes `/C`, and `Clear`
 /// removes it, restoring the standard's default. A control that could only set
 /// would make `/C` a one-way door — once an operator gave a mark a colour there
@@ -73,7 +73,7 @@ pub(super) fn colour_row(
 /// `canvas::markup::spec` is untouched by this. **No fill at author time, fill
 /// available on restyle.**
 ///
-/// # ★★ Absent for a shape with no interior — and the ENGINE says which
+/// # Absent for a shape with no interior — and the ENGINE says which
 ///
 /// A `/Line`, an `/Ink`, a `/PolyLine` and a text markup have no interior for
 /// `/IC` to mean anything in, so a Fill control there would be drawn, live, and
@@ -88,7 +88,7 @@ pub(super) fn colour_row(
 /// [`Current::offers_fill`]. The old sentence was not wrong; it was a copy, and
 /// a copy is what this project filed a request to be rid of.
 ///
-/// # ★ The swatch shape mirrors [`colour_row`] exactly, including the Clear
+/// # The swatch shape mirrors [`colour_row`] exactly, including the Clear
 ///
 /// Set writes `/IC`; Clear removes it and the shape is unfilled again. The one
 /// addition is the word beside the swatch when there is no fill — a swatch
@@ -143,7 +143,7 @@ pub(super) fn fill_row(
 
 /// **The border line style, `/BS` `/S` and `/D` — the Line style row.**
 ///
-/// # ★★★ Why this exists, and what it took to make it SAFE
+/// # Why this exists, and what it took to make it SAFE
 ///
 /// `RIBBON_IA.md` §5.8's Markup row lists eight controls and this was the
 /// eighth. It read **⛔ no engine verb exists**, and that was true: `MarkupStyle`
@@ -166,7 +166,7 @@ pub(super) fn fill_row(
 /// Line style control over the old engine would have been a control its
 /// neighbours undid.
 ///
-/// # ★★ The "way back to the default" is an ENTRY, not a Clear button
+/// # The "way back to the default" is an ENTRY, not a Clear button
 ///
 /// [`colour_row`] and [`fill_row`] each put `StyleEdit::Clear` behind its own
 /// button, because in both cases the cleared state is *the absence of a key* and
@@ -176,14 +176,14 @@ pub(super) fn fill_row(
 /// would be a second spelling of one act, and the two would eventually be
 /// pressed expecting different things.
 ///
-/// ★ It is also why the button's absence rule does not apply. A Clear beside a
+/// It is also why the button's absence rule does not apply. A Clear beside a
 /// mark with nothing to clear is *"a control whose only possible effect is an
 /// undo entry the operator did not earn"*; a **Solid** entry beside a mark that
 /// is already solid is simply the entry that is currently selected, and
 /// [`crate::canvas::markup::linestyle::chooser`] reports nothing when the
 /// current entry is picked again.
 ///
-/// # ★ Absent for a subtype with no border
+/// # Absent for a subtype with no border
 ///
 /// [`Current::offers_dash`], which is `MarkupStyleSupport::takes_border` and
 /// nothing else — a highlight is a colour wash and has no `/BS` to dash. R9, and
@@ -206,7 +206,7 @@ pub(super) fn dash_row(
             current.dash,
             DASH_WIDTH,
         );
-        // ★ The `Option` from `LineStyle::style_edit` is answered by raising
+        // The `Option` from `LineStyle::style_edit` is answered by raising
         // NOTHING — no action, no undo entry, no substituted pattern. It is
         // unreachable for the four offered styles
         // (`linestyle::tests::every_offered_pattern_is_one_the_engine_accepts`),
@@ -241,7 +241,7 @@ pub(super) fn width_row(
     target: &crate::canvas::selection::annot::AnnotTarget,
     actions: &mut Vec<Action>,
 ) {
-    // ★ ABSENT rather than greyed when the mark has no border to widen — a
+    // ABSENT rather than greyed when the mark has no border to widen — a
     // highlight is `/QuadPoints` and has nothing to stroke. R9: an unavailable
     // capability renders nothing. A greyed spinner here would be pdfcer
     // implying that a highlight could have a line width if only something were
@@ -260,7 +260,7 @@ pub(super) fn width_row(
                 .speed(0.1)
                 .suffix(t::markup_width_suffix()),
         );
-        // ★ `drag_stopped` and `lost_focus`, not `changed`. A `DragValue` reports
+        // `drag_stopped` and `lost_focus`, not `changed`. A `DragValue` reports
         // a change on every pixel of a drag, and each one here is a
         // content-stream rewrite plus an undo entry — so a single drag across
         // the control would leave forty entries on the stack and re-plan the
@@ -283,7 +283,7 @@ pub(super) fn width_row(
 ///
 ///
 ///
-/// # ★★ Two controls, ONE dictionary property — and why that is not a breach of
+/// # Two controls, ONE dictionary property — and why that is not a breach of
 /// this module's "one field per action" rule
 ///
 /// The rule at the top of this file forbids assembling a whole `MarkupStyle`
@@ -294,7 +294,7 @@ pub(super) fn width_row(
 /// changing one end necessarily sends both — there is no field that carries half
 /// of it.
 ///
-/// ★ That is still one field of one property, and it is still safe, for the
+/// That is still one field of one property, and it is still safe, for the
 /// reason the rule actually rests on: the unchanged half comes from
 /// [`Current::endings`], which was read **from the session this frame** through
 /// `spec_from_dict`. It is not a widget's remembered value and cannot be stale.
@@ -336,7 +336,7 @@ pub(super) fn endings_row(
         "properties-markup-line-end", // ui-text-exempt: internal widget id, never displayed
         &mut chosen.1,
     );
-    // ★★★ **The fifth state — and yes, it belongs here as well as on the tab.**
+    // **The fifth state — and yes, it belongs here as well as on the tab.**
     //
     // Three arguments, and the third is the one that settles it:
     //
@@ -353,14 +353,14 @@ pub(super) fn endings_row(
     //    while looking at an annotation's properties, not while reaching across
     //    a ribbon mid-drag.
     //
-    // ★ It is a **button on its own row** rather than an entry in the two
+    // It is a **button on its own row** rather than an entry in the two
     // choosers, and the reason is the tab's reason one level down: the choosers
     // answer *what shape at this end*, and `LineEnding::None` is already an
     // answer to that. A removal offered as a fourth shape would be a second
     // entry drawing exactly what *No end* draws, which is a distinction a
     // drafter cannot check by looking.
     //
-    // ★ Absent when there is no `/LE` to remove — `Current::offers_endings_clear`
+    // Absent when there is no `/LE` to remove — `Current::offers_endings_clear`
     // — which is `colour_row`'s rule and the same sentence: a Clear beside a
     // mark that has nothing to clear is a control whose only possible effect is
     // an undo entry the operator did not earn.
@@ -398,7 +398,7 @@ pub(super) fn endings_row(
 
 /// One line-ending chooser, labelled.
 ///
-/// ★ The list is [`ALL_ENDINGS`] rather than a literal written at each call
+/// The list is [`ALL_ENDINGS`] rather than a literal written at each call
 /// site, so the two choosers cannot come to offer different sets — and so that
 /// an ending the engine learns to draw appears in both by editing one constant
 /// whose exhaustiveness the compiler checks.
@@ -417,7 +417,7 @@ pub(super) fn ending_chooser(ui: &mut Ui, label: &str, id: &str, value: &mut Lin
 
 /// Every line ending pdfcer can draw, in the order the choosers offer them.
 ///
-/// ★★ `annot_author::LineEnding` has no `ALL` of its own — unlike `ArrowForm`,
+/// `annot_author::LineEnding` has no `ALL` of its own — unlike `ArrowForm`,
 /// which the ce-dimension panel iterates — so this list is written here, and
 /// `the_ending_list_covers_every_variant_the_engine_has` is what stops it
 /// drifting: that test `match`es an exhaustive set of variants with **no
@@ -434,7 +434,7 @@ pub(super) const ALL_ENDINGS: [LineEnding; 3] = [
 
 /// The constant opacity, `/CA`.
 ///
-/// ★★ **This is the control `NO_SURFACE.md` recorded as "blocked on the engine"
+/// **This is the control `NO_SURFACE.md` recorded as "blocked on the engine"
 /// for weeks, and the blocker was false.** `set_markup_style` has taken an
 /// opacity since it shipped and writes `/CA` clamped to `0.0..=1.0`; the row
 /// that said otherwise was a claim about a repository this project does not

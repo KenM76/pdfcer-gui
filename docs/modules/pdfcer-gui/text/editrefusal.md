@@ -20,10 +20,10 @@ a banner reading *"Why an edit the operator committed did not happen — O140"*
   the joining of its coarse `RefusalKind` with the facts only the shell
   holds.
 
-★ Every item is re-exported from [`super::textedit`], so no call site moved
+Every item is re-exported from [`super::textedit`], so no call site moved
 and nothing outside this pair needs to know the split happened.
 
-## ★★★ The rule that governs every arm in here
+## The rule that governs every arm in here
 
 **The engine's category wins wherever it has one, and a shell-side fact is
 allowed to sharpen exactly the bucket where the engine's answer is true and

@@ -16,14 +16,14 @@ caret**, and nothing here knows what typing does afterwards.
 | **click** on bare page | [`Anchor::Origin`] | `add_text` — one single-line run at a point |
 | **drag** a rectangle | [`Anchor::Box`] | `add_text` boxed — a wrapped paragraph |
 
-★★ The third arrived on 2026-08-21, on the operator's *"I should be able to
+The third arrived on 2026-08-21, on the operator's *"I should be able to
 make it multi line."* It has to be a drag, and the reason is the file format
 rather than a preference: **a PDF has no paragraph.** Each visual line is its
 own show operator at its own absolute position, so something must decide
 where the second line starts — a width to wrap against — and a width is a
 rectangle somebody draws.
 
-## ★ What this module refuses, and why each refusal is a sentence
+## What this module refuses, and why each refusal is a sentence
 
 [`Refusal`]'s variants are shown on the status row, never dropped. That is
 `DEFECTS.md` D4a's whole lesson: the old shell's answer to a caret it could

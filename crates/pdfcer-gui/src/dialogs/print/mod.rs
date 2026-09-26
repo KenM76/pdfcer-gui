@@ -76,7 +76,7 @@ mod popout;
 /// sign, and why Reset and Centre are different commands.
 mod position;
 pub(crate) mod preview;
-/// ★ `pub(crate)` rather than private since 2026-09-10 (**O166**), because
+/// `pub(crate)` rather than private since 2026-09-10 (**O166**), because
 /// `crate::app::prefs::printing` persists the operator's print habits and
 /// stores **these** types — [`spooler::Orientation`], [`spooler::Duplex`],
 /// [`spooler::ScaleMode`], [`spooler::PageSubset`], [`spooler::PaperChoice`] —
@@ -187,7 +187,7 @@ pub struct PrintDialog {
     /// The driver's own settings, once the operator has been through
     /// **Properties…** and accepted.
     ///
-    /// # ★ Why `None` is not "the defaults" but "send no `DEVMODE` at all"
+    /// # Why `None` is not "the defaults" but "send no `DEVMODE` at all"
     ///
     /// They are genuinely different jobs. With `None`, `pdfcer-print` sends
     /// nothing and the device's own configuration applies in full — the
@@ -231,7 +231,7 @@ pub struct PrintDialog {
     /// Which selection the per-device cache — [`Self::features`],
     /// [`Self::forms`], [`Self::config`] — was filled for.
     ///
-    /// ★ **This field is a fix, not salvage.** The old shell read the device
+    /// **This field is a fix, not salvage.** The old shell read the device
     /// features once when the dialog opened and never again — while letting
     /// the operator change printer from the combo box. On a machine with one
     /// duplex device and one simplex device, switching to the simplex one
@@ -327,7 +327,7 @@ pub struct PrintDialog {
     /// zoom and pan beside it, and those three are reset together when the
     /// dialog is constructed.
     ///
-    /// ★ Always read back through the clamp in [`Self::body`], never used raw:
+    /// Always read back through the clamp in [`Self::body`], never used raw:
     /// the bound depends on the window width, which changes under it.
     preview_width: f32,
     /// **Whether the preview is in its own OS window** — operator request O112
@@ -339,13 +339,13 @@ pub struct PrintDialog {
     /// **renders nothing at all** and the options take its room (R9 — see
     /// `layout::Columns::split`).
     ///
-    /// ★ It lives here rather than in `egui::Memory` for the same reason the
+    /// It lives here rather than in `egui::Memory` for the same reason the
     /// width beside it does: it is part of what the operator has arranged about
     /// *this* print, and it goes away with the dialog. A remembered pop-out
     /// state would open a second window on a later print the operator had not
     /// asked for one on, which is the kind of surprise a dialog is not allowed.
     ///
-    /// ★★ There is exactly ONE writer of `false`: [`PrintDialog::popped_preview`]
+    /// There is exactly ONE writer of `false`: [`PrintDialog::popped_preview`]
     /// on `Frame::closed`. Closing the window IS putting the preview back, so a
     /// second control that set this would be a second route to something the
     /// title bar already does — and the two would eventually disagree.
@@ -384,7 +384,7 @@ pub struct PrintDialog {
     /// right rectangle and no content is degraded; one that shows a stale
     /// page is wrong.
     ///
-    /// # ★ The ink mask rides in the SAME tuple, under the SAME key
+    /// # The ink mask rides in the SAME tuple, under the SAME key
     ///
     /// Added 2026-09-03 for operator request O113, and the placement is the
     /// point rather than an implementation detail. [`ink::InkMask`] describes
@@ -442,7 +442,7 @@ pub struct PrintDialog {
     /// through one field means there is one close path rather than several
     /// that can disagree.
     ///
-    /// ★ It carries a REASON rather than a bare `true` since **O185**; see
+    /// It carries a REASON rather than a bare `true` since **O185**; see
     /// [`Dismissal`] for why a boolean stopped being able to say enough. The
     /// one route that never sets it is the window chrome, which arrives as
     /// `frame.closed` and is mapped to [`Dismissal::Revert`] at the single
@@ -452,7 +452,7 @@ pub struct PrintDialog {
     /// **The settings this window opened with**, kept so [`Dismissal::Revert`]
     /// can put them back. `OPERATOR_REQUESTS.md` **O185**.
     ///
-    /// # ★★★ Why Cancel has to WRITE, rather than merely decline to write
+    /// # Why Cancel has to WRITE, rather than merely decline to write
     ///
     /// If reverting were only *"do not save"*, it would be indistinguishable
     /// from what Close did before O185 and the word would be doing no work.
@@ -469,7 +469,7 @@ pub struct PrintDialog {
     /// Restoring is the only thing that makes *"they revert back to what they
     /// were when we opened the print dialogue"* true on that path.
     ///
-    /// ★ A clone rather than a borrow, and the cost is a `String` and twelve
+    /// A clone rather than a borrow, and the cost is a `String` and twelve
     /// scalars once per opening of the window. The alternative — holding a
     /// reference into `Prefs` — would borrow the preferences file for the life
     /// of the dialog, which is the same object [`Self::remember`] needs
@@ -515,7 +515,7 @@ impl PrintDialog {
             Ok(printers) => (None, printers),
             Err(error) => (Some(error), Vec::new()),
         };
-        // ★ The remembered printer is found BY NAME, and a name that no longer
+        // The remembered printer is found BY NAME, and a name that no longer
         // resolves falls silently back to the Windows default — which is what
         // this build did before O166.
         //
@@ -540,12 +540,12 @@ impl PrintDialog {
             properties_error: None,
             properties_requested: false,
             features_for: None,
-            // ★ NOT remembered, and this is the boundary O166 turns on: a
+            // NOT remembered, and this is the boundary O166 turns on: a
             // range names pages of *this* document. `PrintRange::All` is the
             // only honest answer for a file the last job never saw.
             range: PrintRange::All,
             range_text: String::new(),
-            // ★ The mode is remembered; the multiplier is REBUILT from the
+            // The mode is remembered; the multiplier is REBUILT from the
             // percentage rather than restored from the mode's own payload.
             //
             // `PrintPrefs` deliberately stores no payload for
@@ -565,14 +565,14 @@ impl PrintDialog {
             max_dpi: remembered.max_dpi,
             device: DeviceSettings {
                 orientation: remembered.orientation,
-                // ★ Restored even onto a device that cannot duplex. The control
+                // Restored even onto a device that cannot duplex. The control
                 // is simply not drawn there — `DeviceFeatures::supports_duplex`
                 // gates it — so the value sits unused and comes back the moment
                 // the operator returns to a printer that can, which is what
                 // anybody who set it once would expect.
                 duplex: remembered.duplex,
                 pick_tray_by_page_size: remembered.pick_tray_by_page_size,
-                // ★ A POLICY, never a form id. `PrintPrefs::paper` cannot carry
+                // A POLICY, never a form id. `PrintPrefs::paper` cannot carry
                 // `Form(_)` at all — see its own note on why a `dmPaperSize`
                 // above `DMPAPER_USER` means whatever one driver says, and why
                 // a preferences file outlives a printer.
@@ -613,7 +613,7 @@ impl PrintDialog {
             outcome: None,
             commit_requested: false,
             dismissal: None,
-            // ★ The snapshot, taken from what was HANDED IN rather than from
+            // The snapshot, taken from what was HANDED IN rather than from
             // `dialog.habits()` a line later. The two are not the same value
             // and the difference is the whole point of the field: `habits()`
             // reads the dialog, and the dialog has just resolved a remembered
@@ -625,7 +625,7 @@ impl PrintDialog {
             opened_with: remembered.clone(),
         };
 
-        // ★★★ **Traced from the BUILT dialog, and the position of these
+        // **Traced from the BUILT dialog, and the position of these
         // lines is the whole point of them.**
         //
         //
@@ -645,7 +645,7 @@ impl PrintDialog {
         // on one of the thirteen assignments above, this line changes and
         // the check goes red — which it could not do before.
         //
-        // ★ It is a `trace(|| …)` closure, so none of this is formatted
+        // It is a `trace(|| …)` closure, so none of this is formatted
         // unless `PDFCER_DIAG` is set; running after the struct is built
         // rather than before costs nothing at all.
         crate::diag::trace(|| {
@@ -665,7 +665,7 @@ impl PrintDialog {
                 // selected; `missing` = a name was remembered and is not here;
                 // `none` = nothing has been remembered yet.
                 //
-                // ★ This one still reads `remembered`, and it is the one
+                // This one still reads `remembered`, and it is the one
                 // field that must: it reports what the FILE held, so that a
                 // check can tell "no preferences yet" from "a printer was
                 // remembered and this machine does not have it". The adopted
@@ -706,7 +706,7 @@ impl PrintDialog {
                 p::duplex_key(dialog.device.duplex),
                 p::paper_key(dialog.device.paper),
                 crate::app::prefs::opening::bool_key(dialog.device.pick_tray_by_page_size),
-                // ★ `dialog.scale`, not `remembered.scale`, and the two are
+                // `dialog.scale`, not `remembered.scale`, and the two are
                 // deliberately NOT the same value: the constructor rebuilds
                 // `Custom`'s multiplier from the percentage. `scale_key`
                 // reads only the variant, so both spell `custom` — but this
@@ -740,12 +740,12 @@ impl PrintDialog {
     /// This dialog's window: what it is called, how big it opens, and the
     /// floor it may not be dragged below.
     ///
-    /// ★ Built fresh each frame and owning nothing — the position the operator
+    /// Built fresh each frame and owning nothing — the position the operator
     /// drags it to lives in `egui::Memory`, keyed on the id string. See
     /// [`crate::dialogs::host`]'s header for why that is what let the other
     /// thirteen dialogs be converted in one line each.
     ///
-    /// ★ The size argument is unchanged and carried verbatim from the
+    /// The size argument is unchanged and carried verbatim from the
     /// `egui::Window` this replaced. The floor is not a preference:
     /// `resizable` with no minimum lets the operator drag the window down to a
     /// title bar and a scrollbar, which is a state with no way back except
@@ -773,7 +773,7 @@ impl PrintDialog {
     ) -> bool {
         self.refresh_device();
 
-        // ★ Page sizes come from the ROTATED device extent, not from the raw
+        // Page sizes come from the ROTATED device extent, not from the raw
         // `/MediaBox`.
         //
         // A divergence from the salvaged source, and a fix rather than a
@@ -825,7 +825,7 @@ impl PrintDialog {
             .as_deref()
             .map(|name| spooler::plan(name, device, self.config.as_ref(), &page_sizes, &spec))
             .and_then(Result::ok)
-            // ★ O208: the operator's chosen positions are applied HERE, on the
+            // O208: the operator's chosen positions are applied HERE, on the
             // value the plan returned, before any reader. Not inside
             // [`spooler`], whose header rules that nothing in it computes a
             // placement — the displacement is a shell decision. Applying it at
@@ -849,7 +849,7 @@ impl PrintDialog {
             self.preview_page = self.preview_page.min(job.plans.len().saturating_sub(1));
         }
 
-        // ★ ONE context per frame, built here and passed down — operator
+        // ONE context per frame, built here and passed down — operator
         // request O113. It is the job-wide half of every cache key in this
         // dialog: the preview texture's key is *derived from it*
         // (`verdicts::Context::preview_key` is the only place a `PreviewKey` is
@@ -881,7 +881,7 @@ impl PrintDialog {
         // `show_viewport_immediate` here: the next dialog is one line, not a
         // second implementation to keep level with this one.
         //
-        // ★ The screen-anchoring note that stood here is retired rather than
+        // The screen-anchoring note that stood here is retired rather than
         // moved. It said the window is anchored to the SCREEN and never to the
         // document, against an operator objection to controls that move on
         // every zoom and scroll. An OS window is anchored to the DESKTOP, which
@@ -923,7 +923,7 @@ impl PrintDialog {
             self.footer(ui, job.as_ref(), &page_sizes, context.as_ref());
         });
 
-        // ★ The claim is read AFTER the closure, so it includes whatever the
+        // The claim is read AFTER the closure, so it includes whatever the
         // preview learned while drawing this very frame. Reading it before
         // would report the state of the previous frame on the surface that
         // exists to describe this one — the footer already avoids that by
@@ -935,7 +935,7 @@ impl PrintDialog {
         };
         self.trace_plan(printer_name.as_deref(), job.as_ref(), claim);
 
-        // ★ The driver's properties dialog, opened here for a stronger version
+        // The driver's properties dialog, opened here for a stronger version
         // of the reason the commit is deferred: it is a nested modal message
         // loop, and it must not run with an egui `Ui` borrowed. See
         // [`Self::properties_requested`].
@@ -951,12 +951,12 @@ impl PrintDialog {
         // the dismissal trace at the end of this function, which is the only
         // place that reports what a close did to the settings.
         //
-        // ★ The initial `false` is the answer for a window that closes without
+        // The initial `false` is the answer for a window that closes without
         // a Print press ever happening, and it is never the value reported: the
         // only arm that reads this local is [`Dismissal::Printed`], which by
         // construction cannot be reached unless the press below ran.
         let mut saved_on_commit = false;
-        // ★ The commit, performed here: after the window's closure has
+        // The commit, performed here: after the window's closure has
         // returned and before the next frame begins. See
         // [`Self::commit_requested`] for why it is not done at the click site.
         if std::mem::take(&mut self.commit_requested)
@@ -972,7 +972,7 @@ impl PrintDialog {
             // means and is the behaviour no other print dialog on this machine
             // has."*
             //
-            // ★★ What it missed is that *close* was doing two jobs. O185, two
+            // What it missed is that *close* was doing two jobs. O185, two
             // days later: he sets a job up, closes the window to go and check
             // something, comes back, and it is all gone. Both readings of
             // "close" are real and the old design made one of them unsayable.
@@ -984,7 +984,7 @@ impl PrintDialog {
             // overturned half was about what CLOSE means and never about what
             // PRINT means. See [`Dismissal`].
             //
-            // ★ Before the spool rather than after it, and it is remembered
+            // Before the spool rather than after it, and it is remembered
             // even when the spool FAILS. The settings are the operator's
             // answers; a driver refusing the job is a fact about the driver.
             // An operator whose plotter was offline would otherwise lose the
@@ -1011,7 +1011,7 @@ impl PrintDialog {
             // pressed again, and a working button in a window that stays open
             // is pressed again by anyone who expects the window to go.
             //
-            // ★★ **The conventional interaction is the specification here.**
+            // **The conventional interaction is the specification here.**
             // Every print dialog on this machine — Word, Acrobat, Chrome,
             // Notepad — dismisses itself the instant the job is handed to the
             // spooler. A print dialog is a transaction with an end, and the end
@@ -1021,7 +1021,7 @@ impl PrintDialog {
             // the press not having landed. This shell does not get to invent an
             // interaction the whole product class agrees on.
             //
-            // ★★★ A FAILURE DOES **NOT** CLOSE, and that asymmetry is the point
+            // A FAILURE DOES **NOT** CLOSE, and that asymmetry is the point
             // rather than a hedge. On failure the operator's next act is to
             // choose a different printer or a different range — which is what
             // this window is for — and the driver's own words are the only
@@ -1040,7 +1040,7 @@ impl PrintDialog {
                 None => self.outcome = Some(outcome),
             }
         }
-        // ★★ The way out is its own subject and its own file — see
+        // The way out is its own subject and its own file — see
         // [`dismissal`], which owns the enum, the G4 argument, and the single
         // decision about what a close does to the settings. This function's
         // part is over: it hands across the one fact only it knows, which is
@@ -1061,7 +1061,7 @@ impl PrintDialog {
     /// a second while a dialog sits open would be rude to a service other
     /// applications share.
     ///
-    /// # ★ Two things are DROPPED here, for two different reasons
+    /// # Two things are DROPPED here, for two different reasons
     ///
     /// **The configuration**, because a `DEVMODE`'s private tail is one
     /// driver's private format and handing it to another device is undefined
@@ -1110,7 +1110,7 @@ impl PrintDialog {
         self.features = features;
         self.forms = forms;
         self.config = None;
-        // ★ A POLICY SURVIVES A CHANGE OF PRINTER; A SHEET DOES NOT.
+        // A POLICY SURVIVES A CHANGE OF PRINTER; A SHEET DOES NOT.
         //
         // The reset above this line exists because `Form(257)` means one thing
         // on an EPSON and something else on a plotter — see this function's
@@ -1137,7 +1137,7 @@ impl PrintDialog {
     /// [`PaperChoice::Form`] when a sheet was chosen, or
     /// [`PaperChoice::DeviceDefault`] when there was no basis for one.
     ///
-    /// # ★ Why the resolution is a function and not an assignment
+    /// # Why the resolution is a function and not an assignment
     ///
     /// Because [`Self::device`] is what the **operator** chose and it must
     /// survive. Collapsing `AutoFromPages` into `Form(9)` in place would mean
@@ -1181,7 +1181,7 @@ impl PrintDialog {
     /// | cancelled | **nothing at all** — no message, no state change. The operator declined |
     /// | refused | [`Self::properties_error`] is set and shown; whatever configuration was already held survives |
     ///
-    /// # ★ Why the paper combo follows the driver's dialog
+    /// # Why the paper combo follows the driver's dialog
     ///
     /// Because otherwise two surfaces describe the same job differently. An
     /// operator who picks A3 in the driver's dialog and returns to a combo
@@ -1266,7 +1266,7 @@ impl PrintDialog {
 
     /// The options column: the printer, then one of three tabs.
     ///
-    /// # ★ The printer selector is OUTSIDE the tabs, always visible
+    /// # The printer selector is OUTSIDE the tabs, always visible
     ///
     /// It is not a setting like the others — it is the thing that decides
     /// which of the others exist. [`Self::features`] is read from the selected
@@ -1302,7 +1302,7 @@ impl PrintDialog {
                         ui.selectable_value(&mut self.selected, index, &printer.name);
                     }
                 });
-            // ★ BESIDE the printer combo, which is where the operator asked
+            // BESIDE the printer combo, which is where the operator asked
             // for it: *"pretty much every program I have ever seen lets you
             // press a properties button beside the selected printer in the
             // drop-down menu to open the printer options."*
@@ -1342,7 +1342,7 @@ impl PrintDialog {
         ui.horizontal_wrapped(|ui| {
             for tab in PrintTab::ALL {
                 let selected = tab == self.active_tab;
-                // ★ The selected tab paints its own plate and label — the
+                // The selected tab paints its own plate and label — the
                 // same fix as the ribbon's tab strip, and the same defect.
                 // See `DEFECTS.md` D11.
                 //

@@ -25,7 +25,7 @@ const TRAVEL_PT: f32 = 110.0;
 /// are the defensive arm rather than a reachable one, and they draw nothing
 /// rather than a slider over a mode that is not running.
 ///
-/// ★ It takes the **number**, not the document, and that is deliberate rather
+/// It takes the **number**, not the document, and that is deliberate rather
 /// than minimal. A renderer handed an `OpenDoc` can decline for two unrelated
 /// reasons — wrong kind, or nothing to show — and a test with no document
 /// cannot tell which one answered, so the kind guard could be deleted with
@@ -94,7 +94,7 @@ mod tests {
     /// renderer that answered *every* kind is the same defect inverted — a
     /// blend slider standing where the Font group asked for a face chooser.
     ///
-    /// ★ It is given `Some(0.5)` on purpose. Passing `None` would let the
+    /// It is given `Some(0.5)` on purpose. Passing `None` would let the
     /// guard be deleted with this test still green, because the blend would
     /// then be missing too and either arm could be the one answering.
     #[test]

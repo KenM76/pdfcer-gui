@@ -42,7 +42,7 @@ const ORIGIN: (f64, f64) = (100.0, 300.0);
 
 /// How far to the left of the baseline to aim, in points.
 ///
-/// ★ **Left**, and it is the whole reason this sweep lands. For text turned 90°
+/// **Left**, and it is the whole reason this sweep lands. For text turned 90°
 /// anticlockwise the glyph's ascender direction is page **−x**, so the ink of a
 /// letter at `x = 100` occupies roughly `x ∈ 91..103`. Aiming at the baseline
 /// itself would sit on the ink's edge; aiming to the RIGHT would be off the
@@ -230,7 +230,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- assertions 1 and 2 -------------------------------------------------
     let trace = session.trace()?;
-    // ★ The **last** non-empty selection, not the first. A sweep traces every
+    // The **last** non-empty selection, not the first. A sweep traces every
     // distinct state it passes through — `chars=1`, then `3`, then the settled
     // value — and the first is a real selection and a poor verdict: it is
     // whatever was covered on the frame egui first called the press a drag. The

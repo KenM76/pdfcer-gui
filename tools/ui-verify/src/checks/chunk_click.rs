@@ -107,7 +107,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED. The header says
+    // PINNED: `--pdf` and `--doc-point` are read and IGNORED. The header says
     // why the document has to be this one.
     let (pdf, _) = crate::fixture::text_chunk_point(AIMS[0]);
     if !pdf.is_file() {

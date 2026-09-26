@@ -1,7 +1,7 @@
 //! # `canvas::annotquad` tests — what is left to test once the engine owns the
 //! algorithm
 //!
-//! ## ★★★ THESE SHRANK ON PURPOSE, AND THE DELETION IS THE FINDING
+//! ## THESE SHRANK ON PURPOSE, AND THE DELETION IS THE FINDING
 //!
 //!
 //! **They were deleted with their subject, not ported.** Re-asserting the
@@ -17,7 +17,7 @@
 //! that a real turned annotation arrives through the adapter with sane corners
 //! and an angle at all. Plus the tripwire, inverted.
 //!
-//! ## ★★ What these still cannot prove
+//! ## What these still cannot prove
 //!
 //! That the operator sees an angled outline. Every test here calls a function
 //! directly; whether the painter maps those corners through the right
@@ -43,7 +43,7 @@ const PIVOT: (f64, f64) = (X0 + W / 2.0, Y0 + H / 2.0);
 /// A real document with one `/Square` markup authored on page 1, turned by
 /// `degrees`, and its id.
 ///
-/// ★★ Through `add_markup` and `rotate_annotation`, never a hand-built
+/// Through `add_markup` and `rotate_annotation`, never a hand-built
 /// dictionary: the appearance stream, its `/BBox` and its `/Matrix` are then
 /// the ones the engine actually writes, so a change in the engine's convention
 /// turns these red — which is the notification this shell wants rather than a
@@ -92,7 +92,7 @@ fn edges(corners: [(f64, f64); 4]) -> (f64, f64) {
     (lengths[3], lengths[0])
 }
 
-/// ★★★ **A 30° turn arrives through the adapter with the ARTWORK's own
+/// **A 30° turn arrives through the adapter with the ARTWORK's own
 /// dimensions**, not with its bounding box's.
 ///
 /// This is the operator's sentence reduced to arithmetic, and it is the one
@@ -100,7 +100,7 @@ fn edges(corners: [(f64, f64); 4]) -> (f64, f64) {
 /// 140 × 60 mark is about 151 × 122, and the corners this module hands the
 /// painter must still measure 140 × 60.
 ///
-/// ★ It is a test of the **adapter and the projection contract**, not of
+/// It is a test of the **adapter and the projection contract**, not of
 /// §12.5.5 — if the engine's placement were wrong this would fail, but the
 /// engine has five tests of its own saying it is not. What this catches is the
 /// shell passing the wrong `Annotation`, the wrong view, or dropping the
@@ -123,7 +123,7 @@ fn a_thirty_degree_turn_arrives_with_the_artworks_own_dimensions() {
         quad.corners
     );
 
-    // ★★ And the upright bound really did grow, so the two assertions above are
+    // And the upright bound really did grow, so the two assertions above are
     // not passing because there was nothing to notice.
     let xs = quad.corners.map(|c| c.0);
     let bound = xs.iter().fold(f64::NEG_INFINITY, |a, b| a.max(*b))
@@ -145,7 +145,7 @@ fn a_thirty_degree_turn_arrives_with_the_artworks_own_dimensions() {
     );
 }
 
-/// ★★ **An unturned annotation is upright and reports 0°, not `None`.**
+/// **An unturned annotation is upright and reports 0°, not `None`.**
 ///
 /// The base case, and it is what makes the branch above it meaningful: the
 /// canvas takes the cheap axis-aligned path on `is_upright`, so a build that
@@ -153,7 +153,7 @@ fn a_thirty_degree_turn_arrives_with_the_artworks_own_dimensions() {
 /// for no reason, and one that answered `None` for the angle would leave the
 /// properties panel's Angle field blank on the commonest annotation there is.
 ///
-/// ★ `Some(0.0)` rather than `None` is the **engine's** deliberate choice for
+/// `Some(0.0)` rather than `None` is the **engine's** deliberate choice for
 /// an appearance with no `/Matrix` key — Table 95's default, and what the
 /// renderer paints with. `Annotation::appearance_matrix` answers `None` for the
 /// same annotation, because the file really did say nothing, and this shell
@@ -166,7 +166,7 @@ fn an_unturned_annotation_is_upright_and_reports_zero() {
     assert!(quad.is_upright());
 }
 
-/// ★★★ **A QUARTER TURN IS NOT UPRIGHT**, which is the one part of
+/// **A QUARTER TURN IS NOT UPRIGHT**, which is the one part of
 /// [`OrientedBox::is_upright`] a reader is likely to think is a bug.
 ///
 /// A 90°-turned annotation's `/Rect` bounds it exactly — the box is the
@@ -188,7 +188,7 @@ fn a_quarter_turn_is_not_upright_even_though_its_rect_fits() {
     );
 }
 
-/// ★★ **An annotation the engine will not place answers `None`** — and that is
+/// **An annotation the engine will not place answers `None`** — and that is
 /// a correct answer rather than a failure, because the caller then keeps
 /// `/Rect`, which for such an annotation is where the mark is.
 ///
@@ -206,7 +206,7 @@ fn an_annotation_that_is_not_there_has_no_placement() {
 // The tripwire, inverted.
 // ---------------------------------------------------------------------------
 
-/// ★★★ **THE TRIPWIRE FIRED, AND THIS IS WHAT IT BECAME.**
+/// **THE TRIPWIRE FIRED, AND THIS IS WHAT IT BECAME.**
 ///
 ///
 /// **It is kept, inverted**, because the workaround it guarded is gone and the
@@ -229,7 +229,7 @@ fn an_annotation_that_is_not_there_has_no_placement() {
 /// path turning a rename into a green check over an empty scan is a mistake
 /// this project has already made once.
 ///
-/// ★ It reads the **cargo checkout**, located through `Cargo.lock`, not
+/// It reads the **cargo checkout**, located through `Cargo.lock`, not
 /// `D:/Dev/pdfcer` — that working tree moves several times a day, often ahead
 /// of what compiles here, so a tripwire on it fires on work that is not in the
 /// binary.
@@ -318,7 +318,7 @@ fn the_engine_owns_the_placement_and_this_module_only_projects() {
     );
 }
 
-/// ★★★ **A CLOCKWISE TURN IS NORMALISED, AND THIS IS THE TEST THAT WAS MISSING.**
+/// **A CLOCKWISE TURN IS NORMALISED, AND THIS IS THE TEST THAT WAS MISSING.**
 ///
 /// The engine's `Annotation::appearance_rotation_degrees` returns a signed
 /// `atan2`, so a quarter turn clockwise reads **`-89.15`**. This module needs
@@ -338,13 +338,13 @@ fn the_engine_owns_the_placement_and_this_module_only_projects() {
 /// clockwise — one driven run, ninety seconds, on a build the whole suite had
 /// signed off.
 ///
-/// ★★ It asserts **both signs in one test**, deliberately. A test named *"a
+/// It asserts **both signs in one test**, deliberately. A test named *"a
 /// negative angle normalises"* sitting beside four positive ones would be as
 /// easy to leave un-run as the case it guards; asserting the pair means the
 /// property under test is *the round trip is sign-agnostic*, which is what was
 /// actually assumed.
 ///
-/// ★ −89.15° rather than −90°: it is the angle the driven check's drag
+/// −89.15° rather than −90°: it is the angle the driven check's drag
 /// actually produces, and a round number would sit exactly on the boundary of
 /// the quarter-turn case that has its own test above.
 #[test]

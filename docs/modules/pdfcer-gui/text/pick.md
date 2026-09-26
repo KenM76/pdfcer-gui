@@ -4,7 +4,7 @@ The strings for [`crate::canvas::pick`] and for the status-bar popup that
 drives it. That module's header carries the design and the invariants; this
 file carries the copy.
 
-## ★ The vocabulary is the OPERATOR's, not the PDF specification's
+## The vocabulary is the OPERATOR's, not the PDF specification's
 
 This is the rule the whole file follows, and it is worth stating because
 every row here has a perfectly good technical name that would be the wrong
@@ -14,11 +14,11 @@ label.
 |---|---|---|
 | **Lines** | path object | It is the word he used when he asked for the feature — *"text, points, lines, etc"*. On a CAD sheet, path objects **are** the line work |
 | **Points** | anchor, on a subpath | Likewise his word. "Anchor" is Illustrator's, "node" is Inkscape's, "vertex" is CAD's, and "point" is what he says |
-| **Blocks** | form XObject | ★ See below — this is the most load-bearing choice in the file |
+| **Blocks** | form XObject | See below — this is the most load-bearing choice in the file |
 | **Pictures** | image XObject / inline image | Already the shell's word elsewhere: *"Select a picture and drag it"* |
 | **Characters** | the text-selection sweep | Names the unit, which is what distinguishes it from the Text row |
 
-### ★★ Why a form XObject is called a "Block"
+### Why a form XObject is called a "Block"
 
 A form XObject is an entire nested drawing that the page treats as one
 opaque object. There is no everyday English word for that — and there is a

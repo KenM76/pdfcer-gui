@@ -5,7 +5,7 @@
 The first driven check of the About window, which until now had no declared
 region and so could not be found by anything.
 
-# ★ Why About is worth driving at all
+# Why About is worth driving at all
 
 It is the one surface in this program with a **legal** obligation behind it.
 `dialogs::about`'s own header sets it out: the third-party attributions are

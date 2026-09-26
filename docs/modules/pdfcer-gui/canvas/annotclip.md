@@ -13,7 +13,7 @@ A reader asking *"why did my sticky note's author survive and my cloud's
 not?"* finds the whole answer here, in one file, rather than interleaved
 with the paste offset and the OS-clipboard marker.
 
-## ★★ [`duplicate`] lives here, and the carrier question is why
+## [`duplicate`] lives here, and the carrier question is why
 
 `edit.duplicate` (`Ctrl+D`) puts a second copy of the selected comment on
 the page **without touching the clipboard**, which is the whole point of it:
@@ -28,7 +28,7 @@ undated, opaque** copy of a signed revision cloud, which looks correct on
 the page. So it runs the same `copy_selection` and asks the same
 [`Plan::of`]. **No subtype list, in either verb.**
 
-## ★★★ THE RULE THIS MODULE EXISTS TO HOLD
+## THE RULE THIS MODULE EXISTS TO HOLD
 
 **Which carrier an annotation lands on is the engine's answer to read, never
 this shell's to predict.**
@@ -72,7 +72,7 @@ nothing at all.
 | the clip, `Dimension` carrier | it is a **ce dimension** | the group by name, its scale, format, standard, the per-object style and the text override | nothing this shell can author |
 | refused | `/Widget`, `/Popup`, `/Redact` | — | the whole annotation, **by name** |
 
-## ★★ Two address spaces, and this module resolves one of them
+## Two address spaces, and this module resolves one of them
 
 `copy_selection` takes **two index lists** and the engine's own doc comment
 says why they cannot be merged: *"an annotation is not content, so it has
@@ -83,7 +83,7 @@ no paint-order index."* The shell holds annotations by
 conversion: an index taken from anywhere else is an index whose numbering
 nobody can name.
 
-★ It refuses rather than guesses when the id is not on the page. `R168` —
+It refuses rather than guesses when the id is not on the page. `R168` —
 `copy_annotations` refuses the whole call on one bad index rather than the
 valid remainder — and matching that here means a stale selection produces a
 sentence instead of a clip that is quietly missing a member.

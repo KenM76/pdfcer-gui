@@ -23,7 +23,7 @@ pub fn pages_count(total: usize) -> String {
 
 /// How many pages the operator has picked, shown only when that is not zero.
 ///
-/// ★ **This number is the operand list the ribbon's Pages tab already
+/// **This number is the operand list the ribbon's Pages tab already
 /// promises.** Every one of those commands' tooltips says *"the selected
 /// pages"* — `pages.delete` is *"Remove the selected pages from this
 /// document"* — so the count here is not decoration, it is the answer to
@@ -38,7 +38,7 @@ pub fn pages_selected(selected: usize) -> String {
     }
 }
 
-/// ★ **Where a drag will put the pages it is carrying** — the sentence beside
+/// **Where a drag will put the pages it is carrying** — the sentence beside
 /// the insertion caret.
 ///
 /// The caret says *where* graphically; this says it in words, and both are
@@ -49,7 +49,7 @@ pub fn pages_selected(selected: usize) -> String {
 /// dialog is centred over a document the operator may have scrolled: the
 /// number is what makes the choice checkable."*
 ///
-/// # ★ The vocabulary is the Insert dialog's, deliberately
+/// # The vocabulary is the Insert dialog's, deliberately
 ///
 /// *Before page N*, *the start*, *the end* — the same three phrasings the
 /// insert-position radios use, because a drag and an insert answer the same
@@ -80,7 +80,7 @@ pub fn drag_landing(moving: usize, gap: usize, page_count: usize) -> String {
 
 /// A drag hovering a boundary that would change nothing.
 ///
-/// ★ **Said rather than shown by absence.** The alternative is to hide the
+/// **Said rather than shown by absence.** The alternative is to hide the
 /// caret when the drop would not land, and that is worse: an operator whose
 /// caret has vanished cannot tell *"this drop does nothing"* from *"the panel
 /// has stopped tracking my pointer"*. The caret is dimmed and this sentence
@@ -125,7 +125,7 @@ pub fn page_number(page_index: usize) -> String {
 ///
 /// The gestures are named because none of them is discoverable: nothing on
 /// screen says that Ctrl adds to the selection.
-/// ★ Takes **points**, not millimetres, and rounds here.
+/// Takes **points**, not millimetres, and rounds here.
 ///
 /// The caller has the sheet's extent in PDF user-space units and nothing else;
 /// asking it to convert was how this surface came to disagree with the print
@@ -192,7 +192,7 @@ pub fn previews_label() -> &'static str {
 
 /// …and its tooltip, which states the cost rather than hiding it.
 ///
-/// ★ **The number in this sentence is measured, not estimated.**
+/// **The number in this sentence is measured, not estimated.**
 /// `BENCHMARK.md` records a real CAD drawing whose content stream costs
 /// ~0.74 s to interpret *at any scale* — a one-by-one-**point** region of it
 /// costs 691 ms — so a thumbnail of such a page is not cheap merely because
@@ -206,7 +206,7 @@ pub fn previews_tooltip() -> &'static str {
      when it meets one."
 }
 
-/// ★ **The suffix on the time-limit box** — the unit, and nothing else.
+/// **The suffix on the time-limit box** — the unit, and nothing else.
 ///
 /// Seconds rather than milliseconds because the operator is choosing how long
 /// they are prepared to wait for one picture, and nobody has ever had an
@@ -229,7 +229,7 @@ pub fn previews_budget_prefix() -> &'static str {
     "≤ "
 }
 
-/// ★★★ **What the time-limit box does, with the measurement that makes the
+/// **What the time-limit box does, with the measurement that makes the
 /// number choosable.**
 ///
 /// The operator cannot pick a per-page time limit without knowing what a page
@@ -255,7 +255,7 @@ pub fn previews_budget_tooltip() -> &'static str {
      of the document still draws — and raising this draws it again."
 }
 
-/// ★★★ **What the time-limit box shows when it is set to nothing** —
+/// **What the time-limit box shows when it is set to nothing** —
 /// `OPERATOR_REQUESTS.md` **O187**, 2026-09-12: *“setting it to 0 should set
 /// it to infinity (never time out)”*.
 ///
@@ -309,7 +309,7 @@ pub fn previews_skipped_note(page_index: usize, millis: u128) -> String {
 }
 
 // ---------------------------------------------------------------------------
-// ★ THE PAGE VERBS' DISCLOSURES — what a delete broke, in words
+// THE PAGE VERBS' DISCLOSURES — what a delete broke, in words
 //
 // A second audience for this module, and the header's *"consumed by
 // `crate::panels::pages` and by nothing else"* is now *"and by
@@ -451,9 +451,9 @@ pub const fn insert_dialog_title() -> &'static str {
     "Insert pages from a PDF"
 }
 
-/// ★ **What arrived, and the two different ways the rest did not.**
+/// **What arrived, and the two different ways the rest did not.**
 ///
-/// # ★★ This sentence was WRONG for two hours, and the correction is the point
+/// # This sentence was WRONG for two hours, and the correction is the point
 ///
 /// It read: *"Bookmarks, form fields and page labels from that file did not
 /// come across — its pages did."* Three nouns, one verb, and the verb is true
@@ -491,7 +491,7 @@ pub const fn insert_dialog_title() -> &'static str {
 /// *"after page 7"* is the sheet the operator was looking at, in the numbering
 /// the page box and the thumbnails use. A 0-based index here would be the only
 /// place in the application that counted differently.
-/// # ★ The orphan clause is now a NUMBER, and it is exact
+/// # The orphan clause is now a NUMBER, and it is exact
 ///
 /// This sentence used to hedge — *"**Any** form fields on those pages arrived
 /// as boxes…"* — because the shell had no way to know whether there were any,
@@ -510,7 +510,7 @@ pub const fn insert_dialog_title() -> &'static str {
 /// to stop reading the sentence, and the drawings this application is for
 /// almost never have any.
 ///
-/// # ★ And the clause is PERMANENT, which the wording has to survive
+/// # And the clause is PERMANENT, which the wording has to survive
 ///
 /// The engine over-ruled the framing this shell filed it under. It was
 /// proposed as *"the count now, carrying the definitions later"*, and the
@@ -524,7 +524,7 @@ pub const fn insert_dialog_title() -> &'static str {
 /// What an insert did to the two document-level structures that do not travel
 /// with a page.
 ///
-/// # ★★ Three booleans, and there are three because the REMEDIES differ
+/// # Three booleans, and there are three because the REMEDIES differ
 ///
 /// The engine's ruling on the two label fields, adopted verbatim and extended
 /// to the third: *"a stale tree wants renumbering; a dropped one wants
@@ -543,7 +543,7 @@ pub const fn insert_dialog_title() -> &'static str {
 /// page numbers they are looking at have quietly stopped describing the pages
 /// they are on.
 ///
-/// # ★ Why the outline case is a boolean and not "always"
+/// # Why the outline case is a boolean and not "always"
 ///
 /// Because it used to be "always", and that made it a **disclaimer rather than
 /// a disclosure**. The sentence said *"Bookmarks and page labels from that file
@@ -561,7 +561,7 @@ pub const fn insert_dialog_title() -> &'static str {
 /// outline through `add_outline_item`, i.e. exactly what the Bookmarks panel
 /// now does by hand.
 ///
-/// # ★ Why pdfcer deliberately does not match Acrobat on page labels
+/// # Why pdfcer deliberately does not match Acrobat on page labels
 ///
 /// Carried in this type's own documentation, because the first review question
 /// about a *"pdfcer wrote nothing"* disclosure is always *"what does Acrobat
@@ -588,7 +588,7 @@ pub struct Structures {
     pub labels_stale: bool,
 }
 
-/// # ★★ TWO numbers, because they are two different pieces of news
+/// # TWO numbers, because they are two different pieces of news
 ///
 /// `orphaned_widgets_unrecoverable` arrived hours after `orphaned_widgets`,
 /// with the engine's own correction of the sentence it had suggested the day
@@ -611,7 +611,7 @@ pub struct Structures {
 /// route in it. A document with 0 and 2 gets one sentence with no route,
 /// because there is none.
 ///
-/// # ★ The recoverable clause names WHERE, and that is the whole point of it
+/// # The recoverable clause names WHERE, and that is the whole point of it
 ///
 /// *"Forms ▸ Tab order lists them"* is the difference between a disclosure and
 /// a complaint. Before `EditSession::adopt_widget` shipped there was nothing to
@@ -643,7 +643,7 @@ pub fn inserted(
     if structures.outline_dropped {
         line.push_str(" That file's bookmarks did not come across.");
     }
-    // ★ Two forms, because "Nor did..." needs something to follow.
+    // Two forms, because "Nor did..." needs something to follow.
     //
     // Found by the test beside this, not by reading: with `outline_dropped`
     // false the sentence came out *"Inserted 1 page after page 1. Nor did its
@@ -661,7 +661,7 @@ pub fn inserted(
              position.",
         );
     }
-    // ★ LAST of the three, and about THIS document rather than the source.
+    // LAST of the three, and about THIS document rather than the source.
     //
     // Ordered deliberately: the first two are facts about a file the operator
     // has finished with, and this one is about the sheets in front of them. A
@@ -689,7 +689,7 @@ pub fn inserted(
              Forms, Tab order lists them."
         )),
     }
-    // ★★ "N MORE" only works when something came before it.
+    // "N MORE" only works when something came before it.
     //
     // Found by a driven run, not by reading: on a source whose orphans are ALL
     // unrecoverable the re-registering clause is skipped, and the sentence came
@@ -697,7 +697,7 @@ pub fn inserted(
     // entirely..."* — more than what? It reads as a sentence with one deleted
     // in front of it.
     //
-    // ★ This is the SECOND continuation-clause defect in this one function, and
+    // This is the SECOND continuation-clause defect in this one function, and
     // the first was fixed an hour earlier three clauses up ("Nor did its page
     // numbering"). That is the lesson worth more than either fix: a conditional
     // clause written as a continuation is only correct in the branch its author
@@ -877,7 +877,7 @@ pub const fn insert_cancel() -> &'static str {
 }
 
 //
-// ★★★ Why this is a different verb from an insert, and not a convenience over
+// Why this is a different verb from an insert, and not a convenience over
 // it. `insert_pages` takes SOME pages and **orphans** the widgets on them; a
 // form field that arrives that way is drawn and unfillable. `merge_document`
 // re-parents the widgets to their fields, so — the engine's own words —
@@ -892,7 +892,7 @@ pub const fn insert_cancel() -> &'static str {
 
 /// What a merge brought across, and what it had to rename to do it.
 ///
-/// # ★★★ Two renames, and both are disclosures rather than warnings
+/// # Two renames, and both are disclosures rather than warnings
 ///
 /// **`fields_renamed`** — a field whose name was already taken here arrives
 /// under a different one. The engine's note on why that is still the right
@@ -909,7 +909,7 @@ pub const fn insert_cancel() -> &'static str {
 /// old key now resolves to *this* document's destination rather than the
 /// source's — a link that still works and goes somewhere else.
 ///
-/// ★ Each clause appears only when its count is non-zero. A clean merge of a
+/// Each clause appears only when its count is non-zero. A clean merge of a
 /// form-free drawing set says one thing: how many pages arrived.
 #[must_use]
 pub fn merged(outcome: &pdfcer_core::edit::MergeOutcome) -> Vec<String> {
@@ -958,7 +958,7 @@ pub fn merge_failed(detail: &str) -> String {
 mod tests {
     use super::*;
 
-    /// ★ **A document with no form controls gets no sentence about form
+    /// **A document with no form controls gets no sentence about form
     /// controls.**
     ///
     /// The clause used to be unconditional — *"**Any** form fields on those
@@ -985,7 +985,7 @@ mod tests {
         );
     }
 
-    /// ★★ A source that had nothing to lose is told nothing about losing it.
+    /// A source that had nothing to lose is told nothing about losing it.
     ///
     /// The sentence used to end *"Bookmarks and page labels from that file did
     /// not come across"* on **every** insert. On a CAD drawing whose source had
@@ -1046,7 +1046,7 @@ mod tests {
         assert!(!labels.contains("Nor did"), "{labels}");
     }
 
-    /// ★★ The stale-label clause is about THIS document, and it is last.
+    /// The stale-label clause is about THIS document, and it is last.
     ///
     /// The one fact in this sentence that describes the sheets in front of the
     /// operator rather than a file they have finished with: their own page
@@ -1088,7 +1088,7 @@ mod tests {
     /// *"1 form controls"* is the shape that makes an operator distrust the
     /// number beside it.
     ///
-    /// ★ The route is asserted, not just the count. A disclosure that reports a
+    /// The route is asserted, not just the count. A disclosure that reports a
     /// solvable problem without saying it is solvable leaves the operator with
     /// a correct description and nothing to do with it.
     #[test]
@@ -1106,7 +1106,7 @@ mod tests {
         assert!(many.contains("lists them"), "{many}");
     }
 
-    /// ★★ The two counts are two sentences, and the recoverable one is the
+    /// The two counts are two sentences, and the recoverable one is the
     /// **difference**, not the total.
     ///
     /// The engine's correction, asserted. `orphaned_widgets` counts every
@@ -1155,7 +1155,7 @@ mod tests {
         );
     }
 
-    /// ★★ The unrecoverable clause reads correctly with NOTHING before it.
+    /// The unrecoverable clause reads correctly with NOTHING before it.
     ///
     /// Found by a driven run rather than by reading. On a source whose orphans
     /// are all bare kids the re-registering clause is skipped, and the sentence
@@ -1164,7 +1164,7 @@ mod tests {
     /// one deleted in front of it, which is exactly how an operator concludes
     /// the program is losing text.
     ///
-    /// ★ It is the **second** continuation-clause defect in this one function.
+    /// It is the **second** continuation-clause defect in this one function.
     /// The first — *"Nor did its page numbering"* with no bookmarks clause
     /// before it — was fixed an hour earlier, three clauses up, and the sweep
     /// that should have followed it did not happen. Both arms are now asserted

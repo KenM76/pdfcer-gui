@@ -45,7 +45,7 @@ live `EditSession` over a real document, and whether the plan's page indices
 still name pages when the queue drains is a question about a **running
 frame**.
 
-# ★★ The assertion that makes this more than a smoke test
+# The assertion that makes this more than a smoke test
 
 **The characters in the file are counted and reconciled against the trace,
 by an exact identity rather than a bound.**
@@ -65,12 +65,12 @@ and fails this. So does a build that silently dropped a page, wrote a
 leading or trailing separator, or applied an encoding transformation it did
 not disclose.
 
-★ The identity is asserted rather than a `>=` bound — the opposite of
+The identity is asserted rather than a `>=` bound — the opposite of
 [`super::export_dxf`]'s deliberate looseness — because unlike DXF entity
 markers, nothing else in a text file can contribute a character. A loose
 bound here would buy no safety and would give up the whole assertion.
 
-# ★ And it asserts the SEPARATOR the identity depends on
+# And it asserts the SEPARATOR the identity depends on
 
 The trace carries `separator=` and `bom=`. If a later build changes the
 window's defaults, the identity above stops holding and this check must say

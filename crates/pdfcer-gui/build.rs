@@ -93,7 +93,7 @@ fn main() {
 /// time of the build … and the date and time of the builds of the used pdfcer
 /// and iccce"*.
 ///
-/// # ★ Why the engine's stamp is a COMMIT time and not a build time
+/// # Why the engine's stamp is a COMMIT time and not a build time
 ///
 /// `pdfcer-core`, `pdfcer-render` and `pdfcer-print` are compiled **into** this
 /// executable from a git dependency. They have no build of their own: their
@@ -118,7 +118,7 @@ fn main() {
 /// than pretending to know the offset. A stamp that says the wrong hour is
 /// worse than one that says a true hour in a named zone.
 fn provenance() {
-    // ★ Without these, this script does not re-run when the code changes and
+    // Without these, this script does not re-run when the code changes and
     // the stamp is silently the time of some earlier build — which is the one
     // failure mode a build stamp must not have, because nothing about the
     // program looks wrong.
@@ -160,7 +160,7 @@ fn provenance() {
 
     // The engine: version, revision, and the revision's commit time.
     //
-    // ★★ Looked up under BOTH names, current one first. `Cargo.lock` records
+    // Looked up under BOTH names, current one first. `Cargo.lock` records
     // the package's REAL name, which is the engine's PRE-rename one wherever a
     // `package = ...` rename shim stands between this workspace and the engine
     // — and a single literal here then matches nothing, leaving the About
@@ -193,7 +193,7 @@ fn provenance() {
     };
     println!("cargo:rustc-env=PDFCER_ENGINE_TIME={engine_time}");
 
-    // ★ iccce, looked up under that exact package name.
+    // iccce, looked up under that exact package name.
     //
     // Reported as absent rather than omitted when the lookup finds nothing.
     // `RIBBON_IA.md`'s no-placeholders rule governs *controls* — an unavailable
@@ -242,7 +242,7 @@ fn provenance() {
 /// | `PDFCER_RELEASE_DISTANCE` | commits between that tag and `HEAD`, decimal — `0` on the tag itself | **empty** |
 /// | `PDFCER_RELEASE_MODIFIED` | `1` when the working tree had uncommitted changes, else `0` — never empty, see the note at the emitter | `0` |
 ///
-/// # ★★★ Why the git TAG, and not `CARGO_PKG_VERSION`
+/// # Why the git TAG, and not `CARGO_PKG_VERSION`
 ///
 /// Because in this repository the tag **is** the release, and the crate
 /// version deliberately is not.
@@ -265,7 +265,7 @@ fn provenance() {
 /// would be a second place to bump, and the first one to be forgotten — the
 /// exact failure this row exists to close. The value must stay derived.
 ///
-/// # ★★ `--long`, so there is only one shape to parse
+/// # `--long`, so there is only one shape to parse
 ///
 /// `git describe --tags` prints a bare `v0.5.0` on a tagged commit and
 /// `v0.5.0-23-g0a8126c` elsewhere — two shapes, and a parser that handles one
@@ -277,7 +277,7 @@ fn provenance() {
 /// here to glob it) and keeps a future non-release tag — `baseline`,
 /// `before-the-rewrite` — from being read as a version.
 ///
-/// # ★★★ What happens with no git, no `.git`, or no tag — all three
+/// # What happens with no git, no `.git`, or no tag — all three
 ///
 /// All three land in the same place: the three variables are **empty**, the
 /// build **succeeds**, and About says it is not from a released version. They
@@ -303,7 +303,7 @@ fn provenance() {
 /// `crate::dialogs::about::version_label` is where that promise is kept, and
 /// `the_unavailable_case_invents_no_number` is the test that keeps it.
 ///
-/// # ★★ Reproducibility, and the one honest caveat
+/// # Reproducibility, and the one honest caveat
 ///
 /// **The build stays reproducible.** Every input here is committed history:
 /// two builds of the same commit, with the same tags visible, emit
@@ -345,7 +345,7 @@ fn release(modified: bool) {
 
     println!("cargo:rustc-env=PDFCER_RELEASE_VERSION={version}");
     println!("cargo:rustc-env=PDFCER_RELEASE_DISTANCE={distance}");
-    // ★★★ **`"0"`, not `""` — a flag with two named values and no empty
+    // **`"0"`, not `""` — a flag with two named values and no empty
     // case.**
     //
     // An empty string for the clean case would reach a consumer in
@@ -360,7 +360,7 @@ fn release(modified: bool) {
     // precisely when a release is cut. A gate whose result is a function of git
     // state rather than of source is not measuring the source.
     //
-    // ★ It is fixed at the emitter rather than at the comparison, for this
+    // It is fixed at the emitter rather than at the comparison, for this
     // project's standing reason: making the consumer dodge the lint would leave
     // the field's vocabulary — *"empty means false"* — intact, and the next
     // reader would meet the same trap.
@@ -369,7 +369,7 @@ fn release(modified: bool) {
         if modified { "1" } else { "0" }
     );
 
-    // ★ Said out loud, once, and only when it is true. A build with no
+    // Said out loud, once, and only when it is true. A build with no
     // discoverable release version is a legitimate and common state — every
     // build from a tarball is one — so this is not a warning about a mistake;
     // it is the difference between "About says no released version because
@@ -469,7 +469,7 @@ fn commit_time(rev: &str, repo: &str) -> String {
 /// that says `unknown` is a smaller problem than a program that will not
 /// compile off a tarball.
 ///
-/// ★ Reading `D:\Dev\pdfcer` is deliberate and permitted: the governing rule of
+/// Reading `D:\Dev\pdfcer` is deliberate and permitted: the governing rule of
 /// this project is that the engine repository is **read-only until fold-in**,
 /// and `git show -s` writes nothing.
 fn git(args: &[&str], dir: &str) -> Option<String> {
@@ -526,7 +526,7 @@ fn locked_git_package(lock: &str, name: &str) -> (String, String, String) {
             if let Some((url, sha)) = src.split_once('#') {
                 rev = sha.to_owned();
                 // `git+file:///D:/Dev/pdfcer?branch=main` -> `D:/Dev/pdfcer`
-                // ★ Only a `file://` source names a directory this build can
+                // Only a `file://` source names a directory this build can
                 // run `git` in. A crates.io or `https://` dependency is real
                 // and will still report its version and revision; its commit
                 // time simply comes back empty, which the About box renders as

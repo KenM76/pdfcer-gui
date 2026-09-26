@@ -11,7 +11,7 @@ use crate::report::CheckReport;
 
 /// The command under test — **not** `file.settings`.
 ///
-/// ★ The two open one window and ask different questions, which is why they
+/// The two open one window and ask different questions, which is why they
 /// stopped sharing a route. `file.settings` is *"show me the settings"* and
 /// lands at the top, correctly; this one is *"where do font folders live"*.
 const INVOKE: &str = "tools.font_folders";
@@ -60,7 +60,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
 
-    // ★ No `--pdf`, and no input. Settings is one of the few windows that must
+    // No `--pdf`, and no input. Settings is one of the few windows that must
     // work with nothing open — the folders are a preference, not a property of
     // a document — and driving it on an empty shell is what proves that. It also
     // makes this one of the few checks that runs under `--no-input`: the
@@ -103,7 +103,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     let Some(rect) = declared(&trace, ui_rect, CHECKBOX) else {
-        // ★★ The two-way diagnosis, and it is why `ADD` is read at all.
+        // The two-way diagnosis, and it is why `ADD` is read at all.
         //
         // The Add button sits ABOVE the checkbox in the same group. If it
         // published and the checkbox did not, the group opened and the window
@@ -141,7 +141,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          {rect:?} — an operator asking where font folders live is shown them"
     ));
 
-    // ★ The Add button too, reported rather than asserted: it is above the
+    // The Add button too, reported rather than asserted: it is above the
     // checkbox, so its presence is implied by the assertion that passed. It is
     // noted because a run where only ONE of them is visible is a group whose
     // height has grown past the view, and the next person to add a row here

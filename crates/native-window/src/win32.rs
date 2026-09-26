@@ -27,7 +27,7 @@
 //! this, a dropped file is an event with no position, and *"drop it onto the
 //! thumbnails"* cannot be distinguished from *"drop it anywhere"*.
 //!
-//! ## ★ Why the declarations are hand-written rather than a crate
+//! ## Why the declarations are hand-written rather than a crate
 //!
 //! Because a handful of symbols is not worth a dependency, and
 //! `tools/ui-verify` sets the precedent in this repository for that reason: it
@@ -45,7 +45,7 @@ type Hwnd = *mut c_void;
 
 /// `GWLP_HWNDPARENT` — the window-long index that holds a window's **owner**.
 ///
-/// ★ The name is a trap and the SDK documents it as one: this index sets the
+/// The name is a trap and the SDK documents it as one: this index sets the
 /// window's *owner*, not its *parent*. A parent would make the dialog a child
 /// control clipped inside the application's client area — the in-viewport
 /// behaviour this whole module exists to leave behind. An owner is a peer
@@ -54,7 +54,7 @@ const GWLP_HWNDPARENT: i32 = -8;
 
 /// The `POINT` the SDK fills in, laid out exactly as `windef.h` declares it.
 ///
-/// ★ Two `i32`s in declaration order and nothing else. `#[repr(C)]` is not
+/// Two `i32`s in declaration order and nothing else. `#[repr(C)]` is not
 /// decoration here: the operating system writes through this pointer, and a
 /// Rust-ordered struct would be a silent coordinate swap on some future
 /// compiler rather than a compile error.
@@ -95,7 +95,7 @@ unsafe extern "system" {
 /// a dialog draws every frame and there is no "it just opened" event a caller
 /// could rely on that is cheaper than simply checking.
 ///
-/// # ★★ The three ways this answers `false`, and none of them is an error
+/// # The three ways this answers `false`, and none of them is an error
 ///
 /// 1. **The window does not exist yet.** A viewport is created by the toolkit
 ///    *during* the frame, so the first call after a dialog opens can run before
@@ -127,7 +127,7 @@ pub fn own_window(owner: isize, title: &str) -> bool {
     if hwnd.is_null() {
         return false;
     }
-    // ★ It must be OURS. See the module header.
+    // It must be OURS. See the module header.
     let mut pid: u32 = 0;
     // SAFETY: `hwnd` came from `FindWindowExW`; the out-parameter points at a
     // live stack local. The call tolerates a stale handle by returning 0.
@@ -154,7 +154,7 @@ pub fn own_window(owner: isize, title: &str) -> bool {
 /// **Where the pointer is, in physical desktop pixels**, or `None` if the
 /// operating system declined to say.
 ///
-/// # ★★ Why a caller wants this rather than the toolkit's pointer position
+/// # Why a caller wants this rather than the toolkit's pointer position
 ///
 /// Only one caller should: an application's file-drag path, while a file drag
 /// is in flight. In every other situation `egui`'s pointer position is better
@@ -167,7 +167,7 @@ pub fn own_window(owner: isize, title: &str) -> bool {
 /// the caller, because it needs that frame's `pixels_per_point` and the
 /// window's own rectangle, neither of which this crate knows or should.
 ///
-/// # ★ Why `None` rather than `(0, 0)`
+/// # Why `None` rather than `(0, 0)`
 ///
 /// Because `(0, 0)` is a real place — the top-left corner of the primary
 /// monitor — and a caller that resolved a drop target against it would put a

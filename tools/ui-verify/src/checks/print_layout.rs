@@ -18,7 +18,7 @@ const SUBJECT: &str = "file.print";
 /// The window sizes the dialog is driven at, as `width,height` in physical
 /// pixels for `PDFCER_DIAG_VIEWPORT`.
 ///
-/// ★ These size the APPLICATION window, and the dialog inherits its own
+/// These size the APPLICATION window, and the dialog inherits its own
 /// declared 800x620 regardless — so what this actually varies is the machine's
 /// available space and the dialog's placement, not the dialog's size. Varying
 /// the dialog itself needs an OS-level resize of the child window, which is a
@@ -154,7 +154,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         };
         sampled += 1;
 
-        // ★ The assertion. Content must be strictly no larger than the viewport
+        // The assertion. Content must be strictly no larger than the viewport
         // on BOTH axes at a window size that comfortably holds the dialog. It
         // is `<=` rather than `<` because equality draws no bar and demanding a
         // strict margin would be asserting the allowance's exact value, which
@@ -180,7 +180,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ));
         }
 
-        // ★★ The inner cause, asserted separately so a failure names WHICH of
+        // The inner cause, asserted separately so a failure names WHICH of
         // the two it is. The preview's control strip was 379.9 pt in a 340 pt
         // column, and that overflow propagated outward into the body — so a
         // body that fits while the strip does not is a body one theme change

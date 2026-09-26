@@ -83,7 +83,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         ));
     }
 
-    // ★ No fixture. See the module header: the command is offered with nothing
+    // No fixture. See the module header: the command is offered with nothing
     // open, on purpose, and that is the state to drive it from.
     let mut spec = LaunchSpec::new(&exe, ctx.out("new_document_size.trace.txt"));
     spec.env.push((
@@ -116,7 +116,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         )));
     }
 
-    // ★ Nothing may have made a document yet.
+    // Nothing may have made a document yet.
     //
     // A New that fires on its own is `view.app_initiative`'s specified default
     // — Never — broken in the way that matters most, since this command
@@ -198,7 +198,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     // the check was reporting a timing question in language that reads like a
     // missing control.
     //
-    // ★ A retry rather than a longer settle, because a longer settle is a magic
+    // A retry rather than a longer settle, because a longer settle is a magic
     // number tuned against one machine: this asks *"is the popup open yet?"* and
     // presses again only if the answer is no, so it costs nothing when the first
     // click worked and it says how many attempts it took when it did not.
@@ -285,7 +285,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         "the re-parsed page is {w_mm:.1} × {h_mm:.1} mm ({w_pt:.1} × {h_pt:.1} pt)"
     ));
 
-    // ★ The transposition is reported as ITSELF, not as "the wrong size".
+    // The transposition is reported as ITSELF, not as "the wrong size".
     //
     // A page that is 297 × 420 has the right sheet and the wrong orientation,
     // and that is one specific defect — the radio not reaching `sheet_pt`, or
@@ -335,7 +335,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 /// Three clicks and a 20-frame settle apiece changed nothing, which is the tell:
 /// **a retry that does not help means the aim, not the wait.**
 ///
-/// ★★ `RESUME.md` records the identical fault in `checks::ocr::click_region` on
+/// `RESUME.md` records the identical fault in `checks::ocr::click_region` on
 /// 2026-08-27, and its conclusion verbatim: *"If you convert a check to drive a
 /// dialog, use `driving::frame_of`; it is safe on a main-window region and costs
 /// nothing."* That check was fixed; this one was written afterwards without it.

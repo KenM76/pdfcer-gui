@@ -1,7 +1,7 @@
 //! # `shell::commands::catalog::modes` — the mode selector — Read, Review, Edit
 //!
 //!
-//! ## ★★★ The split is per TAB, and the reason it was refused before is gone
+//! ## The split is per TAB, and the reason it was refused before is gone
 //!
 //! [`super`]'s header argued against exactly this cut:
 //!
@@ -21,7 +21,7 @@ pub(super) fn band() -> Vec<Command> {
         // complexity control, not a permission, and there is no document
         // state in which changing your own view stance should be refused.
         //
-        // ★ **No icons, and this is the one entry in the whole "which
+        // **No icons, and this is the one entry in the whole "which
         // commands get a glyph" question that is settled by the renderer
         // rather than by taste.** `egui_shell::ribbon::mode_selector` draws
         // the modes as **text segments** of an N-position segmented control,

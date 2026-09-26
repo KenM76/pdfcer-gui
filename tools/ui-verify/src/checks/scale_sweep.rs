@@ -27,7 +27,7 @@ const ANCHORS_EVENT: &str = "canvas-anchors";
 const HANDLES_EVENT: &str = "canvas-handles";
 /// The box the eight resize grips are laid out on.
 ///
-/// ★★★ The measurement this whole sweep turns on. `overlay::visible_outline_rect`
+/// The measurement this whole sweep turns on. `overlay::visible_outline_rect`
 /// widens it to [`MIN_OUTLINE_EXTENT`] on each axis, and `handles::grip_at`
 /// then covers `GRIP_SIZE_PX / 2 + GRIP_GRAB_SLACK_PX` = 6 pt inward from each
 /// corner — so a box narrower than **12 pt has no body left to drag**, and
@@ -38,7 +38,7 @@ const RESIZE_DECLINED_EVENT: &str = "resize-declined";
 /// `resize-commit grip=… sx=… sy=… ax=… ay=…` — **a resize that went
 /// through**.
 ///
-/// ★★★ The worst of the three outcomes and the one this sweep was not
+/// The worst of the three outcomes and the one this sweep was not
 /// watching for on its first two runs. A drag meant as a move that lands on a
 /// grip and is *refused* costs the operator a gesture; one that lands on a grip
 /// and **succeeds** costs them their artwork, silently. Measured on the
@@ -66,7 +66,7 @@ const RENDER_EVENT: &str = "render-async-done";
 const VIEWPORT_REGION: &str = "canvas-viewport";
 /// `marquee-mode crossing=… mode=… hits=… …` — the band's own line.
 ///
-/// ★★★ It is also **the drag outcome that had no arm** until 2026-09-05, and
+/// It is also **the drag outcome that had no arm** until 2026-09-05, and
 /// its absence produced this check's whole headline. A press on blank paper
 /// inside a selection's bounding box draws a band rather than moving the
 /// selection (`OPERATOR_REQUESTS.md` O72); with nothing reading this line
@@ -79,7 +79,7 @@ const MARQUEE_EVENT: &str = "marquee-mode";
 const VIA_MARQUEE: &str = "pv.marquee";
 /// `canvas-coverage covered=… sharp=… textured=… backdrop=…`.
 ///
-/// ★★ The operator's own report of 2026-09-04 — *"the canvas does a fading
+/// The operator's own report of 2026-09-04 — *"the canvas does a fading
 /// around the edges on stuff shown at the edges of the view. I don't want this.
 /// it should render true."* — is a claim about exactly this line: `sharp` is
 /// the fraction of the viewport the SHARP raster covers, and anything below
@@ -88,7 +88,7 @@ const COVERAGE_EVENT: &str = "canvas-coverage";
 
 /// The zoom rungs walked, as multipliers.
 ///
-/// ★★ Chosen against the **US Letter** boundaries in the module header — 20.69×
+/// Chosen against the **US Letter** boundaries in the module header — 20.69×
 /// for the pixmap ceiling, 1,324× for the `f64` position anchor — and bracketed
 /// on both sides of each rather than merely stepped past. `strategy.rs`'s own
 /// test header states the rule these follow: a transition sampled only at its
@@ -134,13 +134,13 @@ const DRAG_PX: f32 = 40.0;
 /// How far the pointer may be from the sweep's target and still be treated as
 /// on it, in **screen pixels**.
 ///
-/// ★★ Screen pixels, not canvas points: what every probe below needs is that
+/// Screen pixels, not canvas points: what every probe below needs is that
 /// the press lands on the same ink, and "the same ink" is a screen distance.
 /// The canvas's own pick tolerance is of this order, so a residual under it
 /// cannot change what a click hits; in canvas points the same tolerance would
 /// be meaninglessly tight at 100 % and meaninglessly loose at 200,000 %.
 ///
-/// ★ Above this the rung's pointer probes are **not run**, and the rung says
+/// Above this the rung's pointer probes are **not run**, and the rung says
 /// so in its own words. The 2026-09-05 sweep ran them anyway and filed
 /// *"clicking directly on the content the zoom is anchored to selected
 /// nothing"* at five rungs — measured with the pointer **312 px** away from
@@ -150,7 +150,7 @@ const AIM_TOLERANCE_PX: f32 = 6.0;
 /// How many wheel notches the pan probe scrolls, and then scrolls back.
 const PAN_NOTCHES: i32 = 3;
 
-/// ★★★ **Undo whatever the last gesture committed.**
+/// **Undo whatever the last gesture committed.**
 ///
 /// The sweep holds ONE document across every rung and steers one aim point
 /// through it, so a rung that leaves the page changed hands the next rung a
@@ -160,7 +160,7 @@ const PAN_NOTCHES: i32 = 3;
 /// because the content had been moved out from under the aim by the check
 /// itself.
 ///
-/// ★ Undo rather than "do not test the move": the move IS the subject. What has
+/// Undo rather than "do not test the move": the move IS the subject. What has
 /// to be true between rungs is that the document is the one the sweep started
 /// with, and the application's own undo is the only thing that can promise
 /// that.
@@ -283,7 +283,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     click_mode_segment(&session, &driver, ui_rect, MODE)?;
     session.settle(20);
-    // ★★ Without this there is no rubber band at all, and the sweep reports
+    // Without this there is no rubber band at all, and the sweep reports
     // "the marquee raised no selection" at every rung — a confident, wrong
     // finding about a feature that was never armed. `off_page_marquee` learned
     // the same thing; the helper exists because of it.
@@ -305,7 +305,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let window_point = mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?;
     let frame = session.frame()?;
     let mut aim = frame.to_screen(window_point);
-    // ★★★ The SAME point in canvas space — Y-down from the page's top-left,
+    // The SAME point in canvas space — Y-down from the page's top-left,
     // which is the space `canvas-pointer` reports in. This is what the
     // closed-loop re-aim steers towards, and it is the reason the sweep can
     // hold a 0.85 pt cell under the cursor at twenty thousand times
@@ -329,7 +329,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let mut findings: Vec<Rung> = Vec::new();
     for &wanted in &rungs {
-        // ★★★ A FULL RESET, and the sweep was wrong for two runs without it.
+        // A FULL RESET, and the sweep was wrong for two runs without it.
         //
         // The battery's last act is a double-click, and a double-click on a
         // **text** object opens the text editor. That state survived into the
@@ -428,7 +428,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         marquee(&session, &driver, ui_rect, viewport, aim, &mut rung)?;
         nodes_and_handles(&session, &driver, ui_rect, aim, &mut rung)?;
         pan_and_watch_the_edges(&session, &driver, viewport, &mut rung)?;
-        // ★ The double-clicks above can leave a text editor open; say so if one
+        // The double-clicks above can leave a text editor open; say so if one
         // is, because it is a fact about this rung and not only about the next.
         if session.trace()?.events("text-edit-caret").count() > 0 {
             rung.lines.push(
@@ -484,7 +484,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // was tried"*, which is this harness's own stated worst outcome and the
     // reason `--no-input` reports SKIPPED rather than passing.
     //
-    // ★ The oracle is the `click-select:` line rather than a counter kept
+    // The oracle is the `click-select:` line rather than a counter kept
     // alongside, so it cannot drift from what was actually run: a rung that
     // reached the battery emitted one, and a rung that was skipped for aim did
     // not.
@@ -629,7 +629,7 @@ fn probe_pointer(
 /// How many objects the application says are selected, from its own layout
 /// line.
 ///
-/// ★★ `canvas-selection` is **de-duplicated** — `trace_changed` suppresses a
+/// `canvas-selection` is **de-duplicated** — `trace_changed` suppresses a
 /// line identical to the last one in its slot — so a second click that selects
 /// the same object writes nothing, and a check counting those events reads
 /// "the click did nothing" about a click that worked. That produced three false
@@ -711,7 +711,7 @@ fn click_select(
 
 /// Drag whatever is selected and say what the gesture actually became.
 ///
-/// # ★★★ The FOUR outcomes, and why counting only `canvas-move` hid the real one
+/// # The FOUR outcomes, and why counting only `canvas-move` hid the real one
 ///
 /// A drag on a selected object can become a **move**, a **resize** (the press
 /// landed on a grip), a **marquee** (the press landed on empty paper), or
@@ -747,11 +747,11 @@ fn click_select(
 /// zoom-dependent defect. Driven with the press moved to the aim point, the
 /// same build MOVES the object at 104 %, 942 %, 2,096 % and 2,559 %.
 ///
-/// ⇒ ★★ **A uniform failure at every rung of a scale sweep is evidence about
+/// ⇒ **A uniform failure at every rung of a scale sweep is evidence about
 /// the probe, not about scale.** The one rung that is not the subject — the
 /// baseline — is the control, and a control that fails is the finding.
 ///
-/// ★ The aim point is the document coordinate the caller supplied and the one
+/// The aim point is the document coordinate the caller supplied and the one
 /// the click immediately before this selected the object from, so it is on the
 /// object by the same evidence that produced the selection. The old comment's
 /// worry — that the aim can sit on a **grip** — is answered rather than
@@ -801,7 +801,7 @@ fn drag_selection(
         .nth(before.4)
         .map(|l| l.raw.clone());
 
-    // ★★★ A COMMITTED RESIZE IS CHECKED FIRST, because it is the only outcome
+    // A COMMITTED RESIZE IS CHECKED FIRST, because it is the only outcome
     // that changes the document, and a build that both resized and (somehow)
     // moved must report the resize.
     if let Some(r) = resize_commit {
@@ -847,7 +847,7 @@ fn drag_selection(
             .push(format!("a drag on the selected object was declined: `{d}`"));
         return Ok(());
     } else if let Some(m) = marqueed {
-        // ★★★ THE ARM THAT WAS MISSING, and its absence produced the sweep's
+        // THE ARM THAT WAS MISSING, and its absence produced the sweep's
         // headline finding about a build that was working.
         //
         // O72: a press on empty paper INSIDE a selection's bounding box draws a
@@ -943,7 +943,7 @@ fn marquee(
         return Ok(());
     };
 
-    // ★ Candidates walk inward from the corners. One of them is empty paper on
+    // Candidates walk inward from the corners. One of them is empty paper on
     // any page this sweep can be pointed at; if none is, the band is not
     // attempted and the rung says so rather than moving something.
     const CANDIDATES: [(f32, f32); 5] = [
@@ -1028,7 +1028,7 @@ fn marquee(
 
     // …and move what it caught.
     //
-    // ★★ The grab is the AIM POINT — known content, inside the band — and not
+    // The grab is the AIM POINT — known content, inside the band — and not
     // the middle of the band's bounding box. Driven at 107 %, a press at the
     // box's centre landed on empty paper between the objects and started a
     // SECOND band (`marquee-mode … hits=0`), which correctly replaced the
@@ -1164,7 +1164,7 @@ fn nodes_and_handles(
     };
     let frame = session.frame()?;
     let grip = frame.declared_center(first);
-    // ★ Is the grip anywhere near the thing it belongs to? At a deep zoom a
+    // Is the grip anywhere near the thing it belongs to? At a deep zoom a
     // grip placed through a lossy conversion lands somewhere plausible and
     // wrong, and this is the cheapest statement of that.
     let dist = f64::from((grip.x() - aim.x()).pow(2) + (grip.y() - aim.y()).pow(2)).sqrt();
@@ -1186,7 +1186,7 @@ fn nodes_and_handles(
         "nodes: {picked} anchor(s) selected after the descent"
     ));
     if picked == 0 {
-        // ★ A NOTE, not a claimed defect. Measured across this sweep the Node
+        // A NOTE, not a claimed defect. Measured across this sweep the Node
         // rung IS reachable at 15,808 %, 42,972 % and 174,259 % and was not
         // reached at 2,139 % — and the descent is a two-double-click dance whose
         // aim has to be re-read between the two, because entering the Part rung
@@ -1234,7 +1234,7 @@ fn nodes_and_handles(
 /// `sharp=1.000` means the sharp raster covered the whole viewport; anything
 /// less is the backdrop showing through somewhere.
 ///
-/// ★ A **wheel** rather than a drag, because a drag on the canvas is a
+/// A **wheel** rather than a drag, because a drag on the canvas is a
 /// selection gesture and would be measuring something else. The status line
 /// says `wheel=scroll`, so a plain wheel here is a pan.
 fn pan_and_watch_the_edges(
@@ -1268,7 +1268,7 @@ fn pan_and_watch_the_edges(
     // **4.32** at the start of the next, and stayed there for every rung above,
     // magnified by each Ctrl+wheel into thousands of pixels.
     //
-    // ★ Scrolled back rather than re-aimed around, because the wheel is exactly
+    // Scrolled back rather than re-aimed around, because the wheel is exactly
     // invertible and a correction is not: the same notch count the other way is
     // the only recovery that leaves no residue for the next rung to inherit.
     // It is read AFTER the coverage lines above so the measurement is of the

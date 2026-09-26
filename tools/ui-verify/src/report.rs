@@ -109,7 +109,7 @@ impl CheckReport {
     /// classification lives in one place instead of in 152 identical match
     /// arms.
     ///
-    /// # ★★★ Why this is not just `skip`
+    /// # Why this is not just `skip`
     ///
     ///
     /// The guard that catches it is in `Session::trace`, and it has to be able

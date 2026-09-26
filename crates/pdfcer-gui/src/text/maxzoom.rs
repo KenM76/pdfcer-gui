@@ -5,7 +5,7 @@
 //!
 //! > *"put the max zoom setting on the bar at the bottom."*
 //!
-//! ## ★ Why the copy here is unusually plain
+//! ## Why the copy here is unusually plain
 //!
 //! Because his own sentence removed the thing this control would otherwise
 //! have to hedge about:
@@ -31,7 +31,7 @@ pub fn heading() -> &'static str {
 
 /// The one sentence of context, under the heading.
 ///
-/// ★ It names the **consequence**, not the mechanism. *"pdfcer draws the whole
+/// It names the **consequence**, not the mechanism. *"pdfcer draws the whole
 /// page below this and only the visible part above it"* is an implementation
 /// detail; *"panning stays instant below, and redraws above"* is what he will
 /// actually notice, and it is the same fact.
@@ -52,7 +52,7 @@ pub fn readout_tooltip() -> &'static str {
 
 /// One preset row's label, from its percentage.
 ///
-/// ★ Spelled in the units he used — *"1,000,000,000,000%"* — rather than in
+/// Spelled in the units he used — *"1,000,000,000,000%"* — rather than in
 /// exponent notation. A person reading a menu should not have to decode
 /// `1e12`, and the grouping separators are what make the difference between
 /// a million and a billion legible at a glance.
@@ -85,7 +85,7 @@ pub fn current_suffix() -> &'static str {
 mod tests {
     use super::*;
 
-    /// ★★ **`f32` cannot hold a trillion exactly**, and the label says what is
+    /// **`f32` cannot hold a trillion exactly**, and the label says what is
     /// actually stored rather than what was asked for.
     ///
     /// `1e12` rounds to `999,999,995,904` — four parts in a billion
@@ -94,7 +94,7 @@ mod tests {
     /// trillion while the preferences file says otherwise is the kind of small
     /// inconsistency that makes somebody doubt the whole control.
     ///
-    /// ★ So the preset list uses `MAX_MAX_ZOOM_PERCENT` and this asserts the
+    /// So the preset list uses `MAX_MAX_ZOOM_PERCENT` and this asserts the
     /// honest rendering. If a future edit makes the two agree by rounding the
     /// LABEL instead, this fails — which is the right way round, because the
     /// file is the thing the operator can check.

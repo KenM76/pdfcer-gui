@@ -171,7 +171,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 
     // --- C. drive one of them, and read the pen back ------------------------
     //
-    // ★ The width, not a swatch. `color_edit_button_srgba` opens a popup whose
+    // The width, not a swatch. `color_edit_button_srgba` opens a popup whose
     // internals publish no regions, so a harness cannot aim at a hue inside it
     // and clicking blind there is how a check passes for the wrong reason. The
     // width control shares the pen and the trace line, so driving it proves the
@@ -182,7 +182,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         .find(|(n, _)| *n == WIDTH)
         .map(|(_, r)| *r)
         .expect("the width rect was collected above");
-    // ★ Both endpoints come from the control's OWN declared rect, and no
+    // Both endpoints come from the control's OWN declared rect, and no
     // screen coordinate is written here.
     //
     // Rule 2 of this crate's check-writing rules: *only ever write a

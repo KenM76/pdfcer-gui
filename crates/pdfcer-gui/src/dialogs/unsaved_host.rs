@@ -1,7 +1,7 @@
 //! # `dialogs::unsaved_host` — raising and draining the unsaved question
 //!
 //!
-//! ## ★★ The seam is a real one: a question with THREE answers
+//! ## The seam is a real one: a question with THREE answers
 //!
 //! Every other dialog this state hosts parks one thing — an outcome — and the
 //! host drains it. This one has three states and only two of them are an
@@ -13,7 +13,7 @@
 //! | **Cancel** | on the **host**, at the drop site | [`super::DialogsState::unsaved_cancelled`] |
 //! | nothing yet | nowhere | — |
 //!
-//! ★★★ The middle row is the one that cost a defect. A Cancel parks no outcome,
+//! The middle row is the one that cost a defect. A Cancel parks no outcome,
 //! so the retire rule drops the window on it and the answer went with it. That
 //! was invisible for as long as every caller read a Cancel as *"nothing
 //! happened"* — true for a tab close, where the tab simply stays — and became a
@@ -21,7 +21,7 @@
 //! *"they cancelled"* from *"they have not answered yet"*. Without the
 //! distinction it re-asked on the very next frame, forever.
 //!
-//! ★ Found by driving, not by reading: the check saw two `unsaved-asked` lines
+//! Found by driving, not by reading: the check saw two `unsaved-asked` lines
 //! and no `quit-cancelled`.
 
 use crate::app::state::Status;
@@ -35,7 +35,7 @@ impl DialogsState {
     /// **stop** — the intent is now this window's to resume. `false` means
     /// there was nothing to ask about and the caller proceeds unchanged.
     ///
-    /// # ★ Why the return value is "did I interrupt you" rather than "may I
+    /// # Why the return value is "did I interrupt you" rather than "may I
     /// proceed"
     ///
     /// Both spellings work and only one of them is safe to get wrong. A guard
@@ -74,7 +74,7 @@ impl DialogsState {
     /// [`Self::ask_unsaved`], told how many documents are dirty — the quit
     /// cycle's entry point (`OPERATOR_REQUESTS.md` O102).
     ///
-    /// ★ The count decides only whether *Save all* is drawn.
+    /// The count decides only whether *Save all* is drawn.
     pub fn ask_unsaved_in_cycle(
         &mut self,
         status: &Status,
@@ -97,12 +97,12 @@ impl DialogsState {
 
     /// **Was the unsaved question answered with Cancel?**
     ///
-    /// ★ Drained by the quit cycle, which needs to know that the operator said
+    /// Drained by the quit cycle, which needs to know that the operator said
     /// no — a Cancel closes the window and parks no outcome, so
     /// `take_unsaved_answer` reports nothing at all and the cycle would
     /// otherwise re-ask on the very next frame, forever.
     pub fn unsaved_cancelled(&mut self) -> bool {
-        // ★ Drains the PARKED flag; the dialog is already gone.
+        // Drains the PARKED flag; the dialog is already gone.
         std::mem::take(&mut self.unsaved_cancelled)
     }
 }

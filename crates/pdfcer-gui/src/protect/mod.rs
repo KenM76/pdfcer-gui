@@ -19,7 +19,7 @@ use crate::secret::Secret;
 
 /// Which ribbon control opened the window.
 ///
-/// ★ Two commands, one window. The alternative — two windows — would put the
+/// Two commands, one window. The alternative — two windows — would put the
 /// password fields, the destination choice, the disclosures and the atomic write
 /// in two files, and the second copy is where a disclosure goes missing. What
 /// the task decides is the **title**, which of the jobs is offered, and which
@@ -35,7 +35,7 @@ pub enum Task {
 /// What the operator has chosen to do, once the document's own state has
 /// narrowed the field.
 ///
-/// ★ Four values rather than three, because *change the passwords* and *change
+/// Four values rather than three, because *change the passwords* and *change
 /// what it allows* reach the same engine verb (`set_permissions`) with opposite
 /// intentions, and the difference is what the surface must protect: a password
 /// change **preserves** the permission bits the document already has, and a
@@ -92,7 +92,7 @@ impl Job {
 
 /// **The document's protection as it stands, read before anything is offered.**
 ///
-/// ★★★ The reason this type exists at all is one line of the build brief:
+/// The reason this type exists at all is one line of the build brief:
 /// *"A permissions dialog that opens with everything ticked, on a document that
 /// forbids printing, has told the operator a falsehood before he touches
 /// anything."* Every control on the window is seeded from a field here, and
@@ -112,7 +112,7 @@ pub struct Standing {
     /// **Every** permission bit, in Table 22 order, with the document's own
     /// three-valued answer.
     ///
-    /// ★ `Option<bool>` all the way to the screen, never flattened. `None` is
+    /// `Option<bool>` all the way to the screen, never flattened. `None` is
     /// *"this document's encryption revision has no such concept"*, which is not
     /// `Some(false)` — rendering it as refused would show the operator a
     /// restriction nobody wrote. `PermissionBit`'s own doc makes the same point
@@ -138,7 +138,7 @@ impl Standing {
         let encryption = base.encryption();
         let grants = encryption.map_or_else(
             || {
-                // ★ Not encrypted: every bit is GRANTED, and that is a
+                // Not encrypted: every bit is GRANTED, and that is a
                 // read-back rather than a default. A document with no
                 // `/Encrypt` declines nothing — there is no `/P` in which to
                 // decline it — so eight ticks is what the file actually says.
@@ -178,7 +178,7 @@ impl Standing {
     /// possible outcome is a failure.
     #[must_use]
     pub fn refusal(&self, task: Task) -> Option<Refusal> {
-        // ★ Signed first, and it outranks everything. Both mutating verbs and
+        // Signed first, and it outranks everything. Both mutating verbs and
         // `set_encryption` refuse `SignedDocument`, so no job on either control
         // can succeed and there is nothing to choose between.
         if self.signatures > 0 {
@@ -189,7 +189,7 @@ impl Standing {
         if task == Task::Permissions && !self.encrypted {
             return Some(Refusal::NotEncrypted);
         }
-        // ★ Only the encrypted branch needs a file: it is the branch that
+        // Only the encrypted branch needs a file: it is the branch that
         // re-opens one to authenticate as owner (§2). A document created in
         // this session is never encrypted, so this is belt-and-braces — and it
         // is a named refusal rather than an `unwrap` on an "impossible" branch,
@@ -210,7 +210,7 @@ impl Standing {
         match (task, self.encrypted) {
             (Task::Password, false) => vec![Job::SetPassword],
             (Task::Password, true) => vec![Job::ChangePassword, Job::RemovePassword],
-            // ★ On an unprotected document this is empty and the window never
+            // On an unprotected document this is empty and the window never
             // gets here — `refusal` has already returned `NotEncrypted`. It is
             // still written as the honest answer rather than as a `panic!`,
             // because a function that returns "the jobs" should return them.
@@ -222,7 +222,7 @@ impl Standing {
     /// **The permission bits to carry over unchanged**, for a job that must not
     /// alter them.
     ///
-    /// ★★★ This is what makes *change the passwords* a safe verb. It reaches
+    /// This is what makes *change the passwords* a safe verb. It reaches
     /// `set_permissions`, which takes a whole `EncryptionSettings` and re-derives
     /// `/O`, `/U`, `/OE`, `/UE` and `/Perms` from scratch — so a caller that did
     /// not supply the current bits would silently **grant everything** to a
@@ -249,7 +249,7 @@ impl Standing {
     /// answer, with `None` read as granted for [`Self::preserved_grants`]'s
     /// reason.
     ///
-    /// ★★ This is deliberately **not** the same list as [`Self::grants`], and
+    /// This is deliberately **not** the same list as [`Self::grants`], and
     /// the difference is a difference of tense. `grants` is *what this file
     /// says today* and is drawn under
     /// `crate::text::protect::permissions_now_heading`; this is *what the file
@@ -303,7 +303,7 @@ impl Standing {
 /// function is the single predicate both the drawing and
 /// [`Standing::initial_ticks`] consult.
 ///
-/// ★ It takes the whole [`PermissionBit`] and matches exhaustively rather than
+/// It takes the whole [`PermissionBit`] and matches exhaustively rather than
 /// comparing against one variant, so a future engine rule that pins a second
 /// bit is a change in one place and a compile error if the enum grows.
 #[must_use]
@@ -345,7 +345,7 @@ pub enum Refusal {
 
 /// `pdfcer_core::edit::EncryptError`, flattened to something this crate owns.
 ///
-/// ★ A private mirror rather than the engine's own type, for one reason:
+/// A private mirror rather than the engine's own type, for one reason:
 /// `EncryptError` is `#[non_exhaustive]`, is not `Clone`, and carries an
 /// `io`-shaped `WriteError` that cannot sit in a dialog's state across frames.
 /// The mirror is `Clone` and is **exhaustively** matched by
@@ -372,7 +372,7 @@ pub enum Refusal {
 /// added"*; the arm is added, the line is deleted, and this paragraph is what
 /// the exemption was standing in for.
 ///
-/// ★★★ **The same shape bit twice in one evening, in unrelated code.** Hours
+/// **The same shape bit twice in one evening, in unrelated code.** Hours
 /// earlier, `app::actions::textstyle::reflow_refusal`'s wildcard was about to
 /// swallow `ReflowApplyError::PageEditedThisSession` — the engine's reply
 /// warned about it by name — and the repair there was the same: route through
@@ -418,7 +418,7 @@ pub enum EngineRefusal {
     /// message would put an implementer's sentence in front of a draughtsman"*
     /// — and the catch-all was the hole it did not cover.
     ///
-    /// ★ The Sign surface got this right on the day it shipped
+    /// The Sign surface got this right on the day it shipped
     /// (`crate::text::sign::refusal_redaction_pending`). This one did not,
     /// because Sign matched the variant and Protect never added an arm. Two
     /// surfaces, one engine refusal, and only one of them was updated — which
@@ -439,7 +439,7 @@ impl From<&EncryptError> for EngineRefusal {
             EncryptError::Rng(_) => Self::Rng,
             EncryptError::Write(inner) => Self::Write(inner.to_string()),
             EncryptError::RedactionPending => Self::RedactionPending,
-            // ★ `EncryptError` is `#[non_exhaustive]`, so this arm is required
+            // `EncryptError` is `#[non_exhaustive]`, so this arm is required
             // by the compiler and is not dead. It carries the engine's own
             // message rather than inventing one, because a variant this build
             // has never seen is precisely the case where guessing is wrong.
@@ -454,7 +454,7 @@ impl From<&EncryptError> for EngineRefusal {
 
 /// The passwords one job needs, as [`Secret`]s.
 ///
-/// ★ `Secret` rather than `String` the moment they leave the text fields, for
+/// `Secret` rather than `String` the moment they leave the text fields, for
 /// `crate::dialogs::password`'s reason and its module's rule: the value never
 /// enters a trace, a queue or an `Action` unwrapped. Everything traced about a
 /// password on this surface is its **length** and whether it is ASCII.
@@ -512,7 +512,7 @@ impl Prepared {
 
     /// **Write them to `target`, atomically.**
     ///
-    /// ★★ Temp file, then rename — `crate::redact::PreparedRedaction::write_to`'s
+    /// Temp file, then rename — `crate::redact::PreparedRedaction::write_to`'s
     /// mechanism, taken deliberately. The destination may be the file the
     /// operator has open, and a torn write there leaves them with neither the
     /// protected document nor the one they started with.
@@ -534,7 +534,7 @@ impl Prepared {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             //
-            // ★ `job=` and `bytes=`, and NOTHING about the password — not its
+            // `job=` and `bytes=`, and NOTHING about the password — not its
             // value, not even here. `crate::secret`'s rule. A trace file is
             // written to disk and kept; a password in one outlives the session
             // that typed it.
@@ -616,7 +616,7 @@ pub fn prepare(
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
-        // ★ The LENGTHS of the passwords and whether they are ASCII, never the
+        // The LENGTHS of the passwords and whether they are ASCII, never the
         // values — `crate::dialogs::password`'s rule, which exists because those
         // two facts explain a normalisation refusal completely and neither
         // carries the password.
@@ -643,7 +643,7 @@ pub fn prepare(
 fn owner_session(path: &Path, owner: &Secret) -> Result<EditSession, PrepareFailure> {
     let document = Document::load_with_password(path, Some(owner.expose()))
         .map_err(|e| PrepareFailure::Reopen(e.to_string()))?;
-    // ★ Checked HERE as well as by the engine, and the duplication is
+    // Checked HERE as well as by the engine, and the duplication is
     // deliberate: the engine's `NotOwner` carries the `AuthKind` and so does
     // this, but reaching the engine's version means having already built a
     // fresh `EditSession` over a whole document for an answer that was
@@ -667,7 +667,7 @@ fn owner_session(path: &Path, owner: &Secret) -> Result<EditSession, PrepareFail
 
 /// The single-token name of a job, for a trace line.
 ///
-/// ★ Free and `const`, so the trace and any driven check that reads it agree by
+/// Free and `const`, so the trace and any driven check that reads it agree by
 /// construction rather than by two spellings that happen to match today.
 #[must_use]
 pub const fn job_token(job: Job) -> &'static str {

@@ -44,7 +44,7 @@ pub const fn properties() -> &'static str {
 
 /// Hover text for [`properties`].
 ///
-/// # ★ It states the override, and that is the non-obvious half
+/// # It states the override, and that is the non-obvious half
 ///
 /// The driver's dialog offers orientation and paper alongside media type,
 /// quality and finishing. pdfcer **asserts its own** orientation over whatever
@@ -497,7 +497,7 @@ pub const fn tray_tooltip() -> &'static str {
     "Useful when a document mixes sheet sizes and the printer has a tray loaded for each. Off, every sheet is fed from the printer's usual tray."
 }
 
-/// ★ Disclosure for a driver that did not advertise tray-by-size.
+/// Disclosure for a driver that did not advertise tray-by-size.
 ///
 /// # Why the control is still offered, which inverts this project's usual rule
 ///
@@ -591,7 +591,7 @@ pub const fn paper_auto() -> &'static str {
 
 /// What auto selection chose, when every page fits on it.
 ///
-/// # ★ Why this sentence still says a request may be ignored
+/// # Why this sentence still says a request may be ignored
 ///
 /// Because it is still a request. Auto selection changes *how the sheet is
 /// chosen*, not *what happens to the choice*: the same `DEVMODE` goes out with
@@ -623,7 +623,7 @@ pub fn paper_auto_matched(name: &str, sheet_pt: (f64, f64), page_pt: (f64, f64))
 
 /// The extra sentence when the job does not have one page size throughout.
 ///
-/// # ★ Why a mixed job gets an extra sentence rather than a different choice
+/// # Why a mixed job gets an extra sentence rather than a different choice
 ///
 /// A `DEVMODE` names one sheet and a job has many pages; there is no way to
 /// ask for two. Windows' own answer is the **choose tray by sheet size** flag,
@@ -642,7 +642,7 @@ pub const fn paper_auto_mixed() -> &'static str {
 
 /// What auto selection chose when **nothing** the printer offers is big enough.
 ///
-/// # ★ Why the biggest sheet, and why this is not treated as a failure
+/// # Why the biggest sheet, and why this is not treated as a failure
 ///
 /// An A0 site plan on an office printer has no right answer. Falling back to
 /// saying nothing about paper would print on whatever the device happens to be
@@ -699,7 +699,7 @@ pub const fn paper_not_listed() -> &'static str {
     "This printer did not list any paper sizes. The job will use whatever the printer's own settings name."
 }
 
-/// ★ **The sheet a chosen paper actually means: a request, not a setting.**
+/// **The sheet a chosen paper actually means: a request, not a setting.**
 ///
 /// # Why this sentence exists, in the engine's own measurement
 ///
@@ -963,7 +963,7 @@ pub const fn preview_pan_hint() -> &'static str {
 
 /// Move the preview into a window of its own — operator request O112.
 ///
-/// ★ **"Pop out"** is the phrase the product class has settled on — a browser's
+/// **"Pop out"** is the phrase the product class has settled on — a browser's
 /// picture-in-picture, an editor's detached panel, a chat client's detached
 /// call window all use it or a near synonym, and the operator used it himself:
 /// *"the option to pop out into its own resizeable window"*. Using his word
@@ -976,7 +976,7 @@ pub const fn preview_pop_out() -> &'static str {
 
 /// Hover text for the pop-out button.
 ///
-/// ★★ It states the way BACK, in the same breath as the way out. A control that
+/// It states the way BACK, in the same breath as the way out. A control that
 /// moves a surface somewhere else owes the operator the return trip before they
 /// take it — otherwise the first thing they do after popping it out is hunt the
 /// print dialog for a button to put it back, and there is not one, because
@@ -989,7 +989,7 @@ pub const fn preview_pop_out_tooltip() -> &'static str {
 
 /// The pop-out window's title bar.
 ///
-/// ★ Deliberately **not** the document's name. The title bar's job is to make
+/// Deliberately **not** the document's name. The title bar's job is to make
 /// this window findable in the taskbar beside the print dialog it came from,
 /// and *"Print preview"* is what a person scanning a task list is looking for.
 /// A file name there would sit beside the main window's file name and the two
@@ -1041,7 +1041,7 @@ pub fn clip_summary(clipped: usize, total: usize) -> String {
 /// be anywhere from `known_inked` up to that — see
 /// `dialogs::print::verdicts`' header for the inequality.
 ///
-/// ★★★ **The hedge is a correction, not a weakening.** Saying "will" of a
+/// **The hedge is a correction, not a weakening.** Saying "will" of a
 /// number nobody measured would be the invented claim; the two words that
 /// change — *"Up to"* and *"may"* — are the difference between reporting a
 /// measurement and reporting a bound, and they appear exactly when the number
@@ -1068,7 +1068,7 @@ pub fn clip_summary_at_most(clipped: usize, total: usize) -> String {
 /// **The sheet on screen overhangs the printable area, and the overhang is
 /// empty paper** — operator request O113, 2026-09-03.
 ///
-/// # ★★★ The sentence that stops a warning and a picture contradicting
+/// # The sentence that stops a warning and a picture contradicting
 ///
 /// > *"can you make it so the red pattern you put over the page if it is going
 /// > to print beyond the printable borders is only over the areas that extend
@@ -1116,7 +1116,7 @@ pub const fn overhang_is_blank() -> &'static str {
 /// remembered settings. See the module's own header for the argument.
 mod footer;
 
-// ★ A glob re-export, deliberately. The alternative — naming five functions
+// A glob re-export, deliberately. The alternative — naming five functions
 // here — is a hand-written list inside the mechanism that exists to make the
 // split invisible, and this project's standing lesson is that a hand-written
 // list is exactly where the next addition goes missing. A sixth footer string
@@ -1148,7 +1148,7 @@ pub use lines::*;
 mod tests {
     use super::*;
 
-    /// ★ The three no-printer sentences must be genuinely different.
+    /// The three no-printer sentences must be genuinely different.
     ///
     /// Not a tautology test — the same argument as
     /// `crate::text::tests::the_three_open_failures_read_differently`. The
@@ -1198,7 +1198,7 @@ mod tests {
         assert!(!range_all(1).contains("1 pages"));
     }
 
-    /// ★★★ **The three commit labels are three different claims**, and an
+    /// **The three commit labels are three different claims**, and an
     /// operator must be able to tell which one they are being shown from the
     /// words alone — operator request O113, 2026-09-04.
     ///

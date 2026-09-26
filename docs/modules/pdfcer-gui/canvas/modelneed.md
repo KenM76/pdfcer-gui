@@ -4,7 +4,7 @@ One question, asked once, for the whole canvas frame. It decides whether
 [`crate::app::state::OpenDoc::page_objects`] is called at all — and
 therefore whether every consumer below it sees a decomposition or a `None`.
 
-## ★★★ Why this is a module and not four lines inside `canvas::interact`
+## Why this is a module and not four lines inside `canvas::interact`
 
 It **was** four lines inside `canvas::interact`, in the form of a
 hand-maintained `matches!` over [`GestureOutcome`], and that list has been
@@ -18,7 +18,7 @@ before the fourth arrived:
 | 2026-08-20 | `GestureOutcome::DimensionVertex` | quieter: the drag worked and **never snapped**, which is indistinguishable from a snap that found nothing |
 | 2026-09-05 | **the Delete key** at the Part and Node rungs | `canvas-delete-declined level=Part sel=1 reason=NoObjectModel` — three shipped verbs reachable by nothing |
 
-★★★ **The fourth is the one that proves the list was the wrong shape, not
+**The fourth is the one that proves the list was the wrong shape, not
 merely out of date.** `Resize`, `Handle` and `DimensionVertex` were each
 fixed by adding a variant to the list, so each fix left the mechanism
 intact and the next recurrence inevitable. **Delete is a keystroke, not a
@@ -39,14 +39,14 @@ recurrence loud rather than silent:
    is the term a gesture list cannot hold, and every future *"this keystroke
    needs the model"* belongs beside it rather than in a fifth place.
 
-★ And a third guard lives at the far end, where the refusal is raised:
+And a third guard lives at the far end, where the refusal is raised:
 `canvas::keys`' Delete arm carries a `debug_assert` that fires when
 `Refusal::NoObjectModel` is declined on a frame that **never asked** for the
 decomposition — the difference between *"the page would not decompose"*
 (honest) and *"nobody requested it"* (this bug, four times). The release
 build says the same thing on the diagnostic channel: `asked=false`.
 
-## ★★★ The cost, measured rather than reasoned about
+## The cost, measured rather than reasoned about
 
 `pdfcer_core::decompose_page` walks every content stream on the page and
 **has no cache anywhere in `pdfcer-core`**, which is why this gate exists in

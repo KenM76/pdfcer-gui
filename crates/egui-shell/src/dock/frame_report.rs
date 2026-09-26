@@ -8,7 +8,7 @@
 //! why it is published separately from its neighbours rather than inferred
 //! from them.
 //!
-//! ★ Two fields on it are worth reading together, because they are the pair a
+//! Two fields on it are worth reading together, because they are the pair a
 //! reader will otherwise try to derive one from the other:
 //! [`DockFrameReport::rail_show`] says what the rail DID about auto-hide, and
 //! [`DockFrameReport::tab_strips_suppressed`] counts the stacks that drew no
@@ -97,7 +97,7 @@ pub struct DockFrameReport {
     /// The *claim*. [`FloatFrameReport::drawn`] is the *fact*, and
     /// [`Self::floats_undrawn`] is the difference.
     pub floating: Vec<PanelId>,
-    /// ★★★ **How many floating panels nothing drew last frame.**
+    /// **How many floating panels nothing drew last frame.**
     ///
     /// Zero in a correct application. Non-zero means panels are in the
     /// layout, are reported as on screen, and **are not on screen** —
@@ -147,7 +147,7 @@ pub struct DockFrameReport {
     /// stops the panel body reflowing under the pointer.
     /// [`crate::peek::Show::Hidden`] is that setting at rest: the sliver alone.
     ///
-    /// ★ [`crate::peek::Show::Inline`] on a side with no rail at all, because
+    /// [`crate::peek::Show::Inline`] on a side with no rail at all, because
     /// "there is no rail" and "the rail is inline" are the same picture and the
     /// same layout. A check that wants the first asks whether the manifest has
     /// a rail; this field is about the setting.
@@ -155,7 +155,7 @@ pub struct DockFrameReport {
     /// **How many stacks drew no tab strip because the rail switches between
     /// their panels.** See [`Dock::with_rail_reach`].
     ///
-    /// ★★ Counted rather than inferred from the absence of `dock.tab.*`
+    /// Counted rather than inferred from the absence of `dock.tab.*`
     /// regions, because absence has three causes that a harness must not
     /// confuse: a suppressed strip, a stack of one panel (whose strip is drawn
     /// and holds a single tab), and a side that was not drawn at all. Only the

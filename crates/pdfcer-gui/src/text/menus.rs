@@ -11,7 +11,7 @@ mod tests {
     use crate::shell::menus;
     use egui_shell::manifest::Item;
 
-    /// **★ The menu surface owns no copy of its own — asserted, not
+    /// **The menu surface owns no copy of its own — asserted, not
     /// assumed.**
     ///
     /// This module's emptiness is a *consequence* of every menu item being a

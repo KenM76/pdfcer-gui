@@ -16,7 +16,7 @@ use crate::text::panels::formfield as t;
 
 /// The section's rect, for `ui-verify`.
 ///
-/// ★ Plain [`crate::diag::ui_rect`], not the visibility-gated form, for the
+/// Plain [`crate::diag::ui_rect`], not the visibility-gated form, for the
 /// reason [`super::fieldedit`]'s own note records at length: a **section** rect
 /// answers *"did this draw?"* and *"where do I scroll?"*, and gating it on
 /// 60 % visibility deletes it exactly when the section is taller than its dock
@@ -43,7 +43,7 @@ pub const BORDER_COLOR_REGION: &str = "properties.widget_edit.border_color";
 /// The rotation row, for layout checks.
 pub const ROTATION_REGION: &str = "properties.widget_edit.rotation";
 
-/// ★★ The two rotation buttons, EACH named.
+/// The two rotation buttons, EACH named.
 ///
 /// One region per button rather than one for the row, because a driven check
 /// that aimed at a fraction of a shared row is doing coordinate arithmetic the
@@ -62,7 +62,7 @@ pub const APPLY_REGION: &str = "properties.widget_edit.apply";
 
 /// How fast a drag on one of the four spinners moves it, in points per pixel.
 ///
-/// ★ A quarter of a point, matching `super::geometry`'s `SPEED`, and the
+/// A quarter of a point, matching `super::geometry`'s `SPEED`, and the
 /// reason is the same: these are **drafting** numbers on a drawing sheet, where
 /// a whole point of drift is visible. An operator who wants a big move types
 /// the number.
@@ -87,7 +87,7 @@ pub fn section(
         return false;
     };
     let Some(rect) = widget.rect else {
-        // ★ A widget with no readable `/Rect` renders nothing this pane could
+        // A widget with no readable `/Rect` renders nothing this pane could
         // describe, and a zero-area rect is *intentional* invisibility for a
         // signature field (§12.7.4.5) rather than a defect — so `None` here is
         // the malformed case only. Silence: four spinners seeded from nothing
@@ -99,7 +99,7 @@ pub fn section(
     draft.read(widget, rect, fqn, widget_index, epoch);
 
     ui.label(t::widget_heading());
-    // ★ Said only when there is more than one placement, because that is the
+    // Said only when there is more than one placement, because that is the
     // only state in which the scope distinction is visible — and it is
     // precisely the state in which an operator would otherwise expect this
     // section to behave like the one above it.
@@ -115,7 +115,7 @@ pub fn section(
     // in the same thought as which way round it faces, and the caption is a
     // different subject entirely.
     //
-    // ★ And it was measured unreachable at the bottom: with every section drawn
+    // And it was measured unreachable at the bottom: with every section drawn
     // the control landed at `y=1379` in a window 768 points tall. The panel
     // scrolls, so it was not lost the way the bookmarks controls were — but a
     // control an operator has to scroll past four unrelated sections to reach is
@@ -140,7 +140,7 @@ pub fn section(
 /// **Turn the box**, in ninety-degree steps.
 ///
 ///
-/// # ★★★ THE DIRECTION IS THE WHOLE DANGER, AND IT IS NEGATED HERE
+/// # THE DIRECTION IS THE WHOLE DANGER, AND IT IS NEGATED HERE
 ///
 /// `/MK /R` is **counterclockwise**. The page's `/Rotate` is **clockwise**. The
 /// engine flagged this as *"the single most likely thing for a shell to get
@@ -209,7 +209,7 @@ fn rotation_row(
         // reached.
         crate::diag::ui_rect_visible(region, response.rect, ui.clip_rect());
         if response.clicked() {
-            // ★ Normalised HERE as well as by the engine, so the number in the
+            // Normalised HERE as well as by the engine, so the number in the
             // trace is the one the file will carry. `rotate_widget` accepts any
             // multiple of 90 and normalises into 0..360 itself — this is not
             // guarding against it, it is making the two agree so a driven check
@@ -231,7 +231,7 @@ fn rotation_row(
 
     let response = ui
         .horizontal(|ui| {
-            // ★★ LEFT is +90 counterclockwise and RIGHT is -90, and that is the
+            // LEFT is +90 counterclockwise and RIGHT is -90, and that is the
             // negation the engine asked for. It happens on this line and
             // nowhere else.
             turn(ui, t::widget_rotate_left(), ROTATE_LEFT_REGION, 90);
@@ -247,7 +247,7 @@ fn rotation_row(
 
 /// The four typed numbers and the button that commits them.
 ///
-/// # ★★ Why an Apply button and not commit-on-release
+/// # Why an Apply button and not commit-on-release
 ///
 /// [`super::fieldedit`]'s max-length spinner commits on release, and this one
 /// deliberately does not — the difference is that **these four are one edit**.
@@ -257,7 +257,7 @@ fn rotation_row(
 /// the same conclusion for the same reason and this follows it, including the
 /// button's placement.
 ///
-/// ★ The button is **greyed when nothing was typed**, which is R9's temporarily
+/// The button is **greyed when nothing was typed**, which is R9's temporarily
 /// unavailable case: there is a capability and no operand, and the hover says
 /// so.
 fn geometry_rows(
@@ -288,7 +288,7 @@ fn geometry_rows(
     let apply = ui.add_enabled(changed, egui::Button::new(t::widget_apply()));
     crate::diag::ui_rect_visible(APPLY_REGION, apply.rect, ui.clip_rect());
     let apply = if changed {
-        // ★ The hover names which of the two acts is about to happen, because
+        // The hover names which of the two acts is about to happen, because
         // the consequences differ and the operator has already decided: a move
         // keeps the baked artwork exact, a resize rebuilds it and may fail to.
         apply.on_hover_text(t::widget_apply_hover(draft.resizes()))
@@ -325,7 +325,7 @@ fn geometry_rows(
 
 /// The border's style and width — `/BS`, `Pass 146.0`.
 ///
-/// # ★★★ It reads from the DOCUMENT and shows a dash when the file is silent
+/// # It reads from the DOCUMENT and shows a dash when the file is silent
 ///
 /// There is no draft, deliberately, and the style combo reads
 /// `widget.border` fresh every frame — the same argument
@@ -334,14 +334,14 @@ fn geometry_rows(
 /// change. A draft-backed control would show the operator's intent while the
 /// document silently disagreed.
 ///
-/// ★★ **`None` renders [`t::border_unstated`] and offers no width at all.** The
+/// **`None` renders [`t::border_unstated`] and offers no width at all.** The
 /// alternative — a combo pre-set to Solid and a spinner at 1 — is exactly the
 /// invention this whole exchange with the engine was about, and the first press
 /// would write it into the operator's file. Choosing a style from the combo is
 /// how a widget with no stated border gets one, which is an act rather than a
 /// default.
 ///
-/// ★ A width of **0** is a value, not an absence, and shows as `0 pt`.
+/// A width of **0** is a value, not an absence, and shows as `0 pt`.
 fn border_rows(
     ui: &mut Ui,
     widget: &Widget,
@@ -350,7 +350,7 @@ fn border_rows(
     actions: &mut Vec<Action>,
 ) {
     use pdfcer_core::edit::{BorderSpec, BorderStyle};
-    // ★ The five pdfcer can write. Not `BorderStyle`'s variants enumerated by
+    // The five pdfcer can write. Not `BorderStyle`'s variants enumerated by
     // hand somewhere else: this is the list the engine's own `edit_widget`
     // accepts, and offering a sixth would be a control whose press is refused.
     const STYLES: [BorderStyle; 5] = [
@@ -375,7 +375,7 @@ fn border_rows(
                         .clicked()
                         && !selected
                     {
-                        // ★ The width travels with the style, because `/BS` is
+                        // The width travels with the style, because `/BS` is
                         // one dictionary and `BorderSpec` is one value — there
                         // is no "change the style and leave the width" to
                         // express. A widget with no stated border gets the
@@ -398,7 +398,7 @@ fn border_rows(
         crate::diag::ui_rect_visible(BORDER_REGION, combo.response.rect, ui.clip_rect());
     });
 
-    // ★ The width is offered only once the file has a border to widen. A
+    // The width is offered only once the file has a border to widen. A
     // spinner over `border: None` would have to show *something*, and any
     // number it showed would be the invention.
     let Some(border) = current else {
@@ -434,7 +434,7 @@ fn border_rows(
 
 /// Where the widget is visible — `/F`, `Pass 146.0`.
 ///
-/// ★★★ **`None` is a sentence, not an empty combo.** The engine's mapping is
+/// **`None` is a sentence, not an empty combo.** The engine's mapping is
 /// exact-or-refused, so `None` means the file carries flags pdfcer cannot set —
 /// `Print | NoZoom`, say — and it can never mean *absent*, because Table 164
 /// makes an absent `/F` equal `0` which is one of the four.
@@ -492,12 +492,12 @@ fn visibility_row(
 
 /// `/MK` `/CA` — the widget's caption.
 ///
-/// ★★ **Not cosmetic on a push button**, which is why the engine models this
+/// **Not cosmetic on a push button**, which is why the engine models this
 /// one key out of `/MK` and none of the other ten. A push button has no `/V` at
 /// all (§12.7.4.2.2), so the caption is the only thing distinguishing *Submit*
 /// from *Reset* to anyone reading the field list.
 ///
-/// ★ Empty commits `Some("")`, which **removes** it. That is the engine's
+/// Empty commits `Some("")`, which **removes** it. That is the engine's
 /// spelling and it is unambiguous, unlike the tooltip's three-state choice —
 /// there is no "leave it alone" to express here, because not touching the
 /// control is how you leave it alone.
@@ -533,7 +533,7 @@ fn caption_row(
 /// The two `/MK` colours — `/BG` (background) and `/BC` (border and mark).
 /// `OPERATOR_REQUESTS.md` **O202**, the after-placement half.
 ///
-/// # ★★★ This row was REFUSED until the engine painted the colours
+/// # This row was REFUSED until the engine painted the colours
 ///
 /// `/MK` `/BG` and `/BC` were read and written perfectly for months and
 /// **painted by nothing**: R43 makes pdfcer draw the baked `/AP` and never
@@ -550,7 +550,7 @@ fn caption_row(
 /// and the saved page agree. The refusal rested on exactly that and is
 /// withdrawn.
 ///
-/// # ★★ The two keys are not symmetric, and the panel must not pretend they are
+/// # The two keys are not symmetric, and the panel must not pretend they are
 ///
 /// | | absent | empty array | what the panel offers |
 /// |---|---|---|---|
@@ -703,7 +703,7 @@ fn chrome_row(
 pub struct WidgetPropsDraft {
     /// `(field name, widget index, edit epoch)` the values below were read at.
     ///
-    /// ★ The **widget index** is in the stamp where [`super::fieldedit`]'s
+    /// The **widget index** is in the stamp where [`super::fieldedit`]'s
     /// carries only a name, and it has to be: one field can be drawn in three
     /// places with three different boxes, and a draft keyed on the name alone
     /// would carry the first box's numbers onto the second placement. On a
@@ -770,7 +770,7 @@ impl WidgetPropsDraft {
 
     /// Whether any of the four numbers has been typed away from the document's.
     ///
-    /// ★ An epsilon rather than `!=`, because the spinners round to two
+    /// An epsilon rather than `!=`, because the spinners round to two
     /// decimals for display and a `/Rect` read out of a file routinely carries
     /// more. Without it the Apply button would be live the moment the pane
     /// opened, on every widget whose box is not exactly hundredths — which is
@@ -805,7 +805,7 @@ fn near(a: f64, b: f64) -> bool {
 mod tests {
     use super::*;
 
-    /// ★★★ **A draft is re-seeded when the WIDGET changes, not only when the
+    /// **A draft is re-seeded when the WIDGET changes, not only when the
     /// field does.**
     ///
     /// The failure this stamp's middle term exists for, and it is invisible on
@@ -830,7 +830,7 @@ mod tests {
     /// **Apply is dead until something is typed**, and a `/Rect` carrying more
     /// than two decimals does not count as typed.
     ///
-    /// ★ The second half is the one worth testing. Without the epsilon the
+    /// The second half is the one worth testing. Without the epsilon the
     /// button would be live the moment the pane opened on any widget whose box
     /// is not exactly hundredths — which reads as unsaved changes the operator
     /// never made, on most real documents.

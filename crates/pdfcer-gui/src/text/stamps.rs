@@ -46,7 +46,7 @@ pub const fn command_label() -> &'static str {
 
 /// The ribbon command's tooltip.
 ///
-/// ★ Names **Acrobat** explicitly. The whole value of this feature is that the
+/// Names **Acrobat** explicitly. The whole value of this feature is that the
 /// file lands somewhere another application reads, and a tooltip that said
 /// only *"save this document as a stamp collection"* would describe the act
 /// and hide the point.
@@ -81,7 +81,7 @@ pub const fn intro() -> &'static str {
 /// The line under [`intro`] when the open document already **is** a stamp
 /// collection.
 ///
-/// ★ It exists to answer a question the window would otherwise raise and
+/// It exists to answer a question the window would otherwise raise and
 /// leave: *"where did these names come from?"*. With names already in the
 /// rows, an operator has no way to tell pdfcer's defaults from his own
 /// previous work, and the difference decides whether he reads every row or
@@ -179,7 +179,7 @@ pub const fn adjustments_heading() -> &'static str {
 
 /// The explanation under [`adjustments_heading`].
 ///
-/// ★ Says *why there are two names* — the single most confusing thing about
+/// Says *why there are two names* — the single most confusing thing about
 /// this file format, and the reason every adjustment below exists. Acrobat's
 /// own files carry it (`SBApproved=Approved`) and an operator who does not
 /// know about the hidden half will read every sentence below as pdfcer having
@@ -204,7 +204,7 @@ pub fn adjustment(page_number: usize, adjustment: &Adjustment) -> String {
         Adjustment::CharactersRemoved(n) => {
             format!("Page {page_number}: {n} characters left out of the identifier.")
         }
-        // ★ The one adjustment with a consequence rather than a tidiness
+        // The one adjustment with a consequence rather than a tidiness
         // reason, so it is the one that says WHY at length. A `#` marks a
         // stamp Acrobat expects to rewrite its own text; pdfcer writing one
         // would promise a recalculation that never happens.
@@ -229,7 +229,7 @@ pub fn adjustment(page_number: usize, adjustment: &Adjustment) -> String {
 
 /// The status line after a collection is written.
 ///
-/// ★ Says **restart Acrobat**, because that is true and finding it out by
+/// Says **restart Acrobat**, because that is true and finding it out by
 /// experiment costs an operator ten minutes of believing the feature is
 /// broken. Acrobat scans its stamps folder at startup.
 #[must_use]
@@ -288,7 +288,7 @@ pub const fn properties_category_label() -> &'static str {
 
 /// What a collection with no `/Info` `/Title` shows for its category.
 ///
-/// ★ Not "Unknown". The category is genuinely **absent** from the file, which
+/// Not "Unknown". The category is genuinely **absent** from the file, which
 /// is a fact about the file, and Acrobat would list this set without a
 /// heading. Saying so is more useful than saying pdfcer does not know.
 #[must_use]
@@ -319,7 +319,7 @@ pub fn properties_count(total: usize, dynamic: usize) -> String {
 
 /// The explanation of what a dynamic stamp is, shown when there is one.
 ///
-/// ★ Written so it reads as a **fact about the file**, not as a pdfcer
+/// Written so it reads as a **fact about the file**, not as a pdfcer
 /// limitation notice. He is looking at somebody else's collection; what he
 /// needs to know is what those entries do, not what pdfcer declines to author.
 #[must_use]
@@ -351,7 +351,7 @@ pub fn properties_stamp_page(page_number: usize) -> String {
 
 /// The second column when a stamp names no page of **this** document.
 ///
-/// # ★★ It is now a claim, and it was not before
+/// # It is now a claim, and it was not before
 ///
 ///
 /// ⚠ **Still not *"this stamp is broken"*, and that is not leftover caution.**
@@ -366,7 +366,7 @@ pub const fn properties_stamp_no_page() -> &'static str {
 
 /// The second column when the **page tree** could not be read.
 ///
-/// ★ Deliberately not *"names no page in this document"*. That sentence is a
+/// Deliberately not *"names no page in this document"*. That sentence is a
 /// statement about the stamp; this situation is a statement about the
 /// document, and pdfcer knows nothing at all about which page this stamp
 /// names. On the operator's own signature file the old, merged wording told
@@ -413,7 +413,7 @@ pub fn properties_page_tree_unreadable(why: &str) -> String {
 /// machine that is `Signatures`, holding `Ken` and `Savy`; a label a picker
 /// invented would be a second name for a thing that already has one.
 ///
-/// ★ Not prefixed with *"Custom"*, *"Your"* or *"Imported"*. Acrobat's stamp
+/// Not prefixed with *"Custom"*, *"Your"* or *"Imported"*. Acrobat's stamp
 /// menu shows the category alone, and a heading that explained the stamps'
 /// provenance would be telling the operator something about his own files that
 /// he is the author of.
@@ -433,7 +433,7 @@ pub const fn gallery_category_unnamed() -> &'static str {
     "Stamps"
 }
 
-/// ★★ The pre-commit sentence for a **dynamic** stamp, shown in the dialog
+/// The pre-commit sentence for a **dynamic** stamp, shown in the dialog
 /// beside the gallery once one is chosen.
 ///
 /// # Why this is a disclosure and not a warning
@@ -467,7 +467,7 @@ pub const fn gallery_dynamic_note() -> &'static str {
 /// **Why a placement never happened** — the reason half of
 /// [`crate::app::status::decline::Declined::CustomStampUnavailable`].
 ///
-/// # ★★★ Why these are declines and not disclosures, and why that distinction
+/// # Why these are declines and not disclosures, and why that distinction
 /// cost a correction
 ///
 /// The first version of this route recorded both through `record_note`, which
@@ -483,7 +483,7 @@ pub const fn gallery_dynamic_note() -> &'static str {
 /// until his next command — the epoch did not move, so there is no later state
 /// for the sentence to go stale against.
 ///
-/// # ★★ Fieldless, and both facts it might have carried are better lost
+/// # Fieldless, and both facts it might have carried are better lost
 ///
 /// It carries neither the stamp's label nor the loader's own words, and each
 /// omission is a rule rather than a shortcut.
@@ -499,7 +499,7 @@ pub const fn gallery_dynamic_note() -> &'static str {
 ///   and the first draft of this module put it in parentheses in front of the
 ///   operator.
 ///
-/// # ★ Two variants, because the DIAGNOSIS differs
+/// # Two variants, because the DIAGNOSIS differs
 ///
 /// Both sentences end by telling him to reopen the window, because the gallery
 /// rescans on every open and that genuinely fixes both. What differs is what
@@ -515,7 +515,7 @@ pub enum CustomStampUnavailable {
     /// The collection opened, but no longer has the page the gallery offered —
     /// `pdfcer_core::edit::EditError::SourcePageOutOfRange`.
     ///
-    /// ★ This is the failure the [`crate::dialogs::textannot`] window's
+    /// This is the failure the [`crate::dialogs::textannot`] window's
     /// `library` field predicts in its own doc comment: the list is scanned
     /// when the window opens, and **Acrobat rewrites that folder while pdfcer
     /// is running**. A collection that lost a stamp between the scan and the
@@ -540,7 +540,7 @@ pub const fn place_declined(why: CustomStampUnavailable) -> &'static str {
 
 /// The collection opened but no longer holds the page the gallery offered.
 ///
-/// ★ Says **reopen this window**, because that is literally the remedy: the
+/// Says **reopen this window**, because that is literally the remedy: the
 /// gallery rescans on every open, so the next one shows the collection as it is
 /// now. Naming the remedy is what separates a decline from a complaint.
 ///
@@ -558,7 +558,7 @@ pub const fn place_source_page_gone() -> &'static str {
 
 /// The collection file would not open when the operator dropped the stamp.
 ///
-/// ★ Names the FILE's problem, not the stamp's. The stamp list was read at the
+/// Names the FILE's problem, not the stamp's. The stamp list was read at the
 /// moment the dialog opened; a file that will not load now has been moved,
 /// renamed or deleted since — usually by Acrobat, which rewrites its stamps
 /// folder — and the operator's next act is to look in that folder.
@@ -574,7 +574,7 @@ pub const fn place_source_unreadable() -> &'static str {
      there now."
 }
 
-/// ★★★ **The artwork was stretched to fit the rectangle that was dragged.**
+/// **The artwork was stretched to fit the rectangle that was dragged.**
 ///
 /// # What the numbers mean, and why the sentence is about SHAPE not size
 ///
@@ -628,7 +628,7 @@ pub fn placed_distorted(scale_x: f64, scale_y: f64) -> String {
 /// The dynamic stamp's words were frozen at design time — said again, after
 /// the fact.
 ///
-/// ★ **Deliberately repeated**, and the repetition is the point. The dialog
+/// **Deliberately repeated**, and the repetition is the point. The dialog
 /// said it while the choice was still open; this says it about a mark now in
 /// the document, which is a different claim to a reader of the status line and
 /// a different claim to a driven check. An operator who accepted the dialog

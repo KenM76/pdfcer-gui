@@ -207,7 +207,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let commits_before = trace.events(COMMIT_EVENT).count();
     let undos_before = trace.events(UNDO_APPLIED_EVENT).count();
 
-    // --- D: ★★★ REACH FOR ANOTHER TOOL, WHICH MUST WRITE --------------------
+    // --- D: REACH FOR ANOTHER TOOL, WHICH MUST WRITE --------------------
     driver.click_at(session.frame()?.declared_center(hand))?;
     session.settle(24);
     let trace = session.trace()?;

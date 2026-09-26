@@ -22,14 +22,14 @@ One paragraph, and it contains two findings that turned out to have nothing
 to do with each other:
 
 
-★★★ **The sheet that could not be drawn was never the sheet he was looking
+**The sheet that could not be drawn was never the sheet he was looking
 at.** `50411508 × 32619210` is `1224 × 792` pt at scale `41185.87`, and
 `SW41177.pdf` holds thirty-four sheets at `1584 × 1224` against exactly two
 at `1224 × 792`. He was right that *"perhaps the zoom is fine"*: the zoom
 was fine, the acting page rendered perfectly through the region tier, and
 the error was a **neighbour** in the continuous strip.
 
-# ★★ Why part A asserts on the REFUSAL and not on the sentence he saw
+# Why part A asserts on the REFUSAL and not on the sentence he saw
 
 This is the single most important property of this check, and getting it
 wrong would have produced a check that passes on a build with the defect
@@ -54,12 +54,12 @@ down, at the engine's refusal, where the condition is unambiguous — and the
 refusal line carries `page=`, which is the whole finding: it names the sheet
 and the sheet is not the one being looked at.
 
-★ Generalised, and worth carrying away: **a net that swallows a symptom
+Generalised, and worth carrying away: **a net that swallows a symptom
 invalidates every check that asserts on that symptom.** When a fix adds a
 handler upstream of a user-visible complaint, the regression test has to
 move upstream with it.
 
-# ★ The seam trick — how part A reaches the state at all
+# The seam trick — how part A reaches the state at all
 
 Part A needs a state that sounds awkward to reach: a page **visible** at the
 same time as the acting page, at a zoom high enough that the visible one
@@ -78,7 +78,7 @@ after the check turned out flaky — decides how wide the window is.
    descends towards the bottom of the canvas as the gap grows, so there is a
    zoom above which it is off screen and the state cannot be measured at all.
 
-# ★★★ The window is NARROW, and getting that wrong made the check flaky
+# The window is NARROW, and getting that wrong made the check flaky
 
 This section used to read *"With `fixtures/four-pages.pdf` the window is
 wide … both are far below the zoom at which the growing gap pushes the
@@ -116,7 +116,7 @@ just below the middle — plus a **pre-climb feasibility check** that SKIPs with
 the arithmetic printed when the window is empty, instead of climbing ninety
 notches and calling the result an absence.
 
-★ Two details the measurement turned up, both of which the naive arithmetic
+Two details the measurement turned up, both of which the naive arithmetic
 gets wrong:
 
 * the strip stops counting a page as visible about **50 points above** the
@@ -132,7 +132,7 @@ gets wrong:
 *detected* from the application's own `strip-beyond-raster pages=` line. What
 it is used for is aim, budget, and the decision not to bother.
 
-# ★★ Why `strip-beyond-raster pages=0` is printed, and why that matters here
+# Why `strip-beyond-raster pages=0` is printed, and why that matters here
 
 `fill_strip` traces the count of visible-but-unorderable pages **before** it
 scans for something to order, and prints `pages=0` deliberately. Its own
@@ -169,7 +169,7 @@ rise past the learned ceiling, no error sentence is painted anywhere, and
 the status bar's `status-group:raster-stop` region **is** on screen, not
 clipped, inside the window.
 
-★★★ **Part B now DOES assert that the page is still drawn at saturation**,
+**Part B now DOES assert that the page is still drawn at saturation**,
 and the history of that sentence is worth a paragraph because it is an
 argument about when an exemption expires.
 

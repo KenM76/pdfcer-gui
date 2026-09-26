@@ -9,7 +9,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/app/mod.md`.
 
 pub mod actions;
-/// ★★ **Making Windows open PDFs with pdfcer** (O173) — the registry
+/// **Making Windows open PDFs with pdfcer** (O173) — the registry
 /// registration that puts this build in Windows' list of PDF programs, and the
 /// deep link to the Windows page where the operator confirms it. Its header
 /// carries why the second half cannot be automated on Windows 10/11 and why
@@ -27,7 +27,7 @@ pub mod dispatch;
 /// How a path gets from an operator — or from a scripted harness — to
 /// [`actions::Action::Open`]. The picker, the diagnostics seam that answers
 /// it without a human, and the dirty-document rule.
-/// ★ **Files dragged onto the window.** Nothing in this shell read
+/// **Files dragged onto the window.** Nothing in this shell read
 /// `dropped_files` until 2026-08-19, so a dropped file did nothing, silently —
 /// and a drop that is ignored teaches an operator that the program does not
 /// accept drops, which is a conclusion they will not revisit.
@@ -57,7 +57,7 @@ pub mod fonts;
 /// for what differs, and for why R9 makes this group **absent** where the Font
 /// group greys.
 ///
-/// ★ `pub`, unlike [`fontband`] beside it, and for one mechanical reason:
+/// `pub`, unlike [`fontband`] beside it, and for one mechanical reason:
 /// [`PdfcerApp::markup_change`] parks a `markupband::MarkupEdit` on a public
 /// struct, and a public field of a type nothing outside the module can name is
 /// a private interface the compiler refuses under `-D warnings`. `fontband`
@@ -65,13 +65,13 @@ pub mod fonts;
 /// is already public.
 pub mod markupband;
 
-/// ★ The per-frame update — `eframe`'s entry point, and the one order the
+/// The per-frame update — `eframe`'s entry point, and the one order the
 /// frame's eleven steps may happen in.
 ///
 pub mod frame;
 pub mod gating;
 pub mod keyboard;
-/// ★ The **optional-content override** — `hidden_layers`, `set_hidden_layers`,
+/// The **optional-content override** — `hidden_layers`, `set_hidden_layers`,
 /// `set_layer_visible`, `reset_layers`. Split out of [`state`] on 2026-09-01
 /// under R2, when that file reached the 1,500-line ceiling. Its header carries
 /// the three-state rule that `Option<BTreeSet<ObjId>>` encodes, and why
@@ -91,7 +91,7 @@ pub mod modes;
 mod ocrband;
 pub mod panels;
 pub mod persistence;
-/// ★ The **selection filter**, on disk — where it lives, and why it is written
+/// The **selection filter**, on disk — where it lives, and why it is written
 /// immediately where the dock layout is debounced.
 ///
 /// The difference is the whole of the module: a splitter drag reports a change
@@ -104,7 +104,7 @@ pub mod pickstore;
 pub mod prefs;
 /// The documents this operator had open: the capped, persisted list and the
 /// ribbon control that draws it.
-/// ★★ **Closing the program without losing anybody's work** —
+/// **Closing the program without losing anybody's work** —
 /// `OPERATOR_REQUESTS.md` O102. The window's ✕ had no prompt at all: eframe's
 /// close request was never read, so one keystroke ended the process with every
 /// unsaved document still unsaved. Its header carries why the cycle is derived
@@ -113,7 +113,7 @@ pub mod quitting;
 /// The left rail — the permanent strip down the left dock's outer edge.
 /// `OPERATOR_REQUESTS.md` O123 part 7.
 pub mod rail;
-/// ★ The shell's OWN preferences — how pdfcer draws, as distinct from how it
+/// The shell's OWN preferences — how pdfcer draws, as distinct from how it
 /// reads and writes PDFs.
 ///
 /// A separate store from `pdfcer_core::settings` on purpose: that one exists
@@ -121,7 +121,7 @@ pub mod rail;
 /// the clause that is silent. How sharply a page is rasterised cites nothing.
 /// Its header also records which five of the seven commissioned View ▸ Render
 /// settings turned out to have nothing behind them, and why.
-/// ★★★ **Does this document reach outside itself?** — a submit button, a
+/// **Does this document reach outside itself?** — a submit button, a
 /// launch action, a script that runs on open. Asked once when a document opens,
 /// answered on the status row. Its header carries the engine's own account of
 /// why a scan that under-reports reads as a clean bill of health.
@@ -134,7 +134,7 @@ pub mod recent;
 pub mod save;
 pub mod spinnerdraft;
 
-/// ★ The operator's configuration, and the **funnel** that makes it reach the
+/// The operator's configuration, and the **funnel** that makes it reach the
 /// engine.
 ///
 /// Not a struct-holder. Of the thirteen settings the old shell persisted,
@@ -170,7 +170,7 @@ pub mod surfaces;
 /// floating panel, and the coordinate questions being in another window
 /// forces.
 pub mod floats;
-/// ★★★ **Which runs a Format command acts on** - one answer, two gestures.
+/// **Which runs a Format command acts on** - one answer, two gestures.
 ///
 /// `OPERATOR_REQUESTS.md` O198. The five Format ▸ Font controls and the
 /// Properties font editor were each gated on a swept text range, which the
@@ -180,7 +180,7 @@ pub mod floats;
 /// sweep become the same gesture with the same operand. See its header for
 /// the deadlock, and for why the cheap half is a separate function.
 pub(crate) mod textoperand;
-/// ★ **The one-line tool status** — `OPERATOR_REQUESTS.md` O123.
+/// **The one-line tool status** — `OPERATOR_REQUESTS.md` O123.
 ///
 /// The strip the right dock reserves above its columns, naming what is armed
 /// and offering to put it down. It is the surviving half of the Tool panel;
@@ -279,7 +279,7 @@ pub struct PdfcerApp {
     pub active_slot: usize,
     /// **Whether a quit is in progress** — `OPERATOR_REQUESTS.md` O102.
     ///
-    /// ★ One boolean. The cycle's queue is derived from the document set every
+    /// One boolean. The cycle's queue is derived from the document set every
     /// frame rather than remembered, because a remembered queue is a second
     /// model of that set and every answer in the cycle — a save, a discard, a
     /// close — changes it. See [`quitting`].
@@ -327,7 +327,7 @@ pub struct PdfcerApp {
     /// layout persistence saves and a named workspace restores.
     pub dock: egui_shell::dock::DockState,
 
-    /// ★★★ **The panel a `dock.tab` menu row was chosen on**, parked for
+    /// **The panel a `dock.tab` menu row was chosen on**, parked for
     /// exactly one dispatch.
     ///
     /// A command id is a verb with no noun, and three of the four panel
@@ -341,7 +341,7 @@ pub struct PdfcerApp {
     /// `HandlerToken` that carries data and thereby breaks saved key
     /// bindings) and why the pairing is exact rather than nearly right.
     ///
-    /// ★ `None` between dispatches, always. A parked operand that survived
+    /// `None` between dispatches, always. A parked operand that survived
     /// its dispatch would be handed to whatever command ran next, which is
     /// how a Close meant for one panel comes to act on another.
     pub dock_menu_panel: Option<egui_shell::dock::PanelId>,
@@ -384,7 +384,7 @@ pub struct PdfcerApp {
     /// every tab context menu on this desktop does, and what makes them
     /// different commands from `file.close`.
     ///
-    /// ★ Parked rather than carried, in the same shape and for the same reason
+    /// Parked rather than carried, in the same shape and for the same reason
     /// as [`Self::recent_choice`]: `egui_shell`'s menu reports the operator's
     /// intent as a `HandlerToken` and nothing else, so it has no channel for an
     /// operand. Set immediately before the dispatch and cleared immediately
@@ -400,14 +400,14 @@ pub struct PdfcerApp {
     /// [`PdfcerApp::apply_close_other_documents`], which parks it, and
     /// [`PdfcerApp::resume_after_unsaved`], which picks it up.
     ///
-    /// ★ A **slot**, kept in step by the loop that parks it, rather than a
+    /// A **slot**, kept in step by the loop that parks it, rather than a
     /// path or an identity. The alternative was tried on paper and does not
     /// work: a created document's path is a *name*, so an identity keyed on it
     /// cannot find an `Untitled 2.pdf`, and *"close the others and keep my
     /// unsaved scratch document"* is precisely the case that must not close the
     /// wrong thing.
     ///
-    /// ★ Cleared at the top of every close arm, so a cancelled sequence cannot
+    /// Cleared at the top of every close arm, so a cancelled sequence cannot
     /// be picked up later by an unrelated question. A cancel produces no
     /// answer, so it never resumes on its own; the clear is what stops it
     /// waiting around for one that belongs to somebody else.
@@ -487,7 +487,7 @@ pub struct PdfcerApp {
     /// `format.italic`, which need no parking because their operand is the
     /// button they are.
     ///
-    /// ★ **The page and the runs are deliberately NOT parked with it.** They
+    /// **The page and the runs are deliberately NOT parked with it.** They
     /// are re-read from `doc.text_selection` in the dispatch arm, so all five
     /// Font commands derive their operand the same way and a chord route that
     /// never touched the ribbon gets the same answer as a click. Parking the
@@ -495,7 +495,7 @@ pub struct PdfcerApp {
     /// work, which is the shape of *"two routes, two implementations"* that
     /// `Action::Command` exists to prevent.
     ///
-    /// ★ **One slot, not three.** Two of these controls cannot be operated in
+    /// **One slot, not three.** Two of these controls cannot be operated in
     /// one frame: each commits on a discrete, exclusive gesture — a click in a
     /// combo popup, a drag release, a colour accepted — and the pointer is in
     /// exactly one of them. `Vec` here would be a container whose second
@@ -518,7 +518,7 @@ pub struct PdfcerApp {
     /// container whose second element is unreachable because the pointer is in
     /// exactly one control per frame.
     ///
-    /// # ★★★ Why the TARGET is parked here and the Font group's page and runs
+    /// # Why the TARGET is parked here and the Font group's page and runs
     /// are not
     ///
     /// `font_change`'s own note is explicit that the page and the runs are
@@ -545,7 +545,7 @@ pub struct PdfcerApp {
     /// names, declining to the trace if it is not. One operand, read once, at
     /// the moment the operator chose it.
     ///
-    /// ★ Not a half-finished intent living across frames: `Self::ribbon_band`
+    /// Not a half-finished intent living across frames: `Self::ribbon_band`
     /// sets it and dispatches in the same statement pair, and the arm `take`s
     /// it, so it is `None` again before the frame ends.
     pub markup_change: Option<(
@@ -582,7 +582,7 @@ pub struct PdfcerApp {
     /// and for what an edit does to a hit list.
     pub find: crate::find::FindState,
 
-    /// ★ **What a click on the page is allowed to land on** — the operator's
+    /// **What a click on the page is allowed to land on** — the operator's
     /// selection filter (`OPERATOR_REQUESTS.md` O17).
     ///
     /// Here rather than on [`state::OpenDoc`], by this struct's own rule and
@@ -622,7 +622,7 @@ pub struct PdfcerApp {
     /// The operator's answers to the thirteen questions the PDF standard
     /// declines to answer, live.
     ///
-    /// # ★ This is the LIVE configuration, not what is on disk
+    /// # This is the LIVE configuration, not what is on disk
     ///
     /// The distinction is load-bearing in one direction: when a save to disk
     /// fails, the session still adopts the choice and says it will not survive
@@ -641,7 +641,7 @@ pub struct PdfcerApp {
     ///
     pub settings_store: pdfcer_core::settings::StoreLocation,
 
-    /// ★ **The colour and width the next markup is authored with.**
+    /// **The colour and width the next markup is authored with.**
     ///
     /// `RIBBON_IA.md` §5.5's Style group, which this shell shipped without: the
     /// pen was two hard-coded constants and the manifest's `colour_swatch` item
@@ -656,7 +656,7 @@ pub struct PdfcerApp {
     /// why it is also not in the settings file.
     pub pen: crate::canvas::markup::pen::Pen,
 
-    /// ★★ **The last form-field settings the operator accepted**, for the next
+    /// **The last form-field settings the operator accepted**, for the next
     /// placement — their *"remember last settings"* of 2026-08-26.
     ///
     /// Beside the pen and for the same reason: this is a **tool setting**, so
@@ -665,19 +665,19 @@ pub struct PdfcerApp {
     /// whatever file they place it in, exactly as a pen does not change colour
     /// when you turn the page.
     ///
-    /// ★ …and, like the pen, deliberately **not** written to `userdata`. See
+    /// …and, like the pen, deliberately **not** written to `userdata`. See
     /// `canvas::formfield::draft::Remembered`: a remembered setting that
     /// survived a restart would silently govern a different document days
     /// later, which is the shape of a setting nobody can find the source of.
     pub form_defaults: crate::canvas::formfield::Remembered,
 
-    /// ★ **The shell's own preferences** — render quality and the zoom settle
+    /// **The shell's own preferences** — render quality and the zoom settle
     /// delay. See [`prefs`] for why these are not in the engine's settings
     /// store, and for the five commissioned neighbours that turned out to have
     /// nothing behind them.
     pub prefs: prefs::Prefs,
 
-    /// ★★★ **The Acrobat this machine has, resolved once** —
+    /// **The Acrobat this machine has, resolved once** —
     /// `OPERATOR_REQUESTS.md` **O122**.
     ///
     /// `None` means the button beside the mode selector is not drawn at all.
@@ -685,7 +685,7 @@ pub struct PdfcerApp {
     /// [`crate::shell::manifest::ACROBAT_AVAILABLE`] for why absence is a
     /// `visible_when` rather than a greying.
     ///
-    /// # ★★ Cached, not asked per frame, and recomputed on exactly one event
+    /// # Cached, not asked per frame, and recomputed on exactly one event
     ///
     /// Resolving spawns `reg.exe` up to five times — three `App Paths` roots
     /// and two class lookups. At sixty frames a second that is not a cost, it
@@ -693,14 +693,14 @@ pub struct PdfcerApp {
     /// operator saves Settings, which is the only thing that can change the
     /// answer from inside pdfcer. See [`Self::refresh_acrobat`].
     ///
-    /// ★ The one thing it deliberately does NOT notice is Acrobat being
+    /// The one thing it deliberately does NOT notice is Acrobat being
     /// installed while pdfcer is running. That is a real gap and a small one:
     /// the remedy is restarting pdfcer, which somebody who has just run an
     /// Adobe installer is being asked to do anyway. Watching the registry for
     /// it would be a background thread and a file-system notification for an
     /// event that happens once in the life of a machine.
     ///
-    /// ★★ It is **one** value rather than two — a condition and a path —
+    /// It is **one** value rather than two — a condition and a path —
     /// because those two must never disagree. A build where the condition said
     /// *available* and the launch path said something else would draw a button
     /// that starts the wrong program, and the two would be edited in different
@@ -718,7 +718,7 @@ pub struct PdfcerApp {
     /// This application's own top-level window, as a raw `HWND` cast to
     /// `isize`. `None` when the platform did not report one.
     ///
-    /// # ★ Why the shell holds a platform handle at all
+    /// # Why the shell holds a platform handle at all
     ///
     /// For exactly one purpose: to **own** the driver's printer-properties
     /// dialog, which is a modal window Windows creates on our behalf when
@@ -804,7 +804,7 @@ impl PdfcerApp {
         // the other direction, turning eight mode-gating tests red at once. A
         // lite build would have lost its ribbon and gained every permission.
         //
-        // ★★ This is the fourth recorded instance of the same shape: a rule
+        // This is the fourth recorded instance of the same shape: a rule
         // written in a comment beside the code it governs is not a mechanism.
         // What makes it one now is `crate::shell::tests::the_built_in_manifest
         // _survives_a_build_without_an_optional_capability`, which merges
@@ -932,7 +932,7 @@ impl PdfcerApp {
             dock,
         } = startup;
 
-        // ★★★ THE RIBBON TAKES THE RESTORED MODE, and until 2026-09-06 it did
+        // THE RIBBON TAKES THE RESTORED MODE, and until 2026-09-06 it did
         // not — so *"open in the mode you were last in"* had been dead since
         // the day it shipped.
         //
@@ -945,7 +945,7 @@ impl PdfcerApp {
         // the ribbon is the side it treats as authoritative. So the restored
         // mode survived exactly one frame and was then overwritten by Read.
         //
-        // ★★ The trace said it was working, which is why nobody caught it.
+        // The trace said it was working, which is why nobody caught it.
         // `Modes::assemble` emits `mode-restore stored=Some("review")
         // using=Some("review")` — a true statement about what `assemble`
         // adopted — and one frame later `mode-changed from=Some("review")
@@ -956,7 +956,7 @@ impl PdfcerApp {
         // binary off screen against a `layout.ron` holding `mode: Some(
         // "review")`, twice, once on a profile written fresh for the purpose.
         //
-        // ★ Why this is the operator's defect and not a tidy-up. `modes/mod.rs`
+        // Why this is the operator's defect and not a tidy-up. `modes/mod.rs`
         // `assemble` carries the whole argument for remembering the mode, from
         // his own report of 2026-08-26 — *"I can't figure out how to click on
         // objects to edit them"* — and ends: *"Someone who spent an afternoon
@@ -973,7 +973,7 @@ impl PdfcerApp {
             ribbon.set_mode(mode);
         }
 
-        // ★ The recent list is loaded for real, EXCEPT under `cfg(test)`.
+        // The recent list is loaded for real, EXCEPT under `cfg(test)`.
         //
         // `RecentFiles::default()` points nowhere and can write nothing, which
         // is exactly what a unit test needs: several tests in this crate call
@@ -994,7 +994,7 @@ impl PdfcerApp {
             crate::app::recent::RecentFiles::load()
         };
 
-        // ★ Settings, loaded for real EXCEPT under `cfg(test)`, for exactly the
+        // Settings, loaded for real EXCEPT under `cfg(test)`, for exactly the
         // reason the recent list above is.
         //
         // `Settings::load` never fails — a missing file, an unreadable one, a
@@ -1034,7 +1034,7 @@ impl PdfcerApp {
             prefs::Prefs::load().0
         };
 
-        // ★★★ POINT THE TWO PASTE CHORDS AT THE OPERATOR'S CHOSEN ORDER —
+        // POINT THE TWO PASTE CHORDS AT THE OPERATOR'S CHOSEN ORDER —
         // `OPERATOR_REQUESTS.md` O58.
         //
         // Here rather than inside `built_in()` because the manifest is the
@@ -1043,12 +1043,12 @@ impl PdfcerApp {
         // whoever last ran the program, and its equality test would fail on
         // every machine but one.
         //
-        // ★ After the load, necessarily — the preference does not exist until
+        // After the load, necessarily — the preference does not exist until
         // then — and after `validate_against`, which is what decides whether
         // there is a keymap to edit at all.
         let mut shell = shell;
         if let Some(shell) = shell.as_mut() {
-            // ★ The harness override wins for one run, if it is set. See
+            // The harness override wins for one run, if it is set. See
             // `PasteChords::from_environment` for why a seam exists here rather
             // than a check writing the operator's own preferences file.
             let order = prefs::PasteChords::from_environment().unwrap_or(prefs.paste_chords);
@@ -1056,7 +1056,7 @@ impl PdfcerApp {
         }
 
         Self {
-            // ★ Down, always. A fresh application is not quitting — see
+            // Down, always. A fresh application is not quitting — see
             // `quitting`'s own test, which pins that because the failure
             // mode of the opposite is trying to quit on the first frame.
             quitting: quitting::Quitting::default(),
@@ -1129,11 +1129,11 @@ impl PdfcerApp {
             window: None,
             pen: crate::canvas::markup::pen::Pen::default(),
             form_defaults: crate::canvas::formfield::Remembered::default(),
-            // ★ Loaded for real EXCEPT under `cfg(test)`, for exactly the
+            // Loaded for real EXCEPT under `cfg(test)`, for exactly the
             // reason the settings and the recent list above are: a suite that
             // read the developer's own preferences would pass on this machine
             // and fail on another because somebody had chosen `faster`.
-            // ★★★ O122. Resolved here, once, and NOT under `cfg(test)` — the
+            // O122. Resolved here, once, and NOT under `cfg(test)` — the
             // same rule the three loads above follow, and for a stronger
             // reason than any of them. Resolving spawns `reg.exe`, so a suite
             // that did it would (a) be slower by five process launches per
@@ -1161,7 +1161,7 @@ impl PdfcerApp {
     /// [`Self::acrobat`] for why this is not asked per frame, and for the one
     /// change it deliberately does not notice.
     ///
-    /// ★ It reads [`Self::prefs`], so it must run **after** the draft has been
+    /// It reads [`Self::prefs`], so it must run **after** the draft has been
     /// adopted. `crate::app::settings_window::save_settings` calls it there,
     /// and the ordering is the thing to preserve if that function is ever
     /// rearranged: run first and the button would appear one Settings visit
@@ -1232,7 +1232,7 @@ pub(crate) mod tests;
 /// It bites markup hardest: markup is authored in **Review**, and the program
 /// reopened in Read every single time.
 ///
-/// # ★★★ The start-up trace said it was working
+/// # The start-up trace said it was working
 ///
 /// `modes::assemble` emits `mode-restore stored=Some("review")
 /// using=Some("review")` — true of what *that stage* adopted — and forty lines
@@ -1251,7 +1251,7 @@ pub(crate) mod tests;
 /// | before | `file`, `view` |
 /// | after | `file`, `view`, `pages`, `markup`, `measure` |
 ///
-/// # ★★ What the test below can prove, and what only the launch can
+/// # What the test below can prove, and what only the launch can
 ///
 /// This function's test drives the **decision** and is falsifiable: hand it a
 /// restored `"review"` beside a current `"read"` and it must answer `"review"`,

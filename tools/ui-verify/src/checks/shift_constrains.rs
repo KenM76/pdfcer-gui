@@ -25,7 +25,7 @@ const OUTLINE_REGION: &str = "canvas.selection-outline";
 /// How far the south-east grip travels on x, as a fraction of **the selection
 /// box's own width**.
 ///
-/// ★ Deliberately far more than [`DRAG_Y_OF_SHAPE`]. See the module header: a
+/// Deliberately far more than [`DRAG_Y_OF_SHAPE`]. See the module header: a
 /// lopsided travel is what makes assertions 1 and 3 able to fail.
 ///
 ///
@@ -58,14 +58,14 @@ const OUTLINE_REGION: &str = "canvas.selection-outline";
 /// `0.25` against `0.04` is a 6.25 : 1 margin in the space that decides, and it
 /// no longer depends on what the fixture's aspect ratio happens to be.
 ///
-/// ★ It is also indifferent to the 1/zoom inflation recorded as `DEFECTS.md`
+/// It is also indifferent to the 1/zoom inflation recorded as `DEFECTS.md`
 /// **D18**: that scales both factors by the same constant, and a common factor
 /// cannot change which of two numbers is further from unity.
 const DRAG_X_OF_SHAPE: f32 = 0.25;
 /// How far the south-east grip travels on y, as a fraction of **the selection
 /// box's own height**.
 ///
-/// ★ Small on purpose, and allowed to round to zero screen pixels on a short
+/// Small on purpose, and allowed to round to zero screen pixels on a short
 /// box: `factors` answers `sy = 1.0` for a zero-travel axis, `aspect` can never
 /// keep a factor at unity, and assertion 1's discrimination guard compares the
 /// pair rather than requiring both to move. A y travel that vanishes therefore
@@ -124,7 +124,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
+    // PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
     //
     // ⇒ `fixture::grip_gesture_target` holds the point and the reason. A
@@ -251,7 +251,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★ Put the shape back before measuring again. Without this the second drag
+    // Put the shape back before measuring again. Without this the second drag
     // starts from the *resized* box, so its factors are relative to different
     // extents and the two runs are not comparable — the check would then be
     // asserting something true about two different objects.
@@ -385,7 +385,7 @@ fn one_drag(
         1.0 + DRAG_X_OF_SHAPE / 2.0,
         1.0 + DRAG_Y_OF_SHAPE / 2.0,
     );
-    // ★ The grip must still be reachable with a real cursor. A fraction of a
+    // The grip must still be reachable with a real cursor. A fraction of a
     // very wide box can put the release point off the window, where the driver
     // clamps and the drag measured is not the drag asked for — a harness fault
     // that would read as a program one. `client_logical` is the same space

@@ -15,7 +15,7 @@ use crate::report::CheckReport;
 /// Review mode, then arm the rectangle tool — both through the harness seam
 /// rather than through ribbon clicks.
 ///
-/// ★ `mode.review` because markup is authored there, and driving from a named
+/// `mode.review` because markup is authored there, and driving from a named
 /// mode makes the run reproducible rather than dependent on whatever mode the
 /// last session left behind.
 const INVOKE: &str = "mode.review,markup.rectangle";
@@ -29,13 +29,13 @@ const SELECT_EVENT: &str = "annot-select";
 const DRAG_EVENT: &str = "annot-drag";
 /// The line the apply arm writes when the engine has moved it.
 ///
-/// ★ `-applied`, per the convention this project adopted after making the
+/// `-applied`, per the convention this project adopted after making the
 /// same-name mistake twice: `vector_edit` writes its own `move-annotation …`
 /// line for the identical edit, and `.last()` on the bare name reads that one.
 const MOVED_EVENT: &str = "move-annotation-applied";
 /// The page's own region, so a failure can say whether a sheet was even drawn.
 ///
-/// ★★ `page`, not `canvas`. `canvas` is the name of a **trace event** in the
+/// `page`, not `canvas`. `canvas` is the name of a **trace event** in the
 /// profile's vocabulary — the line carrying the view's rect and zoom — and it
 /// is not a `ui-rect` region at all. Asking `declared()` for it answers `None`
 /// on a perfectly healthy build, which is a check reporting the program broken
@@ -46,13 +46,13 @@ const PAGE_REGION: &str = "page";
 
 /// Where the shape is drawn, as fractions of the page.
 ///
-/// ★ Well inside the sheet and away from the title block on a real drawing, so
+/// Well inside the sheet and away from the title block on a real drawing, so
 /// the click that selects it in step 3 cannot land on page content instead —
 /// and away from the edges, so the move in step 4 has somewhere to go.
 const SHAPE: ((f64, f64), (f64, f64)) = ((0.35, 0.35), (0.55, 0.50));
 /// Where the move drag goes, as fractions of the page.
 ///
-/// ★ A displacement in **both** axes, deliberately. A move that only travels in
+/// A displacement in **both** axes, deliberately. A move that only travels in
 /// x would pass on a build that dropped `dy` — and `dy` is the one with a sign
 /// convention to get wrong, because PDF user space increases **upward** while
 /// every screen coordinate here increases downward.
@@ -181,7 +181,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: click it, and confirm it is SELECTED ----------------------------
     //
-    // ★ The centre of the shape just drawn, not a fixed point: the shape is
+    // The centre of the shape just drawn, not a fixed point: the shape is
     // placed in page fractions and the click has to land inside it whatever the
     // sheet size. A fixed screen point would work on one fixture.
     let centre = corner((
@@ -189,7 +189,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         f64::midpoint(SHAPE.0.1, SHAPE.1.1),
     ));
     let centre_screen = aim(ctx, &session, page, centre)?;
-    // ★★★ PUT THE TOOL DOWN FIRST, and `sys::vk::V`'s own doc comment is the
+    // PUT THE TOOL DOWN FIRST, and `sys::vk::V`'s own doc comment is the
     // reason, written for exactly this situation:
     //
     // > With a measure or markup tool armed, a click on the page is a PICK
@@ -212,7 +212,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // blamed the panel. This check raises no panel, which is why `V` works
     // here; a click works whether or not that stays true.
     //
-    // ★ The fallback stays rather than being deleted, because a route with
+    // The fallback stays rather than being deleted, because a route with
     // years of green behind it is better than a SKIP when the ribbon route is
     // unavailable. `scale_switch` refuses the same fallback, and its own note
     // says why: there, the chord is measured not to work.
@@ -302,7 +302,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         moved.get("keys").unwrap_or("?")
     ));
 
-    // ★ `keys=` is REPORTED and never asserted. A `/Square`'s geometry is its
+    // `keys=` is REPORTED and never asserted. A `/Square`'s geometry is its
     // `/Rect`, so zero is the correct answer here — and asserting non-zero
     // would fail on precisely the subtypes the engine says have none. What the
     // number is for is the reader of a failed run: a build that started

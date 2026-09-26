@@ -5,7 +5,7 @@
 //! remember the user's setting."* This file holds the notation the preferences
 //! file uses for it, in the shape [`super::fonts`] holds its own.
 //!
-//! ## ★★ Why the default is not written here
+//! ## Why the default is not written here
 //!
 //! [`crate::canvas::ocrlayer::DEFAULT_COLOUR`] is the one home, and the
 //! painter's module is the right one because the *reason* for the value is a
@@ -13,7 +13,7 @@
 //! contain. A second literal here would be a number that drifts from the
 //! sentence justifying it.
 //!
-//! ## ★ Why hex, and why a bad value is reported rather than replaced
+//! ## Why hex, and why a bad value is reported rather than replaced
 //!
 //! `#CC0099` is what a colour is called everywhere an operator has met one,
 //! and it round-trips through a text file with no separator question. Three
@@ -33,7 +33,7 @@
 /// first. Case does not matter. Anything else is `None`, which
 /// [`super::file`] turns into a `BadValue` note.
 ///
-/// ★ The leading `#` is optional on the way **in** and always written on the
+/// The leading `#` is optional on the way **in** and always written on the
 /// way **out**. A parser that insisted on it would reject the value a
 /// spreadsheet or a colour picker hands out, and a writer that omitted it
 /// would leave the file looking like it held a number.
@@ -78,7 +78,7 @@ mod tests {
     /// What the writer produces, the parser reads — over the default and over
     /// a value with no round number in it.
     ///
-    /// ★ The second case is the one that matters. A round-trip tested only on
+    /// The second case is the one that matters. A round-trip tested only on
     /// the default would pass on a writer that emitted a constant.
     #[test]
     fn what_is_written_is_what_comes_back() {
@@ -103,7 +103,7 @@ mod tests {
 
     /// A value this cannot read is refused, so the caller can report it.
     ///
-    /// ★ `"#CC00999"` is the one worth having: it is seven hex digits, so a
+    /// `"#CC00999"` is the one worth having: it is seven hex digits, so a
     /// parser that read the first six and stopped would accept it and draw a
     /// colour nobody typed.
     #[test]

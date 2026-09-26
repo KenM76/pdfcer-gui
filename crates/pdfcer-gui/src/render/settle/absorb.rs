@@ -40,7 +40,7 @@ impl OpenDoc {
         // page that misses that budget returns `None` and is collected by
         // `poll_render` on a later frame, with the previous texture staying on
         // screen meanwhile.
-        // ★ Record WHAT IS BEING ASKED FOR before the inline wait.
+        // Record WHAT IS BEING ASKED FOR before the inline wait.
         //
         // `poll_render` does this for the asynchronous path by reading
         // `rendering_key()` before it polls, because a failure arrives as a
@@ -76,7 +76,7 @@ impl OpenDoc {
     /// cannot drift: a render that beat the budget and one that took a minute
     /// must produce exactly the same canvas state.
     ///
-    /// # ★ The routing is by the render's own page, not by what asked for it
+    /// # The routing is by the render's own page, not by what asked for it
     ///
     /// A render is labelled with the [`RenderKey`] it was run from, so the
     /// page it is *of* is knowable from the result alone. That is what makes
@@ -86,7 +86,7 @@ impl OpenDoc {
     /// lands in the strip. Routing by "which slot asked" would have to
     /// remember the request, and would be wrong in exactly those two cases.
     ///
-    /// # ★★★ It is also where a raster refusal becomes a zoom CEILING — O186
+    /// # It is also where a raster refusal becomes a zoom CEILING — O186
     ///
     /// The operator, 2026-09-12: *"zoom should stop at the limit and not end up
     /// showing an error — the canvas will just stop zooming in and can still
@@ -137,7 +137,7 @@ impl OpenDoc {
                 }
                 let texture = raster::texture_from_pixels(ctx, Surface::Canvas, &pixels);
                 if page == self.view.page_index {
-                    // ★★★ **PROMOTE IT TO THE BACKDROP** if it is a small
+                    // **PROMOTE IT TO THE BACKDROP** if it is a small
                     // whole-page picture. See `OpenDoc::base_texture`.
                     //
                     // Three conditions, and each excludes a specific way this
@@ -153,17 +153,17 @@ impl OpenDoc {
                     // * the epoch matches — a backdrop from before an edit
                     //   would show content the document no longer has.
                     //
-                    // ★ The handle is CLONED, not copied: at a fit zoom the
+                    // The handle is CLONED, not copied: at a fit zoom the
                     // backdrop and the live texture are the same pixels and
                     // cost nothing, and they only diverge once the operator
                     // zooms past it.
                     if key.region().is_none() && raster::within_base_budget(&pixels) {
                         self.base_texture = Some(texture.clone());
-                        // ★ Per-page (O74), like the live texture below it.
+                        // Per-page (O74), like the live texture below it.
                         // The backdrop is a picture of ONE page, so an edit on
                         // another sheet has nothing to say about it.
                         self.base_texture_epoch = self.page_epochs.get(page);
-                        // ★ Published, because the backdrop is invisible when
+                        // Published, because the backdrop is invisible when
                         // it is working: it only shows in the gaps a sharp
                         // raster leaves, and at a fit zoom there are none. A
                         // check that could not see it being kept would have to
@@ -181,7 +181,7 @@ impl OpenDoc {
                     // Stamped with the epoch it is a picture of, exactly as the
                     // strip's own `insert` two lines below has always been. See
                     // `OpenDoc::page_texture_epoch`.
-                    // ★ Per-page (O74): an edit on sheet 3 must not
+                    // Per-page (O74): an edit on sheet 3 must not
                     // re-rasterise the canvas while it is showing sheet 7.
                     self.page_texture_epoch = self.page_epochs.get(page);
                     self.render_error = None;
@@ -195,7 +195,7 @@ impl OpenDoc {
                     self.strip_rasters.insert(
                         page,
                         key,
-                        // ★★★ Per-page (O74) — see this module's note on the
+                        // Per-page (O74) — see this module's note on the
                         // stamp above. `strip_rasters` already took the epoch
                         // as a parameter of every one of `get`/`has`/`take`/
                         // `insert`, so the whole change here is which number is
@@ -206,7 +206,7 @@ impl OpenDoc {
                 }
             }
             Err(refusal) => {
-                // ★ A failure carries no key — `RenderWorker` reports the
+                // A failure carries no key — `RenderWorker` reports the
                 // refusal alone — so it is attributed to whatever the worker
                 // was rendering. That is exactly the page it is about: the
                 // worker is single-slot, and `render_in_flight` was read
@@ -214,14 +214,14 @@ impl OpenDoc {
                 // that reading, a strip page that would not draw would blank
                 // the whole canvas by landing in `render_error`.
                 //
-                // ★★ **The refusal carries a KIND as well as a sentence** — O186.
+                // **The refusal carries a KIND as well as a sentence** — O186.
                 // See [`RefusalKind`]: the whole of this arm's new behaviour
                 // turns on `BeyondRaster`, and none of it may turn on reading
                 // the sentence, which is a string from `crate::text` that the
                 // operator is free to have reworded.
                 match self.render_in_flight.take() {
                     Some(key) if key.page() != self.view.page_index => {
-                        // ★★ **A neighbour's limit is still a FACT about that
+                        // **A neighbour's limit is still a FACT about that
                         // neighbour**, so it is written down — but the zoom is
                         // NOT pulled back for it.
                         //
@@ -236,7 +236,7 @@ impl OpenDoc {
                         // where it can be drawn, having never shown him an
                         // error at all.
                         //
-                        // ★ Pulling the zoom back here instead would be the
+                        // Pulling the zoom back here instead would be the
                         // defect: it would cap the sheet he IS looking at —
                         // which renders perfectly — because a different sheet in
                         // the same window cannot be drawn that far in.
@@ -250,7 +250,7 @@ impl OpenDoc {
                         self.strip_rasters.insert(
                             key.page(),
                             key,
-                            // ★ A refusal is filed at the same per-page number
+                            // A refusal is filed at the same per-page number
                             // as a picture, so an edit to that page gets it a
                             // second attempt and an edit elsewhere does not.
                             self.page_epochs.get(key.page()),
@@ -258,7 +258,7 @@ impl OpenDoc {
                         );
                     }
                     slot => {
-                        // ★★★ **O186's FIRST THREE CLAUSES, and they are one
+                        // **O186's FIRST THREE CLAUSES, and they are one
                         // act:** *"zoom should stop at the limit and not end up
                         // showing an error — the canvas will just stop zooming
                         // in and can still function."*
@@ -278,7 +278,7 @@ impl OpenDoc {
                         //   question about the resulting VIEW rather than about
                         //   the event.
                         //
-                        // ★★★ **Where he stands, not what this refusal
+                        // **Where he stands, not what this refusal
                         // taught** — O218: *"sometimes when I zoom in I still
                         // get the error … instead of the rasterizer just
                         // stopping at the last zoom level that it
@@ -311,7 +311,7 @@ impl OpenDoc {
                         // can be drawn at, and a blank canvas with no sentence
                         // anywhere is the one outcome worse than the sentence.
                         //
-                        // ★★ When `handled`, `render_error` is deliberately NOT
+                        // When `handled`, `render_error` is deliberately NOT
                         // set and `page_texture` is deliberately NOT cleared.
                         // Both are the ordinary, correct responses to a failed
                         // render and both are wrong here:
@@ -332,7 +332,7 @@ impl OpenDoc {
                         if handled {
                             return;
                         }
-                        // ★★★ THE MEMO THAT STOPS THE RETRY STORM.
+                        // THE MEMO THAT STOPS THE RETRY STORM.
                         //
                         // `render_error` alone cannot do this job -- see
                         // `OpenDoc::render_refused` for the two independent
@@ -369,7 +369,7 @@ impl OpenDoc {
     /// The conditions are enumerated at the call site, which is the only
     /// caller.
     ///
-    /// # ★★★ It answers *where he stands*, not *did the zoom move*
+    /// # It answers *where he stands*, not *did the zoom move*
     ///
     /// O218. A refusal names the scale that was **ordered**, not the scale that
     /// is wanted now, and the two separate whenever a deep render takes long
@@ -379,7 +379,7 @@ impl OpenDoc {
     /// the canvas and painting a sentence telling him to do the thing he has
     /// just done.
     ///
-    /// ★★ The ceiling is read back from [`crate::render::ceiling::RasterCeiling`]
+    /// The ceiling is read back from [`crate::render::ceiling::RasterCeiling`]
     /// rather than taken from `learn`'s return, for the same reason. `learn`
     /// declines a repeat, and a repeat is the commonest shape of a stale
     /// refusal; what the caller needs is the ceiling **in force**, which
@@ -396,13 +396,13 @@ impl OpenDoc {
     /// wrong by a factor of two on the other screen, silently, and only on the
     /// machine it was not measured on.
     ///
-    /// ★ So `pixels_per_point` is read here, at the moment of the clamp, and
+    /// So `pixels_per_point` is read here, at the moment of the clamp, and
     /// again on every frame by [`crate::viewer::zoom_ceiling`]. Neither caches
     /// it. A dragged window is a real gesture on this operator's desk — he runs
     /// two monitors at different densities — and a cached density is a ceiling
     /// that is wrong exactly after the drag.
     ///
-    /// # ★★ Why the clamp is GUARDED, when `set_zoom` clamps already
+    /// # Why the clamp is GUARDED, when `set_zoom` clamps already
     ///
     /// `set_zoom(target, target)` does not *lower* a zoom — it **assigns** one.
     /// It clamps into `[MIN_ZOOM, max]` with the value equal to the bound, so it

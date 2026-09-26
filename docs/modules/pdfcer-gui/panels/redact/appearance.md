@@ -3,7 +3,7 @@
 The operator's **one** choice of fill colour and overlay caption, held for
 the whole panel and applied to every mark authored from it.
 
-## ★ This shipped as three `None`s, and the reason it did is worth keeping
+## This shipped as three `None`s, and the reason it did is worth keeping
 
 
 * `fill` was honoured only when the shell built the spec itself.
@@ -22,7 +22,7 @@ The lesson survives the unblocking and is the reason this paragraph stays:
 is not evidence that anything reads it.** Two of these three reached the PDF
 the whole time.
 
-## ★★ `fill: None` changed meaning, and the change is silent and dangerous
+## `fill: None` changed meaning, and the change is silent and dangerous
 
 Under the old engine `None` meant *black box*; its doc comment said so.
 Under `a705d14` it means **transparent** — ISO 32000-1 Table 192 says an

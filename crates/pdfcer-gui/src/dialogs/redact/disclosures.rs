@@ -30,7 +30,7 @@ const REGION_ENGINE_NOTES: &str = "redact-apply-engine-notes"; // ui-text-exempt
 /// reason, and its own words on the field are *"A single total would hide the
 /// fact that the second number is the one nobody expected to be non-zero."*
 ///
-/// ★ Drawn only when the sweep actually edited something. `objects` is the
+/// Drawn only when the sweep actually edited something. `objects` is the
 /// engine's total — dictionaries scrubbed, plus metadata packets blanked, plus
 /// content streams blanked — so it is zero exactly when the sweep changed
 /// nothing, and a "0 objects will be scrubbed" line on an ordinary redaction
@@ -60,7 +60,7 @@ pub(super) fn sweep(ui: &mut egui::Ui, report: &RedactionReport) {
 /// verification line is this shell's own sweep of the finished bytes and this
 /// is the engine's sweep of the carriers — related, and not equally strong.
 ///
-/// ★★★ The whole argument for its existence is the engine's, on the variant:
+/// The whole argument for its existence is the engine's, on the variant:
 ///
 /// > *"a shell that tells an operator 'nothing to do' when the truth is
 /// > 'checked, clean' has taken away the one thing that distinguishes a
@@ -162,19 +162,19 @@ pub(super) fn left_by_choice_names(report: &RedactionReport) -> Vec<&'static str
 
 /// **`RedactionReport::notes`, at the foot of the report, collapsed.**
 ///
-/// ★★★ These were being discarded, and one of them is load-bearing: when the
+/// These were being discarded, and one of them is load-bearing: when the
 /// residual sweep cannot scrub a stream object, the **object numbers** exist
 /// only in a note. [`crate::text::redact::residual_sweep_line`] tells the
 /// operator to look here for them, which is a promise this function keeps.
 ///
-/// ★★ **Collapsed by default**, and the reason is `OPERATOR_REQUESTS.md` O160 —
+/// **Collapsed by default**, and the reason is `OPERATOR_REQUESTS.md` O160 —
 /// his report that this dialog's warnings had become something to click past.
 /// These notes are the engine's prose: they cite ISO 32000-1 by table number
 /// and there can be a dozen on one sheet. Open by default they would bury the
 /// residual section under spec citations, which is the same failure in a new
 /// place. Closed, they cost one line and lose nothing.
 ///
-/// ★ **Not styled as a warning**, even though some of them are about residuals.
+/// **Not styled as a warning**, even though some of them are about residuals.
 /// The residuals that matter are already lifted out into the danger-coloured
 /// section above by their own derivations; painting this section red as well
 /// would double-count them and dilute the colour that means "read this".
@@ -190,7 +190,7 @@ pub(super) fn engine_notes(ui: &mut egui::Ui, theme: &Theme, report: &RedactionR
             ui.label(egui::RichText::new(t::engine_notes_lead()).color(theme.palette.text_muted));
             ui.add_space(4.0);
             for note in &report.notes {
-                // ★ `note` verbatim. A note pdfcer wrote about its own
+                // `note` verbatim. A note pdfcer wrote about its own
                 // uncertainty is the one thing this report must not paraphrase
                 // — and the sentences that needed translating are already
                 // translated, above, by the derivations that own them.
@@ -220,7 +220,7 @@ pub(super) struct RemovedText {
     /// How many characters the engine reported across every region, before any
     /// cap and counted in `char`s.
     ///
-    /// ★ The trace's only measure of the content, and it exists because the
+    /// The trace's only measure of the content, and it exists because the
     /// content itself must not reach a log file. A driven check that knows what
     /// its fixture says can compare this against that length and catch a build
     /// that listed the wrong strings; a check that only read `entries` could
@@ -236,7 +236,7 @@ pub(super) struct RemovedText {
 /// before the residual sections: the counts answer *how much*, this answers
 /// *what*, and only the second can be checked against an intention.
 ///
-/// ★★ **A safety control, not a convenience.** Every other edit in this program
+/// **A safety control, not a convenience.** Every other edit in this program
 /// costs an undo; this one costs the content. The shell's unit of text
 /// selection is the visual line, and `G032` records that the engine groups a
 /// line with no horizontal-gap criterion, so a bill-of-materials row welds its
@@ -247,7 +247,7 @@ pub(super) struct RemovedText {
 /// still reversible, and the only form that makes it obvious is the
 /// neighbours' own words.
 ///
-/// ★ **The trace carries the shape and not the text.** `entries` and `state`,
+/// **The trace carries the shape and not the text.** `entries` and `state`,
 /// never a character of what was removed: `PDFCER_DIAG` writes to stderr and
 /// gets redirected into log files, and a redaction surface that copies the
 /// operator's confidential strings into a second file has undone its own job.
@@ -290,7 +290,7 @@ pub(super) fn removed_text(ui: &mut egui::Ui, theme: &Theme, report: &RedactionR
 
 /// Every line [`removed_text`] will draw, in order, and which branch drew them.
 ///
-/// ★ **It always returns at least one line.** An empty return would collapse
+/// **It always returns at least one line.** An empty return would collapse
 /// three different states — text found, no text present, and codes removed with
 /// no text reported — into one blank area, which reads as *"pdfcer has nothing
 /// to say about this"* in all three. The first two are findings and the third
@@ -368,7 +368,7 @@ mod tests {
         report
     }
 
-    /// ★★★ **`CheckedClean` reaches the census and the other four verdicts do
+    /// **`CheckedClean` reaches the census and the other four verdicts do
     /// not.**
     ///
     /// The defect this whole module closes was not a wrong filter — it was **no
@@ -399,7 +399,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The census is empty when nothing was checked clean**, so the block
+    /// **The census is empty when nothing was checked clean**, so the block
     /// is drawn on the strength of a measurement and never as decoration.
     ///
     /// Without this, a `checked_clean_names` that returned every carrier would
@@ -463,7 +463,7 @@ mod tests {
         assert!(left_by_choice_names(&report).is_empty());
     }
 
-    /// ★ **The census never prints an engine key**, which is the second half of
+    /// **The census never prints an engine key**, which is the second half of
     /// what this module was written for and is asserted at the derivation
     /// rather than only at the string, because the mapping happens here.
     #[test]
@@ -495,7 +495,7 @@ mod tests {
         report
     }
 
-    /// ★★★ **A line is drawn in all three states.**
+    /// **A line is drawn in all three states.**
     ///
     /// The property the whole block rests on. A state that produced no line
     /// would paint blank space under the heading, and blank space reads as
@@ -520,7 +520,7 @@ mod tests {
         assert_eq!(drawn.lines, vec![t::removed_text_none()]);
     }
 
-    /// ★★ **Codes counted with no text reported is a disclosure, not a gap.**
+    /// **Codes counted with no text reported is a disclosure, not a gap.**
     ///
     /// `glyphs_removed` is the only thing separating this from the case above,
     /// and getting that branch backwards would tell the operator a region full
@@ -549,7 +549,7 @@ mod tests {
         assert_eq!(drawn.lines[1], "\u{201c} 4 \u{201d}");
     }
 
-    /// ★ **The entry cap names its own remainder.** A list that stopped at two
+    /// **The entry cap names its own remainder.** A list that stopped at two
     /// hundred without saying so would be a silent truncation on the one
     /// surface in this program where silence costs content.
     #[test]
@@ -565,7 +565,7 @@ mod tests {
         assert!(last.contains('3'), "the remainder is not in: {last}");
     }
 
-    /// ★★ **A long entry is cut on a `char` boundary.**
+    /// **A long entry is cut on a `char` boundary.**
     ///
     /// Written with a two-byte character on purpose: the strings arriving here
     /// are whatever the document's fonts decoded to, and a byte cut inside a
@@ -594,7 +594,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The three trace tokens are distinct.**
+    /// **The three trace tokens are distinct.**
     ///
     /// `state` is what a driven check reads to tell *"the block found text"*
     /// from *"the block found none"*, and two branches sharing a token would
@@ -614,7 +614,7 @@ mod tests {
         }
     }
 
-    /// ★★ **`chars` counts characters and survives both caps.**
+    /// **`chars` counts characters and survives both caps.**
     ///
     /// It is the only field of the trace a driven check can compare against
     /// something it knows — the length of the string its own fixture puts on

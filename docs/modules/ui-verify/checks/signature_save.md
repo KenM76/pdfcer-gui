@@ -15,7 +15,7 @@ session.changes_structure() -> bool
 ```
 
 
-## ★★★ Why no unit test can make this claim
+## Why no unit test can make this claim
 
 `crates/pdfcer-gui/src/dialogs/signature.rs` already asserts, headlessly and
 against this same fixture, that the engine reports the invalidation and that
@@ -43,14 +43,14 @@ that pairing is the point:
 | 4 | after the click: `signature-confirmed`, then `save-copy` | the proceed button is inert, and Save cannot be completed at all |
 | 5 | the file on disk begins `%PDF-` | the write was traced and went nowhere |
 
-★★ **Assertion 3 is the one worth the whole check.** It is an absence, and
+**Assertion 3 is the one worth the whole check.** It is an absence, and
 `checks/mod.rs`'s rule 4 says an absence is only evidence once the thing
 that would have produced it is shown to work. It is admissible here for
 exactly that reason: the same `save-copy` line is then *demanded* in
 assertion 4, in the same run, from the same build. A build that never writes
 satisfies 3 and fails 4.
 
-## ★★ The fixture, and why this repository had to author one
+## The fixture, and why this repository had to author one
 
 `fixtures/signed-two-pages.pdf`, built by `tools/gen-signed-fixture.py`,
 whose header carries the argument. The short version is that the engine's
@@ -69,7 +69,7 @@ It carries an **approval** signature with no `/Reference`, deliberately, so
 under rule 4, which is the wording hardest to get right and therefore the
 one worth driving.
 
-## ★ Why it drives Save-a-**copy** and never Save-in-place
+## Why it drives Save-a-**copy** and never Save-in-place
 
 Not a preference: `Action::Save` writes over the document's own file, and
 the document here is a **committed fixture**. A check that drove it would

@@ -28,7 +28,7 @@ const INK: &str = "properties.textobject.ink";
 /// The four controls the object state used to send the operator away to reach,
 /// and now draws itself.
 ///
-/// ★★★ THIS REPLACED A CONSTANT CALLED `ROUTE`, AND THE REPLACEMENT IS O198.
+/// THIS REPLACED A CONSTANT CALLED `ROUTE`, AND THE REPLACEMENT IS O198.
 ///
 /// `ROUTE` was spelled `properties.text.route`: a sentence saying *"press T for
 /// the Text tool and sweep across them"*, which was the only surface in the
@@ -38,7 +38,7 @@ const INK: &str = "properties.textobject.ink";
 /// run indices the five Font verbs take -- so the sentence was deleted and the
 /// controls themselves are what this step now asserts.
 ///
-/// ★★ Asserted as a LIST rather than as the section region, for the reason
+/// Asserted as a LIST rather than as the section region, for the reason
 /// `font_group`'s `FONT_ITEMS` gives: a section that draws its heading and
 /// returns before any control publishes the section region and nothing else,
 /// which is exactly the regression this step exists to catch.
@@ -50,7 +50,7 @@ const STYLE_ROWS: [&str; 4] = [
 ];
 /// The Properties pane's tab header, so the pane can be brought to the front.
 ///
-/// ★★ Not optional. The dock draws only the ACTIVE tab's body, so a pane behind
+/// Not optional. The dock draws only the ACTIVE tab's body, so a pane behind
 /// another tab publishes **nothing** — indistinguishable, from here, from a
 /// panel with nothing to say. `font_group`'s own note records the false bug
 /// report that cost.
@@ -67,7 +67,7 @@ const STYLE_EVENT: &str = "text-style-applied";
 const DECLINED_EVENT: &str = "text-style-declined";
 /// The label `vector_edit` writes when the restyle reached the engine.
 ///
-/// ★★ The second half of the two-line oracle. `text-style-applied` alone says a
+/// The second half of the two-line oracle. `text-style-applied` alone says a
 /// module decided to act; this says the act landed in the document. A build
 /// where the two disagree is exactly the shape `RESUME.md` records for
 /// `import-form-data`, twice.
@@ -118,7 +118,7 @@ enum Aim<'a> {
 /// Read [`Aim`] out of a settled trace.
 ///
 ///
-/// ★★ Order is *what* before *how many*. A click that lands on a path inside a
+/// Order is *what* before *how many*. A click that lands on a path inside a
 /// marquee of eleven is an aim problem twice over, and the kind is the half
 /// that names the fixture coordinate to change.
 fn aim_verdict(trace: &Trace) -> Aim<'_> {
@@ -128,7 +128,7 @@ fn aim_verdict(trace: &Trace) -> Aim<'_> {
     if kind != TEXT_KIND {
         return Aim::NotText(kind);
     }
-    // ★ Absent reads as ZERO, not as one. `canvas-selection` is written through
+    // Absent reads as ZERO, not as one. `canvas-selection` is written through
     // `trace_changed`, so no line at all means the selection never changed —
     // after a click, that is a click that selected nothing, and a
     // defaulted-to-one guard would wave it through.
@@ -145,7 +145,7 @@ fn aim_verdict(trace: &Trace) -> Aim<'_> {
 
 /// Turn [`Aim`] into `Ok(())` or into a SKIP that names the harness's own aim.
 ///
-/// ★★ SKIPPED, never failed. A `--doc-point` that is not on text is the
+/// SKIPPED, never failed. A `--doc-point` that is not on text is the
 /// harness's aim, and a harness that reports its own aim as the program's
 /// behaviour is worse than one that reports nothing — `RESUME.md` records that
 /// costing a day on `font_group`, about a program that was working.
@@ -181,7 +181,7 @@ fn aimed_at_one_text_object(session: &Session, trace: &Trace, target: DocPoint) 
 
 /// Poll until the restyle reports one way or the other.
 ///
-/// ★ A bounded poll rather than a fixed sleep, for `restyle_text`'s reason: a
+/// A bounded poll rather than a fixed sleep, for `restyle_text`'s reason: a
 /// restyle re-resolves its pin from a fresh provenance extraction **per run**,
 /// and this route's operand is a whole text object, which can be many runs. A
 /// fixed sleep long enough for the worst case makes every run slow, and a short
@@ -211,7 +211,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
+    // PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
     //
     // `fixture::text_point_target` holds the document, the point, and the
@@ -293,7 +293,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, target.page)?;
     let frame = session.frame()?;
-    // ★ Two points in and two up from the baseline origin, not at it.
+    // Two points in and two up from the baseline origin, not at it.
     // `--doc-point` names the first glyph's origin — the bottom-left corner of
     // the ink — and on a five-point label a click exactly there can land in the
     // paper beside it.
@@ -381,7 +381,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    // ★★★ WHICH one drew is a fact about the FIXTURE, not the program. Recorded
+    // WHICH one drew is a fact about the FIXTURE, not the program. Recorded
     // rather than asserted — see the module header on why requiring the swatch
     // unconditionally would make this check red against a correct build over a
     // spot-inked drawing.
@@ -455,7 +455,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 5. picking a colour and closing reaches the document ---------------
     //
-    // ★ Aimed at the LOWER part of the picker, which is where
+    // Aimed at the LOWER part of the picker, which is where
     // `color_picker_hsva_2d` puts its saturation/value square — the largest
     // target in the popup and the one whose whole area changes the colour. The
     // upper part carries the preview button and the hue strip; a click on the
@@ -463,7 +463,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let picker_click = session.frame()?.declared_at(picker, 0.35, 0.80);
     driver.click_at(picker_click)?;
     session.settle(16);
-    // ★★★ CLOSE the picker, because THE CLOSE IS THE COMMIT. The widget
+    // CLOSE the picker, because THE CLOSE IS THE COMMIT. The widget
     // deliberately does not act on `.changed()` — `egui`'s colour button marks
     // itself changed on every frame of a drag, so committing there would author
     // one undo entry per frame. The whole gesture becomes one action when the
@@ -523,7 +523,7 @@ mod tests {
 
     /// One text object selected, as a settled trace says it.
     ///
-    /// ★ Written with `concat!` rather than as a multi-line literal, and it is
+    /// Written with `concat!` rather than as a multi-line literal, and it is
     /// not style: an indented continuation line inside a `"…"` keeps its
     /// leading spaces, `Trace::parse` strips the prefix from the **start** of
     /// the line, and the fixture silently becomes a trace with one line in it.
@@ -546,7 +546,7 @@ mod tests {
     /// selection at all.
     const PANEL_ONLY: &str = "pdfcer-diag properties-panel object=4 kind=Text notes=0\n";
 
-    /// ★★★ The aim read reaches **all four** of its answers from a trace.
+    /// The aim read reaches **all four** of its answers from a trace.
     ///
     /// The guard that stops this check reporting its own aim as the program's
     /// behaviour, tested without a running program — which is the only way it
@@ -570,7 +570,7 @@ mod tests {
         );
     }
 
-    /// ★★ **Silence about the selection count reads as ZERO, not as one.**
+    /// **Silence about the selection count reads as ZERO, not as one.**
     ///
     /// `canvas-selection` is written through `trace_changed`, so a run with no
     /// line is a run where the selection never changed. A guard that defaulted

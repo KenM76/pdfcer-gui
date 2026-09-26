@@ -151,7 +151,7 @@ mod tests {
     /// a fraction of a point on screen.
     const TOL: f32 = 0.01;
 
-    /// ★ **The outline drawn under the pointer is the box the click writes**,
+    /// **The outline drawn under the pointer is the box the click writes**,
     /// at every `/Rotate`.
     ///
     /// The two halves a preview can get wrong independently. The first is the

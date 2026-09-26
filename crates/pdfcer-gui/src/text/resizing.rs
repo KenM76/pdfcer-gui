@@ -2,7 +2,7 @@
 //!
 //! Six refusals and one disclosure, for [`crate::canvas::resizing`].
 //!
-//! ## ★★ Why a refusal here is worth more than the feature it refuses
+//! ## Why a refusal here is worth more than the feature it refuses
 //!
 //! The eight grips have been drawn, cursored and drag-consuming since S4 and
 //! have **committed nothing** for the whole life of this shell. An operator
@@ -51,7 +51,7 @@ pub const fn refusal(reason: Refusal) -> &'static str {
         // forms and inline images, and it takes a **slice**, so a multi-object
         // resize is one command and one undo entry rather than N of each.
         //
-        // ★ Kept as a comment rather than deleted with the strings, because the
+        // Kept as a comment rather than deleted with the strings, because the
         // shape of the episode is the durable part: **a refusal is a claim with
         // a date on it.** The `NotAPath` sentence carried *"is not built yet"*
         // and was right for one day; the `ManyObjects` one carried an
@@ -72,7 +72,7 @@ pub const fn refusal(reason: Refusal) -> &'static str {
     }
 }
 
-/// ★ The disclosure a completed resize owes — **line weight does not scale**.
+/// The disclosure a completed resize owes — **line weight does not scale**.
 ///
 /// # Why this is disclosed rather than fixed, and rather than ignored
 ///
@@ -104,7 +104,7 @@ pub const fn line_weight_disclosure() -> &'static str {
 mod tests {
     use super::*;
 
-    /// ★ **Every refusal has a real sentence, and none of them is empty.**
+    /// **Every refusal has a real sentence, and none of them is empty.**
     ///
     /// The whole point of the module. The grips' answer to every case they
     /// could not handle was silence, for the entire life of the shell.
@@ -124,14 +124,14 @@ mod tests {
         }
     }
 
-    /// ★★ **No sentence uses a word from the file format.**
+    /// **No sentence uses a word from the file format.**
     ///
     /// The rule in the module header, mechanised. An operator can see a shape,
     /// a line of text and a picture; they cannot see a *node*, a *path object*
     /// or a *show operator*, and a refusal phrased in those terms reads as an
     /// internal error rather than as a limit.
     ///
-    /// ★ The three that are left all describe the operator's own situation
+    /// The three that are left all describe the operator's own situation
     /// rather than the engine's. Everything the ENGINE refuses is worded by the
     /// engine and reaches the status row through `vector_edit` — see
     /// `canvas::resizing`'s note on the preflight for why there is no
@@ -159,12 +159,12 @@ mod tests {
         }
     }
 
-    /// ★ **A refusal that has a working alternative names it.**
+    /// **A refusal that has a working alternative names it.**
     ///
     /// A refusal that does not say what to do instead is a shrug with a capital
     /// letter — `text::commands`' own rule.
     ///
-    /// ★★ This test used to assert TWO of them, and the other one is gone with
+    /// This test used to assert TWO of them, and the other one is gone with
     /// its sentence. `ManyObjects` said *"select just the one you want"*, which
     /// was a real alternative to a real limit until `transform_objects` took a
     /// slice on 2026-08-20. **The assertion outliving the limit is the hazard
@@ -177,7 +177,7 @@ mod tests {
         assert!(refusal(Refusal::NothingSelected).contains("Click"));
     }
 
-    /// ★★ **Every refusal still standing describes a state the shell can
+    /// **Every refusal still standing describes a state the shell can
     /// actually reach.**
     ///
     /// The guard against the failure the row above names. Two of the six

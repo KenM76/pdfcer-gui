@@ -5,7 +5,7 @@
 
 /// The title bar of the window that asks before an invalidating save.
 ///
-/// ★ Deliberately **neutral about the verdict**, and it is the one string here
+/// Deliberately **neutral about the verdict**, and it is the one string here
 /// that does not branch on the basis. A title is read first and out of
 /// context — it is also what the taskbar entry shows — so it states the fact
 /// that is true on both footings and leaves the verdict to the body, where the
@@ -23,7 +23,7 @@ pub const fn window_title() -> &'static str {
 /// The headline when a **certification** signature is present — the
 /// `ImpactBasis::SpecSourced` case.
 ///
-/// ★★ It asserts the outcome flatly, because here pdfcer can. §12.8.1 makes a
+/// It asserts the outcome flatly, because here pdfcer can. §12.8.1 makes a
 /// signature a certification signature when its `/Reference` array holds a
 /// signature-reference dictionary whose `/TransformMethod` is `/DocMDP`, and
 /// Table 254's permitted-change lists are **closed** — *"other changes shall
@@ -43,7 +43,7 @@ pub fn headline_certified(count: usize) -> String {
 /// The headline when only **approval** signatures are present — the
 /// `ImpactBasis::ConservativeReport` case.
 ///
-/// ★★★ It states the **change**, not the verdict, and that asymmetry with
+/// It states the **change**, not the verdict, and that asymmetry with
 /// [`headline_certified`] is the whole point of having two headlines.
 ///
 /// The verdict here is pdfcer's cautious one rather than the standard's: for an
@@ -75,7 +75,7 @@ pub fn headline_approval(count: usize) -> String {
 /// the certifier's list, its closedness, and the finding that no pdfcer
 /// operation is on it.
 ///
-/// ★ It says *"the person who certified it"* rather than *"the author"*. See
+/// It says *"the person who certified it"* rather than *"the author"*. See
 /// the header's third prohibition: the standard uses "author" for both parties
 /// in adjacent clauses, and this shell must not silently pick one.
 #[must_use]
@@ -87,7 +87,7 @@ pub const fn basis_certified() -> &'static str {
 
 /// Why the verdict stands, when only approval signatures are present.
 ///
-/// ★★★ **The most carefully worded string in this catalog**, and the one that
+/// **The most carefully worded string in this catalog**, and the one that
 /// most repays reading the engine's module documentation before editing.
 ///
 /// It has to do three incompatible-looking things at once:
@@ -114,7 +114,7 @@ pub const fn basis_approval() -> &'static str {
 
 /// What an in-place save does to the file the signature is in.
 ///
-/// ★ Named because the two save paths differ in the one way an operator cares
+/// Named because the two save paths differ in the one way an operator cares
 /// about at this moment: whether the file they already have survives. This one
 /// writes over it.
 ///
@@ -128,7 +128,7 @@ pub fn target_in_place(name: &str) -> String {
 
 /// What a save-a-copy does to the file the signature is in: nothing.
 ///
-/// ★ Lifted deliberately close to [`crate::text::compact::signature_line`]'s
+/// Lifted deliberately close to [`crate::text::compact::signature_line`]'s
 /// closing sentence — *"Your original file keeps its signatures."* — because
 /// that sentence already ships, is already true of a command that always
 /// writes a new file, and two different phrasings of one guarantee is how two
@@ -140,7 +140,7 @@ pub const fn target_copy() -> &'static str {
 
 /// The button that goes ahead, when a certification signature is present.
 ///
-/// ★★ It **names the destructive act**, which is `crate::dialogs::unsaved`'s
+/// It **names the destructive act**, which is `crate::dialogs::unsaved`'s
 /// standing rule for this crate: *"a destructive button says the destructive
 /// thing, so that an operator who reads only the buttons — which is most
 /// operators, most of the time — cannot get it wrong."*
@@ -156,7 +156,7 @@ pub const fn proceed_certified() -> &'static str {
 
 /// The button that goes ahead, when only approval signatures are present.
 ///
-/// ★ *"Save anyway"* rather than *"Save and invalidate the signature"*,
+/// *"Save anyway"* rather than *"Save and invalidate the signature"*,
 /// deliberately, and see [`proceed_certified`] for the rule. The word *anyway*
 /// carries the whole of what pdfcer can honestly put on a button here: there is
 /// something to weigh, the operator has read it, and they are proceeding. It
@@ -174,7 +174,7 @@ pub const fn proceed_approval() -> &'static str {
 
 /// The button that does not save.
 ///
-/// ★ *"Cancel"*, matching `crate::text::unsaved::cancel_button` and every
+/// *"Cancel"*, matching `crate::text::unsaved::cancel_button` and every
 /// other confirmation in this crate. The non-destructive answer is the one an
 /// operator presses reflexively to make a surprise go away, and it must wear
 /// the label that reflex expects.
@@ -185,7 +185,7 @@ pub const fn cancel_button() -> &'static str {
 
 /// The footnote under the buttons: pdfcer has not checked anything.
 ///
-/// ★★★ The single most important sentence in this file, and it is in the
+/// The single most important sentence in this file, and it is in the
 /// smallest type — because its job is not to be read in this window but to be
 /// available when an operator wonders what pdfcer actually knows.
 ///
@@ -238,7 +238,7 @@ pub const fn verifies_nothing() -> &'static str {
 /// unanswered — so that a reader who stops halfway has read the fact and not
 /// yet reached a conclusion, rather than the reverse.
 ///
-/// ## ★★ Why *pair it* was chosen over *say nothing*, which was permitted
+/// ## Why *pair it* was chosen over *say nothing*, which was permitted
 ///
 /// Both are allowed and the choice is this shell's. Three reasons, in order of
 /// weight:
@@ -275,7 +275,7 @@ pub fn preserved_note(count: usize) -> String {
 
 /// The status-bar note after a save that pdfcer reports as invalidating.
 ///
-/// ★★ It exists for a path where it is the **only** disclosure, and that is
+/// It exists for a path where it is the **only** disclosure, and that is
 /// why it repeats what the window said rather than assuming the window was
 /// seen. `crate::app::lifecycle::resume_after_unsaved` writes a copy from
 /// inside an already-answered question, and this shell does not stack a second
@@ -283,7 +283,7 @@ pub fn preserved_note(count: usize) -> String {
 /// argument. On that route this note is the whole of what the operator is
 /// told, so it has to stand alone.
 ///
-/// ★ It says *"pdfcer reports"* rather than *"this invalidated"*, and it says
+/// It says *"pdfcer reports"* rather than *"this invalidated"*, and it says
 /// so on **both** footings. A post-hoc receipt is read quickly and out of
 /// context; splitting it in two the way the window's copy is split would put
 /// the more careful wording on the less careful reading. Attributing the
@@ -308,7 +308,7 @@ pub fn invalidated_note(count: usize) -> String {
 mod tests {
     use super::*;
 
-    /// ★★★ **The preserved-save note never reads as a reassurance.**
+    /// **The preserved-save note never reads as a reassurance.**
     ///
     /// The one assertion in this file that is about a *prohibition* rather
     /// than about content, and it is the engine's own: a front end that
@@ -340,7 +340,7 @@ mod tests {
         }
     }
 
-    /// ★★ **The two footings do not share a sentence, and the certified one is
+    /// **The two footings do not share a sentence, and the certified one is
     /// the only one that asserts the outcome.**
     ///
     /// `SignatureImpact::documentation_basis` exists *"because the two deserve
@@ -371,7 +371,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The approval footing says whose verdict it is.**
+    /// **The approval footing says whose verdict it is.**
     ///
     /// The engine's headline negative result, guarded. A sentence that
     /// reported `Invalidated` for an approval signature without saying that
@@ -391,7 +391,7 @@ mod tests {
         );
     }
 
-    /// ★ **No string in this file predicts another application's behaviour.**
+    /// **No string in this file predicts another application's behaviour.**
     ///
     /// The engine names the claim and forbids citing it: that Acrobat and the
     /// PAdES family report such a document as *"signed, but altered since
@@ -426,7 +426,7 @@ mod tests {
         }
     }
 
-    /// ★★ **Nothing here says a signature is valid, or that pdfcer checked
+    /// **Nothing here says a signature is valid, or that pdfcer checked
     /// one.**
     ///
     /// `pdfcer-core`'s signature module opens *"This module verifies nothing."*
@@ -498,7 +498,7 @@ mod tests {
         }
     }
 
-    /// ★ **The in-place sentence names the file it is about to write over.**
+    /// **The in-place sentence names the file it is about to write over.**
     ///
     /// The one string here that takes an operand, and the operand is the whole
     /// point: *"this writes over your file"* is a different statement from

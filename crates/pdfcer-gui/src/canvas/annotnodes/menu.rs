@@ -26,7 +26,7 @@ const PICK_MEMORY_KEY: &str = "pdfcer-markup-node-pick"; // ui-text-exempt: inte
 /// `markup-node-menu id=… pick=… insert=… remove=…` — what a right-click on a
 /// markup shape resolved to, and what the two rows will look like.
 ///
-/// ★ Distinct from [`super::TRACE_MOVE`] and its three siblings, which report a
+/// Distinct from [`super::TRACE_MOVE`] and its three siblings, which report a
 /// gesture that **changed the document**. This reports a *question being
 /// opened*, and a check that read only one of the two could not tell a menu
 /// that offered the wrong row from a command that acted on the wrong node.
@@ -35,7 +35,7 @@ pub const TRACE_MENU: &str = "markup-node-menu"; // ui-text-exempt: diagnostic t
 /// `markup-node-command id=… cmd=… pick=…` — a menu row was pressed and this is
 /// the operand it was carrying.
 ///
-/// ★ It carries the **pick**, not just the command id, because the whole class
+/// It carries the **pick**, not just the command id, because the whole class
 /// of defect this design can produce is *the right verb on the wrong corner*.
 /// A trace line has to carry the number a wrong build would get wrong.
 pub const TRACE_COMMAND: &str = "markup-node-command"; // ui-text-exempt: diagnostic trace name
@@ -50,7 +50,7 @@ pub const TRACE_COMMAND: &str = "markup-node-command"; // ui-text-exempt: diagno
 /// at all, so the number is chosen from what a hand can hold steady rather than
 /// from a picture.
 ///
-/// ★ It is not so wide that it swallows the nodes: [`pick_at`] asks for a node
+/// It is not so wide that it swallows the nodes: [`pick_at`] asks for a node
 /// **first**, so a click near a corner is a corner even though it is also near
 /// two segments. See that function's precedence note.
 const SEGMENT_SLACK_PT: f32 = 6.0;
@@ -79,7 +79,7 @@ pub enum NodePick {
         /// Where on it the pointer was, in **page** space (PDF user space,
         /// y-up), projected onto the segment.
         ///
-        /// ★ Interpolated between the two nodes in page space from a parameter
+        /// Interpolated between the two nodes in page space from a parameter
         /// measured in screen space, rather than converted back from the
         /// pointer: the pointer is up to [`SEGMENT_SLACK_PT`] off the line, and
         /// an inserted node that is not ON the segment it was inserted into
@@ -168,7 +168,7 @@ impl Default for Rows {
 
 /// **Which node or segment a right-click at `screen` landed on.**
 ///
-/// # ★ Precedence: a node beats a segment, always
+/// # Precedence: a node beats a segment, always
 ///
 /// Every node lies on two segments, so within [`SEGMENT_SLACK_PT`] of a corner
 /// both answers are true and exactly one can be offered. The corner wins,
@@ -178,7 +178,7 @@ impl Default for Rows {
 /// `Ctrl+Z`, and an unwanted insertion leaves a shape that looks unchanged
 /// with an extra vertex nobody can find.
 ///
-/// # ★ The comparison is in SCREEN space
+/// # The comparison is in SCREEN space
 ///
 /// [`super::node_at`]'s argument, unchanged and for the same reason: a
 /// tolerance in canvas or page space would shrink as the operator zooms out —
@@ -210,7 +210,7 @@ pub fn pick_at(
         // catch, and it is cheaper to offer no row than to offer a wrong one.
         return NodePick::Elsewhere;
     }
-    // ★ The segments come from `Geometry::segment_pairs` — the SAME list the
+    // The segments come from `Geometry::segment_pairs` — the SAME list the
     // preview is drawn from — rather than from a loop of this module's own.
     // That is what makes two facts true by construction rather than by
     // agreement: a polygon's closing edge is offered exactly when the preview
@@ -244,7 +244,7 @@ pub fn pick_at(
 /// Distance from `p` to the segment `a`–`b`, and **where along it** the closest
 /// point is, as a parameter in `0.0..=1.0`.
 ///
-/// ★ Clamped to the ends, which is the C5 convention `canvas::selection::annot`
+/// Clamped to the ends, which is the C5 convention `canvas::selection::annot`
 /// states: without the clamp a short segment would claim a stripe across the
 /// sheet, and the insertion parameter could land off the end of the edge the
 /// operator pointed at.
@@ -268,7 +268,7 @@ fn distance_to_segment(p: egui::Pos2, a: egui::Pos2, b: egui::Pos2) -> (f32, f32
 /// [`super::Plan`] the row would commit. See the module header for why the
 /// *error variant* is what separates a greyed row from an absent one.
 ///
-/// ★ The cost is one annotation walk per row per frame, and only while the
+/// The cost is one annotation walk per row per frame, and only while the
 /// popup is open — [`crate::canvas::menus`] calls this from inside its own
 /// "is a markup menu the one being drawn" branch. [`super`]'s header records
 /// the standing engine advice this obeys: *"ask the preview verb every frame
@@ -280,7 +280,7 @@ pub fn rows(doc: &OpenDoc, selection: &SelectionState, pick: NodePick) -> Rows {
         return Rows::default();
     };
     let session = &doc.session;
-    // ★ `from` is only read by a MOVE plan's delta and neither row moves, so
+    // `from` is only read by a MOVE plan's delta and neither row moves, so
     // the node's own position is passed — a zero displacement, never consulted.
     let state = |intent: VertexIntent, index: usize, at: Point| {
         let from = shape.points.get(index).copied().unwrap_or(at);
@@ -320,7 +320,7 @@ pub fn rows(doc: &OpenDoc, selection: &SelectionState, pick: NodePick) -> Rows {
             insert: state(VertexIntent::Insert, after, at),
             remove: RowState::Absent,
         },
-        // ★ Both absent, and this is the common case rather than an edge one: a
+        // Both absent, and this is the common case rather than an edge one: a
         // right-click on a markup shape's INTERIOR is a right-click on the
         // shape, opens the markup menu, and is nowhere near an edge. The menu
         // still offers properties, the clipboard and delete — a menu with
@@ -366,7 +366,7 @@ pub fn trace(id: ObjId, pick: NodePick, rows: Rows) {
 
 /// **The action a pressed node row raises**, or `None` if it cannot.
 ///
-/// # ★★ Why the guard is re-asked here and not trusted from the menu
+/// # Why the guard is re-asked here and not trusted from the menu
 ///
 /// The row was drawn from [`rows`] on some earlier frame, and everything
 /// between then and now is a frame in which the document could have changed —
@@ -392,7 +392,7 @@ pub fn action_for(
     let id = shape.id;
     let pick = parked(ctx);
     let states = rows(doc, selection, pick);
-    // ★ Built through the SAME `planned` the row's state was asked with, so the
+    // Built through the SAME `planned` the row's state was asked with, so the
     // action a press raises is the edit the engine said yes to — for an `/Ink`
     // that includes the flat-index → `(stroke, point)` conversion, which a
     // second spelling here could get off by a stroke.
@@ -444,7 +444,7 @@ mod tests {
     /// A right-click on the middle of a segment picks that segment, and the
     /// insertion point is **on the line** rather than under the pointer.
     ///
-    /// ★ Falsified: returning `t = 0.0` instead of the projection makes the
+    /// Falsified: returning `t = 0.0` instead of the projection makes the
     /// midpoint assertion fail on both coordinates, and returning the pointer
     /// itself makes the y assertion fail by the 4 pt offset below.
     #[test]
@@ -462,7 +462,7 @@ mod tests {
     /// END, not to the infinite line — C5, the convention that stops a short
     /// edge claiming a stripe across the sheet.
     ///
-    /// ★ Falsified: dropping `.clamp(0.0, 1.0)` gives `t = 2.0` and a distance
+    /// Falsified: dropping `.clamp(0.0, 1.0)` gives `t = 2.0` and a distance
     /// of 0, so both assertions fail.
     #[test]
     fn a_click_past_the_end_of_a_segment_is_measured_to_the_end() {
@@ -478,7 +478,7 @@ mod tests {
     /// A degenerate segment — two coincident nodes, which `/Vertices` permits
     /// — behaves as the point it is drawn as instead of dividing by zero.
     ///
-    /// ★ Falsified: removing the `length_squared` guard makes `t` NaN, and
+    /// Falsified: removing the `length_squared` guard makes `t` NaN, and
     /// `assert!(t == 0.0)` fails (NaN compares false against everything).
     #[test]
     fn a_zero_length_segment_answers_its_own_point() {
@@ -496,7 +496,7 @@ mod tests {
     /// build that answered them from one field would either grey what should
     /// vanish or hide what should explain itself.
     ///
-    /// ★ Falsified: defining `shown` as `matches!(self, Self::Live)` makes the
+    /// Falsified: defining `shown` as `matches!(self, Self::Live)` makes the
     /// greyed assertion fail, which is the exact regression — an unavailable
     /// row disappearing instead of explaining itself.
     #[test]
@@ -509,7 +509,7 @@ mod tests {
     /// With no shape picked, both rows are absent — which is what lets the rest
     /// of the markup menu open over a shape's interior.
     ///
-    /// ★ Falsified: defaulting `Rows` to `Live` makes both assertions fail.
+    /// Falsified: defaulting `Rows` to `Live` makes both assertions fail.
     #[test]
     fn no_pick_draws_neither_node_row() {
         let rows = Rows::default();
@@ -520,7 +520,7 @@ mod tests {
     /// The pick's default is *nowhere near the shape*, so a frame before any
     /// right-click cannot be read as "node 0".
     ///
-    /// ★ Falsified: making `Node(0)` the default makes this fail, and would
+    /// Falsified: making `Node(0)` the default makes this fail, and would
     /// have offered *Remove this point* on the first vertex of every shape
     /// before the operator had pointed at anything.
     #[test]

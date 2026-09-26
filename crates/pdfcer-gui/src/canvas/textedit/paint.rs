@@ -54,7 +54,7 @@ const PREVIEW_INSET_PT: f32 = 2.0;
 
 /// **Draw the in-place editor: what you are typing, where you are typing it.**
 ///
-/// ## ★★★ D4a's ghost text, the decision that followed it, and why that
+/// ## D4a's ghost text, the decision that followed it, and why that
 /// ## decision was half-right
 ///
 /// The old shell drew the draft *as text*, in an `egui` proportional font, over
@@ -148,7 +148,7 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
     // drew it. So an operator saw the old text, a blinking caret, and no
     // evidence that their keystrokes had landed anywhere.
     //
-    // # ★★ Why an in-place EDITOR BOX and not text overlaid on the page
+    // # Why an in-place EDITOR BOX and not text overlaid on the page
     //
     // The tempting shape is "draw the draft where the glyphs are, in the
     // document's own font, so it looks like the finished result". Two problems,
@@ -158,7 +158,7 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
     //    rasterised by `pdfcer-render` from embedded programs; egui's text stack
     //    has its own faces. The draft would render in a different typeface at a
     //    different width whatever we did.
-    // 2. **★ The original glyphs are still underneath.** They are baked into
+    // 2. **The original glyphs are still underneath.** They are baked into
     //    the page raster and this shell cannot un-draw them. Text drawn on top
     //    of text is illegible, and the shorter the edit the worse it gets —
     //    changing `SHEET 1 OF 4` to `SHEET 2 OF 4` would show both `1` and `2`
@@ -183,12 +183,12 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
     // something legible, because a 4 pt note at 25 % zoom is a box two pixels
     // high and the operator would be typing into a line.
     let height = screen.height().clamp(MIN_PREVIEW_PT, MAX_PREVIEW_PT);
-    // ★ ONE font binding and ONE layout, shared by the fill, the text and the
+    // ONE font binding and ONE layout, shared by the fill, the text and the
     // caret below. Two `FontId`s built separately would be two derivations of
     // one fact, and the caret would sit where a *slightly different* string
     // would have ended. See this module's header.
     let font = egui::FontId::proportional(height * PREVIEW_FILL);
-    // ★★★ A BOX DRAFT WRAPS; EVERY OTHER DRAFT DOES NOT.
+    // A BOX DRAFT WRAPS; EVERY OTHER DRAFT DOES NOT.
     //
     // The operator, 2026-08-21: *"I should be able to make it multi line."*
     //
@@ -197,7 +197,7 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
     // paragraph, so each visual line is its own show operator and something has
     // to decide where the second line starts.
     //
-    // ★ The preview therefore wraps at **the box's own screen width**, which is
+    // The preview therefore wraps at **the box's own screen width**, which is
     // the same width `add_text`'s boxed variant will wrap to. Not the same
     // *metrics* — the preview is the shell's font and the commit is the pen's,
     // which this module's header is explicit about and which is why the box is
@@ -229,7 +229,7 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
         wrap_at,
     );
 
-    // ★★ THE BOX GROWS WITH WHAT IS IN IT, and it has to.
+    // THE BOX GROWS WITH WHAT IS IN IT, and it has to.
     //
     // It was `screen.shrink(1.0)` — the glyph box, exactly — until this was
     // driven and looked at. Two ways that is wrong, and the second is the
@@ -237,7 +237,7 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
     //
     // 1. **A draft longer than the run it replaces** overflows a box sized to
     //    the original, so the tail of what you are typing sits on bare page.
-    // 2. **★ An `Anchor::Origin` draft has no glyph box at all.** `caret_box`
+    // 2. **An `Anchor::Origin` draft has no glyph box at all.** `caret_box`
     //    returns a nominal 6 × 14 pt for new text, so Add-text drew its
     //    characters almost entirely OUTSIDE the fill — text on the page
     //    background in the shell's font, which is exactly the translucent ghost
@@ -252,7 +252,7 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
             .width()
             .max(laid.rect.width() + PREVIEW_INSET_PT * 2.0)
     });
-    // ★★ A BOX GROWS DOWNWARD FROM ITS TOP EDGE, and a single-line draft stays
+    // A BOX GROWS DOWNWARD FROM ITS TOP EDGE, and a single-line draft stays
     // centred on the run it replaces.
     //
     // Two different anchors and therefore two different rectangles, and the
@@ -287,22 +287,22 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
             body.center().y - laid.rect.height() / 2.0
         },
     );
-    // ★★ THE SELECTION IS DRAWN UNDER THE TEXT, before the galley, so the
+    // THE SELECTION IS DRAWN UNDER THE TEXT, before the galley, so the
     // characters sit ON the highlight rather than behind it. Drawing it after
     // would need a translucent fill and would tint every glyph it covers.
     //
-    // ★ This is a **cursor**, not content marking, and R8b rule 4 permits it
+    // This is a **cursor**, not content marking, and R8b rule 4 permits it
     // for exactly that reason: it shows what the *next keystroke* will replace
     // and it is gone the moment the draft commits. Nothing about the applied
     // document is styled here.
-    // ★★ The box, published for the HARNESS as well as for the pointer
+    // The box, published for the HARNESS as well as for the pointer
     // handlers. A driven check that wants to sweep across a draft has no other
     // way to find it: the editor is painted into the canvas rather than laid
     // out as a widget, so it appears in no layout the harness can read, and a
     // check aiming at it from the run's page coordinates would be aiming at
     // the glyphs the box is covering rather than at the box.
     crate::diag::ui_rect(REGION_BOX, body);
-    // ★ Publish the box and the galley for the pointer handlers. See
+    // Publish the box and the galley for the pointer handlers. See
     // `canvas::textedit::hit`: this is the ONE layout, and hit-testing it is
     // the inverse of the `pos_from_cursor` the caret is drawn with.
     crate::canvas::textedit::hit::publish(
@@ -340,7 +340,7 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
         // separating under use. So there is one derivation. The preview draws
         // the text; the caret measures **the same string, in the same font, at
         // the same size**, and the two cannot disagree.
-        // ★★ Measured from the GALLEY THAT WAS DRAWN, not from a second
+        // Measured from the GALLEY THAT WAS DRAWN, not from a second
         // layout of a prefix string.
         //
         // The prefix trick was right while a draft was one line: lay out
@@ -355,7 +355,7 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
         // row's height. One derivation, wrapped or not, which is the rule this
         // module deleted `caret_x` to establish.
         //
-        // ★ The index is a CHARACTER index and `ccursor_from_index` is what
+        // The index is a CHARACTER index and `ccursor_from_index` is what
         // takes one — the same unit `Draft::caret` is documented in. Passing a
         // byte offset would compile and would put the caret inside a multi-byte
         // character on any document with an accent in it.
@@ -397,7 +397,7 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
 /// **Highlight what is selected**, one rectangle per run of characters that
 /// share a row.
 ///
-/// # ★★ Why it is measured character by character rather than from two
+/// # Why it is measured character by character rather than from two
 /// # endpoints
 ///
 /// Because a selection can wrap. Two endpoint rectangles describe a selection
@@ -412,7 +412,7 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
 /// characters. That is the same trade `Draft::caret` makes for character
 /// indices, made again for the same reason.
 ///
-/// ★ A character's right edge is taken from **the next slot's left edge**,
+/// A character's right edge is taken from **the next slot's left edge**,
 /// not from its own `max.x`. The two differ where a row ends: the last
 /// character of a wrapped row has a next slot on the row BELOW, which is how
 /// the row break is detected at all.
@@ -482,7 +482,7 @@ fn caret_box(
             let hi = crate::viewer::pdf_space_to_canvas(Pos2::new(x + 6.0, y + 11.0), page)?;
             Some(egui::Rect::from_two_pos(lo, hi))
         }
-        // ★ A box's caret box is a nominal ONE-LINE slot at the box's TOP-LEFT,
+        // A box's caret box is a nominal ONE-LINE slot at the box's TOP-LEFT,
         // not the whole rectangle.
         //
         // Because that is where the first character will land: `add_text`'s

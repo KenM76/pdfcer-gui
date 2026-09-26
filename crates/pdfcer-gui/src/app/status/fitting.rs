@@ -7,8 +7,8 @@
 //! status-group:page    457.4 .. 603.1     ok
 //! status-group:zoom    326.7 .. 435.4     ok
 //! status-group:fit       6.6 .. 304.7     ok, and 298 pt wide — half the bar
-//! status-group:find    -54.2 ..  -15.4    ★ off the left edge
-//! status-group:filter -127.5 ..  -76.2    ★ off the left edge
+//! status-group:find    -54.2 ..  -15.4    off the left edge
+//! status-group:filter -127.5 ..  -76.2    off the left edge
 //! ```
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/status/fitting.md`.
@@ -60,7 +60,7 @@ impl Group {
     }
 }
 
-/// ★★★ **The groups this module may drop, in the order it drops them, each
+/// **The groups this module may drop, in the order it drops them, each
 /// beside a command that still reaches it.**
 ///
 /// Ordered by *what dropping it buys against what it costs* — the fit group is
@@ -121,7 +121,7 @@ impl Widths {
 /// it at negative x, which is the defect.
 const SEPARATOR_PTS: f32 = 6.0;
 
-/// ★ **Which of the cluster's groups fit in `available` points.**
+/// **Which of the cluster's groups fit in `available` points.**
 ///
 /// Returns them in [`Group::ORDER`] — the order `status::bar` must add them —
 /// with the undroppable ones always present and the droppable ones removed, in
@@ -160,7 +160,7 @@ pub fn affordable(available: f32, widths: &Widths) -> Vec<Group> {
 /// [`Widths`].
 fn measured_width(shown: &[Group], widths: &Widths) -> f32 {
     let known: Vec<f32> = shown.iter().filter_map(|g| widths.get(*g)).collect();
-    // ★ Separators are counted between MEASURED groups, not between shown ones.
+    // Separators are counted between MEASURED groups, not between shown ones.
     //
     // Counting them per shown group broke the bootstrap and the test caught it:
     // with nothing yet measured the sum is zero but four separators are 24 pt,
@@ -185,7 +185,7 @@ pub fn still_reachable_at(group: Group) -> Option<&'static str> {
         .map(|(_, command)| *command)
 }
 
-/// ★★ **Say what the bar dropped, and where it still is.**
+/// **Say what the bar dropped, and where it still is.**
 ///
 /// Emitted on change only, from `status::bar`, once the decision is made.
 ///
@@ -250,7 +250,7 @@ mod tests {
         w
     }
 
-    /// ★★★ **The defect, as an assertion.**
+    /// **The defect, as an assertion.**
     ///
     /// 611 points is the client width the failing run reported. The whole
     /// cluster needs 145.7 + 108.7 + 298.1 + 38.8 + 51.3 = 642.6 plus four
@@ -286,7 +286,7 @@ mod tests {
         assert_eq!(affordable(2000.0, &measured()), Group::ORDER.to_vec());
     }
 
-    /// ★★ **Relative order is preserved under every subset.**
+    /// **Relative order is preserved under every subset.**
     ///
     /// The property that keeps the bar's controls in the positions the operator
     /// learned. Shedding is by priority, not by position, so the result is not
@@ -312,7 +312,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **The two groups with no other home are never shed, at any width.**
+    /// **The two groups with no other home are never shed, at any width.**
     ///
     /// The clause the whole design rests on, swept rather than sampled. The
     /// selection filter has no ribbon command, no menu entry and no shortcut —
@@ -336,7 +336,7 @@ mod tests {
         }
     }
 
-    /// ★★ **Narrowing never puts a control back.**
+    /// **Narrowing never puts a control back.**
     ///
     /// A monotonicity property, and the one a hand-written threshold ladder
     /// would break first: as the bar narrows, the set shown must only ever
@@ -398,7 +398,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **Nothing this module may shed loses its last route.**
+    /// **Nothing this module may shed loses its last route.**
     ///
     /// The clause that makes shedding legitimate, checked against the real
     /// command registry rather than against a comment. A group whose ribbon

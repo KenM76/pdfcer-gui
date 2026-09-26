@@ -14,7 +14,7 @@
 //! deleted or turned into a real test with a committed fixture once the cause
 //! is known.
 //!
-//! ★ Written as a file rather than as a shell one-liner because the question is
+//! Written as a file rather than as a shell one-liner because the question is
 //! *what does the engine say about each run*, and that needs the same planner
 //! the GUI uses — not a byte grep, which is what produced two wrong diagnoses of
 //! his last text-editing report.
@@ -78,7 +78,7 @@ fn where_is_his_text_and_what_does_the_engine_say() {
         println!("\n=== page {i} carries {HIS_TEXT:?} ===");
         println!("runs on this page: {}", text.runs.len());
 
-        // ★ Which RUNS carry it, and how the phrase is split between them. This
+        // Which RUNS carry it, and how the phrase is split between them. This
         // is the measurement that separates "one run" from "several", and the
         // second is what `EditRefusal::SplitAcrossPieces` is about.
         let mut carriers = Vec::new();
@@ -92,7 +92,7 @@ fn where_is_his_text_and_what_does_the_engine_say() {
             println!("  run {r}: {t:?}");
         }
 
-        // ★★ And how many times the phrase occurs on the page. An edit located
+        // And how many times the phrase occurs on the page. An edit located
         // by `find` alone is refused when the page carries the text more than
         // once — `EditRefusal::AmbiguousOnThePage` — and *"sometimes works"* on
         // a BOM is exactly what a repeated value looks like from his chair.
@@ -103,7 +103,7 @@ fn where_is_his_text_and_what_does_the_engine_say() {
 
 /// What a BOM cell looks like: how often short values repeat on one page.
 ///
-/// ★★★ This is the *"only sometimes works"* half of his report and the reason
+/// This is the *"only sometimes works"* half of his report and the reason
 /// it is measured separately. A bill of materials is a grid of short strings —
 /// quantities, item numbers, part codes — and many of them repeat. An edit
 /// located by text alone cannot tell two identical cells apart, so pdfcer
@@ -154,7 +154,7 @@ fn how_many_short_runs_repeat_on_the_busiest_page() {
     }
 }
 
-/// ★★★ **Ask the engine to make his edit, and print exactly what it says.**
+/// **Ask the engine to make his edit, and print exactly what it says.**
 ///
 /// The two measurements above ruled out the two obvious causes for the line he
 /// named: it is **one run**, and it occurs **once** on its page — so it is
@@ -203,7 +203,7 @@ fn what_does_the_engine_say_when_his_edit_is_attempted() {
     }
 }
 
-/// ★★★ **The shell's OWN request shape**, which is not the one above.
+/// **The shell's OWN request shape**, which is not the one above.
 ///
 /// The plain `find_replace` probe is accepted, so the engine can make his edit.
 /// But the GUI does not send that: `canvas::textedit::plan` builds a **pinned
@@ -215,7 +215,7 @@ fn what_does_the_engine_say_when_his_edit_is_attempted() {
 /// for his line. If it does, the refusal is further up in the shell; if it does
 /// not, this is the defect and it is one the plain probe would never have found.
 ///
-/// ★ The pin is measured from a **provenance-carrying** extraction, which is
+/// The pin is measured from a **provenance-carrying** extraction, which is
 /// the only kind that can produce one. An extraction without provenance yields
 /// no pin and the shell falls back — a difference invisible in the text.
 #[test]
@@ -294,7 +294,7 @@ fn what_count_decides_whether_the_pin_comes_off() {
     println!("⇒ the pin is dropped ONLY when this is exactly 1");
 }
 
-/// ★★★ **Which of his BOM cells actually hit the ambiguity refusal, and is the
+/// **Which of his BOM cells actually hit the ambiguity refusal, and is the
 /// remedy that refusal names performable on them?**
 ///
 /// `EditRefusal::AmbiguousOnThePage` fires on the intersection of two
@@ -373,7 +373,7 @@ fn how_many_runs_actually_hit_the_ambiguity_refusal_and_is_the_remedy_real() {
             }
             if n > 1 && !one_operator {
                 refused += 1;
-                // ★ Is there anything else on this run's LINE? If the line is
+                // Is there anything else on this run's LINE? If the line is
                 // the run and nothing else, "include more of it" names an
                 // action he cannot take.
                 let alone = model
@@ -405,7 +405,7 @@ fn how_many_runs_actually_hit_the_ambiguity_refusal_and_is_the_remedy_real() {
     }
 }
 
-/// ★★★ **Ask the engine about EVERY cell on his BOM sheet, one fresh session
+/// **Ask the engine about EVERY cell on his BOM sheet, one fresh session
 /// per cell, and print the ones it refuses.**
 ///
 /// # Why this replaces two wrong diagnoses rather than adding a third
@@ -483,7 +483,7 @@ fn which_cells_on_his_bom_sheet_does_the_engine_actually_refuse() {
             .collect()
     };
 
-    // ★ Sampled, and the sample is STATED. Every 7th run keeps the run under a
+    // Sampled, and the sample is STATED. Every 7th run keeps the run under a
     // minute while covering the whole sheet rather than its first screenful —
     // a prefix would measure the title block and call it a bill of materials.
     let sample: Vec<_> = plans.iter().step_by(7).collect();
@@ -519,7 +519,7 @@ fn which_cells_on_his_bom_sheet_does_the_engine_actually_refuse() {
             }
         };
 
-        // ★★★ THE REPLACEMENT REUSES THE RUN'S OWN CHARACTERS, and the first
+        // THE REPLACEMENT REUSES THE RUN'S OWN CHARACTERS, and the first
         // draft of this probe did not.
         //
         // It appended a `Z`, and **30 of 31 cells came back
@@ -560,7 +560,7 @@ fn which_cells_on_his_bom_sheet_does_the_engine_actually_refuse() {
     }
 }
 
-/// ★★★ **What can he actually TYPE into this drawing?**
+/// **What can he actually TYPE into this drawing?**
 ///
 /// # Where this question came from — a harness artefact worth more than the
 /// measurement it broke
@@ -578,7 +578,7 @@ fn which_cells_on_his_bom_sheet_does_the_engine_actually_refuse() {
 /// `SPAZER` is silly, but `12` → `13` on a sheet whose quantities happen never
 /// to include a `3` is exactly the same refusal.
 ///
-/// ★ *"It only sometimes works"* is what a per-character alphabet feels like
+/// *"It only sometimes works"* is what a per-character alphabet feels like
 /// from the operator's chair, and it is a better fit for his words than either
 /// of the two explanations that preceded it — both of which turned out to be
 /// about populations that are empty on this file.
@@ -661,7 +661,7 @@ fn which_characters_can_he_type_into_his_bom_sheet() {
     );
 }
 
-/// ★★★ **The alphabet PER FONT — because the probe above measured one cell and
+/// **The alphabet PER FONT — because the probe above measured one cell and
 /// its number went into three documents as though it described the drawing.**
 ///
 /// # The correction, and where it came from
@@ -691,12 +691,12 @@ fn which_characters_can_he_type_into_his_bom_sheet() {
 /// project's commit message is a citation, not a measurement, and this session
 /// has already corrected three claims that were exactly that.
 ///
-/// ★ One cell per distinct `font_resource`, so the sample covers the page's
+/// One cell per distinct `font_resource`, so the sample covers the page's
 /// fonts rather than its geometry.
 #[test]
 #[ignore = "reads a file outside the repository, ~95 document loads per font; run by hand"]
 fn what_can_he_type_into_each_of_the_sheets_fonts() {
-    // ★★★ EVERY SHEET IN THE SAMPLE, not one, and that is the correction
+    // EVERY SHEET IN THE SAMPLE, not one, and that is the correction
     // this probe exists for. `pdfcer-core` measured the same file per font
     // and got four fonts at 72/95 where this repository's documents said
     // 46/95 — and both are right, about different SHEETS. A title/BOM sheet
@@ -733,7 +733,7 @@ fn measure_page(page: usize) {
             if run.text.trim().is_empty() {
                 continue;
             }
-            // ★ The font lives on the GLYPH's provenance, not on the run:
+            // The font lives on the GLYPH's provenance, not on the run:
             // a run is closed on geometry, so it can in principle carry
             // glyphs from more than one resource. The first glyph's is the
             // one the pin will address.
@@ -945,7 +945,7 @@ fn does_the_face_the_refusal_names_actually_unblock_his_edit() {
     }
 }
 
-/// ★★★ **O198's second claim, driven at the engine: *"Seems the reflow works
+/// **O198's second claim, driven at the engine: *"Seems the reflow works
 /// with each line but still can't edit when the text has been reflowed."***
 ///
 /// # What the claim is, read carefully
@@ -972,7 +972,7 @@ fn does_the_face_the_refusal_names_actually_unblock_his_edit() {
 /// and the defect is ours; if it refuses, the sentence it refuses with is the
 /// report.**
 ///
-/// ★ It prints rather than asserts, like every probe in this file, because the
+/// It prints rather than asserts, like every probe in this file, because the
 /// answer is a measurement of somebody else's crate on a file that is not in
 /// this repository. An assertion here would be a test of the operator's disk.
 #[test]
@@ -987,7 +987,7 @@ fn can_he_edit_text_after_the_block_it_lives_in_has_been_reflowed() {
 
     // --- 1. locate his run, and the block it belongs to --------------------
     //
-    // ★ Provenance is not optional here: `reflow_block` answers
+    // Provenance is not optional here: `reflow_block` answers
     // `ReflowApplyError::NoProvenance` without it, and the block index must be
     // numbered in the list `reflow_block` ITSELF builds, which is
     // `reflow_recognition_options()` and never the caret's default — see the
@@ -1037,7 +1037,7 @@ fn can_he_edit_text_after_the_block_it_lives_in_has_been_reflowed() {
         Ok(report) => report,
         Err(e) => {
             println!("★★★ THE REFLOW ITSELF REFUSED — {e}");
-            // ★★★ THIS ARM HAS NOW CARRIED TWO WRONG EXPLANATIONS, and the
+            // THIS ARM HAS NOW CARRIED TWO WRONG EXPLANATIONS, and the
             // second one was CORRECT when written. Both are recorded because
             // the shape is the finding, not either sentence.
             //
@@ -1068,7 +1068,7 @@ fn can_he_edit_text_after_the_block_it_lives_in_has_been_reflowed() {
 
     // --- 3. re-measure the pin AFTER the reflow -----------------------------
     //
-    // ★★★ This is the step the whole probe exists for. The reflow rewrote the
+    // This is the step the whole probe exists for. The reflow rewrote the
     // content object, so a span measured in step 1 names bytes that have
     // moved. Re-extracting is what the shell's `(page, edit_epoch)` cache key
     // is supposed to make happen automatically — and measuring it here says
@@ -1131,7 +1131,7 @@ fn can_he_edit_text_after_the_block_it_lives_in_has_been_reflowed() {
     }
 }
 
-/// ★★★ **How many `/Contents` streams does each of his sheets carry?**
+/// **How many `/Contents` streams does each of his sheets carry?**
 ///
 /// ✅ **The defect this probe was written to quantify is FIXED.** Kept, and
 /// worth reading as a worked example of a measurement closing an engine
@@ -1201,7 +1201,7 @@ fn how_many_content_streams_does_each_of_his_sheets_carry() {
     println!("  engine path arrives.");
 }
 
-/// ★★★ **His exact sequence: edit first, then reflow, then edit again.**
+/// **His exact sequence: edit first, then reflow, then edit again.**
 ///
 /// O198: *"Seems the reflow works with each line but still can't edit when the
 /// text has been reflowed."*
@@ -1226,7 +1226,7 @@ fn how_many_content_streams_does_each_of_his_sheets_carry() {
 /// then edit again — and asks the question his sentence actually asks:
 /// **is the text still editable afterwards?**
 ///
-/// ★ It is also the instrument that would notice a reinstated guard from the
+/// It is also the instrument that would notice a reinstated guard from the
 /// other side: if step 2 ever starts REQUIRING step 1 again, this probe is
 /// where that shows up as a difference between two runs rather than as a
 /// report from Ken.

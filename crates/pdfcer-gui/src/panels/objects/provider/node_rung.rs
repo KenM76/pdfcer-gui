@@ -52,7 +52,7 @@ impl ObjectModelProvider {
     /// there is no neighbouring segment at all — which is the ordinary case on
     /// a CAD drawing, where almost every path is polygonal.
     ///
-    /// # ★ Why this is per-ANCHOR and every other point accessor is per-subpath
+    /// # Why this is per-ANCHOR and every other point accessor is per-subpath
     ///
     /// Because handles are only ever drawn for the anchors the operator has
     /// selected, and that is not a cosmetic decision. A subpath's anchors are
@@ -63,7 +63,7 @@ impl ObjectModelProvider {
     /// shape is what makes that the cheap path rather than a filter over a
     /// list that was expensive to build.
     ///
-    /// # ★★ How an anchor index maps onto segments, and the off-by-one in it
+    /// # How an anchor index maps onto segments, and the off-by-one in it
     ///
     /// `Subpath` is `start` plus a list of `segments`, and `anchors()` yields
     /// `start` first and then each segment's end. So for object-scoped anchor

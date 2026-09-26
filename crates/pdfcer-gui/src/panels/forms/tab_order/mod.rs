@@ -23,7 +23,7 @@ use self::tabs::{TabsEntry, TabsMode};
 
 /// The tallest the list may grow before it scrolls, in points.
 ///
-/// See this module's header, "★ The one layout thing this section does". The
+/// See this module's header, "The one layout thing this section does". The
 /// number is a judgement rather than a measurement: tall enough that a page of
 /// eight or nine widgets is read without scrolling, short enough that the fill
 /// list below stays on screen in a dock pane opened at its default height.
@@ -81,7 +81,7 @@ pub(super) fn section(
     let listing = model::collect(view, &slots, form);
     trace(&listing);
 
-    // ★★★ NOTHING TO ORDER, SO NO SECTION — R9.
+    // NOTHING TO ORDER, SO NO SECTION — R9.
     //
     // Drawn unconditionally, the header is a *"Tab order"* expander in the
     // Fill-form panel that opens onto nothing: the no-AcroForm path in
@@ -90,12 +90,12 @@ pub(super) fn section(
     // the panel would offer a disclosure triangle whose whole content is an
     // explainer about reordering an empty list.
     //
-    // ★ R9 in its exact words: an unavailable capability renders **nothing**.
+    // R9 in its exact words: an unavailable capability renders **nothing**.
     // A heading is not exempt from that because it is cheap — a heading is a
     // claim that something is behind it, and this project's own no-placeholders
     // rule makes no distinction between an inert button and an inert expander.
     //
-    // ★★ The trap worth naming: the sibling branch that reaches this function
+    // The trap worth naming: the sibling branch that reaches this function
     // invokes R9 by name, three lines above the call, to explain why it skips
     // *everything else* on the no-fields path. **A rule cited at a call site is
     // not enforced inside the callee** — it has to be applied again, here.
@@ -104,7 +104,7 @@ pub(super) fn section(
     // document can carry an `/AcroForm` whose fields are all unreachable, and
     // that is equally nothing to order. The condition is what the section would
     // SHOW, not what it was handed.
-    // ★★★ EVERYTHING THIS SECTION CAN SHOW has to be in the condition, and
+    // EVERYTHING THIS SECTION CAN SHOW has to be in the condition, and
     // there are THREE sources, not two:
     //
     //   · `total_rows()`            sums `PageTabs::rows` — fields WITH widgets
@@ -121,12 +121,12 @@ pub(super) fn section(
     // pairing unclaimed widgets in the listing against traced `adopt-row`
     // lines.
     //
-    // ★★ The rule behind that: an early return is a claim about **everything
+    // The rule behind that: an early return is a claim about **everything
     // the function does**, not about the part that prompted it. The condition
     // names all three sources, and the doc comment on `Listing` is where the
     // list of them lives.
     //
-    // ★ `anonymous` is deliberately NOT in the condition. A direct-dictionary
+    // `anonymous` is deliberately NOT in the condition. A direct-dictionary
     // `/Widget` has no identity to adopt, so `register::rows` can offer nothing
     // for it; its disclosure belongs to a page that has other rows anyway.
     let unclaimed: usize = listing.pages.iter().map(|p| p.unclaimed.len()).sum();
@@ -135,7 +135,7 @@ pub(super) fn section(
     }
 
     let mut go: Option<usize> = None;
-    // ★ The header publishes its own rectangle so a driven check can OPEN
+    // The header publishes its own rectangle so a driven check can OPEN
     // the section. It ships closed on purpose — the section is a diagnostic
     // rather than the panel's main job — and a check that assumed it open would
     // report the whole feature missing on a correct build.
@@ -143,7 +143,7 @@ pub(super) fn section(
         .id_salt("pdfcer-forms-tab-order")
         .default_open(false)
         .show(ui, |ui| {
-            // ★ EVERY DISCLOSURE ABOVE THE LIST, without exception — the rule
+            // EVERY DISCLOSURE ABOVE THE LIST, without exception — the rule
             // four other panels follow, for one reason: an operator who reads a
             // short list and stops has drawn their conclusion by the time a
             // footnote would reach them.
@@ -152,7 +152,7 @@ pub(super) fn section(
             // what this list IS **and how to reorder it**, then how big it is,
             // then what is missing from it.
             //
-            // ★ The first of those teaches the drag, because it is the only
+            // The first of those teaches the drag, because it is the only
             // thing that can: there is no handle, no grip glyph and no button,
             // so a sentence is the entire discoverability surface for the
             // gesture.
@@ -180,7 +180,7 @@ pub(super) fn section(
                 ui.label(t::tab_order_empty());
             }
 
-            // ★★ The remedy, ABOVE the scroll area and above the list.
+            // The remedy, ABOVE the scroll area and above the list.
             //
             // Every unclaimed widget in the document, gathered here rather than
             // left inside the page block that counts it. The per-page sentence
@@ -220,7 +220,7 @@ pub(super) fn section(
                 });
         });
     crate::diag::ui_rect(REGION_HEADER, header.header_response.rect);
-    // ★★★ WHETHER THE SECTION IS OPEN, as its own trace line.
+    // WHETHER THE SECTION IS OPEN, as its own trace line.
     //
     // Without it a driven check cannot tell three states apart, all of which
     // look like "no rows on screen":
@@ -270,7 +270,7 @@ fn page_block(
     // [`tests::the_page_index_travels_zero_based_and_prints_one_based`].
     let page_number = page.page_index + 1;
 
-    // ★ A PLAIN LABEL, NOT `RichText::strong()`, and this is a measurement
+    // A PLAIN LABEL, NOT `RichText::strong()`, and this is a measurement
     // rather than a preference.
     //
     //
@@ -302,7 +302,7 @@ fn page_block(
         *go = Some(page.page_index);
     }
 
-    // ★ THE `/Tabs` SENTENCE, ALWAYS, ON EVERY PAGE.
+    // THE `/Tabs` SENTENCE, ALWAYS, ON EVERY PAGE.
     //
     // Not conditional, unlike almost every other disclosure in this panel. The
     // conditional rule — "draw it only when it is true, so the marker means
@@ -325,7 +325,7 @@ fn page_block(
         );
     }
 
-    // ★★ Where a drag in flight would land, resolved DURING the row loop and
+    // Where a drag in flight would land, resolved DURING the row loop and
     // carried out of it — `crate::panels::pages`' shape, for its reason: a gap
     // is a rectangle, and a rectangle does not exist until the rows have been
     // laid out. Nothing outside this function is in a position to compute it.
@@ -340,7 +340,7 @@ fn page_block(
         // away, through the SAME tooltip the fill rows use, so a name copied
         // out of either list is the same string.
         let label = row.label.as_deref().unwrap_or(row.field.as_str());
-        // ★ No `dnd_drag_source`. egui 0.35's built-in drag-and-drop paints the
+        // No `dnd_drag_source`. egui 0.35's built-in drag-and-drop paints the
         // dragged widget under the cursor as a floating preview, which is the
         // wrong affordance for a *list reorder*: the operator is not carrying
         // the row somewhere, they are choosing a boundary, and the thing that
@@ -348,7 +348,7 @@ fn page_block(
         // and the operator's own words are "clear markers of where the field is
         // going to move to" — the marker is the feature; the ghost competes.
         //
-        // ★★★ A PLAIN LABEL, THEN `ui.interact` OVER ITS RECT — and this is the
+        // A PLAIN LABEL, THEN `ui.interact` OVER ITS RECT — and this is the
         // fix for a drag that did not start at all.
         //
         // `Label::new(..).sense(Sense::drag())` is the obvious spelling and
@@ -363,7 +363,7 @@ fn page_block(
         // its *mechanism* is the failure this guards against, and only a driven
         // check can see it.
         //
-        // ★ `click_and_drag`, not `drag`: a row is also a click target for a
+        // `click_and_drag`, not `drag`: a row is also a click target for a
         // tooltip, and a `Sense::drag()`-only widget swallows the press without
         // ever reporting the click.
         let placed = ui.add(egui::Label::new(t::tab_order_row(row.position, label)));
@@ -376,7 +376,7 @@ fn page_block(
                 egui::Sense::click_and_drag(),
             )
             .on_hover_text(t::form_field_row_tooltip(&row.field));
-        // ★★★ `ui_rect_visible`, NOT `ui_rect`.
+        // `ui_rect_visible`, NOT `ui_rect`.
         //
         // These rows live in a `ScrollArea` inside a docked panel, at the
         // bottom of a section that itself sits below the fill list. On a real
@@ -399,7 +399,7 @@ fn page_block(
             response.rect,
             ui.clip_rect(),
         );
-        // ★ `drag_started_by(Primary)`, not `drag_started()` — the page rail's
+        // `drag_started_by(Primary)`, not `drag_started()` — the page rail's
         // reason, unchanged: egui's plain predicate is true for the middle
         // button too, and a right-press that wandered a few pixels before
         // releasing would start a reorder the operator meant as a context menu.
@@ -412,7 +412,7 @@ fn page_block(
                 },
             );
         }
-        // ★ The grab cursor is requested EVERY FRAME of the drag, not once at
+        // The grab cursor is requested EVERY FRAME of the drag, not once at
         // `drag_started` — `crate::panels::pages` learnt this the hard way and
         // recorded it: egui resolves the cursor per frame from whatever asked
         // most recently, so a request made only at the start is overwritten by
@@ -617,7 +617,7 @@ mod tests {
     use self::tabs::Sequence;
     use super::*;
 
-    /// **★ Only the states where the sequence is NOT the tab order warn.**
+    /// **Only the states where the sequence is NOT the tab order warn.**
     ///
     /// The single most consequential mapping in this view, and it is wrong in
     /// two opposite and equally bad ways. Warning on `/A` or `/W` would tell an
@@ -663,7 +663,7 @@ mod tests {
         );
     }
 
-    /// **★ An absent `/Tabs` is reported as absent, with NO mode name.**
+    /// **An absent `/Tabs` is reported as absent, with NO mode name.**
     ///
     /// The constraint this view is built around, asserted as a property of the
     /// string an operator actually reads rather than of the enum behind it.
@@ -691,7 +691,7 @@ mod tests {
         }
     }
 
-    /// **★ An ancestor's `/Tabs` is disclosed, named, and not applied.**
+    /// **An ancestor's `/Tabs` is disclosed, named, and not applied.**
     ///
     /// Three assertions because the sentence has three jobs, and dropping any
     /// one of them produces a different wrong answer. It must say the page has
@@ -762,7 +762,7 @@ mod tests {
             t::tab_order_anonymous(1),
         ];
         for s in &warnings {
-            // ★ The glyph has to BE there before it can be checked for being
+            // The glyph has to BE there before it can be checked for being
             // load-bearing, and this half is the tripwire. Every one of these
             // is drawn in `warn_fg_color`; with no glyph the warning-ness is
             // carried by colour alone, which is exactly what R84 forbids — and
@@ -790,7 +790,7 @@ mod tests {
         }
     }
 
-    /// **★ The page index travels 0-based and prints 1-based.**
+    /// **The page index travels 0-based and prints 1-based.**
     ///
     /// The off-by-one that would otherwise be invisible.
     /// [`Action::GoToPage`] takes a 0-based index — the convention
@@ -818,7 +818,7 @@ mod tests {
         }
     }
 
-    /// **★★ The explainer must TEACH THE GESTURE, and must not claim the
+    /// **The explainer must TEACH THE GESTURE, and must not claim the
     /// view is read-only.**
     ///
     /// **A drag with no visible handle is undiscoverable.** There is no button,
@@ -846,7 +846,7 @@ mod tests {
         }
     }
 
-    /// **★ Still no labelled reorder control, and that is deliberate.**
+    /// **Still no labelled reorder control, and that is deliberate.**
     ///
     /// The gesture is the feature — the operator asked for drag and drop by
     /// name — and a "Move up / Move down" pair beside every row would double
@@ -855,7 +855,7 @@ mod tests {
     /// hard to discover" is to add buttons, and the right response is to fix
     /// the sentence that teaches it.
     ///
-    /// ★★ This is NOT a permanent prohibition and should not be read as one.
+    /// This is NOT a permanent prohibition and should not be read as one.
     /// A keyboard route to reordering is an accessibility gap this view has,
     /// and if it is filled the right way — a keymap command, not a pair of
     /// buttons per row — this test is what should be revisited, with its

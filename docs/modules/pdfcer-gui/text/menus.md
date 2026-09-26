@@ -4,7 +4,7 @@ One area of the catalog described in [`crate::text`]'s header, covering
 the four context menus in [`crate::shell::menus`] and the right-click
 wiring in [`crate::canvas::menus`] and [`crate::panels`].
 
-## ★ It is empty, and the emptiness is the design working
+## It is empty, and the emptiness is the design working
 
 Not an oversight and not a file created ahead of its contents. A context
 menu has **no words of its own**. `RIBBON_IA.md` §5.8:
@@ -82,7 +82,7 @@ command already says. If a command's label reads wrongly in a menu, the
 fix is the command's label — the ribbon has the same problem and has not
 noticed.
 
-## ★★★ The case that tested the boundary hardest, and still did not break it
+## The case that tested the boundary hardest, and still did not break it
 
 `canvas.markup` (2026-09-06) carries two rows whose labels are **deictic** —
 *"Add a point here"*, *"Remove this point"* — and whose operand is *the

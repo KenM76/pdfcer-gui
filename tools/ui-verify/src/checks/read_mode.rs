@@ -421,7 +421,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     let Some((point, edit_line)) = found else {
-        // ★ The honest SKIP. Phase A held at every candidate, and that is
+        // The honest SKIP. Phase A held at every candidate, and that is
         // deliberately NOT reported as a pass: with no phase B to establish
         // that a click at those points would have selected anything, Read's
         // silence is equally consistent with a working gate and with a harness

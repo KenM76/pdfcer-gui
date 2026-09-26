@@ -18,7 +18,7 @@ const MODE: &str = "edit";
 const SELECTION: &str = "canvas-selection"; // ui-text-exempt: a trace event name, never displayed
 /// The line `canvas::smart::enter` writes.
 const ENTER: &str = "smart-enter"; // ui-text-exempt: a trace event name, never displayed
-/// ★ The line this check exists to read.
+/// The line this check exists to read.
 const MOVED: &str = "move-subpath-in-form"; // ui-text-exempt: a trace event name, never displayed
 /// The page region, so a failure can say whether a sheet was drawn at all.
 const PAGE_REGION: &str = "page"; // ui-text-exempt: a trace region name, never displayed
@@ -128,7 +128,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ladder is one gesture shorter for exactly the documents where that
     // matters most.
     //
-    // ★★ `smart-enter` is therefore no longer required — but it is still
+    // `smart-enter` is therefore no longer required — but it is still
     // ACCEPTED, and the check reports which of the two happened. A fixture
     // whose form does not swallow the page still enters, and this check must
     // pass on both without being told which it is looking at. Requiring either

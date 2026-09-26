@@ -16,7 +16,7 @@ redo describe **no edit at all**. They ask the session to replay one it has
 already recorded, and everything interesting about them is the four things
 that differ per direction and the one thing that does not.
 
-## ★ The four per-direction answers, and why they are methods on the enum
+## The four per-direction answers, and why they are methods on the enum
 
 `peek`, `step`, `event`, `applied` and `declined` are written as methods on
 [`Direction`] rather than as `if undo { … } else { … }` inside
@@ -29,7 +29,7 @@ five sites rather than a silent fall-through at one.
 It also keeps `history_step` readable as the sequence it is: peek, step,
 trace, disclose or decline.
 
-## ★★ Why an undo is an EDIT
+## Why an undo is an EDIT
 
 It bumps `edit_epoch`, drops the page texture and invalidates the strip,
 exactly as a forward edit does — because it changes what the document says,

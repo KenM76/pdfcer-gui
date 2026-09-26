@@ -10,7 +10,7 @@ measurement. So the copy says *"the dimensions you have drawn on it"*, which
 is both unambiguous and the honest boundary — an operator who has drawn none
 is told pdfcer has no evidence rather than being given a number.
 
-## ★ The one sentence this whole window exists for
+## The one sentence this whole window exists for
 
 `pdfcer-core`'s own doc on `DxfOptions::scale`:
 
@@ -23,7 +23,7 @@ cleanly, measures consistently, and is wrong — and the person who finds out
 is whoever cuts from it. Everything below is arranged so that the scale is
 either stated with its evidence, or stated as unknown.
 
-## ★ Three answers, never two
+## Three answers, never two
 
 `DxfScaleSuggestion` is deliberately not an `Option<f64>`, and this catalog
 keeps its three cases apart because they ask different things of an

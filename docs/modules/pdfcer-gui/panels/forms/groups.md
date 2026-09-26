@@ -20,7 +20,7 @@ there is no widget). Until this section, `EditSession::delete_field_group`
 was an engine capability with **no surface in the shell at all** — the
 finding that produced this work.
 
-## ★★★ Everything this section does is disclosure, because everything its
+## Everything this section does is disclosure, because everything its
 verb does is invisible
 
 Rule 4 says *"disclosure lives off-canvas: a status line, a results panel, a
@@ -38,7 +38,7 @@ names, and the funnel says what did go **after** it, from the engine's own
 report. Neither is optional and neither substitutes for the other: the first
 is a decision, the second is a receipt.
 
-## ★★ The two-press protocol, from this side of it
+## The two-press protocol, from this side of it
 
 | press | raises | changes | draws |
 |---|---|---|---|
@@ -52,7 +52,7 @@ this body is handed `&OpenDoc`, and the session lives behind an `Arc`. See
 [`crate::app::actions::forms::groups`] for the whole argument, including why
 this is not a modal dialog.
 
-## ★★★ R83 — the refusal is asked BEFORE any control is drawn
+## R83 — the refusal is asked BEFORE any control is drawn
 
 `EditSession::deletion_refusal` is a pure query and this section asks it
 once, at the top, exactly as [`super::body`] asks `fill_refusal` and
@@ -70,7 +70,7 @@ have no reason to make.
 be indistinguishable from a feature nobody built, on a panel that lists the
 groups either way.
 
-★ It asks `deletion_refusal`, not `flatten_refusal` and not `fill_refusal`.
+It asks `deletion_refusal`, not `flatten_refusal` and not `fill_refusal`.
 The three are different questions with different answers on documents that
 are not exotic — `super`'s body carries the measured account of that — and
 core's own doc comment names the hazard precisely: *"a call site that asks

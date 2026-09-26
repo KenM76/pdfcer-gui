@@ -20,7 +20,7 @@ const REGION_STROKE: &str = "properties.paint.stroke"; // ui-text-exempt: a trac
 const REGION_UNDECODED: &str = "properties.paint.undecoded"; // ui-text-exempt: a trace region name
 /// The line naming how many objects the controls act on.
 ///
-/// ★ Its own region since the multi-object state shipped, because *"the section
+/// Its own region since the multi-object state shipped, because *"the section
 /// drew"* and *"the section told the operator how many things it is about to
 /// change"* are two different claims and a driven check has to be able to
 /// assert the second.
@@ -31,7 +31,7 @@ const REGION_PARTIAL_INK: &str = "properties.paint.partial-ink"; // ui-text-exem
 
 /// **What one frame's interaction asked for**, per channel.
 ///
-/// ★ A named pair rather than a tuple of two options, because the two positions
+/// A named pair rather than a tuple of two options, because the two positions
 /// are not interchangeable and a tuple invites reading them the wrong way round
 /// exactly once — after which the fill control recolours the line. Clippy asked
 /// for the type; the naming is why it was worth asking.
@@ -78,7 +78,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
         return false;
     }
 
-    // ★ Read every selected object's two paints in ONE borrow of the provider,
+    // Read every selected object's two paints in ONE borrow of the provider,
     // and drop it before anything is drawn. Holding a `Ref` across a `Ui`
     // closure is how a panel comes to panic on a re-entrant borrow, and the
     // single-object version of this function already took care to drop it.
@@ -115,13 +115,13 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     ui.add_space(6.0);
     ui.separator();
     ui.add_space(6.0);
-    // ★ Plain, not `.strong()`. `check-strong-text` forbids it here and its
+    // Plain, not `.strong()`. `check-strong-text` forbids it here and its
     // remedy is the right one: the emphasis is invisible against this panel's
     // background anyway, and the hierarchy is carried by this being the one
     // line in the group that is NOT `.small().weak()`.
     ui.label(t::heading());
 
-    // ★★★ **What the controls are about to act on, before they are used.**
+    // **What the controls are about to act on, before they are used.**
     // Drawn only for a real multi-selection: with one object the answer is on
     // screen already (it is outlined on the page and named by the Objects
     // section), and a line saying "1 shape" is noise that trains the eye to
@@ -158,7 +158,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     if let Some(to) = change {
         actions.push(Action::SetObjectPaint {
             page,
-            // ★ Every selected PATH, in the selection's own order. The
+            // Every selected PATH, in the selection's own order. The
             // non-paths are not sent: the engine would refuse them by name
             // (`PaintRefusalReason::NotAPath`) and the refusal count in the
             // status line would then mix "not a shape" with "a named ink",
@@ -174,7 +174,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
 
 /// The selected indices that are paths, in selection order.
 ///
-/// ★ Re-derived rather than collected in the walk above, because the walk's
+/// Re-derived rather than collected in the walk above, because the walk's
 /// output is *paints* and pairing them with indices would make one `Vec` whose
 /// two halves have to be kept in step by hand. The provider read is cheap (a
 /// slice index per entry) and the alternative is the class of bug where a
@@ -200,12 +200,12 @@ fn path_indices(doc: &OpenDoc, page: usize, objects: &[usize]) -> Vec<usize> {
 
 /// **Fold one channel of a whole selection into a control state.**
 ///
-/// ★★★ The ink check comes **before** agreement, not after, and that ordering
+/// The ink check comes **before** agreement, not after, and that ordering
 /// is the guard. *"They all agree and one of them is a spot ink"* must never
 /// draw a swatch: agreement between two members of a named-ink selection is not
 /// permission to overwrite them.
 ///
-/// ★★ A member whose paint cannot be shown is excluded from the agreement
+/// A member whose paint cannot be shown is excluded from the agreement
 /// question entirely rather than counted as a disagreement. It is not a colour
 /// this control can compare, and folding it in would report *"mixed"* for a
 /// selection of one red line and one PANTONE line — implying a value would
@@ -243,7 +243,7 @@ fn channel<'a>(paints: impl Iterator<Item = &'a PathPaint>) -> Channel {
 /// refusal, where no control may be drawn.
 ///
 /// Returns the newly chosen colour, or `None` when nothing was committed this
-/// frame. ★ *Committed*, not *changed*: [`super::swatch::show`] answers only on
+/// frame. *Committed*, not *changed*: [`super::swatch::show`] answers only on
 /// the frame the picker closes, so one drag through a colour wheel is one
 /// action and one undo entry.
 fn row(
@@ -254,7 +254,7 @@ fn row(
     id_salt: &str,
 ) -> Option<[u8; 3]> {
     let mut chosen = None;
-    // ★★★ The partial-ink disclosure sits ABOVE the control, on this project's
+    // The partial-ink disclosure sits ABOVE the control, on this project's
     // standing rule that *"a caveat below a list arrives after the operator has
     // already drawn a conclusion."* It is the sentence that makes pressing the
     // swatch an informed act rather than a surprise reported afterwards.
@@ -270,12 +270,12 @@ fn row(
         ui.label(label);
         match channel.value {
             Some(value) => {
-                // ★ The hint names THIS row's subject — shapes, not words. See
+                // The hint names THIS row's subject — shapes, not words. See
                 // `super::swatch::show`'s note on why the widget takes it as a
                 // parameter rather than reaching for one.
                 chosen = super::swatch::show(ui, id_salt, value, region, &t::mixed_hint());
             }
-            // ★★★ NO SWATCH. See the header: one opening on black over a spot
+            // NO SWATCH. See the header: one opening on black over a spot
             // ink is one click from destroying a plate, and it would look right
             // while it happened.
             None => {
@@ -291,7 +291,7 @@ fn row(
 
 /// The engine's 0..1 components as the swatch's 8-bit sRGB.
 ///
-/// ★ Rounded rather than truncated. Truncation makes 1.0 into 255 correctly and
+/// Rounded rather than truncated. Truncation makes 1.0 into 255 correctly and
 /// 0.5 into 127 — half a step dark on every mid-tone, which over a round trip
 /// through the swatch would walk a colour steadily darker every time it was
 /// opened and closed without being changed.
@@ -302,7 +302,7 @@ fn to_bytes(rgb: pdfcer_core::vector::Rgb) -> [u8; 3] {
 
 /// The ink's name as the file states it, when there is one.
 ///
-/// ★ Raw bytes, decoded loosely. A colour-space resource name is a PDF name
+/// Raw bytes, decoded loosely. A colour-space resource name is a PDF name
 /// object and carries no declared encoding; showing it as it is beats showing
 /// nothing, and beats a repaired version that no longer matches what the
 /// operator would find in the file.
@@ -336,7 +336,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **An undecodable paint must never yield a colour to open a swatch
+    /// **An undecodable paint must never yield a colour to open a swatch
     /// on.**
     ///
     /// The one assertion this module exists for. If `rgb()` ever answered
@@ -350,7 +350,7 @@ mod tests {
         assert_eq!(ink_name(&ink).as_deref(), Some("PANTONE 300"));
     }
 
-    /// ★★ `Default` and a chosen black both draw a swatch — they are the same
+    /// `Default` and a chosen black both draw a swatch — they are the same
     /// PICTURE and different facts, and only the type keeps them apart.
     #[test]
     fn nobody_chose_and_somebody_chose_black_both_show_black() {
@@ -378,10 +378,10 @@ mod tests {
         );
     }
 
-    /// ★★★ **A selection that disagrees reads as MIXED and still offers a
+    /// **A selection that disagrees reads as MIXED and still offers a
     /// control.**
     ///
-    /// The whole of O89 piece 2. ★ The fixture genuinely disagrees — red and
+    /// The whole of O89 piece 2. The fixture genuinely disagrees — red and
     /// green — because a fixture whose members all share one colour would pass
     /// against an implementation that simply showed the first one's.
     #[test]
@@ -405,7 +405,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **One spot ink among process colours keeps the control AND names
+    /// **One spot ink among process colours keeps the control AND names
     /// the ink.**
     ///
     /// The decision the module header argues, asserted rather than left to the
@@ -424,7 +424,7 @@ mod tests {
         assert_eq!(ch.total, 3);
     }
 
-    /// ★★★ **Every member a named ink: no control at all.**
+    /// **Every member a named ink: no control at all.**
     ///
     /// The single-object guard, unchanged by the selection size. This is the
     /// case where a swatch's only possible effect is destruction, and it is the
@@ -440,7 +440,7 @@ mod tests {
         assert_eq!(ch.inks.len(), 2);
     }
 
-    /// ★★ A spot ink must not be counted as a *disagreement*.
+    /// A spot ink must not be counted as a *disagreement*.
     ///
     /// If it were, one red line plus one PANTONE line would read as "mixed" —
     /// which tells the operator that picking a colour will unify them, and it

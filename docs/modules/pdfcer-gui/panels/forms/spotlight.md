@@ -5,7 +5,7 @@ being filled**
 > *"when we have the fill form panel visible and I click on fields in it
 > instead it should highlight the field on the canvas that is being filled."*
 
-## ★★★ This was already named as missing, and named as PERMITTED
+## This was already named as missing, and named as PERMITTED
 
 [`super`]'s header has carried the gap since the panel was written, and it is
 worth quoting because it settles the rule-4 question in advance:
@@ -22,7 +22,7 @@ worth quoting because it settles the rule-4 question in advance:
 **This is that channel.** Nothing else had to be built: `crate::canvas::forms`
 already places every fillable widget in canvas space.
 
-## ★★ Why it is a cursor and not a mark on the content
+## Why it is a cursor and not a mark on the content
 
 Rule 4 forbids *applied content* being styled differently from saved content.
 A spotlight is neither applied nor content: it is transient, it follows the
@@ -41,6 +41,6 @@ another tab. `egui`'s temp store is exactly that lifetime, and
 `crate::canvas::forms` already uses it for the focused field it types into —
 so this is the same mechanism at the same scope, not a second one.
 
-★ The panel writes it and the canvas reads it, both once per frame. A panel
+The panel writes it and the canvas reads it, both once per frame. A panel
 that is not drawn writes nothing, so hiding the panel puts the spotlight out
 by construction rather than by anybody remembering to clear it.

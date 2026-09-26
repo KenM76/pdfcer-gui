@@ -5,7 +5,7 @@ reaches the document. It is what the placement dialog edits, what
 `Action::CommitFormField` carries, and what [`Remembered`] keeps for the
 next placement.
 
-## ★★★ One struct for five kinds, and why that is not laziness
+## One struct for five kinds, and why that is not laziness
 
 `pdfcer-core` has five distinct spec types — `NewTextField`, `NewCheckBox`,
 `NewRadioButton`, `NewChoiceField`, `NewPushButton` — and this is one type
@@ -24,7 +24,7 @@ The conversion to the five engine specs happens in exactly one place
 ([`crate::app::actions::forms`]), where the unused fields are simply not
 read. That is the correct location for the narrowing: at the boundary, once.
 
-## ★★ What is remembered and what is not, and the hazard in between
+## What is remembered and what is not, and the hazard in between
 
 The operator, 2026-08-26: *"remember last settings"*. Everything here is
 remembered **except the name**, and the exception is a correctness one
@@ -36,7 +36,7 @@ remembering the name would mean the second text field an operator places
 silently becomes a second *view* of the first — type in one and the other
 changes — and nothing on the page would say so.
 
-★ **Radio buttons are the deliberate inverse**, and are the reason this is a
+**Radio buttons are the deliberate inverse**, and are the reason this is a
 per-kind rule rather than a blanket one. Radios that share a name are one
 control, which is what makes them exclusive; a group of three is three
 widgets, one name, three export values. So for [`FormFieldKind::Radio`] the

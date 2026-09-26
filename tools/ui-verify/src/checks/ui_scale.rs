@@ -159,7 +159,7 @@ fn measure(
         ))
     })?;
 
-    // ★★★ **The client area in points is READ from the application, never
+    // **The client area in points is READ from the application, never
     // derived from the OS window and the scale this check asked for.**
     //
     // ⚠ The tempting derivation is `client_px / (os_dpi_ratio ×
@@ -205,7 +205,7 @@ fn measure(
         .ok_or_else(|| Error::new("the `window-inner` line carries no parseable `ppp=` field."))?;
     let traced_initial = trace.events("ui-scale-initial").next().is_some();
     let names = declared_names(&trace, ui_rect, "");
-    // ★ The capture. Assertion 2 is about WHERE things landed, and a rect list
+    // The capture. Assertion 2 is about WHERE things landed, and a rect list
     // in a failure string is not something a human can judge — the screenshot
     // is. Taken before the session is dropped, because dropping it closes the
     // window.
@@ -243,7 +243,7 @@ fn measure(
 
 /// Write `ui_scale = <scale>` into the profile's own preferences file.
 ///
-/// # ★ It writes the WHOLE file, and that is deliberate
+/// # It writes the WHOLE file, and that is deliberate
 ///
 /// Not a surgical edit of one line. `Prefs::write_to_string` is what the
 /// application itself writes, so a file assembled any other way would be
@@ -251,7 +251,7 @@ fn measure(
 /// round-trip property is already unit-tested, so the interesting question
 /// here is whether the *shipped* shape is honoured end to end.
 ///
-/// # ★ The file IS restored to 1.0 at the end, and the first version's
+/// # The file IS restored to 1.0 at the end, and the first version's
 /// argument for not restoring it was wrong
 ///
 /// That argument ran: *"this harness already writes `layout.ron` and
@@ -299,7 +299,7 @@ fn write_preference(exe: &Path, scale: f32) -> Result<()> {
         .join("userdata");
     std::fs::create_dir_all(&dir)
         .map_err(|e| Error::new(format!("could not create {}: {e}", dir.display())))?;
-    // ★★★ Through `sandbox::write_prefs`, NOT `fs::write`.
+    // Through `sandbox::write_prefs`, NOT `fs::write`.
     //
     // Only the one key of our own. Every other preference is absent, which the
     // loader treats as "use the default" — the same state a first run
@@ -324,7 +324,7 @@ fn write_preference(exe: &Path, scale: f32) -> Result<()> {
 
 /// Run both launches and compare them.
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    // ★ Restore the profile to 1.0 on EVERY path out of this check.
+    // Restore the profile to 1.0 on EVERY path out of this check.
     //
     // A guard rather than a line at the end, because there are eleven returns
     // below — three SKIPs and eight FAILs — and the one that gets forgotten is
@@ -362,7 +362,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- assertion 0a: the harness's own oracle is calibrated ---------------
     //
-    // ★★★ **Before comparing the two runs, check that what the application
+    // **Before comparing the two runs, check that what the application
     // says about itself agrees with the operating system.**
     //
     // `window-inner` is emitted by the program under test. An oracle built
@@ -422,7 +422,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- assertion 0b: `pixels_per_point` actually moved --------------------
     //
-    // ★ The property itself, not a report of it, and not the harness's own
+    // The property itself, not a report of it, and not the harness's own
     // arithmetic restated.
     //
     // The obvious oracle is *"did the application trace that it changed the
@@ -506,7 +506,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         if a.width() <= 0.0 || a.height() <= 0.0 {
             continue;
         }
-        // ★ The region's SHARE of the client area, not its size in points.
+        // The region's SHARE of the client area, not its size in points.
         // See the module header's table for why the point sizes are expected
         // to be unchanged and why a build in which they grew would be broken
         // in a different way.

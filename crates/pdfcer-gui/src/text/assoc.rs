@@ -9,7 +9,7 @@
 
 /// The Settings group's heading, and the ask-once dialog's title.
 ///
-/// ★ Deliberately identical. The dialog is the offer and the group is where the
+/// Deliberately identical. The dialog is the offer and the group is where the
 /// offer lives afterwards; an operator who ticks *"don't ask again"* and then
 /// changes their mind is looking for the words they dismissed, and finding a
 /// differently-named group is how a feature is concluded not to exist.
@@ -48,7 +48,7 @@ pub fn action_hover() -> String {
 
 /// The ask-once dialog's dismissal.
 ///
-/// ★ *"Not now"* rather than *"Cancel"*: cancelling implies the offer is
+/// *"Not now"* rather than *"Cancel"*: cancelling implies the offer is
 /// withdrawn, and it is not — it is in Settings, permanently, which is the
 /// whole point of the operator's *"then it should be in the top of our
 /// settings"*.
@@ -85,7 +85,7 @@ pub fn state_default() -> String {
 
 /// **Windows opens PDFs with something else, and here is its name.**
 ///
-/// ★ The ProgID is shown raw. It is not a friendly name and there is no
+/// The ProgID is shown raw. It is not a friendly name and there is no
 /// reliable way to turn one into a friendly name — `AppXd4nrz…` is what Windows
 /// stores for Edge — but it is *stable and searchable*, and an operator who
 /// wants to know what has the association can paste it somewhere. A prettier
@@ -168,7 +168,7 @@ pub fn application_description() -> String {
 
 /// pdfcer cannot find its own executable, so there is no path to register.
 ///
-/// ★ Rare enough to be surprising and real enough to need a sentence:
+/// Rare enough to be surprising and real enough to need a sentence:
 /// `current_exe` is documented as able to fail. Saying so plainly beats a
 /// button that does nothing.
 #[must_use]

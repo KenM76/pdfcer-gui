@@ -1,7 +1,7 @@
 //! A dock driven through real `egui` events, frame by frame — the driver the
 //! gesture test files share.
 //!
-//! # ★ Why the first frame of every fixture is empty
+//! # Why the first frame of every fixture is empty
 //!
 //! `egui` resolves a press against the widget rectangles of the **previous**
 //! frame. A fixture that pressed on its first frame would press on nothing, and

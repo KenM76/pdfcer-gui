@@ -7,7 +7,7 @@
 > button to scroll or flip through pages, or the current way it is now when
 > the scroll wheel is used."*
 
-## ★★★ The case for it, which is stronger than a preference
+## The case for it, which is stronger than a preference
 
 This shell opens documents at **fit page** by default. Under
 [`crate::viewer::PageDisplay::Single`] that means the whole sheet is on

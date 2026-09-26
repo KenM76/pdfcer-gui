@@ -81,7 +81,7 @@ pub fn popup_close() -> &'static str {
 /// which they altered nothing. `crate::app::actions::annot::AnnotAction::SetOpen`
 /// carries the whole argument.
 ///
-/// ⇒ ★★ But an unchanged behaviour with an expired reason needs a **new**
+/// ⇒ But an unchanged behaviour with an expired reason needs a **new**
 /// sentence, because the old one now reads as a limitation that is not there.
 /// So this points at [`popup_open_default`], which is the explicit act that
 /// does write. Rule 4: the operator is told what this did *and* where the
@@ -146,7 +146,7 @@ pub fn popup_delete() -> &'static str {
 
 /// What *Delete comment* does, including the part that is not obvious.
 ///
-/// ★★ Three things, and each is required by `docs/core-api/03-capabilities.md`
+/// Three things, and each is required by `docs/core-api/03-capabilities.md`
 /// §3.4: what it removes, that **delete is not redaction**, and — implied by
 /// the second — that a previous revision of the file may still hold it.
 #[must_use]
@@ -167,7 +167,7 @@ pub fn popup_replies(count: usize) -> String {
 /// Beside a reply that is a §12.5.6.2 **group member** rather than an ordinary
 /// reply.
 ///
-/// ★★ Rule 4, and it is the same disclosure `comment_row_is_group_member`
+/// Rule 4, and it is the same disclosure `comment_row_is_group_member`
 /// makes for the same reason: for a group subordinate the standard says its
 /// own `/Contents`, `/M`, `/T` and the rest *"shall be ignored"* in favour of
 /// the group primary's. `pdfcer-core` deliberately does not apply that rule,
@@ -186,7 +186,7 @@ pub fn popup_reply_no_note() -> &'static str {
 
 /// Why there is no editor in Read mode.
 ///
-/// # ★★★ The one place this catalog explains an absence, and why R9 allows it
+/// # The one place this catalog explains an absence, and why R9 allows it
 ///
 /// R9 reserves an explanation for a capability that is **temporarily**
 /// unavailable, and Read mode is the purest example of that in the whole
@@ -196,7 +196,7 @@ pub fn popup_reply_no_note() -> &'static str {
 /// read this and not fix the typo?"*, which has exactly one correct answer and
 /// it is short.
 ///
-/// ★ It names the mode to switch to rather than the mode you are in. *"You are
+/// It names the mode to switch to rather than the mode you are in. *"You are
 /// in Read mode"* is a fact the badge already states; *"Review lets you edit
 /// comments"* is the sentence that gets the operator to the thing they wanted.
 #[must_use]
@@ -218,14 +218,14 @@ pub fn popup_locked() -> &'static str {
 
 /// The hover tooltip over a comment on the page.
 ///
-/// # ★★ Why the tooltip exists when a click opens the whole window
+/// # Why the tooltip exists when a click opens the whole window
 ///
 /// Because it is the cheap half of the same affordance and every reader in the
 /// class has it: hovering answers *"what is this?"* without committing to
 /// opening anything, which is what a reviewer skimming a sheet of forty marks
 /// is doing. Acrobat shows author and text on hover; so does this.
 ///
-/// # ★ It truncates, and the truncation is visible
+/// # It truncates, and the truncation is visible
 ///
 /// A tooltip that grew to a paragraph would cover the drawing it is about — a
 /// note is arbitrary operator text and can be a page of it. The ellipsis is
@@ -262,7 +262,7 @@ pub fn popup_note_hint() -> &'static str {
 // THE FILE'S OWN `/Open` — `EditSession::set_annotation_open`, `Pass 253.3`
 // ===========================================================================
 //
-// ★★★ Two states with the same name, and the whole of this group exists to
+// Two states with the same name, and the whole of this group exists to
 // keep them apart in the operator's head:
 //
 // | | who owns it | undo | survives closing the document |
@@ -276,7 +276,7 @@ pub fn popup_note_hint() -> &'static str {
 
 /// The control that records this comment's window state **in the document**.
 ///
-/// # ★ Why *Open by default* and not *Save open state*
+/// # Why *Open by default* and not *Save open state*
 ///
 /// Because the second names the mechanism and the first names the effect. The
 /// operator's question is *"will this comment be showing when somebody else
@@ -284,7 +284,7 @@ pub fn popup_note_hint() -> &'static str {
 /// correctly as a checkbox caption in both states, which *Save* — a verb — does
 /// not.
 ///
-/// ★★ It is deliberately **not** worded as an instruction about the current
+/// It is deliberately **not** worded as an instruction about the current
 /// bubble. Ticking it does not open or close anything on screen: the operator
 /// is already looking at the window, and moving it under them as a side effect
 /// of recording a preference would be the surface acting on a gesture nobody
@@ -297,7 +297,7 @@ pub fn popup_open_default() -> &'static str {
 /// What ticking it does, on hover — and the one thing about it that costs
 /// something.
 ///
-/// ★★ It names **the file** and it names **undo**, and both halves are
+/// It names **the file** and it names **undo**, and both halves are
 /// required. The first because this is the only control in the pop-up whose
 /// effect is invisible on screen — nothing about the window changes when it is
 /// pressed. The second because it is the only control in the pop-up that
@@ -309,7 +309,7 @@ pub fn popup_open_default_tooltip() -> &'static str {
     "Write this into the file, so the comment opens the same way for the next reader. This is a document change and can be undone."
 }
 
-/// ★★★ **What the engine actually wrote**, for the case where it wrote
+/// **What the engine actually wrote**, for the case where it wrote
 /// nothing.
 ///
 /// # The one outcome an operator cannot tell from a defect
@@ -329,7 +329,7 @@ pub fn popup_open_default_tooltip() -> &'static str {
 /// answer** — if the two ever disagree, the operator hears about it rather
 /// than the disagreement being swallowed.
 ///
-/// # ★ `None` on success, and that is not silence
+/// # `None` on success, and that is not silence
 ///
 /// A write that landed needs no sentence: the tick is on screen, it is what
 /// the operator asked for, and a confirmation for every ordinary success is
@@ -373,7 +373,7 @@ fn truncate(text: &str) -> String {
 mod tests {
     use super::*;
 
-    /// ★★★ **Rule 15: no string here says a bare "dimension".**
+    /// **Rule 15: no string here says a bare "dimension".**
     ///
     /// The same sweep `crate::text::panels::comments` runs, over this catalog,
     /// and for its reason: **ce dimensions** are the ones pdfcer authors and
@@ -448,7 +448,7 @@ mod tests {
         assert_eq!(tip.chars().count(), TOOLTIP_CHARS + 1, "{tip}");
     }
 
-    /// ★★ **The tooltip does not panic on a multi-byte note.**
+    /// **The tooltip does not panic on a multi-byte note.**
     ///
     /// The failure this guards is not cosmetic: slicing a `String` by byte
     /// index inside a character panics, and the panic would be *in the frame
@@ -509,7 +509,7 @@ mod tests {
         assert!(plain.contains("Line"), "{plain}");
     }
 
-    /// ★★★ **The no-op sentence fires only when the engine wrote nothing.**
+    /// **The no-op sentence fires only when the engine wrote nothing.**
     ///
     /// # Both directions, and the silent direction is the one that matters
     ///
@@ -520,7 +520,7 @@ mod tests {
     /// undo entry, and confirming it would be noise: the tick is on screen and
     /// it is what the operator asked for.
     ///
-    /// ★ A build that spoke on every call would make the one sentence that
+    /// A build that spoke on every call would make the one sentence that
     /// carries information — *"there was nowhere to record this"* —
     /// indistinguishable from the two that carry none, which is the failure
     /// this project calls a confirmation nobody reads.

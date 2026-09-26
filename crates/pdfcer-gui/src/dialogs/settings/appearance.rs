@@ -55,7 +55,7 @@ pub fn theme(ui: &mut Ui, draft: &mut Draft) {
         }
     }
 
-    // ★ The token names a theme this build does not have.
+    // The token names a theme this build does not have.
     //
     // Said out loud, with the name quoted, because otherwise the operator sees
     // none of the three selected and no explanation — which reads as a
@@ -142,7 +142,7 @@ mod tests {
     use super::*;
     use pdfcer_core::settings::Settings;
 
-    /// ★ Every preset the shell offers has a name and a key that round-trips.
+    /// Every preset the shell offers has a name and a key that round-trips.
     ///
     /// The bridge this module is: a preset whose key `from_key` does not
     /// recognise would render as a radio nobody can select — click it, the

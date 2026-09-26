@@ -7,7 +7,7 @@
 /// layout pass. See the module header.
 #[derive(Debug, Clone, PartialEq)]
 pub enum WriteAction {
-    /// ★ **Write one page's vector geometry out as a DXF.**
+    /// **Write one page's vector geometry out as a DXF.**
     ///
     /// Raised by `crate::dialogs::export_dxf` and by nothing else.
     ///
@@ -40,7 +40,7 @@ pub enum WriteAction {
         /// put a second constructor in the path.
         options: pdfcer_core::export::dxf::DxfOptions,
     },
-    /// ★★★ **Write one or more pages out as a picture** — PNG, JPEG or SVG.
+    /// **Write one or more pages out as a picture** — PNG, JPEG or SVG.
     /// `OPERATOR_REQUESTS.md` **O120**.
     ///
     /// Raised by `crate::dialogs::export_image` and by nothing else.
@@ -54,7 +54,7 @@ pub enum WriteAction {
     /// because its one decision (the format) *is* recoverable from the picker,
     /// as the extension the operator types.
     ///
-    /// # ★★ Why the plan is the SHELL's type and not the engine's
+    /// # Why the plan is the SHELL's type and not the engine's
     ///
     /// [`Self::Dxf`] carries `DxfOptions` because that is literally the value
     /// the writer takes. There is no engine equivalent here, and that is a fact
@@ -64,7 +64,7 @@ pub enum WriteAction {
     /// and *"which of the three, over which pages"* is a question none of them
     /// asks. See `super::imageexport` for the whole argument.
     ///
-    /// # ★ The pages are RESOLVED, not a scope and a string
+    /// # The pages are RESOLVED, not a scope and a string
     ///
     /// The window has already parsed the typed range — it needs the answer to
     /// decide whether Export is pressable — so re-parsing in the apply phase
@@ -74,7 +74,7 @@ pub enum WriteAction {
         /// Everything the writer needs, frozen when Export was pressed.
         plan: super::imageexport::ImagePlan,
     },
-    /// ★★★ **Write the words on one or more pages out as a plain text file.**
+    /// **Write the words on one or more pages out as a plain text file.**
     ///
     /// Raised by `crate::dialogs::export_text` and by nothing else. The
     /// operator, 2026-09-04: *"also the engine can export PDFs as text. we
@@ -88,14 +88,14 @@ pub enum WriteAction {
     /// picker. `FormData` needs no plan precisely because its one decision (the
     /// format) *is* recoverable from the picker, as the extension typed.
     ///
-    /// # ★ The pages are RESOLVED, not a scope and a string
+    /// # The pages are RESOLVED, not a scope and a string
     ///
     /// [`Self::Image`]'s reason verbatim: the window has already parsed the
     /// typed range — it needs the answer to decide whether Export is pressable
     /// — so re-parsing in the apply phase would be a second reading of the same
     /// box against a document that may have changed pages in between.
     ///
-    /// # ★★ The plan is the SHELL's type, and there is no engine equivalent
+    /// # The plan is the SHELL's type, and there is no engine equivalent
     ///
     /// [`Self::Dxf`] carries `DxfOptions` because that is literally the value
     /// the writer takes. There is no writer here at all: the engine offers
@@ -110,7 +110,7 @@ pub enum WriteAction {
     },
     /// **Write the form's values out as FDF, XFDF or CSV.**
     ///
-    /// # ★ It carries nothing, and that is the difference from [`Self::Dxf`]
+    /// # It carries nothing, and that is the difference from [`Self::Dxf`]
     ///
     /// The DXF export carries a page index and an options struct because a
     /// dialog collected both before the action was raised. This one has no
@@ -124,7 +124,7 @@ pub enum WriteAction {
     /// Nothing about the document is being ordered, and nothing about it
     /// changes.
     FormData,
-    /// ★★★ **Write the already-serialised compacted copy to a file the operator
+    /// **Write the already-serialised compacted copy to a file the operator
     /// picks.**
     ///
     /// Raised by `crate::dialogs::compact` and by nothing else.
@@ -133,10 +133,10 @@ pub enum WriteAction {
     /// the window quoted a measurement of them, and when a confirmation quotes a
     /// number, the thing it quoted is the operand.
     ///
-    /// ★ No path. The picker opens inside the apply phase, for
+    /// No path. The picker opens inside the apply phase, for
     /// [`Self::FormData`]'s reason — a native file dialog must not open
     /// inside a layout pass.
-    /// ★★★ **Write this document's pages out as an Acrobat stamp
+    /// **Write this document's pages out as an Acrobat stamp
     /// collection.** `OPERATOR_REQUESTS.md` **O169**.
     ///
     /// Raised by `crate::dialogs::stamp_collection` and by nothing else.
@@ -149,7 +149,7 @@ pub enum WriteAction {
     /// writer takes: `crate::stamps::write::build_and_write` reads exactly this
     /// struct.
     ///
-    /// # ★★ Why the plan and not a name list plus a page list
+    /// # Why the plan and not a name list plus a page list
     ///
     /// Because those are the two things that must not be allowed to drift
     /// apart. `pdfcer_core::stamp_file::name_stamp_pages` names `stamps[i]` to
@@ -159,7 +159,7 @@ pub enum WriteAction {
     /// wrong artwork every time. [`crate::stamps::Plan`] derives both lists
     /// from the same rows, so the invariant travels with the value.
     ///
-    /// ★ No path. The picker opens inside the apply phase, for
+    /// No path. The picker opens inside the apply phase, for
     /// [`Self::FormData`]'s reason — a native file dialog must not open inside
     /// a layout pass.
     StampCollection {

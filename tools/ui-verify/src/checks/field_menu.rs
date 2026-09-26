@@ -31,7 +31,7 @@ const PAGE_REGION: &str = "page";
 
 /// Where the field is placed, as page fractions.
 ///
-/// ★ Well inside the sheet, so the placement lands on paper and the right-click
+/// Well inside the sheet, so the placement lands on paper and the right-click
 /// that follows is nowhere near an edge, where a popup would be repositioned.
 const PLACE_AT: (f64, f64) = (0.30, 0.55);
 
@@ -173,14 +173,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- B: disarm, CLEAR, then select it ----------------------------------
     //
-    // ★ Escape first. The tool stays armed after a placement, exactly as a
+    // Escape first. The tool stays armed after a placement, exactly as a
     // markup pen does, so a second click without this would place a SECOND
     // field rather than select one — and the check would fail with a message
     // about selection when the cause was arming.
     driver.press(crate::sys::vk::ESCAPE)?;
     session.settle(12);
 
-    // ★★★ AND THEN A CLICK ON BLANK PAPER — `checks::formaim`'s header carries
+    // AND THEN A CLICK ON BLANK PAPER — `checks::formaim`'s header carries
     // the trace lines that put it here, and `widget_move`'s phase B is the same
     // step for the same reason.
     //
@@ -210,7 +210,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(20);
 
     let trace = session.trace()?;
-    // ★ `field=` absent IS the cleared line: the application writes
+    // `field=` absent IS the cleared line: the application writes
     // `form-field-selected none` with no key/value pairs for a cleared
     // selection, and `field=…` for every other one.
     if !trace.events(SELECTED).any(|l| l.get("field").is_none()) {
@@ -294,7 +294,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- D: …and it had something to offer ----------------------------------
     //
-    // ★★★ The second assertion, and the one the first cannot see past.
+    // The second assertion, and the one the first cannot see past.
     // `canvas-menu-invoked` is written only when the resolved menu
     // `offers_anything`; a menu whose every item is DISABLED resolves its
     // context correctly and never opens.
@@ -314,7 +314,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // this line. Two independent defects, the second hidden behind the first.
     //
     //
-    // ★ Admissible as evidence because phase C proved the menu resolved on this
+    // Admissible as evidence because phase C proved the menu resolved on this
     // very frame (`canvas-menu context=canvas.field`): the absence below can
     // only mean "resolved and drew no rows", never "no right-click happened".
     // `crate::checks` rule 4.
@@ -341,7 +341,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         list(&rows)
     ));
 
-    // ★★ `canvas-menu-invoked` is REPORTED and never asserted, and the
+    // `canvas-menu-invoked` is REPORTED and never asserted, and the
     // distinction is the point: it appears only once a row has been activated,
     // so on this check — which opens the menu and presses nothing — it is
     // correctly absent. Recorded so a later check that does press a row has the
@@ -354,7 +354,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "{invoked} `{INVOKED_EVENT}` line(s) — this check activates no row, so zero is correct"
     ));
 
-    // ★ Escape, so the popup is not left over the page for whatever runs next
+    // Escape, so the popup is not left over the page for whatever runs next
     // in the sweep. `right_click_at` deliberately does not do this itself —
     // leaving it open is what lets a screenshot show one — so the caller says
     // so, here, where the reason is local.

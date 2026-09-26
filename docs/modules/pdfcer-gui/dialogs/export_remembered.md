@@ -62,7 +62,7 @@ Every value below goes through the same `*_key` function the preferences
 file itself uses, so the token a driven check reads and the token on disk
 cannot drift.
 
-# ★ Where these are CALLED, which is the part that is a decision
+# Where these are CALLED, which is the part that is a decision
 
 At the **Export press**, immediately before the `Action` is pushed — never
 when the window closes.

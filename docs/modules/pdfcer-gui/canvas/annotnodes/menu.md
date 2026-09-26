@@ -11,7 +11,7 @@
 > stopgap. The right-click menu lives in a file another job was working in
 > today, so it is written down here rather than half-built.
 
-## ★★★ Why the menu route needs no armed tool, and the chord route does
+## Why the menu route needs no armed tool, and the chord route does
 
 It looks like an inconsistency and it is a rule applied at its own edge.
 
@@ -31,7 +31,7 @@ they had already named, which is the shape of every complaint in
 ⇒ Recorded here rather than at the call site because it is the kind of
 asymmetry a later reader "fixes".
 
-## ★★ The engine is ASKED, never restated
+## The engine is ASKED, never restated
 
 [`super`]'s header carries the matrix — which subtype accepts a move, an
 insert, a remove, and what its floor is. **This module does not read that
@@ -56,12 +56,12 @@ reserved for temporarily unavailable and is always explained on hover"* —
 and it is derived rather than declared. A `/Line` gets no *Add a point here*
 because the engine says `GeometryNotReshapable`, not because this file holds
 a list of subtypes; the day the engine teaches `/Line` to grow a third
-point, the row appears with nothing here edited. ★ And that is precisely
+point, the row appears with nothing here edited. And that is precisely
 what happened to `/Ink` on 2026-09-09: the engine grew the verbs, [`super`]
 grew one `match` arm, and the two rows appeared on a freehand mark with this
 file's *decision* unchanged — only its *addressing* grew a second family.
 
-## ★★★ The operand problem, and where it is parked
+## The operand problem, and where it is parked
 
 A menu row carries **a command id and nothing else**
 (`egui_shell::manifest::Item::Command`). *"Add a point here"* needs to know

@@ -23,7 +23,7 @@ pub struct Slots {
     /// This is the *selection* indicator: it says which thing is moving. What
     /// it will look like is [`Self::shape`]'s job.
     pub ghost: Option<egui::Vec2>,
-    /// ★★★ **The selection's own geometry at its new position**, in page space
+    /// **The selection's own geometry at its new position**, in page space
     /// (`OPERATOR_REQUESTS.md` O63).
     ///
     /// **Ken, 2026-08-30:** *"if I moved the end of a line, it didn't show me
@@ -50,12 +50,12 @@ pub struct Slots {
     /// A ce dimension being dragged to a new placement, as the **page-space**
     /// segments it would be drawn as on release.
     ///
-    /// ★ Not an outline of an existing shape at all — it is the dimension
+    /// Not an outline of an existing shape at all — it is the dimension
     /// redrawn from its own geometry, because moving a dimension line *stretches
     /// its extension lines* rather than translating a box. A ghost offset by a
     /// delta would draw the wrong picture entirely.
     pub dimension: Option<Vec<(Point, Point)>>,
-    /// ★★★ **A markup shape redrawn from its nodes' new positions**, as
+    /// **A markup shape redrawn from its nodes' new positions**, as
     /// page-space segments — `Pass 255.0`, and the operator's *"I also can't
     /// edit or delete nodes of a markup shape once it is drawn."*
     ///
@@ -68,28 +68,28 @@ pub struct Slots {
     /// makes the identical choice against `Self::ghost` for the identical
     /// reason.
     ///
-    /// ★ Not a ghosted outline: moving one node **stretches two segments**, so
+    /// Not a ghosted outline: moving one node **stretches two segments**, so
     /// a bounding box translated by a delta would draw a picture the release
     /// does not commit.
     pub markup_nodes: Option<Vec<(Point, Point)>>,
     /// What a dragged node is snapping to — a ce dimension's corner or a markup
     /// shape's node.
     ///
-    /// ★ Separate from [`Self::dimension`] for the reason `dimdrag::VertexDrag`
+    /// Separate from [`Self::dimension`] for the reason `dimdrag::VertexDrag`
     /// gives: the polyline is page-space geometry and this is one screen-space
     /// glyph, drawn by a different painter at a different moment.
     pub vertex_snap: Option<SnapCandidate>,
     /// A markup annotation being dragged, as the **canvas-space** rectangle it
     /// would occupy on release.
     ///
-    /// ★★ Not [`Self::ghost`], even though it is the same shape and the two can
+    /// Not [`Self::ghost`], even though it is the same shape and the two can
     /// never both be `Some` on one frame. Sharing would work and would make the
     /// painter's question *"which kind of thing is this rectangle about?"*
     /// answerable only by looking at the selection.
     pub annot_ghost: Option<egui::Rect>,
     /// The quads a text-following highlight would cover, in canvas space.
     ///
-    /// ★ A **list** of rectangles — one per line the drag crosses — where a band
+    /// A **list** of rectangles — one per line the drag crosses — where a band
     /// is two points. The painter draws them with the same wash the band uses so
     /// the two gestures look like one feature.
     pub text_marks: Option<Vec<egui::Rect>>,
@@ -98,7 +98,7 @@ pub struct Slots {
     pub band: Option<crate::canvas::markup::band::Preview>,
     /// The freehand trail, already simplified, in canvas space.
     ///
-    /// ★ Beside [`Self::band`] rather than a variant of it: a band is two points
+    /// Beside [`Self::band`] rather than a variant of it: a band is two points
     /// and a shape rule, a trail is a polyline of however many points survived
     /// `markup::ink::simplify`. Folding them would put a `Vec` in a value the
     /// band path copies per frame for no benefit.

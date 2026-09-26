@@ -18,7 +18,7 @@ place — *"the standard copy/paste … aren't implemented"* — and a build tha
 implemented them and stayed silent when it could not act would read
 identically.
 
-## ★ Why two of the four name the ENGINE and two name the selection
+## Why two of the four name the ENGINE and two name the selection
 
 Because they are different kinds of "no" and an operator's next move differs:
 

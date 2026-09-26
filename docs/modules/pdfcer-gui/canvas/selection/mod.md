@@ -18,7 +18,7 @@ All four identity types are re-exported here, so
 `crate::canvas::selection::SelectionLevel` remains the path every caller
 uses and the seam is invisible from outside the module.
 
-## ★ The invariant, stated first because everything here is shaped by it
+## The invariant, stated first because everything here is shaped by it
 
 `GUI_ROADMAP.md` Phase 1, from the operator's own words:
 

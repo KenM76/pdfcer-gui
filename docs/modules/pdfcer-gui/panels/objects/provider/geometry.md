@@ -5,7 +5,7 @@ is inside this thing?"* for a [`TargetId`] rather than for a page
 paint-order index, which is what lets the Part and Node rungs be offered for
 something painted inside a form XObject.
 
-## ★★ Why a module rather than more methods in [`super`]
+## Why a module rather than more methods in [`super`]
 
 R2's gate, and it points at a real seam. `super` answers *"what is on this
 page and where is it?"* — the decomposition, the hit tests, the canvas
@@ -27,7 +27,7 @@ sites move over one at a time behind their own tests. The duplication is a
 `canvas::mapping`'s header draws between a shared helper and a second
 opinion.
 
-## ★★ The engine already published the leaf-friendly forms
+## The engine already published the leaf-friendly forms
 
 `hit_test_subpaths_of(&PathObject, …)` takes the object rather than a model
 and an index, and `PathObject::page_subpaths` is geometry in page space

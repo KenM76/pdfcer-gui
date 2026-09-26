@@ -296,7 +296,7 @@ pub fn snap_marker_shapes(at: Pos2, kind: SnapKind, color: Color32, size: f32) -
 /// on the preset where it happens."* Substituting a fallback here would undo
 /// that, one layer further from the palette.
 ///
-/// # ★ The `Option` is load-bearing, and a `None` here is silent on screen
+/// # The `Option` is load-bearing, and a `None` here is silent on screen
 ///
 /// A context with no installed role map answers `None` for every role, and the
 /// snap marker then falls back to the selection stroke — the exact shape of
@@ -419,7 +419,7 @@ mod tests {
     /// Every snap kind the **engine** offers draws something, and the derived
     /// centerline's glyph is not the routine one's.
     ///
-    /// # ★★★ It consumes `SnapKind::all()` and never a hand-written list
+    /// # It consumes `SnapKind::all()` and never a hand-written list
     ///
     /// A hand-written `let kinds = [SnapKind::Node, …, SnapKind::Axis];` under a
     /// name promising **every** kind agrees with the real list on every day

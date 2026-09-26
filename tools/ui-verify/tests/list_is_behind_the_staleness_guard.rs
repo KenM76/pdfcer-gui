@@ -78,7 +78,7 @@ fn stale_copy_of_the_harness(tag: &str) -> PathBuf {
     let dest = dir.join(format!("ui-verify-{tag}{extension}"));
     std::fs::copy(&source, &dest).expect("cannot copy the harness binary");
 
-    // ★ The whole fixture is this one call. A fresh copy carries TODAY's mtime,
+    // The whole fixture is this one call. A fresh copy carries TODAY's mtime,
     // which is newer than every source file, so an unmodified copy is not stale
     // and the guard would stay silent — the test would then pass for the wrong
     // reason on the day the ordering was reverted.
@@ -97,7 +97,7 @@ fn stale_copy_of_the_harness(tag: &str) -> PathBuf {
 /// `RESUME.md` names, reimplemented so this test measures what an operator's
 /// shell measures.
 ///
-/// ★ Deliberately the same imprecise pattern as the documented command, down
+/// Deliberately the same imprecise pattern as the documented command, down
 /// to picking up the `--exe` target table's rows. Tightening it here would
 /// make this test agree with a command nobody runs.
 fn what_the_count_command_would_answer(stdout: &str) -> usize {

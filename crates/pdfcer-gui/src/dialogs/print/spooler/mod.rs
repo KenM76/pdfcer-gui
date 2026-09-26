@@ -1,6 +1,6 @@
 //! # `dialogs::print::spooler` — the one module that knows `pdfcer-print` exists
 //!
-//! ## ★ Read this first: this module is the ADAPTER, and it is now live
+//! ## Read this first: this module is the ADAPTER, and it is now live
 //!
 //! Everything else in [`crate::dialogs::print`] — the three tabs, the range
 //! parser, the zoom anchor, the preview raster cache, the clip disclosure,
@@ -14,7 +14,7 @@ use std::fmt;
 
 mod device;
 
-// ★ Re-exported rather than left as `spooler::device::…`.
+// Re-exported rather than left as `spooler::device::…`.
 //
 // The dialog is written against `spooler::` as ONE vocabulary, and it was
 // written that way before this module became a directory. A split that made
@@ -205,7 +205,7 @@ pub(crate) struct JobSpec {
 /// Which sheet the driver is asked to feed. Maps to
 /// `pdfcer_print::PaperSelection`.
 ///
-/// # ★ Why choosing paper is a REQUEST and not a setting
+/// # Why choosing paper is a REQUEST and not a setting
 ///
 /// `pdfcer-print` reported, while building this: **two drivers were found
 /// silently ignoring a paper request.** The `DEVMODE` is handed over with
@@ -246,7 +246,7 @@ pub(crate) enum PaperChoice {
     /// **Let pdfcer pick the sheet from the document's pages** — operator
     /// request O167, 2026-09-10.
     ///
-    /// # ★ This variant never reaches the engine, and that is the design
+    /// # This variant never reaches the engine, and that is the design
     ///
     /// `pdfcer_print::PaperSelection` has no auto variant and must not grow
     /// one: the engine is handed a job, not a document, and the pages it is
@@ -290,7 +290,7 @@ pub(crate) struct DeviceSettings {
 ///
 /// Maps to `pdfcer_print::DeviceGeometry`.
 ///
-/// # ★ Turned, and that word is the whole defect this type prevents
+/// # Turned, and that word is the whole defect this type prevents
 ///
 /// `printer_caps` reports the device's *default* `DEVMODE`. On a
 /// portrait-default printer that is a portrait printable area — so a
@@ -351,7 +351,7 @@ pub(crate) struct Placement {
 pub(crate) struct PagePlan {
     /// The **document** page this describes, zero-based.
     ///
-    /// ★ Not a position in the plan list. The plan list is the job's
+    /// Not a position in the plan list. The plan list is the job's
     /// *sequence* — subset-filtered, possibly reversed, possibly repeated for
     /// copies — so the two coincide only for a whole-document forward job.
     /// Indexing page sizes by a plan's position rather than by this field is
@@ -476,7 +476,7 @@ pub(crate) struct SpoolReport {
     pub(crate) job_id: Option<u32>,
     /// Where the `DEVMODE` this job was sent with came from.
     ///
-    /// ★ One of its four values is a disclosure the operator would otherwise
+    /// One of its four values is a disclosure the operator would otherwise
     /// never learn — see [`SettingsSource`].
     pub(crate) settings_source: SettingsSource,
 }
@@ -484,7 +484,7 @@ pub(crate) struct SpoolReport {
 /// Where the `DEVMODE` a job was sent with came from. Maps to
 /// `pdfcer_print::SettingsSource`.
 ///
-/// # ★ Why a shell must report this, and why it cannot be inferred
+/// # Why a shell must report this, and why it cannot be inferred
 ///
 /// pdfcer writes at most four members of a `DEVMODE`. Everything else a device
 /// does — media type, print quality, colour handling, stapling, output bin,
@@ -516,7 +516,7 @@ pub(crate) enum SettingsSource {
     /// properties dialog — was amended. Nothing to disclose; it is what they
     /// asked for.
     CallerSupplied,
-    /// ★ The driver would not report its settings and pdfcer synthesised one.
+    /// The driver would not report its settings and pdfcer synthesised one.
     /// **Disclosed** — see the type's own docs.
     Synthesised,
 }
@@ -595,7 +595,7 @@ const fn to_engine_settings(settings: DeviceSettings) -> pdfcer_print::DeviceSet
 
 /// The paper request, into the engine's.
 ///
-/// # ★ What pdfcer asserts over a driver configuration, and what it leaves
+/// # What pdfcer asserts over a driver configuration, and what it leaves
 ///
 /// The engine amends a `DEVMODE` rather than replacing it, and the members
 /// named in [`DeviceSettings`] win over whatever the configuration held. So
@@ -723,7 +723,7 @@ pub(crate) fn plan(
 ) -> Result<Job, Unavailable> {
     let engine_spec = to_engine_spec(spec);
 
-    // 1. CAPABILITIES, ★ FOR THE SHEET THIS JOB WILL ACTUALLY USE.
+    // 1. CAPABILITIES, FOR THE SHEET THIS JOB WILL ACTUALLY USE.
     //
     //
     //    That is the same failure as the un-turned geometry described on
@@ -770,7 +770,7 @@ pub(crate) fn plan(
         }
     };
 
-    // 2. ★ TURN THE GEOMETRY FIRST. Steps 3 and 4 both take `&device`, so a
+    // 2. TURN THE GEOMETRY FIRST. Steps 3 and 4 both take `&device`, so a
     //    geometry turned after them would leave the dialog previewing a sheet
     //    the job was not planned for — the 77 %-scale defect described on
     //    [`DeviceGeometry`], reintroduced by sequencing rather than by a
@@ -825,7 +825,7 @@ pub(crate) fn plan(
 /// Fill with
 /// `pdfcer_print::spool(printer, &bitmaps, DryRun::No, None, settings, first_page_pt)`.
 ///
-/// # ★ This is the one call in the application that consumes paper
+/// # This is the one call in the application that consumes paper
 ///
 /// `pdfcer-print`'s own header: *"Printing consumes paper, occupies a device
 /// other people may share, and cannot be undone. Nothing in this crate starts
@@ -877,7 +877,7 @@ pub(crate) fn spool(
 
     let pages: Vec<pdfcer_print::PageBitmap> = bitmaps.iter().map(to_engine_bitmap).collect();
 
-    // ★ `DryRun::No` and `output: None`, both hard-coded, both deliberate.
+    // `DryRun::No` and `output: None`, both hard-coded, both deliberate.
     //
     // The CLI defaults to a dry run and requires `--send`, and that is right
     // *there*: a command line has no confirmation step of its own, so the
@@ -885,7 +885,7 @@ pub(crate) fn spool(
     // operator chose a printer, read a clip count in the button's own label,
     // and pressed it. A dry-run toggle on this surface would be a second gate
     // whose only effect is to make the first one mean less.
-    // ★ `spool_with_config` rather than `spool`, always — including when
+    // `spool_with_config` rather than `spool`, always — including when
     // there is no configuration, where `None` makes it the same call.
     //
     // One call site rather than two branches: a shell that chose between two
@@ -955,7 +955,7 @@ mod tests {
         }
     }
 
-    /// ★ **The regression test for the defect this module carried for the
+    /// **The regression test for the defect this module carried for the
     /// whole of v0.1.0.** See the module header.
     ///
     /// # What it asserts, and why the obvious assertion is the wrong one
@@ -1024,7 +1024,7 @@ mod tests {
              says \"choose another printer\" rather than \"there are none\": {planned:?}"
         );
 
-        // ★ Spooling is called with an EMPTY page list. That is not laziness:
+        // Spooling is called with an EMPTY page list. That is not laziness:
         // it is the one input for which `spool` cannot start a job whatever
         // else is true, so a test suite may address it to a real printer name
         // without any risk of consuming paper. The refusal still comes from
@@ -1037,7 +1037,7 @@ mod tests {
         );
     }
 
-    /// ★ No refusal this module produces is the string the defect produced.
+    /// No refusal this module produces is the string the defect produced.
     ///
     /// The narrowest possible statement of the regression, and the one that
     /// would fail if somebody restored a `NotLinked`-shaped shortcut — for
@@ -1146,7 +1146,7 @@ mod tests {
         ));
         assert!(matches!(engine.duplex, pdfcer_print::Duplex::LongEdge));
         assert!(engine.pick_tray_by_page_size);
-        // ★ The paper id must survive the mapping UNCHANGED. It is a
+        // The paper id must survive the mapping UNCHANGED. It is a
         // `dmPaperSize` the driver defined, and a conversion that shifted it
         // by one would request a different sheet from the same list — the
         // failure would be paper, not an error.

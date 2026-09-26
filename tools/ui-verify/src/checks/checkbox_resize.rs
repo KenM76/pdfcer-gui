@@ -21,14 +21,14 @@ const BOX_LINE: &str = crate::checks::formaim::TARGET_LINE;
 const SELECTED: &str = "form-field-selected"; // ui-text-exempt: a trace event name, never displayed
 /// The line the resize gesture writes when it commits.
 const RESIZE_EVENT: &str = "resize-widget-commit"; // ui-text-exempt: a trace event name, never displayed
-/// ★ The line this check exists to read.
+/// The line this check exists to read.
 const APPLIED: &str = "edit-widget-applied"; // ui-text-exempt: a trace event name, never displayed
 /// The page region, so a failure can say whether a sheet was drawn at all.
 const PAGE_REGION: &str = "page"; // ui-text-exempt: a trace region name, never displayed
 
 /// The box dragged out for the check box, as page fractions.
 ///
-/// ★ Deliberately far larger than a check box ever is on paper. The subject is
+/// Deliberately far larger than a check box ever is on paper. The subject is
 /// the appearance rebuild, not the size, and a box that is generous on screen
 /// is one whose eight grips do not overlap each other — see the header.
 const DRAG_FROM: (f64, f64) = (0.28, 0.58);
@@ -185,7 +185,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- B: disarm, clear, then select it ----------------------------------
     //
-    // ★ Escape first: the tool stays armed after a placement, so the next press
+    // Escape first: the tool stays armed after a placement, so the next press
     // would author a SECOND field. Then a click on blank paper, because
     // authoring already selected this one and `select_click` traces only a
     // CHANGE — the finding `checks::formaim`'s header carries.
@@ -261,7 +261,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- D: ★★★ and the engine REDREW it ------------------------------------
+    // --- D: and the engine REDREW it ------------------------------------
     let Some(applied) = trace.last(APPLIED) else {
         return Ok(Some(format!(
             "THE RESIZE NEVER REACHED THE ENGINE: `{RESIZE_EVENT}` was traced and no `{APPLIED}` \

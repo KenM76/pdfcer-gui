@@ -28,7 +28,7 @@ const PRESETS: [f32; 6] = [
 /// Returns nothing; the preference is written in place and the caller decides
 /// whether it moved.
 pub(super) fn popup(ui: &mut egui::Ui, max_zoom_percent: &mut f32) {
-    // ★ Not `.strong()` — `tools/gates/check-strong-text.sh` rejects it, and
+    // Not `.strong()` — `tools/gates/check-strong-text.sh` rejects it, and
     // defect D11 is why: egui resolves it to the accent-filled widget state,
     // which is pale text on a pale background. The hierarchy is position and
     // the separator beneath.
@@ -65,7 +65,7 @@ pub(super) fn popup(ui: &mut egui::Ui, max_zoom_percent: &mut f32) {
 mod tests {
     use super::*;
 
-    /// ★★ **Every preset is inside the range the preference will accept.**
+    /// **Every preset is inside the range the preference will accept.**
     ///
     /// A preset the parser would clamp is a row that silently does something
     /// other than what it says — the operator picks a billion and the file
@@ -93,7 +93,7 @@ mod tests {
         }
     }
 
-    /// ★ **The shipped default is one of the rows**, so the popup always has a
+    /// **The shipped default is one of the rows**, so the popup always has a
     /// current selection to show. Without this a fresh install would open the
     /// popup with nothing marked, which reads as "no maximum is set".
     #[test]

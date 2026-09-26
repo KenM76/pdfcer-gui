@@ -81,7 +81,7 @@ pub enum GestureOutcome {
     Marquee {
         /// The band, normalised — dragged in any of four directions.
         rect: Rect,
-        /// ★★★ **Was it dragged RIGHT TO LEFT?** — `OPERATOR_REQUESTS.md` O88.
+        /// **Was it dragged RIGHT TO LEFT?** — `OPERATOR_REQUESTS.md` O88.
         ///
         /// AutoCAD's names for the two bands: a left-to-right drag is a
         /// **window** and takes only what it completely surrounds; a
@@ -106,7 +106,7 @@ pub enum GestureOutcome {
         /// ⇒ Decided once, here, exactly as [`Self::Marquee::shift`] is sampled
         /// once at the press rather than re-read by whoever needs it.
         ///
-        /// ★ The comparison is on **x only**. A drag that goes left and up is a
+        /// The comparison is on **x only**. A drag that goes left and up is a
         /// crossing window; one that goes right and down is a window. AutoCAD's
         /// rule is horizontal, and a rule that also read y would give the four
         /// diagonal drags two meanings apiece with nothing on screen to say
@@ -127,7 +127,7 @@ pub enum GestureOutcome {
         /// Draw the ghost, or commit the move.
         phase: Phase,
     },
-    /// ★★ A **rotate** drag on the handle above the selection box.
+    /// A **rotate** drag on the handle above the selection box.
     ///
     /// # Why this carries two POSITIONS and not a delta
     ///
@@ -153,7 +153,7 @@ pub enum GestureOutcome {
         /// Draw the ghost, or commit.
         phase: Phase,
     },
-    /// ★★ A **text box** being dragged out: the two raw endpoints, in canvas
+    /// A **text box** being dragged out: the two raw endpoints, in canvas
     /// space.
     ///
     /// Raw and in drag order, for the reason [`Self::Markup`] states at length —
@@ -193,7 +193,7 @@ pub enum GestureOutcome {
     },
     /// A **Bézier handle** drag.
     ///
-    /// # ★ Why this carries the pointer's CANVAS POSITION and the others carry
+    /// # Why this carries the pointer's CANVAS POSITION and the others carry
     /// a delta
     ///
     /// Because `EditSession::move_handle` takes the control point's **new
@@ -229,7 +229,7 @@ pub enum GestureOutcome {
         index: usize,
         /// Where the press landed, in canvas space.
         ///
-        /// ★ Carried so the GRAB POINT can be preserved (`drag-moves` D8).
+        /// Carried so the GRAB POINT can be preserved (`drag-moves` D8).
         /// Without it the only thing to do with `at` is assign it to the
         /// vertex, which teleports the corner under the cursor on the first
         /// frame — the operator grabbed a handle a few pixels off centre and
@@ -252,7 +252,7 @@ pub enum GestureOutcome {
     /// `DragKind::DimensionVertex`'s own note makes the argument against
     /// folding it into `Handle` in the same words.
     ///
-    /// ★ R8b rule 15: this is a **markup shape**. A **ce dimension** is also a
+    /// R8b rule 15: this is a **markup shape**. A **ce dimension** is also a
     /// `/Line` and is claimed by the variant above; **pdf dimensions** are CAD
     /// page content and are not annotations at all.
     MarkupVertex {
@@ -292,7 +292,7 @@ pub enum GestureOutcome {
     /// A markup band: the shape being authored, and its two **raw** endpoints
     /// in canvas space.
     ///
-    /// # ★ Why this carries two points and not a `Rect`
+    /// # Why this carries two points and not a `Rect`
     ///
     /// Because a `Rect` cannot express which corner the operator started at,
     /// and for an arrow that is the entire content of the gesture. `Rect` has
@@ -348,13 +348,13 @@ pub enum GestureOutcome {
         /// Draw the band, or ask for the details.
         phase: Phase,
     },
-    /// ★★★ **A window is waiting for a box** — `OPERATOR_REQUESTS.md` O66.
+    /// **A window is waiting for a box** — `OPERATOR_REQUESTS.md` O66.
     ///
     /// Shaped exactly like [`Self::FormField`], and for the same reason: the
     /// two corners travel raw and in drag order, and whoever turns them into a
     /// page rect normalises once.
     ///
-    /// ★ Unlike every other outcome here, **nothing on this canvas commits
+    /// Unlike every other outcome here, **nothing on this canvas commits
     /// it.** `canvas::placing` writes the answer to `egui::Memory` and the
     /// requesting dialog reads it back through `app::frame`, because the
     /// operator has not pressed Insert yet and may still change the numbers.
@@ -400,7 +400,7 @@ impl Drag {
         match self.kind {
             DragKind::Marquee(intent) => GestureOutcome::Marquee {
                 rect: Rect::from_two_pos(self.origin, self.latest),
-                // ★ Strictly less-than, so a perfectly vertical drag is a
+                // Strictly less-than, so a perfectly vertical drag is a
                 // WINDOW. It has to fall one way and the safe way is the
                 // existing behaviour: a vertical band that silently became a
                 // crossing window would take everything it grazed on a gesture
@@ -460,7 +460,7 @@ impl Drag {
                 to: self.latest,
                 phase,
             },
-            // ★ Raw and in drag order, exactly as the markup band above — the
+            // Raw and in drag order, exactly as the markup band above — the
             // rectangle is normalised once, at the point it becomes a page
             // rect, so a preview and an authored box cannot come from two
             // different normalisations.

@@ -27,7 +27,7 @@ decisions per line than any other:
   "secure" to anyone not told otherwise, and the value really is stored as
   plain text in the file.
 - [`forms_data_export_carries_rich_text`]'s counterpart in the old catalog
-  carries a `★` recording that the sentence outlived the behaviour it
+  carries a `` recording that the sentence outlived the behaviour it
   described by one commit. That string is **not** salvaged here (this build
   has no export), and the lesson is: a disclosure that has gone stale is a
   false statement the operator has no way to check.
@@ -37,7 +37,7 @@ decisions per line than any other:
 | Function | Replaces | Why |
 |---|---|---|
 | [`forms_xfa_note`] | the old shell's post-fill `fill_xfa_may_disagree` | The old note appeared *after* a value was typed. Whether the document carries an XFA packet is a property of the FILE, knowable before the operator touches anything, so it is said up front. |
-| [`form_field_no_on_state_note`] | the old shell's post-toggle `form_field_no_appearance_for_state` | The old one was computed from a predicate that could never be true (see [`crate::panels::forms::rows`]' header, "★ The salvaged appearance check could not fire"). This one asks a question the model can actually answer. |
+| [`form_field_no_on_state_note`] | the old shell's post-toggle `form_field_no_appearance_for_state` | The old one was computed from a predicate that could never be true (see [`crate::panels::forms::rows`]' header, "The salvaged appearance check could not fire"). This one asks a question the model can actually answer. |
 | [`forms_no_fillable_fields`] | — | This build derives the "N you can fill here" count from what the panel actually offers, and the count can legitimately be zero on a form full of fields. A silent zero looks like a bug. |
 
 ## Conventions, restated from [`crate::text`] because they bind here

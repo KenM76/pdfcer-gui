@@ -9,7 +9,7 @@
 //! the widgets live below it — and the tab-order panel is precisely the place
 //! those two answers are put beside each other and compared.
 //!
-//! ## ★★ Why the distinction is load bearing and not merely tidy
+//! ## Why the distinction is load bearing and not merely tidy
 //!
 //! Because they can disagree, and the disagreement is the panel's whole
 //! subject. A page whose `/Tabs` is absent has **no stated order at all** —

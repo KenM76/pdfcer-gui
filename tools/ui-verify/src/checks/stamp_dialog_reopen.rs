@@ -21,7 +21,7 @@ const BOX_PT: f64 = 220.0;
 
 /// How far, in **pdf** points, the second stamp is placed from the first.
 ///
-/// ★ It has to miss the first stamp's rectangle. A second drag that starts
+/// It has to miss the first stamp's rectangle. A second drag that starts
 /// **inside** an annotation that already exists is a different gesture — the
 /// canvas reads it as grabbing that object — and the dialog would then never
 /// open, which this check would report as O171 recurring. A harness with a bad
@@ -31,7 +31,7 @@ const SECOND_OFFSET_PT: f64 = 300.0;
 /// **Where the second stamp goes, given where the first one went and how big
 /// the page is.**
 ///
-/// # ★★★ Why this is a function and not `target + SECOND_OFFSET_PT`
+/// # Why this is a function and not `target + SECOND_OFFSET_PT`
 ///
 ///
 /// > *document point (2520, 840) is outside the page's crop box (0, 0) —
@@ -48,7 +48,7 @@ const SECOND_OFFSET_PT: f64 = 300.0;
 /// deliberate exclusion, next to a `detects:` line describing a real O171
 /// regression nobody was watching for any more.
 ///
-/// # ★★ What it does
+/// # What it does
 ///
 /// Offsets **away from the nearer edge on each axis independently**, so the
 /// second box lands on paper wherever on the sheet the first one was:
@@ -60,7 +60,7 @@ const SECOND_OFFSET_PT: f64 = 300.0;
 ///     satisfies both directions and a clamp is a better answer than an
 ///     off-page drag.
 ///
-/// ★ The 300 pt separation is what stops the second drag from starting inside
+/// The 300 pt separation is what stops the second drag from starting inside
 /// the first stamp, and the sign does not affect it — 300 pt left of the first
 /// box clears it exactly as well as 300 pt right of it, because the box is
 /// 220 pt wide. That is the property [`SECOND_OFFSET_PT`]'s own doc is about,
@@ -91,7 +91,7 @@ const ACCEPT: &str = "text-annot.accept";
 const CANCEL: &str = "text-annot.cancel";
 /// The ribbon control that arms the stamp tool.
 ///
-/// ★ It is a **toggle**, not a momentary button. See [`arm_stamp`].
+/// It is a **toggle**, not a momentary button. See [`arm_stamp`].
 const STAMP_ITEM: &str = "ribbon.item.markup.stamp";
 
 /// The trace line naming the armed markup tool. Emitted on change only.
@@ -167,7 +167,7 @@ fn armed_tool(session: &Session) -> Result<Option<String>> {
 /// *"the second drag traced no further `text-annot-open`"* — a true sentence
 /// about a build in which the operator's own route works.
 ///
-/// ★★ The lesson is the standing one and it earned another instance: **a driven
+/// The lesson is the standing one and it earned another instance: **a driven
 /// failure is a claim about the check too.** The check's own failure message
 /// offered two hypotheses — *"either the tool did not re-arm or the drag landed
 /// on the first stamp"* — and the truth was a third the author had ruled out by
@@ -181,7 +181,7 @@ fn armed_tool(session: &Session) -> Result<Option<String>> {
 ///
 /// If the ribbon item is not on the tab, or the click armed nothing.
 fn arm_stamp(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
-    // ★ Already armed? Then there is nothing to do, and doing it would undo it.
+    // Already armed? Then there is nothing to do, and doing it would undo it.
     if armed_tool(session)?.is_some_and(|t| t.starts_with(TOOL_TEXT_ANNOT)) {
         return Ok(());
     }
@@ -194,7 +194,7 @@ fn arm_stamp(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
     })?;
     driver.click_at(session.frame()?.declared_center(item))?;
     session.settle(14);
-    // ★★ And say so if the click did not arm it. Without this the failure
+    // And say so if the click did not arm it. Without this the failure
     // surfaces one step later, as "the dialog never opened", which reads as a
     // dialog defect rather than a tool one.
     match armed_tool(session)? {
@@ -386,7 +386,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              was created and never drawn."
         )));
     }
-    // ★ Asserted on the first opening TOO, and the message says which. If the
+    // Asserted on the first opening TOO, and the message says which. If the
     // row is already gone here then the operator's report is being reproduced
     // by the wrong mechanism, and a fix aimed at the reopening path would leave
     // the real cause in place.
@@ -444,7 +444,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // `stamp_size_reaches_the_engine` named by SKIPPING in the same minute.
     //
     //
-    // ★★ The standing lesson, earning yet another instance: **a driven failure
+    // The standing lesson, earning yet another instance: **a driven failure
     // is a claim about the check too**, and the way to test that claim is to
     // print what the check actually did rather than to reason about what it
     // probably did. Two hypotheses were written into this file before one

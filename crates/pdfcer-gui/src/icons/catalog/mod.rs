@@ -1,4 +1,4 @@
-//! ★ **This module's documentation lives in `OVERVIEW.md`** beside this file,
+//! **This module's documentation lives in `OVERVIEW.md`** beside this file,
 //! included below — moved there 2026-09-04 for the reason `app::actions`
 //! records for the same move: *"the bulk is prose"*, and prose in `//!`
 //! comments spends R2's line budget without giving a compiler anything to
@@ -161,7 +161,7 @@ pub enum Icon {
     Fonts,
     /// The Tool panel — an arrow cursor with two option rules beside it.
     ///
-    /// ★ The one panel glyph that draws **the operator's hand rather than the
+    /// The one panel glyph that draws **the operator's hand rather than the
     /// document**. Bookmarks, Layers, Pages and Objects all picture content;
     /// this panel's subject is what the pointer does, so its icon is the
     /// pointer.
@@ -199,7 +199,7 @@ pub enum Icon {
     /// Markup → Revision cloud — the same closed run of clicks with a cloudy
     /// border.
     ///
-    /// ★ The one glyph in this band whose meaning is carried by its **edge**
+    /// The one glyph in this band whose meaning is carried by its **edge**
     /// rather than by its outline, and that is the annotation's own doing: a
     /// revision cloud is a `/Polygon` with `/BE << /S /C >>` on it (Table 181),
     /// so the scallop *is* the difference. Drawn as the same closed loop as
@@ -264,7 +264,7 @@ pub enum Icon {
     InsertPages,
     /// Import form data… — the same upload art as [`Icon::InsertPages`].
     ///
-    /// ★★ A **distinct key over shared art**, which is [`Icon::FontFolders`]'s
+    /// A **distinct key over shared art**, which is [`Icon::FontFolders`]'s
     /// arrangement and not the shared-key convention `format.properties` uses.
     /// The difference matters: a shared *key* says *two controls about one
     /// thing*, and this is not that — inserting pages and importing form data
@@ -272,7 +272,7 @@ pub enum Icon {
     /// honest picture for either is *"something comes in from a file"*, which
     /// is what the upload arrow draws.
     ///
-    /// ★ Keying it to `insert-pages` would have been the near-miss reuse this
+    /// Keying it to `insert-pages` would have been the near-miss reuse this
     /// catalog's refusal table exists to prevent: a pages-named key on a form
     /// command reads as a mistake to anyone grepping either.
     ImportFormData,
@@ -340,7 +340,7 @@ pub enum Icon {
 
     /// Page display → one page at a time.
     ///
-    /// ★ The four page-display glyphs are ONE control and are drawn as one:
+    /// The four page-display glyphs are ONE control and are drawn as one:
     /// bare page silhouettes with no interior detail, because the
     /// arrangement is the information. Two axes carry all four positions —
     /// **left-to-right** says how many pages are across, and a **cut bottom
@@ -423,7 +423,7 @@ pub enum Icon {
 
     /// Pages panel toggle.
     ///
-    /// ★ This variant **retires a recorded decision**. `view.panel_pages`
+    /// This variant **retires a recorded decision**. `view.panel_pages`
     /// carried a note reading "No icon, and that is a decision rather than
     /// an omission — there is no `document` (or `pages`) key in
     /// `crate::icons::catalog`, and naming one would draw the catalogue's
@@ -515,7 +515,7 @@ pub enum Icon {
     FormFlatten,
     /// Manage a list — **both** Manage fields and Manage dimension groups.
     ///
-    /// ★ A recorded **deviation**: ui-spec §8.2 assigns `icon-ring.svg` to
+    /// A recorded **deviation**: ui-spec §8.2 assigns `icon-ring.svg` to
     /// Manage Dimension Groups, and two concentric circles read as a target
     /// or a radio button at 16 px, not as a list of named things. That row
     /// was written at reservation depth before the Measure surface existed
@@ -557,7 +557,7 @@ pub enum Icon {
     PickFormXObject,
     /// Selection-filter row: **`/Link` annotations**.
     ///
-    /// ★ Deliberately not [`Icon::Combine`]'s chain, which means "join these
+    /// Deliberately not [`Icon::Combine`]'s chain, which means "join these
     /// files" and is a metaphor the operator has already learned for something
     /// else. This is the box-with-escaping-arrow every browser uses.
     PickLink,
@@ -578,7 +578,7 @@ pub enum Icon {
     /// What survives below is the part the asset does not say — the
     /// registration history, and the refusals this variant retired.
     ///
-    /// ★ This variant **retires two recorded refusals**, which were written in the
+    /// This variant **retires two recorded refusals**, which were written in the
     /// same sentence at both registrations: *"There is no check-mark, tick or
     /// accept glyph in the set, and no existing key means 'complete this
     /// gesture'."* That was true of the catalogue and is now spent — the same
@@ -603,7 +603,7 @@ pub enum Icon {
     /// What survives below is the part the asset does not say — the
     /// registration history, and the refusals this variant retired.
     ///
-    /// ★ Adopting this retires half of a recorded refusal rather than ignoring it.
+    /// Adopting this retires half of a recorded refusal rather than ignoring it.
     /// The registration declines an icon on the ground that a context-menu row's
     /// glyph is decoration — sound for the menu, and the menu may still draw none.
     /// But `manifest::view` also places this command on the View ▸ Window ribbon,
@@ -723,7 +723,7 @@ pub enum Icon {
     /// What survives below is the part the asset does not say — the
     /// registration history, and the refusals this variant retired.
     ///
-    /// ★ This variant **retires a font workaround**, the way [`Icon::Pages`]
+    /// This variant **retires a font workaround**, the way [`Icon::Pages`]
     /// retired a recorded refusal. The Bookmarks panel draws `⏵` U+23F5 today
     /// only because the pair it actually wanted is half missing: `▶` U+25B6 draws
     /// in the shipped stack and `▼` U+25BC does not, so a collapsed row would
@@ -763,7 +763,7 @@ pub enum Icon {
     /// "this thing, from here to here, is how long", which is what the tooltip
     /// promises for a pipe, a cable or a kerb line.
     ///
-    /// ★ Its dangerous neighbour is [`Icon::ShapeInk`] — one irregular flowing
+    /// Its dangerous neighbour is [`Icon::ShapeInk`] — one irregular flowing
     /// stroke spanning the tile, no baseline, no periodicity, which describes
     /// both glyphs. The entire difference is the **two terminator ticks**.
     /// Freehand ink has no ends worth marking; a measured run is bounded, and
@@ -783,7 +783,7 @@ pub enum Icon {
     /// is a separate control precisely because "Perimeter" promises a ring, so
     /// the closure is the distinction from [`Icon::MeasureLength`]'s open run.
     ///
-    /// ★ Dashed is the distinction from [`Icon::ShapePolygon`], which is an
+    /// Dashed is the distinction from [`Icon::ShapePolygon`], which is an
     /// irregular closed outline in solid stroke. That one means "an annotation
     /// you author by clicking corners"; this one means "a route traced round
     /// something already on the page". A measurement path is not ink the
@@ -800,7 +800,7 @@ pub enum Icon {
     /// What survives below is the part the asset does not say — the
     /// registration history, and the refusals this variant retired.
     ///
-    /// ★ Its dangerous neighbour is [`Icon::ShapeEllipse`], whose bare circle is
+    /// Its dangerous neighbour is [`Icon::ShapeEllipse`], whose bare circle is
     /// this one's outer ring to within a unit. The ring cannot carry the
     /// difference, so both cues are interior: the **centre dot**, which a markup
     /// ellipse has no reason to draw, and the **spoke**, which is the radius
@@ -865,7 +865,7 @@ pub enum Icon {
     /// registration history, and the refusals this variant retired.
     ///
     ///
-    /// ★ **`list.svg` reserved this shape for it years before it existed.** That
+    /// **`list.svg` reserved this shape for it years before it existed.** That
     /// asset's recorded deviation from ui-spec §8.2 refuses `icon-ring.svg`
     /// because "at 16 px two concentric circles read as a target or a radio
     /// button — neither of which is a list of named things". The deviation is now
@@ -909,7 +909,7 @@ pub enum Icon {
     /// everything drawn outside a page boundary, and the fourth member of the
     /// redaction family.
     ///
-    /// ★★★ **It does not borrow the family's solid bar, and that is the point.**
+    /// **It does not borrow the family's solid bar, and that is the point.**
     /// [`Icon::Redact`], [`Icon::RedactSelection`] and [`Icon::ApplyRedactions`]
     /// share a filled rectangle because all three are about content being
     /// removed permanently; [`tests::fill_is_semantic_and_the_set_that_uses_it_is_closed`]
@@ -1050,7 +1050,7 @@ pub enum Icon {
     Convert,
     /// Export the page as a raster image — `file.export_image`. A picture tile
     /// (rect, mountain horizon) with an arrow leaving it to the right.
-    /// ★ Replaces a LIVE BORROW made hours earlier: the command registered wearing
+    /// Replaces a LIVE BORROW made hours earlier: the command registered wearing
     /// [`Icon::Export`], defended as one act in three formats — true of DXF and
     /// form data, false of a picture, because [`Icon::InsertImage`] has already
     /// taught the operator what a framed tile with a horizon means here. Distinct
@@ -1063,7 +1063,7 @@ pub enum Icon {
     /// with a title bar — with a document sheet overlapping its lower-left corner
     /// and breaking its outline. No command names it yet.
     /// ⚠ **The label names a vendor; the art carries nothing of that mark** — no
-    /// letterform, no badge, no traced shape. ★★ The title bar is the whole
+    /// letterform, no badge, no traced shape. The title bar is the whole
     /// distinction: [`Icon::PickLink`] already claims the box-with-escaping-arrow
     /// by name, so an arrow on a plain frame would draw one sentence for two
     /// meanings. A frame DIVIDED by a rule is an application, not a box something
@@ -1085,7 +1085,7 @@ pub enum Icon {
 
     /// Put a password on this document — the engine's `set_encryption`, **awaiting
     /// the operator's ruling** as O119. A folded page, padlock over its lower half.
-    /// ★★★ The page is the entire point. [`Icon::Locked`] is a BARE padlock marking
+    /// The page is the entire point. [`Icon::Locked`] is a BARE padlock marking
     /// a ROW the document forbids operating — its asset says "not 'secure', not
     /// 'verified', not 'encrypted'" — and this makes the sentence that one refuses:
     /// the DOCUMENT is what is locked. ⚠ Its constraint travels too: never on a
@@ -1108,7 +1108,7 @@ pub enum Icon {
     Permissions,
     /// Select everything on the page — `edit.select_all`.
     ///
-    /// A dashed marquee enclosing the pointer. ★★★ **This variant exists
+    /// A dashed marquee enclosing the pointer. **This variant exists
     /// because a refusal was mistaken for a ruling.** Its absence was argued in
     /// prose by a build session on 2026-09-01, quoted in four places, and had
     /// begun to be reported to the operator as settled. He corrected it on
@@ -1126,18 +1126,18 @@ pub enum Icon {
     SelectAll,
 
     /// Set the swept run bold — `format.bold`. A capital B, stroked HEAVY.
-    /// ★ The first pair authored under `OVERVIEW.md`'s seam: the ruling lives in
+    /// The first pair authored under `OVERVIEW.md`'s seam: the ruling lives in
     /// `bold.svg`, and this is the pointer. Weight, correction, neighbours there.
     Bold,
     /// Set the swept run italic — `format.italic`. A slanted capital I.
-    /// ★ Ruling in `italic.svg`: the slant, the offset serifs that clear
+    /// Ruling in `italic.svg`: the slant, the offset serifs that clear
     /// [`Icon::TextSelect`], and the refusal both of this pair correct.
     Italic,
 
     /// Draw every stroke at one device pixel — `view.line_weights`, O137.
     /// Three horizontal bars, thick to thin, the CAD lineweight glyph.
     ///
-    /// ★ Ruling in `line-weights.svg`: why this is the ONE asset in the set
+    /// Ruling in `line-weights.svg`: why this is the ONE asset in the set
     /// that breaks the 2.5-stroke style contract (the varying weight IS the
     /// subject), what keeps it clear of `list.svg`, and the 16 px floor the
     /// thinnest bar was measured against.
@@ -1145,7 +1145,7 @@ pub enum Icon {
     LineWeights,
 }
 
-// ★ The mapping lives next door. `Icon::ALL`, `Icon::source` and `Icon::name`
+// The mapping lives next door. `Icon::ALL`, `Icon::source` and `Icon::name`
 // are three total functions over this enum; a new variant must join all three
 // lists, and they are kept adjacent to each other rather than adjacent to the
 // enum so that the "did I add it everywhere" check is one file.

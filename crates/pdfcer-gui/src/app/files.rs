@@ -40,7 +40,7 @@ pub const DIAG_ATTACH_PATH: &str = "PDFCER_DIAG_ATTACH_PATH"; // ui-text-exempt:
 
 /// The seam that answers the **save an attachment out** dialog.
 ///
-/// ★ Separate from [`DIAG_SAVE_PATH`], and this is the sharpest instance of the
+/// Separate from [`DIAG_SAVE_PATH`], and this is the sharpest instance of the
 /// rule rather than a routine application of it. [`pick_save_path`]'s own doc
 /// records that its seam is *shared* by its two callers, so a check driving
 /// both in one session gets one file. Attaching and saving out are the two
@@ -60,7 +60,7 @@ pub const DIAG_FORM_DATA_PATH: &str = "PDFCER_DIAG_FORM_DATA_PATH"; // ui-text-e
 
 /// The text file `file.import_text` reads, for a driven check.
 ///
-/// ★ Its own variable rather than sharing one, for `DIAG_FORM_DATA_PATH`'s
+/// Its own variable rather than sharing one, for `DIAG_FORM_DATA_PATH`'s
 /// stated reason: a check that set one variable and got a different picker's
 /// answer would be a seam that reports the wrong subject, and the two pickers
 /// can be reached in one run.
@@ -68,14 +68,14 @@ pub const DIAG_TEXT_IMPORT_PATH: &str = "PDFCER_DIAG_TEXT_IMPORT_PATH"; // ui-te
 
 /// The harness seam for [`pick_font_folder`].
 ///
-/// ★ Its own variable, for `DIAG_FORM_DATA_PATH`'s reason: a driven check that
+/// Its own variable, for `DIAG_FORM_DATA_PATH`'s reason: a driven check that
 /// adds a font folder must be able to name it without also answering the
 /// document picker.
 pub const DIAG_FONT_FOLDER_PATH: &str = "PDFCER_DIAG_FONT_FOLDER"; // ui-text-exempt: an environment variable name, never displayed
 
 /// The harness seam for [`pick_acrobat`] — `OPERATOR_REQUESTS.md` O122.
 ///
-/// ★ Its own variable, for [`DIAG_FONT_FOLDER_PATH`]'s reason and with an
+/// Its own variable, for [`DIAG_FONT_FOLDER_PATH`]'s reason and with an
 /// extra one of its own: a driven check that sets the Acrobat path must be
 /// able to name a **program** without also answering the document picker, and
 /// the file it names is deliberately not a PDF — sharing a variable with the
@@ -85,7 +85,7 @@ pub const DIAG_ACROBAT_PATH: &str = "PDFCER_DIAG_ACROBAT_PATH"; // ui-text-exemp
 /// The harness seam for [`pick_trust_store`] — the signature-trust work,
 /// 2026-09-05.
 ///
-/// ★ Its own variable, and NOT shared with [`DIAG_ACROBAT_PATH`], for the
+/// Its own variable, and NOT shared with [`DIAG_ACROBAT_PATH`], for the
 /// reason that one gives about the document picker: the two controls sit in
 /// different groups of the same window, and a driven check that set one
 /// variable to answer both would silently make the Acrobat browse button
@@ -109,7 +109,7 @@ pub const DIAG_CERTIFICATE_PATH: &str = "PDFCER_DIAG_CERTIFICATE_PATH"; // ui-te
 /// The environment variable that answers the **save** dialog instead of
 /// opening it.
 ///
-/// ★ Added with [`pick_save_path`], and from the start rather than after a
+/// Added with [`pick_save_path`], and from the start rather than after a
 /// harness failed to reach it — which is this module's own recorded
 /// instruction: *"any future `rfd` call added to a scripted-driven GUI should
 /// get the same `PDFCER_DIAG_<PURPOSE>` seam from the start."* A native save
@@ -131,7 +131,7 @@ pub const DIAG_CERTIFICATE_PATH: &str = "PDFCER_DIAG_CERTIFICATE_PATH"; // ui-te
 /// | set but **empty** | [`Picked::Cancelled`] — no dialog opens | a harness exercising the path where the operator declines to save, which must leave nothing behind |
 pub const DIAG_SAVE_PATH: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
-/// ★★★ **The seam for the MULTI-file picker** — `OPERATOR_REQUESTS.md` O68.
+/// **The seam for the MULTI-file picker** — `OPERATOR_REQUESTS.md` O68.
 ///
 /// `PDFCER_DIAG_MERGE_SOURCES`, and it is the only one of these that names
 /// **several** paths: they are separated by `;`, which is the Windows path-list
@@ -228,7 +228,7 @@ thread_local! {
 
 /// Take this call's answer from a `;`-separated queue, one entry per call.
 ///
-/// # ★★★ Why a queue, when every other seam here is single-valued
+/// # Why a queue, when every other seam here is single-valued
 ///
 /// A shell that holds several documents at once has a ceiling question that
 /// only a several-document process can answer — `OPERATOR_REQUESTS.md` **O221**
@@ -241,7 +241,7 @@ thread_local! {
 /// configuration the per-document strip cache would actually multiply in was
 /// the one that could not be measured.
 ///
-/// # ★★ The single-valued seam must behave identically, and that is what the
+/// # The single-valued seam must behave identically, and that is what the
 /// separator test buys
 ///
 /// `None` here means *"this is not a queue"*, and the caller then runs the
@@ -250,7 +250,7 @@ thread_local! {
 /// the old seam keeps its meaning, and this cannot be a silent change to a
 /// seam six checks already depend on.
 ///
-/// ★ A `;` cannot occur in a Windows filename, which is what makes the
+/// A `;` cannot occur in a Windows filename, which is what makes the
 /// separator test safe rather than a heuristic. It is also the separator
 /// [`pick_merge_sources`] already uses, so the two list-valued seams in this
 /// module are spelled one way.
@@ -370,7 +370,7 @@ fn native_pick() -> Picked {
 
 /// **Ask which PDF to take pages from** — `pages.insert_from_file`.
 ///
-/// # ★ Why this is not [`pick_document`] with a different title
+/// # Why this is not [`pick_document`] with a different title
 ///
 /// Two reasons, and the second is the one that matters.
 ///
@@ -378,7 +378,7 @@ fn native_pick() -> Picked {
 /// headed *"Open a PDF"* over a document the operator is part-way through
 /// editing says the wrong thing at the moment they are most likely to read it.
 ///
-/// **★ The diagnostic seam.** [`pick_document`] reads `PDFCER_DIAG_OPEN_PATH`,
+/// **The diagnostic seam.** [`pick_document`] reads `PDFCER_DIAG_OPEN_PATH`,
 /// which is how `ui-verify` drives Open without a modal dialog blocking the
 /// harness. If insert shared it, a check that set the variable to drive Open
 /// would ALSO silently answer every insert picker — so a run that opened one
@@ -427,7 +427,7 @@ pub fn pick_image_source() -> Picked {
 /// **Ask which form-data file to read.**
 ///
 ///
-/// # ★ Three filters, and the format is decided by CONTENT rather than by which
+/// # Three filters, and the format is decided by CONTENT rather than by which
 /// one the operator picked
 ///
 /// The filters are a convenience for finding the file. What decides how it is
@@ -436,7 +436,7 @@ pub fn pick_image_source() -> Picked {
 /// one rule, and an operator who exported `.csv` and imports `.csv` cannot land
 /// in a branch they did not choose.
 ///
-/// ★ The *all files* filter stays beneath them, for [`pick_image_source`]'s
+/// The *all files* filter stays beneath them, for [`pick_image_source`]'s
 /// stated reason: a file somebody saved under a different name is still that
 /// file, and an operator who knows what theirs is should not be blocked by its
 /// name.
@@ -468,13 +468,13 @@ pub fn pick_form_data_source() -> Picked {
 /// **Ask which text file to import as pages** — `file.import_text`,
 /// `pdfcer-core` `Pass 252.0`.
 ///
-/// ★★ It carries the **same `DIAG_*` env override** every picker in this module
+/// It carries the **same `DIAG_*` env override** every picker in this module
 /// does, and that is not boilerplate: a native file dialog is an OS window a
 /// driven check cannot type into, so without this seam `tools/ui-verify` could
 /// press the ribbon item and get no further. `form-data`, `image`, `document`
 /// and `attachment` all have one for the same reason.
 ///
-/// ★ `.txt` first, then everything — the two filters `pick_form_data_source`
+/// `.txt` first, then everything — the two filters `pick_form_data_source`
 /// offers and in that order. A text export from another system is very often
 /// `.log`, `.csv` or no extension at all, and a picker that hid those would
 /// send the operator to *All files* every time; a picker that opened on *All
@@ -502,7 +502,7 @@ pub fn pick_text_source() -> Picked {
 
 /// **Ask which file to embed in the document** (ISO 32000-1 §7.11.4.1).
 ///
-/// # ★★ Why this picker offers no format filter at all
+/// # Why this picker offers no format filter at all
 ///
 /// Every other file picker in this module narrows what it shows, and each of
 /// them is right to: an image picker that offered `.dll` would have moved a
@@ -542,7 +542,7 @@ pub fn pick_attachment_source() -> Picked {
 
 /// **Ask where to write one attachment out.**
 ///
-/// # ★ Why this is not [`pick_save_path`] with a different title
+/// # Why this is not [`pick_save_path`] with a different title
 ///
 /// Two differences, and both would be defects if this reused that function:
 ///
@@ -591,7 +591,7 @@ pub fn pick_attachment_target(suggested: &std::path::Path) -> Picked {
 
 /// **Ask which folder pdfcer may take fonts from.**
 ///
-/// ★ A *directory* picker, not a file one. `--font-dir`'s own name says the
+/// A *directory* picker, not a file one. `--font-dir`'s own name says the
 /// unit is a folder, and asking for a font FILE would make an operator add
 /// twenty-six entries to embed a family — while the engine searches a folder
 /// for whatever face it needs.
@@ -618,13 +618,13 @@ pub fn pick_font_folder() -> Picked {
 /// **Ask which program is Acrobat** — `OPERATOR_REQUESTS.md` O122's Browse
 /// button.
 ///
-/// ★ A *file* picker, not a folder one, and not the document picker: the value
+/// A *file* picker, not a folder one, and not the document picker: the value
 /// is a full path to an executable. It is offered beside the text field rather
 /// than instead of it, because typing a path from memory is how a letter goes
 /// missing and because somebody who already knows the path should not have to
 /// navigate to it.
 ///
-/// ★★ The filter offers programs first and everything second. First, because a
+/// The filter offers programs first and everything second. First, because a
 /// person browsing for Acrobat is looking for an `.exe` and a picker showing
 /// every file in `Program Files` is a picker they have to fight. Second,
 /// because pdfcer does not actually require an `.exe` — a launcher script or a
@@ -656,12 +656,12 @@ pub fn pick_acrobat() -> Picked {
 /// **Ask where Acrobat's downloaded trust list is** — the Settings ▸ Digital
 /// signatures Browse button.
 ///
-/// ★ Offered beside the text field rather than instead of it, exactly as
+/// Offered beside the text field rather than instead of it, exactly as
 /// [`pick_acrobat`] is and for the same reason: the value is a full path buried
 /// four directories inside `%APPDATA%`, which is a path nobody types correctly
 /// from memory, and somebody who already knows it should not have to navigate.
 ///
-/// ★★ The filter names `.acrodata` first and everything second. First because
+/// The filter names `.acrodata` first and everything second. First because
 /// that is what the file is called and a picker showing every file in a
 /// `Security` directory is one the operator has to fight. Second because pdfcer
 /// does **not** require the extension — `pdfcer_core::trust_store` sniffs the
@@ -709,7 +709,7 @@ pub fn pick_trust_store() -> Picked {
 /// paid for with a durable pointer at somebody's private key, written by a file
 /// nobody thinks of as sensitive.
 ///
-/// ★ `#[cfg]` for `crate::sign`'s reason: without the capability there is no
+/// `#[cfg]` for `crate::sign`'s reason: without the capability there is no
 /// window that could open this picker and no verb that could use its answer,
 /// and the copy it names (`crate::text::sign`) is compiled out with it. The
 /// module boundary is where a capability is present or absent;
@@ -722,7 +722,7 @@ pub fn pick_certificate() -> Picked {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             //
-            // ★ `answer` is NOT interpolated, unlike every sibling in this
+            // `answer` is NOT interpolated, unlike every sibling in this
             // file, and the asymmetry is deliberate: this path names the file
             // holding the operator's private key, and a trace is kept as
             // evidence. Whether a path was supplied is the whole diagnostic
@@ -787,7 +787,7 @@ pub fn pick_insert_source() -> Picked {
 /// answer "the Open dialog" and "the Combine dialog" with the same variable
 /// could not drive a check that used both.
 ///
-/// # ★ Why `Vec<PathBuf>` and not `Picked`
+/// # Why `Vec<PathBuf>` and not `Picked`
 ///
 /// Because [`Picked`] carries exactly one path and widening it would touch
 /// eight call sites to serve one. The three states are expressed instead as:
@@ -861,7 +861,7 @@ pub fn pick_merge_sources() -> Vec<PathBuf> {
 ///
 /// Blocks while the dialog is open, exactly as [`pick_document`] does.
 ///
-/// # ★ The frame-timing requirement, and it is a requirement
+/// # The frame-timing requirement, and it is a requirement
 ///
 /// **The caller runs it after its frame's layout closure has returned.** Not a
 /// convention — see `dialogs::ocr`'s `save_requested` field, which exists for
@@ -964,7 +964,7 @@ mod tests {
 
     /// Past the end the answer is a declined dialog, not a native picker.
     ///
-    /// ★ This is the arm that decides whether the seam is safe to leave set
+    /// This is the arm that decides whether the seam is safe to leave set
     /// for the whole of a run. Returning `None` at the end would fall through
     /// to `rfd` and put a real modal dialog in front of a harness with no hand
     /// to dismiss it — the exact failure the seam exists to prevent.
@@ -984,7 +984,7 @@ mod tests {
             .handler
     }
 
-    /// ★ **The picker's answer becomes an action, and only a path does.**
+    /// **The picker's answer becomes an action, and only a path does.**
     ///
     /// The `file.open` arm reduced to the part a test may run — see rule 3 in
     /// this module's header for why dispatching the command itself is
@@ -1008,7 +1008,7 @@ mod tests {
         assert!(actions.is_empty(), "a build with no picker opens nothing");
     }
 
-    /// ★ **`file.close` raises the Close action, and applying it empties the
+    /// **`file.close` raises the Close action, and applying it empties the
     /// shell.**
     ///
     /// `file.close` was registered, drawn on the File tab, gated on
@@ -1042,7 +1042,7 @@ mod tests {
         );
     }
 
-    /// ★ **The Open action opens, from every starting state.**
+    /// **The Open action opens, from every starting state.**
     ///
     /// Including the one an operator meets most: nothing open at all.
     /// [`crate::app::PdfcerApp::apply`] refuses every other action when
@@ -1071,7 +1071,7 @@ mod tests {
         assert!(matches!(app.status, Status::Empty));
     }
 
-    /// ★ **`file.save_copy` raises the SaveCopy action, through the real token
+    /// **`file.save_copy` raises the SaveCopy action, through the real token
     /// lookup.**
     ///
     /// The regression guard for the defect this command shipped with for the
@@ -1089,7 +1089,7 @@ mod tests {
     /// which the token-to-id lookup had stopped resolving — which is precisely
     /// the state that produced the fall-through in the first place.
     ///
-    /// # ★ Why it stops at the action, and must
+    /// # Why it stops at the action, and must
     ///
     /// It raises and does **not** apply. Applying `Action::SaveCopy` reaches
     /// `crate::app::save::save_copy`, which opens a **real modal save dialog**
@@ -1124,7 +1124,7 @@ mod tests {
         );
     }
 
-    /// ★ **Nothing is pending, so nothing is blocked — and the gate is real.**
+    /// **Nothing is pending, so nothing is blocked — and the gate is real.**
     ///
     /// The dirty-document rule has one home,
     /// [`crate::app::PdfcerApp::save_pending`], consulted by both arms. This
@@ -1144,7 +1144,7 @@ mod tests {
         assert!(matches!(app.status, Status::Empty));
     }
 
-    /// ★ **The diagnostic seam answers the dialog, in all three shapes.**
+    /// **The diagnostic seam answers the dialog, in all three shapes.**
     ///
     /// This is the whole harness contract, and every row of the table in the
     /// module header is asserted: unset defers to the picker, a value is a

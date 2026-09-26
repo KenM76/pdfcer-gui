@@ -13,7 +13,7 @@ or the controls that set it. The copy is next door in
 [`crate::text::print`]; the preview that draws the result is
 [`super::preview`].
 
-## ★ Contract: a delta, keyed on the DOCUMENT page, sparse
+## Contract: a delta, keyed on the DOCUMENT page, sparse
 
 - **A delta, not a position.** Zero means *where pdfcer put it*, which is
   what makes Reset a meaningful command distinct from Centre — see

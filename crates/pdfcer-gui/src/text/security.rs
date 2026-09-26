@@ -8,7 +8,7 @@
 //! been actively misled by this program; an operator who is told nothing has
 //! merely not been helped.
 //!
-//! ## ★★★ Two sentences here came from `pdfcer-core` and must not be re-worded
+//! ## Two sentences here came from `pdfcer-core` and must not be re-worded
 //!
 //!
 //!
@@ -43,7 +43,7 @@ pub const fn password_title() -> &'static str {
 
 /// The sentence above the box.
 ///
-/// ★ It names the FILE, because an operator who has opened four drawings and
+/// It names the FILE, because an operator who has opened four drawings and
 /// walked away needs to know which one is asking. The prompt appears in answer
 /// to their own Open, but not always in the same minute as it.
 #[must_use]
@@ -65,7 +65,7 @@ pub const fn password_open() -> &'static str {
 
 /// The button that gives up.
 ///
-/// ★ *Cancel*, not *Close*: it abandons an attempt the operator started, and
+/// *Cancel*, not *Close*: it abandons an attempt the operator started, and
 /// the tab stays in the document list showing why it did not open. Nothing is
 /// lost by pressing it.
 #[must_use]
@@ -75,7 +75,7 @@ pub const fn password_cancel() -> &'static str {
 
 /// What an operator is told after a password that did not work.
 ///
-/// ★★ It says **which attempt** this was, and that is not decoration. Without
+/// It says **which attempt** this was, and that is not decoration. Without
 /// it, a second wrong password produces a dialog identical to the first, and an
 /// operator who did not see the field clear cannot tell whether their press
 /// registered at all — the same ambiguity the measure tools' running count
@@ -93,7 +93,7 @@ pub fn password_rejected(attempt: u32) -> String {
 
 /// The **different** failure: pdfcer cannot normalise a non-ASCII password.
 ///
-/// # ★★★ Why this is not "wrong password", and why the engine made it a
+/// # Why this is not "wrong password", and why the engine made it a
 /// separate error
 ///
 /// `DocError::PasswordRequiresNormalisation` exists, in `pdfcer-core`'s own
@@ -118,7 +118,7 @@ pub const fn password_needs_normalisation() -> &'static str {
 
 /// The refusal for an empty box.
 ///
-/// ★ Refused here rather than sent on, and the reason is in
+/// Refused here rather than sent on, and the reason is in
 /// [`crate::secret::Secret::is_empty`]: pdfcer has *already* tried the empty
 /// password before it prompted — every conforming reader does — so sending it
 /// again would ask the engine a question it has answered and return an
@@ -141,7 +141,7 @@ pub const fn encryption_heading() -> &'static str {
 
 /// What is said when the document is not encrypted at all.
 ///
-/// ★ Stated rather than left blank. *"This document is not encrypted"* is a
+/// Stated rather than left blank. *"This document is not encrypted"* is a
 /// fact an operator checking a file wants confirmed; an empty panel is
 /// indistinguishable from a panel that failed to load.
 #[must_use]
@@ -151,7 +151,7 @@ pub const fn not_encrypted() -> &'static str {
 
 /// The cipher and key length, in the operator's terms.
 ///
-/// ★ The revision number (`/R`) is deliberately absent. It is the number that
+/// The revision number (`/R`) is deliberately absent. It is the number that
 /// matters to an implementer and means nothing to the person holding the
 /// drawing; what they can act on is *how strong is this* and *is it modern*.
 #[must_use]
@@ -160,7 +160,7 @@ pub fn cipher_line(cipher: Cipher) -> String {
         Cipher::Rc4 => "RC4, an old cipher that is no longer considered secure",
         Cipher::Aes128 => "AES-128",
         Cipher::Aes256 => "AES-256",
-        // ★ `/None` means the security handler decrypts privately and pdfcer
+        // `/None` means the security handler decrypts privately and pdfcer
         // cannot know how. A document routing real content through it is
         // refused before it reaches this shell, so what reaches here is the
         // Identity-like passthrough — encrypted in structure, not in content.
@@ -174,7 +174,7 @@ pub fn cipher_line(cipher: Cipher) -> String {
 
 /// **Which password opened it**, which decides what the operator may do next.
 ///
-/// # ★★ The engine asked for this by name
+/// # The engine asked for this by name
 ///
 /// From its 2026-09-03 reply: *"`AuthKind` tells you which one opened the file
 /// — surface that, because `remove_encryption` will refuse a
@@ -185,7 +185,7 @@ pub fn cipher_line(cipher: Cipher) -> String {
 /// not exist yet, shown before that control arrives, so the day it does the
 /// refusal is already explained.
 ///
-/// ★ [`AuthKind::EmptyUser`] is the case an operator never sees happen: the
+/// [`AuthKind::EmptyUser`] is the case an operator never sees happen: the
 /// document declares a user password of nothing, every conforming reader tries
 /// it silently, and the file opens with no prompt. It is worth naming, because
 /// *"this file is encrypted"* and *"you needed a password"* are then two
@@ -215,7 +215,7 @@ pub const fn permissions_heading() -> &'static str {
     "What this document allows"
 }
 
-/// ★★★ **The engine's own sentence, verbatim.** See the module header.
+/// **The engine's own sentence, verbatim.** See the module header.
 ///
 /// Supplied by `pdfcer-core` on 2026-09-03 with the instruction *"take this one
 /// verbatim; it is the sentence the CLI will print too."* Do not re-word it,
@@ -244,7 +244,7 @@ pub const fn permission_name(bit: PermissionBit) -> &'static str {
 
 /// Whether a bit is granted, refused, or not applicable at this revision.
 ///
-/// ★ Three states, not two. `Permissions::granted` returns `Option<bool>`, and
+/// Three states, not two. `Permissions::granted` returns `Option<bool>`, and
 /// `None` means *the bit does not apply to this document's encryption
 /// revision* — which is not "refused". Rendering it as refused would tell the
 /// operator their document forbids something it has no opinion about.
@@ -260,7 +260,7 @@ pub const fn permission_state(granted: Option<bool>) -> &'static str {
 /// The `/Perms` integrity disagreement — the one signal PDF gives that a
 /// document's stated permissions are not the ones its encryptor recorded.
 ///
-/// # ★★ Reported, never acted on, and the engine is emphatic about why
+/// # Reported, never acted on, and the engine is emphatic about why
 ///
 /// `/Perms` holds an **encrypted** copy of `/P`. The plaintext copy sits in the
 /// `/Encrypt` dictionary where anyone can edit it, with no integrity protection
@@ -283,7 +283,7 @@ pub const fn perms_disagree() -> &'static str {
 
 /// The ordinary case for an older document: there is no `/Perms` entry to check.
 ///
-/// ★ Said, and said as ordinary. `pdfcer-core`: *"`NotApplicable` for every
+/// Said, and said as ordinary. `pdfcer-core`: *"`NotApplicable` for every
 /// `/R` ≤ 4 document, where the entry does not exist. That is the ordinary
 /// answer, not a failed check, and a front end must not render it as one."*
 #[must_use]
@@ -307,7 +307,7 @@ pub const fn not_signed() -> &'static str {
     "This document is not signed."
 }
 
-/// ★★★ **The engine's own sentence, reworded by the engine.** See the module
+/// **The engine's own sentence, reworded by the engine.** See the module
 /// header.
 ///
 /// Our draft said pdfcer *"cannot tell you the document is unaltered"*. The
@@ -316,7 +316,7 @@ pub const fn not_signed() -> &'static str {
 /// answer. So: *"does not yet check"*, and the clause that will change is
 /// separated from the clause about trust, which will not.
 ///
-/// ★★★ **THAT DAY CAME — 2026-09-05 — and this sentence was false for it.**
+/// **THAT DAY CAME — 2026-09-05 — and this sentence was false for it.**
 /// The paragraph above said *"when `signature::verify` lands, the first two
 /// clauses change"*. It landed: `pdfcer-core` v0.38.0 (`b01964f`) carries
 /// `signature::verify_all_with_trust`, `crate::trust::examine` calls it, and
@@ -351,7 +351,7 @@ pub fn signature_count(total: usize) -> String {
 
 /// The coverage verdict — the one signature fact pdfcer *can* state today.
 ///
-/// ★★ `covers_to_eof` is a real answer and it is the useful half of the two:
+/// `covers_to_eof` is a real answer and it is the useful half of the two:
 /// content appended after a signature is the ordinary way a signed document
 /// stops meaning what it said, and it needs no cryptography to detect.
 #[must_use]
@@ -367,7 +367,7 @@ pub const fn coverage_line(covers: bool) -> &'static str {
 // What pdfcer cannot do here
 // ---------------------------------------------------------------------------
 
-/// ★★★ The tab says what it cannot do, and it says it once, at the bottom.
+/// The tab says what it cannot do, and it says it once, at the bottom.
 ///
 /// # Why this exists rather than eight greyed buttons
 ///
@@ -377,13 +377,13 @@ pub const fn coverage_line(covers: bool) -> &'static str {
 /// cannot keep, and an operator would spend their time discovering that one at
 /// a time.
 ///
-/// ★★ But *nothing at all* is the other failure. An operator opening a tab
+/// But *nothing at all* is the other failure. An operator opening a tab
 /// called Security and finding only readouts will reasonably conclude the
 /// feature is half-built and stop looking — which is the discoverability defect
 /// that produced the Tool panel, arriving from the opposite direction. So the
 /// tab states the boundary once, in one sentence, as a fact about this build.
 ///
-/// ★★★ **CORRECTED 2026-09-05 — two of its three clauses were false, and it
+/// **CORRECTED 2026-09-05 — two of its three clauses were false, and it
 /// too has ZERO call sites.** *"Encryption first, signing later"* was the
 /// right prediction and it came true on 2026-09-04: `file.encrypt` and
 /// `file.permissions` are registered, dispatched through
@@ -397,7 +397,7 @@ pub const fn coverage_line(covers: bool) -> &'static str {
 /// sentence sat false and unreferenced for a day. It is scoped to the one
 /// clause that survives, and it now names where the rest went.
 ///
-/// ★★★ **CORRECTED AGAIN 2026-09-06, and the last surviving clause is gone
+/// **CORRECTED AGAIN 2026-09-06, and the last surviving clause is gone
 /// too.** It read *"It cannot sign a document; that is still being built in the
 /// engine."* Both halves were false by then: `pdfcer_core::sign` shipped on
 /// 2026-09-05 — 101 public items, written in answer to this shell's own

@@ -60,7 +60,7 @@ impl LRect {
 
     /// Does this rectangle wholly contain `other`?
     ///
-    /// # ★ Wholly, not partly, and the difference is what a check means by it
+    /// # Wholly, not partly, and the difference is what a check means by it
     ///
     /// The question a driven check asks is *"can the operator click this?"*,
     /// and a control half-outside its container is one whose visible half may

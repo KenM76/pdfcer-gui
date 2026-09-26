@@ -7,7 +7,7 @@
 //! ruling is that the response to it firing is to split the module, not to
 //! shrink the prose.
 //!
-//! ## ★ Why THIS is the seam, out of everything that file holds
+//! ## Why THIS is the seam, out of everything that file holds
 //!
 //! Because it is the one part of `decline` that is not about *what a decline
 //! is*. [`super`] answers three questions — what may be declined, how long a
@@ -18,7 +18,7 @@
 //! protocol changes, which is roughly never, and it is the only thing in the
 //! file with a lifetime — a value held across somebody else's call.
 //!
-//! ★ It reaches into the parent for `LAST` and [`Declined`], which is exactly
+//! It reaches into the parent for `LAST` and [`Declined`], which is exactly
 //! what a child module is for and is why this is a submodule rather than a
 //! sibling: the store stays private to `decline`, and nothing outside it can
 //! write the slot without going through a recorder or through this.
@@ -27,7 +27,7 @@
 
 use super::{Declined, LAST};
 
-/// ★★★ **The floor under every edit: the verb speaks first, and if it says
+/// **The floor under every edit: the verb speaks first, and if it says
 /// nothing the funnel says the un-categorised thing** — `OPERATOR_REQUESTS.md`
 /// O116.
 ///
@@ -47,7 +47,7 @@ use super::{Declined, LAST};
 /// name is always better than one it cannot, so the funnel is the last speaker
 /// and must yield to anything the verb said.
 ///
-/// # ★★ Why it takes the slot rather than merely reading it
+/// # Why it takes the slot rather than merely reading it
 ///
 /// [`before_the_verb`] **empties** the slot and holds the contents.
 /// Comparing before-and-after values instead would have been simpler and
@@ -65,7 +65,7 @@ use super::{Declined, LAST};
 /// Taking the slot makes the question exact: **is anything in here now?** can
 /// only be answered *yes* by a write that happened while the guard was held.
 ///
-/// # ★★★ Repeatability, which the take is what makes mechanical
+/// # Repeatability, which the take is what makes mechanical
 ///
 /// Pressing commit twice on the same unsupported text is **two events, and the
 /// second registers** — the property the module header's reason 2 is about, and
@@ -78,7 +78,7 @@ use super::{Declined, LAST};
 /// `crate::canvas::zoom::trace_outcome` rules for the trace channel and for the
 /// same reason.
 ///
-/// # ★ The one thing a future recorder must not do
+/// # The one thing a future recorder must not do
 ///
 /// Record a decline **before** calling `vector_edit` and expect it to survive a
 /// refusal: [`before_the_verb`] will have taken it, and
@@ -93,7 +93,7 @@ pub(crate) struct BeforeTheVerb(Option<Declined>);
 
 /// Take the slot and hold it for the duration of the verb call.
 ///
-/// ★ A free function rather than `BeforeTheVerb::new` or
+/// A free function rather than `BeforeTheVerb::new` or
 /// `BeforeTheVerb::before_the_verb`, and the reason is only partly that clippy's
 /// `self_named_constructors` rejects the second: the call site reads
 /// `decline::before_the_verb()`, which says **when** it happens, and *when* is
@@ -113,7 +113,7 @@ impl BeforeTheVerb {
     /// **The verb succeeded.** Put back whatever was live before it ran, unless
     /// the verb itself recorded something.
     ///
-    /// ★ Restoring rather than clearing keeps a successful edit's behaviour
+    /// Restoring rather than clearing keeps a successful edit's behaviour
     /// **exactly** what it was before this guard existed: nothing about an
     /// `Ok` has ever retired a decline, and this is not the place to decide
     /// that it should. `retire` owns that question and answers it at the

@@ -15,7 +15,7 @@ It was not the document count and it was not random. It was **off-page
 content**, which is common in CAD exports and rare elsewhere, and which the
 shell displays by default in Review and Edit and not in Read.
 
-# ★★★ A region is not automatically small
+# A region is not automatically small
 
 Two different rectangles reach the render path wearing one type, and they
 behave **oppositely** as the operator zooms:
@@ -52,7 +52,7 @@ off-page display OFF in Read, and a Read-mode run never enters the halo
 tier at all. A whole eight-rung ladder was once measured in Read mode and
 recorded a real, precise zero — of the wrong variable.
 
-# ★★ The controls, and why they carry no engine constant
+# The controls, and why they carry no engine constant
 
 `tools/ui-verify` has one dependency and cannot import
 `pdfcer_render::MAX_PIXMAP_EDGE`; a harness constant *naming* an engine

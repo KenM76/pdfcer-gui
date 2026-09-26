@@ -23,7 +23,7 @@ a failure mode.
   instead of an error banner (O186). The number can only come from a refusal
   that has already happened; see [`crate::render::ceiling`].
 
-## ★ Why `rasterize` is here and not with the scheduling
+## Why `rasterize` is here and not with the scheduling
 
 It reads as a scheduling verb, and moving it would have been the tidier cut.
 It is here because it **absorbs**: it writes `render_in_flight`, whose only

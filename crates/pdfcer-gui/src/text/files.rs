@@ -29,7 +29,7 @@ pub fn filter_pdf() -> &'static str {
 
 /// The picker filter for a raster image.
 ///
-/// ★ Names the four formats rather than saying "images", because those four are
+/// Names the four formats rather than saying "images", because those four are
 /// what `pdfcer-core` actually places and the picker is the last cheap place to
 /// say so. A filter reading *"Images"* that then refuses a GIF has moved the
 /// refusal from a dialog the operator can dismiss to one they have to read —
@@ -42,7 +42,7 @@ pub fn filter_image() -> &'static str {
 
 /// The picker filter for a plain text file.
 ///
-/// ★ *"Text files"* rather than *"Text (TXT)"*, which departs from
+/// *"Text files"* rather than *"Text (TXT)"*, which departs from
 /// [`filter_image`] and [`filter_form_data`] and does so deliberately. Those two
 /// name their extensions because the formats are several and the operator is
 /// matching a suffix he can see. Here the filter's job is the opposite: the
@@ -57,7 +57,7 @@ pub fn filter_text() -> &'static str {
 
 /// The picker filter for a form-data file.
 ///
-/// ★ It names the three extensions rather than calling them "form data",
+/// It names the three extensions rather than calling them "form data",
 /// because the operator arriving at this dialog has a file with one of those
 /// suffixes in front of them and is matching on what they can see. `filter_image`
 /// makes the same call for the same reason.
@@ -101,14 +101,14 @@ pub fn save_copy_dialog_title() -> &'static str {
 
 /// The picker's heading for **Save As**, and the wording carries the difference.
 ///
-/// ★★ *"Save this document as"* rather than *"Save a copy"*, because the two
+/// *"Save this document as"* rather than *"Save a copy"*, because the two
 /// commands do different things and this heading is the last place the operator
 /// sees before bytes are written. A copy leaves them editing the original; this
 /// **moves the document** — the next `Ctrl+S` goes to the file they are about to
 /// name. A heading that said "copy" over a command that rebinds would be the
 /// program describing the safer of the two acts while performing the other.
 ///
-/// ★ The receipt afterwards says which file they are now editing, for the same
+/// The receipt afterwards says which file they are now editing, for the same
 /// reason: the rebinding is invisible until the next save, and by then it is
 /// too late to be surprised by it.
 #[must_use]
@@ -118,7 +118,7 @@ pub fn save_as_dialog_title() -> &'static str {
 
 /// The receipt for a completed Save As, naming the file that is now open.
 ///
-/// ★★★ It says **"you are now editing"**, not "saved". That is the whole
+/// It says **"you are now editing"**, not "saved". That is the whole
 /// difference between this command and Save a copy, it is the half the operator
 /// asked for by name, and it is not visible anywhere else on screen until the
 /// next save goes somewhere he did not expect.
@@ -159,7 +159,7 @@ pub fn saved_in_place(path: &std::path::Path) -> String {
 
 /// The suffix `file.save_copy` appends to suggest a name for the copy.
 ///
-/// # ★ Why the suggestion is never the file that was opened
+/// # Why the suggestion is never the file that was opened
 ///
 /// `crate::text::commands::file_save_copy`'s shipped tooltip promises *"The
 /// original is never overwritten unless you pick it"*, and a **default** is
@@ -199,7 +199,7 @@ pub fn extract_pages_dialog_title() -> &'static str {
     "Save the extracted pages as a new document"
 }
 
-/// ★★★ The heading on the picker that chooses what to combine —
+/// The heading on the picker that chooses what to combine —
 /// `OPERATOR_REQUESTS.md` O68.
 ///
 /// Two things it has to say and neither is optional. **"Combine"** rather than
@@ -258,7 +258,7 @@ pub fn extract_pages_suffix() -> &'static str {
 }
 
 // ---------------------------------------------------------------------------
-// ★ The Recent control's own LABEL and TOOLTIP are deliberately not here.
+// The Recent control's own LABEL and TOOLTIP are deliberately not here.
 //
 // It is a control for a registered command — `file.recent` — and a command's
 // words live in `crate::text::commands`, whichever surface draws it. The
@@ -313,7 +313,7 @@ pub fn recent_entry_label(path: &Path) -> String {
 /// `Untitled` with no ordinal. Two of the three number them.
 ///
 /// The tie-break is a reason of this project's own, and it is the stronger
-/// half. ★★ **A defect in this area is found by reading the trace of a driven
+/// half. **A defect in this area is found by reading the trace of a driven
 /// run**, and `new-document name="Untitled 1.pdf"` twice in a row is a trace
 /// that cannot distinguish "New was pressed twice" from "New was pressed once
 /// and the second press did nothing". The ordinal is what makes the second
@@ -352,7 +352,7 @@ mod tests {
     use super::*;
     use std::path::PathBuf;
 
-    /// ★ **No dialog string can break out of the PowerShell script.**
+    /// **No dialog string can break out of the PowerShell script.**
     ///
     /// See the module header. The interim picker single-quotes these into a
     /// script; a `'` inside one would end the literal and the child process
@@ -384,7 +384,7 @@ mod tests {
         assert_eq!(recent_entry_tooltip(&path), "D:\\jobs\\4471\\Sheet 1.pdf");
     }
 
-    /// ★ **Two created documents are told apart by their names.**
+    /// **Two created documents are told apart by their names.**
     ///
     /// The property the ordinal exists for, asserted rather than assumed. An
     /// `untitled` that ignored its argument would satisfy every other test in

@@ -29,14 +29,14 @@ pub(crate) fn handles(id: &str) -> bool {
         "format.delete"
             | "format.properties"
             | "format.select_form"
-            // ★ The text-run re-aim — O188(A). It sits next to
+            // The text-run re-aim — O188(A). It sits next to
             // `format.select_form` because it is the same act one rung down:
             // both RE-AIM the selection at something the click could not have
             // named on its own, and neither edits anything. `select_form`
             // ascends from a leaf to the form that paints it; this one descends
             // from a text block to the one line the pointer was over.
             //
-            // ★★ It is the only arm in this file whose operand is not the
+            // It is the only arm in this file whose operand is not the
             // selection. It reads a pick parked in `egui::Memory` by the
             // right-click that opened the menu — which is why `dispatch`
             // takes an `egui::Context` at all — and that is not a shortcut:
@@ -44,7 +44,7 @@ pub(crate) fn handles(id: &str) -> bool {
             // is the pointer on?"*, so the command has no ribbon home and is
             // registered `TAB_SCOPED` for exactly that reason.
             | "format.select_text_line"
-            // ★ The form-XObject unshare. It sits with
+            // The form-XObject unshare. It sits with
             // `format.select_form` rather than with the Font group because it
             // asks the same first question every arm in this file has to ask —
             // *which of the two index spaces is this?* — and answers it the
@@ -69,7 +69,7 @@ pub(crate) fn handles(id: &str) -> bool {
             // every one of them arrives here and none has a second
             // implementation inside the renderer.
             //
-            // ★ `format.line_style` needs no machinery of its own here — it
+            // `format.line_style` needs no machinery of its own here — it
             // parks a `MarkupEdit` like the rest of the group — which is what
             // that type's one-field-per-variant design buys.
             | "format.colour"
@@ -93,7 +93,7 @@ pub(crate) fn dispatch(
     actions: &mut Vec<Action>,
 ) {
     match id {
-        // ★ The ribbon's Delete — the contextual Format tab's one command.
+        // The ribbon's Delete — the contextual Format tab's one command.
         //
         // The id is `format.delete`, not `edit.delete`: `RIBBON_IA.md`
         // §5.8 puts Delete on the **Format** tab, which is contextual and
@@ -104,7 +104,7 @@ pub(crate) fn dispatch(
         // dead code wearing a design pattern, which is what the
         // no-placeholders invariant forbids.
         //
-        // ★★ **The selection lives on `OpenDoc`, and this function's
+        // **The selection lives on `OpenDoc`, and this function's
         // `egui::Context` is not a licence to move it back into frame
         // memory.** The context is here so `format.select_text_line` can read
         // an operand the RIBBON could not have asked for — a pointer pick
@@ -123,7 +123,7 @@ pub(crate) fn dispatch(
         // at a rung whose delete verb does not exist yet.
         "format.delete" => {
             if let Status::Open(doc) = &app.status {
-                // ★★★ **A FORM FIELD FIRST, and this arm must stay in step
+                // **A FORM FIELD FIRST, and this arm must stay in step
                 // with the Delete KEY.**
                 //
                 // `canvas::keys`' Delete ladder reaches a selected widget at
@@ -139,12 +139,12 @@ pub(crate) fn dispatch(
                 // the second door, and it is where the divergence shows up as
                 // *"the menu's Delete does nothing"*.
                 //
-                // ★★ The guard is `edit_content`, matching `canvas::keys` and
+                // The guard is `edit_content`, matching `canvas::keys` and
                 // matching where the selection is offered at all: `canvas::forms`
                 // gives the selection surface to Edit and the fill surface to
                 // Read and Review. One predicate per capability.
                 //
-                // ★ `DeleteWidget`, not `DeleteField` — this box, not every box
+                // `DeleteWidget`, not `DeleteField` — this box, not every box
                 // the field owns. A field with two widgets on two pages is one
                 // field the operator can select from either place, and deleting
                 // the whole field because they pointed at one of its boxes
@@ -154,7 +154,7 @@ pub(crate) fn dispatch(
                 if app.capabilities().edit_content
                     && let Some(field) = &doc.selected_field
                 {
-                    // ★★★ R83 — ASKED HERE, THROUGH THE SAME FUNCTION THAT
+                    // R83 — ASKED HERE, THROUGH THE SAME FUNCTION THAT
                     // WITHHOLDS THE MENU ITEM AND DRAWS THE SENTENCE.
                     //
                     // Without it — and without a `visible_when` on the
@@ -201,13 +201,13 @@ pub(crate) fn dispatch(
                     ));
                     return;
                 }
-                // ★ An ANNOTATION first — not a tie-break: `SelectionState`
+                // An ANNOTATION first — not a tie-break: `SelectionState`
                 // cannot hold both, so these are the two cases of one
                 // question. Locked (§12.5.3 bit 8) does nothing rather than
                 // raising an action the engine would refuse; the control
                 // itself should be absent, which is the Format tab's work.
                 if let Some(annot) = doc.selection.annot().filter(|_| {
-                    // ★ `author_markup`, NOT `edit_content` — one predicate per
+                    // `author_markup`, NOT `edit_content` — one predicate per
                     // capability, the rule `canvas::keys` states beside its own
                     // pair. **Review must keep this**: deleting a markup is
                     // exactly what Review is for, and a guard that reached for
@@ -217,7 +217,7 @@ pub(crate) fn dispatch(
                     // neither stands in for the other.
                     app.capabilities().author_markup
                 }) {
-                    // ★★★ R83 — ASKED HERE, THROUGH THE SAME FUNCTION THAT
+                    // R83 — ASKED HERE, THROUGH THE SAME FUNCTION THAT
                     // WITHHELD THE CONTROL.
                     //
                     // ⚠ §12.5.3 Table 165's `Locked` bit is only part of the
@@ -259,7 +259,7 @@ pub(crate) fn dispatch(
                         )),
                     }
                 } else if !app.capabilities().edit_content {
-                    // ★★★ THE MODE, ASKED HERE, BECAUSE WITHOUT IT THE RIBBON
+                    // THE MODE, ASKED HERE, BECAUSE WITHOUT IT THE RIBBON
                     // DELETES PAGE CONTENT IN READ.
                     //
                     // `canvas::keys`' Delete-key path carries this guard and
@@ -271,7 +271,7 @@ pub(crate) fn dispatch(
                     // in the mode whose entire promise is that it authors
                     // nothing — the keyboard refusing and the button doing it.
                     //
-                    // ★★ **A content selection IS reachable in Read**, so
+                    // **A content selection IS reachable in Read**, so
                     // *"entering a mode without the capability clears the
                     // selection, and no gesture can build a new one"* is not a
                     // guard. `canvas::clicking`'s image arm runs precisely when
@@ -280,7 +280,7 @@ pub(crate) fn dispatch(
                     // `selection.any` can be set in Read. The control is not
                     // greyed there; it is **enabled**.
                     //
-                    // ★ The compound is what makes this a data-loss defect
+                    // The compound is what makes this a data-loss defect
                     // rather than an untidy one: `format.select_form` re-aims
                     // the selection from one picture to the whole form
                     // XObject, and `format.delete` then takes the lot. Click a
@@ -302,7 +302,7 @@ pub(crate) fn dispatch(
             }
         }
 
-        // ★★★ **Select the form that contains what is selected.**
+        // **Select the form that contains what is selected.**
         //
         // The deliberate second act that pays for the deep hit test. A click
         // reaches inside a form XObject and the form itself is excluded from
@@ -325,7 +325,7 @@ pub(crate) fn dispatch(
         // mean one thing always. `select_only` then replaces the selection
         // outright, which is the honest report: what you now have is the
         // form, and not the set you had before.
-        // ★ Guarded with the other re-aims. Non-destructive on its own, but
+        // Guarded with the other re-aims. Non-destructive on its own, but
         // it is the FIRST HALF of the compound that makes A18 a data-loss
         // defect: in Read, click a picture inside a title block,
         // `select_form` re-aims the selection from the one image to the whole
@@ -351,7 +351,7 @@ pub(crate) fn dispatch(
                     Some(form) => {
                         doc.selection.select_only(page, form, "select-form");
                     }
-                    // ★★★ **The sentence must say that NOTHING is inside a
+                    // **The sentence must say that NOTHING is inside a
                     // form, not that something is.**
                     //
                     // Nothing selected is drawn inside a form, or this page's
@@ -369,7 +369,7 @@ pub(crate) fn dispatch(
                 }
             }
         }
-        // ★★★ **Select just the line of text the pointer was over.**
+        // **Select just the line of text the pointer was over.**
         //
         // O188(A). The operator's words, `OPERATOR_REQUESTS.md`:
         // *"In text that is grouped together or whatever it is called, such
@@ -416,7 +416,7 @@ pub(crate) fn dispatch(
         // report of that is to leave the selection where the operator last
         // saw it. The trace still says so, for the harness.
         //
-        // ★ Guarded on `edit_content` with the other re-aim, and for the
+        // Guarded on `edit_content` with the other re-aim, and for the
         // same measured reason: `select_form` + `delete` is a data-loss
         // compound in Read mode (A18). This one re-aims DOWN rather than up,
         // so the same compound narrows a delete rather than widening it —
@@ -432,7 +432,7 @@ pub(crate) fn dispatch(
         "format.select_text_line" => {
             if let Status::Open(doc) = &mut app.status {
                 let page = doc.view.page_index;
-                // ★ The `Ref` is taken and dropped inside this block, before
+                // The `Ref` is taken and dropped inside this block, before
                 // `doc` is borrowed mutably to move the selection. `resolve`
                 // re-validates the parked pick against the CURRENT model —
                 // the object is still a text run, the run index is still in
@@ -450,7 +450,7 @@ pub(crate) fn dispatch(
                 }
             }
         }
-        // ★★★ **Give this page its own copy of the shared drawing.**
+        // **Give this page its own copy of the shared drawing.**
         //
         // The "option" half of `pdfcer-core`'s decision 076, and the only route
         // in this shell to `EditSession::unshare_form`.
@@ -474,7 +474,7 @@ pub(crate) fn dispatch(
         // doc comment carries the argument for why an `ObjId` cannot serve the
         // *selection* act and a paint-order index cannot serve this one.
         //
-        // ★★ **OUTERMOST, and passing the innermost would be a live defect.**
+        // **OUTERMOST, and passing the innermost would be a live defect.**
         // `FormLeaf::containment` is *"outermost first"*, so position 0 is the
         // form the PAGE invokes and the last entry is the form the object sits
         // directly inside. `unshare_form` refuses a nested invocation by name —
@@ -504,7 +504,7 @@ pub(crate) fn dispatch(
         // is not `record_inside_form`'s: that one reports a verb refusing
         // BECAUSE the selection is in a form, and this one refuses because it is
         // not. Reusing it would state the exact inverse of what happened.
-        // ★ Guarded — it WRITES TO THE DOCUMENT (`EditSession::unshare_form`)
+        // Guarded — it WRITES TO THE DOCUMENT (`EditSession::unshare_form`)
         // and is reachable from Read by the same route as the re-aims above.
         "format.merge_text_runs" if !app.capabilities().edit_content => {
             crate::diag::trace(|| {
@@ -579,7 +579,7 @@ pub(crate) fn dispatch(
                 "file.properties".to_owned(),
             ));
         }
-        // ★★★ The Font group. Five ids, two operand shapes, ONE derivation of
+        // The Font group. Five ids, two operand shapes, ONE derivation of
         // *which text*.
         //
         // Bold and Italic carry their operand in the button they are, so their
@@ -588,7 +588,7 @@ pub(crate) fn dispatch(
         // "Helvetica-Bold" — so `app::fontband` parks theirs on
         // `PdfcerApp::font_change` and this takes it.
         //
-        // ★ **The page and the runs are derived here for all five**, through
+        // **The page and the runs are derived here for all five**, through
         // `app::textoperand::resolve`, and that is the point of routing the custom
         // controls through a command at all. The alternative — the renderer
         // building a whole `Action::TextStyle` because it already has the
@@ -600,7 +600,7 @@ pub(crate) fn dispatch(
             // Built before the document is borrowed, because `take` needs
             // `&mut app` and the operand read needs `&app.status`.
             let change = match id {
-                // ★ Bold and Italic are **buttons that apply, not switches
+                // Bold and Italic are **buttons that apply, not switches
                 // that reflect**, which is why each names one attribute and
                 // sets the other false rather than toggling a remembered pair.
                 // There is no "is this run bold" bit in a PDF — weight is a
@@ -619,7 +619,7 @@ pub(crate) fn dispatch(
                 }),
                 _ => app.font_change.take(),
             };
-            // ★ `None` here is not a defect and raises nothing. It is the
+            // `None` here is not a defect and raises nothing. It is the
             // ordinary state of a custom control the operator hovered without
             // changing: the ribbon returns a token only when something was
             // invoked, but a token can also arrive from a chord bound to one
@@ -632,13 +632,13 @@ pub(crate) fn dispatch(
             let Status::Open(doc) = &app.status else {
                 return;
             };
-            // ★ The **one** derivation of *which runs a restyle acts on*,
+            // The **one** derivation of *which runs a restyle acts on*,
             // asked of `app::textoperand` so that this arm, the five commands'
             // `enabled_when` and both font surfaces cannot disagree. It answers
             // with a live swept range if there is one, and otherwise with the
             // single selected text object resolved through its byte span.
             //
-            // ★★★ **The object rung is why the press costs something here and
+            // **The object rung is why the press costs something here and
             // nowhere else.** Resolving an object operand runs one page
             // extraction with provenance capture — 392 ms on the operator's
             // benchmark sheet — and this is the correct place to pay it: once
@@ -647,7 +647,7 @@ pub(crate) fn dispatch(
             // caches in `app::fontband` and `panels::properties::textobject`
             // answer the per-frame read-back. See `app::textoperand`'s header.
             //
-            // ★ `runs` owns the staleness gate for the swept rung — a stale
+            // `runs` owns the staleness gate for the swept rung — a stale
             // run ordinal restyles the WRONG text, so the check lives with the
             // data rather than with each of its readers.
             //
@@ -666,7 +666,7 @@ pub(crate) fn dispatch(
                 change,
             });
         }
-        // ★★★ The Markup group. ONE operand shape, and the operand arrives
+        // The Markup group. ONE operand shape, and the operand arrives
         // WITH the token rather than being re-derived here.
         //
         // # Why this is the opposite of the Font arm above, deliberately
@@ -691,11 +691,11 @@ pub(crate) fn dispatch(
         // ⇒ So the arm **verifies** rather than re-derives, which is the honest
         // middle: the parked target must still be what the selection names.
         //
-        // ★ `None` raises nothing and is not a defect: it is what a chord
+        // `None` raises nothing and is not a defect: it is what a chord
         // bound to one of these ids produces, because a chord cannot park an
         // operand. Silence is the honest answer — there is no value to apply
         // and nothing was refused.
-        // ★ `format.line_style` needs no machinery of its own here: it parks a
+        // `format.line_style` needs no machinery of its own here: it parks a
         // `MarkupEdit` like the rest of the group, so it is the same operand
         // shape reaching the same verb. That is the property `MarkupEdit`'s
         // one-field-per-variant design buys — a new control is an enum variant
@@ -708,14 +708,14 @@ pub(crate) fn dispatch(
             let Some((target, edit)) = app.markup_change.take() else {
                 return;
             };
-            // ★★ `author_markup`, NOT `edit_content` — one predicate per
+            // `author_markup`, NOT `edit_content` — one predicate per
             // capability, the rule `canvas::keys` states beside its own pair
             // and the Delete arm above repeats. **Review must keep this**:
             // restyling a mark is exactly what Review is for, and a guard
             // reaching for `edit_content` would take the working verb away from
             // the mode that owns it.
             //
-            // ★ Re-asked here although `enabled_when` and `shown_when` both
+            // Re-asked here although `enabled_when` and `shown_when` both
             // carry it, for this file's standing reason: greying is a hint and
             // enforces nothing — a chord consults no condition at all.
             if !app.capabilities().author_markup {
@@ -728,7 +728,7 @@ pub(crate) fn dispatch(
             let Status::Open(doc) = &app.status else {
                 return;
             };
-            // ★★★ The parked target must still be the selection, and the
+            // The parked target must still be the selection, and the
             // §12.5.3 lock must still be clear.
             //
             // Both are re-asked rather than trusted, and neither is reachable
@@ -740,7 +740,7 @@ pub(crate) fn dispatch(
             // `actions::apply`'s `Err` arm and say nothing to the operator —
             // which is the silent-decline class this project was founded on.
             //
-            // ★ It declines to the TRACE rather than to the status bar for
+            // It declines to the TRACE rather than to the status bar for
             // `format.delete`'s reason above: the sentence for a
             // locked mark is already on screen, in the Properties panel and on
             // the greyed control's own hover
@@ -775,7 +775,7 @@ pub(crate) fn dispatch(
 
 /// **The ribbon's Delete, asked through the same function as the key.**
 ///
-/// # ★★★ Why this is a function and not four lines inside the arm
+/// # Why this is a function and not four lines inside the arm
 ///
 /// Because the rule is destructive and there must be exactly one of it. Both
 /// claimants — this command and the Delete **key** in `canvas::keys` — ask
@@ -794,7 +794,7 @@ pub(crate) fn dispatch(
 /// one label or one corner point exactly as the key does, because there is
 /// only one answer to ask for.
 ///
-/// # ★★ The provider, and why it is read here rather than passed in
+/// # The provider, and why it is read here rather than passed in
 ///
 /// The dispatcher is not inside the canvas's frame — it runs from the command
 /// funnel, after the ribbon or a menu has already closed — so it cannot inherit
@@ -825,12 +825,12 @@ fn delete_the_selection(doc: &crate::app::state::OpenDoc, actions: &mut Vec<Acti
     };
     match outcome {
         Ok(subject) => actions.push(crate::canvas::deleting::action(subject).into()),
-        // ★ The identical channel the key uses, epoch and all — see
+        // The identical channel the key uses, epoch and all — see
         // `crate::text::deleting::refusal` for which refusals speak and why the
         // rest are silent on purpose. Routing an empty operand list to the
         // inside-a-form decline instead leaves a Part or Node rung with no
         // trace line at all, and the command ends up quieter than the key.
-        // ★ `true` for `model_attempted`, and it is a fact rather than a
+        // `true` for `model_attempted`, and it is a fact rather than a
         // convenience: this arm asks `doc.page_objects()` unconditionally just
         // above, so a `None` here can only mean the page would not decompose.
         // The key's answer can differ, because it inherits the canvas's

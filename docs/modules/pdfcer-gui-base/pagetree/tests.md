@@ -1,6 +1,6 @@
 # `pagetree::tests` — and the one shape that would make all of them vacuous
 
-★★★ **A test on a FLAT page tree defeats this entire module.**
+**A test on a FLAT page tree defeats this entire module.**
 
 On a flat tree the immediate parent *is* the root, so `/Count` and the leaf
 tally can only disagree at one node — and an implementation that compared
@@ -25,7 +25,7 @@ writer does.
 | [`a_healthy_nested_tree_is_consistent`] | the guard does not fire on good files — without it the guard could be `false` |
 | [`a_stale_root_above_a_correct_parent_is_caught`] | the walk goes **above the immediate parent**; this is the assertion a flat fixture cannot make |
 | [`a_stale_middle_node_is_caught_as_well_as_the_root`] | it reports **every** bad node, not just the root |
-| [`the_real_corrupt_file_is_caught`] | ★★★ end to end, against bytes the engine wrote |
+| [`the_real_corrupt_file_is_caught`] | end to end, against bytes the engine wrote |
 | [`the_real_clean_file_is_consistent`] | the same file **before** the delete, so the test above cannot pass by always refusing |
 | [`a_flat_tree_is_still_checked`] | the flat case is not skipped — it is merely unable to exhibit the defect |
 | [`an_absent_count_is_not_a_disagreement`] | §6 — malformed is counted, not refused |

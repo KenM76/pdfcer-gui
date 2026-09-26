@@ -41,7 +41,7 @@ screen. The capability was there; the route was not.
 the clicked object**, whose operand is derived from the object's own
 `BT`…`ET` byte span rather than from any guess at geometry.
 
-# ★★★ Why this check is not a subset of `font_group`
+# Why this check is not a subset of `font_group`
 
 `font_group`'s phase 1 asserts that the panel drew the **face row** for a
 clicked text object. This check asserts, in the same state, that the
@@ -62,13 +62,13 @@ complained about.
 | 4 | clicking the swatch opened `properties.textobject.swatch.picker` | the control is drawn and inert — this project's founding defect |
 | 5 | a pick then a close traced `text-style-applied` **and** `format-text` | the gesture decided to act and the action never reached the engine |
 
-★★ **4 and 5 are two assertions and not one**, for the reason
+**4 and 5 are two assertions and not one**, for the reason
 `restyle_text`'s own header gives about its pair: a control that opens a
 picker and never commits, and a control that never opens, are different
 defects with different fixes, and one message covering both would name
 neither.
 
-★★★ **Step 2 is a disjunction on purpose, and it is not a weakened
+**Step 2 is a disjunction on purpose, and it is not a weakened
 assertion.** Which of the two draws is a fact about the *fixture*, not about
 the program: text painted in CMYK or a spot colour must get the sentence and
 no swatch, and text in RGB or Gray must get the swatch. Requiring the swatch
@@ -78,11 +78,11 @@ a spot-inked drawing — which is precisely the class of false red
 recorded as a note, and step 4 runs **only** when it was the swatch: there is
 nothing to click when the program has correctly refused to draw a control.
 
-# ★ The aim
+# The aim
 
 Needs a `--doc-point` on a real run of text. `RESUME.md`'s aim table gives
 `D:/Dev/pdfTests/SW41177/SW41177.pdf` at `0,1140,62` for the text family,
 and that is this check's calibration point: a 5 pt title-block run at PDF
 (1135.7, 58.4)–(1190.5, 63.4). Anything else and step 0 skips.
 
-# ★★★ THE FALSIFICATION TABLE — what to break, and what must go red
+# THE FALSIFICATION TABLE — what to break, and what must go red

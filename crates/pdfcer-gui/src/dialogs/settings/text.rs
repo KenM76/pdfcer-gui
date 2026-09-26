@@ -6,7 +6,7 @@
 //! pattern** are built on — so two of the three carry a consequence the source
 //! did not disclose.
 //!
-//! ## ★ R35, and why two radius lines here name redaction
+//! ## R35, and why two radius lines here name redaction
 //!
 //! `pdfcer-core` is explicit: *a redaction built under one value is not
 //! equivalent under another.* Changing the unmappable sentinel changes
@@ -34,7 +34,7 @@ use crate::text::settings as t;
 /// Free text invites a number that then has to be silently clamped, and a
 /// silent clamp on a setting is an edit the operator did not make.
 ///
-/// # ★ The range MUST be the store's own accepted range
+/// # The range MUST be the store's own accepted range
 ///
 /// `MIN_WORD_GAP_RATIO` and `MAX_WORD_GAP_RATIO` are `pub` in `pdfcer-core`
 /// **specifically so a front end can bound its control by the same numbers the
@@ -76,7 +76,7 @@ pub fn word_gap(ui: &mut Ui, draft: &mut Draft) {
 
 /// What stands in for text pdfcer cannot decode.
 ///
-/// # ★ The consequence the old note omitted
+/// # The consequence the old note omitted
 ///
 /// The source's warning for *Leave it out* was that extracted text reads as
 /// complete when characters are missing. True, and the smaller half.
@@ -144,7 +144,7 @@ pub fn unmappable(ui: &mut Ui, draft: &mut Draft) {
 /// alone as authority — and neither reading can be eliminated. That is why this
 /// is a setting, and why the default is `Always`: it follows the one `shall`.
 ///
-/// # ★ The bound that is not a setting, disclosed under the group
+/// # The bound that is not a setting, disclosed under the group
 ///
 /// **No length correspondence exists** between replacement text and the content
 /// it replaces — the standard's own example maps two shown characters to one —
@@ -197,7 +197,7 @@ pub fn actual_text(ui: &mut Ui, draft: &mut Draft) {
 /// should be an option in the settings to include or exclude such items in
 /// the search.”*
 ///
-/// # ★ In this group, and the group's title is the argument
+/// # In this group, and the group's title is the argument
 ///
 /// *Copying and extracting text* is where it belongs because **search is
 /// extraction** — the module header above already says so for the other
@@ -210,7 +210,7 @@ pub fn actual_text(ui: &mut Ui, draft: &mut Draft) {
 /// entries are per-search choices an operator changes while hunting, where
 /// this is a standing answer to how their clipboard behaves.
 ///
-/// # ★★ The live half is applied in `PdfcerApp::save_settings`
+/// # The live half is applied in `PdfcerApp::save_settings`
 ///
 /// This function edits `Draft::working_prefs`, which is the **file**. The
 /// value the next search reads lives on [`crate::find::FindState`], and

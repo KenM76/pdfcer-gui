@@ -13,7 +13,7 @@ use crate::text::panels::properties as t;
 
 /// The width of the face chooser, in points.
 ///
-/// ★ Chosen against `egui_shell::ribbon::plan::CUSTOM_ITEM_WIDTH`, which is
+/// Chosen against `egui_shell::ribbon::plan::CUSTOM_ITEM_WIDTH`, which is
 /// **96** and is what the band budgets for a custom item it cannot measure.
 /// That module's header is explicit about the asymmetry: *"an estimate that is
 /// too small costs a clipped group; it cannot cost the overflow control"* — so
@@ -40,7 +40,7 @@ const SIZE_WIDTH: f32 = 46.0;
 /// which is what the shell expects for a frame in which the operator merely
 /// looked at the control.
 ///
-/// # ★ `kind` is matched, not asserted
+/// # `kind` is matched, not asserted
 ///
 /// An unrecognised kind returns `None` and draws nothing, exactly as
 /// [`crate::app::PdfcerApp::ribbon_band`]'s renderer does for one it does not
@@ -60,7 +60,7 @@ pub(super) fn draw(
     let command = registry.get(id)?;
     let enabled = command.is_enabled(conditions);
 
-    // ★ The read-back is attempted only when the control is live, and that is
+    // The read-back is attempted only when the control is live, and that is
     // a **performance** decision with a measured number behind it rather than
     // tidiness: `TextStyleDraft::sync` runs a text extraction with provenance
     // capture on, which is 392 ms on the operator's benchmark sheet. The draft
@@ -97,7 +97,7 @@ pub(super) fn draw(
 
     crate::diag::ui_rect(&egui_shell::ribbon::report::band_item(id), response.rect);
 
-    // ★ The same tooltip in both states, from the same field, because
+    // The same tooltip in both states, from the same field, because
     // `render_command` does exactly that for every other control on the band —
     // `on_hover_text` when live and `on_disabled_hover_text` when not. It is
     // why `crate::text::commands`' Font block writes every one of these five
@@ -115,7 +115,7 @@ pub(super) fn draw(
 
 /// Report whether this control was drawn pressable, on CHANGE only.
 ///
-/// # ★★★ Two numbers, because this module greys on the SECOND one
+/// # Two numbers, because this module greys on the SECOND one
 ///
 /// `enabled` is the registered command's own predicate — the thing every other
 /// control on the band is greyed by, and the thing the condition tests assert.
@@ -132,7 +132,7 @@ pub(super) fn draw(
 /// every condition test passes, and until 2026-09-14 nothing outside this
 /// process could see it.
 ///
-/// ★★ Emitted under [`egui_shell::ribbon::report::ENABLEMENT_EVENT`], the same
+/// Emitted under [`egui_shell::ribbon::report::ENABLEMENT_EVENT`], the same
 /// event name the shell's own command controls use, so **one grep finds all
 /// five of the Font group's controls** even though two of them are rendered by
 /// `egui-shell` and three by this module. The prefix differs (`pdfcer-diag`
@@ -141,7 +141,7 @@ pub(super) fn draw(
 /// The `live=` field is additive, so a consumer reading only `id=` and
 /// `enabled=` is unaffected by it.
 ///
-/// ★ **Keyed per id, valued on the two numbers.** That is why the id goes in
+/// **Keyed per id, valued on the two numbers.** That is why the id goes in
 /// the KEY rather than the value: [`crate::diag::trace_on_change`] suppresses a
 /// repeat of the same value under the same key, and these three controls draw
 /// one after another in the same frame. One shared key would see three
@@ -180,7 +180,7 @@ fn command_for(kind: &str) -> Option<&'static str> {
 /// them — or `None` when there is nothing to act on.
 ///
 ///
-/// ★ It asks the **same** questions `panels::properties::text::section` asks,
+/// It asks the **same** questions `panels::properties::text::section` asks,
 /// in the same order: an operand resolves, and its first run pins. A control
 /// that used a looser test would be live at exactly the moment pressing it
 /// declined, which is the disagreement `selection.bounds` was invented to
@@ -208,13 +208,13 @@ fn resolved(doc: Option<&OpenDoc>, draft: &mut TextStyleDraft) -> Option<(usize,
 
 /// The trace region the ribbon's face chooser publishes its POPUP under.
 ///
-/// ★ Deliberately **not** `egui_shell::ribbon::report::band_item("format.font")`
+/// Deliberately **not** `egui_shell::ribbon::report::band_item("format.font")`
 /// — that name is the control's rect on the band, published below by [`draw`]
 /// for every custom item alike, and a popup body that reused it would put two
 /// different rectangles under one name in one frame. A driven check reading the
 /// later one would aim at whichever the paint order happened to leave last.
 ///
-/// ★★ It is a **prefix**: [`crate::panels::properties::face::popup_body`] hangs
+/// It is a **prefix**: [`crate::panels::properties::face::popup_body`] hangs
 /// `.addable`, `.disclosure` and `.new` off it, and the Properties panel's copy
 /// hangs the same three off `properties.text.face`. Two namespaces for one body
 /// so a check can say which surface it is looking at — which matters precisely
@@ -224,12 +224,12 @@ const FACE_POPUP_REGION: &str = "ribbon.font.face";
 
 /// The face chooser.
 ///
-/// ★ **No label beside it.** The group's caption already says *Font*, the
+/// **No label beside it.** The group's caption already says *Font*, the
 /// control shows the current face, and Word's own font-name box carries no
 /// label for the same two reasons. A label here would be the third occurrence
 /// of the word within one inch of ribbon.
 ///
-/// # ★★★ The popup body is NOT written here, and that is the point
+/// # The popup body is NOT written here, and that is the point
 ///
 ///
 /// Adding all of that twice is how *"a face offered in one surface and not the
@@ -245,7 +245,7 @@ fn face(
     ready: Option<&(usize, Vec<usize>)>,
     parked: &mut Option<StyleChange>,
 ) -> bool {
-    // ★ The face the draft holds, or the no-value placeholder — see
+    // The face the draft holds, or the no-value placeholder — see
     // [`crate::text::panels::properties::text_value_absent`] for why a greyed
     // control must not show a value it does not have. The draft is only synced
     // when the control is live, so `None` here is the ordinary greyed state and
@@ -261,7 +261,7 @@ fn face(
         .width(FACE_WIDTH)
         .selected_text(shown)
         .show_ui(ui, |ui| {
-            // ★ The popup is only reachable while the control is live, so this
+            // The popup is only reachable while the control is live, so this
             // closure runs only with a document and a page. Written as a
             // `let else` rather than an `expect` anyway: a paint-loop panic on
             // a state that is merely unexpected is a worse failure than a
@@ -275,7 +275,7 @@ fn face(
                 draft.faces(),
                 crate::panels::properties::text::shorten(&current),
             ) {
-                // ★★ Parked, not dispatched. `egui-shell`'s contract is *"the
+                // Parked, not dispatched. `egui-shell`'s contract is *"the
                 // shell reports, the application dispatches"*, and it is also
                 // what keeps the five Font commands honest as one family: the
                 // operand derivation (which page, which runs) is written once,
@@ -290,7 +290,7 @@ fn face(
 
 /// The size field.
 ///
-/// ★ Committed on `drag_stopped` or `lost_focus`, **never** on `.changed()`,
+/// Committed on `drag_stopped` or `lost_focus`, **never** on `.changed()`,
 /// for the reason the Properties panel's twin gives: each commit is a
 /// content-stream rewrite and one undo entry, so committing on change would
 /// author an edit per pixel of drag and leave a `Ctrl+Z` stack an operator
@@ -302,7 +302,7 @@ fn size(
     parked: &mut Option<StyleChange>,
 ) -> bool {
     let was = draft.size();
-    // ★★★ A greyed size field shows the PLACEHOLDER, not a number.
+    // A greyed size field shows the PLACEHOLDER, not a number.
     //
     //
     // A `Button` rather than a `DragValue` with clever formatting, because a
@@ -342,7 +342,7 @@ fn size(
 /// The colour swatch, or a greyed stand-in for a run this control must not
 /// touch.
 ///
-/// # ★★ Why a run painted in CMYK greys rather than showing its nearest RGB
+/// # Why a run painted in CMYK greys rather than showing its nearest RGB
 ///
 /// A swatch showing DeviceCMYK ink as its nearest sRGB would write that sRGB
 /// back on the next press, moving the run out of its original space for ever —
@@ -364,7 +364,7 @@ fn colour(
 ) -> bool {
     let Some(current) = draft.colour() else {
         let response = ui.add_enabled(false, egui::Button::new(t::text_colour_label()));
-        // ★★★ **THE SENTENCE DEPENDS ON WHY THERE IS NO COLOUR, and for
+        // **THE SENTENCE DEPENDS ON WHY THERE IS NO COLOUR, and for
         // eight days it did not** — `OPERATOR_REQUESTS.md` O89, the third
         // candidate, which O89 recorded as *"R9's own rule, and it is not
         // doing it today."*
@@ -385,7 +385,7 @@ fn colour(
         // *"Set in CMYK or a spot colour…"*: a confident, specific claim about
         // text this control had not read one byte of.
         //
-        // ★★ It is the same defect class as the size field two functions up
+        // It is the same defect class as the size field two functions up
         // (a greyed `DragValue` clamping its `Default` to `1.0 pt` and
         // reading as a fact about the document), and it is worse in one way:
         // a wrong number invites a second look, and a plausible sentence
@@ -427,7 +427,7 @@ fn colour(
 mod tests {
     use super::*;
 
-    /// ★★★ **Every custom kind the manifest declares for this group is drawn
+    /// **Every custom kind the manifest declares for this group is drawn
     /// here, and every kind drawn here backs a registered command.**
     ///
     /// The assertion that closes the gap `COLOUR_SWATCH`'s own doc comment
@@ -465,7 +465,7 @@ mod tests {
     /// The three kinds this module claims are exactly the three the manifest
     /// declares — asserted as an **exact set**, not as three `contains`.
     ///
-    /// ★ A fourth kind added here and not to the manifest is a renderer arm
+    /// A fourth kind added here and not to the manifest is a renderer arm
     /// nothing can ever reach; a fourth added to the manifest and not here is
     /// the empty-band defect above. Only an equality catches both.
     #[test]

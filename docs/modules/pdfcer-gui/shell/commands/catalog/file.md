@@ -1,7 +1,7 @@
 # `shell::commands::catalog::file` — the File tab — opening, saving, exporting, printing, and pdfcer itself
 
 
-## ★★★ The split is per TAB, and the reason it was refused before is gone
+## The split is per TAB, and the reason it was refused before is gone
 
 [`super`]'s header argued against exactly this cut:
 

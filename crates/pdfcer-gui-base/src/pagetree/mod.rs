@@ -74,7 +74,7 @@ pub struct Audit {
     /// Whether the walk hit [`MAX_TREE_DEPTH`] and stopped descending. Same
     /// meaning as `cycles` for the same reason.
     pub too_deep: bool,
-    /// ★★ **How many levels the deepest leaf hangs below the root**, counting
+    /// **How many levels the deepest leaf hangs below the root**, counting
     /// the root as level 1 and the leaf as a level of its own. A flat page
     /// tree — root plus leaves — is `2`; the three-level fixture is `4`.
     ///
@@ -120,7 +120,7 @@ impl Audit {
 /// beside the code that decides it, which is the same placement
 /// `redact::prove_saved_bytes` takes for the identical reason.
 ///
-/// # ★ Bytes rather than the live session, and it is not a free choice
+/// # Bytes rather than the live session, and it is not a free choice
 ///
 /// The session's own graph carries the same disagreement — `delete_pages`
 /// rewrites the parent in place and leaves the ancestors alone, so the corrupt
@@ -132,7 +132,7 @@ impl Audit {
 /// sentence, `app::save::write_copy` uses for the absence proof: the
 /// guarantee must not depend on how the value was constructed.
 ///
-/// # ★ An unparsable buffer returns a DEFAULT audit, not an error
+/// # An unparsable buffer returns a DEFAULT audit, not an error
 ///
 /// [`Audit::walked`] is `false` and [`Audit::is_consistent`] is `true`, so the
 /// save proceeds. §6 carries the argument;
@@ -293,7 +293,7 @@ fn count_of<G: ObjectGraph + ?Sized>(graph: &G, id: ObjId) -> Option<i64> {
 /// `base` is the file the document was opened from, or `None` for a document
 /// that has never been on disk (`file.new`).
 ///
-/// # ★★★ The question this exists to ask: was it already like this when he
+/// # The question this exists to ask: was it already like this when he
 /// opened it?
 ///
 /// `pdfcer-gui`'s `text::pagetree::save_refused_root` and `save_refused_interior`
@@ -309,13 +309,13 @@ fn count_of<G: ObjectGraph + ?Sized>(graph: &G, id: ObjId) -> Option<i64> {
 /// `text::pagetree::save_refused_pre_existing`, names a different remedy and does not
 /// claim the fault is pdfcer's.
 ///
-/// # ★ It is paid only on the refusal path
+/// # It is paid only on the refusal path
 ///
 /// One extra parse of the original file, inside a function that runs only after
 /// a save has already failed. An ordinary save never reaches it, so it is
 /// outside §9's budget entirely.
 ///
-/// # ★ A base file it cannot read or walk falls through to the ordinary
+/// # A base file it cannot read or walk falls through to the ordinary
 /// sentences
 ///
 /// Deliberately. `Audit::walked` is `false` and `is_consistent` is `true` for

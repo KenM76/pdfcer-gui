@@ -1,6 +1,6 @@
 //! One stack's tab bar, and the overflow menu that makes it safe.
 //!
-//! # ★ The reservation, and the exact ordering that enforces it
+//! # The reservation, and the exact ordering that enforces it
 //!
 //! `MODES_AND_PANELS.md` Part 2, failure mode #8 — **tab overflow with no
 //! escape**: past a handful of tabs the overflow *button itself* gets
@@ -184,7 +184,7 @@ pub(crate) fn tab_bar(
             &labels[i],
             tab_rect,
         );
-        // ★ Recorded from the LAYOUT's rect, not from the button's response.
+        // Recorded from the LAYOUT's rect, not from the button's response.
         // This is the rectangle the reservation arithmetic decided on, and it
         // is the one a caret and a drop test must agree with.
         ctx.geometry.push_tab(addr.tab(i), tab_rect);
@@ -261,7 +261,7 @@ fn draw_tab(
                 // and the tab would overhang into the reservation — the
                 // defect this file exists to prevent, arriving from the
                 // tab's side rather than the affordance's.
-                // ★★★ THE PLATE IS STATED, and it has to be.
+                // THE PLATE IS STATED, and it has to be.
                 //
                 // `Button::selected(true)` alone does NOT leave the fill
                 // alone. `egui::Style::button_style` overwrites it:
@@ -285,11 +285,11 @@ fn draw_tab(
                 // the worst because its panel is pure white, so the wash barely
                 // darkens it.
                 //
-                // ★★ `ribbon::tabs` has the identical shape and states its
+                // `ribbon::tabs` has the identical shape and states its
                 // fill the same way — `Button::selectable(...).fill(accent)`.
                 // The two are the same control in two docks and they agree.
                 //
-                // ★★★ AND `tools/gates/check-strong-text.sh` PASSES THIS SITE
+                // AND `tools/gates/check-strong-text.sh` PASSES THIS SITE
                 // ON THAT PREMISE. Its header says of both tab files that both
                 // are drawn on the accent fill, so `on_accent` is the right
                 // colour anyway. That sentence is true only while both files
@@ -298,7 +298,7 @@ fn draw_tab(
                 //
                 // `.fill()` wins over the class-based styling because
                 // `Button`'s own fill is applied after `button_style` has run.
-                // ★★ `click_and_drag`, not the default `click()` and not
+                // `click_and_drag`, not the default `click()` and not
                 // `Sense::drag()`. `egui` still reports `clicked()` when the
                 // press and release are close enough together in space and
                 // time, so activating a tab is unchanged; `Sense::drag()`
@@ -320,7 +320,7 @@ fn draw_tab(
     if response.clicked() {
         ctx.intents.push(Intent::Activate(panel.clone()));
     }
-    // ★ `drag_started_by(Primary)`, never `drag_started()`. `egui`'s plain
+    // `drag_started_by(Primary)`, never `drag_started()`. `egui`'s plain
     // predicate is button-agnostic, so a right-press that wandered a few points
     // before releasing would start a reorder the operator meant as a context
     // menu, and a middle-press one they meant as nothing at all.
@@ -338,7 +338,7 @@ fn draw_tab(
         );
     }
 
-    // ★ The accessible name is published BEFORE anything else is allowed
+    // The accessible name is published BEFORE anything else is allowed
     // to touch this response.
     //
     // Both of the next two things — the built-in menu and, more to the
@@ -358,7 +358,7 @@ fn draw_tab(
         )
     });
 
-    // ★ ONE owner for the secondary click, chosen once.
+    // ONE owner for the secondary click, chosen once.
     //
     // Right-click to close, rather than an ✕ on every tab: a per-tab close
     // glyph would have to be inside the tab's width, so the tab-width
@@ -393,7 +393,7 @@ fn draw_tab(
             }
         });
     }
-    // ★★ The ORDER these are tested in is the answer to "what if a handler
+    // The ORDER these are tested in is the answer to "what if a handler
     // asked for two of them in one frame", and it is documented rather than
     // left to whichever `if` happened to be written first.
     //
@@ -403,7 +403,7 @@ fn draw_tab(
     // docked panel: `dock_back` on it is a no-op anyway, and honouring the
     // no-op over the real verb would make the pair silently order-dependent.
     //
-    // ★ A tab is only ever one of the two states, so a correctly-written
+    // A tab is only ever one of the two states, so a correctly-written
     // handler cannot reach this. It is decided here so that an
     // *incorrectly*-written one has a defined outcome rather than one that
     // depends on the phase of the layout — the same posture
@@ -436,7 +436,7 @@ fn draw_overflow(
     bar: &TabPlan,
     rect: Rect,
 ) {
-    // ★ Clamped, not subtracted.
+    // Clamped, not subtracted.
     //
     // `right − width` goes negative the moment the bar is narrower than
     // its own reservation, and a control at a negative x is drawn,
@@ -584,7 +584,7 @@ mod tests {
         rects
     }
 
-    /// ★ **No cap on tabs per stack: nine panels in one stack, and every
+    /// **No cap on tabs per stack: nine panels in one stack, and every
     /// one of them is reachable.**
     ///
     /// Capping a stack at two panes is the cheap way to dodge an engine
@@ -606,7 +606,7 @@ mod tests {
         );
     }
 
-    /// ★ **Failure mode #8 against a rendered frame: the affordance is
+    /// **Failure mode #8 against a rendered frame: the affordance is
     /// inside the bar it belongs to.**
     ///
     /// The unit tests in [`super::super::plan`] prove the arithmetic; this
@@ -764,7 +764,7 @@ mod tests {
     impl Harness {
         fn new(n: usize, dock_width: f32, window: Vec2) -> Self {
             let ctx = egui::Context::default();
-            // ★ Real font metrics, or every rect below is satisfied by text
+            // Real font metrics, or every rect below is satisfied by text
             // that occupies no space — including the menu's own rows, which
             // would collapse the popup to a few points and make a click
             // "inside the menu" land nowhere. See `super::super::width_tests`
@@ -833,7 +833,7 @@ mod tests {
         /// Click `button` at `pos`, and return the frame the click landed
         /// on.
         ///
-        /// ★ **Two frames, and the first one is not optional.** `egui`
+        /// **Two frames, and the first one is not optional.** `egui`
         /// resolves a press against the hit test it computed *before* the
         /// frame ran, from the pointer position it had then — so a
         /// pointer that arrives and presses in the same pass presses on
@@ -911,7 +911,7 @@ mod tests {
         }
     }
 
-    /// ★ **A supplied handler is offered every drawn tab, and each one
+    /// **A supplied handler is offered every drawn tab, and each one
     /// knows which panel it is.**
     ///
     /// The seam's central claim. If the handler were offered the wrong
@@ -971,7 +971,7 @@ mod tests {
         );
     }
 
-    /// ★ **A handler that asks for a close gets the dock's own close
+    /// **A handler that asks for a close gets the dock's own close
     /// path** — not a mutation of its own, and not a second mechanism.
     ///
     /// `request_close` is what makes the seam compatible with the intent
@@ -1005,7 +1005,7 @@ mod tests {
         assert!(!h.state.layout().contains(&PanelId::new("p1")));
     }
 
-    /// ★ **With no handler, right-click ▸ Close still closes the panel.**
+    /// **With no handler, right-click ▸ Close still closes the panel.**
     ///
     /// The compatibility guarantee, driven end to end through real pointer
     /// input rather than asserted about the code: secondary-click the tab,
@@ -1035,7 +1035,7 @@ mod tests {
         assert!(closed.report.layout_changed);
     }
 
-    /// ★ **One `Response`, one popup, one owner.**
+    /// **One `Response`, one popup, one owner.**
     ///
     /// A handler that attaches nothing means a right-click that does
     /// nothing — the dock must not "helpfully" fall back to its own menu,
@@ -1059,7 +1059,7 @@ mod tests {
         assert_eq!(after.report.closed, None);
     }
 
-    /// ★ **The accessible name is published before the response is handed
+    /// **The accessible name is published before the response is handed
     /// out**, so a handler cannot cost the tab its announcement.
     ///
     /// Observed through `egui`'s own output events: a clicked widget emits

@@ -16,7 +16,7 @@ const INVOKE: &str = "file.import_text";
 const PICKED_EVENT: &str = "text-import-picked";
 /// The line the window writes when Import is pressed, carrying every choice.
 const REQUESTED_EVENT: &str = "import-text-requested";
-/// ★★★ The line the apply arm writes when the engine has made the pages.
+/// The line the apply arm writes when the engine has made the pages.
 const APPLIED_EVENT: &str = "import-text-applied";
 /// The window's body, published so a failure can say whether it opened at all.
 const BODY_REGION: &str = "import-text.body";
@@ -27,13 +27,13 @@ const PATH_ENV: &str = "PDFCER_DIAG_TEXT_IMPORT_PATH";
 
 /// The text this check imports.
 ///
-/// ★★ Chosen so the **receipt has something to say beyond the page count**: the
+/// Chosen so the **receipt has something to say beyond the page count**: the
 /// em dashes are characters WinAnsi can encode (so the import must not refuse),
 /// and the blank lines make paragraphs the placer has to decide about. A file of
 /// bare ASCII words would exercise the chain and prove nothing about the
 /// disclosures.
 ///
-/// ★ Written by the check rather than committed as a fixture, because it is
+/// Written by the check rather than committed as a fixture, because it is
 /// three lines and because a fixture would have to be found and read to know
 /// what the assertions below mean.
 const REGISTER: &str = "Drawing register\n\nSheet 01 \u{2014} site plan, rev C\nSheet 02 \u{2014} foundations, rev A\nSheet 03 \u{2014} steelwork, rev B\n\nIssued for construction.\n";
@@ -159,7 +159,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let _ = body;
     report.note("★ the window opened");
 
-    // --- 3: ★★★ PRESS IMPORT ------------------------------------------------
+    // --- 3: PRESS IMPORT ------------------------------------------------
     let trace = session.trace()?;
     let Some(button) = declared(&trace, ui_rect, IMPORT_REGION) else {
         return Ok(Some(format!(
@@ -169,7 +169,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    // ★★ `frame_of`, not `session.frame()` — see the module header. The import
+    // `frame_of`, not `session.frame()` — see the module header. The import
     // window is its own viewport and its client rect is not the main window's.
     let frame = frame_of(&session, &trace, ui_rect, IMPORT_REGION)?;
     let driver = Driver::new(session.window());
@@ -194,7 +194,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "★★ the window raised the action: `{}`",
         requested.raw
     ));
-    // ★ The choices are asserted, not just the press. A build whose chooser
+    // The choices are asserted, not just the press. A build whose chooser
     // never reached the template raises an identical action from an identical
     // click and makes pages of the wrong size — which reads as a rendering
     // problem three steps later.
@@ -209,7 +209,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 5: ★★★ DID PAGES ARRIVE? -------------------------------------------
+    // --- 5: DID PAGES ARRIVE? -------------------------------------------
     let Some(applied) = trace.events(APPLIED_EVENT).last() else {
         return Ok(Some(format!(
             "★★★ THE ACTION WAS RAISED AND NO PAGES ARRIVED: `{}` and no `{APPLIED_EVENT}` \
@@ -242,7 +242,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         applied.raw
     ));
 
-    // ★★ The undo promise, asserted rather than reported. Seven lines is one
+    // The undo promise, asserted rather than reported. Seven lines is one
     // page, far inside `MAX_UNDO_DEPTH`, so the fold MUST have worked — and a
     // build reporting `coalesced=0` here would be one whose promise of a single
     // Ctrl+Z is false on every import, which is the failure

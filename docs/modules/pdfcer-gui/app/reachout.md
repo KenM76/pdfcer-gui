@@ -48,13 +48,13 @@ that computes a total is an ordinary form, and warning about it would train
 the operator to dismiss the sentence that matters. `panels::forms` already
 lists those for anybody who wants the inventory.
 
-★ **`scan_truncated` is disclosed too**, and it is the subtle one: it means
+**`scan_truncated` is disclosed too**, and it is the subtle one: it means
 the engine stopped walking. A truncated scan that reported *"nothing found"*
 would be exactly the clean-bill-of-health failure above, so when the walk
 gave up this says *"pdfcer could not finish checking"* rather than implying
 an all-clear.
 
-## ★★ Why it is a status line and not a dialog
+## Why it is a status line and not a dialog
 
 Because pdfcer **executes none of these**. The engine's standing NF4 rule is
 that actions are recognised and round-tripped, never run. So nothing is about
@@ -65,5 +65,5 @@ operator cannot act on it at open time and the drawing is not doing anything.
 What they can do is *know*, before they hand the file on or press a button
 in another viewer. That is a sentence, not a barrier.
 
-★ **Render normally, report separately.** Nothing is drawn on the page and
+**Render normally, report separately.** Nothing is drawn on the page and
 no button is marked.

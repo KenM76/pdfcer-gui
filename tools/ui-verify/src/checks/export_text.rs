@@ -14,7 +14,7 @@ use crate::report::CheckReport;
 
 /// The mode this runs in.
 ///
-/// ★ **Read**, deliberately, and it is an assertion rather than a convenience —
+/// **Read**, deliberately, and it is an assertion rather than a convenience —
 /// [`super::export_dxf`]'s reason, and here it is the stronger one. Taking the
 /// words out of a drawing is the archetypal reading act, and it is the same
 /// argument that moved `copy_page_text` onto the File tab in the first place:
@@ -31,7 +31,7 @@ const OPENED: &str = "export-text-open";
 const WROTE: &str = "export-text";
 /// The trace the apply arm emits when the document carries no readable text.
 ///
-/// ★ Read even on a successful run, because it is the branch this feature
+/// Read even on a successful run, because it is the branch this feature
 /// exists for and a build that took it here would otherwise be reported only as
 /// *"no `export-text` line"* — true, and it would not say which of four
 /// different things happened.
@@ -91,7 +91,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
 
-    // ★ Removed before the run, not merely named. A file left by an earlier run
+    // Removed before the run, not merely named. A file left by an earlier run
     // would let a build that writes NOTHING pass every assertion below — the
     // `a_driven_check_that_does_not_establish_its_preconditions_measures_the_previous_run`
     // finding, and the line that prevents it.
@@ -194,7 +194,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let trace = session.trace()?;
     let Some(wrote) = trace.last(WROTE) else {
-        // ★★ The four outcomes are told apart, because they send an operator —
+        // The four outcomes are told apart, because they send an operator —
         // and whoever reads this verdict — to four different places. A refusal
         // in particular is not a bug: it is what a scanned fixture SHOULD
         // produce, and reporting it as "the export is broken" would send
@@ -231,7 +231,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             target.display()
         ))
     })?;
-    // ★ `from_utf8` rather than `from_utf8_lossy`. The window promises UTF-8 by
+    // `from_utf8` rather than `from_utf8_lossy`. The window promises UTF-8 by
     // name, because a CAD drawing carries degree signs and diameter marks; a
     // lossy read would turn a broken encoding into replacement characters and
     // then count them as text, which is the exact failure the promise is about.
@@ -244,7 +244,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
 
-    // --- 5: ★ the preconditions the identity below depends on --------------
+    // --- 5: the preconditions the identity below depends on --------------
     //
     // Read from the trace rather than assumed. A later build that changed the
     // window's defaults must produce "the defaults moved", not "the export is
@@ -262,7 +262,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 6: ★★ the file holds exactly the characters that were reported ----
+    // --- 6: the file holds exactly the characters that were reported ----
     let (Some(reported), Some(pages)) = (
         wrote.get("chars").and_then(|v| v.parse::<usize>().ok()),
         wrote.get("pages").and_then(|v| v.parse::<usize>().ok()),
@@ -289,7 +289,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         pages.saturating_sub(1)
     ));
 
-    // --- 7: ★ the separators are BETWEEN, never bracketing ------------------
+    // --- 7: the separators are BETWEEN, never bracketing ------------------
     //
     // The identity in step 6 counts characters and cannot see where they sit,
     // so a build that wrote a leading form feed and dropped one between two
@@ -320,7 +320,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 8: the fixture actually had text, so this run proved something -----
     //
-    // ★ Last rather than first, because everything above is a real assertion
+    // Last rather than first, because everything above is a real assertion
     // whatever the fixture holds. But a document of scans exports zero
     // characters through a completely correct code path, and a check that
     // reported PASS on that has measured nothing — the same shape as the DXF

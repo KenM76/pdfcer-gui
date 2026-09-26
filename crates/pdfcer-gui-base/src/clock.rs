@@ -42,7 +42,7 @@ pub fn pdf_date_utc() -> Option<String> {
 /// it can mean is *now*. This one formats a moment the **caller** supplies, for
 /// a human to read, and reads no clock at all.
 ///
-/// ★ **Date only, to the day.** The question it answers is *"is this anchor set
+/// **Date only, to the day.** The question it answers is *"is this anchor set
 /// current?"* — a question about weeks and months, since AATL refreshes are not
 /// a daily event — and a timestamp to the second would suggest a precision
 /// about staleness that nothing here has.
@@ -65,7 +65,7 @@ pub fn iso_date_utc(unix_secs: u64) -> String {
 
 /// The pure half, so the formatting can be tested without a clock.
 ///
-/// ★ Split out for exactly that reason and for no other. A function that reads
+/// Split out for exactly that reason and for no other. A function that reads
 /// the clock and formats it in one body is a function whose formatting can only
 /// be tested by asserting on today's date — which is a test that passes for a
 /// year and then starts failing at a month boundary for reasons nobody
@@ -90,7 +90,7 @@ fn format_pdf_date(unix_secs: u64) -> String {
 /// day-of-year formula is a single linear expression and the leap rule needs
 /// no branch at all.
 ///
-/// ★ The magic numbers are the algorithm's own and are not tunable:
+/// The magic numbers are the algorithm's own and are not tunable:
 /// `719_468` is the day count from 0000-03-01 to 1970-01-01, `146_097` is the
 /// days in a 400-year Gregorian cycle, and `153` and `2` are the coefficients
 /// of the linear month-length pattern March..February. Changing any of them
@@ -113,7 +113,7 @@ fn civil_from_days(days_since_epoch: u64) -> (u64, u64, u64) {
 mod tests {
     use super::*;
 
-    /// ★★ **Known instants, formatted exactly.**
+    /// **Known instants, formatted exactly.**
     ///
     /// Four dates chosen for what each one would break: the epoch itself, a
     /// leap day, the day after a leap day, and a century year that is **not** a
@@ -125,7 +125,7 @@ mod tests {
         assert_eq!(format_pdf_date(0), "D:19700101000000Z");
         // 2024-02-29T12:24:56Z — a leap day.
         //
-        // ★ The expected string here was written as `123456` and the code was
+        // The expected string here was written as `123456` and the code was
         // right: the instant is 12:24:56, not 12:34:56. Worth leaving the note
         // because it is the failure mode this test is FOR — the seconds
         // arithmetic and the calendar arithmetic are independent, and a test
@@ -139,7 +139,7 @@ mod tests {
         assert_eq!(format_pdf_date(4_107_542_400), "D:21000301000000Z");
     }
 
-    /// ★★★ **The string this shell writes is one the ENGINE accepts.**
+    /// **The string this shell writes is one the ENGINE accepts.**
     ///
     /// Not a re-implementation of `MarkupNote::validate` — the real one, called
     /// on the real output. A format that drifted from what the engine parses
@@ -158,7 +158,7 @@ mod tests {
         );
     }
 
-    /// ★ A live clock produces a plausible, well-shaped answer.
+    /// A live clock produces a plausible, well-shaped answer.
     ///
     /// Deliberately weak — it asserts the SHAPE and a lower bound on the year,
     /// never the value. A test that asserted today's date would be a test that

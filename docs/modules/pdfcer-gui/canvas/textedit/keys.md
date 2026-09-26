@@ -12,7 +12,7 @@ key goes down*. The old shell's 25,005-line `main.rs` is the argument, and
 the rule that prevents it is to split at the seam rather than to raise the
 limit.
 
-## ★★ The four selection rules, and where each is enforced
+## The four selection rules, and where each is enforced
 
 | # | rule | enforced by |
 |---|---|---|
@@ -25,7 +25,7 @@ Rule 4 is the one that looks like a detail and is not: without it a
 highlight stays on screen after the caret has walked out of it, and the next
 keystroke deletes text the operator is no longer looking at.
 
-## ★ What is NOT here, named rather than left to be discovered
+## What is NOT here, named rather than left to be discovered
 
 **Drag-select and double-click-to-select-a-word.** The draft is drawn in an
 editor box in *screen* space by [`super::paint`], and hit-testing a pointer

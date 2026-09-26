@@ -16,7 +16,7 @@ use crate::report::CheckReport;
 const MODE: &str = "read";
 /// The selection line.
 ///
-/// ★ `selection-set`, not `canvas-selection`. The two are written by different
+/// `selection-set`, not `canvas-selection`. The two are written by different
 /// functions for different acts: the ladder's click path writes the second, and
 /// `SelectionState::select_only` — which this arm calls, because it is naming
 /// one object rather than walking a ladder — writes the first. The check was
@@ -101,7 +101,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .vocab
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
-    // ★ Its own fixture rather than `--pdf`: the subject is a picture, and the
+    // Its own fixture rather than `--pdf`: the subject is a picture, and the
     // sweep's drawing is vector geometry with no image on it at all.
     let pdf = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(FIXTURE);
     if !pdf.is_file() {
@@ -181,7 +181,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("★★ the copy happened: `{}`", copied.raw));
 
-    // --- C: ★★★ …and a PICTURE went on the clipboard ------------------------
+    // --- C: …and a PICTURE went on the clipboard ------------------------
     let Some(picture) = trace.last(PICTURE) else {
         let why = if trace.events(DECLINED).count() > 0 {
             "The application traced `clipboard-image-declined`, so it TRIED and could not: the \
@@ -205,7 +205,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    // ★ The floor, not an exact size. The scale is chosen from the selection's
+    // The floor, not an exact size. The scale is chosen from the selection's
     // own extent (`canvas::clipimage`), so pinning the pixels would pin an
     // arithmetic this check has no business owning — but a picture SMALLER than
     // the selection is in points is one the operator cannot use, and that is
@@ -231,7 +231,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "★★★ …and a {w}×{h} px picture went on the Windows clipboard with it"
     ));
 
-    // --- D: ★★ the route somebody finds without being told ------------------
+    // --- D: the route somebody finds without being told ------------------
     driver.right_click_at(aim(
         ctx,
         &session,

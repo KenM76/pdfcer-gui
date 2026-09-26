@@ -16,7 +16,7 @@ use crate::render::worker::RenderKey;
 /// preference — the value `crate::app::prefs::PageCache::default()` resolves
 /// to, kept here beside the code that spends it.
 ///
-/// ★★ **It was 48 million and a backstop; it is now 256 million and the actual
+/// **It was 48 million and a backstop; it is now 256 million and the actual
 /// limit**, and the change of role matters more than the change of number.
 ///
 /// The old doc comment said, correctly for the code as it then stood: *"a
@@ -37,7 +37,7 @@ use crate::render::worker::RenderKey;
 /// an Annex C sheet differ by four orders of magnitude, and a page count that
 /// admitted six of the latter would admit 1.5 GB without saying so.
 ///
-/// ★ It is a **default**, not a constant, as of 2026-08-19: the operator asked
+/// It is a **default**, not a constant, as of 2026-08-19: the operator asked
 /// for the maximum and the honest answer to *"how much of this machine's memory
 /// may pdfcer spend on page pictures"* is that only they know. See
 /// `crate::app::prefs::PageCache`, whose four steps each state their cost in
@@ -292,7 +292,7 @@ pub enum PageState {
     /// This page is visible and has not been started yet — the renderer is
     /// working through the strip and has not reached it.
     Waiting,
-    /// ★★★ **This page's whole-sheet raster is larger than the renderer can
+    /// **This page's whole-sheet raster is larger than the renderer can
     /// allocate at this zoom, and a strip page has no region tier to fall back
     /// on.** O186, 2026-09-12.
     ///
@@ -309,7 +309,7 @@ pub enum PageState {
     Refused(String),
 }
 
-/// ★ **Draw a page that has no raster — honestly.**
+/// **Draw a page that has no raster — honestly.**
 ///
 /// See the module header for the argument. In one sentence: a white rectangle
 /// would be a claim that the sheet is blank, so this draws the page's real
@@ -357,7 +357,7 @@ pub fn draw_page_state(
             crate::text::canvas_page_waiting(page_number),
             visuals.text_color(),
         ),
-        // ★ The ORDINARY text colour, not the error colour, and that is the
+        // The ORDINARY text colour, not the error colour, and that is the
         // whole point of the state existing. Nothing failed — the operator has
         // simply zoomed in past the point where a neighbour sheet can be
         // rastered whole, and his own sheet is drawing perfectly through the
@@ -385,7 +385,7 @@ pub fn draw_page_state(
         // becomes several lines rather than one line off both edges.
         (rect.width() - TEXT_MARGIN * 2.0).max(1.0),
     );
-    // ★ Centred in the part of the page that is ON SCREEN, not in the page.
+    // Centred in the part of the page that is ON SCREEN, not in the page.
     //
     // **Found by screenshotting a driven scroll**, not by a test. A continuous
     // strip almost always has a page whose top few centimetres are showing and
@@ -415,7 +415,7 @@ pub fn draw_page_state(
 /// The gap between the page's edge and its state sentence, in points.
 const TEXT_MARGIN: f32 = 8.0;
 
-/// ★ **The fill an undrawn page is painted with, and why it is not
+/// **The fill an undrawn page is painted with, and why it is not
 /// `faint_bg_color`.**
 ///
 /// It was, and a screenshot of a driven scroll is what corrected it: in the
@@ -451,7 +451,7 @@ mod tests {
             scale,
             true,
             0,
-            // ★ Faithful widths — the default, and the only answer these
+            // Faithful widths — the default, and the only answer these
             // cache-behaviour tests care about. `view.line_weights` (O137) is a
             // key component, so a test that varied it would be testing the key
             // rather than the strip; `the_render_key_moves_when_line_weights_are_turned_off`
@@ -489,7 +489,7 @@ mod tests {
         assert_eq!(cache.texels(), 0, "a refusal occupies no texels");
     }
 
-    /// ★ **A lookup misses on a different scale, and on a different edit
+    /// **A lookup misses on a different scale, and on a different edit
     /// epoch.**
     ///
     /// The epoch half is what lets a module this work may not edit —
@@ -518,7 +518,7 @@ mod tests {
         assert!(cache.has(3, key(3, 2.0), 0));
     }
 
-    /// ★ **The current page is never in this cache.**
+    /// **The current page is never in this cache.**
     ///
     /// The one rule the split with `OpenDoc::page_texture` costs, enforced
     /// rather than remembered. A duplicate would be a second texture for the
@@ -536,7 +536,7 @@ mod tests {
         assert!(cache.has(1, key(1, 1.0), 0));
     }
 
-    /// ★★★ **Pages that scrolled out of view are KEPT**, and this test used to
+    /// **Pages that scrolled out of view are KEPT**, and this test used to
     /// assert the opposite.
     ///
     /// It read `pages_that_left_the_viewport_are_dropped`, drove
@@ -551,7 +551,7 @@ mod tests {
     /// came back — 691 ms on a dense A1 (`BENCHMARK.md`) — and this test said
     /// that was correct.
     ///
-    /// ★ It is **reversed in place rather than deleted**, which is this
+    /// It is **reversed in place rather than deleted**, which is this
     /// project's rule for a test that turned out to encode a wrong contract: a
     /// reader who remembers the old behaviour must be able to find out what
     /// replaced it, and a deleted test tells them nothing. The name changed
@@ -580,7 +580,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The budget is what bounds it**, and it evicts furthest-first.
+    /// **The budget is what bounds it**, and it evicts furthest-first.
     ///
     /// The assertion the old design could not make, because the visible-set
     /// prune ran first and left the budget nothing to do. A refusal occupies

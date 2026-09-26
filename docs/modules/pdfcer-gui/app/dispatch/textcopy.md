@@ -11,7 +11,7 @@ their subject is genuinely its own. It is the same seam [`super::pages`]
 (ids sharing an operand rule) and [`super::images`] (one id whose body is a
 sequence) are cut on — a subject, not a size.
 
-## ★ Both read the SAME extraction, and that is the load-bearing fact
+## Both read the SAME extraction, and that is the load-bearing fact
 
 `OpenDoc::page_text()` and the document-level `extract_*_view`, which is
 also what a canvas text selection copies from. Two paths to *"the text of
@@ -19,7 +19,7 @@ this page"* is how a ribbon Copy and a swept selection come to disagree
 about what is on it — and they would disagree **silently**, because both
 answers look like text.
 
-## ★ Neither raises an `Action`, and that is not an oversight
+## Neither raises an `Action`, and that is not an oversight
 
 A clipboard write touches no document and needs no frame boundary. It is
 the same call `file.print` makes, for the same stated reason: the action

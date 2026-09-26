@@ -41,7 +41,7 @@ fn nth_chord(list: &str, n: usize) -> Option<&str> {
 /// How many of the application's own frames separate one scripted chord from
 /// the next, and precede the first.
 ///
-/// ★★★ **Measured, not chosen.** With the chords delivered on consecutive
+/// **Measured, not chosen.** With the chords delivered on consecutive
 /// frames, a six-rung zoom ladder against `fixtures/a1-titleblock.pdf` climbed
 /// only five rungs: the first `Ctrl` `+` arrived before the canvas had laid
 /// out, so `FitMode::Page` was still standing and the next frame's fit solve
@@ -71,7 +71,7 @@ const CHORD_GAP_FRAMES: u64 = 20;
 /// grammar, one chord every [`CHORD_GAP_FRAMES`] frames, gated on
 /// [`crate::diag::enabled`].
 ///
-/// # ★★★ Why this exists when `PDFCER_DIAG_INVOKE` already does
+/// # Why this exists when `PDFCER_DIAG_INVOKE` already does
 ///
 /// That seam dispatches a **registered command id**, and the verbs this seam
 /// is for have no command id. `view.zoom_in`, `view.zoom_out`, `view.next_page`
@@ -101,7 +101,7 @@ const CHORD_GAP_FRAMES: u64 = 20;
 /// and not the other would make this seam a source of silent no-ops that look
 /// exactly like a dead handler.
 ///
-/// # ★★ It keeps the application awake until the list is finished
+/// # It keeps the application awake until the list is finished
 ///
 /// `egui` draws on demand. A quiescent viewer requests no repaint, so a seam
 /// that waited for frame twenty in a window nobody is touching would wait

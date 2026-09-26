@@ -14,7 +14,7 @@ the wording decisions below are all consequences of that one fact rather
 than of anything about panels. Keeping them together is what makes the next
 reader able to check them against §12.5.6.3 in one pass.
 
-## ★★★ THE FACT THAT DECIDES ALMOST EVERY STRING BELOW
+## THE FACT THAT DECIDES ALMOST EVERY STRING BELOW
 
 **A review status is APPENDED, not set.** `add_review_state`'s own doc
 comment states it twice with the standard's `shall`:
@@ -38,7 +38,7 @@ operator's own history on that comment now is; [`row_status_history`] says
 how many earlier statuses stand behind the one being shown. A control
 labelled *Set status* would describe a different document format.
 
-## ★★ THE SECOND FACT: THE ENGINE DOES NOT INTERPRET THE STRINGS
+## THE SECOND FACT: THE ENGINE DOES NOT INTERPRET THE STRINGS
 
 `Annotation::state` and `Annotation::state_model` are `Option<String>`,
 decoded verbatim, and `state`'s own doc says why:
@@ -58,7 +58,7 @@ distinction, and the reason collapsing the last two would be wrong, is
 [`crate::text::buttonaction`]'s, reused rather than re-derived; see
 [`crate::panels::comments::reviewstate::StateReading`].
 
-## ★ Where these strings are NOT
+## Where these strings are NOT
 
 **Never on the canvas.** R8b — *"fuzzy, never sneaky"* — and its clause
 about the original GUI: *"the nagging and red flagging … made for a lot of

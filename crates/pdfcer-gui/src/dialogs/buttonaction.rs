@@ -18,7 +18,7 @@ use crate::text::buttonaction as t;
 
 /// The trace event the chooser writes when the operator changes it.
 ///
-/// ★ Written on **change**, not every frame. A driven check needs to know the
+/// Written on **change**, not every frame. A driven check needs to know the
 /// chooser was reached and what it was set to, and a per-frame line would bury
 /// that in thousands of identical ones.
 const CHOSE: &str = "button-action-chose"; // ui-text-exempt: a trace event name, never displayed
@@ -28,7 +28,7 @@ const COMBO_REGION: &str = "form.button.action"; // ui-text-exempt: a trace regi
 
 /// The prefix each popup row is published under, suffixed with the kind.
 ///
-/// ★ A driven check reads `form.button.action.row.ResetForm`, not `…row.1`.
+/// A driven check reads `form.button.action.row.ResetForm`, not `…row.1`.
 /// See the publisher for why: an index survives a reordering of
 /// `ButtonDoesKind::ALL` and goes on passing while aiming at the wrong row.
 const ROW_REGION: &str = "form.button.action.row"; // ui-text-exempt: a trace region name, never displayed
@@ -49,7 +49,7 @@ pub fn rows(ui: &mut Ui, does: &mut ButtonDoes) {
         .show_ui(ui, |ui| {
             for kind in ButtonDoesKind::ALL {
                 let row = ui.selectable_value(&mut does.kind, kind, t::does_choice(kind));
-                // ★★★ **A POPUP ROW'S RECTANGLE CAN ONLY BE PUBLISHED FROM
+                // **A POPUP ROW'S RECTANGLE CAN ONLY BE PUBLISHED FROM
                 // INSIDE THE POPUP**, which is why this is here rather than in
                 // the harness.
                 //
@@ -60,13 +60,13 @@ pub fn rows(ui: &mut Ui, does: &mut ButtonDoes) {
                 // as `a_combobox_popup_is_an_area_laid_out_at_paint_time…`, and
                 // this is the third control in this shell to need it.
                 //
-                // ★ Named per KIND rather than by index. An index-named region
+                // Named per KIND rather than by index. An index-named region
                 // would keep passing after the order of `ALL` changed, aiming a
                 // check at whatever now sits third.
                 crate::diag::ui_rect(&format!("{ROW_REGION}.{kind:?}"), row.rect);
             }
         });
-    // ★★ The closed control's own rectangle, published unconditionally, because
+    // The closed control's own rectangle, published unconditionally, because
     // a check has to click it to open the popup in the first place. `response`
     // is the button; `inner` is `Some` only while the popup is open.
     crate::diag::ui_rect(COMBO_REGION, combo.response.rect);
@@ -81,7 +81,7 @@ pub fn rows(ui: &mut Ui, does: &mut ButtonDoes) {
         });
     }
 
-    // ★ The reach sentence, for every choice including the inert ones. See
+    // The reach sentence, for every choice including the inert ones. See
     // `text::buttonaction::does_note` for why the inert ones carry one: a
     // sentence that appears only on the two addressed choices is a sentence an
     // operator learns to skip.
@@ -101,7 +101,7 @@ pub fn rows(ui: &mut Ui, does: &mut ButtonDoes) {
         }
     }
 
-    // ★★ The blocker sentence sits under the boxes it is about, and is drawn
+    // The blocker sentence sits under the boxes it is about, and is drawn
     // whenever it applies rather than only after a failed press. The dialog
     // greys Add on the same predicate, so an operator who cannot press it can
     // always see the reason without pressing anything.
@@ -160,7 +160,7 @@ fn named_rows(ui: &mut Ui, does: &mut ButtonDoes) {
 
 /// **Show or hide fields** — the names, and which direction.
 ///
-/// ★★ Two radio buttons rather than one *Hidden* checkbox, and the engine's own
+/// Two radio buttons rather than one *Hidden* checkbox, and the engine's own
 /// CLI made the same choice for the same reason: *show* is the value that has
 /// to be written out to exist (Table 210's `/H` defaults to **true**, so an
 /// absent entry means HIDE), and a single `Hidden` checkbox left unticked is
@@ -194,7 +194,7 @@ fn url_row(ui: &mut Ui, does: &mut ButtonDoes) {
     ui.add(egui::TextEdit::singleline(&mut does.url).desired_width(f32::INFINITY));
 }
 
-/// ★★★ **The submit's disclosure**, drawn under the address it is about.
+/// **The submit's disclosure**, drawn under the address it is about.
 ///
 /// Two blocks, and the second is conditional:
 ///

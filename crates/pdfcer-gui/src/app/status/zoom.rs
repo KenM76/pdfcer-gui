@@ -32,7 +32,7 @@ use super::{ROW_HEIGHT_PTS, ZOOM_READOUT_WIDTH_PTS};
 /// So the reserve is the galley width of the widest string this ceiling can
 /// ask for, floored at the old constant.
 ///
-/// # ★★ Why this is not the feedback loop that has bitten this project before
+/// # Why this is not the feedback loop that has bitten this project before
 ///
 /// R128 and the fit-zoom defect were both *a measurement of laid-out content
 /// fed back into the size of the thing that lays it out*, which oscillates.
@@ -45,7 +45,7 @@ use super::{ROW_HEIGHT_PTS, ZOOM_READOUT_WIDTH_PTS};
 /// is an explicit act in a popup, not something that happens under the pointer
 /// while stepping.
 ///
-/// ★ `+ 2.0`: `Button::frame(false)` still lays out with the style's button
+/// `+ 2.0`: `Button::frame(false)` still lays out with the style's button
 /// padding, and a galley measured to the pixel against a rect measured to the
 /// pixel truncates on the last glyph under rounding. Two points is the
 /// smallest allowance that is visibly never wrong, and it is stated here
@@ -85,12 +85,12 @@ pub(super) fn group(
             {
                 actions.push(Action::ZoomIn);
             }
-            // ★★ The readout is a BUTTON now — O24. Same fixed width, so
+            // The readout is a BUTTON now — O24. Same fixed width, so
             // nothing on the bar moves; `Button::frame(false)` keeps it
             // looking like the readout it has always been rather than
             // growing a border the operator has to learn.
             //
-            // ★ It is still not editable, and the reason `page_box` gives for
+            // It is still not editable, and the reason `page_box` gives for
             // being a `TextEdit` is why: a page NUMBER is a value you type,
             // where a zoom is a value you step. This opens a list of
             // maximums; it does not invite a percentage.
@@ -120,7 +120,7 @@ pub(super) fn group(
 mod tests {
     use super::*;
 
-    /// ★★★ The premise the old constant asserted, measured — and it is false.
+    /// The premise the old constant asserted, measured — and it is false.
     ///
     /// `ZOOM_READOUT_WIDTH_PTS`' doc comment said 46 pt was *"wide enough for
     /// four characters, which is the whole range `ZOOM_LADDER` can produce."*

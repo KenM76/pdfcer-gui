@@ -15,7 +15,7 @@ use crate::app::dropped::{Dropped, classify};
 
 /// One file that is going to be imported, and how many pages it brings.
 ///
-/// ★ The count is read **once**, here, and then used twice — for the page list
+/// The count is read **once**, here, and then used twice — for the page list
 /// and for the next file's position. Reading it twice would be two parses of
 /// the same file with no guarantee they agreed.
 struct Source {
@@ -87,7 +87,7 @@ pub fn claim(
 
 /// The dropped paths that are PDFs with pages, in order, each with its length.
 ///
-/// # ★ Why the page count is read here rather than at apply time
+/// # Why the page count is read here rather than at apply time
 ///
 /// Because a file with **no** readable pages must not be claimed at all — it
 /// has to reach `Action::Open` so the parser can say what is wrong with it —
@@ -149,7 +149,7 @@ mod tests {
         assert!(actions.is_empty());
     }
 
-    /// ★★ **A position of `None` declines**, rather than defaulting.
+    /// **A position of `None` declines**, rather than defaulting.
     ///
     /// The platform gives no cursor position on a locked workstation, and the
     /// tempting default — the panel's own centre, or the end of the document —
@@ -180,7 +180,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **A file that is not a readable PDF is left for the fallback.**
+    /// **A file that is not a readable PDF is left for the fallback.**
     ///
     /// The path does not exist, so it cannot be read — the same outcome as a
     /// corrupt file, and the one that matters: the drop is NOT claimed, so
@@ -217,7 +217,7 @@ mod tests {
         assert!(readable_documents(&[PathBuf::from("logo.png")]).is_empty());
     }
 
-    /// ★★ **Two files land in the order they were dragged, not on top of each
+    /// **Two files land in the order they were dragged, not on top of each
     /// other.**
     ///
     /// The arithmetic from the module header, asserted without touching the

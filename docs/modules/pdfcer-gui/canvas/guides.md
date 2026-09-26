@@ -8,7 +8,7 @@ both, plus the two questions they imply: *what does a guide belong to*, and
 
 ---
 
-## ★ 1. A guide belongs to a PAGE, and that follows from the grid
+## 1. A guide belongs to a PAGE, and that follows from the grid
 
 [`super::rulers`]' header §2 settles the space the grid is drawn in: page
 space, per page, anchored to the sheet's own corner, because a reference
@@ -38,7 +38,7 @@ a page's guide.
 
 ---
 
-## ★ 2. Where guides live on disk — a fourth file
+## 2. Where guides live on disk — a fourth file
 
 `page-display.txt` sits beside `layout.ron` and `recent.txt` as a *third*
 store, and [`crate::viewer::remembered`]'s header carries the argument for
@@ -104,7 +104,7 @@ crate cannot serialize.** `serde` and `ron` are dependencies of
 
 ---
 
-## ★ 3. Dragging, and why it cannot disturb the selection
+## 3. Dragging, and why it cannot disturb the selection
 
 Two gestures create and move guides, and both are the ones every peer uses:
 
@@ -158,7 +158,7 @@ another way.
 
 ---
 
-## ★ 4. Rule 4
+## 4. Rule 4
 
 A guide is a **pre-commit affordance in `overlay`'s second category** — the
 cursor, describing where the operator has decided something belongs. It is

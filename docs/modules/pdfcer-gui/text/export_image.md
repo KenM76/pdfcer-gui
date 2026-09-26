@@ -17,7 +17,7 @@ cannot hold**, and every sentence in it is a consequence of that: JPEG has
 no alpha channel, PNG has one and a `pHYs` chunk that decides how large the
 page lands in Word, and SVG has geometry but no text.
 
-## ★★★ The sentence this whole catalog exists for
+## The sentence this whole catalog exists for
 
 
 > *"note that there had better be full support (including transparency
@@ -39,7 +39,7 @@ anything. Two sentences for one rule is deliberate: the first is a
 lives in the receipt, and a build that lost the window would still not
 flatten anybody's page without saying so.
 
-## ★★ Rule 4's shape: the disclosure is off-canvas, after the fact
+## Rule 4's shape: the disclosure is off-canvas, after the fact
 
 Nothing here is drawn on the page or on the preview. Everything in the
 second half of this file is a line for the disclosure slot —
@@ -48,7 +48,7 @@ consequences are already reported (`export_dxf::exported`,
 `export_form::neutralised`). An operator sees the picture they asked for,
 and then reads what could not be expressed exactly.
 
-★ **The one that is easiest to leave out is [`svg_text_is_outlines`], and it
+**The one that is easiest to leave out is [`svg_text_is_outlines`], and it
 is the one most owed.** `pdfcer-render`'s SVG writer says it in its own
 header — *"Text is glyph outlines"* — and the consequence is invisible in
 every way an operator would check: the SVG opens in Inkscape, the words are

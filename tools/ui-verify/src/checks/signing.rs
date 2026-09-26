@@ -105,7 +105,7 @@ const REGION_REDACT_CONFIRM: &str = "redact-apply-confirm";
 
 // --- phase B's document ----------------------------------------------------
 
-/// ★★★ **An encrypted document that opens with NO password.**
+/// **An encrypted document that opens with NO password.**
 ///
 /// `/V` 4, `/R` 4, `/AESV2`, empty user password — the §7.6.3.1 case a reader
 /// must try silently. Read from the engine's corpus rather than from this
@@ -126,14 +126,14 @@ const REGION_REDACT_CONFIRM: &str = "redact-apply-confirm";
 /// **not this check's to fix.** What phase B is about is whether an ENCRYPTED
 /// document is refused, and `crate::sign::Refusal::Encrypted` keys on
 /// `/Encrypt` being present — equally true of a file that needed no password to
-/// open. ★ A fixture that reaches the state under test **without a modal in the
+/// open. A fixture that reaches the state under test **without a modal in the
 /// way** is strictly better evidence: one fewer thing between the launch and
 /// the measurement, and one fewer way for the check to fail about itself.
 const ENCRYPTED: &str = "encryption/enc-emptyuser.pdf";
 
 // --- phases E and F's document ---------------------------------------------
 
-/// ★★★ **A page carrying a PRE-PLACED, EMPTY signature field** — the *"sign
+/// **A page carrying a PRE-PLACED, EMPTY signature field** — the *"sign
 /// here"* box a form author puts on a drawing before mailing it out.
 ///
 /// `/FT /Sig /T (SignHere) /Rect [72 600 300 660] /P <page>`, a merged widget,
@@ -149,7 +149,7 @@ const ENCRYPTED: &str = "encryption/enc-emptyuser.pdf";
 /// is written anywhere near it.**
 const FIELD_DOC: &str = "signing/sig-field-empty.pdf";
 
-/// ★★ The field's name, and it is **the oracle of phase F.**
+/// The field's name, and it is **the oracle of phase F.**
 ///
 /// The one fact that distinguishes *"pdfcer signed the box the sender placed"*
 /// from *"pdfcer made a new box beside it"*. Both produce a signed file, both
@@ -274,7 +274,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             )),
         }
 
-        // ★★★ THE GATE, before the certificate is opened. This is the
+        // THE GATE, before the certificate is opened. This is the
         // measurement that gives phases B and C their dynamic range: the
         // confirm control is declared only while it is live, so its absence
         // here is evidence the gate is shut rather than evidence a click
@@ -324,7 +324,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  the one guard this window offers against the mistake that matters."
             ));
         }
-        // ★★★ THE GATE OPENS. Paired with the assertion above it: together
+        // THE GATE OPENS. Paired with the assertion above it: together
         // they say the feature CONTROLS the button, where either alone says
         // only that it was drawn or was not.
         if !drawn(&trace, ui_rect, REGION_CONFIRM) {
@@ -372,7 +372,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
     }
 
-    // ★ The file exists, before phase D tries to open it — so \"the signed
+    // The file exists, before phase D tries to open it — so \"the signed
     // document has no signature\" and \"there is no signed document\" are two
     // different failure messages rather than one confusing one.
     if !signed_out.is_file() {
@@ -411,7 +411,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  control that silently does nothing is the worse failure."
             ));
         }
-        // ★★★ THE REFUSAL, by name.
+        // THE REFUSAL, by name.
         if !drawn(&trace, ui_rect, REGION_REFUSAL) {
             findings.push(format!(
                 "PHASE B: no `{REGION_REFUSAL}` region on an encrypted document. Regions declared \
@@ -429,7 +429,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  the wrong thing."
             )),
         }
-        // ★★★ AND NO FORM. Every one of these is a presence phase A measured.
+        // AND NO FORM. Every one of these is a presence phase A measured.
         for (name, what) in [
             (REGION_CHOOSE, "the certificate picker"),
             (REGION_PASSPHRASE, "the passphrase field"),
@@ -451,7 +451,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // PHASE C — the PENDING-REDACTION refusal.
     // =======================================================================
     {
-        // ★★★ NOT `four-pages.pdf`, and the reason is a measurement rather
+        // NOT `four-pages.pdf`, and the reason is a measurement rather
         // than a preference: a whole-page redaction on it is REFUSED by the
         // engine with `VerificationFailed { survivors: ["SCALE", "REVISION"] }`,
         // so the apply window opens on a refusal, offers no destination, and
@@ -529,7 +529,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // =======================================================================
-    // PHASE D — ★★★ THE VERDICT. A fresh process, reading the FILE.
+    // PHASE D — THE VERDICT. A fresh process, reading the FILE.
     // =======================================================================
     {
         let session = launch(ctx, report, &signed_out, "sign-verify.trace.txt", &[])?;
@@ -537,7 +537,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
         session.settle(16);
 
-        // ★ The panel must be brought to the FRONT before it is read: a docked
+        // The panel must be brought to the FRONT before it is read: a docked
         // pane that is not in front publishes nothing, which is
         // indistinguishable from a panel with nothing to say. That was called a
         // defect once and was not one. `raise_signatures` carries the rest of
@@ -589,7 +589,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // =======================================================================
-    // PHASE E — ★★★ `Pass 10.13`: THE BOX THE SENDER PLACED.
+    // PHASE E — `Pass 10.13`: THE BOX THE SENDER PLACED.
     // =======================================================================
     let field_doc = engine_fixture(
         FIELD_DOC,
@@ -621,7 +621,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 field_doc.display()
             )));
         }
-        // ★★ The COUNT, before anything is clicked. Two numbers rather than
+        // The COUNT, before anything is clicked. Two numbers rather than
         // one: `empty_fields` is what the document holds and `signable_fields`
         // is what this build will offer, and a build that listed the text field
         // `Name` beside the signature field would read 2 here.
@@ -666,7 +666,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ));
         }
 
-        // ★★★ THE DYNAMIC RANGE FOR THE RETIREMENT ASSERTION, taken FIRST.
+        // THE DYNAMIC RANGE FOR THE RETIREMENT ASSERTION, taken FIRST.
         // `--visible`/`--page` are refused by the engine alongside a field
         // name, so those controls must retire when a box is picked — and
         // "retired" is only a claim if this build draws them at all. So: select
@@ -698,7 +698,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         click_scrolled(&session, &driver, ui_rect, REGION_FIELD_0, report)?;
         session.settle(14);
 
-        // ★★★ THE RETIREMENT. Paired with the measurement above: together they
+        // THE RETIREMENT. Paired with the measurement above: together they
         // say the choice CONTROLS the control, where either alone says only
         // that it was drawn or was not.
         let trace = session.trace()?;
@@ -767,7 +767,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.artifact(field_out.clone());
 
     // =======================================================================
-    // PHASE F — ★★★ THE SECOND VERDICT. A fresh process, reading the NAME.
+    // PHASE F — THE SECOND VERDICT. A fresh process, reading the NAME.
     // =======================================================================
     {
         let session = launch(ctx, report, &field_out, "sign-field-verify.trace.txt", &[])?;
@@ -808,7 +808,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                     field_out.display()
                 ));
             }
-            // ★★★ THE DISCRIMINATOR.
+            // THE DISCRIMINATOR.
             if field != FIELD_NAME {
                 findings.push(format!(
                     "★★★ PHASE F — THE SECOND VERDICT: a fresh process read the signature back \
@@ -820,7 +820,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                      the engine as `None` or was ignored."
                 ));
             }
-            // ★★★ DISTINCT NAMES, NOT ROWS — and the first run of this phase is
+            // DISTINCT NAMES, NOT ROWS — and the first run of this phase is
             // why. `signature-row` is published by the Signatures panel **when
             // it draws**, which is once per frame per signature, so phase D's
             // own note has been reading "37 row(s)" for one signature since the
@@ -850,7 +850,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // =======================================================================
-    // PHASE G — ★★★ `Pass 10.12`: CERTIFYING, as the document's author.
+    // PHASE G — `Pass 10.12`: CERTIFYING, as the document's author.
     // =======================================================================
     let certified_out = ctx.out("certified-by-ui-verify.pdf");
     let _ = std::fs::remove_file(&certified_out);
@@ -871,7 +871,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         click_tab(&session, &driver, ui_rect, FILE_TAB)?;
         press(&session, &driver, ui_rect, SIGN)?;
 
-        // ★ THE DYNAMIC RANGE for phase H's absence assertion, taken on a
+        // THE DYNAMIC RANGE for phase H's absence assertion, taken on a
         // document that has never been signed. Without it, phase H's
         // `may_certify=0` would pass identically on a build that never offers
         // the option at all.
@@ -902,7 +902,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ));
         }
         click_scrolled(&session, &driver, ui_rect, REGION_CERTIFY, report)?;
-        // ★ Plain `click`, NOT `click_scrolled` — and the first run of this
+        // Plain `click`, NOT `click_scrolled` — and the first run of this
         // phase is why. The confirm control lives in the window's FOOTER,
         // below the scroll area, so it is never inside `sign-body` and
         // `click_scrolled` waited eight notches for a containment that
@@ -944,10 +944,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.artifact(certified_out.clone());
 
     // =======================================================================
-    // PHASE H — ★★★ THE THIRD VERDICT. A fresh process, reading /Perms.
+    // PHASE H — THE THIRD VERDICT. A fresh process, reading /Perms.
     // =======================================================================
     //
-    // ★★★ THE ORACLE IS THE DOCUMENT CENSUS, WHICH IS NOT THE SIGNING CODE.
+    // THE ORACLE IS THE DOCUMENT CENSUS, WHICH IS NOT THE SIGNING CODE.
     //
     // `EditSession::signature_census` parses `/Reference … /TransformMethod
     // /DocMDP` and the catalog's `/Perms` out of the bytes on disk. It shipped

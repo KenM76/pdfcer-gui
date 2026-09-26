@@ -20,7 +20,7 @@ here waits on the engine:
 | rename | `rename_dimension_group` |
 | delete | `delete_dimension_group_with` |
 
-## ★ The control that was missing from the whole feature, not just from this
+## The control that was missing from the whole feature, not just from this
 surface
 
 `MeasureState::group` is the active authoring group the next dimension
@@ -33,7 +33,7 @@ The *Draw into* column is that picker. It is the first control here not
 because it is the most elaborate but because without it every other control
 governs a group nothing can reach.
 
-## ★★ Why this is a PANEL and not an [`egui::Window`]
+## Why this is a PANEL and not an [`egui::Window`]
 
 [`crate::dialogs`]' own test reads *a dialog is one transaction with a start
 and an end; a panel is somewhere an operator dips in and out of while
@@ -66,7 +66,7 @@ ce dimension joins is a fact an operator consults while drawing, in the same
 breath as which layer is visible. That is the Layers panel's question with a
 different noun, and Layers has never been a window.
 
-## ★ The growth loop a window would have here, and why the dock removes it
+## The growth loop a window would have here, and why the dock removes it
 
 Put this body — a vertical `ScrollArea` — in a window with a
 `default_width` and no height and the window sizes itself to its content:
@@ -83,7 +83,7 @@ the body draws**, so no content this module lays out can influence it. The
 class of defect is gone rather than tuned, and *reserve-and-hope is the same
 defect with a tuning parameter*.
 
-## ★ Which folds start open — one of six, and the rule behind it
+## Which folds start open — one of six, and the rule behind it
 
 **Scale and unit** alone. Everything else — Add a group, Rename or remove,
 Drafting standard, Layer, Appearance defaults — starts shut.

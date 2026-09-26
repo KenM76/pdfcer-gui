@@ -6,7 +6,7 @@
 //! here has to **drive a click first**, because the left arrow does not exist
 //! until something has scrolled.
 //!
-//! ★★★ That difference is not incidental — it is why a width sweep can test
+//! That difference is not incidental — it is why a width sweep can test
 //! the right arrow exhaustively and say nothing at all about the left one.
 //! `no_visible_group_overlaps_the_overflow_affordance` walks every width and
 //! cannot catch a left-arrow overlap, because there is no width at which an
@@ -19,7 +19,7 @@ use super::tests::{registry, shell};
 use super::width_tests::{SLACK, context};
 use super::{Ribbon, RibbonState, report};
 
-/// ★★★ **No visible group runs under the LEFT scroll arrow either** — the twin
+/// **No visible group runs under the LEFT scroll arrow either** — the twin
 /// of the right-hand affordance's overlap test, and the only thing that holds
 /// the left arrow's reservation in place.
 ///
@@ -34,7 +34,7 @@ use super::{Ribbon, RibbonState, report};
 /// looks normal, is drawn normally, and does something entirely different from
 /// what it says.
 ///
-/// ★ The band must be SCROLLED for the left arrow to exist at all, which is why
+/// The band must be SCROLLED for the left arrow to exist at all, which is why
 /// this test drives a click rather than merely rendering — and why no
 /// width-sweep test can stand in for it: those render a fresh, unscrolled band,
 /// and there is no width at which an unscrolled band draws a left arrow.
@@ -44,7 +44,7 @@ fn no_visible_group_overlaps_the_left_scroll_arrow() {
     let shell = shell();
     let registry = registry();
 
-    // ★★ SWEPT, not fixed at one width. At 180 pt a scrolled band draws no
+    // SWEPT, not fixed at one width. At 180 pt a scrolled band draws no
     // group at all — only the two arrows — so a single-width version of this
     // test can run its loop body zero times and report green over the very
     // defect it exists to catch. The `examined` counter below is what makes

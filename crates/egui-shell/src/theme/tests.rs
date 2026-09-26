@@ -2,7 +2,7 @@
 //! contrast gate's application to the shipped presets, and the two roles
 //! `egui` drives from `visuals.selection`.
 //!
-//! # ★ Why these live in their own file
+//! # Why these live in their own file
 //!
 //! Rule **R2** keeps `theme/mod.rs` under its ceiling, and the tests are the
 //! seam that costs the least — the crate splits the same way for
@@ -10,7 +10,7 @@
 //! move out of `mod.rs` is the arithmetic behind each colour decision, which is
 //! the part a future reader cannot reconstruct.
 //!
-//! ★ `use super::*` rather than a narrowed import list, so every assertion here
+//! `use super::*` rather than a narrowed import list, so every assertion here
 //! can still see private items — `clamp_to_i8`, `Theme::quiet` and friends. A
 //! test that can only reach the public surface would quietly stop covering the
 //! helpers the presets are built out of.
@@ -93,7 +93,7 @@ fn label_plates_stay_content_facing_not_chrome_facing() {
     }
 }
 
-/// **★ `DEFECTS.md` D2's regression test: every foreground `egui`
+/// **`DEFECTS.md` D2's regression test: every foreground `egui`
 /// will actually paint is readable on the background it will actually
 /// paint it on — for all five widget states, both fills, all three
 /// presets.**
@@ -138,7 +138,7 @@ fn label_plates_stay_content_facing_not_chrome_facing() {
 /// property — *the test enumerates the render surface, not the
 /// author's intentions* — is the transferable lesson.
 ///
-/// # ★★★ Why it enumerates twenty-seven pairs and not the widget ten
+/// # Why it enumerates twenty-seven pairs and not the widget ten
 ///
 /// The ten `WidgetVisuals` pairs are the ones easiest to name, and a gate
 /// that stops there is green through every contrast defect that is not a
@@ -178,7 +178,7 @@ fn label_plates_stay_content_facing_not_chrome_facing() {
 /// | selected plate over `window_fill` | 103.1 | 118.9 | 123.2 |
 /// | focus ring on `text_edit_bg_color()` | 147.3 | 170.2 | **96.0** |
 ///
-/// ★ Two rows need reading rather than scanning.
+/// Two rows need reading rather than scanning.
 ///
 /// **`strong_text_color()` is the theme's only exemption**, and it is
 /// structural rather than a tuning miss: that accessor **is**
@@ -190,7 +190,7 @@ fn label_plates_stay_content_facing_not_chrome_facing() {
 ///
 /// **`error_fg_color` on `window_fill` in Dark is the tightest real pair
 /// this gate holds**, and the colour every dialog uses to say the operator
-/// must act. ★ When it shortfalls, the thing to move is the **role** —
+/// must act. When it shortfalls, the thing to move is the **role** —
 /// `Palette::danger` in the dark preset, whose arithmetic `Theme::dark`
 /// carries — never the threshold and never the pair. Loosening either
 /// would keep the gate green by making it stop asking the question.
@@ -225,7 +225,7 @@ fn every_rendered_pair_is_readable_in_every_preset() {
     }
 }
 
-/// **★★ Every contrast exemption still describes a pair that would
+/// **Every contrast exemption still describes a pair that would
 /// otherwise fail.**
 ///
 /// # Why the other direction needs its own test
@@ -307,7 +307,7 @@ fn every_contrast_exemption_still_has_a_subject() {
 /// with its `bg_fill` left at `egui`'s default — and asserts the gate
 /// catches it and *names the state*.
 ///
-/// ★★ The discipline generalises past theming: a test that proves a typo
+/// The discipline generalises past theming: a test that proves a typo
 /// is rejected is worth nothing beside a test that proves the correct
 /// spelling is accepted. A gate needs one of each or it cannot tell
 /// "nothing is wrong" from "nothing is being asked".
@@ -356,7 +356,7 @@ fn on_accent_inverts_where_the_accent_is_light() {
     );
 }
 
-// ★★ **One pair, one test.** Both roles the selection channel serves are
+// **One pair, one test.** Both roles the selection channel serves are
 // measured by `both_roles_the_selection_channel_serves_are_readable_in_every_preset`
 // below, out of `contrast::pairs`. Do not add a second test that measures
 // half of that with its own copy of `egui`'s substitution arithmetic:
@@ -372,7 +372,7 @@ fn on_accent_inverts_where_the_accent_is_light() {
 /// [`Palette::selected_plate`] and `selection.stroke.color` is
 /// [`Palette::accent`], in every preset.
 ///
-/// # ★★★ Why the identity is worth pinning separately, and it is T1's lesson
+/// # Why the identity is worth pinning separately, and it is T1's lesson
 ///
 /// Because named accessors elsewhere promise it.
 /// [`Theme::selected_widget_ink`] and [`Theme::selected_widget_pair`] tell
@@ -418,7 +418,7 @@ fn the_selection_channel_resolves_to_the_selected_plate_pair_in_every_preset() {
 /// **BOTH roles `egui` drives from `visuals.selection` are readable, in
 /// every preset.** Six numbers, one floor.
 ///
-/// # ★★★ Why one channel has two backgrounds, and why that is the whole
+/// # Why one channel has two backgrounds, and why that is the whole
 /// difficulty
 ///
 /// `egui` spends `selection.stroke.color` twice, on two different grounds,
@@ -433,7 +433,7 @@ fn the_selection_channel_resolves_to_the_selected_plate_pair_in_every_preset() {
 ///    [`Theme::write_style`] points at [`Palette::panel`]. `TextEdit` has
 ///    **no `.frame_stroke()`**: there is no per-widget escape hatch.
 ///
-/// ★★ A test that measures only (1) is green about the wrong half of the
+/// A test that measures only (1) is green about the wrong half of the
 /// channel — the ring can be unreadable while the selected pair is
 /// comfortable, and nothing says so. This measures both, from the `Style`
 /// that actually ships.
@@ -452,12 +452,12 @@ fn the_selection_channel_resolves_to_the_selected_plate_pair_in_every_preset() {
 /// lands white on white to within five levels of luminance. `on_accent` is
 /// the ink for the accent FILL and is not a general foreground.
 ///
-/// ★ Dark's ring, at 96.0, is the tightest pair in the theme. It is also
+/// Dark's ring, at 96.0, is the tightest pair in the theme. It is also
 /// the reason this is a loop over `Preset::ALL` and not a spot check: the
 /// light presets clear both columns by fifty or more and would happily
 /// bless an accent that Dark cannot use.
 ///
-/// ★★ The ring is measured against `panel` and NOT against
+/// The ring is measured against `panel` and NOT against
 /// `widgets.*.bg_fill`, because that is genuinely where `egui` draws it —
 /// `text_edit_bg_color()`, not the widget state's own fill. Measuring the
 /// convenient background instead of the real one is the error this whole
@@ -470,7 +470,7 @@ fn both_roles_the_selection_channel_serves_are_readable_in_every_preset() {
         let measured = contrast::pairs(&style);
         let ink = style.visuals.selection.stroke.color;
 
-        // ★ Both numbers come out of `contrast::pairs` rather than being
+        // Both numbers come out of `contrast::pairs` rather than being
         // recomputed here. A second hand-rolled copy of `egui`'s
         // substitution arithmetic is a place for the two to disagree, and
         // the arithmetic is delicate enough that the disagreement would be
@@ -584,7 +584,7 @@ fn the_selected_widget_accessors_agree_with_the_style_egui_will_paint() {
 /// canvas pair through these accessors and never through
 /// `visuals.selection`, which is `egui`'s channel for selected widgets.
 ///
-/// ★★★ Asserted here rather than argued in a comment, so a later edit that
+/// Asserted here rather than argued in a comment, so a later edit that
 /// "tidies" one of these into the chrome pair turns the overlay a different
 /// colour **and goes red** instead of shipping.
 ///
@@ -659,7 +659,7 @@ fn an_out_of_range_panel_padding_saturates_rather_than_wrapping() {
 /// each returned pair clears the same [`contrast::READABLE_LUMA_GAP`] floor
 /// every other pair in this theme is held to.
 ///
-/// # ★★ Why it asserts `is_some()` rather than tolerating `None`
+/// # Why it asserts `is_some()` rather than tolerating `None`
 ///
 /// `None` is the function's honest refusal — *this theme has no text colour
 /// that reads on that fill, so do not tint at all* — and a caller that

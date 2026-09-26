@@ -11,7 +11,7 @@ use pdfcer_core::edit::EditError;
 /// How many terminal names the pre-press disclosure prints before it stops
 /// naming them and starts counting them.
 ///
-/// ★ A cap rather than a scroll area, because this block sits *inside* the
+/// A cap rather than a scroll area, because this block sits *inside* the
 /// Forms panel's own layout and above the fill list. An uncapped list on a
 /// form with two hundred fields under one node would push every control below
 /// it out of a container that does not scroll — the defect
@@ -37,13 +37,13 @@ pub fn field_groups_heading() -> String {
 /// What a field group is, and the one fact about deleting one that an operator
 /// cannot discover any other way.
 ///
-/// ★★ Two clauses, and the second is the load-bearing one. The first defines
+/// Two clauses, and the second is the load-bearing one. The first defines
 /// the noun; the second says the deletion **cascades**, which is the whole
 /// reason this section carries a preview rather than a plain button. An
 /// operator who reads "delete group" and expects one row to disappear has been
 /// told, by the control's own name, something false.
 ///
-/// ★ It also says the groups are **not drawn**, because the panel is beside a
+/// It also says the groups are **not drawn**, because the panel is beside a
 /// canvas and everything else in the shell that can be deleted is visible on
 /// it. Without that clause an operator looks at the page for the thing they are
 /// about to remove, does not find it, and concludes the list is stale.
@@ -58,7 +58,7 @@ pub fn field_groups_explainer() -> String {
 
 /// **Why no control is offered**, when the document refuses structural change.
 ///
-/// # ★★★ R83, and why this returns a sentence rather than a `bool`
+/// # R83, and why this returns a sentence rather than a `bool`
 ///
 /// `EditSession::deletion_refusal` is a *pure query* that answers **before**
 /// anything is drawn, so this surface knows the answer while it still has the
@@ -72,7 +72,7 @@ pub fn field_groups_explainer() -> String {
 /// means the sentence has to exist anyway and is then hidden behind a gesture
 /// the operator has no reason to make.
 ///
-/// # ★★ Three arms, because `deletion_refusal` really can answer three ways
+/// # Three arms, because `deletion_refusal` really can answer three ways
 ///
 /// The shell's existing structural-refusal string names *certification* and
 /// nothing else, which is correct for the case it was written for and silently
@@ -102,7 +102,7 @@ pub fn field_groups_refusal(error: &EditError) -> String {
 
 /// Whether a refusal came from the certification gate.
 ///
-/// ★ A helper rather than a second match arm, because the certification refusal
+/// A helper rather than a second match arm, because the certification refusal
 /// is not one variant. `check_certification` reports the document as certified
 /// by name, and which variant carries that has changed once already on the
 /// engine's side; matching on the *family* through the error's own rendering
@@ -116,7 +116,7 @@ fn is_certification(error: &EditError) -> bool {
 
 /// One grouping node's row: its name, and how many fields are filed under it.
 ///
-/// # ★★ The count comes from `AcroForm::descendants_of`, which is CORE'S walk
+/// # The count comes from `AcroForm::descendants_of`, which is CORE'S walk
 ///
 /// Not a prefix match written here. `FieldGroupDeletion::nodes`' doc comment
 /// forbids a shell re-deriving core's notion of descendant, and it is right —
@@ -139,7 +139,7 @@ pub fn field_group_row(name: &str, fields: usize) -> String {
 
 /// The control that arms a deletion.
 ///
-/// ★ The ellipsis is load-bearing and follows the oldest convention in desktop
+/// The ellipsis is load-bearing and follows the oldest convention in desktop
 /// software: a verb that ends in `\u{2026}` **asks before it acts**. Pressing
 /// this changes no document — it asks the engine what would go and draws the
 /// answer. The confirm control below it has no ellipsis, for the same reason.
@@ -150,7 +150,7 @@ pub fn field_group_delete_button() -> String {
 
 /// What pressing it will and will not do, on hover.
 ///
-/// ★ It promises the *preview*, not the deletion, because that is what the
+/// It promises the *preview*, not the deletion, because that is what the
 /// press does. A hover that described the deletion would make the first press
 /// feel like the destructive one, and an operator who then pressed it
 /// tentatively and read nothing would have learned that the control is broken.
@@ -164,7 +164,7 @@ pub fn field_group_delete_hover(name: &str) -> String {
 
 /// **The pre-press disclosure**: the three numbers, in one sentence.
 ///
-/// # ★★★ Three numbers, and every one of them is invisible
+/// # Three numbers, and every one of them is invisible
 ///
 /// This is the sentence the whole preview exists to produce, and the engine's
 /// own words for why it must exist are worth keeping at the call site:
@@ -179,7 +179,7 @@ pub fn field_group_delete_hover(name: &str) -> String {
 ///   than one means the removal also empties an ancestor or an intermediate,
 ///   which is a node the operator did not choose and cannot see.
 ///
-/// ★ The `groups` clause is omitted when the count is 1, because "1 group" is
+/// The `groups` clause is omitted when the count is 1, because "1 group" is
 /// the ordinary case and carrying it every time trains the eye to skip the
 /// clause that matters on the day it says 3.
 #[must_use]
@@ -205,7 +205,7 @@ pub fn field_group_preview_summary(
 
 /// **The terminal fields, by name.**
 ///
-/// ★★ Named rather than counted, and the argument is core's: a count answers
+/// Named rather than counted, and the argument is core's: a count answers
 /// *how much*, a list answers *which* — and *which* is what decides whether the
 /// operator presses. A form whose group holds `Personal.Name` and
 /// `Personal.Address.Zip` is a different decision from one holding
@@ -241,7 +241,7 @@ pub fn field_group_preview_names(names: &[String]) -> Option<String> {
 
 /// The control that commits.
 ///
-/// ★ It states the **count**, not just the verb. A confirm button reading
+/// It states the **count**, not just the verb. A confirm button reading
 /// "Delete" beside a sentence reading "4 fields" makes the operator carry the
 /// number across; one reading "Delete 4 fields" is the same decision with
 /// nothing to remember. No ellipsis: this one acts.
@@ -258,7 +258,7 @@ pub fn field_group_preview_cancel() -> String {
 
 /// **The preview itself refused.**
 ///
-/// ★★ Close to unreachable from this surface, because the section asks
+/// Close to unreachable from this surface, because the section asks
 /// `deletion_refusal` before it draws a single control and renders
 /// [`field_groups_refusal`] instead when the answer is `Some`. It is worded
 /// anyway, for the case the two disagree — which would mean the query and the
@@ -278,7 +278,7 @@ pub fn field_group_preview_refused(name: &str) -> String {
 
 /// **The preview refused** — the decline-channel wording, without the name.
 ///
-/// # ★★★ Why there are two of these and why this one drops the group's name
+/// # Why there are two of these and why this one drops the group's name
 ///
 /// The pair above went to `record_note`, which renders under **`⚑ About your
 /// last edit:`** — and `crate::text::status`' own rule forbids exactly that for
@@ -311,7 +311,7 @@ pub const fn field_group_delete_declined() -> &'static str {
 
 /// **The deletion refused, after the operator confirmed.**
 ///
-/// ★★★ The one sentence on this surface that must never be a silence. The
+/// The one sentence on this surface that must never be a silence. The
 /// operator has read a preview, decided, and pressed a button whose label named
 /// a number of fields. If the call then refuses and nothing is said, the
 /// program has just shown them a list of what it was about to destroy and then
@@ -326,7 +326,7 @@ pub fn field_group_delete_refused(name: &str) -> String {
 
 /// **What the deletion actually took**, from the engine's returned report.
 ///
-/// # ★★★ The engine's numbers, not the preview's
+/// # The engine's numbers, not the preview's
 ///
 /// `delete_field_group` deliberately overwrites `nodes_removed` with *"what the
 /// cascade ACTUALLY emptied, not the preview's prediction"*, and carries a
@@ -357,7 +357,7 @@ pub fn field_group_deleted(name: &str, fields: usize, boxes: usize, groups: usiz
 
 /// `1 field` / `4 fields`, without a `{n} field(s)` in operator copy.
 ///
-/// ★ `(s)` is a form-filling convention that leaked into prose across this
+/// `(s)` is a form-filling convention that leaked into prose across this
 /// catalog, and it reads as a machine talking. One helper here rather than a
 /// conditional at each of the four call sites.
 fn plural(n: usize, one: &str, many: &str) -> String {
@@ -423,7 +423,7 @@ mod tests {
         assert_eq!(line, "Fields removed: Personal.Name, Personal.Zip.");
     }
 
-    /// ★ The encrypted refusal does not blame a signature, and the certified one
+    /// The encrypted refusal does not blame a signature, and the certified one
     /// does not blame encryption. Naming the wrong cause sends the operator
     /// looking for something that is not in their file.
     #[test]

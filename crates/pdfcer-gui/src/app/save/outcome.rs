@@ -19,7 +19,7 @@ use pdfcer_core::writer::{SaveReport, WriteError};
 /// (`bytes_appended`, `byte_identical`, `promoted`) is a claim about a save
 /// that did not happen in that shape.
 ///
-/// ★ The trace lines differ for the same reason and that is the point. A reader
+/// The trace lines differ for the same reason and that is the point. A reader
 /// of a trace must be able to tell a save that appended a revision from one
 /// that rewrote the whole document with content removed, and the two events
 /// have no fields in common worth pretending they share.
@@ -56,7 +56,7 @@ pub(super) enum SaveError {
     /// The bytes were built and the file system refused them: the folder is
     /// gone, the path is read-only, the volume is full.
     Write(std::io::Error),
-    /// ★★★ **The bytes were built and pdfcer found redacted text in them.**
+    /// **The bytes were built and pdfcer found redacted text in them.**
     ///
     /// The deferred redaction route's own guard. It means the save
     /// was refused *before any byte reached the file system*, and it is the one
@@ -74,7 +74,7 @@ pub(super) enum SaveError {
         /// announce that they leaked would leak them again.
         survivors: Vec<String>,
     },
-    /// ★★★ **A redaction is staged and the removal itself was refused, so no
+    /// **A redaction is staged and the removal itself was refused, so no
     /// save of any kind could be built.**
     ///
     /// It is the one variant here the operator can reach by
@@ -97,7 +97,7 @@ pub(super) enum SaveError {
         /// mechanism.
         refusal: crate::redact::RedactApplyRefusal,
     },
-    /// ★★★ **The bytes were built and their page tree does not agree with
+    /// **The bytes were built and their page tree does not agree with
     /// itself, so writing them would hand the operator a damaged file.**
     ///
     /// From his own report: *"I tested deleting pages from a
@@ -114,7 +114,7 @@ pub(super) enum SaveError {
     /// `page-copy --cut` produces byte-for-byte the same corruption. Filed as
     /// `request_delete_pages_leaves_ancestor_count_stale_on_a_nested_page_tree.md`.
     ///
-    /// ★ The whole [`crate::pagetree::Audit`] is carried, not a pair of
+    /// The whole [`crate::pagetree::Audit`] is carried, not a pair of
     /// numbers, because the sentence differs by *which* node disagrees (see
     /// [`crate::text::pagetree`]) and because the trace wants the node ids —
     /// and because `crate::app::lifecycle`'s rule is that a branch is made on

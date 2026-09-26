@@ -4,7 +4,7 @@ The copy for [`crate::canvas::notepopup`] — the window that opens when an
 operator clicks a comment on the page, and the tooltip that appears when
 they hover one.
 
-## ★★★ The surface this exists for, and the report that commissioned it
+## The surface this exists for, and the report that commissioned it
 
 
 > *"I could add a yellow sticky note but even in read mode I don't think I
@@ -15,7 +15,7 @@ Before this catalog there was **no string anywhere in the crate that
 displayed a note's `/Contents` on the canvas**, in any mode. The only route
 to a comment's words was the Comments panel, on a tab Read is not shown.
 
-## ★★ Why this is not part of [`crate::text::panels::comments`]
+## Why this is not part of [`crate::text::panels::comments`]
 
 Because they are two surfaces answering two questions, and the wording
 follows the question rather than the data.
@@ -30,7 +30,7 @@ page number would be answering a question the click just settled.
 ⇒ Which is why, for instance, [`popup_heading`] takes no page number and
 `comment_row_heading` does.
 
-## ★ What is shared rather than restated
+## What is shared rather than restated
 
 **The byline.** `crate::text::panels::comments::comment_row_byline` is
 called directly by the pop-up rather than copied here, and that is
@@ -41,7 +41,7 @@ is rejecting a legal value. Two surfaces showing one comment must not show
 two different dates for it, and the only way that cannot happen is one
 function.
 
-## ★★★ R9 governs what is ABSENT here, and two absences are deliberate
+## R9 governs what is ABSENT here, and two absences are deliberate
 
 *"An unavailable capability renders nothing, not a disabled stub. Greying
 is reserved for temporarily unavailable, and must explain on hover."*

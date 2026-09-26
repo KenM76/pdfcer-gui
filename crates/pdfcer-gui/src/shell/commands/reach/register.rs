@@ -35,7 +35,7 @@
 
 /// **Registered, deliberately without a dispatch arm, and why.**
 ///
-/// ★ This list is the deliverable, not the leftovers. Every entry is a control
+/// This list is the deliverable, not the leftovers. Every entry is a control
 /// an operator can press today that does nothing, and writing the reason down
 /// is what forces somebody to say *why it is drawn at all*.
 ///
@@ -55,14 +55,14 @@
 /// cites that rather than inventing a second wording, because two wordings of
 /// one decision drift apart and neither one announces that it has.
 ///
-/// # ★ Several of these should probably not be drawn yet, and this list is
+/// # Several of these should probably not be drawn yet, and this list is
 /// where that becomes visible
 ///
 /// `RIBBON_IA.md` P3 says an unavailable capability renders **nothing**, and a
 /// control that is drawn, enabled, pressable and inert breaches it more
 /// severely than a greyed one does — a greyed control at least explains itself
 /// on hover. Entries whose honest answer is *"this should not be on the ribbon
-/// yet"* are marked **★ P3** in their reason. Removing them is a taxonomy
+/// yet"* are marked **P3** in their reason. Removing them is a taxonomy
 /// decision and is the operator's, not this module's; what this module can do
 /// is make the count impossible to lose track of, which
 /// [`tests::the_p3_tension_is_counted`] does.
@@ -74,7 +74,7 @@
 /// is genuinely unreachable, and carries a reason rather than a restatement of
 /// its own id.
 ///
-/// # ★★★ THE FOUR WAYS AN ENTRY HERE GOES FALSE, NONE OF WHICH A TEST SEES
+/// # THE FOUR WAYS AN ENTRY HERE GOES FALSE, NONE OF WHICH A TEST SEES
 ///
 /// `no_scaffolded_entry_is_stale` can prove an entry is registered, has no
 /// dispatch arm, and that its reason is long enough. **It cannot prove the
@@ -104,13 +104,13 @@
 /// every registered id and fails on any `command-unimplemented` trace
 /// line. **No paragraph can satisfy that.**
 ///
-/// # ★★ An entry is DELETED, never reworded
+/// # An entry is DELETED, never reworded
 ///
 /// When the work lands, the entry goes. Rewording it preserves the shape of a
 /// justification for a control that now works, and a reader cannot tell a
 /// live reason from a preserved one.
 ///
-/// ★ A related trap: an entry that says *"no recorded reason anywhere"* is
+/// A related trap: an entry that says *"no recorded reason anywhere"* is
 /// **not** a neutral placeholder, and must not be written. It reads as
 /// *"somebody looked and found nothing"*, which is indistinguishable from
 /// *"somebody deferred this deliberately and forgot to say why"* — and the
@@ -125,13 +125,13 @@ pub(crate) const SCAFFOLDED: &[(&str, &str)] = &[
 /// **The mirror defect: a literal arm that no token can reach, and why each is
 /// tolerated.**
 ///
-/// ★ **Empty, and that is the entry.** The list is kept rather than deleted
+/// **Empty, and that is the entry.** The list is kept rather than deleted
 /// because an empty allow-list is still a gate: a dead arm cannot be added
 /// quietly, it has to be written here with a reason, and
 /// [`tests::the_p3_tension_is_counted`] pins the length at zero so shortening
 /// or lengthening it is a visible act.
 ///
-/// ## ★★ The shape it guards against, and how such an arm hides
+/// ## The shape it guards against, and how such an arm hides
 ///
 /// An arm whose id is in NO registry is reachable by nothing:
 /// `"view.zoom_in" => actions.push(Action::ZoomIn)` compiles, reads as working

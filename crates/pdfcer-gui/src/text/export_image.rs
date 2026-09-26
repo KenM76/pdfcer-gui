@@ -41,7 +41,7 @@ pub const fn format_name(format: ImageFormat) -> &'static str {
         ImageFormat::Png => "PNG",
         ImageFormat::Jpeg => "JPEG",
         ImageFormat::Svg => "SVG",
-        // ★ The acronym AND what it stands for, unlike the other three, and
+        // The acronym AND what it stands for, unlike the other three, and
         // that asymmetry is deliberate. PNG, JPEG and SVG are names an
         // operator has met; "EMF" is one almost nobody has, and a radio
         // reading only "EMF" is a radio nobody presses. The long form is what
@@ -51,7 +51,7 @@ pub const fn format_name(format: ImageFormat) -> &'static str {
     }
 }
 
-/// ★ What each format is FOR, in one line under its radio.
+/// What each format is FOR, in one line under its radio.
 ///
 /// Not decoration. The operator's own examples were *"copy and paste vector
 /// graphics into word or inkscape"*, and the choice between these three is
@@ -70,7 +70,7 @@ pub const fn format_hint(format: ImageFormat) -> &'static str {
              pick up smudges around the edges, and it cannot hold a clear \
              background at all."
         }
-        // ★★ Both vector hints name PROGRAMS rather than properties, because
+        // Both vector hints name PROGRAMS rather than properties, because
         // the choice between these two is not a choice about fidelity — it is
         // a choice about which program is going to open the file, and an
         // operator who has just been told "SVG keeps lines as lines" has no
@@ -121,7 +121,7 @@ pub const fn pages_range_hint() -> &'static str {
     "For example 1-3, 7, 10-12"
 }
 
-/// ★ The typed range does not name any page in this document.
+/// The typed range does not name any page in this document.
 ///
 /// Drawn where the range is typed, not saved for the receipt: this is a
 /// mistake the operator can fix in the box in front of them, and a refusal
@@ -147,7 +147,7 @@ pub const fn dpi_label() -> &'static str {
     "Dots per inch"
 }
 
-/// ★★ What the number means, and it means two different things.
+/// What the number means, and it means two different things.
 ///
 /// For PNG and JPEG it decides the size of the picture and is written **into**
 /// the file, which is the whole of why Word places the result correctly. For
@@ -171,7 +171,7 @@ pub const fn dpi_hint(format: ImageFormat) -> &'static str {
              parts that have to be embedded as a picture — shadings with no \
              gradient form, soft masks, and pictures the PDF already carried."
         }
-        // ★ Worded separately from SVG rather than sharing its arm, because
+        // Worded separately from SVG rather than sharing its arm, because
         // the list of things that "have to be embedded as a picture" is much
         // longer here — every gradient and everything see-through, not just
         // the awkward cases — so the same sentence would understate it by a
@@ -184,7 +184,7 @@ pub const fn dpi_hint(format: ImageFormat) -> &'static str {
     }
 }
 
-/// ★ The pixel size this resolution will produce, before anything is written.
+/// The pixel size this resolution will produce, before anything is written.
 ///
 /// A resolution is an abstraction; a number of pixels is the thing that
 /// actually lands on disk and the thing that can be refused. Shown live so the
@@ -194,7 +194,7 @@ pub fn dpi_pixels(width: u32, height: u32) -> String {
     format!("The largest page comes out {width} by {height} pixels.")
 }
 
-/// ★★ The requested resolution cannot be rendered at all.
+/// The requested resolution cannot be rendered at all.
 ///
 /// `pdfcer_render::MAX_PIXMAP_EDGE` is 16,384 pixels and a render past it is
 /// refused by the engine. Said here, in the window, with the number that would
@@ -234,7 +234,7 @@ pub const fn flatten_hint() -> &'static str {
     "The page is written onto solid white, the way it looks on screen."
 }
 
-/// ★★★ **The refusal, drawn beside the control that would offer the
+/// **The refusal, drawn beside the control that would offer the
 /// impossible combination.**
 ///
 /// The operator asked for *"full support (including transparency where
@@ -269,7 +269,7 @@ pub const fn quality_label() -> &'static str {
     "JPEG quality"
 }
 
-/// ★ What quality costs, in the terms this operator's files are in.
+/// What quality costs, in the terms this operator's files are in.
 ///
 /// A CAD drawing is line art, and line art is the content JPEG treats worst.
 /// The sentence names that rather than talking about compression ratios,
@@ -299,7 +299,7 @@ pub const fn save_dialog_title() -> &'static str {
     "Export image"
 }
 
-/// ★ How several pages are named, said BEFORE the save dialog opens.
+/// How several pages are named, said BEFORE the save dialog opens.
 ///
 /// One file per page, and the operator names one of them. Every reference
 /// application does this — Acrobat's *Export ▸ Image* asks for a base name and
@@ -342,7 +342,7 @@ pub fn wrote_svg(path: &str, page_number: usize, ops: usize) -> String {
 
 /// An EMF export succeeded.
 ///
-/// ★ Its own line rather than [`wrote_svg`]'s, and the difference is the
+/// Its own line rather than [`wrote_svg`]'s, and the difference is the
 /// second number. An SVG's `ops` count is the whole file; a metafile's is
 /// only the part that stayed geometry, and the balance became bitmaps. A
 /// receipt that reported `ops` alone would describe a file that is half
@@ -385,14 +385,14 @@ pub const fn flattened_to_white() -> &'static str {
     "The page is on solid white, as you asked."
 }
 
-/// ★★★ **A transparent JPEG was requested and NOTHING was written.**
+/// **A transparent JPEG was requested and NOTHING was written.**
 ///
 /// The second half of the rule [`jpeg_has_no_alpha`] states. That one prevents
 /// the combination in the window; this one is what the writer says if it is
 /// ever handed the combination anyway — a keyboard route, a restored plan, a
 /// later build with a different window.
 ///
-/// ★ It refuses rather than flattening, and that is the whole point. Flattening
+/// It refuses rather than flattening, and that is the whole point. Flattening
 /// would produce a file the operator can open, that looks almost right, and
 /// whose white background they meet when it is already in somebody else's
 /// document. A refusal costs them one press and tells them which press to make
@@ -418,7 +418,7 @@ pub const fn refused(why: Impossible) -> &'static str {
     }
 }
 
-/// ★★★ **What the SVG could not express exactly** — Rule 4's whole content.
+/// **What the SVG could not express exactly** — Rule 4's whole content.
 ///
 /// `ExportTally` is the engine's own count of what a recording had to
 /// approximate, and every field below is a fact the operator cannot get any
@@ -426,7 +426,7 @@ pub const fn refused(why: Impossible) -> &'static str {
 /// approximated is invisible until somebody prints it on a press or edits it
 /// in Inkscape.
 ///
-/// # ★★ Four decisions in this function, each of which could have been made
+/// # Four decisions in this function, each of which could have been made
 /// wrongly and quietly
 ///
 /// 1. **`shadings_as_gradients` is not a shortfall and is not reported as
@@ -560,7 +560,7 @@ pub fn svg_fidelity_with(
     out
 }
 
-/// ★★★ The one nobody counts, and the one most owed.
+/// The one nobody counts, and the one most owed.
 ///
 /// `pdfcer-render`'s SVG writer states it in its own header — *"Text is glyph
 /// outlines. That is what 'renders identically everywhere' costs"* — and the
@@ -580,14 +580,14 @@ pub const fn svg_text_is_outlines() -> &'static str {
      and no font travels with it."
 }
 
-/// ★★★ **What the metafile could not express exactly** — Rule 4's content for
+/// **What the metafile could not express exactly** — Rule 4's content for
 /// EMF, and it is a longer confession than the SVG's.
 ///
 /// The engine's note names the obligation in one clause: *"`EmfOutcome`
 /// carries what became a bitmap (translucent solids, blend modes, gradients,
 /// images, groups) — **disclose those**"*. This is that.
 ///
-/// # ★★ Why this is not `svg_fidelity` with a different noun
+/// # Why this is not `svg_fidelity` with a different noun
 ///
 /// The two formats fail at different places, and folding them into one
 /// function would mean each page's disclosure was worded for the other one.
@@ -604,7 +604,7 @@ pub const fn svg_text_is_outlines() -> &'static str {
 /// costs them, and none of it is visible in the file: a metafile that is half
 /// `EMR_ALPHABLEND` opens, plays, and looks correct at 100%.
 ///
-/// # ★ The five reasons are given as a breakdown of one total, not five
+/// # The five reasons are given as a breakdown of one total, not five
 /// sentences
 ///
 /// `rasters_embedded` is the engine's own sum and the number that matters —
@@ -613,7 +613,7 @@ pub const fn svg_text_is_outlines() -> &'static str {
 /// the first clause. Five separate sentences would bury the total in the
 /// middle of them.
 ///
-/// # ★★★ The LibreOffice clause is unconditional on its counter and is NOT
+/// # The LibreOffice clause is unconditional on its counter and is NOT
 /// folded in with the rest
 ///
 /// `nonzero_fills_multi_subpath` is the only entry here that is not a loss at
@@ -729,7 +729,7 @@ pub fn emf_fidelity_with(text: Vec<String>, counts: &EmfCounts) -> Vec<String> {
 
 /// The metafile's own always-true loss, [`svg_text_is_outlines`]'s twin.
 ///
-/// ★ Worded separately rather than sharing the SVG's sentence, because the
+/// Worded separately rather than sharing the SVG's sentence, because the
 /// SVG's names the format — *"Text in an SVG"* — and a receipt that told an
 /// operator about their SVG after they exported an EMF is a receipt about
 /// somebody else's file. The consequences are identical and are listed in the
@@ -770,7 +770,7 @@ pub const fn no_pages() -> &'static str {
 mod tests {
     use super::*;
 
-    /// ★★★ **Asking for a transparent JPEG is refused BY NAME.**
+    /// **Asking for a transparent JPEG is refused BY NAME.**
     ///
     /// The assertion this catalog exists for, and the operator's own
     /// parenthesis — *"(including transparency where supported!)"* — is what
@@ -806,7 +806,7 @@ mod tests {
         );
     }
 
-    /// ★★ **A PNG's receipt states the resolution that went INTO the file.**
+    /// **A PNG's receipt states the resolution that went INTO the file.**
     ///
     /// The engine's note names the defect: *"without `pHYs` Word places a 300
     /// DPI page four times too large."* An operator who is told only "300 DPI"
@@ -824,7 +824,7 @@ mod tests {
         assert!(note.contains("real size"), "{note}");
     }
 
-    /// ★★★ **An exact SVG reports nothing lost — but still says text became
+    /// **An exact SVG reports nothing lost — but still says text became
     /// outlines.**
     ///
     /// The trap this asserts against is a disclosure that only lists counted
@@ -852,7 +852,7 @@ mod tests {
         );
     }
 
-    /// ★★ **An inexact SVG names each thing it lost.**
+    /// **An inexact SVG names each thing it lost.**
     #[test]
     fn an_inexact_svg_reports_what_it_could_not_express() {
         let mut tally = ExportTally::default();
@@ -873,7 +873,7 @@ mod tests {
         );
     }
 
-    /// ★ **A native gradient is fidelity and is not confessed as a loss.**
+    /// **A native gradient is fidelity and is not confessed as a loss.**
     ///
     /// `ExportTally::is_exact` zeroes `shadings_as_gradients` before comparing,
     /// on the engine's own reasoning — *"a native gradient is exact; it is
@@ -893,7 +893,7 @@ mod tests {
         assert!(!joined.contains("blocky"), "{joined}");
     }
 
-    /// ★ The resolution hint says a DIFFERENT thing for SVG, because the
+    /// The resolution hint says a DIFFERENT thing for SVG, because the
     /// number means a different thing.
     #[test]
     fn the_resolution_hint_is_not_the_same_sentence_for_a_vector_format() {
@@ -909,7 +909,7 @@ mod tests {
             "the vector case must say raising it will not sharpen the lines: {vector}"
         );
         assert_eq!(dpi_hint(ImageFormat::Jpeg), raster);
-        // ★★ EMF gets its OWN vector sentence rather than sharing SVG's. The
+        // EMF gets its OWN vector sentence rather than sharing SVG's. The
         // list of things that must become a picture is much longer in a
         // metafile — every gradient, everything see-through — so SVG's wording
         // would understate it on exactly the pages where the number matters.
@@ -923,7 +923,7 @@ mod tests {
         assert!(metafile.contains("exact at any value"), "{metafile}");
     }
 
-    /// ★★★ **Every format has a name, a hint and a resolution hint, and no
+    /// **Every format has a name, a hint and a resolution hint, and no
     /// two formats share a name.**
     ///
     /// The sweep that makes adding a fifth format safe. A `match` arm that
@@ -958,7 +958,7 @@ mod tests {
         assert_eq!(count, 4, "PNG, JPEG, SVG, EMF");
     }
 
-    /// ★★ **The EMF radio spells out what the acronym means.**
+    /// **The EMF radio spells out what the acronym means.**
     ///
     /// Unlike PNG, JPEG and SVG, "EMF" is a name almost no operator has met,
     /// and a radio reading only "EMF" is a radio nobody presses. The long form
@@ -978,7 +978,7 @@ mod tests {
         assert!(hint.contains("Paste Special"), "{hint}");
     }
 
-    /// ★★★ **An exact metafile reports nothing lost — and still says text
+    /// **An exact metafile reports nothing lost — and still says text
     /// became outlines.**
     ///
     /// `svg_fidelity`'s clause 3, restated for EMF because the always-true
@@ -1009,7 +1009,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **Every one of the five reasons a part became a bitmap is named,
+    /// **Every one of the five reasons a part became a bitmap is named,
     /// with its own number, in one sentence.**
     ///
     /// The engine's note is imperative about this: *"`EmfOutcome` carries what
@@ -1053,7 +1053,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **A metafile whose RECORDING was exact but whose ALPHA was not is
+    /// **A metafile whose RECORDING was exact but whose ALPHA was not is
     /// reported as inexact.**
     ///
     /// The trap `EmfCounts::is_exact` exists for. `ExportTally` describes the
@@ -1087,7 +1087,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The LibreOffice hole warning names the program AND the version,
+    /// **The LibreOffice hole warning names the program AND the version,
     /// and says what will look wrong.**
     ///
     /// `nonzero_fills_multi_subpath` is the only entry in the EMF disclosure
@@ -1117,7 +1117,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The recording's own losses are worded exactly as the SVG's are.**
+    /// **The recording's own losses are worded exactly as the SVG's are.**
     ///
     /// They are the same losses arriving by the same route — the shared export
     /// recording — and an operator who has read one receipt should recognise
@@ -1147,7 +1147,7 @@ mod tests {
         }
     }
 
-    /// ★★ **The EMF receipt gives the geometry AND the picture count.**
+    /// **The EMF receipt gives the geometry AND the picture count.**
     ///
     /// An SVG's `ops` is the whole file; a metafile's is only the part that
     /// stayed lines. A receipt reporting `ops` alone would describe a file
@@ -1171,7 +1171,7 @@ mod tests {
         assert!(!clean.contains("pictures"), "{clean}");
     }
 
-    /// ★ **The two always-true outline sentences name their own formats.**
+    /// **The two always-true outline sentences name their own formats.**
     ///
     /// They describe the same loss and must not be the same string: a receipt
     /// that told an operator about "an SVG" after they exported a metafile is

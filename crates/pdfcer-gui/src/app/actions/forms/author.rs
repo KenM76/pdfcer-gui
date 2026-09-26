@@ -105,7 +105,7 @@ pub(in crate::app::actions) fn author(
 
     // The two `/MK` colours, handed to every kind identically.
     //
-    // ★ One value reaches BOTH the widget's dictionary and its appearance
+    // One value reaches BOTH the widget's dictionary and its appearance
     // stream, which is the engine's own reason for modelling them as one
     // struct: `Pass 308.0` found a push button whose `/MK` said DeviceRGB
     // while its artwork drew DeviceGray, harmless for months and expensive

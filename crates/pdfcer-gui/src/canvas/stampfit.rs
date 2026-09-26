@@ -44,7 +44,7 @@ pub fn store(ctx: &egui::Context, fit: StampFit) {
 /// This choice as a **stable token for a machine** — the diagnostic trace, and
 /// nothing else.
 ///
-/// ★★★ Never `{:?}`. The rule is absolute on this project and it was bought:
+/// Never `{:?}`. The rule is absolute on this project and it was bought:
 /// a driven check once reported the opposite of the truth while quoting the
 /// truth in its own failure message, because it was pattern-matching a
 /// `Debug` rendering whose shape had changed underneath it. `Debug` belongs to
@@ -77,7 +77,7 @@ pub const fn trace_token(fit: StampFit) -> &'static str {
 mod tests {
     use super::*;
 
-    /// ★★ **The default is the ENGINE's default**, so that a shell that omits
+    /// **The default is the ENGINE's default**, so that a shell that omits
     /// `stamp_fit` and a shell that names it explicitly ask for the same
     /// thing.
     ///
@@ -92,7 +92,7 @@ mod tests {
 
     /// Every policy this shell knows about is offered exactly once.
     ///
-    /// ★ The failure this catches is a list that quietly holds two of the
+    /// The failure this catches is a list that quietly holds two of the
     /// three — a policy an operator can never reach, with no error anywhere.
     /// The same test `pen::FACES` has, for the same reason.
     #[test]

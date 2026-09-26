@@ -19,7 +19,7 @@ was absent from every surface in the program. That is the specific defect
 this check exists to detect — a capability that is present, tested, released
 and unreachable.
 
-## ★★ The way this feature can pass every unit test and be dead
+## The way this feature can pass every unit test and be dead
 
 `panels::properties::face::choices` is unit-tested: give it a page carrying
 `ArialMT` and it answers fourteen addable faces. **Every one of those tests
@@ -33,10 +33,10 @@ The chain this drives:
 | # | link | its own test |
 |---|---|---|
 | 1 | a sweep produces a `TextSelection` and the panel draws a Text section | `restyle_text` |
-| 2 | the chooser's combo is on screen and opens | ★ **nothing** |
-| 3 | the popup separates the two kinds of row and draws the standard-14 heading | ★ **nothing** |
-| 4 | ★★★ **the disclosure is on screen where the choice is made** | ★ **nothing** — and no unit test can see it, because what is under test is that a string reached a rectangle |
-| 5 | a standard-14 row is clickable | ★ **nothing** |
+| 2 | the chooser's combo is on screen and opens | **nothing** |
+| 3 | the popup separates the two kinds of row and draws the standard-14 heading | **nothing** |
+| 4 | **the disclosure is on screen where the choice is made** | **nothing** — and no unit test can see it, because what is under test is that a string reached a rectangle |
+| 5 | a standard-14 row is clickable | **nothing** |
 | 6 | the click reaches `format_text` and the document changes | unit-tested |
 
 Link 4 is the one this check would be worth writing for on its own. pdfcer
@@ -47,14 +47,14 @@ surviving half is that an inference the operator cannot see still owes an
 off-canvas report, and a disclosure that is written, catalogued, unit-tested
 for its three clauses and then never painted has discharged nothing.
 
-## ★ The control point, and why it is not optional
+## The control point, and why it is not optional
 
 `properties.text.face.new` must be **absent** before the combo is clicked.
 Without that, a build whose popup was somehow always open would pass this
 check on regions that were never opened by the gesture — the defect
 `max_zoom` names in its own header, wearing the same green tick.
 
-## ★★ It has been seen to FAIL, which is the acceptance criterion
+## It has been seen to FAIL, which is the acceptance criterion
 
 [`crate::checks`]' founding rule: *"it must fail against a build where the
 wiring is absent, and the wiring must be something no unit test in the
@@ -67,7 +67,7 @@ indistinguishable from one that cannot fail.
 | page faces only (the planted build, and the shell as it shipped) | **FAIL** — *"the chooser opened and declared no `properties.text.face.addable` region"*, with `properties.text.face` as the only region under that prefix and a screenshot beside it |
 | page faces + the standard fourteen | **PASS** — `text-style-applied page=0 change=face applied=19 runs=14`, followed by `format-text` |
 
-★ Note what the planted build's failure text shows: the popup **opened**,
+Note what the planted build's failure text shows: the popup **opened**,
 the page's own faces were **listed**, and every unit test in the workspace
 was green — including `choices`' own, which asserts the filter and not the
 painting. The whole defect was one absent group in one popup, and this is

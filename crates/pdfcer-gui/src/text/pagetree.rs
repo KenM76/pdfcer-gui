@@ -28,7 +28,7 @@ pub fn refusal_sentence(name: &str, origin: crate::pagetree::RefusalOrigin) -> S
 /// file name, not its path — the operator knows which document he is looking
 /// at and a full path would push the numbers off the end of the status bar.
 ///
-/// # ★ Why it names the document at all, then
+/// # Why it names the document at all, then
 ///
 /// Because this shell has document tabs, and a refusal arriving while he is
 /// looking at a different tab than the one he pressed `Ctrl+S` on is a real
@@ -69,7 +69,7 @@ pub fn save_refused_interior(name: &str, nodes: usize) -> String {
     )
 }
 
-/// ★★★ **The save was refused, and the document was ALREADY like this when it
+/// **The save was refused, and the document was ALREADY like this when it
 /// was opened.**
 ///
 /// The third sentence, and it exists because the first two would otherwise give
@@ -78,7 +78,7 @@ pub fn save_refused_interior(name: &str, nodes: usize) -> String {
 /// file arrived that way. An operator who presses Ctrl+Z until the undo stack is
 /// empty and still cannot save has been sent in a circle by his own tool.
 ///
-/// # ★ Why the save is still refused rather than merely disclosed
+/// # Why the save is still refused rather than merely disclosed
 ///
 /// Because pdfcer would be putting its name on the output. An incremental save
 /// keeps the base revision verbatim (§7.5.6) and appends, so a base whose page
@@ -87,7 +87,7 @@ pub fn save_refused_interior(name: &str, nodes: usize) -> String {
 /// input. Writing a file you know is damaged is not defensible on the grounds
 /// that somebody else damaged it first.
 ///
-/// # ★★ What it costs him, and why the sentence says so plainly
+/// # What it costs him, and why the sentence says so plainly
 ///
 /// It costs him the ability to save this document at all through pdfcer, and
 /// there is no remedy inside this program. That is a hard thing to be told and
@@ -136,7 +136,7 @@ mod tests {
         assert!(!s.contains("blank pages"), "{s}");
     }
 
-    /// ★★★ **The pre-existing sentence does NOT tell him to press Ctrl+Z, and
+    /// **The pre-existing sentence does NOT tell him to press Ctrl+Z, and
     /// the other two do.**
     ///
     /// The whole reason the third sentence exists. Undo is the remedy exactly
@@ -160,7 +160,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **All three sentences promise that the work survives.**
+    /// **All three sentences promise that the work survives.**
     ///
     /// The claim is true — `to_incremental_bytes` takes `&self` and the
     /// refusal happens before `std::fs::write` — and it is the one an operator

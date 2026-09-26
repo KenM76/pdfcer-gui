@@ -23,7 +23,7 @@ looks available and is not — reads the other way round here: **a stated
 problem with no offered remedy is the same defect wearing different
 clothes.**
 
-## ★ Every row can be pressed with the name box empty, and that is the
+## Every row can be pressed with the name box empty, and that is the
 recommended answer
 
 The engine measured a real form and found **11 of 13** unclaimed widgets to
@@ -37,7 +37,7 @@ refusal is worded, arrives in the status bar, and says what typing a name
 will actually produce — a new, empty field, not the radio button that was
 lost. See [`crate::text::status::adopt_declined_no_name`].
 
-## ★★ The pre-flight, asked once per row before the press
+## The pre-flight, asked once per row before the press
 
 `EditSession::adopt_preview` is `&self` and writes nothing. Each row asks it
 — with whatever the operator has typed **so far**, not with `None` — and the

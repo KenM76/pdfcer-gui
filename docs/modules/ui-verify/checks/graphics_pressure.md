@@ -21,7 +21,7 @@ were documented, gated by `check-trace-names`, emitted every frame, and read
 by nobody. Emitting a measurement and making a measurement are different
 acts, and only one of them can be gated from the emitting side.
 
-# ★★★ The assertion, and the mechanism that makes it load-bearing
+# The assertion, and the mechanism that makes it load-bearing
 
 `egui`'s `InputState` `Default` sets `max_texture_side` to **2048**, and
 `RawInput::max_texture_side` is an `Option` that begins `None`;

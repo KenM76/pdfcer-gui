@@ -1,7 +1,7 @@
 //! # `canvas::deleting::tests` — which verb each rung reaches, asserted
 //!
 //!
-//! ## ★★★ What these are actually protecting, and it is not the routing
+//! ## What these are actually protecting, and it is not the routing
 //!
 //! The routing is five arms and a match; a reviewer can read it. What cannot be
 //! read is the property the whole feature exists for, and it is the one a wrong
@@ -26,7 +26,7 @@
 //! earns the exemption is not being in the binary. Without it every `assert!`
 //! message below is reported as un-catalogued operator copy.
 //!
-//! ★ `check-file-size.sh` still counts these lines. This is the split R2 asks
+//! `check-file-size.sh` still counts these lines. This is the split R2 asks
 //! for, not a way of hiding from it.
 
 #![cfg(test)]
@@ -38,7 +38,7 @@ use crate::canvas::target::TargetId;
 use crate::panels::objects::provider::ObjectModelProvider;
 use pdfcer_core::content::ContentStream;
 use pdfcer_core::vector::{Matrix, NoXObjects, decompose};
-// ★ The renderer's own transform type, named through the crate that defines it
+// The renderer's own transform type, named through the crate that defines it
 // rather than through `crate::viewer` — that module imports it privately, so the
 // path a reader would guess does not resolve.
 use pdfcer_render::tiny_skia::Transform;
@@ -53,7 +53,7 @@ fn provider(src: &[u8]) -> ObjectModelProvider {
     ObjectModelProvider::from_parts(0, objects, Transform::identity())
 }
 
-/// ★★★ **A TEXT FIXTURE HAS TO BE A REAL DOCUMENT, and finding that out is
+/// **A TEXT FIXTURE HAS TO BE A REAL DOCUMENT, and finding that out is
 /// worth the paragraph.**
 ///
 /// The obvious spelling — `decompose` over a hand-written `BT /F1 10 Tf …
@@ -157,7 +157,7 @@ fn at_node(object: u64, part: usize, node: usize) -> SelectionState {
     selection
 }
 
-/// ★★★ **THE ASSERTION `Pass 32.0` EXISTS FOR.**
+/// **THE ASSERTION `Pass 32.0` EXISTS FOR.**
 ///
 /// A label is selected — the Part rung on a text object — and Delete must reach
 /// `delete_text_run` with that run's index. The variant is the whole claim: a
@@ -193,7 +193,7 @@ fn selecting_one_label_deletes_that_label_and_not_the_object() {
     );
 }
 
-/// ★★ **R83, asked before the press.**
+/// **R83, asked before the press.**
 ///
 /// Line 2 of the fixture is the rotated `Delta`, and line 3 is `Epsilon`
 /// riding on its advance. Removing line 2 would slide line 3; the engine
@@ -238,7 +238,7 @@ fn the_last_label_is_deletable_even_when_the_earlier_one_is_not() {
     );
 }
 
-/// ★★★ **One line out of a path that holds many.**
+/// **One line out of a path that holds many.**
 ///
 #[test]
 fn selecting_one_line_deletes_that_line_and_not_the_drawing_view() {
@@ -256,7 +256,7 @@ fn selecting_one_line_deletes_that_line_and_not_the_drawing_view() {
     );
 }
 
-/// ★★★ **One corner point.**
+/// **One corner point.**
 #[test]
 fn selecting_one_point_deletes_that_point() {
     let provider = provider(TWO_LINES);
@@ -271,7 +271,7 @@ fn selecting_one_point_deletes_that_point() {
     );
 }
 
-/// ★★ **Several anchors refuse rather than removing one of them.**
+/// **Several anchors refuse rather than removing one of them.**
 ///
 /// `move_nodes` takes a slice and `delete_node` is singular, so a multi-anchor
 /// delete would be N commands and N undo entries — and each excision renumbers,
@@ -349,7 +349,7 @@ fn the_point_rung_on_text_declines_by_name() {
     assert_eq!(against(&doc, &selection), Err(Refusal::NoNodeVerbForText));
 }
 
-/// ★★ **The Object rung still works with no object model at all.**
+/// **The Object rung still works with no object model at all.**
 ///
 /// The asymmetry `subject`'s docs argue for: the Object rung is answered from
 /// the selection alone, so a page that will not decompose can still have its
@@ -408,7 +408,7 @@ fn a_form_interior_selection_still_reaches_the_form_delete() {
     );
 }
 
-/// ★★ **A LINE inside a form has no delete verb, and says so.**
+/// **A LINE inside a form has no delete verb, and says so.**
 ///
 /// Measured against the locked engine rather than assumed: its six
 /// form-interior verbs are five moves and one whole-object delete. There is no

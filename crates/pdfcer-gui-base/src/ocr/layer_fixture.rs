@@ -98,7 +98,7 @@ fn dump_the_ocr_layer_fixture() {
     }
 }
 
-/// ★ **The counts the overlay's selector will be measured against.**
+/// **The counts the overlay's selector will be measured against.**
 ///
 /// Both numbers, not one: a build that reported everything invisible passes the
 /// first assertion alone, and a build that reported nothing invisible passes
@@ -142,7 +142,7 @@ fn the_engines_own_diagnostic_counts_the_same_invisible_glyphs() {
     );
 }
 
-/// ★★ **The ladder, which is the whole point of the fixture.**
+/// **The ladder, which is the whole point of the fixture.**
 ///
 /// A hidden run in a stream that is not the OCR layer, followed inside the same
 /// `BT`…`ET` by a visible one. Asserted by reading the text back off the glyphs
@@ -175,7 +175,7 @@ fn rendering_mode_is_ambient_and_the_ladder_proves_both_directions() {
     );
 }
 
-/// ★★★ **The OCR layer contributes nothing to the raster.**
+/// **The OCR layer contributes nothing to the raster.**
 ///
 /// This is the property the whole overlay rests on: the operator sees the
 /// invisible layer only because the shell draws it, never because the

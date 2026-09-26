@@ -20,7 +20,7 @@ use crate::app::state::OpenDoc;
 use crate::panels::PanelsState;
 use crate::text::panels::attachments as t;
 
-/// ★ Putting a file into the document — the writing half of this panel.
+/// Putting a file into the document — the writing half of this panel.
 ///
 /// Its header carries the two rules it obeys rather than rediscovers: a control
 /// that must always be reachable cannot be placed after an unbounded
@@ -30,7 +30,7 @@ pub mod attach;
 
 /// The region the first row's Save button publishes.
 ///
-/// ★ **The FIRST row's**, not every row's. `crate::diag`'s region names are a
+/// **The FIRST row's**, not every row's. `crate::diag`'s region names are a
 /// flat namespace keyed by string, so publishing one name from twenty rows
 /// would emit twenty rectangles under one key and leave a driven check clicking
 /// whichever won the race. The Comments panel reached the same conclusion and
@@ -45,7 +45,7 @@ pub const REGION_REMOVE: &str = "attachments.remove"; // ui-text-exempt: trace r
 /// document — which is the line `crate::panels`' header draws for what may live
 /// here versus what may live behind interior mutability on `OpenDoc`.
 ///
-/// ★ Reset with the document by `PanelsState::forget_document`, and that
+/// Reset with the document by `PanelsState::forget_document`, and that
 /// matters here for `docprops::InfoDrafts`' reason rather than for
 /// tidiness: a half-typed description carried into a second file would be
 /// written into **that** file's `/Desc` by the next attach, describing one
@@ -76,7 +76,7 @@ impl std::fmt::Debug for AttachmentsUi {
 
 /// Draw the Attachments panel.
 ///
-/// # ★ The order of the four blocks is load-bearing, and only one of them is
+/// # The order of the four blocks is load-bearing, and only one of them is
 /// obvious
 ///
 /// 1. **The count**, so the answer to *"does this document carry anything?"* is
@@ -128,7 +128,7 @@ pub fn body(ui: &mut Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut V
     ui.separator();
     attach::show(ui, state.attachments_mut(), actions);
 
-    // ★★★ The Paste control, ABOVE the list and BELOW the attach row.
+    // The Paste control, ABOVE the list and BELOW the attach row.
     //
     // Above the list because the list can be long and a control at the bottom
     // of a scrolled one is a control the operator hunts for. Below the attach
@@ -136,7 +136,7 @@ pub fn body(ui: &mut Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut V
     // a file from disk, the other from another open document -- and putting
     // them together says so without a word of copy.
     //
-    // ★ Drawn only when the clipboard holds an attachment, which is R9: an
+    // Drawn only when the clipboard holds an attachment, which is R9: an
     // unavailable capability renders NOTHING. It is not greyed, because greying
     // is reserved for the temporarily unavailable and an operator with an empty
     // clipboard is not waiting for anything.
@@ -162,7 +162,7 @@ pub fn body(ui: &mut Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut V
 
 /// **Which of this panel's row controls have already published a rectangle.**
 ///
-/// # ★★ Why a struct rather than four `&mut bool`s
+/// # Why a struct rather than four `&mut bool`s
 ///
 /// It began as two, grew to four when the clipboard arrived, and tripped
 /// clippy's seven-argument limit — which was the right complaint about the
@@ -171,7 +171,7 @@ pub fn body(ui: &mut Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut V
 /// on the first row (Remove, on a page-level attachment) must not consume the
 /// flag for the row that does have one.
 ///
-/// ★ A region name is a key in a **flat** namespace. Publishing
+/// A region name is a key in a **flat** namespace. Publishing
 /// `attachments.save` from every row would emit one rectangle per row under one
 /// key, and a driven check would click whichever was written last — not the row
 /// it meant, and not stable between runs. These rows also live in a
@@ -191,7 +191,7 @@ struct Published {
 
 /// Draw one row per attachment.
 ///
-/// # ★ Why the two `published` flags exist
+/// # Why the two `published` flags exist
 ///
 /// A region name is a key in a flat namespace. Publishing `attachments.save`
 /// from every row would emit one rectangle per row under one key, and a driven
@@ -245,13 +245,13 @@ fn row(
     // defect this project keeps finding — a control that exists, is correct, and
     // is unreachable — and it is invisible to every test that does not render.
     //
-    // ★ The order now matches what the controls are FOR. The name says which
+    // The order now matches what the controls are FOR. The name says which
     // file; the buttons say what can be done with it; everything below is
     // detail an operator reads when they want it. Acrobat's own attachments
     // pane puts its verbs on a strip above the list for the same reason, and
     // this is the per-row form of that.
     //
-    // ★★ The caveats about the name are the one thing that arguably belongs
+    // The caveats about the name are the one thing that arguably belongs
     // above the buttons, and they stay below deliberately: they qualify the
     // NAME, they are drawn in small weak text, and hoisting a conditional block
     // above the verbs would make the buttons move up and down as the operator
@@ -297,7 +297,7 @@ fn row(
 
 /// The row's verbs, and the sentences that stand where a verb cannot.
 ///
-/// # ★★ Every branch here is R9 applied to a different fact
+/// # Every branch here is R9 applied to a different fact
 ///
 /// | state | what is drawn | why |
 /// |---|---|---|
@@ -317,7 +317,7 @@ fn controls(
     actions: &mut Vec<Action>,
     published: &mut Published,
 ) {
-    // ★ `stream_id` is `None` for BOTH the legal external reference and the
+    // `stream_id` is `None` for BOTH the legal external reference and the
     // damaged dangling one, so the two are told apart by the size check, which
     // is the only place the engine records the difference:
     // `DeclaredSizeCheck::NoStream` covers both, and
@@ -347,13 +347,13 @@ fn controls(
             }
         }
 
-        // ★★ Copy and Cut, in the same row as Save and Remove. Offered only
+        // Copy and Cut, in the same row as Save and Remove. Offered only
         // for a DOCUMENT-LEVEL attachment, because `copy_attachment` addresses
         // one by its `/EmbeddedFiles` name-tree key and a page-level one has
         // none — `addressable` says the same thing for Save, and this is the
         // same fact wearing a different verb.
         //
-        // ★ Cut is gated a second time inside `clip::row_controls`, on the same
+        // Cut is gated a second time inside `clip::row_controls`, on the same
         // predicate Remove uses. Two gates for one rule reads like belt and
         // braces and is not: the outer one decides whether a KEY exists, the
         // inner whether a DELETE is possible, and a page-level attachment fails
@@ -454,7 +454,7 @@ fn addressable(kind: &AttachmentKind) -> Option<AttachmentRef> {
 
 /// One string, safe to lay out in a single-line-ish label.
 ///
-/// # ★ Two substitutions, and both are rendering rather than reporting
+/// # Two substitutions, and both are rendering rather than reporting
 ///
 /// - **`CR` becomes `LF`.** §12.5.6.2 makes carriage return the paragraph
 ///   separator in annotation `/Contents`, which is where a page-level
@@ -494,7 +494,7 @@ mod tests {
         pdfcer_core::attachments::list_attachments(&doc)
     }
 
-    /// ★★ **The two kinds are described differently, and the page one names its
+    /// **The two kinds are described differently, and the page one names its
     /// page 1-based.**
     ///
     /// Both halves fail invisibly. Describing them alike would tell an operator
@@ -528,7 +528,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **A document-level row is addressable and a direct-dictionary
+    /// **A document-level row is addressable and a direct-dictionary
     /// annotation is not.**
     ///
     /// The first half is what makes Remove possible at all. The second is the
@@ -573,7 +573,7 @@ mod tests {
         }
     }
 
-    /// ★ **A control character never reaches a label as itself.**
+    /// **A control character never reaches a label as itself.**
     ///
     /// A name in a PDF is unconstrained text, `NUL` and `BEL` are authorable,
     /// and §12.5.6.2 makes `CR` the paragraph separator in the `/Contents` a
@@ -601,7 +601,7 @@ mod tests {
         assert_eq!(readable("quote.xlsx"), "quote.xlsx");
     }
 
-    /// ★★ **The panel shows a hostile name exactly as the document wrote it.**
+    /// **The panel shows a hostile name exactly as the document wrote it.**
     ///
     /// The bargain this panel makes, and both halves have to hold or neither is
     /// worth anything: the *listing* reports the raw name, because

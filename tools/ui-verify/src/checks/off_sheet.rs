@@ -14,7 +14,7 @@ use crate::trace::Trace;
 
 /// `VK_CONTROL`, held while the wheel rolls to make it a zoom.
 ///
-/// ★ Plain wheel would be the wrong gesture twice over: it scrolls rather than
+/// Plain wheel would be the wrong gesture twice over: it scrolls rather than
 /// zooms below the threshold, and above it `smooth_scroll_delta` is what the
 /// deep pan route reads — so a plain-wheel climb would exercise the pan this
 /// check is not about and never reach the depth it is about.
@@ -22,14 +22,14 @@ const VK_CONTROL: u16 = 0x11;
 
 /// The fixture, relative to the workspace root.
 ///
-/// ★★ **A1 landscape, and the size is the reason.** Page 0 of this document is
+/// **A1 landscape, and the size is the reason.** Page 0 of this document is
 /// `/MediaBox [0 0 2383.937 1683.78]`, so the deep threshold —
 /// `longest_page_pt × zoom` over `SUB_PIXEL_CONTENT_EXTENT`, which is 2²⁰ since
 /// O49 — is crossed at a zoom of about **440**. On a US Letter sheet the same
 /// constant puts it at about **1,324**, which is another twenty-odd Ctrl+wheel
 /// notches and several seconds of rasterizing for no additional evidence.
 ///
-/// ★ Four pages rather than one, so the uncovered page-flip escape route named
+/// Four pages rather than one, so the uncovered page-flip escape route named
 /// in the module header at least *exists* on the document being driven. A
 /// single-page fixture would make that route unreachable by construction and
 /// the omission harder to see.
@@ -37,7 +37,7 @@ const FIXTURE: &str = "fixtures/four-pages.pdf";
 
 /// The commands to ring once at startup, one per frame, via `PDFCER_DIAG_INVOKE`.
 ///
-/// ★★ Ribbon clicks were the first design and this is better for a specific
+/// Ribbon clicks were the first design and this is better for a specific
 /// reason: it removes three dependencies this check does not want. A ribbon
 /// click needs the group to be uncollapsed, needs `ribbon.item.*` rects to be
 /// published, and needs the View tab to be raised first — three ways for a run
@@ -56,7 +56,7 @@ const CANVAS_EVENT: &str = "canvas"; // ui-text-exempt: a trace event name, neve
 /// The canvas's `f64` position line, read for `tier=`.
 const POS_EVENT: &str = "canvas-pos"; // ui-text-exempt: a trace event name, never displayed
 
-/// ★★★ **The clamp's own trace** — `canvas-confined axes=none|x|y|xy`.
+/// **The clamp's own trace** — `canvas-confined axes=none|x|y|xy`.
 ///
 /// This is what lets the check say *the mechanism ran* separately from *the
 /// symptom is gone*. Without it, a PASS is satisfied equally by the clamp
@@ -77,7 +77,7 @@ const LEARNED_EVENT: &str = "raster-ceiling-learned"; // ui-text-exempt: a trace
 /// The canvas scroll area, whose grey margin is the only bound an off-sheet
 /// point may be converted against.
 ///
-/// ★ Not the page's own rect. Every point this check aims at is outside that by
+/// Not the page's own rect. Every point this check aims at is outside that by
 /// construction; bounding against it rejects the whole check with a message
 /// about margin that is plausible and wrong. See
 /// `CanvasMapping::doc_to_window_off_page`.
@@ -87,7 +87,7 @@ const VIEWPORT_REGION: &str = "canvas-viewport"; // ui-text-exempt: a trace regi
 /// precondition failure rather than a mysterious mapping error.
 const PAGE_REGION: &str = "page"; // ui-text-exempt: a trace region name
 
-/// ★★ **Ctrl+wheel OUT this many notches before aiming**, and this is not
+/// **Ctrl+wheel OUT this many notches before aiming**, and this is not
 /// cosmetic — without it the check cannot aim at all.
 ///
 /// Fit on an A1 landscape sheet in a 1600 × 1380 window is width-limited: the
@@ -116,7 +116,7 @@ const OFF_PAGE_FRACTION: f64 = 0.05;
 
 /// Total Ctrl+wheel notches to climb.
 ///
-/// ★ Sized from the arithmetic rather than guessed. A notch multiplies the zoom
+/// Sized from the arithmetic rather than guessed. A notch multiplies the zoom
 /// by about 1.2048 (derived in `deep_pan`'s `PRESSES`: twenty notches from
 /// `1.0` reach about 4,155 %). Starting from 0.29 after
 /// [`ZOOM_OUT_NOTCHES`], reaching the A1 sheet's deep threshold of about 440
@@ -133,7 +133,7 @@ const CLIMB_NOTCHES: usize = 80;
 
 /// How many notches per batch, between readings.
 ///
-/// ★ Batched rather than rolled all at once because the evidence is a
+/// Batched rather than rolled all at once because the evidence is a
 /// *trajectory*: the peak zoom, the tier, the first blank frame and the first
 /// clamp are all "when did this happen" questions, and a single eighty-notch
 /// roll answers none of them. Ten is small enough to locate the transition to
@@ -143,13 +143,13 @@ const CLIMB_BATCH: usize = 10;
 
 /// Frames to settle after each batch.
 ///
-/// ★ Generous: at this depth the region rasterizer is doing real work and a
+/// Generous: at this depth the region rasterizer is doing real work and a
 /// reading taken before the frame settles reports the *previous* batch's zoom,
 /// which would make the trajectory lag the gesture by one batch and the located
 /// transition wrong by a factor of six.
 const SETTLE_PER_BATCH: u32 = 24;
 
-/// ★★ **The zoom the climb must pass**, as a multiplier (1.0 = 100 %).
+/// **The zoom the climb must pass**, as a multiplier (1.0 = 100 %).
 ///
 /// This is the operator's *"the canvas will just stop zooming in"*, made into a
 /// number. It is deliberately set between the two outcomes rather than near
@@ -160,7 +160,7 @@ const SETTLE_PER_BATCH: u32 = 24;
 /// A thousand is comfortably above every stall that has been measured and four
 /// orders of magnitude below where a working build finishes.
 ///
-/// ★ Both ends have since been measured on this very check, and the gap is
+/// Both ends have since been measured on this very check, and the gap is
 /// wider than the derivation assumed. The fixed build's eighty notches reached
 /// **1,071,053** (107,105,325 %); the falsification build went blank at
 /// **39.8** (3,981 %). This floor sits between them with a factor of 25 of
@@ -178,7 +178,7 @@ const ZOOM_FLOOR: f64 = 1000.0;
 
 /// Ctrl+wheel notches to roll back OUT, as the recovery probe.
 ///
-/// ★★ This is the only driven coverage of `canvas::escape::offer` anywhere, and
+/// This is the only driven coverage of `canvas::escape::offer` anywhere, and
 /// on a *fixed* build it is a sanity check rather than a test of the hatch —
 /// the hatch exists for a blank frame, and a fixed build has none. Its value is
 /// in the falsification run: against a binary with the clamp removed this check
@@ -215,7 +215,7 @@ impl Check for AViewCarriedOffTheSheetComesBack {
 
 /// Everything one reading of the trace can say about the climb so far.
 ///
-/// ★ A single struct built by a single function, on `deep_pan::position`'s
+/// A single struct built by a single function, on `deep_pan::position`'s
 /// lesson: reading two of these quantities at two different moments is how this
 /// harness has produced confident wrong verdicts before. Every field here comes
 /// from the same parse of the same capture.
@@ -270,7 +270,7 @@ fn survey(trace: &Trace, mark: usize) -> Climb {
         .find(|l| l.lineno > mark && l.get("reason") == Some(BLANK_REASON))
         .map(|l| l.lineno);
 
-    // ★★ Verdict 2, and the window matters. A ceiling learned *before* the
+    // Verdict 2, and the window matters. A ceiling learned *before* the
     // canvas went blank was learned from a real refusal and is legitimate; one
     // learned *after* the next drawn frame likewise. Only a line between the
     // blank frame and the next `canvas` line was learned from a canvas that
@@ -395,7 +395,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★ VERIFY what `INVOKE` was asked for rather than assuming it. The env var
+    // VERIFY what `INVOKE` was asked for rather than assuming it. The env var
     // is a request; the canvas's own `display=` field is the answer. A run in
     // continuous display would scroll between pages during the climb and the
     // anchor would belong to a page this check is not aiming at.
@@ -455,7 +455,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              own rect: the aim point is outside that by construction."
         ))
     })?;
-    // ★ PDF y-up. `height_pt * (1 + fraction)` is ABOVE the sheet's top edge,
+    // PDF y-up. `height_pt * (1 + fraction)` is ABOVE the sheet's top edge,
     // and becomes a NEGATIVE `DeepAnchor` page y — see the module header's note
     // on the sign flip, which is why the measured anchor read `-0.54`.
     let above = page.height_pt * (1.0 + OFF_PAGE_FRACTION);
@@ -504,7 +504,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 ""
             }
         ));
-        // ★★ Stop at the first blank frame rather than climbing on. The
+        // Stop at the first blank frame rather than climbing on. The
         // recovery probe below has to start from the state the operator is
         // stuck in, and every further notch multiplies the zoom the hatch must
         // undo by another 20 %.

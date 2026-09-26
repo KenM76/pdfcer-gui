@@ -12,7 +12,7 @@ grip, and the border thickens with the shape.**
 > should be an option that they do scale with resize. Inkscape has options
 > for this and I want the same."*
 
-## ★★★ What this check exists to catch, which is not "the switch is missing"
+## What this check exists to catch, which is not "the switch is missing"
 
 The switch is a checkbox writing a `bool` into `egui::Memory`. Nothing about
 that can plausibly fail. **The chain in front of the engine is what fails**,
@@ -26,13 +26,13 @@ and it has five links, three of which are pure wiring:
 | 4 | it travels on the action rather than being re-read at apply time | **no** |
 | 5 | it reaches `ResizeOptions` and the engine acts on it | yes — `to_options` |
 
-★★ Link 3 is the one that was wrong for the life of the feature and in the
+Link 3 is the one that was wrong for the life of the feature and in the
 opposite direction: `annots::resize` **derived** `scale_stroke_width` from
 whether the drag was proportional, so an operator's answer could not reach
 the engine at all. A build that regressed to that would pass every unit test
 in the chain, because each end of it is correct in isolation.
 
-## ★★ The oracle is `stroke=` on the applied line, not a pixel
+## The oracle is `stroke=` on the applied line, not a pixel
 
 `resize-annotation-applied … stroke=true|false` reports whether the engine
 wrote a new `/BS /W`. A screenshot cannot separate *"the border thickened
@@ -74,25 +74,25 @@ to, the switches live there. Note the shape of the failure: `V` produced
 wrong block when the truth was that nothing had ever reached the
 application.
 
-★★ **The fix is a pointer, not a key**: step B clicks the View tab and then
+**The fix is a pointer, not a key**: step B clicks the View tab and then
 `ribbon.item.view.tool_select`. Clicking a ribbon control is this harness's
 most exercised primitive, it does not depend on focus, and it carries its
 own oracle — the shell writes `ribbon-command-invoked id=view.tool_select`,
 so *"the click did not land"* and *"the panel did not follow"* are now two
 different messages instead of one ambiguous one.
 
-★ And the arm it reaches is idempotent. `view.tool_select` calls
+And the arm it reaches is idempotent. `view.tool_select` calls
 `canvas::tool::arm::select`, a plain write; the two neighbouring pointer
 commands (`view.tool_hand`, `view.tool_text`) are **toggles** and would flip
 on a second press. Choosing the one control on that row that cannot be wrong
 about its own state is what makes this step deterministic rather than merely
 more reliable.
 
-★ Recorded here rather than left to be rediscovered: a check that fails
+Recorded here rather than left to be rediscovered: a check that fails
 half the time is worse than one that fails always, because the failure gets
 attributed to whatever changed most recently.
 
-★★ **Not every keystroke in this suite is suspect, and the distinction
+**Not every keystroke in this suite is suspect, and the distinction
 matters.** Typing into a field the check has just clicked is fine — focus is
 where the keys are meant to go, which is what `dimension_groups` and
 `bookmark_add` do. What is unsafe is a keystroke that has to be *routed to a
@@ -100,7 +100,7 @@ command* while a raised panel holds focus. And a chord that IS the subject —
 `tool_row`'s bare `T`/`A`, `find_bar`'s `Ctrl+F`, `read_mode_chrome`'s
 `Ctrl+H` — must stay a chord: converting it would delete the assertion.
 
-★ Step D drags **diagonally by equal amounts** on purpose. A non-uniform
+Step D drags **diagonally by equal amounts** on purpose. A non-uniform
 resize of a pdfcer-authored appearance is fine — it is rebuilt — but making
 the drag uniform keeps this check about the switch rather than about the
 distortion refusal, which is a different feature with a different sentence.

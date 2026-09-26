@@ -14,7 +14,7 @@
 //! seam. The checker changes when the *checking* changes; this changes when the
 //! *dispatcher* is reorganised.
 //!
-//! ## ★★★ The recurring lesson, recorded once here instead of six times below
+//! ## The recurring lesson, recorded once here instead of six times below
 //!
 //! **A hand-written list inside a completeness test is the gap it was built to
 //! find.** Every entry below was added *after* the checker went red — the split
@@ -53,7 +53,7 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if super::super::markup_for_command(id).is_some() {
         return Some("markup_for_command");
     }
-    // ★ The five form-field commands, claimed by the same shape as markup's.
+    // The five form-field commands, claimed by the same shape as markup's.
     // This checker MIRRORS the dispatcher rather than trusting it, so a guard
     // added there and not here is caught by
     // `the_guards_the_checker_evaluates_are_the_guards_the_dispatcher_has` —
@@ -61,7 +61,7 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if super::super::form_for_command(id).is_some() {
         return Some("form_for_command");
     }
-    // ★ The text-bearing markup kinds, whose guard is an associated function
+    // The text-bearing markup kinds, whose guard is an associated function
     // on the kind rather than a free function in `mapping`.
     //
     // The checker reads the NAME the dispatcher calls, and the dispatcher calls
@@ -71,7 +71,7 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::canvas::textannot::TextAnnotKind::from_command(id).is_some() {
         return Some("from_command");
     }
-    // ★ The four panel-layout verbs. A free function rather than a method,
+    // The four panel-layout verbs. A free function rather than a method,
     // for the reason its own docs give: this reader cannot see through a
     // method call on `self`, so a guard written that way would make the arm
     // invisible here and the four commands would read as unrouted.
@@ -79,7 +79,7 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
         return Some("claims");
     }
     //
-    // ★★ It needs no new entry in [`EVALUATED_GUARDS`], and that is worth
+    // It needs no new entry in [`EVALUATED_GUARDS`], and that is worth
     // stating rather than leaving to be noticed: the guard is also called
     // `claims`, and that list is a set of FUNCTION NAMES read out of
     // `dispatch.rs`'s syntax tree, not a set of call sites. Two guards sharing a
@@ -105,7 +105,7 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
         return Some("claims");
     }
     //
-    // ★★ It needs no new entry in [`EVALUATED_GUARDS`], for the reason spelled
+    // It needs no new entry in [`EVALUATED_GUARDS`], for the reason spelled
     // out at `security::claims` above: that list is a set of FUNCTION NAMES read
     // out of `dispatch.rs`'s syntax tree, and `claims` is already in it. The
     // guard was named `claims` rather than `handles` deliberately, so that this
@@ -114,7 +114,7 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
         return Some("claims");
     }
     //
-    // ★★ Written in the SAME edit as the module, per this file's own header. The
+    // Written in the SAME edit as the module, per this file's own header. The
     // four commands would otherwise all have reported unreachable in one run —
     // the loud-and-total failure that makes a hand-kept list survivable here, and
     // the sixth time it would have been paid for a split.
@@ -150,7 +150,7 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
         return Some("handles");
     }
     //
-    // ★★ **It failed closed here too, and by name**, which is now the fourth
+    // **It failed closed here too, and by name**, which is now the fourth
     // time this checker has caught a split the moment it happened: moving the
     // arm out of the parent made `tools.embed_fonts` report as having no
     // dispatch arm at all, one test run after it was wired. A checker that
@@ -160,7 +160,7 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
         return Some("handles");
     }
     //
-    // ★★ Added in the SAME commit as the arm, deliberately. This checker has
+    // Added in the SAME commit as the arm, deliberately. This checker has
     // failed closed five times on exactly this — a new `dispatch::*` module is
     // invisible here until somebody adds a line, and while it is invisible all
     // of its commands report as unreachable. Writing the entry with the module
@@ -170,7 +170,7 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
         return Some("handles");
     }
     //
-    // ★★ **Written in the same edit as the module**, per the paragraph above —
+    // **Written in the same edit as the module**, per the paragraph above —
     // and this one still went red first, because the arms were MOVED before
     // this line was added. Five commands that had worked for weeks reported as
     // unreachable in one run, which is precisely the loud-and-total failure
@@ -197,7 +197,7 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
         return Some("handles");
     }
     //
-    // ★★★ **And it failed closed for the fifth time, which is the point of
+    // **And it failed closed for the fifth time, which is the point of
     // recording each one.** The instant the three clipboard arms moved out of
     // the parent, this checker reported `edit.cut`, `edit.copy`, `edit.paste`
     // and `edit.paste_duplicate` as registered controls with no dispatch arm —
@@ -228,7 +228,7 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
         return Some("handles");
     }
     //
-    // ★★ **It failed closed, again, and by name.** The moment the three
+    // **It failed closed, again, and by name.** The moment the three
     // `format.*` arms moved out of the parent, this checker reported
     // `format.delete`, `format.properties` and `format.select_form` as
     // registered controls with no dispatch arm — which is the fourth time the

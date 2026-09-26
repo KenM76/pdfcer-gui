@@ -16,7 +16,7 @@ under this project's standing *use the conventional interaction, never
 invent one* rule, the convergence of the product class **is** the spec, so
 this is not a design question and there was nothing to decide.
 
-## ★★★ The whole design is in the choice of what to store
+## The whole design is in the choice of what to store
 
 The obvious implementation stores the [`CustomStamp`] that was placed. It
 is wrong, and wrong in a way that produces a silent, operator-invisible

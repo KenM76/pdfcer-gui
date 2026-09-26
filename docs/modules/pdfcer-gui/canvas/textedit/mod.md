@@ -61,7 +61,7 @@ drag, and the `DragKind` is not a placeholder but the whole feature.
 | click on bare page | [`Anchor::Origin`] | `add_text`, one line at a point |
 | **drag a rectangle** | [`Anchor::Box`] | `add_text` boxed, a wrapped paragraph |
 
-★★ The drag belongs to **this** tool and not to `CanvasTool::Text`. On the
+The drag belongs to **this** tool and not to `CanvasTool::Text`. On the
 sweep tool's rung the box would take the text sweep away in Edit, which
 `text_tool_selects_and_marks_in_edit` depends on to make a selection the
 markup verbs can act on. **Two features claiming one drag is a choice
@@ -96,7 +96,7 @@ mode that cannot author, so a draft cannot survive into Read.
 edit request in `pdfcer-core` that does not exist — `EditRequest` pins to one
 show operator, and *"a `TJ` array is one operator"*.
 
-★ What a caret landing where two runs meet does **not** do is go quiet. It
+What a caret landing where two runs meet does **not** do is go quiet. It
 opens on the piece that was clicked and **discloses** the consequence on the
 status bar — `crate::text::textedit::shares_the_line_note` — because a
 control that takes keystrokes it will not honour is this module's defining

@@ -26,7 +26,7 @@ matters more than the first:
    menu row publish a rectangle?", rather than buried in the middle of
    a lifetime-juggling struct.
 
-# ★★★ Capability 1 — the rows publish where they were drawn
+# Capability 1 — the rows publish where they were drawn
 
 
 `right_clicking_a_form_field_opens_its_menu` is the evidence. It is the
@@ -38,7 +38,7 @@ gesture R1 cannot reach, and the gap left no failing test behind to
 advertise itself."* That was the same finding one layer down: the
 driver existed and the target did not.
 
-★★ Why an `egui` popup makes this the ONLY possible answer, rather than
+Why an `egui` popup makes this the ONLY possible answer, rather than
 the tidiest one. `egui_shell::menu::report`'s header states it: a
 context menu is drawn at the pointer, and `egui` may flip it to any of
 several alignments to keep it on screen. There is no fraction of the
@@ -46,17 +46,17 @@ window it can be hard-coded to and no layout a harness could re-derive.
 Publishing the rectangle is not the best of three options; it is the
 only one.
 
-★ The names are `egui_shell::menu::report`'s — `menu.body.<context>`
+The names are `egui_shell::menu::report`'s — `menu.body.<context>`
 and `menu.item.<context>.<command id>` — and they go through
 [`crate::diag::ui_rect`], the same sink the ribbon, the status bar and
 the dock already publish to. So a harness filters one channel and one
 prefix, and nothing here invents a naming scheme.
 
-★ Cost when nobody is listening: the shell's `Reporter` does not format
+Cost when nobody is listening: the shell's `Reporter` does not format
 a name unless a sink is present, and `crate::diag::ui_rect` is a no-op
 without `PDFCER_DIAG`. A closure per attach, and nothing else.
 
-# ★★★ Capability 2 — the rows draw the icons they already name
+# Capability 2 — the rows draw the icons they already name
 
 
 `ContextMenu::with_icon_painter` has existed since the menu engine
@@ -67,7 +67,7 @@ rasterizable. `view.panel_float` and `view.panel_dock` name
 `floating-panels` at their registration; the key was correct data
 waiting for a surface that read it.
 
-★★ The finding that made this a pass of its own is what the gap did to
+The finding that made this a pass of its own is what the gap did to
 the *record*. An icon-coverage audit had recorded, against
 `view.panel_close`, that a menu row cannot draw a glyph because *"the
 icon column exists on the ribbon, not in a context menu"*. That
@@ -80,7 +80,7 @@ glyph is authored, not worked around**, and the test that separates a
 valid refusal from an invalid one is whether adding the slot would be
 *wrong* or merely *work*. Here it was merely work: one builder call.
 
-★ The painter is [`crate::icons::paint_ribbon_icon`] — **the ribbon's
+The painter is [`crate::icons::paint_ribbon_icon`] — **the ribbon's
 own**, not a second one. The alternative was a menu-specific painter,
 and it is worth naming why that is the wrong shape: the two surfaces
 would then resolve the same key through two catalogues, and the day one
@@ -93,7 +93,7 @@ closure and no captured state — the same property `app::surfaces`
 keeps for the ribbon, and for the same reason: *a painter with no state
 cannot be the thing that goes stale.*
 
-★ What this does **not** do is put a glyph on every row. The shell
+What this does **not** do is put a glyph on every row. The shell
 decides the column per menu (`egui_shell::menu::plan::reserves_icon_column`)
 and the glyph per command, so a menu whose commands have no icons is
 laid out exactly as it was before, and a row with no key inside a menu

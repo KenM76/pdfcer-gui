@@ -10,7 +10,7 @@ use crate::canvas::target::TargetId;
 
 /// **Why pdfcer cannot name the layer**, when it cannot.
 ///
-/// # ★★★ Why the reason is carried rather than collapsed
+/// # Why the reason is carried rather than collapsed
 ///
 ///
 /// **That justification expired with `Pass 250.0`.** Every variant below is
@@ -24,7 +24,7 @@ use crate::canvas::target::TargetId;
 /// When that stops being true, silence stops being honesty and becomes
 /// withholding.
 ///
-/// # ★★★ The declaration order is a PRIORITY order, and `Ord` is derived
+/// # The declaration order is a PRIORITY order, and `Ord` is derived
 ///
 /// Two selected objects can be unanswerable for two different reasons, and the
 /// panel prints one sentence. Which one is not arbitrary: [`Membership::join`]
@@ -39,7 +39,7 @@ use crate::canvas::target::TargetId;
 /// * **A malformed page** outranks the two bookkeeping states, because it is a
 ///   fact about their file rather than about pdfcer's cache.
 ///
-/// ★ Deriving `Ord` rather than writing a `rank()` is deliberate: a hand-written
+/// Deriving `Ord` rather than writing a `rank()` is deliberate: a hand-written
 /// ranking and a variant list are two places to state one order, and they drift.
 /// Moving a variant is the whole edit.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -58,7 +58,7 @@ pub enum Unresolved {
     /// [`pdfcer_core::vector::DecomposeDiagnostics::oc_unresolved`] is
     /// non-zero.
     ///
-    /// ★ **Page-scoped, not object-scoped**, because the counter is. The
+    /// **Page-scoped, not object-scoped**, because the counter is. The
     /// engine's own doc comment nominates it as the way a shell distinguishes
     /// *"on no layer"* from *"pdfcer could not name the group"*, and it counts
     /// per decomposition. So one unresolvable section demotes every `None` on
@@ -125,7 +125,7 @@ pub enum Membership {
     /// vocabulary, which is what makes the highlight a lookup rather than a
     /// translation.
     ///
-    /// ★ It may name an **OCMD** rather than an OCG (§8.11.2.2): both an
+    /// It may name an **OCMD** rather than an OCG (§8.11.2.2): both an
     /// annotation's `/OC` and a content section's `/Pn` are allowed to be
     /// either, and the engine reports membership without expanding. An OCMD's
     /// id will not match any row, and the panel says so in words rather than
@@ -143,7 +143,7 @@ pub enum Membership {
     None,
     /// **pdfcer cannot say**, and this is why.
     ///
-    /// ★ It is a *variant* rather than an absence so that a test can assert
+    /// It is a *variant* rather than an absence so that a test can assert
     /// about it — "we stopped being able to answer" and "we never could" are
     /// distinguishable in the suite — and so that each cause can carry its own
     /// sentence.
@@ -181,13 +181,13 @@ impl Membership {
 
     /// **One stable word per state, for the diagnostic channel.**
     ///
-    /// ★★★ Not `{:?}`. A derived `Debug` prints `Group(ObjId { number: 4,
+    /// Not `{:?}`. A derived `Debug` prints `Group(ObjId { number: 4,
     /// generation: 0 })` — braces and spaces, which the harness's `key=value`
     /// trace parser splits into five tokens and reads as none of them. Worse,
     /// it would change spelling the day a field is added to `ObjId`, silently
     /// retiring every check that matched on it.
     ///
-    /// ★ The words are deliberately **not** the operator's sentences. A trace
+    /// The words are deliberately **not** the operator's sentences. A trace
     /// vocabulary that tracked the wording would make a copy-edit a harness
     /// break, and a check asserting on prose asserts on the wrong thing.
     // ui-text-exempt: a trace vocabulary, never displayed.
@@ -204,7 +204,7 @@ impl Membership {
 
     /// The reason word, for the states that have one.
     ///
-    /// ★ `"-"` and not `""` for the states that have none. The trace parser
+    /// `"-"` and not `""` for the states that have none. The trace parser
     /// gives structural meaning to a space, and an empty value would put two
     /// spaces where every other line has one — a shape difference that is
     /// invisible to a reader and is exactly the sort of thing a field parser
@@ -237,7 +237,7 @@ impl Membership {
     ///                NothingSelected          ← identity
     /// ```
     ///
-    /// ## ★★★ The ordering that is NOT obvious, and it cost a wrong design
+    /// ## The ordering that is NOT obvious, and it cost a wrong design
     ///
     /// **`Mixed ⊔ Unknown = Unknown`**, not `Mixed`. The first draft had it the
     /// other way, and the argument was good: once `Group(a)` and `Group(b)` are
@@ -256,7 +256,7 @@ impl Membership {
     /// could resolve, *"spans several layers"* is true and **incomplete**, and
     /// this panel's standing rule is to withhold rather than to under-state.
     ///
-    /// ## ★★ And `Unknown(a) ⊔ Unknown(b)` takes the SMALLER reason
+    /// ## And `Unknown(a) ⊔ Unknown(b)` takes the SMALLER reason
     ///
     /// Not the left one. Two `Unknown`s with different reasons and a
     /// "first wins" rule is **not commutative** — `U(a) ⊔ U(b)` would differ
@@ -325,7 +325,7 @@ pub const fn for_object(oc: Option<ObjId>, page_malformed: bool) -> Membership {
 ///    anywhere in `PageObjects`. There is nothing to compose, and guessing
 ///    with the outermost would name a group an inner `/OC` may have overridden.
 ///
-/// ★ `outermost` is deliberately named for what it *is* rather than "parent":
+/// `outermost` is deliberately named for what it *is* rather than "parent":
 /// `paint_order` is the **outermost** enclosing form's index in the page's own
 /// list, carried unchanged down the recursion. At depth 1 outermost and parent
 /// coincide, which is exactly why clause 2 is fenced to depth 1.
@@ -393,7 +393,7 @@ fn for_target(model: &PageObjects, target: TargetId) -> Membership {
 /// arms cannot decide anything, and it is written annotation-first only
 /// because it is the shorter arm.
 ///
-/// # ★ The empty-target guard, which is not redundant with `is_empty`
+/// # The empty-target guard, which is not redundant with `is_empty`
 ///
 /// `is_empty()` is false while entries exist on **another** page, and
 /// `targets_on(current)` is then empty. Folding an empty iterator yields
@@ -458,7 +458,7 @@ fn resolve_content(doc: &OpenDoc) -> Membership {
     }
     let page = doc.view.page_index;
     let targets = doc.selection.targets_on(page);
-    // ★ See the doc comment: entries on another page are a real state, and
+    // See the doc comment: entries on another page are a real state, and
     // folding only the current page's would report an empty answer about a
     // non-empty selection.
     let elsewhere = doc.selection.entries().iter().any(|e| e.page != page);
@@ -488,7 +488,7 @@ fn resolve_content(doc: &OpenDoc) -> Membership {
 /// multi-object selection, where the mismatch is already obvious from the
 /// count in the status line.
 ///
-/// # ★★★ Why a readout owes this at all
+/// # Why a readout owes this at all
 ///
 /// The operator, on his own drawing: **one PDF path object holds 6,681
 /// anchors across half his sheet.** `pdfcer object-list` on `SW41177.pdf` p1
@@ -507,7 +507,7 @@ fn resolve_content(doc: &OpenDoc) -> Membership {
 /// part count is how the sentence stops over-promising, and it is stated
 /// **off-canvas** — Rule 4 forbids marking the drawing to express it.
 ///
-/// ★ It is a count and not a hedge. *"This may be part of a larger object"*
+/// It is a count and not a hedge. *"This may be part of a larger object"*
 /// would be a permanent disclaimer; *"this object holds 1,194 parts"* is a
 /// measurement he can act on, and it is silent on the overwhelmingly common
 /// object that holds one.
@@ -548,7 +548,7 @@ mod tests {
         ObjId::new(n, 0)
     }
 
-    /// ★★★ The one fixture in either corpus that can falsify this feature.
+    /// The one fixture in either corpus that can falsify this feature.
     ///
     /// `layers/painted-layers.pdf` is fourteen objects of hand-written syntax
     /// carrying **four** optional-content groups and, critically, **an object
@@ -560,10 +560,10 @@ mod tests {
     ///   /OC /L4 BDC 0 0 0 rg 400 220 120 120 re f EMC   <- "Nested Inner", innermost wins
     /// EMC
     /// /OC /L3 BDC  0 0 300 792 re W n EMC
-    /// 0.5 g 0 600 612 60 re f                           <- ★ on NO layer
+    /// 0.5 g 0 600 612 60 re f                           <- on NO layer
     /// ```
     ///
-    /// ★★ A fixture whose every object shares one layer would make *"the
+    /// A fixture whose every object shares one layer would make *"the
     /// answer follows the selection"* true of a build that ignores the
     /// selection entirely. That is this project's vacuous-pass shape, and it
     /// is why these tests use two objects with different answers rather than
@@ -578,12 +578,12 @@ mod tests {
     /// The paint-order index of the object whose page bbox is **exactly**
     /// this rectangle.
     ///
-    /// ★ Chosen by **geometry**, never by `oc()`. Picking the object by the
+    /// Chosen by **geometry**, never by `oc()`. Picking the object by the
     /// very field under test would make the assertion circular — it would
     /// prove that `resolve` returns what `oc()` returns, which is a restatement
     /// rather than a test.
     ///
-    /// ★★★ **Exact bounds and not "contains this point", and the difference is
+    /// **Exact bounds and not "contains this point", and the difference is
     /// a defect this helper already had.** The first version took a point and
     /// took the FIRST object covering it, which is how
     /// `an_object_outside_every_section_is_on_no_layer` came to select the
@@ -627,7 +627,7 @@ mod tests {
             .and_then(|id| crate::panels::layers::layer_name_for(&read, id))
     }
 
-    /// ★★★ **Selecting a page object names the layer it is painted on.**
+    /// **Selecting a page object names the layer it is painted on.**
     ///
     /// The operator's ask, in a headless test: click the square inside
     /// `/OC /L1` and the answer is *Visible Box*. Before `Pass 250.0` this was
@@ -646,7 +646,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **…and an object painted outside every section is reported as on
+    /// **…and an object painted outside every section is reported as on
     /// no layer, not as unknown and not as somebody else's layer.**
     ///
     /// This is the half a build cannot fake. Everything in the test above
@@ -666,7 +666,7 @@ mod tests {
         assert_eq!(resolved_name(&open), None, "nothing may be highlighted");
     }
 
-    /// ★★ **The innermost `/OC` wins**, which is what `current_oc` resolves
+    /// **The innermost `/OC` wins**, which is what `current_oc` resolves
     /// and what the renderer honours.
     ///
     /// The square at (400,220) sits inside `/OC /L2 BDC … /OC /L4 BDC … EMC
@@ -674,7 +674,7 @@ mod tests {
     /// highlight rather than a missing one, and the operator's own bar rates
     /// that worse.
     ///
-    /// ★ It is selected directly rather than clicked, because both L2 and L3
+    /// It is selected directly rather than clicked, because both L2 and L3
     /// are in the document's `/OFF` array: this object is in the model and is
     /// not drawn. The membership relation is what is under test, not the
     /// visibility one.
@@ -686,7 +686,7 @@ mod tests {
         assert_eq!(resolved_name(&open).as_deref(), Some("Nested Inner"));
     }
 
-    /// ★★ **The granularity line stays silent on an ordinary object.**
+    /// **The granularity line stays silent on an ordinary object.**
     ///
     /// It is a measurement, not a disclaimer: the sentence exists because one
     /// object on the operator's own drawing holds 1,194 subpaths, and a
@@ -700,7 +700,7 @@ mod tests {
         assert_eq!(parts_in_selected_object(&open), None);
     }
 
-    /// ★★★ **The two points `ui-verify selecting_an_object_names_its_layer`
+    /// **The two points `ui-verify selecting_an_object_names_its_layer`
     /// aims at, pinned headlessly.**
     ///
     /// # Why a unit test owns a driven check's coordinates
@@ -717,7 +717,7 @@ mod tests {
     /// sweep with no window open, so the driven check can never be quietly
     /// aiming at something else.
     ///
-    /// # ★★ What it established, and it was not obvious
+    /// # What it established, and it was not obvious
     ///
     /// The fixture's `0 0 300 792 re W n` **clip path** decomposes into a real
     /// `PathObject` on layer *Clip Only* whose bbox covers `(0,0)..(300,792)`
@@ -771,7 +771,7 @@ mod tests {
         assert_eq!(resolve(&open), Membership::NothingSelected);
     }
 
-    /// ★★★ **`Unknown` and `None` are different values**, which is the whole
+    /// **`Unknown` and `None` are different values**, which is the whole
     /// reason this type exists rather than an `Option<ObjId>`.
     ///
     /// If this ever fails to compile because the two were merged, the panel
@@ -789,7 +789,7 @@ mod tests {
         assert_ne!(Membership::None, Membership::Mixed);
     }
 
-    /// ★★ **The reason is part of the answer.**
+    /// **The reason is part of the answer.**
     ///
     /// Two `Unknown`s with different causes must not compare equal, or the
     /// panel could print one reason while holding another and no test would
@@ -819,7 +819,7 @@ mod tests {
         assert_eq!(Membership::Mixed.highlighted(), None);
     }
 
-    /// ★★ **The trace vocabulary is one word per state, and no word is
+    /// **The trace vocabulary is one word per state, and no word is
     /// empty.**
     ///
     /// `ui-verify selecting_an_object_names_its_layer` matches on `answer=`,
@@ -893,7 +893,7 @@ mod tests {
         assert_eq!(for_object(Some(oc(4)), true), Membership::Group(oc(4)));
     }
 
-    /// ★★★ **`None` means "on no layer" only while the page's `/OC` sections
+    /// **`None` means "on no layer" only while the page's `/OC` sections
     /// all resolved.**
     ///
     /// This is the engine's own contract consumed: *"`oc_unresolved` … is how
@@ -925,7 +925,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **D1, repaired: a leaf one form deep inherits the layer its `Do`
+    /// **D1, repaired: a leaf one form deep inherits the layer its `Do`
     /// was painted under.**
     ///
     /// `FormLeaf::oc()` delegates to the wrapped object and the engine's own
@@ -949,7 +949,7 @@ mod tests {
         assert_eq!(for_leaf(None, 1, None, false), Membership::None);
     }
 
-    /// ★★★ **Deeper than one form, pdfcer says so rather than guessing.**
+    /// **Deeper than one form, pdfcer says so rather than guessing.**
     ///
     /// The intermediate form's own `/OC` has no representative in
     /// `PageObjects` — `collect_form_leaves` drops nested containers — so the
@@ -1004,7 +1004,7 @@ mod tests {
         assert_eq!(b.join(a), Membership::Mixed);
     }
 
-    /// ★★ **A layered object and an unlayered one are `Mixed`, not the
+    /// **A layered object and an unlayered one are `Mixed`, not the
     /// layer.**
     ///
     /// This is the marquee case on the operator's own drawings and the one a
@@ -1024,7 +1024,7 @@ mod tests {
         assert_eq!(Membership::None.join(Membership::None), Membership::None);
     }
 
-    /// ★★★ **One unanswerable member makes the whole answer unanswerable.**
+    /// **One unanswerable member makes the whole answer unanswerable.**
     ///
     /// The highlight is read as a claim about the *selection*, so it may not
     /// survive a member nobody could resolve.
@@ -1036,7 +1036,7 @@ mod tests {
         assert_eq!(Membership::None.join(u), u);
     }
 
-    /// ★★★ **…including over an established disagreement, and this assertion
+    /// **…including over an established disagreement, and this assertion
     /// is INVERTED from the one that was written first.**
     ///
     /// The first draft asserted `Mixed ⊔ Unknown = Mixed`, on the reasoning
@@ -1057,7 +1057,7 @@ mod tests {
         assert_eq!(u.join(Membership::Mixed), u);
     }
 
-    /// ★★ **Two unanswerable members merge by PRIORITY, not by position.**
+    /// **Two unanswerable members merge by PRIORITY, not by position.**
     ///
     /// `Unknown(a) ⊔ Unknown(b)` taking the left operand would be
     /// non-commutative, which is the same order-dependence one level down —
@@ -1084,7 +1084,7 @@ mod tests {
     /// single-pair test would catch it.
     #[test]
     fn the_fold_does_not_depend_on_selection_order() {
-        // ★★★ TWO different `Unknown`s, deliberately. The first version of
+        // TWO different `Unknown`s, deliberately. The first version of
         // this array held one, and with one the commutativity of
         // `Unknown ⊔ Unknown` is unobservable — a "first operand wins" rule
         // would have passed. The associativity failure it DID catch was found

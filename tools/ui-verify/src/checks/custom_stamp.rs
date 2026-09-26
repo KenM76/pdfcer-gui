@@ -20,7 +20,7 @@ const COLLECTION: &str = "fixtures/stamp-collection.pdf";
 
 /// The name the planted copy is given inside the scratch stamps folder.
 ///
-/// ★ Deliberately **not** the fixture's own stem. `library::read_collection`
+/// Deliberately **not** the fixture's own stem. `library::read_collection`
 /// falls back to the file stem only when the document has no `/Info` `/Title`,
 /// and this fixture has one — *Site Review*. Giving the copy an unrelated name
 /// means the category can only have come from the title, so a build that
@@ -89,7 +89,7 @@ const OWED_DISCLOSURES: usize = 2;
 /// How far, in **pdf** points, the SECOND box of phase H is dragged from the
 /// first.
 ///
-/// ★ It has to miss the first stamp's rectangle. A drag that STARTS inside an
+/// It has to miss the first stamp's rectangle. A drag that STARTS inside an
 /// annotation that already exists is a different gesture -- the canvas reads it
 /// as grabbing that object -- so the dialog would never open and phase H would
 /// report a memory failure that never happened. Borrowed, with its reason, from
@@ -294,7 +294,7 @@ fn click_until_traced(
 /// directly above the two sentences it claimed did not exist - the check
 /// quoting the truth in its own failure message while reporting its opposite.
 ///
-/// ★ The line is quoted in that failure, which is the only reason the
+/// The line is quoted in that failure, which is the only reason the
 /// mistake took thirty seconds rather than an afternoon. A refusal that does
 /// not print the evidence it refused on sends the reader to the application.
 ///
@@ -378,7 +378,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
-    // ★ The redirect. See the header for everything else that moves with it.
+    // The redirect. See the header for everything else that moves with it.
     spec.env
         .push(("APPDATA".to_owned(), home.display().to_string()));
     spec.allow_stale = ctx.allow_stale;
@@ -636,7 +636,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- H: the window opens again, on the stamp he just used --------------
     //
-    // ★★★ **This is the half no unit test can reach.** `TextAnnotDialog::open`
+    // **This is the half no unit test can reach.** `TextAnnotDialog::open`
     // scans the real stamps folder off `%APPDATA%`, so a test inside the crate
     // can hand the window a remembered CUSTOM stamp and watch it fail to
     // resolve, but it cannot plant a library for it to succeed against. This

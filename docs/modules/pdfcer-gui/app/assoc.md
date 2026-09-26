@@ -5,7 +5,7 @@ pdfce-gui our default opener for pdfs. Ask once with a don't show me again (old-
 check box option. Then it should be in the top of our settings as a button
 to execute the changeover."*
 
-## ★★★ What an application can and cannot do here, because it shapes every
+## What an application can and cannot do here, because it shapes every
 ## word on the two surfaces above this module
 
 **No program can silently take the `.pdf` association on Windows 10 or 11.**
@@ -33,13 +33,13 @@ first one entirely**:
    deep-linked to pdfcer, so it is one click rather than four levels of
    navigation.
 
-★★ The surfaces therefore never claim to have changed the default. They say
+The surfaces therefore never claim to have changed the default. They say
 what they did and what is left, and [`current_owner`] reports what Windows
 actually thinks afterwards — a button that claimed success and had not
 succeeded would be worse than no button, because the operator would stop
 looking.
 
-## ★★ Why `reg.exe` rather than the registry API
+## Why `reg.exe` rather than the registry API
 
 This crate carries `#![forbid(unsafe_code)]` and means it. Writing ten keys
 through `advapi32` would need a second quarantine crate beside
@@ -49,7 +49,7 @@ command-line tool for. `reg.exe` is in `System32` on every Windows since
 keys, and it returns a process exit code — which is a better error channel
 than an `LSTATUS` this module would have to translate anyway.
 
-★ Every invocation carries `CREATE_NO_WINDOW`, from `std`'s own
+Every invocation carries `CREATE_NO_WINDOW`, from `std`'s own
 `CommandExt` — safe, no dependency — because a console flashing up ten
 times is how a considered action looks like a virus.
 

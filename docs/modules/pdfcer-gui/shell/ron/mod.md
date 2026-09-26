@@ -31,7 +31,7 @@ values* rather than of text: comparing strings would fail on
 whitespace and would say nothing about whether the document means the
 same thing.
 
-# ★ `IMPLICIT_SOME`, and why the round trip alone would not have caught
+# `IMPLICIT_SOME`, and why the round trip alone would not have caught
 the defect
 
 `egui-shell` reads and writes with RON's `IMPLICIT_SOME` extension

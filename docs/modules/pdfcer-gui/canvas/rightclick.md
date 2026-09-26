@@ -1,7 +1,7 @@
 # `canvas::rightclick` — which menu a secondary click opens
 
 
-## ★★★ The frame-ordering hazard, which is the whole reason this is subtle
+## The frame-ordering hazard, which is the whole reason this is subtle
 
 **`egui` opens a popup ON the secondary click.** There is no later frame on
 which a wrong answer could be corrected — the menu that appears is the menu
@@ -38,12 +38,12 @@ than silently corrected: it is the third copy of one count in this
 subsystem, and the answer adopted with the sixth menu is that the count
 lives in `canvas::menus::CanvasMenu`'s variant list and nowhere else.
 
-★ 1 and 2 are mutually exclusive by construction — `canvas::forms` owns
+1 and 2 are mutually exclusive by construction — `canvas::forms` owns
 `/Widget` presses and only Edit mode offers field selection, while a caret
 belongs to the text tool — so their order is documentation of that fact
 rather than a precedence anybody has to enforce.
 
-## ★ Called on EVERY frame, not only on the frame of the click
+## Called on EVERY frame, not only on the frame of the click
 
 `egui` draws an open popup until it is dismissed, and the popup exists only
 while something is attached to the response. On a frame with no secondary

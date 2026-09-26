@@ -21,7 +21,7 @@ verb anyway. So the seam is drawn where the knowledge is: `Action::Form`
 carries the intent across the funnel, and [`apply`] is what knows how to
 honour it.
 
-## ★ The four-step mutation protocol, and why it is repeated here
+## The four-step mutation protocol, and why it is repeated here
 
 [`crate::app::actions::vector_edit`] is the same protocol for the vector
 verbs, and this is deliberately **not** a call into it. Two reasons, and
@@ -59,7 +59,7 @@ a page that silently keeps drawing what was just changed**:
    Without this the page keeps showing the empty box until the operator
    zooms or pages away.
 
-## ★ Almost nothing travels back — and the exception is the interesting part
+## Almost nothing travels back — and the exception is the interesting part
 
 ### The rule
 
@@ -86,7 +86,7 @@ subtly wrong. Deriving from the document is both simpler and more correct
 than carrying a note, because a note can outlive the fact it describes and
 a derivation cannot.
 
-### ★ The exception: two facts a fill knows and the document does not
+### The exception: two facts a fill knows and the document does not
 
 The argument above has one precondition — *the fact is re-derivable from the
 document next frame* — and exactly two things `FillOutcome` reports fail it:

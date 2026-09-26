@@ -14,7 +14,7 @@ cap. The whole-page raster cannot be made, and until the region tier was
 wired into the canvas nothing else was tried — so the page simply stopped
 rendering and said so.
 
-# ★★ Why this needs driving rather than a unit test
+# Why this needs driving rather than a unit test
 
 Every part of the mechanism already had unit tests before he hit this:
 `strategy::for_page` knew the ceiling, `render::region` converted the
@@ -34,6 +34,6 @@ zoom driven past the ceiling on a running application.
   produces, **and**
 * a raster actually arrives afterwards.
 
-★ Both, because either alone is satisfiable by a build that renders nothing
+Both, because either alone is satisfiable by a build that renders nothing
 at all: a canvas that never asks cannot fail, and a canvas that fails
 silently still drew something earlier.

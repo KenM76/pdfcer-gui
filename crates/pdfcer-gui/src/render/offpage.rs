@@ -26,7 +26,7 @@ mod tests {
         (out.pixmap.width(), out.pixmap.height())
     }
 
-    /// ★★★ **A region entirely outside the page rasterizes.**
+    /// **A region entirely outside the page rasterizes.**
     ///
     /// The property O23's second half stands on. If this ever fails, the engine
     /// has started clamping the region against the crop box and *"objects off
@@ -55,7 +55,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The pixmap is sized to the REQUESTED region, not to the overlap
+    /// **The pixmap is sized to the REQUESTED region, not to the overlap
     /// with the page.**
     ///
     /// The distinction that matters for a canvas. A build that quietly
@@ -97,7 +97,7 @@ mod tests {
         );
     }
 
-    /// ★ **A region larger than the page in every direction works too.**
+    /// **A region larger than the page in every direction works too.**
     ///
     /// The shape a pasteboard actually asks for: the page plus a margin all
     /// round, in one raster. Separate from the two above because it is the case
@@ -127,7 +127,7 @@ mod tests {
         assert!(h > 0);
     }
 
-    /// ★★ **`PageObjects::page_bbox()` includes off-page geometry**, which is
+    /// **`PageObjects::page_bbox()` includes off-page geometry**, which is
     /// what makes the scrollable extent computable in one call.
     ///
     /// Asserted here rather than taken from the engine's documentation because

@@ -8,7 +8,7 @@ without doubling the width of a ribbon group, so **the tooltip is the only
 place they say what they are** — which makes these strings load-bearing
 rather than supplementary.
 
-★ The line-style names are the exception, and they are here rather than in
+The line-style names are the exception, and they are here rather than in
 `text::ribbon` or `text::panels::properties` for a reason worth stating:
 **three surfaces show them** — the pen that authors, the Format ▸ Markup band
 that restyles, and the Properties panel that restyles — and a name that lived

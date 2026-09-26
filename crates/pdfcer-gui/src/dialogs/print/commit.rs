@@ -33,7 +33,7 @@ impl PrintDialog {
     /// means *"say nothing here and leave the window open"* — the footer draws
     /// the driver's own words and the operator picks another printer.
     ///
-    /// # ★★★ Why this is extracted rather than left inline
+    /// # Why this is extracted rather than left inline
     ///
     /// Because the behaviour it decides is the operator's 2026-09-03 report —
     /// *"it doesn't close after I hit the print button [...] there was a dozen
@@ -48,7 +48,7 @@ impl PrintDialog {
     /// outcome closes, and which sentences travel. The act of printing is
     /// `Self::commit`'s, and is covered by `print_dialog_reaches_the_spooler`.
     ///
-    /// ★ Stated plainly because it is a real gap: *"the window closes after a
+    /// Stated plainly because it is a real gap: *"the window closes after a
     /// successful print"* is asserted as a decision, not as an observed
     /// window disappearing. Closing that gap needs a driven check that prints
     /// to a file device — `Microsoft Print to PDF` is on this machine — and it
@@ -56,14 +56,14 @@ impl PrintDialog {
     pub(super) fn commit_notes(outcome: Result<&SpoolReport, &String>) -> Option<Vec<String>> {
         let report = outcome.ok()?;
         let mut notes = vec![t::sent(report.pages)];
-        // ★ The only one of the four `SettingsSource` values that is disclosed,
+        // The only one of the four `SettingsSource` values that is disclosed,
         // and the operator could not learn it any other way: the job printed,
         // and everything the driver held that pdfcer does not model was
         // silently absent from it. See `SettingsSource::Synthesised`.
         if report.settings_source == SettingsSource::Synthesised {
             notes.push(t::settings_synthesised().to_owned());
         }
-        // ★ Both sentences in ONE call. `record_notes`' own doc comment records
+        // Both sentences in ONE call. `record_notes`' own doc comment records
         // why: the slot holds a single disclosure, so a second `record_note`
         // REPLACES the first rather than joining it, and which one survived
         // would be decided by statement order.
@@ -71,7 +71,7 @@ impl PrintDialog {
     }
     /// Render every planned sheet and hand them to the spooler.
     ///
-    /// # ★ The one place in the GUI that starts a print job
+    /// # The one place in the GUI that starts a print job
     ///
     /// Reached only from the commit button, via [`Self::commit_requested`].
     /// Nothing here runs as a side effect of opening, previewing, saving or
@@ -145,7 +145,7 @@ impl PrintDialog {
             });
         }
 
-        // ★ The orientation page is the FIRST PLANNED page — the one `plan`
+        // The orientation page is the FIRST PLANNED page — the one `plan`
         // resolved orientation from. Not `pages[0]`: the sequence may be
         // reversed or range-filtered. Not the first bitmap either: a poster
         // sheet's bitmap is a tile, not the page.
@@ -157,7 +157,7 @@ impl PrintDialog {
         spooler::spool(
             printer,
             &bitmaps,
-            // ★ The RESOLVED device, never `self.device`. `AutoFromPages` is
+            // The RESOLVED device, never `self.device`. `AutoFromPages` is
             // not a value `pdfcer-print` can act on, and handing it over would
             // silently print on whatever the machine was standing on while the
             // disclosure line above claimed a matched sheet.
@@ -170,12 +170,12 @@ impl PrintDialog {
 
     /// One trace line describing the job the dialog is currently showing.
     ///
-    /// ★ `scale=` is on this line beside `orientation=` because they are the
+    /// `scale=` is on this line beside `orientation=` because they are the
     /// pair that exposes the orientation defect: a radio that changes
     /// `orientation=` and not `scale=` on a landscape page is that regression,
     /// restated. A harness can assert the relationship; a screenshot cannot.
     ///
-    /// ★★ `clipped=` and `claim=` are on this line TOGETHER, and the pairing is
+    /// `clipped=` and `claim=` are on this line TOGETHER, and the pairing is
     /// the assertion — operator request O113. `clipped=` is the unchanged
     /// geometric count; `claim=` is what the button says, as `<state>:<count>`.
     /// A driven check asserts the *correction* between them, which no capture
@@ -206,14 +206,14 @@ impl PrintDialog {
                 job.map(|j| j.resolution.uncapped_page_mb),
                 self.device.orientation,
                 self.device.duplex,
-                // ★ `paper=` and `sheet=` are on this line TOGETHER, and the
+                // `paper=` and `sheet=` are on this line TOGETHER, and the
                 // pairing is the assertion. `paper=` is what was asked for;
                 // `sheet=` is the physical sheet the geometry came back with.
                 // A build that took the request and planned against the
                 // device's default anyway would show `paper=Form(8)` beside an
                 // unchanged `sheet=` — the 77 %-scale defect in a second
                 // dimension, and invisible in any other evidence.
-                // ★★ The RESOLVED paper — what the driver was actually asked
+                // The RESOLVED paper — what the driver was actually asked
                 // for — beside `pick=`, which is what the operator chose, and
                 // `auto=`, which is how the choice came out.
                 //
@@ -231,7 +231,7 @@ impl PrintDialog {
                 autopaper::pick_token(self.device.paper),
                 autopaper::outcome_token(&self.auto_paper),
                 autopaper::size_token(job.map(|j| j.device.physical_pt)),
-                // ★★ `largest=` and `mixed=`, added for O167's driven check.
+                // `largest=` and `mixed=`, added for O167's driven check.
                 //
                 // `largest=` is the page the auto decision was made FOR, in the
                 // same vocabulary as `sheet=` beside it — deliberately, so the
@@ -258,7 +258,7 @@ impl PrintDialog {
 
 /// The render options a print job — and its preview — are drawn with.
 ///
-/// # ★ ONE builder, called from both, and that is the point
+/// # ONE builder, called from both, and that is the point
 ///
 /// Two independently-written builders eventually disagree about something, and
 /// neither side can tell which one they are looking at. For a print preview
@@ -281,7 +281,7 @@ impl PrintDialog {
 /// - **The annotation scope IS the operator's**, because it is a statement
 ///   about the job rather than about the view.
 ///
-/// ## ★ The settings surface landed, and this paragraph is what it changed
+/// ## The settings surface landed, and this paragraph is what it changed
 ///
 ///
 /// > One choice the old shell encoded is missing here and its absence is not an

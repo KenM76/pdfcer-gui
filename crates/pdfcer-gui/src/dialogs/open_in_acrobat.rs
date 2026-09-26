@@ -13,7 +13,7 @@
 //!
 //! - G1 is-an-os-window: **YES.** `Host` opens a real
 //!   `show_viewport_immediate` window with a taskbar entry, so this dialog
-//!   drags outside the application and onto a second monitor. ★ The taskbar
+//!   drags outside the application and onto a second monitor. The taskbar
 //!   entry earns its keep here specifically: this window appears in answer to
 //!   a click on a control at the extreme right of the ribbon, which is where a
 //!   pointer is on its way somewhere else, and a question hidden behind the
@@ -48,7 +48,7 @@
 //!   [`crate::text::acrobat`] for the argument, and for why there is no third
 //!   button.
 //! - G8 cancel-is-silent: **YES.** A cancel writes one trace line and nothing
-//!   else — no status sentence, no warning, no error. ★ That line exists only
+//!   else — no status sentence, no warning, no error. That line exists only
 //!   because a cancel and a question nobody answered leave the screen
 //!   identical, so a driven check cannot otherwise tell them apart; it is not
 //!   a report of a fault.
@@ -68,7 +68,7 @@ pub const REGION_BODY: &str = "dialog:open-in-acrobat"; // ui-text-exempt: trace
 /// The region the **proceed** button publishes — *Save and open* or *Close and
 /// open*, whichever this shape carries.
 ///
-/// ★ One name for both, deliberately, where [`crate::dialogs::unsaved`] gives
+/// One name for both, deliberately, where [`crate::dialogs::unsaved`] gives
 /// its Save and its Save-in-place separate ones. There, the two buttons do
 /// different things to the file on disk and a check that could not tell them
 /// apart would pass on a build that swapped them. Here they do the *same*
@@ -76,7 +76,7 @@ pub const REGION_BODY: &str = "dialog:open-in-acrobat"; // ui-text-exempt: trace
 /// first, which [`REGION_SAVE_FIRST`] publishes on its own.
 pub const REGION_PROCEED: &str = "open-in-acrobat.proceed"; // ui-text-exempt: trace region name, never displayed
 
-/// ★★ Published **only on the frames the unsaved shape is drawn**.
+/// Published **only on the frames the unsaved shape is drawn**.
 ///
 /// Its absence is the assertion a driven check wants: a run over a clean
 /// document must show no such region at all, which is what tells "the
@@ -84,7 +84,7 @@ pub const REGION_PROCEED: &str = "open-in-acrobat.proceed"; // ui-text-exempt: t
 /// — two states with very similar screenshots.
 pub const REGION_SAVE_FIRST: &str = "open-in-acrobat.save_first"; // ui-text-exempt: trace region name, never displayed
 
-/// ★★ Published only on the frames the never-saved refusal is drawn.
+/// Published only on the frames the never-saved refusal is drawn.
 ///
 /// Same reasoning as [`REGION_SAVE_FIRST`], for the state that is easiest to
 /// mistake for a missing Acrobat.
@@ -92,7 +92,7 @@ pub const REGION_NO_FILE: &str = "open-in-acrobat.no_file"; // ui-text-exempt: t
 
 /// The region the Cancel button publishes.
 ///
-/// ★ Published by the two shapes that HAVE a Cancel and by neither the third
+/// Published by the two shapes that HAVE a Cancel and by neither the third
 /// nor its dismiss button. The never-saved refusal offers no decision, so a
 /// check that found a cancel region there would be asserting a choice the
 /// operator was never given.
@@ -104,7 +104,7 @@ pub const REGION_CANCEL: &str = "open-in-acrobat.cancel"; // ui-text-exempt: tra
 /// outcome — see [`OpenInAcrobatDialog::was_cancelled`] — and the refusal
 /// shape has no way forward at all.
 ///
-/// ★ A one-variant enum rather than a `bool` or a bare `()`, and it earns its
+/// A one-variant enum rather than a `bool` or a bare `()`, and it earns its
 /// keep at the call site: `Some(Outcome::Proceed)` reads as an instruction,
 /// where `Some(true)` would read as an answer to a question the reader has to
 /// go and find.
@@ -128,7 +128,7 @@ pub struct OpenInAcrobatDialog {
     viewer: Viewer,
     /// How many edits are at stake, for the sentence that says so.
     ///
-    /// ★ Captured at **open** time rather than read per frame, exactly as
+    /// Captured at **open** time rather than read per frame, exactly as
     /// [`crate::dialogs::unsaved`] captures its own: this window is the only
     /// thing on screen that could change the document (it cannot), so a live
     /// read could only return the same number — but capturing makes the
@@ -173,7 +173,7 @@ impl OpenInAcrobatDialog {
 
     /// **Whether an answer is parked here and has not been drained.**
     ///
-    /// ★★★ The twin of [`crate::dialogs::unsaved::UnsavedDialog::answered`],
+    /// The twin of [`crate::dialogs::unsaved::UnsavedDialog::answered`],
     /// and it is here because this window carries the **same latent defect**
     /// its neighbours shipped: [`Self::show`] answers `false` on the very
     /// frame a button is pressed, and an owner that read that `false` as
@@ -201,7 +201,7 @@ impl OpenInAcrobatDialog {
 
     /// Draw it. Returns `false` when it should close.
     pub fn show(&mut self, ctx: &egui::Context) -> bool {
-        // ★ Its own OS window with a taskbar entry, like every dialog in this
+        // Its own OS window with a taskbar entry, like every dialog in this
         // crate — and this one needs the entry: it appears in answer to a
         // click on a control at the extreme right of the ribbon, which is
         // where an operator's pointer is on its way somewhere else.
@@ -235,7 +235,7 @@ impl OpenInAcrobatDialog {
             ),
         };
 
-        // ★ The heading carries its weight through SIZE and position rather
+        // The heading carries its weight through SIZE and position rather
         // than through `RichText::strong()`, which resolves its own colour out
         // of egui's active-widget channel and comes back pale on a panel —
         // defect D2's shape, and what `tools/gates/check-strong-text.sh`
@@ -246,13 +246,13 @@ impl OpenInAcrobatDialog {
         ui.label(body);
         ui.add_space(10.0);
 
-        // ★ The reading order runs from the answer that acts to the answer
+        // The reading order runs from the answer that acts to the answer
         // that does not, which is where every application the operator uses
         // puts them — and neither of them loses anything, which is the whole
         // point of this window having two buttons rather than three.
         ui.horizontal(|ui| match self.prompt {
             Prompt::NoFileOnDisk => {
-                // ★ ONE button, published under its own region and NOT also
+                // ONE button, published under its own region and NOT also
                 // under `REGION_CANCEL`. This shape has no Cancel — there is
                 // nothing to cancel — and publishing the dismiss control under
                 // both names would let a driven check assert "the operator was

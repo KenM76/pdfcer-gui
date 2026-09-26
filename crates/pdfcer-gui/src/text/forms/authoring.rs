@@ -6,7 +6,7 @@
 //! that contains nothing but disclosure sentences"*. It also keeps both files
 //! comfortably inside R2 — `super` is already at 1,265 lines.
 //!
-//! ## ★★★ The four disclosures, and why they are status lines
+//! ## The four disclosures, and why they are status lines
 //!
 //! `FieldAuthorOutcome` reports four things about a field that has just been
 //! authored, and **not one of them is visible on the rendered page**. That is
@@ -49,7 +49,7 @@ pub fn form_noun_radio() -> String {
 
 /// The noun for a drop-down or list box, in a sentence.
 ///
-/// ★ "Drop-down list" rather than "choice field", which is the PDF spec's word
+/// "Drop-down list" rather than "choice field", which is the PDF spec's word
 /// (`/Ch`) and means nothing to anyone who has not read it. The operator's
 /// standing tie-breaker — *make it work the way other programs do* — applies to
 /// vocabulary as much as to behaviour, and every program calls this a drop-down.
@@ -74,7 +74,7 @@ pub fn form_field_added(noun: &str) -> String {
     format!("{noun} added.")
 }
 
-/// ★★★ **The name matched an existing field, so this widget joined it.**
+/// **The name matched an existing field, so this widget joined it.**
 ///
 /// The single most important sentence in this file, and the one with the least
 /// visible cause. In PDF a fully-qualified name *is* the field's identity: two
@@ -121,7 +121,7 @@ pub fn form_field_no_options() -> String {
 /// deliberately: they are two symptoms of one situation, and an operator who
 /// gets two lines about the same thing reads the second as a separate problem.
 ///
-/// ★ It says what is true rather than what to do, because pdfcer cannot yet fix
+/// It says what is true rather than what to do, because pdfcer cannot yet fix
 /// it and a line that recommended an action it does not offer would be worse
 /// than one that reports a fact.
 #[must_use]
@@ -133,7 +133,7 @@ pub fn form_field_tagged_document() -> String {
 
 /// **The field was renamed.**
 ///
-/// ★★ It names `descendants_renamed` when there are any, and that is the whole
+/// It names `descendants_renamed` when there are any, and that is the whole
 /// reason this takes two arguments. Renaming a field that has children renames
 /// their fully-qualified names too — `Address` becoming `Postal` turns
 /// `Address.Line1` into `Postal.Line1` — because a qualified name is built from
@@ -155,7 +155,7 @@ pub fn form_field_renamed(to: &str, descendants: usize) -> String {
 /// Rule-4 disclosure: **pdfcer rewrote other people's buttons** so they keep
 /// pointing at the field the operator just renamed.
 ///
-/// # ★★★ Why a rename owes a sentence at all
+/// # Why a rename owes a sentence at all
 ///
 /// Renaming a field looks like a local act. It is not: `/ResetForm` and
 /// `/SubmitForm` name their targets in `/Fields`, and `/Hide` names its in
@@ -175,7 +175,7 @@ pub fn form_field_renamed(to: &str, descendants: usize) -> String {
 /// which is true under both readings, rather than *"buttons"*, which is true
 /// under only one.
 ///
-/// ★ **JavaScript is not repaired and is not counted.** `R55` requires every
+/// **JavaScript is not repaired and is not counted.** `R55` requires every
 /// script carrier to round-trip byte-identical, so a form whose logic lives in
 /// a script is not fixed by this — and a sentence claiming the rename was
 /// handled everywhere would be false on exactly the documents most likely to
@@ -192,7 +192,7 @@ pub fn form_field_actions_retargeted(count: usize) -> String {
 /// Rule-4 disclosure: **buttons elsewhere now name a field that is gone**, and
 /// pdfcer did not repair them.
 ///
-/// # ★★★ The asymmetry with a rename is the whole point
+/// # The asymmetry with a rename is the whole point
 ///
 /// A rename can repair an action, because the field still exists under a new
 /// name and that name is known. A **deletion** cannot: there is no name left to
@@ -209,7 +209,7 @@ pub fn form_field_actions_retargeted(count: usize) -> String {
 /// buttons will do less than they say. A bare number would read as bookkeeping
 /// about pdfcer rather than as a fact about the operator's document.
 ///
-/// ★ It does **not** offer to fix them, because pdfcer cannot — repairing would
+/// It does **not** offer to fix them, because pdfcer cannot — repairing would
 /// mean deciding what a Reset button that named a deleted field should now
 /// reset, and that is the operator's judgement rather than a default. Naming
 /// the problem and stopping is the honest end of this.
@@ -224,7 +224,7 @@ pub fn form_field_actions_orphaned(count: usize) -> String {
 
 /// **The field was deleted**, and how many boxes went with it.
 ///
-/// ★ The count is the part that cannot be seen. A field drawn in three places
+/// The count is the part that cannot be seen. A field drawn in three places
 /// disappears from three pages and the operator is looking at one of them.
 #[must_use]
 pub fn form_field_deleted(widgets: usize) -> String {
@@ -241,7 +241,7 @@ pub fn form_widget_deleted() -> String {
     "Box deleted. The field is still in the form, drawn elsewhere.".to_owned()
 }
 
-/// ★★ **The last box went, so the field went with it** — which is not what the
+/// **The last box went, so the field went with it** — which is not what the
 /// operator pressed.
 ///
 /// `delete_widget` removes the field when its last widget goes, and that is
@@ -254,7 +254,7 @@ pub fn form_widget_deleted_last() -> String {
 
 /// **The `Sort` flag was set over a list nobody has sorted.**
 ///
-/// ★★ pdfcer will not reorder an `/Opt` list it was not given, and this
+/// pdfcer will not reorder an `/Opt` list it was not given, and this
 /// sentence is why that is the right refusal rather than an omission.
 /// `Sort` *"intended for use by writers, not by readers"* and requires a
 /// conforming reader to display the options *"in the order in which they occur
@@ -291,7 +291,7 @@ pub const fn field_options_reordered() -> &'static str {
 
 /// **One field's flag changed and several boxes on the page followed.**
 ///
-/// ★★ The engine's scope table, taken verbatim from Acrobat's own scripting
+/// The engine's scope table, taken verbatim from Acrobat's own scripting
 /// model: some properties *"apply to all widgets that are children of that
 /// field"* and others *"are specific to individual widgets"*. Required,
 /// read-only, the tooltip and the type flags are all in the first group — one
@@ -302,7 +302,7 @@ pub const fn field_options_reordered() -> &'static str {
 /// nothing on screen would otherwise say so. `widgets_affected` is reported by
 /// the engine *"to be shown"*, in its own words.
 ///
-/// ★ Said only when the count is above one. On the overwhelming majority of
+/// Said only when the count is above one. On the overwhelming majority of
 /// fields it is exactly one, and a bar that narrated that would stop being
 /// read.
 #[must_use]
@@ -315,12 +315,12 @@ pub fn field_widgets_affected(widgets: usize) -> String {
 
 /// **The engine recorded the edit and could not repaint the box.**
 ///
-/// ★★★ The one disclosure here that is about something the operator can SEE
+/// The one disclosure here that is about something the operator can SEE
 /// and will misread — [`AppearanceOutcome::RecordedNotPainted`], the state the
 /// two older outcome fields could not name. The value is in the file and what
 /// is on screen has not changed.
 ///
-/// # ★★ `resized` picks the sentence, and getting it wrong CONTRADICTS the engine
+/// # `resized` picks the sentence, and getting it wrong CONTRADICTS the engine
 ///
 /// This function said *"This box was resized and its artwork could not be
 /// redrawn, so it will look stretched"* for every unpaintable outcome, because
@@ -351,7 +351,7 @@ pub fn field_appearance_not_repainted(resized: bool, why: &str) -> String {
 
 /// **A widget was moved or resized.**
 ///
-/// ★ It names which of the two happened, because the engine distinguishes them
+/// It names which of the two happened, because the engine distinguishes them
 /// and the consequences differ: a move keeps the baked artwork exact and free,
 /// a resize rebuilds it. An operator who dragged a corner and one who dragged
 /// the middle have done different things to the file.
@@ -374,7 +374,7 @@ pub fn field_widget_moved(resized: bool, regenerated: bool) -> &'static str {
         // into the new `/Rect`. Drag a 12 pt check box to 40 pt and its 1 pt
         // border draws at about 3.3 pt, and the tick thickens with it.
         //
-        // ★★ That is precisely the case `resize_annotation` REFUSES by name
+        // That is precisely the case `resize_annotation` REFUSES by name
         // for a foreign appearance — *"a foreign appearance cannot be rebuilt
         // without replacing somebody else's artwork with pdfcer's rendering of
         // it"* — and the widget path takes it silently, on artwork pdfcer drew
@@ -395,7 +395,7 @@ pub fn field_widget_moved(resized: bool, regenerated: bool) -> &'static str {
              are stretched to fit it."
         }
         (true, true) => "The box was resized and its contents were redrawn to fit.",
-        // ★ A move that regenerated is not distinguished from one that did
+        // A move that regenerated is not distinguished from one that did
         // not, and that is correct rather than an omission: a translation
         // changes no length, so an appearance carried across is exact and
         // there is nothing to disclose. Only a RESIZE can be unsatisfiable.
@@ -405,7 +405,7 @@ pub fn field_widget_moved(resized: bool, regenerated: bool) -> &'static str {
 
 /// **A widget property other than its geometry changed.**
 ///
-/// ★★★ The line [`field_widget_moved`] was giving for every non-geometry edit,
+/// The line [`field_widget_moved`] was giving for every non-geometry edit,
 /// and it said **"The box was moved."** A border style, a caption, a visibility
 /// flag and — since O202 — a colour all reached it, because the caller pushed
 /// that sentence unconditionally and `resized` is `false` for all of them. The
@@ -415,7 +415,7 @@ pub fn field_widget_moved(resized: bool, regenerated: bool) -> &'static str {
 /// the same reason a refusal carries it: after the fact nothing else can say
 /// which one it was.
 ///
-/// ★ `regenerated` is added rather than assumed. A colour change rebuilds the
+/// `regenerated` is added rather than assumed. A colour change rebuilds the
 /// appearance stream and a visibility flag does not, and an operator who just
 /// watched a check box redraw itself is owed the difference from one who did
 /// not.
@@ -447,7 +447,7 @@ pub fn field_siblings_untouched(siblings: usize) -> String {
 mod tests {
     use super::*;
 
-    /// ★★★ **A resize that redrew nothing does not claim it redrew something**
+    /// **A resize that redrew nothing does not claim it redrew something**
     /// — `OPERATOR_REQUESTS.md` O76.
     ///
     /// The three cases are asserted as a set, because the defect was that two
@@ -487,7 +487,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **A non-geometry edit does not report a move it did not make.**
+    /// **A non-geometry edit does not report a move it did not make.**
     ///
     /// Every border, caption, visibility and colour edit ended with *"The box
     /// was moved."*, because the handler pushed that line unconditionally. The
@@ -511,7 +511,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The stretched-artwork sentence belongs to a RESIZE only.**
+    /// **The stretched-artwork sentence belongs to a RESIZE only.**
     ///
     /// The engine's string for a colour edit it could not repaint ends *"The
     /// geometry did not change, so nothing is stretched."* — and the shell
@@ -567,7 +567,7 @@ mod tests {
         }
     }
 
-    /// ★★ **The merge disclosure explains the consequence, not the mechanism.**
+    /// **The merge disclosure explains the consequence, not the mechanism.**
     ///
     /// Asserted rather than left to review because the tempting rewrite — "the
     /// field was merged with an existing one" — is shorter, is what the engine
@@ -622,11 +622,11 @@ mod tests {
     /// ⇒ What is still uncovered is the **frame**: that the status bar draws
     /// the line. `tools/ui-verify` is where that belongs.
     ///
-    /// ★ This paragraph was corrected once already. It read *"the chain is not
+    /// This paragraph was corrected once already. It read *"the chain is not
     /// driven"* for as long as it took to build the fixture, which is the right
     /// thing for a limit to say while it is true and the wrong thing to leave
     /// standing afterwards.
-    /// ★★★ **A rename says pdfcer rewrote buttons the operator did not touch, and
+    /// **A rename says pdfcer rewrote buttons the operator did not touch, and
     /// a delete says it could not.**
     ///
     /// Both counts shipped with the verbs and **neither was read for three days**.
@@ -640,7 +640,7 @@ mod tests {
         let repaired = form_field_actions_retargeted(3);
         let broken = form_field_actions_orphaned(3);
 
-        // ★★ The load-bearing distinction, and it is not cosmetic. A rename REPAIRS
+        // The load-bearing distinction, and it is not cosmetic. A rename REPAIRS
         // the actions; a delete cannot. A build that worded them alike would tell
         // the operator his form still works when it does not.
         assert!(
@@ -662,7 +662,7 @@ mod tests {
         );
     }
 
-    /// ★★ **Both name JavaScript as un-handled**, because `R55` forbids rewriting
+    /// **Both name JavaScript as un-handled**, because `R55` forbids rewriting
     /// a script carrier and the count is therefore a floor on any scripted form.
     ///
     /// ⚠ A sentence claiming the rename was handled everywhere would be false on
@@ -683,7 +683,7 @@ mod tests {
         }
     }
 
-    /// ★ **The rename count is ACTIONS, not buttons**, and the wording must not
+    /// **The rename count is ACTIONS, not buttons**, and the wording must not
     /// promise the distinction pdfcer does not draw.
     ///
     /// The engine states it at the field: one button naming a field three times

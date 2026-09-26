@@ -17,7 +17,7 @@ checks would each pay for a launch, a mode click, a panel open and a
 bookmark authored — about four seconds apiece on this machine — to assert
 two halves of one surface that cannot appear separately.
 
-# ★★★ The fixture has NO outline, and that is the point rather than a
+# The fixture has NO outline, and that is the point rather than a
 limitation
 
 `SW41177.pdf` and every other CAD export in this project's fixture set are
@@ -32,7 +32,7 @@ a different fact from *"the feature is broken"*. A harness that cannot tell
 those apart reports the wrong module, which is what seven of ten failures in
 the 2026-08-28 sweep turned out to be.
 
-# ★★ The rename oracle is the PANEL's census, not the trace alone
+# The rename oracle is the PANEL's census, not the trace alone
 
 `rename-bookmark …` says the engine accepted the call.
 `bookmarks-panel items=N` unchanged says the outline still holds one item
@@ -47,7 +47,7 @@ name is the operator's own words about their drawing and the trace is a file
 a harness keeps. `chars=` moving from 5 to 6 is the evidence available, and
 it is enough to distinguish the two builds that matter.
 
-# ★★★ The delete oracle is the COUNT, and the reason is the engine's
+# The delete oracle is the COUNT, and the reason is the engine's
 
 `delete_outline_item` removes the subtree. This fixture's outline is one
 top-level item, so `descendants=0` and the count goes 1 → 0. A check that
@@ -69,7 +69,7 @@ against the engine's reported one.
 | B | click the row, retype the name, press **Enter** | `bookmark-rename chars=6`, `rename-bookmark`, and `items` **unchanged** |
 | C | press Remove | `bookmark-delete descendants=0`, `delete-bookmark`, and `items=0` |
 
-★★★ **Two of those three gestures were missing until 2026-08-29, and without
+**Two of those three gestures were missing until 2026-08-29, and without
 them this check could not pass on any build.** It went from the Add press
 straight to reading `bookmarks.rename` — on a comment saying *"fall through
 to the row click below"*, and there was no row click below — and then typed
@@ -78,10 +78,10 @@ selection is set only by a row click, and `edit::rename_row` raises its
 action only on the button or on Enter, so both halves reported a working
 panel as broken.
 
-★ Enter, not the Rename button: that button publishes no `ui_rect` region,
+Enter, not the Rename button: that button publishes no `ui_rect` region,
 so there is no coordinate for a harness to aim at. `edit::rename_row` commits
 on either, and its own header commits to the keystroke.
 
-★ The row publishes no region either — it is a frameless `Button` in a
+The row publishes no region either — it is a frameless `Button` in a
 `ScrollArea` — so the aim comes from the `bookmark-row … rect=` line the
 panel traces per row. See [`ROW`].

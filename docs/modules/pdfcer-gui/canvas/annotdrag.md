@@ -4,7 +4,7 @@ The other half of the annotation-drag fork. [`crate::canvas::dimdrag`]
 answers for a **ce dimension**; this answers for everything else pdfcer puts
 on a page — a stamp, an ink stroke, a callout box, a highlight, a note.
 
-## ★★★ What this closes, and how long it was open
+## What this closes, and how long it was open
 
 `FEATURES.md` recorded it under the Format contextual tab:
 
@@ -23,7 +23,7 @@ So the operator pressed inside a stamp, dragged it across the sheet, let go,
 and the stamp was where it started with no message anywhere. That reads as a
 broken program rather than as a missing feature.
 
-## ★★★ The half a canvas cannot see, and it is why this needed an engine Pass
+## The half a canvas cannot see, and it is why this needed an engine Pass
 
 
 > A move has two halves and **only one of them shows up in a render.**
@@ -46,7 +46,7 @@ and reported it as *"it moved back"*. Recorded here because the class
 generalises: **when a document format stores one fact twice, a renderer is
 not an oracle for whether both copies were written.**
 
-## ★★ Why there is no shell-side geometry arithmetic here at all
+## Why there is no shell-side geometry arithmetic here at all
 
 This module computes a `(dx, dy)` in page points and sends it. It does not
 touch `/Rect`, does not enumerate geometry keys, and does not know which
@@ -60,7 +60,7 @@ an empty list is a correct answer** — a Text note, a Stamp or a Link has no
 geometry key because its `/Rect` *is* its geometry. The engine says so
 explicitly, and reading empty as failure is the mistake it warned about.
 
-## ★ Two refusals, and the engine names the verb for each
+## Two refusals, and the engine names the verb for each
 
 `EditError::AnnotationMoveWrongVerb` fires for a **widget** (use
 `move_widget`) and for a **ce dimension** (use `move_dimension`, which

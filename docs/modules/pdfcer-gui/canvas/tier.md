@@ -31,7 +31,7 @@ for and what counts as stale, and nothing downstream has to be told.
 | **halo** | the page fits, but its ink reaches past the sheet | the union of the crop box and the content box |
 | **whole** | otherwise | the crop box, as it always was |
 
-★ The order is a safety argument, not a preference: a halo is never smaller
+The order is a safety argument, not a preference: a halo is never smaller
 than the crop box, so a page that cannot fit a whole-page raster certainly
 cannot fit a halo. Reaching the second row at all means the whole page fits.
 
@@ -62,7 +62,7 @@ asked for"*, which on a page with off-page content is a defect.
 `offpage=` is the third state and it was added because the other two
 could not express it — see below.
 
-# ★★★ The operator's switch, and why BOTH gates are in this file
+# The operator's switch, and why BOTH gates are in this file
 
 
 1. **See and reach** — [`decide`] substitutes `None` for the content

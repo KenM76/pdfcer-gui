@@ -4,7 +4,7 @@ land, and on what"*
 The seam against [`super`]: everything here answers a question **about the
 pointer**, and everything there is about the tools and their state.
 
-## ★★ Why this is one function and not two
+## Why this is one function and not two
 
 [`Resolved`] carries the whole answer — the snapped point, the candidate
 that produced it, and the entity under the pointer — because the indicator
@@ -18,7 +18,7 @@ page at 100 %**, growing from there. That reads as *"sometimes it is fine"*,
 and no unit test can see it, because both functions are individually
 correct.
 
-## ★ Neither reader may require stored state
+## Neither reader may require stored state
 
 `MeasureState` is not written to `egui::Memory` until the operator has
 clicked once — [`super::load`] builds a default and only the click paths

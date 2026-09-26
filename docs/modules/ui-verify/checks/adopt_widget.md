@@ -3,7 +3,7 @@
 `adopt_widget` — **insert a form's pages to CREATE orphaned widgets, then
 register one back into the document.**
 
-# ★★ The only check in this suite that needs two features, because the
+# The only check in this suite that needs two features, because the
 fixture is a STATE and not a file
 
 An orphaned widget is a `/Widget` annotation in a page's `/Annots` that no
@@ -30,7 +30,7 @@ from the field beside it, that swallows every keystroke. This project's
 recurring failure — a visible control that is silently inert — arriving
 through a **document** instead of a ribbon.
 
-# ★ Why the button's LABEL is asserted and not only its presence
+# Why the button's LABEL is asserted and not only its presence
 
 `adopt_preview` shipped so the row could read *"Register as `Address`"*
 instead of *"Register"*, and the engine's framing is the reason it matters:

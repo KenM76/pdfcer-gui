@@ -10,7 +10,7 @@ else authored, and its copy is dominated by disclosures about what a document
 does or does not support. This one is about **authoring**, and its copy is
 dominated by labels for choices the operator is making right now.
 
-## ★★ The vocabulary rule this file follows
+## The vocabulary rule this file follows
 
 Every label here is the word the operator's other programs use, not the word
 the PDF specification uses. The standing tie-breaker — *make it work the way
@@ -24,7 +24,7 @@ spec's names for these things are unusually bad for a UI:
 | `/AS` on state | value when ticked | "on state" is a name in a dictionary |
 | comb | equal cells | the word means nothing; the picture is obvious |
 
-## ★ What is deliberately NOT here
+## What is deliberately NOT here
 
 The field-name stems (`Text`, `Check Box`, `Group`, …) that auto-generated
 names are built from. Those are `/T` strings written into the file and keyed

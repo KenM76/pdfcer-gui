@@ -13,7 +13,7 @@ condition attached to it at all, so the *"This document"* heading was on
 screen every frame of every session, at the bottom of a panel whose subject
 is what you have selected.
 
-★★ **The previous arrangement was DESIGNED, not accidental, and this is a
+**The previous arrangement was DESIGNED, not accidental, and this is a
 supersession rather than a bug fix.** `file.properties`' shipped tooltip
 commissioned both halves in one sentence — *"The document's own title,
 author, subject and keywords, and the properties of whatever is selected on
@@ -21,7 +21,7 @@ the page."* — and `RIBBON_IA.md` §5.1 put that one command in File ▸
 Document. One command, two subjects, one panel. That reading was coherent
 and it is the operator's to overrule; he has.
 
-★★★ **And it was the last thing in the inspector that was not the detail of
+**And it was the last thing in the inspector that was not the detail of
 anything.** `OPERATOR_REQUESTS.md` O123 / A7 is his: *"I never understood
 why there is a tool dock when everything can be in object and properties."*
 Objects and Properties became one master–detail column so that picking a row
@@ -54,7 +54,7 @@ and not about this panel.
 | **modes** | all three. Reading a document's title is **reading**, and Read is shown the `file` tab |
 | **not here** | anything scoped to a selection. Every one of those sections stayed in `crate::panels::properties`, which is now purely the detail of what is picked |
 
-## ★ R9 — what it shows with no document open
+## R9 — what it shows with no document open
 
 Nothing of its own. [`crate::panels::Panel::show`] answers the empty case
 **once**, for every panel, before any body runs: it forgets the panel state
@@ -73,7 +73,7 @@ It opened, for months, by quoting `Panel::command_id`:
 > Only the second half is built here; the first needs a `/Info` accessor
 > that `pdfcer-core` does not expose on `Document` at all.
 
-## ★ That last clause was TRUE when written and false when read
+## That last clause was TRUE when written and false when read
 
 `EditSession::info_text` and `info_bytes` both exist, both are `&self`, and
 both are documented as *"reflects unsaved edits"*. `InfoField::all()`
@@ -91,7 +91,7 @@ a document is a measurement with a timestamp*, and a blocker quoted in
 prose is a measurement. **Re-run it before believing it**, especially when
 it names a crate somebody else is working on in parallel.
 
-## ★ The disclosure this surface owes, and it is not the obvious one
+## The disclosure this surface owes, and it is not the obvious one
 
 Not "these are the metadata fields". It is `InfoText::exact`:
 

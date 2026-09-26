@@ -73,7 +73,7 @@ pub struct RedactUi {
     /// afterwards. The marks themselves live in the document as `/Redact`
     /// annotations and carry their own appearance from the moment they are
     /// made.
-    /// ★ `pub(crate)` because a third marking route reads it.
+    /// `pub(crate)` because a third marking route reads it.
     ///
     /// The panel and the dialog are two readers; `edit.redact_selection` is a
     /// ribbon command dispatched from `app::dispatch` and is the third. Each
@@ -105,7 +105,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     let marks = pdfcer_core::redact::redaction_marks(&doc.session.graph());
     let page_count = doc.pages.len();
 
-    // ★★★ **Everything below scrolls, and it has to.**
+    // **Everything below scrolls, and it has to.**
     //
     // This body is taller than the slot a side dock gives it. At a 1,100x800
     // window the pane runs out at the appearance group, and everything after
@@ -127,7 +127,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
             ui.add_space(6.0);
             ui.separator();
 
-            // ★ **State, then action, then detail** — and the order is measured rather
+            // **State, then action, then detail** — and the order is measured rather
             // than preferred. See the module header's layout section.
             census_and_apply(ui, &marks, actions);
             ui.add_space(8.0);
@@ -181,7 +181,7 @@ fn marking_controls(
     // is gated on `doc.pages`, so a document with none cannot normally get
     // here — and the guard is applied anyway, because a saved dock layout can
     // put this panel on screen with anything open.
-    // ★ Read ONCE, here, and used by both marking controls below.
+    // Read ONCE, here, and used by both marking controls below.
     //
     // The appearance is carried on the action rather than read in the
     // dispatcher, for the reason the action's own field documents: the
@@ -189,7 +189,7 @@ fn marking_controls(
     // Cloned because both controls need it and the panel keeps editing it.
     let chosen = state.redact_mut().appearance.to_core();
 
-    // ★★ BOTH, chained — O77. `Tooltip::for_enabled` and `for_disabled` gate
+    // BOTH, chained — O77. `Tooltip::for_enabled` and `for_disabled` gate
     // on exact complements, so exactly one ever opens and chaining is safe.
     // Until today only the enabled one was attached, so the operator got an
     // explanation whenever he did not need one and silence whenever he did.
@@ -209,7 +209,7 @@ fn marking_controls(
 
     // ---- how it will look ------------------------------------------------
     //
-    // ★ BELOW the two marking controls, deliberately, and this is the same
+    // BELOW the two marking controls, deliberately, and this is the same
     // layout rule the panel's header already argues for the apply control:
     // *state, then action, then detail.* An operator opens this panel to mark
     // something; the appearance is a refinement they reach for second, and
@@ -240,7 +240,7 @@ fn marking_controls(
                 !query.is_empty() && page_count > 0,
                 egui::Button::new(t::search_button()),
             )
-            // ★★★ …and the disabled half, which had been WRITTEN AND
+            // …and the disabled half, which had been WRITTEN AND
             // UNREACHABLE — O77. `search_button_tooltip(false)` exists, is
             // documented, is unit-tested, and could never open, because it was
             // attached with the enabled-only method. The boolean whose sole
@@ -279,11 +279,11 @@ fn marking_controls(
             .small()
             .weak(),
     );
-    // ★ Off-canvas, in the panel that authored the marks — never a badge on the
+    // Off-canvas, in the panel that authored the marks — never a badge on the
     // page. The content this warns about renders correctly and is not in doubt;
     // marking it would be a second rendering path for text that is fine, which
     // is the class of bug decision 059 narrows rule 4 to prevent.
-    // ★ Read from the DOCUMENT, not from panel state. It is a fact about this
+    // Read from the DOCUMENT, not from panel state. It is a fact about this
     // file's fonts, so it follows the file — parked with it, and, the case that
     // decides the placement, never shown against a different document when the
     // operator switches tabs.
@@ -307,7 +307,7 @@ fn census_and_apply(
 ) {
     ui.add_space(6.0);
     let theme = egui_shell::theme::Theme::of(ui.ctx());
-    // ★ Coloured only when there is something to warn about. A census that is
+    // Coloured only when there is something to warn about. A census that is
     // permanently in the warning role is one an operator stops seeing, and
     // "nothing is marked" is a reassuring answer rather than a warning.
     //
@@ -324,7 +324,7 @@ fn census_and_apply(
 
     let apply = ui
         .add_enabled(!marks.is_empty(), egui::Button::new(t::review_and_apply()))
-        // ★★★ The same shape, and the same orphaned string — O77.
+        // The same shape, and the same orphaned string — O77.
         // `review_and_apply_tooltip(false)` was written for a tooltip that
         // could not open.
         .on_hover_text(t::review_and_apply_tooltip(true))
@@ -381,7 +381,7 @@ fn mark_rows(
 /// notice, and a `&mut EditSession` is not available to a test that only wants
 /// to ask what rectangle was chosen.
 ///
-/// # ★ The crop box, not the media box
+/// # The crop box, not the media box
 ///
 /// `Page::crop_box` is what a reader **displays** (ISO 32000-1 Table 30:
 /// content is clipped to it at display time), and it defaults to the media box
@@ -421,7 +421,7 @@ fn mark_rows(
 /// surface. A deferral described in a doc comment is a claim about a backlog,
 /// never evidence that the operator will be told.
 ///
-/// # ★★ `fill: None` means TRANSPARENT, which is the dangerous half
+/// # `fill: None` means TRANSPARENT, which is the dangerous half
 ///
 /// `RedactAppearance::fill`'s `None` is transparent, per Table 192 — not a
 /// black box. So a shell that passes `None` removes the content and draws
@@ -471,7 +471,7 @@ mod tests {
     use super::*;
     use crate::app::state::{FOUR_PAGES, open_fixture};
 
-    /// ★ **A whole-page mark covers what the page displays.**
+    /// **A whole-page mark covers what the page displays.**
     ///
     /// The crop box rather than the media box, argued at
     /// [`whole_page_spec`]. The failure this catches is silent in both
@@ -498,7 +498,7 @@ mod tests {
             "the shipped appearance writes no caption — inventing one would put words \
              on the operator's page that they did not write"
         );
-        // ★ EXPLICIT black, not `None`. `a705d14` changed `None` from "black
+        // EXPLICIT black, not `None`. `a705d14` changed `None` from "black
         // box" to "transparent" per Table 192, so a whole-page mark that
         // passed `None` would remove the page's content and draw nothing over
         // it. Asserted here as well as in `appearance` because this is the

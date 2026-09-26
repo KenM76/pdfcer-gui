@@ -8,7 +8,7 @@ what a press meant: [`crate::canvas::gesture::press_kind`], which turns the
 answer into a [`DragKind`](crate::canvas::gesture::DragKind), and
 `canvas::interact`, which routes the resulting click.
 
-## ★ Why this is its own file, and why the seam is here
+## Why this is its own file, and why the seam is here
 
 [`super`] crossed `PROJECT_PLAN.md` R2's 1,500-line limit when the text tool
 landed, for the second time — the first split took the two keyboard verbs out
@@ -35,7 +35,7 @@ not authoring* ruling, the mode gate derived from a tab list, the arrival of
 
 ---
 
-## ★ THE MODE GATE — no new capability, and NOT `edit_content`
+## THE MODE GATE — no new capability, and NOT `edit_content`
 
 (This was [`super`]'s header §3 until the split; the parent still carries a
 one-line pointer under that number, so a reader following a cross-reference to
@@ -87,10 +87,10 @@ The second half is the original rule, unchanged: that is Acrobat Reader in a
 mode that reads, and it leaves the authoring modes' *un-armed* canvas exactly
 as it was.
 
-### ★ The first half arrived, and it is the paragraph below that predicted it
+### The first half arrived, and it is the paragraph below that predicted it
 
 
-> ★ **Edit is the row worth staring at, and it is a known gap rather than an
+> **Edit is the row worth staring at, and it is a known gap rather than an
 > accident.** A reviewer can select text and an editor cannot, which is an
 > inversion […] The closing move is a `CanvasTool::Text` armed by a
 > `view.tool_text` command, at which point [`takes_the_press`] gains one
@@ -117,7 +117,7 @@ optional:
    See [`crate::canvas::markup::text`] §2, which is where that consequence
    was recorded and is now discharged.
 
-### ★ The reference applications disagree, and the argument is in `tool.rs`
+### The reference applications disagree, and the argument is in `tool.rs`
 
 Not repeated here, because a decision restated in two files is a decision
 that drifts. In one line: **Acrobat and SolidWorks resolve text-versus-object
@@ -128,7 +128,7 @@ Inkscape-shaped mode. The whole argument, including the concrete failure a
 contextual press would produce on a drawing sheet, is at
 [`CanvasTool::Text`](crate::canvas::tool::CanvasTool::Text).
 
-### ★ What the second disjunct costs: exclusivity moves from construction to
+### What the second disjunct costs: exclusivity moves from construction to
 ### precedence
 
 This paragraph replaces one that is now **false**, and it is replaced rather
@@ -191,7 +191,7 @@ the other side. So `PdfcerApp::on_mode_capabilities_changed` clears it on the
 way into any mode that does not offer the gesture, exactly as it clears the
 object selection on the way into one that does not offer *that*.
 
-★ **And it widened with the tool for free, because it was written against the
+**And it widened with the tool for free, because it was written against the
 predicate rather than against the flag.** `app::gating` asks
 `!takes_the_press(tool::selected(ctx), caps)` — the gesture's own question,
 of the tool the operator actually has — rather than spelling `!caps.

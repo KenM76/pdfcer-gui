@@ -10,7 +10,7 @@ subtractive invariant, and why the filter composes with the mode as an
 split is the usual one: that module can be asserted about in a unit test,
 while everything here has to be **driven** before it counts (R1).
 
-## ★ Why this is a file and not a section of [`super`]
+## Why this is a file and not a section of [`super`]
 
 R2's 1,500-line ceiling forced the split, and — as with
 [`super::page_box`], [`super::notes`] and [`super::decline`] before it —

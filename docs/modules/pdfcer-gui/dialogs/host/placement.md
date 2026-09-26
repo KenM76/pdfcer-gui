@@ -30,7 +30,7 @@ markup session and therefore almost never has a remembered position to
 restore. The half-second of hunting for it is small; it is paid on every
 note.
 
-★ The review's wording was *"a click-relative position"*, and that is not
+The review's wording was *"a click-relative position"*, and that is not
 what the discarded computation was. It is centred horizontally and a third
 of the way down the application window — the same placement the Set-scale
 dialog uses — and it is deliberately **not** over the annotation: the
@@ -42,7 +42,7 @@ additionally need the canvas's page-to-screen transform, which this half of
 the program does not own. What was restored is the position that was
 computed, not a different one.
 
-# ★★ The rule this file holds
+# The rule this file holds
 
 > **A chosen opening position is clamped onto the application window, and
 > nothing about the dialog's own content participates in the arithmetic.**

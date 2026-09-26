@@ -36,7 +36,7 @@ impl PdfcerApp {
     /// page and a NaN that falls back to actual size are all decided in
     /// `viewer`, under unit test.
     fn apply(&mut self, action: Action, pixels_per_point: f32) {
-        // ★ The three actions that are about WHICH document is open, matched
+        // The three actions that are about WHICH document is open, matched
         // BEFORE the guard below.
         //
         // Every other arm acts on the open document, so the guard's "no
@@ -64,7 +64,7 @@ impl PdfcerApp {
         // control flow rather than a coincidence: adding an arm here that fell
         // through would be a use-after-move and the compiler would say so.
         match action {
-            // ★★ The four arms that replace the open document live in
+            // The four arms that replace the open document live in
             // `super::document`, one function each, with the two guards they
             // share and the table that orders them.
             //
@@ -94,7 +94,7 @@ impl PdfcerApp {
                 self.apply_new();
                 return;
             }
-            // ★★ The FIFTH arm that replaces the open document, and the first
+            // The FIFTH arm that replaces the open document, and the first
             // one that replaces it with *the same file read differently*.
             //
             // It returns like its four neighbours and for their reason: what
@@ -118,7 +118,7 @@ impl PdfcerApp {
                 self.apply_close();
                 return;
             }
-            // ★ Beside `Close` and returning like it, for `Close`'s own
+            // Beside `Close` and returning like it, for `Close`'s own
             // reason: nothing here is an edit, so it must not fall through to
             // the edit-epoch bookkeeping below. It raises a question and
             // returns; the acts it leads to happen in the drain.
@@ -126,7 +126,7 @@ impl PdfcerApp {
                 self.apply_open_in_acrobat();
                 return;
             }
-            // ★ Beside the four above rather than below the document guard,
+            // Beside the four above rather than below the document guard,
             // and for a third reason again: this arm needs `&mut self`, not
             // `&mut OpenDoc`. It reads a **parked** document's session while
             // it writes the active one's, which is a borrow the guard below
@@ -149,7 +149,7 @@ impl PdfcerApp {
                 self.apply_insert_from_open_document(source_slot, &pages, position, take);
                 return;
             }
-            // ★ Save a copy — matched here for the guard's own reason rather
+            // Save a copy — matched here for the guard's own reason rather
             // than for a borrow one, and it is the third kind of case this
             // pre-guard block holds.
             //
@@ -171,10 +171,10 @@ impl PdfcerApp {
             // session (`to_incremental_bytes(&self)`), so there is no worker to
             // cancel, no `Arc::get_mut` to fail, no epoch to bump and no texture
             // to drop — see `save`'s section 2.
-            // ★ Save-in-place. A blank document with no file behind it never
+            // Save-in-place. A blank document with no file behind it never
             // reaches here: `dispatch` routes it to `file.save_copy` first,
             // because *"where does this go?"* is only the operator's to answer.
-            // ★★ **The three saves**, all matched here for the same two
+            // **The three saves**, all matched here for the same two
             // reasons: each asks a signature question that must run before the
             // document guard, and each returns rather than falling through.
             //
@@ -182,7 +182,7 @@ impl PdfcerApp {
                 super::saving::apply(self, &action);
                 return;
             }
-            // ★ The third arm matched before the document guard, and it is
+            // The third arm matched before the document guard, and it is
             // here for a **borrow** reason rather than for the guard's.
             //
             // Applying a find request needs two of this struct's fields at
@@ -197,7 +197,7 @@ impl PdfcerApp {
             // reach `edit.find` from any state and "the chord did nothing" and
             // "the chord did nothing because no document is open" need
             // different responses from whoever is reading the trace.
-            // ★★★ Signing, matched here for `Action::Find`'s BORROW reason
+            // Signing, matched here for `Action::Find`'s BORROW reason
             // rather than for the guard's: it needs the open document and
             // `self.dialogs` at once, and the guard below takes
             // `&mut self.status` for the rest of the function. Its own module
@@ -218,7 +218,7 @@ impl PdfcerApp {
                 }
                 return;
             }
-            // ★★ Matched HERE — above the `Status::Open` guard below —
+            // Matched HERE — above the `Status::Open` guard below —
             // because a **preference** is not a document action.
             //
             //
@@ -249,17 +249,17 @@ impl PdfcerApp {
         // page step, a window dragged to a different monitor). Caching it
         // is how a guard passes its tests and still lets the operator zoom
         // into an allocation failure on the one machine that matters.
-        // ★★ O24: the ceiling now honours the operator's configured maximum.
+        // O24: the ceiling now honours the operator's configured maximum.
         // `zoom_ceiling` is the one place the whole-page limit and the region
         // tier are reconciled, so this site and `canvas::zoom` cannot answer
         // the question differently.
-        // ★★ O186: and the ceiling this page has TAUGHT us, if it has taught
+        // O186: and the ceiling this page has TAUGHT us, if it has taught
         // us one. Resolved here rather than inside `zoom_ceiling` because that
         // function is pure with respect to document state — it takes a page
         // extent and a density, not an `OpenDoc` — and keeping it that way is
         // what lets its whole ladder be unit-tested.
         //
-        // ★ Asked for **the current page** and at **the current epoch**, which
+        // Asked for **the current page** and at **the current epoch**, which
         // is the whole of the invalidation rule: a ceiling measured on sheet 7
         // says nothing about sheet 3, and one measured before an edit says
         // nothing about the page after it. Both narrowings are
@@ -278,7 +278,7 @@ impl PdfcerApp {
         );
         let page_count = doc.pages.len();
 
-        // ★ Which zoom changes are DISCRETE, and why that matters.
+        // Which zoom changes are DISCRETE, and why that matters.
         //
         // `settle_and_rasterize` debounces a zoom by 150 ms so a Ctrl+wheel
         // gesture — which emits dozens of intermediate values — rasterizes
@@ -338,7 +338,7 @@ impl PdfcerApp {
                 // whoever moved one of these arms. Never rendered.
                 unreachable!("handled before the document guard")
             }
-            // ★ Listed separately rather than folded into the run above, only
+            // Listed separately rather than folded into the run above, only
             // because it carries a `#[cfg]` and an attribute cannot be applied
             // to one alternative of an or-pattern.
             #[cfg(feature = "signing")]
@@ -348,7 +348,7 @@ impl PdfcerApp {
                 unreachable!("handled before the document guard")
             }
             Action::Selection(action) => super::selecting::apply_action(doc, action),
-            // ★ A canvas gesture that refused, asking for its sentence. It
+            // A canvas gesture that refused, asking for its sentence. It
             // changes nothing about the document — see the variant's docs for
             // why it is an action at all, and `decline::CanvasDecline` for why
             // the payload is a two-armed list of this crate's own sentences
@@ -358,7 +358,7 @@ impl PdfcerApp {
             Action::ZoomBy(factor) => doc.view.zoom_by(factor, max_zoom),
             Action::ZoomIn => doc.view.zoom_in(max_zoom),
             Action::ZoomOut => doc.view.zoom_out(max_zoom),
-            // ★★ **The view verbs**, in one arm and one function.
+            // **The view verbs**, in one arm and one function.
             //
             Action::Fit(_)
             | Action::ZoomTo(_)
@@ -369,13 +369,13 @@ impl PdfcerApp {
             | Action::RevealRect { .. } => {
                 super::view::apply(doc, action, page_count, max_zoom);
             }
-            // ★ Every geometry verb, routed. The body is in
+            // Every geometry verb, routed. The body is in
             // [`super::vector`], beside the enum, which is the pattern
             // [`super::dimensions`] already sets one arm below — and it is R2's
             // answer for this file as much as for `action.rs`: the seven arms
             // were 120 lines of a match that is otherwise a routing table.
             Action::Vector(action) => super::vector::apply(doc, action),
-            // ★ One markup annotation, through the same four-step protocol
+            // One markup annotation, through the same four-step protocol
             // every other document change uses.
             //
             // The arm routes; it does not compute. `markup::spec` is a pure,
@@ -392,21 +392,21 @@ impl PdfcerApp {
             // new object's id is discarded because nothing here addresses it —
             // the Comments panel that will is a separate surface with its own
             // way of finding annotations on a page.
-            // ★ Every ce-dimension verb, routed. The body is in
+            // Every ce-dimension verb, routed. The body is in
             // `super::dimensions` — a sibling of `annots` and `pages`, split
             // out under R2 along the same seam — because the family shares a
             // rule this file cannot express in one arm: four of the eight
             // rewrite every member of a group across every page, and four
             // touch one annotation. See that module's header.
             //
-            // ★ The `CommitMarkup` arm below is deliberately NOT routed with
+            // The `CommitMarkup` arm below is deliberately NOT routed with
             // it, even though authoring a ce dimension and authoring a markup
             // look like the same act. They share no invalidation rule — a
             // markup has no group whose other members could move — and folding
             // them together would put a document-wide raster clear one careless
             // edit away from every markup placed on the canvas.
             Action::Dimension(action) => super::dimensions::apply(doc, action),
-            // ★ One image, one undo entry, and every disclosure it owes.
+            // One image, one undo entry, and every disclosure it owes.
             //
             // The closure's return value IS the disclosure list — the funnel's
             // own mechanism — and here it carries the three facts an operator
@@ -417,7 +417,7 @@ impl PdfcerApp {
             // different on paper, which is why the number is stated every time
             // rather than only when it is bad.
             //
-            // ★ `recompressed` reaches the catalog through its own `Display`.
+            // `recompressed` reaches the catalog through its own `Display`.
             // Same call `text::images::import_failed` makes, for the same
             // reason: the value is a SPECIFIC explanation — a colour model PDF
             // has no space for, a filter pdfcer cannot re-emit — and a catalog
@@ -429,7 +429,7 @@ impl PdfcerApp {
                 image,
             } => {
                 vector_edit(doc, "add-image", page, 1, |session| {
-                    // ★ The builder, not a struct literal: `NewImage` is
+                    // The builder, not a struct literal: `NewImage` is
                     // `#[non_exhaustive]`, so a downstream crate cannot
                     // construct it field-by-field — and the constructor is
                     // what keeps a field added upstream from silently
@@ -458,7 +458,7 @@ impl PdfcerApp {
                         )
                     })
                 });
-                // ★★★ **And it arrives SELECTED** — 2026-08-26, closing the
+                // **And it arrives SELECTED** — 2026-08-26, closing the
                 // operator's *"if I add an image I Expect to click on it to
                 // resize but dragging doesn't resize."*
                 //
@@ -468,7 +468,7 @@ impl PdfcerApp {
                 // unselected, so his first press was a press on unselected
                 // paper, and `gesture::meaning` reads that as a marquee.
                 //
-                // ★ The new image is the LAST object in paint order, because
+                // The new image is the LAST object in paint order, because
                 // `add_image` appends to the content stream — so its target is
                 // the decomposition's final index. Taken from the rebuilt model
                 // rather than from a count kept before the edit: the edit
@@ -482,7 +482,7 @@ impl PdfcerApp {
                 // shell's ability to name it, and inventing an index for it
                 // would select whatever happens to be at that position.
                 //
-                // ★ The count is taken and the borrow released in one
+                // The count is taken and the borrow released in one
                 // statement, before the selection is touched. `page_objects()`
                 // hands back a `Ref` into the document's own cache, and
                 // `select_placed` wants `&mut doc.selection` — holding the
@@ -497,7 +497,7 @@ impl PdfcerApp {
                         .select_placed(page, crate::canvas::target::TargetId::Object(last as u64));
                 }
             }
-            // ★ One dictionary entry, through the same four-step protocol as a
+            // One dictionary entry, through the same four-step protocol as a
             // page rewrite — because the protocol is what makes an edit
             // undoable, epoch-bumping and cache-invalidating, and a shortcut
             // for a "small" edit is how one edit ends up outside the log.
@@ -506,7 +506,7 @@ impl PdfcerApp {
             // `/Info` is in the trailer and belongs to no page. The page
             // reaches `vector_edit` only for the trace line.
             //
-            // ★★★ **A completed recognition, applied as one edit.**
+            // **A completed recognition, applied as one edit.**
             //
             Action::ApplyOcr { pages, engine } => {
                 // The borrowed view the engine's slice wants, built here so the
@@ -526,7 +526,7 @@ impl PdfcerApp {
                     // off in the same undo step.
                     session
                         .add_ocr_layer(&layers, &super::ocrlayers::options(engine))
-                        // ★ Every page's disclosures, flattened onto the one
+                        // Every page's disclosures, flattened onto the one
                         // channel every other edit reports on. The dialog does
                         // NOT re-render them: two accounts of one run, worded
                         // differently, is a pair that drifts.
@@ -535,7 +535,7 @@ impl PdfcerApp {
                 });
             }
             Action::RemoveOcrLayers => super::ocrlayers::remove_all(doc),
-            // ★ Nothing is invalidated beyond the epoch, deliberately. Document
+            // Nothing is invalidated beyond the epoch, deliberately. Document
             // metadata is not drawn on any page, so clearing rasters would
             // throw away every cached page to no purpose — the one arm in this
             // file where the *absence* of an invalidation is the decision.
@@ -546,7 +546,7 @@ impl PdfcerApp {
                         .map(|()| Vec::new())
                 });
             }
-            // ★ The `Option` is `markup::Refusal::Mismatched` arriving at the
+            // The `Option` is `markup::Refusal::Mismatched` arriving at the
             // only place it can: a kind holding another family's geometry.
             //
             //
@@ -558,7 +558,7 @@ impl PdfcerApp {
             // the same routing in the file that owns the subject, where the
             // disclosure rules that govern all eleven are stated once.
             //
-            // ★ The author name travels rather than being read there.
+            // The author name travels rather than being read there.
             // `keep_author` is a fact about the DOCUMENT the raising surface
             // had in front of it, and the name is a fact about the OPERATOR
             // that only this scope can see — `AnnotAction::SetNote`'s own field
@@ -575,7 +575,7 @@ impl PdfcerApp {
                 pen,
             } => {
                 if let Some(spec) = crate::canvas::markup::spec(kind, &geometry, pen) {
-                    // ★★★ `add_markup_with`, not `add_markup` — ONE verb and ONE
+                    // `add_markup_with`, not `add_markup` — ONE verb and ONE
                     // undo entry for a translucent mark.
                     //
                     // This is the engine's own argument, and it is a defect
@@ -586,11 +586,11 @@ impl PdfcerApp {
                     // OPAQUE highlight, not no highlight. That is a state they
                     // never asked for and cannot have created any other way."*
                     //
-                    // ★ `opacity_option()` answers `None` at fully opaque, which
+                    // `opacity_option()` answers `None` at fully opaque, which
                     // writes no `/CA` at all — so a build whose operator never
                     // touches the control authors the same bytes it did before
                     // the control existed.
-                    // ★ `dash_option()` is `opacity_option`'s exact twin — see
+                    // `dash_option()` is `opacity_option`'s exact twin — see
                     // its doc — and it is sent HERE and not from
                     // `CommitTextMarkup` below, because a text markup draws no
                     // `/BS` border and the engine documents the field as ignored
@@ -613,11 +613,11 @@ impl PdfcerApp {
                     );
                 }
             }
-            // ★ Placing a text-bearing annotation CHANGES NOTHING. It opens the
+            // Placing a text-bearing annotation CHANGES NOTHING. It opens the
             // dialog, and the words decide whether anything is authored.
             //
             //
-            // ★★ And they cannot be handed to a router either, for a borrow
+            // And they cannot be handed to a router either, for a borrow
             // reason worth stating because it is invisible until you try it:
             // `doc` above IS `&mut self.status`. Passing `doc` and
             // `&self.status` to one function is two borrows of one field and
@@ -641,7 +641,7 @@ impl PdfcerApp {
             // …and this is the one that reaches the document, through the same
             // `vector_edit` funnel every other authoring verb uses.
             //
-            // ★★ The settings are remembered on the way past — the operator's
+            // The settings are remembered on the way past — the operator's
             // *"remember last settings"* — and remembered HERE rather than in
             // the dialog, because this is the point at which they were
             // ACCEPTED. Remembering at the dialog would remember a draft the
@@ -650,7 +650,7 @@ impl PdfcerApp {
                 self.form_defaults.remember(&draft);
                 super::forms::author::author(doc, page, rect, &draft);
             }
-            // ★ The restyle family, routed like every other sub-verb. Its arm
+            // The restyle family, routed like every other sub-verb. Its arm
             // is one line and its module is four hundred, which is the right
             // proportion: what happens here is a decision about WHICH runs and
             // in WHAT ORDER, and neither is a fact this file knows.
@@ -668,7 +668,7 @@ impl PdfcerApp {
             // verb differs (`add_text_annotation` rather than `add_markup`)
             // because the spec type does; nothing else about the protocol does.
             //
-            // ★★★ **…and it forks.** `custom` is `Some` only when the operator
+            // **…and it forks.** `custom` is `Some` only when the operator
             // picked one of his OWN stamps, and it wins over `stamp`. The two
             // routes share a gesture and a dialog and nothing else — see
             // `super::customstamp`'s header §*The fork*, which carries why
@@ -703,7 +703,7 @@ impl PdfcerApp {
                 self.pen.text_annot_colour(kind),
                 self.pen.opacity_option(),
             ),
-            // ★ One text markup, through the SAME funnel and the same engine
+            // One text markup, through the SAME funnel and the same engine
             // verb as the drag-shaped kinds above.
             //
             // The label differs (`add-text-markup`) and nothing else does, which
@@ -718,7 +718,7 @@ impl PdfcerApp {
             // from the same pass that painted the wash the operator was looking
             // at when they pressed the button.
             //
-            // ★ The `pen` comes off the ACTION, never off `self`. It was sampled
+            // The `pen` comes off the ACTION, never off `self`. It was sampled
             // in `dispatch` at the moment the operator invoked the command; this
             // arm runs at the end of the frame, by which time the live pen may
             // have moved. Reading it here would author the mark in a colour the
@@ -726,7 +726,7 @@ impl PdfcerApp {
             // `Action::CommitMarkup`'s `pen` field documents, and the exact
             // reason this variant grew one.
             //
-            // ★ Note the second-order consequence, which is deliberate and is
+            // Note the second-order consequence, which is deliberate and is
             // documented at `canvas::textsel` §7: `vector_edit` bumps
             // `edit_epoch`, so the selection that authored this annotation is
             // **stale on the next frame** and its wash disappears. Acrobat keeps
@@ -742,7 +742,7 @@ impl PdfcerApp {
             } => {
                 let spec = crate::canvas::markup::text::spec(kind, quads, pen);
                 // The same options as the drag-shaped kinds above, for the same
-                // reason and off the same pen. ★ A translucent HIGHLIGHT is the
+                // reason and off the same pen. A translucent HIGHLIGHT is the
                 // case that matters most here: a highlight is the one markup
                 // whose whole job is to sit over text and let it show through,
                 // and `/CA` is the only key that does that — a highlighter's
@@ -757,7 +757,7 @@ impl PdfcerApp {
                         .map(|_| Vec::new())
                 });
             }
-            // ★★ **The commit `DEFECTS.md` D4b is about**, and the two lines
+            // **The commit `DEFECTS.md` D4b is about**, and the two lines
             // that make it different from the old shell's are `plan`'s.
             //
             // The old shell wrote, at its ONLY call site:
@@ -785,7 +785,7 @@ impl PdfcerApp {
                 original,
                 replacement,
             } => super::textcommit::commit_text_edit(doc, page, run, &original, &replacement),
-            // ★ New page text, through the same funnel and the same four steps.
+            // New page text, through the same funnel and the same four steps.
             //
             // `AddTextRequest::new` supplies the engine's own documented default
             // — a bundled 12-pt black Helvetica run — and this arm does not
@@ -802,7 +802,7 @@ impl PdfcerApp {
             // lives in `pages` beside rotate, delete, reorder and extract, and
             // this arm routes. See `pages::insert_from_file` for why it must
             // mutate the session rather than replace it.
-            // ★★ Restyle a placed markup, through the same four-step protocol
+            // Restyle a placed markup, through the same four-step protocol
             // every other document change uses.
             //
             // The arm routes; it does not compute. Which field is `Some` was
@@ -811,7 +811,7 @@ impl PdfcerApp {
             // from anything would be this arm making a decision the surface
             // already made — the failure `MarkupStyle`'s own doc names.
             //
-            // ★ `report.dropped` is carried into the disclosure list rather than
+            // `report.dropped` is carried into the disclosure list rather than
             // discarded, and it is the whole reason this verb returns one:
             // regenerating an appearance loses anything the original expressed
             // OUTSIDE the model pdfcer draws — a border effect it does not
@@ -845,7 +845,7 @@ impl PdfcerApp {
                     wrap,
                 },
             ),
-            // ★ The three things a mode change does. See the variant's docs
+            // The three things a mode change does. See the variant's docs
             // for why each one is here and not somewhere more convenient.
             //
             // The no-op guard is not an optimisation: the ribbon raises this
@@ -860,7 +860,7 @@ impl PdfcerApp {
                     // read the current page as "navigated to" and scroll to it
                     // on its first frame.
                     doc.tracked_page = doc.view.page_index;
-                    // ★★★ **…and the view snaps back to the middle** —
+                    // **…and the view snaps back to the middle** —
                     // `OPERATOR_REQUESTS.md` O177, first half:
                     //
                     // > *"when switching the view from scroll pages to show one
@@ -869,7 +869,7 @@ impl PdfcerApp {
                     // > canvas."*
                     //
                     //
-                    // ★★ Only for a **non-continuous** target, and the gate is
+                    // Only for a **non-continuous** target, and the gate is
                     // read from the mechanism rather than chosen: under a
                     // continuous mode `canvas::strip::page_scroll_offset` owns
                     // where the strip sits, and it no-ops for exactly one frame
@@ -879,7 +879,7 @@ impl PdfcerApp {
                     // does not ask for one — the two arrangements he names are
                     // both non-continuous.
                     //
-                    // ★ Spent by `canvas::fit::placement`, unconditionally, on
+                    // Spent by `canvas::fit::placement`, unconditionally, on
                     // the next frame. See `OpenDoc::recentre`.
                     doc.recentre = !display.is_continuous();
                 }
@@ -889,7 +889,7 @@ impl PdfcerApp {
                 // when the file already says this, so a repeated click still
                 // costs no write.
                 //
-                // ★ …and only for a document that HAS a file. `stored_under`
+                // …and only for a document that HAS a file. `stored_under`
                 // is the one predicate that says so. A created document's path
                 // is a name, so writing here would store an arrangement
                 // against `Untitled 1.pdf` — which the next session's
@@ -915,7 +915,7 @@ impl PdfcerApp {
             Action::ToggleViewChrome(chrome) => {
                 let on = !chrome.read(&doc.view);
                 chrome.write(&mut doc.view, on);
-                // ★★★ One of the six has a REMEMBERED answer, kept per
+                // One of the six has a REMEMBERED answer, kept per
                 // ribbon mode; `prefs::offpage::remember` owns which one and
                 // is a no-op for the rest, so this arm stays one arm. The
                 // borrow is legal because `self.status` (which `doc` came
@@ -936,7 +936,7 @@ impl PdfcerApp {
             // raised no action at all (`canvas::guides::release` compares
             // before it pushes), so a redundant write is unreachable rather
             // than merely cheap.
-            // ★ …with the same `stored_under` guard `SetPageDisplay` carries,
+            // …with the same `stored_under` guard `SetPageDisplay` carries,
             // for the same reason and against the same failure: a guide
             // position stored under a name rather than a location is a guide
             // the next `Untitled 1.pdf` inherits. The guides still work in the
@@ -956,7 +956,7 @@ impl PdfcerApp {
                     )
                 });
             }
-            // ★ The three REDACTION arms live in `super::redact`.
+            // The three REDACTION arms live in `super::redact`.
             //
             Action::Redact(
                 redaction @ (RedactAction::BySearch { .. }
@@ -968,7 +968,7 @@ impl PdfcerApp {
             ) => {
                 super::redact::apply(doc, redaction, &self.settings, self.prefs.redaction_reach);
             }
-            // ★ Its own module, not a fourth arm in `redact`: it is the only
+            // Its own module, not a fourth arm in `redact`: it is the only
             // marking route whose geometry comes from the CANVAS.
             Action::Redact(RedactAction::Selection { appearance }) => {
                 super::redactsel::mark_selection(doc, &appearance);
@@ -980,7 +980,7 @@ impl PdfcerApp {
             // the picks, a reorder remaps them, a rotation leaves them alone.
             // Those three answers to one edit are the whole subject over there,
             // and they were the only part of it living here.
-            // ★ The separation policy travels from the settings store, which
+            // The separation policy travels from the settings store, which
             // this scope can see and `pages::apply` cannot. See `pages::delete`
             // for the promise it was until 2026-08-28.
             Action::Page(action) => {
@@ -990,25 +990,25 @@ impl PdfcerApp {
             // correctable refusals, its three unreachable ones and the three
             // conditional clauses of its disclosure — is `super::forms`, whose
             // header carries the measurement that makes the wording necessary.
-            // ★ An export changes NOTHING — no `vector_edit`, no undo entry,
+            // An export changes NOTHING — no `vector_edit`, no undo entry,
             // no epoch bump, no invalidation. It reads the open page and writes
             // a different file, which is why its body is in `super::export`
             // rather than beside the mutations. See that module's header.
-            // ★ One arm for the three file-picker verbs. See
+            // One arm for the three file-picker verbs. See
             // `super::write::WriteAction` for why they are a family: they are
             // `Action`s only because a native dialog must not open inside a
             // layout pass, and none of them changes the open document.
             Action::Text(super::text::TextAction::Reflow { page, block }) => {
                 super::textstyle::reflow(doc, page, block);
             }
-            // ★ The one arm here that changes no document. It carries a
+            // The one arm here that changes no document. It carries a
             // sentence from a keystroke handler across the `crate::app`
             // boundary to the bar — see the variant's own docs for why a
             // keypress needs an `Action` to speak at all.
             Action::Text(super::text::TextAction::EnterCannotSplit) => {
                 crate::app::status::decline::record_enter_cannot_split();
             }
-            // ★ The second arm here that changes no document, and for the same
+            // The second arm here that changes no document, and for the same
             // reason: a keystroke handler in `canvas::` cannot reach the
             // decline store, which is `pub(super)` of `crate::app` on purpose.
             // The character was already declined before this ran — this arm
@@ -1029,14 +1029,14 @@ impl PdfcerApp {
                 // O120. The refusal of an impossible combination, the picker
                 // and the whole disclosure live in `super::export::image`.
                 super::write::WriteAction::Image { plan } => super::export::image(doc, &plan),
-                // ★ The extraction, the scan refusal, the picker and the whole
+                // The extraction, the scan refusal, the picker and the whole
                 // disclosure live in `super::export::text`. The refusal is the
                 // interesting half: a scanned page extracts successfully and
                 // returns nothing, and a zero-byte `.txt` on disk is
                 // indistinguishable from a successful export.
                 super::write::WriteAction::Text { plan } => super::export::text(doc, &plan),
                 super::write::WriteAction::FormData => super::export::form_data(doc),
-                // ★★★ O169. The picker, the folder Acrobat scans, and the
+                // O169. The picker, the folder Acrobat scans, and the
                 // whole disclosure live in `super::stamps`. It changes no
                 // document: the ticked pages are extracted into a new one and
                 // the names are written to THAT, which is what makes
@@ -1049,17 +1049,17 @@ impl PdfcerApp {
                 }
             },
 
-            // ★ Unlike its two neighbours above, this one DOES change the
+            // Unlike its two neighbours above, this one DOES change the
             // document - it is here rather than in `super::export` for that
             // reason alone. One undo entry, one epoch bump, and every page
             // re-rasterized, because a font gaining a program changes how it
             // draws everywhere it is used.
             Action::EmbedFonts { request } => super::fonts::embed(doc, &request),
             Action::UnembedFonts { request } => super::fonts::unembed(doc, &request),
-            // ★ The bookmark family — add, rename, delete-with-its-subtree.
+            // The bookmark family — add, rename, delete-with-its-subtree.
             //
             Action::Bookmark(action) => super::bookmarks::apply(doc, action),
-            // ★ The attachment family — attach, remove, save one out.
+            // The attachment family — attach, remove, save one out.
             //
             // One line, like its neighbours. What its module carries and this
             // arm must not restate: all three open a native file dialog, so the
@@ -1069,7 +1069,7 @@ impl PdfcerApp {
             // changes nothing and bumping the epoch for it would retire a
             // disclosure that is still true.
             Action::Attachment(action) => super::attachments::apply(doc, action),
-            // ★ The form-XObject family — give this page its own copy, today.
+            // The form-XObject family — give this page its own copy, today.
             //
             // One line, like its three neighbours. The one thing its module
             // carries that a reader of THIS file needs: every refusal is worded
@@ -1078,10 +1078,10 @@ impl PdfcerApp {
             // reads as SUCCESS — the copy is byte-identical, so refused and
             // applied look exactly alike on the canvas.
             Action::XObject(action) => super::xobject::apply(doc, action),
-            // ★ **Undo and redo**, through the same [`vector_edit`] funnel every
+            // **Undo and redo**, through the same [`vector_edit`] funnel every
             // other document change goes through — which is the whole of why
             // these two arms are one line each. See [`history_step`].
-            // ★★★ **Everything on the page, wherever it now sits** — and the
+            // **Everything on the page, wherever it now sits** — and the
             // whole argument for the command, which `Action::SelectAllOnPage`
             // points here for.
             //
@@ -1098,7 +1098,7 @@ impl PdfcerApp {
             // box that decides what is painted. Invisible, unreachable, and
             // still in the file.
             //
-            // ★★ This is the way out of the room, and it is deliberately NOT a
+            // This is the way out of the room, and it is deliberately NOT a
             // fix for off-page input sensing — a band still cannot be started
             // off the sheet, and `OPERATOR_REQUESTS.md` O88's direction-
             // sensitive marquee is still owed. What recommends it is that it is
@@ -1106,7 +1106,7 @@ impl PdfcerApp {
             // not, and it turns "I cannot get them back" into one keystroke
             // today.
             //
-            // ★ CONTENT only. Annotations, form widgets and ce dimensions have
+            // CONTENT only. Annotations, form widgets and ce dimensions have
             // their own surfaces and are not in `PageObjects`; sweeping all four
             // kinds into one selection would produce a set most of this shell's
             // verbs would then refuse.
@@ -1125,7 +1125,7 @@ impl PdfcerApp {
             //    or out-of-page coordinates, which is exactly the case this
             //    command exists for. Nothing has to be special-cased for
             //    off-page geometry because nothing is bounded.
-            // ★★ The refusal list is DATA, not an error — the call succeeds
+            // The refusal list is DATA, not an error — the call succeeds
             // with a partial result, which is what the request asked for:
             // "nine changed", not "done".
             Action::SetObjectPaint {
@@ -1158,7 +1158,7 @@ impl PdfcerApp {
             }
             Action::Undo => super::history::history_step(doc, super::history::Direction::Undo),
             Action::Redo => super::history::history_step(doc, super::history::Direction::Redo),
-            // ★ Reaching here means the frame's drain was removed or moved.
+            // Reaching here means the frame's drain was removed or moved.
             // Traced rather than ignored: the symptom otherwise is a control
             // that does nothing on every press, with no evidence why.
             Action::Command(id) => crate::diag::trace(|| {
@@ -1260,7 +1260,7 @@ impl PdfcerApp {
 /// extend; this is the honest interim, and it is one line in one shared
 /// function rather than a convention spread across four verbs and counting.
 ///
-/// # ★ Why the error type is generic, and it is one word of generality
+/// # Why the error type is generic, and it is one word of generality
 ///
 /// It took `pdfcer_core::edit::EditError` for the whole of its life, because
 /// every verb that came through it — delete, the three moves, `add_markup`,

@@ -15,7 +15,7 @@ Asked whether he meant the entity or the snap point, the answer was
 **both** — and this check asserts both, because either alone leaves the
 question the other answers open.
 
-# ★★ Why this cannot be a unit test, in the specific rather than the general
+# Why this cannot be a unit test, in the specific rather than the general
 
 The two halves are resolved in one pass, in `canvas::measure::resolve_hover`,
 while the page decomposition is borrowed — and then painted several
@@ -42,7 +42,7 @@ only thing that has ever caught that class here.
 | C | the same frame's snap marker | `measure-snap-marker` within tolerance of the pointer |
 | D | move to blank paper | the entity line stops being emitted |
 
-★ Phase D is the half that stops this passing on a build that highlights
+Phase D is the half that stops this passing on a build that highlights
 *everything*. A highlight that never retires is not an indication of what
 is under the pointer, it is a decoration — and it would satisfy every
 assertion above it.

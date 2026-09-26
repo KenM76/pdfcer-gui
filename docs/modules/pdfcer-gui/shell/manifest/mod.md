@@ -19,7 +19,7 @@ One file per tab. The tab modules are where the *reasoning* lives —
 why a command sits where it does, what moved, what was left out and
 why — and they are worth reading before changing anything here.
 
-# ★ The no-placeholders rule, and the two registers that keep it honest
+# The no-placeholders rule, and the two registers that keep it honest
 
 `RIBBON_IA.md` P3: *an unavailable capability renders nothing, not a
 disabled stub.* Greying is reserved for **temporarily** unavailable —

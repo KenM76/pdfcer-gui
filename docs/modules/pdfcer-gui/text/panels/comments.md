@@ -29,7 +29,7 @@ The two that carry the most reasoning:
 ## What is new here, and why each one exists
 
 Six entries have no ancestor in the old shell. Every one of them is a
-**disclosure** that `docs/core-api/03-capabilities.md` §3.4 ("★ what the UI
+**disclosure** that `docs/core-api/03-capabilities.md` §3.4 ("what the UI
 must disclose") or §3.5 ("Traps") asks for by name, and each says which:
 
 | Entry | Commissioned by |
@@ -41,7 +41,7 @@ must disclose") or §3.5 ("Traps") asks for by name, and each says which:
 | [`comment_row_is_group_member`] | §3.5 — the §12.5.6.2 group-attribute rule is **deliberately not applied** by core, so what this panel shows is the raw dictionary value and a conforming reader shows something else |
 | [`comment_row_ce_dimension_heading`] / [`comment_row_ce_dimension_no_note`] | project rule 15 — a **ce dimension** is a `/Line` annotation, and a row that called it "Line" would be true about the file and useless to the operator |
 
-## ★ Rule 15 is enforced by a test in this module
+## Rule 15 is enforced by a test in this module
 
 *"Never write a bare 'dimension".* **ce dimensions** are the ones pdfcer
 authors (`/Line` + `/IT /LineDimension` + a `/PieceInfo` sidecar); **pdf
@@ -57,7 +57,7 @@ kind of file where a bare noun slips in during a late reword.
   punctuation for prose.**
 - **Never state a capability the build does not have.**
 
-### ★★★ A SENTENCE ABOUT WHAT THE BUILD CANNOT DO HAS A SHELF LIFE
+### A SENTENCE ABOUT WHAT THE BUILD CANNOT DO HAS A SHELF LIFE
 
 This panel once carried, as a reasoned decision, *"this build's panel has
 no Delete, because `Action` carries no variant that could delete an

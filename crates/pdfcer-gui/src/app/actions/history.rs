@@ -95,7 +95,7 @@ impl Direction {
 ///
 /// The whole of [`Action::Undo`] and [`Action::Redo`].
 ///
-/// # ★ Why this goes through [`vector_edit`] rather than doing the four steps
+/// # Why this goes through [`vector_edit`] rather than doing the four steps
 /// itself
 ///
 /// Because an undo **is** an edit, and the only thing that distinguishes it
@@ -106,7 +106,7 @@ impl Direction {
 /// |---|---|
 /// | cancel the render worker | `EditSession::undo` takes `&mut self`, and `OpenDoc::session` is an `Arc` a rasterizing worker holds a clone of. Without the cancel, `Arc::get_mut` returns `None` **whenever the page happens to be rendering** — an undo that works or does not depending on how fast the sheet drew |
 /// | mutate through `Arc::get_mut` | the same soundness argument, from the other end |
-/// | bump `edit_epoch` | ★ **the step that makes the undo visible.** Every epoch-keyed cache — the page decomposition, the page-text extraction, the font inventory, the canvas selection's resolution, the Objects panel's count — believes it still describes the document until this moves. An undo that skipped it would restore the bytes and leave the operator looking at the state they just took back |
+/// | bump `edit_epoch` | **the step that makes the undo visible.** Every epoch-keyed cache — the page decomposition, the page-text extraction, the font inventory, the canvas selection's resolution, the Objects panel's count — believes it still describes the document until this moves. An undo that skipped it would restore the bytes and leave the operator looking at the state they just took back |
 /// | drop the cached texture | `settle_and_rasterize` keys the page texture on the page index and the raster scale, and an undo changes neither, so nothing else would notice. This is what re-rasters the page |
 ///
 /// Writing those four again here would be the fifth hand-written copy of a
@@ -149,7 +149,7 @@ impl Direction {
 pub(super) fn history_step(doc: &mut OpenDoc, direction: Direction) {
     let event = direction.event();
     let Some(kind) = direction.peek(&doc.session) else {
-        // ★ Unreachable from a control and reachable from a chord. See
+        // Unreachable from a control and reachable from a chord. See
         // `Declined::NothingToUndo`: the QAT button is greyed by
         // `undo.available`, and `Ctrl+Z` is offered in every mode because the
         // command is on no tab, so this is the keyboard's path and it is the

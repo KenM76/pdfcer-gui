@@ -19,7 +19,7 @@ that happened*. All four are decisions, and the application now publishes
 them on the `dock-drop` and `dock-tear` trace slots. These checks read
 those.
 
-# ★ Two channels, published by different mechanisms, cross-checked
+# Two channels, published by different mechanisms, cross-checked
 
 The decision arrives on the trace slot. The *painting* arrives as a
 published region — `dock.<addr>.zone.<zone>` for the armed quadrant and
@@ -30,7 +30,7 @@ the compass over the compartment next door. Asserting both is what makes
 the pair mean *"the operator was shown the thing that then happened"*
 rather than *"a decision was taken somewhere"*.
 
-# ★★ Nothing here is hard-coded to a compartment
+# Nothing here is hard-coded to a compartment
 
 The arrangement is discovered from the regions the run itself published:
 which compartments the dock drew, which tabs are in which, and which of

@@ -1,7 +1,7 @@
 //! # `shell::commands::catalog::pages` — the Pages tab — what happens to the set of sheets
 //!
 //!
-//! ## ★★★ The split is per TAB, and the reason it was refused before is gone
+//! ## The split is per TAB, and the reason it was refused before is gone
 //!
 //! [`super`]'s header argued against exactly this cut:
 //!
@@ -36,7 +36,7 @@ pub(super) fn band() -> Vec<Command> {
         command("pages.extract", t::pages_extract(), 311)
             .with_icon("page-extract")
             .enabled_when("doc.pages"),
-        // ★ These two REUSE existing keys rather than gaining art, and the
+        // These two REUSE existing keys rather than gaining art, and the
         // reuse is the catalogue's own documented meaning rather than a
         // near-enough substitution. `crate::icons::Icon::ChevronUp`'s doc
         // comment already reads: *"'Move selection up' in the page rail and
@@ -97,14 +97,14 @@ pub(super) fn band() -> Vec<Command> {
             .with_icon("rotate-cw")
             .enabled_when("doc.pages"),
         //
-        // ★ `doc.pages` and no new condition, on this band's own rule stated at
+        // `doc.pages` and no new condition, on this band's own rule stated at
         // the top of the file: with nothing picked it acts on the current
         // sheet, which is a defined answer and not a disabled state. Adding an
         // "are any picked" condition would also mean adding a string to
         // `shell::commands`' closed condition vocabulary, and a command gated
         // on a condition nothing produces is permanently and silently greyed.
         //
-        // ★★ The icon is `page-single`, **shared** with `view.page_single`
+        // The icon is `page-single`, **shared** with `view.page_single`
         // under the header's shared-key convention. Two reasons, and only the
         // second is a preference: the two are never drawn together, because
         // View is a different tab and one tab's band shows at a time; and there
@@ -116,12 +116,12 @@ pub(super) fn band() -> Vec<Command> {
         command("pages.resize", t::pages_resize(), 325)
             .with_icon("page-single")
             .enabled_when("doc.pages"),
-        // ★★ The PAGE clipboard — O59 item 2. Three commands rather than a
+        // The PAGE clipboard — O59 item 2. Three commands rather than a
         // chord: `app::dispatch::pageclip`'s header carries why, and the short
         // form is that the `pages.*` operand rule always resolves, so a chord
         // rung reading it would take Ctrl+C from the canvas for ever.
         //
-        // ★ Gated on `doc.pages` alone. There is no "are any picked" condition
+        // Gated on `doc.pages` alone. There is no "are any picked" condition
         // and there must not be: with nothing picked these act on the current
         // sheet, which is a defined answer rather than a disabled state --
         // exactly as `pages.delete` and `pages.rotate_*` already behave.

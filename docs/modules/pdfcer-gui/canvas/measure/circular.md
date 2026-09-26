@@ -7,7 +7,7 @@ the decomposition so the set can be drawn. [`super`] hosts the other two
 tools and everything the three share — the memory, the snap resolution, the
 preview painting.
 
-## ★ Why this is a file of its own, and what the seam actually is
+## Why this is a file of its own, and what the seam actually is
 
 **R2** (no `.rs` file over 1,500 lines) forced a split when the tool was
 armed: [`super`] reached 1,617 lines. But the line count only says *that*

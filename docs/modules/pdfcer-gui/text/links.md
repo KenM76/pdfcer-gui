@@ -3,7 +3,7 @@
 Consumed by [`crate::canvas::links`]. Five sentences, and **four of them are
 about failure**, which is the shape of the problem rather than pessimism.
 
-## ★★★ Why a link that works says nothing at all
+## Why a link that works says nothing at all
 
 Because it navigates. `pdfcer_core::outline::Destination::Page` is the only
 variant this program can perform, and performing it *is* the feedback — the
@@ -17,7 +17,7 @@ over a link that can be followed and nothing over one that cannot. That is
 rule 4's pre-commit clause — a cursor is an affordance, not a mark on the
 content — and it is also every reader ever written.
 
-## ★★ Why the four failures are FOUR sentences and not one
+## Why the four failures are FOUR sentences and not one
 
 `Destination` has five variants and only one navigates. The engine's own
 note on shipping the reader is the argument, quoted because it is exact:
@@ -40,7 +40,7 @@ Telling somebody their link is broken when the truth is *"this link opens a
 web page and this program does not open web pages"* sends them looking for
 a defect in their document that does not exist.
 
-## ★ Where these appear, and where they must never appear
+## Where these appear, and where they must never appear
 
 **Off-canvas, in the status line, on a click.** Never as a mark on the page,
 never as a tint over the link's rectangle, never as a badge. Rule 4's
@@ -49,7 +49,7 @@ content and not drawn *into* it, and this project's own record of the old
 GUI is that *"the nagging and red flagging … made for a lot of extra bugs in
 the visibility when editing"*.
 
-★★ They are also raised **only on a click**, never on hover. A sentence that
+They are also raised **only on a click**, never on hover. A sentence that
 appeared merely because the pointer crossed a rectangle would fire dozens of
 times crossing a table of contents, and a status line that changes without
 the operator having done anything is a status line they stop reading.

@@ -18,7 +18,7 @@ const TAB: &str = "view";
 
 /// The control pressed, and it is deliberately **not** the compiled-in default.
 ///
-/// ★ `PageDisplay::Single` is what a fresh install shows, so a check that chose
+/// `PageDisplay::Single` is what a fresh install shows, so a check that chose
 /// Single would pass against a build that persisted nothing at all — the
 /// preference and the default would agree and the check could not tell them
 /// apart. Facing is nobody's default.
@@ -32,7 +32,7 @@ const DISPLAY_EVENT: &str = "page-display";
 
 /// `exit-flush layout-written=…` — the exit hook's own record that it ran.
 ///
-/// ★ Traced even when nothing was pending, deliberately: *"the hook ran and had
+/// Traced even when nothing was pending, deliberately: *"the hook ran and had
 /// nothing to do"* and *"the hook never ran"* are the two states the defect hid
 /// between, and a line that only appeared on a write could not tell them apart.
 const FLUSH_EVENT: &str = "exit-flush";
@@ -103,7 +103,7 @@ fn normalise(exe: &Path, report: &mut CheckReport) {
     };
     let mut removed = Vec::new();
     for name in STATE_FILES {
-        // ★★★ The preferences file is RESET to the sandbox's seed rather than
+        // The preferences file is RESET to the sandbox's seed rather than
         // deleted, and the difference is not cosmetic.
         //
         if name == "preferences.txt" {
@@ -220,7 +220,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     crate::checks::ocr::click_command(&session, &driver, ui_rect, COMMAND)?;
     report.note(format!("pressed `{COMMAND}` on the ribbon"));
 
-    // ★★★ **CLOSE IMMEDIATELY, AND GRACEFULLY.** No settle between the click
+    // **CLOSE IMMEDIATELY, AND GRACEFULLY.** No settle between the click
     // and the chord: the whole subject is a change made inside the 750 ms write
     // debounce, and pausing here would let the debounce expire and quietly turn
     // this into a check of the ordinary path. `Alt+F4` is a real `WM_CLOSE`, so
@@ -240,7 +240,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             u64::from(CLOSE_FRAMES) * 25 / 1000
         )));
     }
-    // ★ The process is MEANT to be gone by here — Alt+F4 was pressed and the
+    // The process is MEANT to be gone by here — Alt+F4 was pressed and the
     // loop above waited for it. Said out loud so `Session::trace`'s liveness
     // guard, which otherwise reports a dead process as a red failure, knows
     // this exit is the subject rather than a crash. See that function.
@@ -249,7 +249,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     match trace.last(FLUSH_EVENT) {
         Some(line) => {
             report.note(format!("the exit hook ran: `{}`", line.raw));
-            // ★★★ **WHAT A `layout-written=false` MEANS, said rather than
+            // **WHAT A `layout-written=false` MEANS, said rather than
             // implied.**
             //
             // The exit hook ran and the LAYOUT store had nothing pending. That
@@ -257,7 +257,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             // display and not the ribbon mode — and the layout file is what
             // carries the mode.
             //
-            // ★★ So this run proves the hook is CALLED and proves the standing
+            // So this run proves the hook is CALLED and proves the standing
             // preference survives; it does NOT exercise the debounce rescue,
             // because there was nothing in the debounce to rescue. A reader who
             // took the green as covering both halves would be taking more than
@@ -363,7 +363,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 mod tests {
     use super::*;
 
-    /// ★★★ **The control pressed must not be the compiled-in default.**
+    /// **The control pressed must not be the compiled-in default.**
     ///
     /// `PageDisplay::Single` is what a fresh install shows. A check that chose
     /// Single would pass against a build that persisted nothing whatsoever —
@@ -382,7 +382,7 @@ mod tests {
 
     /// The two documents are different files.
     ///
-    /// ★ Pinned because the whole subject is *a document the program has never
+    /// Pinned because the whole subject is *a document the program has never
     /// seen*: opening the same file twice would be answered by the per-document
     /// record, correctly, and would hide the missing tier completely.
     #[test]
@@ -392,7 +392,7 @@ mod tests {
 
     /// The state files normalised are the three that carry this answer.
     ///
-    /// ★ `page-display.txt` is the per-document record, `preferences.txt` holds
+    /// `page-display.txt` is the per-document record, `preferences.txt` holds
     /// the standing preference, and `layout.ron` carries the ribbon mode — which
     /// picks the default for a document with no entry, and is therefore the
     /// third way a stale file could make this check pass without the feature.

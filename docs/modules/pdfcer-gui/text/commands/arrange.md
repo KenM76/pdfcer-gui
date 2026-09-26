@@ -1,7 +1,7 @@
 # `text::commands::arrange` — the four labels of **Markup ▸ Arrange**, the
 controls that decide which mark is on top
 
-## ★ Why this is a file of its own
+## Why this is a file of its own
 
 **R2**, and the same seam [`super::markupstyle`] took hours earlier the same
 day: [`super`] is a large catalog that has already been split twice, and four
@@ -17,7 +17,7 @@ now form a sequence a reader can hold:
 | [`super::markupstyle`] | **restyle** a mark already placed | `set_markup_style`, an `ObjId` |
 | this one | **re-depth** a mark already placed | `reorder_annotations`, the page's whole `/Annots` |
 
-## ★★★ The word the four labels must NOT use, and it is the one the file
+## The word the four labels must NOT use, and it is the one the file
 format uses
 
 *Z-order.* Every one of these controls is about `/Annots` array order, which
@@ -34,7 +34,7 @@ about this feature before they opened pdfcer.
 
 ⇒ So the labels are borrowed verbatim, and the tooltips do the explaining.
 
-## ★★ What each tooltip has to say that the label cannot
+## What each tooltip has to say that the label cannot
 
 The labels are a **pair of pairs** — two ends and two single steps — and the
 failure mode they invite is pressing *Bring forward* four times when *Bring
@@ -47,7 +47,7 @@ and it is not guessable: `/Annots` is per page (§7.7.3.4 — it is not
 inheritable), so "in front of everything" means in front of everything on
 this sheet and says nothing about the next one.
 
-★ None of the four names a keyboard chord, per [`crate::text::shortcuts`]'
+None of the four names a keyboard chord, per [`crate::text::shortcuts`]'
 rule: the keys are in the manifest's keymap and the shortcuts window reads
 them from there. A chord written into a tooltip is `DEFECTS.md` D5's shape —
 a second statement of a fact that already has one.

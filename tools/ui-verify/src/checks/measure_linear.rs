@@ -589,7 +589,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "P1 Linear across the click: {p1}; P2 Linear vs Two-line in one capture: {p2}; \
          P3 Two-line across the click: {p3}; threshold {MIN_PRESSED_DELTA}"
     ));
-    // ★ From here on, a failed assertion is COLLECTED rather than returned.
+    // From here on, a failed assertion is COLLECTED rather than returned.
     //
     // Everything above this line is a precondition for everything below it —
     // no arm, no picks — so those exits are early and stay early. The three
@@ -676,7 +676,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- step 8: three picks on the page ----------------------------------
     //
-    // ★ One pick is one OR TWO clicks — see the module header's rule-4
+    // One pick is one OR TWO clicks — see the module header's rule-4
     // section. Each click must produce exactly one `measure-pick` line; a
     // `Promoted` line means the application found an inference and is asking
     // before acting on it, so the same point is clicked again, at most
@@ -776,7 +776,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ));
     }
 
-    // ★ The shape of the sequence IS the feature: two picks that take, and a
+    // The shape of the sequence IS the feature: two picks that take, and a
     // third that commits. Both halves are asserted, because a tool that
     // committed on pick A would satisfy "a dimension was placed" perfectly.
     let trace = session.trace()?;
@@ -802,7 +802,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- the DOCUMENT assertion -------------------------------------------
     //
-    // ★ The one that a `committed=true` cannot make. See the module header's
+    // The one that a `committed=true` cannot make. See the module header's
     // §"link 6": the shell raising an action and the engine accepting it are
     // two different facts, and only the second one changes the document.
     let commits: Vec<&crate::trace::TraceLine> = trace.events(COMMIT_EVENT).collect();
@@ -1009,7 +1009,7 @@ mod tests {
         assert_eq!(line.get("kind"), Some(PICK_KIND));
     }
 
-    /// ★ **A promotion is not a pick, and it is not a failure either.**
+    /// **A promotion is not a pick, and it is not a failure either.**
     ///
     /// The two shapes share one event name, so the classification is a field
     /// read. Getting it wrong in either direction is a real hazard: a

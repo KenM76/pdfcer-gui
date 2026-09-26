@@ -17,7 +17,7 @@ first and driven, and pressing Ctrl+F under Fit page took the zoom from
 85 % to 81 % and back again on close — a page that jumps every time you go
 looking for a word on it.
 
-## ★ The four search options live in a menu, not on the bar
+## The four search options live in a menu, not on the bar
 
 Match case, Whole word, Wildcards and the whole-word **rule** are behind
 the `Options` button. Three reasons, in order of weight:
@@ -37,7 +37,7 @@ the `Options` button. Three reasons, in order of weight:
    operator is aiming at, is the difference between a tidy layout and a
    mis-click.
 
-## ★ The width is fixed, and nothing on the bar may move
+## The width is fixed, and nothing on the bar may move
 
 The box is anchored by its **top-right corner** to the canvas viewport, so
 its left edge is `right − width`: any change of width moves every control
@@ -55,7 +55,7 @@ and an `egui::Area` feeds no such computation because it consumes none of
 the layout. Docking the bar is what would have made R128 bind, and that is
 one of the reasons it is not docked.
 
-## ★ The three keys, and the one that is shared
+## The three keys, and the one that is shared
 
 | key | while the field has focus | otherwise |
 |---|---|---|
@@ -79,7 +79,7 @@ one-press-one-effect rule `canvas::interact` applies between the gesture
 machine and the ladder. The close button and Ctrl+F are the routes out from
 there, and both are visible.
 
-## ★ What Enter does depends on whether the answer is still current
+## What Enter does depends on whether the answer is still current
 
 [`super::FindState::readout`] is the single test, and [`enter_intent`] is
 the whole decision as a pure function of it:

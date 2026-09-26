@@ -298,7 +298,7 @@ pub fn mean_luminance(img: &Image, region: PixRect) -> Option<f64> {
 /// thing always present (antialiasing) and said nothing about the thing it
 /// wanted (a run of glyph ink).**
 ///
-/// ⇒ ★★★ **This is a better instrument, not a wider tolerance**, and the
+/// ⇒ **This is a better instrument, not a wider tolerance**, and the
 /// distinction is the project's standing rule: when a measurement runs out,
 /// read something else — never move the threshold until the failure stops.
 /// Text that has genuinely overflowed is **dark** and **contiguous**: a clipped

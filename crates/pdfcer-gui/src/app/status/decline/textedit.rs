@@ -10,14 +10,14 @@ use super::{Declined, LAST};
 /// **Record that a paragraph reflow did not happen, and why** —
 /// `OPERATOR_REQUESTS.md` **O127**, defect 3.
 ///
-/// ★★ Called from **two positions**, which is deliberate rather than untidy:
+/// Called from **two positions**, which is deliberate rather than untidy:
 /// `app::dispatch::text` resolves the caret and can decline before any verb
 /// runs, and `app::actions::textstyle` maps the engine's own refusal after one
 /// has. Both name a cause the operator can act on, and neither can see the
 /// other's — so merging them would mean one of the two speaking for a condition
 /// it cannot observe.
 ///
-/// ★ The `textstyle` call site is what makes the engine's half legible at all.
+/// The `textstyle` call site is what makes the engine's half legible at all.
 /// It writes through `Result::inspect_err` **inside** the funnel's closure, and
 /// the ordering is what makes that work: `vector_edit` takes the decline floor
 /// *before* running the closure, and `BeforeTheVerb::refused` fills the slot
@@ -31,20 +31,20 @@ pub(crate) fn record_reflow(why: crate::text::textedit::ReflowRefusal) {
 /// **Record that Enter could not make a line break here** —
 /// `OPERATOR_REQUESTS.md` **O127**, defect 2.
 ///
-/// ★★ The one decline in this module raised by a **keystroke** rather than by a
+/// The one decline in this module raised by a **keystroke** rather than by a
 /// command or a verb, and it belongs here for exactly the reason the others do:
 /// the operator did something, nothing happened, and the slot that says so
 /// wears `⊗`. A key that quietly does something else is the same defect class
 /// as a button that quietly does nothing — this project's founding one.
 ///
-/// ★ It arrives by `Action`, not by a direct call. `canvas::textedit::keys` is
+/// It arrives by `Action`, not by a direct call. `canvas::textedit::keys` is
 /// outside `crate::app`, and [`super`] is `pub(super)` there on purpose — *"a
 /// decline is written by the one dispatcher and read by the one bar"*. So the
 /// keystroke raises `TextAction::EnterCannotSplit` and the apply arm calls
 /// this. Widening the module's visibility so a keystroke handler could reach
 /// the store would have traded a real invariant for two saved lines.
 ///
-/// ★ The draft is left **alive** afterwards, which matters to the wording as
+/// The draft is left **alive** afterwards, which matters to the wording as
 /// well as to the gesture: the sentence is about the key just pressed, the
 /// operator is still in the text it is about, and *"press Ctrl+Enter to finish
 /// this edit"* therefore names something they can do right now.
@@ -52,7 +52,7 @@ pub(crate) fn record_enter_cannot_split() {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::EnterCannotSplit));
 }
 
-/// ★★★ **Record that a key was declined before it reached the draft** —
+/// **Record that a key was declined before it reached the draft** —
 /// `OPERATOR_REQUESTS.md` **O140/O141**, pre-commit half, 2026-09-09.
 ///
 /// The operator's report was *"if I try to edit the edit is not accepted"*, and
@@ -63,7 +63,7 @@ pub(crate) fn record_enter_cannot_split() {
 /// use.
 ///
 ///
-/// # ★★ Why the sentence is [`EditRefusal::RunCannotTake`] and not one of the
+/// # Why the sentence is [`EditRefusal::RunCannotTake`] and not one of the
 /// # two that name a cause
 ///
 /// Because the shell does not have a cause here — it has a **set**, and the
@@ -83,7 +83,7 @@ pub(crate) fn record_enter_cannot_split() {
 /// and this character is not in the set — and points at the remedy, which is
 /// the same remedy for all four causes.
 ///
-/// # ★★★ `typed: None`, and it is not an omission
+/// # `typed: None`, and it is not an omission
 ///
 /// [`crate::panels::properties::refusedchar::record`]'s last argument is *what
 /// the operator was trying to write*, and it exists because the commit-time
@@ -94,7 +94,7 @@ pub(crate) fn record_enter_cannot_split() {
 /// copy of the text to re-apply would make the offer re-write text that has not
 /// been lost — the same word twice.
 ///
-/// ★ So this recorder is the *pre*-commit twin of [`record_edit_text_refusal`],
+/// So this recorder is the *pre*-commit twin of [`record_edit_text_refusal`],
 /// and the difference between them is exactly one fact: whether the draft
 /// survived. That difference is also the one clause
 /// [`EditRefusal::RunCannotTake`]'s sentence carries and its two neighbours
@@ -118,12 +118,12 @@ pub(crate) fn record_key_refused(page: usize, run: usize, character: char, base_
     crate::panels::properties::refusedchar::record(page, run, character, base_font, None);
 }
 
-/// ★★★ **Record that a committed text edit was refused, and which kind of
+/// **Record that a committed text edit was refused, and which kind of
 /// refusal it was** — `OPERATOR_REQUESTS.md` **O140**, 2026-09-05.
 ///
 /// The operator: *"if I try to edit the edit is not accepted."*
 ///
-/// ## ★★ It belongs in this file, and the seam holds
+/// ## It belongs in this file, and the seam holds
 ///
 /// This module answers *"what does the text caret decline, and who says so?"*
 /// and this is the third such decline — the one raised when the caret's own
@@ -132,14 +132,14 @@ pub(crate) fn record_key_refused(page: usize, run: usize, character: char, base_
 /// `Result::inspect_err`, so the funnel's decline floor lets it stand and the
 /// generic *"That change was refused"* stands aside.
 ///
-/// ★ [`record_reflow`]'s note on the ordering is the whole mechanism and is not
+/// [`record_reflow`]'s note on the ordering is the whole mechanism and is not
 /// repeated here: `vector_edit` takes the floor **before** running the closure,
 /// and `BeforeTheVerb::refused` fills the slot only `if slot.is_none()`. Reflow
 /// was the first verb to use that; this is the second, and the second is what
 /// turns a one-off into the documented route for any verb that learns to
 /// classify its own refusal.
 ///
-/// ## ★★★ Why this is a *narrower* decline than the one it sits beside
+/// ## Why this is a *narrower* decline than the one it sits beside
 ///
 /// [`Declined::EditRefused`] — the funnel's own floor — is still there and is
 /// still what every other verb in the shell falls back to. What is different
@@ -154,7 +154,7 @@ pub(crate) fn record_key_refused(page: usize, run: usize, character: char, base_
 /// in the sentence: one says the document is unchanged, the other says why it
 /// is and whether anything can be done.
 ///
-/// ## ★ Written unconditionally, overwriting whatever was live
+/// ## Written unconditionally, overwriting whatever was live
 ///
 /// [`super::record_text_style`]'s rule, for the reason this file's header
 /// gives: an operator who commits twice must see the second commit's answer,
@@ -289,7 +289,7 @@ pub(crate) fn record_edit_text_refusal(
         // field. `character=none` when the refusal named none, which is the
         // R-INV-2/3/4 case where the encoding itself is unreadable.
         // ui-text-exempt: diagnostic trace, never displayed.
-        // ★★ `said` is `EditRefusal::name`, NOT `{why:?}` — see that function.
+        // `said` is `EditRefusal::name`, NOT `{why:?}` — see that function.
         // A payload added to a variant changed this field's spelling once, and
         // two driven checks went red against a build that was working.
         let said = why.name();
@@ -309,7 +309,7 @@ pub(crate) fn record_edit_text_refusal(
         )
     });
     record_edit_text(why);
-    // ★★★ **O141 — the offer, raised in the same breath as the sentence.**
+    // **O141 — the offer, raised in the same breath as the sentence.**
     //
     // One event, two surfaces: the bar says *what stopped* and names where the
     // answer is; `panels::properties::refusedchar` names the character and
@@ -319,7 +319,7 @@ pub(crate) fn record_edit_text_refusal(
     // nothing joined them.
     if let Some((character, base_font)) = missing {
         //
-        // ★ Read from `canvas::textedit::last_commit` rather than passed in,
+        // Read from `canvas::textedit::last_commit` rather than passed in,
         // and that module's [`Committing`] doc carries the whole argument: the
         // one call site of this function is inside `vector_edit`'s closure in
         // `app::actions::apply`, where nothing but the session and the error is
@@ -337,7 +337,7 @@ pub(crate) fn record_edit_text_refusal(
 /// **The character the engine could not encode, and the face it was refused
 /// against** — or `None` when the refusal was not about one character.
 ///
-/// # ★★★ Why reading a variant is licensed here, when this module's own header
+/// # Why reading a variant is licensed here, when this module's own header
 /// forbids it
 ///
 /// The header forbids *"matching on `EditError`'s variants"* to derive **the
@@ -357,7 +357,7 @@ pub(crate) fn record_edit_text_refusal(
 /// carry — with the difference that this fact is the engine's own and is simply
 /// being passed through.
 ///
-/// ★ The `_` arm is not laziness: `EditError` is `#[non_exhaustive]`, so an
+/// The `_` arm is not laziness: `EditError` is `#[non_exhaustive]`, so an
 /// error the engine adds later must land somewhere honest, and *"this refusal
 /// was not about one character"* is true of every error that is not
 /// `Refused`. Getting that wrong in the other direction — inventing a character
@@ -385,7 +385,7 @@ fn missing_character(error: &pdfcer_core::text_edit::EditError) -> Option<(char,
 /// **Which of the two character-level refusals this is** — `Pass 256.1`,
 /// consumed 2026-09-06.
 ///
-/// # ★★★ Why the shell reads `trigger` here when it reads no other trigger id
+/// # Why the shell reads `trigger` here when it reads no other trigger id
 ///
 /// `app::status::decline::textedit`'s own header forbids building a second copy
 /// of the engine's taxonomy, and grepping `Display` prose for a cause is exactly
@@ -410,7 +410,7 @@ fn missing_character(error: &pdfcer_core::text_edit::EditError) -> Option<(char,
 /// operator told the false version would go looking for a missing letter that is
 /// on his page in front of him.
 ///
-/// ★ `Pass 256.1`'s own reply names the sentence it wants: *"this letter has two
+/// `Pass 256.1`'s own reply names the sentence it wants: *"this letter has two
 /// glyphs in this font; pick another font for it"*. That is what
 /// [`crate::text::textedit::font_has_two_glyphs_for`] says.
 ///

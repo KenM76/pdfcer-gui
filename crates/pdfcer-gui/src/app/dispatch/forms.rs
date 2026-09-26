@@ -22,7 +22,7 @@ use crate::panels::forms::edit::FormEdit;
 /// record rather than an inference.
 pub(super) fn arm(app: &PdfcerApp, ctx: &egui::Context, id: &str, kind: FormFieldKind) {
     if !app.capabilities().edit_content {
-        // ★ `edit_content`, not `author_markup`: a form field is a change to
+        // `edit_content`, not `author_markup`: a form field is a change to
         // the document's own content rather than an annotation over it, so
         // Review mode places no controls. Pairing it with markup would let a
         // reviewer author interactive controls, which is not a review activity.
@@ -32,13 +32,13 @@ pub(super) fn arm(app: &PdfcerApp, ctx: &egui::Context, id: &str, kind: FormFiel
         });
         return;
     }
-    // ★★ **No branch here refuses an inert kind, and that is load-bearing
+    // **No branch here refuses an inert kind, and that is load-bearing
     // rather than an oversight.** `FormFieldKind::is_useful_once_placed`
     // answers `true` for every kind the enum currently carries, so such a
     // branch could not fire — and a branch that cannot fire is a mechanism with
     // no caller, which rots silently and is believed anyway.
     //
-    // ★★ The guard lives where it can still fail:
+    // The guard lives where it can still fail:
     // `canvas::formfield`'s `no_kind_is_authorable_but_inert`. A new kind pdfcer
     // can author and cannot use fails that test, and its message names both
     // halves of the repair — a condition `app::conditions` does not set, AND a
@@ -50,7 +50,7 @@ pub(super) fn arm(app: &PdfcerApp, ctx: &egui::Context, id: &str, kind: FormFiel
 
 /// **Flatten every field in the document**, or decline in words.
 ///
-/// # ★★ Flattening is NOT a destructive verb, and takes no blocking modal
+/// # Flattening is NOT a destructive verb, and takes no blocking modal
 ///
 /// It is one `EditSession` command and therefore one `Ctrl+Z`, and
 /// `EditSession::flatten_fields` **appends** an overlay stream while leaving
@@ -62,10 +62,10 @@ pub(super) fn arm(app: &PdfcerApp, ctx: &egui::Context, id: &str, kind: FormFiel
 /// applies to this ribbon route unchanged. `text::forms`'
 /// `forms_flatten_tooltip` is where the wording lives.
 ///
-/// ★ It is on the ribbon *as well as* in the Forms panel because a command
+/// It is on the ribbon *as well as* in the Forms panel because a command
 /// buried in a panel is reachable only by someone who already opened the panel.
 ///
-/// # ★★ Why this raises the SAME action as the panel button, and takes no
+/// # Why this raises the SAME action as the panel button, and takes no
 /// extra gate
 ///
 /// It pushes `FieldAction::Edit(FormEdit::Flatten)` — the identical intent,
@@ -73,7 +73,7 @@ pub(super) fn arm(app: &PdfcerApp, ctx: &egui::Context, id: &str, kind: FormFiel
 /// implementations. `Action::Command` makes that argument for command-to-command
 /// routes and it is the same argument here.
 ///
-/// ★ And it deliberately adds **no mode gate**, though `arm` above has one.
+/// And it deliberately adds **no mode gate**, though `arm` above has one.
 /// The Edit tab is shown only in Edit, so the ribbon route is already
 /// mode-scoped; a chord could reach further, and there is no chord. What
 /// decided it is that the **panel** offers Flatten with no mode gate, in every
@@ -96,7 +96,7 @@ pub(super) fn flatten(app: &PdfcerApp, id: &str, actions: &mut Vec<Action>) {
     let Status::Open(doc) = &app.status else {
         return;
     };
-    // ★ A worded decline, never silence. `enabled_when("doc.pages")` greys this
+    // A worded decline, never silence. `enabled_when("doc.pages")` greys this
     // control on an empty document and says nothing about certification, so an
     // operator on a certified form meets a live control that must refuse — and
     // `dispatch::forms`' own header carries the ruling: *greying is a hint; the

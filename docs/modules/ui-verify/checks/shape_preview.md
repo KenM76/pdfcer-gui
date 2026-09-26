@@ -14,7 +14,7 @@ He was right, and it was a written convention rather than an oversight —
 `canvas/handledrag.rs` said *"a preview shows the cursor, the render shows
 the document."* That convention is now overruled by operator ruling.
 
-# ★★★ Why this needs TWO trace lines and not one
+# Why this needs TWO trace lines and not one
 
 The shell publishes:
 
@@ -42,7 +42,7 @@ operator watches the object snap back to where it started and then jump
 forward a second later, which reads as the program refusing the edit and
 changing its mind.
 
-★ The hold is asserted **after** the drag, from the same trace, because it is
+The hold is asserted **after** the drag, from the same trace, because it is
 the half that has no visible difference from "no preview at all" on a page
 that rasterises quickly — and every fixture in this repository rasterises
 quickly. A check that only drove the fast case would pass on a build with the

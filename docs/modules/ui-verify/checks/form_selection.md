@@ -32,7 +32,7 @@ screen, and every one of them has been a real defect on this project:
 | the **dock geometry** | a panel width changes the canvas rect, which has silently invalidated harness coordinates before |
 | the **click actually reaching egui** | in-process injection would not exercise the focus machinery a person's click does |
 
-★ *"The tests pass"* is not a report of working software. That is the rule
+*"The tests pass"* is not a report of working software. That is the rule
 this project was founded on, and this file is its discharge for the form
 work.
 
@@ -55,7 +55,7 @@ the same document.
    box;
 6. assert the selection is **empty**.
 
-★★ **Step 6 is the half that is easy to lose and expensive to lose.** It
+**Step 6 is the half that is easy to lose and expensive to lose.** It
 forbids the tempting "fall back to the shallow hit test when the deep one
 finds nothing" repair, which would answer a click on blank paper inside a
 page-sized form with the form — the operator's original complaint, restored,

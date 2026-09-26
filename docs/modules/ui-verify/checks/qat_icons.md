@@ -16,7 +16,7 @@ ui-rect name=ribbon.qat.file.open rect=[[8.0 5.0] - [81.1 23.0]]     <- 73 pt: a
 ui-rect name=ribbon.qat.file.open rect=[[8.0 5.0] - [32.0 23.0]]     <- 24 pt: a glyph
 ```
 
-# ★ Why no unit test could have caught it, which is why this file exists
+# Why no unit test could have caught it, which is why this file exists
 
 `egui_shell::ribbon::qat`'s `shows_label` decides icon-only from **three**
 conditions: the command names an icon, it has a tooltip to serve as that

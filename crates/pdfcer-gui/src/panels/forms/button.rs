@@ -34,7 +34,7 @@ pub(super) fn row(
     let state = match doc.session.button_action(&fqn) {
         Ok(state) => state,
         Err(why) => {
-            // ★ The reader's refusals match the writer's, by the engine's own
+            // The reader's refusals match the writer's, by the engine's own
             // decision: a shell must not learn through the reader about a field
             // it would be refused permission to change. So a refusal here is
             // reported and nothing is offered — there is nothing this row could
@@ -71,7 +71,7 @@ pub(super) fn row(
         format!("button-action-read name={fqn:?} state={}", name_of(&state))
     });
 
-    // ★★★ R9: `Foreign` renders NOTHING further. Not a greyed Change button —
+    // R9: `Foreign` renders NOTHING further. Not a greyed Change button —
     // greying says "not now" and the truth is "not ever, by decision". pdfcer
     // will not author a script and will not overwrite one, and a control that
     // looked like it might is a promise the press would break.
@@ -84,7 +84,7 @@ pub(super) fn row(
         let change = ui.button(t::change_button());
         crate::diag::ui_rect_visible(REGION_CHANGE, change.rect, ui.clip_rect());
         if change.clicked() {
-            // ★★ The chooser opens on what the button ALREADY does, when that
+            // The chooser opens on what the button ALREADY does, when that
             // is knowable. `Unmodelled` cannot seed it — pdfcer did not decode
             // the instance — so it opens at `Nothing`, which is the one value
             // that is not a claim about what is there. The sentence above has
@@ -127,7 +127,7 @@ pub(super) fn row(
 
 /// Which chooser entry a modelled action corresponds to.
 ///
-/// ★ A `match` rather than a `From`, because the mapping is **lossy on
+/// A `match` rather than a `From`, because the mapping is **lossy on
 /// purpose**: the chooser has one entry per kind and an action carries
 /// parameters. This answers *"which row is ticked"*, and [`from_core`] answers
 /// *"what does the row start with"*. Two functions because they are two
@@ -149,7 +149,7 @@ fn kind_of(action: &ButtonAction) -> ButtonDoesKind {
 
 /// Seed the chooser from what the button already does.
 ///
-/// ★★ Only the parameters this shell can round-trip are carried. A
+/// Only the parameters this shell can round-trip are carried. A
 /// `ResetScope::Only`/`Except` becomes the chooser's *whole form* reset,
 /// because the chooser offers no field picker for a reset — and the module that
 /// owns that decision says why: the preview it can show is the whole-form
@@ -209,7 +209,7 @@ const fn name_of(state: &ButtonActionState) -> &'static str {
 mod tests {
     use super::*;
 
-    /// ★★★ **Every modelled action maps to a chooser entry that is not
+    /// **Every modelled action maps to a chooser entry that is not
     /// `Nothing`.**
     ///
     /// The failure this guards is silent and severe: a `Known` action whose
@@ -237,7 +237,7 @@ mod tests {
         }
     }
 
-    /// ★★ The seed round-trips a page number through the 1-based box.
+    /// The seed round-trips a page number through the 1-based box.
     #[test]
     fn a_goto_seeds_the_box_one_based() {
         let does = from_core(&ButtonAction::GoToPage {
@@ -252,7 +252,7 @@ mod tests {
         );
     }
 
-    /// ★ A show/hide seeds both halves, and the direction is the half that is
+    /// A show/hide seeds both halves, and the direction is the half that is
     /// easy to lose — Table 210's `/H` defaults to **true**, so a target list
     /// that arrived without a direction must not silently become "show".
     #[test]

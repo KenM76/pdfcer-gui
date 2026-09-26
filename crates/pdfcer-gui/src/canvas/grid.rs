@@ -123,7 +123,7 @@ mod tests {
     use super::*;
     use crate::canvas::rulers::MIN_MAJOR_PITCH_PTS;
 
-    /// ★ **Every grid line is at least [`MIN_GRID_PITCH_PTS`] apart on
+    /// **Every grid line is at least [`MIN_GRID_PITCH_PTS`] apart on
     /// screen**, at every zoom on the ladder — the defect a measurement found
     /// after a screenshot did not.
     ///
@@ -154,7 +154,7 @@ mod tests {
         }
     }
 
-    /// ★ **Every numbered ruler tick has a grid line under it**, at every zoom
+    /// **Every numbered ruler tick has a grid line under it**, at every zoom
     /// on the ladder.
     ///
     /// The coincidence is the whole reason to ship a ruler and a grid rather

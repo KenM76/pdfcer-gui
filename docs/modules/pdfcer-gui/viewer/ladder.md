@@ -14,14 +14,14 @@ document — is off the ladder, and the two functions here take the next rung
 strictly above or below it, so the ladder doubles as a *snap back to
 sanity*.
 
-## ★★ Past the ladder's end, the two must stay inverses
+## Past the ladder's end, the two must stay inverses
 
 The named rungs stop at 800 %, which was the maximum zoom until O24 raised
 it. Above that [`ladder_step_up`] doubles and [`ladder_step_down`] halves —
 a constant ratio, so a constant number of presses per decade, and the same
 number of presses back.
 
-★ Both branches were needed and only one was written. `ladder_step_up`
+Both branches were needed and only one was written. `ladder_step_up`
 grew its doubling when the ceiling was raised; `ladder_step_down` kept a
 plain reverse search and therefore returned **800 %** from anywhere above
 it. One press discarded a hundred-fold magnification, which is

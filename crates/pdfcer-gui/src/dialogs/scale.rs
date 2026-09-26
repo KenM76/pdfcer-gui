@@ -67,7 +67,7 @@ pub struct ScaleDialog {
     /// group when the ribbon opened it, or from the selected row when the
     /// Manage-groups panel's *Set scale...* button did.
     ///
-    /// # ★ It is now OPERATOR-changeable, and the old contract still holds
+    /// # It is now OPERATOR-changeable, and the old contract still holds
     ///
     /// This field's note used to read *"not re-read per frame: a group picker
     /// that moved underneath an open dialog would let them type a number for
@@ -85,7 +85,7 @@ pub struct ScaleDialog {
     /// because a window that named no group at all could be aimed somewhere
     /// they were not looking and never say so.
     ///
-    /// ★★ Every change to this field goes through [`Self::reseed`], which
+    /// Every change to this field goes through [`Self::reseed`], which
     /// re-reads the new group's stored scale into [`Self::fields`]. Assigning
     /// it without reseeding would leave the entry controls describing the
     /// group the operator just navigated away from, which is the O192 defect
@@ -126,7 +126,7 @@ pub struct ScaleDialog {
     drawn_pdf_length: Option<f64>,
     /// Set by the calibrate button, consumed after the window's closure.
     ///
-    /// ★ It no longer means "close me". See [`Self::hidden`] for what replaced
+    /// It no longer means "close me". See [`Self::hidden`] for what replaced
     /// that, and why the difference is a defect the operator had not yet got
     /// around to reporting.
     calibrate_requested: bool,
@@ -141,7 +141,7 @@ pub const REGION_CALIBRATE: &str = "scale.calibrate"; // ui-text-exempt: trace r
 pub const REGION_GROUP: &str = "scale.group"; // ui-text-exempt: trace region name, never displayed
 /// The region the current-scale line publishes -- O192.
 ///
-/// ★ A region rather than only a trace line, because the defect being closed is
+/// A region rather than only a trace line, because the defect being closed is
 /// that the operator could not **see** the scale. A trace proving the string
 /// was computed would be the same evidence the old window could have produced;
 /// what has to be asserted is that it was drawn, with a rect, inside the
@@ -151,7 +151,7 @@ pub const REGION_CURRENT: &str = "scale.current"; // ui-text-exempt: trace regio
 impl ScaleDialog {
     /// **Open on `group`, showing the scale that group is already at.**
     ///
-    /// # ★ It reads the document now -- O192
+    /// # It reads the document now -- O192
     ///
     /// This constructor took a bare [`GroupId`] until 2026-09-13 and seeded its
     /// fields from [`ScaleEntryFields::for_group_panel`], which is seeded from
@@ -162,7 +162,7 @@ impl ScaleDialog {
     /// half -- *"does not show me the scale that is already set"* -- and the
     /// invisible half is the one that could have damaged a file.
     ///
-    /// ★★ [`ScaleEntryFields::for_group`] carries the whole inversion and the
+    /// [`ScaleEntryFields::for_group`] carries the whole inversion and the
     /// proof that it is exact. The only thing done here is choosing the path:
     /// **ratio**, because a cold-opened window has no drawn reference line and
     /// the real-length path cannot produce a scale without one.
@@ -172,7 +172,7 @@ impl ScaleDialog {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 //
-                // ★★ This line exists so that a window's CONSTRUCTION can be
+                // This line exists so that a window's CONSTRUCTION can be
                 // counted, which is the only externally visible difference
                 // between the window being hidden for the duration of a pick
                 // and the window being destroyed and rebuilt from defaults.
@@ -209,7 +209,7 @@ impl ScaleDialog {
     /// `ScalePick::dialog_open()` turns true — i.e. on the click that completes
     /// the two-point pick.
     ///
-    /// # ★ It seeds the REAL-LENGTH path, not the ratio one
+    /// # It seeds the REAL-LENGTH path, not the ratio one
     ///
     /// `ScaleEntryFields::default()` rather than `for_group_panel()`, and that
     /// is the whole difference between the two constructors. `for_group_panel`
@@ -222,7 +222,7 @@ impl ScaleDialog {
     /// and nothing is lost — `ScaleEntryFields::entry` chooses on the radio,
     /// not on whether a length exists.
     ///
-    /// ★★ It also seeds from the group's stored scale (O192), for the same
+    /// It also seeds from the group's stored scale (O192), for the same
     /// reason [`Self::open`] does and with one extra consequence: the unit the
     /// group is already in becomes the unit the real-length field is read in,
     /// so an operator calibrating a drawing that is already in inches types
@@ -266,7 +266,7 @@ impl ScaleDialog {
     /// inlined three times because the thing that must not drift is *which*
     /// fields survive a reseed.
     ///
-    /// # ★ What is DELIBERATELY carried across
+    /// # What is DELIBERATELY carried across
     ///
     /// `use_real_length`, `real_length` and `real_length_text` belong to the
     /// **reference line**, not to the group. An operator who picked two points,
@@ -279,7 +279,7 @@ impl ScaleDialog {
     /// carrying those across a group switch is the O192 defect one row down:
     /// controls describing a group the operator has navigated away from.
     ///
-    /// ★★ A missing group is a no-op rather than a fallback. The caller that
+    /// A missing group is a no-op rather than a fallback. The caller that
     /// can encounter one ([`Self::show`]) has already redirected
     /// [`Self::group`] to [`DEFAULT_GROUP_ID`] and called this again, so a
     /// second policy here would be a second answer to one question.
@@ -301,7 +301,7 @@ impl ScaleDialog {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 //
-                // ★ `ratio_paper` and `ratio_real` are SEPARATE keys, not one
+                // `ratio_paper` and `ratio_real` are SEPARATE keys, not one
                 // `1:100` field. A driven check reads these to prove the window
                 // was seeded from the document rather than from the defaults
                 // (O192), and a packed field is one a reader has to split --
@@ -349,7 +349,7 @@ impl ScaleDialog {
 
     /// **Is this window out on the page, waiting for the operator to point?**
     ///
-    /// # ★★★ Hidden is DERIVED, and that distinction is the third defect
+    /// # Hidden is DERIVED, and that distinction is the third defect
     ///
     ///
     /// # Why a flag was written first, and then deleted
@@ -375,7 +375,7 @@ impl ScaleDialog {
     /// has never read this file -- brings the window back with every entry
     /// still in it, because there is no flag to forget.
     ///
-    /// ★ The derivation is only sound because `MeasureKind::Scale` has exactly
+    /// The derivation is only sound because `MeasureKind::Scale` has exactly
     /// **one** arming site in the crate: `app::frame`, on this window's own
     /// button. That is not an accident anybody has to maintain by hand --
     /// `canvas::measure`'s `every_variant_is_either_offered_or_deliberately_excluded`
@@ -383,7 +383,7 @@ impl ScaleDialog {
     /// rather than `"ribbon"`, so a future ribbon control for it does not
     /// compile until somebody moves it between the two lists and reads why.
     ///
-    /// ★★ [`crate::canvas::tool::selected`] and not `active`: `active`
+    /// [`crate::canvas::tool::selected`] and not `active`: `active`
     /// resolves the space-bar's temporary Hand override, and an operator who
     /// pans the page mid-pick must not have this window flash back over the
     /// drawing they are panning to look at.
@@ -413,7 +413,7 @@ impl ScaleDialog {
     /// this one sits over a drawing the operator may want to look at while
     /// deciding what the scale is.
     ///
-    /// # ★ The early return says `true`, and the `true` is load-bearing
+    /// # The early return says `true`, and the `true` is load-bearing
     ///
     /// [`Self::hidden`] returns **without drawing**: the window still exists,
     /// it is simply out on the page while the operator points at a line. A
@@ -473,7 +473,7 @@ impl ScaleDialog {
         ui.label(t::intro());
         ui.add_space(6.0);
 
-        // ★★★ O193 and O192, in this order and at the TOP of the window.
+        // O193 and O192, in this order and at the TOP of the window.
         //
         // The order is the sentence: *which drawing* before *what it is at
         // now* before *what you would like it to be*. Put the current scale
@@ -483,7 +483,7 @@ impl ScaleDialog {
         self.group_row(ui, model);
         ui.add_space(6.0);
 
-        // ★★ BOTH PATHS NOW, and which one the window leads with depends on
+        // BOTH PATHS NOW, and which one the window leads with depends on
         // whether the operator measured something first.
         //
         // This block used to say the ratio path was the only one, because
@@ -599,7 +599,7 @@ impl ScaleDialog {
         ui.add_space(8.0);
         ui.separator();
 
-        // ★ The live preview, from the ENGINE's own back-calculation.
+        // The live preview, from the ENGINE's own back-calculation.
         //
         // `ScaleEntryFields::preview` calls `preview_group_scale`, which is the
         // same function the CLI calibrates through — so what this window shows
@@ -660,7 +660,7 @@ impl ScaleDialog {
     /// same `group`**: two functions each resolving the id separately is one
     /// refactor away from a window that names one group and describes another.
     ///
-    /// # ★ The reseed is here, not in the picker's closure
+    /// # The reseed is here, not in the picker's closure
     ///
     /// `selectable_value` writes through a `&mut GroupId`, so the change is
     /// detected by comparing against the value from before the combo rather
@@ -669,7 +669,7 @@ impl ScaleDialog {
     /// [`REGION_GROUP`] is that a driven check can reach this control without
     /// a mouse.
     ///
-    /// # ★★ Rule 4 -- fuzzy, never sneaky
+    /// # Rule 4 -- fuzzy, never sneaky
     ///
     /// The current-scale line is **disclosure, off-canvas, non-blocking**, and
     /// it is phrased as a statement of fact rather than as a caution. A group
@@ -689,7 +689,7 @@ impl ScaleDialog {
                         .map_or("", |group| group.name.as_str()),
                 )
                 .show_ui(ui, |ui| {
-                    // ★ `model.groups()` directly, with no local list in front
+                    // `model.groups()` directly, with no local list in front
                     // of it -- the same rule the unit combo below is read
                     // under. A group the operator adds in the panel beside this
                     // window appears here on the next frame without anybody

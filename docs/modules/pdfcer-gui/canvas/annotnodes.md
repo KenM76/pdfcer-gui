@@ -38,7 +38,7 @@ week later.
 | `/Ink` | `InkEdit`, addressed `(stroke, point)` | yes | yes (after a stroke's last point **extends** it) | yes | 2 **per stroke** |
 | `/Square`, `/Circle`, text markup | — | refused | refused | refused | — |
 
-★★ **This shell knows the first two columns and nothing else in that
+**This shell knows the first two columns and nothing else in that
 table.** [`geometry`] decides which shapes have *anchors to draw* and which
 verb family addresses them — both are routing questions that have to be
 answered locally — and every question about whether an edit is **allowed**
@@ -50,7 +50,7 @@ The day the verbs shipped, the row flipped **here**, in one `match` arm,
 and the honesty of the anchors is still the same rule: an anchor is drawn
 only where a verb can act on it.
 
-## ★★ `/Ink` — one anchor list, two index spaces, no bridging segment
+## `/Ink` — one anchor list, two index spaces, no bridging segment
 
 `/InkList` is a list **of** strokes, so the engine addresses an ink point as
 `(stroke, point)` while everything on this canvas — the painter's trace
@@ -72,7 +72,7 @@ smoothed: re-baking straightens it. `InkForecast::appearance_was_pdfces` (old-na
 reports that and `app::actions::annots` discloses it off-canvas, through
 the same list `measure_stale` travels on — never as a mark on the canvas.
 
-## ★★★ The preflight is asked EVERY FRAME, including for a plain move
+## The preflight is asked EVERY FRAME, including for a plain move
 
 `reshape_annotation_preview` shares one body with the mutating verb
 (`reshape_plan`), so it cannot disagree with what a release would do. The
@@ -89,7 +89,7 @@ is already there.** A drag that begins and then fails is worse than a drag
 that never starts, because it looks like it worked until the next frame
 repaints.
 
-★ It is asked for the **move** as well, which is where this module differs
+It is asked for the **move** as well, which is where this module differs
 from [`crate::canvas::dimdrag`]. That module does not preflight a corner
 move, on an explicit engine ruling: a ce dimension's move cannot be refused
 once the drag has begun, because a self-intersecting polyline has a
@@ -108,7 +108,7 @@ empty. There is no *temporarily* unavailable case here to grey — the refusal
 is a property of the shape's kind and will not change while the operator
 looks at it.
 
-★★ What they get instead is a **sentence**, and it is delivered by
+What they get instead is a **sentence**, and it is delivered by
 [`explain_unreshapable`] at the moment the operator asks: with the Points
 tool armed — the deliberate act of arming the tool whose whole subject is
 nodes — a selected markup that has no nodes says so, once, naming its own

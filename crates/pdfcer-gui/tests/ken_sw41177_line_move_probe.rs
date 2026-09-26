@@ -19,7 +19,7 @@
 //!    sharing a baseline, in stream order. Whether that reconstructs his visual
 //!    line, or something coarser or finer, is a property of his producer.
 //!
-//! ★ Written as a file rather than as a shell one-liner because the question is
+//! Written as a file rather than as a shell one-liner because the question is
 //! *what does the engine say about each run*, and that needs the engine, not a
 //! byte grep — which is what produced two wrong diagnoses of his last text
 //! report.
@@ -303,7 +303,7 @@ fn splitting_at_line_granularity_then_moving_the_piece_relocates_his_line() {
         objects_after - objects_before
     );
 
-    // ★ The pieces land where the original was, in order, so the piece holding
+    // The pieces land where the original was, in order, so the piece holding
     // his line is `object + piece`. That is the arithmetic the shell will have
     // to do, so the probe does it the same way and then CHECKS it rather than
     // trusting it.

@@ -154,7 +154,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let from = caret.get("run").unwrap_or("?").to_owned();
     report.note(format!("★ the caret landed in a run: `{}`", caret.raw));
 
-    // --- 3: ★★ press Down, then Up ------------------------------------------
+    // --- 3: press Down, then Up ------------------------------------------
     //
     // Both directions, because they are separate calls into the model and a
     // build that wired one and not the other is a plausible half-job. Down
@@ -171,7 +171,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let steps: Vec<_> = trace.events(STEP_EVENT).skip(before).collect();
     let nowhere = trace.events(NOWHERE_EVENT).count() - before_nowhere;
     if steps.is_empty() && nowhere > 0 {
-        // ★★ THE KEYS ARRIVED AND THE PAGE HAD NOWHERE TO GO, which is a fact
+        // THE KEYS ARRIVED AND THE PAGE HAD NOWHERE TO GO, which is a fact
         // about the document and the point rather than about the build — and
         // the two were indistinguishable on this check's first live run, which
         // is why `text-caret-nowhere` exists at all.
@@ -192,7 +192,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     if steps.is_empty() {
-        // ★ Ask what else happened before accusing. A caret on the ONLY line of
+        // Ask what else happened before accusing. A caret on the ONLY line of
         // text on a page has nowhere to go in either direction, and that is a
         // fact about the document.
         return Ok(Some(format!(
@@ -210,7 +210,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 4: ★★★ and it landed in a DIFFERENT run ----------------------------
+    // --- 4: and it landed in a DIFFERENT run ----------------------------
     //
     // The assertion the whole check exists for. Moving the caret *within* the
     // run it was already in is a caret movement; moving it to another run is
@@ -243,7 +243,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 5: End, which reaches the end of the LINE and not of the run --------
     //
-    // ★ Recorded rather than asserted, and the difference matters. A page line
+    // Recorded rather than asserted, and the difference matters. A page line
     // drawn as ONE show operator has its end inside the run the caret is
     // already in, and the shell handles that with a single assignment and no
     // trace — indistinguishable from a build where End does nothing. So the

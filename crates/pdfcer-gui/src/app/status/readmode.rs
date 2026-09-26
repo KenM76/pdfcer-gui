@@ -18,13 +18,13 @@ const EXIT_WIDTH_FRACTION: f32 = 0.60;
 
 /// The region the line publishes for `ui-verify`.
 ///
-/// ★ A published region name is a cross-repo stability contract with the
+/// A published region name is a cross-repo stability contract with the
 /// harness: renaming it turns a check into a skip rather than a failure.
 pub(super) const REGION_READ_MODE_EXIT: &str = "status-group:read-mode-exit"; // ui-text-exempt: trace region name, never displayed
 
 /// The trace slot the line publishes, de-duplicated on the rendered sentence.
 ///
-/// ★★ It carries the **sentence**, not a boolean, and that is what makes a
+/// It carries the **sentence**, not a boolean, and that is what makes a
 /// driven check able to fail correctly. `read-mode-exit shown=true` is
 /// identical for a build that names the right chord, a build that names a chord
 /// nothing is bound to, and a build that names no chord at all — so a check
@@ -50,7 +50,7 @@ pub(super) fn show(ui: &mut egui::Ui) {
         return;
     }
 
-    // ★ Both chords come from `app::window`'s published values, resolved once
+    // Both chords come from `app::window`'s published values, resolved once
     // per frame from the keymap that dispatches. Nothing in this file spells a
     // key, and `crate::text::window`'s own test forbids the catalog spelling one
     // either — so there is no place left for the sentence and the binding to
@@ -98,7 +98,7 @@ pub(super) fn show(ui: &mut egui::Ui) {
         .rect;
 
     crate::diag::ui_rect(REGION_READ_MODE_EXIT, rect);
-    // ★ Plain quoted strings rather than `Option`'s `Some("…")` debug form: the
+    // Plain quoted strings rather than `Option`'s `Some("…")` debug form: the
     // harness's field parser gives `(` structural meaning, and an unbound chord
     // is expressed as the empty string. A trace shape a check has to
     // special-case is a trace shape a check gets wrong.
@@ -107,7 +107,7 @@ pub(super) fn show(ui: &mut egui::Ui) {
     crate::diag::trace_changed(EXIT_SLOT, || {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         //
-        // ★ `chord=` beside `line=` so a failing check can tell "the keymap
+        // `chord=` beside `line=` so a failing check can tell "the keymap
         // resolved nothing" from "the sentence dropped the chord it was
         // handed" — two different defects that produce the same missing text.
         // It is also the tie a check needs: `chord=` is what the KEYMAP
@@ -137,7 +137,7 @@ mod tests {
     use crate::app::status::test_support::settled_bar_frame;
     use egui::Context;
 
-    /// ★★★ **Nothing is said when read mode is off**, and this is the half of
+    /// **Nothing is said when read mode is off**, and this is the half of
     /// the pair that is easy to get vacuously right.
     ///
     /// A check that only asserted the sentence *appears* would pass on a build

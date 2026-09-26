@@ -1,7 +1,7 @@
 //! # `dialogs::redact::tests` — the apply transaction's headless assertions
 //!
 //!
-//! ★ The seam is the one R2 asks for. `redact.rs` answers *"what does the
+//! The seam is the one R2 asks for. `redact.rs` answers *"what does the
 //! dialog do?"*; this answers *"what is guaranteed about the state machine
 //! underneath it?"*, and the two grow for different reasons — the first when a
 //! control is added, the second when a rule is discovered. The rules here are
@@ -9,13 +9,13 @@
 //! half**, which is why they are pure functions over
 //! [`super::RedactDialog`]'s fields and not a driven UI.
 //!
-//! ★★ What is NOT asserted here, and is not assertable here: that the
+//! What is NOT asserted here, and is not assertable here: that the
 //! disclosure is drawn *above* the confirm control. This suite proves it
 //! EXISTS in the state where the button is live
 //! ([`super::RedactDialog::staging_disclosure`]); the geometry is
 //! `tools/ui-verify`'s, which publishes both rects and can compare them.
 
-// ★ The INNER `#![cfg(test)]` is redundant — the module is declared
+// The INNER `#![cfg(test)]` is redundant — the module is declared
 // `#[cfg(test)] mod tests;` — and it is here anyway, because
 // `tools/gates/check-ui-strings.sh` exclusion 2 recognises a test-only FILE by
 // exactly this attribute. Without it every assertion message below is read as
@@ -25,7 +25,7 @@
 
 use super::*;
 
-/// ★★ **The suggested name is never the file that was opened.**
+/// **The suggested name is never the file that was opened.**
 ///
 /// The standing rule as a default, and the single most consequential
 /// assertion in this module: the source file is the only remaining copy of
@@ -72,7 +72,7 @@ fn no_document_means_no_dialog() {
     assert!(open_for(&Status::Empty, crate::app::prefs::RedactionReach::default()).is_none());
 }
 
-/// ★★ **The confirm control is not enabled until both gates are answered.**
+/// **The confirm control is not enabled until both gates are answered.**
 ///
 /// §3, asserted over the state machine rather than over pixels. The
 /// interesting direction is the residual one: an operator who ticks only
@@ -145,7 +145,7 @@ fn the_confirm_control_needs_every_gate_that_applies() {
     dialog.residuals_acknowledged = true;
     assert!(dialog.ready_to_confirm());
 
-    // ★★★ …and the third gate, which appears only when the operator has
+    // …and the third gate, which appears only when the operator has
     // asked to replace the file they opened. It is the one that stands
     // between a click and the destruction of the last copy of the content.
     dialog.choose_destination(Destination::ReplaceOriginal);
@@ -164,14 +164,14 @@ fn the_confirm_control_needs_every_gate_that_applies() {
     );
 }
 
-/// ★★★ **Changing the destination retires the overwrite acknowledgement.**
+/// **Changing the destination retires the overwrite acknowledgement.**
 ///
 /// The sequence this forbids is not exotic — it is *"I'll just look at what
 /// the other option says"*: tick the box, select **a new file**, change
 /// your mind, select **replace** again, and find the button already live
 /// with a consent you had explicitly withdrawn in between.
 ///
-/// ★ It also asserts the *other* direction, which is the one a "tidying"
+/// It also asserts the *other* direction, which is the one a "tidying"
 /// edit removes as pointless: arriving at [`Destination::NewFile`] must
 /// clear it too. Retiring a tick that was not needed costs nothing;
 /// deciding *which* changes matter is where the next edit gets it wrong.
@@ -218,7 +218,7 @@ fn changing_the_destination_retires_the_overwrite_acknowledgement() {
     );
 }
 
-/// ★★ **The outcome sentence tells the operator that the window they are
+/// **The outcome sentence tells the operator that the window they are
 /// looking at no longer matches the file.**
 ///
 /// The strangest consequence of the replace path, and the one nothing else
@@ -252,7 +252,7 @@ fn the_outcome_sentence_says_the_open_window_is_now_stale_after_a_replace() {
     );
 }
 
-/// ★ **Every kind of residual reaches the list, and the list is what gates
+/// **Every kind of residual reaches the list, and the list is what gates
 /// the checkbox.**
 ///
 /// One derivation for both, so a residual cannot be listed without being
@@ -294,7 +294,7 @@ fn every_source_of_a_residual_reaches_the_disclosed_list() {
     );
 }
 
-/// ★ **A written outcome with residuals does not borrow the clean
+/// **A written outcome with residuals does not borrow the clean
 /// sentence.**
 ///
 /// The catalog's rule 1, at the one call site that chooses between the two.
@@ -363,7 +363,7 @@ fn clean_session() -> pdfcer_core::edit::EditSession {
     session
 }
 
-/// ★★★ **The default destination writes nothing.**
+/// **The default destination writes nothing.**
 ///
 /// The safety property the default has to carry, expressed as a property
 /// rather than as an identity. Until this afternoon the default was
@@ -388,7 +388,7 @@ fn the_default_destination_writes_nothing() {
     assert!(Destination::ReplaceOriginal.writes_now());
 }
 
-/// ★★★ **The staging consequence is disclosed on the destination that has
+/// **The staging consequence is disclosed on the destination that has
 /// it, and only on that one.**
 ///
 ///
@@ -451,7 +451,7 @@ fn the_staging_consequence_is_disclosed_before_the_operator_can_commit() {
     }
 }
 
-/// ★★★ **A document whose removal is already armed gets the staged phase,
+/// **A document whose removal is already armed gets the staged phase,
 /// with a control that calls it off.**
 ///
 ///
@@ -488,7 +488,7 @@ fn a_staged_document_offers_the_control_that_calls_the_removal_off() {
         destination: DEFAULT_DESTINATION,
         overwrite_acknowledged: false,
         confirm_requested: false,
-        // ★ Set directly rather than by clicking: `staged::body` needs an
+        // Set directly rather than by clicking: `staged::body` needs an
         // `egui::Ui` and this suite is headless by design. What is under test
         // here is what the FLAG does, which is the half a driven check cannot
         // see; `tools/ui-verify` owns the half where a real pointer presses a
@@ -515,7 +515,7 @@ fn a_staged_document_offers_the_control_that_calls_the_removal_off() {
     assert!(dialog.close_requested);
 }
 
-/// ★★ **Confirming the default destination pushes an action and touches no
+/// **Confirming the default destination pushes an action and touches no
 /// file system.**
 ///
 /// The whole of `OPERATOR_REQUESTS.md` O125's second half, asserted at the
@@ -580,11 +580,11 @@ fn confirming_the_default_destination_pushes_an_action_and_writes_no_file() {
     );
 }
 
-/// ★ **The deferred destination is not asked for the overwrite
+/// **The deferred destination is not asked for the overwrite
 /// acknowledgement, and the replace destination still is.**
 ///
 ///
-/// ★★ And the half that is the whole of O125: **Save-over-the-original
+/// And the half that is the whole of O125: **Save-over-the-original
 /// still warns.** It is a warning and not a refusal — the operator may do
 /// it — but he may not do it without having said, at a control naming the
 /// file, that he knows what it costs.
@@ -630,7 +630,7 @@ fn the_overwrite_acknowledgement_is_owed_by_exactly_one_destination() {
     assert!(t::confirm_button_replace("sheet-01.pdf").contains("sheet-01.pdf"));
 }
 
-/// ★ **The dialog's residual list is the domain count plus promotion, and
+/// **The dialog's residual list is the domain count plus promotion, and
 /// nothing else.**
 ///
 /// The other half of `crate::redact::tests::

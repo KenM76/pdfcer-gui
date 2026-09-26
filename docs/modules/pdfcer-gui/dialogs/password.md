@@ -1,6 +1,6 @@
 # `dialogs::password` — the box that lets an encrypted document be opened
 
-## ★★★ The defect this closes, and it is the shape this project keeps finding
+## The defect this closes, and it is the shape this project keeps finding
 
 
 **An encrypted PDF could not be opened at all.** The shell detected the case
@@ -16,7 +16,7 @@ And then **nothing could give it one.** `Document::load_with_password` and
 doc comment in `crate::app::blank` listing the four loading entry points.
 Nothing called either.
 
-★★ **That doc comment is why the coverage tool now strips comment-only lines
+**That doc comment is why the coverage tool now strips comment-only lines
 before it searches.** Its first run reported `load_with_password` as
 *reached*, on the strength of that one sentence — which would have recorded
 the single most important missing capability in the whole area as already
@@ -35,7 +35,7 @@ operator makes and then looks away from, and a modal question hidden behind
 the application window with no taskbar entry is the classic *"the program has
 frozen"* report. [`crate::dialogs::host`] gives it the entry.
 
-## ★★ What is deliberately NOT here
+## What is deliberately NOT here
 
 - **No "remember this password".** It would have to be stored, and the only
   places to store it are a settings file in plain text or an OS keychain this
@@ -48,7 +48,7 @@ frozen"* report. [`crate::dialogs::host`] gives it the entry.
   shoulder-surfing surface in an office; the value of it here is low because
   the field is short-lived and the failure is cheap to retry.
 
-## ★★★ The password never reaches a log
+## The password never reaches a log
 
 It travels in [`crate::secret::Secret`], whose entire purpose is a `Debug`
 that cannot print the value. See that module: this crate traces liberally to

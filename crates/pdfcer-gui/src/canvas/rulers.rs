@@ -308,7 +308,7 @@ impl Scale {
     /// `DimensionModel::new` seeds exactly one group, `DEFAULT_GROUP_ID`, and
     /// nothing can delete it.
     ///
-    /// ★ **Not the *active* group, and that is an open behaviour question
+    /// **Not the *active* group, and that is an open behaviour question
     /// rather than a gap.** A picker exists —
     /// `crate::panels::dimension_groups`' *Draw into* column, written through
     /// [`crate::canvas::measure::set_active_group`] — and both readings are
@@ -489,7 +489,7 @@ impl Ladder {
         Self::from_major(major_units, upp)
     }
 
-    /// ★ **The grid's ladder**: every *drawn line* at least `min_pitch_pts`
+    /// **The grid's ladder**: every *drawn line* at least `min_pitch_pts`
     /// apart on screen — the **minor** step, not the major.
     ///
     /// # Why this is a second constructor
@@ -562,7 +562,7 @@ impl Ladder {
         (from / step).ceil()
     }
 
-    /// ★ **Every minor tick between `from` and `to`, as `index × minor`.**
+    /// **Every minor tick between `from` and `to`, as `index × minor`.**
     ///
     /// The one walk the rulers and both grid axes share, and it multiplies an
     /// **integer index** rather than accumulating `value += minor`. Two things
@@ -608,7 +608,7 @@ impl Ladder {
     /// test drops those, visible as a ruler that stops labelling halfway
     /// along.
     ///
-    /// ★ [`Self::steps`] keeps the error at that floor by multiplying an
+    /// [`Self::steps`] keeps the error at that floor by multiplying an
     /// integer index. A walk that accumulated `value += minor` would outgrow
     /// this tolerance after a few hundred ticks.
     pub(super) fn is_major(self, value: f64) -> bool {
@@ -673,7 +673,7 @@ impl Axis {
 
 /// Draw both ruler gutters.
 ///
-/// # ★ Where the zero is, and why it is the page's top-left
+/// # Where the zero is, and why it is the page's top-left
 ///
 /// The origin is the **current page's own top-left corner in canvas space** —
 /// the same origin `canvas::mapping` calls canvas space and the same one the
@@ -720,12 +720,12 @@ pub(super) fn draw(ui: &Ui, doc: &OpenDoc, gutters: Gutters, geometry: Option<&C
     };
     let scale = Scale::of(doc);
     let ladder = Ladder::for_labels(scale, doc.view.zoom, MIN_MAJOR_PITCH_PTS);
-    // ★ The content-area selection ink by its role name; `overlay::ink`
+    // The content-area selection ink by its role name; `overlay::ink`
     // carries the argument for why `visuals.selection` is not this canvas's
     // channel to read. Same colour, named address.
     let accent = egui_shell::theme::Theme::canvas_selection_ink(ui.ctx());
 
-    // ★ **The page's own span, as a TINT across the gutter** — not a line
+    // **The page's own span, as a TINT across the gutter** — not a line
     // along the gutter's inner edge.
     //
     // The single most useful thing a ruler can say about a drawing sheet is
@@ -856,7 +856,7 @@ fn ticks(
 mod tests {
     use super::*;
 
-    /// ★ **The gutters take a CONSTANT bite out of the viewport** — R128.
+    /// **The gutters take a CONSTANT bite out of the viewport** — R128.
     ///
     /// The property the whole of §3 is about, asserted rather than argued: the
     /// content rect's size depends only on the outer rect and
@@ -975,7 +975,7 @@ mod tests {
         }
     }
 
-    /// ★ **The 1-2-5 ladder, exhaustively over one decade and across five.**
+    /// **The 1-2-5 ladder, exhaustively over one decade and across five.**
     ///
     /// The property: the answer is always of the form 1, 2 or 5 times a power
     /// of ten, and it is always at least the minimum asked for. Both halves
@@ -1020,7 +1020,7 @@ mod tests {
         }
     }
 
-    /// ★ **The on-screen pitch of the labelled ticks stays inside its band at
+    /// **The on-screen pitch of the labelled ticks stays inside its band at
     /// every zoom on the ladder.**
     ///
     /// The law the whole feature rests on, and the one a screenshot cannot
@@ -1064,7 +1064,7 @@ mod tests {
         }
     }
 
-    /// ★ **A ruler with no scale set reads in points, and a calibrated one
+    /// **A ruler with no scale set reads in points, and a calibrated one
     /// reads in its group's unit** — the header's §1 table, as a test.
     ///
     /// Asserted through [`Scale::label`] rather than through
@@ -1099,7 +1099,7 @@ mod tests {
         assert_eq!(mm.label(72.0), "25.40 mm");
     }
 
-    /// ★ **A set scale moves the ladder into the operator's units**, so the
+    /// **A set scale moves the ladder into the operator's units**, so the
     /// numbers on the ruler are round in *their* system rather than in points.
     ///
     /// This is the whole point of §1 and it is the part a reader is most
@@ -1139,7 +1139,7 @@ mod tests {
         assert!((Ladder::first_index(50.0, 101.0) - 3.0).abs() < f64::EPSILON);
     }
 
-    /// ★ **The origin is labelled `0.00 pt`, never `-0.00 pt`.**
+    /// **The origin is labelled `0.00 pt`, never `-0.00 pt`.**
     ///
     /// The ruler's zero is the page's top-left corner, and a view scrolled so
     /// that the paper starts a little way into the gutter walks the ticks up
@@ -1170,7 +1170,7 @@ mod tests {
         }
     }
 
-    /// ★ **A long walk does not drift**, which is what makes the last tick on a
+    /// **A long walk does not drift**, which is what makes the last tick on a
     /// wide sheet land where the first one promised.
     ///
     /// `index × step` rather than repeated addition. Asserted over a thousand

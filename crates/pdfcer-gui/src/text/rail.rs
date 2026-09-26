@@ -10,7 +10,7 @@
 
 /// What a **pinned** row means — shown in its hover at the rail's floor.
 ///
-/// ★★★ The one sentence the rail owes and nothing else does. At
+/// The one sentence the rail owes and nothing else does. At
 /// `Rung::Cramped` the navigate group is drawn as a single row showing
 /// whatever is armed, and without this sentence the operator sees one tool
 /// where a moment ago there were four, with no way to learn that the rest are
@@ -37,7 +37,7 @@ pub fn chevron_glyph(count: usize) -> String {
 
 /// The chevron's hover: what the strip folded away, in the order it went.
 ///
-/// ★ Named rather than counted. *"3 more"* tells an operator that something
+/// Named rather than counted. *"3 more"* tells an operator that something
 /// is missing; naming them tells them whether the thing they want is in there,
 /// which is the only question they are actually asking. `RIBBON_SCALING.md`
 /// makes the same call for the ribbon's `⏷ N more` menu.

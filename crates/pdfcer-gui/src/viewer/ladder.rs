@@ -27,7 +27,7 @@ pub fn ladder_step_up(zoom: f32) -> f32 {
         .iter()
         .copied()
         .find(|&rung| rung > threshold)
-        // ★★★ PAST THE LADDER'S END, KEEP DOUBLING — O24.
+        // PAST THE LADDER'S END, KEEP DOUBLING — O24.
         //
         // This returned `MAX_ZOOM` and therefore stalled at 800 %, whatever
         // the operator had configured. `zoom_ceiling` would honour a maximum
@@ -40,7 +40,7 @@ pub fn ladder_step_up(zoom: f32) -> f32 {
         // and `the_zoom_ladder_can_climb_to_a_configured_maximum` caught it
         // before it shipped.
         //
-        // ★ Doubling rather than continuing the hand-tuned 1-2-5 spacing. The
+        // Doubling rather than continuing the hand-tuned 1-2-5 spacing. The
         // named rungs exist so ordinary zooms land on round percentages a
         // person recognises; past 800 % there are no round numbers left worth
         // hitting, and a constant ratio gives a constant NUMBER OF PRESSES per
@@ -52,7 +52,7 @@ pub fn ladder_step_up(zoom: f32) -> f32 {
 /// The next ladder rung strictly below `zoom`, or [`MIN_ZOOM`] if none
 /// is — **halving first**, above the ladder's end.
 ///
-/// # ★★★ Why the search is not simply reversed
+/// # Why the search is not simply reversed
 ///
 ///
 /// > *"clicking the negative button to zoom back snaps me back to 800% when I
@@ -65,7 +65,7 @@ pub fn ladder_step_up(zoom: f32) -> f32 {
 /// given it**, which made the two buttons stop being inverses of each other
 /// exactly where the new range begins.
 ///
-/// ★ That asymmetry is the defect, more than the snap itself. This module's
+/// That asymmetry is the defect, more than the snap itself. This module's
 /// own header promises *"zoom-in/zoom-out exactly reversible"*, and a pair of
 /// controls that disagree about what a step is breaks the one property an
 /// operator relies on to explore without losing their place.
@@ -76,7 +76,7 @@ pub fn ladder_step_up(zoom: f32) -> f32 {
 #[must_use]
 pub fn ladder_step_down(zoom: f32) -> f32 {
     let threshold = zoom - zoom.abs() * 1e-4;
-    // ★ Above the ladder's top rung, halve — but never below that rung, so the
+    // Above the ladder's top rung, halve — but never below that rung, so the
     // descent lands ON the ladder and every press after it is a named
     // percentage. Without the clamp a zoom of 8.5 would halve to 4.25 and skip
     // the 800 %, 600 %, 400 % sequence entirely.
@@ -95,7 +95,7 @@ pub fn ladder_step_down(zoom: f32) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    // ★ `ViewState` stays in the parent: it is the *state* the ladder is
+    // `ViewState` stays in the parent: it is the *state* the ladder is
     // applied to, not part of the ladder. One test drives a step through it
     // to check the clamp, which is the only coupling in either direction.
     use crate::viewer::ViewState;
@@ -108,7 +108,7 @@ mod tests {
         assert_eq!(ZOOM_LADDER.last().copied(), Some(MAX_ZOOM));
     }
 
-    /// ★★★ O24g — **the two zoom buttons must be inverses of each other**,
+    /// O24g — **the two zoom buttons must be inverses of each other**,
     /// above the ladder as well as on it.
     ///
     /// The operator: *"clicking the negative button to zoom back snaps me back
@@ -116,7 +116,7 @@ mod tests {
     /// when the maximum zoom was raised; `ladder_step_down` did not, so from
     /// 4,155 % one press discarded a hundred-fold magnification.
     ///
-    /// ★ Asserted as a ROUND TRIP rather than against fixed numbers. The
+    /// Asserted as a ROUND TRIP rather than against fixed numbers. The
     /// property this module's header promises is reversibility, and a test of
     /// two constants would keep passing if both were changed together in a way
     /// that broke it.
@@ -133,7 +133,7 @@ mod tests {
         }
     }
 
-    /// ★★ The descent must LAND ON the ladder, not vault over it.
+    /// The descent must LAND ON the ladder, not vault over it.
     ///
     /// Halving from 8.5 gives 4.25, which is between two named rungs — so the
     /// next press down would go to 4.00 and the 600 % rung would never be
@@ -153,7 +153,7 @@ mod tests {
         assert!(ladder_step_down(top) < top);
     }
 
-    /// ★ A zoom below the ladder's top is unaffected — the whole point of the
+    /// A zoom below the ladder's top is unaffected — the whole point of the
     /// branch is that it changes nothing an operator has ever seen before.
     #[test]
     fn the_named_rungs_are_untouched_by_the_halving_branch() {
@@ -175,10 +175,10 @@ mod tests {
         }
     }
 
-    /// ★★ **Stepping DOWN saturates; stepping UP no longer does** — O24.
+    /// **Stepping DOWN saturates; stepping UP no longer does** — O24.
     ///
     ///
-    /// ★ So the property changes shape rather than disappearing: **the step
+    /// So the property changes shape rather than disappearing: **the step
     /// keeps climbing, and what stops it is the CEILING** — `ViewState::zoom_in`
     /// clamps against `zoom_ceiling`, which is where the limit belongs. A
     /// stepper that enforced its own maximum would be a second opinion about
@@ -194,7 +194,7 @@ mod tests {
         assert_eq!(ladder_step_down(MIN_ZOOM), MIN_ZOOM);
         assert_eq!(ladder_step_down(0.001), MIN_ZOOM);
 
-        // ★ And the ceiling is what actually stops a climb, not the ladder.
+        // And the ceiling is what actually stops a climb, not the ladder.
         let mut view = ViewState {
             zoom: MAX_ZOOM,
             ..ViewState::default()

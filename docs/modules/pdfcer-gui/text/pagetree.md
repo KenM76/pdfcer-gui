@@ -14,7 +14,7 @@ of pages actually beneath it. Nothing was written. See
 [`crate::pagetree`]'s header for what that state is and why it is not
 repaired here.
 
-## ★★★ The four things the sentence has to carry, in this order
+## The four things the sentence has to carry, in this order
 
 1. **That no file was written**, so the operator is not left looking for
    one. `crate::app::status::decline`'s `SaveFailed` line already says *"the
@@ -43,7 +43,7 @@ repaired here.
    circle and the sentence says so and names a different route — see
    [`save_refused_pre_existing`].
 
-## ★★ The wording rule: name the symptom the OTHER reader will show
+## The wording rule: name the symptom the OTHER reader will show
 
 Every sentence here says what **Acrobat** will do, and that is deliberate
 and is the only honest framing available. pdfcer's own reader walks `/Kids`
@@ -57,7 +57,7 @@ answer is wrong *and which he uses*. He named it himself in his report.
 the end"; he cannot verify a hedge, and a hedge he cannot verify reads as
 pdfcer refusing for reasons of its own.
 
-## ★ Why the number of blank pages is computed rather than described
+## Why the number of blank pages is computed rather than described
 
 `declared - reachable` is the count of pages Acrobat will list that are not
 in the file, and on the delete path it is exactly the number of pages he
@@ -65,7 +65,7 @@ removed — which is the coincidence that let him diagnose it in one sentence
 (*"equalling the number of pages I deleted"*). Printing the number rather
 than saying "some" is what lets him recognise his own symptom.
 
-## ★★ THREE sentences, not one, because three states are genuinely
+## THREE sentences, not one, because three states are genuinely
 different — and two of them would give bad advice in the third's place
 
 | | when | what only it can say |
@@ -74,7 +74,7 @@ different — and two of them would give bad advice in the third's place
 | [`save_refused_interior`] | only an interior node disagrees | that readers will show the wrong pages, without promising which |
 | [`save_refused_pre_existing`] | the file **already** disagreed when it was opened | that pdfcer did not cause it, that **undo will not help**, and the one route that repairs it |
 
-★★★ The third is the one that must not be merged away. The first two both end
+The third is the one that must not be merged away. The first two both end
 *"undo the page removal (Ctrl+Z)"*, which is right exactly when pdfcer caused
 the damage — and a **circle** when the file came in broken. An operator who
 empties his undo stack against a refusal his own tool told him undo would fix
@@ -97,7 +97,7 @@ with blank pages at the end.
 blames pdfcer for damage pdfcer did not do — and the operator meets that
 sentence precisely when he is least able to judge it.
 
-⇒ ★★ **The remedy was to delete the attribution, not to update it.** A
+⇒ **The remedy was to delete the attribution, not to update it.** A
 refusal owes him three things: that nothing was lost, what is wrong in his
 terms, and what to press. **Whose fault it is is not one of them** — it is
 the sentence's least useful clause and its most perishable, and this header

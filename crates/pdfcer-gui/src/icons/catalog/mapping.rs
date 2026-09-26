@@ -160,7 +160,7 @@ impl Icon {
         Icon::SaveCopy,
         Icon::UnembedFonts,
         Icon::WheelFlip,
-        // ★★★ CORRECTED 2026-09-05. This comment read *"the five with no
+        // CORRECTED 2026-09-05. This comment read *"the five with no
         // ribbon control yet … the other four are art before button"*, and by
         // the end of 2026-09-04 **all five were named by a registered
         // command**: `edit.copy_as_vector` (token 408, Edit ▸ Clipboard),

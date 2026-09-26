@@ -12,7 +12,7 @@ use crate::canvas::formfield::action::{
     ActionBlocker, ButtonDoesKind, NamedChoice, PageViewChoice,
 };
 
-/// ★★★ **What an EXISTING button currently does**, one sentence per state.
+/// **What an EXISTING button currently does**, one sentence per state.
 ///
 /// # The four states, and why there are four
 ///
@@ -28,13 +28,13 @@ use crate::canvas::formfield::action::{
 /// | `Unmodelled` | pdfcer **authors** this subtype and did not decode this instance | name it, offer to **replace**, never claim to show it |
 /// | `Foreign` | pdfcer recognises it and **will not author** it | name it, offer nothing |
 ///
-/// ★★ `Unmodelled` and `Foreign` differ in exactly one thing — whether
+/// `Unmodelled` and `Foreign` differ in exactly one thing — whether
 /// replacing is offered — and that is the decision the operator is actually
 /// being asked to make. A three-state enum would have forced a wrong answer in
 /// one direction or the other: `Foreign("SubmitForm")` on a submit pdfcer writes
 /// happily would grey a row that should have been live.
 ///
-/// ★ Today `GoTo` and `SubmitForm` answer `Unmodelled` — authored, not yet
+/// Today `GoTo` and `SubmitForm` answer `Unmodelled` — authored, not yet
 /// decoded. That will widen, and widening is additive: a state that becomes
 /// `Known` gains a value to show and loses nothing.
 #[must_use]
@@ -48,7 +48,7 @@ pub fn current_known(kind: ButtonDoesKind) -> String {
     format!("Pressing it: {}.", does_choice(kind).to_lowercase())
 }
 
-/// ★★ A subtype pdfcer writes but did not decode **this instance** of.
+/// A subtype pdfcer writes but did not decode **this instance** of.
 ///
 /// The sentence must do two things at once and neither may be dropped: say the
 /// button **does** something, and refuse to say what. Claiming to show it would
@@ -65,7 +65,7 @@ pub fn current_unmodelled(subtype: &str) -> String {
     )
 }
 
-/// ★★★ A subtype pdfcer recognises and will not author.
+/// A subtype pdfcer recognises and will not author.
 ///
 /// The variant the request argued for by name. `None` and `Known` could both be
 /// synthesised by a shell that guessed; this one cannot, and it is what lets
@@ -86,7 +86,7 @@ pub fn current_foreign(subtype: &str) -> String {
 /// Said when the reader itself refused — the field is not a push button, or is
 /// not there.
 ///
-/// ★ The refusals match the WRITER's, deliberately: a shell must not learn
+/// The refusals match the WRITER's, deliberately: a shell must not learn
 /// through the reader about a field it would be refused permission to change.
 #[must_use]
 pub fn current_unreadable(why: &str) -> String {
@@ -107,7 +107,7 @@ pub fn apply_button() -> String {
 
 /// The status line after an existing button's action is changed.
 ///
-/// ★★ `replaced` is what the engine says was destroyed, **including a script**.
+/// `replaced` is what the engine says was destroyed, **including a script**.
 /// `ButtonActionChange::replaced` carries it as a `String` rather than an
 /// `Option<ButtonAction>` precisely so a removed script is expressible — a form
 /// editor overwriting another tool's work should know it did.
@@ -135,7 +135,7 @@ pub fn does_label() -> String {
 
 /// Each choice, as it appears in the drop-down.
 ///
-/// ★ Verb-first and in the operator's terms, never the `/S` subtype name. A
+/// Verb-first and in the operator's terms, never the `/S` subtype name. A
 /// chooser reading *ResetForm / GoToPage / SubmitForm* would be pdfcer showing
 /// its own internals to somebody who wants a button that clears the form.
 #[must_use]
@@ -154,7 +154,7 @@ pub fn does_choice(kind: ButtonDoesKind) -> String {
 
 /// The one-line explanation under the chooser, per choice.
 ///
-/// ★★ Every one of the seven says what the action **reaches**, because that is
+/// Every one of the seven says what the action **reaches**, because that is
 /// the property none of them shows on screen and the property they differ on.
 /// The four that reach nothing say so in as many words, so that the two that do
 /// are not the only ones carrying a sentence — a disclosure that appears only
@@ -231,7 +231,7 @@ pub fn targets_label() -> String {
 
 /// What a show/hide target may be.
 ///
-/// ★★ The terminal-name requirement, said before the engine refuses it. Table
+/// The terminal-name requirement, said before the engine refuses it. Table
 /// 210 states nothing about descendant expansion — the phrase *"all descendants
 /// of the specified fields"* occurs twice per edition of ISO 32000 and never on
 /// this row — so a grouping name is a button that hides a subtree in one reader
@@ -262,7 +262,7 @@ pub fn url_label() -> String {
     "Web address".to_owned()
 }
 
-/// ★★★ **The submit disclosure** — the six facts §12.7.5.2 makes true and
+/// **The submit disclosure** — the six facts §12.7.5.2 makes true and
 /// nobody can guess.
 ///
 /// Shown whole, before the button exists, and every clause is sourced:
@@ -281,7 +281,7 @@ pub fn url_label() -> String {
 /// 6. Not stated here for the same reason: `SubmitPDF` ignores field selection
 ///    entirely.
 ///
-/// ★ It does not say "are you sure". It is a statement of what the file will
+/// It does not say "are you sure". It is a statement of what the file will
 /// declare, positioned where the operator is deciding whether to declare it.
 #[must_use]
 pub fn submit_disclosure() -> String {
@@ -293,7 +293,7 @@ pub fn submit_disclosure() -> String {
         .to_owned()
 }
 
-/// ★★ Said when the address is not `https:` — a **statement**, never a
+/// Said when the address is not `https:` — a **statement**, never a
 /// refusal.
 ///
 /// The standard states no TLS rule; `https` appears zero times in ISO 32000-1.
@@ -307,7 +307,7 @@ pub fn submit_unencrypted() -> String {
 
 /// Why the dialog will not accept the draft yet.
 ///
-/// ★ One sentence per blocker, each naming **the box to fix** rather than the
+/// One sentence per blocker, each naming **the box to fix** rather than the
 /// rule that was broken. An operator reading *"the destination is not
 /// absolute"* has to work out which of four boxes that refers to.
 #[must_use]
@@ -329,7 +329,7 @@ pub fn blocker(reason: ActionBlocker) -> String {
 
 /// The status line after a button is placed with an action.
 ///
-/// ★ Names the action in the operator's words, not the `/S` subtype, and is
+/// Names the action in the operator's words, not the `/S` subtype, and is
 /// the off-canvas half of rule 4: the button on the page is drawn exactly as
 /// the saved file will draw it, and what it now *does* is said here.
 #[must_use]
@@ -344,7 +344,7 @@ pub fn placed_with_action(name: &str, kind: ButtonDoesKind) -> String {
     }
 }
 
-/// ★★ Said when the button and its action could not be folded into one undo
+/// Said when the button and its action could not be folded into one undo
 /// entry.
 ///
 /// `EditSession::coalesce_last` answers `false` when the undo stack was shorter
@@ -352,7 +352,7 @@ pub fn placed_with_action(name: &str, kind: ButtonDoesKind) -> String {
 /// failed. So the button exists and does what it was asked to do; the only
 /// thing wrong is that taking it back needs two presses.
 ///
-/// ★ Worth a sentence rather than a shrug: an operator who presses Ctrl+Z once,
+/// Worth a sentence rather than a shrug: an operator who presses Ctrl+Z once,
 /// sees a button still sitting there, and is told nothing will conclude that
 /// undo is broken — which is a far worse belief than the truth.
 #[must_use]
@@ -362,7 +362,7 @@ pub fn two_undo_entries(name: &str) -> String {
 
 /// Said when the action could not be written although the button was placed.
 ///
-/// ★★★ **Two commands, and the second one can fail on its own.** `pdfcer-core`
+/// **Two commands, and the second one can fail on its own.** `pdfcer-core`
 /// authors the button and sets the action as separate verbs, so a refusal on
 /// the second leaves a correctly placed button with no behaviour. Silence there
 /// would be the exact defect this whole feature exists to remove — a button
@@ -380,7 +380,7 @@ pub fn action_refused(name: &str, why: &str) -> String {
 mod tests {
     use super::*;
 
-    /// ★ Every choice has a name and a note, and the note says what it reaches.
+    /// Every choice has a name and a note, and the note says what it reaches.
     ///
     /// The reach clause is the load-bearing half — see [`does_note`]'s comment
     /// on why the four inert ones carry one too. A new variant added without a
@@ -399,7 +399,7 @@ mod tests {
         }
     }
 
-    /// ★★ The two addressed kinds must not claim to reach nothing, and the five
+    /// The two addressed kinds must not claim to reach nothing, and the five
     /// others must not omit that they do.
     #[test]
     fn only_the_inert_choices_say_nothing_leaves_the_document() {
@@ -423,7 +423,7 @@ mod tests {
         }
     }
 
-    /// ★★★ Nothing here may refuse a scheme. If this test ever needs changing,
+    /// Nothing here may refuse a scheme. If this test ever needs changing,
     /// someone has made pdfcer enforce a rule ISO 32000-1 does not state.
     #[test]
     fn the_unencrypted_line_states_rather_than_refuses() {

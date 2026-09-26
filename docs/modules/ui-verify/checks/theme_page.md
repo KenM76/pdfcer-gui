@@ -39,7 +39,7 @@ Every theme oracle in this project, this file's original check included,
 measures **chrome**: a dialog body, a rendered widget pair, a palette.
 Nothing had ever asked what the theme did to the **sheet**.
 
-★★★ **That is the single invariant a dark theme in this product must hold.**
+**That is the single invariant a dark theme in this product must hold.**
 pdfcer draws CAD drawings. A dark chrome is a comfort; a *tinted sheet* is an
 unreadable drawing, because the linework's contrast is the whole content and
 the paper is the reference the eye reads it against. `egui_shell::theme`

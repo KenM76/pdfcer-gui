@@ -11,7 +11,7 @@ filter's effect on a list**, and the wording rules they follow are
 particular to that job. Keeping them together is what lets those rules
 be written down once and asserted below.
 
-# ★★★ The three rules this copy follows
+# The three rules this copy follows
 
 **1. Say the number, not the adjective.** *"3 of 16 layers"* and never
 *"some layers are hidden"*. An operator scanning a filtered list needs

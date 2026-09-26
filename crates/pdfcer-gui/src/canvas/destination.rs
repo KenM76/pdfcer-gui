@@ -89,7 +89,7 @@ pub enum ArriveStep {
     Drop,
 }
 
-/// ★★★ **The gate that stops a destination being framed against another page's
+/// **The gate that stops a destination being framed against another page's
 /// geometry** — `DEFECTS.md` D23, and the fourth reading of it, which is the
 /// one the trace forces.
 ///
@@ -125,7 +125,7 @@ pub enum ArriveStep {
 /// in the strip. The view lands on page 0 at 3.12×, which is precisely what
 /// the operator sees.
 ///
-/// ★ Note what is NOT wrong, because two readings died on each: the
+/// Note what is NOT wrong, because two readings died on each: the
 /// destination resolves, the page turn happens, the arrival matches, the
 /// anchor arithmetic is exact, and `last_frame` is this frame's record (
 /// `zoom::remember_frame` runs in `canvas::present` *before* `interact`, which
@@ -156,7 +156,7 @@ pub enum ArriveStep {
 /// | the frame record is about the destination's page | [`ArriveStep::Frame`] | the ordinary case, and the *only* case that existed before — a bookmark whose page is already on screen takes this arm on its first frame, so nothing about bookmarks changes |
 /// | it is about some other page, or there is no record yet | [`ArriveStep::Hold`], until `waited` reaches [`MAX_WAIT_FRAMES`], then [`ArriveStep::Drop`] | the page turn is in flight; one more frame and the strip will have laid it out |
 ///
-/// ★★ **Bounded, like `AnchorStep`, and for the same reason.** A destination
+/// **Bounded, like `AnchorStep`, and for the same reason.** A destination
 /// held indefinitely would be spent much later on an unrelated layout change —
 /// a window resize, a mode switch — as a view that springs to a bookmark
 /// clicked a minute ago. That is worse than not arriving.
@@ -179,7 +179,7 @@ pub fn arrive_step(
 
 /// Drain a parked destination, if there is one, and land on it.
 ///
-/// ★★ A ONE-SHOT — consumed on the frame it is acted on, never left standing.
+/// A ONE-SHOT — consumed on the frame it is acted on, never left standing.
 /// A destination that survived its frame would fight every subsequent pan, and
 /// the operator would find the view springing back to a bookmark they clicked a
 /// minute ago. The one exception is [`ArriveStep::Hold`], which is bounded by
@@ -191,7 +191,7 @@ pub(crate) fn arrive(
     actions: &mut Vec<Action>,
 ) {
     let waited_id = egui::Id::new(WAITED_MEMORY_KEY);
-    // ★ READ, not `take()`. Whether this destination is spent is
+    // READ, not `take()`. Whether this destination is spent is
     // [`arrive_step`]'s answer, and taking it first would make `Hold`
     // unexpressible — the frame that decided to wait would already have thrown
     // away the thing it was waiting for.
@@ -203,7 +203,7 @@ pub(crate) fn arrive(
     };
     let page_index = doc.view.page_index;
     let waited = ctx.data(|d| d.get_temp::<u32>(waited_id).unwrap_or(0));
-    // ★★★ **The page the canvas's frame record is actually about** — the whole
+    // **The page the canvas's frame record is actually about** — the whole
     // of D23's fourth reading in one line. `zoom::frame_rect` will plan against
     // this record; if it describes another sheet, everything downstream of it
     // is arithmetic about the wrong page. See [`arrive_step`].
@@ -257,7 +257,7 @@ pub(crate) fn arrive(
             }
         }
     }
-    // ★★ Traced on EVERY step, whether or not it lands. A destination that was
+    // Traced on EVERY step, whether or not it lands. A destination that was
     // parked and then dropped — wrong page, un-invertible geometry, a page that
     // never appeared — is indistinguishable from one that was never raised, and
     // the two send a reader to opposite places. `step=` and `frame_page=` are
@@ -276,7 +276,7 @@ pub(crate) fn arrive(
     match step {
         ArriveStep::Hold => {
             ctx.data_mut(|d| d.insert_temp(waited_id, waited + 1));
-            // ★ The next frame is REQUESTED, not assumed. A reactive shell that
+            // The next frame is REQUESTED, not assumed. A reactive shell that
             // idles because nothing moved would hold the destination until the
             // operator jogged the mouse, and it would then land — correctly, and
             // seconds after the click, which reads as the view lurching on its
@@ -292,7 +292,7 @@ pub(crate) fn arrive(
             doc.dest_origin_x = None;
             ctx.data_mut(|d| d.insert_temp(waited_id, 0u32));
             if let Some(region) = region {
-                // ★ The outcome is reported by `zoom::zoom_to_rect` itself, on
+                // The outcome is reported by `zoom::zoom_to_rect` itself, on
                 // the same channel, as `canvas-zoom to=rect …` — so it is not
                 // lost by being discarded here. The one variant this call site
                 // could have acted on is `NoCanvas`, and it is now unreachable:
@@ -310,7 +310,7 @@ pub(crate) fn arrive(
 mod tests {
     use super::*;
 
-    /// ★★★ **D23 in one assertion.** The view has turned to page 3 and the
+    /// **D23 in one assertion.** The view has turned to page 3 and the
     /// canvas is still drawing page 0; framing now would plan a zoom against
     /// the wrong sheet's geometry and land the operator back where they were.
     #[test]
@@ -328,7 +328,7 @@ mod tests {
         assert_eq!(arrive_step(0, 0, Some(0), 0), ArriveStep::Frame);
     }
 
-    /// ★★ The wait is BOUNDED. A destination held for ever would be spent on
+    /// The wait is BOUNDED. A destination held for ever would be spent on
     /// some later layout change as a view springing to a bookmark clicked a
     /// minute ago.
     #[test]

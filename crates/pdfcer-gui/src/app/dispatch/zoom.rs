@@ -7,7 +7,7 @@
 //! change for different reasons: a new tab or a new dispatch convention
 //! touches the parent, a new way of choosing a magnification touches this.
 //!
-//! ## ★ What is NOT here, and must not be added
+//! ## What is NOT here, and must not be added
 //!
 //! `view.zoom_in`, `view.zoom_out`, `view.next_page` and `view.prev_page` have
 //! no arm in this file because **no such command is registered** — no catalog
@@ -60,7 +60,7 @@ pub(crate) fn dispatch(
     actions: &mut Vec<Action>,
 ) {
     match id {
-        // ★ **The one arm here whose RETURN VALUE matters.**
+        // **The one arm here whose RETURN VALUE matters.**
         //
         // `ZoomOutcome` is `#[must_use]` precisely because its declining
         // variants are the point. Discarding it with a `let _ =` turns
@@ -97,7 +97,7 @@ pub(crate) fn dispatch(
         // Arms; does not act. The canvas disarms it when the drag ends,
         // so there is no "turn it off" arm to write.
         "view.zoom_region" => crate::canvas::zoom::arm_region_zoom(ctx),
-        // ★★ **Actual size is `ZoomTo(1.0)`, not `Fit(FitMode::None)`.**
+        // **Actual size is `ZoomTo(1.0)`, not `Fit(FitMode::None)`.**
         //
         // `Fit(FitMode::None)` only stops the per-frame re-fit and leaves
         // the zoom where it was, so it would pin whatever magnification

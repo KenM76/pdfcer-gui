@@ -10,7 +10,7 @@
 //! > integers."*
 //!
 //!
-//! ## ★★★ Why a TEST and not a swap
+//! ## Why a TEST and not a swap
 //!
 //! Because the failure mode of a wrong invalidation key is not a slow program.
 //! `PageObjects` addresses content **by index**, so a stale model makes
@@ -22,7 +22,7 @@
 //! number notices. Each test here is one dependency class, driven through the
 //! real verbs, on a fixture built for it.
 //!
-//! ## ★★ The class this is really about
+//! ## The class this is really about
 //!
 //! The engine's reply says the memo's key is *"(page id, every `/Contents`
 //! entry with its staged span, the effective `/Resources`)"* — and that the
@@ -63,7 +63,7 @@ fn plain_fixture() -> pdfcer_core::document::Document {
         .expect("fixture a1-titleblock.pdf must load")
 }
 
-/// ★★★ **A content edit moves it.** The baseline: without this the number
+/// **A content edit moves it.** The baseline: without this the number
 /// would be useless in the other direction, and a cache keyed on it would
 /// never rebuild.
 #[test]
@@ -93,7 +93,7 @@ fn a_content_edit_moves_the_generation() {
     );
 }
 
-/// ★★★ **AN EDIT INSIDE A FORM MOVES IT — and this test was red for four
+/// **AN EDIT INSIDE A FORM MOVES IT — and this test was red for four
 /// hours between the two facts.**
 ///
 /// ## The whole exchange, because the shape is worth keeping
@@ -105,7 +105,7 @@ fn a_content_edit_moves_the_generation() {
 /// | 23:36 | the shell took a workaround — its own counter, bumped at the six `*_in_form` call sites — and **this test was written INVERTED**, asserting the limitation so it would go red the day it stopped being true |
 /// | 01:4x | `pdfcer-core` `6e2b69e`: the digest folds in the descended-form set. This test went red on the first build after `cargo update`, naming the counter to delete |
 ///
-/// ★★ That is the third time in two days a test written to assert a
+/// That is the third time in two days a test written to assert a
 /// *limitation* has closed its own request. The alternative — a comment saying
 /// "this does not work yet" — is not executed, so it survives the fix and
 /// misleads the next reader instead of catching them.
@@ -162,7 +162,7 @@ fn an_edit_inside_a_form_moves_the_generation() {
     );
 }
 
-/// ★★ **An annotation-only edit does NOT move it** — which is the whole prize.
+/// **An annotation-only edit does NOT move it** — which is the whole prize.
 ///
 /// Authoring a form field or a markup changes `/Annots`, never the page's
 /// content stream. Today this shell rebuilds its 469 ms decomposition anyway,
@@ -176,7 +176,7 @@ fn an_annotation_edit_does_not_move_the_generation() {
         .page_content_generation(0)
         .expect("page 0 has a generation");
 
-    // ★ Built through the shell's own pen helper rather than as a literal, for
+    // Built through the shell's own pen helper rather than as a literal, for
     // the reason `apply::tests` gives for the same call: the spec's fields are
     // `#[non_exhaustive]`-adjacent in practice — a variant gaining a field
     // breaks a literal here and not the shell — and the helper is what the

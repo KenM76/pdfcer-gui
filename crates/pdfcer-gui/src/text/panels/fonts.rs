@@ -33,7 +33,7 @@ pub fn fonts_total_size(total: &str) -> String {
     format!("Embedded font data in this document: {total}.")
 }
 
-/// ★ The coverage disclosure, shown unconditionally above the list.
+/// The coverage disclosure, shown unconditionally above the list.
 ///
 /// Not a caveat and not a footnote. An operator reading a font inventory to
 /// decide what to delete needs the shape of the evidence, and "there is one
@@ -68,7 +68,7 @@ pub fn fonts_scan_truncated() -> &'static str {
 
 /// The end state: nothing is missing an embedded program.
 ///
-/// ★ Deliberately NOT "ready to submit", "passes embedding checks", or
+/// Deliberately NOT "ready to submit", "passes embedding checks", or
 /// anything naming PDF/A or a print service. Those are claims about a third
 /// party's acceptance that pdfcer has not verified. This states only what
 /// pdfcer measured.
@@ -152,7 +152,7 @@ pub fn font_reason_removable() -> &'static str {
     "This font's character codes are standard, so another font could draw the same text."
 }
 
-/// ★ Reason for [`font_verdict_blocked_identity`] — the sentence this whole
+/// Reason for [`font_verdict_blocked_identity`] — the sentence this whole
 /// panel exists to say.
 ///
 /// Two tiers, because two independently-bad outcomes stack here and a
@@ -225,14 +225,14 @@ pub fn font_reason_unknown_subtype() -> &'static str {
 // ---------------------------------------------------------------------------
 // fsType
 //
-// ★ CLAIM-BEARING COPY. Every sentence below says what the FONT VENDOR'S
+// CLAIM-BEARING COPY. Every sentence below says what the FONT VENDOR'S
 // BITS ASSERT — never what "the licence permits". The OpenType specification
 // is explicit that `fsType` is the vendor's machine-readable assertion of
 // intent and not the licence itself, and that a face may permit more or less
 // than its bits say. Saying "the licence permits" would be pdfcer making a
 // legal claim about a document it has only read four bits of.
 //
-// ★ Four states, and **none of them may look like `0`.** `fsType == 0`
+// Four states, and **none of them may look like `0`.** `fsType == 0`
 // genuinely *means* Installable — the most permissive value the field can
 // express — so a blank, a dash, or an empty line for "we could not read it"
 // would assert the broadest embedding right there is on the strength of
@@ -306,7 +306,7 @@ pub fn font_fstype_version_gated() -> &'static str {
     "This font's OS/2 table is too old for the subsetting and bitmap bits to have had a meaning, so pdfcer ignores them as the format requires."
 }
 
-/// ★ `fsType` could not be read.
+/// `fsType` could not be read.
 ///
 /// Must never be mistaken for value 0 — which genuinely means Installable,
 /// the most permissive value the field can express. The word "unknown" is in

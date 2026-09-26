@@ -13,12 +13,12 @@
 > the nodes. If I recall this is similar to how Inscape does things and we
 > should follow that convention."*
 
-★ He named the convention, so **the convention is the spec** — this shell's
+He named the convention, so **the convention is the spec** — this shell's
 standing rule about never inventing an interaction model. What follows is
 Inkscape's group context, applied to the only container a PDF page actually
 has.
 
-## ★★★ What this changes, and it is the opposite of what it sounds like
+## What this changes, and it is the opposite of what it sounds like
 
 It sounds like *"add a way to go deeper"*. It is not. Before this module a
 click on a title block selected **one line inside it**, because the deep hit
@@ -53,7 +53,7 @@ has had since S4, and they are deliberately untouched: a container is a
 have meant re-reading every `match` on that enum and every assertion that
 *"Object is the rung a click starts on and Escape returns to"*.
 
-## ★★ Why a scope rather than a rung, in one sentence
+## Why a scope rather than a rung, in one sentence
 
 Because a form XObject **is a page object**. Selecting it is an ordinary
 Object-rung selection of `TargetId::Object(paint_order)`; being *inside* it
@@ -87,7 +87,7 @@ Every one of these leaves the container, and each is somebody's habit:
 5. **Leaving Edit mode**, because the whole gesture is content selection and
    `caps.edit_content` is what grants that.
 
-★ 3–5 are enforced by **the record carrying its own page and document
+3–5 are enforced by **the record carrying its own page and document
 epoch** rather than by five call sites remembering to clear it. That is the
 `dialogs::placing` lesson applied one module over: a state that five routes
 must remember to clear is a state one of them will forget.

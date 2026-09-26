@@ -1,7 +1,7 @@
 //! # `shell::commands::catalog::measure` — the Measure tab — ce dimensions and the scale they are read at
 //!
 //!
-//! ## ★★★ The split is per TAB, and the reason it was refused before is gone
+//! ## The split is per TAB, and the reason it was refused before is gone
 //!
 //! [`super`]'s header argued against exactly this cut:
 //!
@@ -28,7 +28,7 @@ pub(super) fn band() -> Vec<Command> {
         // The Measure tab was the worst instance in the build, because five is
         // more than four and because these are the tab's whole purpose.
         //
-        // ★★ **The argument that held the share together was sound and is now
+        // **The argument that held the share together was sound and is now
         // spent.** It ran: *all of these place a dimension, what differs is what
         // they measure FROM, and four near-identical rulers would make the group
         // harder to read rather than easier.* Both halves were true of the
@@ -59,7 +59,7 @@ pub(super) fn band() -> Vec<Command> {
         command("measure.linear", t::measure_linear(), 600)
             .with_icon("measure")
             .enabled_when("doc.pages"),
-        // ★ **Radius / diameter** — a closed circle, a spoke to the rim, a dot
+        // **Radius / diameter** — a closed circle, a spoke to the rim, a dot
         // on the centre: the drafting convention for a radius dimension, and one
         // glyph for both readings because the two are one stored geometry at two
         // scales (decision 011, `diameter = 2 x radius`) rather than two
@@ -105,7 +105,7 @@ pub(super) fn band() -> Vec<Command> {
         // [`crate::icons::Icon::ShapePolyline`] is angular, because vertices are
         // what that glyph is about and a cable run has none.
         //
-        // ★ Its dangerous neighbour is [`crate::icons::Icon::ShapeInk`] — one
+        // Its dangerous neighbour is [`crate::icons::Icon::ShapeInk`] — one
         // irregular flowing stroke spanning the tile, no baseline, no
         // periodicity, which describes both glyphs exactly. **The entire
         // difference is the two terminator ticks.** Freehand ink has no ends
@@ -118,13 +118,13 @@ pub(super) fn band() -> Vec<Command> {
             .enabled_when("doc.pages"),
         // Registered as part of Phase 7, moving out of `manifest::PLANNED`.
         //
-        // ★ Two straight lines meeting at a vertex with a small arc swept across
+        // Two straight lines meeting at a vertex with a small arc swept across
         // the corner: the drafting convention for an angular dimension, and a
         // picture of the gesture — pick one line, pick a second, and
         // `pdfcer_core::dimension::author_from_two_lines` places whichever
         // dimension the geometry calls for.
         //
-        // ★★ **The arc draws only half of what this tool does, and the variant
+        // **The arc draws only half of what this tool does, and the variant
         // doc says so deliberately.** The tool is linear between parallels and
         // angular between lines that meet. Drawing the parallel case would mean
         // two parallels with a dimension across them, which is
@@ -145,7 +145,7 @@ pub(super) fn band() -> Vec<Command> {
         command("measure.two_line", t::measure_two_line(), 602)
             .with_icon("measure-angle")
             .enabled_when("doc.pages"),
-        // ★ **Finish** — the ribbon half of the radius/diameter tool's ending.
+        // **Finish** — the ribbon half of the radius/diameter tool's ending.
         //
         // The radius/diameter gesture is the only one on this tab with no
         // natural end: Linear finishes at three clicks and Two-line at two,
@@ -194,7 +194,7 @@ pub(super) fn band() -> Vec<Command> {
         // * A completion verb rendering as its word was an honest fallback, not
         //   a defect — which is why the button was shippable in the meantime.
         //
-        // ★ **Why `check` here and `finish-shape` on `markup.finish`.** The
+        // **Why `check` here and `finish-shape` on `markup.finish`.** The
         // review supplied two candidate glyphs for these two near-identical
         // commands: `check`, a bare asymmetric tick, and `finish-shape`, a
         // vertex run with a tick appended. They must not share — that is the
@@ -235,7 +235,7 @@ pub(super) fn band() -> Vec<Command> {
             .with_icon("set-scale")
             .enabled_when("doc.pages"),
         //
-        // ★ **The borrow of `list` ended**, and what it was costing is worth
+        // **The borrow of `list` ended**, and what it was costing is worth
         // stating because the borrow was defensible right up until it was not.
         // `list` — [`crate::icons::Icon::ManageList`], three equal rules — is a
         // glyph of ACTION rather than of SUBJECT: it says "here is a set of

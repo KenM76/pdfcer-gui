@@ -17,7 +17,7 @@ Three verbs, and each one broke on its own:
 | **see** | `off_page_visible` | the object is painted at all |
 | **edit** | **this file** | it is still there once you zoom in on it |
 
-# ★★★ Why "edit" is a separate property, and why the first two were green
+# Why "edit" is a separate property, and why the first two were green
 
 
 The pasteboard O23 shipped was `viewport × 1.0`: a fixed count of **screen
@@ -42,7 +42,7 @@ multiplies it by the zoom and publishes it once per frame onto
 `max(viewport × FRACTION, overhang + viewport / 2)`. The `+ viewport / 2` is
 the difference between *reaching* a point and *looking at* it.
 
-# ★★ The climb is calibrated against THIS window, not against a constant
+# The climb is calibrated against THIS window, not against a constant
 
 The old ceiling is a function of the viewport, so a check that zoomed to a
 hard-coded 1000 % would have been a real test on a laptop and a vacuous one
@@ -52,7 +52,7 @@ the zoom at which the old pasteboard stopped reaching
 ([`OFF_PTS`] × zoom > viewport), and climbs [`PAST_THE_OLD_CEILING`] beyond
 it before it asserts anything.
 
-★ It reports that number. A reader of a *passing* run can see how far past
+It reports that number. A reader of a *passing* run can see how far past
 the old limit it actually got, which is the difference between "green" and
 "measured".
 
@@ -80,7 +80,7 @@ exactly as fast as the zoom makes that irrelevant.
 [`the_patches_straddle_the_edge_at_every_zoom_this_check_reaches`] pins the
 arithmetic against the fixture's own content stream.
 
-★★★ The **pair** is the point. If the halo is not painted, both patches read
+The **pair** is the point. If the halo is not painted, both patches read
 canvas grey: the ink patch fails and the control passes, which is the
 feature failing. If the probe is aimed at a panel or at the desktop, both
 read dark: the control fires first and the check reports a **harness**
@@ -95,7 +95,7 @@ is the defect itself** — "the object walked off the screen while I zoomed
 toward it" is the literal complaint — so it is caught and reported as a
 FAILURE carrying the arithmetic that predicts it.
 
-★ The same call is made *before* the climb as well, and there it **is** a
+The same call is made *before* the climb as well, and there it **is** a
 SKIP, because a fixture that is already out of view at 100 % says nothing
 about zooming. Same error, opposite verdict, decided by which side of the
 climb it happened on.

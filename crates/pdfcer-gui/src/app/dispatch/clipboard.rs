@@ -27,7 +27,7 @@ pub fn handles(id: &str) -> bool {
             | "edit.copy_as_vector"
             | "edit.paste"
             | "edit.paste_duplicate"
-            // ★★ `edit.duplicate`, 2026-09-06 — and it is the one id here that
+            // `edit.duplicate`, 2026-09-06 — and it is the one id here that
             // never touches the clipboard. It is routed to this module anyway
             // because *"make another one of this"* is what the operator was
             // doing with Copy-then-Paste before it existed, and because the
@@ -41,13 +41,13 @@ pub fn handles(id: &str) -> bool {
 pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut Vec<Action>) {
     match id {
         "edit.copy" | "edit.cut" => copy_or_cut(app, ctx, id, actions),
-        // ★★ The copy-OUT takes no `ctx` and raises no `Action`, and both
+        // The copy-OUT takes no `ctx` and raises no `Action`, and both
         // absences are the point: it neither reads the internal clipboard nor
         // changes the document. It renders and it places. See `copy_as_vector`.
         "edit.copy_as_vector" => copy_as_vector(app),
         "edit.paste" => paste(app, ctx, id, PasteAs::NewField, actions),
         "edit.paste_duplicate" => paste(app, ctx, id, PasteAs::Duplicate, actions),
-        // ★ Takes no `ctx`, like the copy-OUT and for the mirror reason: it
+        // Takes no `ctx`, like the copy-OUT and for the mirror reason: it
         // neither reads nor writes the clipboard, so there is nothing in
         // `egui`'s memory for it to consult. Its whole operand is the
         // selection.
@@ -56,7 +56,7 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mu
     }
 }
 
-/// ★★★ **`edit.duplicate`** — a second copy of the selected comment, offset,
+/// **`edit.duplicate`** — a second copy of the selected comment, offset,
 /// **without using the clipboard**. `Ctrl+D`.
 ///
 /// # Why it is here and not an extension of `edit.paste_duplicate`
@@ -74,7 +74,7 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mu
 /// the behaviour it would stop having. The same argument this module's header
 /// makes for the two pastes being two commands, applied once more.
 ///
-/// # ★★ What it does NOT do, and it is the feature
+/// # What it does NOT do, and it is the feature
 ///
 /// It does not put anything on the clipboard and does not read what is there.
 /// An operator laying out a row of revision marks keeps whatever they were
@@ -82,7 +82,7 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mu
 /// destroyed once per mark. `crate::text::commands::edit_duplicate`'s tooltip
 /// leads with that clause for the same reason.
 ///
-/// # ★★ The mode gate is `author_markup`, and the sentence is its own
+/// # The mode gate is `author_markup`, and the sentence is its own
 ///
 /// A duplicate authors an annotation, so Review — the mode whose whole purpose
 /// is marking up somebody else's drawing — must be able to do it, and Read must
@@ -93,13 +93,13 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mu
 /// `DuplicateMarkup` — carries the wording, and its doc comment argues why a
 /// shared remedy still owes its own sentence.
 ///
-/// ★★★ It records through `decline::record_mode_refusal`, which draws in the
+/// It records through `decline::record_mode_refusal`, which draws in the
 /// `⊗` slot meaning *this did not happen* — never through
 /// `actions::record_note`, which draws under `⚑ About your last edit:` and
 /// would report a press where nothing happened as an edit. Fourth application
 /// of the split this module's header states.
 ///
-/// # ★ The operand refusals go through `record_note`, unchanged
+/// # The operand refusals go through `record_note`, unchanged
 ///
 /// Nothing selected, an annotation the engine will not carry, a selection that
 /// has outlived its annotation — those are
@@ -149,7 +149,7 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut
         return;
     }
 
-    // ★★★ RUNG 2 — A FORM FIELD. See the header for why this rung had to be
+    // RUNG 2 — A FORM FIELD. See the header for why this rung had to be
     // added rather than merely widened: nothing below can see a `/Widget`.
     if doc.selected_field.is_some() {
         let caps = app.capabilities();
@@ -179,7 +179,7 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut
 
     // RUNG 3 — an annotation, or page content.
     //
-    // ★★ The gate follows WHAT IS SELECTED, not the command. A cut removes
+    // The gate follows WHAT IS SELECTED, not the command. A cut removes
     // something, so it needs a mode that may remove that kind of thing.
     // Cutting an annotation needs `author_markup` (Review and Edit); cutting
     // page content needs `edit_content` (Edit alone), the same predicate the
@@ -208,7 +208,7 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut
         });
         return;
     }
-    // ★ Copy is permitted in every mode and cut is not, and the split is the
+    // Copy is permitted in every mode and cut is not, and the split is the
     // operator's own *copying is not authoring* ruling.
     let outcome = if cutting {
         crate::canvas::clipboard::cut(ctx, doc, actions)
@@ -220,7 +220,7 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut
             doc.edit_epoch,
             crate::text::clipboard::refusal(refusal),
         ),
-        // ★★★ **A PARTIAL COPY SAYS SO** — rule 4, "fuzzy never sneaky",
+        // **A PARTIAL COPY SAYS SO** — rule 4, "fuzzy never sneaky",
         // applied to the clipboard.
         //
         // A copy that took three of four selected things looks *identical* to
@@ -229,12 +229,12 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut
         // does not, because what went missing was a comment's author and
         // opacity rather than a shape.
         //
-        // ★ It is said HERE and not in `canvas::clipboard`, whose standing
+        // It is said HERE and not in `canvas::clipboard`, whose standing
         // contract is that it changes no document and words no decline. The
         // clip carries the facts (`left_behind`, `thin`) and this is the layer
         // that has a status row.
         //
-        // ★★ It is said on the status row rather than drawn on the canvas,
+        // It is said on the status row rather than drawn on the canvas,
         // which is the other half of rule 4: **the pasted mark must render
         // exactly as a saved one will**, so a partial paste gets no badge, no
         // tint and no provisional styling. The disclosure lives off-canvas or
@@ -264,7 +264,7 @@ fn paste(
     };
     let clipped = crate::canvas::clipboard::read(ctx);
 
-    // ★ The gate follows WHAT IS ON THE CLIPBOARD, for the same reason the
+    // The gate follows WHAT IS ON THE CLIPBOARD, for the same reason the
     // cut's follows what is selected: a paste has no operand on the page to
     // look at, so the clipboard is the only honest source.
     let caps = app.capabilities();
@@ -272,7 +272,7 @@ fn paste(
     let (allowed, refusal) = match &clipped {
         //
         //
-        // ★ The stricter gate wins on a mixed clip, and it has to: pasting one
+        // The stricter gate wins on a mixed clip, and it has to: pasting one
         // is one act, so a mode that may not add a line to a drawing may not
         // add three lines and a cloud either. Asking `author_markup` for the
         // whole thing would let Review paste geometry.
@@ -289,7 +289,7 @@ fn paste(
                 )
             }
         }
-        // ★ A form field is document content, not a comment on it, so it takes
+        // A form field is document content, not a comment on it, so it takes
         // the content gate rather than the markup one. Review may annotate a
         // drawing; it may not add a fillable box to it.
         Some(crate::canvas::clipboard::Clipped::FormField(_)) => (
@@ -325,7 +325,7 @@ fn paste(
     let page = doc.view.page_index;
     let epoch = doc.edit_epoch;
 
-    // ★★★ **WHERE THE POINTER IS, IN PDF USER SPACE** —
+    // **WHERE THE POINTER IS, IN PDF USER SPACE** —
     // `OPERATOR_REQUESTS.md` O73: *"When I cut or copy an object, when I paste
     // it should paste where the mouse cursor is sitting."*
     //
@@ -333,7 +333,7 @@ fn paste(
     // content paste and a field paste cannot land in three different places
     // for three different reasons.
     //
-    // ★★ `zoom::anchor_point` answers the "what if the pointer is not over the
+    // `zoom::anchor_point` answers the "what if the pointer is not over the
     // canvas?" question and it is not a new rule: it honours the pointer only
     // while it lies inside the viewport, and otherwise returns the viewport's
     // own **centre**. So a `Ctrl+V` pressed while the pointer is over a dock,
@@ -342,7 +342,7 @@ fn paste(
     // the SAME function the zoom anchor uses, so there is one rule about where
     // the pointer counts rather than two that can drift apart.
     //
-    // ★ The page comes from the recorded frame rather than from
+    // The page comes from the recorded frame rather than from
     // `doc.view.page_index`, so a paste aimed at a strip page lands on the
     // sheet the operator is pointing at. `None` — the canvas has never drawn —
     // falls every paste back to the offset rule it used before today.
@@ -355,7 +355,7 @@ fn paste(
         clipped,
         Some(crate::canvas::clipboard::Clipped::FormField(_))
     ) {
-        // ★★★ THE ONE THING WORTH SAYING *BEFORE* THE PRESS, and it is the only
+        // THE ONE THING WORTH SAYING *BEFORE* THE PRESS, and it is the only
         // pre-press disclosure this shell owes on a paste.
         //
         // Everything else a paste carries or drops is reported AFTER, by the
@@ -365,7 +365,7 @@ fn paste(
         // calculation chain looks identical on the page to one that is not: the
         // operator has no way to know a script is coming until it has come.
         //
-        // ★ The engine deliberately does NOT resolve the field names inside the
+        // The engine deliberately does NOT resolve the field names inside the
         // script, and says so. Acrobat is documented silently dropping a copied
         // JavaScript reference to a field the target lacks — discovered only on
         // reopen — and naming the uncertainty beats half-analysing it.
@@ -382,7 +382,7 @@ fn paste(
         return;
     }
 
-    // ★ `edit.paste_duplicate` over a markup or over page content falls through
+    // `edit.paste_duplicate` over a markup or over page content falls through
     // to the ordinary paste rather than refusing. See the header: neither has a
     // second sense to duplicate into, so the paste is the honest answer to the
     // more specific chord.
@@ -391,14 +391,14 @@ fn paste(
     }
 }
 
-/// ★★★ **`edit.copy_as_vector`** — put the page, or the selection on it, on the
+/// **`edit.copy_as_vector`** — put the page, or the selection on it, on the
 /// operating system's clipboard as **editable geometry**.
 ///
 /// `OPERATOR_REQUESTS.md` **O120**, 2026-09-03: *"Also I'd like to be able to
 /// copy and paste anything to other software - like copy and paste vector
 /// graphics into word or inkscape for example if possible."*
 ///
-/// # ★★ Why this is a fifth id and not a modifier on `edit.copy`
+/// # Why this is a fifth id and not a modifier on `edit.copy`
 ///
 /// The same argument the two pastes make one screen up, and it holds harder
 /// here: **a command is the unit this shell can register, bind, place on a
@@ -415,7 +415,7 @@ fn paste(
 /// else's program, and touches the internal clipboard not at all — so a copy-out
 /// does not destroy what the operator had copied for an in-pdfcer paste.
 ///
-/// # ★★ It says something on SUCCESS, which no other clipboard verb here does
+/// # It says something on SUCCESS, which no other clipboard verb here does
 ///
 /// Because it alone has two possible operands and the button cannot show which
 /// was taken: the selection if there is one, the whole page otherwise. An

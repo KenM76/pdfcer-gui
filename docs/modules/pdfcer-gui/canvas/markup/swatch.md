@@ -19,7 +19,7 @@ a verb, it has no undo, it raises no `Action`, and giving it a handler token
 would put a no-op through the dispatch `match` for every click of a colour
 picker.
 
-## ★ What it sets, and the one thing it deliberately does not
+## What it sets, and the one thing it deliberately does not
 
 `RIBBON_IA.md` §5.5's Style group is *"Colour · Line width · Fill ·
 Opacity"*. Two of the four ship here and two do not, and the two absences
@@ -41,7 +41,7 @@ so that the next reader does not spend a minute looking for a fifth bullet in
 `RIBBON_IA.md` §5.5 that is not there — the entry they will find is §5.8's,
 about the **other** surface.
 
-### ★★★ The Fill row, corrected: it was describing ONE of two surfaces and
+### The Fill row, corrected: it was describing ONE of two surfaces and
 ### did not say which
 
 It used to read *"a design decision, not a gap"*, followed by [`super::spec`]'s
@@ -58,7 +58,7 @@ only ever talking about one of them:
 ⇒ The distinction is the whole answer to *"why can I fill that rectangle and
 not this pen?"*, and a row that named neither surface could not give it.
 
-### ★★★ The Opacity row, corrected: it was FALSE, and false in the direction
+### The Opacity row, corrected: it was FALSE, and false in the direction
 ### this project has been wrong in before
 
 It used to read *"blocked on the engine. Annotation transparency is `/CA`,
@@ -74,14 +74,14 @@ region and its own tooltip, while this table three screens above it said it
 could not exist. Both were read by everyone who opened the file and only the
 table was believed, because a table is what a reader trusts.
 
-★★ That is the **eighth** stale blocker this project has found and it is the
+That is the **eighth** stale blocker this project has found and it is the
 second one *in this file*. The standing rule it produced — **a backlog row is
 a record, not evidence** — has a corollary that this instance adds: *a
 capability table in a module header is a claim about the module, and the
 module is right there.* The correction is written rather than deleted because
 the shape of the mistake is the useful part.
 
-## ★★★ THE PALETTE POPUP — what the operator asked for by name
+## THE PALETTE POPUP — what the operator asked for by name
 
 > *"Also make sure you've used the same default colours and style look for
 > these things as Adobe."*

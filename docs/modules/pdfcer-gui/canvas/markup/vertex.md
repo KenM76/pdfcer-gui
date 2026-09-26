@@ -7,7 +7,7 @@ the two endings do, and what the preview has to draw that a band's does not.
 
 ---
 
-## 1. ★ THE ENDING IS A SOLVED PROBLEM IN THIS CODEBASE, AND IT IS SOLVED
+## 1. THE ENDING IS A SOLVED PROBLEM IN THIS CODEBASE, AND IT IS SOLVED
 ## HERE THE SAME WAY
 
 A band drag ends when the button comes up. A polyline does not: click, click,
@@ -80,7 +80,7 @@ they disagree about is the *second* way out, and this is the interesting half:
   process can ever prove works. `markup.finish` is a control, and a control
   is clickable.
 
-### 1.2 ★ Polygon closes and polyline does not — what that means for the last
+### 1.2 Polygon closes and polyline does not — what that means for the last
 ### click and for the preview
 
 It means **nothing at all for the gesture** and **one segment for the
@@ -130,7 +130,7 @@ The first two are [`load`]'s two synchronisations and are lifted from
 `measure::load` unchanged, including their order: the kind first, because a
 kind change is what invalidates the vertices, then the page.
 
-★ Note what is **not** on that list: retiring the tool. `disarm_markup` puts
+Note what is **not** on that list: retiring the tool. `disarm_markup` puts
 the pen down and does not discard work, exactly as `disarm_measure` does not —
 which is why [`finishable`] has to check that the tool is still armed rather
 than merely that a run exists. Without that check the ribbon would offer

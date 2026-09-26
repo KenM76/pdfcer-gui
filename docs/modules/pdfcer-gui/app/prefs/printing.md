@@ -15,7 +15,7 @@ even within one sitting, because the dialog value is dropped when it closes.
 So an operator who prints every drawing landscape, two-sided, on the
 plotter, at 600 dpi re-answered all four questions on every single print.
 
-## ★★★ The distinction that decides what is remembered
+## The distinction that decides what is remembered
 
 Some of what is in that dialog is **about the job** and some is **about how
 this operator prints**. Only the second kind may be remembered, and the test
@@ -42,7 +42,7 @@ commit button's own label, which reads the live number — so a job of 25
 cannot be committed without the number being on screen at the moment of
 commitment.
 
-### ★ The paper policy is remembered; a specific SHEET is not
+### The paper policy is remembered; a specific SHEET is not
 
 [`PaperChoice::Form`] holds a `dmPaperSize` integer, and those are only
 standard up to a point: the low ids are Win32 constants, but everything a

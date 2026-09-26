@@ -38,7 +38,7 @@ shell stops being reusable.
 Line width, fill and opacity are **N** and join the swatch when they
 exist.
 
-# ★ ONE of ten markup kinds is missing, and it is the one that matters most
+# ONE of ten markup kinds is missing, and it is the one that matters most
 
 
 ## The count, and what each correction to it taught

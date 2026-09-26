@@ -13,13 +13,13 @@ use crate::text::panels::formfield as t;
 
 /// The section's rect, for `ui-verify`.
 ///
-/// ★ A published region name is a cross-repo stability contract: the harness
+/// A published region name is a cross-repo stability contract: the harness
 /// asserts on it by string, so renaming one turns a check into a skip rather
 /// than a failure.
 const REGION: &str = "properties.form_field";
 /// The **Rename** control's rect, published only when the control is drawn.
 ///
-/// ★★★ "Only when drawn" is the whole value of it. On a document that refuses a
+/// "Only when drawn" is the whole value of it. On a document that refuses a
 /// rename this section draws a sentence and no control at all (R9), so the
 /// region's *absence* is the evidence a driven check reads — and it is
 /// admissible evidence only because [`TRACE_GATES`] is written on every frame
@@ -46,7 +46,7 @@ const REGION_DELETE_REFUSED: &str = "properties.form_field.delete_refused";
 
 /// **Would deleting the selected form field be refused right now?**
 ///
-/// ★★★ THE ONE DERIVATION. Four readers, and the whole point of it being a
+/// THE ONE DERIVATION. Four readers, and the whole point of it being a
 /// function is that they cannot disagree:
 ///
 /// | reader | what it does with the answer |
@@ -56,14 +56,14 @@ const REGION_DELETE_REFUSED: &str = "properties.form_field.delete_refused";
 /// | `crate::canvas::keys` (via `crate::canvas::interact`) | declines rung 0 of the Delete ladder |
 /// | `crate::app::dispatch::format` | declines the `format.delete` arm's form-field branch |
 ///
-/// ★ Two further readers ask [`document_refuses_delete`] instead, and only
+/// Two further readers ask [`document_refuses_delete`] instead, and only
 /// because they hold a field that is **not** `doc.selected_field`:
 /// `crate::canvas::rightclick`, correcting the menu's condition on the frame
 /// the right-click lands, and `crate::app::actions::forms::delete`, the verb
 /// itself. That entry point's doc carries why the scope split is real and not
 /// a second derivation.
 ///
-/// # ★★★ It is the FORMS query, not the annotation one, and that was the defect
+/// # It is the FORMS query, not the annotation one, and that was the defect
 ///
 /// `crate::app::conditions` published `selection.delete_permitted` from
 /// `annotdelete::refuses_selected` alone, guarded by
@@ -91,7 +91,7 @@ const REGION_DELETE_REFUSED: &str = "properties.form_field.delete_refused";
 /// `Locked` bit, which no form field has, and §12.8.2.2 Table 254 puts
 /// annotation editing on a different `/P` line from form-structure editing.
 ///
-/// # ★★ `false` when nothing is selected, and the direction of the safe error
+/// # `false` when nothing is selected, and the direction of the safe error
 ///
 /// This answers *would the engine refuse?*, never *is there anything to
 /// delete?* — the second question is `selection.actionable`'s, and conflating
@@ -116,7 +116,7 @@ pub fn refuses_delete(doc: &OpenDoc) -> bool {
 /// **Would deleting ANY form field of this document be refused?** —
 /// [`refuses_delete`] with the selection question taken out of it.
 ///
-/// ★★★ Not a second derivation: the **same** engine query at a different scope,
+/// Not a second derivation: the **same** engine query at a different scope,
 /// and the scope split is written down rather than left to the reader because
 /// it is exactly the thing a caller gets wrong.
 ///
@@ -130,7 +130,7 @@ pub fn refuses_delete(doc: &OpenDoc) -> bool {
 /// | [`refuses_delete`] | *would deleting the **selected** field be refused?* | the four readers that offer a control **about a selection**, where "nothing selected" must read as `false` — an empty selection is nothing to refuse, and answering `true` there would take `format.delete` off the `canvas.object` menu for a reason about forms |
 /// | this | *does this **document** refuse form deletion?* | the two callers holding a field that is **not** (yet) `doc.selected_field` |
 ///
-/// # ★★ The two callers, and why each genuinely cannot use the other
+/// # The two callers, and why each genuinely cannot use the other
 ///
 /// 1. **`crate::canvas::rightclick`**, deciding whether the `canvas.field`
 ///    menu may draw Delete. `menus::attach` corrects two conditions locally
@@ -159,7 +159,7 @@ pub fn document_refuses_delete(doc: &OpenDoc) -> bool {
 /// Returns whether anything was drawn, so [`super::body`] can decide whether a
 /// separator is wanted — the same protocol its three sibling sections use.
 ///
-/// ## ★ Three early returns, and the middle one is the interesting one
+/// ## Three early returns, and the middle one is the interesting one
 ///
 /// 1. **Nothing selected** — the common case, and the panel says nothing at
 ///    all rather than "no field selected". R9: an unavailable capability
@@ -194,7 +194,7 @@ pub fn section(
 
     let epoch = doc.edit_epoch;
 
-    // ★★★ R83 — ASKED HERE, ONCE, BEFORE EITHER CONTROL IS DRAWN, AND EACH
+    // R83 — ASKED HERE, ONCE, BEFORE EITHER CONTROL IS DRAWN, AND EACH
     // CONTROL ASKS ITS OWN QUESTION.
     //
     // Both are **pure queries**: they read the signature census and the trailer
@@ -229,7 +229,7 @@ pub fn section(
     // does not — two checks of three, which works until it does not, on
     // documents that are not exotic.
     //
-    // ★★★ The delete half is asked through [`refuses_delete`] rather than
+    // The delete half is asked through [`refuses_delete`] rather than
     // through `doc.session.deletion_refusal()` inline, and that indirection is
     // the fix rather than a tidy-up. It was inline here, and the three other
     // doors to the same verb — the condition behind `format.delete`'s
@@ -269,7 +269,7 @@ pub fn section(
     // it is handed and raises actions, so the borrow ends with the frame.
     super::fieldedit::section(ui, field, &selected.field, state, epoch, actions);
     ui.add_space(6.0);
-    // ★★ The WIDGET half, directly under the field half, in the engine's own
+    // The WIDGET half, directly under the field half, in the engine's own
     // scope order: what belongs to the field, then what belongs to this one
     // box. `widget_scope_note` explains the distinction in the one state where
     // it is visible — a field drawn in more than one place.
@@ -285,7 +285,7 @@ pub fn section(
     ui.add_space(6.0);
     delete_row(ui, field, &selected, delete_refused, actions);
     ui.add_space(6.0);
-    // ★★ What is left out of reach, and it is now the WIDGET half rather than
+    // What is left out of reach, and it is now the WIDGET half rather than
     // the field half. See `text::panels::formfield::not_editable_note` for the
     // sentence this replaced and why it was worse than a gap.
     ui.small(t::not_editable_note());
@@ -328,7 +328,7 @@ fn facts(
         &t::label_page(),
         &t::page_number(selected.page.saturating_add(1)),
     );
-    // ★ Only when there is more than one, because "1 box" is noise on the
+    // Only when there is more than one, because "1 box" is noise on the
     // overwhelming majority of fields and the number is only interesting as a
     // warning: a field drawn in three places is one an operator can change from
     // three pages without realising.
@@ -353,7 +353,7 @@ fn facts(
 
 /// One label-and-value line.
 ///
-/// ★ `truncate()` rather than wrapping, and the value on hover. A
+/// `truncate()` rather than wrapping, and the value on hover. A
 /// fully-qualified name can run to any length, and a panel row that grew to
 /// three lines would push everything under it around as the operator clicked
 /// between fields — the same restlessness `disclosure_line` exists to prevent
@@ -368,7 +368,7 @@ fn row(ui: &mut Ui, label: &str, value: &str) {
 
 /// The rename draft and its button.
 ///
-/// # ★★★ On a document that refuses a rename, this draws a SENTENCE and no box
+/// # On a document that refuses a rename, this draws a SENTENCE and no box
 ///
 /// `refused` is `EditSession::rename_refusal`'s answer, asked in [`section`]
 /// before anything was drawn. When it is true the operator gets one line saying
@@ -386,7 +386,7 @@ fn row(ui: &mut Ui, label: &str, value: &str) {
 /// controls: an operator who finds the rename box missing with no explanation
 /// has found a panel that looks half-drawn.
 ///
-/// ★★ What this replaces is worse than either. Before this, the box and the
+/// What this replaces is worse than either. Before this, the box and the
 /// button were drawn unconditionally, the operator typed a new name, pressed
 /// Rename, and the engine refused **after** the typing — with the refusal
 /// reaching the trace and nothing else. That is the shape R83 exists to remove:
@@ -403,7 +403,7 @@ fn rename_row(
         return;
     }
     ui.label(t::rename_label());
-    // ★ The draft is seeded from the selection and re-seeded when the selection
+    // The draft is seeded from the selection and re-seeded when the selection
     // changes, so clicking a second field does not leave the first field's name
     // sitting in the box waiting to be applied to the wrong one. That is the
     // failure this two-field state exists to prevent, and it is why the key is
@@ -416,7 +416,7 @@ fn rename_row(
             .desired_width(f32::INFINITY)
             .char_limit(crate::canvas::formfield::draft::NAME_MAX),
     );
-    // ★★ The partial name, NOT the qualified one. `rename_field` takes a
+    // The partial name, NOT the qualified one. `rename_field` takes a
     // partial name and rebuilds the qualified one from the parent chain, so a
     // dotted string typed here would author a `/T` containing a dot — a field
     // no reader, including pdfcer, can address again.
@@ -431,7 +431,7 @@ fn rename_row(
     // Three enforcement sites, two behaviours, unreported and unreportable
     // while the rule could only be enforced and never asked.
     //
-    // ★★ What this buys beyond being correct today is that the hover can name
+    // What this buys beyond being correct today is that the hover can name
     // the case that actually applies. The old gate could only report that one
     // of its two clauses had failed, so an operator looking at an EMPTY box —
     // the state this panel opens in — was told to type a name with no dots in
@@ -449,7 +449,7 @@ fn rename_row(
     let refusal = pdfcer_core::forms_author::validate_partial_name(&typed).err();
     let ready = refusal.is_none();
     let commit = ui.add_enabled(ready, egui::Button::new(t::rename_button()));
-    // ★ Published only on the path where the control exists — see
+    // Published only on the path where the control exists — see
     // `REGION_RENAME`. Greying is still correct HERE: "you have not typed a
     // usable name yet" is exactly the temporary, operator-fixable condition R9
     // reserves greying for, and it is explained on hover two lines down.
@@ -477,7 +477,7 @@ fn rename_row(
 
 /// The two delete controls.
 ///
-/// ★★ Two, not one, and they are different requests. See
+/// Two, not one, and they are different requests. See
 /// `Action::DeleteFormField`'s doc: one field may be drawn in several places,
 /// so "remove this box" and "remove this field" have different consequences,
 /// and offering only one of them makes the other impossible.
@@ -486,7 +486,7 @@ fn rename_row(
 /// is R9 rather than greying: with one box the two buttons would do the same
 /// thing, and a control that duplicates its neighbour is worse than absent.
 ///
-/// # ★★★ `refused` — the second half of a finding, and this is what it cost
+/// # `refused` — the second half of a finding, and this is what it cost
 ///
 /// `EditSession::deletion_refusal` has existed for the whole life of this
 /// shell, carries a doctest that spells out this exact call site, and was
@@ -512,7 +512,7 @@ fn delete_row(
     actions: &mut Vec<Action>,
 ) {
     if refused {
-        // ★★★ A SENTENCE, never a silence — and it is published as a named
+        // A SENTENCE, never a silence — and it is published as a named
         // region so the withholding is *provable* from outside the process.
         //
         // `REGION_DELETE` above is declared only when the button is drawn and
@@ -563,7 +563,7 @@ mod tests {
 
     /// The `/Sig` field both fixtures carry, merged with its widget on page 1.
     ///
-    /// ★ Named by `/T` rather than discovered, because the whole value of the
+    /// Named by `/T` rather than discovered, because the whole value of the
     /// fixture pair is that the two documents are identical apart from the
     /// catalog's `/Perms` — a test that went looking for "a field" could find a
     /// different one in each and report the difference as a gate difference.
@@ -576,7 +576,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **A certified document refuses to delete its form fields, and the
+    /// **A certified document refuses to delete its form fields, and the
     /// derivation says so.**
     ///
     /// The positive half. `fixtures/certified-comments.pdf` carries an enforced
@@ -597,7 +597,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The uncertified twin permits it**, which is what makes the test
+    /// **The uncertified twin permits it**, which is what makes the test
     /// above evidence rather than a tautology.
     ///
     /// The two fixtures differ in **one dictionary** (`tools/gen-certified-fixture.py`
@@ -623,7 +623,7 @@ mod tests {
         );
     }
 
-    /// ★★ **`false` when nothing is selected, on the document that refuses.**
+    /// **`false` when nothing is selected, on the document that refuses.**
     ///
     /// The derivation answers *would the engine refuse?* and never *is there
     /// anything to delete?* — the second question is `selection.actionable`'s.

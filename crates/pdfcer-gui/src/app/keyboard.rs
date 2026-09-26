@@ -1,6 +1,6 @@
 //! # `app::keyboard` — the keyboard map, and the guard that must not be wrong
 //!
-//! ## ★ `DEFECTS.md` D1 — read this before touching the guard
+//! ## `DEFECTS.md` D1 — read this before touching the guard
 //!
 //! The old GUI's keyboard map guarded its unmodified-key bindings with:
 //!
@@ -93,12 +93,12 @@ pub fn collect(ctx: &Context, page_count: Option<usize>) -> Vec<Action> {
         return actions;
     };
 
-    // ★ D1. `text_edit_focused()`, NEVER `egui_wants_keyboard_input()`.
+    // D1. `text_edit_focused()`, NEVER `egui_wants_keyboard_input()`.
     // See the module docs for the whole story; the one-line version is that
     // the latter means "any widget has focus", the canvas takes focus on
     // click, and the difference cost the operator the Delete key and all
     // keyboard page navigation from the first click onward.
-    // ★★ …and a CANVAS text draft counts as typing too, which
+    // …and a CANVAS text draft counts as typing too, which
     // `text_edit_focused()` alone cannot see.
     //
     // These bindings are page keys, not characters, so the harm is not a
@@ -126,7 +126,7 @@ pub fn collect(ctx: &Context, page_count: Option<usize>) -> Vec<Action> {
     // the page keys must keep working right up until the caret is placed.
     let typing = crate::canvas::textedit::composing(ctx);
 
-    // ★★ **The zoom chords match the modifiers CARRIED BY THE KEY EVENT, not
+    // **The zoom chords match the modifiers CARRIED BY THE KEY EVENT, not
     // the frame's.** [`commands`] carries the whole argument and it applies
     // here identically: `InputState::modifiers` is the state as of the END of
     // the frame, `Event::Key` carries the state as of the KEYSTROKE, and the
@@ -236,7 +236,7 @@ pub fn collect(ctx: &Context, page_count: Option<usize>) -> Vec<Action> {
 #[must_use]
 /// The chord an `egui` clipboard event stands in for, or `None`.
 ///
-/// ★ Named for the CHORD rather than the command, because the mapping from
+/// Named for the CHORD rather than the command, because the mapping from
 /// chord to command is the keymap's and this function must not have an opinion
 /// about it. What egui has taken away is the *keystroke*; this puts the
 /// keystroke back and lets the keymap decide what it means.
@@ -246,7 +246,7 @@ pub fn collect(ctx: &Context, page_count: Option<usize>) -> Vec<Action> {
 /// is not silently dead — which is the failure mode this whole function is a
 /// fix for, one layer up.
 ///
-/// # ★★★ `shift` is a parameter because egui CANNOT tell the two pastes apart
+/// # `shift` is a parameter because egui CANNOT tell the two pastes apart
 ///
 /// `OPERATOR_REQUESTS.md` **O58** binds `Ctrl+Shift+V` to `edit.paste_duplicate`,
 /// and `egui-winit-0.35.0`'s own predicate is:
@@ -265,7 +265,7 @@ pub fn collect(ctx: &Context, page_count: Option<usize>) -> Vec<Action> {
 /// unrecoverable from the event and must come from the input state.
 ///
 ///
-/// # ★★ Why the frame's modifiers, when this file's own rule says per-event
+/// # Why the frame's modifiers, when this file's own rule says per-event
 ///
 /// Because there is no per-event answer to have. `Event::Paste` is a *semantic*
 /// event synthesised by the platform layer; the keystroke that produced it was
@@ -295,7 +295,7 @@ pub fn commands(ctx: &Context, keymap: Option<&Keymap>) -> Vec<String> {
         return Vec::new();
     };
 
-    // ★★ **Typing beats every chord, and that is not the D1 predicate alone.**
+    // **Typing beats every chord, and that is not the D1 predicate alone.**
     //
     // Two claimants have to be asked about, because this shell composes text in
     // two different places:
@@ -325,7 +325,7 @@ pub fn commands(ctx: &Context, keymap: Option<&Keymap>) -> Vec<String> {
         return Vec::new();
     }
 
-    // ★★ **Read the modifiers CARRIED BY THE KEY EVENT, not the frame's.**
+    // **Read the modifiers CARRIED BY THE KEY EVENT, not the frame's.**
     //
     // The obvious shape — `i.key_pressed(key)` for the key and `i.modifiers`
     // for the modifiers — is subtly wrong, and wrong in a way that only shows
@@ -348,14 +348,14 @@ pub fn commands(ctx: &Context, keymap: Option<&Keymap>) -> Vec<String> {
     // Matching per event also removes the two-pass shape below it: each event
     // knows its own key and its own modifiers, so there is nothing to carry
     // between the `input` borrow and the filter.
-    // ★ The events AND the modifier state in ONE borrow — see
+    // The events AND the modifier state in ONE borrow — see
     // [`clipboard_chord`] for why the second is needed and why it cannot be a
     // per-event fact. Two separate `ctx.input` calls could straddle a frame.
     let (events, shift_held) = ctx.input(|i| (i.events.clone(), i.modifiers.shift));
 
     let mut out = Vec::new();
     for ev in events {
-        // ★★★ CTRL+C, CTRL+X AND CTRL+V NEVER ARRIVE AS KEY EVENTS, AND THAT IS
+        // CTRL+C, CTRL+X AND CTRL+V NEVER ARRIVE AS KEY EVENTS, AND THAT IS
         // WHY THEY HAVE NEVER WORKED.
         //
         // The operator, twice: *"still no ctrl+c, ctrl+v, ctrl+x"*. On
@@ -376,7 +376,7 @@ pub fn commands(ctx: &Context, keymap: Option<&Keymap>) -> Vec<String> {
         // chord was dead the day it was written and every unit test agreed it
         // was bound, because a keymap lookup is not a keystroke.
         //
-        // ★ And `Ctrl+V` is worse than the other two: `Event::Paste` is pushed
+        // And `Ctrl+V` is worse than the other two: `Event::Paste` is pushed
         // **only if the OS clipboard has non-empty text**. With an empty
         // clipboard the keystroke vanishes entirely — no event of any kind — so
         // a paste of something pdfcer is holding in its own memory would depend
@@ -385,7 +385,7 @@ pub fn commands(ctx: &Context, keymap: Option<&Keymap>) -> Vec<String> {
         // clipboard when it copies, for exactly that reason; its own note
         // carries the argument.
         //
-        // ★★ The translation goes THROUGH THE KEYMAP rather than hard-coding
+        // The translation goes THROUGH THE KEYMAP rather than hard-coding
         // three ids. An operator who rebinds `Ctrl+C` gets the rebinding
         // honoured, and a manifest that binds these chords to something else
         // entirely still works — which is R8's whole posture: the registry
@@ -418,7 +418,7 @@ pub fn commands(ctx: &Context, keymap: Option<&Keymap>) -> Vec<String> {
             if wanted_key != key {
                 continue;
             }
-            // ★ EXACT, never `Modifiers::matches_logically`.
+            // EXACT, never `Modifiers::matches_logically`.
             //
             // egui's own matcher is permissive — it asks whether the pattern's
             // modifiers are *present*, not whether the extras are *absent* — so
@@ -446,7 +446,7 @@ pub fn commands(ctx: &Context, keymap: Option<&Keymap>) -> Vec<String> {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 //
-                // ★ The chord is QUOTED (`{chord:?}`), and it has to be. Two of
+                // The chord is QUOTED (`{chord:?}`), and it has to be. Two of
                 // the manifest's bindings are `[` and `]`, and the harness's
                 // trace parser tracks bracket depth so that
                 // `rect=[[0.0 0.0] - [16.0 9.0]] zoom=1.5` does not split into
@@ -494,7 +494,7 @@ mod tests {
         out
     }
 
-    /// ★ The D1 regression test.
+    /// The D1 regression test.
     ///
     /// Drives a real `Context` through two frames. The first takes focus on
     /// a plain (non-text) widget id — which is exactly what the canvas does
@@ -590,7 +590,7 @@ mod tests {
         );
     }
 
-    /// ★★ The modifier is read from the KEYSTROKE, not from the frame.
+    /// The modifier is read from the KEYSTROKE, not from the frame.
     ///
     /// One long frame — a dense sheet rasterizing — can deliver the press and
     /// the modifier's release together. `InputState::modifiers` then reports
@@ -715,7 +715,7 @@ mod tests {
             let _ = ctx.run_ui(key_press(key, Modifiers::NONE), |ui| {
                 ids = commands(ui.ctx(), Some(&keymap));
             });
-            // ★ **The chord's OWN id must be absent** — not the whole list.
+            // **The chord's OWN id must be absent** — not the whole list.
             //
             //
             // The property under test never was "a bare key does nothing". It is
@@ -729,7 +729,7 @@ mod tests {
     }
 
     // -----------------------------------------------------------------------
-    // ★ The one-owner-per-chord guard, and the derivation it protects
+    // The one-owner-per-chord guard, and the derivation it protects
     // -----------------------------------------------------------------------
 
     /// The real keymap, as the application will use it.
@@ -743,7 +743,7 @@ mod tests {
             .expect("the built-in manifest binds chords")
     }
 
-    /// ★ **No chord has two owners.**
+    /// **No chord has two owners.**
     ///
     /// This is the regression test for the defect in the module header. It
     /// walks every chord [`collect`] binds outright, in every spelling a
@@ -769,7 +769,7 @@ mod tests {
         }
     }
 
-    /// ★★ **THE GATE. Every chord the manifest binds actually fires.**
+    /// **THE GATE. Every chord the manifest binds actually fires.**
     ///
     /// The test whose absence let fourteen shortcuts ship dead. Its
     /// predecessor asserted the right property and then swept a *third* of the
@@ -809,7 +809,7 @@ mod tests {
         }
     }
 
-    /// ★★ **A chord survives its modifier being released in the SAME frame.**
+    /// **A chord survives its modifier being released in the SAME frame.**
     ///
     /// The regression test for a defect that only appears under load and reads,
     /// from outside, as harness flakiness.
@@ -851,7 +851,7 @@ mod tests {
         );
     }
 
-    /// ★ A chord with extra modifiers held does NOT fire the shorter one.
+    /// A chord with extra modifiers held does NOT fire the shorter one.
     ///
     /// `Ctrl+Z` is undo and `Ctrl+Shift+Z` is redo. egui's own
     /// `Modifiers::matches_logically` is permissive - it asks only that the
@@ -874,7 +874,7 @@ mod tests {
         );
     }
 
-    /// ★ A focused text field silences every chord.
+    /// A focused text field silences every chord.
     ///
     /// Both halves of the guard matter, and this is the `egui::TextEdit` one:
     /// `Ctrl+Z` inside a field is the field's undo, and a document-level undo
@@ -917,7 +917,7 @@ mod tests {
         );
     }
 
-    /// ★ ...and a CANVAS text draft silences them too.
+    /// ...and a CANVAS text draft silences them too.
     ///
     /// The half `text_edit_focused()` cannot see. The caret this shell paints
     /// on the page is not an `egui::TextEdit`, so egui reports no focused text
@@ -959,7 +959,7 @@ mod tests {
         );
     }
 
-    /// ★ **`Ctrl+0` is actual size, and it is the manifest that says so.**
+    /// **`Ctrl+0` is actual size, and it is the manifest that says so.**
     ///
     /// Both halves matter. The first is the decision — the browser
     /// convention, and what `view_zoom_actual`'s tooltip and the
@@ -984,7 +984,7 @@ mod tests {
         );
     }
 
-    /// ★ **`Ctrl+O` reaches the Open command.**
+    /// **`Ctrl+O` reaches the Open command.**
     ///
     /// The chord was in the keymap and printed in `file_open`'s tooltip from
     /// the day the ribbon landed, and pressing it did **nothing**: the shell
@@ -1040,7 +1040,7 @@ mod tests {
         }
     }
 
-    /// ★ **The meaning really is derived, not restated.**
+    /// **The meaning really is derived, not restated.**
     ///
     /// Hands `commands` a keymap that binds `Ctrl+0` to something else
     /// entirely and watches the chord follow it. This is the test that would
@@ -1060,7 +1060,7 @@ mod tests {
         assert_eq!(ids, vec!["view.zoom_fit_width".to_owned()]);
     }
 
-    /// ★★★ **Every chord the manifest binds is written down in `MANUAL.md`.**
+    /// **Every chord the manifest binds is written down in `MANUAL.md`.**
     ///
     ///
     /// The manual's *"Every keyboard shortcut"* section documented **33** of
@@ -1073,7 +1073,7 @@ mod tests {
     /// The operator's report that started this was about a different feature
     /// he could not find; the shape is the same one either way.
     ///
-    /// ★ Both numbers are measurements of that day's tree and are *not* what
+    /// Both numbers are measurements of that day's tree and are *not* what
     /// this test asserts — it reads the manifest every run, so it stays right
     /// as the keymap grows. Quoted here only to record the size of the gap an
     /// unchecked table had been carrying.

@@ -15,7 +15,7 @@
 //! checkboxes appear — all of them branch here. A reader asking *"what does
 //! confirming actually do?"* is asking about this enum.
 //!
-//! ★ [`Destination::stages`] and [`Destination::writes_now`] are the two
+//! [`Destination::stages`] and [`Destination::writes_now`] are the two
 //! predicates the dialog branches on, and they are deliberately **not**
 //! complements of each other. See `stages`' own note: a predicate written as
 //! the negation of another changes meaning silently when a variant is added,
@@ -44,7 +44,7 @@
 /// on exactly this reasoning; the redaction had quietly taken the decision away
 /// on his behalf.
 ///
-/// ★ What the old ruling was *actually* protecting is kept, and kept in the
+/// What the old ruling was *actually* protecting is kept, and kept in the
 /// form it belongs in: [`Self::NewFile`] is still the **default**, and
 /// `crate::dialogs::redact::suggested_path` still never suggests the source. A
 /// safe default is a mechanism; a warning is something to click past. The
@@ -69,7 +69,7 @@
 /// the paragraph is not softened, it is **replaced** — [`Self::OpenDocument`]
 /// is the destination it said was impossible, and it is now the default.
 ///
-/// ★ What the old paragraph got right and is worth keeping: the manoeuvre it
+/// What the old paragraph got right and is worth keeping: the manoeuvre it
 /// refused — *"building a second `EditSession` and swapping it under the open
 /// document"* — is still refused, and the engine did not ship that either. Its
 /// verb collapses the session in place, keeps the document identity, and clears
@@ -81,7 +81,7 @@
 /// open\request_apply_redactions_into_the_session.md` and the reply beside it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Destination {
-    /// ★★★ **The open document, with nothing written — the default since
+    /// **The open document, with nothing written — the default since
     /// 2026-09-04 (evening), and the thing he actually asked for.**
     ///
     /// `crate::redact::stage_into_session`: the removal is armed, and
@@ -92,7 +92,7 @@ pub(super) enum Destination {
     /// writes nothing. The old default ([`Self::NewFile`]) was safe because it
     /// never overwrote; this is safer still, because it never writes.
     ///
-    /// ★★★ **Its price was inverted on 2026-09-05, and the old price is worth
+    /// **Its price was inverted on 2026-09-05, and the old price is worth
     /// recording because it is what the operator agreed to.** Under
     /// `Pass 250.1` this destination **finalized**: the removal happened at the
     /// click and the whole undo log went with it, disclosed above the confirm
@@ -106,7 +106,7 @@ pub(super) enum Destination {
     /// **The open document, now** — the removal happens at the click and the
     /// page changes on screen.
     ///
-    /// # ★★★ Why this exists, and it is an operator report
+    /// # Why this exists, and it is an operator report
     ///
     /// The operator, 2026-09-08: *"the redaction feature regressed back to just
     /// giving me the 'don't apply yet' button."*
@@ -122,14 +122,14 @@ pub(super) enum Destination {
     /// happen, which is his 2026-09-04 complaint in a new form — *"what is the
     /// purpose of a redaction tool that refuses every time to do any work?"*
     ///
-    /// ★★ **The deferred destination is not a mistake and is not being
+    /// **The deferred destination is not a mistake and is not being
     /// replaced.** It is cheaper, it is safer, and he asked for it. What was
     /// missing is the other half: a way to apply the removal and SEE it. His
     /// own ruling on the price is on the record — *"finalizing the document and
     /// can't be undone is ok for now"* — so the cost is one he has already
     /// accepted, stated at the control rather than discovered.
     ///
-    /// ★ It writes **no file**. That is what distinguishes it from
+    /// It writes **no file**. That is what distinguishes it from
     /// [`Self::ReplaceOriginal`], and it is why it is *"this document"* rather
     /// than *"save"*: the redacted bytes replace the open session, and where
     /// they go on disk stays his decision.
@@ -144,7 +144,7 @@ pub(super) enum Destination {
     ReplaceOriginal,
 }
 
-/// ★★★ **The destination a freshly-opened dialog starts on.**
+/// **The destination a freshly-opened dialog starts on.**
 ///
 /// A named constant rather than a literal inside [`RedactDialog::open`], so the
 /// property that actually matters — *the default writes nothing* — can be
@@ -170,7 +170,7 @@ impl Destination {
     /// Whether confirming **stages** the removal for the next save rather than
     /// performing it.
     ///
-    /// ★★★ Added 2026-09-08 with [`Self::OpenDocumentNow`], and it is the
+    /// Added 2026-09-08 with [`Self::OpenDocumentNow`], and it is the
     /// reason that variant needed more than a radio row. The confirm handler
     /// branched on `!writes_now()` — *"anything that does not write a file is
     /// staged"* — which was true while `OpenDocument` was the only

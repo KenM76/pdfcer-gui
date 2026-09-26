@@ -52,7 +52,7 @@ const CHORDS: &[Chord] = &[
         spelling: "Ctrl+Shift+Z",
         command: "edit.redo",
     },
-    // ★ The Shift case twice over, because `Modifiers::matches_logically` is
+    // The Shift case twice over, because `Modifiers::matches_logically` is
     // permissive and would let `Ctrl+Shift+E` also satisfy `Ctrl+E`. The unit
     // gate asserts the exact comparison; this proves it through a real keyboard.
     Chord {
@@ -140,7 +140,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(40);
     let driver = Driver::new(session.window());
 
-    // ★ The control probe, first and separately. `find_bar`'s pattern and its
+    // The control probe, first and separately. `find_bar`'s pattern and its
     // reasoning: a check that types into a window which is not listening must
     // report SKIP rather than name a feature as broken. `Ctrl+2` is bound to
     // `mode.review` and has been dispatchable since the ribbon landed, so a
@@ -161,7 +161,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("control chord Ctrl+2 arrived, so the input channel works");
 
     // --- press each chord and collect what dispatched ----------------------
-    // ★ Press them ALL, then read the trace ONCE.
+    // Press them ALL, then read the trace ONCE.
     //
     // Not per-chord, and the difference is not tidiness. A chord whose command
     // does real work — `[` rotates the page and spawns a re-render — can have

@@ -77,7 +77,7 @@ pub fn separations(ui: &mut Ui, draft: &mut Draft) {
 
 /// What to draw for a control that carries several appearances and names none.
 ///
-/// # ★ The guess disclosure here is inverted, and deliberately
+/// # The guess disclosure here is inverted, and deliberately
 ///
 /// Every other setting's default note says whether *that default* is a guess.
 /// This one says that **the other two options are** — because the shipped

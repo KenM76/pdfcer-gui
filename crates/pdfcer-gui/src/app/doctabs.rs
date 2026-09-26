@@ -72,7 +72,7 @@ impl PdfcerApp {
             return;
         }
 
-        // ★ Everything that needs `&self` is read BEFORE the strip is drawn,
+        // Everything that needs `&self` is read BEFORE the strip is drawn,
         // and everything that needs `&mut self` is applied after.
         //
         // The reason is the menu host: it borrows `self.shell` and
@@ -93,7 +93,7 @@ impl PdfcerApp {
 
         let strip = egui_shell::tabstrip::strip(ui, &theme, &tabs, active);
 
-        // ★★ The context menu, attached to each tab's own response.
+        // The context menu, attached to each tab's own response.
         //
         // `egui_shell::tabstrip` deliberately attaches none of its own — a
         // `Response` carries exactly one popup id, so whoever attaches first
@@ -114,7 +114,7 @@ impl PdfcerApp {
                 }
             }
         }
-        // ★ NOT `drop(host)`. `MenuHost` is `Copy`, so dropping it does
+        // NOT `drop(host)`. `MenuHost` is `Copy`, so dropping it does
         // nothing at all and clippy says so — the borrow of `self.shell` and
         // `self.commands` ends where the binding's last USE is, which is the
         // loop above. Naming that here rather than trusting it: everything
@@ -126,7 +126,7 @@ impl PdfcerApp {
             crate::diag::ui_rect(&format!("{REGION_TAB_PREFIX}{slot}"), *rect);
         }
 
-        // ★ Spring-loading, before the intents are applied.
+        // Spring-loading, before the intents are applied.
         //
         // Before, because a spring that fires this frame changes
         // `active_slot`, and an `Activate` intent produced by a click in the
@@ -153,7 +153,7 @@ impl PdfcerApp {
             }
         }
 
-        // ★ The menu's commands, dispatched after the borrow that drew them
+        // The menu's commands, dispatched after the borrow that drew them
         // has ended — and through the ordinary dispatcher, so a row in this
         // menu and the same command anywhere else cannot diverge.
         //
@@ -194,7 +194,7 @@ impl PdfcerApp {
                 // would be a second answer to a question with one owner. See
                 // `app::conditions`' undo/redo note, which makes the same
                 // argument at greater length.
-                // ★★★ O65: `is_modified()` is the engine's "differs from the
+                // O65: `is_modified()` is the engine's "differs from the
                 // BASE revision", and an incremental save takes `&self`, so
                 // the base never moves and the marker never cleared. A tab
                 // that keeps its dot after a successful save is the visible
@@ -249,9 +249,9 @@ impl PdfcerApp {
             return;
         };
 
-        // ★ A diagnostic at the ENTRY of each gate, naming it.
+        // A diagnostic at the ENTRY of each gate, naming it.
         //
-        // ★★ **An instrument that can only return one answer cannot detect the
+        // **An instrument that can only return one answer cannot detect the
         // thing it was added to detect.** `doc-tab-spring` is emitted only when
         // the spring FIRES, so on its own its absence has three
         // indistinguishable meanings: no drag, no hover, or a hover that never
@@ -337,7 +337,7 @@ mod tests {
         );
     }
 
-    /// ★ **The unsaved marker leads the label.**
+    /// **The unsaved marker leads the label.**
     ///
     /// Asserted rather than trusted because the whole argument for the prefix
     /// is about truncation, and a trailing marker would pass any test that

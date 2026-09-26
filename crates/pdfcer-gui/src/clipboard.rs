@@ -76,7 +76,7 @@ impl ClipFormat {
     /// (`RegisterClipboardFormat`) rather than being a predefined `CF_*`
     /// constant.
     ///
-    /// ★ This is the whole of why `arboard` cannot do this job: it offers no
+    /// This is the whole of why `arboard` cannot do this job: it offers no
     /// API for a registered format, and the two formats that return `true`
     /// here are the two that make a Word paste editable and an Inkscape paste
     /// vector.
@@ -86,7 +86,7 @@ impl ClipFormat {
     }
 }
 
-/// ★★★ **The placement order, and it is measured rather than chosen.**
+/// **The placement order, and it is measured rather than chosen.**
 ///
 /// # Why an order exists at all
 ///
@@ -104,7 +104,7 @@ impl ClipFormat {
 /// | 3 | [`ClipFormat::Png`] | Paint.NET, GIMP, browsers, Snip & Sketch — and Office, when the operator deliberately pastes as a picture |
 /// | 4 | [`ClipFormat::DibV5`] | everything older than the `"PNG"` convention; Windows synthesises `CF_DIB` and `CF_BITMAP` from it |
 ///
-/// # ★★★ The property that makes a partial implementation harmful
+/// # The property that makes a partial implementation harmful
 ///
 /// **The two vector entries come first, and if they are absent Word's paste
 /// silently becomes a flat picture.** Not an error, not a warning — a picture
@@ -149,7 +149,7 @@ pub struct CopyPayload {
     pub png: Option<Vec<u8>>,
     /// The raster the PNG was made from, for [`dib_v5`].
     ///
-    /// ★ The pixmap rather than the PNG bytes, because `CF_DIBV5` wants
+    /// The pixmap rather than the PNG bytes, because `CF_DIBV5` wants
     /// **premultiplied** BGRA and the PNG carries straight alpha. Re-deriving
     /// one from the other would mean decoding the PNG we just encoded and
     /// premultiplying it back — two conversions to arrive at the buffer we
@@ -163,7 +163,7 @@ pub struct CopyPayload {
 impl CopyPayload {
     /// The formats this payload can supply, **in [`ORDER`]**.
     ///
-    /// ★ Derived from `ORDER` by filtering rather than by a hand-written list,
+    /// Derived from `ORDER` by filtering rather than by a hand-written list,
     /// so the order cannot be stated correctly in one place and wrongly in
     /// another. A second list is a second answer, and the one that would go
     /// stale is whichever is not the one being read at the time.
@@ -180,7 +180,7 @@ impl CopyPayload {
             .collect()
     }
 
-    /// ★★★ **Whether placing this payload would give Word a flat picture.**
+    /// **Whether placing this payload would give Word a flat picture.**
     ///
     /// True when there is a raster to place and no vector to place before it.
     /// A caller must refuse rather than place such a payload: the paste
@@ -205,7 +205,7 @@ impl CopyPayload {
     }
 }
 
-/// ★★★ **The SVG payload exactly as Chromium writes it: UTF-8, plus one NUL.**
+/// **The SVG payload exactly as Chromium writes it: UTF-8, plus one NUL.**
 ///
 /// # Why a trailing NUL on a format whose length is already known
 ///
@@ -242,7 +242,7 @@ pub fn svg_payload(svg: &str) -> Vec<u8> {
 /// **top-down** (a negative height), `BI_BITFIELDS` with explicit channel
 /// masks, and the sRGB colour space.
 ///
-/// # ★★ Premultiplied, and why the format below it is not
+/// # Premultiplied, and why the format below it is not
 ///
 /// `CF_DIBV5`'s alpha convention is not written down anywhere normative — it
 /// is whatever the ecosystem settled on. Chromium writes premultiplied
@@ -335,7 +335,7 @@ const LCS_GM_IMAGES: u32 = 4;
 /// a 300 DPI copy at 11,810 rather than 11,811 pixels per metre — which is
 /// how a paste ends up a hair's breadth off the page size it should have had.
 ///
-/// ★ The 0.0254 itself now lives in [`crate::units`], beside every other
+/// The 0.0254 itself now lives in [`crate::units`], beside every other
 /// length conversion in the program. What stays here is the part that is about
 /// the DIB and not about the inch: the guard against a nonsense DPI, the zero
 /// returned instead, and the rounding argument above. A conversions table
@@ -355,7 +355,7 @@ pub fn pixels_per_metre(dpi: f32) -> u32 {
 mod tests {
     use super::*;
 
-    /// ★★★ **The placement order is SVG, EMF, PNG, DIB — and nothing else.**
+    /// **The placement order is SVG, EMF, PNG, DIB — and nothing else.**
     ///
     /// The single most important assertion in this module. The order was
     /// *measured* by the engine against a real Word paste through combridge,
@@ -383,7 +383,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The two vector formats come before the two raster ones.**
+    /// **The two vector formats come before the two raster ones.**
     ///
     /// Stated as a property rather than as the literal array above, because
     /// it is the property the whole feature rests on and it should survive a
@@ -407,7 +407,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The SVG entry carries one trailing NUL and the source string
+    /// **The SVG entry carries one trailing NUL and the source string
     /// does not.**
     ///
     /// Chromium's exact byte shape, which is what Office was validated
@@ -433,7 +433,7 @@ mod tests {
         assert_eq!(&unicode[..unicode.len() - 1], "<svg>é</svg>".as_bytes());
     }
 
-    /// ★ **The NUL is not in the payload struct**, so the same string can be
+    /// **The NUL is not in the payload struct**, so the same string can be
     /// written to a `.svg` file.
     ///
     /// XML 1.0 §2.2 does not permit a NUL anywhere in a document, so a file
@@ -454,7 +454,7 @@ mod tests {
         assert_eq!(svg_payload(stored).len(), stored.len() + 1);
     }
 
-    /// ★★★ **A payload with rasters and no vectors is refusable, by name.**
+    /// **A payload with rasters and no vectors is refusable, by name.**
     ///
     /// The engine's note: *"place only the raster formats and it degrades to
     /// a plain picture."* This is the predicate a caller asks before placing,
@@ -489,7 +489,7 @@ mod tests {
         assert!(CopyPayload::default().is_empty());
     }
 
-    /// ★★ **`formats()` reports what would be placed, in `ORDER`** — never in
+    /// **`formats()` reports what would be placed, in `ORDER`** — never in
     /// the order the fields were filled.
     #[test]
     fn the_reported_formats_follow_the_order_and_not_the_struct() {
@@ -509,7 +509,7 @@ mod tests {
         assert!(!payload.formats().contains(&ClipFormat::DibV5));
     }
 
-    /// ★★ **The two registered names are exactly `image/svg+xml` and `PNG`.**
+    /// **The two registered names are exactly `image/svg+xml` and `PNG`.**
     ///
     /// Byte-for-byte, because `RegisterClipboardFormat` is case-sensitive:
     /// `"png"` registers a different, private format that nothing on the
@@ -527,7 +527,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The DIB header is 124 bytes, top-down, `BI_BITFIELDS`, BGRA.**
+    /// **The DIB header is 124 bytes, top-down, `BI_BITFIELDS`, BGRA.**
     ///
     /// Every one of those four is a silent-corruption failure if it is wrong:
     /// a wrong header length reads pixels from the wrong offset, a positive
@@ -565,7 +565,7 @@ mod tests {
         assert_eq!(&dib[124..128], &[0, 0, 255, 255]);
     }
 
-    /// ★★ **The pixels are premultiplied BGRA, not straight alpha.**
+    /// **The pixels are premultiplied BGRA, not straight alpha.**
     ///
     /// The convention Chromium writes and Mozilla reads. A straight-alpha DIB
     /// produces dark haloes around soft edges in exactly the readers that fall
@@ -598,7 +598,7 @@ mod tests {
         );
     }
 
-    /// ★ **Pixels per metre is the exact inch, rounded to nearest.**
+    /// **Pixels per metre is the exact inch, rounded to nearest.**
     ///
     /// 300 DPI / 0.0254 is 11811.02…, so truncation gives 11810 and a paste
     /// lands very slightly wrong. A nonsense resolution yields 0, which is
@@ -614,7 +614,7 @@ mod tests {
         }
     }
 
-    /// ★ A zero-area pixmap cannot exist, and a one-pixel one produces a
+    /// A zero-area pixmap cannot exist, and a one-pixel one produces a
     /// header plus four bytes — the smallest well-formed DIB.
     #[test]
     fn the_smallest_dib_is_a_header_and_one_pixel() {

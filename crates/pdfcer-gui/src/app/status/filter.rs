@@ -30,7 +30,7 @@ use crate::text::pick as t_pick;
 /// stay consistent with. An `Action` round-trip would add a dispatcher arm
 /// whose entire body is one assignment.
 ///
-/// # ★ The caller is what persists it
+/// # The caller is what persists it
 ///
 /// This function does not write to disk, and that is not laziness. *"Did the
 /// operator change the filter"* is one comparison of a `Copy` value at the call
@@ -53,7 +53,7 @@ pub(super) fn show(ui: &mut egui::Ui, filter: &mut PickFilter) -> egui::Response
         .on_hover_text(t_pick::filter_button_tooltip());
     crate::diag::ui_rect(super::REGION_FILTER, response.rect);
 
-    // ★★★ NO MANUAL TOGGLE HERE, AND THE ABSENCE IS THE FIX.
+    // NO MANUAL TOGGLE HERE, AND THE ABSENCE IS THE FIX.
     //
     // This function shipped on 2026-08-21 with an `if response.clicked() {
     // Popup::toggle_id(..) }` above the call below, and **the button did
@@ -74,7 +74,7 @@ pub(super) fn show(ui: &mut egui::Ui, filter: &mut PickFilter) -> egui::Response
     // nothing, every time. A popup that is opened and closed within one frame
     // is indistinguishable from one that was never wired up.
     //
-    // ★ It compiled, 1,628 tests passed, 17 gates passed, and an offscreen
+    // It compiled, 1,628 tests passed, 17 gates passed, and an offscreen
     // smoke launch confirmed the button's rect was published at the right
     // place on the status bar — because every one of those observes the
     // BUTTON, and the button was always fine. R1 is not a slogan: this is the
@@ -89,7 +89,7 @@ pub(super) fn show(ui: &mut egui::Ui, filter: &mut PickFilter) -> egui::Response
 
 /// The body of the Select popup — a heading, All/None, and one row per class.
 ///
-/// # ★ `CloseOnClickOutside`, not `CloseOnClick`
+/// # `CloseOnClickOutside`, not `CloseOnClick`
 ///
 /// egui's default for a menu is to close as soon as anything in it is clicked,
 /// which is right for a list of commands and wrong for a list of checkboxes.
@@ -103,7 +103,7 @@ pub(super) fn show(ui: &mut egui::Ui, filter: &mut PickFilter) -> egui::Response
 /// object-snap list, Illustrator's layer locks, a browser's cookie panel. A
 /// list you can only make one change to is a menu, not a filter.
 fn popup(ui: &mut egui::Ui, filter: &mut PickFilter) {
-    // ★ Deliberately NOT `.strong()`. `tools/gates/check-strong-text.sh`
+    // Deliberately NOT `.strong()`. `tools/gates/check-strong-text.sh`
     // rejects it, and the reason is defect D11: egui has no role for
     // emphasised text, so `.strong()` resolves to the ACCENT-FILLED widget
     // state — pale text on a pale background on an ordinary surface, which
@@ -120,7 +120,7 @@ fn popup(ui: &mut egui::Ui, filter: &mut PickFilter) {
         // is cheaper than a disabled control they have to reason about — R9
         // reserves greying for *temporarily unavailable*, which this is not.
         //
-        // ★ Both publish their rects. A driven check needs to reach a KNOWN
+        // Both publish their rects. A driven check needs to reach a KNOWN
         // filter state without knowing which class the fixture's object
         // belongs to, and "None then All" is that: it makes the assertion
         // *the filter is load-bearing* rather than *row 4 is load-bearing*,
@@ -204,7 +204,7 @@ const fn class_icon(class: PickClass) -> crate::icons::Icon {
 /// indistinguishable from a fault. Drawn on the left, with the narration,
 /// because it is a statement about the session rather than a control.
 ///
-/// ★ Deliberately **not** a mark on the page. Rule 4: disclosure lives
+/// Deliberately **not** a mark on the page. Rule 4: disclosure lives
 /// off-canvas.
 pub(super) fn empty_note(ui: &mut egui::Ui, filter: PickFilter) {
     if !filter.is_none() {
@@ -270,7 +270,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **CLICKING SELECT OPENS THE POPUP.**
+    /// **CLICKING SELECT OPENS THE POPUP.**
     ///
     ///
     /// > *"I see a Select button, but this should be a menu that pops up."*
@@ -286,7 +286,7 @@ mod tests {
     /// drawn, which from outside is indistinguishable from a control that was
     /// never wired up at all.
     ///
-    /// ★ It asserts on `Popup::is_id_open` — the exact flag the two toggles were
+    /// It asserts on `Popup::is_id_open` — the exact flag the two toggles were
     /// fighting over — so a regression fails here rather than somewhere
     /// downstream that merely reads the flag.
     #[test]
@@ -309,7 +309,7 @@ mod tests {
         );
     }
 
-    /// ★★ **AND CLICKING IT AGAIN CLOSES IT.**
+    /// **AND CLICKING IT AGAIN CLOSES IT.**
     ///
     /// The other half of a toggle, and the half a careless fix breaks: deleting
     /// the duplicate could as easily have been deleting *the* toggle, leaving a
@@ -335,7 +335,7 @@ mod tests {
         );
     }
 
-    /// ★ **An idle frame opens nothing.**
+    /// **An idle frame opens nothing.**
     ///
     /// Without this, the test above would pass on a build where the popup was
     /// simply always open — which is a different defect wearing the same green

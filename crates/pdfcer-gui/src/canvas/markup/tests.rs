@@ -1,7 +1,7 @@
 //! # `canvas::markup` tests — the pure rules, enumerated
 //!
 //!
-//! ## ★★ The seam is the one that module's own §5 already draws
+//! ## The seam is the one that module's own §5 already draws
 //!
 //! [`super`]'s header states it: *"[`super::spec`] and [`super::action`] are
 //! pure functions of plain data, so every rule above is testable with no window
@@ -9,7 +9,7 @@
 //! the rules — the same split `gesture::meaning` and `canvas::keys` took in the
 //! same week.
 
-// ★★ The INNER attribute, not just the `mod tests;` declaration in the parent.
+// The INNER attribute, not just the `mod tests;` declaration in the parent.
 // `check-ui-strings.sh`'s exclusion 2b recognises a whole test file from the
 // FILE rather than from its name, and without it every assertion message here
 // is reported as operator-facing copy.
@@ -23,10 +23,10 @@ fn band(start: (f64, f64), end: (f64, f64)) -> Geometry {
 }
 
 // -----------------------------------------------------------------
-// ★ The families partition the kinds
+// The families partition the kinds
 // -----------------------------------------------------------------
 
-/// ★ **Every kind belongs to exactly one gesture family.**
+/// **Every kind belongs to exactly one gesture family.**
 ///
 /// The property `canvas::interact`'s routing and
 /// `gesture::press_kind`'s early return both rest on, asserted as a
@@ -57,10 +57,10 @@ fn the_three_families_partition_every_kind() {
 }
 
 // -----------------------------------------------------------------
-// ★ The arrow keeps its direction
+// The arrow keeps its direction
 // -----------------------------------------------------------------
 
-/// ★ **An arrow dragged up-and-left keeps its head at the end the operator
+/// **An arrow dragged up-and-left keeps its head at the end the operator
 /// dragged to.**
 ///
 /// The salvaged arrow-direction decision, asserted in the direction a
@@ -163,7 +163,7 @@ fn each_kind_authors_its_own_subtype() {
         spec_default_pen(MarkupKind::Polygon, &run),
         Some(MarkupSpec::Polygon { .. })
     ));
-    // ★ The cloud row is the one that could plausibly have been left out,
+    // The cloud row is the one that could plausibly have been left out,
     // and leaving it out is exactly the defect this test is for: a cloud IS
     // a `/Polygon` in the file, so an arm that fell through to
     // `MarkupSpec::Polygon` would author a legal annotation, render, save,
@@ -185,7 +185,7 @@ fn each_kind_authors_its_own_subtype() {
     );
 }
 
-/// ★ **A vertex run and an ink stroke reach the file in the order they were
+/// **A vertex run and an ink stroke reach the file in the order they were
 /// drawn**, point for point.
 ///
 /// The one-derivation promise for the two list-driven families. `/Vertices`
@@ -228,7 +228,7 @@ fn a_vertex_run_and_an_ink_stroke_are_authored_in_drawing_order() {
     assert_eq!(authored, strokes);
 }
 
-/// ★ **No geometric markup is authored with a filled interior**, so a
+/// **No geometric markup is authored with a filled interior**, so a
 /// comment never hides the drawing it is a comment about.
 ///
 /// The Polygon row is the new one and is the one that could plausibly have
@@ -295,7 +295,7 @@ fn a_mismatched_kind_and_geometry_authors_nothing() {
 // Degenerate input
 // -----------------------------------------------------------------
 
-/// ★ **A drag that ends where it began commits nothing** — rather than a
+/// **A drag that ends where it began commits nothing** — rather than a
 /// 1-point mark nobody can see, holding a slot on the undo stack.
 #[test]
 fn a_drag_with_no_extent_commits_nothing() {
@@ -344,7 +344,7 @@ fn the_smallest_real_extent_on_either_axis_still_commits() {
     }
 }
 
-/// ★ **A polygon needs three vertices and a polyline needs two** — the one
+/// **A polygon needs three vertices and a polyline needs two** — the one
 /// place this shell is deliberately stricter than `pdfcer-core`.
 ///
 /// The engine's `validate_geometry` refuses `< 2` for both, so a two-vertex
@@ -476,7 +476,7 @@ fn the_preview_colour_is_the_committed_colour() {
             "{kind:?}"
         );
     }
-    // ★★ …and only Highlight takes the highlighter, and every shipped colour
+    // …and only Highlight takes the highlighter, and every shipped colour
     // is dark enough to be seen on white paper.
     //
     // This pair replaces a single test that read *"only the highlighter is

@@ -12,7 +12,7 @@ page.**
 > but doesn't send us to the spot on the page the bookmark actually points
 > to."*
 
-## ★★★ Why his own drawing is the fixture
+## Why his own drawing is the fixture
 
 `TR-0461-1500-copy.pdf` is the case exactly, and its outline says so:
 
@@ -35,6 +35,6 @@ times that. The `canvas` line carries `zoom=`, so *"did clicking a detail
 bookmark actually take me to the detail"* reduces to *"did the zoom rise"* —
 which no page-only navigation can produce.
 
-★★ Asserted as a RATIO against the zoom before the click rather than against
+Asserted as a RATIO against the zoom before the click rather than against
 an absolute number. The absolute depends on the window size, and a check
 that pinned it would fail on a different monitor while the feature worked.

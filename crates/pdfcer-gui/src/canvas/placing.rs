@@ -22,7 +22,7 @@ const RESULT_MEMORY_KEY: &str = "pdfcer-canvas-placing-result"; // ui-text-exemp
 
 /// Where a cancellation waits to be collected.
 ///
-/// ★ Separate from the result rather than an `Option` inside it. *"The
+/// Separate from the result rather than an `Option` inside it. *"The
 /// operator placed nothing"* and *"the operator has not finished yet"* are
 /// different states, and a single slot would make them the same absence — the
 /// distinction `crate::app::files::Picked` exists to preserve, applied here.
@@ -77,7 +77,7 @@ pub struct Pending {
 /// **Arm a placement**: record who is waiting, and put the canvas in the tool
 /// that collects it.
 ///
-/// ★ One call rather than two, so the record and the tool cannot disagree.
+/// One call rather than two, so the record and the tool cannot disagree.
 /// A `Pending` with no `CanvasTool::Place` armed is a hidden dialog nothing
 /// will ever return to, and the only way to make that unreachable is to make
 /// the two impossible to set separately.
@@ -127,7 +127,7 @@ pub fn cancel(ctx: &egui::Context) -> bool {
 /// the operator experiences as a window moving something they placed minutes
 /// ago.
 pub fn take_result(ctx: &egui::Context) -> Option<(PlaceKind, pdfcer_core::page_tree::Rect)> {
-    // ★ `get_temp` then `remove`, rather than `remove_temp` — the latter needs
+    // `get_temp` then `remove`, rather than `remove_temp` — the latter needs
     // `Default` on the stored type, and neither a `PlaceKind` nor a rectangle
     // has an honest default. Two calls inside one `data_mut` is the same
     // atomicity for the same cost.
@@ -159,7 +159,7 @@ pub fn take_cancelled(ctx: &egui::Context) -> Option<PlaceKind> {
 /// the form-field arm: *"it matches what the drag does"*, so the two gestures
 /// agree about what the pointer means and an operator who switches between them
 /// is not surprised.
-/// ★★★ **`point` is in CANVAS space and is converted here.** The two spaces
+/// **`point` is in CANVAS space and is converted here.** The two spaces
 /// differ by a y flip, and the flip is invisible: a mirrored placement is a
 /// plausible number on a plausible page, so nothing refuses it and nothing
 /// looks wrong until an operator clicks near the top of a sheet and the picture
@@ -181,7 +181,7 @@ pub fn click(ctx: &egui::Context, page: &pdfcer_core::page_tree::Page, point: eg
     let Some(pending) = pending(ctx) else {
         return;
     };
-    // ★ Through `band::endpoints` rather than `viewer::canvas_to_pdf_space`
+    // Through `band::endpoints` rather than `viewer::canvas_to_pdf_space`
     // directly, so the click and the drag share ONE conversion. Two call sites
     // of the same helper can drift; one helper called twice cannot.
     let Some((at, _)) = crate::canvas::markup::band::endpoints(point, point, page) else {
@@ -239,7 +239,7 @@ pub fn band(from: egui::Pos2, to: egui::Pos2) -> crate::canvas::markup::band::Pr
 /// sits beside the rest of this module's arithmetic rather than in the middle
 /// of a gesture pipeline.
 ///
-/// ★ Declines silently when the page cannot be resolved, which is the same
+/// Declines silently when the page cannot be resolved, which is the same
 /// answer every other band in `interact` gives: a release over no page is not
 /// a placement, and inventing one would put an image at a coordinate nobody
 /// pointed at.
@@ -264,7 +264,7 @@ pub fn band_released(
 
 /// One page-space `(f64, f64)` as the `Pos2` this module's arithmetic uses.
 ///
-/// ★ A named function rather than two inline casts, and not only for tidiness:
+/// A named function rather than two inline casts, and not only for tidiness:
 /// the narrowing happens at exactly one boundary — where `markup::band`'s
 /// `f64` endpoints meet `egui`'s `f32` geometry — so a reader asking *"where
 /// does the precision go?"* gets one answer instead of two identical ones with
@@ -284,7 +284,7 @@ fn finish(ctx: &egui::Context, kind: PlaceKind, rect: pdfcer_core::page_tree::Re
         d.remove::<Pending>(id(PLACING_MEMORY_KEY));
         d.insert_temp(id(RESULT_MEMORY_KEY), (kind, PlacedRect(rect)));
     });
-    // ★ The tool goes down HERE rather than in `app::frame`, so the crosshair
+    // The tool goes down HERE rather than in `app::frame`, so the crosshair
     // is gone on the same frame the window comes back. Leaving it armed for one
     // more frame would put a placement cursor over a dialog that is asking for
     // a different kind of input.
@@ -301,7 +301,7 @@ fn finish(ctx: &egui::Context, kind: PlaceKind, rect: pdfcer_core::page_tree::Re
 /// `pdfcer_core::page_tree::Rect` is not `Clone` in the way `egui::Memory`
 /// wants, so it travels wrapped.
 ///
-/// ★ A newtype rather than four `f64`s in the slot: the four numbers have an
+/// A newtype rather than four `f64`s in the slot: the four numbers have an
 /// order and a meaning, and a tuple of them is a thing three call sites could
 /// each get subtly wrong.
 #[derive(Debug, Clone, Copy)]
@@ -369,7 +369,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **A click is recorded in PDF space, not canvas space.**
+    /// **A click is recorded in PDF space, not canvas space.**
     ///
     /// The regression test for the defect the driven check found on its first
     /// run: `click` took the canvas point it was handed and wrote it into a
@@ -377,7 +377,7 @@ mod tests {
     /// was recorded near the BOTTOM. Nothing refused it — a mirrored
     /// coordinate is a perfectly ordinary number on a perfectly ordinary page.
     ///
-    /// ★★ Note what the previous version of this test asserted: that the rect
+    /// Note what the previous version of this test asserted: that the rect
     /// carried the numbers passed in. That is true of the broken build and of
     /// the fixed one, because it was a test of the *plumbing* on a function
     /// whose defect was the *space*. This one asserts the flip by magnitude —
@@ -406,7 +406,7 @@ mod tests {
         );
         assert!(pending(&ctx).is_none(), "the placement is spent");
 
-        // ★ Backwards on both axes, because a band dragged up-and-left must
+        // Backwards on both axes, because a band dragged up-and-left must
         // produce the same rect as one dragged down-and-right.
         arm(&ctx, PlaceKind::Image, 0);
         completed(&ctx, egui::pos2(300.0, 400.0), egui::pos2(120.0, 250.0));
@@ -421,7 +421,7 @@ mod tests {
         );
     }
 
-    /// ★★ Placing with nothing armed does nothing at all.
+    /// Placing with nothing armed does nothing at all.
     ///
     /// The guard that keeps a stray click on the canvas from delivering a
     /// placement to a window that never asked for one.

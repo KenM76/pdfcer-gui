@@ -44,7 +44,7 @@ pub const fn scale_heading() -> &'static str {
     "Scale"
 }
 
-/// ★ pdfcer inferred the scale, and this says **where from**.
+/// pdfcer inferred the scale, and this says **where from**.
 ///
 /// The group's name is in the sentence because the number alone is a claim the
 /// operator cannot check. *"1 paper unit is 50 real units"* is unverifiable;
@@ -65,7 +65,7 @@ pub fn scale_from_group(scale: f64, group: &str, agreeing: usize) -> String {
     }
 }
 
-/// ★ Nothing on the page carries a scale.
+/// Nothing on the page carries a scale.
 ///
 /// **The most important string in this catalog.** The alternative — defaulting
 /// to 1.0 and saying nothing — is precisely what `pdfcer-core` describes every
@@ -83,7 +83,7 @@ pub const fn scale_uncalibrated() -> &'static str {
      the one you know below."
 }
 
-/// ★ Calibrated groups disagree.
+/// Calibrated groups disagree.
 ///
 /// Not refused, and not resolved by pdfcer picking one. A sheet holding a 1:50
 /// plan and a 1:5 detail is a **correct drawing**, and the disagreement is a
@@ -118,7 +118,7 @@ pub const fn units_heading() -> &'static str {
 
 /// A DXF unit's name.
 ///
-/// ★ pdfcer writes only inches and millimetres, and `DxfUnits::for_unit` maps
+/// pdfcer writes only inches and millimetres, and `DxfUnits::for_unit` maps
 /// feet onto inches and metres onto millimetres — *"the NUMBERS stay exact
 /// either way … this choice affects only what the header declares"*. The
 /// wording therefore names what the file will **say it is**, not what the
@@ -126,7 +126,7 @@ pub const fn units_heading() -> &'static str {
 /// is what this control sets.
 #[must_use]
 pub const fn units_name(units: DxfUnits) -> &'static str {
-    // ★ No wildcard, and that is worth noting rather than assuming: `DxfUnits`
+    // No wildcard, and that is worth noting rather than assuming: `DxfUnits`
     // is NOT `#[non_exhaustive]`, unlike four of the five engine enums this
     // shell touched today — so this match really is exhaustive and a third
     // unit added upstream really would fail to compile here. The distinction
@@ -150,7 +150,7 @@ pub const fn fit_arcs() -> &'static str {
     "Write circles and arcs where the curves are circular"
 }
 
-/// ★ Why arc fitting is on, in bytes.
+/// Why arc fitting is on, in bytes.
 ///
 /// The engine measured it: *"not recognising them is what produced a measured
 /// **767 KB for forty washers**."* PDF has no arc primitive, so every hole and
@@ -210,7 +210,7 @@ pub const fn no_geometry() -> &'static str {
 // After the fact
 // ---------------------------------------------------------------------------
 
-/// ★ **What the export produced, and what it left behind.**
+/// **What the export produced, and what it left behind.**
 ///
 /// The disclosure half, and the `skipped` clauses are the reason it exists.
 /// `pdfcer-core` states the case in its own field doc:
@@ -219,7 +219,7 @@ pub const fn no_geometry() -> &'static str {
 /// > the geometry went missing, and *"the labels are not in this file"* is a
 /// > sentence they need **before** they open it in SOLIDWORKS, not after.
 ///
-/// ★ `skipped_text` and `unreadable_text` are kept apart, exactly as the engine
+/// `skipped_text` and `unreadable_text` are kept apart, exactly as the engine
 /// keeps them apart, because they ask different things:
 ///
 /// - **skipped** — the operator turned text off. Nothing is wrong.
@@ -301,7 +301,7 @@ pub fn export_failed(detail: &str) -> String {
 mod tests {
     use super::*;
 
-    /// ★ **An uncalibrated page is told that 1:1 is a CHOICE.**
+    /// **An uncalibrated page is told that 1:1 is a CHOICE.**
     ///
     /// The assertion this catalog exists for. `pdfcer-core` names the failure it
     /// prevents — every generic converter exports at paper scale and says
@@ -333,7 +333,7 @@ mod tests {
         assert!(two.contains("3 calibrated groups"), "{two}");
     }
 
-    /// ★ The two text counts stay apart.
+    /// The two text counts stay apart.
     ///
     /// `skipped` is *you asked*; `unreadable` is *pdfcer could not read it*. The
     /// second is a fact about the source PDF and the reason labels the operator

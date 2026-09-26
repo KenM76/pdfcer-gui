@@ -7,7 +7,7 @@
 Everything here is **rule 4**: pdfcer did something the operator did not ask
 for and cannot see, so it says so — off-canvas, never on the page.
 
-## ★★★ Three lines, and they are INDEPENDENT
+## Three lines, and they are INDEPENDENT
 
 | line | answers |
 |---|---|
@@ -28,7 +28,7 @@ shows whichever fires first. A document opened from a damaged index, then
 edited, with a form filled, owes the operator all three —
 `disclosure_independence` in the parent asserts they cannot collide.
 
-★★ The last two are the odd ones out and the reason for this module's
+The last two are the odd ones out and the reason for this module's
 header: the first two are about **something the operator just did**, and
 those two are about **what the file was before they touched it**. They are
 also the only ones that persist for the life of the document rather than

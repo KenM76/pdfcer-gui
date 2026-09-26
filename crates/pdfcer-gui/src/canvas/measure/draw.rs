@@ -46,7 +46,7 @@ use super::{MeasureKind, Resolved, hover, pick, read};
 /// use, which is why the placing preview goes through
 /// [`pick::dimension_preview_segments`] — the *same* function a committed
 /// dimension is drawn from — rather than drawing a line of its own.
-/// # ★ The circular tool's preview is the whole of its feedback
+/// # The circular tool's preview is the whole of its feedback
 ///
 /// The other two tools draw something that follows the pointer, so an operator
 /// can see the gesture working. The circular tool's pick lands on geometry that
@@ -61,7 +61,7 @@ use super::{MeasureKind, Resolved, hover, pick, read};
 /// [`pick::dimension_preview_segments`]:
 ///
 /// 1. **A marker on every picked point**, straight out of
-///    [`pick::CircularPick::points`]. ★ A rectangle round every picked *object*
+///    [`pick::CircularPick::points`]. A rectangle round every picked *object*
 ///    is the wrong picture: on a real drawing one click outlines a 550 × 500 pt
 ///    region — see `pick::CircularPick`'s header and `OPERATOR_REQUESTS.md`
 ///    O105. A marker per point is both the honest
@@ -99,7 +99,7 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
         return;
     };
     let ctx = ui.ctx();
-    // ★★ The SECOND instance of the same bail, and it is why fixing
+    // The SECOND instance of the same bail, and it is why fixing
     // `resolve_hover` alone changed nothing.
     //
     // `read` returns `None` until the operator has clicked once, because
@@ -122,7 +122,7 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
     let color = snap::snap_indicator_tint(ctx)
         .unwrap_or_else(|| egui_shell::theme::Theme::canvas_selection_ink(ctx));
 
-    // ★ The picked POINTS, marked, and drawn on EVERY frame the set is
+    // The picked POINTS, marked, and drawn on EVERY frame the set is
     // non-empty — not only while the pointer is over the canvas.
     //
     // A `hover` of `None` means the pointer has left the widget, which for the
@@ -130,7 +130,7 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
     // operator has moved to the Tool panel or the ribbon, which is exactly when
     // they most need to still be able to see what is in the set.
     //
-    // ★★ The marker's GLYPH is the snap kind's, through the same
+    // The marker's GLYPH is the snap kind's, through the same
     // `snap::snap_marker_shapes` the hover indicator uses — so a point picked
     // on an endpoint is marked the way an endpoint is marked, and the operator
     // reads one vocabulary rather than two. A FREE point gets the endpoint
@@ -152,7 +152,7 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
             pick::PickOrigin::Free => pdfcer_core::vector::snap::SnapKind::Endpoint,
         };
         painter.extend(snap::snap_marker_shapes(at, kind, color, SNAP_MARKER_PT));
-        // ★★ …and a ring around it, which is the ONE thing that distinguishes
+        // …and a ring around it, which is the ONE thing that distinguishes
         // a committed pick from the hover marker under the pointer.
         //
         // Without it the two are the same glyph at the same size, and while the
@@ -168,7 +168,7 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
         painter.circle_stroke(at, SNAP_MARKER_PT * PICKED_RING_SCALE, stroke);
     }
 
-    // ★★ The hovered entity, drawn UNDER the snap marker.
+    // The hovered entity, drawn UNDER the snap marker.
     //
     // Order is the whole of it: the highlight is a wide translucent stroke and
     // the marker is a small opaque glyph, so painting the highlight second
@@ -182,7 +182,7 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
-                // ★ The list is named as well as the index. A page has two,
+                // The list is named as well as the index. A page has two,
                 // and a trace that cannot tell `objects[7]` from `leaves[7]`
                 // is a trace that cannot be read back.
                 "measure-hover-entity {}={} segment={}",
@@ -202,7 +202,7 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
         }));
     }
 
-    // ★ The snap indicator is drawn BEFORE the in-progress check, and that is
+    // The snap indicator is drawn BEFORE the in-progress check, and that is
     // the point of it.
     //
     // It has to appear while the operator is still deciding *where to click
@@ -218,7 +218,7 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
     if let Some(c) = hover.and_then(|h| h.candidate)
         && let Some(screen) = page_to_screen(c.point, page, map)
     {
-        // ★★ The marker's screen position and the pointer's, on one line.
+        // The marker's screen position and the pointer's, on one line.
         //
         // The evidence for an invariant that is **true by the definition of
         // snapping**: a snap marker is never further from the pointer than the
@@ -264,7 +264,7 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
     }
 
     let segments: Vec<(Point, Point)> = match kind {
-        // ★ The reference line, drawn exactly as the linear tool draws its
+        // The reference line, drawn exactly as the linear tool draws its
         // measuring segment — because it IS one. `ScalePick::line` is a
         // `LinearPick`, so an operator calibrating sees the same constrained
         // A-to-pointer rubber band, the same snap markers and the same
@@ -292,7 +292,7 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
             }
         }
         MeasureKind::Linear => {
-            // ★ The placing preview needs the pointer; the measuring one does
+            // The placing preview needs the pointer; the measuring one does
             // too. With the pointer off the widget there is nothing honest to
             // draw, so nothing is.
             let Some(at) = hover.map(|h| h.at) else {
@@ -306,7 +306,7 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
                 st.linear.preview_segment(at).into_iter().collect()
             }
         }
-        // ★ The fitted circle, from the value the commit would author.
+        // The fitted circle, from the value the commit would author.
         //
         // `author()` is `None` for a degenerate set — one arc, or three points
         // on a line — and that draws nothing, which is the correct picture: the
@@ -318,7 +318,7 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
             .author()
             .map(|kind| pick::dimension_preview_segments(&kind))
             .unwrap_or_default(),
-        // ★ The perimeter, drawn through the SAME segment function a committed
+        // The perimeter, drawn through the SAME segment function a committed
         // one is drawn from - the standing rule in this module, and the whole
         // of what makes a preview a preview rather than an illustration.
         //
@@ -364,7 +364,7 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
 /// operator is zoomed to a whole A1 sheet or to one dimension line. Carried
 /// from the old shell's own indicator sizing.
 ///
-/// ★ `pub(in crate::canvas)` because the perimeter's vertex drag snaps too and
+/// `pub(in crate::canvas)` because the perimeter's vertex drag snaps too and
 /// draws the SAME marker at the SAME size. A second constant would be two
 /// sizes for one affordance, free to
 /// diverge — and an operator who has learned that a small square means
@@ -382,7 +382,7 @@ const PICKED_RING_SCALE: f32 = 1.7;
 
 /// **PDF user space → screen**, both hops, in one place.
 ///
-/// # ★ This function is the fix for a defect, and the defect had shipped
+/// # This function is the fix for a defect, and the defect had shipped
 ///
 /// It replaced a `page_to_canvas` that stopped after the first hop and handed
 /// the result straight to `ui.painter()`. Three frames are in play — screen,
@@ -417,7 +417,7 @@ pub(in crate::canvas) fn page_to_screen(
 mod tests {
     use super::*;
 
-    /// ★ **The preview is drawn in SCREEN space, through the frame's map.**
+    /// **The preview is drawn in SCREEN space, through the frame's map.**
     ///
     /// The regression test for the defect `page_to_screen`'s own docs describe:
     /// `viewer::pdf_space_to_canvas` lands in **canvas** space — page top-left

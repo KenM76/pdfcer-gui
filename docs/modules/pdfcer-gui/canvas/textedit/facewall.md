@@ -76,7 +76,7 @@ a name that points at it will do this**, which is why it is filed as a class
 rather than as "the font swap is broken":
 `D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\request_edit_text_resolves_font_names_against_the_base_revision_so_a_face_swapped_in_this_session_is_unresolvable.md`.
 
-## ★★ What the shell does about it, and what it deliberately does NOT do
+## What the shell does about it, and what it deliberately does NOT do
 
 **It does not work around it.** The only in-process route that works is to
 throw the `EditSession` away and rebuild it from the saved bytes, and that
@@ -122,7 +122,7 @@ was wrong is worth more than the instruction was:
 > Deleting the arm converts every one of them into **silence**, which is a
 > defect already on this project's own list.
 
-⇒ ★★ **A state and its explanation have different lifetimes, and a plan
+⇒ **A state and its explanation have different lifetimes, and a plan
 written from one cause will happily delete the handling for all of them.**
 The explanation expired; the state did not. So the cause was struck from the
 sentence and the state kept its voice. `refused_char_blocked`'s own doc

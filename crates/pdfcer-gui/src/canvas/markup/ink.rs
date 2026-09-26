@@ -160,14 +160,14 @@ pub(in crate::canvas) fn drag(
         return None;
     }
     let mut trail = read(ctx).unwrap_or_else(|| Trail { points: vec![from] });
-    // ★ Distinct positions only — §3.1. A stationary pointer under a held button
+    // Distinct positions only — §3.1. A stationary pointer under a held button
     // reports `dragged` on every frame, and each of those would otherwise be two
     // more `Real`s in `/InkList` and one more `l` in the appearance stream.
     if trail.points.last() != Some(&to) {
         trail.points.push(to);
     }
     let raw = trail.points.len();
-    // ★ The PEN's tolerance, not the shipped constant — §3.2's rule.
+    // The PEN's tolerance, not the shipped constant — §3.2's rule.
     //
     // `SIMPLIFY_TOLERANCE_PTS` is a `const` derived from the pen's *default*
     // 2 pt width. At a 0.25 pt pen — the width that exists to match a CAD
@@ -208,7 +208,7 @@ pub(in crate::canvas) fn drag(
                 page_index,
                 // ui-text-exempt: diagnostic trace, never displayed in the UI.
                 //
-                // ★ `raw` BESIDE `kept` — §3.3. A build whose simplification did
+                // `raw` BESIDE `kept` — §3.3. A build whose simplification did
                 // nothing at all would emit an otherwise identical line, and the
                 // only external evidence that this feature works is the two
                 // numbers differing. It is also how the *real* retention figure
@@ -368,7 +368,7 @@ mod tests {
                 let hashed = ((i as u32).wrapping_mul(2_654_435_761) >> 8) % 601;
                 #[allow(clippy::cast_precision_loss)]
                 let jitter = (hashed as f32 / 1000.0) - 0.3;
-                // ★ Applied along the RADIAL direction, which for a circular arc
+                // Applied along the RADIAL direction, which for a circular arc
                 // is the normal — i.e. across the direction of travel. The first
                 // version of this fixture used `(sin, -cos)`, which is the
                 // *tangent*, so both disturbances merely re-spaced the samples
@@ -382,7 +382,7 @@ mod tests {
             .collect()
     }
 
-    /// ★ **The measured retention at the shipped tolerance, and the bound RDP
+    /// **The measured retention at the shipped tolerance, and the bound RDP
     /// promises.**
     ///
     /// §3.3's synthetic measurement, asserted rather than quoted, plus the two
@@ -492,7 +492,7 @@ mod tests {
         assert_eq!(simplify(&two, 100.0), two);
     }
 
-    /// ★ **A hairpin keeps its point**, which is what distinguishes the segment
+    /// **A hairpin keeps its point**, which is what distinguishes the segment
     /// distance from the line distance.
     ///
     /// A stroke that doubles back on itself has its apex *on* the line through
@@ -519,7 +519,7 @@ mod tests {
         assert!(distance_to_segment(apex, a, b) > 99.0);
     }
 
-    /// ★ **A stationary pointer contributes one point, not one per frame.**
+    /// **A stationary pointer contributes one point, not one per frame.**
     ///
     /// §3.1, at the capture end. Without the duplicate filter a held button emits
     /// ~60 identical points a second into `/InkList`, and the resulting run of
@@ -555,7 +555,7 @@ mod tests {
         assert!(actions.is_empty());
     }
 
-    /// ★ **The trail is derived, so every way a drag can end discards it.**
+    /// **The trail is derived, so every way a drag can end discards it.**
     ///
     /// §2's argument, asserted through the one line that implements it. The
     /// interruption row is the one an event-hooked implementation gets wrong: the
@@ -645,7 +645,7 @@ mod tests {
         assert!(read(&ctx).is_none());
     }
 
-    /// ★ **The preview draws the points that will be committed**, not the raw
+    /// **The preview draws the points that will be committed**, not the raw
     /// trail.
     ///
     /// Rule 4's honesty requirement, asserted where it can be: the value handed
@@ -702,7 +702,7 @@ mod tests {
         );
     }
 
-    /// ★ **The guarantee holds at EVERY width the operator can set**, not just
+    /// **The guarantee holds at EVERY width the operator can set**, not just
     /// at the shipped one.
     ///
     /// The test above is true and insufficient: it asserts a relation between
@@ -744,7 +744,7 @@ mod tests {
         }
     }
 
-    /// ★ The shipped constant and the shipped pen agree.
+    /// The shipped constant and the shipped pen agree.
     ///
     /// The weld between the two halves of this module's tolerance story:
     /// [`SIMPLIFY_TOLERANCE_PTS`] is the value §3.3's measurement table was

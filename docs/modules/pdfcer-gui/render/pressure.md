@@ -17,7 +17,7 @@ render stack looks at it at all**.
 [`native_gl::drain`] is the instrument. This module is the bookkeeping that
 makes a reading of it mean something.
 
-# ★★★ The frame boundary this module is built around
+# The frame boundary this module is built around
 
 `eframe` runs the whole of [`eframe::App::ui`] and *then* calls
 `paint_and_update_textures`, which is where `ctx.load_texture`'s queued
@@ -32,7 +32,7 @@ frame's uploads. Draining anywhere inside the frame's own work would read
 a flag the frame's own uploads have not reached yet, and attribute every
 failure to whatever was on screen one frame too early.
 
-# ★★ A code carries no provenance, so attribution is the hard part
+# A code carries no provenance, so attribution is the hard part
 
 GL's error flag records *that* something failed, never *what*. [`attribute`]
 is therefore deliberately unwilling: it blames the canvas's whole-page
@@ -40,7 +40,7 @@ raster only when that raster was the frame's **only** upload. Everything
 else is traced with the reason it could not be pinned, which is the
 measurement that says whether the rule is too strict to ever fire.
 
-★ That refusal is only worth anything if the census is COMPLETE. Every
+That refusal is only worth anything if the census is COMPLETE. Every
 `ctx.load_texture` in this crate records here — the canvas raster, the page
 thumbnails, the print preview and the icon sheet — because a route that
 uploads without recording does not merely go unseen: it makes a frame that

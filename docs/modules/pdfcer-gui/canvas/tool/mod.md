@@ -12,7 +12,7 @@ operator *chose* ([`selected`]) and whether the space bar is *down*
 ([`space_held`]). Everything else in `canvas/` reads [`active`] and
 branches on the answer.
 
-## ★ Why the space override is derived and never stored
+## Why the space override is derived and never stored
 
 The requirement is *"space held = temporary pan, releasing returns to the
 previous tool"*, and the obvious implementation — remember the previous
@@ -30,7 +30,7 @@ the only persistent value; the space bar is read fresh from
 it is what the next frame computes when the key is no longer down. A lost
 key-up costs one frame of pan, not a stuck mode.
 
-## ★ The text-field guard is not optional
+## The text-field guard is not optional
 
 Space is a *character*. A canvas that panned on any Space keypress would
 pan while the operator typed a page number into the status bar's page box
@@ -41,7 +41,7 @@ reason, as `DEFECTS.md` D1's Delete-key fix, and deliberately **not**
 focus and would therefore disable space-pan after a single click on the
 canvas (the canvas takes focus on click, which is exactly how D1 happened).
 
-## ★★★ The bar a new variant has to clear
+## The bar a new variant has to clear
 
 This is **not** a general "tool" enum with one member per authoring surface.
 It answers a narrow question — **does a primary drag select, move the paper,
@@ -62,7 +62,7 @@ call sites: [`CanvasTool::pans_with_primary`] is the single predicate the
 pan and gesture-suppression paths share, and [`CanvasTool::cursor`] is the
 single place a tool's cursor is decided.
 
-## ★ What each later variant had to bring
+## What each later variant had to bring
 
 **[`CanvasTool::Measure`]** reads like a counter-example — a two-point pick
 with a snap indicator and a live readout — and is not one: that machinery is
@@ -101,7 +101,7 @@ it cannot be closed by hiding the controls, because a command lives on
 exactly one tab and the Markup tab is in both Review and Edit. One variant
 closes both.
 
-### ★ The reference applications DISAGREE here, and Inkscape wins
+### The reference applications DISAGREE here, and Inkscape wins
 
 The standing instruction is to match Inkscape, Acrobat and SolidWorks, and
 to say which won where they disagree. On this question they genuinely do:

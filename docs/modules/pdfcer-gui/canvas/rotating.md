@@ -11,7 +11,7 @@ sentence that corpus row quotes:
 > the screen. Can I please please please have that too?"*
 
 
-## ★★ Why a rotate is not a resize with different arithmetic
+## Why a rotate is not a resize with different arithmetic
 
 The eight grips answer *"how big"*, which is a **distance**, so a resize is
 a delta in two axes and every one of them has an opposite corner that must
@@ -37,7 +37,7 @@ top edge is crowded with the north grip and whatever is behind it, and the
 stem is what says the two belong together — without it the handle reads as
 an unrelated dot floating over the page.
 
-★ **It is drawn as a circle**, not a square. Every square on this canvas
+**It is drawn as a circle**, not a square. Every square on this canvas
 resizes; a shape that resized in one place and rotated in another would be
 a private convention the operator has to learn, which is
 `handles.md` H2's stated failure mode.
@@ -62,13 +62,13 @@ screen→page negation are one gesture whatever is under it. What differs is
 one call. `canvas::resizing` cuts the identical seam in the identical place
 and a reader who has understood one has understood both.
 
-★★ The three operands are the **same shape** — a fixed point and a scalar —
+The three operands are the **same shape** — a fixed point and a scalar —
 because the engine chose it that way on this shell's request: *"the same
 anchor+factors shape as move and resize, so your grip code needs no third
 convention."* So [`commit_annotation`] is a routing decision rather than a
 second arithmetic.
 
-## ★★★ Why the box comes from `pressing::grabbable` and not `overlay::grip_box`
+## Why the box comes from `pressing::grabbable` and not `overlay::grip_box`
 
 [`Frame::bounds`] is filled by `canvas::interact` from
 `crate::canvas::pressing::grabbable`, and that is **the single line the
@@ -119,7 +119,7 @@ remaining caller of `overlay::grip_box` was audited the same day and none of
 them was this bug — which is precisely why it survived a header section
 written to prevent it.
 
-## ★★ No options type, for any of the three, and that is a property of the
+## No options type, for any of the three, and that is a property of the
 operation rather than an omission
 
 A rotation is an **isometry**: every length is preserved, including the

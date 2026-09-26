@@ -81,7 +81,7 @@ enum Phase {
     /// The form is being filled in. Nothing has been computed and nothing has
     /// been written.
     ///
-    /// ★ Unlike the redaction dialog there IS a *ready* state here, and the
+    /// Unlike the redaction dialog there IS a *ready* state here, and the
     /// asymmetry is not an oversight. That dialog runs the whole removal on
     /// open so the numbers on screen are measurements of the exact bytes that
     /// will be written; this one **cannot**, because what it would compute
@@ -154,7 +154,7 @@ pub struct ProtectDialog {
     /// The owner password that authorises a change to an already-protected
     /// document, as typed.
     ///
-    /// ★ A `String` because that is what `egui::TextEdit` binds to; it becomes
+    /// A `String` because that is what `egui::TextEdit` binds to; it becomes
     /// a [`Secret`] the instant it leaves this struct, at [`Self::commit`].
     /// `crate::dialogs::password` sets the same rule and for the same reason —
     /// nothing traced about a password on this surface is ever its value.
@@ -196,7 +196,7 @@ pub struct ProtectDialog {
 }
 
 impl std::fmt::Debug for ProtectDialog {
-    /// ★★★ **Hand-written, and the whole point of it is what it omits.**
+    /// **Hand-written, and the whole point of it is what it omits.**
     ///
     /// Five fields of this struct hold a password the operator typed. A derived
     /// `Debug` would print all five, and `crate::secret`'s header records
@@ -235,7 +235,7 @@ impl ProtectDialog {
         let phase = standing
             .refusal(task)
             .map_or(Phase::Filling, Phase::Refused);
-        // ★ The first offered job, not a constant. On **Encrypt…** over a
+        // The first offered job, not a constant. On **Encrypt…** over a
         // protected document that is `ChangePassword`; over a plain one it is
         // `SetPassword`; on **Permissions…** it is `SetPermissions`. A
         // hard-coded default would be a radio group whose selection disagrees
@@ -284,7 +284,7 @@ impl ProtectDialog {
 
     /// Draw one frame. Returns `false` when the dialog should close.
     pub(super) fn show(&mut self, ctx: &egui::Context, doc: &OpenDoc) -> bool {
-        // ★ Read BEFORE the body draws its fields, so a box ticked or a
+        // Read BEFORE the body draws its fields, so a box ticked or a
         // character typed on this frame does not enable the confirm control
         // until the next one. `crate::dialogs::redact` §4's rule, and it is
         // owed here for the replace branch, which writes over the operator's
@@ -351,7 +351,7 @@ impl ProtectDialog {
 
     /// The **outstanding** conditions, as flags.
     ///
-    /// ★ Outstanding rather than satisfied, and computed from the same
+    /// Outstanding rather than satisfied, and computed from the same
     /// expressions that decide whether each control is drawn — so the
     /// disabled-hover sentence can never send the operator to look for a field
     /// that was never on screen. `OPERATOR_REQUESTS.md` O77's sweep found seven
@@ -363,7 +363,7 @@ impl ProtectDialog {
             owner_missing: self.job.sets_new_passwords() && self.owner.is_empty(),
             mismatch: self.job.sets_new_passwords()
                 && (self.user != self.user_again || self.owner != self.owner_again),
-            // ★ Compared only when the owner password is non-empty, so a form
+            // Compared only when the owner password is non-empty, so a form
             // with both boxes still blank reports "the owner password is
             // required" rather than the confusing "they must differ".
             same: self.job.sets_new_passwords()
@@ -406,7 +406,7 @@ impl ProtectDialog {
 
     /// **Take the job, and re-seed the permission ticks from the document.**
     ///
-    /// ★ Pure-ish and a method rather than a line inside the radio group, so
+    /// Pure-ish and a method rather than a line inside the radio group, so
     /// the rule can be asserted headlessly. Selecting *remove the protection*
     /// and then going back to *change the passwords* must not leave the ticks
     /// wherever a previous job's editing left them — the seed is always
@@ -420,7 +420,7 @@ impl ProtectDialog {
 
     /// The permission bits currently ticked, as the engine wants them.
     ///
-    /// ★ [`always_granted`] bits are forced in regardless of the tick, so this
+    /// [`always_granted`] bits are forced in regardless of the tick, so this
     /// list is what the written file will actually say rather than what the
     /// controls happen to show. The two agree by construction because
     /// [`Standing::initial_ticks`] forces the same bits on, but forcing it here
@@ -437,7 +437,7 @@ impl ProtectDialog {
     fn body(&mut self, ui: &mut egui::Ui, ready: bool) {
         let theme = Theme::of(ui.ctx());
         match &self.phase {
-            // ★★★ Disclosure 2, and it replaces the form rather than greying
+            // Disclosure 2, and it replaces the form rather than greying
             // it. R9: the control is absent or explained, never a button that
             // fails on press.
             Phase::Refused(refusal) => {
@@ -459,7 +459,7 @@ impl ProtectDialog {
                 ui.label(t::written(*job, &file_name_of(path), *replaced));
             }
             Phase::Filling | Phase::Failed(_) => {
-                // ★ The failure sentence is drawn ABOVE the form rather than
+                // The failure sentence is drawn ABOVE the form rather than
                 // instead of it, and that is the difference between this and
                 // the refusal above. A refusal is about the document and
                 // nothing the operator types can change it; a failure is about
@@ -520,7 +520,7 @@ impl ProtectDialog {
 
         // --- every permission bit, with the document's OWN answer ---------
         //
-        // ★ All eight, always, and `Option<bool>` rendered as three states
+        // All eight, always, and `Option<bool>` rendered as three states
         // rather than two. `PermissionBit`'s own doc: *"a partial list would be
         // worse than none"*, and `Some(false)` — the author declined this — is
         // a different statement from `None` — this document's encryption has no
@@ -570,7 +570,7 @@ impl ProtectDialog {
             self.choose_job(choice);
             ui.add_space(4.0);
         }
-        // ★ Drawn for the removal job whether or not the radio group was, so
+        // Drawn for the removal job whether or not the radio group was, so
         // the consequence is stated even on a document where removal is the
         // only thing offered.
         if self.job == Job::RemovePassword {
@@ -582,7 +582,7 @@ impl ProtectDialog {
         ui.label(t::passwords_heading());
         ui.add_space(4.0);
 
-        // ★★★ DISCLOSURE 3 — above the field, not after a refusal. A refusal
+        // DISCLOSURE 3 — above the field, not after a refusal. A refusal
         // that arrives on press is a program that knew the answer and waited.
         if self.job.needs_current_owner() {
             let note =
@@ -602,7 +602,7 @@ impl ProtectDialog {
         }
 
         if self.job.sets_new_passwords() {
-            // ★★★ The sentence that stops the two passwords being collapsed
+            // The sentence that stops the two passwords being collapsed
             // into one. The build brief made this explicit, and what it asks
             // for is not two boxes — it is an explanation of why there are two.
             ui.label(t::passwords_explained());
@@ -644,7 +644,7 @@ impl ProtectDialog {
                     .password(true)
                     .desired_width(280.0),
             );
-            // ★★ Conditional, on the engine's own ask. A warning that is always
+            // Conditional, on the engine's own ask. A warning that is always
             // on screen is a warning nobody reads, and this one is irrelevant
             // to the overwhelming majority of passwords. It is a warning rather
             // than a refusal because the password may well be perfectly
@@ -660,7 +660,7 @@ impl ProtectDialog {
         if self.job.edits_permissions() {
             ui.label(t::permissions_heading());
             ui.add_space(4.0);
-            // ★★★ DISCLOSURE 1 — the ENGINE's own sentence, above the
+            // DISCLOSURE 1 — the ENGINE's own sentence, above the
             // tick-boxes, in the danger role, never re-worded. This is the one
             // control in pdfcer whose plain reading is false: a list of boxes
             // labelled Print, Copy and Change looks exactly like a set of
@@ -671,7 +671,7 @@ impl ProtectDialog {
             crate::diag::ui_rect(REGION_ADVISORY, advisory.rect);
             ui.add_space(6.0);
             for (bit, on) in &mut self.ticks {
-                // ★★★ A bit the engine will grant regardless is a STATEMENT,
+                // A bit the engine will grant regardless is a STATEMENT,
                 // not a control. See `crate::protect::always_granted` — a
                 // tick-box the operator can clear and which comes back ticked
                 // in the written file is the falsehood this surface exists to
@@ -697,7 +697,7 @@ impl ProtectDialog {
 
         // --- destination ---------------------------------------------------
         //
-        // ★★★ §3: `crate::dialogs::redact`'s mechanism, part for part. Drawn
+        // §3: `crate::dialogs::redact`'s mechanism, part for part. Drawn
         // only when there is an original to replace.
         if self.can_replace_original() {
             let name = file_name_of(&self.source);
@@ -728,7 +728,7 @@ impl ProtectDialog {
 
     /// The confirm control, and the sentence that explains it when it is greyed.
     fn confirm_row(&mut self, ui: &mut egui::Ui, ready: bool) {
-        // ★ The label IS the consequence, and the consequence depends on the
+        // The label IS the consequence, and the consequence depends on the
         // destination: an ellipsis promises the picker, and naming the file
         // promises there will be no further question before it is replaced.
         // Promising one with a punctuation mark and not asking it would be a
@@ -747,7 +747,7 @@ impl ProtectDialog {
             crate::diag::ui_rect(REGION_CONFIRM, confirm.rect);
         }
         let clicked = confirm.clicked();
-        // ★★ The `if !ready` shape and the borrow order are copied from
+        // The `if !ready` shape and the borrow order are copied from
         // `dialogs::redact`: `on_disabled_hover_text` CONSUMES the response, so
         // `.rect` and `.clicked()` are read first.
         if !ready {
@@ -789,13 +789,13 @@ impl ProtectDialog {
     /// | [`Destination::NewFile`] | the save picker, suggesting `-protected` / `-unprotected` | the picker itself, plus the OS's own overwrite prompt |
     /// | [`Destination::ReplaceOriginal`] | [`Self::source`], **no picker** | a checkbox naming the file, and a confirm button whose label names it too |
     ///
-    /// ★ The engine call happens **before** the picker on the new-file path,
+    /// The engine call happens **before** the picker on the new-file path,
     /// deliberately. Every failure this surface can meet — a wrong owner
     /// password, a signed document the census missed, an unreachable CSPRNG —
     /// is discovered before the operator is asked to name a file, so a refusal
     /// never arrives after a picker has been filled in and dismissed.
     fn commit(&mut self, doc: &OpenDoc) {
-        // ★ The passwords become [`Secret`]s here, at the one place they leave
+        // The passwords become [`Secret`]s here, at the one place they leave
         // the text fields, and `Passwords` is dropped at the end of this
         // function. `crate::secret`'s rule: the value never enters a trace, a
         // queue or an `Action` unwrapped.
@@ -813,7 +813,7 @@ impl ProtectDialog {
         ) {
             Ok(prepared) => prepared,
             Err(failure) => {
-                // ★ `Failed` rather than `Refused`: the form stays on screen.
+                // `Failed` rather than `Refused`: the form stays on screen.
                 // Every one of these is something the operator can act on with
                 // the boxes they are looking at — a mistyped owner password
                 // being much the commonest — and taking the form away would

@@ -12,7 +12,7 @@ the route against a selection of exactly one line.
 This row drives the ask that only appears once more than one line is held:
 **what a single gesture over a set is supposed to produce.**
 
-# ★★★ The oracle is TWO fields that pull in OPPOSITE directions
+# The oracle is TWO fields that pull in OPPOSITE directions
 
 | field | required | the wrong build it kills |
 |---|---|---|
@@ -30,7 +30,7 @@ singular mark taken first, on one line, through the same menu row. Without
 it, `quads=2` could be a build that always writes two, and `marks` +1 could
 be a build whose panel census does not move at all.
 
-# ★★ Why chunks 0 and 2, never 0 and 1
+# Why chunks 0 and 2, never 0 and 1
 
 Adjacent chunks make a union and a pair of regions produce nearly the same
 `bbox`, so the geometry cannot tell them apart and the check would be

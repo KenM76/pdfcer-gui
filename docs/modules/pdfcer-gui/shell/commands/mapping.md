@@ -12,12 +12,12 @@ from the forward one rather than written out a second time:
 | [`crate::canvas::markup::MarkupKind`] | [`markup_command`] | [`markup_for_command`] | `dispatch` arms the pen; `conditions` lights exactly one shape button |
 | [`crate::canvas::measure::MeasureKind`] | [`measure_command`] | [`measure_for_command`] | the same pair, for the dimension tools |
 
-## ★ Why this is a file of its own
+## Why this is a file of its own
 
 **R2** (no `.rs` file over 1,500 lines) forced a split when
 `measure.finish` was registered and [`super`] reached 1,521 lines. The seam
 is the one the file had already drawn for itself with a blank line and a
-`★` banner: everything before it answers *"what commands exist, with what
+`` banner: everything before it answers *"what commands exist, with what
 label, icon and predicate"*, and everything here answers *"which id names
 this value, and which value does this id name"*.
 
@@ -28,7 +28,7 @@ test that fails is in this file, iterating that enum's `ALL`, which is
 exactly where a reader looking for "why does my new kind not arm anything"
 should land.
 
-## ★ The forward direction is a `match`; the inverse is a search over it
+## The forward direction is a `match`; the inverse is a search over it
 
 Every inverse here is `ALL.iter().find(|k| forward(k) == id)`. That is not
 an optimisation question — the lists are four to seven entries and the call
@@ -38,7 +38,7 @@ search cannot. The failure the derivation removes is the worst kind
 available here, because it is silent: a button that arms one tool while the
 ribbon lights another.
 
-## ★ The guard arms in `app::dispatch` are tried in order, so these must not
+## The guard arms in `app::dispatch` are tried in order, so these must not
 overlap
 
 `PdfcerApp::dispatch_command` has several arms of the shape

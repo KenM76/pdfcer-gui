@@ -72,7 +72,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- A: launch NARROW, and do not widen it -----------------------------
     //
-    // ★★★ The one thing this check must not do is `session.maximize()`. Its
+    // The one thing this check must not do is `session.maximize()`. Its
     // whole subject is the band at a width that cannot show every group, and a
     // maximised window is a window where the search has nothing to search.
     //
@@ -147,7 +147,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         seen.scrolls, seen.rewinds, seen.popups
     ));
 
-    // ★★★ THE assertion, and it is a PAIR. See the module header: the old
+    // THE assertion, and it is a PAIR. See the module header: the old
     // search looked inside collapsed groups at the band's starting position,
     // then scrolled once, then looked at the band **bare**. So a run only
     // distinguishes the fix from the bug if it needed either a second scroll,
@@ -182,7 +182,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- D: the rect was live ----------------------------------------------
     //
-    // ★ Not decoration. `ui-rect` is a change log, so a search that returned a
+    // Not decoration. `ui-rect` is a change log, so a search that returned a
     // FOSSIL — the rect a control had before it scrolled away — would satisfy
     // every assertion above and aim a click at empty band. Pressing it and
     // watching the window open is the only thing that distinguishes the two.

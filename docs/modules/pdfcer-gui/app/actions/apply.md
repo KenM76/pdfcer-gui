@@ -8,7 +8,7 @@ the **interpreter**: [`PdfcerApp::apply_actions`] drains the frame's queue,
 [`vector_edit`] is the four-step protocol every arm that changes a document
 goes through.
 
-## ★ Why this is its own file
+## Why this is its own file
 
 `app/actions.rs` crossed the 1,500-line gate (standing rule **R2**) when
 `file.save_copy` was wired, and the rule's own justification decides where

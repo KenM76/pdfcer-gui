@@ -18,7 +18,7 @@ subject is the seam: seeding the anchor on the way in, restating it on
 every zoom while it holds, moving it on a pan or a wheel, and converting it
 back into a scroll offset on the way out.
 
-★★★ It lives in its own file because the seam is where the defects are and
+It lives in its own file because the seam is where the defects are and
 it had become impossible to see them together. O24f found three faults in
 the upward hand-over. O26e then found that the **downward** one did not
 exist at all — the anchor was discarded and the `f32` machinery resumed

@@ -1,7 +1,7 @@
 # `text::status::diagnostics` — **the narrator's whole vocabulary**
 
 
-## ★ The seam is a consumer, not an alphabet
+## The seam is a consumer, not an alphabet
 
 A catalog area in this crate is keyed by **the surface it serves**, and
 every function here is read by exactly one: `app::status::notes`, whose

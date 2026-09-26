@@ -82,7 +82,7 @@ const CANCEL_REGION: &str = "ocr-cancel";
 /// page — so eight pages is 8–21 s and this is roughly twice the worst of
 /// those.
 ///
-/// ★ Generous on purpose, and the reasoning is `checks::ocr`'s: a budget that
+/// Generous on purpose, and the reasoning is `checks::ocr`'s: a budget that
 /// was too short would report *"recognition never finished"* about a build that
 /// was still working, which is the worst available failure message. This
 /// harness also drives whichever binary it was pointed at, and a debug build is
@@ -240,7 +240,7 @@ fn start_a_run(
     ));
     report.artifact(session.trace_path().to_path_buf());
     session.settle(40);
-    // ★★★ **MAXIMIZE, and this line is a repair.**
+    // **MAXIMIZE, and this line is a repair.**
     //
     // Found on 2026-09-01 by writing `checks::ocr_progress` and watching it
     // SKIP for a reason that turned out to apply to THIS check too: at the
@@ -251,7 +251,7 @@ fn start_a_run(
     // the command having been removed, and is in fact the ribbon doing exactly
     // what a ribbon is for.
     //
-    // ★★ This check had therefore been reporting **SKIP** rather than PASS, and
+    // This check had therefore been reporting **SKIP** rather than PASS, and
     // a SKIP is not a failure, so nothing was red and nothing prompted a look.
     // `Session::maximize`'s own doc comment describes this precise symptom —
     // *"would have been handed ten controls ending at `file.print`, and would
@@ -333,7 +333,7 @@ fn refusal(session: &Session) -> Result<Option<String>> {
 // 1 — the tally advances
 // ---------------------------------------------------------------------------
 
-/// ★ **The operator can watch the run move.**
+/// **The operator can watch the run move.**
 ///
 /// Runs to completion and asserts that at least two *different* `attempted`
 /// values were reported, that they rose, that the last one equals the number of
@@ -398,7 +398,7 @@ fn drive_progress(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
         )));
     }
 
-    // ★ The label must be ON SCREEN, not merely traced. A trace line proves the
+    // The label must be ON SCREEN, not merely traced. A trace line proves the
     // shell computed a tally; the declared rect proves it drew one. The
     // request is about what the operator can SEE, so both are asserted — this
     // codebase has shipped a panel that existed and was unreachable, with every
@@ -440,7 +440,7 @@ fn drive_progress(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
         )));
     }
 
-    // ★★★ THE ASSERTION THIS CHECK IS FOR.
+    // THE ASSERTION THIS CHECK IS FOR.
     //
     // Two distinct values, rising. One value is a label that was drawn and
     // never changed, which is the frozen-looking application. `dedup` on an
@@ -475,7 +475,7 @@ fn drive_progress(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
         distinct.len()
     ));
 
-    // ★★★ **The tally must reach the last page but ONE, and not the last one.**
+    // **The tally must reach the last page but ONE, and not the last one.**
     //
     // The strict `last == scope` was written first and it FAILED,
     // deterministically, at 7 of 8 — which is the correct behaviour, so the
@@ -491,7 +491,7 @@ fn drive_progress(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
     // is `Page 7 of 8` and then the outcome, which states the true totals
     // including page 8.
     //
-    // ★ That is right, and it is what a progress display is supposed to do: be
+    // That is right, and it is what a progress display is supposed to do: be
     // superseded by its result rather than flash 100% on the way past. So this
     // is a **band**, not a widened tolerance — and it is still strong, because
     // what it is aimed at is a tally that goes quiet partway (2 of 8, 3 of 8),
@@ -566,7 +566,7 @@ fn drive_progress(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
 // 2 — Stop keeps the work
 // ---------------------------------------------------------------------------
 
-/// ★★ **Stop finishes the page in hand and keeps every page before it.**
+/// **Stop finishes the page in hand and keeps every page before it.**
 ///
 /// The operator's wording: *"the stop finished the page it is on and keeps the
 /// work it has done."* So the assertion is a conjunction, and both halves
@@ -600,14 +600,14 @@ impl Check for StoppingOcrKeepsWhatItHasDone {
 // 3 — Cancel throws it away
 // ---------------------------------------------------------------------------
 
-/// ★★ **Cancel discards the run and touches the document not at all.**
+/// **Cancel discards the run and touches the document not at all.**
 ///
 /// The falsifying half of the pair. Every assertion in [`StoppingOcrKeepsWhatItHasDone`]
 /// would be satisfied by a build in which Stop and Cancel were the same button;
 /// this one fails against that build, because it asserts the **absence** of the
 /// two lines the other one requires — no `ocr-applied`, no `ocr-layer`.
 ///
-/// ★ That absence is asserted over the *whole* trace rather than over the tail,
+/// That absence is asserted over the *whole* trace rather than over the tail,
 /// deliberately. A Cancel that raised the edit and then tried to take it back
 /// would leave both lines behind and an undo entry in the operator's stack,
 /// which is not "nothing was kept".
@@ -678,7 +678,7 @@ fn drive_ending(
     };
     let (session, driver, real) = start_a_run(ctx, report, trace_name)?;
 
-    // ★★★ **Wait for a page to finish before pressing anything, and that is
+    // **Wait for a page to finish before pressing anything, and that is
     // not politeness — it is what makes the result mean something.**
     //
     // Pressing Stop before any page has completed makes "Stop keeps the work"
@@ -708,7 +708,7 @@ fn drive_ending(
         )));
     }
 
-    // ★ The run may have finished already on a fast machine and a short
+    // The run may have finished already on a fast machine and a short
     // document. That is a SKIP, and it is a real one: you cannot interrupt
     // something that is over, and calling it a pass would be this harness's own
     // worst outcome — a green result that measured nothing.
@@ -855,7 +855,7 @@ fn drive_ending(
             };
             report.note(format!("the run was abandoned: `{}`", cancelled.raw));
 
-            // ★★★ The falsifying assertion, and it is an ABSENCE over the whole
+            // The falsifying assertion, and it is an ABSENCE over the whole
             // trace. See the type's doc comment.
             let applied = trace.events(APPLIED_EVENT).count();
             let edits = trace.events(EDIT_EVENT).count();
@@ -928,7 +928,7 @@ mod tests {
         }
     }
 
-    /// ★ **Stop and Cancel click different controls.**
+    /// **Stop and Cancel click different controls.**
     ///
     /// The one assertion in this file that could not be got wrong by accident
     /// and would invalidate everything if it were: the pair of checks is a pair
@@ -960,7 +960,7 @@ mod tests {
 
     /// With no override, the document is the committed fixture.
     ///
-    /// ★ Deliberately does not test the override branch: setting a process-wide
+    /// Deliberately does not test the override branch: setting a process-wide
     /// environment variable from a test races every other test in the binary,
     /// and this crate runs its tests in threads. The branch is three lines and
     /// its risk is a typo in the variable name, which this pins instead.

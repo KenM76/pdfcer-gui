@@ -16,7 +16,7 @@ verdicts become English.
 
 [cs]: pdfcer_core::redact::RedactionReport::carriers
 
-## ★★★ The defect this module was written to close
+## The defect this module was written to close
 
 Before it, this shell read the carrier list at exactly two sites and both
 were the same `==` filter against `DisclosedNotScrubbed`. That has three
@@ -40,7 +40,7 @@ consequences, and each is worse than the last:
    > 'checked, clean' has taken away the one thing that distinguishes a
    > diligence sweep from a no-op."*
 
-   ★ And this is not a theoretical variant. `pdfcer_core::redact`'s
+   And this is not a theoretical variant. `pdfcer_core::redact`'s
    `carrier_info` reports `CheckedClean` from its own final `else`, and so
    does `carrier_residual_sweep` — the two commonest carriers on the
    operator's own files.
@@ -58,7 +58,7 @@ fourth, and every string below obeys it:
 > 2026-09-04, one sentence over, after his report that the warning *"always
 > finds text that wasn't redacted"*.
 
-★ **The fallback is the raw key, deliberately.** `CarrierStatus::carrier` is
+**The fallback is the raw key, deliberately.** `CarrierStatus::carrier` is
 an open vocabulary — a future engine build may add one — and the choice at
 that moment is between printing an unknown identifier and printing nothing.
 Printing nothing would drop a disclosure the engine went to the trouble of

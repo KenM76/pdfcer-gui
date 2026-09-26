@@ -54,7 +54,7 @@ pub struct RowMetrics {
 
 /// The current row's metrics, without laying out the whole strip.
 ///
-/// ★ **This exists to keep the frame to one O(n) pass rather than two.** The
+/// **This exists to keep the frame to one O(n) pass rather than two.** The
 /// fit modes need the row's extent and ceiling in order to decide the zoom, and
 /// the strip needs the zoom in order to lay out — so a naive frame would build
 /// a strip, read two numbers off it, apply the fit and build it again. On a
@@ -106,7 +106,7 @@ pub fn row_metrics(
 
 /// The metrics a **fit mode** should be computed from.
 ///
-/// # ★ Why this is not always `row_metrics`, and the bug that says so
+/// # Why this is not always `row_metrics`, and the bug that says so
 ///
 /// Under a continuous mode the current page is **derived from the scroll**
 /// (`Strip::page_at_view`, greatest visible area). Feeding that page's row
@@ -399,7 +399,7 @@ impl Strip {
         self.place_row(row).find(|p| p.page == page).map(|p| p.rect)
     }
 
-    /// ★ **Where the whole ROW holding `page` sits** — one page under
+    /// **Where the whole ROW holding `page` sits** — one page under
     /// [`PageDisplay::Single`] and [`PageDisplay::Continuous`], the facing
     /// spread under either facing mode.
     ///
@@ -449,7 +449,7 @@ impl Strip {
             .map(|p| p.page)
     }
 
-    /// ★ **The page the operator is looking at, derived from where they have
+    /// **The page the operator is looking at, derived from where they have
     /// scrolled to.**
     ///
     /// `GUI_ROADMAP.md` Phase 4.3's *"scroll-driven current-page tracking"*.
@@ -506,7 +506,7 @@ impl Strip {
             .map_or((612.0, 792.0), |r| (r.width, r.height))
     }
 
-    /// ★ **The highest zoom every page of the current row can still
+    /// **The highest zoom every page of the current row can still
     /// rasterize at.**
     ///
     /// The per-page raster ceiling, generalised to a row. It is the
@@ -604,7 +604,7 @@ mod tests {
         (0..n).map(|_| page(612.0, 792.0)).collect()
     }
 
-    /// ★ **Single page reproduces the pre-Phase-4 geometry exactly.**
+    /// **Single page reproduces the pre-Phase-4 geometry exactly.**
     ///
     /// The operator's constraint, as an equality rather than an intention:
     /// continuous is *an option, not a replacement*, and the way that survives
@@ -738,7 +738,7 @@ mod tests {
         assert!(right.min.x > left.max.x, "the halves must not overlap");
     }
 
-    /// ★ **The current page follows the scroll, by greatest visible area.**
+    /// **The current page follows the scroll, by greatest visible area.**
     ///
     /// Phase 4.3. Asserted as the behaviour an operator sees — scroll down a
     /// page and the reported page becomes the next one — rather than as the
@@ -797,7 +797,7 @@ mod tests {
         assert_eq!(strip.page_at(pos2(-10.0, 100.0)), None, "outside the page");
     }
 
-    /// ★ **The row ceiling is a minimum over pages, not the ceiling of the
+    /// **The row ceiling is a minimum over pages, not the ceiling of the
     /// spread.**
     ///
     /// A spread is two pixmaps. Guarding it as one would halve the zoom range
@@ -857,7 +857,7 @@ mod tests {
         assert_eq!(strip.placements().count(), 0);
     }
 
-    /// ★ **The cheap row metrics agree with the laid-out strip.**
+    /// **The cheap row metrics agree with the laid-out strip.**
     ///
     /// [`row_metrics`] exists so a frame costs one O(n) pass rather than two,
     /// and the price of that shortcut is a second derivation of two numbers a
@@ -937,7 +937,7 @@ mod tests {
     // fit_metrics — the fit must not depend on where you scrolled to
     // -----------------------------------------------------------------
 
-    /// ★ **The regression test for the continuous-scroll zoom oscillation.**
+    /// **The regression test for the continuous-scroll zoom oscillation.**
     ///
     /// A mixed-size document, asked for its fit metrics from two different
     /// current pages. Under a continuous mode the answer must be the SAME —
@@ -1005,7 +1005,7 @@ mod tests {
         }
     }
 
-    /// ★ **Facing-continuous is different even on a uniform document, and it
+    /// **Facing-continuous is different even on a uniform document, and it
     /// must be.**
     ///
     /// This assertion was written the other way round first — as "a uniform

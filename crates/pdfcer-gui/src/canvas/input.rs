@@ -21,7 +21,7 @@ use crate::canvas::tool::CanvasTool;
 
 /// `egui::Memory` key for the in-flight pointer gesture.
 ///
-/// ★ **The one thing that stayed in `Memory` when the selection left**, and
+/// **The one thing that stayed in `Memory` when the selection left**, and
 /// the distinction is the point rather than an omission — see this module's
 /// header.
 const GESTURE_MEMORY_KEY: &str = "pdfcer-canvas-gesture"; // ui-text-exempt: internal memory id, never displayed
@@ -57,14 +57,14 @@ pub(super) fn probe(
     // `SELECT_SCREEN_TOLERANCE_PX` here would compile, run, and merely drift
     // with zoom — see `mapping`.
     let tolerance = map.tolerance();
-    // ★★★ **A wider radius for an ANCHOR, and only for an anchor** —
+    // **A wider radius for an ANCHOR, and only for an anchor** —
     // `OPERATOR_REQUESTS.md` O69: *"the nodes are hard to see and click on."*
     //
     // Eight screen pixels rather than six, which is what a Bézier control
     // point already got — so an anchor stops being harder to hit than the
     // handle hanging off it — and what Inkscape's grab sensitivity defaults to.
     //
-    // ★★ It is used for `nearest_node` alone. `nth_allowed` (object picking)
+    // It is used for `nearest_node` alone. `nth_allowed` (object picking)
     // and `part_hits` keep the shared radius, so a press on a sheet this
     // project has measured at 129,758 objects still resolves to the same
     // object it did before. Widening the shared constant would have changed
@@ -86,7 +86,7 @@ pub(super) fn probe(
     // not a page index, and the ladder goes as deep inside a container as it
     // does outside one.
     let subject = selection.entered_object().map(|e| e.object).or(object);
-    // ★ The two deeper rungs are gated by the SAME filter, and switching a
+    // The two deeper rungs are gated by the SAME filter, and switching a
     // rung off is not the same act as switching an object class off — it
     // changes how deep a click may go rather than what it may reach. With
     // `Parts` off, a double-click stops descending and the sheet behaves like
@@ -106,7 +106,7 @@ pub(super) fn probe(
                 .copied();
             let node = part
                 .filter(|_| filter.allows(PickClass::Node))
-                // ★ The wider radius, here and nowhere else. See its binding above.
+                // The wider radius, here and nowhere else. See its binding above.
                 .and_then(|p| {
                     targets.nearest_node_of(page_index, target, p, point, node_tolerance)
                 });
@@ -114,7 +114,7 @@ pub(super) fn probe(
         }
         _ => (None, None),
     };
-    // ★ `chunk` is NOT answered here. It asks whether the part is a text line
+    // `chunk` is NOT answered here. It asks whether the part is a text line
     // the operator can see a box around, which needs the document's line count
     // and the `View ▸ Text chunks` preference — a `CanvasTargetProvider` has
     // neither, and this function has no `Context`. `canvas::clicking` fills it
@@ -152,7 +152,7 @@ pub(super) fn probe(
 /// `ImageSource::Form` because a form's `/BBox` is an extent declaration rather
 /// than ink, and only its leaves compete.
 ///
-/// # ★ Why this is not `hit_test` with a predicate bolted on
+/// # Why this is not `hit_test` with a predicate bolted on
 ///
 /// [`CanvasTargetProvider::hit_test`] is defined as the head of
 /// [`CanvasTargetProvider::hit_test_all`], and that definition is load-bearing:
@@ -186,7 +186,7 @@ fn allowed_candidates(
 ) -> Vec<TargetId> {
     let mut out: Vec<TargetId> = Vec::new();
     for target in targets.hit_test_all(page_index, point, tolerance) {
-        // ★★★ **The Smart-Selector substitution happens HERE**, before the
+        // **The Smart-Selector substitution happens HERE**, before the
         // filter and before anything downstream sees a candidate —
         // `OPERATOR_REQUESTS.md` O70.
         //
@@ -200,7 +200,7 @@ fn allowed_candidates(
             Some(class) => filter.allows(class),
             None => true,
         };
-        // ★★ **Deduplicated, and that is not tidiness.** Ten leaves of one
+        // **Deduplicated, and that is not tidiness.** Ten leaves of one
         // title block under one point all resolve to the same container, so
         // without this an `Alt`-cycle through the stack would offer the same
         // object ten times and read as a control that has stopped responding.
@@ -211,7 +211,7 @@ fn allowed_candidates(
             out.push(target);
         }
     }
-    // ★★★ **A DIRECT HIT BEATS A NEAR MISS** — the last step, and the one that
+    // **A DIRECT HIT BEATS A NEAR MISS** — the last step, and the one that
     // makes text reachable on a CAD sheet. The whole argument is on
     // [`direct_hits_first`]; what matters here is that it runs last, on the
     // finished candidate list, so it reorders what the rest of this function
@@ -233,7 +233,7 @@ fn allowed_candidates(
 /// trace back to the code that wrote it.
 const DIRECT_SLOT: &str = "canvas-pick-direct";
 
-/// ★★★ **Put the candidates the pointer is genuinely ON in front of the ones it
+/// **Put the candidates the pointer is genuinely ON in front of the ones it
 /// is merely NEAR**, each group keeping its own front-to-back order.
 ///
 /// # The defect this closes, measured on his own drawing
@@ -252,7 +252,7 @@ const DIRECT_SLOT: &str = "canvas-pick-direct";
 /// | 0.0 pt | **9 of 9** |
 /// | 8.0 pt | 4 of 9 |
 ///
-/// ★★ The path was not on top of his text. It was winning on **slack**.
+/// The path was not on top of his text. It was winning on **slack**.
 /// `pdfcer_core::vector` hits a path on *fill interior, or stroke proximity
 /// within half the scaled line width **plus the tolerance***, and hits a text
 /// object on *its bounding box inflated by the tolerance*. A title-block label
@@ -261,14 +261,14 @@ const DIRECT_SLOT: &str = "canvas-pick-direct";
 /// 1,584 pt sheet. So the press was inside the text and beside a line, and the
 /// line, being painted later, won.
 ///
-/// ★★★ **Every font control, Properties field and restyle verb in this program
+/// **Every font control, Properties field and restyle verb in this program
 /// is reached through a text selection.** A hit test that cannot produce one
 /// makes all of them unreachable at once — which is precisely how a capability
 /// that is present, registered and green on a fixture reaches the operator as
 /// *"that entire area is always greyed out in the menu"*. Claims 1, 3 and 4 of
 /// O198 are one defect seen from three surfaces.
 ///
-/// # ★★ Why this is the conventional rule and not an invention
+/// # Why this is the conventional rule and not an invention
 ///
 /// Every vector editor in the class behaves this way, and it is why none of
 /// them needs a modifier to click a label on a busy drawing. Slack exists to
@@ -279,7 +279,7 @@ const DIRECT_SLOT: &str = "canvas-pick-direct";
 /// > **nothing**. It may never promote one over a candidate that needed no
 /// > slack at all.
 ///
-/// # ★★ What it deliberately does NOT do
+/// # What it deliberately does NOT do
 ///
 /// * **It does not know what a text object is.** The partition is *exact versus
 ///   inexact*. Text comes out in front on his drawing as a consequence of where
@@ -309,7 +309,7 @@ fn direct_hits_first(
     scope: crate::canvas::smart::Scope,
     candidates: Vec<TargetId>,
 ) -> Vec<TargetId> {
-    // ★ Resolved through the SAME Smart-Selector substitution the first query
+    // Resolved through the SAME Smart-Selector substitution the first query
     // used. A raw leaf compared against a resolved container never matches, and
     // the partition would then classify every candidate as inexact — a silent
     // no-op indistinguishable from the rule simply not applying.
@@ -359,7 +359,7 @@ fn direct_hits_first(
 /// [`crate::canvas::trace`] already uses for the same idea, so one capture can
 /// be read with one vocabulary.
 ///
-/// ★ Spelled out rather than `{:?}`-formatted. A `Debug` rendering of a target
+/// Spelled out rather than `{:?}`-formatted. A `Debug` rendering of a target
 /// has already made a driven check in this project report the opposite of the
 /// truth while quoting the truth in its own message, and the two variants index
 /// two different lists in the same document — so which list a number belongs
@@ -375,7 +375,7 @@ fn name(target: Option<TargetId>) -> String {
     )
 }
 
-/// ★★★ **Which of the candidates under the pointer this click means**, given
+/// **Which of the candidates under the pointer this click means**, given
 /// how many times the operator has asked to go deeper at this same point.
 ///
 /// # The defect this closes
@@ -389,7 +389,7 @@ fn name(target: Option<TargetId>) -> String {
 /// every point, for ever. On a page carrying anything page-sized, that one
 /// candidate is the answer to every click anywhere.
 ///
-/// ★ The root cause of his complaint is one level below this — the engine does
+/// The root cause of his complaint is one level below this — the engine does
 /// not enter form XObjects, so the objects he is pointing at are not in the
 /// list at all, and that is filed as an engine request. **This is the other
 /// half**, and it is the half that is ours: even for the objects that ARE in
@@ -418,7 +418,7 @@ fn nth_allowed(
     candidates.get(depth % candidates.len()).copied()
 }
 
-/// ★ **The frontmost object under a point**, after the pick filter — the plain
+/// **The frontmost object under a point**, after the pick filter — the plain
 /// answer, with no selection and no cycling depth involved.
 ///
 /// [`probe`]'s narrow sibling, for the one caller that has neither: the
@@ -512,7 +512,7 @@ pub(crate) fn abandon_gesture(ctx: &egui::Context) -> bool {
 /// Gated on the pointer being over the canvas so a drag that began on some
 /// other surface does not yank the page sideways.
 ///
-/// ★ **`ui` is the canvas's own child `Ui`**, whose `max_rect` is the region
+/// **`ui` is the canvas's own child `Ui`**, whose `max_rect` is the region
 /// *inside* the ruler gutters — see [`super::rulers::Gutters::content_ui`].
 /// That is what stops a drag begun on a ruler from also panning the page: the
 /// gutter is outside this rect, so `over` is false there.
@@ -531,7 +531,7 @@ pub(super) fn pan_delta(ui: &egui::Ui, tool: CanvasTool) -> Option<Vec2> {
     })
 }
 
-/// ★★★ **The direct-hits-first rule, in the three states it can be in.**
+/// **The direct-hits-first rule, in the three states it can be in.**
 ///
 /// These exercise [`allowed_candidates`] rather than [`probe`] because the
 /// rule is about the ORDER of a list, and `probe` returns only its head. A
@@ -539,7 +539,7 @@ pub(super) fn pan_delta(ui: &egui::Ui, tool: CanvasTool) -> Option<Vec2> {
 /// demoted"* from *"the near miss vanished"*, and the second would be a
 /// selection defect this function is explicitly promising not to introduce.
 ///
-/// # ★★ What is NOT exercised here, stated rather than implied
+/// # What is NOT exercised here, stated rather than implied
 ///
 /// The `direct.is_empty()` branch — every exact hit removed by the operator's
 /// pick filter, so nothing may be promoted. [`crate::canvas::target::StubTargets`]
@@ -577,7 +577,7 @@ mod tests {
         Rect::from_min_size(Pos2::new(x, y), Vec2::new(w, h))
     }
 
-    /// ★★ **His title block, reduced to two rectangles.**
+    /// **His title block, reduced to two rectangles.**
     ///
     /// Object 0 is the text run — a small box the pointer lands INSIDE.
     /// Object 1 is the cell rule beside it: a thin strip the pointer lands
@@ -680,7 +680,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The re-rank moves candidates; it never loses one.**
+    /// **The re-rank moves candidates; it never loses one.**
     ///
     /// Asserted as a multiset over every point on a grid crossing both
     /// objects and the space around them, rather than at one chosen point.

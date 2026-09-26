@@ -30,7 +30,7 @@ const PAN_AT: (f32, f32) = (0.30, 0.30);
 /// Spending a hundred notches this run would cost a second; arriving exactly at
 /// the boundary and reporting a failure would cost a reader an investigation.
 ///
-/// ★ On [`FIXTURE`] the numbers are **measured, not derived**, and the first
+/// On [`FIXTURE`] the numbers are **measured, not derived**, and the first
 /// two written here were neither.
 ///
 /// That sheet is 2383.9 pt on its long side, not Letter's 792 — and the long
@@ -63,7 +63,7 @@ const FIXTURE: &str = "fixtures/a1-titleblock.pdf";
 
 /// How far past the threshold to climb before turning round.
 ///
-/// ★ Not zero, deliberately. A descent that begins with the zoom balanced
+/// Not zero, deliberately. A descent that begins with the zoom balanced
 /// exactly on the boundary could cross back on its first notch, and a check
 /// whose first measurement *is* the hand-over cannot distinguish "the
 /// hand-over is broken" from "the climb ended somewhere unlucky". Starting a
@@ -80,7 +80,7 @@ const DESCENT_MARGIN: usize = 16;
 
 /// How many consecutive `tier=scroll` readings end the descent.
 ///
-/// ★ Consecutive, not "the first one". The whole subject of this check is the
+/// Consecutive, not "the first one". The whole subject of this check is the
 /// frames immediately after the hand-over — a descent that stopped the instant
 /// the tier flipped would stop one notch before the defect had a chance to
 /// show, which is the same mistake as measuring once per stage.
@@ -236,7 +236,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.scroll_at_held(centre, &[VK_CONTROL], 1, PAST_THRESHOLD)?;
     session.settle(20);
 
-    // ★ `settled`, not `held` — see its documentation. egui smooths a
+    // `settled`, not `held` — see its documentation. egui smooths a
     // Ctrl+wheel notch across about a dozen frames, and the turn-round point is
     // the reading every drift below is measured against: taken mid-animation it
     // biases the whole descent.
@@ -269,7 +269,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         driver.scroll_at_held(centre, &[VK_CONTROL], -1, 1)?;
         notch += 1;
 
-        // ★ Wait for the notch to LAND before reading anything about it —
+        // Wait for the notch to LAND before reading anything about it —
         // both the position and the tier. See [`super::zoom_keeps_place::settled`].
         let Some(after) = settled(&session, canvas)? else {
             return Err(Error::new(
@@ -292,7 +292,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         let drift = (after.page.0 - prev.page.0)
             .abs()
             .max((after.page.1 - prev.page.1).abs());
-        // ★★★ EVERY notch is asserted, at the same tolerance, at every zoom.
+        // EVERY notch is asserted, at the same tolerance, at every zoom.
         //
         //
         // `crossings` counts the notches that spanned the tier boundary, so a
@@ -361,7 +361,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★★★ `tiers` records what the TRACE reported; `crossings` records what
+    // `tiers` records what the TRACE reported; `crossings` records what
     // this check actually JUDGED, and only the second is evidence. A run that
     // saw both tiers but never measured a single notch spanning them has not
     // tested the hand-over, which is the whole subject — the same distinction

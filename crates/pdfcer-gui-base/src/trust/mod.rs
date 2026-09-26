@@ -18,7 +18,7 @@ mod tests;
 /// The Acrobat/Reader release tracks whose `Security` directory may hold a
 /// downloaded trust list.
 ///
-/// ★ **The same four, in the same order, as `pdfcer-cli`'s
+/// **The same four, in the same order, as `pdfcer-cli`'s
 /// `acrobat_trust_store_paths`.** Deliberately mirrored rather than reasoned
 /// out again: two front ends of one program that look in different places
 /// produce the single most confusing support conversation available — *"the
@@ -43,7 +43,7 @@ const ADDRESS_BOOK: &str = "addressbook.acrodata"; // ui-text-exempt: a file nam
 /// "no store on this machine" is a real state on Windows too. The CLI takes the
 /// identical approach and states the identical reason.
 ///
-/// ★ It reports **candidates**, not findings: nothing here touches the disk.
+/// It reports **candidates**, not findings: nothing here touches the disk.
 /// [`locate`] is what asks whether any of them exists, and keeping the two
 /// apart is what lets [`Located::None`] report *what was looked at*, which is
 /// the only actionable half of "nothing was found".
@@ -158,7 +158,7 @@ pub fn locate(configured: &str) -> Located {
 /// A trust store as read, with the provenance every surface must show beside
 /// it.
 ///
-/// ★ [`Self::modified`] is carried in the same struct as the anchors rather
+/// [`Self::modified`] is carried in the same struct as the anchors rather
 /// than fetched where it is displayed. That is deliberate: the count and the
 /// date are one fact — *"1,780 anchors, as Adobe last downloaded them on this
 /// date"* — and a surface that could obtain one without the other would
@@ -252,7 +252,7 @@ pub enum Anchors {
 impl Anchors {
     /// Whether trust was actually evaluated.
     ///
-    /// ★ Used only to decide which sentence to draw, **never** to decide what a
+    /// Used only to decide which sentence to draw, **never** to decide what a
     /// verdict means. The verdict is the engine's; this predicate says which
     /// explanation of `NotChecked` belongs beside it.
     #[must_use]
@@ -303,7 +303,7 @@ pub fn examine<G: ObjectGraph + ?Sized>(
     configured_path: &str,
 ) -> Report {
     let anchors = resolve_anchors(setting, configured_path);
-    // ★ The pool is threaded straight into the engine and never consulted here.
+    // The pool is threaded straight into the engine and never consulted here.
     // `verify_all_with_trust(.., None)` is by the engine's own documentation
     // identical to `verify_all`, so the opted-out path is not a second code
     // path with its own chance of disagreeing — it is the same call with an
@@ -395,7 +395,7 @@ pub fn examine_path<G: ObjectGraph + ?Sized>(
 
 /// A modification time as `YYYY-MM-DD`, UTC.
 ///
-/// ★ Date only, no clock time. The question an operator is answering is *"is
+/// Date only, no clock time. The question an operator is answering is *"is
 /// this anchor set current?"*, which is a question about weeks and months —
 /// AATL refreshes are not a daily event — and a timestamp to the second would
 /// invite the reading that the number is precise about something it is not.
@@ -415,7 +415,7 @@ pub fn modified_date(at: SystemTime) -> Option<String> {
 
 /// What a cached [`Report`] was computed from.
 ///
-/// ★★★ **Every input is in the key, and that is the whole safety property.**
+/// **Every input is in the key, and that is the whole safety property.**
 ///
 /// A panel redraws sixty times a second and verification is a SHA-256 over the
 /// whole file plus an RSA or ECDSA verify per signature, on top of a 3 MB COS
@@ -429,7 +429,7 @@ pub fn modified_date(at: SystemTime) -> Option<String> {
 /// to), plus both halves of the trust configuration. Change any of them and the
 /// verdict is recomputed.
 ///
-/// ★ `len` and `modified` together rather than either alone: an incremental
+/// `len` and `modified` together rather than either alone: an incremental
 /// save that appends always changes the length, and a same-length rewrite
 /// always changes the time. Neither is sufficient on its own and both are one
 /// `stat`.
@@ -452,7 +452,7 @@ struct CacheKey {
 /// already keeps its per-control edit buffer here for the same reason and says
 /// so.
 ///
-/// ★ It is `insert_temp`, so it is never serialised into the layout file. A
+/// It is `insert_temp`, so it is never serialised into the layout file. A
 /// signature verdict is a measurement of a file at a moment; persisting one
 /// across restarts would produce a verdict about a file that may have been
 /// replaced while pdfcer was not running, which is precisely the failure the
@@ -466,7 +466,7 @@ fn slot() -> egui::Id {
 /// Returns `Err` with the reason the file could not be read — which is a
 /// different statement from any verdict and must not be rendered as one.
 ///
-/// ★ **It computes on the first frame it is called on, without being asked.**
+/// **It computes on the first frame it is called on, without being asked.**
 /// The alternative considered was a *Check signatures* button. It was refused:
 /// an operator who has opened a panel called Signatures has already asked, and
 /// a button would leave the panel's default state showing coverage numbers with
@@ -510,7 +510,7 @@ pub fn cached_report(
 
 /// The anchor state as one trace token.
 ///
-/// ★ Not an operator string and not in the catalog: it is a diagnostic word a
+/// Not an operator string and not in the catalog: it is a diagnostic word a
 /// driven check matches on. `ui-verify` asserts on `anchors=off` /
 /// `anchors=none` / `anchors=used:N`, and a check that matched translated prose
 /// would break the day the prose improved.

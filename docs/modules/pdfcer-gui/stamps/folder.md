@@ -7,7 +7,7 @@ already had. If pdfcer suggests the folder Acrobat scans, his stamps appear
 in Acrobat's own menu the next time he starts it, which is what he asked
 for in `OPERATOR_REQUESTS.md` **O169**.
 
-## ★ What is measured, on this machine, today
+## What is measured, on this machine, today
 
 ```text
 %APPDATA%\Adobe\Acrobat\DC\Stamps\YTV_yyfVN1TzJ0_6oei-GB.pdf
@@ -34,7 +34,7 @@ subdirectory" picks `Preflight Acrobat Continuous` because it sorts first.
 So the rule is: **prefer a folder that already has a `Stamps` directory**,
 and fall back to the shortest plausible generation name.
 
-★ "Already has `Stamps`" is a strong signal precisely because Acrobat
+"Already has `Stamps`" is a strong signal precisely because Acrobat
 creates that folder the first time a user makes a custom stamp — its
 presence means *this is the generation the operator actually uses*, which
 is a better answer than any version ordering could give.

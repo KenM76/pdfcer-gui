@@ -81,7 +81,7 @@ impl Check for ZoomOffHoldsTheViewOnAFindJump {
 fn assess_zoom(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     let plan = Plan::new(ctx)?;
 
-    // ★ Restore the sandbox on every path out, including the failures. A check
+    // Restore the sandbox on every path out, including the failures. A check
     // that leaves `find_zoom_on_jump = false` behind has changed the starting
     // state of every check that runs after it, and a suite that shares state
     // measures the order it ran in.
@@ -130,7 +130,7 @@ fn assess_zoom(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<St
     }
     report.note("the guard was reached and declined to arm the reveal");
 
-    // ★ The independent half. See the struct doc: a guard that records its own
+    // The independent half. See the struct doc: a guard that records its own
     // decision is not evidence about what the frame settled on.
     if let Some(solved) = off.events("find-reveal-solved").last() {
         return Ok(Some(format!(
@@ -174,7 +174,7 @@ fn assess_zoom(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<St
 ///    same defect wearing the other coat. He would type a space, get hits, and
 ///    have no way to learn the space was discarded.
 ///
-/// # ★ The trace fields are plain, not `{:?}`
+/// # The trace fields are plain, not `{:?}`
 ///
 /// `find-bar` carries `trim=` and `edge_blanks=` as bare booleans specifically
 /// so this check can read them. A Debug-formatted field in a line a machine
@@ -260,7 +260,7 @@ fn assess_blank(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
         with_blank.hits
     ));
 
-    // ★ And it searched for the TRIMMED string, not merely for something that
+    // And it searched for the TRIMMED string, not merely for something that
     // happened to give the same count. Without this, an application that passed
     // the raw query to a core that trimmed it internally would be
     // indistinguishable — and that is a different contract, owned by a crate
@@ -382,7 +382,7 @@ impl Plan {
 
         let driver = Driver::new(session.window());
 
-        // ★ The control chord, before the feature. Without it this check cannot
+        // The control chord, before the feature. Without it this check cannot
         // tell "the preference is ignored" from "nothing was ever typed at the
         // window", and it will confidently report the first — which
         // `find_bar`'s own first run did, against a build in which Ctrl+F
@@ -410,7 +410,7 @@ impl Plan {
         driver.press(vk::E)?;
         session.settle(6);
         if self.trailing_space {
-            // ★★ The whole subject of O180, delivered as one keystroke, and a
+            // The whole subject of O180, delivered as one keystroke, and a
             // space rather than a tab for the reason `vk::SPACE` records.
             driver.press(vk::SPACE)?;
             session.settle(6);
@@ -452,7 +452,7 @@ fn last_search(trace: &Trace) -> Option<Search> {
 
 /// Write the sandbox's preference file.
 ///
-/// ★★★ Through `sandbox::write_prefs`, never `fs::write`. The header it
+/// Through `sandbox::write_prefs`, never `fs::write`. The header it
 /// prepends carries `ask_default_app = false`, and three checks that wrote the
 /// file directly re-enabled the O173 startup offer in front of their own
 /// launches — one of which then measured the *dialog's* client area and
@@ -476,7 +476,7 @@ fn write_prefs(userdata: &Path, body: &str) -> Result<()> {
 
 /// Put the sandbox back to the bare seed when the check ends, however it ends.
 ///
-/// ★ A guard rather than a line at the end, because there are a dozen returns
+/// A guard rather than a line at the end, because there are a dozen returns
 /// above and the one that gets forgotten is the one that leaves
 /// `find_zoom_on_jump = false` behind for every check that runs afterwards. A
 /// suite that shares state measures the order it ran in.
@@ -529,7 +529,7 @@ mod tests {
         assert_eq!(vk::SPACE, 0x20, "VK_SPACE");
     }
 
-    /// ★ A `Plan` starts without the trailing space.
+    /// A `Plan` starts without the trailing space.
     ///
     /// O179's check never sets the flag, and if the default were `true` it
     /// would be silently driving O180's gesture instead — and still passing,

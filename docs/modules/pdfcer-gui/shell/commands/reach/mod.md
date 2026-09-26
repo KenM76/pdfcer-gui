@@ -35,7 +35,7 @@ dimensions — is reachable, and correctly so: the operator's press produced
 a decision instead of falling through to `command-unimplemented`. What this
 catches is the *absence of a decision*.
 
-# ★ Why the arms are READ from the source rather than run
+# Why the arms are READ from the source rather than run
 
 Three mechanisms were available. The two that lost are worth recording,
 because each lost for a reason a future session would otherwise re-derive.
@@ -110,7 +110,7 @@ Action::Close)` is the whole story, is precisely what would be lost. The
 brief for this work says so in the same words: it must not turn one
 readable `match` into a table nobody can follow.
 
-# ★ What is done instead, and why it is not the rejected grep
+# What is done instead, and why it is not the rejected grep
 
 **The literal arms are read from the abstract syntax tree**, with `syn` —
 a real Rust parser, already in `D:\Dev\pdfcer`'s lockfile, taken as a
@@ -159,8 +159,8 @@ print the same thing; here the second state cannot be reached.
 
 [`SCAFFOLDED`] is the allow-list of registered commands with no dispatch
 arm, each carrying the reason it is inert. **It is empty**, and
-[`tests::the_p3_tension_is_counted`] pins both its length and the `★ P3`
-subset at zero. A `★ P3` mark is this module's judgement that the honest
+[`tests::the_p3_tension_is_counted`] pins both its length and the `P3`
+subset at zero. A `P3` mark is this module's judgement that the honest
 answer is *the control should not be drawn yet* — `RIBBON_IA.md` P3: "An
 unavailable capability renders nothing, not a disabled stub".
 
@@ -178,7 +178,7 @@ the original had.
 * a **blocker** — something is missing and somebody can build it. It expires
   when they do, and the entry is then deleted.
 * a **decision** — a deferral. It expires only when the person who made it
-  changes it. Whether a `★ P3` entry loses its control is a taxonomy
+  changes it. Whether a `P3` entry loses its control is a taxonomy
   decision and the operator's; nothing here removes one.
 * **no reason at all**, which is not a deferral. An entry that admits it has
   no recorded reason is the FIRST one to re-derive, not the last: somebody
@@ -190,7 +190,7 @@ has no arm, and the recorded cause is not the real one. Nothing about such
 an entry looks wrong; the only thing that finds it is asking what the verb's
 own REQUEST STRUCT requires rather than whether the verb exists.
 
-★ The reliable half is identifiable in advance: **an entry whose truth
+The reliable half is identifiable in advance: **an entry whose truth
 condition is inside THIS repository is the strong kind** — nothing makes a
 missing window appear except somebody building it, so it cannot go stale by
 accident. An entry that cites another document or another repository can,
@@ -204,7 +204,7 @@ and an entry whose id has no arm and whose reason is nonsense is
 indistinguishable from a correct one. A reason is prose; a reader is the
 only instrument.
 
-## ★★★ The honest verdict on this list
+## The honest verdict on this list
 
 It forces an explanation for every dead control. It has never forced a fix.
 An entry can sit for weeks with a reason that is true about one thing and
@@ -216,13 +216,13 @@ be found by the operator pressing the button.
 every registered id and fails on `command-unimplemented`** — a claim about
 the running program, which no paragraph can satisfy. See `tools/ui-verify`.
 
-★★ The empty list is **kept rather than deleted**, exactly as
+The empty list is **kept rather than deleted**, exactly as
 [`UNREACHED_ARMS`] is kept at zero and for the same reason: an empty
 allow-list is still a gate. A new entry cannot be added quietly — it has to
 be written here with a reason, and the count assertion is what makes adding
 one a visible act.
 
-★ **And the mirror defect, which the same reader finds.** A literal arm can
+**And the mirror defect, which the same reader finds.** A literal arm can
 name a command that is **not registered at all**, so no token can reach it
 and no operator ever could. [`UNREACHED_ARMS`] is the allow-list for those.
 It is empty and is kept as a gate: the first planted violation of this check

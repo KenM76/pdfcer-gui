@@ -12,7 +12,7 @@
 //! reader following `pages.rotate_left` from the ribbon to the document now
 //! meets one named file at each layer instead of two general ones.
 //!
-//! ## ★ What did NOT move, and why
+//! ## What did NOT move, and why
 //!
 //! `page_operands` stays on `PdfcerApp` in [`super`]. It is the **operand
 //! rule** — *which pages does a Pages command act on?* — and it is read by
@@ -58,7 +58,7 @@ pub(crate) fn handles(id: &str) -> bool {
 /// guarded on it — so the fall-through below is unreachable and says so rather
 /// than guessing.
 ///
-/// ★ **The receiver is `&mut PdfcerApp` for `pages.resize` alone.** Every other
+/// **The receiver is `&mut PdfcerApp` for `pages.resize` alone.** Every other
 /// arm here builds an `Action` and pushes it; that one opens a window, which
 /// lives on `PdfcerApp::dialogs`. The alternative — putting the arm in
 /// [`super`] beside `pages.merge_into` and `pages.insert_from_file` — would
@@ -68,7 +68,7 @@ pub(crate) fn handles(id: &str) -> bool {
 /// Pages tab.
 pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>) {
     match id {
-        // ★★★ **Change the paper the picked sheets sit on.**
+        // **Change the paper the picked sheets sit on.**
         //
         // The only arm here that opens a window rather than pushing an
         // `Action`, and it has to: the operator is being asked TWO questions,
@@ -76,7 +76,7 @@ pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
         // that a smaller sheet CROPS his drawing rather than shrinking it. See
         // `crate::dialogs::page_size`, whose header carries the measurement.
         //
-        // ★ The operand list is resolved by the same `page_operands` every
+        // The operand list is resolved by the same `page_operands` every
         // other arm calls, and it is resolved BEFORE `app.dialogs` is borrowed
         // mutably — `page_operands` takes `&self` and returns an owned `Vec`,
         // so that borrow is over by the time the window is built. `status` and
@@ -97,7 +97,7 @@ pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
             app.dialogs.open_page_size(doc, &pages);
         }
         // ===============================================================
-        // ★★ THE PAGE VERBS — one operand rule, shared by every arm below
+        // THE PAGE VERBS — one operand rule, shared by every arm below
         //
         // Each of these is reachable from the Pages tab, the page tile's
         // context menu and, for some, a chord. They must agree about what
@@ -112,7 +112,7 @@ pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
         // it exists for the same reason: *two statements of a destructive
         // rule is one too many*.
         //
-        // ★ Note which selection is NOT read here.
+        // Note which selection is NOT read here.
         // `crate::panels::PanelsState::selected_pages` is the **page**
         // selection; `selection.any` and `doc.selection` are the **object**
         // one. `crate::panels::pages::select`'s header carries the table of
@@ -153,7 +153,7 @@ pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
                 actions.push(Action::Page(PageAction::ExtractPages { pages }));
             }
         }
-        // ★ **The two move verbs, and the one arm in this family that can
+        // **The two move verbs, and the one arm in this family that can
         // decline.**
         //
         // `move_order` returns a permutation or a refusal, and the refusal
@@ -165,7 +165,7 @@ pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
         // named after, so the engine is never asked a question whose answer
         // is "nothing".
         //
-        // ★ **These two refusals are traced and not yet worded**, which is a
+        // **These two refusals are traced and not yet worded**, which is a
         // gap rather than a decision: the surface for a worded decline is
         // `crate::app::status::decline`, and neither refusal has a variant
         // there. They carry *distinct* reason tokens so that closing the gap

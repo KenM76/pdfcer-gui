@@ -1,7 +1,7 @@
 //! # `shell::commands::catalog::markup` — the Markup tab — what is added for somebody else to read
 //!
 //!
-//! ## ★★★ The split is per TAB, and the reason it was refused before is gone
+//! ## The split is per TAB, and the reason it was refused before is gone
 //!
 //! [`super`]'s header argued against exactly this cut:
 //!
@@ -56,7 +56,7 @@ pub(super) fn band() -> Vec<Command> {
         command("markup.polygon", t::markup_polygon(), 504)
             .with_icon("shape-polygon")
             .enabled_when("doc.pages"),
-        // ★ **Revision cloud**, registered 2026-08-19 — the operator's item 6,
+        // **Revision cloud**, registered 2026-08-19 — the operator's item 6,
         // raised three times in his own words: *"still no revision cloud
         // tool."*
         //
@@ -78,7 +78,7 @@ pub(super) fn band() -> Vec<Command> {
         command("markup.ink", t::markup_ink(), 505)
             .with_icon("shape-ink")
             .enabled_when("doc.pages"),
-        // ★ **Finish shape** — the ribbon half of the vertex tools' ending, and
+        // **Finish shape** — the ribbon half of the vertex tools' ending, and
         // `measure.finish`'s twin in every respect that matters.
         //
         //
@@ -125,7 +125,7 @@ pub(super) fn band() -> Vec<Command> {
         // * A completion verb rendering as its words was an honest fallback, not
         //   a defect — which is why the button was shippable in the meantime.
         //
-        // ★ **Why `finish-shape` here and `check` on `measure.finish`.** The
+        // **Why `finish-shape` here and `check` on `measure.finish`.** The
         // review supplied two candidate glyphs for these two near-identical
         // commands: `finish-shape`, a vertex run with a tick appended, and
         // `check`, a bare asymmetric tick. They must not share — two commands
@@ -170,7 +170,7 @@ pub(super) fn band() -> Vec<Command> {
         // or `Ctrl+Shift`, with nothing on screen saying so. These two are the
         // route somebody can find.
         //
-        // ## ★★★ Why neither has a ribbon home, and why that is legitimate
+        // ## Why neither has a ribbon home, and why that is legitimate
         //
         // Both are in `shell::manifest::TAB_SCOPED`, whose bar is stated in its
         // own header and is not *"a button would be redundant"*:
@@ -185,7 +185,7 @@ pub(super) fn band() -> Vec<Command> {
         // was pointing at. That is the identical argument `view.panel_float`
         // makes about the panel under the pointer, one surface along.
         //
-        // ★★ And the discoverability the rule exists to protect is answered the
+        // And the discoverability the rule exists to protect is answered the
         // way that register asks it to be: **the capability is on the ribbon
         // even though the verb is not.** `view.tool_node` — labelled *Points* —
         // sits in the tool row and puts square anchors on every corner of the
@@ -193,7 +193,7 @@ pub(super) fn band() -> Vec<Command> {
         // corners and that they are things you can aim at; where the verb that
         // adds one lives is then the universal idiom, at the pointer.
         //
-        // ## ★★ One glyph for the pair
+        // ## One glyph for the pair
         //
         // `show-points` on both, which is this module's stated family
         // convention: a family shares a glyph when its members are told apart by
@@ -205,7 +205,7 @@ pub(super) fn band() -> Vec<Command> {
         // *these points are aimable*, which is exactly what the menu row is
         // about to let the operator do to one.
         //
-        // ## ★★★ The enable predicates, and where their answers come from
+        // ## The enable predicates, and where their answers come from
         //
         // Both are set **per right-click**, by `crate::canvas::menus` through
         // `MenuHost::with_conditions`, never by `PdfcerApp::conditions()` — see
@@ -255,7 +255,7 @@ pub(super) fn band() -> Vec<Command> {
         // publishes `selection.text` from a **live** selection on the open
         // document, and `markup::text::mark` refuses anything else.
         //
-        // # ★ Where they are reachable, which is narrower than the tab suggests
+        // # Where they are reachable, which is narrower than the tab suggests
         //
         // **Review, and Review alone.** Read cannot author markup (its tab list
         // is File and View, so the Markup tab is not there at all), and Edit

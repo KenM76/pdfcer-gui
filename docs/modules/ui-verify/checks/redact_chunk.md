@@ -16,7 +16,7 @@ already is. Three claims, and they are separable:
 | the gesture | the click that selects a chunk is the click that aims the mark | the Part rung is standing when the verb runs |
 | the route | reachable without leaving the canvas (**O53**) | the row is in the object context menu and is pressed |
 
-# ★★★ Why the oracle is TWO marks in ONE launch
+# Why the oracle is TWO marks in ONE launch
 
 `redact-mark-selection-requested page=N quads=N` is written identically for
 a chunk-sized mark and a block-sized one — the exact pair this row exists to
@@ -36,7 +36,7 @@ while the capability was intact.
 it there is nothing to say a one-line box is small, because "small" is only
 meaningful against the block it came out of.
 
-# ★★ Why both marks go through the CONTEXT MENU
+# Why both marks go through the CONTEXT MENU
 
 The ribbon route is `redact_selection`'s subject and is already driven
 there. This row's third ask is the one the ribbon cannot discharge: the
@@ -46,7 +46,7 @@ on a tab he has to travel to is the defect **O53** names. Pressing
 enabled and wired — three things a roster test asserts about the *plan* and
 none about the running program.
 
-# ★ Why the block mark is undone before the chunk mark
+# Why the block mark is undone before the chunk mark
 
 So the second gesture aims at the same document the first did. A `/Redact`
 is an annotation the page now carries, and a check whose second click lands

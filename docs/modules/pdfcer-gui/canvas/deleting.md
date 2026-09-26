@@ -8,7 +8,7 @@ keyboard and the ribbon ask — or the key and the command act on different
 things, which `app::keyboard`'s header calls the defect the single
 dispatcher exists to make impossible.
 
-## ★★★ What this closes, and why it is one defect three times
+## What this closes, and why it is one defect three times
 
 
 ```text
@@ -41,7 +41,7 @@ Each of the three had its **move** twin wired — `move_subpath` through
 `VectorAction::MoveNode` / `MoveNodes` — so for a fortnight a line could be
 entered, selected and **dragged**, and could not be removed.
 
-## ★★ The vocabulary, because getting it wrong here is a documented cost
+## The vocabulary, because getting it wrong here is a documented cost
 
 **R8b Rule 15.** The 237 labels on the operator's SolidWorks export are
 **pdf dimensions** — page content pdfcer reads and must not silently alter.
@@ -59,7 +59,7 @@ lets `canvas::keys` and `app::dispatch::format` ask the identical question,
 which is the property the ribbon's Delete had already been found to have
 lost once.
 
-## ★ R83: a refusal the model can see BEFORE the press is a refusal that
+## R83: a refusal the model can see BEFORE the press is a refusal that
 names its remedy
 
 One refusal here is asked ahead of the verb rather than reported after it:

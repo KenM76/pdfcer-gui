@@ -31,7 +31,7 @@ use egui_shell::manifest::{Item, Tab};
 /// | text swept | **shown** | greyed | enabled |
 /// | both | shown | enabled | enabled |
 ///
-/// ★ The old note's fear — a tab that appears holding a greyed control — is
+/// The old note's fear — a tab that appears holding a greyed control — is
 /// therefore now the *designed* middle two rows rather than a defect, and R9
 /// is what makes that legitimate: the capability is present and the **operand**
 /// is missing, which is the textbook temporarily-unavailable case, greyed and
@@ -44,7 +44,7 @@ pub(super) const VISIBLE_WHEN: &str = "selection.formattable"; // ui-text-exempt
 /// The condition under which a mode may change page content, and therefore
 /// under which the Font group is drawn at all.
 ///
-/// ★★ **Visibility, not enablement**, and R9 is the whole of the reasoning:
+/// **Visibility, not enablement**, and R9 is the whole of the reasoning:
 /// *an unavailable capability renders nothing; greying is reserved for
 /// temporarily unavailable and is always explained on hover.* Read and Review
 /// do not have a mislaid ability to restyle text — they do not have the
@@ -62,7 +62,7 @@ const FONT_VISIBLE_WHEN: &str = "mode.edit_content"; // ui-text-exempt: a condit
 /// The condition under which the **Markup** group is drawn at all: a markup
 /// annotation is selected, and this mode may author markup.
 ///
-/// # ★★★ Why it is ONE fused fact and not two conditions
+/// # Why it is ONE fused fact and not two conditions
 ///
 /// The Font group above takes two — `mode.edit_content` for visibility and
 /// `selection.text` for enablement — and the reason is O37: an operator meets
@@ -83,14 +83,14 @@ const FONT_VISIBLE_WHEN: &str = "mode.edit_content"; // ui-text-exempt: a condit
 /// | the selection is not a markup — a page object, a form field, a swept text range, or a **ce dimension** | these controls have no operand of the right *kind*, and `set_dimension_style` is the ce dimension's verb (Rule 15) |
 /// | the mode cannot author markup — Read | not a mislaid ability; Read does not have it, and the mode selector is the disclosure |
 ///
-/// ★ Fusing them is what `selection.formattable` and
+/// Fusing them is what `selection.formattable` and
 /// `selection.delete_permitted` already do, and for the stated reason:
 /// `egui_shell::commands::Enable`'s grammar is one condition name with an
 /// optional leading `!` — *"a grammar in a string is a parser and a parser is a
 /// thing that has its own bugs"* — so an `A && B` predicate is published as a
 /// **named fact** rather than assembled here. The name says which fact.
 ///
-/// # ★★ What is deliberately NOT folded in: the lock
+/// # What is deliberately NOT folded in: the lock
 ///
 /// §12.5.3 Table 165 bit 8 says a locked annotation's properties *"shall not be
 /// changed by the user interface"*, and the engine refuses `set_markup_style`
@@ -107,7 +107,7 @@ const FONT_VISIBLE_WHEN: &str = "mode.edit_content"; // ui-text-exempt: a condit
 /// (`text::panels::properties::markup_locked`), which is what keeps the two
 /// surfaces from refusing for different reasons.
 ///
-/// ★ Note it is **not** spelled `selection.markup`. That name would claim only
+/// Note it is **not** spelled `selection.markup`. That name would claim only
 /// half of what is published and would read, at the two call sites, as though
 /// Read could restyle a mark.
 const MARKUP_VISIBLE_WHEN: &str = "selection.markup_restylable"; // ui-text-exempt: a condition name, never displayed
@@ -119,7 +119,7 @@ pub(super) fn tab() -> Tab {
         .with_visible_when(VISIBLE_WHEN)
         .with_groups([
             //
-            // ★★★ FIRST, ahead of Selection, and the order is the operator's
+            // FIRST, ahead of Selection, and the order is the operator's
             // rather than this file's. §5.8's own table lists a text run's
             // groups as *Font · Size · Colour · Spacing · Alignment · Delete*,
             // with Delete last, and every other row in that table ends the
@@ -132,7 +132,7 @@ pub(super) fn tab() -> Tab {
             // group of the tab an operator lives on, and this tab is the
             // nearest thing this product has to Home.
             //
-            // # ★★ What is in it is exactly what the PANEL has, and no more
+            // # What is in it is exactly what the PANEL has, and no more
             //
             // §5.8 sets the build order — *"panel first, tab second … the
             // tab's contents are a **subset** of it"* — and that word decides
@@ -151,7 +151,7 @@ pub(super) fn tab() -> Tab {
             // Spacing and Alignment stay in `manifest::PLANNED`, for a reason
             // that is not about order: `EditSession` has no verb for either.
             //
-            // # ★ Every item carries `visible_when`, and the SEPARATOR does not
+            // # Every item carries `visible_when`, and the SEPARATOR does not
             //
             // `egui_shell::manifest::Item::Separator` cannot carry a condition
             // — deliberately, and its own docs say why: a divider's visibility
@@ -169,7 +169,7 @@ pub(super) fn tab() -> Tab {
                 [
                     Item::custom(super::FONT_FACE).shown_when(FONT_VISIBLE_WHEN),
                     Item::custom(super::FONT_SIZE).shown_when(FONT_VISIBLE_WHEN),
-                    // ★ The rule separates *which typeface* from *how it is
+                    // The rule separates *which typeface* from *how it is
                     // set*, which is the seam Word draws in the same place: a
                     // face and a size are what the text IS, and bold, italic
                     // and colour are what is done to it. An operator scanning
@@ -184,7 +184,7 @@ pub(super) fn tab() -> Tab {
             // Markup — §5.8's "Markup annotation" row, built 2026-09-06 on the
             // operator's *"getting full editing working for the Markup tools."*
             //
-            // ★★★ SECOND, between Font and Selection, and the position is
+            // SECOND, between Font and Selection, and the position is
             // decided by the same rule that put Font first. §5.8's tables read
             // *change how this looks · describe it · destroy it*, left to
             // right, in increasing commitment. Font and Markup are both the
@@ -193,7 +193,7 @@ pub(super) fn tab() -> Tab {
             // after Selection would put a Delete between two bands of
             // appearance controls.
             //
-            // ★ Font and Markup are never drawn together. Their conditions are
+            // Font and Markup are never drawn together. Their conditions are
             // disjoint by construction: `mode.edit_content` needs Edit and a
             // swept text range, `selection.markup_restylable` needs an
             // annotation selected — and `SelectionState` cannot hold an
@@ -203,7 +203,7 @@ pub(super) fn tab() -> Tab {
             // anyway, because the next group added here will not be disjoint
             // from both.
             //
-            // # ★★ Five items, one condition, and no separator
+            // # Five items, one condition, and no separator
             //
             // Every item carries `MARKUP_VISIBLE_WHEN`, so the group is drawn
             // whole or not at all and `egui-shell`'s
@@ -215,7 +215,7 @@ pub(super) fn tab() -> Tab {
             // divider (the pair of colours) are already adjacent and already
             // read as a pair from their labels.
             //
-            // # ★ The arrowhead chooser has NO extra condition, and that is the
+            // # The arrowhead chooser has NO extra condition, and that is the
             // application's decision rather than the manifest's
             //
             // `/LE` is meaningful for `/Line` alone. That could have been a
@@ -237,7 +237,7 @@ pub(super) fn tab() -> Tab {
                     Item::custom(super::MARKUP_STROKE).shown_when(MARKUP_VISIBLE_WHEN),
                     Item::custom(super::MARKUP_FILL).shown_when(MARKUP_VISIBLE_WHEN),
                     Item::custom(super::MARKUP_WIDTH).shown_when(MARKUP_VISIBLE_WHEN),
-                    // ★ Beside the width and not at the end of the row: the two
+                    // Beside the width and not at the end of the row: the two
                     // are one subject — *what the line looks like* — and §5.8's
                     // Markup row lists them adjacent for that reason. An
                     // operator setting a mark's linework should not have to
@@ -258,7 +258,7 @@ pub(super) fn tab() -> Tab {
                     // a standing choice they made in the mode selector, and the
                     // mode selector is the disclosure.
                     //
-                    // ★ Why `select_form` counts as authoring when all it does
+                    // Why `select_form` counts as authoring when all it does
                     // is move the selection: it is the first half of the
                     // compound `dispatch::format` records — in Read, click a
                     // picture inside a title block, `select_form` re-aims the
@@ -266,7 +266,7 @@ pub(super) fn tab() -> Tab {
                     // and Delete then takes the lot. The re-aim is only ever
                     // wanted as a prelude to editing.
                     command("format.select_form").shown_when(FONT_VISIBLE_WHEN),
-                    // ★★ Between "select the form" and Delete, and the ordering
+                    // Between "select the form" and Delete, and the ordering
                     // rule two comments up decides it without needing a new
                     // one: §5.8's menu rule is least-destructive-first, and the
                     // same reading orders a group — **describe, then re-aim,
@@ -276,11 +276,11 @@ pub(super) fn tab() -> Tab {
                     // more than a re-aim, so it lands exactly here and the eye
                     // still meets Delete last.
                     //
-                    // ★ It is also the order the two form commands are USED in.
+                    // It is also the order the two form commands are USED in.
                     // "Select the form" answers *what am I looking at*, and
                     // this answers *make it mine before I change it*. A reader
                     // scanning the group top to bottom reads the workflow.
-                    // ★★★ Gated for `select_form`'s reason and a blunter one of
+                    // Gated for `select_form`'s reason and a blunter one of
                     // its own: this **writes to the document**
                     // (`EditSession::unshare_form` gives a page its own copy of
                     // a shared form), so an enabled control in a mode that
@@ -290,7 +290,7 @@ pub(super) fn tab() -> Tab {
                     // Rewrites a content stream, so withheld where content is
                     // not authored; greyed on the engine's preflight otherwise.
                     command("format.merge_text_runs").shown_when(FONT_VISIBLE_WHEN),
-                    // ★★★ **Withheld, not greyed, where the engine would refuse
+                    // **Withheld, not greyed, where the engine would refuse
                     // the delete** — `visible_when` rather than a second
                     // `enabled_when`, and the difference is R9 stated by
                     // `Item::visible_when`'s own doc: *"this is visibility, not
@@ -313,7 +313,7 @@ pub(super) fn tab() -> Tab {
                     // from one function, so the control cannot be withheld for a
                     // reason different from the one the panel gives.
                     //
-                    // ★ The condition is TRUE for every state but the one narrow
+                    // The condition is TRUE for every state but the one narrow
                     // annotation case, so this changes nothing for a content
                     // selection or a form field — see `app::conditions`, which
                     // argues at length why that default direction is the safe
@@ -332,7 +332,7 @@ mod tests {
     /// Every command on the Format tab that WRITES is withheld from a mode
     /// that authors nothing.
     ///
-    /// # ★★★ Why this is a list and not a predicate
+    /// # Why this is a list and not a predicate
     ///
     /// Because "does this command write" is not a property the manifest can
     /// see. The manifest holds an id and a condition string; whether the arm
@@ -378,7 +378,7 @@ mod tests {
             .collect()
     }
 
-    /// ★ A18, second half. The dispatch guard stops the ACT; this stops the
+    /// A18, second half. The dispatch guard stops the ACT; this stops the
     /// promise. A control that is enabled, pressed, and does nothing is the
     /// defect this whole project was founded on, and it was re-created on
     /// 2026-09-03 by the fix for a data-loss defect.
@@ -412,7 +412,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **Every CUSTOM item on this tab is withheld too, and neither test
+    /// **Every CUSTOM item on this tab is withheld too, and neither test
     /// above can see one.**
     ///
     /// `items()` filters `Item::Command`, because that is the only variant
@@ -431,7 +431,7 @@ mod tests {
     /// without authoring, so *every* one of them must carry a mode-bearing
     /// condition. A custom item with no `shown_when` at all fails.
     ///
-    /// ★ Two conditions are accepted rather than one, and they are not
+    /// Two conditions are accepted rather than one, and they are not
     /// interchangeable: `mode.edit_content` gates the Font group (page content)
     /// and `selection.markup_restylable` gates the Markup group (an
     /// annotation), and `Capabilities` keeps `edit_content` and `author_markup`

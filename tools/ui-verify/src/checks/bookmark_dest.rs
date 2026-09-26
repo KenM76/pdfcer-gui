@@ -29,7 +29,7 @@ const FIXTURE: &str = "TR-0461-1500-copy.pdf";
 const DETAIL: &str = "Drawing View64";
 /// How much bigger a detail must be than the page fit to count as arrival.
 ///
-/// ★ 1.5×, deliberately loose. The point is to separate "framed a detail" from
+/// 1.5×, deliberately loose. The point is to separate "framed a detail" from
 /// "did not move at all", and the exact ratio depends on the window; a tight
 /// bound would be a test of the monitor.
 const AT_LEAST: f64 = 1.5;
@@ -151,7 +151,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let before = zoom_of(&session, CANVAS).unwrap_or_default();
     report.note(format!("★ the fitted page is at zoom {before:.3}"));
 
-    // ★ The row's rect comes off its own trace line, not off a `ui-rect`
+    // The row's rect comes off its own trace line, not off a `ui-rect`
     // region: the panel is a scrolled tree and publishes no per-row region, so
     // the line the panel already writes for the harness is the only thing that
     // knows where a row landed.
@@ -166,7 +166,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "★★ after clicking {DETAIL:?} the zoom is {after:.3}"
     ));
 
-    // ★★★ WHICH ROW WAS ACTUALLY PRESSED — asked BEFORE the zoom is judged.
+    // WHICH ROW WAS ACTUALLY PRESSED — asked BEFORE the zoom is judged.
     //
     // `zoom unchanged` has two causes and they want opposite fixes: the
     // destination was not applied (a defect in the shell), or the click landed

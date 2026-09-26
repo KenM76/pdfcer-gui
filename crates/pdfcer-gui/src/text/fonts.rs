@@ -2,7 +2,7 @@
 //!
 //! Five sentences, all of them about something that did **not** happen.
 //!
-//! ## ★★★ Why a skip gets a sentence at all
+//! ## Why a skip gets a sentence at all
 //!
 //! Because *"pdfcer could not embed HelveticaNeue"* and *"pdfcer skipped
 //! HelveticaNeue.ttf because it is 40 MB"* are the same event to the program
@@ -13,7 +13,7 @@
 //! these into the first sentence, and an operator whose font folder contains
 //! the right face in the wrong format would have no way to find that out.
 //!
-//! ## ★ Each names the FILE
+//! ## Each names the FILE
 //!
 //! Not the folder, and not a count. A folder holding two hundred files and one
 //! problem needs the one named; *"3 files were skipped"* is a number that
@@ -23,7 +23,7 @@ use std::path::Path;
 
 /// A configured folder could not be opened.
 ///
-/// ★ It says the rest were still searched, because that is the fact an
+/// It says the rest were still searched, because that is the fact an
 /// operator needs in order to decide whether to care. A removable drive that is
 /// not mounted is a normal state of a list that is otherwise fine.
 #[must_use]
@@ -36,7 +36,7 @@ pub fn folder_unreadable(folder: &Path, detail: &str) -> String {
 
 /// A file was past the size ceiling.
 ///
-/// ★ It gives the size, because the ceiling is only actionable beside the
+/// It gives the size, because the ceiling is only actionable beside the
 /// number that exceeded it — and because a genuinely enormous "font" is nearly
 /// always something else with a font extension, which the operator can see at a
 /// glance once they know which file.
@@ -58,7 +58,7 @@ pub fn file_unreadable(path: &Path) -> String {
 
 /// A file was read and is not a font this build understands.
 ///
-/// ★ The parser's own reason is passed through rather than re-worded, for the
+/// The parser's own reason is passed through rather than re-worded, for the
 /// rule every other pass-through in this shell follows: *"unsupported table
 /// format"* and *"truncated"* are different problems, and a generic sentence
 /// throws away the only part that distinguishes them.
@@ -82,12 +82,12 @@ pub fn no_name(path: &Path) -> String {
 /// Where a **bundled** donor came from, for the row and for the engine's
 /// `SuppliedFont::source`.
 ///
-/// ★★★ It says *pdfcer's own copy*, in those words, because that is the fact the
+/// It says *pdfcer's own copy*, in those words, because that is the fact the
 /// operator needs and the one nothing else on screen carries. A row reading
 /// `FoxitSans` beside a row reading `C:\Windows\Fonts\arial.ttf` invites the
 /// reading that both are files and one of them has an odd path.
 ///
-/// ★ `pdfcer` writes `"bundled: FoxitSans"` for the same value, and this
+/// `pdfcer` writes `"bundled: FoxitSans"` for the same value, and this
 /// deliberately does not match it: that string is for a log a developer greps,
 /// and this is a sentence in a window. The engine's field doc says the value is
 /// *"never parsed; only reported"*, which is what makes them free to differ.

@@ -15,7 +15,7 @@ anywhere on the page. That single fact decides most of the wording below:
 **every sentence here is a disclosure**, because there is nothing on the
 canvas an operator could have looked at instead.
 
-## ★★★ The three sentences that are NOT optional
+## The three sentences that are NOT optional
 
 Each one exists because `pdfcer-core` states an obligation in its own doc
 comment and a shell that skipped it would be shipping a lie the operator
@@ -27,7 +27,7 @@ cannot detect:
 | [`may_be_encrypted`] | `AttachmentNotes::may_be_encrypted`: since PDF 1.5 an embedded file can be encrypted **in an otherwise unencrypted document** (`/EFF` naming a `DefEmbeddedFile` crypt filter, §7.6.5), so the intuitive guard is wrong *silently* — the filter chain runs, produces bytes, and those bytes are garbage that looks like a successful extraction. |
 | [`name_was_changed`] | `sanitize_attachment_name`: the name in a document is attacker-controlled and unconstrained — `..\..\Windows\System32\evil.exe`, `invoice.pdf\0.exe`, `CON.txt` are all authorable — so pdfcer writes a different file name than the row shows, and *"pdfcer renamed this file"* with no reason is the sneaky behaviour rule 4 forbids. |
 
-## ★ Why the size is worded as a measurement and never as a verdict
+## Why the size is worded as a measurement and never as a verdict
 
 `/Params /Size` is **optional** and §7.11.4 attaches no `shall` to it, so a
 document whose declaration disagrees with its bytes is not thereby
@@ -37,7 +37,7 @@ own `DeclaredSizeCheck::Disagrees` doc says to word it *"the document says
 follows that to the letter, and [`DeclaredSizeCheck::is_contradicted`]'s
 name — *contradicted*, not *invalid* — is the same decision one layer down.
 
-## ★ Why the dates are printed exactly as the file wrote them
+## Why the dates are printed exactly as the file wrote them
 
 `Attachment::created` and `Attachment::modified` are **raw and unparsed** by
 design: `pdfcer-core` has no shared §7.9.4 date type yet and says outright

@@ -1,7 +1,7 @@
 # `app::dispatch::markupnodes` — the three commands about a markup shape's
 **points**
 
-## ★★ The seam, and it is a subject rather than a size
+## The seam, and it is a subject rather than a size
 
 What these ids share is not the `markup.` prefix — `markup.cloud` arms a
 pen, `markup.stamp` arms a different one, `markup.comments` opens a panel,
@@ -24,7 +24,7 @@ this project's usual test for a module:
 
 > *"I also can't edit or delete nodes of a markup shape once it is drawn."*
 
-## ★★ The two node commands do NOT require the Points tool armed
+## The two node commands do NOT require the Points tool armed
 
 The chord route does — `Ctrl` and `Ctrl+Shift` over a node, with
 `view.tool_node` armed — because `Ctrl` already means *take this out of the
@@ -35,7 +35,7 @@ armed tool as well would be carrying a rule past the reason that produced
 it. [`crate::canvas::annotnodes::menu`]'s header carries the full argument;
 there is deliberately no tool check anywhere below.
 
-## ★ What is NOT decided here
+## What is NOT decided here
 
 **Whether the edit is allowed.** That is the engine's, asked through
 `EditSession::reshape_annotation_preview` inside

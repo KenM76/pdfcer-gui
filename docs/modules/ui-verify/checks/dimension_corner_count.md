@@ -17,14 +17,14 @@ page=0 n=1` followed by `measure-perimeter-vertex n=1`, and no painter was
 ever asked for a handle. Putting the pen down first (step 3 below) makes
 the whole check pass: `4 → 5 → 4` corners, both engine verbs reached.
 
-★★★ **The lesson is about the negative assertion, not about the tool.**
+**The lesson is about the negative assertion, not about the tool.**
 *"Regions seen: none"* was a true statement that could not distinguish
 *"the handles are not drawn"* from *"nothing was ever selected"* — an
 absence is only evidence when the thing that would produce the presence is
 known to have been attempted. The message at that step now says which
 trace line separates the two.
 
-★★ **And its preconditions were the half that did not get copied.** Both
+**And its preconditions were the half that did not get copied.** Both
 siblings this step was modelled on — `measure_perimeter` and
 `markup_node_edit` — put the pen down before selecting, and
 `markup_node_edit`'s comment names *this check's* first run as the reason
@@ -43,7 +43,7 @@ So a corner could be dragged and the number of corners could not change.
 Ctrl+Shift-drag from a corner handle **with the Points tool armed**, and
 this check is the only instrument that can say whether that arrives.
 
-## ★★★ Why every link here needs a running window
+## Why every link here needs a running window
 
 `canvas::dimdrag::tests` already asserts the arithmetic, the preflight and
 the tool gate without a window — and all of it would pass on a build where
@@ -59,7 +59,7 @@ the operator's hand, and not one is observable in-process:
 | 5 | `count_edit` is reached with a `session` that holds the record | the sidecar is read from the real `EditSession`, not a fixture struct |
 | 6 | the engine accepts it and the annotation is regenerated | `insert-dimension-vertex` is the funnel's own line, and only a real edit writes it |
 
-★★ Link 2 is the one most likely to be the reason this check fails first,
+Link 2 is the one most likely to be the reason this check fails first,
 and it is worth reading before diagnosing anything else. The ribbon and rail
 items for `view.tool_node` both carry `shown_when("mode.edit_content")` in
 `shell::manifest`, which another track owned on the day this was written.
@@ -67,7 +67,7 @@ items for `view.tool_node` both carry `shown_when("mode.edit_content")` in
 failure at the arming step is therefore a manifest gap rather than a canvas
 one, and the message at that step says so.
 
-## ★★ What it deliberately does NOT assert
+## What it deliberately does NOT assert
 
 **That the drawing changed shape on screen.** A screenshot is captured as an
 artifact for a human, and the assertions read the trace, for

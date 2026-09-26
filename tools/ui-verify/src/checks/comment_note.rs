@@ -17,7 +17,7 @@ use crate::sys::vk;
 /// The commands supplied at launch: Review mode, the Comments panel, the
 /// rectangle tool.
 ///
-/// ★ The panel opens **before** the shape is drawn, deliberately. A dock
+/// The panel opens **before** the shape is drawn, deliberately. A dock
 /// appearing between the frame a check takes its coordinate mapping from and
 /// the frame it clicks in changes the canvas width and puts the click somewhere
 /// else — a fault this project has already recorded twice, and one that reads
@@ -187,7 +187,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- B: the census before, which is what makes F mean anything ----------
-    // ★ Anchored on the engine's own line, and recovered if the panel has gone
+    // Anchored on the engine's own line, and recovered if the panel has gone
     // behind another tab — see [`CENSUS`]. A census from before the shape
     // existed says nothing about a panel that can see it.
     let drawn_at = trace.events(MARKUP_APPLIED).last().map_or(0, |l| l.lineno);
@@ -327,7 +327,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- G: the note survives a copy and a paste ---------------------------
     //
-    // ★ The shape's centre, computed from the same fractions phase A drew it
+    // The shape's centre, computed from the same fractions phase A drew it
     // at, so the click lands on the annotation rather than on whatever page
     // content is nearby. A markup tool is still armed from the launch invoke,
     // so the pointer is put down first — a click with the rectangle tool armed
@@ -343,7 +343,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(8);
     driver.click_at(at)?;
     session.settle(12);
-    // ★★★ THE PRECONDITION IS READ FIRST, and the order is the whole point.
+    // THE PRECONDITION IS READ FIRST, and the order is the whole point.
     //
     // Until 2026-08-29 the `selected=1` assertion below stood AHEAD of this
     // one, so a run in which the `V` never arrived — the case this SKIP exists
@@ -361,7 +361,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              than failed: this is the step before the one under test."
         )));
     }
-    // ★★★ The panel FOUND the annotation the canvas selected.
+    // The panel FOUND the annotation the canvas selected.
     //
     // This is the second half of the interaction `pdfcer-core` describes — *draw
     // the shape → it is selected → type the comment in the panel* — and it is
@@ -370,7 +370,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // can only confirm it if the reader already knows which row to look at.
     // `selected=` in the census is the only oracle there is.
     //
-    // ★ Anchored on the selection itself, for [`CENSUS`]' reason: the census
+    // Anchored on the selection itself, for [`CENSUS`]' reason: the census
     // that answers *"did the panel find what the canvas selected?"* must be one
     // the panel drew AFTER the canvas selected it. The unanchored form fails
     // both ways — a fossil from before the click carries `selected=0` and would

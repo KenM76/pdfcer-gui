@@ -12,7 +12,7 @@ quotes the operator's own report as the failure mode:
 > the screen. Can I please please please have that too?"*
 
 
-# ★★ Why this cannot be a unit test
+# Why this cannot be a unit test
 
 `canvas::rotating`'s arithmetic is pure and has eight of them. What they
 cannot reach is the chain:

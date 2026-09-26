@@ -7,7 +7,7 @@ makes the rule testable — the interesting part of a multi-select is the
 and the policy is the part that can be wrong in a way an operator would
 notice.
 
-## ★ This is a SECOND selection in the application, and it is not the
+## This is a SECOND selection in the application, and it is not the
 canvas's
 
 `crate::panels::ObjectTreeUi::focus`'s own docs refuse to become a second

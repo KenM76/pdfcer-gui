@@ -7,7 +7,7 @@ protection, [`crate::text::trust`] reports what pdfcer could and could not
 check about a signature that already exists, and this one describes
 something pdfcer is **about to do with a private key**.
 
-## ★★★ THE STANDARD THIS MODULE IS HELD TO, AND IT IS NOT THE USUAL ONE
+## THE STANDARD THIS MODULE IS HELD TO, AND IT IS NOT THE USUAL ONE
 
 [`crate::text::trust`]'s subject is a **verdict**, and its failure mode is
 claiming more than the engine checked. This module's subject is an **act**,
@@ -28,7 +28,7 @@ every string below, and both are narrower than "be accurate".
    operator's words, copied verbatim into a legal artifact; the copy says
    so rather than describing them as "details".
 
-## ★★ What is deliberately NOT offered, and it is a string's absence
+## What is deliberately NOT offered, and it is a string's absence
 
 **There is no *Name* field**, and its absence is a decision rather than an
 omission — recorded here because an absence cannot be read out of the code
@@ -43,7 +43,7 @@ the subject would show a name nobody vouched for. The certificate is the
 name. So the window shows the subject it read out of the operator's own
 `.pfx`, and offers no way to write a different one.
 
-## ★ `/ContactInfo` is not offered either, for a smaller reason
+## `/ContactInfo` is not offered either, for a smaller reason
 
 It is legitimate and harmless — a phone number for a verifier who wants to
 reach the signer. It is left out because three free-text boxes on a form

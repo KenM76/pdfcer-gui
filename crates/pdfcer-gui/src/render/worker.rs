@@ -95,7 +95,7 @@ enum Outcome {
 /// **Why a render came back with no pixels**, as a fact the shell can act on
 /// rather than only repeat.
 ///
-/// # ★★★ Why a refusal is typed and not a bare `String` — `OPERATOR_REQUESTS.md` O186
+/// # Why a refusal is typed and not a bare `String` — `OPERATOR_REQUESTS.md` O186
 ///
 /// The operator:
 ///
@@ -136,7 +136,7 @@ pub enum RefusalKind {
     /// or the rasterizer's own arithmetic gave out
     /// ([`pdfcer_render::RenderError::RasterizerLimit`]).
     ///
-    /// ★★ **Monotonic in the scale, which is the whole property that makes it
+    /// **Monotonic in the scale, which is the whole property that makes it
     /// learnable.** Both limits are overflows of a product of the page's own
     /// extent and the scale, so a page that refused at a scale refuses at
     /// every larger one. That is what lets
@@ -144,7 +144,7 @@ pub enum RefusalKind {
     /// into a permanent ceiling instead of a failure the operator meets again
     /// on every notch.
     ///
-    /// ★ It is **not** monotonic in the page, which is why the ceiling is
+    /// It is **not** monotonic in the page, which is why the ceiling is
     /// learned per page and never for the document: an E-size sheet was
     /// measured failing at scale 284,964 where a business card reached
     /// 8,053,069.
@@ -152,7 +152,7 @@ pub enum RefusalKind {
     /// Anything else: a content stream that would not decode, a worker that
     /// stopped, a font the engine refused.
     ///
-    /// ★ **Must never be learned as a ceiling.** A page that will not decode
+    /// **Must never be learned as a ceiling.** A page that will not decode
     /// fails at *every* scale including the fit zoom, so treating it as a
     /// raster limit would pin the operator's zoom to wherever they happened to
     /// be standing and word it as a magnification limit — a wrong sentence
@@ -257,7 +257,7 @@ pub struct RenderRequest {
     /// reproduces the content-only raster, which is what View ▸ Display's
     /// `view.show_annotations` exists to ask for.
     pub annotations: bool,
-    /// ★★★ **Whether to draw strokes at the widths the file declares, or to cap
+    /// **Whether to draw strokes at the widths the file declares, or to cap
     /// every one of them at one device pixel** —
     /// [`pdfcer_render::RenderOptions::stroke_display`].
     ///
@@ -265,7 +265,7 @@ pub struct RenderRequest {
     /// *"the button to show all lines without their thickness — thin lines or
     /// something like cad has … I do want that display option!"*
     ///
-    /// # ★★★ This is the ONLY place in the crate that carries it, and that is
+    /// # This is the ONLY place in the crate that carries it, and that is
     /// the whole export guarantee
     ///
     /// The rule the request was built around: **canvas only.** Print, print
@@ -285,7 +285,7 @@ pub struct RenderRequest {
     /// neighbour already gives: the identifier appears in a dozen doc comments,
     /// including this one, and a syntax tree contains no comments at all.
     ///
-    /// ★ It IS a staleness key, unlike [`Self::settings`] beside it, and the
+    /// It IS a staleness key, unlike [`Self::settings`] beside it, and the
     /// difference is that a settings change drops every cached raster
     /// explicitly while this changes several times a minute during ordinary
     /// reading. See [`RenderKey::stroke_display`].
@@ -294,7 +294,7 @@ pub struct RenderRequest {
     /// operator has flipped the toggle again, and what it must report is the
     /// picture it actually drew.
     pub stroke_display: pdfcer_render::font::StrokeDisplay,
-    /// ★ The operator's configuration, as of the frame this request was built.
+    /// The operator's configuration, as of the frame this request was built.
     ///
     /// **Five of the thirteen settings change what a rasterization looks
     /// like** — the CMYK intent, the mask resampling filter, the minification
@@ -331,7 +331,7 @@ pub struct RenderRequest {
     /// How many times the override above has changed — the fourth staleness
     /// key. See [`RenderKey::layers_generation`].
     pub layers_generation: u64,
-    /// ★★ **The page-space rectangle to rasterize, or `None` for the whole
+    /// **The page-space rectangle to rasterize, or `None` for the whole
     /// page.** O24.
     ///
     /// `None` is the whole-page tier: everything at or below the zoom where
@@ -342,7 +342,7 @@ pub struct RenderRequest {
     /// document by `canvas::tier`; there the raster stops scaling with the
     /// zoom, and a pan beyond the overscan costs a new one.
     ///
-    /// ★ It is a staleness key ([`RenderKey::with_region`]) and not merely an
+    /// It is a staleness key ([`RenderKey::with_region`]) and not merely an
     /// option. Two rasters of one page at one scale can show different parts
     /// of it, so a cache that could not tell them apart would serve the first
     /// for every position: the operator pans, the picture does not move, and
@@ -474,7 +474,7 @@ impl RenderWorker {
                     Outcome::Cancelled => "cancelled",
                     Outcome::Failed(_) => "failed",
                 };
-                // ★ How much ink the raster actually carries. See
+                // How much ink the raster actually carries. See
                 // [`sampled_tone_count`] for why this is on the line at all;
                 // `-1` means "not applicable", i.e. there is no pixmap because
                 // the render was cancelled or failed.
@@ -604,7 +604,7 @@ impl Drop for RenderWorker {
 
 /// The worker body. Runs on the spawned thread; touches no GUI type.
 fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
-    // ★ Through the funnel, never `RenderOptions::default()`.
+    // Through the funnel, never `RenderOptions::default()`.
     //
     // `crate::app::settings::SettingsExt` is the one place that turns the
     // operator's configuration into render options, and a `syn` check in that
@@ -621,7 +621,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
     let mut options = request.settings.render_options();
     options.cancel = Some(cancel.clone());
     options.annotations = request.annotations;
-    // ★★★ **The canvas's stroke-width display convention, and the ONE
+    // **The canvas's stroke-width display convention, and the ONE
     // assignment of this field in the whole crate** — O137,
     // `RenderOptions::stroke_display`.
     //
@@ -648,18 +648,18 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
     // request can own the `Arc` and still hand `render_page_with_view` a
     // reference.
     let view = request.session.view();
-    // ★ The clock starts here and nowhere else. Everything above is option
+    // The clock starts here and nowhere else. Everything above is option
     // assembly and a borrow; everything below is a `match` on the result. What
     // is timed is therefore the rasterization, which is what
     // `RenderedPixels::elapsed` says it is — and the two lines are adjacent so
     // that a future statement inserted between them is visibly inside the
     // measurement rather than accidentally so.
     let started = Instant::now();
-    // ★★ O24: the region tier. `None` is the whole-page path this shell has
+    // O24: the region tier. `None` is the whole-page path this shell has
     // always taken; `Some` rasterizes only the rectangle asked for, so the
     // pixmap stops scaling with the zoom.
     //
-    // ★ The two calls are deliberately adjacent and share everything above
+    // The two calls are deliberately adjacent and share everything above
     // them — the same view, the same options, the same scale, the same clock.
     // A second assembly path for the region case is how the five settings that
     // reach this worker would come to reach only one of them.
@@ -680,7 +680,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
     };
     match rendered {
         Ok(rendered) => {
-            // ★★★ **The compositing space, published per raster.**
+            // **The compositing space, published per raster.**
             //
             // `pdfcer-render` composites a page with transparency in a
             // subtractive CMYK buffer only while that buffer fits under
@@ -723,7 +723,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
             let _ = e;
             Outcome::Cancelled
         }
-        // ★★★ **The renderer's own sentence must not reach the canvas here**,
+        // **The renderer's own sentence must not reach the canvas here**,
         // which is why this gets a named arm rather than falling into the
         // pass-through below.
         //
@@ -761,7 +761,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
                 crate::text::canvas_zoom_past_rasterizer().to_owned(),
             ))
         }
-        // ★★★ **THE SENTENCE THE OPERATOR ACTUALLY SAW** —
+        // **THE SENTENCE THE OPERATOR ACTUALLY SAW** —
         // `OPERATOR_REQUESTS.md` O186, his words:
         //
         // > *"I think this sometimes results in similar error to 'This page
@@ -786,7 +786,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
         //    that becomes a zoom ceiling, which is the half of O186 that stops
         //    the error recurring rather than merely rewording it.
         //
-        // # ★★ Why this is a net and not the fix
+        // # Why this is a net and not the fix
         //
         // The cause of a sentence like his lives one layer up.
         // `OpenDoc::region_for` refuses a region to any page but the current
@@ -813,7 +813,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
                     u8::from(request.region.is_some())
                 )
             });
-            // ★★★ **EMPTY IS NOT THE SAME WALL AS TOO LARGE**, and the
+            // **EMPTY IS NOT THE SAME WALL AS TOO LARGE**, and the
             // variant does not distinguish them — its `Display` is *"is empty
             // OR exceeds MAX_PIXMAP_EDGE"*. The shell must, because it LEARNS
             // from this refusal.
@@ -830,7 +830,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
             // fired, measured from the two numbers the variant carries rather
             // than read out of its sentence.
             //
-            // ★ And the two halves get DIFFERENT sentences, not one sentence
+            // And the two halves get DIFFERENT sentences, not one sentence
             // and two kinds. "This zoom is further in than pdfcer can
             // rasterize" would be simply false about an empty pixmap, and a
             // wrong refusal sentence is worse than a vague one: whoever
@@ -843,7 +843,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
             // would need a page under about ten points on a side; every
             // ordinary page is three orders of magnitude away from it.
             //
-            // ★★ **The two predicates are the engine's own, copied from its
+            // **The two predicates are the engine's own, copied from its
             // source rather than inferred from its sentence** — the size guard
             // in `pdfcer_render`'s `render_impl_rasterize`:
             //
@@ -858,7 +858,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
             // the misclassified value cannot occur, which is the sort of
             // accident that stops being one after an engine bump.
             //
-            // ★★★ And it is a THREE-way question, not two. The `else` below is
+            // And it is a THREE-way question, not two. The `else` below is
             // neither half: it is reached only if the engine grows a third
             // reason to raise this variant, and it must fall to
             // `RefusalKind::Other` rather than to the ceiling. A reason this
@@ -966,7 +966,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **TWO REGIONS OF ONE PAGE ARE DIFFERENT KEYS** — O24.
+    /// **TWO REGIONS OF ONE PAGE ARE DIFFERENT KEYS** — O24.
     ///
     /// The region tier rasterizes the viewport rather than the page, so two
     /// rasters of the same page at the same scale can show different parts of
@@ -1001,7 +1001,7 @@ mod tests {
         );
     }
 
-    /// **★ Every field is in exactly one of the two staleness categories.**
+    /// **Every field is in exactly one of the two staleness categories.**
     ///
     /// [`RenderKey::discrete_inputs`] and [`RenderKey::scale_bits`] are how
     /// the shell decides whether a change re-rasterizes **now** or waits out
@@ -1210,7 +1210,7 @@ mod region_accessor_tests {
         assert_eq!(key().with_region(None).region(), None);
     }
 
-    /// ★★ The round-trip must be EXACT, not close.
+    /// The round-trip must be EXACT, not close.
     ///
     /// The placement is computed from what comes back out, and the render was
     /// run from what went in. A rounding step between them is a rounding step
@@ -1231,7 +1231,7 @@ mod region_accessor_tests {
         assert_eq!(back.ury.to_bits(), awkward.ury.to_bits());
     }
 
-    /// ★ Two keys that differ only by region are different keys, and each
+    /// Two keys that differ only by region are different keys, and each
     /// reports its own.
     ///
     /// This is what lets a held texture be placed by the region it is a

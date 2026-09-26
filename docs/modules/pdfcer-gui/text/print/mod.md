@@ -26,7 +26,7 @@ Distinguishing them is what keeps the voice consistent, so they are named:
    causes — see the next section, which is the single most important
    convention in this file.
 
-## ★ Three ways to have no printer, said three ways
+## Three ways to have no printer, said three ways
 
 This mirrors [`crate::text`]'s own three-way open-failure distinction, and
 for the same reason: an operator must be able to tell from the words alone

@@ -15,7 +15,7 @@ use super::Edition;
 /// `D:\Apps\…`, a network install, a per-user install under `AppData`. The
 /// file name is fixed by Adobe and is what `App Paths` is keyed on.
 ///
-/// ★ A path with no file name — `C:\`, or an empty string — is `None` rather
+/// A path with no file name — `C:\`, or an empty string — is `None` rather
 /// than a panic. This runs over values a person may have typed.
 #[must_use]
 pub fn edition_of(path: &Path) -> Option<Edition> {
@@ -49,7 +49,7 @@ pub fn executable_from_registration(raw: &str) -> Option<PathBuf> {
 
 /// Pull the executable out of a registered `shell\open\command`.
 ///
-/// # ★★ Why this is not `raw.split_whitespace().next()`
+/// # Why this is not `raw.split_whitespace().next()`
 ///
 /// Because the overwhelmingly common installation directory is
 /// `C:\Program Files\…`, which contains a space. Splitting on whitespace
@@ -100,7 +100,7 @@ fn clean(raw: &str) -> &str {
 mod tests {
     use super::*;
 
-    /// **★★★ The `.pdf` handler is filtered by file name, and this is the
+    /// **The `.pdf` handler is filtered by file name, and this is the
     /// case that proves the filter earns its keep.**
     ///
     #[test]
@@ -135,7 +135,7 @@ mod tests {
         assert_eq!(edition_of(Path::new(r"C:\")), None);
     }
 
-    /// **★ A `Program Files` path survives parsing.**
+    /// **A `Program Files` path survives parsing.**
     ///
     /// The single most likely place Acrobat is installed contains a space, so
     /// the naive `split_whitespace().next()` yields `C:\Program`. That failure

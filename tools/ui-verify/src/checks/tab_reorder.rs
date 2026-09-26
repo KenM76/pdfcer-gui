@@ -113,7 +113,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★ The SECOND document is the active one — a newly opened document always
+    // The SECOND document is the active one — a newly opened document always
     // is — and that is the operand this check needs, because the interesting
     // failure is the active document following an index. Dragging tab 0 across
     // tab 1 moves the tab the operator is NOT looking at, so a build that
@@ -178,7 +178,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 4: ★★ and the operator is still looking at the same document ------
+    // --- 4: and the operator is still looking at the same document ------
     let Some(after) = trace.last(SUMMARY) else {
         return Ok(Some(format!(
             "the reorder happened and the strip stopped reporting `{SUMMARY}`."

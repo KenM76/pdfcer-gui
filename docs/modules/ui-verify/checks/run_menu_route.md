@@ -22,7 +22,7 @@ offered when the right-click landed on a line of a text object that has
 more than one. This check is the assertion that the row exists, that it is
 about the line the pointer was on, and that pressing it lands on that line.
 
-# ★★★ Why a unit test cannot make this claim, and what it would miss
+# Why a unit test cannot make this claim, and what it would miss
 
 Every mechanism below has unit tests and they were all green while the
 route did not exist. The reason is that the operand is **parked in
@@ -38,7 +38,7 @@ own two frames of a real popup:
 | `dispatch::format` | the arm calls `select_part` when `resolve` answers | that `resolve` is reached at all |
 | `SelectionState::select_part` | the entry list and level are set | that the operator can get there |
 
-★★ The middle row is the one that bites. `MenuHost::with_conditions` sets
+The middle row is the one that bites. `MenuHost::with_conditions` sets
 `canvas.run_select_offered` **per click**, from a pick taken on that click,
 and a condition that is never published is simply absent — which reads as
 *false*, which drops the row, **silently and with every test green**. That
@@ -66,7 +66,7 @@ and a build that breaks one fails at that one.
 | 9 | the bar says which line | `status-rung kind=text part=N held=1 of=6` | the rung is entered and nothing discloses it |
 | 10 | the bar drew it | `ui-rect status-group:selected` | a sentence computed and never painted |
 
-★★★ **Steps 8 and 9 carry the same `N` as step 5, and that is the real
+**Steps 8 and 9 carry the same `N` as step 5, and that is the real
 subject of this file.** Each individual line could be produced by a build
 that re-picks from scratch at press time — which would be wrong in exactly
 the way that is hardest to see, because it works on a one-line document and
@@ -75,7 +75,7 @@ index is *the same number all the way through* is what makes this a check
 of the parked operand rather than three separate checks of three
 mechanisms.
 
-# ★★ Why step 9 needs a trace line and could not use the rect
+# Why step 9 needs a trace line and could not use the rect
 
 
 ⚠ It is emitted through `diag::trace_changed`, which de-duplicates on the
@@ -94,13 +94,13 @@ starting at x = 72. The same file `move_line_of_text` uses, for the same
 measured reasons: one text object with several runs, legible at fit zoom.
 
 
-★★ The aim is **(120, 672)** — inside the *third* line, whose baseline is
+The aim is **(120, 672)** — inside the *third* line, whose baseline is
 668 — and the third and not the first on purpose. A build whose pick
 ignores the pointer and returns run 0 is a real and tempting defect (it is
 what a `.first()` over the run list does), and it is invisible when the aim
 is on the top line. So this check asserts `N != 0` as well as `of == 6`.
 
-★ `N` and `of` are **line** numbers. On this fixture that coincides with
+`N` and `of` are **line** numbers. On this fixture that coincides with
 the show-operator count — see [`EXPECTED_RUNS`] for why that is a stated
 weakness of this check rather than a silent one.
 
@@ -124,7 +124,7 @@ must turn this check red, at the step named:
    statement away from the thing it claims to measure is an assertion both
    outcomes satisfy, and the only way to find one is to run the recipe.
 
-★ (3) and (4) are the two that matter. (1) and (2) break loudly and would
+(3) and (4) are the two that matter. (1) and (2) break loudly and would
 be noticed by a person opening the menu; (3) and (4) are silent, and a
 check that cannot distinguish them from a pass is not measuring the
 feature.

@@ -39,7 +39,7 @@ impl Default for TextPen {
     /// invented: `AddTextRequest::new` is *"Helvetica, bundled, 12 pt,
     /// black"*.
     ///
-    /// ★ Matching it exactly is what makes this addition invisible to anybody
+    /// Matching it exactly is what makes this addition invisible to anybody
     /// who does not touch the controls. A shell whose default differed from the
     /// engine's would change what every existing operator's next Add-text
     /// produced, silently, on the release that added a control they had not
@@ -70,7 +70,7 @@ pub const MAX_SIZE_PT: f64 = 144.0;
 impl TextPen {
     /// The engine face this pen writes in.
     ///
-    /// ★ Kept even though `apply` reaches for `AddTextRequest::with_font`,
+    /// Kept even though `apply` reaches for `AddTextRequest::with_font`,
     /// which takes a bare `Std14`. The two builders exist because
     /// `NewTextFace` has a second variant — `Embedded(Box<FontEmbedPlan>)` —
     /// and this is the accessor a donor-font surface will use when it lands.
@@ -149,7 +149,7 @@ pub fn store(ctx: &egui::Context, pen: TextPen) {
 mod tests {
     use super::*;
 
-    /// ★★ **The default is the engine's default**, so adding these controls
+    /// **The default is the engine's default**, so adding these controls
     /// changed nothing for anybody who does not touch them.
     ///
     /// A shell whose default differed would silently change what every
@@ -164,7 +164,7 @@ mod tests {
         assert_eq!(p.engine_colour(), NewTextColor::Black);
     }
 
-    /// ★ **Black resolves to `Black`, not to `Rgb(0, 0, 0)`.**
+    /// **Black resolves to `Black`, not to `Rgb(0, 0, 0)`.**
     ///
     /// One operator and one byte instead of four, for the same ink. The
     /// property is worth a test rather than a comment because a colour picker
@@ -202,7 +202,7 @@ mod tests {
         assert!((huge.size() - MAX_SIZE_PT).abs() < f64::EPSILON);
     }
 
-    /// ★ **All fourteen bundled faces are offered, each exactly once.**
+    /// **All fourteen bundled faces are offered, each exactly once.**
     ///
     /// The count is the claim: `Std14` has fourteen members, and a list that
     /// quietly held thirteen would be a face an operator could never reach

@@ -10,7 +10,7 @@ the bare word entirely. On screen it is *"the dimensions you draw"*, which is
 unambiguous without asking a drafter to learn a term that exists for our
 benefit.
 
-## ★ The hardest thing this window has to explain
+## The hardest thing this window has to explain
 
 Not what a group *is* — a drafter already has that idea from every CAD
 package they have used. What is genuinely new is that **a group edit reaches
@@ -23,7 +23,7 @@ one and be surprised 40 others changed or didn't."* So every group-level
 control in this window is accompanied by a **count of what will move**, and
 the count is computed before the edit rather than reported after it.
 
-## ★ And the number in that count is NOT the engine's return value
+## And the number in that count is NOT the engine's return value
 
 `EditSession::set_group_style` returns the number of members **regenerated**,
 which is every wired member — including the ones that override the property

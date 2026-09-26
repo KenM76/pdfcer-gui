@@ -72,7 +72,7 @@ const REGION_DESTINATION_INTO_DOCUMENT_NOW: &str = "redact-apply-destination-int
 
 /// The *a new file* destination choice, also declared unconditionally.
 ///
-/// ★ Published so `tools/ui-verify` can **click** it. Its redaction check
+/// Published so `tools/ui-verify` can **click** it. Its redaction check
 /// drives the whole feature to a file — that the source was not touched, that
 /// the output lacks the secret, that a second process extracts nothing from it
 /// — and the default destination produces no file at all, so the harness has to
@@ -82,13 +82,13 @@ const REGION_DESTINATION_NEW_FILE: &str = "redact-apply-destination-new-file"; /
 /// The staging disclosure, declared **only while it is on screen** — i.e. only
 /// while the deferred destination is selected.
 ///
-/// ★ It is a region rather than only a string so a harness can assert that the
+/// It is a region rather than only a string so a harness can assert that the
 /// sentence is *above the confirm control*, which is the whole of its value:
 /// `tools/ui-verify`'s redaction check can compare this rect's bottom against
 /// [`REGION_CONFIRM`]'s top and fail if the disclosure ever moves below the
 /// button it is meant to precede.
 ///
-/// ★★ **The name must keep describing the sentence.** A region name that
+/// **The name must keep describing the sentence.** A region name that
 /// says one thing while the label below it says another aims a harness at a
 /// sentence it will not find, and the check then passes while measuring
 /// something else.
@@ -121,7 +121,7 @@ enum Phase {
     Prepared(Box<PreparedRedaction>),
     /// The apply was refused before anything was written.
     Refused(RedactApplyRefusal),
-    /// ★★★ **A removal is already armed on this document** (`Pass 250.2`, new
+    /// **A removal is already armed on this document** (`Pass 250.2`, new
     /// 2026-09-05).
     ///
     /// A phase of its own rather than a [`Self::Refused`] carrying
@@ -141,7 +141,7 @@ enum Phase {
     Staged,
     /// The bytes reached this path.
     ///
-    /// ★ It carries the three numbers the outcome sentence needs rather than
+    /// It carries the three numbers the outcome sentence needs rather than
     /// the [`PreparedRedaction`] they came from. Keeping the prepared value
     /// alive after the write would mean holding a second copy of a redacted
     /// document in memory for as long as the operator leaves the window open,
@@ -205,7 +205,7 @@ pub struct RedactDialog {
     /// The **third** acknowledgement: that replacing the original destroys the
     /// last copy of the content being removed.
     ///
-    /// ★ A third flag rather than folding it into
+    /// A third flag rather than folding it into
     /// [`Self::acknowledged`], on this dialog's own standing reason for keeping
     /// the first two apart: they answer different questions, and a shared flag
     /// would let an operator who ticked one be treated as having read the
@@ -246,7 +246,7 @@ impl RedactDialog {
     /// The whole removal runs here — see §2 — so this call is as expensive as a
     /// full rewrite of the document, once, on a deliberate click.
     ///
-    /// ★ `reach` is read from the operator's preferences by the caller, once,
+    /// `reach` is read from the operator's preferences by the caller, once,
     /// at the moment the window opens. It is deliberately not re-read while the
     /// window is up: every number on screen was computed at one reach, and a
     /// value that could move underneath them would make the report describe a
@@ -277,7 +277,7 @@ impl RedactDialog {
                 });
                 Phase::Prepared(Box::new(prepared))
             }
-            // ★★★ The staged state arrives as a REFUSAL from the pipeline and
+            // The staged state arrives as a REFUSAL from the pipeline and
             // is turned into a phase here, rather than being detected by asking
             // `doc.session.has_pending_redaction()` before the call.
             //
@@ -325,7 +325,7 @@ impl RedactDialog {
         _doc: &OpenDoc,
         actions: &mut Vec<crate::app::actions::Action>,
     ) -> bool {
-        // ★ §4 — read BEFORE the body draws its checkboxes, so a box ticked on
+        // §4 — read BEFORE the body draws its checkboxes, so a box ticked on
         // this frame does not enable the confirm control until the next one.
         let ready = self.ready_to_confirm();
 
@@ -346,7 +346,7 @@ impl RedactDialog {
         if std::mem::take(&mut self.confirm_requested) {
             self.commit(actions);
         }
-        // ★ …and the reversible one, which still waits for the closure to
+        // …and the reversible one, which still waits for the closure to
         // return. See [`Self::take_cancel`].
         self.take_cancel(actions);
         open && !std::mem::take(&mut self.close_requested)
@@ -362,12 +362,12 @@ impl RedactDialog {
     /// would re-arm the removal the operator just asked to call off, silently,
     /// on a control whose label says the opposite.
     ///
-    /// ★ It pushes an `Action` rather than touching the session. The engine's
+    /// It pushes an `Action` rather than touching the session. The engine's
     /// `cancel_pending_redaction` takes `&mut EditSession`, `Arc::get_mut` is
     /// the funnel's second step, and performing that from inside a dialog's
     /// draw is exactly what the funnel exists to prevent.
     ///
-    /// ★ It closes the window. The outcome is reported by the funnel's edit
+    /// It closes the window. The outcome is reported by the funnel's edit
     /// disclosure like any other edit, and a window left open beside it would
     /// be a second account of one event — and, worse, an account of a state the
     /// document is no longer in, since this phase exists only while a removal
@@ -397,7 +397,7 @@ impl RedactDialog {
         };
         self.acknowledged
             && (residual_lines(prepared).is_empty() || self.residuals_acknowledged)
-            // ★ The overwrite acknowledgement is owed by ONE destination, and
+            // The overwrite acknowledgement is owed by ONE destination, and
             // it is spelled as that destination rather than as "not NewFile".
             // The negative form was correct while there were two choices and
             // became wrong the moment there were three — it would have demanded
@@ -407,7 +407,7 @@ impl RedactDialog {
             && (self.destination != Destination::ReplaceOriginal || self.overwrite_acknowledged)
     }
 
-    /// ★★★ **The staging disclosure, or nothing** — the sentence drawn between
+    /// **The staging disclosure, or nothing** — the sentence drawn between
     /// the destination choice and the confirm control.
     ///
     /// Pure, and a method rather than three lines inside [`Self::gates`], for
@@ -422,7 +422,7 @@ impl RedactDialog {
     /// than an omission: those routes do produce a file at the click, so a
     /// sentence saying nothing is written would be false there.
     fn staging_disclosure(&self) -> Option<&'static str> {
-        // ★ Asked as *"does this write a file?"* rather than by naming the
+        // Asked as *"does this write a file?"* rather than by naming the
         // variant: the disclosure belongs to the destination that defers, which
         // is precisely the one that does not write, and a fourth deferred
         // destination would inherit it rather than have to be remembered here.
@@ -448,7 +448,7 @@ impl RedactDialog {
     /// **Take the destination choice, and retire the acknowledgement that was
     /// given about the previous one.**
     ///
-    /// ★★ Pure, and a method rather than four lines inside [`Self::gates`], so
+    /// Pure, and a method rather than four lines inside [`Self::gates`], so
     /// the rule can be asserted headlessly — `crate::viewer`'s standing split
     /// applied to the one flag that stands between a click and the deletion of
     /// the source document.
@@ -487,7 +487,7 @@ impl RedactDialog {
                 ui.add_space(6.0);
                 ui.label(t::refusal_message(refusal));
             }
-            // ★★★ The armed-removal phase. Its whole body is in `staged`, which
+            // The armed-removal phase. Its whole body is in `staged`, which
             // owns the sentences and the one control, so that this `match`
             // stays a list of states rather than becoming a place where one of
             // them is drawn and the others are dispatched.
@@ -533,13 +533,13 @@ impl RedactDialog {
     ) {
         ui.label(t::report_heading());
         ui.add_space(6.0);
-        // ★ The permanence statement is FIRST in the body and in the warning
+        // The permanence statement is FIRST in the body and in the warning
         // role — never fine print, never below the counts. It is the one
         // sentence a reader who takes in nothing else must take in.
         //
         let permanence = match destination {
             Destination::OpenDocument => t::permanence_statement_deferred(),
-            // ★ Content goes, no file moves — a combination neither neighbour
+            // Content goes, no file moves — a combination neither neighbour
             // describes. See `permanence_statement_now`.
             Destination::OpenDocumentNow => t::permanence_statement_now(),
             Destination::NewFile => t::permanence_statement(false),
@@ -571,7 +571,7 @@ impl RedactDialog {
                     ui.add_space(4.0);
                     ui.label(t::info_scrubbed(report.info_strings_scrubbed));
                 }
-                // ★ …and what the SAME sweep found in the rest of the file.
+                // …and what the SAME sweep found in the rest of the file.
                 // Directly beneath the line above because they are two halves
                 // of one question, and the engine counts them apart precisely
                 // so a shell can say which half a number came from.
@@ -584,14 +584,14 @@ impl RedactDialog {
                         report.images_overcovered,
                     ));
                 }
-                // ★ Separate, because it is a different claim: the same picture
+                // Separate, because it is a different claim: the same picture
                 // is still on the other pages, and "I redacted the logo" and
                 // "the logo is gone from this file" are not the same sentence.
                 if report.images_cloned_shared > 0 {
                     ui.add_space(4.0);
                     ui.label(t::images_shared_copied(report.images_cloned_shared));
                 }
-                // ★★ The drawn geometry that was cut out. New in `pdfcer-core`
+                // The drawn geometry that was cut out. New in `pdfcer-core`
                 // v0.27.0 and worth a line of its own on a CAD sheet: before
                 // it, lines ran straight through a redacted rectangle and
                 // nothing said so. This is the count that makes "the drawing
@@ -610,7 +610,7 @@ impl RedactDialog {
                         report.objects_promoted,
                     ));
                 }
-                // ★★ …and now WHAT, rather than how much. `OPERATOR_REQUESTS.md`
+                // …and now WHAT, rather than how much. `OPERATOR_REQUESTS.md`
                 // O217's fourth bullet: every line above is a count, and a count
                 // cannot be checked against an intention. Last in the removal
                 // block because it is the only part of it that can run to
@@ -638,7 +638,7 @@ impl RedactDialog {
                         .color(theme.palette.text_muted),
                     );
                 }
-                // ★★ The carriers the engine looked inside and found clean.
+                // The carriers the engine looked inside and found clean.
                 // With the proof rather than with the counts, because it is the
                 // same kind of statement — evidence that a check ran — and it
                 // is the difference between "nothing to do" and "checked,
@@ -671,7 +671,7 @@ impl RedactDialog {
                 ui.separator();
                 ui.label(egui::RichText::new(t::scope_reminder()).color(theme.palette.text_muted));
 
-                // ★★★ Last, and collapsed. `residual_sweep_line` promises the
+                // Last, and collapsed. `residual_sweep_line` promises the
                 // operator that the object numbers are "at the foot of this
                 // report"; this is the foot, and this is where they are.
                 disclosures::engine_notes(ui, theme, report);
@@ -680,7 +680,7 @@ impl RedactDialog {
 
     /// The two checkboxes, the confirm control, and the no-shortcut note.
     fn gates(&mut self, ui: &mut egui::Ui, residuals: &[String], ready: bool) {
-        // ★★★ The destination, ABOVE the acknowledgements and above the
+        // The destination, ABOVE the acknowledgements and above the
         // confirm control, because it changes what two of them say. An
         // operator who ticked "I understand this is permanent" and then chose
         // to replace the original would have acknowledged a sentence that was
@@ -727,7 +727,7 @@ impl RedactDialog {
         ui.separator();
         ui.add_space(4.0);
 
-        // ★★★ **The staging disclosure, ABOVE the confirm control.**
+        // **The staging disclosure, ABOVE the confirm control.**
         //
         //
         // What is drawn instead is the fact that replaces it, and it is more
@@ -738,7 +738,7 @@ impl RedactDialog {
         // work"* and *"it worked and the marks are just still drawn"*, and the
         // second is the one that ships a marked file.
         //
-        // ★ A sentence and not a fourth checkbox, deliberately, and that part
+        // A sentence and not a fourth checkbox, deliberately, and that part
         // of the old argument is untouched. This dialog's §3 argues that a box
         // which is always there is a box that is always ticked, and the same
         // erosion applies to boxes that multiply: four acknowledgements is a
@@ -796,7 +796,7 @@ impl RedactDialog {
         crate::diag::ui_rect_visible(REGION_ACK, ack.rect, ui.clip_rect());
         ui.add_space(8.0);
 
-        // ★ The label IS the consequence, and the consequence now depends on
+        // The label IS the consequence, and the consequence now depends on
         // the destination: an ellipsis promises the picker, and naming the file
         // promises there will be no further question before it is replaced.
         let label = match self.destination {
@@ -814,22 +814,22 @@ impl RedactDialog {
             crate::diag::ui_rect(REGION_CONFIRM, confirm.rect);
         }
         let clicked = confirm.clicked();
-        // ★★★ **A greyed Confirm with no explanation at all** — O77's sweep,
+        // **A greyed Confirm with no explanation at all** — O77's sweep,
         // and the most consequential of the seven: this is the last control
         // before content is destroyed, and an operator who cannot press it had
         // no way to find out why.
         //
-        // ★ It names WHICH box is unticked rather than refusing generically.
+        // It names WHICH box is unticked rather than refusing generically.
         // Two checkboxes gate this button and they appear at different times —
         // the residual one only when the engine reported residuals — so
         // *"tick the box"* would be ambiguous exactly when it matters.
         //
-        // ★★ The `if !ready` shape, and the borrow order, are copied from
+        // The `if !ready` shape, and the borrow order, are copied from
         // `dialogs::formfield` and `dialogs::textannot`:
         // `on_disabled_hover_text` CONSUMES the response, so `.rect` and
         // `.clicked()` are read first.
         if !ready {
-            // ★ Three OUTSTANDING flags, not three "acknowledged" ones. A box
+            // Three OUTSTANDING flags, not three "acknowledged" ones. A box
             // that was never drawn is not owed, and sending the operator to
             // look for it would be the vague refusal this sentence exists to
             // prevent — so the conditions that decide whether each box appears
@@ -868,7 +868,7 @@ impl RedactDialog {
     /// worse than a stale sentence in a document nobody reads: this is the
     /// paragraph a future session consults *before* changing the default.
     ///
-    /// ★ The claim it was making is still true of the mechanism, and that is
+    /// The claim it was making is still true of the mechanism, and that is
     /// why it survived a rewrite of the surrounding argument: both defaults are
     /// safe, for **different reasons** — `NewFile` never *overwrote*,
     /// `OpenDocument` never *writes*. A sentence that is right about the
@@ -882,13 +882,13 @@ impl RedactDialog {
     /// | [`Destination::NewFile`] | the save picker, suggesting `-redacted` | the picker itself, plus the OS's own overwrite prompt if the operator navigates onto an existing file |
     /// | [`Destination::ReplaceOriginal`] | [`Self::source`], with no picker | a **third** checkbox naming the file, and a confirm button whose label names it too |
     ///
-    /// ★ Replacing takes no picker **deliberately**. A picker pre-filled with
+    /// Replacing takes no picker **deliberately**. A picker pre-filled with
     /// the source would be a dialog whose safe answer is to change the field,
     /// which is the shape of every accidental overwrite there has ever been.
     /// The consent is taken before the click, in words, at a control the
     /// operator had to select; once taken, the program does what it said.
     ///
-    /// ★★ The write itself is atomic — temp file, then rename — because on this
+    /// The write itself is atomic — temp file, then rename — because on this
     /// path a torn write destroys the last remaining copy of the content being
     /// removed. See [`crate::redact::PreparedRedaction::write_to`].
     fn commit(&mut self, actions: &mut Vec<crate::app::actions::Action>) {
@@ -906,7 +906,7 @@ impl RedactDialog {
         // page textures and resyncs the page set. Performing that from inside a
         // dialog's draw is exactly what the funnel exists to prevent.
         //
-        // ★ The dialog CLOSES rather than moving to an outcome phase, and the
+        // The dialog CLOSES rather than moving to an outcome phase, and the
         // outcome is reported by the funnel's edit disclosure like any other
         // edit. Two accounts of one event is worse than one: the action runs
         // after this frame, so a sentence written here would be a prediction
@@ -938,7 +938,7 @@ impl RedactDialog {
         // textures dropped and the page set resynced — every one of which is
         // `vector_edit`'s job and none of which a dialog's draw may do.
         //
-        // ★ The prepared BYTES are carried rather than re-derived. They are the
+        // The prepared BYTES are carried rather than re-derived. They are the
         // same bytes `NewFile` would write and they have already been through
         // `proof::prove` — re-preparing on the far side would be a second
         // removal, verified separately, and the two could disagree.
@@ -962,12 +962,12 @@ impl RedactDialog {
             match prepared.to_verified_document(acknowledgement) {
                 Ok(document) => crate::redact::park_applied_document(document),
                 Err(refusal) => {
-                    // ★ The same two refusals `write_to` raises, on the same
+                    // The same two refusals `write_to` raises, on the same
                     // gates in the same order — so an unacknowledged residual
                     // behaves identically whether the operator chose a file or
                     // the open document.
                     //
-                    // ★★ `Phase::WriteFailed` although nothing was written, and
+                    // `Phase::WriteFailed` although nothing was written, and
                     // the name is the only thing about it that does not fit:
                     // the phase means *the removal did not land and here is
                     // why*, which is exactly this. A parallel phase would be a
@@ -989,7 +989,7 @@ impl RedactDialog {
             crate::diag::trace(move || {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 //
-                // ★ `bytes=` is a LENGTH. `PreparedRedaction`'s hand-written
+                // `bytes=` is a LENGTH. `PreparedRedaction`'s hand-written
                 // `Debug` exists so that `{:?}` cannot emit a redacted document
                 // into a log, and a trace line that formatted the buffer would
                 // defeat it from the other side.
@@ -1146,7 +1146,7 @@ fn residual_lines(prepared: &PreparedRedaction) -> Vec<String> {
         .filter(|c| c.action == CarrierAction::DisclosedNotScrubbed)
         .map(|c| t::residual_carrier_line(c.carrier))
         .collect();
-    // ★★★ RETAINED MARKS, and the engine names this as the one number to read
+    // RETAINED MARKS, and the engine names this as the one number to read
     // before the word "redacted" is used. A retained mark is a region where
     // NOTHING was removed — the image under it could not be decoded, so the
     // engine applied every other mark and left that one standing rather than
@@ -1155,7 +1155,7 @@ fn residual_lines(prepared: &PreparedRedaction) -> Vec<String> {
     if prepared.report.marks_retained > 0 {
         out.push(t::marks_retained_line(prepared.report.marks_retained));
     }
-    // ★★ Vector geometry crossing a region that could NOT be cut — a malformed
+    // Vector geometry crossing a region that could NOT be cut — a malformed
     // path object the engine cannot rewrite as a unit. Zero on every
     // well-formed page since `pdfcer-core` v0.27.0, which cuts paths at the
     // region boundary; a non-zero value here is therefore rare and is a real
@@ -1170,7 +1170,7 @@ fn residual_lines(prepared: &PreparedRedaction) -> Vec<String> {
             prepared.report.vector_paths_intersecting,
         ));
     }
-    // ★ A clip whose ink was cut and whose ORIGINAL outline had to stay: ISO
+    // A clip whose ink was cut and whose ORIGINAL outline had to stay: ISO
     // 32000-1 §8.5.4 applies a clip after painting, so shrinking it would hide
     // later, unmarked content. Nothing of it is visible and it is still a shape
     // in the file — exactly the finding rule 1 forbids judging harmless on the
@@ -1195,7 +1195,7 @@ fn residual_lines(prepared: &PreparedRedaction) -> Vec<String> {
 
 /// **The name to suggest for the redacted copy.**
 ///
-/// ★ **Never the file that was opened.** The suffix is what makes the default
+/// **Never the file that was opened.** The suffix is what makes the default
 /// answer a new document, so an operator who accepts the suggestion without
 /// reading it cannot overwrite the one file that still contains the content
 /// they are removing. That is the standing rule expressed as a default rather

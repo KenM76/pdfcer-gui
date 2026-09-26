@@ -108,7 +108,7 @@ pub(super) fn offer(
         paint(ui, target);
     }
 
-    // ★ The release is read from RAW POINTER INPUT, not from a page's own
+    // The release is read from RAW POINTER INPUT, not from a page's own
     // `Response`.
     //
     // `panels::pages::settle_drag`'s discipline and its reason, unchanged: the
@@ -236,7 +236,7 @@ fn paint(ui: &egui::Ui, target: &CanvasDrop) {
     // preview all take — so a preset that changes the accent changes every one
     // of them together.
     //
-    // ★ By its role name, not through `visuals().selection`: that is `egui`'s
+    // By its role name, not through `visuals().selection`: that is `egui`'s
     // selected-WIDGET channel and reading it from a canvas was defect T2.
     let base = egui_shell::theme::Theme::canvas_selection_ink(ui.ctx());
     let colour = if target.lands {

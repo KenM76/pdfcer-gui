@@ -14,7 +14,7 @@ use pdfcer_core::edit::{CommandKind, EditSession};
 use pdfcer_core::vector::{Handle, Matrix, Point};
 
 impl From<VectorAction> for super::action::Action {
-    /// ★ So a call site says what it MEANS and the wrapping is not its problem.
+    /// So a call site says what it MEANS and the wrapping is not its problem.
     ///
     /// Thirty-five places raise one of these, and almost all of them are a
     /// single `actions.push(…)` at the end of a gesture. Making each write
@@ -87,7 +87,7 @@ pub enum VectorAction {
     /// invalidated. `docs/core-api/02` states it in a box: *"Never loop the
     /// singular verbs over a selection."*
     ///
-    /// # ★ Why this does NOT invalidate the selection, and Delete does
+    /// # Why this does NOT invalidate the selection, and Delete does
     ///
     /// Because `move_*` **does not renumber**, and that is measured rather
     /// than assumed — `crates/pdfcer-core/tests/object_identity_across_edits.rs`
@@ -115,7 +115,7 @@ pub enum VectorAction {
         /// Vertical displacement, PDF user-space points (Y is up).
         dy: f64,
     },
-    /// ★★★ Delete every selected object **inside a form XObject** —
+    /// Delete every selected object **inside a form XObject** —
     /// `EditSession::delete_objects_in_form`, `OPERATOR_REQUESTS.md` O70.
     ///
     /// Beside [`Self::MoveLeavesInForm`] and for its reason: the indices are a
@@ -128,7 +128,7 @@ pub enum VectorAction {
         /// Leaf indices, ascending and unique.
         leaves: Vec<usize>,
     },
-    /// ★★★ **Remove ONE subpath of one path object** — `EditSession::delete_
+    /// **Remove ONE subpath of one path object** — `EditSession::delete_
     /// subpath`, Pass 25.2, and the Part rung's delete verb.
     ///
     /// # What it closes
@@ -139,7 +139,7 @@ pub enum VectorAction {
     /// which `delete_object` can only remove the entire view. *"Delete this
     /// line"* is what he means, and this is that operation.
     ///
-    /// # ★ Deleting the only subpath deletes the object, and that is the verb's
+    /// # Deleting the only subpath deletes the object, and that is the verb's
     /// rule rather than this shell's
     ///
     /// A painting operator with no path left is not a smaller object; it is
@@ -163,7 +163,7 @@ pub enum VectorAction {
         /// `hit_test_subpaths` returns, so a picked line goes straight here.
         subpath: usize,
     },
-    /// ★★★ **Remove ONE label off a sheet that holds all of them in one text
+    /// **Remove ONE label off a sheet that holds all of them in one text
     /// object** — `EditSession::delete_text_run`, `Pass 32.0`.
     ///
     /// # The defect this closes, in the engine's own measurement
@@ -172,12 +172,12 @@ pub enum VectorAction {
     /// > labels**, so deleting 'a label' deleted every one of them."*
     ///
     ///
-    /// ★ Those 237 are **pdf dimensions** (R8b Rule 15): page content pdfcer
+    /// Those 237 are **pdf dimensions** (R8b Rule 15): page content pdfcer
     /// reads and must not silently alter. A **ce dimension** is one pdfcer
     /// authors, lives in `super::dimensions`, and has nothing to do with this
     /// variant.
     ///
-    /// # ★★ The refusal that is asked BEFORE the press, and where
+    /// # The refusal that is asked BEFORE the press, and where
     ///
     /// §9.4.2: a following run with no positioning operator of its own starts
     /// wherever this one ends, so excising this one **slides it**. The engine
@@ -206,7 +206,7 @@ pub enum VectorAction {
         /// later run in the same object shifts when an earlier one goes.
         line: usize,
     },
-    /// ★★★ **Remove ONE anchor of one path object** — `EditSession::delete_
+    /// **Remove ONE anchor of one path object** — `EditSession::delete_
     /// node`, Pass 36.1, and the Node rung's delete verb.
     ///
     /// Its twins [`Self::MoveNode`] and [`Self::MoveNodes`] have been wired
@@ -220,7 +220,7 @@ pub enum VectorAction {
     /// address space, different engine verb, different undo command — and the
     /// collision deferred this gap by an evening once already.
     ///
-    /// # ★★★ THE DISCLOSURE THIS ONE OWES, and it is the whole reason the arm
+    /// # THE DISCLOSURE THIS ONE OWES, and it is the whole reason the arm
     /// is not one line
     ///
     /// `delete_node` returns a disclosure list that is **non-empty when
@@ -234,7 +234,7 @@ pub enum VectorAction {
     /// says rule 4 forbids letting them find it out from a diff: *"the caller
     /// must surface these."*
     ///
-    /// ★ The surfacing is `super::funnel::vector_edit_on_page`'s, not this
+    /// The surfacing is `super::funnel::vector_edit_on_page`'s, not this
     /// arm's, and that is the point: the funnel records **every** verb's
     /// disclosure list to the status bar's row, stamped with the epoch the edit
     /// produced. So returning the list from the closure *is* surfacing it, and
@@ -256,7 +256,7 @@ pub enum VectorAction {
         /// act on.
         node: usize,
     },
-    /// ★★ Move one **Bézier control point of an object inside a form
+    /// Move one **Bézier control point of an object inside a form
     /// XObject** — `EditSession::move_handle_in_form`. O70.
     ///
     /// Absolute, as [`Self::MoveHandle`] is and for its reason: the operand is
@@ -273,7 +273,7 @@ pub enum VectorAction {
         /// Where it lands, in PDF user space.
         to: pdfcer_core::vector::Point,
     },
-    /// ★★ Displace one **subpath of an object inside a form XObject** —
+    /// Displace one **subpath of an object inside a form XObject** —
     /// `EditSession::move_subpath_in_form`. `OPERATOR_REQUESTS.md` O70.
     MoveSubpathInForm {
         /// The 0-based page.
@@ -287,7 +287,7 @@ pub enum VectorAction {
         /// Vertical displacement, PDF user-space points (Y is up).
         dy: f64,
     },
-    /// ★★ Move one **anchor of an object inside a form XObject** to an
+    /// Move one **anchor of an object inside a form XObject** to an
     /// absolute page-space point — `EditSession::move_node_in_form`.
     ///
     /// Absolute rather than a delta, exactly as [`Self::MoveNode`]: the operand
@@ -304,7 +304,7 @@ pub enum VectorAction {
         /// Where it lands, in PDF user space.
         to: pdfcer_core::vector::Point,
     },
-    /// ★★ Move **several anchors** of an object inside a form XObject, as one
+    /// Move **several anchors** of an object inside a form XObject, as one
     /// command — `EditSession::move_nodes_in_form`.
     MoveNodesInForm {
         /// The 0-based page.
@@ -314,11 +314,11 @@ pub enum VectorAction {
         /// Each anchor and where it lands, object-scoped indices.
         moves: Vec<(usize, pdfcer_core::vector::Point)>,
     },
-    /// ★★★ Displace every selected object **inside a form XObject** by a
+    /// Displace every selected object **inside a form XObject** by a
     /// page-space delta — `EditSession::move_objects_in_form`.
     ///
     ///
-    /// ★★ The coordinates are **page space**, exactly as the page-level verbs
+    /// The coordinates are **page space**, exactly as the page-level verbs
     /// take, and that is the engine's contract rather than this shell's choice:
     /// `FormLeaf` reports geometry already mapped out of the form's own space,
     /// so a caller never has to know the placement matrix. The one thing that
@@ -353,18 +353,18 @@ pub enum VectorAction {
         /// Vertical displacement, PDF user-space points (Y is up).
         dy: f64,
     },
-    /// ★★★ **Displace ONE LINE of a text object** —
+    /// **Displace ONE LINE of a text object** —
     /// `EditSession::move_text_run`, the Part rung's move verb for text, and
     /// `OPERATOR_REQUESTS.md` O188's move half.
     ///
     /// # What the operator asked for, and why it took a month
     ///
     ///
-    /// ★ Those labels are **pdf dimensions** (R8b Rule 15) — page content
+    /// Those labels are **pdf dimensions** (R8b Rule 15) — page content
     /// a CAD exporter wrote. This moves them; it does not re-measure them, and
     /// they have nothing to do with the **ce dimensions** pdfcer authors.
     ///
-    /// # ★★ The refusal that is asked BEFORE the press, and where
+    /// # The refusal that is asked BEFORE the press, and where
     ///
     /// 9.4.2 again, and the mirror image of [`Self::DeleteTextLine`]'s: a run
     /// with no positioning operator of its own starts wherever the previous one
@@ -404,10 +404,10 @@ pub enum VectorAction {
         /// Vertical displacement, PDF user-space points (Y is up).
         dy: f64,
     },
-    /// ★★★ **Displace one line of a text object INSIDE a form XObject** —
+    /// **Displace one line of a text object INSIDE a form XObject** —
     /// `EditSession::move_text_runs_in_form`.
     ///
-    /// ★★ **This is the variant O188 is actually about.** On the operator's
+    /// **This is the variant O188 is actually about.** On the operator's
     /// SolidWorks sets the title block *is* a form XObject, drawn once per
     /// sheet; the labels he wants to nudge live inside it. A page-scoped verb
     /// alone would have answered his request everywhere except where he asked
@@ -436,7 +436,7 @@ pub enum VectorAction {
         /// Vertical displacement, PDF user-space points (Y is up).
         dy: f64,
     },
-    /// ★★★ **Displace SEVERAL chunks of one text object by one drag** —
+    /// **Displace SEVERAL chunks of one text object by one drag** —
     /// `EditSession::move_text_runs` over every run of every named line: one
     /// command, one press of Undo.
     ///
@@ -509,7 +509,7 @@ pub enum VectorAction {
         /// Where the anchor ends up, in PDF user space.
         to: Point,
     },
-    /// ★★ **Move many of one object's nodes at once** — what a RESIZE is, in
+    /// **Move many of one object's nodes at once** — what a RESIZE is, in
     /// the absence of a scale verb.
     ///
     ///
@@ -527,7 +527,7 @@ pub enum VectorAction {
     /// **Drag one Bézier handle** — move a control point of `node`, leaving the
     /// on-curve anchor itself exactly where it is.
     ///
-    /// # ★ Why this is a separate verb and not "move a node that happens to be
+    /// # Why this is a separate verb and not "move a node that happens to be
     /// a control point"
     ///
     /// Because the two change different things about the path, and the engine
@@ -538,7 +538,7 @@ pub enum VectorAction {
     /// which is exactly the inference `pdfcer-core`'s own `Handle` type exists
     /// to remove.
     ///
-    /// # ★★ The disclosure it owes, and it is not the obvious one
+    /// # The disclosure it owes, and it is not the obvious one
     ///
     /// `EditSession::move_handle` returns a list of sentences that is **empty
     /// unless a `v`/`y` segment had to be re-spelled as `c`**. Table 59 gives a
@@ -584,7 +584,7 @@ pub enum VectorAction {
         /// CTM inverse instead of decomposing a translation.
         moves: Vec<(usize, Point)>,
     },
-    /// ★★★ **Move, resize or rotate any objects at all** — `Pass 113.0`,
+    /// **Move, resize or rotate any objects at all** — `Pass 113.0`,
     /// 2026-08-20, and the verb this shell had been waiting for since the eight
     /// resize grips were drawn at S4.
     ///
@@ -601,7 +601,7 @@ pub enum VectorAction {
     /// numeric **operands**, and a text run and an image carry no coordinate
     /// operands at all — which is why `move_objects` is path-only by name.
     ///
-    /// # ★★ The one thing that must not be got wrong: the matrix is PAGE space
+    /// # The one thing that must not be got wrong: the matrix is PAGE space
     ///
     /// `cm` composes into the CTM in force at that point in the stream — the
     /// object's **user** space, not the page's. The engine emits
@@ -625,7 +625,7 @@ pub enum VectorAction {
     /// **gone**: the transform takes every index at once and scales them all
     /// about one pivot, which is what every drawing application does.
     ///
-    /// # ★ What the engine collapses, and why the count is not ours
+    /// # What the engine collapses, and why the count is not ours
     ///
     ///
     /// > *"can you get cut copy and paste working for objects I select on the
@@ -645,7 +645,7 @@ pub enum VectorAction {
     /// hands back is refused with a sentence rather than with whatever a length
     /// prefix read out of the wrong bytes.
     ///
-    /// # ★★ `at` is a PAGE-SPACE matrix, exactly as [`Self::TransformObjects`]
+    /// # `at` is a PAGE-SPACE matrix, exactly as [`Self::TransformObjects`]
     ///
     /// `Matrix::IDENTITY` is paste-in-place, `translate` is paste-with-offset,
     /// and `Matrix::about` gives paste-scaled and paste-rotated from the same
@@ -684,7 +684,7 @@ pub enum VectorAction {
 /// **How many objects the page has, and how many parts one of them has** —
 /// read once, for the trace line the three part-deletes write.
 ///
-/// # ★★★ Why this is measured at all, and why BOTH numbers
+/// # Why this is measured at all, and why BOTH numbers
 ///
 /// `RESUME.md`'s standing rule: *a trace line must carry the number a wrong
 /// build would get wrong.* For a part-delete that number is not "did something
@@ -714,7 +714,7 @@ pub enum VectorAction {
 /// operator is looking at; the "after" read is the one the very next frame will
 /// build anyway to re-resolve the selection. Neither is a second walk.
 ///
-/// ★ The `Ref` is dropped at the end of the statement, before `vector_edit`
+/// The `Ref` is dropped at the end of the statement, before `vector_edit`
 /// takes `&mut doc` — the same ordering `DeleteSelection`'s erase preview has
 /// to observe, and for the same reason.
 fn census(
@@ -806,7 +806,7 @@ fn fold_undo(
 /// drop the texture) whose whole reason for existing is that seven hand-written
 /// copies would be seven chances to omit a step.
 pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) {
-    // ★★★ `vector_edit_on_page`, not `vector_edit` — `OPERATOR_REQUESTS.md`
+    // `vector_edit_on_page`, not `vector_edit` — `OPERATOR_REQUESTS.md`
     // O74. Every verb in this module addresses paint-order indices **into one
     // page's content stream**, which is the module header's own opening claim
     // and the property that makes the whole file a subject rather than a
@@ -814,7 +814,7 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
     // requires: it is true of the VERB, on every document and every operand,
     // not an observation about a particular call.
     //
-    // ★ So this is the strongest narrowing available anywhere in `actions`,
+    // So this is the strongest narrowing available anywhere in `actions`,
     // and it is the one the operator asked about — "when I make edits … all of
     // the page previews get re-rendered". A node drag on sheet 12 now leaves
     // the other thirty-five thumbnails alone.
@@ -827,7 +827,7 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
     match action {
         VectorAction::DeleteSelection { page, objects } => {
             if !objects.is_empty() {
-                // ★★★ THE FOOTPRINT, TAKEN BEFORE THE COMMIT DESTROYS IT.
+                // THE FOOTPRINT, TAKEN BEFORE THE COMMIT DESTROYS IT.
                 //
                 // `OPERATOR_REQUESTS.md` O63. A deleted object stays on screen
                 // until the page redraws — one to two seconds on a dense
@@ -836,7 +836,7 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 // natural response is to press Delete again, which deletes
                 // something else.
                 //
-                // ★★ The order is load-bearing. `page_objects` is keyed on
+                // The order is load-bearing. `page_objects` is keyed on
                 // `(page, edit_epoch)` and `vector_edit` bumps the epoch, so the
                 // geometry is thrown away by the very edit it describes. Built
                 // here, and the `Ref` dropped before `vector_edit` takes
@@ -844,7 +844,7 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 let preview = doc
                     .page_objects()
                     .and_then(|provider| crate::canvas::shapes::erased(&provider, &objects));
-                // ★★★ HELD BEFORE THE COMMIT, and getting this backwards is a
+                // HELD BEFORE THE COMMIT, and getting this backwards is a
                 // silent quarter-second bug.
                 //
                 // `hold_preview` stamps `edit_epoch` AS IT IS WHEN CALLED, and
@@ -884,7 +884,7 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
         }
         VectorAction::DeleteLeavesInForm { page, leaves } => {
             if !leaves.is_empty() {
-                // ★ No shell-side invalidation here either — see
+                // No shell-side invalidation here either — see
                 // `MoveLeavesInForm`'s arm for the counter that stood in both
                 // places for four hours and the engine commit that removed the
                 // need for it.
@@ -901,7 +901,7 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 );
             }
         }
-        // ★★★ The three deeper-rung deletes, and the census line each writes.
+        // The three deeper-rung deletes, and the census line each writes.
         //
         // `-applied` suffixes, per `tools/gates/check-trace-names.py`: the
         // funnel writes `delete-subpath page=… n=… epoch=… disclosures=…` under
@@ -969,7 +969,7 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 );
             }
         }
-        // ★ The disclosures are surfaced by the funnel, not here — see the
+        // The disclosures are surfaced by the funnel, not here — see the
         // variant's own docs for why a second `record_note` beside it would be
         // the mechanism that forgets to retire itself.
         VectorAction::DeleteNode { page, object, node } => {
@@ -1027,7 +1027,7 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
             });
         }
         VectorAction::MoveNodesInForm { page, leaf, moves } => {
-            // ★ The count is the number of ANCHORS, which is what the funnel's
+            // The count is the number of ANCHORS, which is what the funnel's
             // trace reports as the operand size — one object, many points, and
             // the number a reader comparing a trace against a drag wants.
             let n = moves.len();
@@ -1174,7 +1174,7 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 session.move_node(page, object, node, to)
             });
         }
-        // ★★ A resize, and it is `move_nodes` because there is no scale
+        // A resize, and it is `move_nodes` because there is no scale
         // verb — see `VectorAction::MoveNodes` and `crate::canvas::resizing`.
         //
         // ONE call with every node in it, deliberately: the slice is what
@@ -1185,7 +1185,7 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
         // is what its trace line reports as the operand size. That is the
         // honest figure for this edit — one object, many points — and it is
         // the number a reader comparing a trace against a drag would want.
-        // ★ A handle drag, and the only vector edit in this crate whose
+        // A handle drag, and the only vector edit in this crate whose
         // RETURN VALUE is a disclosure rather than a count.
         //
         // `move_handle` answers with a list of sentences that is empty
@@ -1228,10 +1228,10 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 session.move_nodes(page, object, &moves)
             });
         }
-        // ★★★ Move / resize / rotate anything. One call, one command, one
+        // Move / resize / rotate anything. One call, one command, one
         // undo entry, whatever the selection is made of.
         //
-        // ★ `TransformOptions::default()` and no override, and both halves
+        // `TransformOptions::default()` and no override, and both halves
         // of that are decisions the operator made himself before the
         // question reached him: *"make things work both ways as options.
         // default it to your best guess as to what would be normally
@@ -1249,20 +1249,20 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
         // unreachable anyway, and `resizing::is_usable` refuses before we
         // ever get here.
         //
-        // ★★ `objects_transformed`, not `objects.len()`, is what the trace
+        // `objects_transformed`, not `objects.len()`, is what the trace
         // reports — see the variant's docs for what the engine collapses and
         // why. A count taken from our own slice would be a number this
         // shell wished were true.
-        // ★★★ PASTE. The operator's oldest open request, and the arm is short
+        // PASTE. The operator's oldest open request, and the arm is short
         // because the engine's clip owns everything it needs.
         //
-        // ★ The deserialisation is INSIDE the closure, so a payload that is not
+        // The deserialisation is INSIDE the closure, so a payload that is not
         // a clip refuses through `vector_edit`'s own channel with the engine's
         // sentence — `ClipError::NotAClip`, checked before any length prefix is
         // read. A shell that unwrapped here would have to invent a sentence for
         // a case the engine already words.
         //
-        // ★★ `resources_added` is on the trace at the engine's suggestion:
+        // `resources_added` is on the trace at the engine's suggestion:
         // *"every paste adds fresh /Resources entries, so a shell that pastes
         // the same clip forty times and wonders why the file grew has the
         // answer in hand."* Not on the status row — it is a fact about the
@@ -1323,7 +1323,7 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 //
-                // ★ It carries the MATRIX, and it has to. A line saying only
+                // It carries the MATRIX, and it has to. A line saying only
                 // "a transform committed" would be identical for a build
                 // that translated when it meant to scale, scaled about the
                 // wrong pivot, or applied the transform in the object's

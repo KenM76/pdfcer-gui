@@ -61,7 +61,7 @@ pub const fn where_document() -> &'static str {
 
 /// Where a page-level attachment lives, and the consequence of that.
 ///
-/// ★ The clause about page deletion is the whole reason this string is not
+/// The clause about page deletion is the whole reason this string is not
 /// simply *"On page 3"*. A `/FileAttachment` annotation (§12.5.6.15) is
 /// **destroyed when its page is deleted**, and this application can delete a
 /// page from three different surfaces. An operator who has been told is one
@@ -74,7 +74,7 @@ pub fn where_page(page_number: usize) -> String {
 
 /// The media type the document claims for the payload.
 ///
-/// ★★ *"claims"* is load-bearing and is not softened. `/Subtype` on an embedded
+/// *"claims"* is load-bearing and is not softened. `/Subtype` on an embedded
 /// file stream is a **claim by the document about its own payload, never a
 /// measurement** — `pdfcer-core` does not sniff the bytes, and `/text#2Fplain`
 /// on a Windows executable is trivially authorable. A caller that presented
@@ -88,7 +88,7 @@ pub fn kind_claimed(mime: &str) -> String {
 
 /// The size line for a row.
 ///
-/// # ★ Four different sentences, because there are four different facts
+/// # Four different sentences, because there are four different facts
 ///
 /// Collapsing them would put a number on screen with no way to tell an
 /// agreed measurement from an unchecked declaration — and it is the *third*
@@ -106,7 +106,7 @@ pub fn kind_claimed(mime: &str) -> String {
 #[must_use]
 pub fn size(declared: Option<u64>, check: DeclaredSizeCheck) -> String {
     match check {
-        // ★ The bare figure, with no qualifying clause, and that is the whole
+        // The bare figure, with no qualifying clause, and that is the whole
         // difference between this arm and every other one below: pdfcer counted
         // the bytes and they matched what the document declared, so there is
         // nothing left to hedge. A sentence here would be hedging a fact.
@@ -180,7 +180,7 @@ pub const fn name_is_approximate() -> &'static str {
 
 /// The document gave no filename at all, so the index key is standing in.
 ///
-/// ★★ A name-tree key is **not** a filename and has no declared encoding.
+/// A name-tree key is **not** a filename and has no declared encoding.
 /// Table 31 describes `/EmbeddedFiles` as mapping name strings to file
 /// specifications and stops there — the sibling `/Renditions` row in the same
 /// table *does* require Unicode, so the omission is deliberate — and §7.9.6
@@ -228,7 +228,7 @@ pub const fn may_be_encrypted() -> &'static str {
 
 /// Everything the listing had to skip, bound or degrade, as sentences.
 ///
-/// # ★★ Why this is a function over the whole struct rather than a string per flag
+/// # Why this is a function over the whole struct rather than a string per flag
 ///
 /// Because the panel must show **all** of them, and the failure mode of a
 /// string-per-flag catalog is a caller that renders four of the seven. The
@@ -241,7 +241,7 @@ pub const fn may_be_encrypted() -> &'static str {
 /// property the panel relies on to draw nothing: *"all-zero/false means the
 /// listing is complete and everything parsed."*
 ///
-/// ★ `page_tree_unwalkable` is reported even though the document-level list is
+/// `page_tree_unwalkable` is reported even though the document-level list is
 /// still complete, because the operator cannot tell the difference between
 /// *"there are no page attachments"* and *"pdfcer could not go and look"* — and
 /// those are the two answers that matter when a file has gone missing.
@@ -325,7 +325,7 @@ pub const fn attach_heading() -> &'static str {
 
 /// The hint text in the optional description field.
 ///
-/// ★ *"optional"* is in the hint rather than in a sentence beside it, because
+/// *"optional"* is in the hint rather than in a sentence beside it, because
 /// it is the answer to the only question the field raises and an operator who
 /// reads it in the box has been answered before they wonder.
 #[must_use]
@@ -335,7 +335,7 @@ pub const fn attach_description_hint() -> &'static str {
 
 /// Why the description is worth typing, and why it can only be typed now.
 ///
-/// ★★ The second half is a **capability disclosure**, not a nicety.
+/// The second half is a **capability disclosure**, not a nicety.
 /// `EditSession::attach_file` takes the description at attach time and
 /// `pdfcer-core` has no verb that edits one afterwards, so an operator who
 /// leaves the box empty has made a decision they cannot revisit without
@@ -364,7 +364,7 @@ pub const fn attach_dialog_title() -> &'static str {
     "Choose a file to attach"
 }
 
-/// ★★★ **What attaching actually did**, said off-canvas because the page cannot
+/// **What attaching actually did**, said off-canvas because the page cannot
 /// show it.
 ///
 /// Three clauses, and each one is a thing the operator has no other way to
@@ -390,7 +390,7 @@ pub fn attached(name: &str, bytes: u64) -> String {
 
 /// The one refusal this surface can provoke that the operator can understand.
 ///
-/// # ★★ Why this refusal is surfaced and the other three are not
+/// # Why this refusal is surfaced and the other three are not
 ///
 /// `attach_file` refuses four ways. Three of them —
 /// `DocumentEncrypted`, the certification gate and
@@ -438,7 +438,7 @@ pub const fn remove_button() -> &'static str {
 
 /// What removing does, before the press.
 ///
-/// ★ It names the **three objects** that go, because *"remove the row"* is what
+/// It names the **three objects** that go, because *"remove the row"* is what
 /// a careless implementation would do and it is the worst possible outcome:
 /// `detach_file`'s own docs say that removing only the tree entry leaves *"the
 /// bytes in the file with nothing pointing at them: invisible to every reader,
@@ -463,7 +463,7 @@ pub const fn remove_lives_with_the_note() -> &'static str {
     "This one is a note on a page. Remove it from the page, as a comment, rather than from here."
 }
 
-/// ★★★ **What removing actually did** — including the part that is not what
+/// **What removing actually did** — including the part that is not what
 /// the word suggests.
 ///
 /// # This sentence is required by `pdfcer-core`, in its own words
@@ -473,14 +473,14 @@ pub const fn remove_lives_with_the_note() -> &'static str {
 /// > expected to say so rather than let 'delete' imply erasure."*
 ///
 ///
-/// ★ And the second sentence **names the command that does it**. A disclosure
+/// And the second sentence **names the command that does it**. A disclosure
 /// that states a hazard and leaves the operator to find the remedy has done
 /// half the job; `file.save_compacted` is the full rewrite, it is on File ▸
 /// Save, and it is one control away.
 #[must_use]
 pub fn removed(name: &str) -> String {
     format!(
-        // ★ The command is named in words rather than with the ribbon's ▸
+        // The command is named in words rather than with the ribbon's ▸
         // separator: `crate::icons::glyphs` records that U+25B8 is a codepoint
         // this build's font stack CANNOT DRAW, so a path written that way
         // reaches the operator as a substitution box in the middle of the one
@@ -505,7 +505,7 @@ pub const fn save_button() -> &'static str {
 
 /// What pressing it will do, on hover.
 ///
-/// ★ The second clause is the disclosure the first invites: the bytes came from
+/// The second clause is the disclosure the first invites: the bytes came from
 /// inside a file that arrived from somewhere, and `pdfcer-core`'s own module
 /// docs say it *"does not execute, open, or interpret them, and neither should
 /// a caller without its own gate."* pdfcer writes the file and stops; opening it
@@ -528,7 +528,7 @@ pub fn saved(path: &str) -> String {
     format!("Saved to {path}.")
 }
 
-/// ★★★ **pdfcer used a different name than the row shows, and here is why.**
+/// **pdfcer used a different name than the row shows, and here is why.**
 ///
 /// # Why this is a required disclosure and not a nicety
 ///
@@ -544,7 +544,7 @@ pub fn saved(path: &str) -> String {
 /// `SafeName::hazards` exists — sorted and deduplicated, *"so a message can
 /// list them deterministically"* — for exactly this call.
 ///
-/// ★ The hazard names are translated to plain English rather than printed. An
+/// The hazard names are translated to plain English rather than printed. An
 /// operator seeing *"ParentTraversal"* has been shown a Rust identifier; one
 /// seeing *"it tried to climb out of the folder you chose"* has been told what
 /// happened to them.
@@ -656,7 +656,7 @@ mod tests {
         assert!(listing_notes(&AttachmentNotes::default()).is_empty());
     }
 
-    /// ★★ **A damaged document's listing speaks, and says more than one thing.**
+    /// **A damaged document's listing speaks, and says more than one thing.**
     ///
     /// # Why this is a fixture test and not a table of hand-built structs
     ///
@@ -747,7 +747,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The removal sentence says the bytes survive, and names the remedy.**
+    /// **The removal sentence says the bytes survive, and names the remedy.**
     ///
     /// `detach_file`'s doc comment makes this a shell obligation in as many
     /// words, and the failure mode it guards against is an operator who removed
@@ -785,7 +785,7 @@ mod tests {
         }
     }
 
-    /// ★ **An unverified size is not reported as an agreement.**
+    /// **An unverified size is not reported as an agreement.**
     ///
     /// The case `DeclaredSizeCheck` exists for: the stream is filtered, so its
     /// raw byte count is not its decoded byte count, and printing the
@@ -801,7 +801,7 @@ mod tests {
         assert!(none.contains("not stated"), "{none}");
     }
 
-    /// ★★ **A sanitised name names both spellings and says what was wrong.**
+    /// **A sanitised name names both spellings and says what was wrong.**
     ///
     /// The gap this bridges is structural: the listing shows the raw name
     /// because a reader must not repair its evidence, and the filesystem gets
@@ -834,7 +834,7 @@ mod tests {
         assert!(!said.contains("—"), "{said}");
     }
 
-    /// ★ **Every disclosure is a sentence and every label is not.**
+    /// **Every disclosure is a sentence and every label is not.**
     ///
     /// The convention [`crate::text`] states, checked here because this module
     /// holds both kinds two lines apart and the wrong one is easy to copy.

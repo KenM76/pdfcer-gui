@@ -4,7 +4,7 @@
 or delete nodes of a markup shape once it is drawn"*, for the half that is
 a **markup shape** rather than a ce dimension.
 
-## ★★★ Why this check and not the sixteen unit tests beside the feature
+## Why this check and not the sixteen unit tests beside the feature
 
 `canvas::annotnodes::tests` asserts the arithmetic, the subtype table and
 the engine's own floor, against a real `EditSession`, and **every one of
@@ -26,7 +26,7 @@ not one is observable in process:
 | 6 | `Ctrl`+`Shift` survives the OS → winit → egui path **for the whole drag** | `Driver::press_held`'s note: a modifier applied and undone inside one frame's event batch |
 | 7 | the engine accepts it, the `/AP` is re-baked, and **the pixels change** | only a real edit followed by a real render can show this |
 
-## ★★ What it asserts that a trace alone cannot: the PIXELS
+## What it asserts that a trace alone cannot: the PIXELS
 
 Step 7 is the one this check was written for. `move-annotation-vertex` in
 the trace says the verb ran; it does not say the **drawing changed**. A
@@ -41,7 +41,7 @@ watching nothing move.
 So the shape is dragged **out of its own bounding box**, into paper that was
 blank before, and the ink there is counted before and after.
 
-★★★ **The selection is CLEARED before the "after" capture, and that is the
+**The selection is CLEARED before the "after" capture, and that is the
 whole honesty of the pixel assertion.** A selected shape draws its outline
 and its node anchors, which are ink, at exactly the place the drag ended —
 so a build that moved nothing but drew an anchor at the pointer would put

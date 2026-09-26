@@ -31,7 +31,7 @@ clipboard, which is not a courtesy but a **requirement**; see its own header.
 
 [`candidate_name`] - the spelling of a pasted field's name.
 
-## ★★ Rule 4, in one line, because it still governs
+## Rule 4, in one line, because it still governs
 
 A pasted field renders exactly as a saved-and-reopened one would - no badge,
 no tint, nothing drawn on the page. The disclosure lives off-canvas, on the

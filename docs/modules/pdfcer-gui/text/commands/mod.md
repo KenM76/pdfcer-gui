@@ -37,7 +37,7 @@ document, not just the view"), what it *cannot* do, and what is
 *irreversible*. Where the salvage source's wording said something worth
 keeping, it is kept close to verbatim.
 
-★★★ **DO NOT QUOTE A LIVE TOOLTIP HERE AS AN EXEMPLAR.** A header that
+**DO NOT QUOTE A LIVE TOOLTIP HERE AS AN EXEMPLAR.** A header that
 holds one up as a model makes a SECOND COPY of that string's claim, in a
 file nobody opens when the claim expires. Two such exemplars stood in this
 paragraph and both were false before anyone noticed — one denying

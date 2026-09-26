@@ -15,13 +15,13 @@ use crate::sys::vk;
 const INVOKE: &str = "pages.rotate_right";
 /// The line the rotation writes.
 ///
-/// ★ `rotate-pages`, not `pages-rotated`. The name was guessed on the first
+/// `rotate-pages`, not `pages-rotated`. The name was guessed on the first
 /// draft and the check SKIPPED against a build where the rotation had plainly
 /// worked — a harness constant naming an application event decays in one
 /// direction only, and the fix is always to read the trace rather than to
 /// widen the assertion.
 const ROTATED: &str = "rotate-pages"; // ui-text-exempt: a trace event name, never displayed
-/// ★ The line a successful save-in-place writes.
+/// The line a successful save-in-place writes.
 const SAVED: &str = "save-in-place"; // ui-text-exempt: a trace event name, never displayed
 /// The chord the operator pressed.
 const CHORD: &str = "Ctrl+S"; // ui-text-exempt: a key chord, shown only in this report
@@ -30,7 +30,7 @@ const CHORD: &str = "Ctrl+S"; // ui-text-exempt: a key chord, shown only in this
 const CANVAS: &str = "canvas"; // ui-text-exempt: a trace event name, never displayed
 /// The line an unsaved-edits prompt writes when it opens.
 ///
-/// ★ O65's chain ran through this prompt: the tab kept its dot after a save,
+/// O65's chain ran through this prompt: the tab kept its dot after a save,
 /// so the NEXT close raised it, and its only save button was a picker that
 /// proceeded with the close on success. Press save, get asked for a filename,
 /// watch the document close. If this appears at all in a run that only pressed
@@ -78,7 +78,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .clone()
         .ok_or_else(|| Error::new("no --pdf. This check needs a document to edit and save."))?;
 
-    // ★★★ **A COPY, and this is not tidiness.** The check saves IN PLACE, which
+    // **A COPY, and this is not tidiness.** The check saves IN PLACE, which
     // is the operator's own gesture and the one that was reported. Pointing it
     // at `--pdf` would rewrite the fixture every run — and `--pdf` is usually
     // one of the operator's own drawings.
@@ -133,7 +133,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.press_chord(&[vk::CONTROL], vk::S)?;
     session.settle(60);
 
-    // ★★★ THE ASSERTION THIS CHECK EXISTS FOR, and it comes BEFORE the trace
+    // THE ASSERTION THIS CHECK EXISTS FOR, and it comes BEFORE the trace
     // is read. A process that has exited writes no line, and an absent line is
     // this harness's commonest false signal — reporting "the save did nothing"
     // when the truth is "the program is gone" sends a reader to the wrong

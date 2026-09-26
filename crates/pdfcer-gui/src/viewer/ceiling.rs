@@ -10,7 +10,7 @@
 //! | [`SUB_PIXEL_CONTENT_EXTENT`] | the `f32` scroll offset can no longer hold the point under the cursor | ~86,000 % on a 1,224 pt sheet, ~132,000 % on US Letter |
 //! | the operator's own setting | whatever he asked for | wherever he says |
 //!
-//! ★★ The first is not a limit at all once the region tier can render past
+//! The first is not a limit at all once the region tier can render past
 //! it — the raster becomes window-sized and the page's size stops entering
 //! the arithmetic. The second is, and is the one that decides what the shell
 //! can honestly offer today; `viewer::deep::DeepAnchor` is what raises it,
@@ -24,7 +24,7 @@
 //! this page be magnified?* — where the rest of [`super`] answers *where is
 //! the view and what is it showing?*
 
-// ★ `max_zoom_for_page` stays in [`super`] with the rest of the raster-side
+// `max_zoom_for_page` stays in [`super`] with the rest of the raster-side
 // arithmetic and its own tests, and is imported rather than moved: it answers
 // a question about a PIXMAP, where everything in this file answers one about
 // how far the operator may go. Moving it would have dragged its tests across a
@@ -37,7 +37,7 @@ use super::{MAX_ZOOM, MIN_ZOOM, max_zoom_for_page, zoom_for_raster_scale};
 /// representable `f32` offsets **is** the positioning error. `2^20` puts one
 /// step at 0.125 px.
 ///
-/// # ★★★ It gates HOLDING A POINT, not ADDRESSING A PIXEL
+/// # It gates HOLDING A POINT, not ADDRESSING A PIXEL
 ///
 /// The two requirements part company as the zoom rises, and reading this
 /// constant as the second is the mistake that sets it 16× too high:
@@ -51,7 +51,7 @@ use super::{MAX_ZOOM, MIN_ZOOM, max_zoom_for_page, zoom_for_raster_scale};
 /// addressing every pixel, and past it the view drifts off the cursor while
 /// still addressing every pixel perfectly.
 ///
-/// ★★ Measured through the running binary rather than derived, on
+/// Measured through the running binary rather than derived, on
 /// `SW41177.pdf` (1,224 pt tall):
 /// `zooming_does_not_throw_away_where_the_operator_panned` failed reproducibly
 /// at notch 7 of stage 5, between 292,415 % and 357,156 % — a content extent
@@ -60,12 +60,12 @@ use super::{MAX_ZOOM, MIN_ZOOM, max_zoom_for_page, zoom_for_raster_scale};
 /// 3.4× finer than the point that failed, and hands over at 85,700 % on that
 /// sheet and 132,400 % on US Letter.
 ///
-/// ★ Drawing is not what limits this. Driving to the top of the setting on a
+/// Drawing is not what limits this. Driving to the top of the setting on a
 /// US Letter page drew at a content extent of 20.5 billion — a 2,048 px step —
 /// and stopped at 41 billion. Usability gives out four orders of magnitude
 /// earlier, and this is that point.
 ///
-/// ★ `pub` because [`crate::canvas::geometry`] bounds the pasteboard against
+/// `pub` because [`crate::canvas::geometry`] bounds the pasteboard against
 /// it as well. The pasteboard grows with the zoom (an overhang measured in
 /// points, multiplied by the scale), so without a bound tied to THIS number
 /// the scroll content could pass the hand-over point while the strip itself
@@ -73,7 +73,7 @@ use super::{MAX_ZOOM, MIN_ZOOM, max_zoom_for_page, zoom_for_raster_scale};
 /// have handed over late, and silently. One constant, both uses.
 pub const SUB_PIXEL_CONTENT_EXTENT: f32 = 1_048_576.0;
 
-// ★★★ **A constant that changes what it gates has to be re-derived, not
+// **A constant that changes what it gates has to be re-derived, not
 // re-tuned.** This one was a cap on where an `f32` offset stops addressing
 // every pixel before it became a tier hand-over threshold, and the two
 // questions have answers 16× apart. `OPERATOR_REQUESTS.md` **O49**.
@@ -81,7 +81,7 @@ pub const SUB_PIXEL_CONTENT_EXTENT: f32 = 1_048_576.0;
 /// The highest zoom this page can reach **when the region tier is
 /// available** — `OPERATOR_REQUESTS.md` O24.
 ///
-/// # ★★ Why this is a different function rather than a flag on the old one
+/// # Why this is a different function rather than a flag on the old one
 ///
 /// [`max_zoom_for_page`] answers a question about a **pixmap**: how far can
 /// this page be magnified before its whole-page raster exceeds
@@ -96,7 +96,7 @@ pub const SUB_PIXEL_CONTENT_EXTENT: f32 = 1_048_576.0;
 /// would have produced one function whose name describes only half of what
 /// it does.
 ///
-/// # ★ It is dormant, and deliberately so
+/// # It is dormant, and deliberately so
 ///
 /// Nothing calls this yet. It lands ahead of the canvas change that will,
 /// so that the arithmetic can be reviewed and tested while it cannot affect
@@ -117,7 +117,7 @@ pub fn max_zoom_with_regions(limit: f32) -> f32 {
 
 /// **The zoom ceiling in force**, given the operator's configured maximum.
 ///
-/// ★★ The ONE place the two tiers are reconciled, so the two call sites that
+/// The ONE place the two tiers are reconciled, so the two call sites that
 /// need a ceiling — `app::actions::apply` and `canvas::zoom` — cannot answer
 /// the question differently. Their own comments already note that each derives
 /// this per action rather than caching it; deriving it *differently* is the
@@ -132,7 +132,7 @@ pub fn max_zoom_with_regions(limit: f32) -> f32 {
 /// the shipped default reproduces the old behaviour exactly, which is what
 /// keeps a fresh install unchanged.
 ///
-/// # ★★★ `learned_raster_scale` — the THIRD ceiling, and the only one that may
+/// # `learned_raster_scale` — the THIRD ceiling, and the only one that may
 /// override the operator — O186
 ///
 /// `None` on every page of every document until a render has actually been
@@ -156,7 +156,7 @@ pub fn max_zoom_with_regions(limit: f32) -> f32 {
 /// wall, and the wall was reported to him as an error painted across his
 /// drawing.
 ///
-/// ★ So this clause, uniquely, binds below a number the operator typed. That is
+/// So this clause, uniquely, binds below a number the operator typed. That is
 /// not the shell overruling him — it is the shell declining to re-offer a zoom
 /// it has already watched fail. His own ruling: *"zoom should stop at the limit
 /// and not end up showing an error"*. The reason it stopped is disclosed on the
@@ -164,7 +164,7 @@ pub fn max_zoom_with_regions(limit: f32) -> f32 {
 /// the same sentence and is why a silent clamp here is honest rather than
 /// mysterious.
 ///
-/// ★★ Floored at [`MIN_ZOOM`], so a learned ceiling can never make a document
+/// Floored at [`MIN_ZOOM`], so a learned ceiling can never make a document
 /// unzoomable. `max_zoom_with_regions` already makes that guarantee for the
 /// operator's setting and the same guarantee is owed here, for the stronger
 /// reason that this value was not chosen by anyone.
@@ -179,7 +179,7 @@ pub fn zoom_ceiling(
     let limit = max_zoom_with_regions(limit_percent / 100.0);
     let whole_page = max_zoom_for_page(page_pts, pixels_per_point, quality);
 
-    // ★★★ THE DEFAULT MUST CHANGE NOTHING, and a plain `max` breaks that.
+    // THE DEFAULT MUST CHANGE NOTHING, and a plain `max` breaks that.
     //
     // `max_zoom_for_page` can fall BELOW `MAX_ZOOM` on a large page at a high
     // display scale — an A1 sheet at 1.5x tops out at 690 %, not 800 % —
@@ -195,7 +195,7 @@ pub fn zoom_ceiling(
     // has asked for MORE THAN THE SHIPPED DEFAULT. Below that, nothing about
     // the old behaviour is touched — which is the property that makes this
     // feature safe to land.
-    // ★★★ The lift is bounded BELOW by `MAX_ZOOM`, not by the default.
+    // The lift is bounded BELOW by `MAX_ZOOM`, not by the default.
     //
     // The first version compared against `DEFAULT_MAX_ZOOM_PERCENT`, which
     // worked while the default was 800 % and became a no-op the moment the
@@ -209,11 +209,11 @@ pub fn zoom_ceiling(
     // constraint and must keep binding — an A1 sheet at a 1.5x display tops out
     // at 690 %, and lifting that would ask the engine for a raster it refuses.
     // Above it, the region tier can render and the page's size stops mattering.
-    // ★★★ THE POSITIONAL CAP IS GONE, because tier 3 replaced it — O24.
+    // THE POSITIONAL CAP IS GONE, because tier 3 replaced it — O24.
     //
     //
 
-    // ★★★ AND NOTHING CAPS IT ANY MORE. Two ceilings stood here today and both
+    // AND NOTHING CAPS IT ANY MORE. Two ceilings stood here today and both
     // are gone, each removed by finding where the precision was ACTUALLY lost:
     //
     // The sub-pixel cap went when `viewer::deep::DeepAnchor` took the position
@@ -222,7 +222,7 @@ pub fn zoom_ceiling(
     // a magnitude around 10^12 px at deep zoom, where `f32`'s spacing is 131,072
     // px and the thing being drawn is 1,400 px across.
     //
-    // ★ Both fixes are the same move: **do not form the large number**. Neither
+    // Both fixes are the same move: **do not form the large number**. Neither
     // needed a wider type anywhere it would cost anything, which is why the
     // answer to "keep the 32-bit strip or build a 64-bit one?" turned out to be
     // neither — carrying a huge intermediate more precisely is worse than not
@@ -233,7 +233,7 @@ pub fn zoom_ceiling(
 
     let derived = limit.max(whole_page.min(MAX_ZOOM));
 
-    // ★ O186. `None` must change this expression into the identity, which is
+    // O186. `None` must change this expression into the identity, which is
     // what `map_or(derived, ...)` says and what
     // `a_page_that_has_refused_nothing_keeps_its_derived_ceiling` pins — the
     // property that makes this safe to add to a shipped ceiling.
@@ -269,7 +269,7 @@ pub fn deep_position_needed(page_pts: (f32, f32), zoom: f32) -> bool {
 
 /// # Tests — the three ceilings, and the ladder that has to be able to reach them
 ///
-/// ★★ **Moved here from [`super`] on 2026-09-12, and the move is the point.**
+/// **Moved here from [`super`] on 2026-09-12, and the move is the point.**
 /// Every test below asks one question — *how far may this page be magnified?* —
 /// which is the question this file exists to answer, and they were sitting in
 /// `viewer/mod.rs` only because they predate the split that created this file.
@@ -279,7 +279,7 @@ pub fn deep_position_needed(page_pts: (f32, f32), zoom: f32) -> bool {
 /// find the seam, not to raise the limit."* The seam was already named in this
 /// file's header.
 ///
-/// ★ What deliberately did NOT move: the tests of `super::max_zoom_for_page`,
+/// What deliberately did NOT move: the tests of `super::max_zoom_for_page`,
 /// `super::raster_scale` and `ViewState`'s clamping. Those answer questions
 /// about a *pixmap* and about *where the view is*, and the note above this
 /// file's `use super::...` line already records why that function stays in
@@ -289,7 +289,7 @@ pub fn deep_position_needed(page_pts: (f32, f32), zoom: f32) -> bool {
 #[allow(clippy::float_cmp, reason = "ladder rungs are exact f32 literals")] // ui-text-exempt: clippy lint justification, never displayed
 mod tests {
     use super::*;
-    // ★ `ViewState` and `ZOOM_LADDER` are the two things these tests reach back
+    // `ViewState` and `ZOOM_LADDER` are the two things these tests reach back
     // into [`super`] for, and both are reached for the same reason: a ceiling is
     // only worth anything if the control the operator actually presses can climb
     // to it. See `the_zoom_ladder_can_climb_to_a_configured_maximum` below.
@@ -300,7 +300,7 @@ mod tests {
     // here is a failure of the thing the test names.
     use crate::app::prefs::RenderQuality;
 
-    /// ★★★ **The ladder can actually REACH a configured maximum**, stepping.
+    /// **The ladder can actually REACH a configured maximum**, stepping.
     ///
     /// `zoom_ceiling` answering a big number is necessary and not sufficient:
     /// the `+` button walks `ZOOM_LADDER`, which ends at 8.0. If stepping
@@ -308,7 +308,7 @@ mod tests {
     /// the one the operator actually uses, which is the same silently-inert
     /// control in a subtler place.
     ///
-    /// ★ This is the gap `OPERATOR_REQUESTS.md` O24 predicted in its own
+    /// This is the gap `OPERATOR_REQUESTS.md` O24 predicted in its own
     /// words — *"the buttons stop working exactly where the setting starts
     /// mattering"* — asserted rather than left to be discovered.
     #[test]
@@ -340,7 +340,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **THE SETTING IS NOT DECORATIVE** — the whole risk of O24.
+    /// **THE SETTING IS NOT DECORATIVE** — the whole risk of O24.
     ///
     /// `OPERATOR_REQUESTS.md` O24 warned in as many words that shipping the
     /// setting without the mechanism would produce *"a control that is drawn,
@@ -360,7 +360,7 @@ mod tests {
             "the premise: an A1 sheet's whole-page ceiling is around 1,000% ({whole_page})"
         );
 
-        // ★ Below the positional cap the configured maximum is honoured
+        // Below the positional cap the configured maximum is honoured
         // exactly. `10_000%` and `100_000%` are both well inside it on an A1
         // sheet, whose cap is around 1,050,000%.
         for percent in [10_000.0_f32, 100_000.0] {
@@ -372,11 +372,11 @@ mod tests {
             );
         }
 
-        // ★★ …and a TRILLION percent is honoured too, since tier 3 wired the
+        // …and a TRILLION percent is honoured too, since tier 3 wired the
         // `f64` position model. The cap that stood here until then is gone; the
         // same constant now decides when `DeepAnchor` takes over instead of
         // when to refuse.
-        // ★★ …and above it the STRIP EXTENT is what binds now, not the raster
+        // …and above it the STRIP EXTENT is what binds now, not the raster
         // and not the scroll offset. Asking for a trillion percent yields the
         // deepest zoom the page is confirmed to actually draw at.
         let deep = zoom_ceiling(a1, 1.0, RenderQuality::Normal, 1e12, None);
@@ -394,11 +394,11 @@ mod tests {
         );
     }
 
-    /// ★★★ **The default reaches the maximum** — the operator's instruction of
+    /// **The default reaches the maximum** — the operator's instruction of
     /// 2026-08-22, *"Also set the default to be able to hit the maximum zoom."*
     ///
     ///
-    /// ★ The property is kept, not dropped: **what must not change is the
+    /// The property is kept, not dropped: **what must not change is the
     /// PANNING**, which is what he actually cares about. That is asserted by
     /// `every_zoom_the_shell_offers_today_still_rasterizes_the_whole_page` in
     /// `render::strategy`, which walks the whole ladder — the ceiling is
@@ -424,10 +424,10 @@ mod tests {
                         crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT,
                         None,
                     );
-                    // ★ The default asks for the maximum and now GETS it, on every
+                    // The default asks for the maximum and now GETS it, on every
                     // page and display scale — which is only honest because tier 3
                     // positions the view past the point an `f32` offset could.
-                    // ★ The default asks for the maximum and gets the deepest the
+                    // The default asks for the maximum and gets the deepest the
                     // strip can still place a page at — which is what the shell can
                     // actually deliver, on every page size.
                     let wanted = crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT / 100.0;
@@ -444,7 +444,7 @@ mod tests {
         }
     }
 
-    /// ★★ **…and a LOW setting still lets the pixmap ceiling bind.**
+    /// **…and a LOW setting still lets the pixmap ceiling bind.**
     ///
     /// The half that survives from the test this replaced, and it is the one
     /// that stops the change being dangerous: below `MAX_ZOOM` the whole-page
@@ -467,7 +467,7 @@ mod tests {
             "a 300% setting should leave the {whole_page}x pixmap ceiling alone, got {ceiling}"
         );
     }
-    /// ★★★ **The position model changes hands exactly where an `f32` offset
+    /// **The position model changes hands exactly where an `f32` offset
     /// stops being able to place the view** — O24 tier 3.
     ///
     /// One unit of content space is one screen pixel, so `2^24` content points
@@ -475,7 +475,7 @@ mod tests {
     /// area is authoritative and the canvas is unchanged; above it
     /// `viewer::deep::DeepAnchor` is.
     ///
-    /// ★ Asserted on both sides of the threshold, because a predicate that
+    /// Asserted on both sides of the threshold, because a predicate that
     /// answered `true` everywhere would put the whole shell on the deep path —
     /// and that path is the one that has never carried ordinary use.
     #[test]
@@ -507,7 +507,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **The page's size stops mattering once regions are available** —
+    /// **The page's size stops mattering once regions are available** —
     /// O24.
     ///
     /// This is the whole point of the region tier stated as an assertion. In
@@ -543,7 +543,7 @@ mod tests {
         }
     }
 
-    /// ★ **Infinity is not a limit**, and is refused rather than passed
+    /// **Infinity is not a limit**, and is refused rather than passed
     /// through — an infinite ceiling would propagate into a scroll extent and
     /// blank the canvas, which is the failure `geometry`'s guards exist for.
     #[test]
@@ -553,7 +553,7 @@ mod tests {
 
     // ---- the learned ceiling — O186 ------------------------------------
 
-    /// ★★★ **A page that has refused nothing keeps exactly the ceiling it had**
+    /// **A page that has refused nothing keeps exactly the ceiling it had**
     /// — O186's safety property, and the only reason a third clause was safe to
     /// add to a shipped expression.
     ///
@@ -571,7 +571,7 @@ mod tests {
     /// walks a grid for exactly this reason and its own comment records that one
     /// case would have missed the defect it was written for.
     ///
-    /// ★ The comparison is against the derived parts **recomputed here**, not
+    /// The comparison is against the derived parts **recomputed here**, not
     /// against another call to [`zoom_ceiling`]. There is no three-argument form
     /// any more, so a test that compared the function to itself would pass under
     /// every possible change to it — including deleting the whole body.
@@ -599,7 +599,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **A learned ceiling binds even above the number the operator typed**,
+    /// **A learned ceiling binds even above the number the operator typed**,
     /// which no other clause in [`zoom_ceiling`] does.
     ///
     /// This is the clause that answers O186. `max_zoom_percent` is deliberately
@@ -635,7 +635,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The learned value is a raster SCALE, so the zoom it permits moves
+    /// **The learned value is a raster SCALE, so the zoom it permits moves
     /// with BOTH halves of [`crate::viewer::raster_density`]** — the display
     /// density and the operator's render quality.
     ///
@@ -647,7 +647,7 @@ mod tests {
     /// a window dragged between them would change the answer with no event
     /// anywhere to explain it.
     ///
-    /// ★★★ **The quality rows are O218 and they are the ones that were false.**
+    /// **The quality rows are O218 and they are the ones that were false.**
     /// The density row alone passed for a year while the conversion divided by
     /// the density and dropped the quality multiplier, because the test that
     /// measured the conversion only ever varied the half that was right. A
@@ -683,7 +683,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **A ceiling this function reports must be one the ENGINE would
+    /// **A ceiling this function reports must be one the ENGINE would
     /// accept** — O218, and the assertion that fails on the old arithmetic.
     ///
     /// Every other test here compares one derivation against another, which
@@ -694,7 +694,7 @@ mod tests {
     /// to order a raster — and check that it does not re-order the scale that
     /// was refused.
     ///
-    /// # ★★ Why the LEARNED clause, and why the derived ones cannot be asserted
+    /// # Why the LEARNED clause, and why the derived ones cannot be asserted
     /// this way
     ///
     /// A ceiling from the derived clauses is not a claim about a whole-page
@@ -746,7 +746,7 @@ mod tests {
         }
     }
 
-    /// ★★ **A learned ceiling can never make a document unzoomable, and can
+    /// **A learned ceiling can never make a document unzoomable, and can
     /// never RAISE a ceiling.**
     ///
     /// Three clauses in one test because each is a bound on the same `min`:

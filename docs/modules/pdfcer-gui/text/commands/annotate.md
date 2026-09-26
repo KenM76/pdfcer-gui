@@ -1,7 +1,7 @@
 # `text::commands::annotate` — the labels and tooltips of the **Markup** and
 **Measure** tabs
 
-## ★ Why this is a file of its own, and what the seam actually is
+## Why this is a file of its own, and what the seam actually is
 
 **R2** (no `.rs` file over 1,500 lines) forced a split when the three
 unblocked Phase 6 markup kinds arrived: [`super`] reached 1,520 lines. But a

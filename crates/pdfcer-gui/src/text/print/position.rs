@@ -50,7 +50,7 @@ pub const fn position_mm_suffix() -> &'static str {
     " mm"
 }
 
-/// ★ **The frame the two numbers are measured in**, which is the half a
+/// **The frame the two numbers are measured in**, which is the half a
 /// bare offset cannot state.
 ///
 /// A displacement is meaningless without an origin, and this one's origin is
@@ -85,7 +85,7 @@ pub const fn position_reset_unmoved() -> &'static str {
 
 /// Centre the page on both axes.
 ///
-/// ★ This is **not** the same command as [`position_reset`], and the whole
+/// This is **not** the same command as [`position_reset`], and the whole
 /// feature turns on the difference. pdfcer places an oversized page flush to
 /// the top-left corner of the printable area, so that as little of it as
 /// possible falls off the sheet. Reset returns to that corner; Centre moves it
@@ -148,7 +148,7 @@ pub fn position_moved_count(pages: usize) -> String {
     }
 }
 
-/// ★★ **How much of the page falls outside the printable area, edge
+/// **How much of the page falls outside the printable area, edge
 /// by edge.**
 ///
 /// Operator request O208, his second clause: *"the hash lines we use to show
@@ -208,7 +208,7 @@ pub const fn position_drag_hint() -> &'static str {
 
 /// Which page the position controls are acting on.
 ///
-/// ★ The controls act on the sheet the preview is showing, not on "the
+/// The controls act on the sheet the preview is showing, not on "the
 /// current page" of the document — the job may be a narrowed range,
 /// odd/even filtered or reversed, so those two are different numbers. Naming
 /// it removes the one ambiguity that would make a per-page setting

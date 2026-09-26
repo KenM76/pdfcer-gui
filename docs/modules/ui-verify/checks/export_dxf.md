@@ -31,7 +31,7 @@ by the canvas's own provider, keyed on `(page, epoch)`, and whether it is
 populated at the moment an export runs is a question about a **running
 frame**.
 
-# ★ The assertion that makes this more than a smoke test
+# The assertion that makes this more than a smoke test
 
 **The file on disk is counted, and the count is compared against the
 trace.** The trace says what the shell believed it wrote; the file says what

@@ -8,13 +8,13 @@
 //! is the pipeline?"* and this file answers *"what has been proven about
 //! it?"*, and the two grow for different reasons.
 //!
-//! ★ It stays a module named `tests` inside `redact`, deliberately:
+//! It stays a module named `tests` inside `redact`, deliberately:
 //! [`super::proof`]'s own suite reaches [`assemble`] as
 //! `super::super::tests::assemble`, and a rename would have made a mechanical
 //! move into a second, subtly different PDF assembler — which is the one thing
 //! a fixture must not become.
 //!
-//! ★★ It is also inside the one file the call-site monopoly permits — no, it
+//! It is also inside the one file the call-site monopoly permits — no, it
 //! is not, and that is worth stating rather than leaving to be noticed:
 //! `redact::sealed` sweeps **every** `.rs` file in the crate, this one
 //! included, and nothing here calls the engine's removal directly. Every test
@@ -23,7 +23,7 @@
 //! [`super::cancel_staged_redaction`], which is exactly the property the
 //! monopoly exists to keep true of test code as well as of production code.
 
-// ★ The INNER `#![cfg(test)]` is redundant — the module is declared
+// The INNER `#![cfg(test)]` is redundant — the module is declared
 // `#[cfg(test)] mod tests;` — and it is here anyway, because
 // `tools/gates/check-ui-strings.sh` exclusion 2 recognises a test-only FILE by
 // exactly this attribute. Without it every assertion message below is read as
@@ -132,7 +132,7 @@ fn scratch(name: &str) -> std::path::PathBuf {
 
 // -- THE SECURITY ASSERTION ---------------------------------------------
 
-/// ★★ **The headline gate for the apply path.**
+/// **The headline gate for the apply path.**
 ///
 /// After apply-and-save through [`prepare_redaction_apply`], the redacted
 /// text must not be recoverable from the saved bytes by any means pdfcer
@@ -229,7 +229,7 @@ fn the_absence_proof_reports_a_clean_verification() {
     );
 }
 
-/// ★ **A mark that exists ONLY in the session overlay must still be
+/// **A mark that exists ONLY in the session overlay must still be
 /// applied.**
 ///
 /// The un-saved-mark trap §1.2 names: passing `session.document()` to
@@ -251,7 +251,7 @@ fn a_mark_that_was_never_saved_is_still_applied() {
     assert!(prepared.report.glyphs_removed >= SECRET.len() as u64);
 }
 
-/// ★ **The output is a SINGLE revision.**
+/// **The output is a SINGLE revision.**
 ///
 /// A `/Prev` in the trailer would mean a prior revision is reachable in the
 /// saved file, which for a redaction is the un-redacted content one hop
@@ -287,7 +287,7 @@ fn an_unmarked_document_is_refused_by_name() {
     );
 }
 
-/// ★★★ **A region over a raster image now DESTROYS the samples**, and this
+/// **A region over a raster image now DESTROYS the samples**, and this
 /// test is the record of the day that changed.
 ///
 /// It read `a_region_over_an_image_refuses_the_whole_apply` until
@@ -297,7 +297,7 @@ fn an_unmarked_document_is_refused_by_name() {
 /// it tells me it can't"*), and stopped being true with `pdfcer-core`
 /// v0.26.0 the same day.
 ///
-/// ★★★ **Writing over the source replaces it, and leaves no temporary
+/// **Writing over the source replaces it, and leaves no temporary
 /// behind.**
 ///
 ///
@@ -347,7 +347,7 @@ fn writing_over_the_source_replaces_it_and_leaves_no_temporary() {
     let _ = std::fs::remove_file(&target);
 }
 
-/// ★★★ **The whole pipeline, on a REAL document, from mark to written
+/// **The whole pipeline, on a REAL document, from mark to written
 /// file — the test whose absence let the 2026-09-04 defect ship.**
 ///
 /// # Why this exists, and why every other test in this module missed it
@@ -388,7 +388,7 @@ fn writing_over_the_source_replaces_it_and_leaves_no_temporary() {
 ///    telling;
 /// 4. the file is **written** once the acknowledgement is given, which is
 ///    the operator's actual demand: *"still make the changes it could"*;
-/// 5. ★ the negative control: `FOUNDATION`, a word on the same sheet that
+/// 5. the negative control: `FOUNDATION`, a word on the same sheet that
 ///    was never marked, is **still extractable** from the written file. A
 ///    build that emptied the page would satisfy 1–4 and fail here.
 #[test]
@@ -456,7 +456,7 @@ fn a_real_drawing_sheet_with_an_embedded_font_is_applied_rather_than_refused() {
     let _ = std::fs::remove_file(&target);
 }
 
-/// ★★ **A test asserting an external limitation goes red when the
+/// **A test asserting an external limitation goes red when the
 /// limitation lifts, and that red is a REPORT rather than a regression.**
 /// It is also the only member of that family that behaves well: the prose
 /// version of the same claim — in `text::redact`, in a UI string — went on
@@ -508,7 +508,7 @@ fn a_region_over_an_image_destroys_the_samples_and_says_so() {
         report.images_removed,
         report.marks_retained
     );
-    // ★ And the mark was APPLIED rather than retained. A retained mark is
+    // And the mark was APPLIED rather than retained. A retained mark is
     // the honest half-measure for an image the engine cannot decode; this
     // one is a 1x1 DeviceGray it certainly can, so a retention here would
     // mean the destroy path was not reached at all and the assertion above
@@ -543,7 +543,7 @@ fn the_mark_list_and_the_mark_count_agree() {
 
 // -- THE WRITE GATE -----------------------------------------------------
 
-/// ★★ **A disclosed residual cannot be written past without an
+/// **A disclosed residual cannot be written past without an
 /// acknowledgement, and the refusal leaves no file behind.**
 ///
 /// §2.3, asserted rather than described. The dialog greys its confirm
@@ -633,7 +633,7 @@ fn a_write_that_cannot_happen_is_a_named_refusal() {
     assert!(!target.exists());
 }
 
-/// ★ **`{:?}` on a prepared redaction does not print the document.**
+/// **`{:?}` on a prepared redaction does not print the document.**
 ///
 /// §2.1's hand-written [`std::fmt::Debug`], pinned. The failure it prevents
 /// is silent and total: a `#[derive(Debug)]` restored during a routine
@@ -668,13 +668,13 @@ fn the_debug_impl_reports_a_length_rather_than_the_bytes() {
 //     because the un-redacted content is still live in the session. These tests
 //     perform the same save and assert it does not happen.
 //
-// ★★ Both are the same discipline: a guarantee stated in a doc comment is a
+// Both are the same discipline: a guarantee stated in a doc comment is a
 // claim about somebody else's code, and every one of these is the measurement.
 // Each is written so the failure it is looking for makes it fail LOUDLY rather
 // than vacuously — every assertion of absence is paired with a positive control
 // that would catch a build which simply emptied the document.
 //
-// ★★★ And the leak surface is LARGER than the collapse's, which is why there
+// And the leak surface is LARGER than the collapse's, which is why there
 // are more of them. Under the collapse the un-redacted document was dropped the
 // moment the operator confirmed; under staging it is still in memory, still in
 // the file on disk, and still reachable by every verb that serialises a
@@ -698,24 +698,24 @@ fn staged_session() -> EditSession {
     session
 }
 
-/// ★★★ **THE HEADLINE: while a removal is staged, BOTH ordinary save modes are
+/// **THE HEADLINE: while a removal is staged, BOTH ordinary save modes are
 /// refused BY NAME.**
 ///
 /// This is `request_apply_redactions_into_the_session.md` §4.1 — the property
-/// the request marked ★★★ and asked the engine to enforce by refusal. `Pass
+/// the request marked and asked the engine to enforce by refusal. `Pass
 /// 250.1` declined to refuse, on the argument that its collapse removed the
 /// hazard at the root. `Pass 250.2` cannot make that argument, because it
 /// preserves the un-redacted session on purpose, so it ships the refusal — and
 /// this test is why that refusal is believed rather than quoted.
 ///
-/// ★ **The leak is measured as well as the refusal.** It would be possible for
+/// **The leak is measured as well as the refusal.** It would be possible for
 /// the engine to refuse `to_incremental_bytes` and not `to_full_bytes`, or to
 /// refuse both and for this shell to be reaching for some third serialiser, so
 /// the test does not stop at the error type: it asserts that **no bytes came
 /// back at all** from either mode, which is the only form of "cannot leak"
 /// that does not depend on reading the engine's source.
 ///
-/// ★ The positive control is the fixture itself: the same session's staged save
+/// The positive control is the fixture itself: the same session's staged save
 /// path DOES produce bytes, in `the_staged_save_removes_the_text_and_leaves_no_prior_revision`
 /// below. Without that, this test would pass on a build in which the session
 /// could not be serialised by any means whatsoever.
@@ -753,7 +753,7 @@ fn both_ordinary_save_modes_are_refused_by_name_while_staged() {
     );
 }
 
-/// ★★★ **The staged save removes the text, and leaves no prior revision to
+/// **The staged save removes the text, and leaves no prior revision to
 /// walk back to.**
 ///
 /// The other half of the headline, and the positive control for it: the save
@@ -766,7 +766,7 @@ fn both_ordinary_save_modes_are_refused_by_name_while_staged() {
 /// away in a file this shell has told the operator is redacted — R35's whole
 /// point.
 ///
-/// ★ The scan is over the **raw bytes** rather than over decoded streams, and
+/// The scan is over the **raw bytes** rather than over decoded streams, and
 /// on this fixture that is legitimate: the content stream is uncompressed and
 /// the font is Base-14, so there is no encoding under which the text could be
 /// present-but-unfindable, and no font program in which it could be
@@ -811,7 +811,7 @@ fn the_staged_save_removes_the_text_and_leaves_no_prior_revision() {
     );
 }
 
-/// ★★★ **Staging preserves the undo log — the whole reason `Pass 250.2`
+/// **Staging preserves the undo log — the whole reason `Pass 250.2`
 /// exists.**
 ///
 /// The route this replaced cleared the log outright, and the operator accepted
@@ -870,7 +870,7 @@ fn staging_preserves_the_undo_log() {
     );
 }
 
-/// ★★★ **A staged removal can be called off, and calling it off restores
+/// **A staged removal can be called off, and calling it off restores
 /// ordinary saving.**
 ///
 /// *A stageable operation that cannot be un-staged is a trap*, asserted. The
@@ -883,7 +883,7 @@ fn staging_preserves_the_undo_log() {
 /// cancel that cleared the flag and left the session unable to serialise would
 /// satisfy *"the flag is off"* and leave him exactly where he was.
 ///
-/// ★ And the third: the marks survive. Un-arming is not un-marking, and a
+/// And the third: the marks survive. Un-arming is not un-marking, and a
 /// cancel that silently removed the operator's marks would destroy work while
 /// claiming to be the safe button.
 #[test]
@@ -925,7 +925,7 @@ fn a_staged_removal_can_be_called_off_and_saving_works_again() {
     assert!(!session.has_pending_redaction());
 }
 
-/// ★★★ **A staged document with NO MARKS LEFT can still be called off — the
+/// **A staged document with NO MARKS LEFT can still be called off — the
 /// trap this feature would otherwise close on the operator.**
 ///
 /// The sequence, and every step of it is something a reasonable person does:
@@ -943,7 +943,7 @@ fn a_staged_removal_can_be_called_off_and_saving_works_again() {
 /// would then be unsaveable by every route in the program, with the one button
 /// that frees him behind a phase he cannot reach.
 ///
-/// ★ Two things keep it open and both are asserted here: `AlreadyStaged` is
+/// Two things keep it open and both are asserted here: `AlreadyStaged` is
 /// answered ahead of the census, and the command that opens the window is
 /// `enabled_when("doc.pages")` rather than on a marks predicate — so the
 /// ribbon control stays live on a document with none.
@@ -977,13 +977,13 @@ fn a_staged_document_with_no_marks_left_can_still_be_called_off() {
         .expect("an ordinary save must work again once the removal is off");
 }
 
-/// ★★ **Staging twice is refused by name rather than silently re-arming.**
+/// **Staging twice is refused by name rather than silently re-arming.**
 ///
 /// Two reachable causes and one refusal: the operator opens *Review & apply* a
 /// second time on a document he has already staged, or a second `Stage` action
 /// arrives before the first frame after the first one.
 ///
-/// ★ The refusal has to be **this shell's**, not the engine's, and that is the
+/// The refusal has to be **this shell's**, not the engine's, and that is the
 /// assertion. `EditSession::apply_redactions_deferred` would happily run a
 /// second preview and set an already-set flag; what makes the second open
 /// legible is `prepare_redaction_apply` naming the state, because otherwise the
@@ -1007,7 +1007,7 @@ fn a_second_staging_and_a_second_report_are_both_refused_by_name() {
     );
 }
 
-/// ★ **A refused staging leaves the session exactly as it was.**
+/// **A refused staging leaves the session exactly as it was.**
 ///
 /// The engine's own guarantee — *"on any error the pending flag is NOT set"* —
 /// asserted from this side rather than quoted. `NothingToApply` is the one
@@ -1034,7 +1034,7 @@ fn a_refused_staging_leaves_the_session_untouched() {
     );
 }
 
-/// ★★★ **The staging survives the save, and every later save applies it
+/// **The staging survives the save, and every later save applies it
 /// again.**
 ///
 /// `save_applying_redaction` takes `&self`. It does not mutate the session and
@@ -1047,7 +1047,7 @@ fn a_refused_staging_leaves_the_session_untouched() {
 /// save would look correct for one save and then quietly write the un-redacted
 /// document on the second one — with no refusal, because the flag would be off.
 ///
-/// ★ Undo across the save is asserted in the same test, because the two facts
+/// Undo across the save is asserted in the same test, because the two facts
 /// have the same cause (`&self`) and a build that broke one would break both.
 #[test]
 fn the_staging_and_the_undo_log_both_survive_the_save() {
@@ -1093,7 +1093,7 @@ fn the_staging_and_the_undo_log_both_survive_the_save() {
     );
 }
 
-/// ★★★ **A REAL drawing survives the staged route** —
+/// **A REAL drawing survives the staged route** —
 /// `fixtures/a1-titleblock.pdf`.
 ///
 /// Every other fixture in this file is uncompressed with a Base-14 font, which
@@ -1136,7 +1136,7 @@ fn a_real_drawing_survives_the_staged_route() {
         .expect("a real drawing must stage");
     assert!(staged.report.glyphs_removed > 0);
 
-    // ★ The refusal, on a real document. This is the assertion that the guard
+    // The refusal, on a real document. This is the assertion that the guard
     // is not a property of a four-object synthetic fixture.
     assert!(
         matches!(
@@ -1175,7 +1175,7 @@ fn a_real_drawing_survives_the_staged_route() {
     );
 }
 
-/// ★★ **The save-time proof costs nothing on an ordinary save and bites on a
+/// **The save-time proof costs nothing on an ordinary save and bites on a
 /// planted leak.**
 ///
 /// [`super::prove_saved_bytes`] is the check `crate::app::save` runs between
@@ -1215,7 +1215,7 @@ fn the_save_time_proof_is_free_when_there_is_nothing_to_prove_and_bites_when_the
     );
 }
 
-/// ★ **The two residual derivations cannot drift, and the deferred one counts
+/// **The two residual derivations cannot drift, and the deferred one counts
 /// no verification.**
 ///
 /// `crate::dialogs::redact::residual_lines` builds the list the operator
@@ -1225,7 +1225,7 @@ fn the_save_time_proof_is_free_when_there_is_nothing_to_prove_and_bites_when_the
 /// absence proof, which the staging route has not run — are pinned here rather
 /// than left to be rediscovered.
 ///
-/// ★★ The `None` case is the important half and it is a claim rather than a
+/// The `None` case is the important half and it is a claim rather than a
 /// convenience: the staging verb discards its bytes, so no sweep has run, and a
 /// caller passing a default `AbsenceVerification` would have told the operator
 /// that one had and found nothing.

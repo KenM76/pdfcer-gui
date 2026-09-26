@@ -6,7 +6,7 @@ existing form field on the page it's properties should come up in our side
 pane for editing it's properties."* This is the side pane's half; the click
 is `crate::canvas::forms`'s.
 
-## ★★★ What can be changed, what can only be read, and why the difference
+## What can be changed, what can only be read, and why the difference
 is disclosed rather than hidden
 
 `pdfcer-core` has exactly four verbs for a field that already exists:
@@ -22,13 +22,13 @@ indistinguishable from an oversight:
 [`crate::text::panels::formfield::not_editable_note`] says which properties
 cannot be changed after placing and what to do instead.
 
-★★ It is also written up as an engine request rather than worked around.
+It is also written up as an engine request rather than worked around.
 The standing rule is *report every workaround, even a successful one* —
 anything the GUI has to work around is a place the crate boundary was drawn
 wrong. A properties panel that can show a flag and not change it is exactly
 that shape.
 
-## ★★ Why this is not `SelectionState`, and why the panel says so
+## Why this is not `SelectionState`, and why the panel says so
 
 `crate::app::state::SelectedField`'s doc carries the argument: a form field
 is a document-level entry with a **name** for identity and possibly several
@@ -43,7 +43,7 @@ Format tab does not open, and Delete on the keyboard does not remove it. The
 delete controls are *in this panel*, labelled, and there are two of them
 because "remove this box" and "remove this field" are different requests.
 
-## ★★★ Rename and Delete are OFFERED ONLY WHERE THEY WOULD WORK (R83)
+## Rename and Delete are OFFERED ONLY WHERE THEY WOULD WORK (R83)
 
 
 The consequence, on the ordinary real-world certified fillable form: three

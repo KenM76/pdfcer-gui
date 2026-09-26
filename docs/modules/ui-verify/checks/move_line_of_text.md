@@ -8,7 +8,7 @@ is the only thing that can say the feature works, because the defect O188
 names is a *silence*, and a silence is exactly what a green unit-test suite
 looks like.
 
-# ★★★ A CHECK THAT PINS AN ABSENCE HAS A SHELF LIFE IN DAYS
+# A CHECK THAT PINS AN ABSENCE HAS A SHELF LIFE IN DAYS
 
 This check first asserted that a single line could NOT be moved, because
 on the day it was written the engine had no verb for it. The verb landed,
@@ -35,12 +35,12 @@ sentence. So the check drives four drags against one fixture:
 | one the NEXT line's position is measured from | refused, *moving it would drag that line along too* |
 | one whose position this document does not state | refused, *there is no position here to change* |
 
-★★★ **The rows that MOVE are not a bonus, they are what make the other two
+**The rows that MOVE are not a bonus, they are what make the other two
 mean something.** A table of refusals alone passes for ever against the
 build this check was originally written for — the one that refused every
 line move. A check that cannot fail on the dangerous build is not a check.
 
-# ★★★ WHY THIS CHECK EXISTS WHEN FOUR UNIT TESTS ALREADY COVER IT
+# WHY THIS CHECK EXISTS WHEN FOUR UNIT TESTS ALREADY COVER IT
 
 `canvas::moving::tests` asserts, at the seam, that `decline` pushes the
 right `Action::DeclineOnCanvas`, and that a movable line produces
@@ -71,7 +71,7 @@ and, for the row that commits, one line from a fourth subsystem:
 apply phase  move-text-line page=0 n=1 epoch=3 disclosures=none
 ```
 
-★ `n=` is the number of show operators the line is written in. The one
+`n=` is the number of show operators the line is written in. The one
 aim that commits here is a one-piece line, so it is `1`; on his own sheet
 the same line reports `n=9`.
 
@@ -81,7 +81,7 @@ the same line reports `n=9`.
 | `canvas-decline-recorded` | did the refusal's **sentence** cross the `Action` boundary and reach the store? | `crate::app::status::decline::canvas`, holding `&mut` |
 | `status-group:decline` | was it **drawn**, on a frame, where he could read it? | `crate::app::status::disclosure` |
 
-★★ **That is a chain measurement, not the application agreeing with
+**That is a chain measurement, not the application agreeing with
 itself.** The three writers are three subsystems separated by the exact
 boundary O188's design is about — a canvas gesture holds no `&mut` and can
 only *ask*. A shell that raised the action and had no apply arm for it
@@ -89,7 +89,7 @@ writes the first line and not the second. A shell that recorded the
 sentence into a store the bar never reads writes the first two and not the
 third.
 
-## ★★★ Why the region alone would have been worthless
+## Why the region alone would have been worthless
 
 `status-group:decline` is **one region shared by every decline in the
 application** — a save that failed, a bookmark that would not move, a zoom
@@ -133,7 +133,7 @@ A check that has never been seen to fail is not evidence.
    nothing about this check's discrimination.
 5. **Restore from the byte copy**, rebuild, confirm the PASS returns.
 
-★ A second, cheaper plant exercises the third link on its own: in
+A second, cheaper plant exercises the third link on its own: in
 `app::status::decline::show`, return before `disclosure_line` publishes
 `REGION_DECLINE`. All three declining aims should then fail on the
 *region* while still reporting the right `canvas-decline-recorded` token —
@@ -144,7 +144,7 @@ which is the one outcome that separates "recorded but never drawn" from
 
 `fixtures/inherited-runs.pdf` at page 0, four aims in PDF user space.
 
-★★★ **NOT `paragraph.pdf`, which every other line-of-text check in this
+**NOT `paragraph.pdf`, which every other line-of-text check in this
 harness uses** — and the reason is the whole argument for a second
 fixture. `paragraph.pdf` writes a `Tm` in front of all six of its show
 operators, so every one of its lines states its own position, so
@@ -167,7 +167,7 @@ in [`AIMS`] were computed from.
 repository, so its absence is a broken checkout rather than an unavailable
 precondition, and a SKIP would say the opposite.
 
-# ★★ The Points tool, and why there is no double-click here
+# The Points tool, and why there is no double-click here
 
 The Part rung on a **text** object is not reachable by double-click, by
 design: `canvas::clicking`'s O70 arm opens the caret instead, which is the
@@ -183,11 +183,11 @@ is.
 `deeper_rung_delete::Rung::arms_the_points_tool` carries the measurement
 that established this, including the trace lines it was read out of.
 
-★ The chord is pressed **before** the click, not after: with the arrow
+The chord is pressed **before** the click, not after: with the arrow
 armed, the first click would select the whole text object and the Points
 tool's own branch would then be entering an object it did not pick.
 
-★★ It also does the check a second favour, and the check depends on it.
+It also does the check a second favour, and the check depends on it.
 Arming the tool is a **command**, and `app::status::decline::retire` runs
 at the top of `dispatch_command` — so any decline left on the bar by an
 earlier gesture is cleared before this one starts. That is what makes the

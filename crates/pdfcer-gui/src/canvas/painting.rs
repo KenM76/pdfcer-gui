@@ -32,7 +32,7 @@ pub(super) struct Frame<'a> {
     pub marquee: Option<Rect>,
     /// The move ghost's canvas-space displacement, if a move would commit.
     pub ghost: Option<egui::Vec2>,
-    /// ★★★ **The selection's own geometry at its new position**, in page space
+    /// **The selection's own geometry at its new position**, in page space
     /// (`OPERATOR_REQUESTS.md` O63).
     ///
     /// Borrowed rather than owned, because a preview of a CAD object can carry
@@ -46,7 +46,7 @@ pub(super) struct Frame<'a> {
     /// The handle being dragged, if one is — its anchor, its side and where it
     /// now sits in canvas space.
     ///
-    /// ★ Carried so the drawn handle follows the pointer during the drag. The
+    /// Carried so the drawn handle follows the pointer during the drag. The
     /// decomposition still holds its OLD position — nothing is committed until
     /// the release — so a painter that read the model alone would draw the
     /// handle sitting still while the operator dragged it, which is the "the
@@ -55,7 +55,7 @@ pub(super) struct Frame<'a> {
     pub handle_drag: Option<(usize, pdfcer_core::vector::Handle, egui::Pos2)>,
     /// Where a dragged markup annotation would land, in canvas space.
     ///
-    /// ★ Separate from [`Self::ghost`] even though both are one rectangle's
+    /// Separate from [`Self::ghost`] even though both are one rectangle's
     /// worth of preview: that one is a *displacement* applied to the content
     /// selection's outlines, and this is an absolute rectangle for a selection
     /// that has no content outlines at all. They can never both be `Some`, and
@@ -67,7 +67,7 @@ pub(super) struct Frame<'a> {
     /// A ce dimension being dragged to a new placement, as the **page-space**
     /// segments it would be drawn as on release.
     ///
-    /// ★ Page space, not canvas space, and that is the one thing to know about
+    /// Page space, not canvas space, and that is the one thing to know about
     /// this field. Every other preview here is a screen or canvas figure that
     /// the gesture computed directly. This one is produced by
     /// `measure::pick::dimension_preview_segments` - the *same* function a
@@ -77,7 +77,7 @@ pub(super) struct Frame<'a> {
     /// defined in the page. Projecting happens once, at the painter, through
     /// the same two-hop bridge `canvas::measure` uses.
     pub dimension_preview: Option<&'a [(pdfcer_core::vector::Point, pdfcer_core::vector::Point)]>,
-    /// ★★★ **A markup shape being reshaped, as the page-space segments it
+    /// **A markup shape being reshaped, as the page-space segments it
     /// would be drawn as on release** — `Pass 255.0`.
     ///
     /// Page space for [`Self::dimension_preview`]'s reason, and its own field
@@ -86,14 +86,14 @@ pub(super) struct Frame<'a> {
     /// whose meaning depends on the live selection is a value this painter
     /// would have to interrogate.
     ///
-    /// ★ Derived from the SAME point list the release commits —
+    /// Derived from the SAME point list the release commits —
     /// `annotnodes::preview_of` over the edited nodes — and drawn only when the
     /// engine's own preflight has said the release would be accepted. So the
     /// operator is never shown a shape that will not happen.
     pub markup_node_preview: Option<&'a [(pdfcer_core::vector::Point, pdfcer_core::vector::Point)]>,
     /// What a perimeter corner being dragged is snapping to, if anything.
     ///
-    /// ★ `ui-conventions/drag-moves.md` D6: *"a snap is an inference. It is
+    /// `ui-conventions/drag-moves.md` D6: *"a snap is an inference. It is
     /// announced by an indicator at the target while the drag is live — never
     /// applied silently."* Without the marker the corner simply arrives
     /// somewhere the operator did not put it, and there is nothing on screen to
@@ -117,7 +117,7 @@ pub(super) struct Frame<'a> {
     pub band: Option<markup::band::Preview>,
     /// The lines a text-following highlight would cover, in canvas space.
     ///
-    /// ★★ A separate slot from [`Self::band`] and never `Some` beside it: the
+    /// A separate slot from [`Self::band`] and never `Some` beside it: the
     /// two are the same gesture taking different geometry, and the drag decides
     /// which on every frame. Folding them into one value would mean the painter
     /// asking *"is this two points or a list?"* — a question the type can
@@ -178,7 +178,7 @@ pub(super) fn draw(
 
     // ---- 8. draw --------------------------------------------------------
     let painter = ui.painter().with_clip_rect(clip);
-    // ★★ The OCR veil goes UNDER even the grid — `OPERATOR_REQUESTS.md` O226.
+    // The OCR veil goes UNDER even the grid — `OPERATOR_REQUESTS.md` O226.
     //
     // It is the only thing painted here whose subject is the *raster*: it
     // fades the picture of the page towards the backdrop that picture was
@@ -190,7 +190,7 @@ pub(super) fn draw(
     if let Some(strength) = doc.view.ocr_overlay {
         ocrlayer::draw_veil(&painter, pages, strength);
     }
-    // ★ The grid goes UNDER everything, including the find wash. It is the
+    // The grid goes UNDER everything, including the find wash. It is the
     // only thing painted here that is about the *paper* rather than about
     // something the operator has selected, searched for or is dragging, so
     // anything drawn over it is a statement about the drawing and must win.
@@ -199,7 +199,7 @@ pub(super) fn draw(
     if doc.view.grid {
         grid::draw(ui, doc, pages, clip);
     }
-    // ★★ The OCR text goes ABOVE the grid and BELOW the find wash.
+    // The OCR text goes ABOVE the grid and BELOW the find wash.
     //
     // Above the grid because it is **page content** — text the file carries
     // and does not draw — and the grid is furniture under the page. Below the
@@ -215,7 +215,7 @@ pub(super) fn draw(
     if let Some(strength) = doc.view.ocr_overlay {
         ocrlayer::draw_text(&painter, doc, pages, clip, strength);
     }
-    // ★ The find highlights go on FIRST, under everything else.
+    // The find highlights go on FIRST, under everything else.
     //
     // They are a wash over page content — an answer to "where is the text I
     // asked about" — while the selection outline is a statement about what a
@@ -229,7 +229,7 @@ pub(super) fn draw(
     // over content the search no longer describes, because it is never handed
     // one. See `crate::find`'s staleness section.
     //
-    // ★ **Once per drawn page, each through its own map** — the one place the
+    // **Once per drawn page, each through its own map** — the one place the
     // canvas is legitimately about pages other than the one being acted on. A
     // search describes the whole document, so under a continuous mode its hits
     // are on several of the pages on screen at once, and painting them all
@@ -247,7 +247,7 @@ pub(super) fn draw(
             find.page_highlights(view.page, doc.edit_epoch),
         );
     }
-    // ★ The text selection's wash, in the same layer as the find wash and for
+    // The text selection's wash, in the same layer as the find wash and for
     // the same reason: both are statements about *characters on the page*
     // rather than about a control, so they belong under anything that describes
     // a verb's operand. They cannot in fact both be on screen over the same
@@ -269,14 +269,14 @@ pub(super) fn draw(
                 .map_or(&[][..], |s| s.highlights(view.page, doc.edit_epoch)),
         );
     }
-    // ★ The chunk boxes, UNDER the selection outline.
+    // The chunk boxes, UNDER the selection outline.
     //
     // They describe the pieces of what is selected, so where a piece's edge
     // coincides with the block's the stronger line has to be the block's:
     // the operator is being shown what the current selection is, and then
     // what a further click could reach inside it.
     draw_chunks(&painter, &ctx, doc, map, selection, page_index);
-    // ★★★ **ONE `GripSet`, ASKED ONCE, HANDED TO THE PAINTER — rule H7.**
+    // **ONE `GripSet`, ASKED ONCE, HANDED TO THE PAINTER — rule H7.**
     //
     // `pressing::grabbable` is the function `pressing::look` asks to decide
     // what the press lands on, and it is the function asked here to decide what
@@ -284,7 +284,7 @@ pub(super) fn draw(
     // for the two to drift apart on.
     //
     //
-    // ★ It is cheap: `grabbable` is three `Option` probes over values already
+    // It is cheap: `grabbable` is three `Option` probes over values already
     // resolved for this frame, and the dimension probe short-circuits unless an
     // annotation is selected at all.
     let offer = crate::canvas::pressing::grabbable(&ctx, doc, map, selection);
@@ -314,14 +314,14 @@ pub(super) fn draw(
     // exactly the object the operator is aligning to it.
     guides::draw(ui, doc, pages, clip);
     if let Some(delta) = ghost {
-        // ★★★ The second argument is *is the real geometry already
+        // The second argument is *is the real geometry already
         // travelling*, and the whole condition lives in `overlay::ghost_is_owed`
         // rather than here — including the trap that an EMPTY preview does not
         // count. The in-flight value is passed, deliberately without
         // `held_preview_to_draw`'s fallback: that one exists to survive the
         // release frame, and a ghost is only ever drawn while a drag is in
         // flight.
-        // ★★★ The lettering travels FIRST, and the outline is stroked on
+        // The lettering travels FIRST, and the outline is stroked on
         // top of it. O215 ask 5 asks for the chunk to follow the pointer
         // rather than a rectangle; the rectangle is still drawn, because it
         // is what states the SET when several chunks are held and what
@@ -340,7 +340,7 @@ pub(super) fn draw(
             map,
             selection,
             delta,
-            // ★ O69: see the two parameters.
+            // O69: see the two parameters.
             offer.outline,
             f.shape_preview,
         );
@@ -362,7 +362,7 @@ pub(super) fn draw(
     // and the move ghost is why he could see the difference: dragging a stamp
     // previewed, dragging its corner did not.
     //
-    // ★★★ …and the SAME defect on the form surface — O209, *"there is no live
+    // …and the SAME defect on the form surface — O209, *"there is no live
     // preview when I drag the handles to resize them."* A widget is in neither
     // of the two places `ghost_box` could look, so it is handed the box
     // directly. `widgetdrag::grab_box` is the function `pressing::grabbable`
@@ -377,7 +377,7 @@ pub(super) fn draw(
             map,
             selection,
             widget_ghost,
-            // ★ `pivot`, not `anchor` — the SAME point `canvas::resizing`
+            // `pivot`, not `anchor` — the SAME point `canvas::resizing`
             // commits about. `anchor` is where the grip is; the pivot is the
             // opposite corner, which is what stays still. Using the wrong one
             // here would preview a shape growing away from the operator's hand
@@ -387,7 +387,7 @@ pub(super) fn draw(
             factors,
         );
     }
-    // ★ …and the rotate ghost, on the same layer and under the same contract.
+    // …and the rotate ghost, on the same layer and under the same contract.
     //
     //
     // `grip_box` derives its answer from the selection's cached **content**
@@ -412,7 +412,7 @@ pub(super) fn draw(
             radians,
         );
     }
-    // ★★ THE PERIMETER'S VERTEX HANDLES.
+    // THE PERIMETER'S VERTEX HANDLES.
     //
     // Drawn whenever a perimeter ce dimension is selected, and drawn BEFORE the
     // drag rather than only during it - because a handle that appears once you
@@ -420,7 +420,7 @@ pub(super) fn draw(
     // *"edit the endpoints of the lines to adjust the shape"*, and a shape whose
     // corners are not marked gives them nothing to aim at.
     //
-    // ★ The one rule that matters here is `dimdrag::vertex_at`'s: the drawn
+    // The one rule that matters here is `dimdrag::vertex_at`'s: the drawn
     // square is the promise and the live target is slightly larger. Never the
     // reverse - a target smaller than its picture is the operator missing
     // something they can plainly see, which is `handles::grip_at`'s standing
@@ -431,7 +431,7 @@ pub(super) fn draw(
     // as provisional; a selection handle is the cursor, and it is drawn for the
     // selected object only, and it disappears the moment the selection does.
     //
-    // ★★★ …AND A MARKUP SHAPE'S NODES, on the same loop — `Pass 255.0`, and the
+    // …AND A MARKUP SHAPE'S NODES, on the same loop — `Pass 255.0`, and the
     // operator's *"I also can't edit or delete nodes of a markup shape once it
     // is drawn."*
     //
@@ -458,7 +458,7 @@ pub(super) fn draw(
             screen,
             egui::Vec2::splat(crate::canvas::dimdrag::VERTEX_HANDLE_PT),
         );
-        // ★★ PUBLISHED, so a driven check can AIM at a corner.
+        // PUBLISHED, so a driven check can AIM at a corner.
         //
         // The same argument `SELECTION_OUTLINE_REGION` makes: where a handle is
         // sits at the end of a page -> canvas -> screen conversion, and it is a
@@ -483,7 +483,7 @@ pub(super) fn draw(
         );
     }
 
-    // ★★★ **THE SHAPE ITSELF, FOLLOWING THE POINTER** — O63.
+    // **THE SHAPE ITSELF, FOLLOWING THE POINTER** — O63.
     //
     // **Ken, 2026-08-30:** *"if I moved the end of a line, it didn't show me the
     // shape change of the line, it just had a perimeter box around it … there
@@ -494,13 +494,13 @@ pub(super) fn draw(
     // shape says *what it will look like*, and the snap marker says *what it
     // will line up with*. An operator reads them outward from the object.
     //
-    // ★★ Rule 4: this is the cursor, not the document. It is a pre-commit
+    // Rule 4: this is the cursor, not the document. It is a pre-commit
     // affordance — the same category as the rubber band and the snap indicator,
     // both explicitly permitted — it is derived from the transform the release
     // will commit, and it disappears the moment the real thing is rendered.
     // Nothing already applied to the page is marked, tinted or outlined by it.
     //
-    // ★★★ AND IT OUTLIVES THE GESTURE — O63's third piece.
+    // AND IT OUTLIVES THE GESTURE — O63's third piece.
     //
     // `f.shape_preview` is the in-flight value and is `None` the moment the
     // pointer is released. `doc.held_preview_to_draw()` is the same geometry
@@ -509,7 +509,7 @@ pub(super) fn draw(
     // on the operator's own drawing — so dropping the preview at release makes
     // the object appear to snap back and then jump forward.
     //
-    // ★ The in-flight value wins when both are present. A new gesture describes
+    // The in-flight value wins when both are present. A new gesture describes
     // the document better than a hold from the previous one, and `hold_preview`
     // replaces rather than accumulates, so the overlap is at most one frame.
     if let Some(preview) = f.shape_preview.or_else(|| doc.held_preview_to_draw())
@@ -521,7 +521,7 @@ pub(super) fn draw(
             page,
             map,
             egui_shell::theme::Theme::canvas_selection_ink(ui.ctx()),
-            // ★★★ O184 — the zoom and the line-weight view travel TOGETHER,
+            // O184 — the zoom and the line-weight view travel TOGETHER,
             // as one value, because a preview width is computed from both and a
             // caller that supplied one without the other would silently get a
             // preview that answers to a different program than the canvas does.
@@ -530,14 +530,14 @@ pub(super) fn draw(
             // while the erase band underneath it does, because it is covering
             // ink a renderer actually scaled.
             crate::canvas::shapes::StrokeRule {
-                // ★ The zoom is DERIVED by mapping a unit page vector, not read
+                // The zoom is DERIVED by mapping a unit page vector, not read
                 // off the mapping's private zoom. `coords`' standing rule is
                 // that a coordinate is produced by exactly one conversion in
                 // exactly one place, and a stroke width is a coordinate —
                 // asking the mapping to convert a length is the same act as
                 // asking it to convert a point.
                 zoom: map.page_vec_to_screen(egui::vec2(1.0, 0.0)).x.abs(),
-                // ★★ Read from the SAME field the render request reads
+                // Read from the SAME field the render request reads
                 // (`app::state::renderreq`, O137), so the preview and the page
                 // underneath it can never disagree about whether this document
                 // is being shown in real widths or in hairlines. A second copy
@@ -546,7 +546,7 @@ pub(super) fn draw(
             },
         );
     }
-    // ★ The ce-dimension placement preview, on the same layer and under the
+    // The ce-dimension placement preview, on the same layer and under the
     // same honesty contract as the two ghosts above: it is `Some` only when
     // `dimdrag::drag` has established that a release would commit, and it is
     // derived from the SAME placement the commit writes - literally the same
@@ -558,7 +558,7 @@ pub(super) fn draw(
     // following the pointer, and a third colour on the canvas would be a fourth
     // thing to learn for no information gained.
     //
-    // ★★ The markup-node preview shares this loop rather than getting its own,
+    // The markup-node preview shares this loop rather than getting its own,
     // and that is the one place the two subjects are deliberately NOT kept
     // apart: they are the same picture — a polyline in page space, in the
     // selection stroke — and a second colour or a second weight would be a
@@ -586,7 +586,7 @@ pub(super) fn draw(
             painter.line_segment([sa, sb], stroke);
         }
     }
-    // ★★ …and the snap marker for that corner, over the preview it belongs to.
+    // …and the snap marker for that corner, over the preview it belongs to.
     //
     // Drawn from `snap::snap_marker_shapes` — the same glyph set, in the same
     // theme role, at the same zoom-invariant size the measure tools use — so an
@@ -637,7 +637,7 @@ pub(super) fn draw(
     if let Some(band) = f.band {
         markup::band::draw_preview(&painter, map, band, pen);
     }
-    // ★★★ The text-following highlight's preview — one wash per line the drag
+    // The text-following highlight's preview — one wash per line the drag
     // crosses. `OPERATOR_REQUESTS.md` O54.
     //
     // Drawn with the SAME wash the area band uses, deliberately: they are one
@@ -653,7 +653,7 @@ pub(super) fn draw(
     if let Some(trail) = &f.ink_trail {
         markup::ink::draw_preview(&painter, map, trail, pen);
     }
-    // ★ …and the vertex run, which is drawn on EVERY frame the tool is armed
+    // …and the vertex run, which is drawn on EVERY frame the tool is armed
     // rather than only while a gesture is in flight — because for this family
     // there is no "in flight" the frame can see. A run between clicks is a
     // pointer that is not down, so a preview gated on a gesture would appear only
@@ -676,7 +676,7 @@ pub(super) fn draw(
             pen,
         );
     }
-    // ★ …and the form-field ghost — `OPERATOR_REQUESTS.md` O203 — which is the
+    // …and the form-field ghost — `OPERATOR_REQUESTS.md` O203 — which is the
     // same argument once more and arrives at the same answer from the other
     // end: a click-placed field has no gesture in flight for a frame to see, so
     // the outline is drawn on every frame the tool is armed.
@@ -698,7 +698,7 @@ pub(super) fn draw(
     // progress the preview IS the cursor, and it describes what the next click
     // will commit.
     //
-    // ★ It takes the frame's `map`, and the comment here used to say it did not
+    // It takes the frame's `map`, and the comment here used to say it did not
     // need one *"because it converts through the renderer's own page
     // transform"*. That was the defect: the renderer's transform at scale 1.0
     // lands in **canvas** space — page top-left origin, no zoom — and the
@@ -718,7 +718,7 @@ pub(super) fn draw(
             },
         );
     }
-    // ★ …and the caret, which is the same argument once more: while a draft is
+    // …and the caret, which is the same argument once more: while a draft is
     // in flight the caret IS the cursor, and it describes where the next
     // keystroke lands.
     //
@@ -737,7 +737,7 @@ pub(super) fn draw(
         );
     }
 
-    // ★ **The keystrokes**, read raw and consumed here.
+    // **The keystrokes**, read raw and consumed here.
     //
     // After the gesture machine and before the cursor, which is the only place
     // it can be: it needs `actions` (Enter commits) and it must not run on a
@@ -800,7 +800,7 @@ fn draw_chunks(
     }
     match crate::canvas::chunks::outlines(doc, selection, page_index) {
         Ok(boxes) => {
-            // ★ The traced count comes back OUT of the painter rather than off
+            // The traced count comes back OUT of the painter rather than off
             // the vector handed to it — `overlay::draw_chunk_boxes` argues why,
             // and the driven check's falsification depends on it.
             let drawn = overlay::draw_chunk_boxes(painter, map, &boxes);
@@ -815,7 +815,7 @@ fn draw_chunks(
 
 /// Mark the entered object's anchors when the operator is inside one.
 ///
-/// # ★ Why this is a function here rather than three lines at the call site
+/// # Why this is a function here rather than three lines at the call site
 ///
 /// Because it is the **only** place in the paint pass that needs the object
 /// model, and reaching for it costs a `Ref` into the document's decomposition
@@ -856,7 +856,7 @@ fn draw_anchors(
     // enumeration this function already calls. Re-derived on 2026-08-28 as one
     // of six stale blockers in eleven.
     //
-    // ★★ What it gates and what it deliberately does NOT. It gates the draw at
+    // What it gates and what it deliberately does NOT. It gates the draw at
     // its existing scope — the entered object, at the Part rung or the Node
     // rung. Its tooltip promises *"the editable points of every part of the
     // object you are working inside"*, which is what the existing scope
@@ -876,7 +876,7 @@ fn draw_anchors(
             SelectionLevel::Part | SelectionLevel::Node
         )
     {
-        // ★ Silent, and it is the ONE return in this function that is. Past
+        // Silent, and it is the ONE return in this function that is. Past
         // this point somebody has asked for points — the node tool is armed, or
         // Show points is on, or the operator descended a rung — and a request
         // that produces nothing owes an account of why (see `declined`). Above
@@ -886,7 +886,7 @@ fn draw_anchors(
         // nodes"*.
         return;
     }
-    // ★★★ **Why every return below this line writes a reason.**
+    // **Why every return below this line writes a reason.**
     //
     // `overlay::draw_anchors`' census answers *how many points were there*.
     // These answer the question before it — *did the enumeration get far enough
@@ -907,7 +907,7 @@ fn draw_anchors(
     // | `leaf-in-form-xobject` | the target is inside a form XObject, whose geometry is not writable | the aim: pick a page-level object |
     // | `no-page` / `no-provider` | the document or its decomposition is not available this frame | the program, or a load still in flight |
     //
-    // ★ Deliberately NOT named `canvas-anchors …`.
+    // Deliberately NOT named `canvas-anchors …`.
     // `tools/gates/check-trace-names.py` compares FIRST TOKENS, and a harness
     // asking `last("canvas-anchors")` must never be handed one of these by
     // accident — that caller reads `total=`, `selected=` and
@@ -920,7 +920,7 @@ fn draw_anchors(
             format!("canvas-anchors-declined reason={reason}")
         });
     }
-    // ★★★ **The Object rung is reachable through `show_points` and through
+    // **The Object rung is reachable through `show_points` and through
     // nothing else**, and getting this wrong shipped an inert toggle for about
     // ten minutes.
     //
@@ -972,7 +972,7 @@ fn draw_anchors(
     let Some(provider) = doc.page_objects() else {
         return declined("no-provider");
     };
-    // ★★ **The entered SUBPATH's anchors, not the object's** — and this is the
+    // **The entered SUBPATH's anchors, not the object's** — and this is the
     // difference between a usable feature and a decoration.
     //
     // The first version drew the whole object's, with a 400-anchor cap above
@@ -1017,18 +1017,18 @@ fn draw_anchors(
     // owes an off-canvas report.* The canvas is not marked; the status bar
     // says the number and why.
     //
-    // ★ Only when the operator ASKED — `show_points` on — and not on the
+    // Only when the operator ASKED — `show_points` on — and not on the
     // descent path, where the cap has always fired silently and where the
     // operator's subject is the subpath they entered rather than the whole
     // object.
     //
     //
-    // ★ Two sentences, because the remedy differs by rung. At the Object rung
+    // Two sentences, because the remedy differs by rung. At the Object rung
     // "descend into a part" is right; at the Part rung there is nothing below
     // a subpath and the remedy is to zoom, which the viewport cull shipped in
     // the same commit made true.
     //
-    // ★★ `show_points` is no longer required at an inner rung. It gates
+    // `show_points` is no longer required at an inner rung. It gates
     // whether the operator ASKED to see an object's points, which is the right
     // question for the Object rung and the wrong one for the Points tool —
     // arming that tool IS the ask.
@@ -1063,7 +1063,7 @@ fn draw_anchors(
         .collect();
     overlay::draw_anchors(painter, ui.visuals(), map, &points, &selected);
 
-    // ★★ The handles, and the in-flight one moved to the pointer.
+    // The handles, and the in-flight one moved to the pointer.
     //
     // Read from the same provider borrow's data, converted the same way, and
     // then OVERRIDDEN for the handle being dragged — because the decomposition

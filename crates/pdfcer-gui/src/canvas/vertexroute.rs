@@ -64,7 +64,7 @@ pub struct Frame<'a> {
 
 /// The previews one node-drag frame produced — at most one polyline is `Some`.
 ///
-/// ★ Two polyline fields rather than one, matching the preview slots
+/// Two polyline fields rather than one, matching the preview slots
 /// `canvas::previews` already carries and for their stated reason: the painter
 /// reads each independently, and one `Vec` whose meaning depends on which
 /// selection is live is a value the paint loop has to interrogate.
@@ -76,7 +76,7 @@ pub struct Previews {
     pub markup: Option<Vec<(Point, Point)>>,
     /// What the node is snapping to, if anything.
     ///
-    /// ★ Shared between the two subjects deliberately, unlike the polylines:
+    /// Shared between the two subjects deliberately, unlike the polylines:
     /// it is one screen-space glyph drawn by one painter from one candidate,
     /// and a snap marker means the same thing whichever kind of node produced
     /// it. Splitting it would give the operator two markers to learn for one
@@ -101,11 +101,11 @@ pub fn dragged(frame: Frame<'_>, actions: &mut Vec<Action>) -> Previews {
         map,
         shift,
     } = frame;
-    // ★★ SHIFT LOCKS A NODE TO ONE AXIS, measured from the PRESS — so the grab
+    // SHIFT LOCKS A NODE TO ONE AXIS, measured from the PRESS — so the grab
     // point survives (`drag-moves` D8). Applied once, above the fork, so both
     // subjects receive the same constrained position from one filter.
     let at = crate::canvas::constrain::reposition(ctx, shift, from, at);
-    // ★★ ALT SUSPENDS THE SNAP, read live and asked of the same
+    // ALT SUSPENDS THE SNAP, read live and asked of the same
     // `snap_query_enabled` a measure pick asks.
     let alt_held = ctx.input(|i| i.modifiers.alt);
     let mut out = Previews::default();
@@ -127,7 +127,7 @@ pub fn dragged(frame: Frame<'_>, actions: &mut Vec<Action>) -> Previews {
                 actions,
             );
             out.dimension = dragged.segments;
-            // ★ The candidate TRAVELS to the painter rather than being
+            // The candidate TRAVELS to the painter rather than being
             // re-queried there, which is `measure::Resolved`'s whole reason for
             // existing: a marker resolved a second time is a second derivation,
             // and this project has already shipped one that sat away from the
@@ -161,7 +161,7 @@ pub fn dragged(frame: Frame<'_>, actions: &mut Vec<Action>) -> Previews {
 mod tests {
     use super::*;
 
-    /// ★ **The two subjects are distinct values**, which is the whole content
+    /// **The two subjects are distinct values**, which is the whole content
     /// of this type.
     ///
     /// A tripwire rather than a tautology: the day somebody replaces [`Subject`]

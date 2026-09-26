@@ -16,7 +16,7 @@ use crate::sys::vk;
 const MODE: &str = "edit";
 /// The **Edit tab**, which is where the Add-text control lives.
 ///
-/// ★ A mode is not a tab. `click_mode_segment` puts the shell in Edit *mode*,
+/// A mode is not a tab. `click_mode_segment` puts the shell in Edit *mode*,
 /// which is what decides `edit_content` — and leaves whichever tab was already
 /// showing. The control has to be reached on its own tab, and the first run of
 /// this check found that out by reporting the control as undeclared.
@@ -24,7 +24,7 @@ const EDIT_TAB: (&str, &str) = ("ribbon.tab.edit", "edit");
 
 /// The ribbon control that arms the ADD-text tool.
 ///
-/// ★★ **Add text, not Edit text**, and the distinction is what keeps two
+/// **Add text, not Edit text**, and the distinction is what keeps two
 /// features off one gesture. `edit.add_text` arms
 /// `CanvasTool::TextEdit(TextEditKind::Add)`, whose drag draws a box; the
 /// separate `view.tool_text` arms `CanvasTool::Text`, whose drag **sweeps** and
@@ -156,7 +156,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 2: drag a box ------------------------------------------------------
     //
-    // ★ Built from DOCUMENT points through the frame's own mapping, not from
+    // Built from DOCUMENT points through the frame's own mapping, not from
     // screen pixels: the box has to be big enough to hold two lines at the
     // pen's default 12 pt, and "big enough" is a fact about the page rather
     // than about the window. 200 × 60 pt is four default lines wide and three
@@ -199,7 +199,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("★ the drag opened a box: `{}`", opened.raw));
 
-    // --- 3: ★★ type two lines, with a plain Enter between them --------------
+    // --- 3: type two lines, with a plain Enter between them --------------
     //
     // The link that would ship. If Enter still commits, the draft ends here and
     // the second line's keystrokes land nowhere.
@@ -217,7 +217,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 4: Ctrl+Enter commits ---------------------------------------------
     //
-    // ★ The escape hatch the plain Enter gave up. Every in-place editor that
+    // The escape hatch the plain Enter gave up. Every in-place editor that
     // takes multi-line input needs one, and this is the old shell's own choice
     // carried across: *"in box mode a plain Enter is a paragraph break;
     // Ctrl+Enter accepts."*
@@ -234,7 +234,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
 
-    // --- 5: ★★★ and it authored TWO lines, not one --------------------------
+    // --- 5: and it authored TWO lines, not one --------------------------
     let lines: usize = applied
         .get("n")
         .and_then(|v| v.parse().ok())

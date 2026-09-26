@@ -36,7 +36,7 @@ pub struct Frame {
 
 /// Whether this selection is one this module moves, and its outline if so.
 ///
-/// ★ Three conditions, and each one is a different kind of "no":
+/// Three conditions, and each one is a different kind of "no":
 ///
 /// | condition | what it means |
 /// |---|---|
@@ -77,7 +77,7 @@ pub fn grab_box(
     selection: &SelectionState,
 ) -> Option<crate::canvas::handles::GripFrame> {
     let (_, outline) = eligible(selection)?;
-    // ★★★ **The TURNED frame when there is one** — `OPERATOR_REQUESTS.md` O147.
+    // **The TURNED frame when there is one** — `OPERATOR_REQUESTS.md` O147.
     //
     // `AnnotSelection::oriented` is `Some` only when the mark's appearance
     // carries a rotation that `/Rect` therefore cannot describe. It is read
@@ -96,7 +96,7 @@ pub fn grab_box(
 /// is nothing to draw — which covers both *"this selection is not draggable"*
 /// and *"this is the frame that commits"*.
 ///
-/// ★ Nothing is previewed on the committing frame, for `dimdrag`'s stated
+/// Nothing is previewed on the committing frame, for `dimdrag`'s stated
 /// reason: the annotation is about to be redrawn where it landed, and a ghost
 /// left over it would be a second copy of the same artwork, one frame stale.
 pub fn drag(
@@ -116,7 +116,7 @@ pub fn drag(
     }
 
     // --- the commit ---------------------------------------------------------
-    // ★★ The page arrives as a parameter rather than being read off the
+    // The page arrives as a parameter rather than being read off the
     // document, and it is what lets every rule in this module be tested without
     // a window or a file. `dimdrag` takes `&OpenDoc` because it must scan the
     // dimension model; this needs nothing but a coordinate transform.
@@ -125,7 +125,7 @@ pub fn drag(
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         format!("{TRACE} id={} dx={:.3} dy={:.3}", id.num, d.dx, d.dy)
     });
-    // ★ A zero delta is sent, not filtered out here.
+    // A zero delta is sent, not filtered out here.
     //
     // The engine accepts one by name — *"a drag that returns to its start
     // should not make you special-case your own arithmetic"* — and filtering it
@@ -167,7 +167,7 @@ mod tests {
 
     /// **A markup drags and a ce dimension does not.**
     ///
-    /// ★ The second half is the load-bearing one. `dimdrag` claims a ce
+    /// The second half is the load-bearing one. `dimdrag` claims a ce
     /// dimension and does strictly more with it — `place_dimension` moves where
     /// the dimension is *drawn* and cannot alter the number it prints — so a
     /// ce dimension reaching this module would be a translation that leaves the
@@ -178,7 +178,7 @@ mod tests {
         assert!(eligible(&selection(AnnotKind::CeDimension, false)).is_none());
     }
 
-    /// ★★ **A locked annotation does not drag, and draws no ghost either.**
+    /// **A locked annotation does not drag, and draws no ghost either.**
     ///
     /// §12.5.3 Table 165 bit 8 is the *document* saying the user interface may
     /// not change this. The failure this guards is the one that looks like it

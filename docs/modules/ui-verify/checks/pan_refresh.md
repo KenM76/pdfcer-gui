@@ -10,7 +10,7 @@ strip, made falsifiable.
 > render the new exposed area, and the same thing happens usually when I
 > zoom out."*
 
-# ★★★ What was actually wrong, and why every existing check was green
+# What was actually wrong, and why every existing check was green
 
 Above the pixmap ceiling a raster covers the **visible region** rather than
 the page, so two textures of the same page at the same scale can be pictures
@@ -42,7 +42,7 @@ Pan by more than a whole viewport, so the destination is certainly outside
 | a render completes after the pan | the shell never asked, which is O25 |
 | the canvas is not near-uniform afterwards | it asked, and what arrived is blank anyway |
 
-★ Both, because either alone is satisfiable while the operator looks at
+Both, because either alone is satisfiable while the operator looks at
 nothing: a render can complete for the region the view has already left, and
 a canvas can be non-uniform because of the page's *edge* while its middle is
 empty.

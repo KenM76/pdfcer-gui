@@ -2,7 +2,7 @@
 //! it presses**
 //!
 //!
-//! ## ★★★ THE THREE FINDINGS THAT LIVE HERE, because they are about the
+//! ## THE THREE FINDINGS THAT LIVE HERE, because they are about the
 //! HARNESS and will bite the next check as well
 //!
 //! 1. **A dialog is an OS window**, so `session.frame()` is the wrong frame for
@@ -130,7 +130,7 @@ pub(super) fn click_tab(
 /// emits nothing when clicked, and the strict form then reports a perfectly good
 /// click as a failure.
 ///
-/// ★ A missing tab is still an error. This tolerates *no change*, never *no tab*.
+/// A missing tab is still an error. This tolerates *no change*, never *no tab*.
 fn click_tab_tolerant(
     session: &Session,
     driver: &Driver,
@@ -151,7 +151,7 @@ fn click_tab_tolerant(
 
 /// **Find a ribbon control and press it**, through the overflow if it is there.
 ///
-/// ★★★ Through [`declared_or_in_overflow`] rather than a bare rect lookup, and
+/// Through [`declared_or_in_overflow`] rather than a bare rect lookup, and
 /// for `checks::protect`'s reason word for word: at the harness's window width
 /// the File band runs out of room, and `file.sign` is the **third** control in a
 /// Security group that was already the last group added to a full band. A plain
@@ -193,7 +193,7 @@ pub(super) fn invokes(session: &Session, id: &str) -> Result<usize> {
 
 /// Whether the application declared `name` at a usable rectangle.
 ///
-/// ★ A degenerate rect counts as **absent**, not present. A region declared at
+/// A degenerate rect counts as **absent**, not present. A region declared at
 /// zero area is not something an operator can see.
 pub(super) fn drawn(trace: &Trace, ui_rect: &str, name: &str) -> bool {
     declared(trace, ui_rect, name).is_some_and(|r| r.is_substantial())
@@ -201,7 +201,7 @@ pub(super) fn drawn(trace: &Trace, ui_rect: &str, name: &str) -> bool {
 
 /// Click a region's centre, refusing when it was never drawn.
 ///
-/// ★★★ Through [`driving::frame_of`] rather than `session.frame()`, and the
+/// Through [`driving::frame_of`] rather than `session.frame()`, and the
 /// first driven run of this check is why. **A dialog is an OS window**
 /// (`ui-conventions/dialogs.md` G1), so every region inside the Sign window is
 /// declared in a CHILD viewport with its own origin; `session.frame()` is the
@@ -214,7 +214,7 @@ pub(super) fn drawn(trace: &Trace, ui_rect: &str, name: &str) -> bool {
 /// this project has recorded about the rotation buttons and about
 /// `panning_past_the_overscan`, arriving a third way.
 ///
-/// ★ `frame_of` is safe on a main-window region too — an untagged one answers
+/// `frame_of` is safe on a main-window region too — an untagged one answers
 /// with `session.frame()`, unchanged — so there is no reason for a call site to
 /// use the other form.
 pub(super) fn click(session: &Session, driver: &Driver, ui_rect: &str, name: &str) -> Result<()> {
@@ -233,7 +233,7 @@ pub(super) fn click(session: &Session, driver: &Driver, ui_rect: &str, name: &st
 
 /// **Scroll the Sign window until `name` is wholly inside it, then click it.**
 ///
-/// ★★★ Written for phase E, and the run that forced it is the point. The form
+/// Written for phase E, and the run that forced it is the point. The form
 /// grew by one section when `Pass 10.12`'s certification option landed, and the
 /// placement radios went below the fold: the harness aimed at
 /// `(943, 889)` — a point **outside the application's window entirely** — and
@@ -246,14 +246,14 @@ pub(super) fn click(session: &Session, driver: &Driver, ui_rect: &str, name: &st
 /// check that breaks the next time a section is added, which is exactly what
 /// happened here.
 ///
-/// ★★ The wheel goes at the window's own centre rather than at a fraction of
+/// The wheel goes at the window's own centre rather than at a fraction of
 /// it, and that is a difference from `reaching::bring_into_body`, which aims
 /// three-quarters down because a dock body carries fixed furniture above its
 /// scroll area. This window's furniture is **below** — the separator and the
 /// button row — so its centre is inside the scrolling region, and aiming lower
 /// would risk the wheel landing on the footer.
 ///
-/// ★ Everything goes through [`driving::frame_of`], never `session.frame()`: a
+/// Everything goes through [`driving::frame_of`], never `session.frame()`: a
 /// dialog is an OS window with its own origin, and this module's header records
 /// what aiming at the wrong frame cost the first time.
 pub(super) fn click_scrolled(
@@ -316,7 +316,7 @@ pub(super) fn click_scrolled(
 /// `field=Some("Signature1")` since the day it was written without anybody
 /// noticing that the quotes and the wrapper were not the field's name.
 ///
-/// ★ It is normalised **here** rather than fixed at the emitter, and the reason
+/// It is normalised **here** rather than fixed at the emitter, and the reason
 /// is ownership rather than preference: `crates/pdfcer-gui/src/panels/` belongs
 /// to no track this session and a concurrent edit would lose one of them. The
 /// one-line fix — a bare token, `none` for the absent case, spelled by a `const
@@ -355,7 +355,7 @@ pub(super) fn repo_fixture(name: &str) -> Result<PathBuf> {
 
 /// Resolve something from the engine repository's synthetic corpus.
 ///
-/// ★ The path is derived, not configured. `D:\Dev\pdfcer` is READ-ONLY to this
+/// The path is derived, not configured. `D:\Dev\pdfcer` is READ-ONLY to this
 /// project and its corpus is the only place these shapes exist, so the check
 /// reads from it and writes nowhere near it — `checks::adopt_widget`'s
 /// precedent, unchanged.
@@ -377,14 +377,14 @@ pub(super) fn engine_fixture(rel: &str, what: &str) -> Result<PathBuf> {
 /// **Bring the Signatures panel to the front, mounting it if it is not there.**
 ///
 ///
-/// ★★★ The fallback is not optional, and the first full re-run of this check is
+/// The fallback is not optional, and the first full re-run of this check is
 /// why. `raise_dock_tab` succeeded once purely because a PREVIOUS launch had
 /// left the panel selected and the shell had saved that layout — so the verdict
 /// was resting on inherited state. On a machine whose saved layout has it behind
 /// another tab, the phase would have had no oracle and would have SKIPPED,
 /// reporting nothing, in green.
 ///
-/// ★★ The tab click is TOLERANT, unlike [`click_tab`]: the View tab may already
+/// The tab click is TOLERANT, unlike [`click_tab`]: the View tab may already
 /// be active, in which case a correct click emits no new
 /// `ribbon-tab-activated` line and the strict form reports a click that landed
 /// as one that did not.

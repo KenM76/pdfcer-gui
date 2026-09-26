@@ -12,7 +12,7 @@ use crate::panels::objects::provider::{ObjectModelProvider, TargetId};
 
 /// How many objects a preview will carry before it gives up.
 ///
-/// # ★★ Why there is a cap at all, and why it is disclosed rather than silent
+/// # Why there is a cap at all, and why it is disclosed rather than silent
 ///
 /// A marquee across a CAD sheet can select thousands of paths, each with
 /// thousands of segments. Painting all of them every frame would turn the
@@ -23,7 +23,7 @@ use crate::panels::objects::provider::{ObjectModelProvider, TargetId};
 /// there before this module existed is what the operator sees. That is a
 /// graceful floor rather than a failure: it is what the shell did yesterday.
 ///
-/// ★ `canvas-shape-preview` traces `capped=1` when it fires, because an absence
+/// `canvas-shape-preview` traces `capped=1` when it fires, because an absence
 /// with no account of itself is indistinguishable from a defect — the lesson
 /// `painting.rs`'s anchor census already carries.
 const MAX_OBJECTS: usize = 64;
@@ -60,7 +60,7 @@ pub struct ShapePreview {
     pub shapes: Vec<PreviewShape>,
     /// The same shapes **where they still are** — the footprint to erase.
     ///
-    /// # ★★★ Why an erase list exists at all
+    /// # Why an erase list exists at all
     ///
     /// The page raster underneath is stale: it still shows the object where it
     /// was, and it cannot be re-rendered in under ~0.7 s on the operator's own
@@ -71,7 +71,7 @@ pub struct ShapePreview {
     /// was, painted into the raster, and once where their pointer is. That is
     /// worse than the bounding box this feature replaced.
     ///
-    /// # ★★ The footprint, not the bounding box — and that is the whole
+    /// # The footprint, not the bounding box — and that is the whole
     /// difference between acceptable and not
     ///
     /// **Ken, 2026-08-30:** *"yeah do both"*, accepting that erasing the old
@@ -90,7 +90,7 @@ pub struct ShapePreview {
     pub erase: Vec<PreviewShape>,
     /// Whether a cap above stopped this being the whole selection.
     ///
-    /// ★ Carried rather than dropped so the painter can decide what to do about
+    /// Carried rather than dropped so the painter can decide what to do about
     /// it, and so a check can assert that a big selection produced a *bounded*
     /// preview rather than no preview.
     pub capped: bool,
@@ -119,7 +119,7 @@ impl ShapePreview {
 /// effect *is* a matrix, and which reach `EditSession::transform_objects` or
 /// `move_objects` with exactly this transform.
 ///
-/// # ★★★ The matrix is the COMMIT's matrix, not a second one
+/// # The matrix is the COMMIT's matrix, not a second one
 ///
 /// Convention D2 on this canvas: the preview is derived from the value the
 /// release will hand to the engine. `moving::action`, `resizing::action` and
@@ -144,7 +144,7 @@ pub fn transformed(
     let mut segments = 0_usize;
 
     for &target in targets.iter().take(MAX_OBJECTS) {
-        // ★ Only paths. See the module header: a text run and an image carry no
+        // Only paths. See the module header: a text run and an image carry no
         // geometry this shell may draw, and drawing them approximately would be
         // worse than leaving them to the outline.
         //
@@ -161,7 +161,7 @@ pub fn transformed(
             out.capped = true;
             break;
         }
-        // ★ The untransformed twin, for the erase pass. Built from the same
+        // The untransformed twin, for the erase pass. Built from the same
         // `page_subpaths()` walk rather than from a second read of the model:
         // two walks could disagree if the cache were invalidated between them,
         // and an erase that does not match the shape it is erasing leaves a
@@ -174,7 +174,7 @@ pub fn transformed(
         out.shapes.push(PreviewShape {
             subpaths,
             style: path.style,
-            // ★★ The width is scaled by the matrix, because a resize scales the
+            // The width is scaled by the matrix, because a resize scales the
             // stroke. Approximated by the average of the two axis scales rather
             // than solved properly: a stroke under a non-uniform scale is an
             // ellipse-pen, PDF has no such thing, and the engine's own resize
@@ -197,7 +197,7 @@ pub fn transformed(
 /// The builder for the gesture the operator actually named: *"if I moved the end
 /// of a line, it didn't show me the shape change of the line"*.
 ///
-/// # ★★★ The anchor indices are OBJECT-SCOPED, and the walk order is the
+/// # The anchor indices are OBJECT-SCOPED, and the walk order is the
 /// provider's, not a second one
 ///
 /// `move_node` / `move_nodes` address an anchor by an index that counts across
@@ -212,7 +212,7 @@ pub fn transformed(
 /// matching rule must not be re-derived in the shell, and index arithmetic that
 /// *must* match another module's is the same hazard wearing a smaller hat.
 ///
-/// # ★★ Handles move with their anchor, and that is a choice
+/// # Handles move with their anchor, and that is a choice
 ///
 /// Displacing an on-curve anchor leaves its two control points where they were,
 /// which is Inkscape's *"corner"* behaviour and produces a visibly different
@@ -229,7 +229,7 @@ pub fn with_nodes_moved(
     dx: f64,
     dy: f64,
 ) -> Option<ShapePreview> {
-    // ★ Either index space — see [`transformed`]'s own note. The anchor
+    // Either index space — see [`transformed`]'s own note. The anchor
     // numbering below is object-scoped and identical in both, because
     // `provider::geometry` computes it with the same running-offset walk.
     let VectorObject::Path(path) = provider.object_for(target)? else {
@@ -284,7 +284,7 @@ pub fn with_nodes_moved(
 /// *the shape the operator sees* lives in one readable table and a sixth rung
 /// cannot be added without appearing in it.
 ///
-/// ★★★ It takes the [`MoveSubject`] the commit will use, not the selection.
+/// It takes the [`MoveSubject`] the commit will use, not the selection.
 /// That is convention D2 — *derived from commit* — enforced by the type rather
 /// than by discipline: there is no way to reach this function without having
 /// already computed what the release is going to do, so a preview cannot be
@@ -315,12 +315,12 @@ pub fn for_move_subject(
             let targets: Vec<TargetId> = leaves.iter().map(|&i| TargetId::Leaf(i as u64)).collect();
             transformed(provider, &targets, Matrix::translate(dx, dy))
         }
-        // ★ A subpath move is every anchor in that subpath, and the anchor list
+        // A subpath move is every anchor in that subpath, and the anchor list
         // comes from the PROVIDER rather than from a walk here — it already
         // reports the object-scoped indices for one subpath, offsets included,
         // and re-deriving that arithmetic is the hazard `with_nodes_moved`'s
         // header describes.
-        // ★★★ **A text run gets the bounding ghost and NOTHING else, and that
+        // **A text run gets the bounding ghost and NOTHING else, and that
         // is the honest preview rather than a gap.**
         //
         // `ShapePreview` is path geometry — anchors and segments moved by a
@@ -370,7 +370,7 @@ pub fn for_move_subject(
                 .collect();
             with_nodes_moved(provider, target, &nodes, dx, dy)
         }
-        // ★★★ THE ONE THE OPERATOR NAMED: *"if I moved the end of a line, it
+        // THE ONE THE OPERATOR NAMED: *"if I moved the end of a line, it
         // didn't show me the shape change of the line."*
         MoveSubject::Node { object, node, .. } => {
             let mut only = std::collections::BTreeSet::new();
@@ -404,7 +404,7 @@ pub fn for_move_subject(
 /// The builder for a delete: an erase list and **no** shapes, so the preview is
 /// pure subtraction.
 ///
-/// # ★★★ Why a delete needs a preview at all, when nothing is being drawn
+/// # Why a delete needs a preview at all, when nothing is being drawn
 ///
 /// Because the raster underneath does not know. The operator presses Delete,
 /// the object is gone from the document — and it stays on screen for one to two
@@ -417,7 +417,7 @@ pub fn for_move_subject(
 /// every operator on earth expects and what the program was already doing to
 /// the document. The picture simply catches up with it.
 ///
-/// # ★★ It must be built BEFORE the commit
+/// # It must be built BEFORE the commit
 ///
 /// `app::cache::page_objects` is keyed on `(page, edit_epoch)` and the commit
 /// bumps the epoch, so the geometry this needs is thrown away by the very edit
@@ -449,7 +449,7 @@ pub fn erased(provider: &ObjectModelProvider, objects: &[usize]) -> Option<Shape
         out.capped = true;
     }
     trace(&out, objects.len());
-    // ★ `is_empty()` asks about `shapes`, which a delete never has — so the
+    // `is_empty()` asks about `shapes`, which a delete never has — so the
     // emptiness test here is about the ERASE list, and using the wrong one would
     // discard every delete preview ever built.
     (!out.erase.is_empty()).then_some(out)
@@ -498,7 +498,7 @@ fn average_scale(m: Matrix) -> f64 {
 
 /// Publish what the preview cost and whether it was capped.
 ///
-/// ★ Written on **every** build, including the empty one. An absent preview and
+/// Written on **every** build, including the empty one. An absent preview and
 /// a preview nobody asked for are different states and a trace that only spoke
 /// when there was something to say could not tell them apart — the lesson
 /// `painting.rs`'s anchor census carries, applied before it can bite here.
@@ -544,7 +544,7 @@ fn trace(preview: &ShapePreview, asked: usize) {
 /// > *"A filled shape following the pointer would hide what is under it, and
 /// > what is under it is the page the operator is aligning against."*
 ///
-/// ★★★ **A stroke two hundred pixels wide IS a fill.** At 3,000 % a 6 pt
+/// **A stroke two hundred pixels wide IS a fill.** At 3,000 % a 6 pt
 /// highlighter outline is 180 device pixels across, which hides precisely the
 /// geometry the operator zoomed in to line up with - so the zoom-scaled preview
 /// was defeating the reason the preview exists, by the module's own argument,
@@ -553,7 +553,7 @@ fn trace(preview: &ShapePreview, asked: usize) {
 /// ⇒ The preview is **the cursor**. A cursor does not grow when the document
 /// is magnified, any more than the pointer arrow does.
 ///
-/// # ★★ Why the ERASE pass is deliberately NOT zoom-invariant
+/// # Why the ERASE pass is deliberately NOT zoom-invariant
 ///
 /// The erase pass and the preview pass look like the same drawing and are
 /// statements about two different things:
@@ -570,7 +570,7 @@ fn trace(preview: &ShapePreview, asked: usize) {
 /// a rendering artefact rather than as a preview - the one outcome
 /// [`ShapePreview::erase`] exists to prevent.
 ///
-/// ★ So a single constant cannot serve both, and the two methods below are kept
+/// So a single constant cannot serve both, and the two methods below are kept
 /// apart on purpose rather than folded into one with a flag.
 ///
 /// # `real_widths` - the second half of the ruling
@@ -651,7 +651,7 @@ impl StrokeRule {
 
 /// **Paint the preview**, in the selection stroke, over the page.
 ///
-/// # ★★ Stroke only, never fill — and this is the one place the preview is
+/// # Stroke only, never fill — and this is the one place the preview is
 /// deliberately *less* than the truth
 ///
 /// A filled shape following the pointer would hide what is under it, and what is
@@ -677,7 +677,7 @@ pub fn draw(
     colour: egui::Color32,
     rule: StrokeRule,
 ) {
-    // ★★ The census: what actually reached the PAINTER.
+    // The census: what actually reached the PAINTER.
     //
     // Distinct from `canvas-shape-preview`, which says what was BUILT, and the
     // distinction is the whole reason there are two lines. A preview that is
@@ -686,7 +686,7 @@ pub fn draw(
     // exactly like a preview that was never built, to anything reading one
     // trace. Two lines make "built but not drawn" a state a check can name.
     //
-    // ★ Written only when there is something to draw, so it costs nothing on
+    // Written only when there is something to draw, so it costs nothing on
     // the frames nobody is dragging — which is almost all of them.
     if !preview.shapes.is_empty() || !preview.erase.is_empty() {
         crate::diag::trace(|| {
@@ -702,7 +702,7 @@ pub fn draw(
                 // this one field is published. Two spellings of one fact is one
                 // more thing a reader has to hold.
                 rule.real_widths,
-                // ★★★ O184 - the widest preview stroke this frame, IN THE
+                // O184 - the widest preview stroke this frame, IN THE
                 // TRACE, because zoom-invariance is a claim about two frames at
                 // two zooms and no screenshot of one frame can carry it. A
                 // driven check reads this line at 100 % and again at 800 % and
@@ -715,14 +715,14 @@ pub fn draw(
             )
         });
     }
-    // ★★★ THE ERASE PASS — the object's old footprint, in paper.
+    // THE ERASE PASS — the object's old footprint, in paper.
     //
     // See [`ShapePreview::erase`] for why this is necessary and what it costs.
     // In short: the raster underneath still shows the object where it was and
     // cannot be redrawn inside a second, so without this the operator sees the
     // thing twice.
     //
-    // ★★ Sized by [`StrokeRule::erase_px`], which is the ZOOM-SCALED one of the
+    // Sized by [`StrokeRule::erase_px`], which is the ZOOM-SCALED one of the
     // pair: this band covers ink a renderer actually put on the texture, and
     // that ink scaled with the zoom. See the rule's header for why the erase
     // and the preview deliberately answer to different spaces.
@@ -736,7 +736,7 @@ pub fn draw(
         );
     }
     for shape in &preview.shapes {
-        // ★★★ Sized by [`StrokeRule::preview_px`], which zoom does not enter -
+        // Sized by [`StrokeRule::preview_px`], which zoom does not enter -
         // O184. The preview is the cursor, and a cursor does not grow when the
         // document is magnified.
         stroke_shape(
@@ -756,7 +756,7 @@ pub fn draw(
 /// covering ink with the ground it was composited onto, so a second constant
 /// would be two answers to one question.
 ///
-/// # ★★ Why this is a constant and not read from the document
+/// # Why this is a constant and not read from the document
 ///
 /// PDF has no page-background colour. A page is whatever its content paints,
 /// and the overwhelming majority of pages paint nothing at all outside their
@@ -829,7 +829,7 @@ fn stroke_shape(
 
 /// Page space → screen, through the one function entitled to do it.
 ///
-/// ★ `measure::page_to_screen`, not arithmetic here. `coords`' standing rule is
+/// `measure::page_to_screen`, not arithmetic here. `coords`' standing rule is
 /// that a coordinate is produced by exactly one conversion in exactly one place,
 /// and the ce-dimension placement preview already goes through this door.
 fn screen(p: Point, page: &pdfcer_core::page_tree::Page, map: &PageMapping) -> Option<Pos2> {

@@ -5,7 +5,7 @@ This block renders
 [`crate::app::actions::disclosure::last_edit_disclosure`] — the slot that
 carries, among other things, **the text tools' refusal sentences**.
 
-## ★★★ The problem this block exists to solve
+## The problem this block exists to solve
 
 `crate::text::textedit::refusal` writes three good sentences and
 `every_refusal_says_something` holds them to it, but they are long:
@@ -18,7 +18,7 @@ on the canvas"*: on a dense CAD sheet the first click of `edit.text` lands
 where the operator *wants* text rather than where text *is*, so
 `Refusal::NoRun` is the likely first outcome.
 
-## ★★★ Why Properties is a permitted home, and the status bar is not
+## Why Properties is a permitted home, and the status bar is not
 
 * **The status bar already carries this exact slot.**
   `crate::app::status::disclosure::edit_disclosure` reads the same
@@ -37,7 +37,7 @@ where the operator *wants* text rather than where text *is*, so
 text wrapped inside it cannot drive a width and R128 does not apply. That is
 the property every wrapping surface in this shell relies on.
 
-## ★★ And why THIS panel rather than any other
+## And why THIS panel rather than any other
 
 [`super::annotdelete`] makes the same argument for the same reason: R9 sends
 a permanently-refused capability's explanation to the surface that describes
@@ -48,7 +48,7 @@ A refusal is a fact about the last thing the operator tried to do to the
 document in front of them. Properties is where this application puts facts
 of that shape.
 
-## ★ FIRST in the panel
+## FIRST in the panel
 
 Every disclosure sits above the thing it qualifies, without exception: a
 caveat below a list arrives after the operator has already drawn a

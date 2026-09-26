@@ -14,7 +14,7 @@ frame
 
 Both halves are here: the set, and the test.
 
-## ★ Why the roles are defined HERE and not in `egui-shell`
+## Why the roles are defined HERE and not in `egui-shell`
 
 **R7.** `egui-shell` never learns what a PDF is, and `"dimension_selected"`
 is a pdfcer concept wearing a colour. `egui_shell::theme::Overlays` is
@@ -27,7 +27,7 @@ That is prose in a doc comment, not a dependency, and
 `tools/gates/check-shell-purity.sh` scopes to `pdfcer-*` crate and module
 names for that reason.
 
-## ★ Why every colour comes from the palette, and none is a literal
+## Why every colour comes from the palette, and none is a literal
 
 `tools/gates/check-theme-colors.sh` forbids a raw `Color32` outside
 `crates/egui-shell/src/theme/`, and the reason is the one this module would
@@ -43,7 +43,7 @@ the mapping is the argument:
 | `preview` | `notice` | *"Something is worth knowing and nothing is broken"* — which is precisely what a snap marker is. It is a **proposal**: pdfcer saying *here is where I think you are pointing*, before any click has committed anything |
 | `dimension_selected` | `accent` | what every other selection in this application is drawn in. A committed ce dimension that is selected is selected, and inventing a second selection colour for one object kind would be a cue that means nothing anywhere else |
 
-## ★ The pair must stay DISTINCT, and that is the test this module owes
+## The pair must stay DISTINCT, and that is the test this module owes
 
 `egui-shell`'s own `overlays.rs` states it and cannot enforce it:
 

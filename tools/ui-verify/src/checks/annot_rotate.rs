@@ -14,7 +14,7 @@ use crate::report::CheckReport;
 
 /// Review mode, then arm the rectangle tool.
 ///
-/// ★ `mode.review` because markup is authored there — and because it is the
+/// `mode.review` because markup is authored there — and because it is the
 /// mode where `caps.edit_content` is **false**, which is precisely the mode the
 /// new rung had to fire in. Driving this in Edit would pass on a build whose
 /// rotate handle only worked where the content branch could catch it.
@@ -23,10 +23,10 @@ const INVOKE: &str = "mode.review,markup.rectangle";
 const COMMIT_EVENT: &str = "markup-commit";
 /// The line the canvas writes when a click selects an annotation.
 const SELECT_EVENT: &str = "annot-select";
-/// ★★★ The line the rotate drag writes when it routes to the **annotation**
+/// The line the rotate drag writes when it routes to the **annotation**
 /// verb.
 const ROTATE_EVENT: &str = "rotate-annot-commit";
-/// ★★★ The line the rotate drag writes when it routes to **page content**.
+/// The line the rotate drag writes when it routes to **page content**.
 ///
 /// Asserted **absent**. See the module header, link 5: a press that fell
 /// through to `caps.edit_content` produces this line instead, and the resulting
@@ -34,14 +34,14 @@ const ROTATE_EVENT: &str = "rotate-annot-commit";
 const CONTENT_ROTATE_EVENT: &str = "rotate-commit";
 /// The line the apply arm writes when the engine has turned it.
 ///
-/// ★ `-applied`, per the convention this project adopted after making the
+/// `-applied`, per the convention this project adopted after making the
 /// same-name mistake twice: `vector_edit` writes its own bare
 /// `rotate-annotation …` line for the identical edit, and `.last()` on the bare
 /// name reads that one.
 const ROTATED_EVENT: &str = "rotate-annotation-applied";
 /// The line a drag on a markup's **body** writes — asserted absent.
 ///
-/// ★★ The other half of link 3. A build whose `annot_rotate` was computed from
+/// The other half of link 3. A build whose `annot_rotate` was computed from
 /// the live pointer rather than from `press_origin` finds `None` on every real
 /// drag (egui does not call an interaction a drag until the pointer has
 /// travelled a threshold, by which time it is ~20 pt from an 8 pt handle) — and
@@ -68,11 +68,11 @@ const ANNOT_GEOMETRY_EVENT: &str = "annot-geometry-draft";
 /// The right dock's **Properties** tab, which has to be clicked before the
 /// geometry section is laid out at all.
 ///
-/// ★ A dock draws only its ACTIVE tab, and in Review the right dock opens on
+/// A dock draws only its ACTIVE tab, and in Review the right dock opens on
 /// Comments. Reading the trace without bringing this forward reports "the panel
 /// published no angle" about a build whose panel is correct.
 const PROPERTIES_TAB_REGION: &str = "dock.tab.file.properties";
-/// ★★★ The region the **rotate handle** publishes, and only when it is drawn.
+/// The region the **rotate handle** publishes, and only when it is drawn.
 const HANDLE_REGION: &str = "canvas.rotate-handle";
 /// The canvas viewport's own declared region.
 ///
@@ -87,13 +87,13 @@ const PAGE_REGION: &str = "page";
 
 /// Where the shape is drawn, as fractions of the page.
 ///
-/// ★★ **Well below the top of the sheet**, which is this check's own version of
+/// **Well below the top of the sheet**, which is this check's own version of
 /// `checks::rotate`'s O22 hazard: the rotate handle sits `ROTATE_STEM_PX` above
 /// the selection box, so a shape near the top of the viewport has its handle
 /// clipped away by the painter and the press lands on the ribbon. 0.35 down the
 /// page is comfortably clear of it on any sheet size.
 ///
-/// ★ And away from the edges, so the drag in step 5 — which swings out to a
+/// And away from the edges, so the drag in step 5 — which swings out to a
 /// radius of half the box plus the stem — has somewhere to go.
 const SHAPE: ((f64, f64), (f64, f64)) = ((0.35, 0.35), (0.55, 0.50));
 
@@ -212,7 +212,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 2: put the pen down, then select it --------------------------------
     //
-    // ★★★ THE TOOL MUST GO DOWN FIRST. With a markup tool armed a click on the
+    // THE TOOL MUST GO DOWN FIRST. With a markup tool armed a click on the
     // page is a PICK rather than a selection, so a check that skipped this
     // would draw a *second* rectangle and then report "the shape could not be
     // selected" about a build whose selection works perfectly.
@@ -253,7 +253,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ));
     }
 
-    // --- 3: ★★★ IS THE NINTH HANDLE EVEN PAINTED? ---------------------------
+    // --- 3: IS THE NINTH HANDLE EVEN PAINTED? ---------------------------
     //
     // The direct observation of link 1, and it is asserted BEFORE any press is
     // made — which is the difference between this check and its page-content
@@ -299,7 +299,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // --- 3b: rule the OFF-CANVAS cause out ----------------------------------
     //
     //
-    // ★ Here it uses the handle's OWN declared rect rather than a mirrored
+    // Here it uses the handle's OWN declared rect rather than a mirrored
     // stem constant, so it measures what is actually on screen.
     if let Some(canvas) = declared(&trace, ui_rect, CANVAS_REGION)
         && handle_rect.min.y < canvas.min.y
@@ -326,7 +326,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // a failure of *this* check is about the routing rather than about the
     // arithmetic the unit tests already cover.
     //
-    // ★ The radius is derived from the two DECLARED rects — the vertical gap
+    // The radius is derived from the two DECLARED rects — the vertical gap
     // between the handle's centre and the outline's centre — so nothing here
     // mirrors `ROTATE_STEM_PX`, `GRIP_SIZE_PX` or `MIN_OUTLINE_EXTENT_PX`.
     let frame = session.frame()?;
@@ -336,7 +336,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let outline_cy = f32::midpoint(outline.min.y, outline.max.y);
     let radius = (outline_cy - handle_cy).abs().max(1.0);
     let press = frame.declared_at(handle_rect, 0.5, 0.5);
-    // ★ Through 45°, so the drag passes frames where the bearing is genuinely
+    // Through 45°, so the drag passes frames where the bearing is genuinely
     // changing rather than teleporting from press to release — `drag_via`'s own
     // header makes the same argument about holding a modifier through a
     // gesture.
@@ -350,10 +350,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.drag_via(press, via, std::time::Duration::from_millis(60), to, None)?;
     session.settle(40);
 
-    // --- 5: ★★★ WHICH VERB DID IT REACH? ------------------------------------
+    // --- 5: WHICH VERB DID IT REACH? ------------------------------------
     let trace = session.trace()?;
     let Some(commit) = trace.events(ROTATE_EVENT).nth(before_annot) else {
-        // ★★★ The two wrong-verb diagnoses, ruled IN or OUT before any guess is
+        // The two wrong-verb diagnoses, ruled IN or OUT before any guess is
         // offered. This is the whole reason both counters were taken.
         if trace.events(CONTENT_ROTATE_EVENT).count() > before_content {
             return Ok(Some(format!(
@@ -412,7 +412,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         commit.raw
     ));
 
-    // ★★ …and it did not ALSO rotate the page content. Asserted separately
+    // …and it did not ALSO rotate the page content. Asserted separately
     // from the branch above, because a build that raised both actions would
     // satisfy every assertion so far and quietly turn something else on the
     // sheet at the same time.
@@ -425,12 +425,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 6: ★★ the number a wrong build would get wrong ---------------------
+    // --- 6: the number a wrong build would get wrong ---------------------
     let deg: f64 = commit
         .get("deg")
         .and_then(|v| v.parse().ok())
         .unwrap_or(0.0);
-    // ★ A generous window. The press lands at a declared centre and the release
+    // A generous window. The press lands at a declared centre and the release
     // at a computed point, both rounded to whole pixels, so the measured
     // bearing is a degree or two off 90 by construction. What is asserted is
     // the QUADRANT and the SIGN, not the arithmetic — that has eight unit
@@ -472,7 +472,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("★★★ the engine turned it: `{}`", applied.raw));
 
-    // ★ `matrix=` is REPORTED and lightly asserted; `from=`/`to=` are reported
+    // `matrix=` is REPORTED and lightly asserted; `from=`/`to=` are reported
     // only. A rotation is expressed by composing into the appearance stream's
     // own `/Matrix` (§12.5.5 step (a)), so a build that wrote a new `/Rect` and
     // left the matrix alone produces a box that grew around artwork that did
@@ -491,13 +491,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // The operator, 2026-09-07: *"the box outlined when an object is selected
     // should be in the same angled orientation as the object."*
     //
-    // ★★ Asserted here rather than in a check of its own, deliberately. Getting
+    // Asserted here rather than in a check of its own, deliberately. Getting
     // a turned annotation on screen costs a draw, a mode change, a select and a
     // rotate drag — four real pointer gestures, on a machine this suite has to
     // share — and this check has just performed all four. A separate check
     // would spend the same ninety seconds to arrive at the same frame.
     //
-    // ★ It re-reads the trace AFTER the rotation, so a build that computed the
+    // It re-reads the trace AFTER the rotation, so a build that computed the
     // quad correctly and never re-read it on the following frame fails here.
     let trace = session.trace()?;
     let Some(angle_line) = trace.events(ANGLE_EVENT).last() else {
@@ -534,7 +534,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    // ★★ …and the corners are published, so a later reader can see WHERE it
+    // …and the corners are published, so a later reader can see WHERE it
     // drew. `turned=1` alone would pass for a build that took the turned branch
     // and then handed it the upright box's corners — the "traces perfectly and
     // does nothing" shape this canvas keeps producing.

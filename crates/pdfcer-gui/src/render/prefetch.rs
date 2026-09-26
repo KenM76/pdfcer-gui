@@ -198,7 +198,7 @@ mod tests {
             .all(|w| w[0].abs_diff(current) <= w[1].abs_diff(current))
     }
 
-    /// ★ **The reverse of the eviction order**, in the middle of a document
+    /// **The reverse of the eviction order**, in the middle of a document
     /// where nothing is clamped.
     #[test]
     fn the_band_is_offered_nearest_page_first() {

@@ -14,7 +14,7 @@ pub const fn heading() -> &'static str {
 /// Shown when the selected annotation is a ce dimension whose sidecar record
 /// cannot be found.
 ///
-/// ★ **Reachable, and not a bug in this panel.** A `/Line` with
+/// **Reachable, and not a bug in this panel.** A `/Line` with
 /// `/IT /LineDimension` can arrive in a document from anywhere — an insert
 /// from another file, a merge, an earlier pdfcer that wrote the annotation and
 /// whose sidecar was dropped by a third-party tool's rewrite. The annotation is
@@ -35,7 +35,7 @@ pub const fn group_label() -> &'static str {
     "Group"
 }
 
-/// ★ **What moving a ce dimension to another group DOES**, said before it is
+/// **What moving a ce dimension to another group DOES**, said before it is
 /// done.
 ///
 /// The one disclosure this control cannot ship without, and the engine spent a
@@ -86,7 +86,7 @@ pub const fn display_diameter() -> &'static str {
 
 /// What switching between them does, and does not, change.
 ///
-/// ★ The point of the sentence is the second half. Both numbers come from
+/// The point of the sentence is the second half. Both numbers come from
 /// **one fitted circle**, so this is a change of notation and not a
 /// re-measurement — which is why it was worth building rather than telling the
 /// operator to delete and re-draw. The ui-spec called that a *"real, named
@@ -113,7 +113,7 @@ pub const fn overrides_hint() -> &'static str {
 
 /// The label on each override checkbox.
 ///
-/// ★ **"Set on this dimension", not "Enabled".** The `Option` is the checkbox
+/// **"Set on this dimension", not "Enabled".** The `Option` is the checkbox
 /// and `None` does not mean *off*: the property has a value, supplied by a tier
 /// above. "Enabled" would say the property is absent when unticked, which is
 /// false for all eleven of them.
@@ -124,7 +124,7 @@ pub const fn set_here() -> &'static str {
 
 /// Which tier supplied the value currently in force.
 ///
-/// ★ **`Factory` is rendered as *"pdfcer's default"* and NOT as *"inherited"***
+/// **`Factory` is rendered as *"pdfcer's default"* and NOT as *"inherited"***
 /// — the three tiers are three different answers to *"where did this come
 /// from?"*, and collapsing two of them would hide the one fact the operator
 /// asked for: whether a group edit is going to move this. It is, for both
@@ -140,7 +140,7 @@ pub const fn source_name(source: StyleSource) -> &'static str {
 
 /// Whether a group edit will move this property.
 ///
-/// ★ The predicate is `StyleSource::follows_group()`, which is **true for
+/// The predicate is `StyleSource::follows_group()`, which is **true for
 /// `Factory` as well as `Group`** — a property nobody has set anywhere still
 /// moves the moment the group speaks. This sentence is the operator-facing
 /// half of that, and it is why `Factory` and `Group` are named separately above
@@ -257,7 +257,7 @@ pub const fn precision_reduce() -> &'static str {
     "Reduce the fraction"
 }
 
-/// ★ Why *not* reducing is the drafting convention rather than an oversight.
+/// Why *not* reducing is the drafting convention rather than an oversight.
 ///
 /// `pdfcer-core`'s own `FractionMode` doc calls the unreduced form *"the
 /// architectural convention (`6/8"` not `3/4"`)"*, which is the opposite of
@@ -300,7 +300,7 @@ pub fn unit_name(unit: Unit) -> &'static str {
 
 /// The name of a tolerance form.
 ///
-/// ★ **`Basic` is named *"Basic — boxed, no ± text"*.** Its caption is the
+/// **`Basic` is named *"Basic — boxed, no ± text"*.** Its caption is the
 /// empty string and the **box** is the notation, drawn by the appearance-stream
 /// baker. An operator who picked "Basic" and saw no numbers appear would
 /// reasonably conclude the control had failed, so the name says what to expect
@@ -348,7 +348,7 @@ pub const fn tolerance_lower() -> &'static str {
     "Lower"
 }
 
-/// ★ **A limit tolerance replaces the number rather than sitting beside it.**
+/// **A limit tolerance replaces the number rather than sitting beside it.**
 ///
 /// The single most important sentence in this catalog, and it is here because
 /// the engine's appearance-stream baker branches on
@@ -386,7 +386,7 @@ pub fn tolerance_unit_note(unit: Unit) -> String {
 
 /// A tolerance the engine refused, by its own name.
 ///
-/// ★ **Never paraphrased, never clamped.** `ToleranceError`'s `Display` is
+/// **Never paraphrased, never clamped.** `ToleranceError`'s `Display` is
 /// written for an operator — *"a symmetric tolerance's magnitude must not be
 /// negative (write ±0.1, not ±-0.1)"* — and `pdfcer-core`'s own comment on the
 /// refusal is the argument for showing it verbatim: *"a corrected value the
@@ -409,7 +409,7 @@ pub const fn tolerance_places_follows() -> &'static str {
 
 /// The label-override section's heading.
 ///
-/// ★ *"What it says"*, not *"Label"* or *"Text"*. The operator is choosing
+/// *"What it says"*, not *"Label"* or *"Text"*. The operator is choosing
 /// between the measured number and their own words, and the heading that makes
 /// that obvious is the one phrased as the question they are answering.
 #[must_use]
@@ -419,7 +419,7 @@ pub const fn label_heading() -> &'static str {
 
 /// The hint under the box.
 ///
-/// ★★★ Both halves matter and neither is optional.
+/// Both halves matter and neither is optional.
 ///
 /// *"Leave empty to show the measurement"* is the **only** discoverable route
 /// back: there is no Clear button, because clearing the box IS the restore —
@@ -439,7 +439,7 @@ pub const fn label_hint() -> &'static str {
 
 /// Shown while an override is in force.
 ///
-/// ★★ It says the measurement is still there and does **not** say what it is,
+/// It says the measurement is still there and does **not** say what it is,
 /// which is honest rather than coy: `DimensionRecord` does not carry the
 /// measured value — it is computed from the geometry and the group's scale —
 /// so this shell cannot print it here without re-measuring, and a number
@@ -453,7 +453,7 @@ pub const fn label_overridden() -> &'static str {
 
 /// **The caption is on** — and this names the number it hid.
 ///
-/// ★★★ The measured value goes in the receipt because this is the one moment
+/// The measured value goes in the receipt because this is the one moment
 /// the shell has it. `DimensionRecord` does not carry the measurement — it is
 /// computed from the geometry and the group's scale — and only
 /// `DimensionLabelChange` hands it back. So an operator who overrides a ce
@@ -468,7 +468,7 @@ pub fn label_set(measured: &str) -> String {
 
 /// **The caption is off** — and this names the number that came back.
 ///
-/// ★★ It names the value deliberately, because the reassurance this whole
+/// It names the value deliberately, because the reassurance this whole
 /// feature rests on is that clearing an override restores the ORIGINAL
 /// measurement rather than re-measuring. A receipt carrying the number is what
 /// lets an operator confirm that rather than take it on trust.
@@ -511,7 +511,7 @@ mod tests {
 
     /// The three tiers are three different sentences.
     ///
-    /// ★ The property under test is that `Factory` and `Group` do **not**
+    /// The property under test is that `Factory` and `Group` do **not**
     /// collapse into one "inherited". They differ in what a `--clear` on the
     /// group would do, and an operator reading "inherited" cannot tell which
     /// tier to go and edit.

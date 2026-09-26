@@ -26,7 +26,7 @@ mod ring;
 mod tabbing;
 
 /// A choice field's option list: the popup's side, its keyboard, and what a
-/// pick sends. Split out under R2; see its header, and in particular its ★ on
+/// pick sends. Split out under R2; see its header, and in particular its on
 /// why the side is chosen before the constraint rather than after it.
 mod choosing;
 
@@ -123,7 +123,7 @@ impl Focus {
 
     /// Bring a stored focus up to date with the document, or discard it.
     ///
-    /// # ★ Where this differs from the panel, and why
+    /// # Where this differs from the panel, and why
     ///
     /// [`crate::panels::forms::FormsUi`] keys its drafts on `(path, epoch)` and
     /// **drops them all** when either moves. Doing that here would be wrong in
@@ -174,7 +174,7 @@ pub(super) fn store_focus(ctx: &egui::Context, focus: Option<Focus>) {
 /// **What the operator is typing on the page right now**, as
 /// `(field name, draft)` — or `None` when they are not typing on the page.
 ///
-/// # ★★★ Why this exists: two draft stores, one field
+/// # Why this exists: two draft stores, one field
 ///
 /// [`Focus::draft`] holds what is being typed on the canvas;
 /// [`crate::panels::forms::FormsUi::drafts`] holds what is being typed in the
@@ -198,7 +198,7 @@ pub(super) fn store_focus(ctx: &egui::Context, focus: Option<Focus>) {
 /// surfaces, and no drift possible between them because there is nothing to
 /// drift from.
 ///
-/// # ★★ The `egui` focus check is the whole of the safety argument
+/// # The `egui` focus check is the whole of the safety argument
 ///
 /// A stored [`Focus`] is not by itself evidence that the operator is typing on
 /// the page — it survives until the editor loses focus, and this function is
@@ -214,7 +214,7 @@ pub(super) fn store_focus(ctx: &egui::Context, focus: Option<Focus>) {
 /// a frame this returns `None`, so the panel is never mirroring a draft that
 /// is on its way to becoming a document value.
 ///
-/// # ★ Why the `(path, epoch)` guard as well
+/// # Why the `(path, epoch)` guard as well
 ///
 /// The same reason [`Focus::sync`] carries it. A draft belonging to another
 /// document is meaningless, and a draft taken at another revision describes a
@@ -244,7 +244,7 @@ pub(crate) fn live_draft(ctx: &egui::Context, doc: &OpenDoc) -> Option<(String, 
 /// is the property that makes this cheap enough to consult on every frame in
 /// order to set a cursor.
 ///
-/// # ★ `pub(crate)`, because the panel reads the same answer
+/// # `pub(crate)`, because the panel reads the same answer
 ///
 /// [`crate::panels::forms::canvas_routing`] needs to know how many fields the
 /// page cannot be clicked for, and the only correct source of that number is
@@ -258,7 +258,7 @@ pub(crate) fn live_draft(ctx: &egui::Context, doc: &OpenDoc) -> Option<(String, 
 ///
 /// `EditSession::widget_rects(page)` reports every `/Widget` **that page's
 /// `/Annots` lists**, with corners already normalised and the session overlay
-/// applied. See [`boxes::place`]'s ★ section for why asking the pages is the
+/// applied. See [`boxes::place`]'s section for why asking the pages is the
 /// only correct direction and why asking the widgets' `/P` is a defect no
 /// fixture in the corpus can catch.
 pub(crate) fn placed(ctx: &egui::Context, doc: &OpenDoc) -> Arc<boxes::Placed> {
@@ -298,7 +298,7 @@ pub(crate) fn placed(ctx: &egui::Context, doc: &OpenDoc) -> Arc<boxes::Placed> {
             list.routing.unreachable,
         )
     });
-    // ★ Then the census itself, one line per box, in CANVAS space.
+    // Then the census itself, one line per box, in CANVAS space.
     //
     // The summary above proves boxes exist; this proves *where*, which is the
     // only thing that makes a hit test checkable from outside the process. A
@@ -314,7 +314,7 @@ pub(crate) fn placed(ctx: &egui::Context, doc: &OpenDoc) -> Arc<boxes::Placed> {
     // census on a pathological form would bury every other line in the
     // capture, which is the same "fifty identical lines in nine seconds"
     // failure `trace::pointer` was fixed for.
-    // ★★ The SELECTABLE census, beside the fillable one and deliberately
+    // The SELECTABLE census, beside the fillable one and deliberately
     // separate. The two sets differ — a push button and an undrawn widget are
     // selectable and not fillable — and that difference is the whole
     // of what form authoring added to this surface. One census reporting the
@@ -435,7 +435,7 @@ pub(super) fn overlay(
     let ctx = ui.ctx().clone();
     ctx.data_mut(|d| d.remove::<bool>(Id::new(ESCAPE_KEY)));
 
-    // ★★★ **IN EDIT MODE A CLICK SELECTS THE FIELD; ELSEWHERE IT FILLS IT.**
+    // **IN EDIT MODE A CLICK SELECTS THE FIELD; ELSEWHERE IT FILLS IT.**
     //
     // The operator: *"when I click on an existing form field on the page its
     // properties should come up in our side pane for editing its
@@ -449,7 +449,7 @@ pub(super) fn overlay(
     // separation and it is the mode selector, whose whole job is *what will
     // this program let me do*. Read and Review fill; Edit authors.
     //
-    // ★★ What it costs, stated rather than hidden: **filling on the page is
+    // What it costs, stated rather than hidden: **filling on the page is
     // not available in Edit mode.** That is the correct trade and it is
     // reversible in one line if it proves wrong, but it is a real change — an
     // operator who was filling a form in Edit mode drops to Review to go on
@@ -457,7 +457,7 @@ pub(super) fn overlay(
     // mode. The alternative — a modifier key — would make the commonest
     // gesture on this surface depend on a key nobody discovers.
     //
-    // ★ Note it is asked BEFORE `offer`. Selection is not filling and must not
+    // Note it is asked BEFORE `offer`. Selection is not filling and must not
     // inherit filling's gates: `fill_refusal()` is `Some` for a certified
     // document, where the operator may still legitimately want to look at what
     // a field IS. What it does share is `annotations_visible`, because a
@@ -469,7 +469,7 @@ pub(super) fn overlay(
             selecting::seeded_select(doc, &placed.targets, actions);
             selecting::select_click(&ctx, doc, pages, drawn, &placed.targets, actions);
             selecting::select_cursor(&ctx, pages, &placed.targets);
-            // ★★★ **DRAW THE BOXES THEMSELVES** — O209, *"when I am in edit
+            // **DRAW THE BOXES THEMSELVES** — O209, *"when I am in edit
             // mode I can't see these boxes."*
             //
             // He is right and the cause was here: the wash that makes a form
@@ -479,17 +479,17 @@ pub(super) fn overlay(
             // hides its own subject is not usable however well the selection
             // works underneath.
             //
-            // ★ `targets`, not `boxes`, and unconditional rather than gated on
+            // `targets`, not `boxes`, and unconditional rather than gated on
             // the display option — `form_marks::authoring_boxes` carries both
             // arguments and why each is not the filling surface's answer.
             crate::canvas::form_marks::authoring_boxes(ui, pages, &placed.targets);
-            // ★★★ DRAW THE SELECTION. `OPERATOR_REQUESTS.md` **O53**.
+            // DRAW THE SELECTION. `OPERATOR_REQUESTS.md` **O53**.
             //
             // Nothing painted a selected form field. The click landed, the
             // action was raised, `doc.selected_field` was set, the Properties
             // panel filled in -- and **the canvas showed no change at all**.
             //
-            // ★★★ That is the largest part of his *"I can't select it on the
+            // That is the largest part of his *"I can't select it on the
             // canvas to move or resize"*: a selection with no visible outline
             // is not a selection an operator can believe in, whatever the state
             // underneath says. They click, see nothing, and conclude the click
@@ -500,7 +500,7 @@ pub(super) fn overlay(
             // it is not drawn, the claim was never made, and every capability
             // that depends on it is unreachable however well it works.
             //
-            // ★★ The grips come with it, which is H7: `pressing::grabbable`
+            // The grips come with it, which is H7: `pressing::grabbable`
             // hands `GripSet::scale_only()` for this selection, so the eight
             // squares are hit-tested whether or not they are painted -- and an
             // invisible target that steals a press is worse than a visible
@@ -529,7 +529,7 @@ pub(super) fn overlay(
         return;
     }
 
-    // ★★★ **THE FIELD WASH** — `OPERATOR_REQUESTS.md` O96, *"an option to shade
+    // **THE FIELD WASH** — `OPERATOR_REQUESTS.md` O96, *"an option to shade
     // the form fields like acrobat does."*
     //
     // FIRST in this function, so every other overlay this module draws — the
@@ -537,17 +537,17 @@ pub(super) fn overlay(
     // wash painted last would sit over the caret and the text the operator is
     // typing, which is the one thing that must stay legible.
     //
-    // ★★ Drawn here rather than by the page rasterizer, and that is what keeps
+    // Drawn here rather than by the page rasterizer, and that is what keeps
     // it inside rule 4: it is over the finished texture, so it reaches no
     // print, no export, no Save and no `render-page`.
     //
-    // ★ Gated on the preference only. `offer` above has already established
+    // Gated on the preference only. `offer` above has already established
     // that this mode fills forms, that annotations are visible and that the
     // document is not certified — so a field that is not fillable here is a
     // field this function has already returned before reaching.
     crate::canvas::form_marks::shade(ui, doc, pages, list);
 
-    // ★★★ **THE SPOTLIGHT** — `OPERATOR_REQUESTS.md` O98. The field the Forms
+    // **THE SPOTLIGHT** — `OPERATOR_REQUESTS.md` O98. The field the Forms
     // panel is pointing at, outlined so the operator can see which box on the
     // page they are filling.
     //
@@ -555,7 +555,7 @@ pub(super) fn overlay(
     // rather than under it, and *under* the focused editor's own caret and
     // text, which are what must stay legible.
     //
-    // ★ `crate::panels::forms::spotlight` carries why this is a cursor rather
+    // `crate::panels::forms::spotlight` carries why this is a cursor rather
     // than a mark on the content, and quotes the panel header that named this
     // gap — and named it permitted — long before it was built.
     crate::canvas::form_marks::spotlight(ui, pages, list);
@@ -760,7 +760,7 @@ fn editor(
     // Which font, which end of the box, and what colour — all three are
     // properties of the document rather than of this interaction, so they live
     // in [`textbox`] and the editable combo box reads the same rules. The
-    // three ★★★ arguments that admit `/Q` and `/MK` `/BG` and refuse `/DA` are
+    // three arguments that admit `/Q` and `/MK` `/BG` and refuse `/DA` are
     // on [`textbox::lay`].
     let response = textbox::lay(
         ui,
@@ -784,7 +784,7 @@ fn editor(
     // test: see `canvas::tabnav`'s header.
     crate::canvas::tabnav::publish(&ctx, crate::canvas::tabnav::Scope::Field, id);
 
-    // ★ Seat the caret exactly once, at the END rather than over a selection.
+    // Seat the caret exactly once, at the END rather than over a selection.
     // The click that asked for this editor was consumed by the PAGE (see the
     // module header §4), so there is no click position to place a caret from,
     // and selecting all would turn the operator's next keystroke into a
@@ -795,13 +795,13 @@ fn editor(
         textbox::seat(&ctx, id, &draft, false);
     }
 
-    // ★ Escape closes the editor and **writes what is in it**, and says so.
+    // Escape closes the editor and **writes what is in it**, and says so.
     // Read BEFORE the `lost_focus` branch for the same reason `gesture` reads
     // it before its release branch: `egui`'s own `TextEdit` surrenders focus on
     // Escape, so without this arm the two are the same event and which one runs
     // is an accident of ordering.
     //
-    // ★★★ `OPERATOR_REQUESTS.md` **O223** — *"escape should also save changes
+    // `OPERATOR_REQUESTS.md` **O223** — *"escape should also save changes
     // to the text … it is easy to accidentally press escape and lose a lot of
     // text that has been entered."* It is [`settle`]'s rule one surface over,
     // and [`settle`] already carried the argument: *a half-typed field value is
@@ -899,7 +899,7 @@ fn click(
     });
 
     match &widget_box.kind {
-        // ★ Re-focusing the field that already has focus would re-seed the
+        // Re-focusing the field that already has focus would re-seed the
         // draft from the document — which is to say, it would silently throw
         // away everything the operator has typed and not yet committed.
         //

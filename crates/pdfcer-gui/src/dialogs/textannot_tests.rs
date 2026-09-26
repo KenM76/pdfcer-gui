@@ -86,7 +86,7 @@ fn screen() -> egui::Rect {
     egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 800.0))
 }
 
-/// ★★★ **The note window does not open in the corner** — review finding
+/// **The note window does not open in the corner** — review finding
 /// A16c.
 ///
 /// The whole of the defect in one assertion. `dialogs/textannot.rs`
@@ -155,11 +155,11 @@ fn the_note_window_is_squeezed_but_never_below_its_own_floor() {
     );
 }
 
-/// ★★★ **Each kind's window is as tall as its own body needs, and the one
+/// **Each kind's window is as tall as its own body needs, and the one
 /// kind with nothing added did not move.**
 ///
 ///
-/// ★★ **The text-box assertion is the positive control** and it is what
+/// **The text-box assertion is the positive control** and it is what
 /// makes this a test at all. Asserting only *"the sticky and the stamp are
 /// taller"* passes on a `window_size` that had gone taller for **every**
 /// kind — the change would be invisible, the text box would grow a strip of
@@ -231,7 +231,7 @@ fn each_kinds_window_is_as_tall_as_its_body_needs() {
     assert_eq!(stamp.x, boxed.x, "the width is per-kind for nobody");
 }
 
-/// ★★★ **The icon the operator picked reaches the action — and the two
+/// **The icon the operator picked reaches the action — and the two
 /// kinds that have no icon still carry the default rather than a
 /// contradiction.**
 ///
@@ -239,7 +239,7 @@ fn each_kinds_window_is_as_tall_as_its_body_needs() {
 /// every sticky note pdfcer ever authored carried `/Note` because the field
 /// did not exist.
 ///
-/// ★★ The `stamp` assertion beside it is the **positive control for the
+/// The `stamp` assertion beside it is the **positive control for the
 /// route**, not decoration. `StampName` already travelled this exact path,
 /// so asserting the two together is what says the icon was added *to* a
 /// working carrier rather than replacing one — and if a later edit dropped
@@ -288,7 +288,7 @@ fn the_chosen_icon_reaches_the_commit_action() {
 
 /// A fresh dialog carries no words and every chooser's stated default.
 ///
-/// ★★ **The size assertion is the load-bearing one**, and it is not merely
+/// **The size assertion is the load-bearing one**, and it is not merely
 /// completeness. `StampSize`'s own header argues that a fresh gallery must
 /// offer the size DERIVED from the drawn box — the behaviour of every build
 /// before engine `Pass 287.0` — rather than the engine's flat 12 pt,
@@ -310,7 +310,7 @@ fn a_fresh_dialog_is_empty_and_defaulted() {
     assert!(!d.accept_requested);
 }
 
-/// ★ The page and the rect are captured, not re-read.
+/// The page and the rect are captured, not re-read.
 ///
 /// The property that stops a page change under an open window redirecting
 /// the annotation. Asserted on the stored values because there is nothing
@@ -322,7 +322,7 @@ fn the_page_and_rect_are_captured_at_open() {
     assert!((d.rect.urx - 100.0).abs() < f64::EPSILON);
 }
 
-/// ★ Accept is live for a stamp with no typed text, and dead for the
+/// Accept is live for a stamp with no typed text, and dead for the
 /// others.
 ///
 /// The readiness rule, which is the gallery exception stated once more at
@@ -373,7 +373,7 @@ fn typing_into_the_open_window_reaches_the_draft() {
     assert_eq!(d.text, "h", "the window took the keystroke");
 }
 
-/// ★★ **The regression test: focus LOST on the opening frame is re-taken.**
+/// **The regression test: focus LOST on the opening frame is re-taken.**
 ///
 /// The defect this replaced latched on having *asked* for focus rather than
 /// on holding it, so a request that lost its frame was never retried and
@@ -425,7 +425,7 @@ fn focus_stolen_on_the_opening_frame_is_taken_back() {
     );
 }
 
-/// ★ ...and the retry is BOUNDED, so Cancel stays clickable.
+/// ...and the retry is BOUNDED, so Cancel stays clickable.
 ///
 /// The objection the original one-shot latch was written to answer, and it
 /// is still correct: a field that asks for focus every frame takes it back
@@ -495,7 +495,7 @@ fn a_custom_stamp() -> CustomStamp {
 
 /// **The invariant the whole gallery rests on: exactly one selection.**
 ///
-/// ★★★ This is the assertion that stands between the operator and the
+/// This is the assertion that stands between the operator and the
 /// worst bug this feature could have had — picking `Approved` and getting
 /// his signature, silently, on the second click of a session. `radio_value`
 /// would have shipped it: it writes one variable and knows nothing about
@@ -537,7 +537,7 @@ fn exactly_one_of_the_two_galleries_holds_the_selection() {
 /// **His stamp reaches the commit action**, which is the only thing that
 /// makes the gallery more than a picture.
 ///
-/// ★ Asserted alongside `stamp` still carrying a NON-default value, for
+/// Asserted alongside `stamp` still carrying a NON-default value, for
 /// the positive-control reason `the_chosen_icon_reaches_the_commit_action`
 /// gives: if a later edit dropped `custom` out of the action literal, the
 /// surviving assertion is still about a live route.
@@ -607,7 +607,7 @@ fn only_the_stamp_kind_scans_the_stamps_folder() {
 /// over an empty list, no *"you can add your own"* invitation on a machine
 /// that has never made a stamp.
 ///
-/// ★★ The second half is what stops this being vacuous. An
+/// The second half is what stops this being vacuous. An
 /// absence-assertion alone passes on a `custom_stamps` that returns early
 /// unconditionally — which is to say, on a build where the whole feature
 /// is missing. The populated case is the control: it fails if the function
@@ -646,7 +646,7 @@ fn the_custom_half_appears_only_when_there_is_something_in_it() {
     );
 }
 
-/// ★★★ **The stamp window opens tall enough to show the operator's own
+/// **The stamp window opens tall enough to show the operator's own
 /// stamps** — the defect the first driven run of O172 found, 2026-09-10.
 ///
 /// `custom_stamp_reaches_the_page` armed Markup ▸ Stamp, dragged a box, and
@@ -661,7 +661,7 @@ fn the_custom_half_appears_only_when_there_is_something_in_it() {
 /// yet contain this section, and **a guessed size is a claim about the content
 /// that the content can outgrow**.
 ///
-/// ★★ The two negative controls are what make this a test rather than an
+/// The two negative controls are what make this a test rather than an
 /// observation. Asserting only *"the stamp window got taller"* passes on a
 /// `window_size` that ignored its new argument and grew unconditionally, and
 /// passes on one that applied the growth to every kind — the sticky note and
@@ -685,7 +685,7 @@ fn the_stamp_window_grows_for_the_operators_own_stamps() {
          were drawn below the fold of a window sized before they existed."
     );
 
-    // ★ Negative control 1: the other two kinds have no gallery to put a
+    // Negative control 1: the other two kinds have no gallery to put a
     // custom half in, so the same argument must move neither.
     for kind in [TextAnnotKind::Sticky, TextAnnotKind::TextBox] {
         assert_eq!(
@@ -694,7 +694,7 @@ fn the_stamp_window_grows_for_the_operators_own_stamps() {
             "{kind:?} has no custom gallery and must not grow for one"
         );
     }
-    // ★ Negative control 2: a machine with no stamps gets the window it always
+    // Negative control 2: a machine with no stamps gets the window it always
     // had. R9's height twin — an unavailable capability costs nothing, not even
     // empty space.
     assert_eq!(
@@ -787,7 +787,7 @@ fn a_library_of(n: usize) -> Library {
 // itself, including the case this window cannot see: a collection the operator
 // edited in Acrobat between two openings.
 //
-// ★★ **What this file structurally CANNOT test, and where it is tested
+// **What this file structurally CANNOT test, and where it is tested
 // instead.** `open` scans the real stamp folder off `%APPDATA%`, so a unit test
 // cannot plant a library and therefore cannot watch a remembered CUSTOM stamp be
 // re-selected -- the half the memory exists for. That is asserted by driving the
@@ -795,7 +795,7 @@ fn a_library_of(n: usize) -> Library {
 // Saying so here so a later reader does not mistake the gap for coverage.
 //
 
-/// ★★★ **Cancel must not remember.** The whole reason
+/// **Cancel must not remember.** The whole reason
 /// [`TextAnnotDialog::remembered`] reads a field only the accept path writes,
 /// rather than reading `stamp`/`custom` when the window closes: a dismissed
 /// window is the operator saying no, and a memory taken from it would
@@ -918,7 +918,7 @@ fn a_remembered_stamp_that_has_gone_falls_back_without_a_sentence() {
     assert_eq!(d.stamp, DEFAULT_STAMP);
 }
 
-/// ★★★ **The four answers a harness reads, and the one that would otherwise
+/// **The four answers a harness reads, and the one that would otherwise
 /// not exist.** `gone` and `default` both put the default face in the gallery
 /// and both say nothing on screen -- deliberately, because to the operator
 /// "the collection I deleted" and "my first stamp today" are the same

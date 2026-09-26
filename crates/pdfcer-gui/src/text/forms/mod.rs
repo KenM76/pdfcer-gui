@@ -69,7 +69,7 @@ pub fn forms_empty_acroform() -> &'static str {
 
 /// The count line at the top of a populated list.
 ///
-/// # ★ `fillable` is what THIS PANEL offers, not what the model calls fillable
+/// # `fillable` is what THIS PANEL offers, not what the model calls fillable
 ///
 /// The obvious implementation counts `pdfcer_core::forms::Field::is_fillable`,
 /// and it is wrong in a way the operator can see. `is_fillable` answers *"could
@@ -95,7 +95,7 @@ pub fn forms_field_count(total: usize, fillable: usize) -> String {
 
 /// Disclosure that the form declares fields this panel cannot list.
 ///
-/// # ★ The count line understates the file, by exactly this many
+/// # The count line understates the file, by exactly this many
 ///
 /// `pdfcer_core::forms::AcroForm::inline_field_roots` counts `/Fields` entries
 /// that are **direct dictionaries rather than indirect references**. Table 218
@@ -184,7 +184,7 @@ pub fn forms_javascript_note(count: usize) -> String {
 /// Saying it once, before the list, means the operator learns that their
 /// typing may not stick *before* they do it — and it removes the need for this
 /// panel to carry a note channel back from the action funnel at all. See
-/// [`crate::panels::forms`]' header, "★ Nothing has to travel back from
+/// [`crate::panels::forms`]' header, "Nothing has to travel back from
 /// `apply`".
 ///
 /// Leads with the consequence rather than the mechanism, which is the old
@@ -267,7 +267,7 @@ pub fn form_field_certification_disabled_tooltip() -> &'static str {
 /// Listed rather than hidden (R83): an operator scrolling past a signature
 /// field should see that pdfcer knows it is there.
 ///
-/// ★★★ **WHY THIS SENTENCE MAKES NO CAPABILITY CLAIM, HAVING TWICE BEEN
+/// **WHY THIS SENTENCE MAKES NO CAPABILITY CLAIM, HAVING TWICE BEEN
 /// CORRECTED FOR MAKING ONE.**
 ///
 /// It read *"pdfcer does not create or verify signatures yet."* Two claims in
@@ -282,7 +282,7 @@ pub fn form_field_certification_disabled_tooltip() -> &'static str {
 /// command — so a panel row was telling the operator *"pdfcer cannot sign a
 /// document"* while the ribbon two clicks away offered to do exactly that.
 ///
-/// ★★★ **The lesson is NOT "split conjoined claims".** It is that **a
+/// **The lesson is NOT "split conjoined claims".** It is that **a
 /// hard-coded sentence must not make a capability claim at all.**
 ///
 /// R8: registering a command is the only way this GUI may learn that a
@@ -360,7 +360,7 @@ pub fn form_field_commit_tooltip() -> &'static str {
 /// **New in this build**, replacing a salvaged string that could not fire —
 /// see [`crate::panels::forms::rows`]' header for the full account.
 ///
-/// # ★ Why the wording is "cannot", not "will look the same"
+/// # Why the wording is "cannot", not "will look the same"
 ///
 /// The obvious sentence — *"the value changes but the page will not"* — is
 /// what the old shell's equivalent tried to say, and it is **false against
@@ -495,7 +495,7 @@ pub fn form_field_rich_text_convert_tooltip() -> &'static str {
 /// there; the per-run breakdown ([`form_field_rich_text_runs_tooltip`]) is a
 /// hover away. Progressive disclosure, with the frequent question visible.
 ///
-/// # ★ Collected by category, emitted in a fixed order
+/// # Collected by category, emitted in a fixed order
 ///
 /// Not in the order the runs happen to mention things. A single
 /// accumulate-as-you-go list produced, on the old shell's shipped fixture,
@@ -738,7 +738,7 @@ pub const fn recompute_apply_button() -> &'static str {
 
 /// Tooltip for that button.
 ///
-/// # ★ It says "one undo step per field", and the old catalog said "one undo
+/// # It says "one undo step per field", and the old catalog said "one undo
 /// step"
 ///
 /// The old wording was inherited from a control that writes one command, and
@@ -947,7 +947,7 @@ pub fn forms_flatten_needs_redraw_note(count: usize) -> String {
 /// went**, which is the whole difference between a routing decision and a
 /// capability that quietly disappeared.
 ///
-/// # ★ The remedy sentence was wrong on its first draft, and driving the
+/// # The remedy sentence was wrong on its first draft, and driving the
 /// binary is what caught it
 ///
 /// It read: *"Use “Redraw values” to draw them, and they can then be clicked
@@ -970,7 +970,7 @@ pub fn forms_flatten_needs_redraw_note(count: usize) -> String {
 /// on the page from then on. So the sentence names both, in the order they
 /// apply.
 ///
-/// ★★ The rejected first draft is worth naming because of its SHAPE: it was
+/// The rejected first draft is worth naming because of its SHAPE: it was
 /// plausible, it read well, no test could contradict it, and it was a promise
 /// to the operator that the engine would not keep. **A sentence no test can
 /// contradict is the one to check against the engine by hand.**
@@ -1044,7 +1044,7 @@ pub fn forms_fill_autosize_note(field: &str, size: f64) -> String {
 /// Rule-4 disclosure: **the chosen size does not fit, and the text will spill
 /// out of the box.**
 ///
-/// # ★★★ Why this is a separate sentence and not a suffix
+/// # Why this is a separate sentence and not a suffix
 ///
 /// `AutoFitBound::Floor` is the one outcome where pdfcer's answer is not an
 /// answer. The engine says so at the branch that returns it — *"the one case
@@ -1057,10 +1057,10 @@ pub fn forms_fill_autosize_note(field: &str, size: f64) -> String {
 /// [`forms_fill_autosize_note`] rather than inside it. `OPERATOR_REQUESTS.md`
 /// **O86** promises the operator that *"pdfcer now tells you which way it
 /// decided … the box is too small for this text, which will overflow"* — and
-/// ★ **a promise the engine and the CLI keep is not kept by this shell until
+/// **a promise the engine and the CLI keep is not kept by this shell until
 /// this shell says the words.**
 ///
-/// ★ It names the **remedy**, because there is one and it is the operator's:
+/// It names the **remedy**, because there is one and it is the operator's:
 /// make the box bigger, or put less in it. A disclosure with an available
 /// remedy that withholds it is a complaint.
 #[must_use]
@@ -1075,7 +1075,7 @@ pub fn forms_fill_autosize_overflow_note(field: &str, size: f64) -> String {
 /// Rule-4 disclosure: pdfcer chose the size, and **the field's width is what
 /// decided it** rather than its height.
 ///
-/// ★★ Worth its own sentence rather than folding into
+/// Worth its own sentence rather than folding into
 /// [`forms_fill_autosize_note`], because the two point at **different edits**.
 /// A height-bound field gets bigger text by being made taller; a width-bound
 /// one does not — it was already going to be taller and got shrunk sideways,
@@ -1132,12 +1132,12 @@ pub fn forms_structural_certification_disabled_tooltip() -> &'static str {
 
 /// Disclosure: the field's other boxes stayed where they were.
 ///
-/// ★★★ The engine's own words for why this is owed: *"A field with widgets on
+/// The engine's own words for why this is owed: *"A field with widgets on
 /// pages 1, 2 and 3 looks like one thing to an operator who asked to move 'the
 /// signature box'. Moving one and silently leaving two behind is the kind of
 /// partial result that reads as a bug later."*
 ///
-/// ★★ It says the move was **correct**, not that something went wrong. The
+/// It says the move was **correct**, not that something went wrong. The
 /// boxes are separate placements of one value and moving one is exactly what
 /// the operator dragged — so the sentence's job is to stop them hunting for a
 /// fault, not to apologise for one.
@@ -1179,7 +1179,7 @@ mod tests {
         }
     }
 
-    /// **★ The fill gate and the structural gate say different things.**
+    /// **The fill gate and the structural gate say different things.**
     ///
     /// Not a tautology of the test above. These two are the pair most likely
     /// to be collapsed into one string by someone tidying up, because on most

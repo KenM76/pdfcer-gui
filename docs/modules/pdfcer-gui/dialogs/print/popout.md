@@ -11,7 +11,7 @@
 
 Ask 1 — the draggable splitter — shipped the same day. This file is ask 2.
 
-# ★★★ Why it is thirty lines of code and four hundred of reasoning
+# Why it is thirty lines of code and four hundred of reasoning
 
 Because almost all of it already existed and the value of this file is
 knowing that. Every dialog in this shell is a real OS window through
@@ -28,13 +28,13 @@ is therefore:
 | it survives being dragged to a second monitor | `Host` remembers position | nothing |
 | it is findable when it falls behind | `with_taskbar(true)` in `Host` | nothing |
 
-★ **The close is already the return path.** That is the sentence worth
+**The close is already the return path.** That is the sentence worth
 carrying out of here: the request reads like a feature with two halves —
 pop out, and put back — and the second half is the default behaviour of a
 window. Building a "put it back" control would have been building a second,
 worse route to something the title bar already does.
 
-# ★★★ What the print dialog draws while the preview is out: NOTHING
+# What the print dialog draws while the preview is out: NOTHING
 
 Not a greyed rectangle. Not a *"the preview is in another window"* card. Not
 an outline where it used to be. The column collapses and the options take
@@ -48,7 +48,7 @@ occupying the space teaches the operator that this dialog has a dead region
 in it, and the next time something *is* broken there they will not report
 it.
 
-# ★★ The geometry trap this file had to be written around
+# The geometry trap this file had to be written around
 
 `Host::fit` grows a dialog whose content is bigger than its window — a
 measurement fed into a size, which is R128's shape and has bitten this
@@ -68,7 +68,7 @@ that can grow the window once is a canvas clamped up to
 `CANVAS_MIN_HEIGHT_PTS` on a window shorter than that — bounded by the
 clamp, not by a budget, and it settles in one round trip.
 
-★ `Host`'s three-step growth budget is still behind it, and the trace line
+`Host`'s three-step growth budget is still behind it, and the trace line
 `dialog-fit-runaway title="Print preview"` is what a future mistake here
 would announce itself as. Read that line before reading this file.
 

@@ -24,7 +24,7 @@
 //! Phase 4 doubled its size. That file's header already named the seam: it
 //! answers *"what is open"*, and this answers *"what should the picture be"*.
 
-// ★ A NOTE ON THE ORDER OF WHAT FOLLOWS, because it has already eaten four
+// A NOTE ON THE ORDER OF WHAT FOLLOWS, because it has already eaten four
 // module headers once and the damage is silent.
 //
 //
@@ -32,7 +32,7 @@
 // doc comment, and the run stays alphabetical.** A doc comment stranded above a
 // `pub mod` whose name it does not describe is the tell.
 
-/// ★★★ **The zoom ceiling this document TAUGHT the shell** — O186's
+/// **The zoom ceiling this document TAUGHT the shell** — O186's
 /// *"zoom should stop at the limit and not end up showing an error"*.
 ///
 /// Its header carries why this one ceiling cannot be derived the way the two in
@@ -49,7 +49,7 @@ pub mod ceiling;
 /// header carries why four passing wiring tests were not enough.
 mod hairline;
 
-/// ★★★ **The ground OUTSIDE the sheet** — O23's "see" half: the box to
+/// **The ground OUTSIDE the sheet** — O23's "see" half: the box to
 /// rasterize so that an object placed past the page edge is actually painted,
 /// and how far the visible-region tier may look past the sheet.
 ///
@@ -68,7 +68,7 @@ pub mod halo;
 /// the harness could see only one of them.
 pub mod ink;
 
-/// ★★ **Tests only** — the engine properties O23's second half will stand on,
+/// **Tests only** — the engine properties O23's second half will stand on,
 /// asserted here because the engine's own suite has never exercised them.
 ///
 /// `render_page_region` accepts a rectangle outside the `/CropBox` by
@@ -88,7 +88,7 @@ pub mod offpage;
 /// the top of the next — and why attribution refuses to guess.
 pub mod pressure;
 
-/// ★★ **Screen ⟷ PDF for a RASTER** — the two conversions the region tier
+/// **Screen ⟷ PDF for a RASTER** — the two conversions the region tier
 /// needs, kept together because they are inverses and the round trip is the
 /// property that matters.
 ///
@@ -106,7 +106,7 @@ pub mod raster;
 /// distorted above the whole-page → region crossover and nowhere below it.
 pub mod region;
 
-/// ★★★ **Whole page, or just the window?** — O24's one decision, made from
+/// **Whole page, or just the window?** — O24's one decision, made from
 /// numbers in one place.
 ///
 /// Its header carries the constraint that shaped it: panning at full detail is

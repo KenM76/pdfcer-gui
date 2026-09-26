@@ -94,7 +94,7 @@ mod tests {
 
     /// **A single hairline is enough to say "not blank".**
     ///
-    /// ★ This is the assertion that makes the field useful rather than merely
+    /// This is the assertion that makes the field useful rather than merely
     /// present: the interesting case is not a busy drawing, it is *one line on
     /// otherwise empty paper*, which is what a deep-zoom viewport of a CAD sheet
     /// actually contains when it contains anything at all.

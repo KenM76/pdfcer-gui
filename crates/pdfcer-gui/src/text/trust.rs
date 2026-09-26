@@ -12,7 +12,7 @@ use pdfcer_core::trust_store::SourceCounts;
 /// The sentence above the list, replacing the old *"pdfcer does not check
 /// whether these signatures are valid — it cannot yet"*.
 ///
-/// ★★★ That sentence had to go the moment `verify_all_with_trust` was wired,
+/// That sentence had to go the moment `verify_all_with_trust` was wired,
 /// and this project's most expensive recorded failure is exactly a claim like
 /// it going stale while the prose around it stayed true. What replaces it is
 /// **not** a reassurance: it names the three facts, in the order the rows print
@@ -48,7 +48,7 @@ pub const fn integrity_label() -> &'static str {
 
 /// The digest matched and the CMS signature verified.
 ///
-/// ★ It names the algorithms rather than saying "yes", and that is
+/// It names the algorithms rather than saying "yes", and that is
 /// [`pdfcer_core::signature::Integrity::Verified`]'s own instruction: the two
 /// fields are carried *"so a shell can disclose a SHA-1 signature as
 /// verified-with-a-weak-digest rather than hide it"*. A shell that printed
@@ -101,7 +101,7 @@ pub const fn integrity_signature_invalid() -> &'static str {
 
 /// pdfcer could not reach a verdict, and says why in the engine's words.
 ///
-/// ★ `reason` is passed through **unedited**. The engine promises this case is
+/// `reason` is passed through **unedited**. The engine promises this case is
 /// *"never reported as either of the other three"*, and it names each cause
 /// precisely — an unimplemented subfilter, `adbe.x509.rsa_sha1`, RFC 3161,
 /// P-521, Brainpool, a malformed CMS, a hole that does not fit the range. A
@@ -134,7 +134,7 @@ pub const fn trust_label() -> &'static str {
 
 /// The signer chains to a trusted anchor.
 ///
-/// ★★★ **The single most dangerous string in this application**, and the reason
+/// **The single most dangerous string in this application**, and the reason
 /// it is long. It states four things in one sentence because separating any of
 /// them would leave the good news standing alone:
 ///
@@ -173,7 +173,7 @@ pub fn trusted(anchor_subject: &str, source: &[String], validity_checked: bool) 
 
 /// Trust was evaluated and the signer does not chain to a trusted anchor.
 ///
-/// ★ *"Valid but untrusted"* is a real and common state — a self-signed
+/// *"Valid but untrusted"* is a real and common state — a self-signed
 /// certificate, a corporate CA nobody added to Acrobat — and this sentence says
 /// so, because an operator who reads "untrusted" beside an intact signature will
 /// otherwise conclude the document was tampered with. The engine's own reason
@@ -203,7 +203,7 @@ pub const fn signer_unknown() -> &'static str {
 
 /// The prefix every unchecked-trust sentence begins with.
 ///
-/// ★★★ Its own function, and every caller of the four `not_checked_*` sentences
+/// Its own function, and every caller of the four `not_checked_*` sentences
 /// goes through [`not_checked`], so the words *"Not checked"* cannot be dropped
 /// from one branch by a well-meaning edit that shortened it.
 #[must_use]
@@ -247,7 +247,7 @@ pub fn not_checked_no_store(looked_in: usize) -> String {
 
 /// The operator configured a path and nothing is there.
 ///
-/// ★ Not the same sentence as [`not_checked_no_store`], and the separation is
+/// Not the same sentence as [`not_checked_no_store`], and the separation is
 /// the point: this person did not fail to have a store, they made a typo, and
 /// telling them their machine has no trust list would send them looking in
 /// entirely the wrong place.
@@ -315,7 +315,7 @@ pub fn store_undecodable(count: usize) -> String {
 /// The at-own-risk disclosure, shown wherever the store is turned on or
 /// inspected.
 ///
-/// ★★ Translated from `pdfcer_core::settings::AcrobatTrustStore`'s own type
+/// Translated from `pdfcer_core::settings::AcrobatTrustStore`'s own type
 /// documentation and from the CLI's identical warning, deliberately: two front
 /// ends wording one legal limitation differently is worse than either wording,
 /// and this is the sentence a person would quote back at us.
@@ -345,7 +345,7 @@ pub const fn use_store_title() -> &'static str {
 
 /// What the standard leaves open here.
 ///
-/// ★ **This one is not a spec silence and the sentence says so**, exactly as
+/// **This one is not a spec silence and the sentence says so**, exactly as
 /// `quad_point_order`'s does. ISO 32000-1 is perfectly clear that validation
 /// has a trust leg; what it does not do — and cannot — is tell a program which
 /// certificates a particular person trusts. That is a fact about the operator,
@@ -383,7 +383,7 @@ pub const fn use_store_off_note() -> &'static str {
 
 /// The at-own-risk option.
 ///
-/// ★ The label spells *"at your own risk"* because the engine's own persisted
+/// The label spells *"at your own risk"* because the engine's own persisted
 /// token does — `acrobat_trust_store = at_own_risk` — and an operator who opens
 /// `settings.txt` must find the same words they clicked.
 #[must_use]
@@ -456,7 +456,7 @@ pub const fn store_path_filter() -> &'static str {
 
 /// What pdfcer currently resolves, when a usable store was found.
 ///
-/// ★ Reported as of the last time pdfcer looked, which is every frame this
+/// Reported as of the last time pdfcer looked, which is every frame this
 /// group is drawn — a `stat`, not a read. That differs from
 /// `crate::text::acrobat::resolved_note`, which cannot update as you type
 /// because resolving an Acrobat spawns processes. Locating a file does not, so
@@ -489,7 +489,7 @@ pub fn resolved_configured_missing(path: &str) -> String {
 
 /// The button that reads the store and reports what is in it.
 ///
-/// ★★★ **This control is drawn only when a store was actually found**, which is
+/// **This control is drawn only when a store was actually found**, which is
 /// R9: an unavailable capability renders nothing, and greying is reserved for
 /// something that is *temporarily* unavailable. A person with no Acrobat store
 /// is not one press away from having one. The path field above stays visible in
@@ -517,7 +517,7 @@ pub fn inspect_failed(reason: &str) -> String {
 mod tests {
     use super::*;
 
-    /// ★★★ **`NotChecked` says "not checked", in every one of its four
+    /// **`NotChecked` says "not checked", in every one of its four
     /// explanations.**
     ///
     /// The property this whole feature stands on, asserted over the sentence
@@ -547,7 +547,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **The four explanations are four different sentences.**
+    /// **The four explanations are four different sentences.**
     ///
     /// Not a tautology: the cheap implementation of this feature has one
     /// "trust was not checked" string and four call sites, and it would pass
@@ -576,7 +576,7 @@ mod tests {
         assert!(all[3].contains("could not read it"), "{}", all[3]);
     }
 
-    /// ★★★ **A `Trusted` verdict discloses that revocation was not checked.**
+    /// **A `Trusted` verdict discloses that revocation was not checked.**
     ///
     /// The engine attaches that disclosure to every `Trusted` note it produces
     /// and the whole design rests on the shell not dropping it. This is the

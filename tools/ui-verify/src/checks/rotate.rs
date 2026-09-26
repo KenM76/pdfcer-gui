@@ -36,7 +36,7 @@ const HALF_GRIP_PT: f32 = 4.0;
 
 /// How far above the selection box the handle sits, in points.
 ///
-/// ★ It mirrors `canvas::handles::ROTATE_STEM_PX` and is **not** imported from
+/// It mirrors `canvas::handles::ROTATE_STEM_PX` and is **not** imported from
 /// it — this harness drives a built binary and must not compile against the
 /// application's internals, or it would agree with a build by construction
 /// rather than by observation.
@@ -80,7 +80,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
+    // PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
     //
     // ⇒ `fixture::grip_gesture_target` holds the point and the reason. A
@@ -181,7 +181,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: find the handle, from the application's own declaration ---------
     //
-    // ★ The outline's rect, and the handle derived from it — never a guess.
+    // The outline's rect, and the handle derived from it — never a guess.
     // `handles.md` H8: where a handle sits is the end of a
     // document→canvas→screen conversion and is a fact only the application
     // knows. A harness that guessed would land inside the object, start a MOVE,
@@ -197,7 +197,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let w = (outline.max.x - outline.min.x).max(1.0);
     let h = (outline.max.y - outline.min.y).max(1.0);
 
-    // ★★ EVERY POINT BELOW IS BUILT WITH `declared_at`, AND THAT IS THE
+    // EVERY POINT BELOW IS BUILT WITH `declared_at`, AND THAT IS THE
     // DISCIPLINE RATHER THAN A CONVENIENCE.
     //
     // `ScreenPoint`'s only constructor in this crate is `WindowFrame::to_screen`
@@ -237,7 +237,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // and all three inside the application. A reader would go looking in the
     // routing for a defect that is in the LAYOUT.
     //
-    // ★ This is the same failure mode the two checks written this evening
+    // This is the same failure mode the two checks written this evening
     // both committed: **a confident, specific, wrong accusation is worse than
     // a vague one**, because it is actionable and it aims somebody at the
     // wrong file. A check that can rule a cause OUT should.
@@ -304,19 +304,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
 
-    // --- 5: ★★ the number a wrong build would get wrong ---------------------
+    // --- 5: the number a wrong build would get wrong ---------------------
     let deg: f64 = commit
         .get("deg")
         .and_then(|v| v.parse().ok())
         .unwrap_or(0.0);
     report.note(format!("★ the rotation committed: `{}`", commit.raw));
-    // ★ A generous window. The press lands at the handle's declared centre and
+    // A generous window. The press lands at the handle's declared centre and
     // the release at a computed point, both rounded to whole pixels, so the
     // measured bearing is a degree or two off 90 by construction. What is being
     // asserted is the QUADRANT and the SIGN, not the arithmetic — that has eight
     // unit tests.
     //
-    // ★★ NEGATIVE, and that is the assertion that catches link 5. Screen y is
+    // NEGATIVE, and that is the assertion that catches link 5. Screen y is
     // down, so the drag is clockwise and `rotating::angle` reports +90; PDF user
     // space is y-up and `Matrix::rotate` turns anticlockwise in it, so the
     // committed angle must be −90. A build that forgot the crossing, or applied

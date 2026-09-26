@@ -6,7 +6,7 @@
 `reach`'s `SCAFFOLDED` set with **no recorded reason at all**, and inert.
 `EditSession::add_image` has shipped the whole time.
 
-## ★ This catalog's hardest job: saying what a resolution MEANS
+## This catalog's hardest job: saying what a resolution MEANS
 
 An image placed into a PDF has no resolution of its own — §8.9.4 maps it
 onto the **unit square** and the content stream's matrix scales that square
@@ -25,7 +25,7 @@ its own doc comment is the argument this catalog follows:
 That last clause is why the sentence exists: both mistakes look perfect
 until the sheet is plotted.
 
-## ★ It IS previewed now, and the request that got it is worth the paragraph
+## It IS previewed now, and the request that got it is worth the paragraph
 
 This section used to say the resolution could not be shown before the
 commit, because `NewImage` offered `placed_rect()` as a pure preview and
@@ -35,7 +35,7 @@ about: *"re-deriving the arithmetic in the GUI is how a preview and a result
 drift apart."*
 
 
-★ **And the four-line version this shell nearly wrote would have been
+**And the four-line version this shell nearly wrote would have been
 wrong.** Under `ImageFit::Contain` the placed rectangle is the *letterboxed*
 sub-rectangle, not the box the operator typed — so measuring `rect` reports
 a resolution low by exactly the letterbox ratio. The pure sibling is not

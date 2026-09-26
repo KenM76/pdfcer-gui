@@ -55,7 +55,7 @@ pub(crate) struct DrawnPage {
     /// Where its raster was actually PAINTED, which is not [`Self::rect`]
     /// once the region tier is engaged.
     ///
-    /// ★★ Recorded so the trace can report it, and the trace reports it
+    /// Recorded so the trace can report it, and the trace reports it
     /// because `OPERATOR_REQUESTS.md` O24c — the page lurching backwards
     /// mid-pan — is a defect in the PAINT rectangle and is invisible in every
     /// other field. `rect=` is the page's own rect and moves smoothly all the
@@ -147,7 +147,7 @@ pub(super) fn nearest_first(pages: &[(usize, f32)], centre_y: f32) -> Vec<usize>
     order.into_iter().map(|(_, page)| page).collect()
 }
 
-/// ★ **The scroll offset that brings a navigated-to page onto the strip**, or
+/// **The scroll offset that brings a navigated-to page onto the strip**, or
 /// `None` when nothing navigated.
 ///
 /// The third source of a forced scroll offset, and the one Phase 4 adds. Under
@@ -187,7 +187,7 @@ pub(super) fn page_scroll_offset(
     let rect = strip.rect_of(doc.view.page_index)?;
     doc.tracked_page = doc.view.page_index;
     let size = strip.size();
-    // ★ The rect is STRIP space and the answer is a SCROLL offset; since O23
+    // The rect is STRIP space and the answer is a SCROLL offset; since O23
     // they differ by the pasteboard. `strip_to_scroll` is the one conversion.
     let overhang = (doc.pasteboard_overhang.x, doc.pasteboard_overhang.y);
     let x = crate::canvas::geometry::strip_to_scroll(
@@ -235,7 +235,7 @@ pub(super) fn track_current_page(
     viewport_size: egui::Vec2,
     deep: bool,
 ) {
-    // ★ **Which page this frame's input is about**, and the two ways it is
+    // **Which page this frame's input is about**, and the two ways it is
     // decided. Both write `view.page_index`, which is the fourth item of
     // per-frame view bookkeeping the canvas is permitted to write (see the
     // module header): a scroll position cannot be deferred into an `Action`,
@@ -253,7 +253,7 @@ pub(super) fn track_current_page(
     //    from the pages' own responses so it costs nothing on a frame with no
     //    input.
     //
-    // ★★★ CONVERTED OUT OF CONTENT SPACE FIRST — `OPERATOR_REQUESTS.md` O26,
+    // CONVERTED OUT OF CONTENT SPACE FIRST — `OPERATOR_REQUESTS.md` O26,
     // and the SECOND site of the omission O23 was four attempts long.
     //
     // `page_at_view` takes a **strip-space** rect; `scroll_offset` is measured
@@ -264,7 +264,7 @@ pub(super) fn track_current_page(
     // far more often, **no page at all**, because the horizontal error is a
     // whole viewport and the strip is only as wide as its widest page.
     //
-    // ★★ Both failure modes are damaging and the silent one is worse.
+    // Both failure modes are damaging and the silent one is worse.
     //
     // * *No page* means `page_at_view` returns `None` on nearly every frame,
     //   the branch does not run, and scroll-driven current-page tracking —
@@ -278,7 +278,7 @@ pub(super) fn track_current_page(
     //   either side of it. That is the operator's *"seems to happen at other
     //   junctions too"*.
     //
-    // ★★★ And the wrong page is not a cosmetic mis-report, because
+    // And the wrong page is not a cosmetic mis-report, because
     // `current_origin` — the frame of reference every single-page solve in
     // `canvas::zoom` and `find::reveal` is handed — is *this page's* origin in
     // the strip. Set it to page 7 and the next anchored zoom converts its
@@ -287,7 +287,7 @@ pub(super) fn track_current_page(
     // notch at 30 % took the view from page 1 to page 8, and the status bar
     // said so.
     //
-    // ★ Skipped entirely at the deep tier, for the reason `visible_rect` is:
+    // Skipped entirely at the deep tier, for the reason `visible_rect` is:
     // above the threshold the scroll offset is **forced to zero** and says
     // nothing about where the view is — the `f64` anchor holds that. Asking
     // this question there would answer about the strip's origin rather than
@@ -341,7 +341,7 @@ mod tests {
     use crate::viewer::PageDisplay;
     use crate::viewer::strip::Strip;
 
-    /// ★ **The renderer is pointed at the middle of the viewport first.**
+    /// **The renderer is pointed at the middle of the viewport first.**
     ///
     /// `render::settle` starts one render per frame and takes the first entry
     /// of this list that has no raster, so the order **is** the fill order. Top
@@ -376,7 +376,7 @@ mod tests {
         assert_eq!(nearest_first(&pages, 0.0).len(), 2);
     }
 
-    /// ★ **A page command scrolls the strip; a scroll does not.**
+    /// **A page command scrolls the strip; a scroll does not.**
     ///
     /// The gate this function exists for, from both sides. Without the first
     /// half, "Next page" in a continuous document does nothing at all; without
@@ -398,7 +398,7 @@ mod tests {
         let offset = page_scroll_offset(&mut doc, &strip, viewport)
             .expect("a navigation must move the strip");
         let rect = strip.rect_of(2).expect("page 2 is laid out");
-        // ★ The expected value gained a `strip_to_scroll` since O23: the rect
+        // The expected value gained a `strip_to_scroll` since O23: the rect
         // is in STRIP space and the answer is a SCROLL offset, and the two now
         // differ by the pasteboard. The property is unchanged — the page's top
         // lands at the top of the viewport — only the space the number is
@@ -434,7 +434,7 @@ mod tests {
         }
     }
 
-    /// ★★ **The offset stays inside the scrollable range — which is now the
+    /// **The offset stays inside the scrollable range — which is now the
     /// CONTENT's range, not the strip's.**
     ///
     /// This asserted `Vec2::ZERO` until 2026-08-21, on the reasoning that a
@@ -444,7 +444,7 @@ mod tests {
     /// around — which is the operator's *"move the view of the corner of the
     /// page to the center of the screen"* for a small document.
     ///
-    /// ★ So the assertion is the INVARIANT rather than the number. Pinning the
+    /// So the assertion is the INVARIANT rather than the number. Pinning the
     /// new number would say nothing about whether it is reachable, and this
     /// function's whole job is that its answer is inside the range egui will
     /// accept — an offset beyond it is silently clamped, and the page then

@@ -21,7 +21,7 @@
 //! stamps the wrong picture every time. There is no symptom short of looking
 //! at the artwork.
 
-//! ## ★ `#![cfg(test)]` as well as the parent's `#[cfg(test)] mod tests;`
+//! ## `#![cfg(test)]` as well as the parent's `#[cfg(test)] mod tests;`
 //!
 //! Redundant to the compiler and load-bearing to two gates.
 //!
@@ -52,7 +52,7 @@ fn plan(pages: usize) -> Plan {
 
 /// The names an already-written collection carries, as the plan sees them.
 ///
-/// ★ Deliberately built from `(page, display)` rather than from a
+/// Deliberately built from `(page, display)` rather than from a
 /// `StampCollection`: `super::existing_names` is the one place the engine's
 /// `#[non_exhaustive]` type is converted, and the plan's contract is about
 /// this narrower shape. `stamp_collection_reaches_the_engine` in
@@ -94,7 +94,7 @@ fn spaces_are_dropped_rather_than_becoming_underscores() {
 
 #[test]
 fn a_leading_hash_is_removed_even_when_a_space_follows_it() {
-    // ★ THE ORDERING TEST. `#` is stripped AFTER the character filter, because
+    // THE ORDERING TEST. `#` is stripped AFTER the character filter, because
     // only the filter makes `# Approved` and `#Approved` the same string.
     // Reverse the two clauses and this input keeps its marker.
     for input in ["#Approved", "# Approved", "#  Approved"] {
@@ -135,7 +135,7 @@ fn a_long_name_is_truncated_and_says_so() {
 
 #[test]
 fn truncation_happens_before_deduplication() {
-    // ★ Reverse the order and the appended number is cut back off, silently
+    // Reverse the order and the appended number is cut back off, silently
     // reintroducing the collision the number existed to resolve.
     let long = "A".repeat(super::MAX_INTERNAL_LEN + 10);
     let taken = vec!["A".repeat(super::MAX_INTERNAL_LEN)];
@@ -180,7 +180,7 @@ fn a_fresh_plan_names_every_page_one_based() {
 
 #[test]
 fn plan_and_extraction_agree() {
-    // ★★ THE LOAD-BEARING TEST. See the module header.
+    // THE LOAD-BEARING TEST. See the module header.
     let mut p = plan(5);
     p.stamps[0].include = false;
     p.stamps[3].include = false;
@@ -209,7 +209,7 @@ fn plan_and_extraction_agree() {
 
 #[test]
 fn an_excluded_row_claims_no_name_and_frees_it() {
-    // ★ An excluded row must not consume a name. If it did, the row that
+    // An excluded row must not consume a name. If it did, the row that
     // actually claimed the name would show a `MadeUnique` disclosure the
     // operator cannot explain, because the row that took it is not in the file.
     let mut p = Plan::new(2, "Signatures", &[]);
@@ -229,7 +229,7 @@ fn an_excluded_row_claims_no_name_and_frees_it() {
 
 #[test]
 fn rederiving_after_a_rename_drops_the_stale_disclosure() {
-    // ★ A disclosure has a subject. Renaming row 0 frees `Approved`, so row 1's
+    // A disclosure has a subject. Renaming row 0 frees `Approved`, so row 1's
     // "we renamed it" sentence must go with the collision that caused it —
     // otherwise the operator reads a permanent explanation of something that is
     // no longer true.
@@ -298,7 +298,7 @@ fn the_no_stamps_blocker_wins_when_both_apply() {
 
 #[test]
 fn an_existing_collection_is_matched_by_page_not_by_tree_position() {
-    // ★★ The `StandardBusiness.pdf` case, in miniature. The tree is sorted
+    // The `StandardBusiness.pdf` case, in miniature. The tree is sorted
     // lexicographically (§7.9.6) and the pages are not, so zipping the two
     // lists attaches the wrong name to every page.
     let names = existing(&[(Some(0), "Approved"), (Some(4), "Completed")]);
@@ -343,7 +343,7 @@ fn a_stamp_naming_no_page_does_not_claim_one() {
 /// project has already paid for twice, once at the cost of four filed defects
 /// against code that was correct.
 ///
-/// ★ And the reverse tripwire in the same test: `four-pages.pdf` is asserted
+/// And the reverse tripwire in the same test: `four-pages.pdf` is asserted
 /// NOT to be a collection. An absence assertion whose control had grown a name
 /// tree would be a check that cannot fail.
 #[test]
@@ -384,7 +384,7 @@ fn the_driven_checks_fixtures_are_what_the_check_believes_they_are() {
          for every file would be caught only if `unresolved_count` also regressed"
     );
 
-    // ★★ The property the row regions exist for: TREE ORDER IS NOT PAGE
+    // The property the row regions exist for: TREE ORDER IS NOT PAGE
     // ORDER. `#` sorts before `S`, so the dynamic stamp is tree entry 0 and
     // page 3. A build that enumerated pages instead of tree entries would
     // produce a plausible list in the wrong order, and only this assertion

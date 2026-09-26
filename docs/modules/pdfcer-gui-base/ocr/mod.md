@@ -26,7 +26,7 @@ call site produces a layer that is mirrored *twice* — i.e. correct — for
 one engine and mirrored once for the next, "which is the kind of defect
 that gets attributed to the wrong module for a long time."
 
-## ★ pdfcer-gui is the first consumer of `add_ocr_layer` anywhere
+## pdfcer-gui is the first consumer of `add_ocr_layer` anywhere
 
 Worth knowing before trusting anything downstream of step 6. Grepping
 `D:\Dev\pdfcer` for `add_ocr_layer` finds the function, its own tests, and
@@ -34,7 +34,7 @@ Worth knowing before trusting anything downstream of step 6. Grepping
 OCR verb. So the sandwich writer is exercised by unit tests and by this
 module, and by nothing else in either repository.
 
-## ★ Why this runs on a thread, when `file.copy_document_text` does not
+## Why this runs on a thread, when `file.copy_document_text` does not
 
 `app::dispatch`'s document-text arm blocks the UI thread on purpose and
 says so: a whole-document extraction is 331–449 ms on this project's
@@ -56,7 +56,7 @@ deliberate act rather than a per-frame consequence:
   dialog that started it, and the dialog cannot start a second while the
   first is running.
 
-## ★★ What the recogniser is given, and why the obvious answer was wrong
+## What the recogniser is given, and why the obvious answer was wrong
 
 **The raster size is [`TARGET_PIXELS`] = 8.4 million, not a DPI**, and that
 constant carries the measurement that produced it. The short version, because
@@ -76,7 +76,7 @@ Greyscale rather than colour because that is the trait's contract:
 layout every candidate engine takes". Converting here rather than inside the
 engine adapter keeps the adapter a pure binding.
 
-## ★ Why recognition reads the document as it was OPENED
+## Why recognition reads the document as it was OPENED
 
 `add_ocr_layer` takes a `&Document` — the base revision — and writes an
 incremental section on top of it. That is what keeps the scan

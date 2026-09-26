@@ -1,7 +1,7 @@
 //! # `text::settings::bytes` — what changing it makes pdfcer WRITE
 //!
 //!
-//! ## ★ The split is by BLAST RADIUS, which is the window's own taxonomy
+//! ## The split is by BLAST RADIUS, which is the window's own taxonomy
 //!
 //! Not by dialog group, and not alphabetically. Every setting in this window
 //! carries a `*_radius` line stating *which way costs what*, and that line is
@@ -37,7 +37,7 @@ pub const fn separations_title() -> &'static str {
 
 /// Separations: what the standard leaves open.
 ///
-/// ★ Careful wording, and the care is the point. This is **not** a spec
+/// Careful wording, and the care is the point. This is **not** a spec
 /// ambiguity: §14.11.4 is perfectly clear about the invariant. What it does
 /// not say is what an *editor* should do when an edit breaks it, and all three
 /// answers are defensible for different workflows. Blurring the two shapes of
@@ -133,7 +133,7 @@ pub const fn missing_as_nothing_label() -> &'static str {
 
 /// Why refusing to guess is the shipped answer.
 ///
-/// ★ The guess disclosure here is inverted from every other setting's, and
+/// The guess disclosure here is inverted from every other setting's, and
 /// deliberately: what is disclosed is that *the other two are the guesses*.
 /// Making either of them the default would be the "sneaky" failure the
 /// disclosure rule forbids, because the operator would see a plausible
@@ -282,7 +282,7 @@ pub const fn trailing_eol_lf_label() -> &'static str {
     "End with a newline (pdfcer's default)"
 }
 
-/// ★ The guess disclosure the old note omitted.
+/// The guess disclosure the old note omitted.
 ///
 /// Both readings of the standard are self-consistent and it does not choose.
 /// The note read as a plain recommendation; it now says which of the two
@@ -309,7 +309,7 @@ pub const fn trailing_eol_none_note() -> &'static str {
 // ===========================================================================
 // Saving files — /QuadPoints corner order
 //
-// ★ The register's own WORST CASE, and the one setting in this window whose
+// The register's own WORST CASE, and the one setting in this window whose
 // effect nobody can ever see in pdfcer.
 //
 // The other two settings in this group say "changes the bytes pdfcer writes,
@@ -334,7 +334,7 @@ pub const fn quad_order_title() -> &'static str {
 
 /// Quad-point order: what the standard leaves open.
 ///
-/// ★ It does NOT leave it open, and that is the honest and unusual thing to
+/// It does NOT leave it open, and that is the honest and unusual thing to
 /// have to say in a window whose every other silence line means *the standard
 /// declines to choose*. Section 12.5.6.10 states an order and essentially no
 /// producer follows it, so pdfcer is choosing between the clause and the world.
@@ -389,7 +389,7 @@ pub const fn quad_order_ccw_note() -> &'static str {
 
 /// Faking bold/italic: what it is.
 ///
-/// ★ Named for the ACT, not for the engine's type. `StylePolicy` means nothing
+/// Named for the ACT, not for the engine's type. `StylePolicy` means nothing
 /// to an operator; *"faking bold and italic"* is what they will have seen
 /// happen and the phrase they would search for.
 #[must_use]
@@ -399,7 +399,7 @@ pub const fn style_policy_title() -> &'static str {
 
 /// Faking bold/italic: what is left open.
 ///
-/// ★★ This is the one `*_silence` line in the window that is **not** about the
+/// This is the one `*_silence` line in the window that is **not** about the
 /// standard being silent. Every other setting here exists because ISO 32000-1
 /// permits two readings; this one exists because the *page* may not carry what
 /// the operator asked for, and there is no answer in any standard to what a
@@ -415,7 +415,7 @@ pub const fn style_policy_silence() -> &'static str {
 
 /// Faking bold/italic: what it costs.
 ///
-/// ★★★ It changes **the bytes pdfcer writes**, and that is not obvious.
+/// It changes **the bytes pdfcer writes**, and that is not obvious.
 ///
 /// A faked weight is not a display trick: it is text rendering mode 2 plus a
 /// stroke width written into the page's content stream, and a faked slant is a
@@ -436,7 +436,7 @@ pub const fn style_policy_auto_label() -> &'static str {
 
 /// Faking bold/italic: the default's note.
 ///
-/// ★ It states what pdfcer does FIRST, because the thing operators get wrong
+/// It states what pdfcer does FIRST, because the thing operators get wrong
 /// about this setting is assuming it decides whether a real face is used. It
 /// does not — a real face is always preferred, under all three choices.
 #[must_use]
@@ -464,7 +464,7 @@ pub const fn style_policy_refuse_label() -> &'static str {
 
 /// Faking bold/italic: refuse's note.
 ///
-/// ★★ It says the button will appear not to work, in advance. This is the only
+/// It says the button will appear not to work, in advance. This is the only
 /// setting in this window that can make a control do nothing, and an operator
 /// who chose it months earlier will otherwise read the silence as a defect.
 #[must_use]
@@ -474,7 +474,7 @@ pub const fn style_policy_refuse_note() -> &'static str {
 
 /// Faking bold/italic: the bound, disclosed under the whole group.
 ///
-/// ★★★ The fact that makes this setting narrower than it looks, and it is a
+/// The fact that makes this setting narrower than it looks, and it is a
 /// fact rather than a direction — so it is drawn under the group rather than
 /// attached to one option, exactly as `actual_text_bound` is.
 ///

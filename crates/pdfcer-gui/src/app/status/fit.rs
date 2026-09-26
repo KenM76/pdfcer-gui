@@ -1,7 +1,7 @@
 //! # `status::fit` — the bar's four named zoom levels
 //!
 //!
-//! ## ★ The one thing to read before changing anything here
+//! ## The one thing to read before changing anything here
 //!
 //! The bar's right-hand cluster is laid out **right to left**, so within this
 //! group the control added FIRST is drawn RIGHTMOST. The screen reads
@@ -18,12 +18,12 @@ use super::REGION_FIT;
 
 /// `Actual size · Fit width · Fit page`, mirroring View ▸ Zoom under P1a.
 ///
-/// ★ **Two of the three are toggles and one is a button, and that asymmetry
+/// **Two of the three are toggles and one is a button, and that asymmetry
 /// is honest rather than sloppy.** `FitMode::Page` and `FitMode::Width` are
 /// *modes*: they persist, they re-fit on every window resize, and a control
 /// that shows whether you are in one is telling the truth. `FitMode::None`
 /// is the absence of a mode, so a "selected" Actual size would light up at
-/// any pinned zoom — including 73 % — which is the module docs' ★ defect
+/// any pinned zoom — including 73 % — which is the module docs' defect
 /// rendered on screen instead of merely wired. A plain button makes no claim
 /// about state.
 ///
@@ -42,7 +42,7 @@ pub(super) fn group(ui: &mut egui::Ui, doc: &OpenDoc, actions: &mut Vec<Action>)
             {
                 actions.push(Action::Fit(FitMode::Page));
             }
-            // ★ Between Fit page and Fit width on screen — O29. Added
+            // Between Fit page and Fit width on screen — O29. Added
             // second here because the layout is right-to-left, so the bar
             // reads `Actual size · Fit width · Fit height · Fit page` and the
             // two single-axis fits sit beside each other rather than with
@@ -61,7 +61,7 @@ pub(super) fn group(ui: &mut egui::Ui, doc: &OpenDoc, actions: &mut Vec<Action>)
             {
                 actions.push(Action::Fit(FitMode::Width));
             }
-            // ★ Raises exactly what the ribbon's `view.zoom_actual` raises,
+            // Raises exactly what the ribbon's `view.zoom_actual` raises,
             // including its defect. See the module docs: the fix is a new
             // action variant, not a divergent mirror.
             if ui

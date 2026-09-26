@@ -10,7 +10,7 @@ use crate::app::actions::Action;
 
 /// The ids this module owns.
 ///
-/// ★ A predicate rather than a `match` in `super`, so the routing arm cannot
+/// A predicate rather than a `match` in `super`, so the routing arm cannot
 /// drift from the arms it routes to. `measure_for_command` already answers for
 /// the tool-arming ids; the named ones are the `measure.*` commands that are
 /// **not** tools, each for a reason its own arm records.
@@ -25,13 +25,13 @@ pub(super) fn handles(id: &str) -> bool {
 /// Dispatch one `measure.*` command.
 pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str, actions: &mut Vec<Action>) {
     match id {
-        // ★ **Set scale — recalibrate the group a dimension is measured in.**
+        // **Set scale — recalibrate the group a dimension is measured in.**
         //
         // Gated on `author_measure` exactly as every arm here is: a mode that
         // cannot author a dimension has no business recalibrating the group
         // they live in.
         //
-        // # ★ Which group, and why the fallback is traced
+        // # Which group, and why the fallback is traced
         //
         // The measure tool's active authoring group, when the tool has been
         // entered this session. When it has not, there is no state in
@@ -48,12 +48,12 @@ pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str, actions: &m
                 });
                 return;
             }
-            // ★ One resolution for every arm that needs a group, taking the
+            // One resolution for every arm that needs a group, taking the
             // id so the fallback trace still names the command.
             let group = active_group(ctx, id);
             app.dialogs.open_scale(&app.status, group);
         }
-        // ★ **Manage dimension groups**, on the operator's report: *"I still
+        // **Manage dimension groups**, on the operator's report: *"I still
         // can't get to edit dimension groups when I click on it."*
         //
         // Gated on `author_measure` for exactly the reason `measure.set_scale`
@@ -68,13 +68,13 @@ pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str, actions: &m
                 });
                 return;
             }
-            // ★ **A panel toggle, not a window**, on the operator's report:
+            // **A panel toggle, not a window**, on the operator's report:
             // *"the groups editor popup is too long for some screens so can't
             // close it"*. A window whose content outgrows the screen can carry
             // its own title bar — and its only ✕ — off the desktop.
             // `crate::panels::dimension_groups`' header has the whole account.
             //
-            // ★ **No authoring group is resolved here**, unlike
+            // **No authoring group is resolved here**, unlike
             // `measure.set_scale` above, and the asymmetry is the point: a
             // panel is not constructed when it is shown, so it reads the
             // authoring group itself on every frame and keeps following it
@@ -83,7 +83,7 @@ pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str, actions: &m
             // operator pressed the button.
             app.toggle_panel(crate::panels::Panel::DimensionGroups);
         }
-        // ★ **Finish** — the ribbon half of the radius/diameter tool's ending.
+        // **Finish** — the ribbon half of the radius/diameter tool's ending.
         //
         // It must sit ahead of the tool arm below rather than inside it:
         // `measure_for_command` maps ids to *kinds*, this id names no kind, and
@@ -125,7 +125,7 @@ pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str, actions: &m
                 });
             }
         }
-        // ★ **The measure tools — one arm for every kind in
+        // **The measure tools — one arm for every kind in
         // `MeasureKind::ALL`.** The id IS the kind, so one arm and one mapping
         // cannot come to disagree with a run of hand-written arms.
         //
@@ -133,7 +133,7 @@ pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str, actions: &m
         // clicks that `crate::canvas::measure` takes, and only the pick that
         // completes one raises an `Action`.
         //
-        // ★ `author_measure` and not `author_markup`. They are two flags
+        // `author_measure` and not `author_markup`. They are two flags
         // because `Capabilities::for_mode` derives each from whether the mode
         // is shown its own ribbon tab, so a manifest can offer markup without
         // dimensions or the reverse. One "authoring" flag would make that

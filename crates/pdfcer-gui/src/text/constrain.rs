@@ -15,17 +15,17 @@ use crate::canvas::constrain::{Axis, Lock};
 #[must_use]
 pub const fn caption(lock: Lock) -> &'static str {
     match lock {
-        // ★ "Left and right", not "the X axis" and not "horizontally". The
+        // "Left and right", not "the X axis" and not "horizontally". The
         // operator can see left and right; X is the file format's word, and
         // "horizontally" is an adverb doing the work of a picture.
         Lock::Axis(Axis::Horizontal) => "Shift: locked to left and right",
         Lock::Axis(Axis::Vertical) => "Shift: locked to up and down",
-        // ★★ "Keeping its proportions", not "aspect ratio locked". The first is
+        // "Keeping its proportions", not "aspect ratio locked". The first is
         // what the operator wanted; the second is what a program does about it.
         // It also states the *consequence* — the shape does not distort — which
         // is the fact that makes the key worth reaching for.
         Lock::Aspect => "Shift: keeping its proportions",
-        // ★ It names the STEP, because that is the fact an operator acts on —
+        // It names the STEP, because that is the fact an operator acts on —
         // "constrained" tells them a rule is in force and not what it will let
         // them have. Fifteen degrees is what makes the four right angles and
         // the four diagonals reachable, and saying the number is how they find
@@ -53,7 +53,7 @@ mod tests {
         assert_ne!(v, a);
     }
 
-    /// ★ Every sentence names the key, because the caption is also how the
+    /// Every sentence names the key, because the caption is also how the
     /// feature is discovered.
     #[test]
     fn every_sentence_names_the_key() {

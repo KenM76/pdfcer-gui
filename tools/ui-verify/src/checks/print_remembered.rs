@@ -27,7 +27,7 @@ const PLAN_EVENT: &str = "print-plan";
 
 /// The preferences file, beside the executable under test.
 ///
-/// ★ **Reset to the bare sandbox seed** before the control run and rewritten
+/// **Reset to the bare sandbox seed** before the control run and rewritten
 /// before the second — never deleted. Those are not the same act, and the
 /// difference cost this check two sweeps: deletion takes `ask_default_app = false`
 /// with it, and the symptom is the O173 offer opening a real OS window in front of
@@ -174,7 +174,7 @@ fn launch_and_open(
         )));
     }
 
-    // ★ Through the overflow when the ribbon has folded it there. At the
+    // Through the overflow when the ribbon has folded it there. At the
     // harness's window width the File tab correctly folds its rightmost groups
     // — Print among them — into the overflow menu, and a lookup that read only
     // the tab surface reports "Print is missing", which is false. The same
@@ -264,7 +264,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     //
     //
-    // ★★★ **What this paragraph used to say, and what its one wrong clause
+    // **What this paragraph used to say, and what its one wrong clause
     // cost.** It said *"`userdata/` is not among the sibling directories it brings,
     // so every check begins with no preferences file of any kind"*, and concluded
     // from that that the delete at the top of this function always finds nothing —
@@ -277,7 +277,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // preferences file; the delete always found it; and what it removed was the
     // suppression.
     //
-    // ★★ So why keep it. Because the two runs where it is NOT redundant are
+    // So why keep it. Because the two runs where it is NOT redundant are
     // exactly the two where losing the file would cost the most:
     //
     //   1. `--shared-profile`, where every check writes to ONE `userdata/`
@@ -294,7 +294,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     //      obvious next move, and that install's `userdata/` holds settings a
     //      person chose.
     //
-    // ★★★ **RESET to the bare seed, never deleted — and this paragraph used
+    // **RESET to the bare seed, never deleted — and this paragraph used
     // to argue the opposite, at length and persuasively.** The argument it made
     // was: `ui_scale` writes back `1.0` because that is a real, safe, non-absent
     // value of the one key it owns, whereas here the neutral state is *no print
@@ -314,7 +314,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // Deletion does not, because an absent `ask_default_app` takes its own
     // compiled-in default, and that one is `true`.
     //
-    // ★★ **What it cost, measured 2026-09-13 by driving the check.** The
+    // **What it cost, measured 2026-09-13 by driving the check.** The
     // control launch's trace carries `dialog-owned title="Open PDFs with pdfcer"
     // owned=true` and `dialog-focus — focused=Some(true)` forty lines ahead of the
     // File-tab click, and the click then produced no `ribbon-tab-activated` line at
@@ -351,7 +351,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     struct Neutral<'a>(&'a Path);
     impl Drop for Neutral<'_> {
         fn drop(&mut self) {
-            // ★ Reset, not removed. The two paths where this guard is not
+            // Reset, not removed. The two paths where this guard is not
             // redundant — `--shared-profile`, and a hand run against a real
             // `--exe` — are exactly the paths where removing the O173 suppression
             // would hand the offer to the NEXT check's window.
@@ -386,7 +386,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              print defaults with the O173 offer still suppressed",
             prefs_path.display()
         )),
-        // ★ A SKIP, where the old delete treated its own failure as a note and
+        // A SKIP, where the old delete treated its own failure as a note and
         // carried on. The asymmetry is the point: a delete that failed left a file
         // whose print keys this check knows nothing about, and the twelve values
         // measured from the launch below would then be somebody else's settings
@@ -433,7 +433,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- the seed ------------------------------------------------------------
     //
-    // ★ Written in the writer's own vocabulary, and every value required to
+    // Written in the writer's own vocabulary, and every value required to
     // DIFFER from what the control run just reported. A seeded value that
     // happened to equal the default would come back correct whether the file
     // was read or ignored, so it is a skip rather than a pass — see the module
@@ -536,7 +536,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- and they reached the PLAN, not just the fields -----------------------
     //
-    // ★★ `print-open` reports what the dialog's fields were set to. A build that
+    // `print-open` reports what the dialog's fields were set to. A build that
     // stored the preferences into fields the job planner never consults would
     // pass every assertion above and print portrait anyway. `print-plan` carries
     // `orientation=` and `duplex=` from `effective_device()` — the values that
@@ -600,7 +600,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 mod tests {
     use super::*;
 
-    /// ★★★ **Every seeded value must be spelled the way the file spells it.**
+    /// **Every seeded value must be spelled the way the file spells it.**
     ///
     /// The seed is written straight into `preferences.txt` and compared straight
     /// against the trace, and both sides use the preferences module's `*_key`

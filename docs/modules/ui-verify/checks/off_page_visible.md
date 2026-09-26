@@ -25,7 +25,7 @@ break separately:
 claim the operator can SEE the object"* — and that sentence is what this
 check discharges.
 
-# ★★★ Why a screenshot, and why nothing else would do
+# Why a screenshot, and why nothing else would do
 
 `D:/dev/rag/egui/` carries the rule this obeys: **layout and clipping
 defects have exactly one oracle, and it is a rendered screenshot.** The
@@ -57,7 +57,7 @@ assertion.
    could be placed at the wrong rectangle, or the image could be drawn
    under the backdrop.
 
-★ The **pair** is the point, and the second half of the pair is the control
+The **pair** is the point, and the second half of the pair is the control
 this suite has learned to insist on: *"a uniform failure at every rung of a
 sweep is about the probe."* A patch of the halo that is inside the widened
 raster but outside the square must come back as **paper**. If both patches
@@ -81,7 +81,7 @@ B's centre is `(−100, 120)`; the paper control is `(−100, 40)`, which is
 60 pt below B, still 100 pt left of the sheet, and therefore inside the
 widened raster and outside every mark in the file.
 
-# ★★ Why `view.zoom_actual` and not fit-page
+# Why `view.zoom_actual` and not fit-page
 
 The same reason `off_page_press` gives, and it was measured there: fit-page
 on a 200 × 200 fixture in a maximised window puts the sheet at roughly

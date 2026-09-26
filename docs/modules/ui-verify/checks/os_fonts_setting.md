@@ -17,7 +17,7 @@ missed a row:
 Opening the right window is not the same as answering the question the
 command's own name asks.
 
-## ★★★ Why this check is possible at all, and what it replaces
+## Why this check is possible at all, and what it replaces
 
 The Fonts group is inside a `ScrollArea`, below the fold, inside a
 `CollapsingHeader` that is **closed by default**. A control in that state
@@ -32,7 +32,7 @@ the landing happened — which is both a smaller mechanism and a truer test,
 because scrolling is not what an operator does either: they press the thing
 named after what they want.
 
-## ★★ The oracle is a VISIBLE region, and the distinction is the point
+## The oracle is a VISIBLE region, and the distinction is the point
 
 `settings.fonts.use_os` is published through `ui_rect_visible`, which needs
 60 % of the control inside the clip rect. So the assertion *"this region was

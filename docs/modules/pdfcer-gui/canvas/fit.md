@@ -1,7 +1,7 @@
 # `canvas::fit` — **where the view goes when the viewport changes, or a fit
 is pressed**
 
-★★★ **The subject widened on 2026-08-31** (`OPERATOR_REQUESTS.md` O78) and
+**The subject widened on 2026-08-31** (`OPERATOR_REQUESTS.md` O78) and
 the old title — *"spending a fit command's request to place the view"* — is
 kept above the new one because the widening is the finding.
 
@@ -12,7 +12,7 @@ The operator:
 > changed the zoom after clicking one of the preset options, the pdf should
 > maintain whichever option was selected."*
 
-## ★★★ Preserving the centre SUBSUMES a fit's re-placement
+## Preserving the centre SUBSUMES a fit's re-placement
 
 
 On an axis a fit **pins**, the page is by construction no larger than the
@@ -36,7 +36,7 @@ does.
 > *"If I press the Fit width or fit page button the view should center to
 > the width as well or center the page."*
 
-## ★★★ Why a fit is now a position as well as a scale
+## Why a fit is now a position as well as a scale
 
 Before O23's pasteboard a page no larger than the viewport had nowhere to
 be except the middle, so *fit* and *centred* were the same act and the

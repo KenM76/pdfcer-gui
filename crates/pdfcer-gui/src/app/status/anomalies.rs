@@ -13,7 +13,7 @@ use crate::text::anomalies as t;
 /// a fifth field cannot be added without every construction site being visited
 /// by the compiler.
 ///
-/// ★ `unknown` is not a bug counter. It is the count of anomalies reported by a
+/// `unknown` is not a bug counter. It is the count of anomalies reported by a
 /// `LoadAnomaly` variant this build has no arm for, which becomes possible the
 /// moment the engine adds one — see [`crate::text::anomalies::clause_unknown`]
 /// for why silently dropping them would be the worst available behaviour.
@@ -84,7 +84,7 @@ pub(crate) fn census(anomalies: &[LoadAnomaly]) -> Census {
 ///
 /// Empty when the file was clean, which is how the caller knows to draw nothing.
 ///
-/// # ★★ The order is the argument
+/// # The order is the argument
 ///
 /// Most consequential first, because the bar **truncates** (R128) and truncation
 /// drops from the right. Whatever an operator's window width leaves room for, he
@@ -104,7 +104,7 @@ pub(crate) fn census(anomalies: &[LoadAnomaly]) -> Census {
 ///    build* rather than about the file.
 pub(crate) fn clauses(anomalies: &[LoadAnomaly]) -> Vec<String> {
     let c = census(anomalies);
-    // ★ The control, taken first and named. Almost every file an operator opens
+    // The control, taken first and named. Almost every file an operator opens
     // is clean, and this is the branch that says so out loud rather than leaving
     // "no clauses survived the filter" to be inferred from an empty vector two
     // statements later. It costs nothing and it is the one line a reader looking
@@ -146,7 +146,7 @@ pub(crate) fn status_line(anomalies: &[LoadAnomaly]) -> Option<String> {
 
 /// One sentence per anomaly, in the order the engine reported them.
 ///
-/// # ★ Why these are NOT re-ordered the way [`clauses`] is
+/// # Why these are NOT re-ordered the way [`clauses`] is
 ///
 /// The bar's census is a summary and is sorted by consequence. This is the list
 /// the operator reads when he has gone looking for *which*, and the engine's
@@ -172,7 +172,7 @@ pub(crate) fn rows(anomalies: &[LoadAnomaly]) -> Vec<String> {
             LoadAnomaly::StreamLengthRecovered { object } => t::stream_length_row(*object),
             LoadAnomaly::MissingEndobjRecovered { object } => t::missing_endobj_row(*object),
             LoadAnomaly::ObjectUnreadable { object, reason } => t::unreadable_row(*object, reason),
-            // ★★ The wildcard arm can destructure nothing, and that is exactly
+            // The wildcard arm can destructure nothing, and that is exactly
             // what `LoadAnomaly::object()` and `LoadAnomaly::kind()` are for —
             // the engine documents `kind()` as "a short stable token for
             // machine-readable output". Between them the row still says which
@@ -207,7 +207,7 @@ mod tests {
 
     /// A file with no contradiction produces no line at all.
     ///
-    /// ★ The control the engine's notice names. The assertion is `None`, not an
+    /// The control the engine's notice names. The assertion is `None`, not an
     /// empty string: an empty status line would still allocate a row.
     #[test]
     fn a_clean_file_discloses_nothing() {
@@ -230,7 +230,7 @@ mod tests {
 
     /// The census is ordered by consequence, and the order is pinned whole.
     ///
-    /// ★ Every class at once, deliberately. A weaker fixture — two classes, one
+    /// Every class at once, deliberately. A weaker fixture — two classes, one
     /// of them absent — is satisfied by orderings that differ from the intended
     /// one, so it would pass against a table somebody had shuffled. The property
     /// being asserted is *"most consequential first, because the bar truncates
@@ -282,7 +282,7 @@ mod tests {
 
     /// Both values of a duplicate key survive all the way to the panel row.
     ///
-    /// ★ This is the assertion that distinguishes a built feature from a counted
+    /// This is the assertion that distinguishes a built feature from a counted
     /// one. The engine carries `kept` and `discarded` specifically so a shell can
     /// show what pdfcer chose between; if only the count arrives, the operator's
     /// question — *"what if it is the wrong one?"* — has no answer on screen.
@@ -306,7 +306,7 @@ mod tests {
         assert!(row.contains("parse error at byte 43992"), "{row}");
     }
 
-    /// ★★★ **A REAL FILE, THROUGH THE REAL LOADER** — the one test here that is
+    /// **A REAL FILE, THROUGH THE REAL LOADER** — the one test here that is
     /// not this module talking to itself.
     ///
     /// Every test above builds its `LoadAnomaly`s by hand and asserts on the
@@ -387,7 +387,7 @@ mod tests {
     /// **The control: the fixtures a driven run uses as "a file that does NOT
     /// contradict itself" really do not.**
     ///
-    /// ★★★ Without this, `ui-verify`'s `load_anomalies_are_disclosed` is a check
+    /// Without this, `ui-verify`'s `load_anomalies_are_disclosed` is a check
     /// that cannot fail in one direction. That check launches twice - once on
     /// `contradicts-itself.pdf`, asserting the status line and the
     /// Document-properties rows are THERE, and once on a clean file, asserting

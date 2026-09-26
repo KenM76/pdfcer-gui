@@ -24,7 +24,7 @@ pub(super) const REGION: &str = "status-group:raster-stop"; // ui-text-exempt: t
 /// an E-size sheet against 8,053,069 on a business card — so any fixed epsilon
 /// would be meaningless at one end and a gate at the other.
 ///
-/// ★ Generous at one part in a thousand rather than tight at `f32::EPSILON`, and
+/// Generous at one part in a thousand rather than tight at `f32::EPSILON`, and
 /// the asymmetry is deliberate. The clamp lands on the ceiling by way of
 /// [`crate::viewer::clamp_zoom`] and a division by `pixels_per_point`, so the
 /// stored value and the live value are the same number arrived at by two routes
@@ -60,7 +60,7 @@ const NEAR: f32 = 1e-3;
 /// — the disclosure switching itself off in precisely the condition it exists
 /// for, leaving the operator back at a control that stops responding in silence.
 ///
-/// ★ `pixels_per_point.max(f32::MIN_POSITIVE)` reads like that guard and is not
+/// `pixels_per_point.max(f32::MIN_POSITIVE)` reads like that guard and is not
 /// one: `f32::max` returns the *other* operand when one is `NaN`, so a `NaN`
 /// density survives as `f32::MIN_POSITIVE` and the division produces infinity
 /// anyway.
@@ -143,7 +143,7 @@ mod tests {
         );
     }
 
-    /// ★ **It retires itself when he zooms out** — the whole reason this module
+    /// **It retires itself when he zooms out** — the whole reason this module
     /// needs no store and no retirement rule.
     ///
     /// Asserted rather than argued: "it cannot go stale" is a claim about a
@@ -224,7 +224,7 @@ mod tests {
     /// between a measurement and an excuse (`at_the_ceiling(&doc, bad) ||
     /// bad.is_nan()`) measures neither, and passes whatever the `NaN` case does.
     ///
-    /// ★ **Both directions, and the second half is not redundant.** A bad density
+    /// **Both directions, and the second half is not redundant.** A bad density
     /// must not silence the sentence *and* must not conjure it; the loops falsify
     /// different clauses of the guard:
     ///

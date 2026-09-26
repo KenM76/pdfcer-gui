@@ -7,7 +7,7 @@
 > (name, one sentence, 'Put this tool down'); its buttons duplicate the
 > ribbon and go."*
 
-## ★★★ What moved where, and why nothing was deleted
+## What moved where, and why nothing was deleted
 
 The standing objection to collapsing the Tool panel is that it deletes the
 armed block's live controls and orphans a disclosure slot. That objection
@@ -27,14 +27,14 @@ They are properties of what is selected or about to be drawn.
 | the three **scale switches** | `crate::panels::properties::tool` |
 | the **disclosure block** (Block C) | `crate::panels::properties::disclose` |
 
-★ The tool list is the only genuine subtraction, and it is the one he asked
+The tool list is the only genuine subtraction, and it is the one he asked
 for by name. It answered a **discoverability** defect — `panels::tool`
 exists because *"The feature works. He could not find it."* — and removing
 it is his call to make and not this module's. What survives of that argument is the sentence on
 this strip: it is permanent chrome, it names what is armed at frame one with
 no clicks, and it cannot be closed, which is more than the panel could say.
 
-## ★★ Why a dock banner and not a status-bar item
+## Why a dock banner and not a status-bar item
 
 The strip has to be **beside the document**, permanently, and it has to have
 somewhere to put a button. The status bar is under R128 — its row must not
@@ -52,7 +52,7 @@ to it. A *Put this tool down* button beside `Select` would be a control
 whose press changes nothing, and R9 forbids a dead control. So the button
 appears when something is armed and is absent otherwise.
 
-## ★★★ And the strip draws its sentence even when it cannot name the tool
+## And the strip draws its sentence even when it cannot name the tool
 
 `OPERATOR_REQUESTS.md` **O66**. A `CanvasTool::Place` is armed from inside a
 dialog that then hides itself, so there is no ribbon control to name and

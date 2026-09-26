@@ -10,7 +10,7 @@ use crate::text::commands as t;
 
 /// This group's commands, in ribbon order.
 ///
-/// ★ **Front first, back last** — the order every reference application uses,
+/// **Front first, back last** — the order every reference application uses,
 /// and it is not arbitrary: read top to bottom the four are a single axis from
 /// nearest to furthest, so the list itself teaches what the words mean. Sorting
 /// them any other way (the two ends together, then the two steps) would group

@@ -38,14 +38,14 @@ const VIEW_TAB: &str = "ribbon.tab.view";
 
 /// How far to pull the object, in screen pixels.
 ///
-/// ★ Far enough that the press is a drag and not a click, and short enough
+/// Far enough that the press is a drag and not a click, and short enough
 /// that the object stays on the page at the deep rung — at 900 % a 40 px pull
 /// is under 5 pt of document, which no fixture can fall off.
 const DRAG_PX: f32 = 40.0;
 
 /// The zoom phase B climbs to, as a multiplier.
 ///
-/// ★★ Nine times, not the 20,000 % `scale_sweep` reaches, and the reason is
+/// Nine times, not the 20,000 % `scale_sweep` reaches, and the reason is
 /// that this check wants a **large, reliable** zoom rather than an extreme one.
 /// The defect multiplies the preview width by the zoom, so 9× turns a 2 px
 /// outline into an 18 px one — an eight-sigma difference against a tolerance of
@@ -56,7 +56,7 @@ const DEEP_ZOOM: f32 = 9.0;
 /// How much higher than the opening zoom phase B must actually get for the
 /// comparison to mean anything.
 ///
-/// ★★★ The guard against the degenerate pass. If the wheel does not reach the
+/// The guard against the degenerate pass. If the wheel does not reach the
 /// canvas — which has happened, and is `zoom_gallery`'s report to make — both
 /// phases measure the same zoom, the widths are trivially equal, and this check
 /// would report a green it did not earn. Three times is far below
@@ -124,7 +124,7 @@ fn zoom_now(session: &Session) -> Result<f32> {
 
 /// How many objects the canvas last reported as selected.
 ///
-/// ★ Read from `canvas … sel=N` rather than by counting `selection-set` lines.
+/// Read from `canvas … sel=N` rather than by counting `selection-set` lines.
 /// `scale_sweep`'s header carries why: the trace suppresses a line identical to
 /// its predecessor, so a second click that picks the same object writes
 /// nothing, and a check counting those events reads "the click did nothing"
@@ -142,7 +142,7 @@ fn selection_count(session: &Session) -> Result<usize> {
 /// with the widest preview stroke among the frames that actually carried
 /// shapes.
 ///
-/// ★★ `shapes=0` lines are skipped rather than counted as zero. A delete
+/// `shapes=0` lines are skipped rather than counted as zero. A delete
 /// preview publishes an erase and no shapes — `ShapePreview::is_empty` asks
 /// about `shapes` precisely because of that — and folding a `widest_px=0.00`
 /// from such a frame into the maximum would be harmless, but folding it into
@@ -180,7 +180,7 @@ fn painted_since(trace: &Trace, mark: usize) -> Option<Painted> {
 
 /// Press, pull, and report what the painter drew on the way.
 ///
-/// ★ The press point is the aim — the same coordinate the click immediately
+/// The press point is the aim — the same coordinate the click immediately
 /// before selected the object from, so it is on the object by the same evidence
 /// that produced the selection. `scale_sweep`'s `drag_selection` header carries
 /// the run that established this: pressing at the *outline's centre* instead
@@ -200,7 +200,7 @@ fn drag_and_read(
 
 /// Ctrl+Z, and wait for it to land.
 ///
-/// ★★ The document has to be the one this check started with between phases.
+/// The document has to be the one this check started with between phases.
 /// A drag that is not undone leaves the object [`DRAG_PX`] away from the aim,
 /// and the next phase's click then selects whatever is now under that
 /// coordinate — which reads as "clicking on the content selected nothing" and
@@ -228,7 +228,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
     // ---- the fixture is PINNED, and --pdf / --doc-point are ignored -------
     //
-    // ★★★ Both rulings need a stroke WIDER THAN ONE POINT, and neither the
+    // Both rulings need a stroke WIDER THAN ONE POINT, and neither the
     // sweep's shared aim nor any aim a caller might pass can be relied on to
     // provide one. Driven on the sweep's own `a1-titleblock.pdf 0,2000,320`
     // this check SKIPPED - that coordinate is over text
@@ -264,7 +264,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.name
         ))
     })?;
-    // ★ `--page-size` is ignored for the same reason `--pdf` is: it describes
+    // `--page-size` is ignored for the same reason `--pdf` is: it describes
     // the document the caller passed, and this check does not open that
     // document. Honouring it would map every aim point through the geometry
     // of a file that is not on screen, and a mis-mapped aim does not fail
@@ -295,7 +295,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     click_mode_segment(&session, &driver, ui_rect, MODE)?;
     session.settle(20);
-    // ★★ Without this there is no select tool armed and the press becomes a
+    // Without this there is no select tool armed and the press becomes a
     // rubber band, which draws no shape preview at all — the check would then
     // report "nothing was painted" about a feature it never reached.
     if !arm_select_from_ribbon(&session, &driver, ui_rect, report)? {
@@ -398,7 +398,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // ---- the guard against a pass nobody earned ---------------------------
     //
-    // ★★★ Asked BEFORE the widths are compared. Two readings at one zoom make
+    // Asked BEFORE the widths are compared. Two readings at one zoom make
     // the equality trivially true, and a check that cannot fail is not
     // evidence — this project has written that down three times.
     let ratio = if shallow.zoom > f32::EPSILON {
@@ -463,7 +463,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // ---- ruling 2: the hairline view governs the preview too --------------
     //
-    // ★★ Asked of phase A's number first. `preview_px` floors at one device
+    // Asked of phase A's number first. `preview_px` floors at one device
     // pixel, so on an object already at or under 1 pt the hairline view and the
     // normal view give the same answer and the correct build cannot make them
     // differ. Reporting that is the honest outcome; asserting a difference

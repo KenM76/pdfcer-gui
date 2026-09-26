@@ -1,7 +1,7 @@
 //! # `canvas::textsel` tests — driven against real extractions of real files
 //!
 //!
-//! ## ★ Every assertion here drives the ENGINE
+//! ## Every assertion here drives the ENGINE
 //!
 //! `PageText`, `TextRun` and `ExtractedGlyph` are all `#[non_exhaustive]`, so
 //! this crate cannot construct one. That is a constraint worth naming rather
@@ -17,7 +17,7 @@
 //! | `rotated-text.pdf` | **this** repository's `fixtures/` | strings at 0°, 90°, 180°, 270° and 30° — §8. The engine's corpus contains no such page, which is why this one had to be authored; see [`super::fixture`] |
 
 #![cfg(test)]
-// ★ The INNER attribute, and it is load-bearing rather than redundant beside
+// The INNER attribute, and it is load-bearing rather than redundant beside
 // the `#[cfg(test)] mod tests;` that declares this file.
 //
 // `tools/gates/check-ui-strings.sh` and `check-theme-colors.sh` both recognise
@@ -126,10 +126,10 @@ fn on_string(ctx: &PageContext<'_>, word: &str, fraction: f32) -> Pos2 {
 }
 
 // =======================================================================
-// ★ §8 — text that does not run along the page's x axis
+// §8 — text that does not run along the page's x axis
 // =======================================================================
 
-/// ★★★ **The operator's report, as an assertion.**
+/// **The operator's report, as an assertion.**
 ///
 /// > *"when I copy and paste into notepad, I get the text on one line as
 /// > expected […] as it is now […] it pastes each letter onto its own
@@ -156,7 +156,7 @@ fn sweeping_a_vertical_string_copies_it_on_one_line() {
     });
 }
 
-/// ★★ **And it shades as one block**, which is the other half of the same
+/// **And it shades as one block**, which is the other half of the same
 /// report.
 ///
 /// > *"when I select the text it shades each letter as part of the same
@@ -187,7 +187,7 @@ fn a_vertical_selection_is_one_tall_band() {
     });
 }
 
-/// ★★ **The 180° string too**, and it reaches the fix by a different route.
+/// **The 180° string too**, and it reaches the fix by a different route.
 ///
 /// 90° and 270° break the extraction's *baseline* clause; 180° breaks its
 /// *backward-jump* clause, because `advance` is published as a positive
@@ -206,7 +206,7 @@ fn an_upside_down_string_copies_on_one_line_too() {
     });
 }
 
-/// ★★★ **The horizontal string is untouched**, asserted against the same
+/// **The horizontal string is untouched**, asserted against the same
 /// page that contains four rotated ones.
 ///
 /// This is the regression guard with the hardest possible input: a page
@@ -236,7 +236,7 @@ fn horizontal_text_on_a_rotated_page_is_unchanged() {
     });
 }
 
-/// ★★★ **The operator's OWN file**, which is the only evidence that any of the
+/// **The operator's OWN file**, which is the only evidence that any of the
 /// above matters.
 ///
 /// `#[ignore]`d, and the reason is a rule rather than a convenience:
@@ -292,7 +292,7 @@ fn the_operators_own_vertical_stamp_comes_back_whole() {
     let words: Vec<String> = model
         .lines()
         .iter()
-        // ★ Only the rotated ones, which is what this probe is about. Before
+        // Only the rotated ones, which is what this probe is about. Before
         // `Pass 139.2` the shell had to recover that fact; the engine publishes
         // it now, and every glyph on a line shares it by construction.
         .filter(|line| line.direction.1.abs() > f32::EPSILON || line.direction.0 < 0.0)
@@ -323,7 +323,7 @@ fn the_operators_own_vertical_stamp_comes_back_whole() {
     );
 }
 
-/// ★★★ **The cursor's question, answered in CANVAS space.**
+/// **The cursor's question, answered in CANVAS space.**
 ///
 /// > *"In Adobe when I hover over it the I cursor re-orients itself to match
 /// > the text orientation […] as it is now the I cursor doesn't reorient."*
@@ -377,7 +377,7 @@ fn the_cursor_is_told_which_way_the_text_under_it_runs() {
     });
 }
 
-/// ★ **A rotated band's `/QuadPoints` are the true parallelogram**, not its
+/// **A rotated band's `/QuadPoints` are the true parallelogram**, not its
 /// bounding box.
 ///
 /// The canvas wash is a `Rect` and therefore over-covers a 30° band at the
@@ -422,10 +422,10 @@ fn first_glyph_centre(ctx: &PageContext<'_>) -> Pos2 {
 }
 
 // =======================================================================
-// ★ One derivation — module header §5
+// One derivation — module header §5
 // =======================================================================
 
-/// ★ **What is highlighted is what is copied.**
+/// **What is highlighted is what is copied.**
 ///
 /// The brief's own requirement, asserted the only way it can be asserted
 /// from outside: select every character on the page, and check that the
@@ -453,7 +453,7 @@ fn a_selection_carries_its_text_and_its_boxes_from_one_pass() {
     });
 }
 
-/// ★ **The boxes exist in both spaces, index for index** — module header
+/// **The boxes exist in both spaces, index for index** — module header
 /// §5.1.
 ///
 /// The property the text-markup kinds rest on: the wash the operator sees
@@ -502,7 +502,7 @@ fn every_painted_box_has_the_page_space_quad_a_markup_would_use() {
     });
 }
 
-/// ★ **An edit makes a selection stale, and a stale selection paints
+/// **An edit makes a selection stale, and a stale selection paints
 /// nothing** — module header §7.
 ///
 /// Both halves, because the second is the one rule 4 turns on: a stored quad
@@ -529,7 +529,7 @@ fn an_edit_makes_a_selection_stale_and_stops_the_highlight() {
 // The gestures
 // =======================================================================
 
-/// ★ **A double-click selects a word, and a triple-click selects at least as
+/// **A double-click selects a word, and a triple-click selects at least as
 /// much.**
 ///
 /// The two emphatic gestures, asserted *against each other* rather than
@@ -561,7 +561,7 @@ fn a_double_click_takes_a_word_and_a_triple_click_takes_at_least_the_line() {
     });
 }
 
-/// ★ **A plain click clears** — Acrobat, Inkscape and SolidWorks alike.
+/// **A plain click clears** — Acrobat, Inkscape and SolidWorks alike.
 ///
 /// Expressed as `None` rather than as an empty selection, which is the
 /// invariant `TextSelection`'s own docs rest on: the field on the document
@@ -577,7 +577,7 @@ fn a_plain_click_clears_the_selection() {
     });
 }
 
-/// ★ **A drag selects the range between its ends, and it is
+/// **A drag selects the range between its ends, and it is
 /// direction-blind.**
 ///
 /// Dragging right-to-left must select exactly what dragging left-to-right
@@ -696,7 +696,7 @@ fn a_degenerate_drag_selects_nothing() {
 // the whole selection with it.
 // =======================================================================
 
-/// ★★★ **A sweep that runs off the end of a line keeps what it swept.**
+/// **A sweep that runs off the end of a line keeps what it swept.**
 ///
 /// Measured on this fixture before the clamp existed: a drag from the start
 /// of `HORIZONTAL` to any point past `x = 161.34` — its box plus one
@@ -728,7 +728,7 @@ fn overshooting_the_end_of_a_line_keeps_the_selection() {
     });
 }
 
-/// ★★ **And it does not stop at the first gap** — the clamp scans backwards
+/// **And it does not stop at the first gap** — the clamp scans backwards
 /// from the pointer, so a sweep that crosses blank paper and keeps going
 /// selects through to the furthest text it passed.
 ///

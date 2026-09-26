@@ -1,7 +1,7 @@
 //! # `canvas::textannot` — the three markup kinds that carry WORDS
 //!
 //!
-//! ## ★ Why they were left out, and why that was right at the time
+//! ## Why they were left out, and why that was right at the time
 //!
 //! `shell::commands::reach`'s register carries the reason verbatim, quoting
 //! `canvas::markup`'s own table of kinds it deliberately does not handle:
@@ -15,7 +15,7 @@ use pdfcer_core::vartext::{Quadding, TextColor};
 
 /// Which text-bearing annotation is being placed.
 ///
-/// # ★ One enum carrying three kinds, not three tools
+/// # One enum carrying three kinds, not three tools
 ///
 /// The same argument `MarkupKind` and `MeasureKind` both make, and for the
 /// third time it is a statement about types rather than about tidiness: the
@@ -92,7 +92,7 @@ impl TextAnnotKind {
 
 /// The stamps offered, in the order the gallery lists them.
 ///
-/// # ★ The ENGINE's names, not a list of my own
+/// # The ENGINE's names, not a list of my own
 ///
 ///
 /// Inventing strings would have authored `/Name /Draft` — the enum's default —
@@ -121,7 +121,7 @@ pub const STAMPS: &[StampName] = &[
 
 /// The sticky-note icons offered, in the order the dialog lists them.
 ///
-/// # ★★★ The ENGINE's set, enumerated from the engine's own enum
+/// # The ENGINE's set, enumerated from the engine's own enum
 ///
 /// `pdfcer_core::annot_author::StickyIcon` models seven standard names —
 /// `Comment`, `Key`, `Note`, `Help`, `NewParagraph`, `Paragraph`, `Insert` —
@@ -134,7 +134,7 @@ pub const STAMPS: &[StampName] = &[
 /// drafting workflow, this list is the whole enum and there is no editorial
 /// decision in it.
 ///
-/// ★ It is nonetheless written out here rather than taken from an `ALL`
+/// It is nonetheless written out here rather than taken from an `ALL`
 /// constant, because the engine publishes none — the same position
 /// `annot_author::LineEnding` is in, and
 /// `panels::properties::markup::ALL_ENDINGS` is the precedent. What stops it
@@ -161,7 +161,7 @@ pub const STICKY_ICONS: &[StickyIcon] = &[
 
 /// The icon a fresh sticky note carries.
 ///
-/// # ★★★ `Comment`, not the engine's `Note` default — and it is MEASURED
+/// # `Comment`, not the engine's `Note` default — and it is MEASURED
 ///
 /// `ACROBAT_DEFAULTS.md`'s non-colour table reads *"default sticky-note icon —
 /// **`Comment`** — `cAnnot` `tnoteIcon`"*, taken from Acrobat's own registry
@@ -203,7 +203,7 @@ pub const DEFAULT_STAMP: StampName = StampName::Approved;
 
 /// **How big a stamp's label is** — the operator's half of engine `Pass 287.0`.
 ///
-/// # ★★★ Why this control exists, and it is not "the engine gained a field"
+/// # Why this control exists, and it is not "the engine gained a field"
 ///
 /// Before `Pass 287.0` a stamp's text size was **derived from the box**:
 /// `(height * 0.42).clamp(8.0, 28.0)`, stored nowhere. Drag a bigger box, get
@@ -229,7 +229,7 @@ pub const DEFAULT_STAMP: StampName = StampName::Approved;
 /// So the default here is [`Self::FitTheBox`], which keeps the derived size,
 /// and the stated sizes are the new capability sitting beside it.
 ///
-/// # ★★ Every variant pairs its size with `StampFit::GrowToText`, and the REASON changed
+/// # Every variant pairs its size with `StampFit::GrowToText`, and the REASON changed
 ///
 ///
 ///
@@ -253,7 +253,7 @@ pub const DEFAULT_STAMP: StampName = StampName::Approved;
 /// it, and [`crate::panels::properties::markup::textannot`] reads the restyle
 /// half. **The engine limit is gone.**
 ///
-/// ## ★★★ Why the placing dialog still shows no fit control anyway
+/// ## Why the placing dialog still shows no fit control anyway
 ///
 /// Because the reason is now an interaction judgement, and the two are worth
 /// keeping apart: an engine limit disappears the day a pin moves, a judgement
@@ -277,7 +277,7 @@ pub const DEFAULT_STAMP: StampName = StampName::Approved;
 ///     the properties panel, under the number it qualifies, sharing one
 ///     session preference through [`crate::canvas::stampfit`].
 ///
-/// ★ O171 is also on the record here: the operator's report that this dialog
+/// O171 is also on the record here: the operator's report that this dialog
 /// was already too small to reach its own buttons. That was fixed
 /// structurally rather than by height, so a row is no longer unaffordable —
 /// which is why the case above is made on what the control *means* and not on
@@ -295,7 +295,7 @@ pub enum StampSize {
     /// Size the label from the box the operator drew, as every build before
     /// `Pass 287.0` did — and widen the box if the word still does not fit.
     ///
-    /// ★ **Not the same as the engine's `StampStyle::legacy_derived()`**, and
+    /// **Not the same as the engine's `StampStyle::legacy_derived()`**, and
     /// the difference is the whole point. That constructor pairs the derived
     /// size with `StampFit::ClipToBox`, which is the pre-Pass behaviour
     /// *including* the clipping the operator reported. This pairs the derived
@@ -334,7 +334,7 @@ pub const DEFAULT_STAMP_SIZE: StampSize = StampSize::FitTheBox;
 impl StampSize {
     /// The engine style this asks for.
     ///
-    /// ★ Built from `StampStyle::default()` by `with_font_size` rather than by
+    /// Built from `StampStyle::default()` by `with_font_size` rather than by
     /// struct literal, and not only because `StampStyle` is
     /// `#[non_exhaustive]`. A field the engine adds arrives here carrying the
     /// engine's own default instead of failing to compile with a value this
@@ -351,7 +351,7 @@ impl StampSize {
     /// This choice as a **stable token for a machine**, for the diagnostic
     /// trace and for nothing else.
     ///
-    /// # ★★★ Why this exists rather than `{:?}`
+    /// # Why this exists rather than `{:?}`
     ///
     /// A `Debug` rendering is a *rendering*, and this project has already been
     /// bitten by one: a driven check once reported the opposite of the truth
@@ -368,7 +368,7 @@ impl StampSize {
     /// | [`StampSize::FitTheBox`] | `derived` |
     /// | [`StampSize::Points`] | the number, e.g. `24` |
     ///
-    /// ★★ **`derived`, not `auto` and not `fit`.** The word has to say what
+    /// **`derived`, not `auto` and not `fit`.** The word has to say what
     /// the engine is being asked to do — work the size out from the box the
     /// operator drew — because the failure this token exists to catch is a
     /// build that sends the engine's flat 12 pt instead. `auto` would be true
@@ -393,7 +393,7 @@ impl StampSize {
 
 /// The side, in PDF points, of the square a sticky note's rect is given.
 ///
-/// # ★ It is not a size the operator sees
+/// # It is not a size the operator sees
 ///
 ///
 /// So this number decides nothing about the picture. What it must be is
@@ -408,7 +408,7 @@ pub const STICKY_PT: f64 = 20.0;
 
 /// The longest note or caption offered.
 ///
-/// # ★ It bounds the FIELD, not the format
+/// # It bounds the FIELD, not the format
 ///
 /// `/Contents` is a PDF string and has no length worth naming. What is bounded
 /// is what an operator can usefully put on a drawing: a `/FreeText` is painted
@@ -433,7 +433,7 @@ pub const TEXT_SIZE_PT: f64 = 11.0;
 /// that the caller writing `/Contents` a second way can apply exactly the same
 /// one.
 ///
-/// # ★★★ Why this is a named function rather than a `.trim()` in two places
+/// # Why this is a named function rather than a `.trim()` in two places
 ///
 /// Because for a `/FreeText` the two places are **the same PDF key**, and as of
 /// `pdfcer-core` `95a936e` a disagreement between them is a hard refusal rather
@@ -465,7 +465,7 @@ pub fn painted_text(typed: &str) -> &str {
 
 /// Build the engine spec for a placed, typed annotation.
 ///
-/// # ★ Pure, and separate from the action arm for the standing reason
+/// # Pure, and separate from the action arm for the standing reason
 ///
 /// It is the part that could be wrong in a way an operator would notice — a
 /// stamp authored with the wrong quadding, a sticky whose words went into the
@@ -484,7 +484,7 @@ pub fn spec(
     text: &str,
     stamp: StampName,
     icon: &StickyIcon,
-    // ★ The operator's label-size choice, following `stamp` and `icon` down
+    // The operator's label-size choice, following `stamp` and `icon` down
     // the same route. Meaningless for the two kinds that are not stamps and
     // passed anyway, for the reason `Placement::icon` already states: a
     // chooser always has a selection, so an `Option` here would model a state
@@ -493,7 +493,7 @@ pub fn spec(
     colour: (f64, f64, f64),
 ) -> Option<TextAnnotSpec> {
     let text = painted_text(text);
-    // ★ The blank refusal applies to the two kinds whose words the OPERATOR
+    // The blank refusal applies to the two kinds whose words the OPERATOR
     // types, and not to the stamp, whose words come from its `/Name`.
     // Refusing a blank stamp would refuse every stamp, since the gallery
     // supplies no text at all.
@@ -514,7 +514,7 @@ pub fn spec(
             // Left, because a callout is read as prose and prose is
             // left-aligned. Centring is a stamp's property, not a note's.
             quadding: Quadding::Left,
-            // ★ Multiline. A callout that did not wrap would put the
+            // Multiline. A callout that did not wrap would put the
             // operator's second sentence outside the box they drew, which is
             // the same class of defect as a control laid out below its pane.
             //
@@ -552,7 +552,7 @@ pub fn spec(
             border: Some(Color::Rgb(r, g, b)),
             border_width: 1.0,
         },
-        // ★ **The icon is real in the file and invisible on pdfcer's own
+        // **The icon is real in the file and invisible on pdfcer's own
         // page**, and that is disclosed rather than left to be discovered.
         //
         // The engine's sticky author — the private `sticky_note` behind
@@ -604,7 +604,7 @@ pub fn spec(
             // be copying the wrong half.
             open: false,
         },
-        // ★ `label: None` — the NAME carries the text.
+        // `label: None` — the NAME carries the text.
         //
         // `TextAnnotSpec::Stamp` takes both, and passing a label here would
         // override the name's own default text. That is a real capability (a
@@ -613,7 +613,7 @@ pub fn spec(
         // disagree is a document that says two things, and a reader other than
         // pdfcer shows the name.
         TextAnnotKind::Stamp => {
-            // ★★★ **THE ORACLE FOR THE SIZE CHOOSER, and the feature has no
+            // **THE ORACLE FOR THE SIZE CHOOSER, and the feature has no
             // other one short of parsing the saved file.**
             //
             // `autosize_overflow`'s header states the rule this obeys: *a trace
@@ -625,7 +625,7 @@ pub fn spec(
             // the dialog's combo and this function's argument. There are four
             // hops in that chain and a unit test can see none of them at once.
             //
-            // ★★ **The rect is on the line with the size, and it is not
+            // **The rect is on the line with the size, and it is not
             // padding.** Under `StampFit::GrowToText` the drawn rectangle is a
             // *position and a minimum*, not a size — that is the sentence the
             // dialog shows the operator — so the pair (what he asked for, what
@@ -651,7 +651,7 @@ pub fn spec(
                 name: stamp,
                 label: None,
                 color: Color::Rgb(r, g, b),
-                // ★★★ **The operator's own choice, and this field exists because a
+                // **The operator's own choice, and this field exists because a
                 // compiler asked for it.**
                 //
                 // Engine `Pass 287.0` made `style` required, so this line had to
@@ -679,7 +679,7 @@ pub fn spec(
 mod tests {
     use super::*;
 
-    /// ★★★ **The trace token's contract, asserted, because `ui-verify`'s
+    /// **The trace token's contract, asserted, because `ui-verify`'s
     /// `stamp_size_reaches_the_engine` parses it and no compiler stands between
     /// the two.**
     ///
@@ -692,7 +692,7 @@ mod tests {
     /// produced six plausible failure reports and four filed defects, none of
     /// which existed.
     ///
-    /// ★★ So four separate clauses, each of which a plausible future edit
+    /// So four separate clauses, each of which a plausible future edit
     /// breaks on its own:
     ///
     /// 1. the derived case is the literal word `derived` — not `auto`, not
@@ -755,7 +755,7 @@ mod tests {
         }
     }
 
-    /// ★ Every kind maps to the engine variant it names.
+    /// Every kind maps to the engine variant it names.
     ///
     /// The failure this catches is a copy-paste between arms — a sticky
     /// authored as a `FreeText` would paint the operator's private note onto
@@ -802,7 +802,7 @@ mod tests {
         ));
     }
 
-    /// ★ **An empty or blank text authors nothing.**
+    /// **An empty or blank text authors nothing.**
     ///
     /// The one refusal this module makes, and it is worth a test rather than a
     /// comment: an annotation with no words is an empty box on the operator's
@@ -811,7 +811,7 @@ mod tests {
     #[test]
     fn a_blank_text_authors_nothing() {
         for blank in ["", "   ", "\t\n "] {
-            // ★ The gallery kind is excluded, and NOT by a hard-coded
+            // The gallery kind is excluded, and NOT by a hard-coded
             // `!= Stamp`. It is excluded by the same predicate the production
             // code branches on, so the exception cannot drift: if a second
             // kind ever takes its words from a gallery this test follows it
@@ -859,7 +859,7 @@ mod tests {
         assert_eq!(text, "hello");
     }
 
-    /// ★★★ **The words a text box PAINTS and the words its note WRITES are the
+    /// **The words a text box PAINTS and the words its note WRITES are the
     /// same string, byte for byte — because for a `/FreeText` they are the same
     /// PDF key and the engine refuses a disagreement.**
     ///
@@ -871,7 +871,7 @@ mod tests {
     /// assertion standing between an operator's stray space bar and a gesture
     /// that authors nothing.
     ///
-    /// # ★★ Two assertions, and the second is what makes the first a test
+    /// # Two assertions, and the second is what makes the first a test
     ///
     /// Asserting only `text == painted_text(typed)` passes on a
     /// [`painted_text`] reduced to the identity function AND on a [`spec`] that
@@ -907,7 +907,7 @@ mod tests {
         );
     }
 
-    /// ★ A text box wraps, and a sticky's words are never painted.
+    /// A text box wraps, and a sticky's words are never painted.
     ///
     /// The two properties that make each kind the thing it is. A `/FreeText`
     /// that did not wrap puts the operator's second sentence outside the box
@@ -1006,7 +1006,7 @@ mod tests {
         }
     }
 
-    /// ★ **A stamp authors the NAME the operator chose.**
+    /// **A stamp authors the NAME the operator chose.**
     ///
     /// The regression test for the mistake this module made in its first
     /// draft: inventing label strings and leaving `/Name` at the enum's
@@ -1060,7 +1060,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **[`STICKY_ICONS`] covers every variant `StickyIcon` has.**
+    /// **[`STICKY_ICONS`] covers every variant `StickyIcon` has.**
     ///
     /// The same guard `panels::properties::markup::ALL_ENDINGS` carries, and
     /// for the same reason: the engine publishes no `ALL` for this enum, so the
@@ -1068,7 +1068,7 @@ mod tests {
     /// day the engine gains an eighth icon — quietly, and in the direction that
     /// **withholds** a choice that had started working.
     ///
-    /// ★ The `match` is exhaustive **with no wildcard**, which is the whole
+    /// The `match` is exhaustive **with no wildcard**, which is the whole
     /// mechanism: a new variant is a compile error here, not a failing
     /// assertion, so it is caught by `cargo build` before any test runs.
     /// `StickyIcon` is not `#[non_exhaustive]`, which is what makes that
@@ -1117,11 +1117,11 @@ mod tests {
         }
     }
 
-    /// ★★★ **A sticky note authors the icon the operator chose — and no other
+    /// **A sticky note authors the icon the operator chose — and no other
     /// kind is given one.**
     ///
     ///
-    /// ★★ The negative half is asserted **beside** it rather than alone, which
+    /// The negative half is asserted **beside** it rather than alone, which
     /// is the methodology note of 2026-09-06: *"a negative assertion is vacuous
     /// when the thing that would produce the positive is absent."* Asserting
     /// only that a text box carries no icon would pass on a [`spec`] that had

@@ -1,7 +1,7 @@
 #![cfg(test)]
 //! Tests for [`super`] — the Sign window's pure decisions.
 //!
-//! ★ Everything asserted here is reachable without an `egui::Context`.
+//! Everything asserted here is reachable without an `egui::Context`.
 //! [`super::SignDialog::show`] needs a real viewport and nothing inside it can
 //! be asserted headlessly, which is `crate::viewer`'s standing split; what CAN
 //! be asserted is the gate on the one control that attaches somebody's legal
@@ -15,7 +15,7 @@ use super::*;
 
 /// A dialog in the state the operator meets after opening a clean document.
 ///
-/// ★ Built directly rather than through [`super::SignDialog::open`], which
+/// Built directly rather than through [`super::SignDialog::open`], which
 /// needs an `OpenDoc`. Every field this file asserts on is set here explicitly,
 /// so a test cannot pass because a default happened to line up.
 fn filling() -> SignDialog {
@@ -55,7 +55,7 @@ fn filling() -> SignDialog {
     }
 }
 
-/// ★★★ **The confirm control is dead until a certificate has been OPENED.**
+/// **The confirm control is dead until a certificate has been OPENED.**
 ///
 /// Not until one has been chosen, and not until a passphrase has been typed —
 /// until the container has actually been unlocked and its subject is on screen.
@@ -91,7 +91,7 @@ fn the_confirm_control_is_dead_until_the_certificate_has_been_opened() {
 /// explained on hover**. `OPERATOR_REQUESTS.md` O77's sweep found seven greyed
 /// controls with no explanation.
 ///
-/// ★ The order matters because both can be outstanding at once, and the
+/// The order matters because both can be outstanding at once, and the
 /// certificate is the one the operator must deal with first — a sentence about
 /// a tick-box on a form whose first section is not finished sends them to the
 /// wrong end of the window.
@@ -106,7 +106,7 @@ fn the_disabled_hover_names_the_first_outstanding_thing() {
     );
 }
 
-/// ★★★ **Changing the destination retires an acknowledgement already given.**
+/// **Changing the destination retires an acknowledgement already given.**
 ///
 /// `crate::dialogs::redact::choose_destination`'s rule. Without it an operator
 /// could tick the box, think better of it, select *a new file*, change their
@@ -149,7 +149,7 @@ fn re_selecting_the_same_destination_leaves_the_acknowledgement_alone() {
 
 /// **A refusal, a signing in flight and a finished write all have no confirm.**
 ///
-/// ★ The `Signing` arm is the one worth having: it lasts one frame in practice,
+/// The `Signing` arm is the one worth having: it lasts one frame in practice,
 /// and "in practice" is an assumption about a machine. Without it a second
 /// press on a slow document signs twice — two files, two signatures, and the
 /// second one written over the first if the destination was *replace*.
@@ -176,7 +176,7 @@ fn no_phase_but_filling_offers_a_confirm() {
     }
 }
 
-/// ★★★ **`Debug` prints no passphrase, no certificate path, and no key.**
+/// **`Debug` prints no passphrase, no certificate path, and no key.**
 ///
 /// The mechanism, asserted rather than trusted. `crate::secret`'s header
 /// records what the alternative costs: `Action` derives `Debug`, this crate
@@ -185,7 +185,7 @@ fn no_phase_but_filling_offers_a_confirm() {
 /// would write the operator's passphrase to disk, in a directory whose whole
 /// purpose is to be kept and read.
 ///
-/// ★★ The **path** is asserted absent too, which goes further than
+/// The **path** is asserted absent too, which goes further than
 /// `crate::dialogs::protect`'s equivalent. A path is not key material; it is a
 /// durable pointer at where somebody keeps their digital ID.
 #[test]
@@ -236,7 +236,7 @@ fn the_handlers_outcome_moves_the_window_out_of_the_signing_phase() {
     assert!(matches!(dialog.phase, Phase::Failed(_)));
 }
 
-/// ★★ **Picking a different certificate retires the identity AND the error.**
+/// **Picking a different certificate retires the identity AND the error.**
 ///
 /// Leaving either would show the operator a read-back of the certificate they
 /// just replaced — which is the one sentence on this window that must never
@@ -262,7 +262,7 @@ fn choosing_a_new_certificate_clears_what_the_old_one_said() {
 
 /// **Every refusal has its own sentence, and no two are the same.**
 ///
-/// ★ The cheap test that catches the expensive mistake: a `match` whose arms
+/// The cheap test that catches the expensive mistake: a `match` whose arms
 /// were filled in by copying the one above it. Five refusals, five different
 /// next moves for the operator, and a build that gave two of them the same
 /// words would send somebody to take the password off a document that has a
@@ -291,7 +291,7 @@ fn the_five_refusals_are_five_different_sentences() {
     );
 }
 
-/// ★★★ **No sentence on this surface calls a signature valid, trusted, secure
+/// **No sentence on this surface calls a signature valid, trusted, secure
 /// or verified.**
 ///
 /// `crate::text::sign`'s first rule, enforced rather than remembered.
@@ -349,7 +349,7 @@ fn nothing_on_this_surface_claims_a_signature_is_trusted() {
     copy.push(t::field_refused("that box is already signed."));
     copy.push(t::appearance_overflow("3 lines do not fit."));
 
-    // ★★★ `Pass 10.12`'s certification copy is on this list TOO, and the
+    // `Pass 10.12`'s certification copy is on this list TOO, and the
     // word it is allowed is the point.
     //
     // `FORBIDDEN` holds "certified" - a claim that somebody has vouched for a
@@ -379,7 +379,7 @@ fn nothing_on_this_surface_claims_a_signature_is_trusted() {
         existing: 2,
     }));
 
-    // ★ "checked" is NOT on this list, deliberately: `identity_integrity` says
+    // "checked" is NOT on this list, deliberately: `identity_integrity` says
     // the container's own checksum was checked, which is a true statement about
     // a file's integrity and says nothing about a signature's trust. The list
     // is the words that make a claim about the SIGNATURE.
@@ -403,7 +403,7 @@ fn nothing_on_this_surface_claims_a_signature_is_trusted() {
     }
 }
 
-/// ★★★ **The box is no longer described as empty, and this assertion is the
+/// **The box is no longer described as empty, and this assertion is the
 /// successor to a paragraph that could not go red.**
 ///
 /// Until `Cargo.lock` moved to `d6b998f` (v0.42.0),
@@ -444,7 +444,7 @@ fn the_box_is_described_as_carrying_the_name_and_the_date() {
     );
 }
 
-/// ★★★ **AN AUTHOR-IMPOSED REFUSAL SAYS WHOSE RULE IT IS, AND PDFCER IS NOT THE
+/// **AN AUTHOR-IMPOSED REFUSAL SAYS WHOSE RULE IT IS, AND PDFCER IS NOT THE
 /// SUBJECT OF THE FIRST SENTENCE.**
 ///
 /// The single most important property of any string added on 2026-09-06.
@@ -643,7 +643,7 @@ fn the_appearance_counter_measures_the_sentence_not_the_slice() {
 
 /// **The three placement arms map to three different requests.**
 ///
-/// ★ The one that matters: choosing the sender's box must NOT produce a
+/// The one that matters: choosing the sender's box must NOT produce a
 /// rectangle. `SignRequest::visible` beside a resolving `field_name` is
 /// `RectRefusedForExistingField`, so a build that carried both would refuse the
 /// ordinary case the feature exists for.
@@ -677,7 +677,7 @@ fn choosing_the_senders_box_produces_no_rectangle() {
     );
 }
 
-/// ★★ **An index that outran its list falls back to drawing NOTHING.**
+/// **An index that outran its list falls back to drawing NOTHING.**
 ///
 /// Unreachable from the window — `Place::Existing` is only offered when a
 /// selectable field exists — so this pins the *direction* of a guess rather

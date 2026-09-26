@@ -80,12 +80,12 @@ impl Check for RibbonMatchesTheMockupGeometry {
 /// verdict is taken over the pairs that survive; if none survives, the caller
 /// is told so rather than being handed a pass built on nothing.
 ///
-/// ★ `inset` is 2 px rather than 1: `egui` rounds a button's corners
+/// `inset` is 2 px rather than 1: `egui` rounds a button's corners
 /// (`Metrics::corner_radius`, 3 pt in `Quiet`), so the literal corner pixel of
 /// the rectangle is outside the painted shape even when a frame IS drawn, and
 /// a one-pixel probe would report every framed control as frameless.
 ///
-/// # ★★★ `ground` is the load-bearing argument, and a wrong one makes this
+/// # `ground` is the load-bearing argument, and a wrong one makes this
 /// # function measure NOTHING while looking exactly like a working oracle
 ///
 /// Every verdict here is a comparison against `ground`, and both branches use
@@ -106,7 +106,7 @@ impl Check for RibbonMatchesTheMockupGeometry {
 /// be measured would have reported the band frameless — the very claim the
 /// check exists to establish — on a run that had measured no pixels.
 ///
-/// ★ A hypothesis that was **falsified by driving**, recorded because the
+/// A hypothesis that was **falsified by driving**, recorded because the
 /// reasoning was plausible and wrong: when the band began stacking controls
 /// into columns one point apart, the diagonal outside probe looked certain to
 /// land on the neighbour above. It does not — the diagonal steps sideways as
@@ -121,7 +121,7 @@ pub fn is_frameless(image: &Image, rect: PixRect, ground: Rgb, inset: u32) -> Op
         let d = |a: u8, b: u8| i32::from(a).abs_diff(i32::from(b));
         d(c.r, ground.r) + d(c.g, ground.g) + d(c.b, ground.b) > 24
     };
-    // ★★ Every probe is `checked_sub`, and a corner whose outside sample would
+    // Every probe is `checked_sub`, and a corner whose outside sample would
     // fall at a negative coordinate is **declined**, not clamped to zero.
     //
     // That is not defensive arithmetic against a synthetic fixture. A ribbon
@@ -413,7 +413,7 @@ mod tests {
     /// A synthetic band: a uniform ground with one optional 1 px box drawn on
     /// it, so [`is_frameless`] can be exercised without a window.
     ///
-    /// ★ The oracle needs its own test for the reason `PROJECT_PLAN.md` §4.1
+    /// The oracle needs its own test for the reason `PROJECT_PLAN.md` §4.1
     /// keeps restating: a predicate that has only ever been seen to say "yes"
     /// is indistinguishable from one that cannot say "no". This file's whole
     /// value is one boolean, and that boolean is asserted here against both
@@ -461,7 +461,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **A control that is not on the capture produces NO verdict.**
+    /// **A control that is not on the capture produces NO verdict.**
     ///
     /// The third answer, and the one that keeps the other two honest. A
     /// control laid out past the window's edge — the state
@@ -484,7 +484,7 @@ mod tests {
         );
     }
 
-    /// ★★ **…and a control against the window's left edge is judged on the
+    /// **…and a control against the window's left edge is judged on the
     /// corners it has**, rather than being declined outright or — worse —
     /// judged on a clamped probe.
     ///
@@ -502,7 +502,7 @@ mod tests {
     ///    leftmost control is never judged is a band whose frame is never
     ///    checked where the operator looks first.
     ///
-    /// ★ Note what this does **not** distinguish, because a falsification
+    /// Note what this does **not** distinguish, because a falsification
     /// pass found it out rather than assuming: clamping the probe to zero
     /// instead of declining it passes this test. It does so for a benign
     /// reason — a clamped "outside" probe lands on the control's own left
@@ -519,7 +519,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **A `ground` that is not the band's colour makes this REFUSE, and
+    /// **A `ground` that is not the band's colour makes this REFUSE, and
     /// the margin is ten points of grey.**
     ///
     /// The incident, 2026-09-05: [`assess`] sampled its reference from the

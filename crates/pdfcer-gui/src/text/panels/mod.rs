@@ -7,7 +7,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/text/panels/mod.md`.
 
-/// ★★ **The annotation half of the Properties panel's geometry section** —
+/// **The annotation half of the Properties panel's geometry section** —
 /// X/Y/W/H, typeable over a selected markup.
 ///
 /// A module of its own rather than four more functions in [`properties`], and
@@ -19,7 +19,7 @@
 /// is only what the annotation subject adds — the file's own refusal — plus the
 /// argument for why the *other* refusal it could reach gets no string at all.
 pub mod annotgeometry;
-/// ★ The Attachments panel — the whole files a document carries inside itself
+/// The Attachments panel — the whole files a document carries inside itself
 /// (§7.11.4.1), and the four verbs opposite them.
 ///
 /// Its own header carries the three sentences that are **not optional** on this
@@ -29,7 +29,7 @@ pub mod annotgeometry;
 /// document, and that the name pdfcer writes to disk is not always the name the
 /// document shows.
 pub mod attachments;
-/// ★ The words for **moving** a bookmark and for **expanding or collapsing**
+/// The words for **moving** a bookmark and for **expanding or collapsing**
 /// one — `pdfcer-core` `Pass 161.0`'s two verbs.
 ///
 /// The Bookmarks panel's other strings stay in this file, with Layers and
@@ -51,7 +51,7 @@ pub mod comments;
 /// printing beside it, and a panel previewing the two by concatenation
 /// disagrees with the bytes in the page.
 pub mod dimension;
-/// ★★★ **The Document properties panel's copy** — the file's own title, author,
+/// **The Document properties panel's copy** — the file's own title, author,
 /// subject and keywords, the seven facts pdfcer read about it, and the two
 /// disclosures it can owe.
 ///
@@ -59,7 +59,7 @@ pub mod dimension;
 /// `properties.rs` sits against its 1,500-line R2 ceiling. Nothing here
 /// carries a `properties_` prefix: the module path already says it.
 pub mod docprops;
-/// ★ The **face chooser**, which is one control drawn on two surfaces — the
+/// The **face chooser**, which is one control drawn on two surfaces — the
 /// Properties panel's *This text* section and the ribbon's Format ▸ Font group.
 ///
 /// Its own header carries the obligation that made it a module rather than a
@@ -83,13 +83,13 @@ pub mod layersearch;
 /// argues the seam.
 pub mod layers;
 
-/// ★ Re-exported so `t::layer_selection_unlayered()` still resolves at the two
+/// Re-exported so `t::layer_selection_unlayered()` still resolves at the two
 /// call sites that had it before the vocabulary moved into [`layers`]. The
 /// sentence did not change; only its home did, and a rename of the path would
 /// have been churn in files this landing does not otherwise touch.
 pub use layers::layer_selection_unlayered;
 
-/// ★ **A choice field's `/Opt` list**, and the three `/Ff` flags Acrobat groups
+/// **A choice field's `/Opt` list**, and the three `/Ff` flags Acrobat groups
 /// with it. Its own module under R2 and on the seam the code takes; the header
 /// argues the Shown/Sent vocabulary.
 pub mod choiceopts;
@@ -103,7 +103,7 @@ pub mod formfield;
 pub mod objects;
 /// The Properties panel.
 pub mod properties;
-/// ★★ The Properties panel's **text-annotation style** section — a sticky
+/// The Properties panel's **text-annotation style** section — a sticky
 /// note's icon and colour and a stamp's colour, which reach
 /// `EditSession::set_text_annot_style` rather than `set_markup_style`.
 ///
@@ -114,7 +114,7 @@ pub mod properties;
 /// one verb reaches, `properties::markup::textannot` draws what the other does
 /// — so the copy follows the code rather than the file it started in.
 pub mod textannotstyle;
-/// ★★ The Properties panel's **clicked-text** colour section — O89's object
+/// The Properties panel's **clicked-text** colour section — O89's object
 /// route.
 ///
 /// Its own module rather than more of [`properties`], and the reason is
@@ -194,7 +194,7 @@ pub fn panel_unknown() -> &'static str {
 // Signatures
 // ---------------------------------------------------------------------------
 
-// ★★★ THERE IS NO "pdfcer cannot check whether these signatures are valid"
+// THERE IS NO "pdfcer cannot check whether these signatures are valid"
 // SENTENCE HERE, AND ONE MUST NOT BE ADDED BACK.
 //
 // `signature::verify_all_with_trust` is wired into `crate::panels::signatures`
@@ -311,7 +311,7 @@ pub fn layers_count(total: usize) -> String {
 
 /// The disclosure above the list, always shown.
 ///
-/// ## ★ Wording history, because this string has been wrong twice
+/// ## Wording history, because this string has been wrong twice
 ///
 /// It has now had three lives, and the record matters more than any one of
 /// them: **nothing compiles a doc comment against the behaviour it
@@ -326,7 +326,7 @@ pub fn layers_count(total: usize) -> String {
 /// | this build, S3 | *"…Switching a layer on or off is not available in this build…"* | yes — the panel genuinely had no control |
 /// | this build, S4 (**now**) | the sentence below | yes — the control is back |
 ///
-/// ## ★ What changed at S4, and when
+/// ## What changed at S4, and when
 ///
 /// S4 completed the third and last of the preconditions
 /// `crate::panels::layers`' header tracks. `crate::app::actions::Action`
@@ -344,7 +344,7 @@ pub fn layers_count(total: usize) -> String {
 /// *"Switching a layer changes what you see, not the document"* is the thing
 /// an operator most needs to know and the hardest for them to discover: a
 /// panel of tickboxes over a document is, by every other application's
-/// convention, an editor. ★ Restating it in fresh words re-derives a decision
+/// convention, an editor. Restating it in fresh words re-derives a decision
 /// already paid for, and the restatement has none of the evidence that bought
 /// this wording — so it stands verbatim.
 ///
@@ -458,7 +458,7 @@ pub fn layers_auto_managed(n: usize) -> String {
 /// Explains why a layer the document lists as off is shown anyway —
 /// otherwise the only available reading is "pdfcer got it wrong".
 ///
-/// ## ★ A second sentence was added at S4, and it is not a stylistic one
+/// ## A second sentence was added at S4, and it is not a stylistic one
 ///
 /// The first sentence alone became **actively misleading** the moment the
 /// visibility control returned, because it invites the reading *"so there is
@@ -554,7 +554,7 @@ pub fn layer_radio_tooltip() -> &'static str {
 
 /// Tooltip on a radio-group member whose group also contains a locked layer.
 ///
-/// ## ★ This is pdfcer's answer to a question the standard leaves open
+/// ## This is pdfcer's answer to a question the standard leaves open
 ///
 /// `pdfcer_core::layers`' own module docs name it `DA-A8` and hand it here
 /// verbatim: *"a locked group's state 'cannot be changed through the user
@@ -647,7 +647,7 @@ pub fn bookmark_add_destination(page_number: usize) -> String {
     format!("It will point at page {page_number}, the one on screen.")
 }
 
-/// ★★ **The `/Count` trap, turned into a sentence.**
+/// **The `/Count` trap, turned into a sentence.**
 ///
 /// The engine called it *"not a footnote … the entire difficulty of the
 /// feature"*: a bookmark added under a **collapsed** ancestor does not change
@@ -682,7 +682,7 @@ pub const fn bookmark_add_button() -> &'static str {
 
 /// Why the button is unavailable with an empty title.
 ///
-/// ★ Greyed **with** an explanation rather than absent, unlike the Rename
+/// Greyed **with** an explanation rather than absent, unlike the Rename
 /// button in the groups window — and the difference is which control it is.
 /// That one is an alternative to a field that already shows the name; this one
 /// is the whole of the feature, and a row that vanished until you typed would
@@ -722,7 +722,7 @@ pub const fn bookmark_edit_heading() -> &'static str {
 
 /// Which bookmark the rename and remove controls act on.
 ///
-/// ★ The selected row is named rather than merely highlighted, for the reason
+/// The selected row is named rather than merely highlighted, for the reason
 /// the ce-dimension group window names its group: this block sits **above** an
 /// unbounded scroll area, so the row it acts on may be scrolled out of sight by
 /// the time the operator presses a button. A highlight nobody can see is not a
@@ -751,7 +751,7 @@ pub const fn bookmark_rename_button() -> &'static str {
 /// every page exactly where it was. A button reading "Delete" beside a document
 /// How many bookmarks a copy will take with it.
 ///
-/// ★ The same shape as `bookmark_delete_takes_subtree`, deliberately: an
+/// The same shape as `bookmark_delete_takes_subtree`, deliberately: an
 /// operator who has read one has read the other, and a copy and a delete take
 /// exactly the same set. Two wordings for one fact is how a panel comes to
 /// describe two different operations that are in fact identical in scope.
@@ -784,7 +784,7 @@ pub fn bookmark_copy_refused(engine: &str) -> String {
 
 /// What is on the clipboard, above the Paste button.
 ///
-/// ★ It counts the WHOLE subtree, not the roots, because that is what will
+/// It counts the WHOLE subtree, not the roots, because that is what will
 /// arrive — and an operator who copied one chapter heading and sees *"12
 /// bookmarks"* has learned something true that the tree did not show them.
 #[must_use]
@@ -796,7 +796,7 @@ pub fn bookmark_paste_heading(items: usize) -> String {
     }
 }
 
-/// ★★★ **The warning that must be read BEFORE the press.**
+/// **The warning that must be read BEFORE the press.**
 ///
 /// A pasted bookmark whose destination names a page this document does not have
 /// is **dropped, not clamped** — it arrives, shows, keeps its title, and does
@@ -809,7 +809,7 @@ pub fn bookmark_paste_heading(items: usize) -> String {
 /// the sheets first, or accept the loss. *"Some destinations will be dropped"*
 /// is a warning they can only obey or ignore.
 ///
-/// ★ It does **not** say how many will drop, and that is honest rather than
+/// It does **not** say how many will drop, and that is honest rather than
 /// lazy: the clip knows its deepest destination, not the distribution of the
 /// rest, so any count here would be a guess. The engine reports the real number
 /// after the paste, which is where an exact figure belongs.
@@ -842,7 +842,7 @@ pub const fn bookmark_paste_button() -> &'static str {
 
 /// **How many arrived without their destination** — reported after the paste.
 ///
-/// ★ The panel predicted this before the press and this is what happened, and
+/// The panel predicted this before the press and this is what happened, and
 /// the two are not duplicates: a prediction is a guess nobody confirmed, and a
 /// report alone arrives too late to choose differently. The operator gets the
 /// choice *and* the outcome.
@@ -866,7 +866,7 @@ pub const fn bookmark_delete_button() -> &'static str {
     "Remove"
 }
 
-/// ★★ **The subtree warning, said before the press.**
+/// **The subtree warning, said before the press.**
 ///
 /// The engine's rule, and the reason it is Acrobat's too:
 ///
@@ -905,7 +905,7 @@ pub const fn bookmark_delete_keeps_pages() -> &'static str {
     "The pages themselves are not touched — only the way of jumping to them."
 }
 
-/// ★★ **What was actually removed**, reported after the fact from the count the
+/// **What was actually removed**, reported after the fact from the count the
 /// engine returned.
 ///
 /// `EditSession::delete_outline_item` returns how many items went, the clicked
@@ -913,7 +913,7 @@ pub const fn bookmark_delete_keeps_pages() -> &'static str {
 /// and cannot answer any other way: the subtree went too, and on a collapsed
 /// parent the operator could not see how large it was.
 ///
-/// ★ **It may disagree with the number promised before the press, and that is
+/// **It may disagree with the number promised before the press, and that is
 /// why both are said.** `read_outline` gives up part-way on a cycle, on
 /// excessive depth, or on exhausting its item budget — the panel draws a
 /// truncation notice when it does — so the pre-press count is a count of *what
@@ -937,7 +937,7 @@ pub fn bookmark_deleted(removed: usize) -> String {
 
 /// Why the Rename button is not offered for a blank name.
 ///
-/// ★ Absent rather than greyed, unlike the Add button one block up, and the
+/// Absent rather than greyed, unlike the Add button one block up, and the
 /// asymmetry is deliberate in both directions. The Add button is the **whole**
 /// of its feature and a row that vanished until you typed would leave an
 /// operator hunting for where bookmarks are added; the Rename button sits
@@ -1148,7 +1148,7 @@ mod tests {
         assert!(doc_hides.contains("shown"), "{doc_hides}");
     }
 
-    /// ★★ **The delete disclosure speaks about the SAME quantity, before and
+    /// **The delete disclosure speaks about the SAME quantity, before and
     /// after the press — and the two sentences count differently to do it.**
     ///
     /// This is the one piece of arithmetic in the bookmark wording and it has a
@@ -1207,7 +1207,7 @@ mod tests {
         assert_eq!(bookmark_deleted(0), leaf);
     }
 
-    /// ★ **The removal disclosure names the undo**, because that is what
+    /// **The removal disclosure names the undo**, because that is what
     /// stands in for the confirmation dialog this surface deliberately does
     /// not show.
     ///

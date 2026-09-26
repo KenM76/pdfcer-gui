@@ -138,7 +138,7 @@ fn measure(label: &str, path: &Path) {
     );
 }
 
-/// ★★ **The measurement.** Prints; asserts nothing about time.
+/// **The measurement.** Prints; asserts nothing about time.
 ///
 /// A timing assertion in a suite that runs on whatever machine happens to be
 /// free is a flake, and a flake gets `#[ignore]`d and then deleted. What is

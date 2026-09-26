@@ -247,7 +247,7 @@ pub(super) fn button_focus(
     }
 
     tabnav::publish(&ctx, tabnav::Scope::Field, id);
-    // ★ `canvas_selection_ink`, whose own doc names "the selected form field's
+    // `canvas_selection_ink`, whose own doc names "the selected form field's
     // box" as its role. Never `visuals.selection.stroke` — that is egui's
     // CHROME channel and `tools/gates/check-selection-channel.sh` keeps it out
     // of the content area.

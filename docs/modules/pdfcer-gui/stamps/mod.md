@@ -23,7 +23,7 @@ the export. That is why this module has no serialiser: there is nothing to
 serialise to. It has a *plan* and a *save path*, and the save path is an
 ordinary PDF write through the ordinary save route.
 
-## ★★ Every claim above is measured, in Adobe's own files, on this machine
+## Every claim above is measured, in Adobe's own files, on this machine
 
 Not sourced from the internet. The engine measured them from
 `…/Acrobat DC/Acrobat/plug_ins/Annotations/Stamps/ENU/*.pdf`, and this
@@ -37,7 +37,7 @@ Dynamic.pdf           category=Dynamic             5 stamps, all `#`-prefixed
 SignHere.pdf          category=Sign Here           5 stamps
 ```
 
-★ **`StandardBusiness.pdf` is the one that disproves the obvious design.**
+**`StandardBusiness.pdf` is the one that disproves the obvious design.**
 Its `SBApproved` names page 1 and `SBCompleted` names page 5. **Page order
 is not name-tree order** — §7.9.6 requires the tree be sorted
 lexicographically by name, and a conforming reader may binary-search it. A
@@ -73,7 +73,7 @@ each is an inference he did not ask for:
 All three are reported **off-canvas**, in the dialog that is about to write
 the file, before it is written. None of them marks anything on a page.
 
-## ★★★ Placing a custom stamp — was NOT here, and now is
+## Placing a custom stamp — was NOT here, and now is
 
 This section used to read *"Placing a custom stamp on a drawing … the
 engine has no verb that draws one page's artwork onto another"*, and it was

@@ -46,7 +46,7 @@ const WAIT: Duration = Duration::from_secs(35);
 const PARK_ACROSS: f32 = 0.25;
 /// The tile the drop is aimed at: the second page, so the resolved gap is 1.
 ///
-/// ★ Not tile 0. Its left edge is gap 0, which is also what a build that
+/// Not tile 0. Its left edge is gap 0, which is also what a build that
 /// defaulted to `Start` would produce, and this check must not have a passing
 /// answer that a position-blind build can reach.
 const TILE_INDEX: usize = 1;
@@ -97,7 +97,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .pdf
         .clone()
         .ok_or_else(|| Error::new("no --pdf. This check needs a document to import INTO."))?;
-    // ★ The dropped file must be a DIFFERENT document. pdfcer activates the tab
+    // The dropped file must be a DIFFERENT document. pdfcer activates the tab
     // a path is already open in rather than opening it twice, so dropping the
     // open document on its own thumbnails would be testing a case with a
     // different correct answer.
@@ -184,7 +184,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         if Instant::now() >= deadline {
             break None;
         }
-        // ★ One point back and forth. See the module header: an idle egui
+        // One point back and forth. See the module header: an idle egui
         // application does not draw, and a drop that is never polled for never
         // fires. Both positions are deep inside the same half of the tile.
         jiggle = 1 - jiggle;

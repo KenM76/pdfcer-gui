@@ -4,7 +4,7 @@ the sheet**
 The copy for [`crate::dialogs::offpage`], and the disclosure half of the
 off-page feature O23 opened.
 
-## ★★★ What this window is FOR, in the operator's own words
+## What this window is FOR, in the operator's own words
 
 
 > *"how do I view and edit objects that are off of the page? we added this
@@ -20,7 +20,7 @@ What none of them answer is the question that comes **first**:
 An operator cannot go and look at a thing whose existence they have no
 reason to suspect. That is what this window is: a census, and a way to cut.
 
-## ★★ Why this is a *Protect* control and not a *View* one
+## Why this is a *Protect* control and not a *View* one
 
 Because off-page content is the classic PDF leak, and on a CAD drawing it is
 not a hypothetical one. A sheet exported with the drawing border cropped
@@ -43,13 +43,13 @@ button produces `/Redact` annotations that render exactly as any other
 `/Redact` annotation does. There is no provisional tint, no dashed halo, no
 "off-page" badge. The disclosure is this window; the canvas is the document.
 
-★ And the removal is a **mark**, not an apply. `edit.redact_apply` remains
+And the removal is a **mark**, not an apply. `edit.redact_apply` remains
 the only place content is destroyed, which is the arm/mark/obliterate split
 `crate::shell::commands::catalog::edit` argues at the redaction family's
 registration. A control that scanned and deleted in one press would be a
 fourth member of that family that skipped its middle step.
 
-## ★ Why every function here takes primitives rather than the engine's types
+## Why every function here takes primitives rather than the engine's types
 
 `pdfcer_core::offpage::PageScan` and `OffPageObject` are `#[non_exhaustive]`,
 so nothing outside `pdfcer-core` can build one — which would make every test

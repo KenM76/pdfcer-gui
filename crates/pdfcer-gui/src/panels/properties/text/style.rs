@@ -28,7 +28,7 @@ use super::{TextStyleDraft, shorten};
 use crate::app::state::OpenDoc;
 use crate::text::panels::properties as t;
 
-/// ★★★ **Which RUNG of the engine's style ladder one of the two weight buttons
+/// **Which RUNG of the engine's style ladder one of the two weight buttons
 /// would take**, said before the press.
 ///
 ///
@@ -66,7 +66,7 @@ pub(crate) enum StyleOutlook {
     /// **Rung 1**, different family: the only real face on the page that can
     /// show this run belongs to another typeface.
     ///
-    /// ★★ Its own variant and not a flag, because to a draughtsman these are
+    /// Its own variant and not a flag, because to a draughtsman these are
     /// different events. Taking the same family's bold face is invisible on a
     /// plot; taking another family's changes the shape of a title block. Only
     /// one of the two is worth warning him about before the press, and
@@ -83,7 +83,7 @@ pub(crate) enum StyleOutlook {
     /// **Rung 0**: the run is already that way, so the press will change
     /// nothing.
     ///
-    /// ★ Worth a sentence rather than silence. "I pressed it and nothing
+    /// Worth a sentence rather than silence. "I pressed it and nothing
     /// happened" is indistinguishable from a broken button, and this is the
     /// difference between a control that did nothing and one that had nothing
     /// to do.
@@ -92,7 +92,7 @@ pub(crate) enum StyleOutlook {
     /// so the press will be **declined** —
     /// `FormatError::SynthesisRefusedByPosture`.
     ///
-    /// ★★ The button still does not grey. R9 reserves greying for the
+    /// The button still does not grey. R9 reserves greying for the
     /// *temporarily* unavailable, and this is neither temporary nor a
     /// malfunction: it is *Settings ▸ Fonts ▸ never fake it* being obeyed
     /// exactly as set. The hover says so in those terms, because an operator
@@ -103,7 +103,7 @@ pub(crate) enum StyleOutlook {
 
 /// One real face the ladder will try and pass over, in the operator's words.
 ///
-/// # ★★★ The feature `passed_over` being prose cost outright
+/// # The feature `passed_over` being prose cost outright
 ///
 /// `StyleLadder::passed_over` was a `Vec<String>` of `"BaseFont (reason)"`
 /// until `Pass 295.0`. Saying *"pdfcer will try `Times-Bold` and it has no
@@ -115,14 +115,14 @@ pub(crate) enum StyleOutlook {
 /// was told which rung bound and never which faces were tried and rejected,
 /// which is the half he asks about.
 ///
-/// ★★ `PassedOver` is now `{ base_font, reason, refusal }`, and
+/// `PassedOver` is now `{ base_font, reason, refusal }`, and
 /// `Refusal::character` gives **the offending character**. That is what makes
 /// this worth a type of its own here: the engine's `reason` is accurate and
 /// technical (*"R-INV-1: character U+006F 'o' has no code in font
 /// 'Times-Bold'"*), and the hover wants *"no 'o'"*. The character is carried;
 /// the prose is not.
 ///
-/// ★ `character` is `Option` because a face can be passed over for a reason
+/// `character` is `Option` because a face can be passed over for a reason
 /// that is not one character — it could not be planned at all, say. The
 /// sentence degrades to naming the face, which is still more than nothing was.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -135,7 +135,7 @@ pub(crate) struct TriedFace {
 
 /// What one weight button would do, and what it will step over on the way.
 ///
-/// ★ Two fields rather than a sixth [`StyleOutlook`] variant, because they
+/// Two fields rather than a sixth [`StyleOutlook`] variant, because they
 /// answer different questions and are independently present: a rung-2 bind can
 /// pass over two page faces on the way, and a rung-1 bind can pass over none.
 /// Folding them together would make the passed-over list a property of the
@@ -151,7 +151,7 @@ pub(crate) struct StyleForecast {
 impl TextStyleDraft {
     /// One axis's [`StyleForecast`], or `None` when the probe did not answer.
     ///
-    /// # ★★★ One engine call, and it is the SAME computation the press will run
+    /// # One engine call, and it is the SAME computation the press will run
     ///
     /// `EditSession::preview_style_ladder` runs `plan_style_ladder` — the
     /// function `format_text` runs — against the session's *staged* content, so
@@ -167,7 +167,7 @@ impl TextStyleDraft {
     /// against `preview_font_resources`' accepted list to reconstruct an answer
     /// neither call gave — is deleted; see [`TextStyleDraft::sync`].
     ///
-    /// # ★★ `options` is not optional, and passing the wrong one is a lie
+    /// # `options` is not optional, and passing the wrong one is a lie
     ///
     /// `StylePolicy::Refuse` changes the answer: under it a ladder that reaches
     /// rung 4 is a **refusal**, not a synthesis. The engine says so at the
@@ -178,7 +178,7 @@ impl TextStyleDraft {
     /// an operator who had ticked *never fake it*, which is the exact defect
     /// the deleted `Refuse`-pinned probe used to cause from the other side.
     ///
-    /// ★ A single axis per call, because the two buttons issue two separate
+    /// A single axis per call, because the two buttons issue two separate
     /// single-axis requests; see [`TextStyleDraft::italic_outlook`] for why
     /// neither may borrow the other's answer.
     pub(super) fn forecast(
@@ -199,7 +199,7 @@ impl TextStyleDraft {
                 .preview_style_ladder(page, "", Some(read.pin.span), want, &options)
             {
                 Ok(ladder) => ladder,
-                // ★★★ The operator's own setting, previewed as their setting. This
+                // The operator's own setting, previewed as their setting. This
                 // is the ONE error worth a sentence: every other failure here is
                 // "the probe could not run", and this one is "the probe ran and the
                 // answer is that pdfcer will decline, because you told it to".
@@ -212,12 +212,12 @@ impl TextStyleDraft {
                 Err(_) => return None,
             };
 
-        // ★★ The faces the ladder will step over, carried alongside the rung
+        // The faces the ladder will step over, carried alongside the rung
         // rather than folded into it. `Refusal::character` is the whole reason
         // this is worth carrying: the engine's `reason` is accurate and
         // technical, and the hover wants *"no 'o'"*. See [`TriedFace`].
         //
-        // ★ The closure's parameter is ANNOTATED, and that is a fix rather than
+        // The closure's parameter is ANNOTATED, and that is a fix rather than
         // decoration. `Pass 295.0` re-exported `StyleLadder` but not
         // `PassedOver`, so `pdfcer_core::text_edit::PassedOver` did not resolve
         // and the shape this code walks was invisible — inference typed it and
@@ -238,7 +238,7 @@ impl TextStyleDraft {
         let outlook = match ladder.rung {
             StyleRung::AlreadyStyled => StyleOutlook::AlreadyStyled,
             StyleRung::Synthetic => StyleOutlook::Synthesized,
-            // ★ `same_family` is `Option<bool>` and `None` means NOTHING WAS
+            // `same_family` is `Option<bool>` and `None` means NOTHING WAS
             // BOUND — the engine says at the field that it must not be
             // flattened into `Some(false)`. On a rung that bound a face that
             // would be an engine invariant breaking, so it falls to the
@@ -254,7 +254,7 @@ impl TextStyleDraft {
             StyleRung::StandardFourteenSibling => {
                 StyleOutlook::StandardSibling(shorten(ladder.bound.as_deref()?).to_owned())
             }
-            // ★ A named catch-all rather than a fall-through, because
+            // A named catch-all rather than a fall-through, because
             // `StyleRung` is `#[non_exhaustive]`: rung 3 (`--font-dir` donors,
             // `Pass 142.0`) is not built in this shell and a fifth rung is
             // possible. A variant this build has never seen must land somewhere
@@ -269,7 +269,7 @@ impl TextStyleDraft {
 
 /// The Bold button's hover text, given what the engine says would happen.
 ///
-/// # ★★★ Seven sentences, and the last is the one that was there before
+/// # Seven sentences, and the last is the one that was there before
 ///
 /// | outlook | what the operator reads |
 /// |---|---|
@@ -297,7 +297,7 @@ impl TextStyleDraft {
 /// [`crate::text::panels::properties::text_bold_hint`] already said, which is
 /// why it stays.
 ///
-/// # ★★ None of the seven greys the button, and that is still the engine's ruling
+/// # None of the seven greys the button, and that is still the engine's ruling
 ///
 /// *"Do not grey out a bold button. Offer it, and surface the disclosure when
 /// synthesis fires."* [`StyleOutlook::Declined`] is the row where greying could
@@ -314,7 +314,7 @@ pub(super) fn bold_hint(draft: &TextStyleDraft) -> String {
 /// this is the same seven rows with *slant* in place of *thicken*, from the
 /// draft's separately-probed italic axis.
 ///
-/// ★ It reads [`TextStyleDraft::italic_outlook`] and never the bold one. The
+/// It reads [`TextStyleDraft::italic_outlook`] and never the bold one. The
 /// two are genuinely different answers on an ordinary page — one holding a real
 /// `Arial-Bold` and no `Arial-Italic` gives `SiblingOnPage` for one button and
 /// `Synthesized` for the other — and a shared sentence would be wrong on
@@ -325,10 +325,10 @@ pub(super) fn italic_hint(draft: &TextStyleDraft) -> String {
 
 /// Both buttons' hover text, from one forecast and one axis flag.
 ///
-/// # ★★ One function for two axes, which is the opposite of what was here
+/// # One function for two axes, which is the opposite of what was here
 ///
 ///
-/// ★ The addendum is appended here rather than folded into each sentence,
+/// The addendum is appended here rather than folded into each sentence,
 /// because it is **orthogonal** — a ladder can pass over faces on its way to any
 /// rung, including the one that ends in a refusal, and writing it into seven
 /// sentences twice over is how a clause goes stale in six of fourteen places.
@@ -422,7 +422,7 @@ mod outlook_tests {
         })
     }
 
-    /// ★★★ **Seven outcomes, seven different sentences**, per axis.
+    /// **Seven outcomes, seven different sentences**, per axis.
     ///
     /// If any two collapsed, the probe would be decoration: an operator whose
     /// page carries the bold form of their own typeface and one whose page
@@ -430,13 +430,13 @@ mod outlook_tests {
     /// learn nothing either way — and those two results look quite different on
     /// the page.
     ///
-    /// ★★ The three face-bearing rows all carry **the same face name** on
+    /// The three face-bearing rows all carry **the same face name** on
     /// purpose. A test that varied the name as well as the variant would pass
     /// on a build whose sentences were identical apart from the interpolated
     /// string, which is exactly the bug this is here to catch: the distinction
     /// that matters is *what pdfcer will do*, not *which face it names*.
     ///
-    /// ★ The `None` row is included deliberately — it is the sentence that was
+    /// The `None` row is included deliberately — it is the sentence that was
     /// there before any preview existed, and it must remain distinguishable
     /// from the six predictions rather than being absorbed into one of them.
     #[test]
@@ -462,7 +462,7 @@ mod outlook_tests {
         assert_eq!(seen.len(), 7, "a row was dropped from the sweep");
     }
 
-    /// ★★ **The two axes read their own probes**, and never each other's.
+    /// **The two axes read their own probes**, and never each other's.
     ///
     /// The state this pins is the ordinary one, not an exotic one: a page
     /// carrying a real `Arial-Bold` and no `Arial-Italic` gives `SiblingOnPage`
@@ -481,7 +481,7 @@ mod outlook_tests {
         assert!(italic_hint(&draft).contains("slant"));
     }
 
-    /// ★ **Bold thickens and italic slants**, and neither sentence borrows the
+    /// **Bold thickens and italic slants**, and neither sentence borrows the
     /// other's verb.
     ///
     /// They are different synthetic operations — a weight is the regular face
@@ -501,7 +501,7 @@ mod outlook_tests {
         assert!(!italic.contains("thicken"), "{italic}");
     }
 
-    /// ★★★ **The two rung-1 sentences disagree about the letterforms**, which
+    /// **The two rung-1 sentences disagree about the letterforms**, which
     /// is the only thing the operator can act on.
     ///
     /// Both bind a real face already on the page and embed nothing, so a
@@ -511,7 +511,7 @@ mod outlook_tests {
     /// own words for the second are *"a bigger change than a weight swap"*, and
     /// rule 4 makes the visible half the half that must be disclosed.
     ///
-    /// ★ Asserted on the *shape* claim rather than on the whole sentence, so
+    /// Asserted on the *shape* claim rather than on the whole sentence, so
     /// rewording the hover does not break the test while removing the
     /// distinction silently would.
     #[test]
@@ -530,7 +530,7 @@ mod outlook_tests {
         assert!(other.contains("shaped differently"), "{other}");
     }
 
-    /// ★★★ **The refusal is predicted, names the cause, and does not prescribe
+    /// **The refusal is predicted, names the cause, and does not prescribe
     /// a font.**
     ///
     /// `StylePolicy::Refuse` is the operator's own setting, so the honest
@@ -549,7 +549,7 @@ mod outlook_tests {
         );
     }
 
-    /// ★★★ **A face the ladder will step over is named before the press**, with
+    /// **A face the ladder will step over is named before the press**, with
     /// the character that defeated it.
     ///
     /// The engine discloses `passed_over` **after** the commit and this shell
@@ -557,7 +557,7 @@ mod outlook_tests {
     /// timing: the same fact one gesture earlier, where it can still change what
     /// the operator does.
     ///
-    /// ★ The addendum is checked on a rung that is **not** a refusal, because
+    /// The addendum is checked on a rung that is **not** a refusal, because
     /// that is the case a naive design gets wrong — passing over a face and then
     /// succeeding is the ordinary path, not an error path.
     #[test]
@@ -578,7 +578,7 @@ mod outlook_tests {
         assert!(line.contains("no 'o'"), "{line}");
     }
 
-    /// ★★ **A face passed over for no one character gets no empty parenthesis.**
+    /// **A face passed over for no one character gets no empty parenthesis.**
     ///
     /// `Refusal::character` is an `Option` and a refusal about the whole run is
     /// a real case; *"Times-Bold ()"* would be this shell rendering an absence
@@ -602,7 +602,7 @@ mod outlook_tests {
         assert!(!line.contains("(no"), "{line}");
     }
 
-    /// ★★ **Nothing passed over means no addendum at all.**
+    /// **Nothing passed over means no addendum at all.**
     ///
     /// The commonest case by far, and the one where an unconditional clause
     /// would read as a warning about nothing. Falsifies the previous two tests:
@@ -617,7 +617,7 @@ mod outlook_tests {
         assert!(!line.contains("pass over"), "{line}");
     }
 
-    /// ★★ **A fresh draft says the conditional**, not a prediction.
+    /// **A fresh draft says the conditional**, not a prediction.
     ///
     /// `TextStyleDraft::default()` has never been synced, so both forecasts are
     /// `None` — and the honest thing to say about a run nothing has been read

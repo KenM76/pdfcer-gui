@@ -24,7 +24,7 @@ use crate::text::stamps as t;
 /// the same green tick. [`super::REGION_ANOMALIES`] carries the same shape and
 /// the same warning.
 ///
-/// ★ Named under the `properties.` prefix like its neighbours, so that the
+/// Named under the `properties.` prefix like its neighbours, so that the
 /// `declared_names(&trace, "properties")` dump several checks print when they
 /// cannot find a region lists it. A region under a prefix nobody enumerates is
 /// discoverable only by whoever wrote it.
@@ -42,7 +42,7 @@ pub const REGION_ROW_PREFIX: &str = "properties.stamp-collection."; // ui-text-e
 
 /// Draw the stamp-collection section, or draw nothing at all.
 ///
-/// # ★ The test is the name tree, never the title
+/// # The test is the name tree, never the title
 ///
 /// [`crate::stamps::is_collection`] asks whether the document has **named
 /// pages**. A PDF with a `/Title` and no name tree is just a PDF with a title,
@@ -56,7 +56,7 @@ pub(super) fn section(ui: &mut Ui, doc: &OpenDoc) {
         return;
     }
 
-    // ★★ Scoped so the section's rect is a value egui computed rather than a
+    // Scoped so the section's rect is a value egui computed rather than a
     // difference between two cursor readings — `load_anomalies_note`'s finding,
     // copied rather than re-derived: a before/after `ui.cursor()` pair is right
     // today and wrong the first time somebody wraps this in a horizontal
@@ -103,7 +103,7 @@ pub(super) fn section(ui: &mut Ui, doc: &OpenDoc) {
                 );
             }
 
-            // ★★★ Why no page number is shown, said ONCE and above the list.
+            // Why no page number is shown, said ONCE and above the list.
             //
             let unreadable = crate::stamps::page_tree_unreadable(&collection);
             if let Some(why) = unreadable {
@@ -132,7 +132,7 @@ pub(super) fn section(ui: &mut Ui, doc: &OpenDoc) {
                     };
                     ui.label(egui::RichText::new(page).small().weak());
                 });
-                // ★ Per-row region. The section region below says *"this file is
+                // Per-row region. The section region below says *"this file is
                 // a stamp collection"*; only these say *"and here is what is in
                 // it"* — a regression that drew the heading and the count with
                 // no rows under them would be invisible to the section region
@@ -149,7 +149,7 @@ pub(super) fn section(ui: &mut Ui, doc: &OpenDoc) {
         .response
         .rect;
 
-    // ★ `ui_rect_visible` rather than `ui_rect`, for the reason `info_body`
+    // `ui_rect_visible` rather than `ui_rect`, for the reason `info_body`
     // states at its own publication: this draws inside `body`'s `ScrollArea`,
     // and a rect published for a scrolled-out control gets clicked by the
     // harness at a coordinate the operator can never reach.
@@ -168,7 +168,7 @@ mod tests {
 
     #[test]
     fn a_collection_with_no_title_says_what_acrobat_would_do() {
-        // ★ Not "Unknown". The category is genuinely ABSENT from the file,
+        // Not "Unknown". The category is genuinely ABSENT from the file,
         // which is a fact about the file; Acrobat lists such a set with no
         // heading. Saying so beats saying pdfcer does not know.
         let sentence = t::properties_no_category().to_lowercase();
@@ -177,7 +177,7 @@ mod tests {
 
     #[test]
     fn a_stamp_pointing_nowhere_is_described_and_not_diagnosed() {
-        // ★★ THE SENTENCE THIS FEATURE'S ENGINE REQUEST EXISTS ABOUT.
+        // THE SENTENCE THIS FEATURE'S ENGINE REQUEST EXISTS ABOUT.
         // `stamp_file::read` swallows a page-tree failure and then reports
         // EVERY stamp as pointing at nothing, so a perfectly good collection
         // inside a document pdfcer could not walk counts as entirely broken.
@@ -207,7 +207,7 @@ mod tests {
 
     #[test]
     fn the_row_regions_are_a_prefix_of_the_section_region() {
-        // ★ Not pedantry: several driven checks dump every declared region
+        // Not pedantry: several driven checks dump every declared region
         // under a prefix when they cannot find the one they wanted, and a row
         // prefix that drifted out from under the section's would vanish from
         // that dump — leaving a check reporting "no such region" about rows

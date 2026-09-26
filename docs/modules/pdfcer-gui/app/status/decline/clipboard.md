@@ -3,7 +3,7 @@ a paste
 
 One recording function, and the argument for why it exists at all.
 
-## ★★★ It is the second half of a fix, and without it the fix is a
+## It is the second half of a fix, and without it the fix is a
 regression
 
 
@@ -29,7 +29,7 @@ moved the defect rather than closed it: from *a key that does nothing in
 Review* to *a key that does nothing in Read and Review and says less about
 it*.
 
-## ★★ Why `decline` and emphatically not `record_note`
+## Why `decline` and emphatically not `record_note`
 
 `crate::app::actions::record_note` draws under **`⚑ About your last edit:`**
 — a slot whose contract is *an edit happened; here is the part you cannot

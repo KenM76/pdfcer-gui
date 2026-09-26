@@ -21,12 +21,12 @@ they share a cause. They do not:
 | **recentre** | `Action::SetPageDisplay` deliberately suppresses the scroll-to-page that a page change would otherwise cause, so the continuous strip's offset survives the switch and the new arrangement is drawn wherever that offset happens to land |
 | **fit the spread** | the fit's **scale** is computed from the ROW (`viewer::strip::fit_metrics`, which is facing-aware) and the fit's **placement** is converted back through the acting PAGE's rect (`canvas::offset`'s `strip_offset_for`), so a spread is placed as though the page were the thing being centred — one page lands in the middle and the other runs off the edge, which reads exactly as *"it snaps to fitting one"* |
 
-★ That asymmetry is the finding worth carrying away: **when a feature's
+That asymmetry is the finding worth carrying away: **when a feature's
 scale rule is taught about a new layout unit and its placement rule is not,
 the symptom presents as the scale being wrong.** The operator's sentence
 says "fit", and the zoom was never the problem.
 
-# ★★★ Why `canvas-strip` exists and why neither half could be checked
+# Why `canvas-strip` exists and why neither half could be checked
 without it
 
 The canvas has published `page` (the acting page's drawn rect) since Phase 1
@@ -62,7 +62,7 @@ does move when the strip scrolls.
 the facing half needs a document with a genuine two-page row and the
 operator's own drawings are frequently single-sheet.
 
-★★ `viewer::display::PageDisplay::row_of` implements the **cover rule**:
+`viewer::display::PageDisplay::row_of` implements the **cover rule**:
 row 0 holds page 0 **alone**, and rows 1.. hold `2r-1` and `2r`. A facing
 fit measured at launch therefore measures **one page** and would pass on a
 build that cannot fit two. The run presses **Page Down** once to reach page

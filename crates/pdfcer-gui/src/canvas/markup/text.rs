@@ -15,12 +15,12 @@ use crate::canvas::textsel::TextSelection;
 /// ribbon's Text markup group lists them, after Highlight.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TextMarkKind {
-    /// ★★★ `/Highlight` — a translucent wash over each quad.
+    /// `/Highlight` — a translucent wash over each quad.
     ///
     /// The one kind in this enum that is *also* a [`super::MarkupKind`] — the
     /// armed tool that draws an area highlight by dragging a box.
     ///
-    /// ★★ That is not a duplication, and the reason is what these two enums
+    /// That is not a duplication, and the reason is what these two enums
     /// actually encode: **not identity, but GEOMETRY.** `MarkupKind` is *"kinds
     /// whose operand is a shape the pointer draws"*; this one is *"kinds whose
     /// operand is a run of text"*. Highlight is the only kind that is honestly
@@ -32,7 +32,7 @@ pub enum TextMarkKind {
     /// every arm that today cannot be wrong, to express a thing that is true of
     /// one variant.
     ///
-    /// ★ It takes the **highlighter**, not the ink, unlike the other three —
+    /// It takes the **highlighter**, not the ink, unlike the other three —
     /// see [`Self::rgb`]. Same instrument, same swatch, whichever gesture
     /// reached it.
     Highlight,
@@ -88,7 +88,7 @@ impl TextMarkKind {
         }
     }
 
-    /// ★★★ **EACH OF THE FOUR TAKES ITS OWN PEN.**
+    /// **EACH OF THE FOUR TAKES ITS OWN PEN.**
     ///
     /// A two-instrument partition — lines take the biro, the wash takes the
     /// marker — answers *"which of these two?"* correctly and is still the
@@ -108,13 +108,13 @@ impl TextMarkKind {
     /// [`super::palette`] for where those four readings come from and
     /// [`super::pen::PenSlot`] for the slots.
     ///
-    /// ★ The property a partition gave for free — **no kind reaching two
+    /// The property a partition gave for free — **no kind reaching two
     /// colours and no kind reaching none** — is asserted instead, from both
     /// sides: `pen::tests::every_kind_takes_the_slot_it_is_documented_to_take`
     /// and [`tests::each_text_kind_takes_its_own_pen`], each sweeping its enum's
     /// full list rather than a hand-written subset.
     ///
-    /// # ★ Why this is a routing table and NOT a hard-coded triple
+    /// # Why this is a routing table and NOT a hard-coded triple
     ///
     /// A constant here — `fn rgb(self) -> (f64, f64, f64)` returning one red for
     /// every line kind — compiles, and a test that asserts the constant against
@@ -130,7 +130,7 @@ impl TextMarkKind {
     /// exists. What catches it is a test asserting the two paths agree, which is
     /// `tests::the_ink_reaches_every_text_kind`.
     ///
-    /// # ★★ The constraint the measurement has to pass
+    /// # The constraint the measurement has to pass
     ///
     /// *"A line must be seen against the text it marks; a yellow underline under
     /// black glyphs on white paper is very nearly invisible."* That is a **check
@@ -236,7 +236,7 @@ pub fn spec(kind: TextMarkKind, quads: Vec<Quad>, pen: super::pen::Pen) -> Marku
     }
 }
 
-/// ★ **The ONE action a text-markup command becomes** — the whole rule, pure.
+/// **The ONE action a text-markup command becomes** — the whole rule, pure.
 ///
 /// Everything the command means is here: which selection is eligible, what a
 /// stale one does, and what travels to the apply arm. `app::dispatch` calls this
@@ -259,7 +259,7 @@ pub fn spec(kind: TextMarkKind, quads: Vec<Quad>, pen: super::pen::Pen) -> Marku
 /// made on; re-deriving the page in the apply would silently author it wherever
 /// the operator happens to be looking.
 ///
-/// # ★ The pen is sampled HERE, not read in the apply arm
+/// # The pen is sampled HERE, not read in the apply arm
 ///
 /// [`Action::CommitMarkup`]'s `pen` field carries the argument in full and it
 /// applies here without amendment: *"reading the live pen in the apply arm
@@ -313,7 +313,7 @@ pub fn decline(kind: TextMarkKind, reason: Refusal) {
 
 /// Report a text markup that is about to be authored.
 ///
-/// ★ Traced with its **quad count and its page**, not a success flag, for the
+/// Traced with its **quad count and its page**, not a success flag, for the
 /// reason [`super::drag`]'s trace carries its coordinates: a line saying only
 /// *"committed"* would be equally true before and after the defect anybody is
 /// hunting. Here the two numbers that can be wrong are *how many boxes* (a
@@ -337,26 +337,26 @@ pub fn trace_commit(kind: TextMarkKind, page: usize, quads: usize) {
 /// crosses — when the gesture is following text, and `None` when it is not, so
 /// the caller falls through to the area band.
 ///
-/// # ★★★ Why this is the DEFAULT for a highlight and the band is the fallback
+/// # Why this is the DEFAULT for a highlight and the band is the fallback
 ///
 /// The operator: *"we should be able to drag it along to just highlight text
 /// too like it works in adobe."* Acrobat's Highlight follows text, and it is the
 /// convergent behaviour of the class.
 ///
-/// ★★ pdfcer's fallback is **better than the reference** and is kept for that
+/// pdfcer's fallback is **better than the reference** and is kept for that
 /// reason: over a scan with no text layer Acrobat's highlight draws nothing at
 /// all, and an area highlight there is exactly what a drawing office wants. So
 /// the rule is *follow text where there is text, box where there is not*, which
 /// strictly dominates the behaviour being matched.
 ///
-/// # ★★ Only Highlight, and the other seven band kinds are not offered this
+/// # Only Highlight, and the other seven band kinds are not offered this
 ///
 /// A rectangle, an ellipse, an arrow or a cloud drawn over a paragraph means the
 /// shape, not the words — nobody drags an arrow expecting it to follow a line of
 /// text. Highlight is the one band kind whose *subject* is the text it covers,
 /// which is why it is the one kind that appears in both geometry enums.
 ///
-/// # ★ It commits nothing before the release
+/// # It commits nothing before the release
 ///
 /// Same contract every preview in this crate is held to: the marks are handed
 /// back on every frame so the operator can see what they are about to get, and
@@ -394,7 +394,7 @@ pub fn swept(frame: Swept<'_>, actions: &mut Vec<Action>) -> Option<Vec<egui::Re
     }
     let page_text = doc.page_text()?;
     let page = doc.pages.get(page_index)?;
-    // ★ The SAME options the extraction ran with — `textsel::PageContext::opts`
+    // The SAME options the extraction ran with — `textsel::PageContext::opts`
     // — so the runs this drag sweeps are segmented exactly as the runs the
     // canvas paints and the find bar searches.
     let ctx = crate::canvas::textsel::PageContext {
@@ -406,7 +406,7 @@ pub fn swept(frame: Swept<'_>, actions: &mut Vec<Action>) -> Option<Vec<egui::Re
     let selection = crate::canvas::textsel::drag(&ctx, from, to)?;
     let marks = selection.highlights(page_index, doc.edit_epoch);
     if marks.is_empty() {
-        // ★★ No quads is NOT the same as no text: a drag that began and ended
+        // No quads is NOT the same as no text: a drag that began and ended
         // inside one glyph selects nothing, and so does one over a page whose
         // text could not be extracted. Both mean *"this gesture is not
         // following text"*, and both fall through to the band — which is the
@@ -465,10 +465,10 @@ mod tests {
     }
 
     // -----------------------------------------------------------------
-    // ★ The subtype, the colour and the quads
+    // The subtype, the colour and the quads
     // -----------------------------------------------------------------
 
-    /// ★ **Each kind authors its own `/Subtype`, and none borrows another's.**
+    /// **Each kind authors its own `/Subtype`, and none borrows another's.**
     ///
     /// The failure this catches is the copy-paste one: three arms built from one
     /// another, two of which say `Underline`. It would produce three ribbon
@@ -495,7 +495,7 @@ mod tests {
         );
     }
 
-    /// ★ **The quads are carried through untouched, in order and in number.**
+    /// **The quads are carried through untouched, in order and in number.**
     ///
     /// The one-derivation promise at this end of it: the boxes the operator saw
     /// washed are the boxes written into `/QuadPoints`. A build that merged,
@@ -514,7 +514,7 @@ mod tests {
         assert_eq!(authored, quads, "the boxes must arrive as they left");
     }
 
-    /// ★★ **The operator's pen reaches every text kind.**
+    /// **The operator's pen reaches every text kind.**
     ///
     /// # It asserts a RELATION, never a magnitude
     ///
@@ -529,7 +529,7 @@ mod tests {
     /// itself. A planted pen with one ink could not catch a kind taking the
     /// wrong *line* colour, because there would be only one line colour to take.
     ///
-    /// # ★ What it deliberately does NOT assert
+    /// # What it deliberately does NOT assert
     ///
     /// The shipped default values. Those are Acrobat's, pinned against the
     /// registry keys they were read from by
@@ -558,7 +558,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **Each text kind takes its OWN pen, and no two share one.**
+    /// **Each text kind takes its OWN pen, and no two share one.**
     ///
     /// # What this replaces, and why the replacement is stricter
     ///
@@ -575,12 +575,12 @@ mod tests {
     /// "simplifying" `rgb` to one shared colour fails on the first pair — and it
     /// catches the new failure as well.
     ///
-    /// ★ It asserts on the **slot**, not on the colour. Two slots may legitimately
+    /// It asserts on the **slot**, not on the colour. Two slots may legitimately
     /// hold the same colour (Squiggly and Shape ship at the same Acrobat red, and
     /// an operator may set any two the same), and a test that demanded distinct
     /// *colours* would forbid a state the operator is entitled to choose.
     ///
-    /// # ★★★ THE SEPARATION CLAIM ALONE WAS NOT ENOUGH, and running the
+    /// # THE SEPARATION CLAIM ALONE WAS NOT ENOUGH, and running the
     /// # falsification is how that was found
     ///
     /// This test shipped its first draft asserting only *"no two of the four
@@ -611,7 +611,7 @@ mod tests {
             (TextMarkKind::StrikeOut, PenSlot::StrikeOut),
             (TextMarkKind::Squiggly, PenSlot::Squiggly),
         ];
-        // ★ IDENTITY: each kind takes the slot named after it. This is the row
+        // IDENTITY: each kind takes the slot named after it. This is the row
         // the separation check below cannot make — a kind routed to a slot that
         // belongs to a different FAMILY (the shape pen, the note) is still
         // "distinct from the other three".
@@ -625,7 +625,7 @@ mod tests {
                 kind.slot()
             );
         }
-        // ★ SEPARATION: and no two of them share one.
+        // SEPARATION: and no two of them share one.
         for i in 0..every.len() {
             for j in (i + 1)..every.len() {
                 assert_ne!(
@@ -672,10 +672,10 @@ mod tests {
     }
 
     // -----------------------------------------------------------------
-    // ★ The rule: what a command does with the selection it finds
+    // The rule: what a command does with the selection it finds
     // -----------------------------------------------------------------
 
-    /// ★ **A live selection becomes exactly one action, on ITS page.**
+    /// **A live selection becomes exactly one action, on ITS page.**
     ///
     /// The page assertion is the load-bearing half and it is written as a
     /// magnitude rather than a relation: the action must name page **7**, the
@@ -700,7 +700,7 @@ mod tests {
         assert_eq!(quads, sel.page_quads, "the selection's own boxes");
     }
 
-    /// ★ **A selection made before an edit is refused, not marked.**
+    /// **A selection made before an edit is refused, not marked.**
     ///
     /// `canvas::textsel` §7's rule at the authoring end: after an edit the
     /// recorded positions may name different glyphs, and writing a `/QuadPoints`
@@ -739,7 +739,7 @@ mod tests {
         );
     }
 
-    /// ★ **Every kind behaves identically at the rule level.**
+    /// **Every kind behaves identically at the rule level.**
     ///
     /// Asserted over `ALL` rather than for one kind, because the plausible
     /// failure is per-kind: a fourth entry added to the enum, given a subtype and

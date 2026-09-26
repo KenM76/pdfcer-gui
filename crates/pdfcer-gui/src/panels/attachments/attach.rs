@@ -24,7 +24,7 @@ pub const REGION_ATTACH: &str = "attachments.attach"; // ui-text-exempt: trace r
 
 /// Draw the attach-a-file row.
 ///
-/// # ★ The button is never greyed, and the contrast with the Bookmarks add row
+/// # The button is never greyed, and the contrast with the Bookmarks add row
 /// is the argument
 ///
 /// That row greys its Add button until a title has been typed, because a
@@ -89,7 +89,7 @@ pub fn show(ui: &mut Ui, ui_state: &mut AttachmentsUi, actions: &mut Vec<Action>
 mod tests {
     use super::*;
 
-    /// ★ **An all-whitespace description is no description.**
+    /// **An all-whitespace description is no description.**
     ///
     /// The expression under test is the one the button arm uses, spelled the
     /// same way, so the two cannot come apart. What it defends: writing

@@ -115,7 +115,7 @@ mod tests {
         find_in(items, ObjId::new(num, 0), |n| n.id, kids)
     }
 
-    /// ★ A bookmark is found at any depth.
+    /// A bookmark is found at any depth.
     ///
     /// Depth is the point. The hazard this search replaces is an **index**, and
     /// an index is wrong precisely for the nested case — which is the one the
@@ -141,7 +141,7 @@ mod tests {
         assert!(find_node(&tree, 99).is_none(), "an id that is not there");
     }
 
-    /// ★ A collapsed item is readable, which is what makes the add row's
+    /// A collapsed item is readable, which is what makes the add row's
     /// disclosure possible at all.
     ///
     /// `open` is the shell's read of the **sign** on `/Count` — §12.3.3 defines
@@ -155,7 +155,7 @@ mod tests {
         assert!(find_node(&tree, 2).expect("present").open);
     }
 
-    /// ★★ **The subtree count is the whole subtree, and it excludes the node
+    /// **The subtree count is the whole subtree, and it excludes the node
     /// itself.**
     ///
     /// This is the number the delete disclosure quotes before the press, so
@@ -213,7 +213,7 @@ mod tests {
         assert_eq!(descendants_in(branch, kids), 3, "3, 4 and 5");
     }
 
-    /// ★ A **collapsed** node's subtree is counted in full.
+    /// A **collapsed** node's subtree is counted in full.
     ///
     /// The case the §12.3.3 trap would get wrong. `/Count` on a closed item is
     /// negative and its magnitude is not a subtree size — core's own doc says

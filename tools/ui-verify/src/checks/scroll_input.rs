@@ -21,7 +21,7 @@ const CANVAS_EVENT: &str = "canvas";
 
 /// The canvas's own line saying it has no page to show.
 ///
-/// ★ Read as a **stop condition**, not as a defect. It is what an honest
+/// Read as a **stop condition**, not as a defect. It is what an honest
 /// canvas says when the operator has scrolled into the pasteboard past the end
 /// of a short document, and reading it as the failure under test is what made
 /// this check file A3 against the application.
@@ -48,7 +48,7 @@ const STEPS: usize = 10;
 /// How much the scroll offset must **grow** for this check to be testing
 /// anything.
 ///
-/// ★ A *gain*, not an absolute floor, and the difference is measured: on
+/// A *gain*, not an absolute floor, and the difference is measured: on
 /// `a1-titleblock.pdf` the canvas rests at `off=[484.0 592.3]` because the
 /// sheet is centred in a pasteboard, so the old absolute floor of 300 pt was
 /// satisfied **before the wheel was touched**. A check whose precondition is
@@ -120,7 +120,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // Where the canvas is. Read once — the viewport does not move in this
     // check, since no mode is changed and no panel is opened.
     let trace = session.trace()?;
-    // ★ Read as a PRECONDITION and then not used: the aim comes from the page
+    // Read as a PRECONDITION and then not used: the aim comes from the page
     // (below), but a run in which the canvas itself was never declared has a
     // different and much simpler explanation than the one this check reports,
     // and saying so first costs nothing.
@@ -131,7 +131,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
     let frame = session.frame()?;
-    // ★★ Aimed at the PAGE, not at the middle of the viewport. `canvas-pointer`
+    // Aimed at the PAGE, not at the middle of the viewport. `canvas-pointer`
     // is emitted when the pointer is over a **page**, so a control taken over
     // the pasteboard would count zero and abort the run with the wrong reason.
     let page_rect = driving::declared(&trace, ui_rect, PAGE_REGION).ok_or_else(|| {
@@ -201,7 +201,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- does the canvas still see the pointer? ------------------------------
     //
-    // ★ Moved to a DIFFERENT point. `canvas-pointer` is emitted on movement, so
+    // Moved to a DIFFERENT point. `canvas-pointer` is emitted on movement, so
     // re-issuing the same position could legitimately produce nothing and would
     // read as the defect.
     //
@@ -254,7 +254,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
 /// The canvas's current vertical scroll offset, in points.
 ///
-/// ★ Read from the `canvas` line's `off=` rather than accumulated by the
+/// Read from the `canvas` line's `off=` rather than accumulated by the
 /// harness. The application is the only thing that knows where its own scroll
 /// area ended up after a wheel event the OS delivered asynchronously, and a
 /// harness-side sum would be a second opinion that disagrees at exactly the

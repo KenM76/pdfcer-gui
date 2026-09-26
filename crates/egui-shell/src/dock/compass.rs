@@ -7,7 +7,7 @@
 //! [`DockLayout::resolve_drop`] turns a pointer position into the
 //! [`DropTarget`] the drop grammar acts on.
 //!
-//! ## ★ A left or right edge splits the SIDE, not the stack
+//! ## A left or right edge splits the SIDE, not the stack
 //!
 //! The layout has four fixed levels — side, column, stack, tab — and the only
 //! horizontal split it can express is a new column. Releasing against a
@@ -17,7 +17,7 @@
 //! replay: the operator is shown the column that would actually appear, not an
 //! outline of the half of the stack they aimed at.
 //!
-//! ## ★ The tab strip is not one of the five
+//! ## The tab strip is not one of the five
 //!
 //! A pointer over a stack's tab bar is asking *between which two tabs*, which
 //! [`super::geometry::DockGeometry::gap_in`] already answers and
@@ -26,7 +26,7 @@
 //! knows to draw the caret and not the zones. The compass divides what is left
 //! of the compartment — its body.
 //!
-//! ## ★★ The zones are drawn as they are hit, because they are one definition
+//! ## The zones are drawn as they are hit, because they are one definition
 //!
 //! Four edge bands over a rectangle overlap at its corners, and a compass that
 //! *draws* full-length bands but *resolves* a corner by some other rule shows
@@ -392,7 +392,7 @@ mod tests {
         );
     }
 
-    /// ★ The module header's rule made a test: an edge that looks like it
+    /// The module header's rule made a test: an edge that looks like it
     /// splits the stack in half splits the whole side into another column.
     #[test]
     fn a_release_against_a_left_or_right_edge_starts_a_column_on_that_side_of_it() {
@@ -443,7 +443,7 @@ mod tests {
         );
     }
 
-    /// ★ The strip is resolved before the compass, and reports no zone — which
+    /// The strip is resolved before the compass, and reports no zone — which
     /// is how an overlay knows to draw the caret instead of the five quads.
     #[test]
     fn over_the_tab_strip_is_a_boundary_between_tabs_and_not_a_compass_zone() {
@@ -475,7 +475,7 @@ mod tests {
         );
     }
 
-    /// ★★ A corner is in two bands at once, and the nearer edge wins **as a
+    /// A corner is in two bands at once, and the nearer edge wins **as a
     /// fraction of that edge's band** rather than in points. The fixture's
     /// bands differ — 50 across, 45 down — so a point 20 from the left edge and
     /// 19 from the top is nearer the top edge in points and belongs to the left
@@ -506,7 +506,7 @@ mod tests {
         );
     }
 
-    /// ★★ The drawn shape and the hit test are one definition, measured
+    /// The drawn shape and the hit test are one definition, measured
     /// against each other: every point on a fine grid lands in the zone whose
     /// [`Compass::outline`] contains it, by an inside-a-convex-polygon test
     /// written here rather than borrowed from the code under test.
@@ -570,7 +570,7 @@ mod tests {
     /// the test's own containment uses.
     const SEAM_PTS: f32 = 0.001;
 
-    /// ★ The invariant that makes the compass safe to wire to a release: every
+    /// The invariant that makes the compass safe to wire to a release: every
     /// point over the dock resolves to something the grammar accepts, and
     /// acting on it leaves a layout the dock can draw.
     #[test]
@@ -647,7 +647,7 @@ mod tests {
         );
     }
 
-    /// ★ The cap, stated as the thing it prevents: a tall compartment's bottom
+    /// The cap, stated as the thing it prevents: a tall compartment's bottom
     /// zone stays a band rather than becoming a third of the panel.
     #[test]
     fn a_large_compartment_gets_a_capped_edge_band_and_keeps_a_dominant_centre() {

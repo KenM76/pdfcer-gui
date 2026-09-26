@@ -107,7 +107,7 @@ fn a_typed_path_is_trimmed() {
 /// **The setting being off is reported as the setting being off — never as
 /// "no store found".**
 ///
-/// ★★★ The single most important assertion in this file. `Off` is the shipped
+/// The single most important assertion in this file. `Off` is the shipped
 /// default, so it is the state almost every operator is in, and it is the one
 /// they can fix in five seconds. Reporting it as *"pdfcer found no trust list"*
 /// would send them looking for an Acrobat install they already have.
@@ -189,13 +189,13 @@ fn the_four_no_anchor_states_are_distinct() {
 /// **`examine` over a document with no signature fields produces no verdicts
 /// and still reports the anchor state.**
 ///
-/// ★ The second half is the point. A report that carried an empty verdict list
+/// The second half is the point. A report that carried an empty verdict list
 /// AND no anchor state would leave the panel unable to distinguish *"this
 /// document is not signed"* from *"pdfcer did not look"*, which is the same
 /// collapse the four states exist to prevent, one level up.
 #[test]
 fn an_unsigned_document_still_reports_where_the_anchors_would_have_come_from() {
-    // ★ Anchored on `CARGO_MANIFEST_DIR`, not on the working directory. A bare
+    // Anchored on `CARGO_MANIFEST_DIR`, not on the working directory. A bare
     // relative path resolves against the CRATE directory under `cargo test`
     // and against the workspace root under some runners, so the same test
     // passes and fails depending on how it was invoked. Every other fixture

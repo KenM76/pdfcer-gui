@@ -4,7 +4,7 @@
 opens, a group made in it reaches the document and comes back joinable, and
 the same group can then be renamed and removed.
 
-# ★ The surface is a DOCK PANEL, not a window
+# The surface is a DOCK PANEL, not a window
 
 A window whose content outgrows the screen can push its own title bar — and
 its only ✕ — off the desktop, leaving the operator no way to close it.
@@ -26,7 +26,7 @@ because they are what a driven check is *for*:
    so its region appearing proves the ribbon control raised a tab that was
    behind another one.
 
-# ★★★ THE CONTROL IS A TOGGLE, AND THIS CHECK ESTABLISHES ITS OWN
+# THE CONTROL IS A TOGGLE, AND THIS CHECK ESTABLISHES ITS OWN
 PRECONDITION
 
 `app::panels::toggle_panel` closes a panel that is already on screen and
@@ -44,12 +44,12 @@ drawing (`ui-rect-gone`), so a live `panel:dimension-groups` means *drawing
 now*, which is the same predicate `DockLayout::is_on_screen` answers inside
 the application.
 
-★ The convention is `properties_metadata`'s and `bookmark_add`'s, worded the
+The convention is `properties_metadata`'s and `bookmark_add`'s, worded the
 same way here rather than reinvented: press a panel toggle only if the panel
 is not already up. Three panel checks, one rule, one wording — because three
 wordings become three rules and then three behaviours.
 
-★★ What the guard costs, stated rather than hidden: on a run that takes the
+What the guard costs, stated rather than hidden: on a run that takes the
 already-showing branch, nothing presses the ribbon control, so *that* run
 does not prove the control raises a tab. The check writes a note saying so
 instead of passing quietly on the weaker claim. Review's default arrangement
@@ -98,7 +98,7 @@ second group can be created and joined by nothing. A row with a radio on it
 is the only evidence that the group is reachable rather than merely
 recorded.
 
-# ★ The round trip, and the verbs it exercises
+# The round trip, and the verbs it exercises
 
 Create, **rename**, **delete** — ending with the list exactly as long as it
 started. Each verb alone would show only that its arm exists; together they

@@ -214,7 +214,7 @@ pub(super) fn text_selection(
 /// ```
 ///
 /// * `via=` — the gesture: `click`, `marquee`, `key`, `escape`, and the rest.
-/// * `mod=` — whether the modifier (Shift) was held. ★ Every caller passes
+/// * `mod=` — whether the modifier (Shift) was held. Every caller passes
 ///   the operator's modifier and nothing else: a flag that happens to be a
 ///   `bool` at the call site — double-click, additive-marquee, a constant —
 ///   reads as the modifier here and is wrong in both directions for a check
@@ -258,7 +258,7 @@ pub(super) fn selection_event(selection: &SelectionState, kind: &str, modifier: 
     // *what*, and O215 ask 1 is entirely about whether the same click lands on
     // the same chunk twice. Printed as the index or `none`.
     //
-    // ★ This line is written through `trace_changed`, so a click that lands on
+    // This line is written through `trace_changed`, so a click that lands on
     // the chunk already selected writes nothing. A driven check measuring
     // repeatability therefore alternates — chunk A, chunk B, chunk A — and
     // reads three lines, rather than clicking one chunk twice and reading a

@@ -2,7 +2,7 @@
 //!
 //! ## The gap this closes
 //!
-//! `edit.insert_image` was registered, drawn on Edit ▸ Insert, carried a `★ P3`
+//! `edit.insert_image` was registered, drawn on Edit ▸ Insert, carried a `P3`
 //! mark in `shell::commands::reach`'s `SCAFFOLDED` list — and its recorded
 //! reason was, verbatim, **"No recorded reason for the missing arm."** One of
 //! only three entries in that list of which that was true.
@@ -61,7 +61,7 @@ pub const REGION_WIDTH: &str = "insert-image.width"; // ui-text-exempt: trace re
 /// The region the Insert button publishes.
 /// The **Place it on the page…** button's region — `OPERATOR_REQUESTS.md` O66.
 ///
-/// ★ Published on every frame the dialog draws, which is every frame it is NOT
+/// Published on every frame the dialog draws, which is every frame it is NOT
 /// hiding for a placement — so its absence from a trace means the window has
 /// stepped aside, which is exactly the state a driven check needs to observe.
 pub const REGION_PLACE: &str = "insert-image.place"; // ui-text-exempt: trace region name, never displayed
@@ -81,7 +81,7 @@ const MIN_MM: f64 = 1.0;
 pub struct InsertImageDialog {
     /// The imported picture.
     ///
-    /// ★ `Arc`, and it is the only field here that is not a number. An
+    /// `Arc`, and it is the only field here that is not a number. An
     /// `ImportedImage` owns the decoded or re-encoded stream bytes — megabytes
     /// for a scan — and the `Action` this window raises has to carry it out of
     /// the frame to the apply phase. Cloning it there would double the peak,
@@ -96,7 +96,7 @@ pub struct InsertImageDialog {
     name: String,
     /// The page it will go on, frozen at open.
     ///
-    /// ★ Frozen for [`super::insert_pages`]' reason, one control smaller: an
+    /// Frozen for [`super::insert_pages`]' reason, one control smaller: an
     /// operator who opens this window on page 7 and then pages away must not
     /// find the picture landing on page 9. The window says which page, so the
     /// choice is checkable.
@@ -104,7 +104,7 @@ pub struct InsertImageDialog {
     /// The page's own extent in points, for the on-the-sheet check.
     page_size_pt: (f64, f64),
     /// The box, in millimetres from the page's bottom-left.
-    /// ★★★ The operator's offer to point at the page instead of typing —
+    /// The operator's offer to point at the page instead of typing —
     /// `OPERATOR_REQUESTS.md` O66. See [`crate::dialogs::placing`]; it holds
     /// one boolean and derives everything else.
     place: crate::dialogs::placing::PlaceHandoff,
@@ -131,7 +131,7 @@ pub struct InsertImageDialog {
 impl InsertImageDialog {
     /// Open the window for an already-imported picture.
     ///
-    /// # ★ The box is seeded at the picture's NATURAL size, centred
+    /// # The box is seeded at the picture's NATURAL size, centred
     ///
     /// Natural size is what the file asks for — its pixels at the resolution it
     /// declares, or one pixel per point when it declares none — so an operator
@@ -181,11 +181,11 @@ impl InsertImageDialog {
 
     /// Draw it. Returns `false` when it should close.
     pub fn show(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
-        // ★★★ **Step aside while the operator points** — `OPERATOR_REQUESTS.md`
+        // **Step aside while the operator points** — `OPERATOR_REQUESTS.md`
         // O66. The FIRST line, before the window is built, so nothing of this
         // dialog exists on a frame where a placement is pending for it.
         //
-        // ★ It returns `true` — *still open* — while drawing nothing. The
+        // It returns `true` — *still open* — while drawing nothing. The
         // dialog is not closed: its typed numbers, its chosen fit and its
         // position are all exactly where they were, and they come back with it.
         // That is the difference between stepping aside and being dismissed,
@@ -215,7 +215,7 @@ impl InsertImageDialog {
 
         if std::mem::take(&mut self.insert_requested) {
             let rect = self.rect_pt();
-            // ★ The PREVIEWED resolution is traced, and it is here for a driven
+            // The PREVIEWED resolution is traced, and it is here for a driven
             // check rather than for a human reading a log.
             //
             // `add_image`'s own disclosure carries the same number, from the
@@ -262,12 +262,12 @@ impl InsertImageDialog {
 
     /// **Write a placed rectangle back into the four millimetre fields** — O66.
     ///
-    /// ★★ Through the INVERSE of [`rect_pt`], not through a second conversion.
+    /// Through the INVERSE of [`rect_pt`], not through a second conversion.
     /// That function's own doc comment exists to keep one arithmetic for
     /// millimetres and points; a placement that converted separately would be
     /// the second, and the two would drift by a rounding rule nobody chose.
     ///
-    /// ★ A **degenerate** rect — what a click produces — writes the corner and
+    /// A **degenerate** rect — what a click produces — writes the corner and
     /// leaves the size alone. The dialog already has a width and a height, typed
     /// or defaulted from the picture's own aspect, and a click is a statement
     /// about *where*, not about *how big*. Overwriting the size with zero would
@@ -288,7 +288,7 @@ impl InsertImageDialog {
 
     /// The placement spec, built the one way.
     ///
-    /// ★ The builder rather than a struct literal — `NewImage` is
+    /// The builder rather than a struct literal — `NewImage` is
     /// `#[non_exhaustive]`, so a downstream crate cannot construct it
     /// field-by-field, and the constructor is what keeps a field added upstream
     /// from silently defaulting here.
@@ -313,7 +313,7 @@ impl InsertImageDialog {
 
     /// Whether the current box can be placed, and what is wrong if not.
     ///
-    /// ★ **Refused rather than clamped**, and the refusal names the problem.
+    /// **Refused rather than clamped**, and the refusal names the problem.
     /// A box silently moved back onto the sheet is a placement the operator did
     /// not make, and they would discover it by looking at the drawing rather
     /// than at this window — which is `Tolerance::validate`'s rule applied one
@@ -377,7 +377,7 @@ impl InsertImageDialog {
             ui.add(spinner(&mut self.height_mm, MIN_MM..=max_mm));
         });
         ui.add_space(6.0);
-        // ★★★ **The second route to the same four numbers** —
+        // **The second route to the same four numbers** —
         // `OPERATOR_REQUESTS.md` O66: *"anything we are inserting like this
         // should have an option in its dialogue box to place it with the mouse
         // instead of by positional co-ordinates."*
@@ -387,7 +387,7 @@ impl InsertImageDialog {
         // picture, not to Insert. An operator reading the four fields and
         // wondering how to know what to type finds the answer on the next line.
         //
-        // ★ Neither route is the real one. This fills the fields in and the
+        // Neither route is the real one. This fills the fields in and the
         // operator can correct them afterwards, which the note under the button
         // says out loud.
         self.place.button(ui, REGION_PLACE);
@@ -400,7 +400,7 @@ impl InsertImageDialog {
         }
         ui.weak(t::fit_hint(self.fit));
 
-        // ★ The landing, from the ENGINE's own arithmetic. Shown only when it
+        // The landing, from the ENGINE's own arithmetic. Shown only when it
         // differs from the box, which under `Stretch` is never — a line
         // restating the two numbers above it would be noise.
         let spec = self.spec(self.rect_pt());
@@ -414,7 +414,7 @@ impl InsertImageDialog {
                 crate::units::mm_from_points(placed.ury - placed.lly),
             ));
         }
-        // ★ The resolution, previewed — the number that decides whether the
+        // The resolution, previewed — the number that decides whether the
         // sheet plots, shown beside the spinners that set it rather than after
         // the commit that fixes it.
         //
@@ -463,7 +463,7 @@ impl InsertImageDialog {
 
 /// The box, in PDF points, from millimetres.
 ///
-/// # ★ Free rather than a method, and `#[non_exhaustive]` is what forced it
+/// # Free rather than a method, and `#[non_exhaustive]` is what forced it
 ///
 /// `ImportedImage` is `#[non_exhaustive]`, so **this crate cannot construct
 /// one** — which means it cannot construct an [`InsertImageDialog`] either, and
@@ -494,13 +494,13 @@ fn rect_pt(x_mm: f64, y_mm: f64, width_mm: f64, height_mm: f64) -> Rect {
 /// Whether a box can be placed on a sheet of `page_size_pt`, and what is wrong
 /// if not.
 ///
-/// ★ **Refused rather than clamped**, and the refusal names the problem. A box
+/// **Refused rather than clamped**, and the refusal names the problem. A box
 /// silently moved back onto the sheet is a placement the operator did not make,
 /// and they would discover it by looking at the drawing rather than at this
 /// window — `Tolerance::validate`'s rule applied one feature along: *"a
 /// corrected value the operator never saw is exactly the sneaky case."*
 ///
-/// ★ **An overhang is NOT refused.** Bleeding a picture past the crop box is a
+/// **An overhang is NOT refused.** Bleeding a picture past the crop box is a
 /// real thing to do deliberately, and refusing it would make this window
 /// stricter than the format — the class of helpfulness that makes an operator
 /// fight their tool. Only a box **wholly** off the sheet is declined, because
@@ -567,12 +567,12 @@ mod tests {
 
     /// The millimetre conversion is the definition, not a rounded copy.
     ///
-    /// ★ A hand-rounded `2.8346` would be wrong in the sixth decimal, and a
+    /// A hand-rounded `2.8346` would be wrong in the sixth decimal, and a
     /// picture placed at 210 mm would land 0.0004 mm off A4's edge — invisible,
     /// permanent, and different from every other number in this application.
     /// `dialogs::new_document` makes the same point about `594.0 * 72/25.4`.
     ///
-    /// ★ The constant this once asserted was a private `PTS_PER_MM` in this
+    /// The constant this once asserted was a private `PTS_PER_MM` in this
     /// file — the third of six copies. The argument above is why the
     /// replacement is [`crate::units`] and not a fourteenth spelling: of every
     /// surface in this program, this dialogue is the one whose numbers go
@@ -590,7 +590,7 @@ mod tests {
     /// A4 in points, the sheet every case below is measured against.
     const A4: (f64, f64) = (595.276, 841.89);
 
-    /// ★ A box wholly off the sheet is refused; one that overhangs is not.
+    /// A box wholly off the sheet is refused; one that overhangs is not.
     ///
     /// The second half is the decision worth pinning. Bleeding a picture past
     /// the crop box is a real thing to do deliberately, and refusing it would

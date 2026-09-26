@@ -10,7 +10,7 @@ Two things live here and they are two halves of one subject: the picture
 that stops the page going blank, and the number that makes its absence
 falsifiable.
 
-## ★★★ The defect, measured before anything was built
+## The defect, measured before anything was built
 
 Above the pixmap ceiling a raster is a picture of the **visible region**
 rather than of the page, and `canvas::mod` places it at *its own* region's
@@ -22,7 +22,7 @@ enough and it leaves the window altogether.
 Driven on a real CAD sheet: zooming out from 3590 % held **`covered=0.000`
 for about twenty frames**. The operator is looking at blank paper.
 
-## ★★ Why a screenshot is the wrong oracle here, against this project's rule
+## Why a screenshot is the wrong oracle here, against this project's rule
 
 `D:/dev/rag/egui/` records that layout and clipping defects have exactly one
 oracle and it is a rendered screenshot. **This is not a layout defect, it is

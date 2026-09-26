@@ -3,7 +3,7 @@
 One setting, and the only one in the window that is not about the PDF
 standard at all.
 
-## ★ This closes the second half of `DEFECTS.md` D10
+## This closes the second half of `DEFECTS.md` D10
 
 D10 was *"the theme system is built, tested, gated, and never installed"*:
 three presets, a palette, a role per colour, a rendered-pair contrast gate

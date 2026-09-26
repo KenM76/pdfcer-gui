@@ -4,7 +4,7 @@
 out of the file by a different subsystem in a different process**
 
 
-# ★★★ THE ONE THING THIS CHECK EXISTS FOR, AND WHY A TRACE LINE IS NOT IT
+# THE ONE THING THIS CHECK EXISTS FOR, AND WHY A TRACE LINE IS NOT IT
 
 `pdfcer-gui` has shipped features that traced perfectly and did nothing.
 `EditSession::sign` emits `sign-written path=… bytes=… field=Signature1
@@ -33,16 +33,16 @@ also fails on.
 
 | phase | document | what it proves |
 |---|---|---|
-| **A** | `four-pages.pdf` | ★ THE NEGATIVE CONTROL — a document that signs. Also: the gate on the confirm control opens only after the certificate is opened, which is the dynamic range the two refusals are measured against |
+| **A** | `four-pages.pdf` | THE NEGATIVE CONTROL — a document that signs. Also: the gate on the confirm control opens only after the certificate is opened, which is the dynamic range the two refusals are measured against |
 | **B** | `encrypted-aes-128.pdf` | the **encrypted** refusal, stated instead of a form |
 | **C** | `four-pages.pdf` with a redaction armed | the **pending-redaction** refusal, stated instead of a form |
-| **D** | phase A's output, fresh process | ★★★ THE VERDICT — the signature is in the file |
+| **D** | phase A's output, fresh process | THE VERDICT — the signature is in the file |
 | **E** | `sig-field-empty.pdf` | `Pass 10.13` — a box the SENDER placed is listed, chosen, and the placement controls RETIRE |
-| **F** | phase E's output, fresh process | ★★★ THE SECOND VERDICT — the signature went INTO that box |
+| **F** | phase E's output, fresh process | THE SECOND VERDICT — the signature went INTO that box |
 | **G** | `four-pages.pdf`, certifying | `Pass 10.12` — the operator can sign as the document's AUTHOR |
-| **H** | phase G's output, fresh process | ★★★ THE THIRD VERDICT — the `/DocMDP` is in the file |
+| **H** | phase G's output, fresh process | THE THIRD VERDICT — the `/DocMDP` is in the file |
 
-# ★★★ PHASE H'S ORACLE IS THE DOCUMENT CENSUS, WHICH IS NOT THE SIGNING CODE
+# PHASE H'S ORACLE IS THE DOCUMENT CENSUS, WHICH IS NOT THE SIGNING CODE
 
 There is no signature-panel row that reports a certification, so phase F's
 trick — read the name back through the verification side — has no equivalent
@@ -57,7 +57,7 @@ this shell reads it **when the Sign window opens**.
 `/DocMDP` transform where the document had none — asked of a subsystem that
 knows nothing about how the file was produced.
 
-# ★★★ WHY PHASE F IS A SEPARATE VERDICT AND NOT A REPEAT OF PHASE D
+# WHY PHASE F IS A SEPARATE VERDICT AND NOT A REPEAT OF PHASE D
 
 Phase D asks *"is there a signature in the file?"* Phase F asks a question
 phase D cannot distinguish: **which box did it go into?**
@@ -75,12 +75,12 @@ convention. That name is read back **in a fresh process, by the verification
 side**, from `signature-row field=…`, so it is not the signing code's account
 of its own behaviour.
 
-★★ And the same phase measures the thing that has no in-process oracle at
+And the same phase measures the thing that has no in-process oracle at
 all: `sign-written field_reused=1`. That line is written by the same beliefs
 as the signing, so it is reported as a **note**, never as the verdict — the
 verdict is the name, read by somebody else.
 
-★★ **Phase A is not a formality and it is not there for coverage.** A probe
+**Phase A is not a formality and it is not there for coverage.** A probe
 whose baseline has no dynamic range cannot produce a verdict: without a
 document that signs, phases B and C would pass identically on a build where
 `file.sign` opened a window that refused *everything*, or on one where the
@@ -88,7 +88,7 @@ confirm control was never drawn under any circumstances. Every absence
 phases B and C assert is a presence phase A measured, in the same build,
 over the same region names, minutes apart.
 
-# ★★★ THE CERTIFICATE: read from the engine's corpus, never committed here
+# THE CERTIFICATE: read from the engine's corpus, never committed here
 
 `D:\Dev\pdfcer\fixtures\synthetic\signing\rsa2048-modern.pfx`, with the
 passphrase `pdfcer` that its own `PROVENANCE.md` publishes. That file is
@@ -103,7 +103,7 @@ suite on a date nobody chose. The engine's corpus is READ-ONLY to this
 project, which is exactly the relationship this needs: read it, write
 nowhere near it.
 
-★ Missing corpus is a hard error naming the path, not a SKIP. A SKIP reads
+Missing corpus is a hard error naming the path, not a SKIP. A SKIP reads
 as *"this build does not have the feature"*, and this is a fact about the
 checkout.
 

@@ -62,7 +62,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
+    // PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
     //
     // `fixture::text_point_target` holds the document, the point, and the
@@ -161,14 +161,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: Home, so the caret is at a known end ----------------------------
     //
-    // ★ Without this the caret is wherever the click put it, which on a run
+    // Without this the caret is wherever the click put it, which on a run
     // whose right-hand end was clicked is the end — and Shift+Right there
     // selects nothing, correctly, and looks exactly like a build with no
     // selection at all.
     driver.press(vk::HOME)?;
     session.settle(20);
 
-    // ★★ THE RUN IS RE-READ AFTER Home, and the first version of this check did
+    // THE RUN IS RE-READ AFTER Home, and the first version of this check did
     // not do that and accused the build of the document's arithmetic.
     //
     // Home reaches the start of the **page's line**, which on a CAD sheet is
@@ -197,8 +197,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "the caret's run holds {len} character(s), so this run presses Shift+Right {presses} times"
     ));
 
-    // --- 4: ★★★ Shift+Right, three times ------------------------------------
-    // ★★ HELD, not chorded per press. `press_chord` sends the modifier down
+    // --- 4: Shift+Right, three times ------------------------------------
+    // HELD, not chorded per press. `press_chord` sends the modifier down
     // and up around each key, and the application traced `Modifiers::NONE` on
     // all three arrows when it was used here — every key arrived, not one
     // carried Shift. See `Driver::press_held`.
@@ -243,7 +243,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         sel.raw
     ));
 
-    // --- 5: ★★ and an unshifted move DROPS it -------------------------------
+    // --- 5: and an unshifted move DROPS it -------------------------------
     driver.press(vk::ARROW_RIGHT)?;
     session.settle(20);
     let trace = session.trace()?;
@@ -264,10 +264,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("★★ and a plain Right dropped it, so no highlight is left behind".to_owned());
 
-    // --- 6: ★★★ SWEEP ACROSS THE TEXT WITH THE POINTER ----------------------
+    // --- 6: SWEEP ACROSS THE TEXT WITH THE POINTER ----------------------
     //
     //
-    // ★ The editor box is aimed at through its OWN declared region. It is
+    // The editor box is aimed at through its OWN declared region. It is
     // painted into the canvas rather than laid out as a widget, so it appears
     // in no layout the harness can read; and aiming at it through the run's
     // page coordinates would aim at the glyphs the box is COVERING, which is a

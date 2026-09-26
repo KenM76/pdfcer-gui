@@ -14,7 +14,7 @@ single time. In-place save had been written down in the manifest's planned
 list as *"blocked on autosave and crash recovery"* and had then been nobody's
 problem for a fortnight.
 
-# ★★ The assertion this check is really for: the ORIGINAL survives a failure
+# The assertion this check is really for: the ORIGINAL survives a failure
 
 Save-in-place is **the only verb in this application that can destroy the
 operator's work**, and the way it would do so is not exotic:

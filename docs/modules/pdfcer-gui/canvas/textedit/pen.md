@@ -19,7 +19,7 @@ Nothing in the engine was blocking it. `AddTextRequest` has carried `face`,
 `AddTextRequest::new(…)` — *a bundled 12-pt black Helvetica run* — and
 overrode none of them.
 
-## ★ Why this is a TOOL option and not a Format-tab property
+## Why this is a TOOL option and not a Format-tab property
 
 `RIBBON_IA.md` §5.8 sends `Text run → Font · Size · Colour · Spacing ·
 Alignment` to the Format tab, and that is right **for a run already on the
@@ -32,7 +32,7 @@ It is the same split `canvas::markup::pen` already makes, in the same words:
 the Markup ▸ Style group sets the pen for the next markup, and changing a
 placed one is Format's job.
 
-## ★★ Why it lives in `egui::Memory` and the markup pen does not
+## Why it lives in `egui::Memory` and the markup pen does not
 
 `canvas::markup::pen::Pen` is a field on `PdfcerApp`, and `panels::tool`'s
 header records the consequence: a panel body is handed `&OpenDoc` and

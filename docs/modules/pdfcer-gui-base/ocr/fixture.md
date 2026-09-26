@@ -10,7 +10,7 @@ cargo test -p pdfcer-gui-base --lib write_synthetic_image_only -- --ignored
 cargo test -p pdfcer-gui-base --lib recognises_the_synthetic_page -- --ignored --nocapture
 ```
 
-## ★★ WHAT THIS FIXTURE IS, AND — MORE IMPORTANTLY — WHAT IT IS NOT
+## WHAT THIS FIXTURE IS, AND — MORE IMPORTANTLY — WHAT IT IS NOT
 
 **It is not a scan.** It is a page rendered from vector text and then thrown
 away as pixels. Read the name as the whole caveat: *synthetic*, *image-only*.

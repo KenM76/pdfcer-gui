@@ -30,7 +30,7 @@ use crate::text::settings as t;
 /// now exists — `xref::observed_entry_eol` reads the form out of the base file
 /// — and the operator's 2026-08-08 ruling was to use it.
 ///
-/// # ★ Three legal forms, and the illegal ones are deliberately absent
+/// # Three legal forms, and the illegal ones are deliberately absent
 ///
 /// §7.5.4 fixes the entry at exactly **20 bytes** and permits three and only
 /// three forms for bytes 18–19. `LF CR`, bare `LF`, bare `CR`, `SP SP` and
@@ -101,7 +101,7 @@ pub fn xref_entry_eol(ui: &mut Ui, draft: &mut Draft) {
 /// anyway.
 ///
 ///
-/// # ★ The guess disclosure the old note omitted
+/// # The guess disclosure the old note omitted
 ///
 /// The note read as a plain recommendation. It now says which of the two
 /// readings pdfcer took and that it took one, which is what the window's own
@@ -131,7 +131,7 @@ pub fn trailing_eol(ui: &mut Ui, draft: &mut Draft) {
 
 /// Which corner order `/QuadPoints` gets — spec ambiguity `QP-A1`.
 ///
-/// # ★ The one setting here where the standard is NOT silent
+/// # The one setting here where the standard is NOT silent
 ///
 /// Every other setting in this window exists because the specification declines
 /// to have an opinion. This one exists because §12.5.6.10 **does** state an
@@ -190,7 +190,7 @@ pub fn quad_point_order(ui: &mut Ui, draft: &mut Draft) {
 mod tests {
     use super::*;
 
-    /// ★ Only the three legal entry forms are offered.
+    /// Only the three legal entry forms are offered.
     ///
     /// §7.5.4 permits exactly three, and the temptation a future hand will feel
     /// is to add the others "for completeness" — bare `LF` in particular, since

@@ -1,7 +1,7 @@
 //! **The print window's three ways out** — `OPERATOR_REQUESTS.md` **O185**.
 //!
 //!
-//! # ★★ What the three words have to do between them
+//! # What the three words have to do between them
 //!
 //! | string | promise |
 //! |---|---|
@@ -14,7 +14,7 @@
 //! button beside it that only keeps, at which point an operator choosing
 //! between them needs each to disclose the half the other does not.
 //!
-//! # ★★★ Why the hovers exist at all, given R9 and this project's dislike of chrome
+//! # Why the hovers exist at all, given R9 and this project's dislike of chrome
 //!
 //! Because the difference between these three buttons is entirely in what
 //! happens to state the operator cannot see. A label can say *Cancel*; it
@@ -29,7 +29,7 @@
 
 /// Leave without printing, **and put the settings back**.
 ///
-/// # ★★★ It said "Close" until O185, and the old reasoning was right about the old window
+/// # It said "Close" until O185, and the old reasoning was right about the old window
 ///
 /// The argument it carried: *nothing has started, so there is nothing to
 /// cancel, and a Cancel button next to a Print button invites the reading that
@@ -43,7 +43,7 @@
 /// avoided, by [`cancel_hover`], which says in words what the button puts back
 /// and does not mention jobs at all.
 ///
-/// # ★★ Why this word and not "Discard" or "Revert"
+/// # Why this word and not "Discard" or "Revert"
 ///
 /// Because it sits on the route the window chrome means. `dialogs.md` G4 makes
 /// the OS close button, Escape and this button deliberately indistinguishable,
@@ -60,7 +60,7 @@ pub const fn cancel() -> &'static str {
 ///
 /// Names all three routes, because they are one route with three doorways and
 /// an operator who learns it from the button should not have to re-learn it
-/// from the X. ★ It says *"opened with"* rather than *"saved"*: the window may
+/// from the X. It says *"opened with"* rather than *"saved"*: the window may
 /// have written settings already -- a Print that reached a printer which then
 /// refused the job saves before it spools -- and "unsaved changes" would be a
 /// false description of what is being put back.
@@ -71,7 +71,7 @@ pub const fn cancel_hover() -> &'static str {
 
 /// Keep the settings for next time, without printing.
 ///
-/// # ★★★ The fourth route, and why it needs a label rather than a chord
+/// # The fourth route, and why it needs a label rather than a chord
 ///
 /// Operator request O185: *"I set the printer up, close the window to go check
 /// something, and it's all gone."* The three routes that existed -- Print, and
@@ -86,7 +86,7 @@ pub const fn cancel_hover() -> &'static str {
 /// meaning goes on the chrome; the positively-chosen one gets a button with a
 /// verb on it.
 ///
-/// ★ **Two words, both of them promises.** *Keep* says what happens to the
+/// **Two words, both of them promises.** *Keep* says what happens to the
 /// settings and *close* says what happens to the window, and an operator who
 /// reads only the first word still gets the half that distinguishes this
 /// button from the one beside it.
@@ -97,7 +97,7 @@ pub const fn keep_and_close() -> &'static str {
 
 /// What [`keep_and_close`] does, in the operator's own terms.
 ///
-/// ★ *"without printing"* is the clause that earns the tooltip. The label
+/// *"without printing"* is the clause that earns the tooltip. The label
 /// already says the settings are kept; what an operator hesitating over an
 /// unfamiliar button needs to know is that pressing it does **not** put paper
 /// through the machine.
@@ -157,7 +157,7 @@ pub fn commit_with_clipping(clipped: usize) -> String {
 /// prints a 1:1 CAD sheet whose border is empty paper — *"the area that isn't
 /// printed is just empty border."*
 ///
-/// ★★ **Reusing the old sentence for the corrected number would have been the
+/// **Reusing the old sentence for the corrected number would have been the
 /// defect.** With two of five clipped sheets known blank, *"Print — 3 sheets
 /// will be clipped"* is plainly false: five are clipped. The count changed
 /// what it counts, so the sentence has to say what it now counts. That is a
@@ -180,7 +180,7 @@ pub fn commit_losing_content(losing: usize) -> String {
 /// has looked at still counted, because a claim about an unexamined sheet
 /// would be invented.
 ///
-/// # ★ The two words carrying the whole difference
+/// # The two words carrying the whole difference
 ///
 /// *"up to"* and *"may"*. They are here because the number is a bound rather
 /// than a count, and they are **absent** from [`commit_losing_content`] and
@@ -229,7 +229,7 @@ pub fn failed(detail: &str) -> String {
     format!("Nothing was sent to the printer. {detail}")
 }
 
-/// ★ **The driver would not report its settings, so the job carried only what
+/// **The driver would not report its settings, so the job carried only what
 /// pdfcer sets itself.**
 ///
 /// Shown beside [`sent`] after a job whose `SettingsSource` came back
@@ -262,7 +262,7 @@ pub const fn settings_synthesised() -> &'static str {
     "This printer would not report its current settings, so the job was sent with only the settings shown here — media type, quality and finishing fell back to the driver's own. Open Properties… before printing again to send them."
 }
 
-/// ★★★ Why the Custom percentage field is greyed —
+/// Why the Custom percentage field is greyed —
 /// `OPERATOR_REQUESTS.md` O77's sweep.
 ///
 /// `dialogs::print::tabs` has always argued that greying is the correct side
@@ -272,7 +272,7 @@ pub const fn settings_synthesised() -> &'static str {
 /// greyed with no hover explanation of any kind, so the reasoning existed only
 /// in a source comment.
 ///
-/// ★ It names the remedy and where the remedy is. *"Choose Custom"* alone
+/// It names the remedy and where the remedy is. *"Choose Custom"* alone
 /// would be true and would still leave him looking for what to choose it on;
 /// the radio is immediately to the left and saying so costs three words.
 #[must_use]

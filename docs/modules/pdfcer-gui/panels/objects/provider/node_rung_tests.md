@@ -14,12 +14,12 @@ space `vector::anchor_count` reports and `pdfcer node-move --node N`
 addresses. A second numbering would make the number pdfcer shows disagree
 with the number the operator can act on.
 
-★ Everything here addresses the **page's** paint order, because
+Everything here addresses the **page's** paint order, because
 `part_hits`, `part_bounds` and `nearest_node` all index
 `PageObjects::objects`. That is a fact about THIS provider's geometry
 helpers and it is still true.
 
-★★ The paragraph used to end *"the ladder stops at the Object rung for a
+The paragraph used to end *"the ladder stops at the Object rung for a
 leaf, and it stops there because the address space runs out"*, citing
 `FormLeaf::is_editable` being `false` for every leaf. **Corrected
 2026-09-11: the ladder does not stop.** `pdfcer-core`'s `Pass 188.0`
@@ -43,7 +43,7 @@ filename is a restatement of it that goes stale the moment a third such
 module is written.
 
 
-★ **The line gate still counts these lines.** `check-file-size.sh` counts
+**The line gate still counts these lines.** `check-file-size.sh` counts
 total lines, tests included, on purpose — its own header says so — so
 this split is not a way of hiding lines from R2. It is the split R2 asked
 for, taken on the seam that was already there.

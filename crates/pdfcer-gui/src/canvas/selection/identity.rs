@@ -172,7 +172,7 @@ pub struct ClickHit {
     /// line of a multi-line text object, with `View ▸ Text chunks` switched on
     /// and a box drawn around it.
     ///
-    /// ★ Not filled by [`crate::canvas::input::probe`], and that is the one
+    /// Not filled by [`crate::canvas::input::probe`], and that is the one
     /// field of this struct that is not. `probe` holds a
     /// [`CanvasTargetProvider`](crate::canvas::target::CanvasTargetProvider),
     /// which can say what class an object is but cannot count a text object's

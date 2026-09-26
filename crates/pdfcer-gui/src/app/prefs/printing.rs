@@ -11,7 +11,7 @@ use crate::dialogs::print::spooler::{Duplex, Orientation, PageSubset, PaperChoic
 
 /// The lowest resolution ceiling the file will accept, in DPI.
 ///
-/// ★ **36, because that is the floor of the dialog's own `DragValue`.** The
+/// **36, because that is the floor of the dialog's own `DragValue`.** The
 /// numbers here are deliberately the control's numbers rather than a
 /// separately-reasoned pair: a file that refused a value the operator could
 /// produce by dragging the box would silently discard a setting they had just
@@ -52,7 +52,7 @@ pub const MAX_PRINT_COPIES: u16 = 999;
 pub(crate) struct PrintPrefs {
     /// The printer's Windows name, or `None` if none has been used yet.
     ///
-    /// # ★ By NAME, never by index
+    /// # By NAME, never by index
     ///
     /// `PrintDialog::selected` is an index into a list the spooler builds fresh
     /// on every open, and that list reorders whenever a printer is added,
@@ -172,7 +172,7 @@ impl Default for PosterPrefs {
 }
 
 impl Default for PrintPrefs {
-    /// ★ **Exactly what `PrintDialog::open` hard-coded before this existed.**
+    /// **Exactly what `PrintDialog::open` hard-coded before this existed.**
     ///
     /// That is the whole specification of this impl, and it is worth stating as
     /// a rule rather than as a coincidence: a fresh `userdata` folder must open
@@ -357,7 +357,7 @@ pub(crate) fn subset_from_key(token: &str) -> Option<PageSubset> {
 
 /// The file token for which classes of annotation print.
 ///
-/// ★ `AnnotationScope::ContentOnly` has a token even though the dialog does not
+/// `AnnotationScope::ContentOnly` has a token even though the dialog does not
 /// offer it. It is a legal value of the type, a hand-edited file may name it,
 /// and the round-trip test below covers every variant this build can name — so
 /// it must have one. Omitting it would make the writer capable of emitting a
@@ -442,7 +442,7 @@ pub(super) enum KeyOutcome {
 
 /// Read one `key = value` line into [`PrintPrefs`], if it belongs to this group.
 ///
-/// # ★★ Why the parser for this group lives HERE and not in `prefs::file`
+/// # Why the parser for this group lives HERE and not in `prefs::file`
 ///
 /// `prefs::file`'s header states the rule this obeys: *"adding a preference is
 /// one edit to one file"*, because the parser and the writer are two spellings
@@ -482,7 +482,7 @@ pub(super) fn parse_key(prefs: &mut PrintPrefs, key: &str, value: &str) -> KeyOu
     }
 
     match key {
-        // ★ A printer NAME, stored raw. An empty value is the legitimate way to
+        // A printer NAME, stored raw. An empty value is the legitimate way to
         // say "no printer has been chosen yet", which is what a fresh profile
         // holds. It cannot be a `BadValue` — every string is a legal printer
         // name, including one that no longer resolves. See `PrintPrefs::printer`
@@ -528,7 +528,7 @@ pub(super) fn parse_key(prefs: &mut PrintPrefs, key: &str, value: &str) -> KeyOu
             super::opening::bool_from_key(value).map(|collated| !collated),
             prefs.uncollated
         ),
-        // ★ The three numbers are CLAMPED rather than rejected. A hand-edited
+        // The three numbers are CLAMPED rather than rejected. A hand-edited
         // `print_copies = 5000` is a number the operator meant something by,
         // and the nearest legal value is a better answer than silently
         // reverting to 1 — the same posture `chrome::normalise_ui_scale` takes
@@ -869,7 +869,7 @@ mod tests {
 
     /// **Every scale mode round-trips to the same MODE.**
     ///
-    /// ★ `Custom`'s payload deliberately does not survive, and this test says
+    /// `Custom`'s payload deliberately does not survive, and this test says
     /// so by comparing the token rather than the value. The percentage has its
     /// own key; asserting the payload here would pin a duplication the module
     /// header argues against.
@@ -973,7 +973,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **Every remembered field is actually read back into the dialog.**
+    /// **Every remembered field is actually read back into the dialog.**
     ///
     /// The half of O166 that no compiler and no other test can see, and it is
     /// the half most likely to rot.

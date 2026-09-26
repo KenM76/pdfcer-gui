@@ -21,7 +21,7 @@
 //! the last thing read, and a command that belongs here is one that ends the
 //! current activity rather than one that advances it.
 //!
-//! # ★★ Why almost every line of this file is borrowed from [`super::qat`]
+//! # Why almost every line of this file is borrowed from [`super::qat`]
 //!
 //! Deliberately, and the borrowing is the point rather than an accident of
 //! copy-and-paste. Both regions are:
@@ -38,7 +38,7 @@
 //! measurement functions for one button shape is how a region comes out
 //! narrower than it draws and lands on top of its neighbour.
 //!
-//! # ★ The one behavioural difference from the QAT: no trailing separator
+//! # The one behavioural difference from the QAT: no trailing separator
 //!
 //! The QAT ends in a `ui.separator()`, because it has the tabs on its right
 //! and needs a rule between two unlike things. This region ends at the edge of
@@ -46,7 +46,7 @@
 //! of the ribbon, which reads as a panel border rather than as a divider, and
 //! there is nothing on the far side of it to divide from.
 //!
-//! # ★ Hidden items are removed BEFORE measurement, not while drawing
+//! # Hidden items are removed BEFORE measurement, not while drawing
 //!
 //! [`measure`] and [`render`] both filter on
 //! [`super::sizing::visible`] first. If measurement counted a hidden control
@@ -158,7 +158,7 @@ pub(crate) fn render(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, trailing: Option<&Tra
             super::control::command_button(ui, ctx, &command, with_label, selected, enabled, true);
 
         a11y::describe_command(&response, &command, with_label, enabled);
-        // ★ R9's second half — *"greying … is always explained on hover"*.
+        // R9's second half — *"greying … is always explained on hover"*.
         // A control in this region that is present but disabled is
         // temporarily unavailable, and the tooltip is the only place the
         // operator can find out why, so it is shown on the disabled control

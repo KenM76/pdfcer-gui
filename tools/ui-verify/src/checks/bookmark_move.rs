@@ -48,7 +48,7 @@ const DISCLOSE_REGION: &str = "bookmarks.disclose.";
 
 /// `DETAIL` — the first bookmark, and the one that ends up the parent.
 ///
-/// ★ Spelled from the letters `crate::sys::vk` actually publishes. That module
+/// Spelled from the letters `crate::sys::vk` actually publishes. That module
 /// adds virtual-key constants **one at a time, with a reason**, deliberately —
 /// its own note says so — so a check invents a word from the alphabet that is
 /// there rather than widening a shared file for a fixture name. `DETAIL` is
@@ -57,7 +57,7 @@ const DISCLOSE_REGION: &str = "bookmarks.disclose.";
 const PARENT_KEYS: [u16; 6] = [vk::D, vk::E, vk::T, vk::A, vk::I, vk::L];
 /// `TAIL` — the second, and the one that is dragged.
 ///
-/// ★ A **different length** from the first, deliberately, so a trace that
+/// A **different length** from the first, deliberately, so a trace that
 /// reported only a character count could still tell them apart. Nothing below
 /// needs that today; it costs nothing, and it is the property `bookmark_edit`
 /// had to go back and add after the fact.
@@ -98,7 +98,7 @@ fn census(session: &Session) -> Result<Option<usize>> {
 
 /// The rows of the **most recent frame** that are inside the panel body.
 ///
-/// # ★★★ Why both filters, and why each was paid for
+/// # Why both filters, and why each was paid for
 ///
 /// **The frame filter.** The trace holds every frame the application drew, and
 /// this check needs to count rows — *"one row is drawn"* is its central
@@ -216,21 +216,21 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(40);
     let driver = Driver::new(session.window());
     click_mode_segment(&session, &driver, ui_rect, MODE)?;
-    // ★★ The dock draws only the ACTIVE tab's body, and in this mode's default
+    // The dock draws only the ACTIVE tab's body, and in this mode's default
     // layout Bookmarks shares a stack with Pages. See
     // [`crate::checks::driving::raise_dock_tab`].
     driving::raise_dock_tab(&session, &driver, ui_rect, "view.panel_bookmarks")?;
 
     // --- A: two top-level bookmarks this check then reorganises -------------
     //
-    // ★ Both go to the TOP LEVEL, and that is a property of the panel rather
+    // Both go to the TOP LEVEL, and that is a property of the panel rather
     // than of this check: the authoring row files a new bookmark under
     // whichever row was last **clicked**, and nothing here clicks a row before
     // pressing Add. Authoring does not select what it authored — the add row
     // leaves the selection alone deliberately, because what a selection means
     // there is *the parent for the next add*.
     report.note("phase A: authoring DETAIL and TAIL, both at the top level".to_owned());
-    // ★★ Measured BEFORE, never assumed to be zero. The fixture set is not
+    // Measured BEFORE, never assumed to be zero. The fixture set is not
     // uniform — `four-pages.pdf` ships with a six-item outline and
     // `SW41177.pdf` has none — and a check that hard-coded either would SKIP on
     // half the corpus while reporting the fixture as the fault. Every count
@@ -259,7 +259,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let body = declared(&trace, ui_rect, PANEL_BODY);
     let rows = visible_rows(&trace, body);
     let rows_before_move = rows.len();
-    // ★ The LAST TWO rows, not the first two. `add_outline_item` files a new
+    // The LAST TWO rows, not the first two. `add_outline_item` files a new
     // bookmark as the last child of the parent it is given, and this check
     // gives it the top level — so on a document that already had an outline the
     // two just authored are at the very end of the walk, after every branch
@@ -296,7 +296,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             parent.raw
         ))
     })?;
-    // ★★ TAIL is identified by its OBJECT ID from here on, never by its
+    // TAIL is identified by its OBJECT ID from here on, never by its
     // position. The move is about to change where it is in the walk — that is
     // the whole point of the gesture — so a check holding an index would be
     // holding the number the very edit it performs invalidates. That is the
@@ -310,7 +310,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             child.raw
         ))
     })?;
-    // ★ `rect=` to LIFT, because only the label is a widget. See the module
+    // `rect=` to LIFT, because only the label is a widget. See the module
     // header's table; the strip's centre is empty space and a press there
     // starts no drag at all.
     let lift = child.get_rect("rect").ok_or_else(|| {
@@ -320,7 +320,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             child.raw
         ))
     })?;
-    // ★ `row=` to DROP, because the band test is over the full-width strip.
+    // `row=` to DROP, because the band test is over the full-width strip.
     let onto = parent.get_rect("row").ok_or_else(|| {
         Error::new(format!(
             "DETAIL's row line carries no parsable `row=`: `{}`. That is the strip the landing \
@@ -335,7 +335,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- B: drag TAIL onto the MIDDLE of DETAIL ------------------------------
     //
-    // ★★ The middle of the strip, vertically and horizontally, which is the
+    // The middle of the strip, vertically and horizontally, which is the
     // `Into` band. A drop a quarter of the way up or down would be `Before` or
     // `After` — a reorder, not a re-parent — and the level would not move,
     // which is exactly the failure this aim is chosen to avoid.
@@ -399,7 +399,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             engine.raw
         )));
     }
-    // ★★ The engine's own word for what kind of move it was, asserted beside
+    // The engine's own word for what kind of move it was, asserted beside
     // the level below. `OutlineMove::reparented` is carried separately from
     // comparing the two parent ids precisely because it is *"the fact a
     // disclosure sentence turns on"*, so a build that got it wrong would word
@@ -461,7 +461,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              engine's promise or the panel's walk is not holding."
         )));
     }
-    // ★★★ The oracle. A level cannot be reached by a reorder.
+    // The oracle. A level cannot be reached by a reorder.
     match nested.get_usize("level") {
         Some(1) => {
             report.note(format!("★★ TAIL is now nested: `{}`", nested.raw));
@@ -479,7 +479,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- C: collapse the branch ---------------------------------------------
     //
-    // ★ The triangle exists only because DETAIL now HAS children, which is
+    // The triangle exists only because DETAIL now HAS children, which is
     // itself a consequence of phase B. That ordering is deliberate: a check
     // that collapsed a branch it had not built would be testing the fixture.
     report.note("phase C: pressing DETAIL's disclosure triangle".to_owned());
@@ -524,7 +524,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★★★ The two numbers that must now disagree. See the module header.
+    // The two numbers that must now disagree. See the module header.
     let after_collapse = census(&session)?.unwrap_or(usize::MAX);
     let rows = visible_rows(&trace, declared(&trace, ui_rect, PANEL_BODY));
     if after_collapse != authored {
@@ -535,7 +535,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              folded. A build that 'collapsed' by deleting the subtree lands exactly here."
         )));
     }
-    // ★★★ EXACTLY one fewer, not "fewer". DETAIL holds exactly one child, so
+    // EXACTLY one fewer, not "fewer". DETAIL holds exactly one child, so
     // folding it hides exactly one row. A "shorter than before" assertion would
     // pass on a build that emptied the list, which is also shorter — the trap
     // `pdfcer-core` reported from its own delete Pass, where *"every defect we

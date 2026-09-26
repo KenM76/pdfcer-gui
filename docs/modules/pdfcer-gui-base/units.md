@@ -52,7 +52,7 @@ never showed, because both `f32` sites round to whole millimetres — but a
 module whose whole purpose is that two surfaces agree cannot be built on a
 width that depends on which surface you asked.
 
-# ★★★ The rounding rule, and why it is a decision rather than a default
+# The rounding rule, and why it is a decision rather than a default
 
 A whole-number length shown to the operator rounds **half away from zero**:
 `2.5 → 3`, `-2.5 → -3`. That is [`whole`], and it is the only function in

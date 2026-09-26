@@ -16,7 +16,7 @@ about — `docs/core-api/02-editing-and-saving.md` §1.10.1, *which verbs
 RENUMBER* — and it is why the page travels on every variant rather than
 being re-derived at apply time.
 
-## ★★ The two verbs that both "move things", and why there are two
+## The two verbs that both "move things", and why there are two
 
 [`VectorAction::MoveSelection`] reaches `move_objects`, which rewrites
 numeric **operands** in place. [`VectorAction::TransformObjects`] reaches

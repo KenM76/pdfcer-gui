@@ -18,7 +18,7 @@
 //! sheet has 5,903 page objects, so it is very nearly the last thing painted.
 //! `of=2` says the text WAS a candidate. It was second.
 //!
-//! ★★★ That is the whole of his first sentence, and it is not about text
+//! That is the whole of his first sentence, and it is not about text
 //! editing at all. Every font control, every Properties field and every restyle
 //! verb in this program is reached through a text selection, so a hit test that
 //! cannot produce one makes all of them unreachable at once — which is exactly
@@ -44,12 +44,12 @@
 //!    remedy is a re-rank the shell can do with the API it already calls, and
 //!    no engine change is needed for it.
 //!
-//! ★★ Asked of the engine and not of the running shell because the shell's
+//! Asked of the engine and not of the running shell because the shell's
 //! answer is one number — `depth=0 of=2` — and one number cannot distinguish a
 //! wrong ORDER from a wrong CANDIDATE SET. This project has filed a wrong
 //! engine request from exactly that confusion once already.
 //!
-//! # ★ A probe, not a test, and `#[ignore]`d for the same reason as its sibling
+//! # A probe, not a test, and `#[ignore]`d for the same reason as its sibling
 //!
 //! It reads a file that is **not in this repository** — a copy of his drawing
 //! under `target/scratch/docs/` — so it cannot run in CI and must never fail a
@@ -82,7 +82,7 @@ const FIXTURES: [&str; 2] = [
 
 /// The nine aims the driven check was pointed at, in PDF user space.
 ///
-/// ★★ One per distinct font size on page 1, and the choice of ONE PER SIZE is
+/// One per distinct font size on page 1, and the choice of ONE PER SIZE is
 /// the point rather than a convenience. Two points either side of a transition
 /// look exactly like no transition, and a series picked by eye is a series
 /// picked to agree with whoever picked it. These came out of
@@ -110,7 +110,7 @@ const NUDGE: f64 = 2.0;
 
 /// Tolerances asked at each aim, in PDF user space points.
 ///
-/// ★ `0.0` is the control and the other three are the series. The shell derives
+/// `0.0` is the control and the other three are the series. The shell derives
 /// its tolerance from the zoom — a few screen pixels converted into page units
 /// — so on a 1,584 pt sheet fitted into roughly a thousand pixels one pixel is
 /// about 1.6 pt and the working tolerance is several points. Walking four rungs
@@ -161,7 +161,7 @@ fn class_of(model: &PageObjects, hit: HitTarget) -> String {
         Some(pdfcer_core::vector::VectorObject::Text(_)) => "Text",
         Some(pdfcer_core::vector::VectorObject::Path(_)) => "Path",
         Some(pdfcer_core::vector::VectorObject::Image(_)) => "Image",
-        // ★ No catch-all arm, and its absence is deliberate. `VectorObject`
+        // No catch-all arm, and its absence is deliberate. `VectorObject`
         // has exactly these three variants as of engine 0.53.0, so `Some(_)`
         // here is unreachable and clippy says so. Leaving it out turns the
         // engine growing a fourth variant into a COMPILE ERROR in this file

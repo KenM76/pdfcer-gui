@@ -3,7 +3,7 @@
 `select_filter_changes_what_a_click_hits` — the filter is load-bearing, not
 decorative.
 
-# ★★ Why the obvious check would have been worthless
+# Why the obvious check would have been worthless
 
 The tempting assertion is *"clicking Select opens a popup"*. That is already
 a unit test, and — more to the point — **it is the claim that is also true of
@@ -31,7 +31,7 @@ trace. The third step is what makes the second *attributable*: a build that
 had simply broken selection outright would fail there, and a check that
 stopped after step 2 would have called that a passing filter.
 
-# ★ Why None and All rather than a named class row
+# Why None and All rather than a named class row
 
 The popup publishes an indexed rect per class row, and aiming at one would
 be a statement about **the fixture** — *"row 1 is Lines, and the object at

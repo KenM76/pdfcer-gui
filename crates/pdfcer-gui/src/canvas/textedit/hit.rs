@@ -27,7 +27,7 @@ pub struct Layout {
     /// The same box in **canvas** coordinates, for the click ladder, which
     /// works in page space and never sees a screen point.
     ///
-    /// ★ Both, rather than one and a conversion at the call site: the two
+    /// Both, rather than one and a conversion at the call site: the two
     /// callers live in different coordinate spaces and neither has the other's
     /// map to hand at the moment it asks. Publishing both puts the one
     /// conversion in the one place that owns the map.
@@ -48,7 +48,7 @@ impl Layout {
     /// does and it is what makes a drag that runs off the end select to the
     /// end rather than stopping.
     ///
-    /// ★ `CCursor::index` is a **character** index, which is the unit
+    /// `CCursor::index` is a **character** index, which is the unit
     /// `super::Draft::caret` is documented in. `Galley` also speaks in rows and
     /// byte offsets; taking either would compile and would put the caret inside
     /// a multi-byte character on the first document with an accent in it.
@@ -68,7 +68,7 @@ pub fn publish(ctx: &egui::Context, layout: Layout) {
 
 /// The editor box as of the last frame that drew one, if any.
 ///
-/// # ★ Why nothing clears this
+/// # Why nothing clears this
 ///
 /// Because every caller asks *"is the pointer inside the box"* and a stale
 /// rectangle from a draft that has ended answers that question wrongly only if

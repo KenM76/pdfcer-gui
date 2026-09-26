@@ -14,7 +14,7 @@
 
 /// The **Properties…** button's published region.
 ///
-/// ★ Published for `ui-verify`, which is the only oracle this project trusts
+/// Published for `ui-verify`, which is the only oracle this project trusts
 /// for a layout claim. See `tools/ui-verify/src/checks/print_paper.rs` for
 /// what it asserts, and for why a driven check reads this rect without ever
 /// clicking it.
@@ -42,7 +42,7 @@ pub(super) const REGION_PAPER_ITEM_PREFIX: &str = "print.paper.item.";
 /// The **Match the pages in this document** entry's own published region —
 /// operator request O167, 2026-09-10.
 ///
-/// # ★ Why it is NOT `print.paper.item.1`
+/// # Why it is NOT `print.paper.item.1`
 ///
 /// It sits second in the list on screen, so the obvious thing would have been
 /// to give it index 1 and push the driver's forms up by one. That would have

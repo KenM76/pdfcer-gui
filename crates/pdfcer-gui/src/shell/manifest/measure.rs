@@ -23,7 +23,7 @@ pub(super) fn tab() -> Tab {
                     command("measure.perimeter"),
                     command("measure.length"),
                     command("measure.two_line"),
-                    // ★ **Finish** sits with the tools, not in its own group.
+                    // **Finish** sits with the tools, not in its own group.
                     //
                     // It is not a fourth tool — it arms nothing — and a reader
                     // could reasonably expect it beside the thing it acts on

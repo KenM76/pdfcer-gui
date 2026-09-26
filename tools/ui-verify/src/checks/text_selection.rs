@@ -74,7 +74,7 @@ const PAGE_TEXT_EVENT: &str = "page-text";
 /// first. Each band is a wide sweep, because a narrow one on a sparse sheet is
 /// a coin toss.
 ///
-/// ★ `pub(crate)` because [`crate::checks::text_markup`] sweeps the same
+/// `pub(crate)` because [`crate::checks::text_markup`] sweeps the same
 /// ladder for the same reason — it needs a selection before it can mark one —
 /// and a second copy of a *calibration* is the thing this crate's
 /// [`crate::profile`] module exists to prevent: the numbers are tuned to this
@@ -84,7 +84,7 @@ pub(crate) const BANDS: [((f64, f64), (f64, f64)); 8] = [
     // The title block, bottom right — three sweeps at different heights,
     // because its rows are close together and a single y can fall between them.
     //
-    // ★ These three are MEASURED, not estimated. `pdfcer.exe find-text` reports
+    // These three are MEASURED, not estimated. `pdfcer.exe find-text` reports
     // the box of every run on `fixtures/a1-titleblock.pdf`; the fractions below
     // are the centres of its three richest rows on a 1683.78 pt sheet:
     //
@@ -150,7 +150,7 @@ fn selections(trace: &Trace) -> Vec<&crate::trace::TraceLine> {
 /// lines so a caller can tell a gesture that said nothing from one that said
 /// `chars=0`.
 ///
-/// # ★★★ Why this exists beside [`selections`], which looks like it answers
+/// # Why this exists beside [`selections`], which looks like it answers
 ///
 /// [`selections`] filters on `chars > 0`, so its `.last()` is *the last
 /// non-empty state the gesture passed through* — which is **not** the state the
@@ -328,7 +328,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         driver.drag(from, to)?;
         session.settle(16);
         let after = session.trace()?;
-        // ★ The SETTLED line, and it must be read unfiltered — see
+        // The SETTLED line, and it must be read unfiltered — see
         // [`settled_selection`] for the failure that rule closes.
         //
         // A sweep traces every distinct state it passes through — measured on
@@ -402,7 +402,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- the picture, saved as evidence rather than asserted on -------------
     //
-    // ★ Captured, and deliberately **not** used as an oracle.
+    // Captured, and deliberately **not** used as an oracle.
     //
     // This whole file exists because the wash cannot be an oracle: at
     // `TEXT_SELECTION_ALPHA` over a drawing sheet, selected and unselected are
@@ -496,7 +496,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "verdict established on band {band}: {READ} swept text the same drag did not sweep in \
          {EDIT}, and the selection it made both copied characters and drew boxes"
     ));
-    // ★ Escape, Ctrl+A and Ctrl+C are NOT driven — see the module header's
+    // Escape, Ctrl+A and Ctrl+C are NOT driven — see the module header's
     // "Mouse only" section. Said in the report rather than only in the source,
     // so a reader of a PASS knows exactly what it does and does not cover.
     report.note(
@@ -547,7 +547,7 @@ mod tests {
         );
     }
 
-    /// ★ **A cleared selection is not a selection.**
+    /// **A cleared selection is not a selection.**
     ///
     /// `canvas::trace` emits `chars=0` for a clear — deliberately, because a
     /// clear is a real event with a real cause — so a check that counted

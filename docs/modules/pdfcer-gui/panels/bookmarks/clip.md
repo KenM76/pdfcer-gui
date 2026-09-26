@@ -2,7 +2,7 @@
 
 `OPERATOR_REQUESTS.md` **O59**, item 3, and the last of the three.
 
-## ★★★ This is the one Acrobat cannot do
+## This is the one Acrobat cannot do
 
 `pdfcer-core`, 2026-08-29: *"Acrobat cannot do this between two files at all;
 Adobe's own documentation says so by name."* Copying a chapter's bookmark
@@ -26,7 +26,7 @@ is filed under it.
 for pages; here it is simpler, because there was never a competing claimant:
 `Ctrl+C` belongs to the canvas and no bookmark has ever wanted it.
 
-## ★★ The one question that must be asked BEFORE the press
+## The one question that must be asked BEFORE the press
 
 **Does the destination document have the pages these bookmarks point at?**
 
@@ -42,7 +42,7 @@ The engine flagged this itself and it is the third of its three
 and it is asked **while the operator can still choose** — before the paste,
 beside the button, rather than as a report afterwards.
 
-★ Dropped rather than clamped is the right engine behaviour and worth
+Dropped rather than clamped is the right engine behaviour and worth
 understanding before writing the sentence: clamping would send the operator
 to *some* page, confidently and wrongly, which is worse than a bookmark that
 plainly does nothing. §12.3.3 permits an item with no destination — a pure

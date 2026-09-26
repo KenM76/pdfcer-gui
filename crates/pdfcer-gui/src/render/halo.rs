@@ -72,12 +72,12 @@ pub fn region(crop: Rect, content: Option<Rect>, raster_scale: f32) -> Option<Re
         return None;
     }
 
-    // ★ The same ceiling `strategy::for_page` applies to the whole-page tier,
+    // The same ceiling `strategy::for_page` applies to the whole-page tier,
     // asked of the bigger box. Rotation is irrelevant to it — a quarter turn
     // swaps the two edges and does not change which is longest — which is why
     // this function needs no `PageFrame` and the one below does.
     //
-    // ★★★ Through `strategy::region_raster_fits` and not spelled here. The
+    // Through `strategy::region_raster_fits` and not spelled here. The
     // order that reaches the worker is guarded by that same predicate, one
     // frame later and at a scale this call could not see — and a halo box
     // validated here at one scale was rasterized at the next one up, refused,
@@ -135,7 +135,7 @@ fn finite(r: Rect) -> bool {
 /// Returns `place` unchanged whenever there is nothing to add, so the caller
 /// has no branch and the ordinary page keeps exactly today's behaviour.
 ///
-/// ## ★ Why this takes the content box and not [`region`]'s answer
+/// ## Why this takes the content box and not [`region`]'s answer
 ///
 /// [`region`] returns [`None`] above the pixmap ceiling — which is precisely
 /// when this function matters. Feeding it here would switch the visible-region
@@ -162,7 +162,7 @@ pub fn reach(
     let sx = f64::from(place.width()) / ex;
     let sy = f64::from(place.height()) / ey;
 
-    // ★★ Into CANVAS space — y-down from the page's top-left, `/Rotate`
+    // Into CANVAS space — y-down from the page's top-left, `/Rotate`
     // resolved. `canvas_box_of` takes the bounding box of the two mapped
     // corners rather than mapping them corner-for-corner, because 90° and 270°
     // swap the axes; that is O174, and doing it by hand here would be the
@@ -206,7 +206,7 @@ pub fn reach(
 ///   [`crate::app::cache`]'s `content_bounds_if_known`, which peeks rather than
 ///   builds precisely so the canvas can run this every frame.
 ///
-/// # ★★★ Why the canvas needs this and [`reach`] would not do
+/// # Why the canvas needs this and [`reach`] would not do
 ///
 /// [`reach`] answers *"what rectangle on screen may I paint into"*, and it
 /// needs the page's **placement** to answer, which is only known **after** the
@@ -221,7 +221,7 @@ pub fn reach(
 /// which is the single place `/Rotate` is resolved — O174's rule, and the
 /// reason neither of them maps corners by hand.
 ///
-/// # ★★★ What it is for, stated as the defect it removes
+/// # What it is for, stated as the defect it removes
 ///
 ///
 /// `content_extent` puts **one viewport of slack** on every side of the strip,
@@ -307,7 +307,7 @@ mod tests {
         assert_eq!(region(CROP, Some(r(10.0, 10.0, 190.0, 190.0)), 1.0), None);
     }
 
-    /// ★ A border stroke's half-width is not a feature request. See
+    /// A border stroke's half-width is not a feature request. See
     /// [`OVERHANG_TOLERANCE_PTS`].
     #[test]
     fn a_hairline_overhang_is_not_a_halo() {
@@ -318,7 +318,7 @@ mod tests {
         );
     }
 
-    /// ★★★ The feature. An object off the left edge grows the box to the left
+    /// The feature. An object off the left edge grows the box to the left
     /// and leaves the other three sides alone — a halo that grew symmetrically
     /// would cost four times the pixels to show the same object.
     #[test]
@@ -351,7 +351,7 @@ mod tests {
         assert_eq!(region(CROP, Some(empty), 1.0), None);
     }
 
-    /// ★★ The ceiling. The same object at a zoom whose raster would not fit
+    /// The ceiling. The same object at a zoom whose raster would not fit
     /// gives up the halo tier rather than asking for a pixmap the engine
     /// refuses — and `canvas::present` then falls through to the
     /// visible-region tier, which is what [`reach`] is for.
@@ -393,7 +393,7 @@ mod tests {
         assert_eq!(reach(place, (200.0, 200.0), frame, None), place);
     }
 
-    /// ★★★ An object off the LEFT of an upright page reaches LEFT on screen.
+    /// An object off the LEFT of an upright page reaches LEFT on screen.
     ///
     /// 400 screen px for 200 pt is 2 px/pt, so 160 pt of overhang is 320 px.
     #[test]
@@ -411,7 +411,7 @@ mod tests {
         assert_eq!(out.max.y, place.max.y);
     }
 
-    /// ★★ O174's case, which a y-only conversion cannot produce: on a
+    /// O174's case, which a y-only conversion cannot produce: on a
     /// `/Rotate 90` page the PDF's −x becomes the canvas's −y, so the same
     /// object reaches **up** the screen rather than left.
     #[test]
@@ -449,7 +449,7 @@ mod tests {
         );
     }
 
-    /// ★ An unmeasured page is not a page with nothing off it — the same
+    /// An unmeasured page is not a page with nothing off it — the same
     /// distinction `region` draws in its case 1. `content_bounds_if_known`
     /// PEEKS, so `None` is the answer on every page the operator has not
     /// decomposed, which is most of them most of the time.
@@ -461,7 +461,7 @@ mod tests {
         );
     }
 
-    /// ★★★ The feature, in points. An object 160 pt off the left edge of a
+    /// The feature, in points. An object 160 pt off the left edge of a
     /// 200 pt sheet gives 160 pt of x overhang and no y overhang, so the
     /// pasteboard grows on the axis the object is actually on.
     #[test]
@@ -475,7 +475,7 @@ mod tests {
         assert!(oy.abs() < 0.01, "y overhang {oy}");
     }
 
-    /// ★★ O174's case again, and the reason this goes through
+    /// O174's case again, and the reason this goes through
     /// `PageFrame::canvas_box_of` rather than subtracting the crop box
     /// directly: on a `/Rotate 90` page the PDF's −x is the canvas's −y, so
     /// the SAME object overhangs the other axis. A hand-rolled

@@ -14,7 +14,7 @@
 //! land?* Every drag in the dock — reorder, move between stacks, tear out,
 //! dock back — is that question and nothing else.
 //!
-//! ## ★★★ It is filled during the draw and consumed in the same frame
+//! ## It is filled during the draw and consumed in the same frame
 //!
 //! A pointer gesture over compartment B is processed while compartment A is
 //! being drawn, so a naive implementation reads the rect B had **last** frame.
@@ -248,7 +248,7 @@ impl DockGeometry {
     /// caller that got the convention wrong would be off by one in one
     /// direction only — the hardest kind of off-by-one to see.
     ///
-    /// ## ★ Resolved by CENTRES, not by edges
+    /// ## Resolved by CENTRES, not by edges
     ///
     /// A tab whose centre is left of the pointer is a tab the dragged one has
     /// passed. The boundary therefore flips when the pointer crosses the middle
@@ -256,7 +256,7 @@ impl DockGeometry {
     /// which is what stops the caret jittering between two gaps while the
     /// pointer rests on the seam between two tabs.
     ///
-    /// ## ★ Seeded from the FIRST DRAWN tab, not from zero
+    /// ## Seeded from the FIRST DRAWN tab, not from zero
     ///
     /// A strip whose leading tabs are in the overflow menu starts at a non-zero
     /// index. Seeding at zero would let a pointer at the left edge report a
@@ -355,7 +355,7 @@ mod tests {
         assert_eq!(g.tab_at(pos2(350.0, 10.0)), None);
     }
 
-    /// ★ The whole contract of [`DockGeometry::gap_in`] in one sweep: the
+    /// The whole contract of [`DockGeometry::gap_in`] in one sweep: the
     /// boundary flips at a tab's CENTRE, and the ends are reachable.
     #[test]
     fn the_gap_flips_at_each_tabs_centre() {
@@ -371,7 +371,7 @@ mod tests {
         assert_eq!(gap(999.0), Some(3), "past the end is still the end");
     }
 
-    /// ★ The seeding rule. With tabs 0 and 1 in the overflow menu, the leftmost
+    /// The seeding rule. With tabs 0 and 1 in the overflow menu, the leftmost
     /// boundary a pointer can name is 2 — not 0, which would be a caret drawn
     /// on screen and a move committed off it.
     #[test]

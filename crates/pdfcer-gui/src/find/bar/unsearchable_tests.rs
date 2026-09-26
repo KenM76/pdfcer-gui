@@ -1,13 +1,13 @@
 //! # `find::bar` — the unsearchable note's tests
 //!
 //!
-//! ★ Kept separate because it must reach **both** `find::bar` (through
+//! Kept separate because it must reach **both** `find::bar` (through
 //! `super::*`) and `super::tests::searched`. Nested inside the other module,
 //! `super::*` would resolve to the tests rather than to the bar, and every
 //! reference to the code under test would have to be re-spelled — a rewrite of
 //! working assertions to save one file.
 //!
-//! ★★ **The inner `#![cfg(test)]` is load-bearing and is not a duplicate of
+//! **The inner `#![cfg(test)]` is load-bearing and is not a duplicate of
 //! the outer `#[cfg(test)] mod tests;`.** Without it,
 //! `tools/gates/check-ui-strings.sh` walks this file as ordinary source and
 //! reports every assertion message as a user-visible string that should live
@@ -49,7 +49,7 @@ fn the_ocr_offer_and_the_note_are_not_alternatives() {
     // the one a file with a Type 3 titleblock produces.
 }
 
-/// ★★ **A sentence about one search cannot outlive that search.**
+/// **A sentence about one search cannot outlive that search.**
 ///
 /// Three ways a result stops describing what the bar is showing, and all
 /// three must silence the note: the operator edits the query, the operator

@@ -15,7 +15,7 @@
 //! same shape as a gated string catalogue and a gated icon set: a class of
 //! change made safe by making the scattered form impossible.
 //!
-//! # ★ CHROME IS THEMED. CONTENT COLOUR IS NOT. THEY ARE NOT THE SAME KIND.
+//! # CHROME IS THEMED. CONTENT COLOUR IS NOT. THEY ARE NOT THE SAME KIND.
 //!
 //! This is the distinction that makes a colour sweep dangerous, and it is
 //! the reason the gate has an escape hatch rather than being absolute.
@@ -189,7 +189,7 @@ pub struct Palette {
     /// paint time (`egui-0.35.0/src/widget_style.rs:151-154`), so it reaches all of them
     /// together whether or not any call site mentions it.
     ///
-    /// # ★★★ WHAT THIS IS NOT: it is not [`Self::selection_fill`]
+    /// # WHAT THIS IS NOT: it is not [`Self::selection_fill`]
     ///
     /// Read that sentence twice. Merging the two fields back together is a
     /// silent regression, not a compile error.
@@ -211,7 +211,7 @@ pub struct Palette {
     /// different (a panel, whose colour the theme knows; a page, whose colour
     /// the document decides).
     ///
-    /// # ★★ Why a plate at all, rather than [`Self::accent`] itself
+    /// # Why a plate at all, rather than [`Self::accent`] itself
     ///
     /// Because one channel has to serve two roles and `egui` gives no way to
     /// separate them. `visuals.selection.stroke` is BOTH the ink on this plate
@@ -261,7 +261,7 @@ pub struct Metrics {
     pub icon_pts: f32,
 
     // -----------------------------------------------------------------
-    // ★★★ THE RIBBON BAND'S OWN RHYTHM — `mockups/pdfcer-shell.html`
+    // THE RIBBON BAND'S OWN RHYTHM — `mockups/pdfcer-shell.html`
     //
     // Five numbers that exist because the band is the one surface in this
     // application whose vertical proportions are **specified as a
@@ -283,7 +283,7 @@ pub struct Metrics {
     // svg.g.big      { width: 24px }      /* a Large control's icon     */
     // ```
     //
-    // ★ Why they live HERE rather than as constants in `ribbon::band`.
+    // Why they live HERE rather than as constants in `ribbon::band`.
     //
     // Because they are theme-dependent and the two other presets prove
     // it. `Airy` exists to be *roomier* — its `control_height` is 28 pt
@@ -295,7 +295,7 @@ pub struct Metrics {
     // assertion that keeps the relationship true rather than merely
     // true-today.
     //
-    // ★★ What is deliberately NOT here: a hover colour. The mockup's
+    // What is deliberately NOT here: a hover colour. The mockup's
     // `--chrome-3` is commented `/* hover, derived */` in its own palette
     // block — the mock author's arithmetic, not a role this theme
     // publishes. `write_style` already lifts hover toward `surface` with a
@@ -312,7 +312,7 @@ pub struct Metrics {
     /// which is what makes the captions in a band share one baseline
     /// whether the group above used one row or three.
     ///
-    /// ★ It is deliberately **not** `GROUP_ROWS × (control_height +
+    /// It is deliberately **not** `GROUP_ROWS × (control_height +
     /// gutter)`. That expression is "exactly as tall as two rows", so a
     /// two-row group fills it edge to edge and the caption sits
     /// immediately under the last control — which reads as cramped. The
@@ -346,7 +346,7 @@ pub struct Metrics {
     /// drift apart, which is a distinction no reader of the band could
     /// name.
     ///
-    /// ★ It is larger than `egui`'s `TextStyle::Small` (9 pt), which is
+    /// It is larger than `egui`'s `TextStyle::Small` (9 pt), which is
     /// what `RichText::small()` would give: the mockup asks for 11, so the
     /// band must state the size rather than take the stock small.
     pub ribbon_caption_pts: f32,
@@ -483,7 +483,7 @@ impl Theme {
                 danger: Color32::from_rgb(0xC0, 0x2A, 0x2A),
                 notice: Color32::from_rgb(0xB0, 0x6A, 0x1A),
                 selection_fill: Color32::from_rgba_unmultiplied(90, 140, 220, 70),
-                // ★ DERIVED, not picked: `accent` at 30 % over `panel`,
+                // DERIVED, not picked: `accent` at 30 % over `panel`,
                 // composited here so the value that ships is OPAQUE.
                 //
                 //   0.30·(23, 92,196) + 0.70·(232,232,234)
@@ -531,7 +531,7 @@ impl Theme {
                 text: Color32::from_rgb(0x24, 0x26, 0x2B),
                 text_muted: Color32::from_rgb(0x6C, 0x70, 0x78),
                 outline: Color32::from_rgb(0xDC, 0xDE, 0xE3),
-                // ★ Same derivation as Quiet — `accent` at 30 % — over THIS
+                // Same derivation as Quiet — `accent` at 30 % — over THIS
                 // preset's panel, which is pure white:
                 //
                 //   0.30·(23, 92,196) + 0.70·(255,255,255)
@@ -551,7 +551,7 @@ impl Theme {
                 panel_padding: 12.0,
                 corner_radius: 6,
                 icon_pts: 17.0,
-                // ★★★ NOT the mockup's literals, and this preset is the proof
+                // NOT the mockup's literals, and this preset is the proof
                 // that the ribbon rhythm had to be a metric.
                 //
                 // `Airy` exists to be roomier: `control_height` 28 against
@@ -604,7 +604,7 @@ impl Theme {
                 accent: Color32::from_rgb(0x4C, 0x9A, 0xFF),
                 on_accent: Color32::from_rgb(0x10, 0x14, 0x1A),
                 outline: Color32::from_rgb(0x44, 0x48, 0x4F),
-                // ★★ LIGHTER THAN THE OBVIOUS SALMON, AND THE ARITHMETIC IS
+                // LIGHTER THAN THE OBVIOUS SALMON, AND THE ARITHMETIC IS
                 // THE REASON. `Theme::write_style` hands this role to
                 // `visuals.error_fg_color`, which every dialog reads for the
                 // line that says the operator must act — and a dialog is
@@ -621,7 +621,7 @@ impl Theme {
                 // a saturated red scores far below how it reads (the same pair
                 // is 4.71:1 under WCAG, a comfortable AA pass).
                 //
-                // ★★ Fix the ROLE rather than exempt the pair, on two grounds.
+                // Fix the ROLE rather than exempt the pair, on two grounds.
                 // A quarter-level of headroom is not headroom: `panel` and
                 // `accent` are both live values here — `selected_plate` is
                 // derived from `accent`, and this preset's focus ring already
@@ -638,7 +638,7 @@ impl Theme {
                 // separates. This preset's problem is the mirror of theirs.
                 danger: Color32::from_rgb(0xFF, 0x7B, 0x7B),
                 notice: Color32::from_rgb(0xE0, 0xA0, 0x40),
-                // ★★★ THE ONE PRESET WHERE THE LIGHT PRESETS' DERIVATION
+                // THE ONE PRESET WHERE THE LIGHT PRESETS' DERIVATION
                 // CANNOT BE USED, AND THE ARITHMETIC THAT PROVES IT.
                 //
                 // Still derived from `accent`, but from `accent` ALONE:
@@ -741,7 +741,7 @@ impl Theme {
     /// an active tab, a selected mode chip — any chrome that must look
     /// *emphatically enabled*.
     ///
-    /// # ★★★ Why this exists as a function rather than two field reads
+    /// # Why this exists as a function rather than two field reads
     ///
     /// Because a fill and a foreground fetched separately are correct
     /// separately and wrong together, and the result is a surface that looks
@@ -767,13 +767,13 @@ impl Theme {
     /// spelling of *"paint something as the emphasised action"*, and a preset
     /// that changes its accent moves every such surface together.
     ///
-    /// ★ Not `strong_text_color()` for the foreground. That follows
+    /// Not `strong_text_color()` for the foreground. That follows
     /// `override_text_color`, which is the **body text** colour — near-black
     /// under the light presets. On a saturated accent that is poor contrast,
     /// and under a preset whose accent is dark it would be black on black.
     /// [`Palette::on_accent`] is the theme's own answer and inverts per preset.
     ///
-    /// ★ Deliberately NOT `selection.bg_fill`. That channel carries
+    /// Deliberately NOT `selection.bg_fill`. That channel carries
     /// [`Palette::selected_plate`], a *diluted* accent chosen to be readable
     /// under `accent` INK. An emphasised action wants the accent at full
     /// strength with [`Palette::on_accent`] on it. Reading the channel gets you
@@ -791,7 +791,7 @@ impl Theme {
     /// Returns `(plate, ink)`: `(`[`Palette::content_backdrop`]`,
     /// `[`Palette::text_muted`]`)`.
     ///
-    /// # ★★★ Why this is a named pair and not two field reads
+    /// # Why this is a named pair and not two field reads
     ///
     /// Because **a correctly-sourced colour used for the wrong role passes
     /// every gate this project has.** `tools/gates/check-theme-colors.sh`
@@ -822,12 +822,12 @@ impl Theme {
     ///   is the weight the *values* in the panel are drawn at, and would claim
     ///   the dash was one of them.
     ///
-    /// ★ Deliberately **not** [`Palette::on_accent`], and
+    /// Deliberately **not** [`Palette::on_accent`], and
     /// `tools/gates/check-plate-colour.sh` is the reason it would have been
     /// caught: `on_accent` means *ink drawn ON `accent`*, and an indeterminate
     /// control is the opposite of an emphasised one.
     ///
-    /// ★ Deliberately **not** greyed-out widget visuals either. A greyed
+    /// Deliberately **not** greyed-out widget visuals either. A greyed
     /// control means *you cannot use this* (R9), and a mixed swatch is fully
     /// usable — picking a colour applies it to the whole selection. Borrowing
     /// the disabled look would tell the operator the opposite of the truth.
@@ -846,7 +846,7 @@ impl Theme {
     /// selected, and therefore has to match a colour it did not choose: a
     /// tinted glyph on a toggle, a hand-painted chevron, a custom check mark.
     ///
-    /// # ★★ What to use instead, almost always: nothing
+    /// # What to use instead, almost always: nothing
     ///
     /// `egui` styles a selected widget correctly on its own — it substitutes
     /// both fills and the text colour out of this channel at paint time
@@ -893,7 +893,7 @@ impl Theme {
     /// span markers, the selected form field's box — everything drawn *over
     /// the document* to say "this is what you have picked".
     ///
-    /// # ★★★ Why this is a named function and not `visuals().selection.stroke`
+    /// # Why this is a named function and not `visuals().selection.stroke`
     ///
     /// Because `egui::Visuals::selection` is `egui`'s styling channel for
     /// **selected widgets** — see [`Theme::write_style`], which quotes the four
@@ -911,7 +911,7 @@ impl Theme {
     /// for `canvas_selection_ink` cannot accidentally be asking for the chrome
     /// role, because the two questions have different spellings.
     ///
-    /// ★ "Canvas" here means the application's content area — the region
+    /// "Canvas" here means the application's content area — the region
     /// [`Palette::content_backdrop`] sits behind. The shell has no opinion
     /// about what is drawn there.
     ///
@@ -976,7 +976,7 @@ impl Theme {
     /// `Some((fill, ink))`, or **`None` when the theme has no text colour that
     /// reads on that fill** — in which case the caller must not tint at all.
     ///
-    /// # ★★★ Why this exists, and why the pair is the whole point
+    /// # Why this exists, and why the pair is the whole point
     ///
     /// Every other `*_pair` on this type answers *"which two of MY roles go
     /// together"*. This one is the case the theme does not own either half of:
@@ -1074,7 +1074,7 @@ impl Theme {
 
     /// The style write itself, shared by both of `egui`'s per-theme styles.
     ///
-    /// # ★ Three invariants this function must keep — `DEFECTS.md` D2
+    /// # Three invariants this function must keep — `DEFECTS.md` D2
     ///
     /// 1. **Both fills are assigned for every widget state.** `bg_fill` and
     ///    `weak_bg_fill` are two different backgrounds that different
@@ -1108,7 +1108,7 @@ impl Theme {
         v.extreme_bg_color = p.panel;
         v.faint_bg_color = p.panel;
         v.window_stroke = egui::Stroke::new(1.0, p.outline);
-        // ★★★ `visuals.selection` IS EGUI'S WIDGET CHANNEL. IT IS NOT THE
+        // `visuals.selection` IS EGUI'S WIDGET CHANNEL. IT IS NOT THE
         // CONTENT AREA'S. Never point it at [`Palette::selection_fill`].
         //
         // This is a documented `egui` contract, and the consequence is
@@ -1143,20 +1143,20 @@ impl Theme {
         // values are correctly sourced from the palette, and it forbids only
         // *invented* colours.
         //
-        // ★ The pair below is `egui`'s own design for the channel — its stock
+        // The pair below is `egui`'s own design for the channel — its stock
         // light theme pairs a pale blue `bg_fill` with a dark blue `stroke`,
         // i.e. *a plate and the ink that reads on it*, never a translucent
         // tint — said in this palette's words: [`Palette::selected_plate`] and
         // [`Palette::accent`].
         //
-        // ★★ The content area is served instead by
+        // The content area is served instead by
         // [`Theme::canvas_selection_ink`] and [`Theme::canvas_selection_fill`],
         // which return `accent` and `selection_fill`. Same values, a name that
         // says what they are for — so re-tuning chrome cannot silently re-tune
         // the content overlay.
         //
         // ═══════════════════════════════════════════════════════════════════
-        // ★★★ THE SECOND ROLE THIS CHANNEL SERVES: THE FOCUSED-TEXTEDIT RING.
+        // THE SECOND ROLE THIS CHANNEL SERVES: THE FOCUSED-TEXTEDIT RING.
         // THIS IS THE PART THAT MAKES THE PLATE A PLATE.
         // ═══════════════════════════════════════════════════════════════════
         //
@@ -1184,7 +1184,7 @@ impl Theme {
         // focused field that looks unfocused. That is `DEFECTS.md` D2's shape
         // again.
         //
-        // ★★ THE TWO ROLES LOOK IRRECONCILABLE AND ARE NOT. The argument that
+        // THE TWO ROLES LOOK IRRECONCILABLE AND ARE NOT. The argument that
         // says they are runs:
         //
         //   · an ink readable on `accent`  (luma 84.8) needs luma ≥ 174.8
@@ -1210,7 +1210,7 @@ impl Theme {
         // the three preset constructors; the assertion is
         // `both_roles_the_selection_channel_serves_are_readable_in_every_preset`.
         //
-        // ★ Three consequences worth stating, since nothing at a call site
+        // Three consequences worth stating, since nothing at a call site
         // will announce them:
         //
         //  1. A SELECTED control does not look identical to a PRESSED one.
@@ -1229,7 +1229,7 @@ impl Theme {
         //     `text` on `accent`, a gap of 56.7 in Quiet. On the plate it is
         //     159.8.
         //
-        // ★ The blinking caret (`visuals.text_cursor`, a separate 2 pt stroke
+        // The blinking caret (`visuals.text_cursor`, a separate 2 pt stroke
         // this function does not touch) is the other focus cue. The ring is a
         // real second one, not a decoration that happens to be invisible.
         v.selection.bg_fill = p.selected_plate;
@@ -1251,7 +1251,7 @@ impl Theme {
             w.fg_stroke = egui::Stroke::new(1.0, p.text);
         }
 
-        // ★ D2. Both fills, every state, from the palette — see this
+        // D2. Both fills, every state, from the palette — see this
         // function's doc comment. `bg_fill` and `weak_bg_fill` are two
         // different backgrounds that different widgets choose between,
         // and a theme that sets one of them has themed an arbitrary

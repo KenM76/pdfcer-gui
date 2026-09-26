@@ -3,7 +3,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/shell/commands/mapping.md`.
 
-/// ★ **The command id that names a page-display mode**, and its inverse.
+/// **The command id that names a page-display mode**, and its inverse.
 ///
 /// One binding between [`crate::viewer::PageDisplay`] and the ribbon, written
 /// down once. The two directions are used by different surfaces and would drift
@@ -49,7 +49,7 @@ pub fn page_display_for_command(id: &str) -> Option<crate::viewer::PageDisplay> 
         .find(|&m| page_display_command(m) == id)
 }
 
-/// ★ **The command id that names a piece of View ▸ Display chrome**, and its
+/// **The command id that names a piece of View ▸ Display chrome**, and its
 /// inverse.
 ///
 /// Exactly the shape [`page_display_command`] has, and here for exactly the
@@ -112,7 +112,7 @@ pub fn chrome_for_command(id: &str) -> Option<crate::app::actions::ViewChrome> {
 /// it, and each for its own reason:
 ///
 ///
-/// ★ **This said "these four" until 2026-08-14**, and the sentence it rested on
+/// **This said "these four" until 2026-08-14**, and the sentence it rested on
 /// was *"polygon, polyline and ink are not drag-shaped"*. That was true and it
 /// stopped being a reason the day those gestures were built: two of the three
 /// are now clicked (`canvas::markup::vertex`) and one is dragged freehand
@@ -140,14 +140,14 @@ pub fn markup_command(kind: crate::canvas::markup::MarkupKind) -> &'static str {
         K::PolyLine => "markup.polyline",
         // ui-text-exempt: command ids, never displayed
         K::Polygon => "markup.polygon",
-        // ★ `markup.cloud`, registered 2026-08-19. It was in
+        // `markup.cloud`, registered 2026-08-19. It was in
         // `crate::shell::manifest::PLANNED` with the reason *"the ONLY markup
         // kind still absent for an ENGINE reason rather than a gesture one"* —
         // and that had stopped being true: `MarkupSpec::Cloud` shipped in
         // `pdfcer-core` and nothing in this shell had noticed.
         // ui-text-exempt: command ids, never displayed
         K::Cloud => "markup.cloud",
-        // ★ The id is `markup.ink` and the LABEL is "Freehand". The
+        // The id is `markup.ink` and the LABEL is "Freehand". The
         // specification's word and the operator's word differ here, and the two
         // vocabularies are kept apart deliberately — ids are the shell's, labels
         // are `text::commands`'. See `canvas::markup`'s header.
@@ -170,7 +170,7 @@ pub fn markup_for_command(id: &str) -> Option<crate::canvas::markup::MarkupKind>
         .find(|&k| markup_command(k) == id)
 }
 
-/// ★ The command id that **marks the selection** with `kind`, and its inverse.
+/// The command id that **marks the selection** with `kind`, and its inverse.
 ///
 /// [`markup_command`]'s sibling and deliberately a separate pair, because the
 /// two families do different things to a press: a `markup.*` shape id *arms a
@@ -179,7 +179,7 @@ pub fn markup_for_command(id: &str) -> Option<crate::canvas::markup::MarkupKind>
 /// header §1 for the interaction decision that makes them different, and §3 for
 /// why the three kinds are not [`crate::canvas::markup::MarkupKind`] variants.
 ///
-/// ## ★ The disjointness is load-bearing, not tidy
+/// ## The disjointness is load-bearing, not tidy
 ///
 /// All six ids begin `markup.`, and `app::dispatch` matches both families with
 /// guard arms of the shape `id if …_for_command(id).is_some()`, tried in order.
@@ -205,7 +205,7 @@ pub fn markup_for_command(id: &str) -> Option<crate::canvas::markup::MarkupKind>
 pub fn text_mark_command(kind: crate::canvas::markup::text::TextMarkKind) -> &'static str {
     use crate::canvas::markup::text::TextMarkKind as K;
     match kind {
-        // ★★ Highlight has no text-markup COMMAND of its own, and that is not
+        // Highlight has no text-markup COMMAND of its own, and that is not
         // an omission. It is the one kind reachable by two gestures — an armed
         // tool that follows text where there is text and draws an area box
         // where there is not (`OPERATOR_REQUESTS.md` O54) — so its control is
@@ -296,7 +296,7 @@ pub fn measure_command(kind: crate::canvas::measure::MeasureKind) -> &'static st
         K::PathLength => "measure.length",
         // ui-text-exempt: command ids, never displayed
         K::TwoLine => "measure.two_line",
-        // ★ Armed from the Set-scale DIALOG, not from the ribbon, so it maps
+        // Armed from the Set-scale DIALOG, not from the ribbon, so it maps
         // to no command id at all.
         //
         // The empty string is deliberate and is safe by construction:
@@ -323,7 +323,7 @@ pub fn measure_for_command(id: &str) -> Option<crate::canvas::measure::MeasureKi
 
 /// The form-field kind a command id arms, if it is one of the five.
 ///
-/// ★ A NAMED function taking `id`, deliberately, rather than an inline closure
+/// A NAMED function taking `id`, deliberately, rather than an inline closure
 /// at the dispatch site. `shell::commands::reach` *reads* `app/dispatch.rs` to
 /// prove every registered command is routed, and it can follow a call like
 /// `form_for_command(id)` while a closure is opaque to it — the first version
@@ -355,7 +355,7 @@ mod tests {
         super::super::register(&mut reg);
         reg
     }
-    /// ★ **Every chrome toggle has a registered command, and every one of
+    /// **Every chrome toggle has a registered command, and every one of
     /// those commands names a toggle.**
     ///
     /// The twin of [`every_page_display_mode_has_a_registered_command`], and
@@ -389,7 +389,7 @@ mod tests {
         assert_eq!(page_display_for_command("view.rulers"), None);
     }
 
-    /// ★ **Every markup kind the canvas can draw has a registered command,
+    /// **Every markup kind the canvas can draw has a registered command,
     /// and no other mapping claims a `markup.*` id.**
     ///
     /// The third of this family, and the one with the most room to go wrong,
@@ -435,7 +435,7 @@ mod tests {
         assert_eq!(markup_for_command("view.rulers"), None);
         assert_eq!(markup_for_command("view.tool_hand"), None);
         assert_eq!(markup_for_command("markup.comments"), None);
-        // ★ `markup.finish` in particular, which is `measure.finish`'s twin and
+        // `markup.finish` in particular, which is `measure.finish`'s twin and
         // carries the identical hazard its own assertion below records: this id
         // names no kind, and if it ever answered here, pressing **Finish** would
         // reach `arm_markup` — whose same-kind-retires rule would put the pen
@@ -447,7 +447,7 @@ mod tests {
         assert_eq!(page_display_for_command("markup.rectangle"), None);
     }
 
-    /// ★ **Every text-markup kind has a registered command, and no shape id
+    /// **Every text-markup kind has a registered command, and no shape id
     /// answers to it — nor it to a shape id.**
     ///
     /// The third `markup.*` mapping and the one with the most room to go wrong,
@@ -475,7 +475,7 @@ mod tests {
                 "`{id}` names {kind:?} and is not registered"
             );
             assert_eq!(text_mark_for_command(id), Some(kind), "round trip");
-            // ★ The enable predicate is part of the mapping's contract here, in
+            // The enable predicate is part of the mapping's contract here, in
             // the way `finish_is_registered_and_is_not_a_tool` makes it part of
             // Finish's: a text-markup command with no operand does nothing, and
             // P3 reserves greying for exactly that.
@@ -498,7 +498,7 @@ mod tests {
             TextMarkKind::ALL.len(),
             "two kinds sharing one id would author the wrong subtype from one button"
         );
-        // ★ The two `markup.*` families do not overlap, in either direction.
+        // The two `markup.*` families do not overlap, in either direction.
         for &kind in TextMarkKind::ALL {
             assert_eq!(markup_for_command(text_mark_command(kind)), None);
             assert_eq!(measure_for_command(text_mark_command(kind)), None);
@@ -517,7 +517,7 @@ mod tests {
         assert_eq!(text_mark_for_command("markup.comments"), None);
     }
 
-    /// ★ **Every measure kind has a registered command, and every one of those
+    /// **Every measure kind has a registered command, and every one of those
     /// commands names a kind.**
     ///
     /// [`tests::every_markup_kind_has_a_registered_command`]'s twin, catching
@@ -573,7 +573,7 @@ mod tests {
         assert_eq!(page_display_for_command("measure.linear"), None);
     }
 
-    /// ★ **`measure.finish` ends a gesture; it must never arm one.**
+    /// **`measure.finish` ends a gesture; it must never arm one.**
     ///
     /// If it ever answered to [`measure_for_command`] the guard arm in
     /// `PdfcerApp::dispatch_command` would claim it before its own arm, and
@@ -606,7 +606,7 @@ mod tests {
         // the outside review's sheet. Nothing about it was a design position;
         // the registration said as much, and said the remedy was art.
         //
-        // ★ The second is still true and is what this assertion now pins. The
+        // The second is still true and is what this assertion now pins. The
         // worry was never "Finish should have no picture", it was **"Finish
         // must not draw the measure ruler"** — a fourth control wearing the
         // glyph of the three tools around it, for a command that places
@@ -614,7 +614,7 @@ mod tests {
         // it names the glyph Finish must wear and re-states the one it must
         // not.
         //
-        // ★★ `check` and not `finish-shape`, and the split is deliberate.
+        // `check` and not `finish-shape`, and the split is deliberate.
         // `markup.finish` carries the identical refusal in its own file and
         // took `finish-shape` — a polyline closed with a tick — because the
         // markup band's Finish completes a DRAWN SHAPE. A measurement's Finish
@@ -637,7 +637,7 @@ mod tests {
         );
     }
 
-    /// ★ **Every page-display mode has a registered command, and every one of
+    /// **Every page-display mode has a registered command, and every one of
     /// those commands names a mode.**
     ///
     /// Both directions, against the **live registry** rather than against the

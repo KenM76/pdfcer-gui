@@ -82,7 +82,7 @@ fn run_of(session: &EditSession, needle: &str) -> (usize, [f32; 6], [f32; 6]) {
 
 /// The index and matrices of the first run whose text matrix is **rotated**.
 ///
-/// ★ **Why the rotated line cannot be found by its text, and this is a real
+/// **Why the rotated line cannot be found by its text, and this is a real
 /// finding rather than a test detail.** `extract_page_view`'s line clustering
 /// groups glyphs by horizontal proximity, so a line whose baseline runs *up* the
 /// page is not clustered at all: `TITLE VERTICAL` comes back as the fifteen runs
@@ -116,7 +116,7 @@ fn rotated_run(session: &EditSession) -> (usize, [f32; 6], [f32; 6]) {
 fn reason_for(session: &EditSession, needle: &str) -> Reason {
     let text = extract(session);
     let (run, tm, ctm) = run_of(session, needle);
-    // ★ The multi-run test, derived exactly as `plan` derives it: the DEFAULT
+    // The multi-run test, derived exactly as `plan` derives it: the DEFAULT
     // recognition, because the question is how the thing the operator clicked
     // was segmented, and the relaxed model below answers a different question
     // about the same page.
@@ -179,7 +179,7 @@ fn holds(hay: &[u8], needle: &str) -> bool {
 // The three findings — the rule reaching the right answer on real geometry
 // ===========================================================================
 
-/// ★★ **A right-aligned block is detected as right-aligned**, against the real
+/// **A right-aligned block is detected as right-aligned**, against the real
 /// engine on a real page.
 ///
 /// The unit tests in [`super::disposition`] assert what the rule does with a
@@ -204,7 +204,7 @@ fn a_right_aligned_block_reaches_the_pin_rule() {
     );
 }
 
-/// ★★ **Rotated text reaches the rotation guard.**
+/// **Rotated text reaches the rotation guard.**
 ///
 /// `[0 1 -1 0 e f]` — the shape a SolidWorks title block's side text has, and
 /// the case `DEFECTS.md` D4b says *"bites rotated CAD title-block text
@@ -219,11 +219,11 @@ fn a_rotated_line_reaches_the_rotation_guard() {
         .block_at(TextPosition::new(run, 0))
         .and_then(|b| ReflowEngine::new(&relaxed).detect_alignment(b).ok())
         .map(disposition::from_detection);
-    // ★ Passing the engine's real finding in, rather than `None`, is what makes
+    // Passing the engine's real finding in, rather than `None`, is what makes
     // this an assertion about the RUNG ORDER as well as about the guard: this
     // block's alignment is whatever the recogniser makes of fifteen one-glyph
     // runs, and the answer must be `Rotated` regardless of it.
-    // ★ `false` for the multi-run rung, deliberately, and it is the same kind of
+    // `false` for the multi-run rung, deliberately, and it is the same kind of
     // statement the real `finding` beside it makes: this asserts that ROTATION
     // wins, so every rung below it must be given the value that would otherwise
     // answer, and `true` here would let `SharesTheLine` claim the result and the
@@ -235,7 +235,7 @@ fn a_rotated_line_reaches_the_rotation_guard() {
     );
 }
 
-/// ★ **Upright left-aligned text still reflows** — the selectivity control.
+/// **Upright left-aligned text still reflows** — the selectivity control.
 ///
 /// A build that answered `Pin` unconditionally would satisfy both tests above
 /// and would not be the fix: it would freeze every line on every ordinary
@@ -255,10 +255,10 @@ fn upright_left_aligned_text_still_reflows() {
 }
 
 // ===========================================================================
-// ★★ The bytes — and the falsifying run beside each one
+// The bytes — and the falsifying run beside each one
 // ===========================================================================
 
-/// ★★★ **The right-aligned tail does not move, and under the old shell's
+/// **The right-aligned tail does not move, and under the old shell's
 /// options it does.**
 ///
 /// The fixture's three right-aligned lines share one `BT`/`ET`, so the engine's
@@ -270,7 +270,7 @@ fn upright_left_aligned_text_still_reflows() {
 /// * under `EditOptions::default()` — the old shell's only call site — it is
 ///   rewritten with `e` increased by the advance delta, and the string is gone.
 ///
-/// # ★★★ The second run here is an INVERTED control
+/// # The second run here is an INVERTED control
 ///
 /// It asserts that `EditOptions::default()` — plain `Reflow` — *also* leaves
 /// line 3's `Tm` alone, and that is the engine's property rather than this
@@ -315,7 +315,7 @@ fn the_right_aligned_tail_is_left_exactly_where_it_was() {
     );
 }
 
-/// ★★★ **The rotated line's tail does not move, and under the old shell's
+/// **The rotated line's tail does not move, and under the old shell's
 /// options it slides along the wrong axis.**
 ///
 /// The follower is `0 1 -1 0 90.00 420.00 Tm`. Its baseline runs **up** the
@@ -348,12 +348,12 @@ fn the_rotated_tail_is_not_slid_along_the_wrong_axis() {
         "a rotated follower must be re-emitted verbatim; `{TAIL}` is not in the \
          appended revision"
     );
-    // ★ Inverted for the same reason as its right-aligned sibling, and here
+    // Inverted for the same reason as its right-aligned sibling, and here
     // the engine's rule bites harder: a rotated follower differs from the
     // edited run in `a`, `b`, `c` AND `d`, so the "differs in `e` alone" test
     // ends the line at the first character of it.
     //
-    // ★★ Note what is NOT weakened by this. The shell still answers
+    // Note what is NOT weakened by this. The shell still answers
     // `Reason::Rotated` and still pins, and it must: the engine's rule is about
     // where a line ENDS, and this shell's is about text whose baseline does not
     // run left-to-right, where adding a scalar to `e` is the right magnitude on
@@ -368,7 +368,7 @@ fn the_rotated_tail_is_not_slid_along_the_wrong_axis() {
     );
 }
 
-/// ★★★ **The case pinning still uniquely prevents: two runs on ONE baseline.**
+/// **The case pinning still uniquely prevents: two runs on ONE baseline.**
 ///
 /// # Why a fixture that cannot exhibit the hazard proves nothing
 ///
@@ -419,7 +419,7 @@ fn a_same_baseline_follower_is_the_case_pinning_still_prevents() {
     );
 }
 
-/// ★ **The edit itself reaches the bytes**, under both dispositions.
+/// **The edit itself reaches the bytes**, under both dispositions.
 ///
 /// The floor, and it is worth stating separately: every assertion above is about
 /// text the operator did **not** touch, and all of them would pass against a

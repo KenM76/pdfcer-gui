@@ -31,7 +31,7 @@ const OBJECTS_BODY: &str = "dock.body.view.panel_objects";
 const PROPERTIES_BODY: &str = "dock.body.file.properties";
 /// The region the document's own `/Info` form publishes.
 ///
-/// ★ Named `properties.info` even though it belongs to
+/// Named `properties.info` even though it belongs to
 /// `crate::panels::docprops` now: the region name was deliberately left alone
 /// when the section became a panel, and that module's `REGION` carries the
 /// reason. **This check is the one that would notice if it drifted**, so the
@@ -45,7 +45,7 @@ const DOC_METADATA: &str = "properties.info";
 const DOC_PROPERTIES_TAB: &str = "dock.tab.file.document_properties";
 /// The splitter between the right side's two stacks.
 ///
-/// ★ Column 0, boundary 0 — the only stack boundary Edit's right side has, and
+/// Column 0, boundary 0 — the only stack boundary Edit's right side has, and
 /// the name is structural rather than generated, which is what lets this check
 /// re-read it instead of remembering a coordinate.
 const STACK_SPLITTER: &str = "dock.right.0.split.row.0";
@@ -54,7 +54,7 @@ const ROWS_EVENT: &str = "objects-rows";
 /// How wide a strip of the Objects pane's right edge is sampled, in logical
 /// points.
 ///
-/// ★ Eight, not one. A single-point column can fall between two glyph stems and
+/// Eight, not one. A single-point column can fall between two glyph stems and
 /// report clean on a row that is plainly running off the edge; eight is about
 /// one character and cannot.
 const EDGE_STRIP_PTS: f32 = 8.0;
@@ -105,7 +105,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
 
-    // ★ Pinned, and any `--pdf` is ignored: a document of short rows cannot
+    // Pinned, and any `--pdf` is ignored: a document of short rows cannot
     // exhibit the defect, so a sweep's fixture would make this check unable to
     // fail.
     let pdf = ctx.source_root.clone().unwrap_or_default().join(FIXTURE);
@@ -141,7 +141,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let driver = Driver::new(session.window());
 
-    // ★★★ **RESET THE LAYOUT FIRST, AND ASSERT THE RESET LANDED.**
+    // **RESET THE LAYOUT FIRST, AND ASSERT THE RESET LANDED.**
     //
     // The application persists its dock arrangement to `userdata/layout.ron`,
     // and `Session::launch` does not clear it. So without this the check
@@ -154,7 +154,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // makes the check **hermetic**: a measurement of an inherited width is a
     // measurement of an earlier session's furniture.
     //
-    // ★★ It is the same defect that made `panels_float_close_and_dock` fail for
+    // It is the same defect that made `panels_float_close_and_dock` fail for
     // days — four sections relaunching the binary, each inheriting what the last
     // one saved, and the headline number (`docked=0`) *honest* the whole time.
     // That check's fix is the precedent this follows: reset in the shared path,
@@ -192,7 +192,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 1: both bodies are on screen ---------------------------------------
     //
-    // ★ Both regions come through `crate::diag::ui_rect_visible`, so their
+    // Both regions come through `crate::diag::ui_rect_visible`, so their
     // presence is a claim about REACHABILITY and not about layout. A panel
     // behind a sibling tab publishes nothing here at all.
     let Some(objects) = declared(&trace, ui_rect, OBJECTS_BODY) else {
@@ -235,14 +235,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 2b: ★★★ the detail pane is the detail of the SELECTION, and of
+    // --- 2b: the detail pane is the detail of the SELECTION, and of
     // nothing else ---------------------------------------------------------
     //
     // The file's own `/Info` form belongs to `crate::panels::docprops` and its
     // own tab, not to the foot of this pane under everything else. This asserts
     // that it is not INSIDE the detail pane's rectangle.
     //
-    // ★★★ **The negative alone is vacuous, and the pairing is the point.**
+    // **The negative alone is vacuous, and the pairing is the point.**
     // `properties.info` is published through `ui_rect_visible`, so a panel that
     // is mounted behind a sibling tab publishes nothing at all — which means
     // "the region is not inside the detail pane" is satisfied by a build that
@@ -319,7 +319,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .get("visible")
         .and_then(|v| v.parse().ok())
         .ok_or_else(|| Error::new(format!("`{ROWS_EVENT}` carries no `visible=` count")))?;
-    // ★ `pane=` and `overflow=` go in the NOTE, not only in the failure
+    // `pane=` and `overflow=` go in the NOTE, not only in the failure
     // message, so a PASS records the margin it passed by. A run that passes at
     // 295 pt of a 296 pt room is one edit from failing and looks identical, in
     // a report, to one that passes at half the width.
@@ -361,7 +361,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         crate::geom::Pt::new(objects.max.x - EDGE_STRIP_PTS, objects.min.y),
         crate::geom::Pt::new(objects.max.x, objects.max.y),
     );
-    // ★★★ **`ink_run_into`, not `region_not_uniform`.**
+    // **`ink_run_into`, not `region_not_uniform`.**
     //
     // The strip this samples is 2,098 pixels of the panel's own plate, 8 of the
     // pane's border column, and **six single antialiased pixels**.

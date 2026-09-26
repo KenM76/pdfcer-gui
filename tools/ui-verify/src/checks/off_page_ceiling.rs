@@ -27,7 +27,7 @@ const KEYS_ENV: &str = "PDFCER_DIAG_KEYS";
 /// The command seam's environment variable.
 const INVOKE_ENV: &str = "PDFCER_DIAG_INVOKE";
 
-/// ★ Load-bearing. See the module header: off-page display is off in Read, so
+/// Load-bearing. See the module header: off-page display is off in Read, so
 /// a Read-mode run cannot reach the tier this check is about.
 const INVOKE: &str = "mode.edit";
 
@@ -164,7 +164,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
 /// A document is open and off-page display came up.
 ///
-/// ★ Both are reported as harness findings. This project has twice produced
+/// Both are reported as harness findings. This project has twice produced
 /// confident, detailed and entirely wrong defect reports out of a reading
 /// taken on a run where the subject was never present.
 fn preconditions(trace: &Trace) -> Result<()> {
@@ -176,7 +176,7 @@ fn preconditions(trace: &Trace) -> Result<()> {
         )));
     }
 
-    // ★ Read from the canvas' own tier line and NOT from `off-page-seed` —
+    // Read from the canvas' own tier line and NOT from `off-page-seed` —
     // see that constant. The seed is taken while the document opens, which is
     // before a command from the environment has fired, so on a fresh profile
     // it reports Read and `on=false` on a run that goes on to enter Edit and
@@ -218,7 +218,7 @@ struct Wall {
     zoom: f32,
 }
 
-/// ★★ Both controls, and both relational — no engine constant appears here.
+/// Both controls, and both relational — no engine constant appears here.
 /// See the module header for why.
 fn controls(trace: &Trace, report: &mut CheckReport) -> Result<Wall> {
     let sheet_pts = trace
@@ -336,7 +336,7 @@ fn controls(trace: &Trace, report: &mut CheckReport) -> Result<Wall> {
 fn check_no_refusal(trace: &Trace) -> Option<String> {
     let refusal = trace.events(BAD_RASTER).next()?;
     let region = refusal.get("region").unwrap_or_default();
-    // ★ The two have different owners and a reader must not be sent to the
+    // The two have different owners and a reader must not be sent to the
     // wrong one. `region=1` is this check's defect; `region=0` is the
     // whole-page wall, which `raster_wall` owns.
     let whose = if region == "1" {
@@ -510,7 +510,7 @@ fn launch_scripted(ctx: &CheckContext, exe: &Path) -> Result<Session> {
     if let Some(name) = ctx.profile.viewport_env {
         spec.env.push((name.to_owned(), OFFSCREEN.to_owned()));
     }
-    // ★ Without this the line above is decoration: `Session::place` would move
+    // Without this the line above is decoration: `Session::place` would move
     // the window onto the desktop the operator is using, where it would also
     // take his keystrokes.
     spec.place = false;
@@ -519,7 +519,7 @@ fn launch_scripted(ctx: &CheckContext, exe: &Path) -> Result<Session> {
 
 /// Wait until the seam has delivered the last chord, then let its effect land.
 ///
-/// ★ Not [`Session::settle`] as the primary wait: that polls the frame counter,
+/// Not [`Session::settle`] as the primary wait: that polls the frame counter,
 /// and this application stops drawing the moment the seam stops asking it to.
 /// The thing being waited for is a trace line, so the trace line is what is
 /// waited for.

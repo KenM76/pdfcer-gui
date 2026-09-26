@@ -63,7 +63,7 @@ frame after frame.
 | a chord | **a statement** naming it. R9: this is not a placeholder and not a greyed control; it is a fact |
 | nothing | **a button** that leaves read mode |
 
-★ The second row is not hedging. A build whose manifest binds no chord to
+The second row is not hedging. A build whose manifest binds no chord to
 `view.read_mode` is legal — the manifest's operator layer may rebind keys, and
 R8 lets a stripped build drop commands — and in that build the ribbon control
 is hidden, the chord does not exist, and **there is no way back at all short

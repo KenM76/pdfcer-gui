@@ -24,7 +24,7 @@ pub(crate) const POS_EVENT: &str = "canvas-pos";
 
 /// Where to roll the wheel to knock the view off its centred position.
 ///
-/// ★ The pan is what makes this check able to fail. The centred position is
+/// The pan is what makes this check able to fail. The centred position is
 /// exactly where the O24e defect snapped **to**, so a check that zoomed without
 /// panning first would have watched the view "stay" where the bug was about to
 /// put it anyway — green, and measuring nothing.
@@ -35,7 +35,7 @@ const STAGE: usize = 8;
 
 /// The most stages to climb before giving up.
 ///
-/// # ★★ A CAP, not a count — the loop climbs until the zoom SATURATES
+/// # A CAP, not a count — the loop climbs until the zoom SATURATES
 ///
 /// The operator, 2026-08-22: *"can you test up to maximum zoom please?"* So the
 /// run does not stop at a chosen depth; it keeps rolling until a whole stage
@@ -44,12 +44,12 @@ const STAGE: usize = 8;
 /// notches multiply the zoom by roughly five, so from a page-fit 76 % it takes
 /// about fifteen stages.
 ///
-/// ★ The cap exists only so that a build broken in the *other* direction — one
+/// The cap exists only so that a build broken in the *other* direction — one
 /// that climbs by an epsilon for ever — ends the run instead of wedging the
 /// suite. Reaching it is reported as a SKIP, not a pass: a run that never found
 /// the ceiling has not tested the ceiling.
 ///
-/// ★★ The saturation test asks the APPLICATION where its ceiling is rather than
+/// The saturation test asks the APPLICATION where its ceiling is rather than
 /// comparing against a constant. The maximum is an operator setting, so a check
 /// that hard-coded 10¹² % would silently stop testing the ceiling the day he
 /// changed it — the same silently-inert control this whole request began with.
@@ -66,7 +66,7 @@ const MAX_STAGES: usize = 24;
 /// How far the anchored page point may drift **per wheel notch**, as a
 /// fraction of the page width currently visible.
 ///
-/// # ★★ Per notch, not per stage, and the difference is not pedantry
+/// # Per notch, not per stage, and the difference is not pedantry
 ///
 /// The first version read the position once per stage of eight notches and
 /// judged it against a one-notch tolerance. It failed by 3.17 pt against
@@ -80,7 +80,7 @@ const MAX_STAGES: usize = 24;
 /// **every** notch keeps the tolerance tight and localises a failure to the
 /// notch that caused it.
 ///
-/// ★ A fraction rather than an absolute, because the tolerance must shrink with
+/// A fraction rather than an absolute, because the tolerance must shrink with
 /// the zoom. Two percent of what is on screen is generous against a defect that
 /// discards the position outright — O24e moved the view by the whole pan, and
 /// O24f by the whole zoom ratio.
@@ -88,7 +88,7 @@ pub(crate) const DRIFT_FRACTION: f64 = 0.02;
 
 /// The smallest drift this check will ever call a failure, in page points.
 ///
-/// # ★★ A floor on the TOLERANCE, which is not the same as loosening it
+/// # A floor on the TOLERANCE, which is not the same as loosening it
 ///
 /// [`DRIFT_FRACTION`] is a fraction of what is on screen, so it shrinks with
 /// the zoom — which is right, and which at the top of the climb takes it below
@@ -101,7 +101,7 @@ pub(crate) const DRIFT_FRACTION: f64 = 0.02;
 /// label stroke on the fixture. Every defect this check exists for moves the
 /// view by hundreds of points or by the whole pan. Nothing real hides under it.
 ///
-/// ★ It is a **floor on the tolerance**, applied only where the proportional
+/// It is a **floor on the tolerance**, applied only where the proportional
 /// tolerance would be smaller — not a widening of it at the zooms where the
 /// proportional one is meaningful. Those are different changes and only one of
 /// them is honest.
@@ -133,7 +133,7 @@ impl Check for ZoomingDoesNotThrowAwayWhereTheOperatorPanned {
 
 /// One reading: the page point under the viewport centre, the zoom, the span.
 ///
-/// ★ `pub(crate)` because [`super::zoom_out_keeps_place`] measures the same
+/// `pub(crate)` because [`super::zoom_out_keeps_place`] measures the same
 /// quantity on the way back down and must measure it with the **same
 /// instrument**. Two spellings of "where is the view" would drift, and the one
 /// that drifted would be the one whose check went green.
@@ -155,7 +155,7 @@ pub(crate) struct Held {
 
 /// Read the page point currently under the centre of the canvas.
 ///
-/// # ★★★ From the `f64` position line, because the `f32` one runs out
+/// # From the `f64` position line, because the `f32` one runs out
 ///
 /// The first version derived this from the `canvas` line's `rect=` and `zoom=`:
 /// `(centre − rect.min) / zoom`. Correct, and it stops working partway up the
@@ -166,7 +166,7 @@ pub(crate) struct Held {
 /// and the check failed with "moved 0.0000 pt, where 0.0000 is the tolerance"
 /// against a build that was holding the point perfectly.
 ///
-/// ★ That is the harness's floor, not the application's, and the tempting fix —
+/// That is the harness's floor, not the application's, and the tempting fix —
 /// widening the tolerance — would have hidden a real defect at every zoom below
 /// it. The `canvas-pos` line already carries the same quantity in `f64`
 /// (`canvas::trace::position`, added for O24b for exactly this reason), so the
@@ -178,7 +178,7 @@ pub(crate) struct Held {
 /// depth — so no large intermediate is formed here either.
 ///
 /// Falls back to the `f32` derivation when no position line has been emitted,
-/// which is the case for a build older than that trace field. ★ The fallback is
+/// which is the case for a build older than that trace field. The fallback is
 /// SILENT by design at shallow zooms, where the two agree to many decimals, and
 /// is why [`RESOLUTION_FLOOR`] exists as a second guard.
 pub(crate) fn held(session: &Session, canvas: crate::geom::LRect) -> Result<Option<Held>> {
@@ -268,7 +268,7 @@ const SETTLE_ROUNDS: usize = 24;
 /// holds to within a fifth of the tolerance nearly always, and occasionally
 /// does not.
 ///
-/// ★ The fix is to read the settled frame, **not to widen the tolerance**.
+/// The fix is to read the settled frame, **not to widen the tolerance**.
 /// Those are opposite changes: one removes a variable the check never modelled,
 /// the other blinds it to the defect it exists for. Waiting for the view to
 /// stop makes the check strictly stronger — it now judges the position the
@@ -383,7 +383,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- knock the view off centre, at the starting (page-fit) zoom ----------
     //
-    // ★ The middle button is the operator's own gesture; this harness has no
+    // The middle button is the operator's own gesture; this harness has no
     // middle drag, and a primary drag pans only under the hand tool. The wheel
     // is unconditional and moves the view off the centred position, which is
     // all this check needs in order to be capable of failing.
@@ -413,13 +413,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let mut stage = 0usize;
     while stage < MAX_STAGES && !saturated {
         let stage_from = prev.zoom;
-        // ★★ ONE NOTCH AT A TIME. See `DRIFT_FRACTION` — reading once per
+        // ONE NOTCH AT A TIME. See `DRIFT_FRACTION` — reading once per
         // stage compared eight steps of accumulated rounding against the
         // budget for one, and failed a correct build by 3.17 pt against 2.57.
         for notch in 0..STAGE {
             driver.scroll_at_held(centre, &[VK_CONTROL], 1, 1)?;
 
-            // ★ Wait for the notch to LAND. See [`settled`]: egui smooths a
+            // Wait for the notch to LAND. See [`settled`]: egui smooths a
             // Ctrl+wheel notch over about a dozen frames, and a fixed short
             // wait here read a half-applied zoom on every notch this check has
             // ever measured.
@@ -429,7 +429,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 ));
             };
 
-            // ★ Read AFTER settling, so the tier named in a failure message is
+            // Read AFTER settling, so the tier named in a failure message is
             // the tier the judged reading was taken on and not one the view
             // passed through on its way there.
             let now = tier(&session)?;
@@ -440,7 +440,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             let drift = (after.page.0 - prev.page.0)
                 .abs()
                 .max((after.page.1 - prev.page.1).abs());
-            // ★ `crossings` counts the notches that spanned the tier
+            // `crossings` counts the notches that spanned the tier
             // boundary — the UPWARD hand-over, which is what O24f broke. It
             // is counted rather than merely observed because `tiers` records
             // what the TRACE reported and only a notch measured with a
@@ -491,7 +491,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ));
     }
 
-    // ★ A run that never climbed has said nothing. Checked once at the end
+    // A run that never climbed has said nothing. Checked once at the end
     // rather than per notch: a single notch that lands on the rung the zoom is
     // already at is not a fault, a whole run that never moves is.
     if !saturated {
@@ -508,7 +508,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         prev.zoom * 100.0
     ));
 
-    // ★★ MOST notches must have advanced, not all of them.
+    // MOST notches must have advanced, not all of them.
     //
     // This guard catches a run where the wheel was not zooming at all — a lost
     // Ctrl turns Ctrl+wheel into an ordinary pan, and the climb would then be a
@@ -518,7 +518,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // whole of the next legitimately stand still. The measured climb to 10¹² %
     // advanced on 117 of 128 notches.
     //
-    // ★ Three quarters, with room to spare: a build whose wheel is panning
+    // Three quarters, with room to spare: a build whose wheel is panning
     // instead of zooming advances on ZERO notches, so the two cases are nowhere
     // near each other and the exact fraction is not load-bearing.
     if climbed * 4 < stage * STAGE * 3 {
@@ -532,7 +532,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★★★ REFUSE TO PASS A RUN THAT NEVER LEFT ONE TIER.
+    // REFUSE TO PASS A RUN THAT NEVER LEFT ONE TIER.
     //
     if tiers.len() < 2 {
         return Err(Error::new(format!(

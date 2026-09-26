@@ -99,7 +99,7 @@ mod tests {
         assert_eq!(WheelPaging::from_key(""), None);
     }
 
-    /// ★ The default is today's behaviour, and that is a promise rather than
+    /// The default is today's behaviour, and that is a promise rather than
     /// an accident: a new option that changed what the operator already had
     /// would be a surprise delivered by an upgrade.
     #[test]

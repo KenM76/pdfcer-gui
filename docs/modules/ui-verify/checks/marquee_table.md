@@ -11,7 +11,7 @@ operator drew a box round a table and could not move it.**
 > entire thing and move it somewhere else, or cut/copy and paste it
 > elsewhere."*
 
-## ★★★ What "only the lines" would mean, and why it needs measuring
+## What "only the lines" would mean, and why it needs measuring
 
 A CAD-exported table is two kinds of object drawn in one place: **paths**
 (the rules and the border) and **text** (every cell's contents). They are
@@ -32,7 +32,7 @@ inside the page around a table that does **not** touch the edge, and asking
 what came back. A green result here moves the investigation to the third,
 which is a different module and a different report.
 
-★★ It is deliberately NOT a screenshot. Two objects selected and one object
+It is deliberately NOT a screenshot. Two objects selected and one object
 selected draw the same blue outline round the same table; the distinguishing
 fact is the census, and `canvas-selection` carries it.
 

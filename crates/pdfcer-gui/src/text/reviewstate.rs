@@ -11,7 +11,7 @@
 
 /// The seven states pdfcer AUTHORS, as the operator reads them.
 ///
-/// # ★ These are the file's own words, and that is the decision
+/// # These are the file's own words, and that is the decision
 ///
 /// `Accepted`, `Rejected`, `Cancelled`, `Completed`, `None`, `Marked`,
 /// `Unmarked` are Table 171's vocabulary and
@@ -36,7 +36,7 @@ pub fn state_name(state: pdfcer_core::edit::ReviewState) -> &'static str {
 
 /// `Review`-model `None`, disambiguated from *no status at all*.
 ///
-/// # ★★ The distinction the standard makes and a menu would lose
+/// # The distinction the standard makes and a menu would lose
 ///
 /// `Annotation::state`'s doc: *"`None` is a **writable value**, not a spelling
 /// of 'the key is absent'."* Recording `None` is an act — it is how a reviewer
@@ -52,7 +52,7 @@ pub fn state_none() -> &'static str {
 /// **A `/State` in a model pdfcer authors, whose value is not in that model's
 /// vocabulary** — shown verbatim, never normalised.
 ///
-/// # ★★★ Why this is not folded into [`state_foreign`]
+/// # Why this is not folded into [`state_foreign`]
 ///
 /// [`crate::text::buttonaction::button_action_current`]'s table, applied to a
 /// different key for the same reason:
@@ -86,7 +86,7 @@ pub fn state_unmodelled(state: &str, model: &str) -> String {
 /// this is the `Foreign` row of the table above, and R9 makes it render the
 /// fact rather than a greyed control.
 ///
-/// ★ It does **not** stop the operator recording their own status: their status
+/// It does **not** stop the operator recording their own status: their status
 /// goes in the `Review` model, on their own `/IRT` chain, and leaves this one
 /// untouched. [`record_other_model_note`] is the sentence that says so.
 #[must_use]
@@ -125,7 +125,7 @@ pub fn row_status_by(who: &str, status: &str) -> String {
 /// `crate::text::panels::comments::comment_row_byline`'s reason: `/T` is a
 /// Table 170 markup key and its absence is not a claim about a person.
 ///
-/// ★ It also has a consequence the operator can act on, and the sentence
+/// It also has a consequence the operator can act on, and the sentence
 /// carries it: `add_review_state` chains on `/T` equality, so an unsigned
 /// status can never be continued by a signed one — a later status starts a
 /// fresh history beside it.
@@ -137,7 +137,7 @@ pub fn row_status_unsigned(status: &str) -> String {
 /// **How much history stands behind the status being shown**, when there is
 /// more than one.
 ///
-/// # ★★★ This is the string that stops the panel lying about the format
+/// # This is the string that stops the panel lying about the format
 ///
 /// The row shows one status per reviewer — the tip of that reviewer's `/IRT`
 /// chain. `depth` is how many states that reviewer has recorded on this
@@ -167,7 +167,7 @@ pub fn row_status_none() -> &'static str {
     "No status recorded"
 }
 
-/// ★★★ **The row that IS a status**, named so an empty comment is not a
+/// **The row that IS a status**, named so an empty comment is not a
 /// mystery.
 ///
 /// # Why this exists, and why not filtering the row out instead
@@ -224,7 +224,7 @@ pub fn record_tooltip() -> &'static str {
      history, not a field."
 }
 
-/// ★ The note on a comment whose only status is in a **foreign** model.
+/// The note on a comment whose only status is in a **foreign** model.
 ///
 /// Says what the control will do rather than leaving the operator to infer it
 /// from a value in a vocabulary nobody has explained: their status is recorded
@@ -255,7 +255,7 @@ pub fn filter_status_any() -> &'static str {
 
 /// The entry that keeps only comments **nobody has reviewed**.
 ///
-/// ★★ This is the entry the whole filter is for. A reviewer's question on a
+/// This is the entry the whole filter is for. A reviewer's question on a
 /// thirty-six-sheet drawing set is *"what have I not dealt with"*, and it is
 /// unanswerable from a chooser that can only name statuses that exist. It is
 /// distinct from a `/State` of `None` — see [`state_none`] — and the two
@@ -265,7 +265,7 @@ pub fn filter_status_unrecorded() -> &'static str {
     "No status recorded"
 }
 
-/// ★★★ **What was written**, on the status row, after the edit lands.
+/// **What was written**, on the status row, after the edit lands.
 ///
 /// # Why `depth` is in the sentence
 ///
@@ -293,7 +293,7 @@ pub fn status_recorded(state: &str, depth: usize) -> String {
     }
 }
 
-/// ★★ The second sentence, when the operator has **no name set**.
+/// The second sentence, when the operator has **no name set**.
 ///
 /// `add_review_state` takes an author `&str` and uses it as the chain key —
 /// its `deepest_state_for_author` matches on `title == Some(author)` — so an

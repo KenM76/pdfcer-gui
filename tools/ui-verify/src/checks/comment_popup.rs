@@ -87,7 +87,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
 
-    // ★ The fixture is pinned and any `--pdf` is discarded — and SAID so,
+    // The fixture is pinned and any `--pdf` is discarded — and SAID so,
     // because a sweep that silently ignored a flag is indistinguishable from
     // one that honoured it.
     let pdf = fixture();
@@ -169,7 +169,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("on load: {}", first.raw));
 
-    // ★ Through `TraceLine::get_usize` rather than a hand-rolled split: the
+    // Through `TraceLine::get_usize` rather than a hand-rolled split: the
     // parser already handles quoting and the `Some(3)` wrapper, and a second
     // field reader in this file would be a second thing to keep in step with
     // the trace vocabulary.
@@ -204,7 +204,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              rather than because the file said so. Nothing has been clicked yet. `{raw}`"
         )));
     }
-    // ★★★ The negative half, and it is what stops this check passing on a
+    // The negative half, and it is what stops this check passing on a
     // build that simply opens everything. The fixture carries TWO notes with
     // words: one `/Open true` and one `/Open false`.
     if open_now != 1 {

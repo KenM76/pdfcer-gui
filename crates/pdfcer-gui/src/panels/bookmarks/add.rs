@@ -57,7 +57,7 @@ pub fn show(ui: &mut Ui, doc: &OpenDoc, ui_state: &mut BookmarksUi, actions: &mu
     ui.weak(t::bookmark_add_parent_hint());
     ui.weak(t::bookmark_add_destination(page.saturating_add(1)));
 
-    // ★ The `/Count` disclosure, said BEFORE the press. See the module header:
+    // The `/Count` disclosure, said BEFORE the press. See the module header:
     // a bookmark added under a collapsed parent is genuinely not visible, the
     // panel is correct to show it that way, and an operator who was not told
     // goes looking for a bookmark that is there.

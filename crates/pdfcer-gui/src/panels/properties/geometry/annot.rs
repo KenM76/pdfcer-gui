@@ -25,7 +25,7 @@ use super::{
 /// and when it carries no `/Rect`, which `EditSession` refuses by name
 /// (`EditError::AnnotationRectMissing`) rather than inventing one.
 ///
-/// # ★★★ Read from the DOCUMENT, not from the selection's `outline`
+/// # Read from the DOCUMENT, not from the selection's `outline`
 ///
 /// [`AnnotSelection::outline`](crate::canvas::selection::AnnotSelection::outline)
 /// is right there and is the wrong number. It is in **canvas space** — Y down
@@ -40,7 +40,7 @@ use super::{
 /// would be neither what they typed nor what they saw. Reading the dictionary
 /// is one hop and no convention.
 ///
-/// # ★★ Normalised, because §7.9.5 does not require a `/Rect` to be
+/// # Normalised, because §7.9.5 does not require a `/Rect` to be
 ///
 /// A rectangle may legitimately be written with its *upper-right* corner first,
 /// and producers do it. `min`/`max` on both axes is what makes "Left" mean the
@@ -48,7 +48,7 @@ use super::{
 /// without it a width would come out negative, which
 /// `resize_annotation` would divide by and turn into a mirror.
 ///
-/// ★ [`crate::canvas::annotclip::rect_centre_of`] gets the same fact right by a
+/// [`crate::canvas::annotclip::rect_centre_of`] gets the same fact right by a
 /// different route (it averages the pair, which needs no normalisation) and
 /// says so; the two agree because both are reading §7.9.5 rather than a habit.
 ///
@@ -77,7 +77,7 @@ pub(super) fn bounds_of(doc: &OpenDoc, page: usize, id: ObjId) -> Option<Bounds>
 /// **Draw the four fields over a selected markup annotation**, returning
 /// whether anything was drawn.
 ///
-/// # ★★★ The three refusals, and why each takes the surface it takes
+/// # The three refusals, and why each takes the surface it takes
 ///
 /// | condition | surface | why |
 /// |---|---|---|
@@ -85,7 +85,7 @@ pub(super) fn bounds_of(doc: &OpenDoc, page: usize, id: ObjId) -> Option<Bounds>
 /// | the annotation is **gone** or has no `/Rect` | draws nothing, returns `false` | there is no number to show; four spinners over `0.0` would be an invitation to place a mark at the sheet's corner |
 /// | `/F` bit 8 — **locked** | draws the fields and Apply, **greyed**, with [`crate::text::panels::annotgeometry::locked`] on hover | R9's reserved case exactly: the capability is present and this annotation is out of bounds, so selecting a different one restores it |
 ///
-/// ★★ **The ce-dimension guard is an [`AnnotKind`] match, never a `/Subtype`
+/// **The ce-dimension guard is an [`AnnotKind`] match, never a `/Subtype`
 /// string comparison**, and that is rule 15 made mechanical. A ce dimension IS
 /// a `/Line` — `/IT /LineDimension` — so `subtype == "Line"` reads `true` for a
 /// dimension and for a plain arrow alike, and routing a measurement into
@@ -96,13 +96,13 @@ pub(super) fn bounds_of(doc: &OpenDoc, page: usize, id: ObjId) -> Option<Bounds>
 /// *a bool is a fact a caller may forget to read; a variant is one the compiler
 /// makes them handle.*
 ///
-/// ★ The engine would in fact catch it — `move_annotation` returns
+/// The engine would in fact catch it — `move_annotation` returns
 /// `AnnotationMoveWrongVerb` naming `move_dimension` — so this guard is not the
 /// last line of defence. It is the one that keeps the shell from **offering**
 /// the affordance, which is R83: a control that can only produce a refusal is
 /// not drawn.
 ///
-/// # ★★ The foreign-appearance refusal is NOT guarded here
+/// # The foreign-appearance refusal is NOT guarded here
 ///
 /// `resize_annotation` refuses a non-uniform scale over an `/AP` pdfcer did not
 /// draw, unless `allow_appearance_distortion` is set. That condition cannot be
@@ -120,7 +120,7 @@ pub(super) fn section(
     draft: &mut GeometryDraft,
     actions: &mut Vec<Action>,
 ) -> bool {
-    // ★ Exhaustive, so a third `AnnotKind` fails to compile here rather than
+    // Exhaustive, so a third `AnnotKind` fails to compile here rather than
     // falling into whichever arm was written first. That is the same property
     // `annotclip::translated` buys with its exhaustive `MarkupSpec` match and
     // for the same reason: the failure of a wildcard is silent.
@@ -132,7 +132,7 @@ pub(super) fn section(
     let Some(bounds) = bounds_of(doc, page, target.id) else {
         return false;
     };
-    // ★★★ **The angle, read from the appearance's own `/Matrix`** — O146.
+    // **The angle, read from the appearance's own `/Matrix`** — O146.
     //
     // `canvas::annotquad` is a declared workaround (its header says what is
     // filed and carries the tripwire); the engine's read model has no rotation
@@ -155,7 +155,7 @@ pub(super) fn section(
 
     // No `.strong()` — R84 / DEFECTS.md D11.
     //
-    // ★★ The SAME heading, the SAME units note and the SAME four labels the
+    // The SAME heading, the SAME units note and the SAME four labels the
     // content arm draws. The units note is the load-bearing one: it says
     // *"Points, measured to the bottom-left corner. Y increases upward"*, which
     // is true of a `/Rect` in exactly the terms it is true of a path's bounding
@@ -165,7 +165,7 @@ pub(super) fn section(
     ui.label(t::geometry_heading());
     ui.label(egui::RichText::new(t::geometry_units_note()).small().weak());
 
-    // ★★★ **Greyed, not hidden, and the reason is on the hover** — R9. The
+    // **Greyed, not hidden, and the reason is on the hover** — R9. The
     // fields themselves and not only Apply, because a live spinner over a
     // locked annotation would accept a scrub and then refuse to commit it,
     // which is the "accepts a value and discards it" control this whole section
@@ -182,10 +182,10 @@ pub(super) fn section(
     );
     field(ui, t::geometry_h(), &mut draft.h, None, locked);
 
-    // ★★★ **THE ANGLE** — `OPERATOR_REQUESTS.md` O146, 2026-09-07: *"the angle
+    // **THE ANGLE** — `OPERATOR_REQUESTS.md` O146, 2026-09-07: *"the angle
     // should be editable from the properties."*
     //
-    // ★★ Drawn only when the mark HAS one. `draft.angle` is `None` for an
+    // Drawn only when the mark HAS one. `draft.angle` is `None` for an
     // annotation with no appearance stream and for one whose `/Matrix` is a
     // shear or a mirror, and in both cases this renders **nothing** — not a
     // greyed spinner. R9's line is that greying is for *temporarily*
@@ -207,7 +207,7 @@ pub(super) fn section(
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
-        // ★ `annot-geometry-draft`, not `geometry-draft`: two subjects writing
+        // `annot-geometry-draft`, not `geometry-draft`: two subjects writing
         // one trace name would make `TraceLog::last("geometry-draft")` return
         // whichever arm drew most recently, and a driven check reading `bw=`
         // would silently be reading the other subject's box.
@@ -225,7 +225,7 @@ pub(super) fn section(
             bounds.y0,
             bounds.w(),
             bounds.h(),
-            // ★★ `none` rather than an omitted token, for both of these. A
+            // `none` rather than an omitted token, for both of these. A
             // trace that simply left the field out when there is no angle would
             // be indistinguishable from a build that forgot to emit it, and
             // this project has already been bitten by a check reading a fossil
@@ -243,7 +243,7 @@ pub(super) fn section(
         )
     });
 
-    // ★ The three reasons, in the order that makes the most specific one win.
+    // The three reasons, in the order that makes the most specific one win.
     // Locked first because it is a fact about the file rather than about the
     // typing — an operator whose fields are dead needs to know the file said
     // so, not that they have not typed anything yet, and "type a different
@@ -263,7 +263,7 @@ pub(super) fn section(
 
     if response.clicked() {
         let plan = annot_plan(draft, bounds);
-        // ★★★ THE MOVE FIRST. `resize_annotation`'s anchor is an ABSOLUTE
+        // THE MOVE FIRST. `resize_annotation`'s anchor is an ABSOLUTE
         // point, so the corner the operator pinned with Left and Bottom must
         // already be where they said before it is used as the fixed point.
         // Raising the resize first would anchor on a corner the annotation is
@@ -272,7 +272,7 @@ pub(super) fn section(
         // sharper here because a factor tolerates a stale origin and a point
         // does not.
         if let Some((dx, dy)) = plan.translate {
-            // ★★ A **delta**, which is what `move_annotation(id, dx, dy)`
+            // A **delta**, which is what `move_annotation(id, dx, dy)`
             // takes. The field holds an absolute Left/Bottom, so the conversion
             // is `delta`'s subtraction and it happens exactly once, in the pure
             // function, rather than in this arm where it could not be tested
@@ -289,17 +289,17 @@ pub(super) fn section(
                 anchor,
                 sx,
                 sy,
-                // ★★ Whether the two factors are equal, computed the same way
+                // Whether the two factors are equal, computed the same way
                 // `canvas::resizing` computes it from a grip drag. The engine
                 // asked for this by name — it reports what the operator's hand
                 // did, and a uniform scale of a foreign appearance is always
                 // safe where a non-uniform one is refused.
                 //
-                // ★ Typing `40` into Width and leaving Height alone is a
+                // Typing `40` into Width and leaving Height alone is a
                 // NON-uniform scale even though the operator touched one field.
                 // That is correct and is the case the refusal exists for.
                 uniform: (sx - sy).abs() <= f64::EPSILON,
-                // ★★★ **The operator's Tool-row switches, read live** —
+                // **The operator's Tool-row switches, read live** —
                 // `OPERATOR_REQUESTS.md` O51. `AnnotAction::Resize::modifiers`
                 // documents why a *drag* must carry them rather than let the
                 // apply arm read them: the gesture completed frames before the
@@ -311,7 +311,7 @@ pub(super) fn section(
                 modifiers: crate::canvas::scaling::read(ui.ctx()),
             }));
         }
-        // ★★★ **THE TURN, RAISED LAST**, after the move and the resize.
+        // **THE TURN, RAISED LAST**, after the move and the resize.
         //
         // The order matters for the same reason the move-before-resize order
         // does, and more sharply. `move_annotation` and `resize_annotation`
@@ -321,7 +321,7 @@ pub(super) fn section(
         // composed. Turning last means the two extent verbs act on the
         // rectangle the operator was reading the numbers off.
         //
-        // ★★ **ABSOLUTE since 2026-09-07 (afternoon), and that is the whole
+        // **ABSOLUTE since 2026-09-07 (afternoon), and that is the whole
         // point of the field.** It raised `AnnotAction::Rotate` — a delta,
         // computed here as `typed − seed` — for a few hours, because
         // `rotate_annotation` was the only verb that existed. `Pass 155.2`
@@ -337,7 +337,7 @@ pub(super) fn section(
         // being read as a 340° turn — but the number that travels is
         // `draft.angle`, absolute.
         //
-        // ★ The pivot is the `/Rect`'s CENTRE, which is the same point
+        // The pivot is the `/Rect`'s CENTRE, which is the same point
         // `Grip::Rotate.pivot` answers for the rotate handle. That is not a
         // coincidence to be maintained by hand: the two routes must turn a mark
         // about the same point, or typing `45` and dragging to 45° would leave

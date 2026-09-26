@@ -75,7 +75,7 @@ pub enum DeleteSubject {
 
 /// Why a Delete removes nothing.
 ///
-/// ★ Every variant is reported **by name** on the diagnostic channel, and the
+/// Every variant is reported **by name** on the diagnostic channel, and the
 /// three that an operator can meet without having made a mistake carry a
 /// sentence in [`crate::text::deleting`]. That split is the whole design: a bar
 /// that narrates the obvious stops being read, and a program that says nothing
@@ -85,7 +85,7 @@ pub enum Refusal {
     /// The page has no readable object model, so nothing can be verified and
     /// nothing may be promised. Reachable when the page failed to decompose.
     ///
-    /// ★ Only the deeper rungs need the model at all; the Object rung is
+    /// Only the deeper rungs need the model at all; the Object rung is
     /// answered from the selection alone, so a page that will not decompose
     /// can still have its objects deleted. That asymmetry is deliberate — see
     /// [`subject`].
@@ -102,7 +102,7 @@ pub enum Refusal {
     /// The entered target is painted **inside a form XObject**, and this shell
     /// declines rather than deleting it.
     ///
-    /// ★★ THE SENTENCE IS THIS SHELL'S, NOT THE ENGINE'S. The pinned
+    /// THE SENTENCE IS THIS SHELL'S, NOT THE ENGINE'S. The pinned
     /// `pdfcer-core` declares `delete_text_run_in_form`,
     /// `delete_subpath_in_form` and `delete_node_in_form` alongside the six
     /// form-interior move verbs. Nothing upstream forbids this. What is missing
@@ -130,7 +130,7 @@ pub enum Refusal {
     NoNodeVerbForText,
     /// **Several anchors are selected and `delete_node` is singular.**
     ///
-    /// ★ Refused rather than looped, and this is the one judgement in this
+    /// Refused rather than looped, and this is the one judgement in this
     /// module that is worth arguing with. `move_nodes` exists and takes a
     /// slice, so a multi-anchor drag is one command; there is no `delete_nodes`,
     /// so a multi-anchor delete would be N commands and N undo entries for one
@@ -167,7 +167,7 @@ pub enum Refusal {
 /// stated twice is a rule that drifts, and the drift here removes a drawing
 /// view instead of a line.
 ///
-/// # ★ Why `provider` is an `Option` and the Object rung does not need it
+/// # Why `provider` is an `Option` and the Object rung does not need it
 ///
 /// The Object rung's operand list comes from the selection alone: an entry
 /// already holds a resolved `TargetId`, and `object_indices_on` is a filter
@@ -201,7 +201,7 @@ pub fn subject(
 /// The Object rung: whole objects, in whichever of the two index spaces the
 /// selection is made of.
 ///
-/// ★ Unchanged behaviour, lifted verbatim out of `canvas::keys`. The page's own
+/// Unchanged behaviour, lifted verbatim out of `canvas::keys`. The page's own
 /// paint order wins when both are present, because `delete_objects` is the verb
 /// with the erase preview and the leaf list is the fallback for a selection
 /// made **entirely** of form-interior targets — which is the state an ordinary
@@ -221,7 +221,7 @@ fn object_rung(selection: &SelectionState, page: usize) -> Result<DeleteSubject,
 
 /// The Part rung: one subpath, or one label.
 ///
-/// ★★ The kind decides the verb, and the **address space decides whether a verb
+/// The kind decides the verb, and the **address space decides whether a verb
 /// exists at all** — asked in that order, exactly as `moving::eligible` asks
 /// it, because a form-interior part has no delete verb of any kind and saying
 /// so first is what stops the kind match promising one.
@@ -287,7 +287,7 @@ fn node_rung(
         .ok_or(Refusal::UnaddressableObject)?;
     match provider.part_kind_of(entry.object) {
         Some(PartKind::Subpath) => {
-            // ★ The whole selected set, not the entered entry — the same read
+            // The whole selected set, not the entered entry — the same read
             // `moving::eligible` makes, and for the same reason its comment
             // gives: the model has held a multi-anchor selection since the Node
             // rung landed, and a consumer that asks `entered_object()` sees the
@@ -358,7 +358,7 @@ pub fn action(subject: DeleteSubject) -> crate::app::actions::VectorAction {
 /// **Say why nothing was deleted** — on the trace always, on screen when the
 /// operator could not have known.
 ///
-/// # ★★ Which refusals get a sentence, and the rule behind the split
+/// # Which refusals get a sentence, and the rule behind the split
 ///
 /// Five do, and they are the five an operator meets **without having made a
 /// mistake**:
@@ -390,7 +390,7 @@ pub fn action(subject: DeleteSubject) -> crate::app::actions::VectorAction {
 /// epoch moved, and the operator is owed a sentence anyway. The epoch passed is
 /// the **current** one, so the sentence stands until the next real edit moves
 /// past it, which is what retires it without anything having to remember to.
-/// # ★★★ `model_attempted`, and why a refusal carries how it was reached
+/// # `model_attempted`, and why a refusal carries how it was reached
 ///
 /// [`Refusal::NoObjectModel`] is raised for two causes that look identical from
 /// here: the page genuinely would not decompose, or **this frame never asked**

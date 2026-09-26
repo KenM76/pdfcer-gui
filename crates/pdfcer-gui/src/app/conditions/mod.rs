@@ -26,7 +26,7 @@ impl PdfcerApp {
     /// outside the list, so a typo in a manifest cannot silently produce a
     /// control that is disabled forever.
     ///
-    /// # ★ `selection.any` is published from here, and only now
+    /// # `selection.any` is published from here, and only now
     ///
     /// It was deliberately absent while the selection lived in
     /// `egui::Memory`: this function has no `egui::Context`, so it could not
@@ -55,7 +55,7 @@ impl PdfcerApp {
     /// is how a control comes to be enabled by one rule and drawn by another.
     pub(super) fn conditions(&self, ctx: &egui::Context) -> egui_shell::commands::ConditionSet {
         let mut set = egui_shell::commands::ConditionSet::new();
-        // ★ **More than one document is open**, and therefore something to
+        // **More than one document is open**, and therefore something to
         // switch to. Set OUTSIDE the `Status::Open` arm below, deliberately: a
         // tab whose file failed to open is still a tab
         // (`crate::app::documents` §2), and an operator sitting on a damaged
@@ -64,7 +64,7 @@ impl PdfcerApp {
         if self.document_count() > 1 {
             set.set("docs.multiple");
         }
-        // ★★★ **At least one panel is in a window of its own**, which is the
+        // **At least one panel is in a window of its own**, which is the
         // only thing `view.dock_all_panels` needs to know.
         //
         // Read from the dock's live layout rather than from a counter this
@@ -82,7 +82,7 @@ impl PdfcerApp {
         if !self.dock.layout().floating.is_empty() {
             set.set("panels.floating");
         }
-        // ★★★ **An Acrobat exists on this machine** — `OPERATOR_REQUESTS.md`
+        // **An Acrobat exists on this machine** — `OPERATOR_REQUESTS.md`
         // O122, and the ONE thing that decides whether the control beside the
         // mode selector is drawn.
         //
@@ -105,7 +105,7 @@ impl PdfcerApp {
             set.set("doc.open");
             if !doc.pages.is_empty() {
                 set.set("doc.pages");
-                // ★★★ **THE ONE LINE**, and it was written as one line on
+                // **THE ONE LINE**, and it was written as one line on
                 // purpose a fortnight before it could be uncommented.
                 //
                 // `edit.form_push_button` is `enabled_when("forms.push_button_runnable")`
@@ -115,7 +115,7 @@ impl PdfcerApp {
                 // greying was *"one line"* away from lifting; this is the line.
                 //
                 //
-                // ★ Welded to `FormFieldKind::is_useful_once_placed` by a test, and
+                // Welded to `FormFieldKind::is_useful_once_placed` by a test, and
                 // that weld is the mechanism: the ribbon asks by condition string and
                 // `app::dispatch::forms` asks by predicate, and a build where the two
                 // disagree is one where a greyed control still works by chord.
@@ -124,7 +124,7 @@ impl PdfcerApp {
             if !doc.selection.is_empty() {
                 set.set("selection.any");
             }
-            // ★★★ **Something Delete and Properties can act on**, which is a
+            // **Something Delete and Properties can act on**, which is a
             // WIDER question than `selection.any` and has to be its own name.
             //
             // A form field is not in `SelectionState` at all — it lives in
@@ -133,7 +133,7 @@ impl PdfcerApp {
             // is selected and every control gated on it resolves disabled.
             //
             //
-            // ★★ It is deliberately NOT a widening of `selection.any`. That
+            // It is deliberately NOT a widening of `selection.any`. That
             // condition also decides whether the contextual **Format tab**
             // appears, and a form field has no font, no stroke and no fill for
             // that tab to offer — so widening it would draw a tab of controls
@@ -141,15 +141,15 @@ impl PdfcerApp {
             if !doc.selection.is_empty() || doc.selected_field.is_some() {
                 set.set("selection.actionable");
             }
-            // ★★★ **Deleting what is selected would not be refused** — the
+            // **Deleting what is selected would not be refused** — the
             // condition `format.delete` carries as its `visible_when`, so the
             // control is **absent** rather than greyed where the engine would
             // refuse it (R9).
             //
-            // # ★★★ Why this exists, and it is a defect rather than a polish
+            // # Why this exists, and it is a defect rather than a polish
             //
             //
-            // # ★★ It is a POSITIVE name for a negative fact, deliberately
+            // # It is a POSITIVE name for a negative fact, deliberately
             //
             // `Enable::When` and `Item::visible_when` both accept a leading `!`,
             // so `!selection.delete_refused` would compile and read backwards at
@@ -159,7 +159,7 @@ impl PdfcerApp {
             // un-negated by accident, and the symptom is a Delete that appears
             // only on the documents that refuse it.
             //
-            // # ★★★ The default is TRUE, and that is the whole safety argument
+            // # The default is TRUE, and that is the whole safety argument
             //
             // Set for every state except the two narrow cases below. In
             // particular it is set when **nothing** is selected and when a
@@ -176,7 +176,7 @@ impl PdfcerApp {
             // false answer this predicate must never give is `false`, and every
             // path that cannot prove a refusal leaves it `true`.
             //
-            // # ★★ The form-field arm mirrors the dispatcher's ladder exactly
+            // # The form-field arm mirrors the dispatcher's ladder exactly
             //
             // `app::dispatch::format`'s `format.delete` arm checks
             // `doc.selected_field` FIRST and returns, so on the (reachable)
@@ -202,7 +202,7 @@ impl PdfcerApp {
             // `annotation_deletion_preview`, which walks `/Annots` — is **not**
             // asked here; it is memoised on `(id, epoch)` in the panel.
             //
-            // ★ One derivation per rung, four consumers each.
+            // One derivation per rung, four consumers each.
             // `panels::properties::annotdelete::gate` and
             // `panels::properties::formfield::refuses_delete` are each called
             // from here, from the panel that draws the sentence, from the
@@ -210,7 +210,7 @@ impl PdfcerApp {
             // can never be withheld for one reason while the panel explains
             // another.
             //
-            // ★★★ **A LADDER, and the `is_none()` guard it replaces was a gate
+            // **A LADDER, and the `is_none()` guard it replaces was a gate
             // that was a no-op by construction.**
             //
             // It read `doc.selected_field.is_none() && annotdelete::…`. With a
@@ -251,13 +251,13 @@ impl PdfcerApp {
             //   > clears the selection and no gesture can build a new one
             //
             //
-            // ★ Not a widening into `selection.actionable`'s territory, which
+            // Not a widening into `selection.actionable`'s territory, which
             // this condition's own header forbids. That one asks *is there
             // anything to delete*; this asks *would the delete be refused* —
             // and a mode that traces `canvas-delete-declined` is refusing, by
             // the same reading that makes `/Encrypt` a refusal.
             //
-            // ★★ ONE PREDICATE PER CAPABILITY, and the rungs are the
+            // ONE PREDICATE PER CAPABILITY, and the rungs are the
             // dispatcher's own precedence — field, then annotation, then
             // content — so the drawn control and the arm behind it cannot
             // answer about different capabilities. **`author_markup` guards the
@@ -275,7 +275,7 @@ impl PdfcerApp {
             if mode_may_delete && !delete_refused {
                 set.set("selection.delete_permitted");
             }
-            // ★★★ **`selection.cut_permitted` — default TRUE, like its
+            // **`selection.cut_permitted` — default TRUE, like its
             // neighbour above, and cleared only for the handful of things the
             // clipboard cannot carry.**
             //
@@ -284,21 +284,21 @@ impl PdfcerApp {
             // nothing — the original stays. A cut of the same thing is a
             // deletion wearing a clipboard's clothes."*
             //
-            // ★ It is NOT a refinement of `selection.delete_permitted`, and the
+            // It is NOT a refinement of `selection.delete_permitted`, and the
             // two disagree in both directions. A redaction mark can be
             // **deleted** and cannot be **cut**: deleting it removes a pending
             // operation, which is a thing an operator may want, while cutting it
             // would put it on a clipboard that could arm it somewhere else. And
             // a locked annotation can be neither. Two questions, two names.
             //
-            // ★★ Cheap by construction — one dictionary read — because this is
+            // Cheap by construction — one dictionary read — because this is
             // rebuilt every frame and the honest oracle (`copy_selection`)
             // decomposes the page. `canvas::cutgate`'s header carries the
             // measurement and the reason the mirror is permissive.
             if crate::canvas::cutgate::blocker(doc).is_none() {
                 set.set("selection.cut_permitted");
             }
-            // ★★ **Something selected on this page lives inside a form
+            // **Something selected on this page lives inside a form
             // XObject**, so `format.select_form` has a container to offer.
             //
             // # Why this is a refinement of `selection.any` and still its own name
@@ -386,7 +386,7 @@ impl PdfcerApp {
             if doc.session.can_redo() {
                 set.set("redo.available");
             }
-            // ★ **A live text selection** — the operand the three Text markup
+            // **A live text selection** — the operand the three Text markup
             // commands act on, and the condition that keeps them from being
             // controls that do nothing on almost every press.
             //
@@ -427,7 +427,7 @@ impl PdfcerApp {
             {
                 set.set("selection.text");
             }
-            // ★★★ **There is an operand for a restyle** — whether it was
+            // **There is an operand for a restyle** — whether it was
             // swept or clicked. `OPERATOR_REQUESTS.md` O198.
             //
             // # Why `selection.text` could not stay the Font group's condition
@@ -451,7 +451,7 @@ impl PdfcerApp {
             // would put the ribbon and the verb back into disagreement, which is
             // the failure `selection.bounds` exists to prevent for zoom.
             //
-            // # ★★★ Why the object half asks the CHEAP question
+            // # Why the object half asks the CHEAP question
             //
             // Resolving the object operand for real costs one page extraction
             // with provenance capture — **392 ms on the benchmark sheet** —
@@ -472,7 +472,7 @@ impl PdfcerApp {
             {
                 set.set("selection.text_runs");
             }
-            // ★★★ **The Format tab has a subject** — either kind of
+            // **The Format tab has a subject** — either kind of
             // selection, and it is deliberately NOT a synonym for either.
             //
             // # Why a third name, when two already exist
@@ -490,7 +490,7 @@ impl PdfcerApp {
             // it as `selection.text` loses the Delete the tab has carried
             // since it shipped.
             //
-            // ★ The expression language is deliberately one condition name
+            // The expression language is deliberately one condition name
             // with an optional leading `!` (`egui_shell::commands::Enable`'s
             // own docs: *"a grammar in a string is a parser and a parser is a
             // thing that has its own bugs"*), so an `A || B` predicate is
@@ -534,7 +534,7 @@ impl PdfcerApp {
             // drawn. R9 then requires absence in both states, and one name is
             // what absence in both states is called.
             //
-            // # ★★ `AnnotKind::Markup`, matched — Rule 15, and it is a
+            // # `AnnotKind::Markup`, matched — Rule 15, and it is a
             // DIFFERENT VERB, not a stricter filter
             //
             // A **ce dimension** is also an annotation and is also selectable,
@@ -549,7 +549,7 @@ impl PdfcerApp {
             // would restyle the operator's dimensions into bare lines and
             // would look correct while doing it.
             //
-            // # ★ `author_markup`, NOT `edit_content`
+            // # `author_markup`, NOT `edit_content`
             //
             // One predicate per capability — the rule `canvas::keys` states
             // beside its own pair, and `dispatch::format`'s Delete arm repeats.
@@ -558,7 +558,7 @@ impl PdfcerApp {
             // the working verb away from the mode that owns it. Read has
             // neither capability and gets no group.
             //
-            // # ★★ The LOCK is deliberately not folded in
+            // # The LOCK is deliberately not folded in
             //
             // §12.5.3 Table 165 bit 8 is a fact about one annotation, not about
             // the build or the mode — click a different mark and the controls
@@ -570,7 +570,7 @@ impl PdfcerApp {
             // Properties panel shows, so the two surfaces cannot refuse for
             // different reasons.
             //
-            // # ★ Why it asks the ribbon for the mode rather than `self.modes`
+            // # Why it asks the ribbon for the mode rather than `self.modes`
             //
             // Because [`Self::capabilities`] does, and its own note says why:
             // the ribbon is where the operator's click lands and `self.modes`
@@ -587,7 +587,7 @@ impl PdfcerApp {
             {
                 set.set("selection.markup_restylable");
             }
-            // ★ `selection.bounds` is NOT `selection.any`, and the gap
+            // `selection.bounds` is NOT `selection.any`, and the gap
             // between them is a real state rather than a defensive check.
             //
             // A selection is an identity — page, object, subpath, node —
@@ -606,7 +606,7 @@ impl PdfcerApp {
             if crate::canvas::zoom::can_zoom_to_selection(doc) {
                 set.set("selection.bounds");
             }
-            // ★ **The page-display radio's pressed position.**
+            // **The page-display radio's pressed position.**
             //
             // `egui_shell::ribbon::selected_condition` is the framework's
             // convention for "this command is currently ON", and
@@ -623,7 +623,7 @@ impl PdfcerApp {
             set.set(egui_shell::ribbon::selected_condition(
                 crate::shell::commands::page_display_command(doc.view.display),
             ));
-            // ★ **The three View ▸ Display toggles' pressed state.**
+            // **The three View ▸ Display toggles' pressed state.**
             //
             // Between zero and three of these are set, where exactly one
             // page-display condition above always is — which is the whole
@@ -641,7 +641,7 @@ impl PdfcerApp {
                     ));
                 }
             }
-            // ★ **Is there a circle fit waiting to be committed?** — the one
+            // **Is there a circle fit waiting to be committed?** — the one
             // condition on this list that is about a *gesture in progress*
             // rather than about the document or the view.
             //
@@ -652,7 +652,7 @@ impl PdfcerApp {
             // control that does nothing on almost every press, which P3
             // forbids and which is the placeholder shape this project refuses.
             //
-            // # ★ Why it is INSIDE the `Status::Open` arm when the armed-tool
+            // # Why it is INSIDE the `Status::Open` arm when the armed-tool
             // conditions below are deliberately outside it
             //
             // Those publish *"which tool you are in"*, which is true of the
@@ -674,7 +674,7 @@ impl PdfcerApp {
             if crate::canvas::measure::finishable(ctx) {
                 set.set("measure.finishable");
             }
-            // ★ …and the same fact for the two **vertex markup** tools, which
+            // …and the same fact for the two **vertex markup** tools, which
             // have the same problem and were given the same answer.
             //
             // PolyLine and Polygon are runs of clicks with no natural end, so
@@ -687,7 +687,7 @@ impl PdfcerApp {
             // is no page for it to name. Inside the `Status::Open` arm,
             // therefore, beside its twin.
             //
-            // ★ It is also where the polygon/polyline difference reaches the
+            // It is also where the polygon/polyline difference reaches the
             // operator: `finishable` asks `markup::action`, which needs **three**
             // vertices for a polygon and two for a polyline, so after two clicks
             // this control is live for one tool and greyed for the other — the
@@ -702,7 +702,7 @@ impl PdfcerApp {
             }
         }
 
-        // ★★★ **This mode may change page content**, and it is the only
+        // **This mode may change page content**, and it is the only
         // condition here that describes the MODE rather than the document, the
         // view, a gesture or an armed tool.
         //
@@ -726,7 +726,7 @@ impl PdfcerApp {
         // makes the text tool discoverable at all, because a greyed control an
         // operator can hover is a control that can explain itself.
         //
-        // # ★ Outside the `Status::Open` arm, with the armed-tool conditions
+        // # Outside the `Status::Open` arm, with the armed-tool conditions
         //
         // For the reason stated below them: a mode is a property of the
         // application and survives closing a document. It is safe here because

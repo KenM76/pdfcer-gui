@@ -29,7 +29,7 @@ const FEATURES_EVENT: &str = "print-features";
 /// The paper combo, closed.
 const PAPER: &str = "print.paper";
 
-/// ★ The auto entry's own region, **outside** the numbered
+/// The auto entry's own region, **outside** the numbered
 /// `print.paper.item.N` namespace.
 ///
 /// That is not a naming preference, it is the reason `print_paper_changes_the_plan`
@@ -261,7 +261,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 
     // --- B. the device has something to choose from -------------------------
     //
-    // ★ ONE form is enough here, and that is the difference from
+    // ONE form is enough here, and that is the difference from
     // `print_paper_changes_the_plan`, which needs two because it must switch
     // BETWEEN sheets. Auto has to decide even when the list has one entry —
     // the answer is then either "that one" or "that one, and it is too small"
@@ -308,7 +308,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 
     // --- D. choose it -------------------------------------------------------
     //
-    // ★★ FROM HERE THE REGIONS ARE IN THE DIALOG'S OWN OS WINDOW. Its
+    // FROM HERE THE REGIONS ARE IN THE DIALOG'S OWN OS WINDOW. Its
     // `ui-rect` rectangles are relative to ITS client area, so `session.frame()`
     // is the wrong origin for every one of them and produces coordinates that
     // look entirely reasonable and land several hundred points away. The frame
@@ -389,7 +389,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         )));
     }
 
-    // --- F. ★★★ the claim that is about the DOCUMENT ---------------------
+    // --- F. the claim that is about the DOCUMENT ---------------------
     let Some(largest) = size(&after.largest) else {
         return Ok(Some(format!(
             "`auto={}` and `largest={}`: the decision reports an outcome and no page measurement. \
@@ -415,7 +415,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         largest.0, largest.1, sheet.0, sheet.1
     ));
 
-    // ★★★ The verdict is ASYMMETRIC, and the asymmetry is the finding.
+    // The verdict is ASYMMETRIC, and the asymmetry is the finding.
     //
     match after.auto.as_str() {
         "matched" if clearance > -OVERHANG_PT => {
@@ -427,7 +427,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
                 largest.1,
                 sheet.0,
                 sheet.1,
-                // ★ Said in words rather than as a signed number, because a
+                // Said in words rather than as a signed number, because a
                 // NEGATIVE clearance is a correct pass here and "with -0.60 pt
                 // to spare" reads like a defect being waved through. It is the
                 // producer-rounding case the application's tolerance is for,
@@ -493,7 +493,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 
     // --- G. and it can be left again ----------------------------------------
     //
-    // ★ Cheap, and it asserts a property nothing above does: that auto is a
+    // Cheap, and it asserts a property nothing above does: that auto is a
     // POLICY the operator can change their mind about, not a latch. A build
     // that resolved auto once and then held `device.paper` at the resolved
     // `Form(n)` would pass every assertion above and would have quietly
@@ -606,7 +606,7 @@ fn size(token: &str) -> Option<(f64, f64)> {
 /// difference between "the sheet is one size down" and "the sheet is unrelated
 /// to this document".
 ///
-/// ★ Both orientations are tried, and that is not a convenience: `dmPaperSize`
+/// Both orientations are tried, and that is not a convenience: `dmPaperSize`
 /// names a physical piece of paper and `dmOrientation` is a separate field with
 /// its own control in this dialog. A3 and "A3 landscape" are not two sheets. A
 /// clearance that respected page orientation would call an A3 sheet wrong for a

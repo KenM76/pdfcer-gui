@@ -11,7 +11,7 @@
 and — this is the part the feature depends on — **never clamps or intersects
 it with the crop box**.
 
-## ★★ The caveat that produced this file
+## The caveat that produced this file
 
 That last claim is true *by construction*: there is no code in the region
 path that could reject an off-page rectangle. It is also, in the engine's own

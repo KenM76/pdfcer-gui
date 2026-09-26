@@ -1,7 +1,7 @@
 //! A synthetic TrueType face, assembled in memory, so that this crate's
 //! layout tests can measure **real text**.
 //!
-//! # ★ Why this file exists
+//! # Why this file exists
 //!
 //! `egui-shell` depends on `egui` with `default-features = false`. That
 //! is a deliberate dependency-posture decision (`Cargo.toml` says why),
@@ -527,7 +527,7 @@ pub(crate) fn install(ctx: &egui::Context) {
 mod tests {
     use super::*;
 
-    /// **★ The synthetic face parses, loads, and measures real text.**
+    /// **The synthetic face parses, loads, and measures real text.**
     ///
     /// The self-test of the harness. Everything in
     /// [`super::super::width_tests`] is worthless if this is not true, and

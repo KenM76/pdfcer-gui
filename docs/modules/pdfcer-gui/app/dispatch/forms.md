@@ -15,7 +15,7 @@ feature rather than an extra step: a stray form field is invisible on a
 printed page and swallows every keystroke aimed near it, so a mis-drag must
 cost nothing.
 
-## ★★★ Why the push button is refused here, in words
+## Why the push button is refused here, in words
 
 This file exists to hold one finding, and it is worth the space.
 
@@ -31,7 +31,7 @@ the ribbon at all. Driving the release binary with that id arms the tool and
 traces `form-tool-armed kind=PushButton`. **An `enabled_when` is a drawing
 instruction, not a rule**, and that holds for every command that carries one.
 
-### ★★ Why there is no blanket guard at the top of `dispatch_command`
+### Why there is no blanket guard at the top of `dispatch_command`
 
 The obvious repair — refuse any command whose `enable` predicate is false —
 is wrong, and the apply layer's own tests assert against it: *"the

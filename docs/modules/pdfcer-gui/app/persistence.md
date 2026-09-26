@@ -27,7 +27,7 @@ Worse, not merely less good. A fixed layout costs an operator nothing
 after the first day; a rearrangeable one that forgets charges them the
 rearrangement every single session, and teaches them not to bother.
 
-## ★ Where the file lives, and why it is not this module's decision
+## Where the file lives, and why it is not this module's decision
 
 `<the settings directory>/layout.ron` — **beside `settings.txt`**, and
 the directory is resolved by asking `pdfcer-core` rather than by
@@ -104,7 +104,7 @@ caller inherits:
   could not be restored — from a profile that never had one.
 - **Never a dialog.** A layout is not worth interrupting anybody for.
 
-## ★ A dropped panel is never written back
+## A dropped panel is never written back
 
 `SHELL_FRAMEWORK.md` §5b: *a capability's presence is expressed by
 registering it, and by nothing else.* A build compiled without some

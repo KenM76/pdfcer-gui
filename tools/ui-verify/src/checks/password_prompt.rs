@@ -124,7 +124,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- B: a wrong password is refused, and SAYS it was refused -----------
     //
-    // ★ Typed through the OS, not seeded: the field is a real `TextEdit` behind
+    // Typed through the OS, not seeded: the field is a real `TextEdit` behind
     // a real viewport, and a check that wrote the string into memory would be
     // asserting about a program nobody can operate.
     driver.type_ascii(WRONG)?;
@@ -171,7 +171,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // is the tell: the submit reached the engine, so the chord and the button
     // were fine and only the field's contents were wrong.
     //
-    // ★ The first type works without this because the prompt focuses its field
+    // The first type works without this because the prompt focuses its field
     // when it opens — which is why the defect only appears after a rejection,
     // i.e. only in the branch nothing had ever driven.
     let trace = session.trace()?;
@@ -200,7 +200,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 .to_owned(),
         );
     }
-    // ★★★ "THE PROMPT CLOSED" IS NOT ASSERTED, AND THE REASON IS A FINDING
+    // "THE PROMPT CLOSED" IS NOT ASSERTED, AND THE REASON IS A FINDING
     // ABOUT THIS HARNESS RATHER THAN A GAP IN THE CHECK.
     //
     //
@@ -224,7 +224,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // whose prompt had closed. A confident, specific, wrong defect report --
     // this harness's own stated worst outcome, and another instance of a change
     // log read as a snapshot.
-    // ★ …and the DOCUMENT is on screen, which is the operator's actual claim.
+    // …and the DOCUMENT is on screen, which is the operator's actual claim.
     // `password-accepted` alone would pass on a build that closed the prompt and
     // opened nothing.
     let canvas_page = trace
@@ -242,7 +242,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- D: the password is nowhere in the evidence ------------------------
     //
-    // ★★★ See the module header. This is the phase most worth having, and it
+    // See the module header. This is the phase most worth having, and it
     // reads the file this harness itself wrote.
     let raw = std::fs::read_to_string(session.trace_path()).unwrap_or_default();
     for secret in [RIGHT, WRONG] {

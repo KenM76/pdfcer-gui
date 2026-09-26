@@ -17,7 +17,7 @@ different subject from the catalog**, and this is the third cut along it —
 [`super::catalog`] moved the *entries*, [`super::tests`] moved the *rules
 about them*, and this moves the *history of the counts*.
 
-★ The ratio is the point rather than an embarrassment. Roughly nine hundred
+The ratio is the point rather than an embarrassment. Roughly nine hundred
 lines here are commentary against four lines of assertion, because the
 assertions are two integers and an integer records nothing. What a reader
 needs when `registration_succeeds_and_registers_every_command` fails is not
@@ -25,7 +25,7 @@ the number — the failure prints that — but *whether the change that moved it
 was supposed to*, and the only place that can be answered is beside the
 previous forty answers.
 
-## ★★ Why the ledgers stay with the assertions rather than moving to the
+## Why the ledgers stay with the assertions rather than moving to the
 registrations
 
 [`super::tests`]' header states it and it survives this move unchanged:

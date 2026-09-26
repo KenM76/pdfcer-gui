@@ -10,7 +10,7 @@ That is exactly the interaction the existing command's own tooltip has
 promised since it was written — *"Click where you want it, or drag out the
 exact size."* The design was specified and never built.
 
-## ★★★ Why it was never built, and why that reason was wrong
+## Why it was never built, and why that reason was wrong
 
 `shell::commands::reach::register` recorded `edit.form_create_field` as
 blocked on *"core's STRUCTURAL certification gate"*. **There is no such
@@ -25,7 +25,7 @@ this feature needs. `app::actions::forms::authoring_is_available` is the
 standing test, and it asserts both halves so it cannot rot into a
 tautology.
 
-★★ Fourth stale blocker in this project. The standing rule that produced the
+Fourth stale blocker in this project. The standing rule that produced the
 probe: **a backlog row is a record, not evidence.**
 
 ## The shape, and why it borrows from markup rather than inventing

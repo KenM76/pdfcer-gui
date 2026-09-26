@@ -26,7 +26,7 @@ impl PdfcerApp {
     /// window would have two exits with two meanings and no way to tell which
     /// one an operator took. Both paths drop the draft.
     pub(super) fn settings_window(&mut self, ctx: &egui::Context) {
-        // ★ Read BEFORE the draft is borrowed mutably, and cloned rather than
+        // Read BEFORE the draft is borrowed mutably, and cloned rather than
         // borrowed: `settings_draft` and `acrobat` are both fields of `self`,
         // and the window needs one mutably and the other by shared reference.
         // A clone of one `PathBuf` and two enums, once per frame the Settings
@@ -54,7 +54,7 @@ impl PdfcerApp {
                 self.settings_draft = None;
             }
             Outcome::RestoreDefaults => {
-                // ★ Replaces the DRAFT only, and does not save or close.
+                // Replaces the DRAFT only, and does not save or close.
                 //
                 // "Restore defaults" is not the kind of button that should be
                 // able to discard a configuration in one click with no way
@@ -97,7 +97,7 @@ impl PdfcerApp {
     /// has a third state — saved, unsaved, and saved-but-still-open-with-more-
     /// edits — and this one is short enough that Save-and-close costs nothing.
     ///
-    /// # 3. ★ Every cached raster is invalidated
+    /// # 3. Every cached raster is invalidated
     ///
     /// This is the step whose absence would be a defect, and a confusing one.
     /// Several settings change how a page **renders** — `cmyk_intent`,
@@ -136,7 +136,7 @@ impl PdfcerApp {
         self.settings = draft.working;
         self.prefs = draft.working_prefs;
 
-        // ★★★ AND THE KEYMAP FOLLOWS THE PASTE-ORDER PREFERENCE — O58.
+        // AND THE KEYMAP FOLLOWS THE PASTE-ORDER PREFERENCE — O58.
         //
         // `Prefs` is data; the shell's keymap is what a keystroke actually
         // consults. Adopting the preference without rewriting the binding would
@@ -146,7 +146,7 @@ impl PdfcerApp {
         // exists to prevent, and the same reason `wheel_paging` carries its own
         // live-apply branch in `frame.rs`.
         //
-        // ★ Unconditional rather than guarded on a change. `apply_paste_chords`
+        // Unconditional rather than guarded on a change. `apply_paste_chords`
         // clears both chords and rewrites both, so its result depends only on
         // the preference — running it when nothing changed costs two map
         // operations and removes the need for a before/after snapshot that could
@@ -155,7 +155,7 @@ impl PdfcerApp {
             crate::shell::manifest::apply_paste_chords(shell, self.prefs.paste_chords);
         }
 
-        // ★★★ AND THE ACROBAT PATH IS RE-RESOLVED — `OPERATOR_REQUESTS.md`
+        // AND THE ACROBAT PATH IS RE-RESOLVED — `OPERATOR_REQUESTS.md`
         // O122, and this is the paste-chord paragraph above applied to a
         // second setting for the identical reason.
         //
@@ -166,17 +166,17 @@ impl PdfcerApp {
         // changes nothing until pdfcer is restarted: the same silently-inert
         // control again.
         //
-        // ★ It matters more here than it does for the paste chords, because
+        // It matters more here than it does for the paste chords, because
         // this setting's WHOLE PURPOSE is to be used by somebody who is looking
         // at an interface with no Acrobat button in it. If typing the path does
         // not make the button appear, they have no way to tell whether they got
         // the path right.
         //
-        // ★ After `self.prefs` is adopted, necessarily. `refresh_acrobat`
+        // After `self.prefs` is adopted, necessarily. `refresh_acrobat`
         // reads it.
         self.refresh_acrobat();
 
-        // ★★★ AND THE FIND STATE FOLLOWS THE BLANK-TRIMMING PREFERENCE —
+        // AND THE FIND STATE FOLLOWS THE BLANK-TRIMMING PREFERENCE —
         // `OPERATOR_REQUESTS.md` **O180**. The third instance of the paragraph
         // above, and it is written out a third time rather than summarised
         // because the failure it prevents is the same one each time and the
@@ -191,16 +191,16 @@ impl PdfcerApp {
         // shape this shell guards against most often, and it is the precise
         // reason `apply_paste_chords` and `refresh_acrobat` are called here.
         //
-        // ★ `set_trim_query` clears any standing result set, and only when
+        // `set_trim_query` clears any standing result set, and only when
         // the value actually changed — see its own doc. So pressing Save
         // without touching this tick does not throw away the hits the
         // operator is stepping through, while changing it does, because a
         // hit list computed under the old answer is wrong rather than stale.
         //
-        // ★ After `self.prefs` is adopted, necessarily.
+        // After `self.prefs` is adopted, necessarily.
         self.find.set_trim_query(self.prefs.find_trim_query);
 
-        // ★ Trace before the write, so a harness can see the adopted values
+        // Trace before the write, so a harness can see the adopted values
         // even if the write is what fails. `theme` is named separately because
         // it is the one setting whose effect is already on screen by now.
         crate::diag::trace(|| {
@@ -230,7 +230,7 @@ impl PdfcerApp {
 
         // 4 — the write, and its report.
         //
-        // ★ Success is SILENT, and that is this shell's convention rather than
+        // Success is SILENT, and that is this shell's convention rather than
         // an omission. `crate::app::status::decline`'s own note on the
         // save-a-copy path states it: there is deliberately no matching "it
         // worked" call, because the operator pressed a button in a window they
@@ -266,7 +266,7 @@ impl PdfcerApp {
             }
         }
 
-        // ★ The shell's own preferences, written to their own file.
+        // The shell's own preferences, written to their own file.
         //
         // Separate from the engine's store and reported separately, because
         // they can fail separately — a settings write can succeed while a
@@ -302,7 +302,7 @@ impl PdfcerApp {
         self.adopt_settings();
     }
 
-    /// ★ **Give the open document the current settings, and drop everything
+    /// **Give the open document the current settings, and drop everything
     /// that was derived under the previous ones.**
     ///
     /// One function, two acts, and they are together on purpose. This is the
@@ -339,7 +339,7 @@ impl PdfcerApp {
     pub(crate) fn adopt_settings(&mut self) {
         let settings = self.settings.clone();
         let prefs = self.prefs.clone();
-        // ★ **Every open document, not only the one on screen.**
+        // **Every open document, not only the one on screen.**
         //
         // The snapshot-plus-caches argument above is a property of an
         // `OpenDoc`, not of the active one: a parked document keeps its page
@@ -391,7 +391,7 @@ mod tests {
     /// lifecycle tests use.
     const FIXTURE: &str = "pageops/four-pages.pdf";
 
-    /// ★ **Opening a document gives it the operator's settings.**
+    /// **Opening a document gives it the operator's settings.**
     ///
     /// The regression test for the one hole this design leaves open.
     /// `OpenDoc::assemble` starts every document on the *shipped defaults* —
@@ -423,7 +423,7 @@ mod tests {
         assert_eq!(doc.settings.unmappable_code, UnmappableCode::Omit);
     }
 
-    /// ★ **Adopting settings drops everything derived under the old ones.**
+    /// **Adopting settings drops everything derived under the old ones.**
     ///
     /// The other half of `adopt_settings`, and the half whose absence would be
     /// invisible: the snapshot updates, the caches do not, and the operator

@@ -24,7 +24,7 @@ they are doing. Reading a drawing, it is not: the page is the subject and
 the band is in the way. Reviewing or editing one, it is: a title block
 dragged off the sheet is a defect you must be able to see and grab.
 
-# ★★★ Why the answer is stored per MODE rather than once
+# Why the answer is stored per MODE rather than once
 
 
 > *"by default, read doesn't show off page items, review and edit do show

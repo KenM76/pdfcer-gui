@@ -46,7 +46,7 @@ assertion here and would be the exact defect this feature was written to
 prevent: on screen, "we did not look" and "we looked and it was fine" would
 be the same picture.
 
-# ★★ The oracle is the TRACE TOKEN, not the sentence
+# The oracle is the TRACE TOKEN, not the sentence
 
 `signature-row … integrity=<token> trust=<token>` carries diagnostic words —
 `verified`, `not-checked`, `untrusted` — that are deliberately **not** in
@@ -59,7 +59,7 @@ because a trace line proves the code ran and says nothing about whether an
 operator can see it. This project has recorded that distinction more than
 once.
 
-# ★★★ What this deliberately does NOT assert
+# What this deliberately does NOT assert
 
 **That anything is ever `trusted`.** It cannot, and pretending otherwise
 would be the worst check in the suite. A `Trusted` verdict needs a signature

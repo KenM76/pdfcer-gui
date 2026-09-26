@@ -10,7 +10,7 @@ end from the status-bar toggle.
 > button to scroll or flip through pages, or the current way it is now when
 > the scroll wheel is used."*
 
-# ★★★ What makes this check able to fail, and it is not the page number
+# What makes this check able to fail, and it is not the page number
 
 The obvious check — *turn it on, roll the wheel, did the page change?* —
 would pass against a build whose toggle wrote a preference nothing reads,
@@ -22,7 +22,7 @@ three things in order and each is a separate claim:
    unconditionally — ignoring the setting entirely — would pass everything
    below it. It is also the direct assertion that O30 did not change what
    the operator already had.
-2. **The toggle turns it on**, and the very next notch turns a page. ★★ The
+2. **The toggle turns it on**, and the very next notch turns a page. The
    *very next* matters: the preference is a snapshot on `OpenDoc` for every
    other setting in the program, adopted when the Settings window is
    applied, and a build that let this one wait for that would look correct,
@@ -32,7 +32,7 @@ three things in order and each is a separate claim:
    A sign error is a viewer that works and feels wrong, which is harder to
    notice than one that is broken.
 
-# ★★ And the control is not drawn where the choice does not exist
+# And the control is not drawn where the choice does not exist
 
 R9. Under a continuous display mode the wheel scrolls the whole document by
 definition, so there is no second answer to offer and nothing is drawn —
@@ -40,7 +40,7 @@ not a disabled stub. The run switches to Continuous and asserts the
 `status-wheel-paging` region **stops being declared**, which is the only
 claim in this check that is about an absence.
 
-★ An absence is admissible here under this module's rule 4 precisely
+An absence is admissible here under this module's rule 4 precisely
 because the same region is shown to be present, in the same run, moments
 earlier: the instrument that would have reported it is demonstrably
 working.

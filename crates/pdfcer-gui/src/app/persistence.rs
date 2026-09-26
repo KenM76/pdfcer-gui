@@ -545,7 +545,7 @@ mod tests {
         dir
     }
 
-    /// ★ **The layout file sits beside the settings file, in the directory
+    /// **The layout file sits beside the settings file, in the directory
     /// `pdfcer-core` chose.**
     ///
     /// The location rule, asserted against `pdfcer-core`'s own resolution
@@ -577,7 +577,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// ★ **A first run is not news.**
+    /// **A first run is not news.**
     ///
     /// A missing file yields the fallback, records the fact, and reports
     /// nothing worth telling anybody — an application that announced this
@@ -597,7 +597,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// ★ **Broken syntax falls back, discloses, and does not interrupt.**
+    /// **Broken syntax falls back, discloses, and does not interrupt.**
     ///
     /// The one genuinely wholesale case — a parser cannot say which half of
     /// a broken file was meant — and it must still be a *disclosure*, never
@@ -650,7 +650,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// ★ **A panel this build does not offer loses its tab — and the save
+    /// **A panel this build does not offer loses its tab — and the save
     /// does not put it back.**
     ///
     /// `SHELL_FRAMEWORK.md` §5b from both sides. The loader drops the
@@ -692,7 +692,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// ★ **One gesture is one write, not one write per frame.**
+    /// **One gesture is one write, not one write per frame.**
     ///
     /// A splitter drag reports a change every frame. Sixty ticks inside the
     /// settle window must produce no writes at all; the write happens once,
@@ -734,7 +734,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// ★ **A change cannot be deferred forever.**
+    /// **A change cannot be deferred forever.**
     ///
     /// A continuous rearrangement re-arms the settle window on every frame,
     /// which without a ceiling would starve the write for as long as the
@@ -804,7 +804,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// ★ **No writable location is a working session, not a failure.**
+    /// **No writable location is a working session, not a failure.**
     ///
     /// `StoreKind::None` is what `pdfcer-core` returns when neither the
     /// portable directory nor the platform one can be written. Everything
@@ -830,7 +830,7 @@ mod tests {
         assert_eq!(store.save_error(), None);
     }
 
-    /// ★ **A default store cannot overwrite an operator's layout.**
+    /// **A default store cannot overwrite an operator's layout.**
     ///
     /// `Default` exists so `PdfcerApp` can keep deriving it. The hazard that
     /// buys is a store that looks loaded, holds an empty document, and

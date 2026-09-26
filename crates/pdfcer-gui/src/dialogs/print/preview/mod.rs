@@ -507,7 +507,7 @@ pub(super) fn column(
     // are a primary drag on the same rectangle, so the only thing that can
     // separate them is WHERE the press landed.
     //
-    // ★ Latched at `drag_started_by`, and read from `press_origin` rather
+    // Latched at `drag_started_by`, and read from `press_origin` rather
     // than `interact_pointer_pos`. Two findings in `D:\dev\rag\egui\`
     // bind this: `drag_started` fires only after egui's drag threshold, by
     // which time the interact position has moved off the pixel the operator
@@ -637,7 +637,7 @@ pub(super) fn column(
             dialog.preview_zoom,
             dialog.preview_pan.x,
             dialog.preview_pan.y,
-            // ★★ `pos=` is the ONLY headless evidence that operator
+            // `pos=` is the ONLY headless evidence that operator
             // request O208 works, and it has to be here rather than inferred
             // from `overhang=` because the two are independent: a page dragged
             // across a blank border changes its position and changes neither

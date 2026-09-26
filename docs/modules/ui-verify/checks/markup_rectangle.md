@@ -53,7 +53,7 @@ itself declared on the frame it drew it**; see
 4. Click **Rectangle** in the Shapes group.
 5. Capture the window again — the *after* picture.
 
-# ★ The assertions, split by oracle, and why both are needed
+# The assertions, split by oracle, and why both are needed
 
 ## Trace evidence — that the arm happened
 

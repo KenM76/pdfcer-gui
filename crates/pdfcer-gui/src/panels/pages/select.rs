@@ -175,7 +175,7 @@ impl PageSelection {
     /// [`super::ops::inverse`]'s output, which is the inverse of the
     /// permutation handed to `EditSession::reorder_pages`.
     ///
-    /// ## ★ Why this remaps where [`Self::retain_below`] clamps
+    /// ## Why this remaps where [`Self::retain_below`] clamps
     ///
     /// The two are the same problem — *a page index is a position, not an
     /// identity* — meeting two different edits, and the honest answer differs
@@ -263,7 +263,7 @@ mod tests {
         assert_eq!(sel.pages(), &BTreeSet::from([2, 3, 4, 5]));
     }
 
-    /// **★ A second Shift+click adjusts the same range rather than growing
+    /// **A second Shift+click adjusts the same range rather than growing
     /// it.**
     ///
     /// The property the anchor rule exists for, and the only one that is
@@ -297,7 +297,7 @@ mod tests {
         assert_eq!(sel.pages(), &BTreeSet::from([6]));
     }
 
-    /// **★ A right-click over an unpicked page picks it first…**
+    /// **A right-click over an unpicked page picks it first…**
     ///
     /// Without this, right-clicking page 9 while 1–3 are picked and choosing
     /// Delete destroys 1–3 — the pointer and the operand list disagreeing,
@@ -326,7 +326,7 @@ mod tests {
         );
     }
 
-    /// **★ A page index is a position, not an identity.**
+    /// **A page index is a position, not an identity.**
     ///
     /// The document shrinking must drop the picks that no longer name a
     /// page. Keeping them would leave a selection pointing at a *different*
@@ -351,7 +351,7 @@ mod tests {
         assert_eq!(sel.click(1, false, true), ClickOutcome { navigate: true });
     }
 
-    /// **★ A reorder carries the picked pages to their new positions.**
+    /// **A reorder carries the picked pages to their new positions.**
     ///
     /// The property that makes the reorder arrows usable more than once: move
     /// four sheets up, and they are still the four sheets that are picked, so

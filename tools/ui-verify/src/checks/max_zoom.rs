@@ -78,7 +78,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- the control point: nothing is open yet -----------------------------
     //
-    // ★ Without this, "rows are declared" after the click could be rows that
+    // Without this, "rows are declared" after the click could be rows that
     // were always declared, and the check would pass on a build where the popup
     // was permanently open — a different defect wearing the same green tick.
     let trace = session.trace()?;
@@ -97,7 +97,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
 
-    // ★ The readout is the MIDDLE of the zoom group — `− ⟨percent⟩ +` — so the
+    // The readout is the MIDDLE of the zoom group — `− ⟨percent⟩ +` — so the
     // group's centre is the readout. Aiming at an edge would hit a step button
     // and zoom instead, which would then report the popup as not opening.
     let frame = session.frame()?;

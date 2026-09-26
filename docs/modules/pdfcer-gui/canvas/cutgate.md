@@ -14,7 +14,7 @@ clipboard cannot carry is a deletion wearing a clipboard's clothes.
 > Copy the selection first, look for an `Unsupported` entry, grey the
 > control with the subtype named.
 
-## ★★★ Why this MIRRORS the engine's rule instead of calling it
+## Why this MIRRORS the engine's rule instead of calling it
 
 Their advice — *copy the selection first, then look* — is right about the
 **oracle** and wrong about the **budget**, and the difference only shows on
@@ -33,7 +33,7 @@ and the selection already carries the object id. One dictionary read, the
 same shape `panels::properties::annotdelete::gate` already uses for the
 delete gate, on the same cadence.
 
-## ★★ The engine remains the authority, and that is not a formality
+## The engine remains the authority, and that is not a formality
 
 This gate greys a control. It does **not** decide whether the cut happens —
 `EditSession::cut_selection` copies first and refuses on its own
@@ -61,7 +61,7 @@ resolves to *"let them press it"*, and the engine answers.
 | `/Redact` | a pending destructive operation; pasting one arms a redaction nobody reviewed | **yes** |
 | a ce dimension with a missing sidecar record | R204 — the record is what makes it a ce dimension rather than lines | **yes** |
 
-★ The two unreachable rows are checked anyway. `canvas::selection::annot`'s
+The two unreachable rows are checked anyway. `canvas::selection::annot`'s
 exclusion table is a *current* fact about one surface, and this gate is
 consulted by the ribbon, the context menu and the keyboard — three doors,
 and only one of them is that surface. A gate that assumed the exclusion

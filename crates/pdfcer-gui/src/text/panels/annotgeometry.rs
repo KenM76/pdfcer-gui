@@ -14,7 +14,7 @@
 /// geometry", which is false and which the operator would have no way to
 /// disprove.
 ///
-/// # ★★ It names the remedy, and the remedy is not in pdfcer
+/// # It names the remedy, and the remedy is not in pdfcer
 ///
 /// This shell has no unlock verb — clearing `/F` bit 8 is an authoring act on
 /// somebody else's decision, and nothing in `EditSession` offers it. A sentence
@@ -25,14 +25,14 @@
 /// the present tense because this is read **before** an attempt rather than
 /// after one.
 ///
-/// # ★ "Position and size", not "properties"
+/// # "Position and size", not "properties"
 ///
 /// The flag governs more than geometry, but this hover is attached to four
 /// geometry fields, and naming the whole of what the flag covers would invite
 /// the operator to conclude that the colour swatches above it are also dead
 /// when they may not be — that is a different surface's sentence to write.
 ///
-/// # ★ "Comment", not "annotation"
+/// # "Comment", not "annotation"
 ///
 /// `crate::text`'s standing rule that a label is the operator's vocabulary.
 /// The Comments panel, the ribbon's Comment tab and every disclosure in
@@ -49,7 +49,7 @@ pub const fn locked() -> &'static str {
 mod tests {
     use super::*;
 
-    /// ★ The sentence names what the operator can DO, which is this catalog's
+    /// The sentence names what the operator can DO, which is this catalog's
     /// standing rule for anything that says no. A refusal that only diagnoses
     /// leaves them looking for a control.
     ///
@@ -60,7 +60,7 @@ mod tests {
         assert!(locked().contains("Unlock it"));
     }
 
-    /// ★★ **Present tense, no past-tense verb about an edit.**
+    /// **Present tense, no past-tense verb about an edit.**
     ///
     /// This is a hover on a control the operator has not pressed. A sentence
     /// saying an edit "was refused" would describe an event that has not
@@ -78,7 +78,7 @@ mod tests {
         );
     }
 
-    /// ★ The operator's word, not the specification's.
+    /// The operator's word, not the specification's.
     ///
     /// **Falsified** by swapping `comment` for `annotation` in [`locked`]: red.
     #[test]

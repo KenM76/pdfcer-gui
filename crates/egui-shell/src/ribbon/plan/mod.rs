@@ -106,7 +106,7 @@
 //! would be asserting against a band that never overflows. The floor
 //! keeps the numbers honest headlessly.
 //!
-//! ## ★ And why the floor is not enough — read this before trusting a
+//! ## And why the floor is not enough — read this before trusting a
 //! ## width test in this crate
 //!
 //! The floor keeps the arithmetic *meaningful*; it does not make a
@@ -172,7 +172,7 @@ pub(crate) const CUSTOM_ITEM_WIDTH: f32 = 96.0;
 /// The mockup's `.group { padding: 0 13px }`, **both budgeted here and
 /// drawn** by [`super::band::captioned_group`].
 ///
-/// # ★ Budgeted and drawn must stay together
+/// # Budgeted and drawn must stay together
 ///
 /// Whether a ribbon group has internal padding is a design decision, not an
 /// arithmetic one, and it has exactly two consistent answers: draw it and
@@ -190,7 +190,7 @@ pub(crate) const CUSTOM_ITEM_WIDTH: f32 = 96.0;
 /// so no group moves into the overflow menu that was not already there. The
 /// band spends on padding exactly what it would otherwise spend on nothing.
 ///
-/// # ★ 6 pt here against the mockup's 13 px, and why they agree anyway
+/// # 6 pt here against the mockup's 13 px, and why they agree anyway
 ///
 /// The two numbers look like a disagreement and are not, because the mockup
 /// and this build decompose the space *between* two groups differently:
@@ -245,7 +245,7 @@ pub(crate) const GROUP_PADDING: f32 = 6.0;
 /// unavoidable: it is a deliberate, global, one-off event, not something
 /// that happens when the operator clicks a tab.
 ///
-/// # ★★★ Why THREE
+/// # Why THREE
 ///
 /// Where `mockups/ribbon.html` — the ribbon study — and
 /// `mockups/pdfcer-shell.html` — the whole-shell mockup the operator approved
@@ -281,7 +281,7 @@ pub(crate) const GROUP_PADDING: f32 = 6.0;
 ///    three, which is the baseline invariant
 ///    `height_tests::every_caption_in_a_band_shares_one_baseline` asserts.
 ///
-/// ★ Three is also what the product class does. Word's ribbon lays small
+/// Three is also what the product class does. Word's ribbon lays small
 /// buttons three rows deep at every width; so does Acrobat's. The convergence
 /// of the class is the specification.
 ///
@@ -299,14 +299,14 @@ pub(crate) const GROUP_ROWS: usize = 3;
 /// `tools/word-ribbon-study.ps1` photographs, including 460, where it
 /// collapses instead.
 ///
-/// ★ Why the ceiling is not simply "as many as it takes": the band's HEIGHT is
+/// Why the ceiling is not simply "as many as it takes": the band's HEIGHT is
 /// fixed and must stay fixed — R128, and the reason [`GROUP_ROWS`] is a
 /// constant at all. A fourth row would either grow
 /// the band, which moves the canvas under a fit-to-page zoom, or shrink the
 /// controls below the size at which their icons are legible. Word reached the
 /// same answer, and reaching it independently is worth more than copying it.
 ///
-/// ★★ Note this is a **ceiling, not a target**. `wrap_group` searches for the
+/// Note this is a **ceiling, not a target**. `wrap_group` searches for the
 /// narrowest packing that fits within the row limit it is given, so a group
 /// that reaches its narrowest at two rows stays at two even when three are
 /// permitted, and `collapse::Candidate::gains_from` then declines to spend a
@@ -465,7 +465,7 @@ pub(crate) fn wrap_group(
         width: single,
     };
 
-    // ★★★ **`prefer_rows` is exactly the right to skip the fits-already test.**
+    // **`prefer_rows` is exactly the right to skip the fits-already test.**
     //
     // Everything below already searches for the NARROWEST packing within the
     // row limit. What kept a comfortable group on one row was this
@@ -479,7 +479,7 @@ pub(crate) fn wrap_group(
     // algorithm, and no way for a preferred layout and a pressured one to
     // disagree about how a group wraps.
     //
-    // ★★ The value is a HINT and the band's ceiling still wins: `max_rows` is
+    // The value is a HINT and the band's ceiling still wins: `max_rows` is
     // unchanged below, so a group asking for four rows in a two-row band gets
     // two. And because the search returns the narrowest, asking for two rows
     // does not FORCE two — a pair of items whose 1 x 2 is narrowest stays on
@@ -597,7 +597,7 @@ impl ItemWidths {
 /// A wrapped group costs its widest row and not the sum of its items — that
 /// substitution is the entire width benefit of wrapping.
 ///
-/// ★ Why this takes a number and not a [`GroupRows`]: a group may have a
+/// Why this takes a number and not a [`GroupRows`]: a group may have a
 /// Large run *beside* its rows, so the content width is a sum of two things
 /// and only the caller knows both. The guard that a width is never asked for
 /// before the wrap is decided is therefore structural rather than typed —
@@ -718,7 +718,7 @@ pub(crate) fn plan_band(
         };
     }
 
-    // ★ THE RESERVATION. Subtracted before a single group is considered.
+    // THE RESERVATION. Subtracted before a single group is considered.
     let group_budget = (available - overflow_width - separator).max(0.0);
 
     let mut used = 0.0_f32;
@@ -747,7 +747,7 @@ pub(crate) fn plan_band(
 /// control is one measurable string, and so a build with no icon set
 /// still shows an affordance rather than an empty button.
 ///
-/// ## ★ The chevron is `⏷` U+23F7, and the obvious choices are all tofu
+/// ## The chevron is `⏷` U+23F7, and the obvious choices are all tofu
 ///
 /// egui's bundled font stack (Ubuntu-Light + NotoEmoji + emoji-icon-font)
 /// has no face for most of the downward chevrons somebody reaches for first,
@@ -887,7 +887,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **A group that asks for two rows gets them, even though one fits.**
+    /// **A group that asks for two rows gets them, even though one fits.**
     ///
     /// `OPERATOR_REQUESTS.md` O97 — four square icon buttons that are a strip in
     /// one row and a control in a 2 x 2 block. Without the hint the planner
@@ -921,7 +921,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The hint is a preference, not a command.**
+    /// **The hint is a preference, not a command.**
     ///
     /// Three properties, and each is a way the feature could have been built
     /// wrong:
@@ -955,7 +955,7 @@ mod tests {
         );
     }
 
-    /// **★ A group narrower than [`GROUP_WRAP_WIDTH`] is left alone.**
+    /// **A group narrower than [`GROUP_WRAP_WIDTH`] is left alone.**
     ///
     /// The half of the mockup's rule that is easy to lose: `max-width` is a
     /// *trigger*. Wrapping every group would turn a two-control group into
@@ -981,7 +981,7 @@ mod tests {
         }
     }
 
-    /// **★ A group over the cap is split into two rows, evenly, and is
+    /// **A group over the cap is split into two rows, evenly, and is
     /// narrower for it.**
     ///
     ///
@@ -1131,7 +1131,7 @@ mod tests {
         assert!(!plan.has_overflow());
     }
 
-    /// **★ Failure mode #8: at a width too narrow for even one group, the
+    /// **Failure mode #8: at a width too narrow for even one group, the
     /// overflow affordance is still planned and still has its width.**
     ///
     /// This is the invariant the whole module exists for. The observed
@@ -1303,7 +1303,7 @@ mod tests {
         assert!(!plan.has_overflow());
     }
 
-    /// **★ The reservation covers the widest label by WIDTH, not by
+    /// **The reservation covers the widest label by WIDTH, not by
     /// character count.**
     ///
     /// The trap this pins is the one real text springs and zero-width
@@ -1370,7 +1370,7 @@ mod tests {
         assert_eq!(overflow_label(1), "⏷ 1 more");
     }
 
-    /// ★ **The chevron is the pinned codepoint — one half of a two-sided
+    /// **The chevron is the pinned codepoint — one half of a two-sided
     /// pin, and this half cannot check the thing that actually matters.**
     ///
     /// Whether the character is *drawable* is asserted in the consuming

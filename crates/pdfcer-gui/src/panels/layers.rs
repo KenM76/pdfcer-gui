@@ -101,7 +101,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                 .small(),
         );
     }
-    // ★★★ **The search field**, and it sits BELOW the block of
+    // **The search field**, and it sits BELOW the block of
     // document-wide disclosures and ABOVE the list it filters.
     //
     // The order is the whole of the placement decision. Everything above it —
@@ -113,7 +113,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // thing an operator would ask is whether the counts above it were now
     // counting the filtered set. They are not.
     //
-    // ★★ Drawn only when there is more than one layer —
+    // Drawn only when there is more than one layer —
     // `search::MIN_LAYERS_FOR_SEARCH` carries that argument: a search over one
     // row can only remove the row.
     let total = read.layers.len();
@@ -134,7 +134,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
         // frame behind.
         state.layers_search_mut().trim().to_owned()
     } else {
-        // ★ Not merely "draw no field": the stored query is emptied too.
+        // Not merely "draw no field": the stored query is emptied too.
         // Without this, a document with sixteen layers filtered down to
         // `A-ANNO`, followed by one with a single layer, would filter that
         // single layer out through a box that is no longer on screen — a row
@@ -158,7 +158,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
             hidden: total - shown.len(),
         }
     };
-    // ★ EVERY disclosure sits ABOVE the list, without exception — the rule
+    // EVERY disclosure sits ABOVE the list, without exception — the rule
     // `panels::comments` states and follows. A line under a list is a line an
     // operator scrolls past.
     // Two gates that agree, and they are not redundant: `is_narrowed` is the
@@ -183,13 +183,13 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
         if clear.clicked() {
             state.layers_search_mut().clear();
         }
-        // ★★ Return before the scroll area. An empty `ScrollArea` still
+        // Return before the scroll area. An empty `ScrollArea` still
         // reserves and paints its region, so drawing one here would put a
         // blank panel-coloured slab under the sentence — which reads as the
         // list having failed to draw rather than as there being nothing in it.
         return;
     }
-    // ★★★ **Which layer the canvas selection is on** — the operator's
+    // **Which layer the canvas selection is on** — the operator's
     // *"selecting an object highlights that layer"*.
     //
     // Resolved ONCE per frame, before the list, because two things need it:
@@ -197,13 +197,13 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // per row would ask the engine once per layer for an answer that does not
     // vary by layer.
     //
-    // ★★ Five-valued, and no two of the five render the same. See
+    // Five-valued, and no two of the five render the same. See
     // [`highlight`]'s header for the lattice and for the two engine
     // divergences building the page-object route found.
     let membership = highlight::resolve(doc);
     let highlighted = membership.highlighted();
 
-    // ★★★ **Where the answer's row sits relative to what is ON SCREEN**, which
+    // **Where the answer's row sits relative to what is ON SCREEN**, which
     // is not the same question as whether the document has such a layer.
     //
     // The panel draws `shown` — the search-filtered list — and a plate on a
@@ -239,7 +239,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     if let Some(sentence) = tl::layer_selection_report(membership, row) {
         ui.label(egui::RichText::new(sentence).small());
     }
-    // ★★★ **The operator's own finding, said back to him.** One path object on
+    // **The operator's own finding, said back to him.** One path object on
     // his drawing holds 1,194 subpaths across half a sheet, so *"this is on
     // layer Grid"* is exact about a thing far larger than the circle he
     // clicked. Stated as a count rather than as a hedge, and only when the
@@ -263,7 +263,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                 // invented one. `/Name` is Required (Table 98), so its
                 // absence is a real malformation and a synthesised "Layer 3"
                 // would disguise it as data from the file.
-                // ★★ The SAME function the search matches against — see
+                // The SAME function the search matches against — see
                 // [`row_name`]. Two spellings of "what this row is called"
                 // would let a layer be drawn under one name and searched
                 // under another, which is the one defect this feature can
@@ -271,7 +271,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                 let name = row_name(l);
                 let effective = !effective_hidden.contains(&l.id);
                 let notes = row_caveats(&read, l, effective);
-                // ★★★ **The highlight**, and it is a background PLATE rather
+                // **The highlight**, and it is a background PLATE rather
                 // than bolder or coloured text.
                 //
                 // Three reasons, and the first is a gate:
@@ -290,7 +290,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                 //    tint, so it survives greyscale and colour-vision
                 //    deficiency, which a recoloured label does not.
                 //
-                // ★★ `selected_plate` and not the accent fill: this is the
+                // `selected_plate` and not the accent fill: this is the
                 // same role the Objects panel's selected row uses, so "the
                 // thing the canvas selection corresponds to" looks the same in
                 // both panels rather than being two inventions.
@@ -323,14 +323,14 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                     // which is the difference between a control that is
                     // explained and one that is explicable.
                     //
-                    // ★ Drawn only when `/Locked` is set (Table 101), never as
+                    // Drawn only when `/Locked` is set (Table 101), never as
                     // an open padlock on the unlocked rows. R9: an absent
                     // condition renders NOTHING. A row of open padlocks would
                     // be sixteen pictures saying "normal", which is noise the
                     // eye then has to filter to find the one that matters —
                     // and the one that matters is exactly what this is for.
                     //
-                    // ★★ `text_muted`, not the accent. This is a STATEMENT
+                    // `text_muted`, not the accent. This is a STATEMENT
                     // about the file, not a state of the application and not
                     // something the operator did. An accented padlock would
                     // read as "selected" or as a warning, and §12.5.3's
@@ -380,7 +380,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                         .fold(ui.label(name), |r, note| r.on_hover_text(note));
                 });
                 });
-                // ★★ **Scrolled into view**, and only on the frame the
+                // **Scrolled into view**, and only on the frame the
                 // selection CHANGES to this layer — not every frame it is
                 // still on it.
                 //
@@ -391,7 +391,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                 // `dock::floatwin` documents for a position re-asserted every
                 // frame, one surface down.
                 //
-                // ★ The comparison is against the LAST HIGHLIGHTED id rather
+                // The comparison is against the LAST HIGHLIGHTED id rather
                 // than against a "selection changed" event, because there is
                 // no event: the panel is handed a document and works out the
                 // answer, so "changed" is something it has to remember. One
@@ -405,7 +405,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                     }
                 }
                 crate::diag::trace(|| {
-                    // ★★ `highlighted=` is what makes "selecting an object
+                    // `highlighted=` is what makes "selecting an object
                     // highlights that layer" a DRIVABLE claim. Without it a
                     // check can see that rows were drawn and cannot see which
                     // one carries the plate, so the only assertion available
@@ -432,7 +432,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
 /// `/Name` is Required (Table 98), so its absence is a real malformation and
 /// a synthesised "Layer 3" would disguise it as data from the file.
 ///
-/// # ★★★ Why this is a function and not two lines at the row
+/// # Why this is a function and not two lines at the row
 ///
 /// It was two lines at the row until the search landed. The search matches
 /// **the name the row shows** — [`search`]'s Decision 1 — and the only way to
@@ -461,7 +461,7 @@ fn row_name(l: &pdfcer_core::layers::Layer) -> String {
 /// `on layer ""`: an empty pair of quotes is the placeholder R9 forbids, and
 /// [`crate::text::panels::layers::layer_clause`] has words for it.
 ///
-/// # ★★★ Why the status bar comes here rather than reading `/Name` itself
+/// # Why the status bar comes here rather than reading `/Name` itself
 ///
 /// [`row_name`]'s own header states the rule: **one spelling of what a layer
 /// is called.** It was written when the search needed to match what the row
@@ -651,7 +651,7 @@ mod tests {
         (read, hidden)
     }
 
-    /// **★ Precondition 2 is satisfied: a layer toggle invalidates the
+    /// **Precondition 2 is satisfied: a layer toggle invalidates the
     /// cached page.**
     ///
     /// The reason this panel shipped without its checkbox at S3 was that
@@ -715,7 +715,7 @@ mod tests {
         assert_ne!(before.discrete_inputs(), after.discrete_inputs());
     }
 
-    /// **★ Precondition 3: the click reaches `apply`, and the whole round
+    /// **Precondition 3: the click reaches `apply`, and the whole round
     /// trip lands on the page.**
     ///
     /// The end-to-end statement the other tests only approach: compose the

@@ -56,7 +56,7 @@ impl Check for TheWheelTurnsPagesWhenTheOperatorAsksItTo {
 
 /// The wheel-paging setting the status bar last reported: `scroll` or `flip`.
 ///
-/// ★★★ The instrument that makes this check **re-runnable**, and it did not
+/// The instrument that makes this check **re-runnable**, and it did not
 /// exist until this check needed it. The setting is PERSISTED, so a run that
 /// turned it on left it on, and the second run of this check inherited the
 /// first one's choice and reported the shipped default as broken — a
@@ -187,7 +187,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- the precondition: a single-page display, with pages to turn --------
     //
-    // ★ Established THROUGH the ribbon, so the run also proves the control
+    // Established THROUGH the ribbon, so the run also proves the control
     // that sets it. A check that reached in and set the mode would be testing
     // its own fixture.
     invoke(&session, &driver, ui_rect, "ribbon.item.view.page_single")?;
@@ -225,13 +225,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 0. NORMALISE, before anything is measured --------------------------
     //
-    // ★★★ At the START, not at the end. Restoring it afterwards only runs when
+    // At the START, not at the end. Restoring it afterwards only runs when
     // the check PASSED — the case that did not need it — and every early
     // return leaks, which are the runs most likely to be repeated immediately.
     // This check found that out the hard way: its second run inherited its
     // first run's toggle and failed at claim 1, accusing the shipped default.
     //
-    // ★ Normalised THROUGH the control, not by writing the file, so the run
+    // Normalised THROUGH the control, not by writing the file, so the run
     // also proves the control can turn the setting off as well as on. A build
     // whose toggle only ever set `FlipPages` would fail here rather than
     // silently pass the rest.
@@ -348,7 +348,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     )?;
     session.settle(20);
     //
-    // ★ A first draft of this check used `declared_since` with an EVENT COUNT
+    // A first draft of this check used `declared_since` with an EVENT COUNT
     // where that helper wants a LINE NUMBER, and it reported this control as
     // still drawn when it was not. Kept in the record because it is the same
     // failure in a third costume: **a confident, specific, wrong report,

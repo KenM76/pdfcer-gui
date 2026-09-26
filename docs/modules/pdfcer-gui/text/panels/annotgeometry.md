@@ -21,7 +21,7 @@ presenting Y from the top in one half and from the bottom in the other.
 one reason a control can be unavailable over an annotation and cannot be
 over a path: the *file* has refused, before the operator has typed anything.
 
-## ★★ The register: a hover on a greyed control answers "why can't I", not
+## The register: a hover on a greyed control answers "why can't I", not
 "what went wrong"
 
 The sentence below is read while the pointer rests on a control that is
@@ -34,7 +34,7 @@ in the other tense, for the surface where the operator has already pulled a
 grip and watched nothing move, and the two are deliberately worded
 differently rather than shared.
 
-## ★★★ What is deliberately NOT here, and it is the interesting half
+## What is deliberately NOT here, and it is the interesting half
 
 **A pre-press warning that a non-uniform resize may be refused.**
 

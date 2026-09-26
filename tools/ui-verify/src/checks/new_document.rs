@@ -326,7 +326,7 @@ fn press_new(
         }
     }
 
-    // --- 5. ★ did the page DRAW? -------------------------------------------
+    // --- 5. did the page DRAW? -------------------------------------------
     //
     // The step this check exists for. Everything above is satisfied by a
     // document that is open and blank on screen because it never rasterized,
@@ -368,7 +368,7 @@ mod tests {
     use super::*;
     use crate::trace::Trace;
 
-    /// ★ **The expected names are the ones the application actually writes.**
+    /// **The expected names are the ones the application actually writes.**
     ///
     /// `PathBuf` is traced through `{:?}`, so the trace reads
     /// `name="Untitled 1.pdf"` — quoted. **`TraceLine::get` strips a value's
@@ -376,7 +376,7 @@ mod tests {
     /// is what keeps the two in step: it parses a real quoted trace line and
     /// asserts the bare constant matches it.
     ///
-    /// ★ The quoting exists because a value can contain structural characters —
+    /// The quoting exists because a value can contain structural characters —
     /// a chord spelled `[` in an unquoted `chord=[` opens a bracket the field
     /// splitter never sees closed, and swallows every field after it on the
     /// line. The application quotes such values and `get` unwraps them, so no

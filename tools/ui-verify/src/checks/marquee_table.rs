@@ -14,7 +14,7 @@ use crate::report::CheckReport;
 
 /// Content selection needs Edit.
 const RIBBON_MODE: &str = "edit";
-/// ★★ Single page, fitted, BEFORE anything is aimed at.
+/// Single page, fitted, BEFORE anything is aimed at.
 ///
 /// The first run of this check drove a band to screen y=2 — above the canvas
 /// entirely — because the file is ten pages shown continuously and the view had
@@ -56,20 +56,20 @@ const FIXTURE_PAGE: PageGeometry = PageGeometry {
 /// non-disturbance is the rule this check broke: *"A press on empty paper still
 /// marquees."* Pressing on ink does not.
 ///
-/// ★★ And "empty" is a much larger radius than it looks. The pick tolerance is
+/// And "empty" is a much larger radius than it looks. The pick tolerance is
 /// `SELECT_SCREEN_TOLERANCE_PX` converted to page units, so at the fitted zoom
 /// this check drives (about 0.38×) a **4-pixel** screen tolerance is over **ten
 /// page points**. The old origin sat 6 pt from the sheet border — visually in
 /// the margin, and inside the catch radius.
 ///
-/// ★ Chosen by rendering page 1 at scale 1.0 (1 px = 1 pt) and looking: this
+/// Chosen by rendering page 1 at scale 1.0 (1 px = 1 pt) and looking: this
 /// point is in the blank field below the INSPECTION STATUS table and left of
 /// the isometric view, about **80 pt** from the nearest ink in any direction.
 const BAND_FROM: (f64, f64) = (300.0, 560.0);
 
 /// Where it ENDS — up and to the **left**, inside the table.
 ///
-/// ★★★ Right-to-left, so this is a **crossing window** and takes anything it
+/// Right-to-left, so this is a **crossing window** and takes anything it
 /// touches. That is the point: it is the gesture `OPERATOR_REQUESTS.md` O88
 /// added, and it is the only one that can reach this table at all.
 ///
@@ -84,7 +84,7 @@ const BAND_TO: (f64, f64) = (60.0, 765.0);
 /// `marquee-mode crossing=… mode=… hits=…` — the shell's record of WHICH
 /// rule the band was resolved by.
 ///
-/// ★★ Asserted as well as the selection census, and the pair is the point. A
+/// Asserted as well as the selection census, and the pair is the point. A
 /// build that ignored the drag direction and ran `Enclosed` for everything
 /// would select nothing here and fail on the count — but so would a build
 /// whose hit test was broken outright, and the two want opposite fixes. This
@@ -234,7 +234,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    // ★★★ **WHICH RULE RESOLVED IT** — asserted before the census, and the pair
+    // **WHICH RULE RESOLVED IT** — asserted before the census, and the pair
     // is the point.
     //
     // A build that ignored the drag direction and ran `Enclosed` for everything
@@ -292,13 +292,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // table should return well into double figures"*, and failed anything under
     // four.
     //
-    // ★★ Measured on this very sheet: `objects n=25 paths=19 text=6`. The
+    // Measured on this very sheet: `objects n=25 paths=19 text=6`. The
     // **whole drawing** — two tables, a title block, an isometric view, dozens
     // of labels — is twenty-five objects. A band returning three is a large
     // fraction of the page, and the threshold was rejecting a correct result
     // while calling it the operator's defect.
     //
-    // ★★★ And it could never have expressed his complaint anyway. *"It only
+    // And it could never have expressed his complaint anyway. *"It only
     // picks up the lines of each table"* is a claim about a **kind being
     // missing**. One path and one text is a pass; nine paths and no text is the
     // defect — and a count ranks those two the wrong way round at every

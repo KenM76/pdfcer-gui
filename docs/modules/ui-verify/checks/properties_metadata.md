@@ -21,7 +21,7 @@ and are now a panel of their own, `crate::panels::docprops`, opened by
 different ribbon item and brings a different dock tab to the front. It
 asserts the same four things about the same four boxes.
 
-★ **The region names did not change** — `properties.info` and
+**The region names did not change** — `properties.info` and
 `properties.info.N`. That was the moving session's decision and it is stated
 at the constants: one change at a time, so that the next run's verdict is
 readable rather than being a race between two edits neither of which was
@@ -36,7 +36,7 @@ recorded blocker — *"needs a `/Info` accessor that `pdfcer-core` does not
 expose on `Document` at all"* — which was true when written and false when
 read.
 
-# ★ The assertion that is the whole check, and it is the SECOND one
+# The assertion that is the whole check, and it is the SECOND one
 
 Not *"a commit was traced"*. That proves the keystrokes arrived and the
 action was raised, and it is satisfied by a build where the value never
@@ -50,7 +50,7 @@ draft still differs, and every focus change writes it again — a field that
 looks edited, produces an undo entry per glance, and holds a value the file
 does not have.
 
-# ★ And the third: undo has to reach the BOX, not only the file
+# And the third: undo has to reach the BOX, not only the file
 
 The drafts are re-seeded whenever `doc.edit_epoch` moves, and that is what
 makes `Ctrl+Z` work here. Without it the box would still show the title the

@@ -114,7 +114,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 1: Edit, the one mode whose canvas selects content ----------------
     //
-    // ★ And the one mode that may PASTE content. `edit.paste` gates on
+    // And the one mode that may PASTE content. `edit.paste` gates on
     // `edit_content` when the clipboard holds page content and on
     // `author_markup` otherwise — a Review that could paste a line onto a
     // drawing would break the promise its whole name makes.
@@ -160,7 +160,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .filter(|l| l.get("kind") == Some("selection"))
         .last();
     let Some(copy) = copy else {
-        // ★ Ask what else happened before accusing — the rule three separate
+        // Ask what else happened before accusing — the rule three separate
         // repairs in this suite have now earned. A refusal is a different
         // finding from a silence and sends the reader somewhere else.
         let markup = trace
@@ -214,7 +214,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("★ the paste was raised: `{}`", paste.raw));
 
-    // --- 5: ★★ and it reached the engine WITH ITS RESOURCES ------------------
+    // --- 5: and it reached the engine WITH ITS RESOURCES ------------------
     let Some(applied) = trace.events(APPLIED_EVENT).last() else {
         return Ok(Some(format!(
             "the paste was raised and no `{APPLIED_EVENT}` line followed, so the action never \
@@ -240,7 +240,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         applied.raw
     ));
 
-    // ★★★ THE ASSERTION THIS CHECK EXISTS FOR, and it is a count rather than a
+    // THE ASSERTION THIS CHECK EXISTS FOR, and it is a count rather than a
     // picture.
     //
     // A content object's operators name their resources by PAGE-LOCAL NAME. A
@@ -250,7 +250,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // the fresh `/Resources` entries it bound on the destination page, and it is
     // the only thing on this side of the boundary that can see the difference.
     //
-    // ★ It is asserted as "greater than zero" rather than against a number,
+    // It is asserted as "greater than zero" rather than against a number,
     // because how many resources a given object consumes is a fact about the
     // fixture — a bare stroked path may genuinely consume none. So a zero is
     // reported with the fixture named as the first suspect rather than the

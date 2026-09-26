@@ -18,7 +18,7 @@ use super::palette;
 
 /// **Which pen** — one variant per default Acrobat keeps a separate key for.
 ///
-/// # ★ Why this exists rather than the swatch naming a field
+/// # Why this exists rather than the swatch naming a field
 ///
 /// Because there are now eight colours and one control. A swatch that wrote to
 /// `pen.underline` by naming the field would need a second swatch for every
@@ -69,7 +69,7 @@ pub enum PenSlot {
     Note,
     /// `/FreeText` — the text box.
     ///
-    /// ★ Acrobat splits this in two and this shell cannot. `cFreeText` holds a
+    /// Acrobat splits this in two and this shell cannot. `cFreeText` holds a
     /// *border* colour (`#F86464`) and a *text* colour (`#DB3425`), and
     /// `canvas::textannot` authors one `ink` used for both. This slot ships at
     /// Acrobat's **text** colour, because the words are what the operator reads
@@ -167,7 +167,7 @@ pub struct Pen {
     /// Clamped to [`MIN_WIDTH_PTS`]`..=`[`MAX_WIDTH_PTS`] by the control that
     /// sets it — see those constants for why the range is what it is.
     pub width_pts: f64,
-    /// ★★★ **The annotation's constant opacity, `/CA`** — `0.0`–`1.0`, where
+    /// **The annotation's constant opacity, `/CA`** — `0.0`–`1.0`, where
     /// `1.0` is fully opaque and is the default.
     ///
     /// # This field is why the mark can be seen THROUGH
@@ -178,7 +178,7 @@ pub struct Pen {
     /// argument against a **fill** does not apply here — a translucent outline
     /// obscures nothing.
     ///
-    /// # ★★ `1.0` writes no key at all, and that is deliberate
+    /// # `1.0` writes no key at all, and that is deliberate
     ///
     /// [`Self::opacity_option`] answers `None` at `1.0`. §12.5.2 Table 164 makes
     /// 1.0 the default, so writing it explicitly would add a key that changes
@@ -190,7 +190,7 @@ pub struct Pen {
     /// **a build which omits nothing must behave as it did before the choice
     /// existed**, byte for byte.
     ///
-    /// # ★ Clamped by the control, refused by the engine
+    /// # Clamped by the control, refused by the engine
     ///
     /// [`MIN_OPACITY`]`..=1.0` at the widget. The engine **refuses** an
     /// out-of-range author-time alpha by name rather than clamping it, because
@@ -198,7 +198,7 @@ pub struct Pen {
     /// reporting success"* — so a value that escaped this range would produce a
     /// refusal, not a silent surprise.
     pub opacity: f64,
-    /// ★★★ **The border line style the next mark is drawn in** — `/BS` `/S` and
+    /// **The border line style the next mark is drawn in** — `/BS` `/S` and
     /// `/D` (§12.5.4, Table 166).
     ///
     /// # It is a [`super::linestyle::LineStyle`] and not a `BorderDash`
@@ -208,7 +208,7 @@ pub struct Pen {
     /// load-bearing. [`Self::dash_option`] is the boundary that builds the
     /// engine's value.
     ///
-    /// # ★★ Solid ships, and that keeps the standing rule
+    /// # Solid ships, and that keeps the standing rule
     ///
     /// [`Self::opacity`]'s doc states the rule this project applies when a
     /// capability becomes choosable: *"a build which omits nothing must behave
@@ -261,12 +261,12 @@ pub const MIN_OPACITY: f64 = 0.1;
 pub const MAX_WIDTH_PTS: f64 = 12.0;
 
 impl Default for Pen {
-    /// ★★★ **The shipped pen: Acrobat's own eight defaults, at 2 pt, opaque.**
+    /// **The shipped pen: Acrobat's own eight defaults, at 2 pt, opaque.**
     ///
     /// # Every colour here is measured, and none of it is chosen
     ///
     ///
-    /// # ★★★ THIS DELIBERATELY BREAKS THE STANDING "OMITS NOTHING" RULE, and
+    /// # THIS DELIBERATELY BREAKS THE STANDING "OMITS NOTHING" RULE, and
     /// # the rule is not being ignored — it is being answered
     ///
     /// [`Self::opacity`]'s doc comment states the rule this project applies when
@@ -294,7 +294,7 @@ impl Default for Pen {
     /// exists.
     ///
     ///
-    /// # ★★ 2 pt is KEPT, and Adobe's number is not being ignored — there
+    /// # 2 pt is KEPT, and Adobe's number is not being ignored — there
     /// # isn't one
     ///
     /// The brief for this change said to weigh Acrobat's default line width
@@ -362,7 +362,7 @@ impl Pen {
     /// **The freehand simplification tolerance this pen implies**, in PDF
     /// points — a quarter of the stroke width.
     ///
-    /// # ★ This function exists because the constant it replaced went stale
+    /// # This function exists because the constant it replaced went stale
     /// the day the pen became a control
     ///
     /// `ink::SIMPLIFY_TOLERANCE_PTS` was `PEN_WIDTH_PTS / 4.0`, a `const`
@@ -493,7 +493,7 @@ impl Pen {
 
     /// **The colour a sticky note, text box or stamp is authored in.**
     ///
-    /// ★ Its one caller is `app::actions::apply`'s `CommitTextAnnot` arm, and
+    /// Its one caller is `app::actions::apply`'s `CommitTextAnnot` arm, and
     /// the line it replaced read `self.pen.ink` — one colour for all three,
     /// which made a pdfcer sticky note shape-red where Acrobat's is violet.
     /// Routing through [`PenSlot::of_text_annot`] rather than exposing the three
@@ -509,7 +509,7 @@ impl Pen {
 
     /// Set the ink colour from a screen colour, discarding alpha.
     ///
-    /// # ★ Alpha is dropped, deliberately, and this is not a limitation
+    /// # Alpha is dropped, deliberately, and this is not a limitation
     ///
     /// `egui`'s colour picker offers an alpha channel; a PDF annotation's `/C`
     /// entry is **three components and no more** (§12.5.2 Table 164: an array
@@ -621,7 +621,7 @@ fn color32_of((r, g, b): (f64, f64, f64)) -> Color32 {
 mod tests {
     use super::*;
 
-    /// ★★★ **The shipped pen is Acrobat's, slot for slot.**
+    /// **The shipped pen is Acrobat's, slot for slot.**
     ///
     /// The successor to `the_default_pen_is_the_constants_it_replaced`, which
     /// pinned `(0.85, 0.16, 0.16)` and `(1.0, 1.0, 0.0)` — this shell's own
@@ -667,7 +667,7 @@ mod tests {
         assert!((pen.width_pts - 2.0).abs() < f64::EPSILON);
     }
 
-    /// ★★ **The highlighter is ORANGE, and that is not a typo.**
+    /// **The highlighter is ORANGE, and that is not a typo.**
     ///
     /// Stated as its own test because it is the single value most likely to be
     /// "corrected" back to yellow by somebody who knows that PDF highlighters
@@ -690,7 +690,7 @@ mod tests {
         );
     }
 
-    /// ★ **Every markup kind reaches a slot, and the geometric family shares
+    /// **Every markup kind reaches a slot, and the geometric family shares
     /// one.**
     ///
     /// The successor to `only_the_highlight_kind_uses_the_highlighter`, over
@@ -721,7 +721,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **Every slot is separately settable, and setting one moves nothing
+    /// **Every slot is separately settable, and setting one moves nothing
     /// else.**
     ///
     /// This is the *"once they set a colour for a kind, it sticks for that
@@ -793,7 +793,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **THE TOLERANCE FOLLOWS THE WIDTH.**
+    /// **THE TOLERANCE FOLLOWS THE WIDTH.**
     ///
     /// The rule [`Pen::simplify_tolerance_pts`] carries at length: ε must be a
     /// quarter of the stroke width, because that is half of the half-width and
@@ -849,7 +849,7 @@ mod tests {
         PenSlot::ALL.iter().map(|s| pen.colour_of(*s)).collect()
     }
 
-    /// ★ A colour survives the round trip through the picker unchanged.
+    /// A colour survives the round trip through the picker unchanged.
     ///
     /// The property that makes the swatch usable rather than merely present.
     /// A conversion that truncated would walk a colour down by one unit every

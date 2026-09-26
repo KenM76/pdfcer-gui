@@ -31,7 +31,7 @@ impl Declined {
     /// first place, which is what stops a second spelling of "is there
     /// anything to frame?" drifting away from the first.
     ///
-    /// # ★ Why a fourth parameter rather than a `&OpenDoc`
+    /// # Why a fourth parameter rather than a `&OpenDoc`
     ///
     /// [`History`] arrived with the undo wiring and needed a third fact — *is
     /// there anything on the stack now?* — which is where the temptation to
@@ -64,13 +64,13 @@ impl Declined {
             // operator doing anything, which is exactly what the sentence
             // promised ("…has not finished drawing").
             Self::CanvasNotDrawn => !canvas_has_drawn,
-            // ★ Neither fact is about this one, and there is no third fact to
+            // Neither fact is about this one, and there is no third fact to
             // add. A write that failed stays failed until the operator does
             // something about it, and what they do about it is a *command* —
             // which `retire` catches. See the variant's own docs; the two
             // parameters are deliberately ignored rather than being joined by a
             // third that would always be `true`.
-            // ★ `ResizeNotRebuildable` joins them: whether an appearance can
+            // `ResizeNotRebuildable` joins them: whether an appearance can
             // be rebuilt is a property of the FILE, and it does not change
             // while the operator reads the status bar. What retires it is their
             // next act — including, in the good case, ticking the switch the
@@ -79,7 +79,7 @@ impl Declined {
             | Self::SettingsNotSaved
             | Self::ResizeNotRebuildable { .. }
             | Self::ResizeFixedSizeMarker { .. } => true,
-            // ★ `true`, with the others whose state cannot change between two
+            // `true`, with the others whose state cannot change between two
             // frames. A document's certification is a property of the file: it
             // does not lapse while the operator looks at the status bar, and
             // the only thing that would retire this sentence is opening a
@@ -90,7 +90,7 @@ impl Declined {
             // the per-frame path that decides whether a status line is still
             // true would pay for it sixty times a second to learn an answer
             // that never moves.
-            // ★ `FieldDeleteRefused` joins it on the identical argument with
+            // `FieldDeleteRefused` joins it on the identical argument with
             // `deletion_refusal` substituted for `flatten_refusal`: `/Encrypt`
             // and a certification signature are properties of the FILE, neither
             // lapses while the operator reads the status bar, and the only
@@ -100,7 +100,7 @@ impl Declined {
             // over the whole document, and putting it in the per-frame path
             // that decides whether a status line is still true would pay for it
             // sixty times a second to learn an answer that never moves.
-            // ★★ The two field-group declines are `true` for a DIFFERENT reason
+            // The two field-group declines are `true` for a DIFFERENT reason
             // from their neighbours above, and the difference is worth the
             // separate arm rather than an extra `|`.
             //
@@ -110,7 +110,7 @@ impl Declined {
             // was, and there is no state for a later frame to find the sentence
             // stale against. What retires them is the operator's next act,
             // which is what retires every decline.
-            // ★★ The two bookmark declines join the field-group pair on the
+            // The two bookmark declines join the field-group pair on the
             // *second* argument rather than the first, and it is worth saying
             // which: **nothing happened.** The move was never made or was
             // refused, so the epoch did not move, the outline is as it was, and
@@ -120,7 +120,7 @@ impl Declined {
             // pay for a `read_outline` sixty times a second to learn an answer
             // that cannot change without a command — and a command is what
             // `retire` catches.
-            // ★ The mode is not going to change between one frame and the
+            // The mode is not going to change between one frame and the
             // next without a **command**, and a command is exactly what
             // `retire` catches — so there is no live predicate to re-ask, on
             // the identical argument the five below it make. Note the
@@ -131,7 +131,7 @@ impl Declined {
             | Self::FieldDeleteRefused
             | Self::FieldGroupPreviewRefused
             | Self::FieldGroupDeleteRefused
-            // ★ Same ruling, and the sharpest case of it. The stamps folder
+            // Same ruling, and the sharpest case of it. The stamps folder
             // could genuinely change again while he reads the sentence —
             // Acrobat is what rewrites it — but re-asking would mean rescanning
             // the folder every frame to retire a line he is still reading, and
@@ -142,14 +142,14 @@ impl Declined {
             | Self::BookmarkMoveRefused
             | Self::VertexEditRefused(_)
             | Self::MarkupNodeRefused(_) => true,
-            // ★ Same ruling, third and fourth cases. A name is not going to
+            // Same ruling, third and fourth cases. A name is not going to
             // stop being taken, and a widget is not going to grow a `/T`,
             // between one frame and the next. Both are corrected by the
             // operator doing something — typing a different name and pressing
             // Register again — and pressing Register is a command, which
             // `retire` catches.
             Self::FieldNameTaken | Self::WidgetHasNoName => true,
-            // ★★ Same ruling, fifth case — but on the OTHER of the two
+            // Same ruling, fifth case — but on the OTHER of the two
             // arguments this function keeps making, and the difference is
             // worth an arm rather than another `|`.
             //
@@ -162,12 +162,12 @@ impl Declined {
             // operator retyping the name and pressing OK — a command, which
             // `retire` catches.
             //
-            // ★ Deliberately NOT re-asked by looking the named field up again.
+            // Deliberately NOT re-asked by looking the named field up again.
             // That is a `parse_acroform` walk of the whole document, and
             // putting it in the per-frame path that decides whether a status
             // line is still true would pay for it sixty times a second to learn
             // an answer that cannot change without a command.
-            // ★ Joined rather than given an arm of its own, and the
+            // Joined rather than given an arm of its own, and the
             // reasoning above is why: this is the SAME argument, not merely
             // the same answer. `DottedPartialName` is raised before the verb
             // resolves anything, so no byte was staged and no undo entry was
@@ -175,7 +175,7 @@ impl Declined {
             // stale against, and the operator's next command retires it
             // through `retire`.
             //
-            // ★★ It is also the **only** one of the two whose fact could not
+            // It is also the **only** one of the two whose fact could not
             // change even in principle. `FieldPathCrossesTerminal` depends on
             // what the document contains (is `Order` a terminal?) and is true
             // here because re-asking costs a `parse_acroform` walk per frame,
@@ -184,7 +184,7 @@ impl Declined {
             // holds. If a future reader ever makes the first one re-askable,
             // this one still belongs exactly where it is.
             Self::FieldPathCrossesTerminal(_) | Self::DottedPartialName(_) => true,
-            // ★★ Same ruling, and here the temptation to key on
+            // Same ruling, and here the temptation to key on
             // `selection_in_form` is strongest: all but one of the sentences are
             // about the DOCUMENT (encrypted, signed, damaged index, nested
             // drawing, drawn nowhere else), none of which changes while the bar
@@ -193,20 +193,20 @@ impl Declined {
             Self::Unshare(_) => true,
             // About the runs as they were; the page is unchanged.
             Self::RunMerge(_) => true,
-            // ★ The stack filled up. Something was authored — or, for redo,
+            // The stack filled up. Something was authored — or, for redo,
             // something was undone — and the sentence is now history, exactly
             // as `NothingToFrame` is once something is selected. The operator
             // reaches this without invoking any command, which is why the
             // filter is needed at all: `retire` would not have run.
             Self::NothingToUndo => !history.can_undo,
             Self::NothingToRedo => !history.can_redo,
-            // ★ True while the operator is still looking at the selection the
+            // True while the operator is still looking at the selection the
             // sentence is about. Selecting something else — including the
             // containing form, which is the remedy the sentence exists to send
             // them to — ends it, without any command being invoked and so
             // without `retire` running. That is precisely the case the filter
             // exists for, and it is the same shape as `NothingToFrame`.
-            // ★★★ **One arm per fact, because the two facts have opposite
+            // **One arm per fact, because the two facts have opposite
             // predicates** — and this line asserting one of them for both is
             // what kept `Select containing form`'s refusal invisible.
             //
@@ -217,27 +217,27 @@ impl Declined {
             // the operator reaches the remedy without invoking a command, so
             // `retire` would never run.
             Self::InsideForm(crate::text::status::InsideFormRefusal::NotAPath) => selection_in_form,
-            // ★★ `true`, and the inversion is the point. This sentence is
+            // `true`, and the inversion is the point. This sentence is
             // recorded precisely BECAUSE nothing form-interior is selected, so
             // filtering it on `selection_in_form` discarded it on the frame it
             // was written — every time, in every build, since the verb
             // shipped. The operator pressed the control and got silence.
             //
-            // ★ Retired by `retire` on the operator's next command, like every
+            // Retired by `retire` on the operator's next command, like every
             // other stable sentence in this enum.
             Self::InsideForm(crate::text::status::InsideFormRefusal::NoContainingForm) => true,
-            // ★ See the variant's docs: nothing on the frame can make a
+            // See the variant's docs: nothing on the frame can make a
             // restyle refusal stop being a true report of what happened when
             // the operator pressed the control. `retire` ends it.
             Self::TextStyle(_) => true,
-            // ★ Same ruling again, and each of the four refusals earns it
+            // Same ruling again, and each of the four refusals earns it
             // separately: a document does not stop being signed, a sidecar does
             // not grow a record, and a routing bug does not fix itself, between
             // one frame and the next. The remedy is always something the
             // operator *does* — and doing it is a command, which `retire`
             // catches.
             Self::Rotate(_) => true,
-            // ★★★ `true`, and NOT on the stability argument its neighbours in
+            // `true`, and NOT on the stability argument its neighbours in
             // this arm use — see the variant's own docs, which spend a section
             // refusing to claim it. An unexplained refusal's causes are unknown
             // by construction and some of them do change under the operator.
@@ -250,23 +250,23 @@ impl Declined {
             // that produced them*, and this one was produced by an error value
             // this shell is not permitted to interpret.
             Self::EditRefused => true,
-            // ★ Both on the TENSE argument, not the stability one: several of
+            // Both on the TENSE argument, not the stability one: several of
             // these causes are live predicates the operator changes in a click,
             // so `EditRefused`'s reasoning applies rather than its neighbours'.
             // The sentence reports the press; `retire` owns stale.
             Self::Reflow(_) | Self::EnterCannotSplit => true,
-            // ★ On the TENSE argument too, and here it is the ONLY argument
+            // On the TENSE argument too, and here it is the ONLY argument
             // available: the condition this reports is the one the sentence
             // asks the operator to change. A live predicate would retire the
             // explanation at the instant they acted on it.
             Self::ClipboardMode(_) => true,
-            // ★★ On the TENSE argument, and inheriting `EditRefused`'s section
+            // On the TENSE argument, and inheriting `EditRefused`'s section
             // wholesale — this variant is that one with a cause attached, so
             // the retirement reasoning is unchanged by the payload. It reports
             // what the engine answered about a request that no longer exists;
             // there is no predicate to re-ask, and `retire` owns stale.
             Self::EditText(_) => true,
-            // ★★★ On the TENSE argument, and it is `ClipboardMode`'s case
+            // On the TENSE argument, and it is `ClipboardMode`'s case
             // rather than `EditRefused`'s — a distinction worth stating
             // because the two `true`s look identical and are reached for
             // opposite reasons. `EditRefused` **cannot** be re-asked (the fact
@@ -282,7 +282,7 @@ impl Declined {
             // sentence that flickers once and is gone — indistinguishable, from
             // his side, from the silence O188 was raised about.
             //
-            // ★★ That is also why `still_true` gained no fifth parameter here.
+            // That is also why `still_true` gained no fifth parameter here.
             // The draft threaded `selection_at_part_rung: bool` through twenty
             // -one call sites in `decline/tests.rs` to build the one mechanism
             // this arm exists to refuse.

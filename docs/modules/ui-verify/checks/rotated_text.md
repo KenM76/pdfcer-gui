@@ -13,7 +13,7 @@ operator's 2026-08-26 report about vertical text.
 Three symptoms, one gesture, and **all three are observable from one drag**
 — which is why this is one check rather than three.
 
-# ★★★ Why this exists when the unit tests already pass
+# Why this exists when the unit tests already pass
 
 R1, and its founding example. `canvas::textsel` and `canvas::textsel::
 writing` carry twenty-odd unit tests that assert the grouping, the band
@@ -45,13 +45,13 @@ between them.
 | 3 | `cursor-custom … deg=` | **90** | the I-beam stays upright over vertical text |
 | 4 | the OS clipboard | `UPWARD` | the trace is right and the clipboard is not, which is defect O18's shape and is invisible to every field above |
 
-★ **`chars` and `quads` are asserted as exact numbers, not as `> 0`.** The
+**`chars` and `quads` are asserted as exact numbers, not as `> 0`.** The
 pre-fix build produces `chars=11 quads=6`, both greater than zero, and a
 check written the usual way would have passed against the defect it was
 written for. This is the one place in this harness where the ordinary
 liveness form would be actively misleading.
 
-# ★★ The cursor angle rides on the drag, and that is not a coincidence
+# The cursor angle rides on the drag, and that is not a coincidence
 
 `canvas::cursor`'s header records that **a cursor cannot be verified by
 screenshot**: Windows composites the pointer separately, so `BitBlt` and

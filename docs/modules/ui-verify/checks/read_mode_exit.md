@@ -29,7 +29,7 @@ memory or by accident having pointed at nothing, and a click is not a hover.
 **A tooltip is not a disclosure; it is a disclosure available to somebody who
 already knows where to point.**
 
-# ★★★ The vacuous shapes this is written to avoid
+# The vacuous shapes this is written to avoid
 
 Three, and each of them is a check that passes on a broken build:
 
@@ -37,7 +37,7 @@ Three, and each of them is a check that passes on a broken build:
 |---|---|
 | *the hint exists* | a hint naming a chord nothing is bound to |
 | *the hint exists* | a hint shown permanently, including when read mode is **off** — furniture, and a false statement for every minute the mode is not on |
-| *the hint says `Ctrl+H`* | ★ nothing — but it FAILS on a legitimate rebind, which makes it a second copy of the binding rather than a test of it |
+| *the hint says `Ctrl+H`* | nothing — but it FAILS on a legitimate rebind, which makes it a second copy of the binding rather than a test of it |
 
 So what is asserted is an **identity between two derivations that a wrong
 build breaks and a rebind does not**:
@@ -53,7 +53,7 @@ red the first time anybody rebinds the command, which is exactly the moment
 it becomes a lie. A rebind with the mechanism intact moves `chord=`, `line=`
 and the title together, and this check stays green.
 
-# ★★ And the absence half, taken from a run that REACHED the state
+# And the absence half, taken from a run that REACHED the state
 
 An absence assertion is vacuous when the run never reaches the state it is
 asserting absence in. This one reads a **single launch that does both**:
@@ -73,13 +73,13 @@ that was not there before. Nothing in this file spells the sentence, so a
 rewording of the operator copy cannot make it fail — which is the property a
 `contains("Read mode")` assertion would not have.
 
-★ The prefix being a prefix is itself load-bearing, not incidental. A taskbar
+The prefix being a prefix is itself load-bearing, not incidental. A taskbar
 button truncates from the right; a hint appended after the build stamp would
 be the first thing the ellipsis eats, on the window of the one operator who
 most needs it. It is also what keeps
 [`super::title_build_stamp`]'s right-hand parse aimed at the build stamp.
 
-# ★ Full screen is checked by its absence
+# Full screen is checked by its absence
 
 `fullscreen=` must be **empty** here. Full screen hides no chrome of pdfcer's
 own — the ribbon stays, its control stays, `app::conditions` renders it
@@ -99,7 +99,7 @@ same `dispatch_command` a chord reaches. So this can run beside somebody
 working — which for a check about a state an operator gets *stuck in* is
 worth having, because it can then run often.
 
-★ And no `--pdf`. Read mode is per **window**, not per document
+And no `--pdf`. Read mode is per **window**, not per document
 (`app::window` §3), so the statement must appear with nothing open — and
 `title_build_stamp`'s note applies: a check whose subject does not need a
 document should not acquire a dependency on one, or a moved fixture turns it

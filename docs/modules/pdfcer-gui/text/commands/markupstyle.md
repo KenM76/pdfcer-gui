@@ -1,7 +1,7 @@
 # `text::commands::markupstyle` — the labels and tooltips of **Format ▸
 Markup**, the six controls that restyle a mark that is already on the page
 
-## ★ Why this is a file of its own
+## Why this is a file of its own
 
 **R2** — no source file over 1,500 lines. [`super`] stood at 1,438 when
 these five arrived, and five `CommandText`s written to this project's
@@ -21,7 +21,7 @@ different question in the ribbon (*what is selected?*, not *what am I about
 to draw?*).
 
 
-## ★★★ Every tooltip below has to read correctly in TWO states
+## Every tooltip below has to read correctly in TWO states
 
 The same constraint that shaped the Font block in [`super`], for the same
 mechanical reason: `egui_shell::ribbon::control::render_command` shows a
@@ -49,7 +49,7 @@ did. The one greyed state that remains has its own sentence, drawn by
 *"this mark is locked"* is a fact about that annotation and not about the
 command.
 
-## ★★ What the fill tooltip has to say, and why it is the longest
+## What the fill tooltip has to say, and why it is the longest
 
 `canvas::markup::spec` authors every shape with `interior: None` — no fill —
 and its reason is quoted in `panels::properties::markup`'s header: *"a
@@ -62,6 +62,6 @@ back. Its tooltip therefore names the **no fill** state explicitly, because
 that state is the one the mark started in and the one an operator will want
 to return to after trying a fill on a drawing.
 
-★ This does **not** change what new markup is authored with. The pen is
+This does **not** change what new markup is authored with. The pen is
 `canvas::markup::pen`'s and it is untouched; this restyles one existing
 annotation, which is a different act with a different verb.

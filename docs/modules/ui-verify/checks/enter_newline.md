@@ -18,7 +18,7 @@ is red on its first run, read §"what each failure means" before assuming the
 shell is broken: an unrun check's first failure is as likely to be in the
 check as in the subject, and that is not a reason to weaken it.
 
-## ★★★ What this check is for, and why the unit tests are not enough
+## What this check is for, and why the unit tests are not enough
 
 `canvas::textedit::keys::enter_means` is a pure function with four unit
 tests, and they prove **the rule**. They cannot prove any of these:
@@ -50,11 +50,11 @@ committed. So:
   commits `n=1`;
 * only a build where the whole chain works commits `n=2`.
 
-★ A count rather than a screenshot, for the reason `text_edit`'s check gives
+A count rather than a screenshot, for the reason `text_edit`'s check gives
 about the same choice: two lines of 11 pt text on an A1 sheet are a few
 pixels, and an oracle that cannot tell one line from two is not an oracle.
 
-## ★★ Why the text is SEEDED and the Enter is REAL
+## Why the text is SEEDED and the Enter is REAL
 
 `PDFCER_DIAG_TYPE` puts characters in the draft, because this machine's
 harness cannot inject arbitrary characters — `sys::vk` is a deliberately

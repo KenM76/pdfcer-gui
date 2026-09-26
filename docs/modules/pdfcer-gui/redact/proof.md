@@ -1,7 +1,7 @@
 # `redact::proof` — the absence proof, and the only thing entitled to the
 word *verified*
 
-★ This module is the ONLY place the absence proof exists. Nothing else in
+This module is the ONLY place the absence proof exists. Nothing else in
 this repository, and nothing in the engine, answers the question it asks.
 
 ## What a proof is for, here
@@ -45,7 +45,7 @@ into noise operators learn to click through. They are still checked against
 exactly what [`crate::text::redact::verification_limit_line`] says on
 screen (*"those were checked against the decoded page content only"*).
 
-## ★★★ Why only a CONTENT-bearing stream can refuse
+## Why only a CONTENT-bearing stream can refuse
 
 Handing the first row of that table **every** stream in the file — on the
 argument that a decoded stream is content a renderer or a text extractor
@@ -73,7 +73,7 @@ English-language `name` table, so under that rule every redaction of an
 ordinary English word on an ordinary document is liable to be refused
 outright — a redaction tool that refuses every time to do any work.
 
-★ **The classification would be inverted.** The raw-byte half has the right
+**The classification would be inverted.** The raw-byte half has the right
 instinct — a byte run in a place nothing draws is a coincidence pdfcer
 cannot rule out, so *disclose* — and [`MIN_VERIFIABLE_LEN`] exists entirely
 because of it. Applying the **opposite** rule to the **same** kind of
@@ -88,7 +88,7 @@ into the disclosure list with the place named, so nothing passes silently:
 it is reported, in the operator's face, and gated behind the residual
 acknowledgement.
 
-★★ What this deliberately does **not** relax: a survival in page content, a
+What this deliberately does **not** relax: a survival in page content, a
 form XObject (which is what an annotation appearance stream is), a tiling
 pattern or a Type 3 glyph procedure is the one hit that can still stop a
 write. It is disclosed at preparation and, once acknowledged, allowed; what
@@ -97,7 +97,7 @@ disclosed list. The test
 `the_sweep_reaches_a_stream_that_is_not_page_content` holds the line that
 such a stream is reached by the sweep at all.
 
-## ★ One decode, two halves
+## One decode, two halves
 
 [`prove`] decodes every stream **once** and hands the same blobs to both
 halves. Calling the disclosure half and the content half one after the

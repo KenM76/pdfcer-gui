@@ -2,7 +2,7 @@
 document
 
 
-## ★★★ Its recorded blocker was TRUE, which made it the odd one out
+## Its recorded blocker was TRUE, which made it the odd one out
 
 Ten scaffolded commands were retired in three days and nine of them turned
 out to be sitting behind reasons that had expired — citations of citations,
@@ -19,7 +19,7 @@ the register as noise. **A blocker naming a SURFACE THAT DOES NOT EXIST is
 the strong kind**: it cannot go stale by accident, because nothing makes a
 window appear except somebody building it.
 
-## ★★★ And there is a FOURTH invisible consequence nobody had written down
+## And there is a FOURTH invisible consequence nobody had written down
 
 **This shell cannot deliver the bytes.** `UnembedPlan::bytes_reclaimable` is
 the number an operator opens this window for, and the engine warns that an

@@ -26,7 +26,7 @@ const RENDER_EVENT: &str = "render-async-done";
 
 /// The worker's **inline** completion line — the other half of the same fact.
 ///
-/// ★★★ Added 2026-08-28, after this check reported *"NO RENDER WAS REQUESTED"*
+/// Added 2026-08-28, after this check reported *"NO RENDER WAS REQUESTED"*
 /// against a build that had spawned and completed **nineteen** of them.
 ///
 /// `render::worker` has two completion paths and takes whichever is cheaper: a
@@ -41,14 +41,14 @@ const RENDER_EVENT: &str = "render-async-done";
 /// This one printed `render::settle`'s staleness test as the suspect, in detail,
 /// down to `RenderKey::same_region` — and that mechanism was working perfectly.
 ///
-/// ★★ The general rule, which this project has now met three times in one day:
+/// The general rule, which this project has now met three times in one day:
 /// **ask what the check SAMPLED before asking what is broken.** A failing
 /// measurement is a claim about an instrument as much as about a program.
 const RENDER_INLINE_EVENT: &str = "render-inline";
 
 /// How far to zoom before panning, in Ctrl+wheel notches.
 ///
-/// ★ Enough to be **past the pixmap ceiling**, which is where a raster stops
+/// Enough to be **past the pixmap ceiling**, which is where a raster stops
 /// covering the page and starts covering the window — the tier this check is
 /// about. Below it a pan is free and this check would be measuring nothing.
 /// Twenty notches lands around 4,000 % on a Letter sheet, comfortably above the
@@ -97,7 +97,7 @@ impl Check for PanningPastTheOverscanRendersTheNewArea {
 
 /// How many renders have completed so far, **by either path**.
 ///
-/// ★ The asynchronous line carries an `outcome`, because a thread can come back
+/// The asynchronous line carries an `outcome`, because a thread can come back
 /// with a cancellation or a failure; the inline one cannot fail asynchronously
 /// and carries none, so it is counted unconditionally. Two shapes for one fact,
 /// and the asymmetry is the worker's rather than this function's.
@@ -125,7 +125,7 @@ fn field(session: &Session, key: &str) -> Result<Option<String>> {
         .map(str::to_owned))
 }
 
-/// ★★★ The region the shell **wants**, which is the one that moves with the
+/// The region the shell **wants**, which is the one that moves with the
 /// view.
 ///
 /// `region=` is what the pixels on screen are a picture of, and on a build with
@@ -217,7 +217,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let renders_before = renders_done(&session)?;
     driver.scroll_at(centre, PAN_NOTCHES)?;
     // Generous: a region render at this depth re-interprets the content stream,
-    // and the debounce has to expire first. ★ A settle that is too short does
+    // and the debounce has to expire first. A settle that is too short does
     // not fail this check, it makes its evidence ambiguous — "no render yet" and
     // "no render ever" look identical, and the second is the defect.
     session.settle(260);
@@ -276,14 +276,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 4: and the other half of his sentence ------------------------------
     //
-    // ★★ *"…and the same thing happens usually when I zoom out."* Same root
+    // *"…and the same thing happens usually when I zoom out."* Same root
     // cause arriving by a different route: a zoom DOES change the scale, so a
     // render is requested — but it is built from whatever region was current
     // when it spawned, and by the time it lands the gesture has moved on. Once
     // the scale settles, nothing notices the region it arrived with is the
     // wrong one.
     //
-    // ★ Asserted separately rather than assumed fixed by the pan case. They
+    // Asserted separately rather than assumed fixed by the pan case. They
     // share a cause and they do not share a code path, and "it is probably the
     // same bug" is how the second half of a two-part report gets shipped
     // broken.

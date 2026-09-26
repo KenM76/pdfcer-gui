@@ -14,7 +14,7 @@ this shell had never grown**, driven against the real binary.
 Two checks, because the two are different claims about different surfaces and
 a reader who sees one fail should not have to work out which half is broken.
 
-# ★★★ Why these need DRIVING and cannot be settled by a unit test
+# Why these need DRIVING and cannot be settled by a unit test
 
 Both defects are of the shape this harness exists for, and neither is
 observable from inside the crate:
@@ -44,7 +44,7 @@ working.
 | `forms/nested-form.pdf` | `Personal.Name`, `Personal.Address.City`, `Personal.Address.Zip` | **The only fixture with grouping nodes at all.** Core's own note on `AcroForm::groups` says it is empty for a flat form, *"which is every file in the Pass 7.0 census"* — and the two-level shape is what makes the **cascade** observable: deleting `Personal` also empties `Personal.Address`, a node nobody named |
 | `../../fixtures/certified-nested-form.pdf` | `/DocMDP` at **`/P 2`**, over the SAME two-level tree | Certified **and** nested, which is the intersection nothing else in either corpus occupies. Filling permitted, restructuring refused. The engine's `PROVENANCE.md` says why `/P 1` would not do: it refuses *everything*, so a check written against it *"passes whether or not those gates differ at all"* — the fill controls would be gone too, and the check could not tell a correct build from one that disables the whole panel |
 
-★★★ **The second fixture was `forms/certified-p2-form.pdf` and could not
+**The second fixture was `forms/certified-p2-form.pdf` and could not
 serve.** That file is certified at the right `/P` and its fields are
 **flat** (`FullName`, `Subscribe` — no dots), so `AcroForm::groups` is empty
 and `panels::forms::groups::section` takes its early return before laying
@@ -82,7 +82,7 @@ properties it has to keep — it loads, `deletion_refusal` is `Some`,
 | G | click a widget the canvas census names | `form-field-selected field=…` |
 | H | File ▸ Properties, then read the Properties pane's gate census | `form-field-gates rename_refused=1 delete_refused=1`, and **neither** `properties.form_field.rename` nor `properties.form_field.delete` declared |
 
-★★★ **H opens the Properties panel, and that is a correction rather than a
+**H opens the Properties panel, and that is a correction rather than a
 flourish.** Edit's default dock puts Properties and Forms in ONE tabbed
 stack, and a tabbed stack draws only its active tab — so phase F's own
 `View ▸ Forms` click pushed Properties to the back and
@@ -91,12 +91,12 @@ sweep reported *"a field is selected and the Properties pane traced no
 `form-field-gates` line"* about a pane the check had itself hidden; the
 selection in that same trace is real. See `PROPERTIES_ITEM`.
 
-★ Phase F is what makes phase H's absences readable: a build that simply
+Phase F is what makes phase H's absences readable: a build that simply
 failed to draw the Properties section would produce the same missing
 regions, and the `form-field-gates` line — written unconditionally, refused
 or not — is what tells the two apart.
 
-★★★ **The arm half of F is LIVE, and its history is worth keeping.** It has
+**The arm half of F is LIVE, and its history is worth keeping.** It has
 been through three states, and each was a worse-looking fix than it sounds:
 
 1. **Asserted unconditionally on a flat fixture** — and passed, having

@@ -196,7 +196,7 @@ mod tests {
         (a.min - b.min).abs().max_elem() < 0.5 && (a.max - b.max).abs().max_elem() < 0.5
     }
 
-    /// ★ **The one thing the calibration above cannot see.**
+    /// **The one thing the calibration above cannot see.**
     ///
     /// It compares the walk against a frame that was drawn *by the walk*, so
     /// an error in the step — dropping the splitter, double-counting it —
@@ -251,7 +251,7 @@ mod tests {
         assert_eq!(stacks_down(area, &[1.0]), vec![area]);
     }
 
-    /// ★ **The calibration, and the reason the replay can be trusted.**
+    /// **The calibration, and the reason the replay can be trusted.**
     ///
     /// Everything below asks the walk where a compartment *would* be. This
     /// asks whether the walk agrees with where the dock *did* draw one — so
@@ -291,7 +291,7 @@ mod tests {
         assert_eq!(checked, 3, "the fixture has three stacks");
     }
 
-    /// ★ The property a preview built out of the *target's current rect*
+    /// The property a preview built out of the *target's current rect*
     /// cannot have: emptying a column widens the one the panel lands in.
     #[test]
     fn the_preview_accounts_for_the_column_the_drag_empties() {
@@ -381,7 +381,7 @@ mod tests {
         );
     }
 
-    /// ★ A target that moves nothing still has an answer, and it is the
+    /// A target that moves nothing still has an answer, and it is the
     /// compartment the panel is already in. Returning `None` would blink the
     /// highlight out over exactly the release the operator is most likely to
     /// make by accident.
@@ -423,7 +423,7 @@ mod tests {
         );
     }
 
-    /// ★ The geometry is a record of a frame that happened. Before the first
+    /// The geometry is a record of a frame that happened. Before the first
     /// one there is nothing to divide, and inventing a rect from the window
     /// would be a second answer to the question the panel reservation already
     /// settles.

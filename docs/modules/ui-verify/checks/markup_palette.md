@@ -19,7 +19,7 @@ are put side by side — which is the comparison the operator's own request
 ("*make sure you've used the same default colours and style look for these
 things as Adobe*") is about.
 
-# ★★★ Why the sixteen unit tests beside it cannot see this
+# Why the sixteen unit tests beside it cannot see this
 
 `palette::tests` is thorough and it is thorough about **the table**:
 `each_constant_is_the_registry_value_it_claims_to_be` divides the byte by 255
@@ -41,7 +41,7 @@ test in the workspace observes more than one of them at a time:
 | 5 | `pdfcer-render` paints the `/AP` onto the page raster | a separate crate, driven by the canvas |
 | 6 | the composited window shows it | the compositor, the theme, and whatever the canvas draws over the top |
 
-## ★ What this check measures is the DEFAULT, and that is a deliberate scope
+## What this check measures is the DEFAULT, and that is a deliberate scope
 
 `canvas::markup::pen`'s header is explicit — the pen *"is deliberately **not
 persisted** to the settings file"*, because a pen colour is a preference
@@ -76,7 +76,7 @@ Three readings from two captures:
 | **the edge strip** — a thin box lying along where the rectangle's top edge will be | must be **blank paper** | must hold ink, and that ink must be `#DB3425` |
 | **the interior box** — well inside the shape | blank | still blank |
 
-★★★ **The blank baseline is not politeness, it is what stops the check
+**The blank baseline is not politeness, it is what stops the check
 passing for the wrong reason.** A "the ink here is red" assertion is
 satisfied by any red thing: a red title block, a red revision cloud already
 on the sheet, a red selection outline. This project has paid for exactly that
@@ -93,7 +93,7 @@ drawing it is a comment about, which on a CAD sheet is the whole content
 under it"* — and that is a claim about the picture, so it is asserted from
 the picture.
 
-# ★★★ How the stroke's colour is extracted — and why the obvious way fails
+# How the stroke's colour is extracted — and why the obvious way fails
 
 **There is no core pixel to sample.** `a1-titleblock.pdf` is a 2384 × 1684 pt
 A1 sheet displayed fit-page in an 1100 × 800 window, which is **20 % zoom**:

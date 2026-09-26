@@ -1,7 +1,7 @@
 //! # `canvas::gesture::meaning` tests — the precedence table, driven as a table
 //!
 //!
-//! ## ★★ The seam is the ordinary one, and the half it leaves behind is the
+//! ## The seam is the ordinary one, and the half it leaves behind is the
 //! interesting one
 //!
 //! [`super`] is **one pure function and the two enums it decides between** —
@@ -15,7 +15,7 @@
 //! holds state, touches egui, or knows that frames exist, which is the same
 //! property the parent has and the reason both can be read alone.
 
-// ★★ The INNER attribute, not just the `mod tests;` declaration in the parent.
+// The INNER attribute, not just the `mod tests;` declaration in the parent.
 //
 // `check-ui-strings.sh`'s exclusion 2b recognises a whole test file **from the
 // file** rather than from its name, and it exists because the last R2 split of
@@ -30,7 +30,7 @@ use super::*;
 
 /// A press that landed on nothing, for the table-driven cases below.
 ///
-/// ★ Named rather than spelled out at each call: eight fields of which six
+/// Named rather than spelled out at each call: eight fields of which six
 /// are `None`/`false` in almost every row, and a literal repeated a dozen
 /// times is where a `true` gets left behind after an edit.
 fn probe(tool: CanvasTool) -> Press {
@@ -51,7 +51,7 @@ fn probe(tool: CanvasTool) -> Press {
 
 use crate::canvas::textedit::TextEditKind;
 
-/// ★★ **The caret tool takes the click, leaves the drag, and needs
+/// **The caret tool takes the click, leaves the drag, and needs
 /// `edit_content`** — its whole rung, over every capability combination.
 ///
 /// Three claims in one loop, and each fails against a different plausible
@@ -70,7 +70,7 @@ use crate::canvas::textedit::TextEditKind;
 /// Over the whole capability lattice rather than the three shipped modes,
 /// for the reason this module's other tests are: a mode is a manifest entry
 /// and can be customized, and the rule is about the flags.
-/// ★★ **This test asserted `drag.is_none()` until 2026-08-21**, and the
+/// **This test asserted `drag.is_none()` until 2026-08-21**, and the
 /// sentence it carried — *"a caret is placed, not dragged"* — was true of
 /// the gesture and wrong about the tool.
 ///
@@ -105,7 +105,7 @@ fn the_caret_tool_clicks_for_a_caret_and_drags_for_a_box_on_edit_content_alone()
                          change page content must not offer a rectangle to type into"
                     );
                 }
-                // ★ An armed region zoom does NOT take the box away, which
+                // An armed region zoom does NOT take the box away, which
                 // is the one interaction worth pinning: the zoom marquee
                 // outranks a text SWEEP (`textsel`) and must not outrank a
                 // tool the operator explicitly armed to author with.
@@ -126,7 +126,7 @@ fn the_caret_tool_clicks_for_a_caret_and_drags_for_a_box_on_edit_content_alone()
 // What a press means
 // -----------------------------------------------------------------
 
-/// ★ **The armed markup tool outranks the grips and the region zoom.**
+/// **The armed markup tool outranks the grips and the region zoom.**
 ///
 /// Both rows matter and both are failure modes with teeth: a markup drag
 /// classified as a `Resize` would be consumed and author nothing (a tool
@@ -270,7 +270,7 @@ fn without_a_markup_tool_the_press_precedence_is_unchanged() {
 // The mode gate
 // -----------------------------------------------------------------
 
-/// ★ **A mode that cannot edit content gives every content press no
+/// **A mode that cannot edit content gives every content press no
 /// meaning** — and leaves the region zoom alone.
 ///
 /// This is the operator's ask (*"in read mode the document shouldn't allow
@@ -279,7 +279,7 @@ fn without_a_markup_tool_the_press_precedence_is_unchanged() {
 /// gating three of them would look exactly like gating all four right up
 /// until someone dragged a grip.
 ///
-/// ★ **The bare press is no longer `NOTHING`, and that is the text-selection
+/// **The bare press is no longer `NOTHING`, and that is the text-selection
 /// row arriving.** It used to assert *"no marquee-select, and no selecting
 /// click either"* against `PressMeaning::NOTHING`, which was the right
 /// assertion while Read had no press meaning at all — and would be the wrong
@@ -298,7 +298,7 @@ fn without_a_markup_tool_the_press_precedence_is_unchanged() {
 fn read_mode_gives_a_content_press_no_meaning_but_keeps_the_region_zoom() {
     let select = CanvasTool::Select;
     let read = Capabilities::NONE;
-    // ★ Asserted as the ABSENCE OF EVERY CONTENT MEANING rather than as
+    // Asserted as the ABSENCE OF EVERY CONTENT MEANING rather than as
     // `PressMeaning::NOTHING`, and the change of shape is the point.
     //
     // `NOTHING` was the right assertion while Read had no press meaning at
@@ -415,7 +415,7 @@ fn read_mode_gives_a_content_press_no_meaning_but_keeps_the_region_zoom() {
     );
 }
 
-/// ★ **No press ever means both a text sweep and a content marquee.**
+/// **No press ever means both a text sweep and a content marquee.**
 ///
 /// The exclusivity `canvas::textsel`'s header §3 rests on, asserted at the
 /// point where a press is given its meaning rather than only at the
@@ -520,7 +520,7 @@ fn no_press_offers_both_a_text_sweep_and_a_content_marquee() {
     }
 }
 
-/// ★ **The armed text tool takes the press in EDIT** — the row the whole
+/// **The armed text tool takes the press in EDIT** — the row the whole
 /// tool exists for, asserted by itself so that a failure names it.
 ///
 /// `Capabilities::FULL` is Edit, whose primary drag is the content marquee.
@@ -604,7 +604,7 @@ fn the_text_tool_sweeps_in_edit_and_retiring_it_gives_the_marquee_back() {
     );
 }
 
-/// ★ **An armed region zoom outranks the armed text tool, and an armed pen
+/// **An armed region zoom outranks the armed text tool, and an armed pen
 /// outranks the zoom.**
 ///
 /// The two orderings around rung 2, asserted together because they point in
@@ -669,7 +669,7 @@ fn a_region_zoom_outranks_the_text_tool_but_not_a_pen() {
     );
 }
 
-/// ★ **A vertex markup tool takes the CLICK and offers no drag** — the row
+/// **A vertex markup tool takes the CLICK and offers no drag** — the row
 /// added on 2026-08-14, and the one a build that folded PolyLine into the
 /// band rung would fail.
 ///
@@ -770,7 +770,7 @@ fn a_vertex_markup_tool_takes_the_click_and_offers_no_drag() {
     );
 }
 
-/// ★ **Review places markup and does not touch content** — the middle row
+/// **Review places markup and does not touch content** — the middle row
 /// of `MODES_AND_PANELS.md`'s gesture table, which is the row that proves
 /// the gate is per-capability rather than a single on/off.
 #[test]
@@ -857,7 +857,7 @@ fn review_mode_places_markup_but_refuses_content() {
 // The rotate handle of a selected annotation
 // -----------------------------------------------------------------
 
-/// ★★★ **A press on a selected MARKUP's rotate handle is a rotate, in
+/// **A press on a selected MARKUP's rotate handle is a rotate, in
 /// REVIEW** — the mode markup is authored in and the mode `edit_content` is
 /// false in.
 ///
@@ -883,7 +883,7 @@ fn a_markups_rotate_handle_turns_it_in_review() {
     );
 }
 
-/// ★★★ **A ce dimension's rotate handle turns it, and it needs
+/// **A ce dimension's rotate handle turns it, and it needs
 /// `author_measure` rather than `author_markup`.**
 ///
 /// The two rows together are the whole reason [`RotatableAnnot`] is a variant
@@ -934,7 +934,7 @@ fn a_dimensions_rotate_handle_is_gated_on_measure_not_markup() {
     );
 }
 
-/// ★★ **The handle claims the press ABOVE the two annotation rungs below it,
+/// **The handle claims the press ABOVE the two annotation rungs below it,
 /// and above `edit_content`.**
 ///
 /// The ordering is stated in `press_kind` rather than relied on, and this pins
@@ -964,7 +964,7 @@ fn the_handle_outranks_the_content_branch_in_edit() {
     );
 }
 
-/// ★ **And with no annotation selected the handle still belongs to page
+/// **And with no annotation selected the handle still belongs to page
 /// content**, which is the assertion that stops the test above passing on a
 /// build where every `Grip::Rotate` became an annotation rotation.
 #[test]
@@ -985,11 +985,11 @@ fn without_an_annotation_the_handle_is_still_the_content_rotate() {
     );
 }
 
-/// ★★★ **A press on one of a markup's RESIZE GRIPS scales it — in Review,
+/// **A press on one of a markup's RESIZE GRIPS scales it — in Review,
 /// where the content branch does not run.**
 ///
 ///
-/// ★ Driven at screen (532, 493) against a box declared
+/// Driven at screen (532, 493) against a box declared
 /// `[[443.3 493.1] - [531.0 578.8]]` — one point outside its right edge and a
 /// tenth of a point above its top.
 #[test]
@@ -1025,7 +1025,7 @@ fn a_grip_outside_a_markups_box_still_resizes_it_in_review() {
     }
 }
 
-/// ★★ **…and the body still means MOVE**, which is what makes the two flags
+/// **…and the body still means MOVE**, which is what makes the two flags
 /// two rather than one.
 ///
 /// A build that repaired the grip by widening `markup_body` would pass the
@@ -1054,7 +1054,7 @@ fn the_body_of_a_markup_still_means_move_not_resize() {
     );
 }
 
-/// ★★ **A grip flag alone does not license a drag: the capability still
+/// **A grip flag alone does not license a drag: the capability still
 /// gates it.**
 ///
 /// Read authors no markup, so a press that somehow arrived with `markup_grip`
@@ -1074,7 +1074,7 @@ fn a_markup_grip_in_a_mode_that_authors_no_markup_resizes_nothing() {
             Capabilities::NONE
         )
         .drag,
-        // ★ `assert_ne!` against the resize rather than `assert_eq!` against
+        // `assert_ne!` against the resize rather than `assert_eq!` against
         // `None`, and the difference is a real fact about Read: a press there
         // is a **text sweep**, so the honest assertion is *"it is not a
         // resize"*, not *"it means nothing"*. Writing the stronger form first
@@ -1086,7 +1086,7 @@ fn a_markup_grip_in_a_mode_that_authors_no_markup_resizes_nothing() {
     );
 }
 
-/// ★★ **The same repair for a form field's box, and the same gate.**
+/// **The same repair for a form field's box, and the same gate.**
 ///
 /// `widget_grip` is `markup_grip`'s twin and was broken identically: a widget
 /// is only selectable in Edit, so the press fell into the content branch,

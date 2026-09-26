@@ -87,7 +87,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★★★ Its own fixture, and `--pdf` is deliberately ignored. See the
+    // Its own fixture, and `--pdf` is deliberately ignored. See the
     // header: two real drawings were driven first, and the measurement that
     // ruled both out is what this fixture exists to answer.
     let pdf = local_fixture(FIXTURE).ok_or_else(|| {
@@ -102,7 +102,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .vocab
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
-    // ★ Read from the FILE rather than taken from the constant above, so a
+    // Read from the FILE rather than taken from the constant above, so a
     // regenerated fixture at another size makes this check aim correctly rather
     // than silently at the wrong place. The constant is the fallback, and the
     // two disagreeing is a fact worth surfacing in the note below.
@@ -214,7 +214,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- C: two Escapes step back out --------------------------------------
     //
-    // ★ The FIRST press must not leave. `canvas::keys` puts the container below
+    // The FIRST press must not leave. `canvas::keys` puts the container below
     // the selection on the ladder, so this asserts the order as well as the
     // effect: if one press did both, an operator who pressed Escape to drop a
     // selection would silently lose the container they were working inside.

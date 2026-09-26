@@ -52,7 +52,7 @@ impl Choice {
     fn apply(self, settings: &mut Settings) {
         match self {
             Self::Recommended => apply_pdfcer(settings),
-            // ★ A standard's preset is applied ON TOP of pdfcer's defaults, not
+            // A standard's preset is applied ON TOP of pdfcer's defaults, not
             // onto whatever the operator last had. Otherwise "PDF/X-4" would
             // mean something different depending on what was set before it,
             // which is the one thing a named preset must not do.
@@ -66,7 +66,7 @@ impl Choice {
 
 /// **Everything the presets row offers**, in display order.
 ///
-/// ★★★ pdfcer's own answers first, then every standard the engine knows about.
+/// pdfcer's own answers first, then every standard the engine knows about.
 /// The list is *derived* from `RenderStandard::all()` rather than restated, so
 /// a standard the engine adds appears here with no change at all — R8's
 /// registration rule, reached through the crate boundary instead of through a
@@ -80,11 +80,11 @@ pub fn choices() -> Vec<Choice> {
 
 /// pdfcer's own recommended answers.
 ///
-/// # ★★★ It is `Settings::default()`, and getting here took two corrections
+/// # It is `Settings::default()`, and getting here took two corrections
 ///
 ///
 ///
-/// ★ The second is the more instructive mistake. A doc comment asserting a
+/// The second is the more instructive mistake. A doc comment asserting a
 /// difference that does not exist is worse than no comment: it invites the next
 /// reader to preserve a line that does nothing, and it makes a *deliberate*
 /// override indistinguishable from a copied one. **Read the value, not the
@@ -97,7 +97,7 @@ fn apply_pdfcer(s: &mut Settings) {
     *s = Settings::default();
 }
 
-/// ★ **The `&'static str` a stored id names**, or `None` if this build has no
+/// **The `&'static str` a stored id names**, or `None` if this build has no
 /// such choice.
 ///
 /// The seam between `Prefs`'s owned `String` and the `&'static str` every other
@@ -122,7 +122,7 @@ const PRESET_SLOT: &str = "settings-preset"; // ui-text-exempt: a trace slot key
 /// Which preset the control should show as selected.
 ///
 /// The operator's own choice while it still describes the working settings,
-/// and otherwise the derived reading. See [`row`]'s ★★★ comment for why the
+/// and otherwise the derived reading. See [`row`]'s comment for why the
 /// order is that way round and not the other.
 fn live_choice(draft: &Draft) -> Option<&'static str> {
     draft
@@ -131,7 +131,7 @@ fn live_choice(draft: &Draft) -> Option<&'static str> {
         .or_else(|| matching(&draft.working))
 }
 
-/// ★ **Whether the draft's chosen standard still describes its working
+/// **Whether the draft's chosen standard still describes its working
 /// settings** — the question `commit` asks before writing the choice to disk.
 ///
 /// [`live_choice`]'s own filter, exposed so the display rule and the stored
@@ -150,7 +150,7 @@ pub fn still_chosen(draft: &Draft) -> bool {
 
 /// Whether `id`'s preset still describes `settings`.
 ///
-/// ★ Asked against the preset rather than remembered as a flag, because the
+/// Asked against the preset rather than remembered as a flag, because the
 /// operator can change any control in the window after choosing a preset and
 /// nothing tells this module when they do. A flag would need every other
 /// control to remember to clear it — the shape of a guard that is correct until
@@ -174,7 +174,7 @@ fn still_holds(id: &str, settings: &Settings) -> bool {
 /// by staring at an unchanged page costs an hour and reads as the setting being
 /// broken. Saying it costs a line.
 ///
-/// ★ Computed rather than written down, so the day a standard's answers diverge
+/// Computed rather than written down, so the day a standard's answers diverge
 /// the sentence corrects itself instead of becoming a stale claim — which is
 /// this file's own recorded lesson: *read the value, not the prose about the
 /// value.*
@@ -197,7 +197,7 @@ fn identical_siblings(id: &str) -> usize {
 
 /// Which preset the given settings currently match, if any.
 ///
-/// ★ Returns `None` for "none of them", which is the **normal** state once an
+/// Returns `None` for "none of them", which is the **normal** state once an
 /// operator has adjusted anything, and is not a fault. The control shows no
 /// selection rather than pretending the nearest one is chosen — a radio that
 /// claimed "pdfcer recommended" over settings that are not pdfcer's recommended
@@ -213,7 +213,7 @@ pub fn matching(settings: &Settings) -> Option<&'static str> {
 
 /// Whether two settings agree on **everything a preset sets**.
 ///
-/// ★★ Compares the render-radius fields explicitly rather than deriving
+/// Compares the render-radius fields explicitly rather than deriving
 /// `PartialEq` on `Settings`, and the reason is not tidiness. `Settings` also
 /// carries `theme` — the *program's* appearance — and the two write-radius
 /// entries that change bytes on disk. A preset is about how a **document
@@ -235,7 +235,7 @@ fn same(a: &Settings, b: &Settings) -> bool {
 /// `widgets::group`'s convention is that a group holds settings sharing a
 /// *subject*, and a preset shares a *purpose*.
 ///
-/// ## ★★★ What is shown BESIDE the choice, and why it is not decoration
+/// ## What is shown BESIDE the choice, and why it is not decoration
 ///
 /// The engine's reply that supplied these values spent most of its length on
 /// one point: *"the interesting column is not the value, it is how much weight
@@ -269,19 +269,19 @@ pub fn row(ui: &mut egui::Ui, draft: &mut Draft) {
                 // down.
                 "",
             );
-            // ★★★ **The operator's CHOICE outranks the reading of the
+            // **The operator's CHOICE outranks the reading of the
             // values**, and this two-line rule is the whole of the fix for the
             // defect reported as *"I can only select (ISO15930-1, -4)"*.
             //
             //
-            // ★★ The choice is authoritative **only while it remains true**.
+            // The choice is authoritative **only while it remains true**.
             // `still_holds` re-asks whether the working settings are still that
             // preset's, so adjusting any control by hand drops the selection
             // back to the derived reading rather than leaving a dot claiming an
             // intent the settings no longer express. That is what keeps this
             // from becoming a label that lies.
             let current = live_choice(draft);
-            // ★ The row's own state, on change only. Two facts a driven check
+            // The row's own state, on change only. Two facts a driven check
             // has no other way to read: WHICH standard the window is showing as
             // selected, and whether the draft has anything to save.
             //
@@ -309,7 +309,7 @@ pub fn row(ui: &mut egui::Ui, draft: &mut Draft) {
                 if ui.radio(selected, c.label()).clicked() && !selected {
                     c.apply(&mut draft.working);
                     draft.chosen_preset = Some(c.id());
-                    // ★★★ **And into the PREFERENCES, which is what makes Save
+                    // **And into the PREFERENCES, which is what makes Save
                     // live.** 2026-08-26, on the operator's report that
                     // *"select some of the standards [and] the save button is
                     // greyed out"*.
@@ -360,7 +360,7 @@ fn detail(ui: &mut egui::Ui, choice: Choice) {
     };
     let preset = RenderPreset::for_standard(standard);
     ui.indent(standard.as_str(), |ui| {
-        // ★★★ THE WEIGHT LINE, and it is the reason this feature is not just a
+        // THE WEIGHT LINE, and it is the reason this feature is not just a
         // dropdown. The engine's own framing: *"the interesting column is not
         // the value, it is how much weight the value can bear, and for most of
         // these axes the answer is less than the button implies."* For PDF/X-4
@@ -394,7 +394,7 @@ fn detail(ui: &mut egui::Ui, choice: Choice) {
             .weak(),
         );
 
-        // ★ Verbatim from the engine, never paraphrased. These sentences carry
+        // Verbatim from the engine, never paraphrased. These sentences carry
         // clause citations and one is quoted word-for-word out of ISO 15930;
         // rewording them here would put our phrasing behind a standard's
         // authority, which is the failure this whole feature was shaped to
@@ -403,7 +403,7 @@ fn detail(ui: &mut egui::Ui, choice: Choice) {
             ui.label(egui::RichText::new(line).small().weak());
         }
 
-        // ★★★ THE `why` OF EVERY SET CLAIM ARRIVES IN `disclosures()` ABOVE —
+        // THE `why` OF EVERY SET CLAIM ARRIVES IN `disclosures()` ABOVE —
         // it did not, for one day, and this is the record of that.
         //
         //
@@ -420,7 +420,7 @@ fn detail(ui: &mut egui::Ui, choice: Choice) {
         // way to make that not happen is to write the condition for its removal
         // as a failing test on the day you write the workaround.
 
-        // ★★★ **How many other standards give the same answers**, measured
+        // **How many other standards give the same answers**, measured
         // rather than asserted. See `identical_siblings`: today every one of
         // the eight conformance presets returns 7, so choosing between them
         // changes nothing pdfcer renders — which is exactly what the operator
@@ -440,7 +440,7 @@ fn detail(ui: &mut egui::Ui, choice: Choice) {
 
         let untouched = preset.left_alone();
         if !untouched.is_empty() {
-            // ★★ Named with the titles the operator already reads one screen
+            // Named with the titles the operator already reads one screen
             // down, NOT with the engine's key names. `mesh_patch_padding` is a
             // field identifier; "A gradient fill that comes out scrambled" is
             // the control they would go looking for. Printing the identifier
@@ -462,7 +462,7 @@ fn detail(ui: &mut egui::Ui, choice: Choice) {
 
 /// The operator-facing title for a settings key.
 ///
-/// ★ The engine names these `mesh_patch_padding`, `image_minify` and so on —
+/// The engine names these `mesh_patch_padding`, `image_minify` and so on —
 /// field identifiers, correct for an API and wrong for a window. Every one of
 /// them already has a title in [`crate::text::settings`], written by the
 /// symptom that would send somebody looking for it, and this is the one place
@@ -498,7 +498,7 @@ pub const REGION: &str = "settings.presets";
 #[cfg(test)]
 mod tests {
 
-    /// **★★★ The reasoning behind every SET claim reaches the operator — and
+    /// **The reasoning behind every SET claim reaches the operator — and
     /// since 2026-09-02 it arrives in the engine's own `disclosures()`.**
     ///
     /// This test began life asserting the output of a nine-line workaround in
@@ -506,7 +506,7 @@ mod tests {
     /// preset LEAVES ALONE. The engine shipped the same rule the same day; the
     /// workaround is gone and this now points at the real thing.
     ///
-    /// ★★ What it checks is deliberately the *content* that makes this a rule-4
+    /// What it checks is deliberately the *content* that makes this a rule-4
     /// disclosure — that another viewer will show these areas differently — and
     /// not merely that some sentence mentioning spots appeared. The two values
     /// render visibly differently, and without that sentence an operator
@@ -536,7 +536,7 @@ mod tests {
         let a2 = RenderPreset::for_standard(RenderStandard::PdfA2)
             .disclosures()
             .join(" ");
-        // ★★★ PDF/A must not CLAIM the axis — but it SHOULD name it and say
+        // PDF/A must not CLAIM the axis — but it SHOULD name it and say
         // it does not reach it. The first version of this assertion demanded
         // the word "spot" be absent, and went red on a correct build: the
         // engine emits `spot_colorant_device_model` **left alone (sourced)**
@@ -560,7 +560,7 @@ mod tests {
         );
     }
 
-    /// **★★ A best-effort value is still summarised as a COUNT, not spelled
+    /// **A best-effort value is still summarised as a COUNT, not spelled
     /// out** — which is the half of the rule that keeps the panel readable.
     ///
     /// The distinction the engine adopted, in one sentence: *a count is an
@@ -569,7 +569,7 @@ mod tests {
     /// pdfcer says the standard IMPLIES must show its citation, because that is
     /// something an operator may want to check.
     ///
-    /// ★ Pinned because the obvious "improvement" is to print every `why`, and
+    /// Pinned because the obvious "improvement" is to print every `why`, and
     /// that turns a disclosure into a wall of prose nobody reads — six entries
     /// times ten standards. `image_minify` is best-effort on every PDF/X and
     /// PDF/A preset and is the stable example to test against.
@@ -603,7 +603,7 @@ mod tests {
     /// **Applying a choice leaves the settings matching a choice with the same
     /// answers** — and that is deliberately weaker than "matching itself".
     ///
-    /// ★★★ Because **two standards can mean the same thing to pdfcer**, and two
+    /// Because **two standards can mean the same thing to pdfcer**, and two
     /// of them do: applying `pdf-x3` leaves settings that `matching` reports as
     /// `pdf-x1a`. That is not a defect in either — it is a fact about the
     /// domain. PDF/X-1a and PDF/X-3 differ in what colour spaces a *file* may
@@ -643,7 +643,7 @@ mod tests {
         }
     }
 
-    /// ★★ **At least two standards share a vector**, recorded so that the
+    /// **At least two standards share a vector**, recorded so that the
     /// weakened assertion above is understood as describing the domain rather
     /// than as a concession.
     ///
@@ -662,7 +662,7 @@ mod tests {
         );
     }
 
-    /// ★★ **pdfcer's recommended answers ARE the engine's defaults**, and this
+    /// **pdfcer's recommended answers ARE the engine's defaults**, and this
     /// test is the guard on the day that stops being true.
     ///
     /// Its predecessor asserted the opposite and failed twice in one evening,
@@ -702,7 +702,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The theme is not part of a preset**, because a preset is about how
+    /// **The theme is not part of a preset**, because a preset is about how
     /// a DOCUMENT renders and the theme is about the program.
     #[test]
     fn choosing_a_theme_does_not_leave_the_preset() {
@@ -730,7 +730,7 @@ mod tests {
         }
     }
 
-    /// ★★ **Every key a standard leaves alone is named in the operator's own
+    /// **Every key a standard leaves alone is named in the operator's own
     /// words**, not in the engine's field identifiers.
     ///
     /// `mesh_patch_padding` is correct for an API and wrong for a window. The
@@ -763,7 +763,7 @@ mod tests {
 
     /// **The weight line adds up to the answers that carry a value.**
     ///
-    /// ★ `NotApplicable` is deliberately excluded from the tally and named in
+    /// `NotApplicable` is deliberately excluded from the tally and named in
     /// the left-alone list instead. *"Does not apply"* is a different kind of
     /// fact from *"we chose"*, and adding them together is the arithmetic that
     /// would make a preset look better sourced than it is.
@@ -791,7 +791,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **Every preset in the list can be selected**, which is the defect
+    /// **Every preset in the list can be selected**, which is the defect
     /// the operator reported as *"I can only select (ISO15930-1, -4)"*.
     ///
     /// Drives the real rule — click a radio, then ask what the control would
@@ -800,7 +800,7 @@ mod tests {
     /// FIRST choice whose settings equal the current ones and all eight
     /// conformance presets apply byte-identical settings.
     ///
-    /// ★★ It asserts the property the operator cares about — *can I choose
+    /// It asserts the property the operator cares about — *can I choose
     /// this?* — rather than the mechanism. A test that asserted
     /// `chosen_preset == Some(id)` would pass against a version that stored the
     /// choice and still drew the dot somewhere else.
@@ -821,7 +821,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **The operator's report, as an assertion: choosing a standard must
+    /// **The operator's report, as an assertion: choosing a standard must
     /// make Save live.**
     ///
     /// > *"When I go to settings and select some of the standards the save
@@ -833,7 +833,7 @@ mod tests {
     /// choosing a second one moved nothing and Save was correctly greyed about
     /// a draft that really did equal what was saved.
     ///
-    /// ★ The test is written over **every pair** of choices rather than the two
+    /// The test is written over **every pair** of choices rather than the two
     /// that were reported, because the reported pair is not special: any two of
     /// the eight reproduce it. Picking two would have passed the day a ninth
     /// standard arrived and collided with a tenth.
@@ -872,7 +872,7 @@ mod tests {
         }
     }
 
-    /// ★★ **A choice survives the window being closed and reopened.**
+    /// **A choice survives the window being closed and reopened.**
     ///
     /// The half the operator had not seen yet. Before this was persisted the
     /// window showed whichever standard `matching` found first, so choosing
@@ -899,7 +899,7 @@ mod tests {
         }
     }
 
-    /// ★★ **A stored choice the settings no longer express is retired, not
+    /// **A stored choice the settings no longer express is retired, not
     /// shown.**
     ///
     /// The guard that stops persistence turning into a lie. `live_choice`
@@ -958,7 +958,7 @@ mod tests {
         assert_eq!(resolve_id(Some(known)), Some(known));
     }
 
-    /// ★★ **Adjusting a control by hand drops the chosen preset**, so the dot
+    /// **Adjusting a control by hand drops the chosen preset**, so the dot
     /// cannot go on claiming a standard the settings no longer describe.
     ///
     /// The other half of the fix, and the reason the choice is filtered through
@@ -984,7 +984,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The eight conformance presets really are identical today** — the
+    /// **The eight conformance presets really are identical today** — the
     /// measurement the disclosure is built on, pinned so it cannot rot.
     ///
     /// This is not asserting that they SHOULD be identical. It records what is
@@ -992,7 +992,7 @@ mod tests {
     /// ever diverge, this test fails and whoever reads it learns that the
     /// sentence under the radio has become interesting rather than routine.
     ///
-    /// ★ It is also the falsification for the test above: with the presets all
+    /// It is also the falsification for the test above: with the presets all
     /// distinct, `every_preset_in_the_list_can_actually_be_selected` would pass
     /// against the OLD code, and would have proved nothing.
     #[test]

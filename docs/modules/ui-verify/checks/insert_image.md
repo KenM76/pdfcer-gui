@@ -5,11 +5,11 @@ resolution the window promised is the one the document reports.
 
 # The gap this closes
 
-`edit.insert_image` was `★ P3` scaffolded with the recorded reason **"No
+`edit.insert_image` was `P3` scaffolded with the recorded reason **"No
 recorded reason for the missing arm"** — one of three such entries — while
 `EditSession::add_image` had shipped the whole time.
 
-# ★ The assertion this check exists for, and it is the LAST one
+# The assertion this check exists for, and it is the LAST one
 
 **The resolution the window previewed and the resolution the document
 reported are the same number.**

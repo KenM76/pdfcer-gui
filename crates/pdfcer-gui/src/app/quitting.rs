@@ -34,7 +34,7 @@ impl Quitting {
 
     /// **Abandon the quit.** The program stays open.
     ///
-    /// ★ Called on Cancel, and it is the answer with the honest caveat: any
+    /// Called on Cancel, and it is the answer with the honest caveat: any
     /// document the operator already chose to *discard* in this cycle is
     /// already closed, and cancelling does not bring it back. That matches
     /// every editor in the class — a discard is an answer, not a step — but it
@@ -49,7 +49,7 @@ impl Quitting {
 /// The whole of the cycle's ordering: lowest tab position first, which is
 /// left-to-right in the strip and is the order an operator reads them in.
 ///
-/// ★ Takes a **predicate** rather than `&PdfcerApp`, so it can be tested without
+/// Takes a **predicate** rather than `&PdfcerApp`, so it can be tested without
 /// an application — and a predicate rather than the `Status` itself because
 /// `Status` is deliberately not `Clone` (it owns an `EditSession`). What this
 /// needs to know is *"is slot n dirty"*, which is one bool.
@@ -70,7 +70,7 @@ pub fn dirty_count(count: usize, dirty: impl Fn(usize) -> bool) -> usize {
 
 /// Whether one slot has work that would be lost.
 ///
-/// ★★ Delegates to `save::has_unsaved_edits`, which is the **one** expression
+/// Delegates to `save::has_unsaved_edits`, which is the **one** expression
 /// of this question — the same one `dialogs::unsaved::ask_for` consults before
 /// deciding whether to ask at all. A second expression of *"is this document
 /// dirty"* anywhere in the crate is a defect by construction: the two eventually
@@ -108,7 +108,7 @@ impl crate::app::PdfcerApp {
     ///    document and ask about it.
     /// 5. **The cycle is running and nothing is dirty** — close, for real.
     ///
-    /// # ★★ Why the close is cancelled rather than pre-empted
+    /// # Why the close is cancelled rather than pre-empted
     ///
     /// `egui` reports the request and closes at the end of the frame unless
     /// something says otherwise. There is no "ask first" hook, so the sequence
@@ -142,7 +142,7 @@ impl crate::app::PdfcerApp {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 //
-                // ★★ The COUNT is on the line. "A close was held" and "a close
+                // The COUNT is on the line. "A close was held" and "a close
                 // was held because four documents are dirty" are the same event
                 // to a reader who cannot see the tab strip, and the count is
                 // what a driven check asserts the cycle works through.
@@ -188,7 +188,7 @@ impl crate::app::PdfcerApp {
     /// Raise the unsaved question for the active document, told how many are
     /// dirty so the *Save all* button knows whether to draw itself.
     ///
-    /// ★ A thin wrapper rather than a parameter on `DialogsState::ask_unsaved`,
+    /// A thin wrapper rather than a parameter on `DialogsState::ask_unsaved`,
     /// because every other caller is about **one** document and should keep
     /// saying so without being edited.
     pub(crate) fn ask_unsaved_for_quit(&mut self, dirty: usize) {
@@ -209,11 +209,11 @@ impl crate::app::PdfcerApp {
     /// # Returns
     ///
     /// `false` if any attempted write failed, so the caller can abandon the
-    /// resume. ★ A document with **no file is not attempted and is not a
+    /// resume. A document with **no file is not attempted and is not a
     /// failure**: it needs a destination, which is a question only the operator
     /// can answer, and the cycle asks about those individually afterwards.
     ///
-    /// # ★★ Why it activates each slot before writing it
+    /// # Why it activates each slot before writing it
     ///
     /// Because `save::save_in_place` takes the **active** document, and the
     /// application's own invariant is that `status` is the active one with the
@@ -223,7 +223,7 @@ impl crate::app::PdfcerApp {
     /// means every document in the batch is saved by exactly the path a single
     /// save uses.
     ///
-    /// ★ The originally-active slot is restored at the end, so an operator who
+    /// The originally-active slot is restored at the end, so an operator who
     /// cancels the rest of the cycle is looking at the document they were
     /// looking at when they pressed the button.
     pub(super) fn save_every_dirty_document(&mut self) -> bool {
@@ -249,7 +249,7 @@ impl crate::app::PdfcerApp {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             //
-            // ★ `all_written` beside the count, because "saved four of four"
+            // `all_written` beside the count, because "saved four of four"
             // and "attempted four and one refused" are the two states the guard
             // above branches on and a count alone cannot separate them.
             format!("save-all documents={count} all_written={all_written}")
@@ -274,7 +274,7 @@ mod tests {
 
     /// The ordering rule, stated as a test because it is a choice.
     ///
-    /// ★ Lowest slot first — left to right in the tab strip, which is the order
+    /// Lowest slot first — left to right in the tab strip, which is the order
     /// the operator reads them in. Any other order would make the cycle feel
     /// arbitrary, and "arbitrary" is what a modal must never feel while it is
     /// asking about destroying work.
@@ -288,7 +288,7 @@ mod tests {
         );
     }
 
-    /// ★★ **Everything clean means no question and no cancelled close.**
+    /// **Everything clean means no question and no cancelled close.**
     ///
     /// The case that must not regress into a spurious modal: an operator who
     /// has saved everything and presses ✕ should get an immediate exit, not a
@@ -303,7 +303,7 @@ mod tests {
         assert_eq!((0..n).find(|&i| dirty(i) == Some(true)), None);
     }
 
-    /// ★ **Save all is offered only when it would do more than Save.**
+    /// **Save all is offered only when it would do more than Save.**
     ///
     /// With one dirty document the two buttons are the same act, and a second
     /// button that means the same thing is one the operator has to stop and
@@ -318,7 +318,7 @@ mod tests {
 
     /// The flag starts down, goes up on `begin`, and comes back down on Cancel.
     ///
-    /// ★ Pinned because `running` defaulting to `true` would make the
+    /// Pinned because `running` defaulting to `true` would make the
     /// application try to quit on its first frame, which is the one failure
     /// mode of this design that would be spectacular rather than subtle.
     #[test]

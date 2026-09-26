@@ -55,7 +55,7 @@ pub fn filter_none() -> &'static str {
     "None"
 }
 
-/// ★ Shown on the status bar whenever **nothing at all** is selectable.
+/// Shown on the status bar whenever **nothing at all** is selectable.
 ///
 /// This exists because the state is legitimate and its symptom is
 /// indistinguishable from a fault. An operator who switched everything off
@@ -183,7 +183,7 @@ mod tests {
         }
     }
 
-    /// ★ The Links row must not promise what the build cannot do.
+    /// The Links row must not promise what the build cannot do.
     ///
     /// `PickClass::Link` is off by default because nothing can pick a link, and
     /// its tooltip is the only place the operator is told that. If link picking

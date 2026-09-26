@@ -18,7 +18,7 @@
 //! is entirely here, and changing when a section is *reachable* is entirely
 //! there.
 //!
-//! ## ★★ Why the fields stay private and this is a child module
+//! ## Why the fields stay private and this is a child module
 //!
 //! Rust's privacy is *"visible to the defining module and its descendants"*, so
 //! `dialogs::sign::sections` can read [`super::SignDialog`]'s private fields
@@ -69,7 +69,7 @@ impl SignDialog {
         );
         crate::diag::ui_rect(REGION_PASSPHRASE, field.rect);
         ui.add_space(2.0);
-        // ★★★ The promise about behaviour, where the secret is typed rather
+        // The promise about behaviour, where the secret is typed rather
         // than in a footnote. `crate::text::sign::passphrase_note` names the
         // two mechanisms that make it true.
         ui.label(
@@ -107,7 +107,7 @@ impl SignDialog {
             ui.label(t::identity_friendly_name(friendly));
         }
         ui.label(t::identity_key(&report.key, report.chain_length));
-        // ★★ Both directions, always. A line that appears only when something
+        // Both directions, always. A line that appears only when something
         // is wrong is a line nobody learns to look for — and the wrong
         // direction here (a container with no MAC) is the one fact on this
         // window an operator could act on and would not otherwise be told.
@@ -172,7 +172,7 @@ impl SignDialog {
     /// `Pass 10.12`. §2d of [`crate::sign`]'s header argues why this is a radio
     /// pair here rather than a second ribbon command.
     ///
-    /// ★★★ **The certifying option is ABSENT, not greyed, on a document that
+    /// **The certifying option is ABSENT, not greyed, on a document that
     /// cannot carry one** — and the sentence explaining why is drawn in its
     /// place. R9's *explained* branch: both of the engine's certification
     /// refusals are states of the document that are knowable when this window
@@ -218,7 +218,7 @@ impl SignDialog {
                     egui::RichText::new(t::certify_unavailable(bar))
                         .color(theme.palette.text_muted),
                 );
-                // ★ The flag is cleared as well as the control removed. A
+                // The flag is cleared as well as the control removed. A
                 // document that gains a signature under the window would
                 // otherwise leave a `certify` set by a radio that is no longer
                 // on screen, and `commit` would send a certification the
@@ -240,7 +240,7 @@ impl SignDialog {
         let box_radio = ui.radio_value(&mut self.place, Place::Box, t::placement_visible());
         crate::diag::ui_rect(REGION_PLACE_BOX, box_radio.rect);
 
-        // ★★★ `Pass 10.13`. The option is drawn even when the document holds
+        // `Pass 10.13`. The option is drawn even when the document holds
         // no box — disabled, with `no_existing_fields()` beneath it — which is
         // the OPPOSITE of this window's usual absent-not-greyed rule, and the
         // exception is argued at that string: the operator was told by the
@@ -286,7 +286,7 @@ impl SignDialog {
                     );
                     crate::diag::ui_rect(REGION_BOX_WHERE, where_line.rect);
                     ui.add_space(4.0);
-                    // ★ A one-page document gets no chooser — a control with
+                    // A one-page document gets no chooser — a control with
                     // one possible value is a label pretending to be a choice.
                     if self.standing.pages > 1 {
                         ui.horizontal(|ui| {
@@ -303,7 +303,7 @@ impl SignDialog {
                     }
                 }
             }
-            // ★★★ THE PLACEMENT CONTROLS RETIRE, AND THE SENTENCE SAYS WHY.
+            // THE PLACEMENT CONTROLS RETIRE, AND THE SENTENCE SAYS WHY.
             // The engine refuses `--visible`/`--page` alongside a field name by
             // name; this shell makes the combination unrepresentable, so
             // `placement_note`, `placement_where` and the page chooser are all
@@ -323,7 +323,7 @@ impl SignDialog {
     /// **The pre-placed signature fields, one row each, with what the author
     /// attached to them.**
     ///
-    /// ★★★ The two disclosures below a row — the `/Lock` and the `/SV` — are
+    /// The two disclosures below a row — the `/Lock` and the `/SV` — are
     /// drawn **here, before the press**, and that is the whole point of reading
     /// them out of the document rather than waiting for `SignReport`. Signing a
     /// locked box freezes fields the author nominated; a consequence the
@@ -357,7 +357,7 @@ impl SignDialog {
                     );
                     return;
                 }
-                // ★★ The LOCK is `danger`-coloured and the others are muted,
+                // The LOCK is `danger`-coloured and the others are muted,
                 // and the split is by consequence rather than by severity: the
                 // lock changes what the operator can do to his own document
                 // afterwards, and the other two describe what he will see.
@@ -420,7 +420,7 @@ impl SignDialog {
     /// The confirm control, and the sentence that explains it when it is
     /// greyed.
     pub(super) fn confirm_row(&mut self, ui: &mut egui::Ui) {
-        // ★ The label IS the consequence, and the consequence depends on the
+        // The label IS the consequence, and the consequence depends on the
         // destination: an ellipsis promises the picker, and naming the file
         // promises there will be no further question before it is replaced.
         // Promising one with a punctuation mark and not asking it would be a
@@ -437,7 +437,7 @@ impl SignDialog {
             crate::diag::ui_rect(REGION_CONFIRM, confirm.rect);
         }
         let clicked = confirm.clicked();
-        // ★★ The `if !ready` shape and the borrow order are copied from
+        // The `if !ready` shape and the borrow order are copied from
         // `dialogs::redact`: `on_disabled_hover_text` CONSUMES the response, so
         // `.rect` and `.clicked()` are read first.
         if !ready {

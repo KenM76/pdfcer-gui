@@ -27,7 +27,7 @@ hit-tested ahead of nodes (028 §Q3), and why a closed subpath's closing
 segment deliberately offers no handle. Every word of that came across with
 the code it is about; nothing was summarised on the way.
 
-## ★★★ Why this is a module and not more methods in [`super`]
+## Why this is a module and not more methods in [`super`]
 
 
 **The seam chosen is the Point rung.** [`super`] answers *"what is on this
@@ -58,7 +58,7 @@ canvas-space input among them ([`ObjectModelProvider::nearest_node`]). The
 move is therefore invisible from outside `provider`: the panel, the canvas
 and the measure tools call exactly what they called before.
 
-★ The Point rung's **tests do not live here**, and that is deliberate
+The Point rung's **tests do not live here**, and that is deliberate
 rather than an omission. [`super::node_rung_tests`] covers the Part rung
 (`part_hits`, `part_bounds`) as well as the Node rung, and the Part rung
 stayed in [`super`]; splitting that file to follow this one would make a

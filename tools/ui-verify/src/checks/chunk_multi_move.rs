@@ -28,7 +28,7 @@ const PART_RUNG_LOWER: &str = "part"; // ui-text-exempt: a trace token, never di
 /// `SelectionState::select_part`'s own line, naming the chunk it replaced the
 /// entry list with.
 ///
-/// ★★ The only channel on which a press-time re-pick is visible.
+/// The only channel on which a press-time re-pick is visible.
 /// `canvas-selection` is written by the CLICK path, which runs on the release
 /// and reports the selection the click left — so a chunk chosen on the press
 /// and then dragged never appears there at all. A check that read
@@ -323,7 +323,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED. The header says
+    // PINNED: `--pdf` and `--doc-point` are read and IGNORED. The header says
     // why the document has to be this one.
     let (pdf, _) = crate::fixture::text_chunk_point(PAIR[0]);
     if !pdf.is_file() {
@@ -412,7 +412,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- C: the control — the undo log is EMPTY -----------------------------
     //
-    // ★★★ Step F asserts `undo_depth=1`, and that number means *the move added
+    // Step F asserts `undo_depth=1`, and that number means *the move added
     // exactly one entry* only if the log was empty before it. Established by
     // pressing undo and requiring a decline, because the depth is not published
     // any other way: `history_step` traces it, and `history_step` only runs
@@ -450,7 +450,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- which chunks the two aims actually reach ---------------------------
     //
-    // ★★ Measured, never assumed. Step G asserts that the press in the gap
+    // Measured, never assumed. Step G asserts that the press in the gap
     // re-picked a chunk that is NOT one of the two held, and that comparison
     // needs both indices — `canvas-selection`'s `part=` reports the FIRST entry
     // only, so the Shift-added one is never on that line. One plain descent onto
@@ -482,7 +482,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- the surface that tells him what he is holding ----------------------
     //
-    // ★★ Read with `last`, not `last_after`: `status-rung` goes through
+    // Read with `last`, not `last_after`: `status-rung` goes through
     // `diag::trace_changed`, keyed on the rendered line, so the bar re-states
     // itself only when the clause CHANGES. `held=1` was written by the descent
     // and `held=2` by the Shift-click; the newest line is the current state,
@@ -641,7 +641,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- G: the gap press ---------------------------------------------------
     //
-    // ★★★ The step the Part-rung narrowing in `pressing::body_under` exists
+    // The step the Part-rung narrowing in `pressing::body_under` exists
     // for, and the only one that can see it: every press above lands on a chunk
     // that is already held, where the object-granular predicate and the
     // chunk-granular one agree.
@@ -692,7 +692,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    // ★★★ The re-pick is read on `selection-set`, NOT on `canvas-selection`.
+    // The re-pick is read on `selection-set`, NOT on `canvas-selection`.
     //
     // `canvas-selection` is written by the click path, which runs on the
     // RELEASE. A chunk chosen on the press and dragged never produces a click
@@ -735,7 +735,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             repick.raw
         )));
     };
-    // ★★ Compared against the two measured indices, never pinned to a literal.
+    // Compared against the two measured indices, never pinned to a literal.
     // Which index the provider gives a line is the provider's business; pinning
     // one here would make a legitimate change of line granularity read as a
     // selection defect.

@@ -18,7 +18,7 @@ pre-delete page count. Acrobat builds its page list from the root `/Count`;
 pdfcer walks `/Kids`. `crate::pagetree` — in the shell — refuses the save
 rather than handing him the file.
 
-## ★★★ Why this needs a driven check at all, when the unit tests are green
+## Why this needs a driven check at all, when the unit tests are green
 
 Because the unit tests can only prove that `write_copy` refuses when it is
 called with a stale document. They cannot prove that **pressing the delete
@@ -36,7 +36,7 @@ them is invisible to `cargo test`:
 3. the guard runs there, on the funnel, and refuses;
 4. **the operator is told**, on an off-canvas surface, in a sentence.
 
-## ★★★ The fixture is PINNED, and a flat one would make this vacuous
+## The fixture is PINNED, and a flat one would make this vacuous
 
 `--pdf` is ignored. This check opens `fixtures/nested-page-tree.pdf` and
 nothing else, and says so in its notes when a `--pdf` was supplied and
@@ -53,13 +53,13 @@ indistinguishable from one that honoured it
 | 2 | **no file exists at the target** | the guard traced a refusal and wrote the file anyway |
 | 3 | the `status-group:edit-disclosure` region is on screen | he was **told**, rather than left with a save that silently did nothing |
 
-★★ Assertion 3 is the one this project has learned to insist on. A refusal
+Assertion 3 is the one this project has learned to insist on. A refusal
 with no sentence is this shell's founding defect shape — a control that is
 pressed and does nothing — and it is worse here than usual, because the
 operator has just deleted pages and is pressing save: a silence reads as
 *"it saved"*, and he goes looking for a file that is not there.
 
-★ The region carries a **rect**, not the text. `status::disclosure` publishes
+The region carries a **rect**, not the text. `status::disclosure` publishes
 `ui_rect(region, rect)` and no more, so this check can prove a sentence is on
 screen and cannot prove which sentence. The words are asserted headlessly in
 `crate::text::pagetree::tests`, which is the right split: the catalog owns

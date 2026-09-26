@@ -1,6 +1,6 @@
 //! # `canvas::selection::annot` — clicking the things pdfcer itself put on the page
 //!
-//! ## ★ The gap this closes, and how long it was open
+//! ## The gap this closes, and how long it was open
 //!
 //! `FEATURES.md` recorded it on 2026-08-17, under the Format contextual tab:
 //!
@@ -106,7 +106,7 @@ pub struct AnnotSelection {
     /// content selection's outlines are also cached in, so a zoom or a pan
     /// moves where this is drawn without changing what it is.
     pub outline: Rect,
-    /// ★ **Where the artwork ACTUALLY sits**, when that differs from
+    /// **Where the artwork ACTUALLY sits**, when that differs from
     /// [`Self::outline`] — the four corners of the appearance's placed
     /// `/BBox`, canvas space, in the artwork's own frame (see
     /// [`crate::canvas::annotquad`]).
@@ -139,7 +139,7 @@ pub struct AnnotSelection {
 /// | `/Widget` | the form field surface owns it — a click there focuses an editor, and two owners of one press is how a field becomes unfillable |
 /// | `/Popup` | §12.5.6.14 is a `shall`: a pop-up *"shall not appear alone but is associated with a markup annotation"*. It is a reader-UI window, not content |
 /// | `/Link`, `/Movie`, `/PrinterMark`, `/TrapNet` | not authored by the operator and not restylable. `/TrapNet` in particular is prepress output state |
-/// | **hidden** (§12.5.3 bit 2) | ★ **this surface's own**, and it is not shared with the panel |
+/// | **hidden** (§12.5.3 bit 2) | **this surface's own**, and it is not shared with the panel |
 ///
 /// The hidden case is the one worth stating. The Comments panel *lists* a
 /// hidden annotation, deliberately — it is on the page and the operator has a
@@ -183,7 +183,7 @@ pub fn selectable_on(
         // rather than fixed at the time because this file belonged to another
         // track that afternoon.
         //
-        // ★★ The rule is that **the selection layer must ask the same question
+        // The rule is that **the selection layer must ask the same question
         // the painter asked.** Two predicates over the same flags is exactly
         // the shape this project has been bitten by repeatedly: each half is
         // self-consistent, so no test of either half can see the disagreement.
@@ -232,12 +232,12 @@ pub fn selectable_on(
                 locked: annot.flags.locked(),
             },
             outline,
-            // ★ `filter` rather than `unwrap_or_default`: an EMPTY shape would
+            // `filter` rather than `unwrap_or_default`: an EMPTY shape would
             // claim nothing and make the annotation unselectable, which is a
             // worse failure than claiming too much. Absent means "not known",
             // and not-known falls back to the rectangle.
             shape: shapes.get(&id).filter(|s| !s.is_empty()).cloned(),
-            // ★★ The turned outline, and **only when it is actually turned**.
+            // The turned outline, and **only when it is actually turned**.
             //
             // `is_upright` answering `true` collapses to `None` right here
             // rather than at the painter, so every downstream consumer gets one
@@ -258,7 +258,7 @@ pub fn selectable_on(
 /// `point` is **canvas space**, the same space `selectable_on` returns and the
 /// same space the content hit test works in.
 ///
-/// # ★★★ A RECTANGLE IS NOT ALWAYS THE SHAPE, and assuming it was cost the
+/// # A RECTANGLE IS NOT ALWAYS THE SHAPE, and assuming it was cost the
 /// # operator the ability to select anything under a dimension
 ///
 /// This function tested `rect.contains(point)` and nothing else. The reasoning
@@ -291,7 +291,7 @@ pub fn selectable_on(
 /// canvas space — and where it does, that is what is tested. Where it does not,
 /// the rectangle stands, because for those kinds it is the truth.
 ///
-/// # ★ Tolerance: none for a rect, and necessarily some for a segment
+/// # Tolerance: none for a rect, and necessarily some for a segment
 ///
 /// The engine's argument for testing `/Rect` bare:
 ///
@@ -347,7 +347,7 @@ pub struct Candidate {
     /// The artwork's four placed corners, canvas space — see
     /// [`AnnotSelection::oriented`], which this becomes on selection.
     ///
-    /// ★ **Carried but NOT hit-tested against**, deliberately. Narrowing the
+    /// **Carried but NOT hit-tested against**, deliberately. Narrowing the
     /// click target to the turned quad would be more precise and would be the
     /// wrong trade: `/Rect` already contains the pen half-width (the engine's
     /// own argument for testing it bare), and a turned mark is exactly the case
@@ -362,7 +362,7 @@ impl Candidate {
         let Some(shape) = self.shape.as_deref() else {
             return self.outline.contains(point);
         };
-        // ★ The rectangle still gates the segment scan. It is a cheap reject
+        // The rectangle still gates the segment scan. It is a cheap reject
         // that cannot change the answer — every segment is inside the `/Rect`
         // by construction — and on a sheet carrying hundreds of dimensions it
         // is the difference between one containment test per annotation and a
@@ -431,7 +431,7 @@ pub fn under_pointer(
 ) -> Option<AnnotSelection> {
     let page = doc.pages.get(page_index)?;
     let ce = crate::panels::comments::model::ce_dimension_annots(&doc.session);
-    // ★★ The ce dimensions' ACTUAL INK, so that a click inside a dimension's
+    // The ce dimensions' ACTUAL INK, so that a click inside a dimension's
     // bounding box but not on it reaches the drawing underneath. See [`hit`]'s
     // header for the operator's report and the argument; the shapes come from
     // the same segment function the dimension is DRAWN from, so what is
@@ -462,7 +462,7 @@ mod tests {
         Rect::from_min_size(Pos2::new(x, y), egui::vec2(w, h))
     }
 
-    /// ★ **The topmost annotation wins, not the first one found.**
+    /// **The topmost annotation wins, not the first one found.**
     ///
     /// `/Annots` is paint order, so a stamp dropped over a rectangle is drawn
     /// last and is what the operator sees. A hit test that took the first
@@ -514,7 +514,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **The operator's report of 2026-08-20, as one test.**
+    /// **The operator's report of 2026-08-20, as one test.**
     ///
     /// > *"selecting space not actually occupied by the lines or text of the
     /// > dimension still selects it if I am selecting within the box area it
@@ -550,7 +550,7 @@ mod tests {
         );
     }
 
-    /// ★ The tolerance is what makes a hairline clickable at all, and it is
+    /// The tolerance is what makes a hairline clickable at all, and it is
     /// bounded: a segment is a SEGMENT, not an infinite line.
     ///
     /// A click level with the horizontal arm but well past its end must miss.
@@ -601,7 +601,7 @@ mod tests {
         assert!(hit(&[], Pos2::new(0.0, 0.0), TOL).is_none());
     }
 
-    /// ★ The kind survives the hit test.
+    /// The kind survives the hit test.
     ///
     /// The one property that routes a later restyle to `set_dimension_style`
     /// rather than `set_markup_style`. If it were dropped here and re-derived
@@ -617,7 +617,7 @@ mod tests {
         let hit = hit(&candidates, Pos2::new(10.0, 10.0), TOL).expect("a hit");
         assert_eq!(hit.target.kind, AnnotKind::CeDimension);
     }
-    /// ★★★ **The selection layer asks the SAME question the painter asked.**
+    /// **The selection layer asks the SAME question the painter asked.**
     ///
     /// # The defect
     ///
@@ -635,7 +635,7 @@ mod tests {
     ///
     /// # Why no existing test could have caught it
     ///
-    /// ★★ **Two predicates over the same flags, each self-consistent.** Every
+    /// **Two predicates over the same flags, each self-consistent.** Every
     /// test of the selection layer used the selection layer's own notion of
     /// visible, and every test of the painter used the painter's. A
     /// disagreement between two correct halves is invisible to any test of
@@ -681,7 +681,7 @@ mod tests {
              let through"
         );
 
-        // ★ And the identity that keeps the two layers from drifting apart
+        // And the identity that keeps the two layers from drifting apart
         // again: the predicate this file filters on IS the predicate the
         // painter filters on. Asserted as an equality of derivations rather
         // than by repeating the expression, so a third bit added to Table 165
@@ -694,7 +694,7 @@ mod tests {
             );
         }
 
-        // ★★★ **AND THE CALL SITE, which is the half that actually catches a
+        // **AND THE CALL SITE, which is the half that actually catches a
         // regression here.** Everything above is a contract test on
         // `AnnotFlags`, and every line of it passes on a build where
         // `selectable_on` still filters on `hidden()` alone — which is exactly

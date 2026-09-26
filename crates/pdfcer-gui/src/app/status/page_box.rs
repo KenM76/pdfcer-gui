@@ -87,7 +87,7 @@ pub(super) fn group(
         .data_mut(|d| d.get_temp::<PageBox>(state_id))
         .unwrap_or_default();
 
-    // ★ A clamp note describes where the LAST commit landed. The moment the
+    // A clamp note describes where the LAST commit landed. The moment the
     // operator is looking at some other page it is describing history, and a
     // stale explanation beside a live control is worse than no explanation:
     // it attaches a reason to a page the operator reached by other means.
@@ -149,7 +149,7 @@ pub(super) fn group(
 /// > button to scroll or flip through pages, or the current way it is now when
 /// > the scroll wheel is used."*
 ///
-/// # ★★★ It renders NOTHING under a continuous display mode
+/// # It renders NOTHING under a continuous display mode
 ///
 /// R9: an unavailable capability renders nothing, and greying is reserved for
 /// *temporarily* unavailable. Under
@@ -158,7 +158,7 @@ pub(super) fn group(
 /// is no control. A disabled toggle there would be a permanent apology for a
 /// choice that does not exist.
 ///
-/// ★ It sits immediately to the left of `⏴`, inside the page group's own
+/// It sits immediately to the left of `⏴`, inside the page group's own
 /// right-to-left scope, so it is adjacent to the two buttons it is an
 /// alternative to. Placing it in the empty middle of the bar would put the
 /// question a hand's width from its subject.
@@ -216,7 +216,7 @@ fn field(
         .clone()
         .unwrap_or_else(|| t::page_number(current + 1));
 
-    // ★ A real `egui::TextEdit`, with a stable explicit id — defect D1's
+    // A real `egui::TextEdit`, with a stable explicit id — defect D1's
     // guard resolves the focused id and looks for a `TextEditState` under
     // it. See the module docs.
     let response = ui
@@ -241,7 +241,7 @@ fn field(
         state.note = None;
     }
 
-    // ★ The commit gate. Everything above runs every frame; nothing below
+    // The commit gate. Everything above runs every frame; nothing below
     // runs until the operator has finished.
     if !response.lost_focus() {
         return;
@@ -278,7 +278,7 @@ fn field(
             });
         }
         PageCommit::NotANumber => {
-            // ★ The text is KEPT. See the module docs.
+            // The text is KEPT. See the module docs.
             state.draft = Some(text);
             state.note = Some(Note::NotANumber);
             crate::diag::trace(|| {
@@ -433,7 +433,7 @@ mod tests {
         assert_eq!(resolve("42", 42), PageCommit::Go(41));
     }
 
-    /// ★ **The box is 1-based and the action is 0-based**, and the
+    /// **The box is 1-based and the action is 0-based**, and the
     /// conversion happens exactly once.
     ///
     /// An off-by-one here is the most likely defect this control can carry
@@ -453,7 +453,7 @@ mod tests {
         assert_eq!(resolve("\t7\n", 42), PageCommit::Go(6));
     }
 
-    /// ★ **Out of range clamps into the document, at both ends, and is
+    /// **Out of range clamps into the document, at both ends, and is
     /// reported.**
     ///
     /// The verdict carries the number that was asked for as well as the one
@@ -504,7 +504,7 @@ mod tests {
         );
     }
 
-    /// ★ **Non-numeric input is refused.**
+    /// **Non-numeric input is refused.**
     ///
     /// The other half of the requirement — that the text survives the
     /// refusal — is a property of the widget and is asserted in
@@ -576,7 +576,7 @@ mod tests {
         });
     }
 
-    /// ★ **The D1 regression test, from the page box's end.**
+    /// **The D1 regression test, from the page box's end.**
     ///
     /// `crate::app::keyboard`'s guard is `ctx.text_edit_focused()`, and it
     /// only protects a control that egui recognises as a text edit. This
@@ -693,7 +693,7 @@ mod tests {
         assert_eq!(keyboard_actions, vec![Action::NextPage]);
     }
 
-    /// ★ **Enter commits.**
+    /// **Enter commits.**
     #[test]
     fn enter_commits_the_typed_page() {
         let ctx = Context::default();
@@ -715,7 +715,7 @@ mod tests {
         );
     }
 
-    /// ★ **Focus loss commits too**, with no Enter anywhere.
+    /// **Focus loss commits too**, with no Enter anywhere.
     ///
     /// Clicking away from a half-typed field and having it silently discard
     /// the number is the behaviour operators describe as "it didn't take".
@@ -736,7 +736,7 @@ mod tests {
         assert_eq!(actions, vec![Action::GoToPage(3)]);
     }
 
-    /// ★ **An out-of-range commit clamps, navigates, and leaves a note.**
+    /// **An out-of-range commit clamps, navigates, and leaves a note.**
     #[test]
     fn an_out_of_range_commit_clamps_and_reports_it() {
         let ctx = Context::default();
@@ -764,7 +764,7 @@ mod tests {
         assert_eq!(state.draft, None, "the commit succeeded; 99 is not held");
     }
 
-    /// ★ **A refused commit keeps what the operator typed.**
+    /// **A refused commit keeps what the operator typed.**
     ///
     /// Wiping the field to "helpfully" restore the current page destroys the
     /// evidence of what the operator meant, and leaves them unable to tell a

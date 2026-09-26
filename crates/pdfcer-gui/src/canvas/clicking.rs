@@ -15,7 +15,7 @@
 //!
 //! Corpus: `ui-conventions/click-selects.md`.
 //!
-//! ★ **Most of that corpus is about a HIT TEST and this module is about
+//! **Most of that corpus is about a HIT TEST and this module is about
 //! ROUTING**, so most rows below name where the rule actually lives rather than
 //! claiming it. That is the honest answer and it is not a dodge: C8 — *click
 //! priority is stated, not emergent* — is **this module's whole subject**, and
@@ -54,7 +54,7 @@ use crate::app::modes::Capabilities;
 use crate::app::state::OpenDoc;
 use crate::canvas::input::probe;
 
-/// ★★★ **How deep into the stack under one point the operator has asked to
+/// **How deep into the stack under one point the operator has asked to
 /// go**, and where they asked it.
 ///
 /// # What this closes
@@ -69,7 +69,7 @@ use crate::canvas::input::probe;
 /// which is Illustrator's *Select Behind* (`Ctrl`+click there) and Figma's
 /// deep-select, the two conventions for exactly this.
 ///
-/// # ★★ Why it resets on pointer travel, and why the threshold is generous
+/// # Why it resets on pointer travel, and why the threshold is generous
 ///
 /// A depth is only meaningful *at a point*: three clicks in three different
 /// places are three first clicks, not a walk into a stack. So the cursor
@@ -166,7 +166,7 @@ pub struct Frame<'a> {
     pub active_tool: CanvasTool,
     /// What this mode is allowed to do.
     pub caps: Capabilities,
-    /// ★ What the OPERATOR is allowing clicks to land on.
+    /// What the OPERATOR is allowing clicks to land on.
     ///
     /// Beside `caps` because the two compose, and the composition is an
     /// `AND` in one direction only: a mode decides what may be authored,
@@ -215,7 +215,7 @@ pub fn click(
         triple,
     } = frame;
 
-    // ★★★ **This frame's Smart-Selector scope**, read once — O70.
+    // **This frame's Smart-Selector scope**, read once — O70.
     //
     // Once, and passed down, because every picking question below must resolve
     // identically: a press that grabbed a container and a click that selected
@@ -224,7 +224,7 @@ pub fn click(
     // reading the context themselves.
     let scope = crate::canvas::smart::scope(ctx, page_index);
 
-    // ★★ The annotation under the pointer, resolved BEFORE the ladder.
+    // The annotation under the pointer, resolved BEFORE the ladder.
     //
     // Ahead of it rather than inside it because the arm that consumes
     // this has to be an `if let` — a click that hits nothing must fall
@@ -282,11 +282,11 @@ pub fn click(
             format!("note-popup-toggle page={page_index} id={}", id.num)
         });
     }
-    // ★★ The LINK under the pointer, resolved beside `annot_hit` and for the
+    // The LINK under the pointer, resolved beside `annot_hit` and for the
     // same reason: the arm that consumes it has to be an `if let`, so a click
     // that hits no link falls through and means exactly what it meant before.
     //
-    // ★ Hoisted rather than written as a guard in the ladder, which is also how
+    // Hoisted rather than written as a guard in the ladder, which is also how
     // this file's one previous compiler crash was avoided — a `let` chain
     // inside an `else if` at that depth put rustc 1.97 over its own stack. The
     // shape here matches `annot_hit` above, which is where it belonged anyway.
@@ -306,7 +306,7 @@ pub fn click(
     if annot_hit.is_none() && caps.author_markup {
         selection.clear_annot();
     }
-    // ★ A click is a measure pick, a **text** gesture, or a content
+    // A click is a measure pick, a **text** gesture, or a content
     // selection — never two of them.
     //
     // The text branch asks `super::textsel::takes_the_press` again rather than
@@ -316,7 +316,7 @@ pub fn click(
     // statement of the rule, free to disagree with the one that decided
     // the drag. One function, two readers — the same shape
     // `active_tool.measure_kind()` already has one line above.
-    // ★ …and the **caret** tool takes it before either, which is
+    // …and the **caret** tool takes it before either, which is
     // `press_kind`'s own rung order restated where the click is routed.
     //
     // It has to be restated rather than inferred, for the reason the
@@ -329,7 +329,7 @@ pub fn click(
     // A refusal is shown rather than swallowed. That is D4a's whole
     // lesson: the old shell's answer to a caret it could not place was a
     // boolean and a keyboard that stopped responding.
-    // ★★ **The Node tool takes the click before anything else**, and
+    // **The Node tool takes the click before anything else**, and
     // it is first because it is the most specific: the operator armed a
     // tool whose entire subject is anchors, so a click means an anchor
     // if one is there and "show me this shape's anchors" if not. See
@@ -396,7 +396,7 @@ pub fn click(
                 });
             }
         }
-    // ★★ **AN ANNOTATION UNDER THE POINTER TAKES THE CLICK.**
+    // **AN ANNOTATION UNDER THE POINTER TAKES THE CLICK.**
     //
     // The arm that closes `FEATURES.md`'s *"the canvas selection cannot
     // address an annotation"*, reported by the operator four ways:
@@ -418,7 +418,7 @@ pub fn click(
     // on a stamp was being consumed as a text-selection click. Nothing
     // was broken downstream; the click never got there.
     //
-    // ★ **My first diagnosis of this was wrong and a test caught it.**
+    // **My first diagnosis of this was wrong and a test caught it.**
     // I read `press_kind`'s `click: caps.edit_content || text` and
     // concluded Review produced no click event at all. It produces one
     // — `text` is true there for exactly the reason above — and
@@ -435,7 +435,7 @@ pub fn click(
     // have taken away text selection in the same stroke. `annot_hit`
     // is therefore computed ahead of the ladder and this arm is an
     // `if let`, so a miss is not a branch at all.
-    // ★★★ **A LINK UNDER THE POINTER IS FOLLOWED** — the operator's question,
+    // **A LINK UNDER THE POINTER IS FOLLOWED** — the operator's question,
     // 2026-09-01: *"does a clickable table of contents work?"*
     //
     // It did not. There was no link-following code path anywhere in this shell,
@@ -459,7 +459,7 @@ pub fn click(
     // caret, a pen or a measure tool was armed on purpose and a link underneath
     // must not steal the press.
     //
-    // # ★★ `!caps.edit_content` — Edit SELECTS a link, it does not follow it
+    // # `!caps.edit_content` — Edit SELECTS a link, it does not follow it
     //
     // In Edit a `/Link` is an annotation like any other and the operator is
     // there to move, resize or delete it. A click that navigated away instead
@@ -488,7 +488,7 @@ pub fn click(
                 hit.outline,
             )
         });
-    // ★★★ **AN IMAGE, IN A MODE THAT CANNOT EDIT** — `OPERATOR_REQUESTS.md`
+    // **AN IMAGE, IN A MODE THAT CANNOT EDIT** — `OPERATOR_REQUESTS.md`
     // O71: *"In read mode the regular pointer should also allow us to select
     // images so we can copy and paste them … outside of the pdfcergui."*
     //
@@ -505,7 +505,7 @@ pub fn click(
     // runs. That is the same mistake the annotation arm's comment records, and
     // this is the second feature to have been at risk from it.
     //
-    // # ★★ IMAGES ONLY, and the narrowness is the decision
+    // # IMAGES ONLY, and the narrowness is the decision
     //
     // The filter is one class. He asked for images, and the reason to hold the
     // line there is Read mode's whole promise: a click means *read*, and every
@@ -514,11 +514,11 @@ pub fn click(
     // here would make text selection unreachable on exactly the drawings this
     // program is for.
     //
-    // ★ In **Edit** this arm is skipped and the ordinary content ladder below
+    // In **Edit** this arm is skipped and the ordinary content ladder below
     // handles images along with everything else — with grips, a marquee and the
     // rest. Two behaviours, one for each stance, rather than one behaviour that
     // is wrong in one of them.
-    // ★★★ **…AND TEXT UNDER THE POINTER STILL WINS** — 2026-09-01, hours after
+    // **…AND TEXT UNDER THE POINTER STILL WINS** — 2026-09-01, hours after
     // the arm above shipped, on the operator's report: *"I can't seem to copy
     // and paste text we have OCRed."*
     //
@@ -535,7 +535,7 @@ pub fn click(
     // pointer over the picture — and it makes the arm safe on a scan by
     // construction rather than by choosing the right filter.
     //
-    // ★ `word_at` is asked of the SAME `PageText` the sweep below would use, so
+    // `word_at` is asked of the SAME `PageText` the sweep below would use, so
     // the two cannot disagree about whether there is a word here. A second
     // opinion computed differently would produce a click that selects the image
     // and a drag that selects text, from one pixel.
@@ -552,7 +552,7 @@ pub fn click(
             scope,
         )
     {
-        // ★ The text selection goes, because the operator has just said they
+        // The text selection goes, because the operator has just said they
         // mean the picture. Leaving a swept range behind would make the next
         // `Ctrl+C` ambiguous — and `canvas::clipboard::text_owns_the_chord`
         // resolves that ambiguity in text's favour, so the copy would silently
@@ -561,7 +561,7 @@ pub fn click(
         selection.select_only(page_index, image, "read-image");
     } else if super::textsel::takes_the_press(active_tool, caps) {
         if let (Some(page_text), Some(page)) = (doc.page_text(), doc.pages.get(page_index)) {
-            // ★ The SAME options the extraction ran with, through the funnel —
+            // The SAME options the extraction ran with, through the funnel —
             // `textsel::PageContext::opts` documents why a bare
             // `ExtractOptions::default()` here would be a defect rather than a
             // shortcut.
@@ -593,7 +593,7 @@ pub fn click(
             };
             super::trace::text_selection(page_index, text_selection.as_ref(), via);
         }
-    // ★ A **vertex markup** click — PolyLine and Polygon, whose whole
+    // A **vertex markup** click — PolyLine and Polygon, whose whole
     // gesture is clicks.
     //
     // It sits beside the measure branch rather than inside the markup
@@ -621,7 +621,7 @@ pub fn click(
             actions,
         );
     } else if matches!(active_tool, crate::canvas::tool::CanvasTool::Place(_)) {
-        // ★★ A CLICK places the corner and leaves the size to the window that
+        // A CLICK places the corner and leaves the size to the window that
         // asked — `OPERATOR_REQUESTS.md` O66.
         //
         // Lower-left rather than centre, which is the Form arm's rule below and
@@ -629,18 +629,18 @@ pub fn click(
         // gestures agree about what the pointer meant and an operator who
         // switches between them is not surprised.
         //
-        // ★ Unlike every other arm here this commits nothing. The answer goes
+        // Unlike every other arm here this commits nothing. The answer goes
         // to `egui::Memory` and the dialog reads it back — the operator has not
         // pressed Insert yet and may still change the numbers.
         //
-        // ★★★ The page is passed because the conversion belongs INSIDE
+        // The page is passed because the conversion belongs INSIDE
         // `placing` — see its `click`. The first version of this line handed
         // over a canvas point and the placement came out mirrored in y.
         if let Some(page) = doc.current_page() {
             crate::canvas::placing::click(ctx, page, point);
         }
     } else if let crate::canvas::tool::CanvasTool::Form(kind) = active_tool {
-        // ★★ A CLICK places a form control at its conventional size.
+        // A CLICK places a form control at its conventional size.
         //
         // The operator, 2026-08-26: *"I should be able to click on the canvas
         // to place the position or drag a box for size"*. Both, and this is the
@@ -659,7 +659,7 @@ pub fn click(
         // does — the press is one corner and the control grows from it — so the
         // two gestures agree about what the pointer meant.
         //
-        // ★ Through `formfield::ghost::click_rect` rather than inline, and the
+        // Through `formfield::ghost::click_rect` rather than inline, and the
         // indirection is the feature: the ghost outline drawn under the pointer
         // (O203) is the SAME value, so a preview that promises one rectangle
         // and a click that places another is not a state this code can reach.
@@ -676,7 +676,7 @@ pub fn click(
             );
         }
     } else if let crate::canvas::tool::CanvasTool::TextAnnot(kind) = active_tool {
-        // ★ The STICKY's whole placing gesture: one click, one point.
+        // The STICKY's whole placing gesture: one click, one point.
         //
         // The dragged kinds reach the dialog through
         // `GestureOutcome::TextAnnot` instead, so this arm is the
@@ -692,7 +692,7 @@ pub fn click(
         // where a conforming reader puts the marker (ISO 32000-1
         // 12.5.3: *"the annotation's position shall be determined by the
         // coordinates of the upper-left corner of its annotation
-        // rectangle"*). ★ Until 2026-09-09 this square grew UPWARD from
+        // rectangle"*). Until 2026-09-09 this square grew UPWARD from
         // the click, on the strength of the engine's own `Sticky` doc
         // comment naming the lower-left — a sentence the engine has since
         // struck through and corrected. The click is now the corner a
@@ -724,7 +724,7 @@ pub fn click(
                 page_index,
                 kind,
                 canvas_point: point,
-                // ★ The double-click travels to the pick rather than
+                // The double-click travels to the pick rather than
                 // being re-read there. It is the radius/diameter tool's
                 // **ending** — the gesture has no natural one, so the
                 // operator supplies it — and it is carried on the same
@@ -737,7 +737,7 @@ pub fn click(
             actions,
         );
     } else {
-        // ★★★ `Alt`+click reaches PAST whatever is on top. See [`CycleCursor`].
+        // `Alt`+click reaches PAST whatever is on top. See [`CycleCursor`].
         //
         // The depth is computed here rather than inside `probe`, because it is
         // a fact about this gesture — how many times the operator has asked, at
@@ -750,7 +750,7 @@ pub fn click(
         let hit = targets
             .map(|t| probe(t, selection, page_index, point, map, pick, depth, scope))
             .unwrap_or_default();
-        // ★★★ **The one field `probe` cannot answer** — see `ClickHit::chunk`.
+        // **The one field `probe` cannot answer** — see `ClickHit::chunk`.
         //
         // Three facts meet here and nowhere else: the point (the gesture's),
         // the document's line count (`chunks::boxed`, through `doc`), and the
@@ -767,7 +767,7 @@ pub fn click(
                     .is_some_and(|object| crate::canvas::chunks::boxed(ctx, doc, object)),
             ..hit
         };
-        // ★ How many there were, so the status line can say *"2 of 5 here"*
+        // How many there were, so the status line can say *"2 of 5 here"*
         // rather than leaving the operator to discover a stack by cycling into
         // it. Computed only when something is under the pointer — the count is
         // a second walk of the same list and there is no reason to pay for it
@@ -785,7 +785,7 @@ pub fn click(
                 )
             })
             .unwrap_or(0);
-        // ★★★ **A DOUBLE-CLICK ON A CONTAINER GOES INSIDE IT** —
+        // **A DOUBLE-CLICK ON A CONTAINER GOES INSIDE IT** —
         // `OPERATOR_REQUESTS.md` O70, and Inkscape's group context, which is
         // the convention the operator named.
         //
@@ -796,7 +796,7 @@ pub fn click(
         // is, and `canvas::smart`'s header carries the argument for why the
         // container is a scope rather than a fourth `SelectionLevel`.
         //
-        // ★ Re-probed with the entered scope rather than reusing `hit`, which
+        // Re-probed with the entered scope rather than reusing `hit`, which
         // resolved to the container by construction. One rule, applied twice,
         // instead of a second path that reaches inside a form its own way.
         if double
@@ -822,7 +822,7 @@ pub fn click(
                 entered: Some(object.raw()),
             };
             let hit = probe(t, selection, page_index, point, map, pick, 0, inside);
-            // ★ `false` for `double`: the operator's double-click was spent on
+            // `false` for `double`: the operator's double-click was spent on
             // ENTERING. Passing it on would descend into whatever is inside on
             // the same gesture, which is two rungs for one act and is not what
             // Inkscape does either.
@@ -832,7 +832,7 @@ pub fn click(
             super::trace::selection_event(selection, "enter-form", shift);
             return;
         }
-        // ★★★ **A DOUBLE-CLICK ON TEXT EDITS THE TEXT** —
+        // **A DOUBLE-CLICK ON TEXT EDITS THE TEXT** —
         // `OPERATOR_REQUESTS.md` O70: *"Selecting a text box or similar item
         // does the same thing, but double-clicking inside the bounding box
         // should edit the text."*
@@ -842,7 +842,7 @@ pub fn click(
         // double-click, which is the same chain the operator described rather
         // than a shortcut past it.
         //
-        // ## ★★ It ARMS the caret tool, and that is the convention rather than
+        // ## It ARMS the caret tool, and that is the convention rather than
         // ## a side effect
         //
         // Inkscape's selector switches to the text tool on this gesture, and
@@ -853,7 +853,7 @@ pub fn click(
         // next click means *select* when everything about the screen says they
         // are typing.
         //
-        // ★ `tool::select` rather than `arm_text_edit`, and the difference
+        // `tool::select` rather than `arm_text_edit`, and the difference
         // matters here: the latter TOGGLES, so on a second double-click into
         // text it would retire the caret tool this arm exists to arm.
         if double
@@ -884,7 +884,7 @@ pub fn click(
                     "canvas-double-click-text via=descend".to_owned()
                 }),
                 Err(refusal) => {
-                    // ★ The refusal is the operator's, not the trace's alone.
+                    // The refusal is the operator's, not the trace's alone.
                     // A double-click that opened no caret and said nothing
                     // would read as a text object that cannot be edited, which
                     // is a different and more discouraging claim than the one
@@ -901,7 +901,7 @@ pub fn click(
             }
             return;
         }
-        // ★★ **A CLICK OUTSIDE THE CONTAINER LEAVES IT** — O70, and Inkscape's
+        // **A CLICK OUTSIDE THE CONTAINER LEAVES IT** — O70, and Inkscape's
         // other way out.
         //
         // "Outside" is answered by the substitution that has already happened:
@@ -911,7 +911,7 @@ pub fn click(
         // leaves is, by construction, elsewhere — and a click on blank paper
         // (no hit at all) is elsewhere too.
         //
-        // ★ Written as a question about the RESOLVED target rather than as a
+        // Written as a question about the RESOLVED target rather than as a
         // bounds test against the form's rectangle. A title block is usually a
         // hollow shape spanning the sheet, so "inside its bounding box" is true
         // of most of the drawing and would trap the operator in a container
@@ -929,12 +929,12 @@ pub fn click(
             }
         }
         selection.click(page_index, hit, shift, double);
-        // ★ Recorded WITH the object it is about, so it cannot be claimed for
+        // Recorded WITH the object it is about, so it cannot be claimed for
         // a selection that arrived some other way — see `canvas::depth::taken`.
         if let Some(object) = hit.object {
             crate::canvas::depth::remember(ctx, depth, under, page_index, object);
         }
-        // ★★★ `shift`, not `double`. The field is named `mod=` and is
+        // `shift`, not `double`. The field is named `mod=` and is
         // documented as *whether the modifier was held*, so a driven check
         // asserting that a Shift-click reached `pick_within` reads it — and a
         // double-click flag under that name answers `false` for a genuine
@@ -953,7 +953,7 @@ pub fn click(
 
 /// **Is there a word under this point?**
 ///
-/// # ★★★ The one question that keeps the Read-mode image arm off a scan
+/// # The one question that keeps the Read-mode image arm off a scan
 ///
 /// Added 2026-09-01 on the operator's report — *"I can't seem to copy and paste
 /// text we have OCRed"* — hours after the image arm shipped. That arm was
@@ -966,14 +966,14 @@ pub fn click(
 /// ⇒ The document class where selecting text matters most was the one where the
 /// arm swallowed it.
 ///
-/// ## ★★ Asked of the SAME `PageText` the sweep would use
+/// ## Asked of the SAME `PageText` the sweep would use
 ///
 /// Not of a second extraction and not of a cached copy taken elsewhere. Two
 /// extractions under two configurations segment differently, so a second
 /// opinion here would produce a click that takes the image and a drag that
 /// takes text — from one pixel, with nothing on screen to explain it.
 ///
-/// ## ★ Absent page text answers `false`, which yields to the image
+/// ## Absent page text answers `false`, which yields to the image
 ///
 /// That is the honest direction. `page_text` is `None` before the extraction has
 /// run for this page; treating "I do not know yet" as "there is text here" would

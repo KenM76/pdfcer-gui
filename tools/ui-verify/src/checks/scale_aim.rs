@@ -1,7 +1,7 @@
 //! # `checks::scale_aim` — getting to a zoom rung, and staying on the target
 //!
 //!
-//! ## ★★ The seam is a real subject boundary, not a size-driven cut
+//! ## The seam is a real subject boundary, not a size-driven cut
 //!
 //! `scale_sweep` is now one thing: **what the mouse can do once you are
 //! there.** Click-select, drag, marquee, nodes, handles, pan — a battery of
@@ -21,7 +21,7 @@ pub const CANVAS_EVENT: &str = "canvas";
 pub const POINTER_EVENT: &str = "canvas-pointer";
 /// `canvas-pos at=… tier=… region=… want=… ext=…`.
 ///
-/// ★ `region=none` is the whole-page tier and anything else is the region tier,
+/// `region=none` is the whole-page tier and anything else is the region tier,
 /// so this line — not an arithmetic guess — is what says which tier a rung
 /// actually reached. `tier=` names the POSITION model, which is the third
 /// boundary.
@@ -61,7 +61,7 @@ pub fn tier_of(session: &Session) -> Result<String> {
 /// **Steer the pointer back onto the target**, using the application's own
 /// report of where it thinks the pointer is.
 ///
-/// # ★★★ Why the aim is a loop and not a calculation
+/// # Why the aim is a loop and not a calculation
 ///
 /// The subject of this sweep is a **0.85 pt** pair of cells on a US Letter
 /// sheet. A single conversion at the opening zoom places the pointer to within
@@ -76,7 +76,7 @@ pub fn tier_of(session: &Session) -> Result<String> {
 /// every doubling: one screen pixel of residual error is one page point at
 /// 100 %, and 5 × 10⁻⁵ of one at twenty thousand percent.
 ///
-/// ★★ It is also, incidentally, a **second** reading of the conversion under
+/// It is also, incidentally, a **second** reading of the conversion under
 /// test — if `screen_to_page` were lying, this loop would diverge rather than
 /// converge, and the caller would see the aim wander. That is why the corrected
 /// aim is reported at every rung.
@@ -116,7 +116,7 @@ pub fn re_aim(
         // No improvement means the cap, the viewport clamp or the zoom has put
         // the target out of reach; another move would only jitter the pointer.
         //
-        // ★ Written as `>=` rather than `!(… < …)`: a NaN residual — which a
+        // Written as `>=` rather than `!(… < …)`: a NaN residual — which a
         // degenerate mapping could produce — must end the loop, and `>=` is
         // false for NaN, so the `break` below it is reached. The negated form
         // says the same thing and clippy is right that nobody can see it.
@@ -133,14 +133,14 @@ pub fn re_aim(
 
 /// How many correction moves [`re_aim`] will make before giving up.
 ///
-/// ★ Each is one pointer move and one 70 ms settle, and the ordinary case
+/// Each is one pointer move and one 70 ms settle, and the ordinary case
 /// exits after the first. Twelve is enough to close a full-viewport error at a
 /// third of the viewport per step with room to spare.
 const RE_AIM_STEPS: usize = 12;
 
 /// The residual, in screen pixels, at which [`re_aim`] stops correcting.
 ///
-/// ★★ Screen pixels rather than canvas points, deliberately: what the next
+/// Screen pixels rather than canvas points, deliberately: what the next
 /// click needs is to land on the same ink, and "the same ink" is a screen
 /// distance. In canvas points the same tolerance would be meaninglessly tight
 /// at 100 % and meaninglessly loose at 200,000 %.
@@ -178,7 +178,7 @@ fn re_aim_once(
     }
     let frame = session.frame()?;
     let moved = frame.offset_from(at, dx, dy);
-    // ★★★ CLAMPED INTO THE CANVAS VIEWPORT, and the sweep ran away without it.
+    // CLAMPED INTO THE CANVAS VIEWPORT, and the sweep ran away without it.
     //
     // The pan probe scrolls the view, so the next rung's first correction is a
     // large one; two rungs of that walked the aim off the top of the window
@@ -192,7 +192,7 @@ fn re_aim_once(
     let Some(vp) = viewport else {
         return Ok(moved);
     };
-    // ★ Expressed as a FRACTION of the viewport and rebuilt through
+    // Expressed as a FRACTION of the viewport and rebuilt through
     // `declared_at`, because `ScreenPoint` has no public constructor — by
     // design, so that every screen coordinate in this harness comes from a
     // conversion rather than from arithmetic somebody did by hand.
@@ -270,11 +270,11 @@ pub fn zoom_to(
 /// `None` when the application has published no `canvas-pointer` line at all,
 /// which is a different fact and has its own line in [`probe_pointer`].
 ///
-/// ★ Read from the application's own report of where the pointer is, never
+/// Read from the application's own report of where the pointer is, never
 /// computed from the harness's mapping. A residual computed through the same
 /// conversion the sweep is testing would be zero by construction — the shape
 /// of measurement this project calls a proxy.
-/// ★★ The pointer is put back on `aim` first. [`probe_pointer`] leaves it
+/// The pointer is put back on `aim` first. [`probe_pointer`] leaves it
 /// [`PROBE_PX`] away, and reading the residual from that position would report
 /// the probe's own displacement as an aiming error — a harness measuring its
 /// own last move.

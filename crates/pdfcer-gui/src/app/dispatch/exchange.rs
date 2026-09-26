@@ -7,7 +7,7 @@ use crate::app::actions::Action;
 
 /// Whether `id` belongs to this module.
 ///
-/// ★ Spelled as a `matches!` over the literals rather than a
+/// Spelled as a `matches!` over the literals rather than a
 /// `starts_with("file.export")` prefix test, which would be shorter and wrong
 /// twice over: it would swallow a future `file.export_settings` that has
 /// nothing to do with page content, and it would miss the imports, which do
@@ -28,7 +28,7 @@ pub(crate) fn claims(id: &str) -> bool {
 impl PdfcerApp {
     /// Route one Export-band command.
     ///
-    /// ★★ Every arm here is either *open a window* or *pick a file, then open a
+    /// Every arm here is either *open a window* or *pick a file, then open a
     /// window* — never *do the thing*. That is the band's shape and it is worth
     /// stating once: each of these verbs has at least one decision that cannot
     /// be recovered from a picker, so none of them can be a bare command, and
@@ -42,7 +42,7 @@ impl PdfcerApp {
                 .open_export_dxf(&self.status, &self.prefs.export.dxf),
             // **Export image — `OPERATOR_REQUESTS.md` O120.**
             //
-            // ★ Gated through the registry on `doc.pages` rather than on a
+            // Gated through the registry on `doc.pages` rather than on a
             // capability, exactly as its DXF neighbour is and for that arm's
             // reason: an export reads the document and writes elsewhere, so
             // there is no mode in which it should be refused. Read mode
@@ -50,7 +50,7 @@ impl PdfcerApp {
             "file.export_image" => self
                 .dialogs
                 .open_export_image(&self.status, &self.prefs.export.image),
-            // ★★ **Export text**, on the operator's ask: *"also the engine can
+            // **Export text**, on the operator's ask: *"also the engine can
             // export PDFs as text. we should have export/import for that."*
             //
             // A dialog rather than a bare picker, unlike `file.export_form_data`
@@ -60,9 +60,9 @@ impl PdfcerApp {
             "file.export_text" => self
                 .dialogs
                 .open_export_text(&self.status, &self.prefs.export.text),
-            // ★★ **Import text as pages** — the other half of that ask.
+            // **Import text as pages** — the other half of that ask.
             //
-            // ★ A picker THEN a dialog, which is `file.insert_pages`' shape and
+            // A picker THEN a dialog, which is `file.insert_pages`' shape and
             // not `file.export_text`'s. The difference is which end the
             // decisions are at: an export decides how to write the file it is
             // about to create, so the window comes first and the save picker
@@ -84,20 +84,20 @@ impl PdfcerApp {
                     }
                 }
             }
-            // ★★ **Save as stamp collection — `OPERATOR_REQUESTS.md` O169.**
+            // **Save as stamp collection — `OPERATOR_REQUESTS.md` O169.**
             //
             // In this band because it is the same act every other verb here is:
             // *content of this document, crossing its boundary to a file*. What
             // is unusual is only the destination's meaning — the bytes land in
             // the folder a second application scans at startup.
             //
-            // ★ A window and not a bare picker, for `file.export_text`'s reason
+            // A window and not a bare picker, for `file.export_text`'s reason
             // at its strongest: the operator decides a name **per page** plus a
             // category for the set, and none of that is recoverable from a save
             // dialog. The picker still runs, in the apply phase, after the
             // window has closed.
             //
-            // ★ There is no `file.import_stamp_collection` beside it, and that
+            // There is no `file.import_stamp_collection` beside it, and that
             // is a recorded finding rather than an omission: a stamp collection
             // is an ordinary PDF, so its import is `file.open`. See the
             // registration in `shell::commands::catalog::file`.
@@ -105,7 +105,7 @@ impl PdfcerApp {
             "file.export_form_data" => actions.push(Action::Write(
                 crate::app::actions::write::WriteAction::FormData,
             )),
-            // ★ The picker runs HERE, before the action, where the export's runs
+            // The picker runs HERE, before the action, where the export's runs
             // inside the apply phase. Both are right for their case: an export
             // computes the bytes before it can honestly ask where they go, and
             // an import has nothing to compute until it knows which file.

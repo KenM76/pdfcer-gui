@@ -42,7 +42,7 @@ pub const THUMBNAIL_WIDTH_PTS: f32 = 140.0;
 /// **The default per-page time limit: none** — what [`ThumbnailCache::budget`]
 /// holds until the operator types a number.
 ///
-/// # ★★★ No limit, because a missing preview is a worse answer than a slow one
+/// # No limit, because a missing preview is a worse answer than a slow one
 ///
 /// The operator's rule: *"draw page previews should be set to 'no limit' by
 /// default."* A budget that trips produces a tile with no picture, and the
@@ -108,7 +108,7 @@ pub const MIN_PAGE_BUDGET: Duration = Duration::from_millis(100);
 /// full-size raster of that page belongs anyway.
 pub const MAX_PAGE_BUDGET: Duration = Duration::from_secs(60);
 
-/// ★★★ **The only place in this crate that decides what a budget number
+/// **The only place in this crate that decides what a budget number
 /// MEANS** — `OPERATOR_REQUESTS.md` **O187**, 2026-09-12: *“setting it to 0
 /// should set it to infinity (never time out)”*.
 ///
@@ -125,7 +125,7 @@ pub const MAX_PAGE_BUDGET: Duration = Duration::from_secs(60);
 /// | `100`…`60 000` | `Some(that)` | in range, untouched |
 /// | over `60 000` | `Some(60 s)` | above the ceiling a hitch reads as a hang |
 ///
-/// # ★ Why `0` is not simply clamped like every other out-of-range value
+/// # Why `0` is not simply clamped like every other out-of-range value
 ///
 /// Because it is not out of range — it is a different *kind* of answer.
 /// Clamping it to [`MIN_PAGE_BUDGET`] would give the operator who typed the
@@ -221,7 +221,7 @@ pub enum TileState {
     PreviewsOff,
     /// The render hit [`ThumbnailCache::budget`] and was abandoned.
     ///
-    /// ★ Not a failure and not a stop. The next page is drawn normally;
+    /// Not a failure and not a stop. The next page is drawn normally;
     /// only this one has no picture, and raising the budget brings it
     /// back ([`ThumbnailCache::set_budget`]).
     Abandoned,
@@ -257,7 +257,7 @@ pub struct ThumbnailCache {
     /// The **pixels-per-point bits** everything above describes, or `None`
     /// before the first frame.
     ///
-    /// ★★★ **The edit epoch LEFT this key on 2026-08-31** —
+    /// **The edit epoch LEFT this key on 2026-08-31** —
     /// `OPERATOR_REQUESTS.md` O74, the operator: *"all of the page previews
     /// get re-rendered instead of just the one that is being changed."* It was
     /// a **document-wide** counter used as the invalidation key for a cache
@@ -279,7 +279,7 @@ pub struct ThumbnailCache {
     /// the wrong resolution, and the symptom is a grid that is soft or aliased
     /// with nothing to say why. A per-page density does not exist.
     key: Option<u32>,
-    /// ★ **The page epoch each held entry was built at**, keyed the same way
+    /// **The page epoch each held entry was built at**, keyed the same way
     /// [`Self::ready`] and [`Self::unavailable`] are.
     ///
     /// One entry per held picture *and* per held refusal — a page that failed
@@ -291,7 +291,7 @@ pub struct ThumbnailCache {
     /// stamp a new entry without the render path having to be handed the
     /// document.
     ///
-    /// ★ Correct precisely because `sync` runs **once per frame before any
+    /// Correct precisely because `sync` runs **once per frame before any
     /// tile is drawn**, which is a contract `sync`'s own docs already state
     /// and which several other things here already depend on. A picture
     /// rendered later in the same frame is a picture of the revision this
@@ -305,7 +305,7 @@ pub struct ThumbnailCache {
     /// [`Self::set_budget`], because a verdict measured against a limit the
     /// operator has since changed is a stale claim.
     skipped: Option<SkippedPage>,
-    /// ★★★ **Whether the operator wants previews. Nothing but the operator
+    /// **Whether the operator wants previews. Nothing but the operator
     /// writes this.**
     ///
     ///
@@ -317,7 +317,7 @@ pub struct ThumbnailCache {
     /// checkbox — or `None`, meaning *never give up*.
     ///
     ///
-    /// # ★ `Option`, not a zero
+    /// # `Option`, not a zero
     ///
     /// `Duration::ZERO` would have been a sentinel every reader of this field
     /// had to remember; `None` is one the compiler makes them handle. The
@@ -410,7 +410,7 @@ impl ThumbnailCache {
         //    only while the page it describes has not moved — so an edit on
         //    sheet 12 drops sheet 12's tile and leaves the rest alone.
         //
-        //    ★ An entry with no `built_at` is dropped rather than kept. That is
+        //    An entry with no `built_at` is dropped rather than kept. That is
         //    unreachable today (every insertion stamps one) and it is written
         //    this way round deliberately: the failure mode of "keep what you
         //    cannot date" is showing the operator a picture of content he has
@@ -486,7 +486,7 @@ impl ThumbnailCache {
     /// Three things happen, and the second and third are the ones that matter:
     ///
     ///
-    /// ★ Idempotent by design — the panel calls this from a `DragValue` that
+    /// Idempotent by design — the panel calls this from a `DragValue` that
     /// reports a change on every pixel of a drag, so an unchanged value must
     /// cost nothing.
     pub fn set_budget(&mut self, budget: Option<Duration>) {
@@ -595,7 +595,7 @@ impl ThumbnailCache {
     ) -> Duration {
         let scale = raster_scale_for(page, pixels_per_point);
 
-        // ★ Through the funnel, not `RenderOptions::default()`.
+        // Through the funnel, not `RenderOptions::default()`.
         //
         // A thumbnail is a small picture of the same page the canvas draws, so
         // it must obey the same five rendering settings — otherwise an operator
@@ -621,7 +621,7 @@ impl ThumbnailCache {
         // nothing this panel does can vary them.
         options.annotations = true;
         options.layers = None;
-        // ★★ …and `stroke_display` is deliberately NOT set, which leaves the
+        // …and `stroke_display` is deliberately NOT set, which leaves the
         // funnel's `StrokeDisplay::Actual` — O137's `view.line_weights` does not
         // reach the rail.
         //
@@ -638,7 +638,7 @@ impl ThumbnailCache {
         // does. The canvas is.
 
         let cancel = RenderCancel::new();
-        // ★ Copied out before the thread is spawned: `self` is borrowed
+        // Copied out before the thread is spawned: `self` is borrowed
         // mutably for the whole of this function, so the closure cannot read
         // the field, and an `Option<Duration>` is `Copy`.
         let budget = self.budget;
@@ -675,7 +675,7 @@ impl ThumbnailCache {
         };
         let elapsed = started.elapsed();
         drop(tx);
-        // ★ `drop(tx)` is unconditional even when no watchdog was spawned:
+        // `drop(tx)` is unconditional even when no watchdog was spawned:
         // `rx` was moved into the closure only in the `Some` arm, so in the
         // `None` arm the receiver is dropped with `guard`'s `None` and the
         // sender has nothing to wake. Dropping it anyway costs nothing and
@@ -721,7 +721,7 @@ impl ThumbnailCache {
                     viewport_centre,
                 );
             }
-            // ★ A refusal is stamped too (O74). It is as much a claim about a
+            // A refusal is stamped too (O74). It is as much a claim about a
             // revision as a picture is, and an unstamped refusal would be
             // dropped by `sync` on every frame — or, worse if the polarity were
             // reversed, would survive the edit that fixed it and the page would
@@ -730,7 +730,7 @@ impl ThumbnailCache {
                 self.unavailable.insert(page_index, Unavailable::Abandoned);
                 self.built_at
                     .insert(page_index, self.synced.get(page_index));
-                // ★ The disclosure, and the ONLY thing this arm does beyond
+                // The disclosure, and the ONLY thing this arm does beyond
                 // recording the tile's state. It does not touch `self.on`.
                 // That is the whole of O151: a page the budget could not
                 // afford is a fact about that page, and the operator's
@@ -739,7 +739,7 @@ impl ThumbnailCache {
                 // `budget`, not `elapsed`, because the page's real cost is
                 // unknown — pdfcer stopped it precisely so as not to spend it.
                 //
-                // ★ `budget` is `Some` on every path that reaches here: the
+                // `budget` is `Some` on every path that reaches here: the
                 // token is only armed when there is a limit (step 1), so a
                 // cancelled render implies one. `map` rather than `expect`
                 // because a disclosure is not worth a panic — if that
@@ -771,7 +771,7 @@ impl ThumbnailCache {
             self.order.retain(|p| *p != victim);
         }
         self.ready.insert(page_index, texture);
-        // ★ Stamped with the revision `sync` recorded at the top of this frame
+        // Stamped with the revision `sync` recorded at the top of this frame
         // (O74). Not `epochs.get()` re-read here: this function has no document
         // and giving it one would put a document borrow inside the eviction
         // path for a number that cannot have changed since the frame began.
@@ -801,7 +801,7 @@ impl ThumbnailCache {
 /// instead, which is wrong-looking and *present*, and the tile is scaled into
 /// its box anyway.
 ///
-/// # ★ The rail is pinned to `Normal` quality, and that is a decision
+/// # The rail is pinned to `Normal` quality, and that is a decision
 ///
 /// Every other raster in the application follows the operator's
 /// `RenderQuality`. This one does not, and the reason is the same one that

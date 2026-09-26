@@ -57,7 +57,7 @@ const RAIL_WIDTH_PTS: f32 = 16.0;
 
 /// How tall the clickable part of a collapse control or a rail is, in points.
 ///
-/// ★ Larger than the glyph it contains, deliberately. A live target may exceed
+/// Larger than the glyph it contains, deliberately. A live target may exceed
 /// the drawn affordance and must never be smaller than it. A chevron is a few
 /// points across and would be a miserable thing to hit.
 const RAIL_HIT_PTS: f32 = 22.0;
@@ -126,7 +126,7 @@ pub(super) fn draw_collapsed_rail(
             .inner
         });
 
-    // ★ The whole RAIL is published, not the button inside it, and the
+    // The whole RAIL is published, not the button inside it, and the
     // difference is deliberate: the rail is what an operator aims at — a
     // thin strip at the edge of the window — and a driven check that aimed
     // at the glyph's own rect would be measuring the glyph's centring
@@ -160,7 +160,7 @@ pub(super) fn draw_collapse(ctx: &mut Ctx<'_>, ui: &mut egui::Ui, side: DockSide
         DockSide::Left => "\u{25c2}",
         DockSide::Right => "\u{25b8}",
     };
-    // ★★ ALWAYS THE TRAILING END OF THE TAB ROW — the right-hand end of the
+    // ALWAYS THE TRAILING END OF THE TAB ROW — the right-hand end of the
     // dock, on both sides.
     //
     // Putting it on each side's INNER edge reads well — the operator's hand is

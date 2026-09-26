@@ -102,7 +102,7 @@ pub(super) fn seeded_select(
 /// A click in **Edit mode**: select the field under the pointer, or clear the
 /// selection.
 ///
-/// ★★ A click on empty paper CLEARS, and that is deliberate rather than
+/// A click on empty paper CLEARS, and that is deliberate rather than
 /// incidental. Every selection model the operator uses works that way, and
 /// without it the properties panel would go on describing a field long after
 /// they had moved on — a panel that will not let go is worse than one that is
@@ -121,7 +121,7 @@ pub(super) fn select_click(
     let Some(pos) = ctx.pointer_interact_pos() else {
         return;
     };
-    // ★★★ **A right-click selects too, and the two buttons are NOT the same
+    // **A right-click selects too, and the two buttons are NOT the same
     // rule.** `OPERATOR_REQUESTS.md` O53's ruling — anything the engine can do
     // to an object must be reachable by clicking that object — reaches the
     // context menu, and a menu about a field the operator did not point at is
@@ -165,7 +165,7 @@ pub(super) fn select_click(
             page: t.page,
         });
 
-    // ★ Raised only on a CHANGE. A click that re-selects what is already
+    // Raised only on a CHANGE. A click that re-selects what is already
     // selected, or that clears an empty selection, is not an event — and this
     // surface is asked on every frame the pointer is down, so raising
     // unconditionally would put an action on the queue sixty times a second
@@ -173,7 +173,7 @@ pub(super) fn select_click(
     if picked == doc.selected_field {
         return;
     }
-    // ★ The one asymmetry between the buttons, and it is the table above's
+    // The one asymmetry between the buttons, and it is the table above's
     // last row. A secondary click that hit nothing leaves the selection alone;
     // a primary one clears it. Placed after the no-change guard so an
     // unchanged selection still costs nothing either way.
@@ -195,7 +195,7 @@ pub(super) fn select_click(
 
 /// **Is a right-click at `point` about a form field?**
 ///
-/// ## ★★★ Why this exists instead of reading `doc.selected_field`
+/// ## Why this exists instead of reading `doc.selected_field`
 ///
 /// Because on the frame of the click that field is **not selected yet**.
 /// [`select_click`] does not mutate — it raises `FieldAction::Select`, which
@@ -209,11 +209,11 @@ pub(super) fn select_click(
 /// arrive. The first right-click on a field would silently show the wrong menu
 /// for ever.
 ///
-/// ★ It is the twin of [`crate::canvas::menus::right_clicked_object`], and it
+/// It is the twin of [`crate::canvas::menus::right_clicked_object`], and it
 /// answers the same question the same way — by hit-testing the click's own
 /// position rather than by consulting state one frame behind it.
 ///
-/// ## ★★ It reproduces the surface's own gates, and it must
+/// ## It reproduces the surface's own gates, and it must
 ///
 /// `edit_content` and `annotations_visible`: a form field is only *selectable*
 /// in Edit mode with annotations shown, and a menu offered where selection is
@@ -239,7 +239,7 @@ pub fn right_click_hits_a_field(
 
 /// The pointer over a selectable widget in Edit mode.
 ///
-/// ★ `PointingHand`, the same cursor the fill surface uses, and deliberately
+/// `PointingHand`, the same cursor the fill surface uses, and deliberately
 /// **not** a bespoke one. It says *"there is something here"*, which is the
 /// only claim either surface needs to make; what differs is what a click does,
 /// and a cursor is a poor place to say that. `ui-conventions` has no row for
@@ -266,18 +266,18 @@ pub(super) fn select_cursor(
 /// `OPERATOR_REQUESTS.md` **O53**: a selected field must be visibly distinct
 /// from an unselected one.
 ///
-/// ★★★ It is drawn **here** rather than in `canvas::overlay::draw_selection`,
+/// It is drawn **here** rather than in `canvas::overlay::draw_selection`,
 /// and the reason is that a form field is not in `SelectionState` at all:
 /// `canvas::selection::annot` excludes `/Widget` outright so the form surface
 /// owns those presses, and the selection lives on the document. The overlay
 /// draws what the selection state holds; this draws what this surface owns.
 ///
-/// ★★ The rectangle is the **same one** `hit_target` matched and
+/// The rectangle is the **same one** `hit_target` matched and
 /// `widgetdrag::grab_box` projects — one rectangle for what the operator can
 /// see, what they can grab and what moves. That is rule H7, and the third use
 /// is the one that was missing.
 ///
-/// ★ Nothing is drawn when the selection names a widget the form no longer has
+/// Nothing is drawn when the selection names a widget the form no longer has
 /// — a field deleted while selected, or a page that has changed underneath.
 /// An outline around nothing is a claim about a field that is gone.
 pub(super) fn selection_overlay(
@@ -303,14 +303,14 @@ pub(super) fn selection_overlay(
         egui::Order::Foreground,
         egui::Id::new("form-field-selection"), // ui-text-exempt: a layer id.
     ));
-    // ★ The LIVE theme, read from the caller's own `Context`, never a colour
+    // The LIVE theme, read from the caller's own `Context`, never a colour
     // resolved somewhere else and carried here: `Theme::of` returns the
     // operator's current preset, so a painter that guessed would draw a
     // selection outline in the wrong colour on exactly the build where
     // somebody had changed it. (`visuals` is still the caller's, and
     // `draw_grips` below still needs it for `window_fill`.)
     //
-    // ★★★ Never `visuals.selection.stroke.color`, however identical the value
+    // Never `visuals.selection.stroke.color`, however identical the value
     // looks. That is `egui`'s SELECTED-WIDGET channel, not a canvas role:
     // pointing the canvas at it makes every selected chrome control in the
     // application share this outline's colour, so a theme that wanted one
@@ -323,16 +323,16 @@ pub(super) fn selection_overlay(
         stroke,
         egui::StrokeKind::Middle,
     );
-    // ★★ Published under the SAME region name every other selection outline
+    // Published under the SAME region name every other selection outline
     // uses, so a driven check aiming at a grip reads one name whatever is
     // selected. `handles::grip_rects` derives all eight from this box.
     crate::diag::ui_rect(crate::canvas::overlay::SELECTION_OUTLINE_REGION, screen);
-    // ★★ `scale_only()`, spelled here as the same value `pressing::grabbable`
+    // `scale_only()`, spelled here as the same value `pressing::grabbable`
     // hands the hit test for this selection — H7, and the field is the one
     // selection where the two flags differ in the direction that would be
     // easiest to get wrong by inheritance.
     //
-    // ★★★ **A widget scales and does not turn**, and the asymmetry is
+    // **A widget scales and does not turn**, and the asymmetry is
     // §12.5.6.19 Table 189's rather than a gap in pdfcer: a widget's rotation is
     // `/MK /R`, a quantised 0/90/180/270 *declaration* the field's appearance
     // generator reads, not a free-angle transform. `rotate_annotation` refuses

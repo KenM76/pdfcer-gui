@@ -84,7 +84,7 @@ fn zoom_now(trace: &Trace, canvas_event: &str) -> Option<f64> {
 
 /// Whether the disclosure has **ever** been declared.
 ///
-/// ★★ `ui_rect` is a **change log**, not a per-frame census — a widget that
+/// `ui_rect` is a **change log**, not a per-frame census — a widget that
 /// stops being drawn publishes nothing. So "has it ever appeared" is the
 /// question a change log can answer honestly, and "is it on screen now" is not.
 /// Phase A therefore asks *never*, and phase F asks *not since the second
@@ -116,7 +116,7 @@ fn ink_in(image: &Image, region: crate::geom::PixRect) -> u64 {
 /// **Where the densest patch of ink sits inside `canvas`**, as fractions of the
 /// canvas rect, or `None` when the canvas carries no ink at all.
 ///
-/// # ★★★ Why the climb has to be aimed, and what NOT aiming it cost
+/// # Why the climb has to be aimed, and what NOT aiming it cost
 ///
 /// `Ctrl+wheel` zooms **about the pointer**, so whatever is under the cursor
 /// stays under it for the whole climb. Aiming at the canvas's geometric centre
@@ -129,7 +129,7 @@ fn ink_in(image: &Image, region: crate::geom::PixRect) -> u64 {
 /// at content before climbing"*. **A SKIP is not red**, so it had been telling
 /// nobody anything for as long as it had been running.
 ///
-/// # ★★ Why a patch and not the ink's bounding box
+/// # Why a patch and not the ink's bounding box
 ///
 /// Measured on that fixture at scale 0.25: the ink spans **24–2356 pt
 /// horizontally and 28–1660 vertically** — very nearly the whole A1 sheet — and
@@ -146,11 +146,11 @@ fn ink_in(image: &Image, region: crate::geom::PixRect) -> u64 {
 /// leaves the viewport as soon as the zoom climbs, while a coarse one finds a
 /// *region* that stays populated all the way up.
 ///
-/// ★ It answers the cell's **centre**, not the darkest pixel, for the same
+/// It answers the cell's **centre**, not the darkest pixel, for the same
 /// reason — the exact pixel of a stroke is a knife edge at 400 %, and one
 /// rounding in the pointer's position falls off it.
 ///
-/// ★★ Fractions rather than a screen point, so the caller converts through
+/// Fractions rather than a screen point, so the caller converts through
 /// `Frame::declared_at` like every other aim in this harness. `coords`' rule is
 /// that a coordinate is **produced by a conversion and never assembled**, and
 /// returning pixels here would be assembling one two conversions away from the
@@ -282,7 +282,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             frame.declared_at(canvas, fx, fy)
         }
         None => {
-            // ★ Not an error, and it must not become one: a page really can be
+            // Not an error, and it must not become one: a page really can be
             // blank at the opening zoom, and the ink floor further down is the
             // assertion that owns that case and words it properly. Falling back
             // to the centre keeps this function's failure mode identical to
@@ -352,7 +352,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // application.** They are a statement about 138 pixels of nothing, and the
     // screenshot settles it in one look.
     //
-    // ★★ This is the third instance of the same shape today, and the rule it
+    // This is the third instance of the same shape today, and the rule it
     // earns is: **a probe whose baseline has no dynamic range cannot produce a
     // verdict.** `mouse_work_survives_every_render_tier` failed at every rung on
     // his own drawing until it was re-aimed from blank paper to an object; the
@@ -444,7 +444,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- E: the picture must actually get thinner, and the bar must say so --
     //
-    // ★★ The SAME `px` rectangle as phase C, deliberately re-used rather than
+    // The SAME `px` rectangle as phase C, deliberately re-used rather than
     // re-read. Two captures compared pixel for pixel are only comparable if
     // they name the same region — and the ribbon tab click above cannot move
     // the canvas, so re-deriving it here would introduce a way for the two
@@ -497,7 +497,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // | **> 0** | down | **PASS** — the mode did work and put less ink down |
     // | **> 0** | up or level | **FAIL** — handled above; the wrong convention, or a stale raster |
     //
-    // ★ This shell asked the engine for that count precisely because *"an
+    // This shell asked the engine for that count precisely because *"an
     // operator could switch it on, see no change, and have no way to tell 'this
     // drawing has no strokes thin enough to matter' from 'the setting is
     // broken'"*. The harness had the identical problem and is fixed the
@@ -536,7 +536,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
     }
 
-    // ★ The ink ratio is kept as a SECOND opinion rather than deleted, and the
+    // The ink ratio is kept as a SECOND opinion rather than deleted, and the
     // floor is only applied when the count could not be read. With the count in
     // hand the pixels answer a different and weaker question — *did the picture
     // visibly change* — and a build that thinned strokes and drew them anyway
@@ -595,7 +595,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    // ★ The disclosure must have STOPPED. A change log cannot say "absent now",
+    // The disclosure must have STOPPED. A change log cannot say "absent now",
     // so the question is scoped: nothing published it after the second press.
     let after_second = session
         .trace()?

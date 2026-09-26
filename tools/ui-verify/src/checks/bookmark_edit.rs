@@ -57,7 +57,7 @@ use crate::sys::vk;
 /// on that function: **a helper that can decline must not hand back a `no` a
 /// caller is free to ignore.**
 ///
-/// ★★ The general shape, and it is this project's commonest: **a check that
+/// The general shape, and it is this project's commonest: **a check that
 /// SKIPs is not red, so a check aimed at a surface the application has since
 /// been specified not to have can sit there for ever looking like an ordinary
 /// wrong-fixture skip.** The tell here was two checks disagreeing — one
@@ -80,7 +80,7 @@ const CENSUS: &str = "bookmarks-panel";
 /// The dock body the rows are drawn inside — the bound a clickable row must sit
 /// within. See the row-picking comment in [`drive`].
 const PANEL_BODY: &str = "dock.body.view.panel_bookmarks";
-/// ★★★ **One line per outline row drawn, carrying that row's own rectangle.**
+/// **One line per outline row drawn, carrying that row's own rectangle.**
 ///
 /// This is how the row is aimed at, and it is not a `ui_rect` region because a
 /// row is not one: `panels::bookmarks::rows` draws a frameless `Button` per
@@ -90,7 +90,7 @@ const PANEL_BODY: &str = "dock.body.view.panel_bookmarks";
 /// it and `WindowFrame::declared_center` converts it exactly as it converts a
 /// declared region — same space, same origin, same frame.
 ///
-/// ★ `.last()` is the most recently drawn row of the most recently drawn
+/// `.last()` is the most recently drawn row of the most recently drawn
 /// frame. This check authors exactly one bookmark before it aims, so there is
 /// one row and the choice does not arise; a check that authored several would
 /// have to filter on `title=` instead.
@@ -109,7 +109,7 @@ const DELETED: &str = "delete-bookmark";
 const TITLE_KEYS: [u16; 5] = [vk::T, vk::I, vk::T, vk::L, vk::E];
 /// `DETAIL`, the name it is renamed to — a DIFFERENT LENGTH, deliberately.
 ///
-/// ★ Six letters against five is the whole oracle: the panel traces the length
+/// Six letters against five is the whole oracle: the panel traces the length
 /// of a bookmark name and not its text, so a rename to a same-length word would
 /// be indistinguishable from no rename at all in the only evidence available.
 const RENAME_KEYS: [u16; 6] = [vk::D, vk::E, vk::T, vk::A, vk::I, vk::L];
@@ -195,7 +195,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(40);
     let driver = Driver::new(session.window());
     click_mode_segment(&session, &driver, ui_rect, MODE)?;
-    // ★★ The dock draws only the ACTIVE tab's body, and in this mode's default
+    // The dock draws only the ACTIVE tab's body, and in this mode's default
     // layout Bookmarks shares a stack with Pages. See
     // [`crate::checks::driving::raise_dock_tab`].
     driving::raise_dock_tab(&session, &driver, ui_rect, "view.panel_bookmarks")?;
@@ -238,13 +238,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- B: click the row, then rename it -----------------------------------
     //
-    // ★ The rename block appears only once a row is SELECTED, and the click
+    // The rename block appears only once a row is SELECTED, and the click
     // that selects it is the same click that navigates — the panel's own
     // decision, because a bookmark click means "take me there" first and always.
     // So there is no separate select gesture to drive: the row is the control.
     //
     let trace = session.trace()?;
-    // ★★★ A row that is ON SCREEN, not merely the last one traced.
+    // A row that is ON SCREEN, not merely the last one traced.
     //
     // `bookmark-row` is a diagnostic line, not a `ui_rect`: the panel writes one
     // per row per frame **whether or not the row is inside the visible scroll
@@ -282,7 +282,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    // ★ A row whose destination pdfcer could not resolve is drawn DISABLED, and
+    // A row whose destination pdfcer could not resolve is drawn DISABLED, and
     // a disabled `Button` never reports a click — so it can never be selected
     // and the rename block can never appear for it. That is correct behaviour
     // and it would read here as the defect, so it is a SKIP with the reason.
@@ -334,7 +334,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     session.settle(10);
     //
-    // ★ Enter rather than the button, and not by preference: the Rename button
+    // Enter rather than the button, and not by preference: the Rename button
     // publishes **no `ui_rect` region** — only the field does (`REGION_RENAME`)
     // and only the Remove does (`REGION_DELETE`) — so there is no coordinate to
     // aim at, and Enter is the one route a harness has. That module's own
@@ -359,14 +359,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
     report.note(format!("the panel raised the rename: `{}`", pressed.raw));
-    // ★★ The oracle this module's header names and the code did not have. The
+    // The oracle this module's header names and the code did not have. The
     // panel traces the LENGTH of the name and never its text, so the one thing
     // a trace can say about *which* name was committed is that it is not the
     // length of the one already there. A rename that raised the existing title
     // back at the document is a no-op wearing a success line, and every
     // assertion below — the funnel line, the unchanged count — holds for it.
     //
-    // ★ Asserted as "different from five", not as "exactly six": Ctrl+A is a
+    // Asserted as "different from five", not as "exactly six": Ctrl+A is a
     // chord, this panel is a dock, and `scale_switch` measured a chord over a
     // dock arriving zero times in six. A failed select-all leaves
     // `TITLEDETAIL` — eleven characters, a name genuinely committed from
@@ -450,7 +450,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     let after_delete = census(&session)?.unwrap_or(usize::MAX);
-    // ★★★ EXACTLY, not "fewer". The engine's own account of this Pass records
+    // EXACTLY, not "fewer". The engine's own account of this Pass records
     // three injected defects surviving a "shorter than before" assertion,
     // including one that emptied the list — which is also shorter.
     if after_delete != after_add - 1 {

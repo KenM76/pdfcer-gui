@@ -37,7 +37,7 @@ const MENU_SLOT: &str = "canvas-menu"; // ui-text-exempt: trace slot name, never
 pub enum CanvasMenu {
     /// The pointer was over an object: act on it.
     Object,
-    /// ★★★ **A caret is placed in text already on the page**: act on the
+    /// **A caret is placed in text already on the page**: act on the
     /// paragraph.
     ///
     /// Chosen ahead of both others when it applies, and the precedence is the
@@ -47,10 +47,10 @@ pub enum CanvasMenu {
     /// give them the view menu, because a text run is not a hit-testable
     /// object.
     ///
-    /// ★ It is `Anchor::Run` only. A caret placing NEW text (`Origin`/`Box`)
+    /// It is `Anchor::Run` only. A caret placing NEW text (`Origin`/`Box`)
     /// has no paragraph behind it, so that operator gets the ordinary menus.
     Text,
-    /// ★★★ **A form field is selected**: act on the field.
+    /// **A form field is selected**: act on the field.
     ///
     /// Chosen ahead of [`Self::Object`] and [`Self::Empty`], below
     /// [`Self::Text`]. The precedence is a statement about what can be true at
@@ -60,14 +60,14 @@ pub enum CanvasMenu {
     /// is documentation of that, and the field beats the object because a
     /// widget sits on top of whatever page content is underneath it.
     Field,
-    /// ★★★ **Reading, and the pointer is over a picture**: offer to copy it.
+    /// **Reading, and the pointer is over a picture**: offer to copy it.
     ///
     /// `OPERATOR_REQUESTS.md` **O71**. A picture became selectable in Read so
     /// it could be pasted into Word, and `Ctrl+C` was the only way to reach
     /// that — which is a route nobody discovers. Acrobat Reader offers *Copy
     /// Image* on the right-click and that is where somebody looks.
     ///
-    /// ## ★★ Why a context of its own rather than [`Self::Object`]
+    /// ## Why a context of its own rather than [`Self::Object`]
     ///
     /// Because every other row of the object menu **edits**: Delete, unshare,
     /// re-aim to the container, the Properties panel's editable fields. Reusing
@@ -81,11 +81,11 @@ pub enum CanvasMenu {
     /// things a reader can genuinely do with a picture: take a copy of it, and
     /// look at it more closely.
     ReadObject,
-    /// ★★★ **A markup shape is selected**: act on the shape, and on the corner
+    /// **A markup shape is selected**: act on the shape, and on the corner
     /// under the pointer.
     ///
     ///
-    /// ## ★★ Keyed on the SELECTION, not on a hit test, and here is why that
+    /// ## Keyed on the SELECTION, not on a hit test, and here is why that
     /// is not the field menu's mistake in reverse
     ///
     /// A right-click does not select an annotation. `canvas::annot`'s hit test
@@ -105,7 +105,7 @@ pub enum CanvasMenu {
     /// annotation hit test on the secondary button, which is a change in
     /// `canvas::interact`'s press pipeline and not in a menu.
     ///
-    /// ## ★ When it wins over [`Self::Object`]
+    /// ## When it wins over [`Self::Object`]
     ///
     /// When the pointer is **over the shape's own outline box**, or when it hit
     /// no content object at all. Not merely "a markup is selected": a markup
@@ -171,7 +171,7 @@ pub fn select_under_right_click(
     // the same accessor `deletable_objects_on` builds the Delete operand
     // list from — so "is this one of the things Delete would act on" and
     // "is this selected" are answered from one place.
-    // ★ Both lists, asked separately, because `object_indices_on` answers only
+    // Both lists, asked separately, because `object_indices_on` answers only
     // about the page's own paint order — a right-click on an already-selected
     // form-interior object would otherwise read as *not* selected and clear
     // the set the operator had built.
@@ -211,13 +211,13 @@ pub fn select_under_right_click(
 /// **What a right-click landed on**, hit-tested at the object rung.
 ///
 ///
-/// ★ **The OBJECT rung only** — `hit_test`, not `probe`. `probe` also asks for
+/// **The OBJECT rung only** — `hit_test`, not `probe`. `probe` also asks for
 /// the nearest part and node so that a double-click can descend, and a
 /// right-click never descends: it names a whole object, because the verbs a
 /// context menu offers act on whole objects. Asking for the deeper rungs would
 /// pay for two extra provider queries on every right-click and discard both.
 ///
-/// ★ It takes the frame's **screen** position and the frame's **one** mapping,
+/// It takes the frame's **screen** position and the frame's **one** mapping,
 /// rather than a page point. The `PointerFrame` has been consumed by the
 /// gesture machine by the time a menu is attached, so re-deriving the page
 /// point through the same `map` is the frame's one conversion applied twice —
@@ -274,7 +274,7 @@ pub struct Attach<'a> {
     pub reading: bool,
     /// **Whether this mode may author markup.**
     ///
-    /// ★ `author_markup`, deliberately not `!reading`. Review edits no content
+    /// `author_markup`, deliberately not `!reading`. Review edits no content
     /// and authors every comment there is, so a markup menu gated on
     /// `edit_content` would be absent in the one mode whose entire subject is
     /// markup. The two capabilities are separate on
@@ -329,7 +329,7 @@ pub struct Attach<'a> {
 /// Returns the handler tokens the operator chose, for the caller to hand to
 /// the application's one dispatch point. **Nothing here executes anything.**
 ///
-/// ★ It took eight positional arguments until 2026-09-06 under a
+/// It took eight positional arguments until 2026-09-06 under a
 /// `too_many_arguments` allow whose reason ended *"the resulting type would
 /// have no name that was true"*. The markup menu brought four more — the
 /// document, the mapping, the pointer and one capability, every one of them
@@ -363,20 +363,20 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
 
     // 2.
     if response.secondary_clicked() {
-        // ★★ The caret wins, and it is asked BEFORE the hit test so the
+        // The caret wins, and it is asked BEFORE the hit test so the
         // selection is not disturbed on the way past: `select_under_right_click`
         // would replace the object selection with whatever happens to sit under
         // a paragraph, which the operator did not ask for and cannot see.
         let chosen = if caret_in_existing_text(&ctx) {
             CanvasMenu::Text
         } else if field_selected {
-            // ★★ Asked BEFORE the hit test, and the ordering is the same
+            // Asked BEFORE the hit test, and the ordering is the same
             // protection the caret rung gets: `select_under_right_click` would
             // replace the object selection with whatever page content sits
             // under the widget, which the operator did not ask for and cannot
             // see behind the field's own outline.
             //
-            // ★★★ The SELECTION is what is read here, not a hit test, and that
+            // The SELECTION is what is read here, not a hit test, and that
             // is deliberate: `canvas::forms::selecting::select_click` has already made the
             // field under the pointer the selected one on this very frame — a
             // secondary click selects exactly as a primary does, minus the
@@ -386,7 +386,7 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             CanvasMenu::Field
         } else if markup_menu(selection, author_markup, object, map, screen_pos) {
             //
-            // ★★ The PICK is taken here and parked, on this one frame, because
+            // The PICK is taken here and parked, on this one frame, because
             // this is the only frame on which the pointer is still over the
             // shape. Every later frame of the popup's life has the pointer on
             // the menu itself. `annotnodes::menu`'s header carries the whole
@@ -406,7 +406,7 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             }
             CanvasMenu::Markup
         } else if reading {
-            // ★★★ **Reading**: the object menu's rows all edit, so this mode
+            // **Reading**: the object menu's rows all edit, so this mode
             // gets its own two-row menu — O71. See [`CanvasMenu::ReadObject`].
             //
             // # Why the gate is HERE and was not before
@@ -438,7 +438,7 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             select_under_right_click(selection, page, object)
         };
         store(&ctx, chosen);
-        // ★★★ **The run pick, taken on this one frame and parked** — O188(A).
+        // **The run pick, taken on this one frame and parked** — O188(A).
         //
         // Same mechanism, same reason and the same memory discipline as the
         // markup node pick four screens up: this is the only frame on which
@@ -447,13 +447,13 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
         // is on the menu. `crate::canvas::runmenu`'s header carries the whole
         // argument.
         //
-        // ★★ Taken from `object` — the hit test `right_clicked_object` already
+        // Taken from `object` — the hit test `right_clicked_object` already
         // ran — and NOT from the selection, which step 2 has just changed. The
         // row is about the thing the pointer is on, and `select_under_right_click`
         // may legitimately have left a different thing selected (a multi-object
         // selection the click landed inside is preserved, by its second rule).
         //
-        // ★★★ **Parked on every right-click, not only on the object menu.** The
+        // **Parked on every right-click, not only on the object menu.** The
         // `else` arm is what makes a stale pick impossible: without it, a
         // right-click on paper would leave the previous click's line parked,
         // and the next frame that read it would be reading an operand from a
@@ -480,19 +480,19 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
     }
 
     // 3.
-    // ★★ THREE conditions, corrected on the same frame and for one reason.
+    // THREE conditions, corrected on the same frame and for one reason.
     // `PdfcerApp::conditions()` ran at the top of the frame, before step 2 could
     // move the selection, so a first right-click on an object would otherwise
     // resolve `format.delete` disabled and the engine — correctly — would
     // decline to open a menu with nothing in it.
     //
-    // ★ `selection.actionable` is the wider of the two: it is also set for a
+    // `selection.actionable` is the wider of the two: it is also set for a
     // selected form field, which is not in `SelectionState`. Without it here,
     // `canvas.field`'s items would resolve disabled and the menu would never
     // open at all — the state `offers_anything` is built to prevent, met from
     // the one direction it cannot see.
     //
-    // ★★ It used to say *"both items"*, and that stopped being true on
+    // It used to say *"both items"*, and that stopped being true on
     // 2026-08-29: `canvas.field`'s `format.delete` now carries
     // `selection.delete_permitted` as its `visible_when`, so on a document
     // whose form structure is frozen the menu offers `format.properties`
@@ -517,7 +517,7 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
     // conditions, one reason: `PdfcerApp::conditions()` ran before the click
     // that decided what this menu is about.
     //
-    // ★★★ **Applied ONLY to `canvas.field`, and the narrowness is the whole
+    // **Applied ONLY to `canvas.field`, and the narrowness is the whole
     // correctness argument.** `with_conditions` overrides a name for whatever
     // menu is about to be drawn, and `canvas.object` carries the identical
     // `visible_when` for a different subject: page content and annotations,
@@ -542,18 +542,18 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
     if matches!(chosen, CanvasMenu::Field) {
         overrides.push((DELETE_PERMITTED, field_delete_permitted));
     }
-    // ★★★ **The two node rows' four conditions**, corrected here and nowhere
+    // **The two node rows' four conditions**, corrected here and nowhere
     // else, for the same reason and with the same narrowness as the Delete
     // above: they are facts about ONE right-click on ONE edge, and
     // `PdfcerApp::conditions()` ran before that click existed.
     //
-    // ★★ Asked from the **parked** pick rather than from the live pointer.
+    // Asked from the **parked** pick rather than from the live pointer.
     // `attach` runs on every frame the popup is drawn and the pointer is on the
     // menu by the second of them; recomputing would grey the row the operator's
     // hand was travelling toward. `annotnodes::menu`'s header carries the
     // argument; this is the call site it is about.
     //
-    // ★ The engine preflight behind [`rows`] costs one annotation walk per row,
+    // The engine preflight behind [`rows`] costs one annotation walk per row,
     // and it is paid only inside this `matches!` — a right-click anywhere else
     // on the canvas asks the engine nothing.
     if matches!(chosen, CanvasMenu::Markup) {
@@ -569,19 +569,19 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             (menus::NODE_REMOVABLE, rows.remove.enabled()),
         ]);
     }
-    // ★★★ **`format.select_text_line`'s one condition** — O188(A), and the
+    // **`format.select_text_line`'s one condition** — O188(A), and the
     // narrowness is the same argument the Delete above makes: it is a fact
     // about ONE right-click on ONE line, and `PdfcerApp::conditions()` ran
     // before that click existed. Nothing publishes this name anywhere else, so
     // outside this `matches!` it is simply absent, which `ConditionSet` reads
     // as false and the item's `shown_when` reads as *no row*.
     //
-    // ★★ Read from the **parked** pick rather than recomputed, for the reason
+    // Read from the **parked** pick rather than recomputed, for the reason
     // stated where it is parked: on every frame after the click the pointer is
     // on the menu, and a recomputed answer would delete the row out from under
     // the hand travelling toward it.
     //
-    // ★ ONE name, where the node pair needs four. There is no greyed state
+    // ONE name, where the node pair needs four. There is no greyed state
     // here — see `shell::menus::RUN_SELECT_OFFERED` — so *shown* and *enabled*
     // are one question, and the command carries the same name in its
     // `enabled_when` so a route that never consults an item cannot press a row
@@ -641,7 +641,7 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
 ///    right-click is the opening of a question, and an operator who aims a
 ///    little wide of the shape they have selected meant the shape.
 ///
-/// ★ The containment test is on the annotation's own `/Rect` outline, in
+/// The containment test is on the annotation's own `/Rect` outline, in
 /// **canvas** space, which is the space both that outline and
 /// [`PageMapping::to_page`] speak. It is expanded by the mapping's own click
 /// tolerance rather than by a number invented here, so *"near the shape"* means
@@ -723,7 +723,7 @@ mod tests {
         selection
     }
 
-    /// **★ A right-click over an unselected object selects it first.**
+    /// **A right-click over an unselected object selects it first.**
     ///
     /// The rule that makes the menu about the thing the operator pointed at.
     /// Without it, right-clicking B while A is selected and choosing Delete
@@ -743,7 +743,7 @@ mod tests {
         );
     }
 
-    /// **★ …and a right-click over an object that is already selected
+    /// **…and a right-click over an object that is already selected
     /// changes nothing.**
     ///
     /// The case the naive version gets wrong. A marquee over eight objects
@@ -763,7 +763,7 @@ mod tests {
         );
     }
 
-    /// **★ A right-click on blank page never clears the selection.**
+    /// **A right-click on blank page never clears the selection.**
     ///
     /// A left click on paper deselects, and that is right — it is an
     /// unambiguous statement. A right-click is the opening of a question,
@@ -794,7 +794,7 @@ mod tests {
         assert!(selection.is_empty());
     }
 
-    /// **★ Right-clicking the object you are inside keeps you inside it.**
+    /// **Right-clicking the object you are inside keeps you inside it.**
     ///
     /// A descended rung is expensive to reach — one measured CAD export
     /// holds a whole drawing view as a single path object with 1,194
@@ -874,7 +874,7 @@ mod tests {
     #[test]
     fn each_canvas_menu_names_a_context_the_shell_defines() {
         assert_eq!(CanvasMenu::Object.context_id(), CANVAS_OBJECT);
-        // ★ The third, added with paragraph reflow. Its menu is the only route
+        // The third, added with paragraph reflow. Its menu is the only route
         // to that command that does not go through the ribbon, so a context id
         // that drifted from `shell::menus` would silently take the canvas route
         // away and leave the ribbon working — a half-loss no other test sees.
@@ -882,7 +882,7 @@ mod tests {
             CanvasMenu::Text.context_id(),
             crate::shell::menus::CANVAS_TEXT
         );
-        // ★ The fourth, added with the form-field menu. Same argument as the
+        // The fourth, added with the form-field menu. Same argument as the
         // third: this is the only route to acting on a field by pointing at it,
         // so a drifted id takes the canvas route away and leaves the Forms
         // panel working — a half-loss no other test sees.
@@ -898,7 +898,7 @@ mod tests {
              would claim a selection the pointer has not been shown to be over"
         );
 
-        // ★ The fifth, added with the markup menu. Same argument as the third
+        // The fifth, added with the markup menu. Same argument as the third
         // and fourth, and one more that is specific to it: `markup.add_node`
         // and `markup.remove_node` are in `manifest::TAB_SCOPED`, which means
         // this menu is their ONLY surface. A drifted context id would take the
@@ -963,7 +963,7 @@ mod tests {
     /// The whole point of the sixth context: the operator has a shape selected,
     /// points at it, and gets the menu that carries its two node verbs.
     ///
-    /// ★ Falsified by returning `false` from `markup_menu` unconditionally —
+    /// Falsified by returning `false` from `markup_menu` unconditionally —
     /// which is the state before this change, where the same right-click
     /// resolved to `canvas.empty` and offered four zoom levels.
     #[test]
@@ -989,7 +989,7 @@ mod tests {
     /// (`AnnotationIsCeDimension`) and would leave the operator asking why the
     /// measurement did not follow.
     ///
-    /// ★ Falsified by dropping the `kind != Markup` clause: this test fails and
+    /// Falsified by dropping the `kind != Markup` clause: this test fails and
     /// no other one does, which is exactly why it is written separately from
     /// the one above rather than as a second assertion inside it.
     #[test]
@@ -1011,7 +1011,7 @@ mod tests {
     /// **A mode that cannot author markup gets no markup menu**, and the
     /// capability asked is `author_markup`.
     ///
-    /// ★ Falsified by passing `!reading` (i.e. `edit_content`) instead: Review
+    /// Falsified by passing `!reading` (i.e. `edit_content`) instead: Review
     /// has `edit_content == false` and `author_markup == true`, so the mode
     /// whose entire subject is comments would lose the comment's own menu.
     #[test]
@@ -1038,7 +1038,7 @@ mod tests {
     /// leave the operator holding a shape's verbs over the path they had just
     /// pointed at.
     ///
-    /// ★ Falsified by dropping the containment test and returning `true`
+    /// Falsified by dropping the containment test and returning `true`
     /// whenever a markup is selected.
     #[test]
     fn a_right_click_on_a_distant_object_is_about_the_object() {
@@ -1065,7 +1065,7 @@ mod tests {
     /// commonest miss — a shape drawn thin, aimed at from just outside its box
     /// — from silently becoming the zoom menu.
     ///
-    /// ★ Falsified by removing the `object.is_none()` early return.
+    /// Falsified by removing the `object.is_none()` early return.
     #[test]
     fn a_right_click_on_paper_beside_a_selected_markup_keeps_its_menu() {
         let map = identity_map();

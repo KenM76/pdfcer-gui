@@ -72,7 +72,7 @@ pub(crate) fn frames(job: &Job, rect: Rect, pan: Vec2, scale: f32) -> (Rect, Rec
 /// why this takes `printable` rather than the sheet origin — see
 /// [`crate::dialogs::print::spooler::Placement`].
 ///
-/// ★ The `Placement` here is the spooler's, spelled out in full because
+/// The `Placement` here is the spooler's, spelled out in full because
 /// this module has a private enum of its own by the same name (the dialog-or-
 /// popout one). Importing it would make the two indistinguishable at a glance
 /// in a file that uses both.

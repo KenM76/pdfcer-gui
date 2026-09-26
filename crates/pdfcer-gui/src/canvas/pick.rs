@@ -80,7 +80,7 @@ pub enum PickClass {
     CeDimension,
     /// A `/Widget` annotation — one form field on the page.
     ///
-    /// ★ Note the asymmetry, which is deliberate: filling a field is **not**
+    /// Note the asymmetry, which is deliberate: filling a field is **not**
     /// gated by mode (`Capabilities` leaves it alone, because Acrobat Reader
     /// fills forms), so this row is the only control over whether a click
     /// reaches a field at all.
@@ -207,7 +207,7 @@ impl PickClass {
 
     /// The class a decomposed page object belongs to.
     ///
-    /// ★ Takes an [`ObjectKind`] rather than a `VectorObject`, so that
+    /// Takes an [`ObjectKind`] rather than a `VectorObject`, so that
     /// `panels::objects::summary::object_kind` stays **the** classifier. That
     /// module's header is explicit that a second kind classifier is the exact
     /// divergence it exists to prevent, and this is where a second one would
@@ -283,7 +283,7 @@ impl Default for PickFilter {
 impl PickFilter {
     /// Every class on, including the ones that are off by default.
     ///
-    /// ★ Deliberately **not** the same as [`PickFilter::default`], and the
+    /// Deliberately **not** the same as [`PickFilter::default`], and the
     /// difference is the honest one: `default()` describes what the shell can
     /// do, `all()` describes what the popup can express. `Link` is on here and
     /// off there. Switching it on still picks nothing until link picking
@@ -392,7 +392,7 @@ impl PickFilter {
 
     /// Parse what [`PickFilter::to_tokens`] wrote.
     ///
-    /// # ★ The three decisions in this function, none of them obvious
+    /// # The three decisions in this function, none of them obvious
     ///
     /// **1. An unrecognised token is skipped, not rejected.** A file written by
     /// a newer build naming a class this one has never heard of is not corrupt;

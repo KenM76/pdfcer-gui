@@ -8,7 +8,7 @@ catalogue must hold.
 > catalog**, and the catalog is the half a reader opens to find out what a
 > control says.
 
-★ It is the same cut [`super::catalog`] took a week earlier, one level up.
+It is the same cut [`super::catalog`] took a week earlier, one level up.
 That split moved the *entries*; this one moves the *rules about them*, and
 what is left in [`super`] is what a caller of this module actually reaches
 for: `register`, `FILE_RECENT`, the `mapping` re-exports and the `reach`
@@ -38,7 +38,7 @@ a file called *ledger* because the word fits.
 ## Nothing moved but the module wrapper
 
 
-## ★ `#![cfg(test)]` as well as the parent's `#[cfg(test)] mod tests;`
+## `#![cfg(test)]` as well as the parent's `#[cfg(test)] mod tests;`
 
 Redundant to the compiler and load-bearing to a gate.
 `tools/gates/check-ui-strings.sh` stops scanning a file at

@@ -3,7 +3,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/shell/commands/reach/mod.md`.
 
-/// ★ Which `handles`-style module claims an id — six guards and the
+/// Which `handles`-style module claims an id — six guards and the
 /// paragraph each carries. Split out under R2; its header records the
 /// recurring lesson the six of them are evidence for.
 mod guards;
@@ -19,7 +19,7 @@ use std::collections::{BTreeMap, BTreeSet};
 /// about exactly that ("SKIPPED is not PASSED"). A missing `include_str!`
 /// target is a **compile error**, so the state in which this module checks
 /// nothing and says so quietly does not exist.
-/// ★ The register — every registered command with no dispatch arm, and why.
+/// The register — every registered command with no dispatch arm, and why.
 ///
 /// Split out at rule R2's ceiling, and the seam is a real one: this file is
 /// the **check** and that one is the **data**. See its header for
@@ -31,7 +31,7 @@ pub(crate) use register::{SCAFFOLDED, UNREACHED_ARMS};
 
 const DISPATCH_SRC: &str = include_str!("../../../app/dispatch.rs");
 
-/// ★ The **second** file the routing table lives in.
+/// The **second** file the routing table lives in.
 ///
 /// # Why there are two, and why the checker had to learn about it
 ///
@@ -56,7 +56,7 @@ const DISPATCH_PAGES_SRC: &str = include_str!("../../../app/dispatch/pages.rs");
 
 /// The measure dispatcher, split out of `dispatch.rs`.
 ///
-/// ★ **The second source [`DISPATCH_PAGES_SRC`]'s own doc predicts**: a checker
+/// **The second source [`DISPATCH_PAGES_SRC`]'s own doc predicts**: a checker
 /// which reads ONE file is a checker with a shelf life, because R2 guarantees
 /// that any file it reads will eventually be split.
 ///
@@ -134,7 +134,7 @@ pub(super) struct Arms {
     /// `command-unimplemented` is traced, so a `match` without one is not the
     /// `match` this module thinks it is reading.
     pub(super) catch_all: bool,
-    /// ★★★ The ids named by an arm carrying `#[cfg(feature = "…")]` — a
+    /// The ids named by an arm carrying `#[cfg(feature = "…")]` — a
     /// **conditional** arm, `SHELL_FRAMEWORK.md` §5b's dispatch-side twin of
     /// the manifest's `capability:` field.
     ///
@@ -182,7 +182,7 @@ pub(super) fn read_arms(src: &str, consts: &BTreeMap<String, String>) -> Result<
 
     let mut arms = Arms::default();
     for (n, arm) in matched.arms.iter().enumerate() {
-        // ★★★ A CONDITIONAL ARM IS SKIPPED, and this is `SHELL_FRAMEWORK.md`
+        // A CONDITIONAL ARM IS SKIPPED, and this is `SHELL_FRAMEWORK.md`
         // §5b arriving in the one instrument that reads the dispatcher as text.
         //
         // An arm carrying `#[cfg(feature = "…")]` names a command that is
@@ -201,7 +201,7 @@ pub(super) fn read_arms(src: &str, consts: &BTreeMap<String, String>) -> Result<
         // permanent entry on the unreached list would make a working control
         // look like an outstanding work item forever.
         //
-        // ★ It is skipped rather than recorded as a third category because
+        // It is skipped rather than recorded as a third category because
         // this reader's whole output is *"which ids can a token reach"*, and
         // the honest answer for a conditional arm is *"it depends on the
         // build"* — which the registry already answers, in the build that is
@@ -429,7 +429,7 @@ pub(super) use guards::{EVALUATED_GUARDS, guard_claiming};
 
 /// Whether `id` is routed by some arm of `arms`.
 ///
-/// ★ The guard half consults **both** sides: a guard function may claim the
+/// The guard half consults **both** sides: a guard function may claim the
 /// id, *and* the dispatcher must actually have an arm that consults that
 /// function. Checking only the first would keep vouching for a family whose
 /// guard arm had been deleted — the mapping would still answer and four ribbon
@@ -461,7 +461,7 @@ mod tests {
     fn dispatcher() -> Arms {
         let consts = string_consts(CONSTS_SRC);
         let mut arms = read_arms(DISPATCH_SRC, &consts).expect("the dispatcher must be readable");
-        // ★ …and every file it has been split into. See `DISPATCH_PAGES_SRC`:
+        // …and every file it has been split into. See `DISPATCH_PAGES_SRC`:
         // the parent no longer contains the Pages tab's ids anywhere a `syn`
         // walk of it can see, and this checker reported all six as unreachable
         // the moment they moved — correctly, and loudly, which is the whole
@@ -492,7 +492,7 @@ mod tests {
     // THE CHECK
     // -----------------------------------------------------------------
 
-    /// ★★ **Every registered command is reachable, or argued for.**
+    /// **Every registered command is reachable, or argued for.**
     ///
     /// The one assertion this module exists to make. A failure here means a
     /// control is drawn, enabled and pressable and produces
@@ -569,7 +569,7 @@ mod tests {
         }
     }
 
-    /// ★ **No literal arm names a command that is not registered.**
+    /// **No literal arm names a command that is not registered.**
     ///
     /// The mirror of the check above, and it was not planned — it fell out of
     /// planting the first violation. `app::dispatch`'s `format.delete` arm
@@ -586,7 +586,7 @@ mod tests {
     /// computing over an enum, and [`super::mapping`]'s own tests already
     /// assert in both directions that every kind has a registered command.
     ///
-    /// ★★★ **CONDITIONAL arms are exempt, and `UNREACHED_ARMS` is the wrong
+    /// **CONDITIONAL arms are exempt, and `UNREACHED_ARMS` is the wrong
     /// place for them.**
     ///
     /// An arm carrying `#[cfg(feature = "…")]` names a command that is
@@ -606,7 +606,7 @@ mod tests {
     /// allow-list test would then fail in the default build because the arm is
     /// both listed and routed.
     ///
-    /// ★ The exemption is narrow in the right way: it does not weaken the
+    /// The exemption is narrow in the right way: it does not weaken the
     /// mirror direction. `every_registered_command_is_routed_or_argued` still
     /// sees a conditional arm in [`Arms::literals`], so a build that registers
     /// `file.sign` and forgets its arm still fails.
@@ -668,7 +668,7 @@ mod tests {
         }
     }
 
-    /// ★ **The guards the checker runs are the guards the dispatcher has.**
+    /// **The guards the checker runs are the guards the dispatcher has.**
     ///
     /// The seam between the two halves of this module, asserted as a set
     /// equality in both directions:
@@ -905,7 +905,7 @@ pub const FX_CONST: &str = "fx.constant";
     // WHAT THE ALLOW-LIST SAYS ABOUT THE RIBBON
     // -----------------------------------------------------------------
 
-    /// **★ How many drawn controls do nothing, and how many of those breach
+    /// **How many drawn controls do nothing, and how many of those breach
     /// P3.**
     ///
     /// Not a rule — a **published number**, in the shape
@@ -914,7 +914,7 @@ pub const FX_CONST: &str = "fx.constant";
     /// that shortening this list is a visible act rather than a silent one.
     ///
     /// `RIBBON_IA.md` P3 says an unavailable capability renders **nothing**.
-    /// Every entry marked `★ P3` in its reason is a control this module's
+    /// Every entry marked `P3` in its reason is a control this module's
     /// author believes should not be drawn yet; removing one is a taxonomy
     /// decision and is the operator's. The count moving *down* is the project
     /// working.
@@ -925,7 +925,7 @@ pub const FX_CONST: &str = "fx.constant";
             .iter()
             .filter(|(_, reason)| reason.contains("\u{2605} P3"))
             .count();
-        // ★ The literal, and it is the ONLY copy of this number.
+        // The literal, and it is the ONLY copy of this number.
         //
         // A failure message that sends a reader off to update prose is the
         // shape this project has corrected repeatedly — a gate runner's header,
@@ -938,7 +938,7 @@ pub const FX_CONST: &str = "fx.constant";
         // mean opposite things. An entry ADDED is a command drawn and left
         // unwired. An entry REMOVED is work that landed.
         //
-        // ★★★ THE LIST IS EMPTY, AND AN EMPTY LIST IS STILL A GATE. A new entry
+        // THE LIST IS EMPTY, AND AN EMPTY LIST IS STILL A GATE. A new entry
         // cannot be added quietly: it has to be written in `register.rs` with a
         // reason, and this assertion is what makes adding one a visible act.
         //
@@ -962,19 +962,19 @@ pub const FX_CONST: &str = "fx.constant";
         assert_eq!(
             // Same rule as the total above: one copy of the number, here.
             //
-            // A `★ P3` entry is a control drawn on the ribbon that does
+            // A `P3` entry is a control drawn on the ribbon that does
             // nothing. The count exists to make the direction visible: it goes
             // down when such a control is wired, and it goes down when the
             // command is UNREGISTERED instead, which is R9's answer.
             //
-            // ★ Why P3 is a cost and not a cosmetic. `RIBBON_IA.md` groups the
+            // Why P3 is a cost and not a cosmetic. `RIBBON_IA.md` groups the
             // commands of Edit ▸ Content so the answer to *"what can I change
             // on this page?"* is one group; a group of three where one does
             // nothing reads as a broken program rather than as a missing
             // feature, which is precisely what P3 names.
             //
-            // ★★ A caution for whoever reads a zero here. This census counts
-            // `reason.contains("★ P3")`, i.e. **self-assigned prose**, and it
+            // A caution for whoever reads a zero here. This census counts
+            // `reason.contains("P3")`, i.e. **self-assigned prose**, and it
             // has never seen the worst breaches in this build: a command can be
             // enabled at application startup with no document, drawn on the
             // ribbon, and inert — the most severe form of P3 available — and
@@ -987,7 +987,7 @@ pub const FX_CONST: &str = "fx.constant";
              report to the operator quotes the figure, so move both together"
         );
         assert!(p3 <= total, "the P3 subset must be a subset");
-        // ★ …and the mirror list's length, pinned for the same reason and in
+        // …and the mirror list's length, pinned for the same reason and in
         // the same place. It is **zero**: an arm is tolerated only when its
         // verb has two live routes that are not the dispatcher, and none does.
         // A dead arm is still possible and still has to be argued — this

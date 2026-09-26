@@ -39,7 +39,7 @@ The ui-spec settles it (§C.12) and the reasoning is not about taste:
   the specified build order is panel first — which is exactly what
   `manifest/format.rs`'s header already records.
 
-## ★ And why it is a section of Properties rather than a panel of its own
+## And why it is a section of Properties rather than a panel of its own
 
 §C.12 answered this too, and it flagged the consequence honestly: the
 Properties panel's own premise — *"nothing else competed for the word
@@ -54,7 +54,7 @@ Transient, "what I am looking at right now" content goes **first**, above
 the persistent object form — the same top-first-bottom-persistent ordering
 the Objects/Properties split already establishes.
 
-## ★ Rule 4: everything here is off-canvas, and the canvas is untouched
+## Rule 4: everything here is off-canvas, and the canvas is untouched
 
 The selection outline is the cursor, which the rule permits by name. Nothing
 in this section tints, badges or flags the ce dimension it is describing;
@@ -67,7 +67,7 @@ point of the surface: the inference (which tier supplied this) is disclosed
 
 | | why |
 |---|---|
-| ~~change the group~~ | ★ **closed 2026-08-19.** It was *"no engine verb; filed"* — filed on the 18th, shipped on the 19th, and it is a picker now. What it gained with the verb is a **disclosure**: `set_dimension_group` re-measures, so the number changes |
+| ~~change the group~~ | **closed 2026-08-19.** It was *"no engine verb; filed"* — filed on the 18th, shipped on the 19th, and it is a picker now. What it gained with the verb is a **disclosure**: `set_dimension_group` re-measures, so the number changes |
 | change the scale | **by refusal** — `StyleOverrides` has no scale field, asserted structurally, because a member measuring at a different scale from its group would print a number nothing on the page discloses |
 | drag the extension lines | the gap and overshoot are standard-derived, not per-ce-dimension fields; new core work, named in §C.11 item 3 |
 

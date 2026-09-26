@@ -7,7 +7,7 @@ already), and because this is the only row group in the dialog that carries
 a **disclosure obligation**, which is easier to review when it is not
 interleaved with a comb-cell checkbox.
 
-## ★★★ The interaction is Acrobat's, deliberately
+## The interaction is Acrobat's, deliberately
 
 *Field Properties ▸ Actions* is a chooser of behaviours with the chosen
 one's parameters beneath it. Every form editor that came after copied it,
@@ -16,7 +16,7 @@ convergence of the product class **is** the spec. So: one drop-down, the
 parameters for the chosen behaviour under it, and nothing else.
 
 
-## ★★ Why the parameters are held even when they are not shown
+## Why the parameters are held even when they are not shown
 
 [`ButtonDoes`] carries every parameter for every kind at once, so switching
 the chooser to *Nothing* and back does not lose the page number that was
@@ -25,7 +25,7 @@ restated here because the obvious way to draw this control — build the
 engine's `ButtonAction` in the closure — silently has the opposite
 behaviour.
 
-## ★ Nothing is greyed, and nothing is hidden
+## Nothing is greyed, and nothing is hidden
 
 All seven choices are always offered. R9's rule is that an unavailable
 capability renders **nothing** and greying is for the *temporarily*

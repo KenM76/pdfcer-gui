@@ -7,7 +7,7 @@ corners rather than as an upright rectangle
 > orientation as the object."* — 2026-09-07, `OPERATOR_REQUESTS.md` **O147**
 
 
-## ★★★ THIS MODULE WAS A WORKAROUND FOR ONE DAY, AND IS NOW A THIN ADAPTER
+## THIS MODULE WAS A WORKAROUND FOR ONE DAY, AND IS NOW A THIN ADAPTER
 
 
 **`Pass 155.2` shipped that afternoon and gave us both**, and the engine's
@@ -31,7 +31,7 @@ pinned engine's own source and went red the moment `Annotation` grew
 | what are the raw six numbers? | `Annotation::appearance_matrix` |
 | where is that **on this canvas**, at this zoom, on a `/Rotate 90` sheet? | **here**, via `crate::canvas::mapping::oriented_canvas_quad` |
 
-★ The engine also publishes the free function
+The engine also publishes the free function
 `pdfcer_core::annot::rotation_degrees([f64; 6])`, which decomposes a matrix
 this shell does not have in its hand. **It is deliberately not called
 here**: the method reads `appearance_matrix` *and* applies Table 95's
@@ -40,14 +40,14 @@ where the free function would need this module to decide what an absent
 matrix means — and deciding that here is precisely the private opinion about
 somebody else's format that this module was rewritten to stop having.
 
-★ **The corner order is the engine's and it is deliberate**: `[LL, LR, UR,
+**The corner order is the engine's and it is deliberate**: `[LL, LR, UR,
 UL] of the /BBox` — *appearance* space, before the transform. Past 90° the
 first element is no longer the leftmost point on the page. That is what lets
 a caller draw an outline that follows the object and read a bearing off one
 edge, and it is why `handles::GripFrame::Turned` documents its corners as
 the **artwork's** frame rather than the page's.
 
-★★ The engine pins, with a test of its own, that **the bearing of the first
+The engine pins, with a test of its own, that **the bearing of the first
 placed edge equals `appearance_rotation_degrees()`** on the same annotation.
 This shell reads the angle from one and draws the outline from the other, so
 a divergence would put a grip where the artwork is not; that agreement is
@@ -61,7 +61,7 @@ held by an assertion on their side rather than by intent on ours.
 | `annot::rotation_degrees`, `Annotation::appearance_rotation_degrees` | **`(−180, 180]`** — SIGNED | it decomposes a matrix through `atan2` |
 | `forms::WidgetRotation::was` / `::now` | **`[0, 360)`** — unsigned | `/MK /R` is a *stored declaration*, a multiple of 90, which pdfcer normalises |
 
-★★★ **Each was documented correctly at its own definition and neither
+**Each was documented correctly at its own definition and neither
 mentioned the other**, which is the whole defect surface — and the engine
 makes the point that this shell fell into it *from the other direction*,
 having already learned the normalising convention from the widget path and

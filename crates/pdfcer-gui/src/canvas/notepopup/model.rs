@@ -45,7 +45,7 @@ pub struct NoteView {
     pub author: Option<String>,
     /// `/M`, **raw and unparsed**.
     ///
-    /// ★ The same ruling `crate::text::panels::comments::comment_row_byline`
+    /// The same ruling `crate::text::panels::comments::comment_row_byline`
     /// records at length and it is not re-argued: §12.5.2 gives `/M`'s type as
     /// *"date **or** text string"* and requires a conforming reader to accept
     /// any format, so formatting it here would mean writing a parser whose
@@ -114,9 +114,9 @@ pub struct PopupBox {
 /// | `/Widget` | a form field is not a comment; the Forms panel owns it, and its `/Contents` is a tooltip rather than a remark |
 /// | `/Popup` | §12.5.6.14 is a `shall`: a pop-up *"shall not appear alone but is associated with a markup annotation, its parent annotation."* It is the window, not the note |
 /// | `/Link`, `/Movie`, `/PrinterMark`, `/TrapNet` | nobody wrote them. `/TrapNet` in particular is prepress output state a RIP applied |
-/// | **not drawn on screen** (§12.5.3 bit 2 `Hidden` **or** bit 6 `NoView`) | ★ nothing is painted there, so a pop-up would hang off a point on blank paper with no visible anchor. The Comments panel is where such an annotation is reached, and it marks it as hidden — the same split the canvas already makes for an undrawn form field |
+/// | **not drawn on screen** (§12.5.3 bit 2 `Hidden` **or** bit 6 `NoView`) | nothing is painted there, so a pop-up would hang off a point on blank paper with no visible anchor. The Comments panel is where such an annotation is reached, and it marks it as hidden — the same split the canvas already makes for an undrawn form field |
 ///
-/// ### ★★★ This is STRICTER than the selection's exclusion, and the difference
+/// ### This is STRICTER than the selection's exclusion, and the difference
 /// is a finding
 ///
 /// `crate::canvas::selection::annot::selectable_on` excludes `flags.hidden()`
@@ -134,7 +134,7 @@ pub struct PopupBox {
 /// | **no object id** | there would be nothing for Edit or Delete to name — see [`NoteView::id`] |
 /// | **no usable `/Rect`** | §12.5.5's placement target is missing, so there is no anchor and the renderer drew nothing either |
 ///
-/// ★ **A `/FreeText` is NOT excluded**, and that is worth stating because it
+/// **A `/FreeText` is NOT excluded**, and that is worth stating because it
 /// is the one case where a pop-up duplicates what is already on the page: a
 /// free-text annotation paints its own words. Acrobat still gives it a
 /// pop-up — the words on the page are the *appearance*, which a producer may
@@ -184,7 +184,7 @@ pub fn notes_on<G: ObjectGraph + ?Sized>(graph: &G, page: &Page) -> Vec<NoteView
         // topmost note wins a click.
         //
         //
-        // ★★ And the reply is not hidden by this — it is shown where §12.5.6.2
+        // And the reply is not hidden by this — it is shown where §12.5.6.2
         // says it belongs. [`super::thread`] lists the whole transitive thread
         // inside the root's window, so excluding replies here **removes a
         // duplicate**, not a route: before this line a reply's words appeared
@@ -310,7 +310,7 @@ fn canvas_rect(rect: pdfcer_core::page_tree::Rect, page: &Page) -> Option<Rect> 
 ///
 /// # The rule, and why it is not simply "has words"
 ///
-/// ★★ **A sticky note is a note whether or not anybody typed in it.** Opening it
+/// **A sticky note is a note whether or not anybody typed in it.** Opening it
 /// empty is not noise — it is the annotation's entire purpose, it is what
 /// Acrobat does, and an operator who placed one and has not written in it yet
 /// needs the window in order to write. The same is true of a free-text box,
@@ -322,7 +322,7 @@ fn canvas_rect(rect: pdfcer_core::page_tree::Rect, page: &Page) -> Option<Rect> 
 /// on a drawing* that may additionally carry a comment; where they carry none,
 /// there is nothing to show and the click belongs to selection.
 ///
-/// ★ A byline with no words is deliberately **not** enough. Knowing that
+/// A byline with no words is deliberately **not** enough. Knowing that
 /// B. Reviewer drew this cloud is a fact about the drawing, and the Comments
 /// panel lists it — putting a window over the page to say only that would be
 /// the noise this function exists to remove. The panel is where facts live;
@@ -344,7 +344,7 @@ pub fn has_something_to_read(note: &NoteView) -> bool {
         .is_some_and(|c| !c.trim().is_empty())
 }
 
-/// ★★★ **Is there anywhere in this document to record a window state?** — the
+/// **Is there anywhere in this document to record a window state?** — the
 /// R83 gate on the *Open by default* control.
 ///
 /// `EditSession::set_annotation_open` writes `/Open` on **up to two objects**
@@ -363,7 +363,7 @@ pub fn has_something_to_read(note: &NoteView) -> bool {
 /// tick box whose entire effect is a sentence explaining that it had none is
 /// exactly the control that rule exists to remove.
 ///
-/// # ★★ It does NOT manufacture the companion, and that is the engine's line
+/// # It does NOT manufacture the companion, and that is the engine's line
 ///
 /// `set_annotation_open` *"does not create a `/Popup`. An annotation without
 /// one has no window to open, and manufacturing the companion — with a `/Rect`
@@ -390,7 +390,7 @@ pub fn can_record_open_state(note: &NoteView) -> bool {
 /// top of a cloud is the thing the operator sees and therefore the thing they
 /// mean.
 ///
-/// # ★ The tolerance is the frame's, not a number of this module's own
+/// # The tolerance is the frame's, not a number of this module's own
 ///
 /// Handed in from `crate::canvas::mapping::PageMapping::tolerance`, which is
 /// the same click tolerance content and annotation selection both use. A note
@@ -398,7 +398,7 @@ pub fn can_record_open_state(note: &NoteView) -> bool {
 /// separately chosen constant here would drift from that the first time either
 /// was tuned.
 ///
-/// # ★★ Rectangle containment, not ink
+/// # Rectangle containment, not ink
 ///
 /// Unlike the selection hit test, which narrows a ce dimension to its drawn
 /// segments, this claims the whole `/Rect`. That is deliberate and it is the
@@ -434,7 +434,7 @@ pub struct Reply {
     /// Whether this is a §12.5.6.2 **group member** rather than an ordinary
     /// reply — `/RT /Group`.
     ///
-    /// ★ It matters to what the operator is being shown. For a group member
+    /// It matters to what the operator is being shown. For a group member
     /// the standard says the subordinate's own `/Contents`, `/M`, `/T` and the
     /// rest *"shall be ignored"* in favour of the primary's, so the words
     /// displayed beside it are words a conforming reader is instructed **not**
@@ -447,7 +447,7 @@ pub struct Reply {
 
 /// **The thread hanging off `root`**, gathered from the whole document.
 ///
-/// # ★★ Every page, because a reply need not be on the parent's page
+/// # Every page, because a reply need not be on the parent's page
 ///
 /// §12.5.6.2 puts no page constraint on `/IRT`, and `pdfcer-core` reaches the
 /// same conclusion where it plans a deletion: `plan_annotation_deletion` is
@@ -458,7 +458,7 @@ pub struct Reply {
 /// forty-sheet drawing set, which is the shape of document this program is
 /// for.
 ///
-/// # ★ Replies to replies are flattened onto the root
+/// # Replies to replies are flattened onto the root
 ///
 /// One transitive pass: anything whose `/IRT` chain reaches `root` is in the
 /// thread. `MAX_THREAD_DEPTH` bounds it, because a file may legally contain a
@@ -546,7 +546,7 @@ mod tests {
         ObjId::new(num, 0)
     }
 
-    /// ★★★ **A note the file says is open reads as open.**
+    /// **A note the file says is open reads as open.**
     ///
     /// The assertion the whole `/Open` path exists for, and the one the
     /// assignment names: *"A note authored open should open. Read it; do not
@@ -571,7 +571,7 @@ mod tests {
     /// **Absent means closed**, which is Table 172's stated default value —
     /// not an assumption this module is making.
     ///
-    /// ★★ And *absent on both* is the case that has to be spelled out, because
+    /// And *absent on both* is the case that has to be spelled out, because
     /// the engine deliberately reports absence as `None` rather than folding it
     /// to `false`: somewhere the default has to be applied, and this asserts
     /// that the somewhere is here.
@@ -580,7 +580,7 @@ mod tests {
         assert!(!read_open(None, None));
     }
 
-    /// ★★ **The pop-up's own `/Open` is consulted when the note has none.**
+    /// **The pop-up's own `/Open` is consulted when the note has none.**
     ///
     /// The case that matters on a file another product wrote: `/Square`,
     /// `/Ink` and every other geometric markup have **no `/Open` in Table
@@ -601,7 +601,7 @@ mod tests {
     /// left to the `or`, because the precedence is a decision with a reason
     /// (see [`read_open`]) and a reordering would be silent.
     ///
-    /// ★ Asserted in the direction where the two DISAGREE and the note says
+    /// Asserted in the direction where the two DISAGREE and the note says
     /// *closed*: a build with the operands swapped passes any test where they
     /// agree, and passes the `Some(true), Some(false)` case as well by
     /// accident.
@@ -630,7 +630,7 @@ mod tests {
         Rect::from_min_size(Pos2::new(x, y), egui::vec2(w, h))
     }
 
-    /// ★ **The topmost note wins, not the first one found.**
+    /// **The topmost note wins, not the first one found.**
     ///
     /// `/Annots` is paint order, so a sticky dropped over a cloud is drawn
     /// last and is what the operator sees. A hit test taking the first match
@@ -656,7 +656,7 @@ mod tests {
         assert!(under(&notes, Pos2::new(400.0, 400.0), 2.0).is_none());
     }
 
-    /// ★ The tolerance widens the target, which is what makes a 20 pt sticky
+    /// The tolerance widens the target, which is what makes a 20 pt sticky
     /// icon hittable at a low zoom where it is a few pixels across.
     #[test]
     fn the_tolerance_widens_the_target() {
@@ -678,7 +678,7 @@ mod tests {
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/comment-note.pdf")
     }
 
-    /// ★★★ **THE FIXTURE CARRIES WHAT THE DRIVEN CHECKS ASSERT ABOUT.**
+    /// **THE FIXTURE CARRIES WHAT THE DRIVEN CHECKS ASSERT ABOUT.**
     ///
     /// # Why this test is here and not in `tools/ui-verify`
     ///
@@ -707,7 +707,7 @@ mod tests {
         let view = session.view();
         let notes = notes_on(&view, &pages[0]);
 
-        // ★★★ **TWO notes**, not four and not three — and the two exclusions
+        // **TWO notes**, not four and not three — and the two exclusions
         // are different rules that this one number is the control for.
         //
         // The `/Popup` is the window rather than a comment: §12.5.6.14 is a
@@ -721,7 +721,7 @@ mod tests {
              comment unclickable on the canvas. Got {:?}",
             notes.iter().map(|n| &n.subtype).collect::<Vec<_>>()
         );
-        // ★★ …and the positive control for that exclusion, without which
+        // …and the positive control for that exclusion, without which
         // `len() == 2` would also pass on a build that had dropped the reply
         // from the file, from the walk, or from the fixture. The reply must
         // still be **in the document** and still reachable as part of the
@@ -751,7 +751,7 @@ mod tests {
             "the note needs a real /M, for the same reason"
         );
 
-        // ★★★ The two halves of the `/Open` assertion, on ONE document. A
+        // The two halves of the `/Open` assertion, on ONE document. A
         // build that ignored the key and defaulted to closed passes the second
         // and fails the first; one that opened everything passes the first and
         // fails the second. Neither can pass both.
@@ -771,7 +771,7 @@ mod tests {
              opens every pop-up' passes every check here"
         );
 
-        // ★ The pop-up's own rectangle, placed away from the note on purpose —
+        // The pop-up's own rectangle, placed away from the note on purpose —
         // see the generator's docstring. Without this, a build that always
         // draws beside the note is indistinguishable from one that honours the
         // file's placement.
@@ -810,7 +810,7 @@ mod tests {
              transitive walk is claiming unrelated annotations"
         );
     }
-    /// ★★★ **A mark with nothing to say opens no window; a note does even when
+    /// **A mark with nothing to say opens no window; a note does even when
     /// it is empty.**
     ///
     /// # What this is really asserting
@@ -822,7 +822,7 @@ mod tests {
     /// asserted here, in one test, because a build that gets either wrong is
     /// broken in a way the operator meets immediately.**
     ///
-    /// ★ The byline case is the one worth having by name. An annotation signed
+    /// The byline case is the one worth having by name. An annotation signed
     /// by a reviewer but carrying no message is a *fact about the drawing*, and
     /// the Comments panel is where facts live. Putting a window over the page to
     /// say only "B. Reviewer drew this" is the noise this predicate exists to
@@ -876,7 +876,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **Only an annotation with somewhere to write it is offered the
+    /// **Only an annotation with somewhere to write it is offered the
     /// *Open by default* control** — R83, and the two halves are different
     /// rules.
     ///
@@ -896,7 +896,7 @@ mod tests {
     /// selection and the wrong affordance for a window: a tick box whose whole
     /// effect is a sentence explaining that it had none.
     ///
-    /// # ★★ All four combinations, because two of them are the interesting ones
+    /// # All four combinations, because two of them are the interesting ones
     ///
     /// A build that asked only *"is it a `/Text`?"* withholds the control from
     /// every shape an operator commented on and gave a pop-up — which is what

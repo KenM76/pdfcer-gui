@@ -13,7 +13,7 @@ On a drawing with a dozen fields you fill one in the panel and cannot see
 where it went. Note the direction — **panel → canvas**. The other direction
 shipped as O53.
 
-# ★★★ Why this needs driving, and why it needed two new instruments first
+# Why this needs driving, and why it needed two new instruments first
 
 The feature is a **handshake across two surfaces inside one frame**: the
 panel writes a field name into `egui`'s temp store when a row has focus, and
@@ -30,7 +30,7 @@ individually trivial. What can break is the *join*:
 real frame with both surfaces in it and a real pointer press that moves
 keyboard focus.
 
-★★ Two instruments had to be built before this check could exist, and that
+Two instruments had to be built before this check could exist, and that
 is worth naming because it keeps happening:
 
 1. **The spotlight published no trace.** Drawing an outline is invisible to
@@ -44,7 +44,7 @@ is worth naming because it keeps happening:
 A feature that cannot be observed cannot be verified, and the fix is to give
 it an oracle rather than to weaken the assertion.
 
-# ★ The assertion that distinguishes working from plausible
+# The assertion that distinguishes working from plausible
 
 `drawn >= 1` **with the field named**. A build where the panel writes and
 the canvas silently fails to match would trace `field=Subscribe drawn=0`,

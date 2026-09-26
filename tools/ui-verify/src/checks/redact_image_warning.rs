@@ -32,7 +32,7 @@ const WITHOUT_IMAGE: &str = "fixtures/a1-titleblock.pdf";
 /// page. A build that said "this region covers 1 image(s)" and stopped would
 /// pass a looser check and leave him no wiser about what Apply will do.
 ///
-/// ★★★ **It read `"will be refused"` until 2026-09-03, and the words changed
+/// **It read `"will be refused"` until 2026-09-03, and the words changed
 /// because the OUTCOME did.** `pdfcer-core` v0.26.0 (`Pass 245.0`) destroys
 /// image samples under a region instead of refusing the document, so the
 /// disclosure stopped being a warning about a failure and became a warning
@@ -109,7 +109,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 2: ★★★ and one that does NOT ------------------------------------
+    // --- 2: and one that does NOT ------------------------------------
     let without = mark_whole_page(ctx, &exe, ui_rect, WITHOUT_IMAGE, report)?;
     let Some(line) = without else {
         return Ok(Some(format!(
@@ -169,7 +169,7 @@ fn mark_whole_page(
     crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
     session.settle(14);
 
-    // ★ Only if it is not already there: a panel toggle that is already on
+    // Only if it is not already there: a panel toggle that is already on
     // CLOSES the thing this check needs.
     if declared(&session.trace()?, ui_rect, PANEL).is_none() {
         let trace = session.trace()?;

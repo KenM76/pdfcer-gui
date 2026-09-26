@@ -13,7 +13,7 @@ Every text field the operator has ever used has all three. Without them,
 replacing a word means pressing Backspace once per character, and replacing
 a whole title-block cell means pressing it a dozen times.
 
-# ★★★ Why this check reads a TRACE and changes nothing
+# Why this check reads a TRACE and changes nothing
 
 The honest way to prove that Shift+Right selected three characters is to
 type over them and watch the text shrink. This check refuses to.
@@ -28,7 +28,7 @@ observable, and a check that has to mutate to measure will eventually mutate
 and fail to clean up.
 
 
-# ★★ The second half is the one nobody writes: the selection must GO AWAY
+# The second half is the one nobody writes: the selection must GO AWAY
 
 Rule 4 of the four in `canvas::textedit::caret`'s selection section: any
 movement without Shift drops the selection. It is as important as the
@@ -45,7 +45,7 @@ come out of it. It is here rather than in a check of its own because it
 needs everything steps 1-3 establish — a mode, a tool, and a caret in a real
 run — and a second check would be a second copy of all of it.
 
-★ **Double-click-to-select-a-word is built and is NOT driven here.** Its
+**Double-click-to-select-a-word is built and is NOT driven here.** Its
 logic is unit-tested against a real galley, and a driven double click is a
 gesture this harness has had trouble synthesising before (see
 `a_synthetic_double_click_must_not_be_two_calls_to_a_settling_click_helper`

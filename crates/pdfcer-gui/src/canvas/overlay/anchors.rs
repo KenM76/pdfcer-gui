@@ -1,6 +1,6 @@
 //! # `canvas::overlay::anchors` — the marks that say **where the points are**
 //!
-//! ## ★ The seam against the parent
+//! ## The seam against the parent
 //!
 //! Everything in `overlay` answers *"where is the thing you have selected?"* —
 //! an outline, eight grips, a rotate handle, a ghost, a marquee, a wash.
@@ -23,7 +23,7 @@ use crate::canvas::mapping::PageMapping;
 
 /// The size of an anchor mark, in screen pixels, edge to edge.
 ///
-/// ★★★ An anchor is a **target**, not merely a statement: the Node tool makes
+/// An anchor is a **target**, not merely a statement: the Node tool makes
 /// a single click on an anchor the way an operator picks one, so it must be as
 /// grabbable as a grip and no smaller than its own Bézier control point —
 /// `OPERATOR_REQUESTS.md` O69: *"the nodes are hard to see and click on."*
@@ -38,7 +38,7 @@ use crate::canvas::mapping::PageMapping;
 /// as a row of dots rather than as a second outline. Seven does; twelve would
 /// not.
 ///
-/// ★ **It has a second consumer** — `canvas::pressing::grabbable` inflates the
+/// **It has a second consumer** — `canvas::pressing::grabbable` inflates the
 /// inner-rung move box by this amount, so that an anchor sitting on the
 /// object's bounding edge (half outside it) is still draggable. Widening the
 /// mark widens that box by the same pixel, which is the right direction and is
@@ -47,7 +47,7 @@ pub const ANCHOR_PX: f32 = 7.0;
 
 /// The most anchors that will be drawn as *unselected* marks.
 ///
-/// ★ A real number from a real document rather than a round one: `canvas::moving`
+/// A real number from a real document rather than a round one: `canvas::moving`
 /// records **6,681 anchors on one measured CAD export**, and a single object on
 /// this operator's drawings routinely carries thousands. Painting all of them
 /// would put several thousand filled rects in the frame for a rung the operator
@@ -64,7 +64,7 @@ pub const MAX_UNSELECTED_ANCHORS: usize = 400;
 
 /// Paint the entered object's anchors, and mark the selected ones.
 ///
-/// # ★★ Why it exists
+/// # Why it exists
 ///
 /// The Node rung is enterable and multi-node selection is representable, so an
 /// operator can descend two rungs and Shift-click four anchors. Without a mark
@@ -80,7 +80,7 @@ pub const MAX_UNSELECTED_ANCHORS: usize = 400;
 /// vocabulary of "a thing you can grab" is one vocabulary across the ladder,
 /// and a reader who has learned the grips has learned these.
 ///
-/// # ★ This is the CURSOR, not content
+/// # This is the CURSOR, not content
 ///
 /// Rule 4 forbids styling *applied content* to express pdfcer's own uncertainty
 /// and explicitly welcomes *pre-commit affordances*: "snap indicators, hover
@@ -95,7 +95,7 @@ pub const MAX_UNSELECTED_ANCHORS: usize = 400;
 ///
 /// `points` are in **canvas space**, already converted by the caller.
 ///
-/// ★ The conversion is the caller's because `PageMapping` speaks canvas ⟷
+/// The conversion is the caller's because `PageMapping` speaks canvas ⟷
 /// screen and knows nothing about PDF user space — turning a `vector::Point`
 /// into a canvas position needs the `Page`'s own box and rotation, which is
 /// `viewer::pdf_space_to_canvas`' job. Passing the `Page` in here so that this
@@ -109,7 +109,7 @@ pub fn draw_anchors(
     points: &[(usize, egui::Pos2)],
     selected: &std::collections::BTreeSet<usize>,
 ) {
-    // ★ Read by its ROLE NAME, never through `visuals.selection` — that is
+    // Read by its ROLE NAME, never through `visuals.selection` — that is
     // `egui`'s selected-widget channel, so pointing the canvas at it would
     // fuse this ink with every selected chrome control in the application.
     // See `overlay::ink`; `tools/gates/check-selection-channel.sh` keeps that
@@ -118,7 +118,7 @@ pub fn draw_anchors(
     let ink = egui_shell::theme::Theme::canvas_selection_ink(painter.ctx());
     let stroke = Stroke::new(1.0, ink);
 
-    // ★★★ **THE CAP COUNTS WHAT IS ON SCREEN, NOT WHAT EXISTS** —
+    // **THE CAP COUNTS WHAT IS ON SCREEN, NOT WHAT EXISTS** —
     // `OPERATOR_REQUESTS.md` O69: *"the nodes are hard to see and click on."*
     //
     // [`MAX_UNSELECTED_ANCHORS`] bounds how many rectangles are painted, and
@@ -149,7 +149,7 @@ pub fn draw_anchors(
         .collect();
     let draw_unselected = on_screen.len() <= MAX_UNSELECTED_ANCHORS;
 
-    // ★★★ **The census is written BEFORE the empty return**, and the order is
+    // **The census is written BEFORE the empty return**, and the order is
     // the contract rather than a convenience.
     //
     // A census line states *what the draw was asked to draw*, which is a fact
@@ -169,7 +169,7 @@ pub fn draw_anchors(
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
-            // ★ `on_screen=` joined the census with the cull (O69). Without
+            // `on_screen=` joined the census with the cull (O69). Without
             // it "the cap fired" and "the operator has scrolled away from the
             // points" are the same line, and they need different responses.
             // The first token is unchanged — four driven checks read it.
@@ -184,12 +184,12 @@ pub fn draw_anchors(
         return;
     }
 
-    // ★ Iterates the culled set, whose screen positions were computed once
+    // Iterates the culled set, whose screen positions were computed once
     // above — through the same mapping the outlines use, never a screen
     // position carried from the click, which would be a frame stale the
     // instant the operator scrolled.
     //
-    // ★★ A SELECTED anchor that has been scrolled off screen is not drawn
+    // A SELECTED anchor that has been scrolled off screen is not drawn
     // either, and that is not a loss: it is off screen. What it does mean is
     // that the always-draw-selected escape hatch below is now scoped to the
     // visible set too, which keeps the painted count bounded by the viewport
@@ -203,7 +203,7 @@ pub fn draw_anchors(
         if is_selected {
             painter.rect(rect, CornerRadius::ZERO, ink, stroke, StrokeKind::Middle);
         } else {
-            // ★★★ **FILLED, not hollow** — `OPERATOR_REQUESTS.md` O69, and the
+            // **FILLED, not hollow** — `OPERATOR_REQUESTS.md` O69, and the
             // single highest-value half of *"the nodes are hard to see"*.
             //
             // The argument is not new: it is written out fifteen lines below,
@@ -218,7 +218,7 @@ pub fn draw_anchors(
             // reads as a mark sitting **on** the drawing rather than as four
             // thin lines competing with it.
             //
-            // ★ So the distinction between picked and unpicked becomes the
+            // So the distinction between picked and unpicked becomes the
             // FILL COLOUR — accent versus window background — rather than
             // filled-versus-hollow. That is what Inkscape does, and it is the
             // stronger signal: two solid shapes differing in colour are told
@@ -234,7 +234,7 @@ pub fn draw_anchors(
         }
     }
 
-    // ★★ The first selected anchor **and** the first few drawn ones, published
+    // The first selected anchor **and** the first few drawn ones, published
     // so a driven check can aim at them — the same argument
     // `SELECTION_OUTLINE_REGION`'s comment makes about the grips, and stronger
     // here: an anchor's screen position is a fact about the page's
@@ -258,7 +258,7 @@ pub fn draw_anchors(
         );
     }
     if draw_unselected {
-        // ★ The CULLED set, so the regions name dots that are on screen —
+        // The CULLED set, so the regions name dots that are on screen —
         // O69. Publishing a region for an anchor scrolled out of view was the
         // trap `D:/dev/rag/egui` records twice: the harness resolves a rect,
         // clicks its centre, and hits whatever is actually there. A rect that
@@ -275,7 +275,7 @@ pub fn draw_anchors(
 
 /// The diameter of a Bézier-handle mark, in screen pixels.
 ///
-/// ★ Slightly larger than an anchor mark and **round** where anchors are
+/// Slightly larger than an anchor mark and **round** where anchors are
 /// square, which is the vector-editor idiom every tool this operator has used
 /// shares — Illustrator, Inkscape, Figma and the old shell all draw an on-curve
 /// point as a square and a control point as a circle. It is not decoration: the
@@ -286,7 +286,7 @@ pub const HANDLE_PX: f32 = 7.0;
 /// Paint the Bézier handles of the selected anchors, each tethered to its
 /// anchor.
 ///
-/// # ★ Why the tether is not optional
+/// # Why the tether is not optional
 ///
 /// A control point with no line back to the anchor it governs is an unexplained
 /// dot floating beside a curve — and on a path with two selected anchors, four
@@ -313,7 +313,7 @@ pub fn draw_handles(
     if handles.is_empty() {
         return;
     }
-    // ★ The content-area selection ink by name; see `overlay::ink`.
+    // The content-area selection ink by name; see `overlay::ink`.
     let colour = egui_shell::theme::Theme::canvas_selection_ink(painter.ctx());
     let stroke = Stroke::new(1.0, colour);
     let radius = HANDLE_PX / 2.0;

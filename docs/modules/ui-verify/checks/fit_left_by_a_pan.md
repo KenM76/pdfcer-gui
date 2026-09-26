@@ -4,7 +4,7 @@
 resize: the view stays where the operator put it AND the fit is still
 live.**
 
-# ★★★ The request changed by one clause, and this file is the record
+# The request changed by one clause, and this file is the record
 
 
 > *"if the canvas window is resized the pdf should resize to match unless
@@ -17,7 +17,7 @@ live.**
 The pan clause is gone, and the same message says why it could go:
 *"whatever area was centered in the current canvas should stay centered."*
 
-## ★★★ Why the clause was only ever load-bearing by accident
+## Why the clause was only ever load-bearing by accident
 
 A fit is a rule about **zoom**; where the operator is looking is a rule
 about **position**. Until O78 nothing owned the second, so a resize under a
@@ -30,7 +30,7 @@ viewport change, in or out of a fit. The proxy is unnecessary, and keeping
 it would cost him the thing he has now asked for twice: a page that stops
 re-fitting the moment he drags it an inch.
 
-## ★★ What this check had to gain to stay honest
+## What this check had to gain to stay honest
 
 Steps A–D are **unchanged**, and they still have teeth: preserving an
 off-centre point keeps it off centre, so "the margins are not equal" is
@@ -49,7 +49,7 @@ is evidence about that reading, and the honest amendment is to add the
 assertion that separates the two rather than to remove the one that no
 longer distinguishes them.
 
-## ★★ Why the HAND tool, and why the primary button
+## Why the HAND tool, and why the primary button
 
 `canvas::input::pan_delta` treats two gestures as one pan: the middle
 button always, and the primary button while the hand tool is active. This
@@ -57,11 +57,11 @@ harness has no middle-button driver — a third gesture-class hole, found the
 same day as the secondary click and the window resize — so the check arms
 the hand tool and uses the primary drag it already has.
 
-★ That is not a workaround around the subject: `pan_delta` is one function
+That is not a workaround around the subject: `pan_delta` is one function
 and both buttons reach it, so a build that dropped the fit for one and not
 the other is not reachable. The check drives the door that exists.
 
-## ★★★ The wheel is deliberately NOT this gesture, and the sibling proves it
+## The wheel is deliberately NOT this gesture, and the sibling proves it
 
 Scrolling a fit-width document is how every reader in the class is read,
 and a wheel notch that dropped the fit would stop the page re-fitting the
@@ -82,7 +82,7 @@ arm and nothing else changed, this check fails and reports:
 the correct build. So the assertion is live and the tolerance is nowhere
 near either result.
 
-★★ **It would NOT have caught the state this shipped in before today**, and
+**It would NOT have caught the state this shipped in before today**, and
 that is worth saying rather than leaving somebody to assume otherwise. Then,
 a resize re-placed nothing at all, so a panned page was not re-centred and
 this check would have passed for the wrong reason. It has teeth only against
@@ -102,6 +102,6 @@ made possible.
 | C | **resize** the window | `canvas-viewport` changed |
 | D | the page is **not** re-centred | its margins are still lopsided |
 
-★ Step B asserts its own precondition, for the reason the sibling states: a
+Step B asserts its own precondition, for the reason the sibling states: a
 pan that did nothing would leave the page centred, and step D would then
 pass against a build that re-centres on every resize — measuring nothing.

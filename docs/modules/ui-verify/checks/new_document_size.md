@@ -11,7 +11,7 @@ one template, resize page 0, rewrite the whole file, **re-parse it**, and
 hand the result over as an ordinary new document with nothing pending and
 nothing undoable.
 
-# ★ The failure this exists for, and why the unit tests cannot see it
+# The failure this exists for, and why the unit tests cannot see it
 
 There are four places the size can be lost, and each looks correct from the
 one next to it:

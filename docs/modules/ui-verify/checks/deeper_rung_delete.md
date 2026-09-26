@@ -10,7 +10,7 @@ gesture can tell which one is shut. Its argument is on
 [`Rung::narrows_by_clicking_a_chunk_box`].
 
 
-# ★★★ THE ASSERTION THAT MATTERS IS "THE OTHERS SURVIVE"
+# THE ASSERTION THAT MATTERS IS "THE OTHERS SURVIVE"
 
 Read this before changing anything below.
 
@@ -51,7 +51,7 @@ answer different questions: the first says the page still looks right, the
 second says an edit really landed. A build that computed the census and never
 reached `EditSession` writes the first and not the second.
 
-★ The `-applied` suffix is not decoration. `check-trace-names.py` exists
+The `-applied` suffix is not decoration. `check-trace-names.py` exists
 because a module line sharing its first token with a funnel label is the one
 `Trace::last` returns — three recorded instances, each of which made a driven
 check report *"the verb did nothing"* about a verb that worked.
@@ -62,7 +62,7 @@ A check that has never been seen to fail is not evidence. The plant, and the
 proof that the plant landed, in order:
 
 
-★ A falsification that produces a SKIP has proved nothing. If step 4 finds
+A falsification that produces a SKIP has proved nothing. If step 4 finds
 `[SKIP]`, the fixture is wrong before the plant is wrong — see the table
 below.
 
@@ -77,7 +77,7 @@ below.
 | chunk | `fixtures/paragraph.pdf` | `0,100,704` | the **same line of the same document as the label rung**, borrowed from `crate::fixture::text_chunk_point` so the two cannot drift. The rungs differ in the door, not the target, which is the whole reason both exist |
 
 
-★★★ **The line rung's fixture was WRONG in the first version of this table
+**The line rung's fixture was WRONG in the first version of this table
 and the check said so rather than passing.** It named `polyline-nodes.pdf`
 at `0,150,260`; that page is one path object holding **one** subpath, so the
 delete committed correctly, took the whole object with it (which is right —

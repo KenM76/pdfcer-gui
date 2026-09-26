@@ -32,7 +32,7 @@ What survives from that section, and still binds: **R9 — an unavailable
 capability renders nothing.** There is no greyed control in any of these
 surfaces, and no string here explains an absent one.
 
-## ★ What the placement copy must say, and must not
+## What the placement copy must say, and must not
 
 Four disclosures come back from one placement, and they are the rule-4
 half of this feature: the artwork was stretched, the stamp is a *dynamic*

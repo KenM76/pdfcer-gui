@@ -7,7 +7,7 @@
 //! its own status row. Two different surfaces with two different audiences and
 //! two different lifetimes.
 //!
-//! ## ★ Rule 4 governs all three
+//! ## Rule 4 governs all three
 //!
 //! A combine writes a **new file** and changes nothing the operator is looking
 //! at. So none of this may become a mark on the page view — no badge on the
@@ -19,7 +19,7 @@ use std::path::Path;
 
 /// **It worked**, with the two numbers that say whether it worked *correctly*.
 ///
-/// ★★ Both counts, and the pair is the point. A combine that silently dropped
+/// Both counts, and the pair is the point. A combine that silently dropped
 /// a source writes a perfectly good PDF; the only thing on screen that would
 /// differ is the number of files it says it read. An operator who chose three
 /// and is told "2 files" has been told about a defect in the one sentence they
@@ -56,7 +56,7 @@ pub fn failed_source(path: &Path) -> String {
 
 /// **It did not work**, and pdfcer is not pretending to know why in one line.
 ///
-/// ★ The engine's own error text is deliberately **not** carried. It goes to
+/// The engine's own error text is deliberately **not** carried. It goes to
 /// the trace, where a reader diagnosing a machine they cannot see will find it,
 /// and it is not operator copy — the same split `crate::text::status`'s
 /// `save_copy_failed` makes, for the same reason: a `Display` impl is written
@@ -109,7 +109,7 @@ mod tests {
         assert!(many.contains("12 pages"), "{many}");
     }
 
-    /// ★★ The success sentence carries BOTH counts.
+    /// The success sentence carries BOTH counts.
     ///
     /// The property that lets an operator notice a dropped source in the one
     /// sentence they were going to read. Asserted as "both numbers appear"
@@ -128,7 +128,7 @@ mod tests {
         );
     }
 
-    /// ★★★ Every failure says nothing was written.
+    /// Every failure says nothing was written.
     ///
     /// The one fact an operator cannot check for themselves without going to
     /// look, and the one that decides whether they panic.

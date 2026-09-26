@@ -52,16 +52,16 @@ pub struct Filter {
     pub subtype: Option<String>,
     /// Show only comments that carry note text.
     ///
-    /// ★ `Note::Description` counts as **text**, and that is deliberate:
+    /// `Note::Description` counts as **text**, and that is deliberate:
     /// §12.5.2 makes `/Contents` dual-purpose, and a `/Link`'s accessibility
     /// description is still somebody's words. The row already says which
     /// meaning it is; the filter's job is *"is there anything to read here"*.
     pub with_note_only: bool,
-    /// ★★★ **Show only comments at this review status** — `/State`, added
+    /// **Show only comments at this review status** — `/State`, added
     /// 2026-09-06 when `pdfcer-core` `Pass 253.1` closed the engine gap this
     /// module's header recorded as absent.
     ///
-    /// # ★★ It lives here but is NOT evaluated by [`Self::keeps`], and that is
+    /// # It lives here but is NOT evaluated by [`Self::keeps`], and that is
     /// deliberate rather than an oversight
     ///
     /// **A review status is not on the row, because it is not on the
@@ -106,7 +106,7 @@ impl Filter {
     /// that [`Self::sort`] is **not** part of it: reordering a list omits
     /// nothing, and a "you have sorted this" notice would be noise attached to
     /// a change the operator can see.
-    /// ★ [`Self::status`] counts, even though [`Self::keeps`] cannot evaluate
+    /// [`Self::status`] counts, even though [`Self::keeps`] cannot evaluate
     /// it — see that field. This predicate answers *"is the operator being
     /// shown less than the document holds"*, and where the answer is computed
     /// has no bearing on it.
@@ -154,7 +154,7 @@ impl Filter {
 /// and a document with enough comments for that to matter has a layout cost
 /// two orders of magnitude larger (see `crate::panels::comments`' cost note).
 ///
-/// ★ **Stable**, so an ordering by author or by kind preserves document order
+/// **Stable**, so an ordering by author or by kind preserves document order
 /// within each group. See the module header.
 #[must_use]
 pub fn apply(rows: Vec<CommentRow>, filter: &Filter) -> Vec<CommentRow> {
@@ -165,7 +165,7 @@ pub fn apply(rows: Vec<CommentRow>, filter: &Filter) -> Vec<CommentRow> {
         // an explicit no-op rather than an early return so that adding a
         // fourth ordering cannot forget to handle it.
         Sort::Document => {}
-        // ★ An author-less comment sorts to the END rather than the start.
+        // An author-less comment sorts to the END rather than the start.
         // `/T` is legitimately absent — it means anonymous — and a reviewer
         // ordering by author is looking for a *person*; putting the unsigned
         // rows first would bury the thing they asked for under the thing they
@@ -183,7 +183,7 @@ pub fn apply(rows: Vec<CommentRow>, filter: &Filter) -> Vec<CommentRow> {
 /// Every distinct author in a listing, in the order a chooser should offer
 /// them.
 ///
-/// # ★ Sorted and de-duplicated, and blank names dropped
+/// # Sorted and de-duplicated, and blank names dropped
 ///
 /// A chooser is a list of *people*, so it is alphabetical rather than in
 /// document order — the operator is looking up a name, not walking the sheet.
@@ -282,7 +282,7 @@ mod tests {
         assert!(filter.is_narrowing());
     }
 
-    /// ★ **An exact match, not a substring.**
+    /// **An exact match, not a substring.**
     ///
     /// *Ken* and *Ken Mantle* are two reviewers. A substring match would fold
     /// one into the other, and the operator would read one person's comments
@@ -309,7 +309,7 @@ mod tests {
         assert!(kept.iter().all(|r| r.subtype == "Text"));
     }
 
-    /// ★★ **"With text only" drops the rows pdfcer's own markup produces.**
+    /// **"With text only" drops the rows pdfcer's own markup produces.**
     ///
     /// The filter this shell added that Acrobat does not have, and the reason
     /// it earns its place: `MarkupSpec` has no contents field on any variant,
@@ -327,7 +327,7 @@ mod tests {
         assert!(kept.iter().all(|r| !matches!(r.note, Note::Absent)));
     }
 
-    /// ★ A `/Link`'s accessibility **description** counts as text.
+    /// A `/Link`'s accessibility **description** counts as text.
     ///
     /// §12.5.2 makes `/Contents` dual-purpose and the row already says which
     /// meaning it carries. The filter asks *"is there anything to read"*, and
@@ -344,7 +344,7 @@ mod tests {
         assert_eq!(apply(rows, &filter).len(), 1);
     }
 
-    /// ★★★ **Sorting by author is stable, and document order survives inside
+    /// **Sorting by author is stable, and document order survives inside
     /// each name.**
     ///
     /// The property that stops the list flickering. An unstable sort would
@@ -366,7 +366,7 @@ mod tests {
         assert_eq!(ken, vec![0, 1], "Ken's own comments left document order");
     }
 
-    /// ★★ **An unsigned comment sorts to the END, not the start.**
+    /// **An unsigned comment sorts to the END, not the start.**
     ///
     /// A reviewer ordering by author is looking for a person. `None` sorting
     /// first — which is the derived order on `Option` and therefore what an

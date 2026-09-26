@@ -46,7 +46,7 @@ pub fn render_quality(ui: &mut Ui, prefs: &mut Prefs) {
     }
 }
 
-/// ★★ How much memory the page cache may hold.
+/// How much memory the page cache may hold.
 ///
 /// # Why this is in *Drawing the page* and not in a group of its own
 ///
@@ -57,7 +57,7 @@ pub fn render_quality(ui: &mut Ui, prefs: &mut Prefs) {
 /// rather than by what it does, and nobody arrives with the symptom *"pdfcer is
 /// using the wrong amount of RAM"*.
 ///
-/// # ★ Third rather than first in the group, and it is the newest
+/// # Third rather than first in the group, and it is the newest
 ///
 /// Quality and settle are read on every frame by an operator who is *looking at
 /// the page*; this one is read when they are annoyed by a wait they have
@@ -76,7 +76,7 @@ pub fn page_cache(ui: &mut Ui, prefs: &mut Prefs) {
             ui,
             &mut prefs.page_cache,
             *option,
-            // ★ Owned, unlike every other label in this window, because the
+            // Owned, unlike every other label in this window, because the
             // megabyte figure is COMPUTED from the budget rather than written
             // beside it. `widgets::option` takes `&str`, and a `String` that
             // lives to the end of the call is the smallest thing that works —
@@ -148,7 +148,7 @@ pub fn opening_fit(ui: &mut Ui, prefs: &mut Prefs) {
 
 /// What a plain mouse wheel does under a one-page-at-a-time display mode.
 ///
-/// # ★ Here as well as on the status bar, and that is not duplication
+/// # Here as well as on the status bar, and that is not duplication
 ///
 /// The status-bar control is the one the operator will use: it sits beside the
 /// page buttons, which is where they are already looking when they are
@@ -160,7 +160,7 @@ pub fn opening_fit(ui: &mut Ui, prefs: &mut Prefs) {
 /// `OPERATOR_REQUESTS.md` **O58**. Ken, 2026-08-29: *"let's make it an option to
 /// have it swap to match Acrobat or work the way we have it now."*
 ///
-/// # ★ Here rather than on a keyboard-shortcuts page, and there is no keyboard page
+/// # Here rather than on a keyboard-shortcuts page, and there is no keyboard page
 ///
 /// The shortcuts dialog *lists* bindings; it does not edit them. And this is not
 /// really a question about keys — it is a question about **which of two pastes
@@ -212,7 +212,7 @@ pub fn wheel_paging(ui: &mut Ui, prefs: &mut Prefs) {
 /// Which of the three View ▸ Display overlays are already on when a document
 /// opens.
 ///
-/// # ★ One setting with three switches, not three settings
+/// # One setting with three switches, not three settings
 ///
 /// [`widgets::toggle`]'s own documentation carries the control-shape argument.
 /// The reason they are **one setting** is different and is about the operator
@@ -231,7 +231,7 @@ pub fn wheel_paging(ui: &mut Ui, prefs: &mut Prefs) {
 /// bound makes, and `widgets::disclosure` exists for exactly this.
 /// **Shade the fillable fields** — `OPERATOR_REQUESTS.md` O96.
 ///
-/// ★ In *Display* rather than in a Forms group, which is where he asked for it
+/// In *Display* rather than in a Forms group, which is where he asked for it
 /// (*"in our display section"*) and is also right: it changes nothing about the
 /// form and everything about what the page looks like. An operator turning it
 /// off is tidying their view, not altering how fields behave.
@@ -256,14 +256,14 @@ pub fn field_shade(ui: &mut Ui, prefs: &mut Prefs) {
 /// **What colour the recognised text is drawn in over a scan** —
 /// `OPERATOR_REQUESTS.md` O229.
 ///
-/// ★ In *Display* beside the field wash, because it is the same kind of
+/// In *Display* beside the field wash, because it is the same kind of
 /// answer: a colour pdfcer paints over the page that never reaches the file.
 /// Not in *Appearance*, which is about how the program itself looks — a
 /// preset and a theme, neither of which knows anything about a particular
 /// scan. `crate::app::prefs::Prefs::ocr_layer_colour` carries why choosing a
 /// colour for invisible text is not the content marking R8b forbids.
 ///
-/// # ★★ The reset is ABSENT rather than greyed when there is nothing to reset
+/// # The reset is ABSENT rather than greyed when there is nothing to reset
 ///
 /// R9's rule, and here it also carries information: a swatch with no button
 /// beside it *is* the default, so the control answers "have I changed this?"
@@ -295,12 +295,12 @@ pub fn ocr_colour(ui: &mut Ui, prefs: &mut Prefs) {
 
 /// **The two auto-hide settings** — 2026-09-05.
 ///
-/// ★★ One header over both, because they are one decision the operator makes
+/// One header over both, because they are one decision the operator makes
 /// twice: *"how much of the window do I want the drawing to have?"* Two
 /// separate sections would ask it twice and would put the sentence that makes
 /// the feature safe — the drawing does not move — under only one of them.
 ///
-/// ★ In *Display* beside the page chrome, and not in *Appearance*: Appearance
+/// In *Display* beside the page chrome, and not in *Appearance*: Appearance
 /// is about how pdfcer LOOKS (its preset, its colours), and this is about how
 /// much of the window the drawing gets. `field_shade` was filed here by the
 /// same test and the operator put it here himself.
@@ -362,7 +362,7 @@ pub fn page_chrome(ui: &mut Ui, prefs: &mut Prefs) {
 mod tests {
     use super::*;
 
-    /// ★ The shipped quality is the identity multiplier.
+    /// The shipped quality is the identity multiplier.
     ///
     /// The "a build that omits nothing behaves as it did before" rule, at the
     /// one place it can be checked cheaply. `viewer::raster_scale` was

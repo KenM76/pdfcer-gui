@@ -68,7 +68,7 @@ const READOUT_WIDTH_PTS: f32 = 110.0;
 
 /// The whole overlay, including its frame.
 ///
-/// ★ Published so `ui-verify` can reach the bar at all. A check that wants to
+/// Published so `ui-verify` can reach the bar at all. A check that wants to
 /// assert *"Ctrl+F produced a find bar, and its text is legible"* has exactly
 /// two honest sources for **where to look** — the application measures the
 /// rect on the frame it reports, or the harness hard-codes a fraction of the
@@ -111,7 +111,7 @@ const AREA_ID: &str = "pdfcer-find-bar"; // ui-text-exempt: widget id, never dis
 
 /// The search field's id.
 ///
-/// ★ **Stable and explicit, because defect D1 depends on it.**
+/// **Stable and explicit, because defect D1 depends on it.**
 /// `crate::app::keyboard::collect` guards its unmodified bindings with
 /// `ctx.text_edit_focused()`, which resolves the focused id and asks whether a
 /// `TextEditState` exists *for that id*. The field therefore has to be a real
@@ -164,7 +164,7 @@ pub fn show(ui: &mut egui::Ui, state: &mut FindState, status: &Status, actions: 
         // tooltips and by a modal — all of which egui puts in higher orders.
         // Claiming `Foreground` here would put the Find bar over its own popup.
         .order(egui::Order::Middle)
-        // ★ Anchored by its RIGHT-top corner, and that is a fix rather than a
+        // Anchored by its RIGHT-top corner, and that is a fix rather than a
         // preference — found by driving the binary and reading the trace.
         //
         // With a LEFT-top pivot the position is `right − width`, and egui does
@@ -188,7 +188,7 @@ pub fn show(ui: &mut egui::Ui, state: &mut FindState, status: &Status, actions: 
         // the edge the operator is reaching for.
         .constrain_to(host);
 
-    // ★ The OCR offer's condition, evaluated HERE and nowhere else.
+    // The OCR offer's condition, evaluated HERE and nowhere else.
     //
     // Two questions, and the order is the whole affordability argument:
     //
@@ -206,7 +206,7 @@ pub fn show(ui: &mut egui::Ui, state: &mut FindState, status: &Status, actions: 
     // page extraction is strictly cheaper than the gesture that caused it, and
     // it is charged to that gesture rather than to the act of opening the bar.
     //
-    // ★ And (2) is not a refinement of (1). It is the *actual* trigger — the
+    // And (2) is not a refinement of (1). It is the *actual* trigger — the
     // operator's rule is that the offer means "this document is images", never
     // "this search had no matches". (1) is here because the offer is drawn in
     // the place the empty readout occupies and there is nowhere else on a
@@ -214,7 +214,7 @@ pub fn show(ui: &mut egui::Ui, state: &mut FindState, status: &Status, actions: 
     // dropped (2) would offer to OCR a text PDF every time somebody mistyped a
     // part number.
     let offer_ocr = offer_ocr(state.readout(epoch), || doc.page_has_extractable_text());
-    // ★★★ THE OTHER REASON A SEARCH FINDS NOTHING.
+    // THE OTHER REASON A SEARCH FINDS NOTHING.
     //
     // `pdfcer-core` v0.11.0's note, in its own words: *"a zero-result search is
     // not proof the word is absent"*. Two situations produce an identical empty
@@ -241,13 +241,13 @@ pub fn show(ui: &mut egui::Ui, state: &mut FindState, status: &Status, actions: 
             // prevent.
             egui::Frame::popup(ui.style()).show(ui, |ui| {
                 body(ui, state, epoch, actions);
-                // ★ FIRST of the second-row notes, and above the
+                // FIRST of the second-row notes, and above the
                 // unsearchable one deliberately: this is a statement about
                 // what the OPERATOR typed, and the other two are statements
                 // about the document. The one they can act on immediately
                 // - by deleting a character - goes first.
                 //
-                // ★★ Unconditional on the readout, unlike its neighbour.
+                // Unconditional on the readout, unlike its neighbour.
                 // `unsearchable_note` draws only on an empty result because
                 // a caveat under a successful search is the nagging he
                 // objected to. This one is owed even when the search
@@ -360,7 +360,7 @@ fn body(ui: &mut egui::Ui, state: &mut FindState, epoch: u64, actions: &mut Vec<
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             //
-            // ★ `trim` and `edge_blanks` are PLAIN, not `{:?}`, and that
+            // `trim` and `edge_blanks` are PLAIN, not `{:?}`, and that
             // is deliberate: they are read by a harness, and a Debug tuple
             // in a field a machine parses has already produced one driven
             // check that reported the opposite of the truth while quoting
@@ -446,7 +446,7 @@ fn field(ui: &mut egui::Ui, state: &mut FindState, epoch: u64, actions: &mut Vec
     crate::diag::ui_rect(REGION_FIELD, rect);
 }
 
-/// ★ **What Enter means**, as a pure function of the readout and the shift
+/// **What Enter means**, as a pure function of the readout and the shift
 /// key.
 ///
 /// The table is in this module's header; the argument for the `Empty` row —
@@ -474,7 +474,7 @@ fn enter_intent(readout: Readout, shift: bool) -> Option<FindRequest> {
 // The OCR offer
 // ---------------------------------------------------------------------------
 
-/// ★ **Whether to offer OCR**, as a pure function of the readout and the page.
+/// **Whether to offer OCR**, as a pure function of the readout and the page.
 ///
 /// `page_has_text` is a closure rather than a `bool` so that the caller's
 /// answer is **not computed unless it is needed** — the short-circuit is the
@@ -548,7 +548,7 @@ fn ocr_offer(ui: &mut egui::Ui, actions: &mut Vec<Action>) {
                         .on_hover_text(crate::text::ocr::offer_tooltip())
                         .clicked()
                     {
-                        // ★ Raised as a COMMAND, not as a new action variant.
+                        // Raised as a COMMAND, not as a new action variant.
                         //
                         // The offer is a second route to `file.ocr` and must
                         // not become a second implementation of it: routing it
@@ -655,7 +655,7 @@ fn readout_text(readout: Readout) -> (String, &'static str) {
 
 /// The `Options` menu button.
 ///
-/// ★ **Changing an option re-runs the search**, when and only when a search
+/// **Changing an option re-runs the search**, when and only when a search
 /// has already been run for what is in the box. Both halves matter:
 ///
 /// - re-running is what makes the control *do* something — a "Whole word"
@@ -683,7 +683,7 @@ fn options(ui: &mut egui::Ui, state: &mut FindState, actions: &mut Vec<Action>) 
         .rect;
     crate::diag::ui_rect(REGION_OPTIONS, rect);
 
-    // ★ The Zoom control is handled FIRST and SEPARATELY, and the separation is
+    // The Zoom control is handled FIRST and SEPARATELY, and the separation is
     // the whole reason it is not a `FindOptions` field: the block below re-runs
     // the search, and this preference must not. See
     // `FindState::set_zoom_on_jump`.
@@ -732,7 +732,7 @@ fn options(ui: &mut egui::Ui, state: &mut FindState, actions: &mut Vec<Action>) 
 /// without a popup: what matters about it is which controls appear under which
 /// conditions, and that is a property of the options value.
 ///
-/// ★ **The word-rule chooser exists only while it means something.**
+/// **The word-rule chooser exists only while it means something.**
 /// P3: an unavailable capability renders nothing, and greying is for
 /// *temporarily* unavailable with an explanation. A rule chooser beside an
 /// unticked *Whole word* is neither — it is a control that would change a value
@@ -740,7 +740,7 @@ fn options(ui: &mut egui::Ui, state: &mut FindState, actions: &mut Vec<Action>) 
 /// works. So it appears with the option and disappears with it, and
 /// [`crate::text::find::whole_word_tooltip`] warns the operator that it will.
 ///
-/// ★★ **`zoom_on_jump` is a second `&mut`, not a fourth field of
+/// **`zoom_on_jump` is a second `&mut`, not a fourth field of
 /// [`FindOptions`]**, and the split survives all the way down to this
 /// signature on purpose. Everything reachable through the first argument
 /// changes *what matches* and so re-runs the search; the second changes what
@@ -767,7 +767,7 @@ fn options_menu(ui: &mut egui::Ui, options: &mut FindOptions, zoom_on_jump: &mut
     ui.checkbox(&mut options.wildcards, t::wildcards())
         .on_hover_text(t::wildcards_tooltip());
 
-    // ★ Below a separator, and last. The three above answer *what counts as a
+    // Below a separator, and last. The three above answer *what counts as a
     // hit*; this one answers *what happens when you go to one*. They are two
     // subjects, and a menu that ran them together as four peers would read as
     // four ways of changing the search — which is exactly the misreading that
@@ -814,7 +814,7 @@ mod tests;
 
 /// **Say that part of this document could never have matched.**
 ///
-/// # ★★★ Off-canvas, and that is the whole design
+/// # Off-canvas, and that is the whole design
 ///
 /// Rule 4 as narrowed by pdfcer's decision 059: an inference the operator cannot
 /// see still owes them a report, **and the report does not go on the page.** No
@@ -860,7 +860,7 @@ fn unsearchable_note(ui: &mut egui::Ui, fonts: u64) {
     );
 }
 
-/// ★★★ The unsearchable note answers a DIFFERENT question from the OCR offer,
+/// The unsearchable note answers a DIFFERENT question from the OCR offer,
 /// and both can be true at once.
 ///
 /// Written when the note landed, because the two are drawn in the same row and
@@ -876,7 +876,7 @@ fn unsearchable_note(ui: &mut egui::Ui, fonts: u64) {
 /// else produces the note and **no** OCR offer, and that is correct: the page
 /// in front of the operator is searchable, and the document still contains
 /// something no search will ever reach.
-/// ★★★ **The blank at the end of the query, said out loud** —
+/// **The blank at the end of the query, said out loud** —
 /// `OPERATOR_REQUESTS.md` **O180**.
 ///
 /// A trailing space, tab or newline on the query stops a search from finding
@@ -896,7 +896,7 @@ fn unsearchable_note(ui: &mut egui::Ui, fonts: u64) {
 /// the predicate behind it is about the RAW query rather than about
 /// whether trimming changed anything. See [`crate::find::query`].
 ///
-/// # ★ Off-canvas, and nothing is marked
+/// # Off-canvas, and nothing is marked
 ///
 /// Rule 4. The page renders exactly as it will render when saved; the
 /// highlight over a hit is unchanged; no badge, tint or flag appears

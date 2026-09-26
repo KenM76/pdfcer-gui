@@ -111,7 +111,7 @@ const RUNG_TEXT: &str = "text";
 
 /// The menu row itself, published through `MenuHost::attach_with`'s rect sink.
 ///
-/// ★ Publishing is the only possible answer for a popup: a context menu is
+/// Publishing is the only possible answer for a popup: a context menu is
 /// drawn **at the pointer** and `egui` may flip it to any of several
 /// alignments to keep it on screen. There is no fraction of the window it can
 /// be hard-coded to and no layout a harness could re-derive.
@@ -158,7 +158,7 @@ impl Check for TheRightClickOffersTheLineYouClicked {
 /// failure and an honest *"the pointer was not on a line"* are different
 /// findings and must not share a message.
 ///
-/// ★ Parsed rather than `Debug`-matched. A `{:?}` rendering of the pick would
+/// Parsed rather than `Debug`-matched. A `{:?}` rendering of the pick would
 /// make this harness depend on a Rust enum's formatting, which is the defect
 /// recorded as *never `Debug`-format a field a machine reads* — a check there
 /// reported the opposite of the truth while quoting the truth in its own
@@ -323,7 +323,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: the control — the bar has said NOTHING about a rung -------------
     //
-    // ★★★ Without this, step 9 is vacuous. `status-rung` goes through
+    // Without this, step 9 is vacuous. `status-rung` goes through
     // `diag::trace_changed`, which de-duplicates on the rendered line, so a
     // line already in the trace could not be told apart from one the press
     // produced.
@@ -382,7 +382,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 5: the pick was taken on that frame -------------------------------
     //
-    // ★★ This is the frame-scoped half. `canvas::runmenu::pick_at` runs inside
+    // This is the frame-scoped half. `canvas::runmenu::pick_at` runs inside
     // the same `if response.secondary_clicked()` block, because this is the
     // only frame on which the pointer is still over the text — every later
     // frame of the popup's life has it on the menu.
@@ -458,7 +458,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          one, and the count matches the fixture's {EXPECTED_RUNS} show operators"
     ));
 
-    // --- 6: ★★★ THE O188(A) DEFECT ITSELF — is there a route? --------------
+    // --- 6: THE O188(A) DEFECT ITSELF — is there a route? --------------
     //
     //
     // ⇒ For this command that is the right coverage anyway, because R9 makes

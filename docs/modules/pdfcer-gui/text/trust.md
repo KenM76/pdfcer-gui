@@ -6,7 +6,7 @@ The catalog area for [`crate::panels::signatures`] and
 the product where **a wrong answer is worse than no answer**, so it carries
 rules the rest of the catalog does not.
 
-## ★★★ THE FOUR RULES THAT GOVERN EVERY STRING IN THIS FILE
+## THE FOUR RULES THAT GOVERN EVERY STRING IN THIS FILE
 
 ### 1. Nothing here may be invented
 
@@ -39,7 +39,7 @@ explain which of the four situations applies. A surface that hid the
 unchecked case would be indistinguishable, on screen, from one that had
 checked and found nothing wrong.
 
-★ And the four explanations are four sentences rather than one. *"You have
+And the four explanations are four sentences rather than one. *"You have
 this turned off"*, *"this machine has no Acrobat trust list"*, *"you pointed
 at a file that is not there"* and *"the list is there and pdfcer could not
 read it"* are four different calls to action, and only one of them is

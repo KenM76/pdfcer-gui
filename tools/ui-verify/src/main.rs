@@ -66,7 +66,7 @@ fn main() -> ExitCode {
 /// message that opens *"the traces you are about to collect would describe code
 /// that is NOT the code you just wrote."* It guarded everything except itself.
 ///
-/// # ★★ Why the failure is worse here than for the application
+/// # Why the failure is worse here than for the application
 ///
 /// A stale *application* produces a missing trace line, which reads as a broken
 /// feature — bad, and the reason the original guard exists. A stale *harness*
@@ -82,10 +82,10 @@ fn main() -> ExitCode {
 /// If that directory is gone — a binary copied elsewhere, which
 /// `package-portable` does — the check is skipped rather than guessed at.
 ///
-/// ★ `--allow-stale` covers this too, deliberately: one flag for *"yes, I mean
+/// `--allow-stale` covers this too, deliberately: one flag for *"yes, I mean
 /// to drive the older build"*, whichever binary is older, rather than a second
 /// flag nobody would remember.
-/// # ★★★ And `--list` is behind this guard, which it was not until 2026-09-14
+/// # And `--list` is behind this guard, which it was not until 2026-09-14
 ///
 ///
 /// `RESUME.md` names `ui-verify --list | grep -cE '^  [a-z0-9_]+$'` as the way
@@ -103,7 +103,7 @@ fn main() -> ExitCode {
 /// It was caught only because a release rebuild happened to intervene between
 /// the measurement and the document.
 ///
-/// # ★★ Why the fix is the ORDER and not a warning
+/// # Why the fix is the ORDER and not a warning
 ///
 /// Every softer option is defeated by the pipe the count command is used in:
 ///
@@ -118,7 +118,7 @@ fn main() -> ExitCode {
 /// command answers **0**. Zero is not a plausible roster size and cannot be
 /// mistaken for one; 223 can, and was.
 ///
-/// # ★ The general shape, which outlives this instance
+/// # The general shape, which outlives this instance
 ///
 /// **A guard is placed against the uses that existed when it was written.**
 /// When a command later grows a second job, nothing re-asks which side of every
@@ -126,7 +126,7 @@ fn main() -> ExitCode {
 /// nothing has changed about either the guard or the command. Re-ask it by
 /// hand, at the moment the second job appears.
 ///
-/// ★ `--help` stays in front, deliberately. It prints the argument surface,
+/// `--help` stays in front, deliberately. It prints the argument surface,
 /// which is compiled in but is not a measurement of the tree, and it is exactly
 /// what a reader reaches for when the tool has just refused them.
 fn refuse_if_self_is_stale(args: &[String]) -> Result<(), String> {
@@ -271,7 +271,7 @@ fn run(args: &[String]) -> Result<ExitCode, String> {
     }
     println!();
 
-    // ★★★ **One profile directory per check** — see [`ui_verify::sandbox`].
+    // **One profile directory per check** — see [`ui_verify::sandbox`].
     //
     //
     // The resolution happens ONCE, here, and not per check, because
@@ -321,7 +321,7 @@ fn run(args: &[String]) -> Result<ExitCode, String> {
         // — the first of those three sent a session hunting for a broken
         // Proceed button on signed documents, which would have been a morning.
         //
-        // ★★ The evidence for contention rather than flakiness is in the third
+        // The evidence for contention rather than flakiness is in the third
         // one's own notes, which print two numbers the others do not:
         //
         //   in the sweep:  swept 22 characters, restyle took 20006 ms
@@ -333,7 +333,7 @@ fn run(args: &[String]) -> Result<ExitCode, String> {
         // the gesture SHORTER; the application under test is starved at the
         // same time. Neither is a property of the feature.
         //
-        // ★ The cause is the shape of the suite: every check launches a release
+        // The cause is the shape of the suite: every check launches a release
         // binary — with a render worker pool — drives it, and kills it. The
         // process is reaped (`Session::drop` waits), but window teardown,
         // GPU/context release and Windows' foreground arbitration all lag
@@ -354,7 +354,7 @@ fn run(args: &[String]) -> Result<ExitCode, String> {
         // directory — including whatever `userdata/` the driven process wrote
         // into it — before the next check begins.
         //
-        // ★ A sandbox that cannot be made is a HARNESS error and is reported as
+        // A sandbox that cannot be made is a HARNESS error and is reported as
         // the check's own result, not swallowed. Falling back to the shared
         // profile would be an isolation that quietly did not happen, wearing a
         // passing run as a disguise, which is the defect this closes.

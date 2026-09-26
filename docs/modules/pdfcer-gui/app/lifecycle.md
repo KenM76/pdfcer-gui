@@ -4,7 +4,7 @@ Three methods on [`PdfcerApp`] and one predicate: what happens when a
 document arrives, what happens when it leaves, and how a load failure is
 told apart from a file pdfcer has not finished supporting.
 
-## ★ Why this is its own file
+## Why this is its own file
 
 `app/state.rs` crossed the 1,500-line gate (rule R2) when canvas text
 selection added the page-text cache and the text selection to [`OpenDoc`].

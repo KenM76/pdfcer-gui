@@ -395,7 +395,7 @@ pub(crate) fn tab_width(label_width: f32) -> f32 {
 /// spirit and in wording to the ribbon's, because an operator should not
 /// have to learn two overflow idioms in one window.
 ///
-/// ★ The chevron is `⏷` U+23F7 and **must stay in step with the ribbon's**
+/// The chevron is `⏷` U+23F7 and **must stay in step with the ribbon's**
 /// — see `crate::ribbon::plan::overflow_label`, which carries the account
 /// of why `⌄` U+2304 renders as tofu in the pinned font and which near
 /// misses are also missing from it. "Identical in wording" is the promise
@@ -531,7 +531,7 @@ impl TabPlan {
 ///    overflow control that took space when there was nothing to overflow
 ///    into it would be a permanent tax on every dock in the application.
 /// 2. Otherwise `tab_budget = available − overflow_width − gap`, **clamped
-///    at zero**. ★ This is the line the whole module exists for.
+///    at zero**. This is the line the whole module exists for.
 /// 3. Fill `tab_budget` greedily from index 0. If that window contains
 ///    the active tab, use it — this is the stable, no-jitter case and it
 ///    covers every stack the operator has not scrolled.
@@ -573,7 +573,7 @@ pub(crate) fn plan_tabs(
         };
     }
 
-    // ★ THE RESERVATION. Subtracted before a single tab is considered.
+    // THE RESERVATION. Subtracted before a single tab is considered.
     let tab_budget = (available - overflow_width - gap).max(0.0);
 
     // Step 3: the window that starts at zero.
@@ -716,7 +716,7 @@ mod tests {
         assert!(close(spans.iter().sum::<f32>(), 60.0), "nothing overflows");
     }
 
-    /// ★ **Failure mode #6, asserted directly: resolving is idempotent
+    /// **Failure mode #6, asserted directly: resolving is idempotent
     /// under a round trip through a narrow window.**
     ///
     /// The defect it names is that un-maximising and re-maximising loses
@@ -759,7 +759,7 @@ mod tests {
     // drag_boundary — failure mode #7
     // -----------------------------------------------------------------
 
-    /// ★ **Failure mode #7, asserted directly: a splitter affects its two
+    /// **Failure mode #7, asserted directly: a splitter affects its two
     /// neighbours only.**
     ///
     /// The defect it names is that dragging one divider resizes every
@@ -857,7 +857,7 @@ mod tests {
         assert!(!plan.has_overflow());
     }
 
-    /// ★ **The reservation is exact and biconditional**: reserved
+    /// **The reservation is exact and biconditional**: reserved
     /// whenever something is hidden, never when nothing is.
     #[test]
     fn the_overflow_affordance_is_reserved_exactly_when_it_is_needed() {
@@ -874,7 +874,7 @@ mod tests {
         }
     }
 
-    /// ★ **Failure mode #8: the visible tabs plus the reservation never
+    /// **Failure mode #8: the visible tabs plus the reservation never
     /// exceed the bar.**
     ///
     /// This is the invariant that stops the overflow control from being
@@ -903,7 +903,7 @@ mod tests {
                 );
 
                 if available < reserved + TAB_GAP {
-                    // ★ The bar is narrower than the affordance ITSELF.
+                    // The bar is narrower than the affordance ITSELF.
                     //
                     // There is no assignment in which everything fits, so
                     // the question becomes *what gives way* — and the
@@ -930,7 +930,7 @@ mod tests {
         }
     }
 
-    /// ★ **The active tab is always in the visible window** whenever the
+    /// **The active tab is always in the visible window** whenever the
     /// window is non-empty.
     ///
     /// A prefix plan would fail this the moment the operator selects a
@@ -968,7 +968,7 @@ mod tests {
         }
     }
 
-    /// ★ **At a width narrower than the reservation, the bar degrades to
+    /// **At a width narrower than the reservation, the bar degrades to
     /// the affordance alone — the affordance is never what is squeezed
     /// out.**
     ///
@@ -1051,7 +1051,7 @@ mod tests {
     // Failure mode #3, and the 1280-point budget of failure mode #4
     // -----------------------------------------------------------------
 
-    /// ★ **Failure mode #3: no minimum in this module is a function of a
+    /// **Failure mode #3: no minimum in this module is a function of a
     /// tab label.**
     ///
     /// The defect it names is an invisible, inactive tab whose width
@@ -1078,7 +1078,7 @@ mod tests {
         assert!(close(spans[0], MIN_COLUMN_WIDTH));
     }
 
-    /// ★ **Failure mode #4, budgeted and tested at 1280 points wide.**
+    /// **Failure mode #4, budgeted and tested at 1280 points wide.**
     ///
     /// Failure mode #4 is a single dock whose minimum consumes a third of
     /// the screen. Both of this shell's docks at their minimum must leave

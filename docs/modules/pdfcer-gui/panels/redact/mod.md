@@ -12,7 +12,7 @@ Everything in this panel can be taken back — by the Remove button on a row,
 by `Ctrl+Z`, or by simply not applying. Nothing here removes a byte from
 anything.
 
-## ★ Why a panel and not a dialog, when apply is a dialog
+## Why a panel and not a dialog, when apply is a dialog
 
 [`crate::dialogs`]' header draws the line: *"a dialog is a single
 transaction with a start and an end… a panel is somewhere an operator dips
@@ -31,7 +31,7 @@ It holds no document state of its own: the marks are `/Redact` annotations
 keep in step. What [`RedactUi`] holds is the operator's half-typed search —
 their state, not the document's.
 
-## ★ The census is read from the SESSION GRAPH, never the base document
+## The census is read from the SESSION GRAPH, never the base document
 
 `redaction_marks(&doc.session.graph())`, and the distinction is not
 academic: it is the shape of a real defect in the shell this one replaces,
@@ -44,7 +44,7 @@ possible reading of the worst possible counter.
 reason, so the number this panel shows and the number the apply acts on
 cannot disagree.
 
-## ★ Layout: state, then action, then detail
+## Layout: state, then action, then detail
 
 Deliberately **not** the usual detail-then-action order. The count and the
 *Review & apply* control come **first**, above the marking controls and
@@ -73,7 +73,7 @@ will conclude is broken.
 | **A confirmation on Mark whole page** | Same argument, and its tooltip says so in words. |
 | **An Apply button that applies** | The control opens a **report**. The click that opens it must not feel like the click that commits, which is why its label ends in an ellipsis and the commit lives behind two checkboxes in another surface. |
 
-## ★ Marking by drag: panel-only, and the reasoning
+## Marking by drag: panel-only, and the reasoning
 
 Marks are made from this panel. There is no canvas drag-to-mark gesture,
 and that is a decision rather than an omission: a canvas gesture here is

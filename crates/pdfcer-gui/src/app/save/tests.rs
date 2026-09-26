@@ -1,14 +1,14 @@
 //! # `app::save::tests` — what is guaranteed about writing this document out
 //!
 //!
-//! ★ The seam is a real one. `save.rs` answers *"how does a document reach a
+//! The seam is a real one. `save.rs` answers *"how does a document reach a
 //! file?"* and grows when a save verb or a save mode is added; this answers
 //! *"what must never be true of a file this shell wrote?"* and grows when a
 //! way of getting that wrong is discovered. The two have different rates and
 //! different readers — the second is the one somebody reads after a file came
 //! out wrong.
 //!
-//! ★★ The suite's centre of gravity is deliberately the **truth table for
+//! The suite's centre of gravity is deliberately the **truth table for
 //! [`super::has_unsaved_edits`]**. Three of its assertions exist because a
 //! two-term version of that predicate answered *clean* on a document with
 //! unsaved work in it, twice, for two unrelated reasons — an in-place save the
@@ -16,7 +16,7 @@
 //! session so that `is_modified()` correctly says *no*. Both were silent, and
 //! both reached the operator.
 
-// ★ The INNER `#![cfg(test)]` is redundant — the module is declared
+// The INNER `#![cfg(test)]` is redundant — the module is declared
 // `#[cfg(test)] mod tests;` — and it is here anyway, because
 // `tools/gates/check-ui-strings.sh` exclusion 2 recognises a test-only FILE by
 // exactly this attribute. Without it every assertion message below is read as
@@ -38,7 +38,7 @@ fn scratch(name: &str) -> PathBuf {
     dir.join(name)
 }
 
-/// ★ **The suggested name is never the file that was opened.**
+/// **The suggested name is never the file that was opened.**
 ///
 /// The shipped tooltip's promise as a **default** rather than as a warning.
 /// An operator who accepts the suggestion without reading it must not
@@ -61,7 +61,7 @@ fn the_suggested_name_is_never_the_source_file() {
     );
 }
 
-/// ★ **A created document is suggested its own name, with no suffix and no
+/// **A created document is suggested its own name, with no suffix and no
 /// folder.**
 ///
 /// The other half of `stored_under`, and the interesting failure is not
@@ -101,7 +101,7 @@ fn the_suggestion_is_always_a_usable_pdf_name() {
     }
 }
 
-/// ★★ **The copy really is an incremental update: the original file's bytes
+/// **The copy really is an incremental update: the original file's bytes
 /// are its prefix, verbatim.**
 ///
 /// The assertion this whole module exists for, and the one that fails
@@ -152,7 +152,7 @@ fn a_saved_copy_begins_with_the_original_file_byte_for_byte() {
     let _ = std::fs::remove_file(&target);
 }
 
-/// ★★ **An edit reaches the file, and it reaches it as an appended
+/// **An edit reaches the file, and it reaches it as an appended
 /// revision.**
 ///
 /// The round trip, in the smallest form a unit test can hold: rotate a page
@@ -230,7 +230,7 @@ fn an_edit_survives_the_round_trip_through_a_saved_copy() {
     let _ = std::fs::remove_file(&target);
 }
 
-/// ★ **Saving does not touch the open document — not its epoch, not its
+/// **Saving does not touch the open document — not its epoch, not its
 /// identity.**
 ///
 /// §3, asserted rather than described. Three failures this catches, each of
@@ -274,7 +274,7 @@ fn saving_a_copy_changes_nothing_about_the_open_document() {
     let _ = std::fs::remove_file(&target);
 }
 
-/// ★ **A document `file.new` made saves too, and re-opens as a document.**
+/// **A document `file.new` made saves too, and re-opens as a document.**
 ///
 /// The case the shipped `file.new` tooltip now promises and that nothing
 /// else covers: `tools/ui-verify`'s round trip drives an *opened* document,
@@ -320,7 +320,7 @@ fn a_created_document_saves_and_the_copy_opens() {
     let _ = std::fs::remove_file(&target);
 }
 
-/// ★★★ **The truth table for [`has_unsaved_edits`]** —
+/// **The truth table for [`has_unsaved_edits`]** —
 /// `OPERATOR_REQUESTS.md` O65.
 ///
 /// Five states, and each of the two terms is load-bearing in a different
@@ -364,7 +364,7 @@ fn a_saved_document_is_not_dirty_and_an_undone_edit_is_not_either() {
     open.edit_epoch += 1;
     assert!(has_unsaved_edits(&open), "an edited document is dirty");
 
-    // ★ The save. `saved_epoch` catches up; `is_modified()` does NOT and
+    // The save. `saved_epoch` catches up; `is_modified()` does NOT and
     // never can, because `to_incremental_bytes` takes `&self`. This is the
     // line the whole row exists for.
     open.saved_epoch = open.edit_epoch;
@@ -390,7 +390,7 @@ fn a_saved_document_is_not_dirty_and_an_undone_edit_is_not_either() {
     );
 }
 
-/// ★ **A write that cannot happen is reported rather than swallowed.**
+/// **A write that cannot happen is reported rather than swallowed.**
 ///
 /// A directory that does not exist is the commonest real failure — the
 /// operator typed a path, or a network share went away between the dialog
@@ -450,7 +450,7 @@ fn stage(open: &mut crate::app::state::OpenDoc, term: &str) {
     open.edit_epoch += 1;
 }
 
-/// ★★★ **A document with an armed removal is UNSAVED, and the term that sees
+/// **A document with an armed removal is UNSAVED, and the term that sees
 /// it is `has_pending_redaction`.**
 ///
 ///
@@ -503,7 +503,7 @@ fn a_document_with_a_staged_redaction_has_unsaved_edits() {
     assert!(has_unsaved_edits(&open));
 }
 
-/// ★★★ **The third term is load-bearing on a document the first two call
+/// **The third term is load-bearing on a document the first two call
 /// clean.**
 ///
 /// The assertion above is the headline and it would still pass on a two-term
@@ -544,7 +544,7 @@ fn an_armed_removal_alone_is_enough_to_make_a_document_dirty() {
     );
 }
 
-/// ★★★ **A staged document saves through THIS module with the content gone —
+/// **A staged document saves through THIS module with the content gone —
 /// and the ordinary writer is never reached.**
 ///
 /// The end-to-end assertion for `OPERATOR_REQUESTS.md` O125's second half:
@@ -553,7 +553,7 @@ fn an_armed_removal_alone_is_enough_to_make_a_document_dirty() {
 /// function every save verb goes through, and the fork inside it is the whole
 /// of §1.1.
 ///
-/// ★ **The `Written::RedactionApplied` assertion is not decoration.** A build
+/// **The `Written::RedactionApplied` assertion is not decoration.** A build
 /// that failed to fork would not leak — the engine refuses both ordinary
 /// modes — it would simply stop saving, and the failure would arrive as a
 /// refusal rather than as a wrong file. What this pins is the *route*, so a
@@ -595,7 +595,7 @@ fn a_staged_document_saves_through_the_redaction_writer_with_the_content_gone() 
         !bytes.windows(TERM.len()).any(|w| w == TERM.as_bytes()),
         "★★★ the removed text is in the file the operator would hand over"
     );
-    // ★★ The positive control, and on a compressed CAD sheet it is the
+    // The positive control, and on a compressed CAD sheet it is the
     // assertion that does the work: a build that wrote an empty document
     // would satisfy the absence check above.
     let reopened = pdfcer_core::document::Document::load(&target).expect("the file must open");
@@ -615,7 +615,7 @@ fn a_staged_document_saves_through_the_redaction_writer_with_the_content_gone() 
     let _ = std::fs::remove_file(&target);
 }
 
-/// ★★ **The save-time proof refuses, and writes nothing.**
+/// **The save-time proof refuses, and writes nothing.**
 ///
 /// The falsification for the check above. [`write_copy`] is handed a claim
 /// that is demonstrably still in the document — no removal is armed, so the
@@ -651,7 +651,7 @@ fn a_save_whose_bytes_still_hold_the_redacted_text_is_refused_and_writes_nothing
     );
 }
 
-/// ★★★ **Undoing the marks under an armed removal refuses the save BY NAME,
+/// **Undoing the marks under an armed removal refuses the save BY NAME,
 /// rather than writing an un-redacted file.**
 ///
 /// The trap `Pass 250.2` brings with it, and the one sequence in this feature
@@ -665,7 +665,7 @@ fn a_save_whose_bytes_still_hold_the_redacted_text_is_refused_and_writes_nothing
 /// modes are refused too while the arming stands. The document cannot be saved
 /// at all until it is called off.
 ///
-/// ★ The failure this test is looking for is the *tempting* repair: falling
+/// The failure this test is looking for is the *tempting* repair: falling
 /// back to the ordinary writer when the removal reports `NothingToApply`. That
 /// build saves successfully, looks correct, and writes a document whose
 /// `redaction_absence_claims` still say text was removed from it — so the very
@@ -710,7 +710,7 @@ fn undoing_the_marks_under_an_armed_removal_refuses_the_save_by_name() {
     );
     assert!(!target.exists(), "nothing may reach the disk");
 
-    // ★ And the sentence really does name the remedy, because a refusal an
+    // And the sentence really does name the remedy, because a refusal an
     // operator cannot act on is one he learns to ignore.
     let said = crate::text::redact::save_refused_message(
         &crate::redact::RedactApplyRefusal::NothingToApply,
@@ -723,7 +723,7 @@ fn undoing_the_marks_under_an_armed_removal_refuses_the_save_by_name() {
 }
 
 //
-// ★★★ Added because the operator opened a file pdfcer had just written and
+// Added because the operator opened a file pdfcer had just written and
 // found pages in it pdfcer did not believe were there:
 //
 //   "I tested deleting pages from a pdf. when I open the document in Acrobat
@@ -771,7 +771,7 @@ fn a_healthy_nested_document_still_saves() {
     let _ = std::fs::remove_file(&target);
 }
 
-/// ★★★ **A document whose page tree does not agree with itself is refused, by
+/// **A document whose page tree does not agree with itself is refused, by
 /// name, and nothing reaches the disk.**
 ///
 /// The bite. The corruption is planted in the **base file's own bytes** rather
@@ -853,7 +853,7 @@ fn a_document_whose_page_tree_disagrees_with_itself_is_refused_and_writes_nothin
          would be the same failure with a smaller file."
     );
 
-    // ★ And the sentence he is shown carries his own symptom back to him — a
+    // And the sentence he is shown carries his own symptom back to him — a
     // refusal he cannot recognise is one he learns to ignore.
     let said = crate::text::pagetree::save_refused_root("x.pdf", root.declared, root.reachable);
     assert!(said.contains("1 blank page at the end"), "{said}");
@@ -861,14 +861,14 @@ fn a_document_whose_page_tree_disagrees_with_itself_is_refused_and_writes_nothin
     let _ = std::fs::remove_file(&path);
 }
 
-/// ★★★ **The operator's own operation, end to end through this shell's save.**
+/// **The operator's own operation, end to end through this shell's save.**
 ///
 /// `delete_pages` on the nested fixture, then a save through `write_copy` — the
 /// exact path `file.save_copy` takes. This is the assertion that says the guard
 /// catches the defect *he reported*, rather than a shape chosen because it was
 /// easy to construct.
 ///
-/// ★★ It **skips loudly** rather than failing if `pdfcer-core` is ever fixed.
+/// It **skips loudly** rather than failing if `pdfcer-core` is ever fixed.
 /// The day the engine walks the ancestor chain this save succeeds, and a test
 /// that went red on the repair would turn good news into a broken build. The
 /// guard's own bite stays under permanent assertion in
@@ -881,7 +881,7 @@ fn a_document_whose_page_tree_disagrees_with_itself_is_refused_and_writes_nothin
 fn deleting_a_page_from_a_nested_document_is_caught_at_the_save() {
     let mut open = open_local_fixture("nested-page-tree.pdf");
 
-    // ★★★ THE FIXTURE MUST BE NESTED, AND IT IS ASSERTED RATHER THAN NAMED.
+    // THE FIXTURE MUST BE NESTED, AND IT IS ASSERTED RATHER THAN NAMED.
     //
     // Falsified 2026-09-05 by pointing this line at `fixtures/four-pages.pdf`
     // — a flat tree. The delete then came out clean (on a flat tree the

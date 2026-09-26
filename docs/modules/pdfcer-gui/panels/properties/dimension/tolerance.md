@@ -12,7 +12,7 @@ cascade first.
 Seven forms: `None`, `Basic`, `Symmetric { magnitude }`,
 `Deviation { plus, minus }`, `Limit { upper, lower }`, `Min`, `Max`.
 
-## ★ Rule one: never build a preview by concatenation
+## Rule one: never build a preview by concatenation
 
 `docs/core-api/03-capabilities.md` §1.6 trap (b), and it is the trap that
 cost `pdfcer` a shipped defect of its own:
@@ -34,7 +34,7 @@ already owns. `Pass 68.0`'s defect — the pane reading `77.5°` while the
 `/AP` read `77.47 pt` — was exactly two independent derivations of one
 display value, and the fix was *one producer, always*.
 
-## ★ Rule two: nothing is clamped, swapped or absolutised
+## Rule two: nothing is clamped, swapped or absolutised
 
 `Tolerance::validate` refuses and says why, and `tolerance.rs`'s own comment
 is the reason: *"a corrected value the operator never saw is exactly the

@@ -22,7 +22,7 @@ pub const REGION_DONT_ASK: &str = "defaultapp.dont-ask";
 /// The button that declines this time — the one route out of this window that
 /// changes nothing outside pdfcer.
 ///
-/// ★ Declared for the same reason [`REGION_ACTION`] is, and the operator's
+/// Declared for the same reason [`REGION_ACTION`] is, and the operator's
 /// sentence of 2026-09-10 is plural: *"Those **buttons** should always be
 /// available"*. A harness that could see one of the two would report the answer
 /// row as reachable on a build where half of it had been clipped away.
@@ -59,7 +59,7 @@ pub struct DefaultAppDialog {
     dont_ask: bool,
     /// What happened when the button was pressed, if it has been.
     ///
-    /// ★ It replaces the explanatory body rather than joining it: once the act
+    /// It replaces the explanatory body rather than joining it: once the act
     /// has happened, the sentence describing what *would* happen is history,
     /// and leaving both would make the operator read two paragraphs to find the
     /// one that is current.
@@ -79,7 +79,7 @@ impl Default for DefaultAppDialog {
 impl DefaultAppDialog {
     /// Open it.
     ///
-    /// ★ The checkbox starts **unticked**. A pre-ticked *"don't ask me again"*
+    /// The checkbox starts **unticked**. A pre-ticked *"don't ask me again"*
     /// is a dialog that suppresses itself if the operator dismisses it without
     /// reading, which is the same defect as a pre-ticked consent box and is
     /// worse here because there is no way to notice it happened.
@@ -114,7 +114,7 @@ impl DefaultAppDialog {
             );
         });
 
-        // ★ The window's own close button counts as *Not now* with whatever the
+        // The window's own close button counts as *Not now* with whatever the
         // box says. Somebody who ticks the box and then presses the X has
         // answered the question, and losing that because they did not use one
         // of ours would make the checkbox unreliable in exactly the way that
@@ -128,7 +128,7 @@ impl DefaultAppDialog {
 
     /// **Write the operator's answer, and save it.**
     ///
-    /// ★★★ The whole of O173's *"ask once"* lives in this function, and the
+    /// The whole of O173's *"ask once"* lives in this function, and the
     /// asymmetry is deliberate:
     ///
     /// | What they did | Asked again next launch? |
@@ -164,7 +164,7 @@ impl DefaultAppDialog {
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI.
-                // ★ Stable tokens, never `{:?}` on anything carrying a payload:
+                // Stable tokens, never `{:?}` on anything carrying a payload:
                 // this project's standing lesson is that a Debug-formatted
                 // field makes a driven check report the opposite of the truth
                 // while quoting the truth in its own message.
@@ -189,13 +189,13 @@ impl DefaultAppDialog {
     /// before the body so it can never be pushed off the bottom.
     fn footer(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
-            // ★ R9: never greyed. Every state this window can be in is one the
+            // R9: never greyed. Every state this window can be in is one the
             // operator may legitimately proceed from.
             let act = ui.button(t::action());
             crate::diag::ui_rect_visible(REGION_ACTION, act.rect, ui.clip_rect());
             if act.on_hover_text(t::action_hover()).clicked() {
                 self.note = Some(act_now());
-                // ★★ The window closes on the NEXT frame rather than this one,
+                // The window closes on the NEXT frame rather than this one,
                 // so `note` is drawn at least once. Closing immediately would
                 // make a refusal — the one case where the sentence is the only
                 // thing that helps — appear and vanish inside a single frame.
@@ -255,7 +255,7 @@ mod tests {
 
     /// **Pressing the button silences it too**, box or no box.
     ///
-    /// ★ The row of [`DefaultAppDialog::settle`]'s table most likely to be
+    /// The row of [`DefaultAppDialog::settle`]'s table most likely to be
     /// removed by somebody tidying: it looks like the checkbox's job. It is
     /// not — asking again after the operator engaged is the nagging this
     /// project refuses, and the remedy for a change of mind is the Settings
@@ -282,7 +282,7 @@ mod tests {
     /// **A machine that already opens PDFs with pdfcer is not asked**, and the
     /// preference is not what decides it.
     ///
-    /// ★ This asserts only the cheap half — that the preference gates the
+    /// This asserts only the cheap half — that the preference gates the
     /// question — because the other half spawns processes and depends on the
     /// machine the test runs on. The live half belongs to a driven check.
     #[test]

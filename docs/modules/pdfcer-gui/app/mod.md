@@ -15,7 +15,7 @@ a widget cannot mutate a document it has no path to.
    [`PdfcerApp::dispatch_command`]) — before any widget is built, so the
    map sees the frame's raw key presses rather than whatever survived a
    widget consuming them. The split between the two is the subject of
-   [`keyboard`]'s ★ section: chords the manifest keymap binds arrive as
+   [`keyboard`]'s section: chords the manifest keymap binds arrive as
    command ids and go through the same dispatcher a ribbon click does,
    and chords the viewer owns outright arrive as actions.
 2. **Compose the panels** — draw, and let each surface push more

@@ -19,7 +19,7 @@ use pdfcer_core::page_tree::{Page, Rect};
 /// forgot the rotation would get the pre-O174 behaviour back, compiling
 /// cleanly, on the exact pages where it is wrong.
 ///
-/// # ★ The crop box is narrowed through `f32` on the way in
+/// # The crop box is narrowed through `f32` on the way in
 ///
 /// `pdfcer_render::region_base_geometry_of` does this — deliberately, with a
 /// comment saying why: the whole-page path truncates the crop box to `f32`
@@ -51,7 +51,7 @@ impl PageFrame {
     /// The crop box **as this type holds it** — already narrowed through
     /// `f32` the way the engine narrows it.
     ///
-    /// ★ Exposed so [`super::halo::region`] — and `canvas::present`, which
+    /// Exposed so [`super::halo::region`] — and `canvas::present`, which
     /// calls it — union the content box against the *same* numbers
     /// [`Self::canvas_box_of`] maps against. Reading `page.crop_box` there
     /// instead would be a second source for one value, and the two differ by
@@ -192,7 +192,7 @@ impl PageFrame {
     /// | 180 | `cx = urx − x`, `cy = y − lly` | `x = urx − cx`, `y = lly + cy` |
     /// | 270 | `cx = ury − y`, `cy = urx − x` | `x = urx − cy`, `y = ury − cx` |
     ///
-    /// ★ Note that 90 and 270 **swap the axes**: the canvas's x comes from the
+    /// Note that 90 and 270 **swap the axes**: the canvas's x comes from the
     /// PDF's y. That is the whole of O174 — a conversion that only subtracted
     /// in y could never produce it, however carefully the subtraction was
     /// written.
@@ -224,14 +224,14 @@ impl PageFrame {
     /// The bounding box in **canvas space** of a rectangle given in PDF user
     /// space, as `(x0, y0, x1, y1)` with `x0 ≤ x1` and `y0 ≤ y1`.
     ///
-    /// ★ A bounding box of the two mapped corners, not a corner-by-corner
+    /// A bounding box of the two mapped corners, not a corner-by-corner
     /// copy: under 90° and 270° the axes swap and under 180° both mirror, so
     /// the mapped "lower-left" is not the canvas's top-left. Every rotation
     /// here is a multiple of 90°, so the box of the two opposite corners is
     /// the exact image of the rectangle — no rotation-of-a-rotated-rect
     /// inflation is possible.
     ///
-    /// ★ Visible to the rest of `render` rather than private, because
+    /// Visible to the rest of `render` rather than private, because
     /// [`super::halo::reach`] needs the same mapping for the content bounding
     /// box and O174 is exactly the class of defect that a second hand-written
     /// copy reproduces. Deliberately **not** `pub`: PDF-user-space geometry is
@@ -260,13 +260,13 @@ impl PageFrame {
 /// why that is the difference between panning smoothly and waiting for a redraw
 /// on every pixel of movement.
 ///
-/// ★★ The quantisation happens in **canvas** space, before the conversion, and
+/// The quantisation happens in **canvas** space, before the conversion, and
 /// that ordering is load-bearing: the grid the pan snaps to has to be the grid
 /// the *window* moves on, and the window moves in canvas space. Snapping after
 /// the rotation would put the grid on the page's un-turned axes, so a pan due
 /// east on his sheet would cross grid lines belonging to north.
 #[must_use]
-/// ★★ `visible_canvas` is `f64`: at deep zoom it holds a rectangle a few times
+/// `visible_canvas` is `f64`: at deep zoom it holds a rectangle a few times
 /// 10⁻⁸ pt wide at an absolute position near 540, and `f32` cannot carry both
 /// magnitudes at once. See [`super::strategy::region_for`].
 pub fn page_region(visible_canvas: (f64, f64, f64, f64), frame: PageFrame) -> Rect {
@@ -336,7 +336,7 @@ pub fn region_on_screen(
 /// Where a region's raster belongs on screen at **deep zoom**, computed from
 /// the `f64` anchor rather than from the page's own screen rect.
 ///
-/// # ★★★ Why the other one stops working, and it is not the strip
+/// # Why the other one stops working, and it is not the strip
 ///
 /// [`region_on_screen`] derives its answer from `page_screen` — where the
 /// WHOLE page would be drawn. At four billion percent that rect has a
@@ -348,7 +348,7 @@ pub fn region_on_screen(
 /// coarser than the whole window, and the region's position is then derived
 /// from it — inheriting an error that never had to exist.
 ///
-/// ★ That is why the answer is neither a 32-bit strip nor a 64-bit one. Making
+/// That is why the answer is neither a 32-bit strip nor a 64-bit one. Making
 /// the strip `f64` would carry the huge number more precisely; **not forming
 /// it** is better, costs nothing, and leaves one code path instead of two.
 /// Every large magnitude is subtracted inside `f64` before anything narrows —
@@ -449,10 +449,10 @@ mod tests {
     const A1_CEILED: (f32, f32) = (2384.0, 1684.0);
 
     // =======================================================================
-    // ★★★ The extent and the conversion must describe the SAME rectangle
+    // The extent and the conversion must describe the SAME rectangle
     // =======================================================================
 
-    /// ★★★ **The page's own crop box fills canvas space exactly** — it starts
+    /// **The page's own crop box fills canvas space exactly** — it starts
     /// at the canvas origin and ends at [`PageFrame::extent_pts`].
     ///
     /// # Why this is the test that matters
@@ -504,7 +504,7 @@ mod tests {
         }
     }
 
-    /// ★★ **A page 1683.78 pt tall measures 1683.78, not 1684.**
+    /// **A page 1683.78 pt tall measures 1683.78, not 1684.**
     ///
     /// The literal regression pin for the defect above. Separate from the
     /// property test because a future change that broke the property in the
@@ -537,7 +537,7 @@ mod tests {
     /// `viewer::page_extent_pts`'s callers rely on when they reject a page
     /// rather than dividing by its size.
     ///
-    /// ★ Built by struct literal, **not** by `Rect::from_corners`, which
+    /// Built by struct literal, **not** by `Rect::from_corners`, which
     /// normalises: a crop box arrives here as `pdfcer_core` parsed it, and a
     /// file whose `/CropBox` has its corners the wrong way round is exactly
     /// the case worth pinning. Writing the test through the normalising
@@ -557,10 +557,10 @@ mod tests {
     }
 
     // =======================================================================
-    // ★★★ O174 — the calibration against the OTHER SIDE of the boundary
+    // O174 — the calibration against the OTHER SIDE of the boundary
     // =======================================================================
 
-    /// ★★★ **The engine rasterizes the rectangle the canvas asked for** — on
+    /// **The engine rasterizes the rectangle the canvas asked for** — on
     /// every rotation, and on a crop box that does not start at the origin.
     ///
     /// # Why this test and not another round trip
@@ -580,7 +580,7 @@ mod tests {
     /// from. Anything else means the operator is being shown a different part
     /// of his drawing from the one he is pointing at.
     ///
-    /// ★ Asserted at `scale = 1`, where device space **is** canvas space. The
+    /// Asserted at `scale = 1`, where device space **is** canvas space. The
     /// engine's `x0`/`y0` are the region's left and top edges in page-device
     /// space, and `width`/`height` its size there, so the comparison needs no
     /// arithmetic of its own — which is the point, since arithmetic in a test
@@ -600,7 +600,7 @@ mod tests {
             // converted.
             let (qx0, qy0, qx1, qy1) = super::super::strategy::region_for(visible);
 
-            // ★ Half a pixel. The engine floors and ceils its device corners
+            // Half a pixel. The engine floors and ceils its device corners
             // to whole pixels, so an exact conversion still lands within one;
             // the defect this test exists for is off by hundreds.
             let tol = 1.0_f64;
@@ -627,7 +627,7 @@ mod tests {
         }
     }
 
-    /// ★★ **The two conversions are inverses on every rotation**, which is the
+    /// **The two conversions are inverses on every rotation**, which is the
     /// property `canvas::present` depends on once the engine agrees about
     /// *which* rectangle is being drawn.
     ///
@@ -667,7 +667,7 @@ mod tests {
         }
     }
 
-    /// ★★ **A turned page's region is inside the page it belongs to.**
+    /// **A turned page's region is inside the page it belongs to.**
     ///
     /// The cheapest statement of O174 and the one that needs no engine call: a
     /// window in the middle of the canvas must map to a rectangle inside the
@@ -690,7 +690,7 @@ mod tests {
         );
     }
 
-    /// ★ **The rotation is not a no-op** — a guard against a future
+    /// **The rotation is not a no-op** — a guard against a future
     /// "simplification" that deletes the axis swap because two of the four
     /// arms look alike.
     #[test]
@@ -713,7 +713,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The y flip happens, and in the right direction.**
+    /// **The y flip happens, and in the right direction.**
     ///
     /// Looking at the TOP of the page must ask for the page's HIGH y in PDF
     /// space. A missed flip shows the opposite end of the sheet, which at deep
@@ -735,7 +735,7 @@ mod tests {
         );
     }
 
-    /// ★ **The screen rect may extend past the page's own**, because the region
+    /// **The screen rect may extend past the page's own**, because the region
     /// carries overscan. Clamping it would stretch the texture, so this pins
     /// that it is left alone.
     #[test]
@@ -751,10 +751,10 @@ mod tests {
     }
 
     // =======================================================================
-    // ★★★ Where the SHARP picture ends and the blurry one begins
+    // Where the SHARP picture ends and the blurry one begins
     // =======================================================================
 
-    /// ★★★ **The sharp raster covers the window, on every side, at every phase
+    /// **The sharp raster covers the window, on every side, at every phase
     /// of the snap grid** — the operator's report of 2026-09-04.
     ///
     /// > *"the canvas does a fading around the edges on stuff shown at the
@@ -775,7 +775,7 @@ mod tests {
     /// | [`page_region`] (which calls `region_for`) | the PDF-space rect that will be rasterized |
     /// | [`region_on_screen`] | `paint_rect` — where that raster lands |
     ///
-    /// ★★ The y flip lives in the middle of that chain and is the reason this
+    /// The y flip lives in the middle of that chain and is the reason this
     /// test is worth writing separately. `region_for` snaps in canvas space,
     /// y-**down**; `page_region` then flips to PDF space, y-**up**; and
     /// `region_on_screen` flips back. A margin that is generous on the snapped
@@ -784,7 +784,7 @@ mod tests {
     /// only a test that composes all three can say which edge of the operator's
     /// window is the starved one.
     ///
-    /// ★ Since O174 the chain also crosses a rotation, so this runs on **every**
+    /// Since O174 the chain also crosses a rotation, so this runs on **every**
     /// frame rather than on an upright Letter page alone: a starved edge that
     /// depended on the axis swap would otherwise be invisible here.
     ///
@@ -850,7 +850,7 @@ mod tests {
                 }
             }
             assert!(
-                // ★ `0.24`, a little under the quarter the snap can guarantee —
+                // `0.24`, a little under the quarter the snap can guarantee —
                 // this chain crosses `f32` twice (the page's screen rect and the
                 // returned `egui::Rect`) at a magnitude of ~19,000 px, so a few
                 // ULPs of slack is honest rather than lax. What the threshold
@@ -868,7 +868,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **The deep placement stays exact where the shallow one cannot.**
+    /// **The deep placement stays exact where the shallow one cannot.**
     ///
     /// At four billion percent the page's own screen rect has a magnitude of
     /// ~10^12 px, where `f32`'s spacing is 131,072 px — coarser than the whole
@@ -876,7 +876,7 @@ mod tests {
     /// returns is correct to a fraction of a pixel.
     ///
     /// Asserted by placing the anchor ON the region's own canvas-space corner:
-    /// the answer must then be the viewport origin exactly, at any zoom. ★ The
+    /// the answer must then be the viewport origin exactly, at any zoom. The
     /// anchor is seeded through [`PageFrame::canvas_box_of`] rather than by
     /// hand, because after O174 "the region's corner in canvas space" is a
     /// rotation away from its `llx`/`ury` and a hand-written seed would only be

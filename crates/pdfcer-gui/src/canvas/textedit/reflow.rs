@@ -17,7 +17,7 @@ use crate::app::state::OpenDoc;
 /// are one answer here (*"there is no paragraph to reflow"*) and are told apart
 /// by the caller only insofar as it says so.
 ///
-/// ★ The run index is the SAME integer in both recognitions — both recognise
+/// The run index is the SAME integer in both recognitions — both recognise
 /// one extraction, and `BlockRecognitionOptions` groups runs into blocks
 /// without renumbering the runs. So asking the relaxed model
 /// `block_at(run)` still asks *"which paragraph is the operator's run in"*.
@@ -25,7 +25,7 @@ use crate::app::state::OpenDoc;
 /// engine will read it in.
 #[must_use]
 pub fn block_of_run(doc: &OpenDoc, page_index: usize, run: usize) -> Option<usize> {
-    // ★ `with_provenance(true)`, which `reflow_block` requires by name — it
+    // `with_provenance(true)`, which `reflow_block` requires by name — it
     // answers `ReflowApplyError::NoProvenance` without it. The extraction
     // options are otherwise the operator's own, so the runs this addresses are
     // segmented exactly as the runs the canvas paints. Both facts are now
@@ -38,7 +38,7 @@ pub fn block_of_run(doc: &OpenDoc, page_index: usize, run: usize) -> Option<usiz
 
 #[cfg(test)]
 mod tests {
-    /// ★★ **The recognition is the one the ENGINE will index the answer in.**
+    /// **The recognition is the one the ENGINE will index the answer in.**
     ///
     /// A source assertion, and the WEAKER of the two instruments in this module
     /// — the behavioural one below is the real check and should be read first.
@@ -60,7 +60,7 @@ mod tests {
     #[test]
     fn the_block_is_numbered_the_way_the_engine_will_read_it() {
         let source = include_str!("reflow.rs");
-        // ★ The needle is BUILT rather than written, and it has to be: a
+        // The needle is BUILT rather than written, and it has to be: a
         // literal here appears in this very file, so the scan would match its
         // own assertion and pass against wrong code. **A source scan cannot
         // contain its own needle** — the same trap `typing-guard-exempt:
@@ -70,7 +70,7 @@ mod tests {
             source.contains(&engines),
             "the block lookup no longer numbers its answer the way `reflow_block` reads it"
         );
-        // ★★ The negative targets the CALL, not the name. The name appears in
+        // The negative targets the CALL, not the name. The name appears in
         // this module's own header, in the quoted argument that got this wrong
         // — an assertion on the bare string would fail on the documentation
         // that prevents the mistake, which is the shape where a test punishes
@@ -86,7 +86,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **THE BEHAVIOURAL ONE: the index this returns must be an index the
+    /// **THE BEHAVIOURAL ONE: the index this returns must be an index the
     /// engine accepts, on a fixture that is in this repository.**
     ///
     ///
@@ -106,14 +106,14 @@ mod tests {
     /// answer is proved to be rejected, and the right answer is proved not to
     /// be rejected *for that reason*.
     ///
-    /// ★ The literals `3` and `2` are asserted rather than derived. They are
+    /// The literals `3` and `2` are asserted rather than derived. They are
     /// the calibration: if the engine's recogniser changes so the two configs
     /// agree on this fixture, this test goes red saying so, instead of quietly
     /// becoming a test that cannot distinguish the answers — which is exactly
     /// what `ui-verify`'s `reflowing_a_paragraph_rewraps_it` had become on
     /// `fixtures/paragraph.pdf`, where both recognitions say *block 0 of 1*.
     ///
-    /// ★★ The right-hand side is built from [`reflow_recognition_options`], the
+    /// The right-hand side is built from [`reflow_recognition_options`], the
     /// engine's own published function — the same one `reflow_block` calls
     /// internally. An oracle taken from the system under test needs
     /// independent calibration, and the calibration is the round trip below:
@@ -132,7 +132,7 @@ mod tests {
             "the fixture is missing at {}. Regenerate it: python tools/gen-textedit-fixtures.py",
             path.display()
         );
-        // ★ Three independent sessions over one file: the `OpenDoc` the shell
+        // Three independent sessions over one file: the `OpenDoc` the shell
         // reads through, and one fresh session per round trip below. They must
         // not share, because `reflow_block` MUTATES on success and a second
         // question asked of a mutated session is a question about a different

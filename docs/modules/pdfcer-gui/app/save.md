@@ -37,7 +37,7 @@ not to fall back to a full rewrite — the engine already refuses a full
 rewrite by name (`WriteError::HybridFullRewrite`) and points at incremental
 as the supported path, which is the same posture from the other side.
 
-★ **The exact width of that refusal, which is narrower than it sounds.**
+**The exact width of that refusal, which is narrower than it sounds.**
 `save_full` refuses only a hybrid whose `/XRefStm` **does not parse** — the
 file says it hides objects and pdfcer cannot tell which. Ordinary hybrid
 files, which is most of what Microsoft Office exports, rewrite fine. The
@@ -45,7 +45,7 @@ wide refusal — any hybrid at all — stands in `save_full_encrypted` and
 `save_full_decrypted`, so **adding or removing encryption refuses every
 hybrid**. The posture being cited here is the same either way.
 
-### ★★★ 1.1 …EXCEPT while a redaction is staged
+### 1.1 …EXCEPT while a redaction is staged
 
 There is exactly one state in which this module writes a **single-revision
 full rewrite** instead, and it is not a fallback: a staged redaction.
@@ -98,7 +98,7 @@ add out of symmetry:
 | bump `edit_epoch` | see §3 — it would throw away the decomposition, the page-text cache and any live disclosure to record that **nothing changed** |
 | `page_texture = None` | the page on screen is still correct; a re-raster would be work with no cause |
 
-## 3. ★ What happens to the edit epoch and the dirty state: **nothing**,
+## 3. What happens to the edit epoch and the dirty state: **nothing**,
    in both directions
 
 This is the part that is easy to get wrong in the tidy-looking direction, so
@@ -204,7 +204,7 @@ the bar; `check-ui-strings.sh`'s exclusion 3 says in as many words that a
 ruling for a dismissed Open — the operator changed their mind, and that is a
 complete and correct outcome that must not put a line anywhere.
 
-## 6. ★★★ What a save says about a DIGITAL SIGNATURE
+## 6. What a save says about a DIGITAL SIGNATURE
 
 Saying nothing is the failure this section exists to prevent. A structural
 edit followed by `Ctrl+S` writes a revision over a signed document, and a

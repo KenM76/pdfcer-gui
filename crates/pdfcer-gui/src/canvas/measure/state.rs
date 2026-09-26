@@ -211,7 +211,7 @@ impl MeasureState {
     /// **Bring this state into line with the armed [`MeasureKind`], discarding
     /// any in-progress gesture if the kind actually changed.**
     ///
-    /// # ★ Why this exists, and the collision it resolves
+    /// # Why this exists, and the collision it resolves
     ///
     /// The old shell had **two** axes and this one has **one**. There, the
     /// operator chose a `CanvasTool` (`MeasureLinear` / `MeasureCircular` /
@@ -300,7 +300,7 @@ impl MeasureState {
 
     /// Whether ANY tool has a discardable in-progress gesture.
     ///
-    /// # ★★ This function is read by more than the Escape key, and forgetting
+    /// # This function is read by more than the Escape key, and forgetting
     /// that shipped a tool with NO PREVIEW
     ///
     /// Its doc comment used to say only *"drives the two-stage Escape's
@@ -415,7 +415,7 @@ mod tests {
         assert_eq!(st.snap_cycle, 0);
     }
 
-    /// ★ Switching pick mode discards whatever pick was in progress — the
+    /// Switching pick mode discards whatever pick was in progress — the
     /// other mode cannot interpret it, and carrying it over would surface as
     /// a strange result on the operator's NEXT click rather than as an error.
     #[test]
@@ -458,7 +458,7 @@ mod tests {
     // `set_kind` — the axis this shell actually has
     // -----------------------------------------------------------------
 
-    /// ★ **Switching kind discards a pick in progress**, which is the whole
+    /// **Switching kind discards a pick in progress**, which is the whole
     /// reason [`MeasureState::set_kind`] exists.
     ///
     /// The failure it prevents is the one the original's docs warn about in
@@ -501,7 +501,7 @@ mod tests {
         assert_eq!(st.page_index, 3);
         assert!(!st.gesture_in_progress());
     }
-    /// ★★ **Every pick machine is counted as a gesture in progress.**
+    /// **Every pick machine is counted as a gesture in progress.**
     ///
     ///
     /// # Why this is shaped as one sub-test per FIELD

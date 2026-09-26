@@ -14,17 +14,17 @@ use crate::trace::Trace;
 
 /// The commands rung on startup, in order, one per frame.
 ///
-/// ★ The list form of `PDFCER_DIAG_INVOKE`, which exists because arming a form
+/// The list form of `PDFCER_DIAG_INVOKE`, which exists because arming a form
 /// tool takes two commands: the arm declines without `edit_content`, so Edit
 /// mode has to be entered first. Using it here rather than clicking a mode
 /// segment also removes a whole class of flake from this check — a mode segment
 /// click that misses is a failure about the ribbon, not about forms.
 ///
-/// ★★★ **`file.properties` is in the middle of the list, and phases D–F cannot
+/// **`file.properties` is in the middle of the list, and phases D–F cannot
 /// run without it.** Edit mode's default dock puts Properties in a TABBED stack
 /// with Comments, Forms, Redact, Dimension groups and Attachments
 /// (`app::modes::defaults`), and a tabbed stack draws only its **active** tab.
-/// ★★ If Properties is not the active tab then
+/// If Properties is not the active tab then
 /// `panels::properties::formfield::section` never runs on a single frame, no
 /// `properties.form_field` region is ever declared, and phase D reports a
 /// properties pane that "did not draw" about a pane that was never asked to
@@ -32,7 +32,7 @@ use crate::trace::Trace;
 /// the panel and brings it to the front of whatever stack holds it, from any
 /// mode (`app::tests` asserts exactly that), so ringing it is idempotent.
 ///
-/// ★ It goes AFTER `mode.edit`, because a mode change re-applies that mode's
+/// It goes AFTER `mode.edit`, because a mode change re-applies that mode's
 /// default arrangement and would undo it, and BEFORE `edit.form_text_field`, so
 /// that nothing runs after the tool is armed that could put it down.
 const INVOKE: &str = "mode.edit,file.properties,edit.form_text_field";
@@ -50,7 +50,7 @@ const AUTHORED: &str = "add-form-field";
 const SELECTED: &str = "form-field-selected";
 /// The census line naming every **selectable** widget, in canvas space.
 ///
-/// ★ `form-target`, not `form-box`. The two censuses describe different sets
+/// `form-target`, not `form-box`. The two censuses describe different sets
 /// and the difference is exactly what form authoring added: `form-box` lists
 /// what a click can FILL, which excludes a drop-down, a push button and any
 /// widget with no appearance. Aiming at that list would make this check unable
@@ -59,7 +59,7 @@ const SELECTED: &str = "form-field-selected";
 const BOX_LINE: &str = "form-target";
 /// The properties section's published region.
 const PROPERTIES_REGION: &str = "properties.form_field";
-/// ★★★ **A window tall enough that a form field's properties fit in the
+/// **A window tall enough that a form field's properties fit in the
 /// Properties pane.**
 ///
 /// The harness's default window gives the Properties panel about **180 points**
@@ -68,7 +68,7 @@ const PROPERTIES_REGION: &str = "properties.form_field";
 /// the read-only facts, the rename box, seven editable properties, the two
 /// delete buttons, and the box's own four numbers.
 ///
-/// ★★ **That is a real finding about the product and it is recorded here rather
+/// **That is a real finding about the product and it is recorded here rather
 /// than absorbed.** An operator on a 1,100 × 800 window has to scroll a
 /// 180-point window through 450 points of pane to reach the controls that move
 /// a box, and *"I clicked the field and there is nothing there"* is what that
@@ -85,7 +85,7 @@ const PROPERTIES_REGION: &str = "properties.form_field";
 /// makes it need fewer notches, not none, and on the display this is driven on
 /// it needs them all. The measurement below says why the room cannot be had.
 ///
-/// # ★★★ A viewport is a request; a PLACED window is an arithmetic obligation
+/// # A viewport is a request; a PLACED window is an arithmetic obligation
 ///
 /// `PDFCER_DIAG_VIEWPORT` states a size, not a position:
 /// `launch::Session::place` moves **every** launched window to desktop
@@ -95,7 +95,7 @@ const PROPERTIES_REGION: &str = "properties.form_field";
 /// the far edge of the window off the screen, which is precisely where the
 /// Properties panel lives.
 ///
-/// ★★★ **The consequence is invisible and total.** `SetCursorPos` **clamps** an
+/// **The consequence is invisible and total.** `SetCursorPos` **clamps** an
 /// off-desktop coordinate rather than refusing it, so a wheel aimed past the
 /// right edge still lands over the panel and scrolls, and the step looks
 /// healthy — while a click aimed past the bottom edge lands a few points above
@@ -110,7 +110,7 @@ const PROPERTIES_REGION: &str = "properties.form_field";
 /// spare. **A margin of one pixel is a margin that a theme change takes
 /// away.**
 ///
-/// # ★★ And the height it CAN get is still not enough, which is the real point
+/// # And the height it CAN get is still not enough, which is the real point
 ///
 /// 1000 points of window is ~400 points of Properties slot once the tab bar,
 /// the Objects panel above it and the status bar have taken theirs — against
@@ -130,7 +130,7 @@ const VIEWPORT: &str = "0,0,1100,980";
 const PANE_REGION: &str = "dock.body.file.properties";
 /// The editable-properties section, reached through `EditSession::edit_field`.
 ///
-/// ★★★ Its own region, distinct from [`PROPERTIES_REGION`], and the separation
+/// Its own region, distinct from [`PROPERTIES_REGION`], and the separation
 /// is the point. The section above it — the read-only facts, the rename box,
 /// the delete buttons — draws perfectly well on a build whose pane is entirely
 /// READ-ONLY, so a check asserting only `properties.form_field` passes there,
@@ -146,7 +146,7 @@ const REQUIRED_REGION: &str = "properties.field_edit.required";
 /// The Default value box's own region — `/DV`, the value a Reset button puts
 /// back.
 ///
-/// ★★ Asserted here rather than in a check of its own because the expensive
+/// Asserted here rather than in a check of its own because the expensive
 /// part is already paid: this check authors a text field, selects it, and
 /// scrolls the properties pane to its editable section. Adding a second launch
 /// to look at one more control in the same section would cost thirty seconds
@@ -160,7 +160,7 @@ const DEFAULT_VALUE_REGION: &str = "properties.field_edit.default_value";
 /// The Alignment chooser's own region — `/Q`, which end of the box the text
 /// sits against.
 ///
-/// ★ Asserted in the SAME late block as [`DEFAULT_VALUE_REGION`] and for the
+/// Asserted in the SAME late block as [`DEFAULT_VALUE_REGION`] and for the
 /// same reason: reaching it scrolls the pane, and anything that moves the pane
 /// belongs after every phase that clicks at a computed point. That ordering was
 /// learned the expensive way — see the block's own comment.
@@ -168,7 +168,7 @@ const ALIGNMENT_REGION: &str = "properties.field_edit.alignment";
 /// The `edit-field` label `vector_edit` writes when the change reached the
 /// engine.
 ///
-/// ★★ Named after the ENGINE verb, so the line says which crate did the work —
+/// Named after the ENGINE verb, so the line says which crate did the work —
 /// the convention `format-text` follows, and the one that was learned the hard
 /// way when a module's summary line and `vector_edit`'s label shared a name and
 /// a check read the wrong one.
@@ -177,7 +177,7 @@ const EDIT_APPLIED: &str = "edit-field";
 /// Properties panel's fold. `restyle_text` spends the same number looking for
 /// Bold, in the same panel, for the same reason.
 const SCROLL_ATTEMPTS: usize = 12;
-// ★★★ `properties.widget_edit` is deliberately NOT a constant here, and the
+// `properties.widget_edit` is deliberately NOT a constant here, and the
 // reason is a finding rather than tidiness.
 //
 // It was one, used as this step's scroll anchor, and the wheel went nowhere.
@@ -235,7 +235,7 @@ struct PlacedBox {
 
 /// Read the application's own census of where the form's boxes are.
 ///
-/// ★★ The application's numbers, not the fixture's. `canvas/forms.rs` publishes
+/// The application's numbers, not the fixture's. `canvas/forms.rs` publishes
 /// one line per widget precisely so a harness can aim at where the program says
 /// the box is; a check that computed the rect from the PDF would be asserting
 /// that two independent derivations agree, and would report a disagreement as a
@@ -262,7 +262,7 @@ fn placed_boxes(trace: &Trace) -> Vec<PlacedBox> {
         .collect()
 }
 
-// ★★★ The scroll-until-visible loop lives in `checks::driving` as `scroll_to`,
+// The scroll-until-visible loop lives in `checks::driving` as `scroll_to`,
 // not here, and every caller in this file uses it. **A rule stated twice is a
 // rule that drifts**: a hand-rolled copy keeps whatever mistake it was born
 // with while the shared helper is corrected, and a check that scrolls at the
@@ -334,7 +334,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.env
         .push((ACCEPT_ENV.0.to_owned(), ACCEPT_ENV.1.to_owned()));
-    // ★ See `VIEWPORT`: the default window's Properties slot is shorter than a
+    // See `VIEWPORT`: the default window's Properties slot is shorter than a
     // selected field's properties, which is a finding about the product and a
     // wrong subject for this check to fail on.
     if let Some(name) = ctx.profile.viewport_env {
@@ -407,7 +407,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         opened.get("kind"),
         opened.get("name")
     ));
-    // ★ The generated name is asserted non-empty because it is what makes the
+    // The generated name is asserted non-empty because it is what makes the
     // dialog acceptable: `is_authorable` refuses a blank one, so a naming bug
     // would make the seam below do nothing and the failure would read as "the
     // engine refused" rather than "the name was never generated".
@@ -433,7 +433,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- C: disarm, then click a field that already exists -----------------
     //
-    // ★ Escape first. The tool stays armed after a placement, exactly as a
+    // Escape first. The tool stays armed after a placement, exactly as a
     // markup pen does, so a second click without this would place a SECOND
     // field rather than select one — and the check would fail with a message
     // about selection when the cause was arming.
@@ -456,7 +456,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         existing.field, existing.centre.0, existing.centre.1
     ));
 
-    // ★★★ CLEAR THE SELECTION ON BLANK PAPER FIRST, AND ASSERT THAT IT
+    // CLEAR THE SELECTION ON BLANK PAPER FIRST, AND ASSERT THAT IT
     // CLEARED. `checks::formaim`'s header carries the whole finding.
     //
     // The field authored above is ALREADY SELECTED — `app::actions::forms`
@@ -500,7 +500,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(20);
 
     let trace = session.trace()?;
-    // ★ `field=` absent IS the cleared line: the application writes
+    // `field=` absent IS the cleared line: the application writes
     // `form-field-selected none`, with no key/value pairs at all, for a cleared
     // selection and `field=…` for every other one.
     if !trace.events(SELECTED).any(|l| l.get("field").is_none()) {
@@ -552,7 +552,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- D: and the properties section is actually on screen ---------------
     //
-    // ★ The region, not just the trace line. A selection that no panel drew is
+    // The region, not just the trace line. A selection that no panel drew is
     // the whole defect restated: the operator clicked, something was recorded,
     // and nothing appeared. This is the difference between "the model changed"
     // and "the operator can see it", and only the second is the feature.
@@ -572,13 +572,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- E: …and it lets the operator CHANGE something --------------------
     //
-    // ★★★ The assertion this check was missing for a day, and the day is the
+    // The assertion this check was missing for a day, and the day is the
     // argument for it. Steps A–D all passed on a build whose properties pane
     // was **read-only** and which told the operator, in shipped UI text, to
     // *"delete this field and place a new one"* — a destructive workaround for
     // a capability the engine already had. Every one of those steps was
     // asserting something true; none of them asked whether the pane could edit.
-    // ★★ SCROLL FOR IT, the way an operator would. Found by driving: the
+    // SCROLL FOR IT, the way an operator would. Found by driving: the
     // Properties panel is a `ScrollArea` whose dock slot is shorter than its
     // content, and on the operator's own drawing the form-field section runs
     // Name / Type / Page / Rename before it reaches anything editable — so the
@@ -590,7 +590,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // reporting "the controls are missing" about controls that are present and
     // one notch away.
     //
-    // ★★★ IT SCROLLS AT THE DOCK PANE, NOT AT THE SECTION. **Content rects are
+    // IT SCROLLS AT THE DOCK PANE, NOT AT THE SECTION. **Content rects are
     // not scroll anchors** — `reaching::scroll_to`'s doc carries the same rule
     // with the three anchors that fail it.
     //
@@ -604,7 +604,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // [`PANE_REGION`] is the dock's own body rect, which is the visible slot by
     // construction and therefore always inside the window.
     //
-    // ★★ And the OTHER remedy in this check does not work either, which is why
+    // And the OTHER remedy in this check does not work either, which is why
     // this one has to. [`VIEWPORT`] asks for a window big enough to hold the
     // pane; no window this display can show is big enough — the section is
     // ~1,100 points of content and the slot is ~400 whatever the window does.
@@ -642,7 +642,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
 
-    // ★★ This block used to FAIL when `EDITABLE_REGION` was absent while a
+    // This block used to FAIL when `EDITABLE_REGION` was absent while a
     // control inside it was present, on the reasoning that it *"should be
     // impossible — the section publishes its own rect after its controls."*
     //
@@ -669,7 +669,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- F: press it, and the change reaches the document ------------------
     //
-    // ★★ A checkbox, deliberately, and not the tooltip box or the max-length
+    // A checkbox, deliberately, and not the tooltip box or the max-length
     // spinner. It is **one click with a binary outcome**: a text box needs
     // typing and a focus loss to commit, and a spinner needs a scrub that has
     // to be reconciled against a speed constant — either of which makes a
@@ -677,7 +677,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // The same argument `restyle_text` makes for pressing Bold rather than
     // scrubbing the size.
     //
-    // ★ It also toggles a real flag on a real field and leaves it toggled.
+    // It also toggles a real flag on a real field and leaves it toggled.
     // That is a side effect on the fixture in `--out`, not on the operator's
     // file — ⚠ which is why the suite must always be driven against a COPY of
     // the exe and a COPY of the document, never the published build.
@@ -707,20 +707,20 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- G: the BOX moves ---------------------------------------------------
     //
-    // ★★★ The widget half, and it is a different verb with a different scope.
+    // The widget half, and it is a different verb with a different scope.
     // `edit_field` writes one property and every placement follows;
     // `edit_widget` writes one placement. A check that exercised only the first
     // would pass on a build where the second was never wired, which is the
     // state this shell was in an hour before this was written.
     //
-    // ★ Scrubbed, not typed. `geometry_fields`' own header argues for a scrub
+    // Scrubbed, not typed. `geometry_fields`' own header argues for a scrub
     // over a double-click-and-type: typing into an `egui::DragValue` needs a
     // focus dance the harness has no reliable way to drive, while a horizontal
     // drag is one gesture. The arithmetic does not have to be reconciled here
     // because the assertion is *"a move reached the document"*, not *"it moved
     // by exactly N points"* — the engine's own tests own the second question,
     // and a check that asserted it would be pinning `SPEED`.
-    // ★ Scroll again. The widget-scoped controls sit below the field-scoped
+    // Scroll again. The widget-scoped controls sit below the field-scoped
     // ones, which were themselves below the fold — so one scroll reaches the
     // first set and not the second, and the first run of this step reported the
     // box controls missing while `properties.widget_edit` was in the very same
@@ -736,7 +736,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         report,
     )?;
     let trace = session.trace()?;
-    // ★ The rect is deliberately discarded and only its PRESENCE is used: the
+    // The rect is deliberately discarded and only its PRESENCE is used: the
     // spinner is re-found after the Apply scroll below, because scrolling for
     // Apply moves it. Named `_` so that is a statement rather than an oversight.
     let Some(_) = spinner else {
@@ -756,7 +756,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    // ★ Apply sits below the four spinners, so reaching them is not reaching
+    // Apply sits below the four spinners, so reaching them is not reaching
     // it — the same one-more-notch lesson this file has now learned three
     // times, at three different depths of one pane. Scrolled for by the same
     // helper rather than assumed.
@@ -777,7 +777,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         ))
     })?;
-    // ★ Re-find the spinner AFTER that scroll. The rect read before it names a
+    // Re-find the spinner AFTER that scroll. The rect read before it names a
     // position the content has since left, and a drag aimed at it lands on
     // whatever is there now — the staleness `D:/dev/rag/egui/` records as the
     // commonest harness defect in a scrolled panel.
@@ -790,7 +790,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
 
-    // ★★ Apply must be GREYED before anything is typed — R9's temporarily
+    // Apply must be GREYED before anything is typed — R9's temporarily
     // unavailable case, and the assertion that a driven check can make where a
     // unit test cannot: it is the join between `WidgetPropsDraft::differs` and
     // the button's `add_enabled`. A build whose epsilon was wrong would render
@@ -819,7 +819,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("Apply is dead until a number moves");
 
     // Now move it, and press.
-    // ★ `offset_from`, not arithmetic on a `ScreenPoint`'s fields — `coords`'
+    // `offset_from`, not arithmetic on a `ScreenPoint`'s fields — `coords`'
     // standing rule is that *a coordinate is produced by a conversion and never
     // assembled*, and this is the one sanctioned displacement: a drag in screen
     // pixels from a point the application itself published.
@@ -863,7 +863,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         line.unwrap_or_default()
     ));
 
-    // ★★★ THE DEFAULT VALUE BOX IS ASSERTED LAST, AND THE ORDER IS THE POINT.
+    // THE DEFAULT VALUE BOX IS ASSERTED LAST, AND THE ORDER IS THE POINT.
     //
     // Reaching this box takes five more scroll notches than reaching Required —
     // max-length and comb sit between them — and the phase that presses
@@ -874,7 +874,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // is; placed beside the control it reads about, it silently pushes the next
     // phase's target off-screen and that phase then reports a confident,
     // detailed, entirely wrong defect against the application.
-    // ★★★ THE DEFAULT VALUE BOX — `/DV`, the value a Reset button restores.
+    // THE DEFAULT VALUE BOX — `/DV`, the value a Reset button restores.
     //
     // Asserted from the same trace the Required row came from, because the two
     // are drawn by the same call: if `fieldedit::section` ran far enough to
@@ -886,7 +886,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // `/ResetForm` button, and until `/DV` could be written, Reset emptied
     // every field on any form pdfcer made — §12.7.5.3 behaving correctly with
     // nothing to restore. Without this box that is still true.
-    // ★★ Scrolled to, not merely looked for. The box sits BELOW Required in
+    // Scrolled to, not merely looked for. The box sits BELOW Required in
     // the same section — max-length and comb come between them — so on any
     // realistic pane height it is off-screen when Required is not, and
     // `ui_rect_visible` correctly withholds it. A check that read the trace
@@ -920,7 +920,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          button on a pdfcer-authored form has something to put back"
     ));
 
-    // ★★ The Alignment chooser, in the same late block and for the same reason.
+    // The Alignment chooser, in the same late block and for the same reason.
     //
     // ⇒ It is asserted SECOND because it is drawn second: scrolling for the
     // default value has already brought the pane most of the way, so this

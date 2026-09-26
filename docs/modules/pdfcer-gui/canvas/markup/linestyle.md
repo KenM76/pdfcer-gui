@@ -14,7 +14,7 @@ request with three halves rather than the one it asked for:
 | **restyle** | `MarkupStyle::dash: Option<StyleEdit<BorderDash>>` | the Format ▸ Markup chooser and the Properties panel row |
 
 
-## ★★★ Why one module and not three controls
+## Why one module and not three controls
 
 Because *what a dash is* has to be spelled once. Three surfaces offer this —
 the pen that authors, the ribbon band that restyles, and the Properties panel
@@ -29,7 +29,7 @@ there is only one list.
 It also holds the **chooser widget** itself, so the three surfaces cannot
 come to disagree about what the entries are *called* either.
 
-## ★★ It is a new file rather than more of `pen.rs`, and that is R2
+## It is a new file rather than more of `pen.rs`, and that is R2
 
 `pen.rs` stood at 1,010 lines. This subject is a type, a reading of a
 dictionary key, a widget and their tests, and every one of those choices

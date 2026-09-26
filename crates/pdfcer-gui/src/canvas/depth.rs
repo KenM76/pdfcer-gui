@@ -12,7 +12,7 @@ const KEY: &str = "pdfcer-canvas-depth"; // ui-text-exempt: internal memory id, 
 /// **which object it was about**.
 ///
 /// The third field is what makes this self-invalidating — see [`taken`].
-/// ★ **No `Default`, deliberately.** A defaulted `Depth` would have to name
+/// **No `Default`, deliberately.** A defaulted `Depth` would have to name
 /// some target, and every number in `TargetId`'s two index spaces is a real,
 /// addressable object — so the default would be a claim about `objects[0]`
 /// rather than an absence. `taken` already answers `None` for "nothing to
@@ -27,7 +27,7 @@ pub struct Depth {
     page: usize,
     /// The target the click selected.
     ///
-    /// ★ A [`TargetId`](crate::canvas::target::TargetId) rather than a bare
+    /// A [`TargetId`](crate::canvas::target::TargetId) rather than a bare
     /// index, and that is load-bearing rather than tidy: a page has **two**
     /// index spaces now — the page's own objects and the leaves inside its
     /// form XObjects — and `7` occurs in both. A bare number would let a depth
@@ -61,7 +61,7 @@ pub fn remember(
     });
 }
 
-/// ★★ **What the last click chose, but only if it was about THIS selection.**
+/// **What the last click chose, but only if it was about THIS selection.**
 ///
 /// # Why it validates rather than trusting a caller to forget
 ///
@@ -121,7 +121,7 @@ mod tests {
         assert_eq!((got.taken, got.of), (2, 5));
     }
 
-    /// ★★★ **A selection this depth was not measured for claims nothing** —
+    /// **A selection this depth was not measured for claims nothing** —
     /// and nobody had to remember to clear it.
     ///
     /// The four routes that change a selection without a click are an edit

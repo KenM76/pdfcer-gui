@@ -8,7 +8,7 @@
 //! measures only exists inside one. Nothing here does, and a windowed harness
 //! would add a second thing that can fail without measuring anything more.
 //!
-//! # ★ The fuzz is the point, and it counts what it swept
+//! # The fuzz is the point, and it counts what it swept
 //!
 //! [`every_drop_leaves_a_layout_the_dock_can_draw`] generates layouts and
 //! targets — including out-of-range ones — and asserts the invariants after
@@ -307,7 +307,7 @@ fn a_floating_panel_dropped_into_the_dock_stops_floating() {
 /// [`super::model::DockLayout::take_panel`]; this is the rule that delegation
 /// must not have changed.
 ///
-/// ★ **The closed tab is in the middle, and that is the whole test.** Closing
+/// **The closed tab is in the middle, and that is the whole test.** Closing
 /// the *last* tab selects its predecessor whether the rule exists or not,
 /// because [`super::model::DockLayout::normalize`] clamps a stale index to the
 /// end of the list and the end of the list is the predecessor. Only a tab with

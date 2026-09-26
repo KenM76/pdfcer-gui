@@ -15,7 +15,7 @@ pub const REGION_SAVE: &str = "unsaved.save_copy"; // ui-text-exempt: trace regi
 
 /// The **Save all** control, published only while it is drawn.
 ///
-/// ★ Its absence in the trace is the assertion a driven check wants: this
+/// Its absence in the trace is the assertion a driven check wants: this
 /// button is drawn if and only if more than one document is dirty, so a run
 /// with one dirty document must show no such region at all.
 pub const REGION_SAVE_ALL: &str = "unsaved.save_all"; // ui-text-exempt: trace region name, never displayed
@@ -27,7 +27,7 @@ pub const REGION_SAVE_ALL: &str = "unsaved.save_all"; // ui-text-exempt: trace r
 /// them apart would pass on a build that had silently swapped one for the
 /// other.
 ///
-/// ★ Published only on the frames the button is DRAWN, which is what lets a
+/// Published only on the frames the button is DRAWN, which is what lets a
 /// driven check tell "this document has never been saved, so there is no Save
 /// button" from "the Save button is off screen" — two states with the same
 /// screenshot, and a distinction this project has twice had to make the hard
@@ -40,7 +40,7 @@ pub const REGION_CANCEL: &str = "unsaved.cancel"; // ui-text-exempt: trace regio
 
 /// What the operator asked for, held until they have answered the question.
 ///
-/// # ★ Four variants because four `Action`s replace the open document
+/// # Four variants because four `Action`s replace the open document
 ///
 /// Not "close", which is how this would have been built if it had been written
 /// from the tooltip that exposed the defect. `crate::app::lifecycle`'s
@@ -81,7 +81,7 @@ pub enum PendingIntent {
         /// Page height in points.
         height_pt: f64,
     },
-    /// ★★★ `Action::RereadWithDuplicateKeys` — **the fifth variant, and the
+    /// `Action::RereadWithDuplicateKeys` — **the fifth variant, and the
     /// second one anything constructs.**
     ///
     /// It is the odd one out in this enum and worth saying how: the four above
@@ -92,7 +92,7 @@ pub enum PendingIntent {
     /// empty undo stack — which is precisely why it belongs here rather than
     /// beside the harmless commands.
     ///
-    /// ★ It carries the [`pdfcer_core::document::LoadOptions`] across the
+    /// It carries the [`pdfcer_core::document::LoadOptions`] across the
     /// dialog rather than re-deriving them on the other side. The operator
     /// chose a reading and then answered a question about saving; the answer
     /// must not be able to change which reading they get.
@@ -103,7 +103,7 @@ pub enum PendingIntent {
 }
 
 // ---------------------------------------------------------------------------
-// ★★ THREE OF THE FOUR VARIANTS ARE CURRENTLY UNCONSTRUCTED, AND THAT IS
+// THREE OF THE FOUR VARIANTS ARE CURRENTLY UNCONSTRUCTED, AND THAT IS
 //    RECORDED RATHER THAN DELETED.
 //
 //
@@ -135,7 +135,7 @@ impl PendingIntent {
             Self::Close => t::question_close(),
             Self::Open(_) => t::question_open(),
             Self::New | Self::NewSized { .. } => t::question_new(),
-            // ★ Its own sentence, not `question_close`'s. An operator who
+            // Its own sentence, not `question_close`'s. An operator who
             // pressed *use the first value* and is asked about **closing** will
             // read the prompt as being about a control they did not touch.
             Self::Reread { .. } => t::question_reread(),
@@ -144,7 +144,7 @@ impl PendingIntent {
 
     /// The label of the button that goes ahead without saving.
     ///
-    /// ★ Named for **what it does**, never *"Yes"* or *"OK"*. The standing
+    /// Named for **what it does**, never *"Yes"* or *"OK"*. The standing
     /// rule this project inherited: a destructive button says the destructive
     /// thing, so that an operator who reads only the buttons — which is most
     /// operators, most of the time — cannot get it wrong. *"Close without
@@ -164,7 +164,7 @@ impl PendingIntent {
 /// What the operator chose.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Outcome {
-    /// ★★★ **Write the file the operator opened, then resume** —
+    /// **Write the file the operator opened, then resume** —
     /// `OPERATOR_REQUESTS.md` O65.
     ///
     /// Offered only when the document has a file to be written over. Resumes
@@ -176,19 +176,19 @@ pub enum Outcome {
     SaveCopy,
     /// Go ahead and lose the edits.
     Discard,
-    /// ★★★ **Save every document with unsaved work, in place** —
+    /// **Save every document with unsaved work, in place** —
     /// `OPERATOR_REQUESTS.md` O102.
     ///
     /// The operator: *"have a save all button that saves all changed
     /// documents."* It is what makes the quit cycle bearable — without it,
     /// somebody with six dirty documents answers six questions.
     ///
-    /// ★★ **Offered only when more than one document is dirty.** With one, it
+    /// **Offered only when more than one document is dirty.** With one, it
     /// is the same act as [`Self::SaveInPlace`], and a second button meaning
     /// the same thing is one the operator has to stop and think about on a
     /// modal that is standing between them and their work.
     ///
-    /// ★ It saves **in place**, so it reaches only documents that have a file.
+    /// It saves **in place**, so it reaches only documents that have a file.
     /// A never-saved document needs a destination, which is a question only the
     /// operator can answer — the cycle asks about those individually
     /// afterwards, which is Word's behaviour and the only honest one.
@@ -205,14 +205,14 @@ pub struct UnsavedDialog {
     intent: PendingIntent,
     /// How many edits are at stake, for the sentence that says so.
     ///
-    /// ★ Captured at **open** time rather than read per frame, and the reason
+    /// Captured at **open** time rather than read per frame, and the reason
     /// is the dialog's own honesty: this window is the only thing on screen
     /// that can change the document (it cannot), so a live read could only ever
     /// return the same number — but capturing it makes the sentence a statement
     /// about the moment the operator was asked, which is what a confirmation
     /// dialog's text is *for*.
     edits: u64,
-    /// ★ **Whether this document has a file to save over**, captured at open
+    /// **Whether this document has a file to save over**, captured at open
     /// time from `app::save::has_a_file`.
     ///
     /// Decides whether the Save button is drawn at all. R9: a never-saved
@@ -222,7 +222,7 @@ pub struct UnsavedDialog {
     /// and the operator already has the control that fixes it, one button to
     /// the right.
     has_file: bool,
-    /// ★★ **How many documents are dirty**, so the *Save all* button knows
+    /// **How many documents are dirty**, so the *Save all* button knows
     /// whether it would do more than *Save*.
     ///
     /// Captured at open time, like [`Self::edits`] and for the same reason: it
@@ -246,7 +246,7 @@ impl UnsavedDialog {
     /// The same, told how many documents are dirty — the quit cycle's
     /// constructor.
     ///
-    /// ★ A second constructor rather than a parameter on the first, so that
+    /// A second constructor rather than a parameter on the first, so that
     /// every existing caller keeps saying what it means (*"this is about one
     /// document"*) without being edited, and the one caller that is part of a
     /// cycle says so. `new` delegates, so there is one initialiser.
@@ -269,7 +269,7 @@ impl UnsavedDialog {
 
     /// **Did the operator answer Cancel?**
     ///
-    /// ★ Read by the quit cycle. A Cancel parks no outcome — it closes the
+    /// Read by the quit cycle. A Cancel parks no outcome — it closes the
     /// window and nothing else — so `take_outcome` reports nothing, which is
     /// indistinguishable from *"they have not answered yet"*. The cycle needs
     /// the difference, or it re-asks on the next frame forever.
@@ -291,7 +291,7 @@ impl UnsavedDialog {
 
     /// **Whether an answer is parked here and has not been drained.**
     ///
-    /// ★★★ The twin of `signature::SignatureDialog::answered`, and it is here
+    /// The twin of `signature::SignatureDialog::answered`, and it is here
     /// because this window carries the **same latent defect** its neighbour
     /// shipped: [`Self::show`] answers `false` on the very frame a button is
     /// pressed, and its owner used to read that `false` as *"this dialog is
@@ -308,7 +308,7 @@ impl UnsavedDialog {
     /// Draw it. Returns `false` when it should close.
     pub fn show(&mut self, ctx: &egui::Context) -> bool {
         //
-        // ★ Still no `ScrollArea`, and the note that said so stands: this is
+        // Still no `ScrollArea`, and the note that said so stands: this is
         // the one dialog whose content is bounded by construction — three
         // buttons and at most four sentences — so the family of reach defects
         // cannot arise here, and adding a scroll region "for safety" would
@@ -338,13 +338,13 @@ impl UnsavedDialog {
         ui.label(t::edits_at_stake(self.edits));
         ui.add_space(8.0);
 
-        // ★ The buttons are in a fixed left-to-right order and the destructive
+        // The buttons are in a fixed left-to-right order and the destructive
         // one is NOT first. Save-a-copy, then discard, then cancel: the reading
         // order runs from the answer that loses nothing to the answer that
         // loses everything, which is the order every application the operator
         // uses puts them in.
         ui.horizontal(|ui| {
-            // ★★★ **Save, when there is a file to save over** — O65.
+            // **Save, when there is a file to save over** — O65.
             //
             // First, because it is the answer that loses nothing AND changes
             // nothing about where the operator's work lives. The order of this
@@ -364,14 +364,14 @@ impl UnsavedDialog {
                     self.outcome = Some(Outcome::SaveInPlace);
                 }
             }
-            // ★★★ **Save all** — `OPERATOR_REQUESTS.md` O102, and it is drawn
+            // **Save all** — `OPERATOR_REQUESTS.md` O102, and it is drawn
             // only when it would do more than the button to its left.
             //
             // Second, immediately after Save, because it is the same act at a
             // larger scope and the row's order is least-destructive-first. It
             // loses nothing, exactly as Save does.
             //
-            // ★ Absent rather than greyed on a single dirty document (R9): with
+            // Absent rather than greyed on a single dirty document (R9): with
             // one document the two buttons are the same act, and this is not a
             // *temporarily* unavailable control that a hover sentence could
             // explain — there is simply nothing else to save.
@@ -400,12 +400,12 @@ impl UnsavedDialog {
         });
 
         ui.add_space(8.0);
-        // ★★ The disclosure that makes the first button honest, and it is
+        // The disclosure that makes the first button honest, and it is
         // BELOW the buttons rather than above them on purpose: it is what an
         // operator needs after they have noticed the button says "a copy" and
         // wondered why, and putting it above would make three sentences stand
         // between the question and the answer.
-        // ★★★ **Which sentence, and it is decided by which BUTTONS are on
+        // **Which sentence, and it is decided by which BUTTONS are on
         // screen** — `OPERATOR_REQUESTS.md` O65.
         //
         // With one writing button the note explains what "a copy" means for
@@ -464,13 +464,13 @@ pub fn ask_for(status: &Status, intent: PendingIntent) -> Option<UnsavedDialog> 
     if !crate::app::save::has_unsaved_edits(doc) {
         return None;
     }
-    // ★ The count is measured from the last SAVE, not from zero. "You have 12
+    // The count is measured from the last SAVE, not from zero. "You have 12
     // unsaved changes" after saving eleven of them was a true count of the
     // wrong thing.
     Some(UnsavedDialog::new(
         intent,
         doc.edit_epoch.saturating_sub(doc.saved_epoch),
-        // ★ Whether a Save button is drawn at all — O65. `has_a_file` is the
+        // Whether a Save button is drawn at all — O65. `has_a_file` is the
         // same predicate `file.save` itself consults before deciding between
         // an overwrite and a picker, so the button offered here and the verb
         // behind it cannot disagree about whether there is a file.
@@ -548,7 +548,7 @@ mod tests {
         assert_eq!(d.take_outcome(), None, "it must not repeat");
     }
 
-    /// ★★★ **A parked answer is visible to the owner until it is drained, and
+    /// **A parked answer is visible to the owner until it is drained, and
     /// not after.**
     ///
     ///
@@ -575,7 +575,7 @@ mod tests {
     /// make the ✕ destructive, and the ✕ is the control an operator presses
     /// reflexively to make a surprise go away.
     ///
-    /// ★ The [`Self::answered`] half is what lets [`crate::dialogs::retire`]
+    /// The [`Self::answered`] half is what lets [`crate::dialogs::retire`]
     /// drop a dismissed window on the frame it closes rather than holding it
     /// open waiting for an answer that is never coming.
     #[test]

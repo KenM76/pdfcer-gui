@@ -13,7 +13,7 @@
 anywhere he pointed it; what it could not do was *move the document*, so the
 next `Ctrl+S` went back to the file he was trying to leave.
 
-# ★★★ Why the oracle is the ORIGINAL file's digest
+# Why the oracle is the ORIGINAL file's digest
 
 Every cheaper oracle passes against the defect this exists to catch.
 
@@ -28,7 +28,7 @@ is to **do another save and see which file moved.** So this check saves
 twice: once with Save As, once with `Ctrl+S`, and hashes the original both
 before and after.
 
-★★ A build that wrote the copy and stayed bound to the original passes the
+A build that wrote the copy and stayed bound to the original passes the
 first three rows above and **fails phase D**, because the original changes
 under it. That is a genuinely falsifying assertion rather than a confirming
 one, and it is the same shape `checks::ocr` phase E uses for the same reason.
@@ -46,7 +46,7 @@ Both files are in the run's own output directory: the fixture is **copied**
 there first, and the Save As destination is a sibling. The check writes only
 inside `--out`.
 
-★ The native picker is never opened. `PDFCER_DIAG_SAVE_PATH` supplies its
+The native picker is never opened. `PDFCER_DIAG_SAVE_PATH` supplies its
 answer, which is this project's established seam for a system dialog and is
 what makes phase B an assertion about **a file on disk** rather than about a
 button having been pressed.

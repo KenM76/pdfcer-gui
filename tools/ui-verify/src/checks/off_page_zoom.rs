@@ -17,7 +17,7 @@ use crate::report::CheckReport;
 /// Single-page display, then **100 %** — a property of the document rather than
 /// of the window, so the climb starts from the same place on every machine.
 ///
-/// ★★★ `mode.edit` is named FIRST, and it is not decoration. Since
+/// `mode.edit` is named FIRST, and it is not decoration. Since
 /// 2026-09-11 the display of off-sheet content is a per-mode preference and
 /// **Read ships with it OFF** — the operator's request: *"by default, read
 /// doesn't show off page items, review and edit do show off page items."*
@@ -67,7 +67,7 @@ const PAST_THE_OLD_CEILING: f64 = 1.5;
 
 /// The most wheel notches to roll before giving up.
 ///
-/// ★ A cap, not a count: the loop climbs until the calibrated target is
+/// A cap, not a count: the loop climbs until the calibrated target is
 /// reached. Hitting the cap is a SKIP, because a run that never got past the
 /// old ceiling has not tested anything — it is neither a pass nor evidence of a
 /// defect. One notch is about 1.223×, so this reaches roughly 4 × 10⁵ %.
@@ -159,7 +159,7 @@ const UNAVAILABLE_EVENT: &str = "canvas-unavailable";
 /// The reason field that means the strip's cull kept nothing.
 const NOTHING_VISIBLE: &str = "nothing-visible";
 
-/// ★★★ **A stalled climb is a FAIL when the canvas went blank, and a SKIP only
+/// **A stalled climb is a FAIL when the canvas went blank, and a SKIP only
 /// when it did not.**
 ///
 /// # Why this function exists at all
@@ -285,7 +285,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     report.artifact(session.trace_path().to_path_buf());
     session.settle(40);
-    // ★ Maximising makes this check HARDER, not easier: a wider viewport raises
+    // Maximising makes this check HARDER, not easier: a wider viewport raises
     // the old pasteboard's ceiling, and the calibration below follows it up. It
     // also gives the climb room to keep the anchor on screen.
     session.maximize();
@@ -348,7 +348,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         })?;
     let anchor = frame.to_screen(start);
 
-    // ★★ Where the trace stood BEFORE the first notch, so that if the climb
+    // Where the trace stood BEFORE the first notch, so that if the climb
     // stalls, `stall_verdict` looks only at what the climb itself provoked and
     // not at a `canvas-unavailable` written while the document was opening.
     let climb_mark = trace.mark();
@@ -364,7 +364,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let mut notches = 0usize;
     while now.zoom < target && notches < MAX_NOTCHES {
         driver.scroll_at_held(anchor, &[VK_CONTROL], 1, 1)?;
-        // ★ Wait for the notch to LAND: egui smooths a Ctrl+wheel notch over
+        // Wait for the notch to LAND: egui smooths a Ctrl+wheel notch over
         // about a dozen frames, and a fixed short wait reads a half-applied
         // zoom on every notch. `zoom_keeps_place::settled` is the shared reader
         // and the place that lesson is written down.
@@ -410,7 +410,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- where does the application say the edge is now? ---------------------
     //
-    // ★ A FRESH trace, frame and mapping. Deliberately not the anchor-held
+    // A FRESH trace, frame and mapping. Deliberately not the anchor-held
     // position: `zoom_keeps_place` owns that property, and asserting it here
     // too would make this check go red for its neighbour's reason.
     let trace = session.trace()?;
@@ -494,7 +494,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         now.zoom * 100.0
     ));
 
-    // ★★★ THE CONTROL FIRST. If the patch below the edge is dark, the probe is
+    // THE CONTROL FIRST. If the patch below the edge is dark, the probe is
     // not looking at the page and nothing said about the ink patch would mean
     // anything — including a pass.
     if paper > PAPER_INK_FRACTION {
@@ -563,7 +563,7 @@ mod tests {
     /// The fixture's media box, which is also its crop box: it declares none.
     const MEDIA: (f64, f64, f64, f64) = (0.0, 0.0, 200.0, 200.0);
 
-    /// ★★ The anchor is the midpoint of the off-page square's bottom edge, and
+    /// The anchor is the midpoint of the off-page square's bottom edge, and
     /// that square really is off the page. Both halves are the premise, and
     /// both are transcribed from the fixture rather than assumed.
     #[test]
@@ -585,7 +585,7 @@ mod tests {
         );
     }
 
-    /// ★ The ceiling arithmetic in the module header, in the calibration and in
+    /// The ceiling arithmetic in the module header, in the calibration and in
     /// every failure message is written in terms of `OFF_PTS`, while the anchor
     /// is what is actually driven. If they drift, every number this check
     /// prints is wrong while the check itself stays green — the exact failure
@@ -595,7 +595,7 @@ mod tests {
         assert!((OFF_PTS - EDGE_AT.0.abs()).abs() < 1e-9);
     }
 
-    /// ★★★ **The patches straddle the edge at every zoom this check can
+    /// **The patches straddle the edge at every zoom this check can
     /// reach** — the theorem that makes a fixed SCREEN offset legal.
     ///
     /// In page points the patches reach `(OFFSET + HALF) / zoom` from the edge,

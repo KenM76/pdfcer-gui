@@ -31,7 +31,7 @@ panel fell silent three hundred frames before the drag and its last census
 stood for ever. Both checks read that fossil, twice, and subtracted it from
 itself.
 
-⇒ ★★ **Two checks sharing a helper can share a defect; two checks sharing a
+⇒ **Two checks sharing a helper can share a defect; two checks sharing a
 COPY of a helper are worse, because the duplication is what makes the two
 failures look like corroboration.** One module now, imported by both, so a
 future repair cannot land in one and miss the other.
@@ -50,7 +50,7 @@ different subjects — the first is a layout fact and reports SKIP, the second
 is a defect and reports FAIL — and the whole of the 2026-09-05 misreport was
 the first being printed as the second.
 
-# ★ What a census asserts, and what it does not
+# What a census asserts, and what it does not
 
 The line carries no annotation identity, so a caller cannot name the object
 it is looking for. What it can do, and what [`Census::describes_one_more`]
@@ -83,7 +83,7 @@ have shown the repair to be cosmetic. Run 4 is what stops the repair being
 say so, and they say it about the panel rather than about the save or the
 undo.
 
-★ Run 3 also corrected the repair **while it was being made**. The first
+Run 3 also corrected the repair **while it was being made**. The first
 version anchored the baseline on a mark taken before the mode click, and
 that was still wrong: a launch restores its remembered mode, the harness
 clicks a segment out from under it, and a perfectly fresh census from the
@@ -92,7 +92,7 @@ coming from a Read frame while the check believed it had measured Review.
 The anchor is `mode-changed … to=<mode>` because of that run and not
 because of any reasoning that preceded it.
 
-# ★★ `filtered=` is checked, and the reason is this panel's own rule
+# `filtered=` is checked, and the reason is this panel's own rule
 
 `panels::comments` gained filtering by author, type and has-words on
 2026-09-05. Its founding discipline is that *"nothing is silently

@@ -12,7 +12,7 @@ use crate::launch::{LaunchSpec, Session};
 /// `VK_CONTROL`, held while the wheel rolls to make it a zoom.
 const VK_CONTROL: u16 = 0x11;
 
-/// ★★ **Where on the page to zoom INTO**, in PDF user-space points.
+/// **Where on the page to zoom INTO**, in PDF user-space points.
 ///
 /// `banana.pdf` draws a banana at life size and, beside it, two banana cells at
 /// **the same scale** — 0.85 pt and 0.17 pt across, with labels 0.085 pt tall.
@@ -45,7 +45,7 @@ const CANVAS_EVENT: &str = "canvas";
 
 /// The canvas's `f64` pan position — the only field that can measure this.
 ///
-/// ★ Not `canvas`'s `off=` and not its `rect=`. Both are `f32`, and at the
+/// Not `canvas`'s `off=` and not its `rect=`. Both are `f32`, and at the
 /// zoom this check works at their representable spacing is larger than the
 /// drag, so both would read "unchanged" against an application that panned
 /// perfectly. See `canvas::trace::position`.
@@ -53,7 +53,7 @@ const POS_EVENT: &str = "canvas-pos";
 
 /// How far to zoom in before the FIRST probe.
 ///
-/// # ★★★ Where this has to land, and how badly it was got wrong
+/// # Where this has to land, and how badly it was got wrong
 ///
 /// It must land in the band where the **region tier is engaged and the position
 /// is still on the `scroll` tier** — because that band is the only place O24c
@@ -71,7 +71,7 @@ const POS_EVENT: &str = "canvas-pos";
 /// the check reported PASS twice against a binary with the defect deliberately
 /// put back in.
 ///
-/// ★★ It was defended with an argument, too: the operator's *"up to 800 %
+/// It was defended with an argument, too: the operator's *"up to 800 %
 /// things work perfect"* was read as evidence that 800 % is a mechanism
 /// boundary. It is not one — 800 % is the **old maximum zoom**, and the plain
 /// reading of his sentence is *"the range that existed before is fine; the new
@@ -84,7 +84,7 @@ const PRESSES: usize = 20;
 
 /// Refuse to PASS unless a region raster was actually placed.
 ///
-/// ★ The single most important line in this file. Without it the check is
+/// The single most important line in this file. Without it the check is
 /// satisfied by a run that never reached the tier it is named after — which is
 /// not a hypothetical, it is what happened. A check that cannot fail is not
 /// evidence, and this one was being quoted as evidence.
@@ -92,19 +92,19 @@ const REGION_TIER_REQUIRED: bool = true;
 
 /// How many MORE presses before the second probe.
 ///
-/// # ★★ Why the check probes twice
+/// # Why the check probes twice
 ///
 /// The position is owned by two different mechanisms at two different depths —
 /// an `f32` scroll offset below the deep threshold and an `f64`
 /// `viewer::deep::DeepAnchor` above it — and they are a hard branch, not a
 /// re-parameterisation. A pan that works on one says nothing about the other.
 ///
-/// ★ Probing only the deepest would have been the tempting choice and it would
+/// Probing only the deepest would have been the tempting choice and it would
 /// have missed the operator's actual case, which was on the shallow tier. One
 /// probe per mechanism is the minimum that can honestly claim panning works
 /// "at high zoom".
 ///
-/// ★★ Sized to SATURATE, on the operator's request of 2026-08-22 — *"can you
+/// Sized to SATURATE, on the operator's request of 2026-08-22 — *"can you
 /// test up to maximum zoom please?"* A Ctrl+wheel notch multiplies the zoom by
 /// about 1.22, so reaching the default ceiling of 10¹² % from the first probe's
 /// 4,155 % takes roughly a hundred notches. Overshooting costs a few seconds
@@ -114,7 +114,7 @@ const MORE_PRESSES: usize = 110;
 
 /// How many wheel notches to roll.
 ///
-/// # ★★ Why the wheel and not a drag
+/// # Why the wheel and not a drag
 ///
 /// The first version of this check drag-panned with the primary button and
 /// reported a stuck view. It was wrong: `canvas::input::pan_delta` pans on the
@@ -134,7 +134,7 @@ const NOTCHES: i32 = -3;
 
 /// How many separate wheel rolls to make, sampling the placement after each.
 ///
-/// # ★★★ Why one small roll is not enough, and how that was found out
+/// # Why one small roll is not enough, and how that was found out
 ///
 /// `render::strategy::region_for` quantises the wanted region to a **half
 /// viewport** grid, and O24c only exists while a *new* cell's raster is in
@@ -157,7 +157,7 @@ const PAGE_REGION: &str = "page";
 /// How far a raster may sit from where its own region says it belongs, in
 /// window logical points, before this is a defect.
 ///
-/// ★ Not zero. The application computes the placement in `f32` from a page rect
+/// Not zero. The application computes the placement in `f32` from a page rect
 /// that is itself `f32`, and the trace prints three decimals; the harness
 /// recomputes in `f64` from those printed values. A fraction of a point of
 /// disagreement is the arithmetic, not the defect. The defect it is looking for
@@ -209,7 +209,7 @@ struct Pos {
 /// The canvas's latest `f64` position line, parsed, **with the page rect from
 /// the same reading**.
 ///
-/// # ★★ Why the two must be read together
+/// # Why the two must be read together
 ///
 /// The first version of this check read the position here and the page rect at
 /// the end of the probe. They came from different frames, so the placement
@@ -255,7 +255,7 @@ fn position(session: &Session, ui_rect: &str) -> Result<Option<(Pos, crate::geom
     }))
 }
 
-/// ★★★ **The placement invariant, recomputed independently.**
+/// **The placement invariant, recomputed independently.**
 ///
 /// The pixels on screen must be a picture of the page area they cover. The
 /// application places a region raster with `render::region::region_on_screen`,
@@ -346,7 +346,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ))
         })?,
     };
-    // ★ Asserted present but not clicked. The zoom is driven by Ctrl+wheel at
+    // Asserted present but not clicked. The zoom is driven by Ctrl+wheel at
     // the cells (see `CELLS_PT`); this is the check that a document is open at
     // all, and its absence is a far clearer failure than a mapping built from a
     // canvas that was never laid out.
@@ -356,7 +356,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .ok_or_else(|| Error::new(format!("no `{CANVAS_REGION}`; is a document open?")))?;
     let frame = session.frame()?;
 
-    // ★★★ ZOOM AT THE CELLS, not at the middle of the sheet.
+    // ZOOM AT THE CELLS, not at the middle of the sheet.
     //
     // Ctrl+wheel is zoom-about-the-pointer, so the point under the cursor stays
     // put: aim once and every subsequent notch magnifies the same content. The
@@ -435,7 +435,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 /// `Ok(Some(verdict))` when it did not — the two failure shapes described in
 /// this module's header.
 ///
-/// ★ Takes the report so its notes carry BOTH probes' numbers. A verdict that
+/// Takes the report so its notes carry BOTH probes' numbers. A verdict that
 /// says "the view did not move" without saying which tier it was on sends the
 /// next reader to whichever of the two files they guess first.
 fn probe(
@@ -461,7 +461,7 @@ fn probe(
         ));
     };
 
-    // ★ The placement is checked BEFORE the wheel as well as after, and this
+    // The placement is checked BEFORE the wheel as well as after, and this
     // ordering matters. When the defect was re-introduced deliberately to
     // falsify this check, the movement assertion below happened to trip first
     // and the run reported a stuck view — a true failure for the wrong reason,
@@ -474,13 +474,13 @@ fn probe(
 
     let (before, tier) = (first.at, first.tier.clone());
 
-    // ★★★ ROLL REPEATEDLY, SAMPLING THE PLACEMENT AFTER EACH.
+    // ROLL REPEATEDLY, SAMPLING THE PLACEMENT AFTER EACH.
     //
     // One roll cannot cross `render::strategy::region_for`'s half-viewport
     // grid, so it cannot reproduce O24c. See `ROLLS`.
     for roll in 0..ROLLS {
         driver.scroll_at(frame.declared_at(canvas, 0.5, 0.5), NOTCHES)?;
-        // ★ TWO FRAMES, and the shortness is the point: this reading must land
+        // TWO FRAMES, and the shortness is the point: this reading must land
         // INSIDE the raster transient. O24c only exists while a new cell's
         // raster is in flight; once it lands, the held region and the wanted
         // region agree again and the placement is correct on a broken build as
@@ -499,7 +499,7 @@ fn probe(
         }
     }
 
-    // ★★ A SECOND reading, far enough out for the SCROLL to have been applied.
+    // A SECOND reading, far enough out for the SCROLL to have been applied.
     //
     // The two answer different questions and cannot share a moment. `flight`
     // above must land inside the raster transient or the placement defect has
@@ -515,7 +515,7 @@ fn probe(
         ));
     };
 
-    // ★ And again several frames later. A view that moves and is then put back
+    // And again several frames later. A view that moves and is then put back
     // is a different defect from one that never moved, and only a second
     // reading can tell them apart — the operator described both in one
     // sentence, so the check must be able to say which he saw.
@@ -570,13 +570,13 @@ fn probe(
     Ok(None)
 }
 
-/// ★★★ O24c — THE PIXELS MUST BE A PICTURE OF WHERE THEY ARE DRAWN.
+/// O24c — THE PIXELS MUST BE A PICTURE OF WHERE THEY ARE DRAWN.
 ///
 /// Checked at every reading, because the window in which it fails is exactly
 /// the window in which a new region's raster is in flight: check only the
 /// settled one and the defect is invisible, which is how it shipped.
 ///
-/// ★ `scroll` tier only. Above the deep threshold the placement comes from the
+/// `scroll` tier only. Above the deep threshold the placement comes from the
 /// `f64` anchor rather than from the page's rect, and `placement_error`'s
 /// formula does not describe it — comparing anyway would report a defect that
 /// is only a wrong model.

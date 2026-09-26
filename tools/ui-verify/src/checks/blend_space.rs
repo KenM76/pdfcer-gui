@@ -29,7 +29,7 @@ const MAX_BATCHES: usize = 40;
 const RASTER_WAIT_TICKS: usize = 60;
 /// The engine's ceiling, in pixels: `MAX_CMYK_BUFFER_BYTES` / 20 B per px.
 ///
-/// ★ Duplicated from `pdfcer-render`, where it is `pub(crate)` and therefore
+/// Duplicated from `pdfcer-render`, where it is `pub(crate)` and therefore
 /// unreadable from here. **That is the finding, not an accident**: this shell
 /// cannot choose a raster that respects a ceiling it cannot see, which is why
 /// `render::strategy` keeps asking for whole pages four times past it. Filed as
@@ -72,7 +72,7 @@ fn zoom_now(trace: &Trace, canvas_event: &str) -> Option<f64> {
 
 /// The scale of the most recent **completed** raster.
 ///
-/// ★★ `raster-blend-space`, which the worker emits when a render FINISHES —
+/// `raster-blend-space`, which the worker emits when a render FINISHES —
 /// not `render-spawn`, which it emits when one starts. Both were tried and the
 /// difference cost a run: a whole-page raster past the ceiling is 30 M pixels
 /// and takes seconds, so the check saw `render-spawn scale=8.01`, believed the
@@ -89,7 +89,7 @@ fn last_raster_scale(trace: &Trace) -> f64 {
 
 /// Whether the disclosure is on screen **now**.
 ///
-/// ★★ `ui_rect` is a **change log**, not a per-frame census — this project's
+/// `ui_rect` is a **change log**, not a per-frame census — this project's
 /// own RAG records that a widget which stops being drawn publishes nothing, so
 /// "the region has ever appeared" and "the region is on screen" are different
 /// questions. Phase A therefore checks that the line has **never** appeared,
@@ -195,7 +195,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // --- B: climb past the ceiling ----------------------------------------
     let frame = session.frame()?;
     let driver = Driver::new(session.window());
-    // ★ Aimed at the canvas centre ONCE and left there: Ctrl+wheel is
+    // Aimed at the canvas centre ONCE and left there: Ctrl+wheel is
     // zoom-about-the-pointer, so the point under the cursor stays under it for
     // the whole climb and no re-aiming is needed.
     let canvas = crate::checks::driving::declared(&trace, ui_rect, CANVAS_REGION)
@@ -213,7 +213,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.settle(5);
         batches += 1;
     }
-    // ★★★ **Wait for the RASTER to catch up with the zoom.**
+    // **Wait for the RASTER to catch up with the zoom.**
     //
     // The first run of this check failed and the product was innocent: it
     // climbed to 801 %, asserted, and the trace showed the last raster had been
@@ -271,7 +271,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★★★ THE PRECONDITION THAT IS ABOUT THE FIXTURE, NOT THE BUILD — and it has
+    // THE PRECONDITION THAT IS ABOUT THE FIXTURE, NOT THE BUILD — and it has
     // to be asked BEFORE the verdict below, because its absence is
     // symptom-identical to the defect.
     //
@@ -283,7 +283,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // there is correctly nothing to disclose and the application is right to
     // say nothing.
     //
-    // ★ This is not hypothetical. On 2026-08-26 the full suite was run against
+    // This is not hypothetical. On 2026-08-26 the full suite was run against
     // `SW41177.pdf` — a SOLIDWORKS drawing set, which is the operator's own
     // document and the harness's usual `--pdf` — and this check reported FAIL
     // with a report that read as *"the page's colours have changed and nothing
@@ -299,7 +299,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // is worse than no check, because it trains a reader to skip the section.
     // `crate::report`'s three-state model exists for exactly this: PRECONDITION
     // ABSENT is a SKIP, and it names what was missing.
-    // ★★★ THREE OUTCOMES, TOLD APART BY THE TRACE. The table in this module's
+    // THREE OUTCOMES, TOLD APART BY THE TRACE. The table in this module's
     // header is the whole of the reasoning; what follows is it, in order of
     // increasing badness.
 
@@ -322,7 +322,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★★★ THE ASSERTION THAT CAN ACTUALLY FAIL, and it is here rather than
+    // THE ASSERTION THAT CAN ACTUALLY FAIL, and it is here rather than
     // inside either branch below because it is true of both.
     //
     // The tier only moves down for a page the shell has OBSERVED compositing in
@@ -331,7 +331,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // line stops working, `for_page` answers `Additive` for ever, the tier
     // never moves, and every raster past the ceiling comes back in sRGB again.
     //
-    // ★ Without this, that regression would be **invisible to this check**: it
+    // Without this, that regression would be **invisible to this check**: it
     // would land in outcome (3), the fallback would engage, the disclosure
     // would appear, and the check would PASS — reporting that pdfcer correctly
     // apologised for a defect it had just reacquired. Outcome (2) versus (3) is
@@ -356,7 +356,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          the render tier end at the colour ceiling rather than at the pixmap one"
     ));
 
-    // (2) ★ THE REPAIR. The page composites in ink and was NEVER refused, at a
+    // (2) THE REPAIR. The page composites in ink and was NEVER refused, at a
     // zoom well past the ceiling a whole-page raster would have crossed — so
     // `render::strategy` moved to the region tier and the ink survived. This is
     // the outcome the shell now aims for and the one that makes the operator's

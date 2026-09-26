@@ -14,7 +14,7 @@ and this catalog only frames; "No recent documents" is a *state*, not a
 verb. Putting them in `commands` would mean that file no longer answered
 one question.
 
-## ★ The dialog strings cross a shell boundary
+## The dialog strings cross a shell boundary
 
 [`open_dialog_title`], [`filter_pdf`] and [`filter_all`] are interpolated
 into a PowerShell script (see [`crate::app::files`] for why that script

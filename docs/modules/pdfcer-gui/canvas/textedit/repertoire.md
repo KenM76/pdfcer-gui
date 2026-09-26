@@ -21,7 +21,7 @@ module is the whole of the shell side of it: ask once when the caret lands,
 keep the set, and decline the keys that are not in it **as they are pressed**
 rather than after the last one.
 
-## ★★★ Ask ONCE. The alternative is a whole-page walk per character typed
+## Ask ONCE. The alternative is a whole-page walk per character typed
 
 The engine says which verb not to use here, by name:
 
@@ -35,7 +35,7 @@ measurement is taken exactly once per `(page, run, edit_epoch)` and parked in
 `egui`'s temp memory, which is where every other per-draft fact this shell
 keeps already lives.
 
-## ★★★ The FAILURE is cached too, and that is the load-bearing line
+## The FAILURE is cached too, and that is the load-bearing line
 
 [`Held::rep`] is an `Option`, and the slot is written **even when the
 measurement failed**. This is the finding `app::cache::provenance` was
@@ -46,7 +46,7 @@ the slot would re-walk the page's content stream on **every frame** for as
 long as the caret sat in an unmeasurable run — invisibly, because the
 feature would still behave correctly.
 
-## ★★★ What `None` means, and it is "not measured", never "yes"
+## What `None` means, and it is "not measured", never "yes"
 
 [`of_run`] answers `None` when the run cannot be pinned or the engine
 returned an error. Every caller must read that as *do not gate* and let the
@@ -55,7 +55,7 @@ unmeasured answer blocks editing everywhere on a guess. The commit-time
 refusal is still there and is still correct — a keystroke that gets through
 this gate is exactly as safe as it was before this module existed.
 
-## ★★ The direction of the engine's guarantee, and why the converse holds
+## The direction of the engine's guarantee, and why the converse holds
 
 The engine guarantees one direction only:
 

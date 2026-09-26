@@ -1,6 +1,6 @@
 //! # `canvas::overlay` — what the selection looks like, and what it must never look like
 //!
-//! ## ★ Rule 4 is the whole design constraint of this file
+//! ## Rule 4 is the whole design constraint of this file
 //!
 //! `D:\Dev\FeatureRequests\pdfce_FeatureRequests\README.md`, second and fourth
 //! clauses of the disclosure rule:
@@ -15,7 +15,7 @@ use crate::canvas::selection::{SelectionLevel, SelectionState};
 
 /// The anchor marks and the Bézier handles.
 ///
-/// ★ Re-exported below rather than left behind a module path, so every call site
+/// Re-exported below rather than left behind a module path, so every call site
 /// writes `overlay::ANCHOR_PX` / `overlay::draw_anchors` and nothing outside
 /// `canvas/` learns that the anchors have a file of their own.
 pub mod anchors;
@@ -35,12 +35,12 @@ pub(super) use raster::{draw_raster_ghost, raster_ghost_is_owed};
 
 /// The region the selection's grip box publishes.
 ///
-/// ★ It is the box the eight grips are laid out on, not the union of the
+/// It is the box the eight grips are laid out on, not the union of the
 /// outlines: `visible_outline_rect` widens a degenerate outline to a minimum
 /// extent so a hairline is still grabbable, and a check aiming at the un-widened
 /// rect would miss the grips on exactly the objects that needed the widening.
 ///
-/// ★★ It lives in the parent rather than in [`anchors`] because it names the
+/// It lives in the parent rather than in [`anchors`] because it names the
 /// OUTLINE and the grips — `overlay`'s subject — and not the points. Three call
 /// sites publish it: the annotation branch, the content grip box, and
 /// `canvas::forms`' widget box.
@@ -124,7 +124,7 @@ pub fn grip_box(mapping: &PageMapping, selection: &SelectionState) -> Option<Rec
     ))
 }
 
-/// ★★★ **The box a GHOST is measured against** — annotation first, then page
+/// **The box a GHOST is measured against** — annotation first, then page
 /// content, in the same order [`draw_move_ghost`] has always used.
 ///
 /// # Why this exists rather than [`grip_box`] doing it
@@ -144,7 +144,7 @@ pub fn grip_box(mapping: &PageMapping, selection: &SelectionState) -> Option<Rec
 /// on [`crate::canvas::selection::AnnotSelection`] and not in
 /// `SelectionState::outlines`.
 ///
-/// # ★★ What it prevents — `OPERATOR_REQUESTS.md` O154 and O209
+/// # What it prevents — `OPERATOR_REQUESTS.md` O154 and O209
 ///
 /// > *"the Markup Items don't have a live preview — the bounding box stays the
 /// > same size when I drag the handles."*
@@ -160,7 +160,7 @@ pub fn grip_box(mapping: &PageMapping, selection: &SelectionState) -> Option<Rec
 /// — and that split is exactly what lets one of them quietly miss a kind of
 /// selection the other handles, so the box they share is stated once, here.
 ///
-/// # ★★★ `widget`, and why it is a parameter rather than a third arm
+/// # `widget`, and why it is a parameter rather than a third arm
 ///
 /// A form widget is in **neither** of the two places this function can look. It
 /// is not `selection.annot()` — `canvas::selection` excludes `/Widget` by name
@@ -175,7 +175,7 @@ pub fn grip_box(mapping: &PageMapping, selection: &SelectionState) -> Option<Rec
 /// rectangle `pressing::grabbable` hands the drag itself — so the preview, the
 /// hit test and the commit are one box and not three.
 ///
-/// ★ It takes **precedence**, which costs nothing: a widget selection and an
+/// It takes **precedence**, which costs nothing: a widget selection and an
 /// annotation or content selection are mutually exclusive, so at most one of
 /// the three arms can be `Some` on any frame.
 #[must_use]
@@ -220,7 +220,7 @@ const GHOST_ALPHA: u8 = 150;
 /// `canvas::resizing::action` for a grip drag — has established that the
 /// release will reach a real verb on real operands.
 ///
-/// ★★★ That condition is the rule, and it outlives any one gesture: **a
+/// That condition is the rule, and it outlives any one gesture: **a
 /// pre-commit affordance that describes something which does not happen is not
 /// an affordance, it is a lie at a low alpha.** A ghost ships in the same change
 /// as the verb it previews, never ahead of it.
@@ -229,7 +229,7 @@ pub fn draw_selection(
     visuals: &Visuals,
     mapping: &PageMapping,
     selection: &SelectionState,
-    // ★ The whole answer, not just its grip set — `OPERATOR_REQUESTS.md` O69.
+    // The whole answer, not just its grip set — `OPERATOR_REQUESTS.md` O69.
     // The caller already holds it and was narrowing it to one field; the
     // outline needs a second, and re-deriving that second one here would be a
     // predicate spelled in two places. See `Grabbable::outline`.
@@ -240,7 +240,7 @@ pub fn draw_selection(
     }
     let stroke = Stroke::new(1.5, ink(painter));
 
-    // ★ The selected ANNOTATION, if the selection is one.
+    // The selected ANNOTATION, if the selection is one.
     //
     // The **same stroke** as a content outline, deliberately. An operator does
     // not need to be taught that pdfcer distinguishes a `/Annots` entry from a
@@ -249,10 +249,10 @@ pub fn draw_selection(
     // finds interesting. What is selected is said in words, off-canvas, where
     // rule 4 puts every other disclosure.
     //
-    // ★★★ The grips around a selected annotation, painted here so the predicate
+    // The grips around a selected annotation, painted here so the predicate
     // that paints them is the one that hit-tests them (H7).
     //
-    // ★★★ **`offer` IS THAT PREDICATE, AND IT IS PASSED IN RATHER THAN
+    // **`offer` IS THAT PREDICATE, AND IT IS PASSED IN RATHER THAN
     // RE-DERIVED HERE.** Three annotation kinds offer three different sets:
     //
     // | selected | painted | hit-tested |
@@ -273,7 +273,7 @@ pub fn draw_selection(
     if let Some(annot) = selection.annot() {
         let screen =
             visible_outline_rect(mapping.rect_to_screen(annot.outline), MIN_OUTLINE_EXTENT_PX);
-        // ★★★ **THE OUTLINE IS DRAWN AT THE MARK'S OWN ANGLE** —
+        // **THE OUTLINE IS DRAWN AT THE MARK'S OWN ANGLE** —
         // `OPERATOR_REQUESTS.md` O147: *"the box outlined when an
         // object is selected should be in the same angled orientation as the
         // object."*
@@ -287,7 +287,7 @@ pub fn draw_selection(
         // mark instead; the discrepancy is not something to explain in words,
         // it is something not to draw.
         //
-        // ★★ The published region stays the UPRIGHT bound, deliberately. Every
+        // The published region stays the UPRIGHT bound, deliberately. Every
         // driven check that aims at this selection derives grips and offsets
         // from it, and a region that changed shape with the annotation's angle
         // would break each of them for a fact none of them is asking about.
@@ -311,7 +311,7 @@ pub fn draw_selection(
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             //
-            // ★★ It carries `turned=1|0` **and the corners**, because a build
+            // It carries `turned=1|0` **and the corners**, because a build
             // that drew the upright box and one that drew a quad which happened
             // to coincide with it are the same screenshot — and the second is
             // the one a broken projection produces. A check reading only
@@ -325,13 +325,13 @@ pub fn draw_selection(
                 frame.corners_for_trace()
             )
         });
-        // ★★ Published under the SAME region name the content selection uses,
+        // Published under the SAME region name the content selection uses,
         // so a driven check aiming at a grip reads one name whatever is
         // selected. `handles::grip_rects` derives all eight from this box, so a
         // harness that has it cannot disagree with the application about where
         // they are.
         crate::diag::ui_rect(SELECTION_OUTLINE_REGION, screen);
-        // ★★ Whatever `offer` says, and nothing else. A **ce dimension** gets
+        // Whatever `offer` says, and nothing else. A **ce dimension** gets
         // the rotate handle and none of the eight — its extent IS its
         // measurement, so pdfcer has no verb that scales one and declines to
         // grow one; a rotation is an isometry, so the number is identical
@@ -345,7 +345,7 @@ pub fn draw_selection(
         return;
     }
 
-    // ★★★ **THE BOX IS NOT DRAWN OVER THE NODES** — `OPERATOR_REQUESTS.md`
+    // **THE BOX IS NOT DRAWN OVER THE NODES** — `OPERATOR_REQUESTS.md`
     // O69: *"If we are at a point where we are showing the nodes in an
     // editable state there shouldn't be a bounding box around the objects."*
     //
@@ -355,7 +355,7 @@ pub fn draw_selection(
     // he was trying to see. The eight grips were already correctly withheld
     // there (`GripSet::default()`); the outline was the half nobody had gated.
     //
-    // ★ Traced rather than only changed, because "no box" and "no selection"
+    // Traced rather than only changed, because "no box" and "no selection"
     // are the same screenshot. `canvas-outline` is a new first token — checked
     // against `tools/gates/check-trace-names.py`, which matches on first
     // tokens, and deliberately not `canvas-selection`, which
@@ -380,7 +380,7 @@ pub fn draw_selection(
     }
 
     if let Some(box_) = grip_box(mapping, selection) {
-        // ★★ Published so a driven check can AIM AT A GRIP.
+        // Published so a driven check can AIM AT A GRIP.
         //
         // It is the difference between a check that measures the feature and
         // one that measures the harness's guesswork: a grip sits at a corner
@@ -396,7 +396,7 @@ pub fn draw_selection(
         // it, so a harness that has this rect has every grip and cannot
         // disagree with the application about where they are.
         crate::diag::ui_rect(SELECTION_OUTLINE_REGION, box_);
-        // ★★ The SAME `offer` the hit test was given, which for page content is
+        // The SAME `offer` the hit test was given, which for page content is
         // `GripSet::all()` at the Object rung and `GripSet::default()` at every
         // inner one. Deliberately NOT re-spelled here as
         // `selection.level() == SelectionLevel::Object`, for the reason the
@@ -417,7 +417,7 @@ pub fn draw_selection(
 /// content, where an outline-only square disappears over dense linework —
 /// which is precisely the document class pdfcer is for.
 ///
-/// # ★★★ `offer` is the hit test's own value, and that is the contract
+/// # `offer` is the hit test's own value, and that is the contract
 ///
 /// It is [`crate::canvas::pressing::grabbable`]'s answer, passed straight
 /// through — **never a predicate recomputed here**. Rule H7, and it is the
@@ -448,7 +448,7 @@ pub fn draw_grips(
 
 /// [`draw_grips`] in an arbitrary [`handles::GripFrame`].
 ///
-/// ★★ The eight squares and the rotate handle follow the frame, so on a turned
+/// The eight squares and the rotate handle follow the frame, so on a turned
 /// annotation they sit on the outline that is actually drawn. Anchoring them to
 /// the upright bound while the outline turned would leave eight squares
 /// floating in the space between the mark and its bounding box — a picture that
@@ -473,7 +473,7 @@ pub fn draw_grips_in(
             );
         }
     }
-    // ★★ …and the rotate handle, which is a CIRCLE ON A STEM and not a ninth
+    // …and the rotate handle, which is a CIRCLE ON A STEM and not a ninth
     // square.
     //
     // Every square on this canvas resizes, so a shape that resized in one place
@@ -482,7 +482,7 @@ pub fn draw_grips_in(
     // handle belongs to this box; without it the circle reads as an unrelated
     // dot floating over the page.
     //
-    // ★★★ Gated **separately** from the eight, which is the whole reason
+    // Gated **separately** from the eight, which is the whole reason
     // `GripSet` has two fields. On a selected **ce dimension** this is the only
     // thing drawn: there are no squares at all, because there is no verb that
     // scales one and `pdfcer-core` has declined to build one — *"either the
@@ -493,7 +493,7 @@ pub fn draw_grips_in(
     if offer.rotate {
         let handle = handles::rotate_rect_in(frame);
         let centre = handle.center();
-        // ★ The stem runs from the frame's own top edge, not from the page's.
+        // The stem runs from the frame's own top edge, not from the page's.
         // On a turned frame those are different points, and a stem drawn to the
         // page's top edge would cross the mark diagonally at any angle past a
         // few degrees — reading as a line through the object rather than as the
@@ -507,7 +507,7 @@ pub fn draw_grips_in(
             visuals.window_fill,
             stroke,
         );
-        // ★★ **Published so a driven check can aim at the ninth handle.**
+        // **Published so a driven check can aim at the ninth handle.**
         //
         // The eight are derivable from `SELECTION_OUTLINE_REGION` — they sit on
         // its corners and edge midpoints — and the rotate handle is **not**: it
@@ -517,7 +517,7 @@ pub fn draw_grips_in(
         // aim at this number directly"*; this region is what lets a check stop
         // mirroring it at all.
         //
-        // ★ It is published only when the handle is actually drawn, so a check
+        // It is published only when the handle is actually drawn, so a check
         // reading it is reading the application's own statement that the
         // affordance exists — not a rectangle where one would be if the
         // selection had a rotate verb.
@@ -527,7 +527,7 @@ pub fn draw_grips_in(
 
 /// The region the **rotate handle** publishes when it is drawn.
 ///
-/// ★ Distinct from [`SELECTION_OUTLINE_REGION`] because the handle is the one
+/// Distinct from [`SELECTION_OUTLINE_REGION`] because the handle is the one
 /// affordance that cannot be derived from the outline: it sits on a stem
 /// outside the box. Its presence in a trace is also the honest answer to *"does
 /// this selection offer a rotation at all?"* — which is a question a driven
@@ -538,7 +538,7 @@ pub const ROTATE_HANDLE_REGION: &str = "canvas.rotate-handle"; // ui-text-exempt
 /// Paint the **annotation move ghost**: one rectangle, where the markup would
 /// land.
 ///
-/// ★★ Its own function beside [`draw_move_ghost`] rather than a case of it, and
+/// Its own function beside [`draw_move_ghost`] rather than a case of it, and
 /// the reason is what the two iterate. That one walks
 /// `SelectionState::outlines()` -- the CONTENT selection's rectangles -- which
 /// is empty for an annotation selection by construction, because the two
@@ -547,7 +547,7 @@ pub const ROTATE_HANDLE_REGION: &str = "canvas.rotate-handle"; // ui-text-exempt
 /// "the gesture does nothing" symptom in the place hardest to notice: the drag
 /// would still commit on release.
 ///
-/// ★ It takes the rectangle already computed rather than a delta plus the
+/// It takes the rectangle already computed rather than a delta plus the
 /// selection, because `annotdrag` has to decide the same rectangle to know
 /// whether a drag is eligible at all. One computation, one answer, and the
 /// preview cannot promise a landing spot the commit disagrees with.
@@ -563,7 +563,7 @@ pub fn draw_annot_ghost(painter: &Painter, mapping: &PageMapping, rect: egui::Re
 /// `delta` is in **canvas space** — the same space the cached outlines are in,
 /// which is what makes this a translation and nothing more.
 ///
-/// # ★ Why this costs no re-raster and no re-decomposition
+/// # Why this costs no re-raster and no re-decomposition
 ///
 /// Three facts line up, and the preview is affordable because of all three:
 ///
@@ -597,11 +597,11 @@ pub fn draw_move_ghost(
     mapping: &PageMapping,
     selection: &SelectionState,
     delta: egui::Vec2,
-    // ★★★ The same flag `draw_selection` takes — `OPERATOR_REQUESTS.md` O69.
+    // The same flag `draw_selection` takes — `OPERATOR_REQUESTS.md` O69.
     // At the object rung the ghost is always owed; at an inner rung it depends
     // on the companion below.
     outline: bool,
-    // ★★★ **Whether the operator can already see the real thing moving.**
+    // **Whether the operator can already see the real thing moving.**
     // `MovePreview` returns a ghost for `MoveSubject::Node` and `Nodes` as
     // well, and there the shape preview draws the actual anchors travelling.
     // A perimeter box on top of that is O63's complaint word for word — *"it
@@ -669,7 +669,7 @@ pub(super) fn ghost_is_owed(
 /// selection's centre.
 ///
 ///
-/// ★ **It draws a quadrilateral, not a rect**, and that is the whole visible
+/// **It draws a quadrilateral, not a rect**, and that is the whole visible
 /// difference. Drawing the rotated bounding box instead would show the operator
 /// a shape that grew as they turned it — a preview of something the release
 /// does not do.
@@ -679,7 +679,7 @@ pub(super) fn ghost_is_owed(
 /// function that module's own test pins against the measured bearing. The
 /// commit negates once, at the page crossing; see `rotating::drag`.
 ///
-/// # ★★★ An ANNOTATION's ghost is drawn by this same function
+/// # An ANNOTATION's ghost is drawn by this same function
 ///
 /// …unlike the **move** ghost, which `canvas::painting` carries in a separate
 /// `annot_ghost` slot. The asymmetry is deliberate and is about the arithmetic
@@ -694,7 +694,7 @@ pub(super) fn ghost_is_owed(
 ///   twice, and the second copy is where a preview and a commit come to
 ///   disagree about which way round something went.
 ///
-/// ★★ The annotation case **returns early**, mirroring `draw_selection`'s own
+/// The annotation case **returns early**, mirroring `draw_selection`'s own
 /// structure one screen up. An annotation selection and a content selection are
 /// mutually exclusive by construction (`SelectionState` enforces it in one
 /// place), so the early return is a statement of that invariant rather than a
@@ -709,7 +709,7 @@ pub fn draw_rotate_ghost(
     radians: f32,
 ) {
     let stroke = Stroke::new(1.5, ghost(ink(painter)));
-    // ★ The quadrilateral, not the rotated bounding box. Drawing the box would
+    // The quadrilateral, not the rotated bounding box. Drawing the box would
     // show the operator a shape that GREW as they turned it — which is a
     // preview of something the release does not do, and doubly misleading here:
     // an annotation's `/Rect` really does grow on commit (§12.5.2 requires it
@@ -743,7 +743,7 @@ pub fn draw_rotate_ghost(
 /// grip's anchor.
 ///
 ///
-/// ★ The anchor is in **screen** space, because that is the space the outlines
+/// The anchor is in **screen** space, because that is the space the outlines
 /// are projected into and the space [`crate::canvas::handles::Grip::anchor`]
 /// already answers in. Converting to PDF for the preview and back again would
 /// be two conversions for a picture that is thrown away next frame — and, worse,
@@ -758,7 +758,7 @@ pub fn draw_resize_ghost(
     (sx, sy): (f32, f32),
 ) {
     let stroke = Stroke::new(1.5, ghost(ink(painter)));
-    // ★★★ **The annotation arm** — the same arm [`draw_move_ghost`] carries.
+    // **The annotation arm** — the same arm [`draw_move_ghost`] carries.
     //
     // `selection.outlines()` holds **page-content** entries. A markup
     // annotation's box lives on `AnnotSelection` instead, so without this the
@@ -773,13 +773,13 @@ pub fn draw_resize_ghost(
     // `canvas::resizing` commits. Two copies of `anchor + (p - anchor) * s` is
     // how a preview and a commit come to disagree about where a corner went.
     //
-    // ★★★ **The widget arm** — O209, the same defect one surface along. A form
+    // **The widget arm** — O209, the same defect one surface along. A form
     // widget is in neither `annot()` nor `outlines()`; its screen box arrives
     // as a parameter, from the same `widgetdrag::grab_box` the drag measured
     // against. See [`ghost_box`] for why it is a parameter and not a third
     // place this module looks.
     //
-    // ★ When it is `Some` the other two are empty by construction — a widget
+    // When it is `Some` the other two are empty by construction — a widget
     // selection clears both — so the three are chained rather than ordered.
     let widget_box = widget.map(|screen| visible_outline_rect(screen, MIN_OUTLINE_EXTENT_PX));
     let annot_box = selection
@@ -804,7 +804,7 @@ pub fn draw_resize_ghost(
                 anchor.y + (screen.max.y - anchor.y) * sy,
             ),
         );
-        // ★ Published so a driven check can measure the preview rather than
+        // Published so a driven check can measure the preview rather than
         // photograph it. Without this the only oracle for "did the ghost
         // change size" is a screenshot diff, and a ghost is a 1.5 px stroke at
         // low alpha over arbitrary linework — which is the least reliable
@@ -852,7 +852,7 @@ const HIT_ALPHA: u8 = 40;
 
 /// How opaque the current hit's wash is.
 ///
-/// ★ **Emphasis, not hue, is what distinguishes the current hit** — and that
+/// **Emphasis, not hue, is what distinguishes the current hit** — and that
 /// is a constraint rather than a preference. Every colour on this canvas comes
 /// from the theme (see this module's header, and
 /// `tools/gates/check-theme-colors.sh`), and the theme has no role meaning
@@ -867,7 +867,7 @@ const HIT_ALPHA: u8 = 40;
 /// glance. Acrobat and every browser use a second hue for this; pdfcer cannot,
 /// and this is the honest substitute.
 ///
-/// ### ★ Why 96, and the ceiling above it
+/// ### Why 96, and the ceiling above it
 ///
 /// **Measured on a screenshot of the running binary**, on `reflow.pdf`
 /// searching `the`. Past roughly this value the wash becomes a solid block and
@@ -937,7 +937,7 @@ pub fn draw_find_hits(
 
 /// How opaque the **text selection** wash is, out of 255.
 ///
-/// ★ **A wash must never hide its own subject.** [`CURRENT_ALPHA`] carries the
+/// **A wash must never hide its own subject.** [`CURRENT_ALPHA`] carries the
 /// measured ceiling for that rule and the argument behind it; read it first.
 ///
 /// It applies here with more force. A find hit is something the operator is
@@ -972,7 +972,7 @@ const TEXT_SELECTION_ALPHA: u8 = 40;
 /// property of the *content*: it marks a range the operator just swept. The
 /// one-line test still answers no; with nothing selected this paints nothing.
 ///
-/// # ★ Unstroked, where a find hit is stroked
+/// # Unstroked, where a find hit is stroked
 ///
 /// [`draw_find_hits`] strokes the **current** hit because it has to be told
 /// apart from the other hits on the page. A text selection is one thing, so
@@ -1033,7 +1033,7 @@ const CHUNK_OUTLINE_ALPHA: u8 = 110;
 /// restyled, and the same document saved and reopened paints identically.
 /// [`crate::canvas::chunks`] carries the whole argument.
 ///
-/// # ★★★ Returns how many rectangles reached the painter, and the caller
+/// # Returns how many rectangles reached the painter, and the caller
 /// traces THAT
 ///
 /// Not `boxes.len()`, which the caller already holds. The difference is the
@@ -1105,7 +1105,7 @@ pub fn draw_marquee(painter: &Painter, mapping: &PageMapping, page_rect: Rect) {
 /// `OPERATOR_REQUESTS.md` O96 — *"in our display section we should have an
 /// option to shade the form fields like acrobat does."*
 ///
-/// # ★★★ Why this is an affordance and not the tint rule 4 forbids
+/// # Why this is an affordance and not the tint rule 4 forbids
 ///
 /// The standing rule is *applied content renders exactly as saved content will
 /// render*. A field is **not content**: it is a control, and this wash is the
@@ -1113,7 +1113,7 @@ pub fn draw_marquee(painter: &Painter, mapping: &PageMapping, page_rect: Rect) {
 /// over a widget. It marks no inference and says nothing about pdfcer's
 /// confidence in anything.
 ///
-/// ★★ The property that keeps that true is **where it is painted**: here, in the
+/// The property that keeps that true is **where it is painted**: here, in the
 /// canvas overlay, over the finished page texture. It reaches no rasterizer, so
 /// it cannot appear in a print, an export, a Save or a `render-page`.
 ///
@@ -1125,7 +1125,7 @@ pub fn draw_marquee(painter: &Painter, mapping: &PageMapping, page_rect: Rect) {
 /// is the theme's "this is interactive, click it" role and that is exactly what
 /// a fillable field is.
 ///
-/// ★ [`FIELD_WASH_ALPHA`] is lower than the marquee's, deliberately. A band is
+/// [`FIELD_WASH_ALPHA`] is lower than the marquee's, deliberately. A band is
 /// transient and the operator is looking *at* it; this sits under the page's own
 /// content for as long as the document is open, and a wash that made a filled
 /// field's own text harder to read would have traded one legibility problem for
@@ -1151,11 +1151,11 @@ pub fn draw_field_shade(painter: &Painter, visuals: &Visuals, mapping: &PageMapp
 /// so a faint fill over nothing is still nothing. The outline is what makes an
 /// empty field a thing on screen.
 ///
-/// ★ Same hue as the wash, at [`FIELD_TARGET_ALPHA`], so the two read as one
+/// Same hue as the wash, at [`FIELD_TARGET_ALPHA`], so the two read as one
 /// family rather than as two unrelated marks — and *not* the selection ink,
 /// which is reserved for the one box the operator has actually picked.
 ///
-/// ★★ Rule 4 is satisfied for [`draw_field_shade`]'s reason and no other: this
+/// Rule 4 is satisfied for [`draw_field_shade`]'s reason and no other: this
 /// is painted in the canvas overlay, over the finished page texture, so it
 /// reaches no rasterizer, no print, no export and no Save. It marks no
 /// inference — a widget either has a rectangle or it is not in the list.
@@ -1193,11 +1193,11 @@ const FIELD_TARGET_ALPHA: u8 = 150;
 /// compare two boxes to notice. An outline is a difference of *kind* and reads
 /// at a glance, which is the whole job.
 ///
-/// ★ The theme's **selection stroke**, because that is what the operator is
+/// The theme's **selection stroke**, because that is what the operator is
 /// doing — they have picked this field out of a list, and every other "this is
 /// the one I mean" on this canvas wears the same colour.
 ///
-/// ★★ `StrokeKind::Outside`, so the outline sits *around* the field rather than
+/// `StrokeKind::Outside`, so the outline sits *around* the field rather than
 /// over its first and last characters. A middle-aligned stroke on a tight text
 /// box eats the glyphs at both ends, which is worst on exactly the short fields
 /// — a date, a revision letter — where every character matters.
@@ -1213,7 +1213,7 @@ pub fn draw_field_spotlight(painter: &Painter, mapping: &PageMapping, rect: Rect
 
 /// How thick the spotlight's outline is, in points.
 ///
-/// ★ 2.0 rather than the marquee's 1.0. This one has to be seen against a page
+/// 2.0 rather than the marquee's 1.0. This one has to be seen against a page
 /// that may be dense linework at a fitted zoom, and it is transient — it is on
 /// screen only while a row is focused, so it can afford to be assertive in a
 /// way a permanent mark could not.
@@ -1221,7 +1221,7 @@ const SPOTLIGHT_WIDTH: f32 = 2.0;
 
 /// The alpha [`draw_field_shade`] washes a field at.
 ///
-/// ★ 28, against the marquee's 48. See that function's ★ for why lower: this one
+/// 28, against the marquee's 48. See that function's for why lower: this one
 /// is on screen for as long as the document is open and sits under the field's
 /// own text, where the band is transient and has nothing under it that has to
 /// stay readable.
@@ -1230,7 +1230,7 @@ const FIELD_WASH_ALPHA: u8 = 28;
 /// **The ink every outline, grip, ghost and band in this module is drawn
 /// with** — the theme's *content-area* selection role.
 ///
-/// # ★★★ Why this is a call and not `visuals.selection.stroke.color`
+/// # Why this is a call and not `visuals.selection.stroke.color`
 ///
 /// That address is the wrong one for a canvas. `egui::Visuals::selection` is
 /// `egui`'s styling channel for **selected widgets**: `Style::button_style`
@@ -1249,7 +1249,7 @@ const FIELD_WASH_ALPHA: u8 = 28;
 /// `tools/gates/check-selection-channel.sh` keeps the widget channel
 /// unreachable from here.
 ///
-/// ★ Takes the [`Painter`] rather than a `&Context` because every drawing
+/// Takes the [`Painter`] rather than a `&Context` because every drawing
 /// function in this module already holds one and `Painter::ctx` is free. That
 /// is deliberate: a helper whose argument the caller must go and *find* is a
 /// helper people work around.

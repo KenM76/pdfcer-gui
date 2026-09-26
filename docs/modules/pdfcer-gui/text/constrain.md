@@ -2,7 +2,7 @@
 
 Three strings, for [`crate::canvas::constrain`].
 
-## ★ Why a constraint gets words at all, when the ghost already shows it
+## Why a constraint gets words at all, when the ghost already shows it
 
 `ui-conventions/drag-moves.md` D5 states the failure mode in the operator's
 own position:

@@ -11,7 +11,7 @@ takes the whole desktop while it does. **No line below has been observed
 against a running binary**, and nothing in the report that ships with it
 claims otherwise. It is registered so the next sweep picks it up.
 
-★ That is the honest state and it is worth naming what it costs: every
+That is the honest state and it is worth naming what it costs: every
 failure message here is a *prediction* of what a wrong build would print,
 and this project has three recorded cases of an articulate, plausible
 failure message being about nothing at all. Treat the first run as
@@ -24,7 +24,7 @@ The repair routes the copy through `EditSession::copy_selection`, which
 carries an annotation pdfcer does **not** model as its own dictionary plus
 the object closure it reaches — including its baked `/AP`.
 
-## ★★ Why this cannot be a unit test
+## Why this cannot be a unit test
 
 The unit tests in `canvas::clipboard::tests` already assert the clip's
 contents and the round trip through `ObjectClip::to_bytes`. What they cannot
@@ -38,7 +38,7 @@ comment explaining why it was needed, and the symptom was `Ctrl+V` working
 or not depending on what the operator had last copied in another program.
 The annotation copy is a new copy site and inherits exactly that hazard.
 
-## ★★★ It pins its own fixture and IGNORES `--pdf`
+## It pins its own fixture and IGNORES `--pdf`
 
 Same posture as `ocr` and as `three_clicks_round_a_hole_measure_the_hole`,
 and for a stronger reason than either: this check's subject is *"a

@@ -33,7 +33,7 @@ The fix pushes the four clipboard chords through blind and lets
 `app::dispatch::clipboard` decide per press, which it was already doing
 correctly and had never been reached from Review to do.
 
-## ★★★ Why THIS check, and not just the repaired sticky-note one
+## Why THIS check, and not just the repaired sticky-note one
 
 `copying_a_sticky_note_carries_the_whole_comment` owns the **grant**: a
 comment copied in Review pastes in Review. It cannot own the **refusal**,
@@ -56,12 +56,12 @@ if it stopped at the gate.
 none of the three is redundant:
 
 
-★ Assertion 2 is the one that would be tempting to drop as "internal". It is
+Assertion 2 is the one that would be tempting to drop as "internal". It is
 not: without it, assertion 1 alone passes on a build where **paste
 succeeded**, because a successful paste also emits no `chord-not-offered`.
 The pair is what pins *reached the dispatcher AND was refused there*.
 
-## ★★ How it gets a content clip into Review without Review copying one
+## How it gets a content clip into Review without Review copying one
 
 Review cannot select page content — that is `edit_content`, and Review does
 not have it. So the operand is prepared **in Edit**, with `Ctrl+A`, and the

@@ -20,7 +20,7 @@
 //! held at pdfcer's legibility floor; the box is too small for this text, which
 //! will overflow"* — true of the engine and the CLI, **false of this shell**.
 //!
-//! # ★★ Why this test exists beside the unit tests, and what it adds
+//! # Why this test exists beside the unit tests, and what it adds
 //!
 //! `app::status::tests` asserts the three sentences are distinct and that only
 //! one claims overflow. That is a test of the **wording**, and it would pass on
@@ -54,7 +54,7 @@ const FIELD: &str = "FullName";
 /// averages a little over half an em, so ~90 characters is comfortably past it
 /// and 120 leaves no doubt.
 ///
-/// ★ Deliberately readable English rather than `"x".repeat(120)`: if this test
+/// Deliberately readable English rather than `"x".repeat(120)`: if this test
 /// ever fails, the failure message quotes the value, and a wall of `x` tells a
 /// reader nothing about whether the input was the problem.
 const TOO_LONG: &str = "Alexandra Christina Wetherby-Fitzgerald of the Northern Districts Planning \
@@ -70,7 +70,7 @@ fn session(fixture: &str) -> pdfcer_core::edit::EditSession {
     pdfcer_core::edit::EditSession::new(doc)
 }
 
-/// ★★★ The load-bearing test: a real fill of a real too-small field reports
+/// The load-bearing test: a real fill of a real too-small field reports
 /// `Floor`, and the sentence the operator reads says the text will overflow.
 #[test]
 fn a_field_too_small_for_its_text_reports_floor_and_says_it_will_overflow() {
@@ -117,7 +117,7 @@ fn a_field_too_small_for_its_text_reports_floor_and_says_it_will_overflow() {
 /// The control, and it is doing real work: it proves the fixture is not simply
 /// *always* reporting `Floor`.
 ///
-/// ★★ Without this, a build where `applied_autosize_bound` was hard-wired to
+/// Without this, a build where `applied_autosize_bound` was hard-wired to
 /// `Some(Floor)` — or where the engine's bound detection had broken in the
 /// permissive direction — would satisfy the test above completely. A one-sided
 /// test of a value is not a test of the value.

@@ -13,7 +13,7 @@ the text caret decline, and who says so?"*, which is a subject with two
 call-site families and an argument about **channels** that nothing else on
 that surface shares.
 
-## ★★★ The argument, once, for both: a sentence in the wrong slot is silence
+## The argument, once, for both: a sentence in the wrong slot is silence
 
 Every cause below was **already being reported** before O127. Four of the
 reflow refusals went through `crate::app::actions::record_note`, which the
@@ -41,7 +41,7 @@ is the second time this project has proved the same thing: **a control that
 answers in the wrong place is indistinguishable, from the operator's chair,
 from a control that does not answer at all.**
 
-## ★★ Written unconditionally, overwriting whatever was live
+## Written unconditionally, overwriting whatever was live
 
 [`super::record_text_style`]'s rule, and it matters more here: reflow is a
 control an operator presses **twice** when nothing appears to happen. The

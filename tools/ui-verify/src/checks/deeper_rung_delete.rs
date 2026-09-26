@@ -55,7 +55,7 @@ enum Rung {
     /// reaches it: chunk boxes on, a plain left click on the block, a plain
     /// left click inside one of the boxes he can see.
     ///
-    /// ★★★ **A rung is a verb plus a door, and this row is the second door.**
+    /// **A rung is a verb plus a door, and this row is the second door.**
     /// `Label` proves `delete_text_run` is wired and proves nothing about
     /// whether a hand holding a mouse can get to it — it arms the Points tool
     /// first, which is a route the operator has never been told about. O216
@@ -85,7 +85,7 @@ impl Rung {
 
     /// The census field prefix: `text-lines`, `lines` or `points`.
     ///
-    /// ★ The text rung's prefix is `text-lines` and not `lines`, because
+    /// The text rung's prefix is `text-lines` and not `lines`, because
     /// `Rung::Line` — a subpath — already owns `lines`, and two rungs writing
     /// one field name into one trace is how a check comes to read the wrong
     /// census and report a pass.
@@ -129,10 +129,10 @@ impl Rung {
     /// One double-click enters the Part rung; a second descends to the Node
     /// rung. `canvas::selection::descend` is the rule.
     ///
-    /// ★★★ **Zero for the label, and that is a fact about the program rather
+    /// **Zero for the label, and that is a fact about the program rather
     /// than a shortcut.** See [`Self::arms_the_points_tool`].
     ///
-    /// ★★ Zero for the chunk too, for the same underlying reason and by a
+    /// Zero for the chunk too, for the same underlying reason and by a
     /// different route: its descent is a second **plain** click, not a
     /// double-click, so it is counted by
     /// [`Self::narrows_by_clicking_a_chunk_box`] rather than here. A
@@ -146,7 +146,7 @@ impl Rung {
         }
     }
 
-    /// ★★★ **Whether this rung is reached with the Points tool rather than
+    /// **Whether this rung is reached with the Points tool rather than
     /// with a double-click**, and the answer is *only the label*.
     ///
     /// # The measurement that put this here
@@ -188,7 +188,7 @@ impl Rung {
         matches!(self, Self::Label)
     }
 
-    /// ★★★ **Whether this rung is reached by clicking a chunk box with the
+    /// **Whether this rung is reached by clicking a chunk box with the
     /// plain left button**, which is the only route the operator has been
     /// shown, and the answer is *only the chunk*.
     ///
@@ -250,7 +250,7 @@ impl Rung {
     /// The smallest part count at which the check can tell a right build from a
     /// wrong one, and why.
     ///
-    /// ★ **Two, not one, and for the Point rung three.** On a one-part object
+    /// **Two, not one, and for the Point rung three.** On a one-part object
     /// every one of these verbs correctly deletes the whole object — a painting
     /// operator with no path, or a `BT`…`ET` that shows nothing, is not a
     /// smaller object but a meaningless one — so a right build and a wrong build
@@ -282,7 +282,7 @@ impl Rung {
     fn fixture(self) -> (std::path::PathBuf, DocPoint) {
         let (name, page, x, y) = match self {
             Self::Label => ("paragraph.pdf", 0, 120.0, 704.0),
-            // ★★ The chunk rung borrows `clicking_a_chunk_selects_that_chunk`'s
+            // The chunk rung borrows `clicking_a_chunk_selects_that_chunk`'s
             // own aim rather than restating it. The two checks are the same
             // gesture on the same line of the same document — one asks whether
             // the click lands, the other whether Delete then works — and a
@@ -506,12 +506,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, rung: Rung) -> Result<Opt
 
     // --- 2: select the object, then descend to the rung ---------------------
     //
-    // ★★★ The label rung arms the **Points** tool first, because a
+    // The label rung arms the **Points** tool first, because a
     // double-click on text opens a caret and never touches the ladder. The
     // measurement that established that, and the trace lines it was read out
     // of, are on `Rung::arms_the_points_tool`.
     //
-    // ★ Pressed BEFORE the click rather than after it: with the arrow armed,
+    // Pressed BEFORE the click rather than after it: with the arrow armed,
     // the first click would select the whole text object and the Points tool's
     // own branch would then be entering an object it did not pick.
     if rung.arms_the_points_tool() {
@@ -546,7 +546,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, rung: Rung) -> Result<Opt
         )));
     }
 
-    // ★★ The chunk rung's descent: a second PLAIN click at the same point.
+    // The chunk rung's descent: a second PLAIN click at the same point.
     // Step 3 of the sequence on `Rung::narrows_by_clicking_a_chunk_box`. It is
     // deliberately not a double-click — on text that opens the caret (O70) and
     // the ladder never moves — and deliberately at the same point, because the
@@ -561,7 +561,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, rung: Rung) -> Result<Opt
         session.settle(16);
     }
 
-    // ★ The Point rung needs an ANCHOR under the pointer, and the second
+    // The Point rung needs an ANCHOR under the pointer, and the second
     // double-click above only guarantees the rung, not the anchor —
     // *"inside this part, nothing picked yet"* is a real state the ladder can
     // be in. So aim the last descent at a published anchor mark instead of at
@@ -610,7 +610,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, rung: Rung) -> Result<Opt
             .last(SELECTION_EVENT)
             .and_then(|l| l.get("level").map(str::to_owned))
             .unwrap_or_else(|| "none".to_owned());
-        // ★★★ For the chunk rung this is a FAILURE, not a skipped precondition,
+        // For the chunk rung this is a FAILURE, not a skipped precondition,
         // and the difference is the whole reason the row exists.
         //
         // The other three rungs can legitimately fail to descend: their point
@@ -714,7 +714,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, rung: Rung) -> Result<Opt
     let objects_before = line.get_usize("objects_before").unwrap_or(0);
     let objects_after = line.get_usize("objects_after").unwrap_or(0);
 
-    // ★ The fixture check comes AFTER the delete, because the count that
+    // The fixture check comes AFTER the delete, because the count that
     // decides it is on the applied line. A SKIP here means the document could
     // not exercise the case, not that the build is wrong — on a one-part object
     // every one of these verbs correctly deletes the whole object, so a right
@@ -781,7 +781,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, rung: Rung) -> Result<Opt
 
     // --- the disclosure it owes --------------------------------------------
     //
-    // ★★ NOT an assertion, and deliberately. `delete_node`'s disclosure list is
+    // NOT an assertion, and deliberately. `delete_node`'s disclosure list is
     // non-empty **only when a curve was discarded with the point** — the
     // §8.5.2.2 `c`/`v`/`y` case — and whether the anchor this run happened to
     // pick sits on a curve is a fact about the fixture's content stream, not

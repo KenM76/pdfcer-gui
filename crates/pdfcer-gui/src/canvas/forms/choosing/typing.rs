@@ -17,7 +17,7 @@ use crate::panels::forms::edit::FormEdit;
 
 /// The drop button's width, from a rectangle in whichever space it is in.
 ///
-/// ★ Taken from the **height**, so the button is the square Acrobat draws and
+/// Taken from the **height**, so the button is the square Acrobat draws and
 /// scales with the field rather than with the zoom. Capped at half the width
 /// so a wide-and-short field does not end up all button; floored at one unit
 /// so the arithmetic below never produces an inverted rectangle.
@@ -73,7 +73,7 @@ pub(super) fn type_into(
     let mut draft = focus.draft.clone();
     let mut chosen: Option<usize> = None;
 
-    // ★★ The drop button is interacted with BEFORE the text box is laid, so
+    // The drop button is interacted with BEFORE the text box is laid, so
     // its press is consumed here rather than reaching the `TextEdit` beneath
     // the pointer — `ui.put` allocates the text rectangle only, but an
     // `Area`-hosted popup from a previous frame can still be over this one.
@@ -101,7 +101,7 @@ pub(super) fn type_into(
         // [`textbox::seat`].
         textbox::seat(&ctx, id, &draft, true);
     } else if !response.has_focus() && pointer_in_list(&ctx, id) {
-        // ★★★ The same surrender `super::choose` documents at length: egui's
+        // The same surrender `super::choose` documents at length: egui's
         // `SurrenderFocusOn::Presses` takes focus from a focused widget on any
         // press where it is not hovered, and a row of the popup is not this
         // text box. Without this the press frame drops the focus, the release
@@ -110,12 +110,12 @@ pub(super) fn type_into(
         response.request_focus();
     }
 
-    // ★ Escape's two rungs, innermost first — `super::choose`'s rule, and it
+    // Escape's two rungs, innermost first — `super::choose`'s rule, and it
     // has to be read BEFORE the commit branch because egui's own `TextEdit`
     // surrenders focus on Escape. Without that ordering the two are one event
     // and which runs is an accident of ordering rather than a decision.
     //
-    // ★★★ **The outer rung writes the typed string on its way out** —
+    // **The outer rung writes the typed string on its way out** —
     // `OPERATOR_REQUESTS.md` **O223**. The inner one does not, and the
     // difference is not an inconsistency: closing the popup leaves the operator
     // in the box they were typing in with their text still in front of them,
@@ -202,7 +202,7 @@ pub(super) fn type_into(
             actions,
         );
     } else if ctx.input(|i| i.key_pressed(Key::Enter)) || response.lost_focus() {
-        // ★★ Enter and focus loss both commit **the typed string**, and this
+        // Enter and focus loss both commit **the typed string**, and this
         // is the whole of what bit 19 buys: `set_choice_value` matches it
         // against `/Opt` first, so a typed "Large" is the same command as a
         // picked "Large", and a typed "Extra large" is a free-text value the
@@ -245,7 +245,7 @@ pub(super) fn type_into(
 /// Raise a fill for the typed string, if it says anything the field does not
 /// already hold.
 ///
-/// ★★ The whole of what bit 19 buys: `set_choice_value` matches the string
+/// The whole of what bit 19 buys: `set_choice_value` matches the string
 /// against `/Opt` first, so a typed *"Large"* is the same command as a picked
 /// *"Large"*, and a typed *"Extra large"* is a free-text value the engine
 /// stores as its own export. Nothing here has to tell the two apart.
@@ -279,7 +279,7 @@ fn commit_typed(
 
 /// Whether `text` is already the display or export of the selected option.
 ///
-/// ★ Without this, opening an editable combo whose `/V` is an export that
+/// Without this, opening an editable combo whose `/V` is an export that
 /// differs from its display would commit the *display* on the way out — a
 /// write the operator did not ask for, on every field they merely looked at.
 fn display_matches(options: &[(String, String)], selected: &[String], text: &str) -> bool {
@@ -317,7 +317,7 @@ const ARROW: &str = "pdfcer-canvas-form-combo-arrow"; // ui-text-exempt: interna
 
 /// Paint the drop button: a chevron on the theme's own plate.
 ///
-/// ★ `accent_pair`, never a named colour — `tools/gates/check-theme-colors.sh`
+/// `accent_pair`, never a named colour — `tools/gates/check-theme-colors.sh`
 /// forbids the second and `check-plate-colour.sh` requires that an `on_accent`
 /// ink state the plate it is drawn on. Both are satisfied by taking the pair
 /// together, which is also the only way the contrast is gated.

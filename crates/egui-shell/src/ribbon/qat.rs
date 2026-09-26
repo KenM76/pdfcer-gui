@@ -29,7 +29,7 @@
 //! The uniqueness check lives in [`crate::manifest::Shell::validate`] and
 //! already counts tabs only, so nothing here has to enforce it.
 //!
-//! # ★ Icon-only is earned, not assumed
+//! # Icon-only is earned, not assumed
 //!
 //! A QAT is conventionally icon-only. This module will not draw an
 //! icon-only control unless the command supplies **both** an icon key and
@@ -92,7 +92,7 @@ pub(crate) fn shows_label(command: &Command, can_paint_icons: bool) -> bool {
 
 /// The width the QAT will occupy, measured **before** it is drawn.
 ///
-/// # ★ Why an unmeasured QAT is not an option
+/// # Why an unmeasured QAT is not an option
 ///
 /// The tab-strip row reserves space outermost-first
 /// ([`super::plan::plan_strip_row`]), and a reservation you cannot measure
@@ -242,7 +242,7 @@ pub(crate) fn min_width(ui: &egui::Ui, ctx: &Ctx<'_>, qat: Option<&Qat>) -> f32 
 /// Ordering is the manifest's; unknown ids are skipped with a disclosure
 /// by [`Ctx::command`].
 ///
-/// # ★ How a QAT that does not fit degrades, and why it is not "truncate"
+/// # How a QAT that does not fit degrades, and why it is not "truncate"
 /// alone
 ///
 /// The caller lays this out inside a `Ui` whose `max_rect` is the width
@@ -284,7 +284,7 @@ pub(crate) fn render(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, qat: Option<&Qat>) {
         let Some(command) = ctx.command(id).cloned() else {
             continue;
         };
-        // ★ The containment rule. `available_width()` is honest here
+        // The containment rule. `available_width()` is honest here
         // because the caller gave this `Ui` an explicit `max_rect`; what
         // it cannot tell us is that a button below its floor overflows
         // rather than shrinking, which is why the check is against
@@ -343,7 +343,7 @@ mod tests {
     use super::*;
     use crate::commands::HandlerToken;
 
-    /// **★ A control is icon-only only when it has an accessible name to
+    /// **A control is icon-only only when it has an accessible name to
     /// go with the icon.**
     ///
     /// The tooltip *is* the accessible name of an icon-only control. A
@@ -381,7 +381,7 @@ mod tests {
         assert!(shows_label(&bare, true));
     }
 
-    /// **★ An application that cannot paint icons still gets labels.**
+    /// **An application that cannot paint icons still gets labels.**
     ///
     /// Registering an icon key is an *intention*; supplying an
     /// [`super::Ribbon::with_icon_painter`] is the *capability*. Only the

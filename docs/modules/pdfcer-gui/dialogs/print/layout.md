@@ -5,7 +5,7 @@
 # Why this is its own file
 
 
-# ★★★ THE ONE RULE THIS FILE EXISTS TO HOLD
+# THE ONE RULE THIS FILE EXISTS TO HOLD
 
 > **Every width and height is derived from the space OUTSIDE the scroll area
 > and from constants. Nothing is measured from inside it.**
@@ -30,7 +30,7 @@ that raised a vertical bar; the vertical bar consumed width, which kept the
 horizontal one. **The two bars were each other's cause**, which is why no
 amount of resizing dismissed them.
 
-★★ And the failure was INVERTED, which walking the size series found and a
+And the failure was INVERTED, which walking the size series found and a
 single screenshot would not have: bars at 1000x760 and 1300x900 where
 nothing needed scrolling, and **no bar at all** at 700x520 where the Paper
 section was clipped and unreachable.

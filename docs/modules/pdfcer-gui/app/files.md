@@ -7,7 +7,7 @@ failure split, forgetting the previous document's panel state, recording
 the file in the recent list — is [`crate::app::PdfcerApp::open_path`]'s and
 is reached through the action funnel, never from here.
 
-## ★ Rule 1: substitute the dialog's ANSWER, never its interaction
+## Rule 1: substitute the dialog's ANSWER, never its interaction
 
 `D:\dev\rag\egui\native_file_dialog_is_a_hard_wall_substitute_the_answer_via_env_var.md`
 records this as a **pattern in this project**, promoted after its second
@@ -70,7 +70,7 @@ placeholder that does not**, and the interim was built so that replacing it
 touched exactly one function — the seam, the action, the command and the
 dirty-document rule were all deliberately on this side of the call.
 
-## ★ Rule 3: no test may dispatch `file.open`
+## Rule 3: no test may dispatch `file.open`
 
 On the machine this is built on, dispatching `file.open` opens a **real
 modal dialog** and blocks until a human dismisses it. A `cargo test` that
@@ -81,7 +81,7 @@ three variants supplied directly. The only untested millimetre is the
 `env::var_os` read itself, and it cannot be tested: `std::env::set_var` is
 `unsafe` in edition 2024 and this crate is `#![forbid(unsafe_code)]`.
 
-## ★ The dirty-document rule, stated where it will be needed
+## The dirty-document rule, stated where it will be needed
 
 
 * `save_pending` asks *"is a save **in flight**?"* — is there a moment at

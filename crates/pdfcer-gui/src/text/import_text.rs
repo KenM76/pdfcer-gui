@@ -8,7 +8,7 @@
 
 /// The window's title.
 ///
-/// ★ *"as pages"* in the title as well as on the command, because a window that
+/// *"as pages"* in the title as well as on the command, because a window that
 /// has been open for a minute is the only thing on screen and its title is the
 /// last statement of what is about to happen.
 #[must_use]
@@ -51,7 +51,7 @@ pub const fn size_label() -> &'static str {
 
 /// The margin field's label.
 ///
-/// ★ **One margin, not four.** `PageTemplate` carries four and this window
+/// **One margin, not four.** `PageTemplate` carries four and this window
 /// offers one, which is a deliberate narrowing: an operator importing a text
 /// file wants a readable page, and four spinners is a form to fill in rather
 /// than a decision to make. The engine's four are still set — all to this
@@ -81,7 +81,7 @@ pub const fn size_pt_label() -> &'static str {
 
 /// The sentence under the font chooser.
 ///
-/// ★★★ The one warning in the window, and it earns its place: `place_text`
+/// The one warning in the window, and it earns its place: `place_text`
 /// embeds nothing (R79), so a file containing a character none of the Standard
 /// 14 can write is **refused entirely** rather than imported with gaps. That is
 /// the correct behaviour and it is also the one an operator will not predict,
@@ -131,7 +131,7 @@ pub const fn cancel() -> &'static str {
 
 /// **The label for one Standard-14 face**, as the chooser shows it.
 ///
-/// ★ The engine's `/BaseFont` name with its hyphen opened out — `Times-Roman`
+/// The engine's `/BaseFont` name with its hyphen opened out — `Times-Roman`
 /// becomes *Times Roman* — and nothing else. These are the names printed in
 /// every PDF reader's font panel and written into the `/BaseFont` key, so an
 /// operator checking what a page uses meets the same word pdfcer wrote.
@@ -156,7 +156,7 @@ pub const fn face_name(face: pdfcer_core::fontdata::Std14) -> &'static str {
 
 /// The window's title bar: the act, then the file it is about.
 ///
-/// ★ The file's name after an em dash, which is this program's title
+/// The file's name after an em dash, which is this program's title
 /// convention — the window says what it does first, because that is what an
 /// operator alt-tabbing back to it needs, and names the subject second.
 #[must_use]

@@ -46,7 +46,7 @@ impl AboutDialog {
 
     /// Draw one frame of the dialog. Returns `false` when it should close.
     pub(super) fn show(&mut self, ctx: &egui::Context) -> bool {
-        // ★ Its own OS window, like every dialog in this directory. This is the
+        // Its own OS window, like every dialog in this directory. This is the
         // case that makes the reason obvious: About carries the third-party
         // ATTRIBUTIONS, the one surface in this program with a legal obligation
         // behind it, and it has to be movable off the document so it can be read
@@ -79,7 +79,7 @@ impl AboutDialog {
         let theme = Theme::of(ui.ctx());
 
         ui.label(egui::RichText::new(t::product()).heading());
-        // ★ The RELEASE version, from the git tag by way of `build.rs` — not
+        // The RELEASE version, from the git tag by way of `build.rs` — not
         // the crate manifest. See [`version_label`] for the whole argument; the
         // short form is that `CARGO_PKG_VERSION` is pinned at `0.1.0` on
         // purpose and is not a release version at all.
@@ -108,7 +108,7 @@ impl AboutDialog {
         // that must be legible without scrolling, and a scroll area over
         // everything would let them be dragged out of sight.
         //
-        // ★ The `max` is not defensive tidying. `available_height()` minus the
+        // The `max` is not defensive tidying. `available_height()` minus the
         // footer's reservation goes NEGATIVE in a window shorter than its own
         // header, and a negative `max_height` is neither a compile error nor a
         // panic — it is a scroll area that silently draws nothing. The
@@ -149,7 +149,7 @@ impl AboutDialog {
 /// line that is true about them. Every word it returns comes out of
 /// [`crate::text::about`]; the only thing decided here is *which*.
 ///
-/// # ★★★ Never `CARGO_PKG_VERSION`
+/// # Never `CARGO_PKG_VERSION`
 ///
 /// `Cargo.toml` is pinned at `0.1.0` by a recorded decision (O109, O110): this
 /// crate is versioned by the pdfcer workspace it folds **into**, so its manifest
@@ -170,7 +170,7 @@ impl AboutDialog {
 /// | version, any distance or a modified tree | `Version 0.5.0, plus 23 commits — not the released build` |
 /// | no version | `No released version — the build details below identify this program.` |
 ///
-/// # ★★ Why the third case says a sentence instead of nothing
+/// # Why the third case says a sentence instead of nothing
 ///
 ///
 /// # Why `distance` is a `&str` and parsed here
@@ -200,7 +200,7 @@ fn version_label(version: &str, distance: &str, modified: bool) -> String {
 /// Every value here arrives through `env!` from `build.rs`, so none of it can
 /// drift from what was compiled: there is no constant to forget to bump.
 ///
-/// # ★ Why the components are listed at all
+/// # Why the components are listed at all
 ///
 /// `summary()` already says the engine is built in. That answers *"does this
 /// talk to pdfcer or contain it"* and not the question an operator asks when a
@@ -210,12 +210,12 @@ fn version_label(version: &str, distance: &str, modified: bool) -> String {
 /// beside the executable — which the operator does not have when someone sends
 /// them a screenshot of the window.
 ///
-/// # ★ Why an absent component is named
+/// # Why an absent component is named
 ///
 /// See [`crate::text::about::component_absent`]. Short version: the
 /// no-placeholders rule governs controls, and this is a report.
 fn build_block(ui: &mut egui::Ui, theme: &Theme) {
-    // ★ The provenance, traced as well as drawn.
+    // The provenance, traced as well as drawn.
     //
     // A screenshot proves the block rendered; it does not prove the values are
     // the ones that were compiled in, and reading four fields out of a PNG is
@@ -236,7 +236,7 @@ fn build_block(ui: &mut egui::Ui, theme: &Theme) {
             env!("PDFCER_ENGINE_VERSION"),
             env!("PDFCER_ENGINE_REV"),
             env!("PDFCER_ICCCE_VERSION"),
-            // ★ This line grows by ADDING keys, never by reordering or
+            // This line grows by ADDING keys, never by reordering or
             // renaming: `tools/ui-verify`'s about check reads named keys off it
             // and asserts on a fixed list of them, so a new key is available to
             // a future driven check without disturbing the one that exists.
@@ -247,7 +247,7 @@ fn build_block(ui: &mut egui::Ui, theme: &Theme) {
             env!("PDFCER_RELEASE_DISTANCE"),
         )
     });
-    // ★ `.strong()` AND an explicit colour, which is the sanctioned pairing.
+    // `.strong()` AND an explicit colour, which is the sanctioned pairing.
     //
     // `RichText::strong()` has no colour role of its own — it resolves to
     // `widgets.active.fg_stroke`, the foreground of the accent-FILLED widget
@@ -384,7 +384,7 @@ mod tests {
 
     /// A frame drawn at a size that leaves almost no room still composes.
     ///
-    /// ★ The specific thing this catches. [`AboutDialog::body`] sizes its
+    /// The specific thing this catches. [`AboutDialog::body`] sizes its
     /// scroll area as `available_height() - 44.0`, and a window shorter than
     /// its own header makes that **negative**. A negative `max_height` is not
     /// a compile error and is not a panic either — it is a scroll area that
@@ -426,7 +426,7 @@ mod tests {
 
     /// A build past the tag says so, and does not pass for the release.
     ///
-    /// ★ The quiet half of the wrong-version failure. A bare `Version 0.5.0` on
+    /// The quiet half of the wrong-version failure. A bare `Version 0.5.0` on
     /// a build twenty-three commits past the tag tells an operator comparing
     /// their build against the released one that the two match.
     #[test]
@@ -455,7 +455,7 @@ mod tests {
         assert!(label.contains("uncommitted"), "got {label:?}");
     }
 
-    /// ★★★ **With no version available, nothing numeric is drawn.**
+    /// **With no version available, nothing numeric is drawn.**
     ///
     /// A tarball with no `.git`, a machine with no `git`, a clone with no tags:
     /// `build.rs` emits empty strings, and the *only* number anywhere in reach

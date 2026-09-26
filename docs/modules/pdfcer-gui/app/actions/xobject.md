@@ -4,7 +4,7 @@ One verb today: **give this page its own private copy of a shared drawing**,
 so that a later edit to it changes this page and no other.
 
 
-## ★★★ Why this is a sub-enum file on day one, holding one variant
+## Why this is a sub-enum file on day one, holding one variant
 
 [`super::action`]'s rule is *"the next family of variants to **grow**"*, and
 a family of one has not grown. Three answers, and the third is the one that
@@ -22,7 +22,7 @@ decides it:
    three verbs at once has grown before anybody had to measure it."* This
    family arrives with one — see the next point for why it is nonetheless a
    family rather than a stray.
-3. ★★ **The family is defined by its OPERAND, and the operand is unique in
+3. **The family is defined by its OPERAND, and the operand is unique in
    this crate.** Every other authoring verb here addresses either a
    paint-order index into one content stream (`super::vector`), a stable
    annotation `ObjId` (`super::annot`), an outline item `ObjId`
@@ -34,7 +34,7 @@ decides it:
    three further form-XObject verbs as open gaps; they land here, and they
    land here because of the operand, not because of the noun.
 
-## ★★★ The one fact a reader of this file must not get wrong
+## The one fact a reader of this file must not get wrong
 
 **The granularity is one PAGE, not one invocation**, and it is the engine's
 decision rather than a simplification made here. From `unshare_form`'s own
@@ -54,7 +54,7 @@ engine does not implement — a placeholder wearing an enum variant, which is
 what `super`'s `OVERVIEW.md` forbids in as many words when it explains why
 there is no `ResizeSelection`.
 
-## ★★ What this file does NOT do, and where it happens instead
+## What this file does NOT do, and where it happens instead
 
 **It does not derive the operand.** The `ObjId` arrives already resolved,
 from `crate::app::dispatch::format`, which reads the first leaf of the

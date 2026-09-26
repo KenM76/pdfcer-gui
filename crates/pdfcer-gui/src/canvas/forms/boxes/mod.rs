@@ -72,7 +72,7 @@ pub enum BoxKind {
         /// (§12.7.4.3, Table 222: `0` left, `1` centre, `2` right), resolved by
         /// `pdfcer-core` through the field tree and the AcroForm default.
         ///
-        /// ## ★★★ Why the editor honours this when it honours no other
+        /// ## Why the editor honours this when it honours no other
         /// appearance property
         ///
         /// [`super`]'s §3 refuses to make the editor a facsimile of the
@@ -98,7 +98,7 @@ pub enum BoxKind {
         /// passes that test. `/DA`'s font and size do not, which is why
         /// [`editor_font_size`] still derives its number from the box.
         ///
-        /// ## ★ The background colour is honoured too, and by the same test
+        /// ## The background colour is honoured too, and by the same test
         ///
         /// `/MK` `/BG` (Table 189) is a fill and not a placement, so honouring
         /// it makes no claim about where a glyph lands and it passes the rule
@@ -162,7 +162,7 @@ pub enum BoxKind {
         /// `/Ff` `Combo` (§12.7.4.4, Table 230, bit 18) — a **combo box**
         /// rather than a list box.
         ///
-        /// ★★★ It decides where the options are drawn, and the two are not
+        /// It decides where the options are drawn, and the two are not
         /// variations of one another. A combo's options drop *below the
         /// widget* as a separate surface; a list box's options render **inside
         /// its own rectangle**, replacing what the appearance stream shows,
@@ -178,7 +178,7 @@ pub enum BoxKind {
         /// `/Ff` `Edit` (§12.7.4.4, Table 230, bit 19) **and** `Combo` — the
         /// operator may type a value the list does not contain.
         ///
-        /// ★★★ Both bits, never bit 19 alone. The spec's own words for bit 19
+        /// Both bits, never bit 19 alone. The spec's own words for bit 19
         /// are *"used only with Combo"*, so `Edit` on a list box is a
         /// meaningless bit rather than a meaningful one, and a decoder that
         /// honoured it would put a caret into a surface whose whole behaviour
@@ -188,7 +188,7 @@ pub enum BoxKind {
         /// offer typing into a field the engine then refuses with
         /// `ChoiceValueNotInOptions`.
         ///
-        /// ★★ What it changes on the page is the **whole control**, not a
+        /// What it changes on the page is the **whole control**, not a
         /// property of one: an editable combo box is a live text box with a
         /// drop button beside it, where a plain one is a focus ring with a
         /// popup. `super::super::choosing::typing` draws the first;
@@ -217,7 +217,7 @@ pub enum NotOnCanvas {
     /// **No page's `/Annots` lists this widget with a usable rectangle.**
     ///
     /// One variant rather than a separate "no `/Rect`" and "no `/P`", and the
-    /// merge is the point. See [`place`]'s ★ section: the question *"which
+    /// merge is the point. See [`place`]'s section: the question *"which
     /// page is this widget on?"* is answered by walking each page's `/Annots`,
     /// so there is no `/P` to be absent, and a widget that no page lists is a
     /// widget with no place whatever its own dictionary says.
@@ -251,7 +251,7 @@ pub struct Routing {
 /// One widget of one field, placed — **whatever kind it is and whether or not
 /// it can be filled.**
 ///
-/// ## ★★★ Why this is not [`WidgetBox`], and why it comes from the same walk
+/// ## Why this is not [`WidgetBox`], and why it comes from the same walk
 ///
 /// A `WidgetBox` is a widget a click can **fill**, and five conditions narrow
 /// the set: no appearance, a rotated page, an unlisted widget, a kind with no
@@ -370,7 +370,7 @@ pub fn offered_in(tool: CanvasTool) -> bool {
 /// The widget's own background colour as sRGB components, or `None` for
 /// "leave the theme's box alone".
 ///
-/// # ★★★ What this is for, and why it is not a facsimile
+/// # What this is for, and why it is not a facsimile
 ///
 /// The in-canvas field editor lays a live `egui` text box over the raster for
 /// the duration of a keystroke. With no fill that box is `extreme_bg_color` —
@@ -397,7 +397,7 @@ pub fn offered_in(tool: CanvasTool) -> bool {
 /// would have lost one. This function is where they are allowed to merge, and
 /// it merges them at the point of use rather than at the point of reading.
 ///
-/// # ★★ DeviceCMYK IS converted here, and elsewhere in this shell it is not
+/// # DeviceCMYK IS converted here, and elsewhere in this shell it is not
 ///
 /// `app::markupband::rgb_of` returns `None` for a CMYK mark and
 /// `app::fontband` greys the swatch, on a rule this project holds firmly: *a
@@ -413,7 +413,7 @@ pub fn offered_in(tool: CanvasTool) -> bool {
 /// box**. Refusing it would not avoid a conversion; it would make the editor
 /// disagree with the page it is sitting on.
 ///
-/// ★ The match is exhaustive with no wildcard, so a new [`MkColor`] variant
+/// The match is exhaustive with no wildcard, so a new [`MkColor`] variant
 /// stops the build here rather than silently taking the `None` arm.
 #[must_use]
 pub fn editor_fill(widget: &Widget) -> Option<[f32; 3]> {
@@ -446,7 +446,7 @@ pub fn editor_fill(widget: &Widget) -> Option<[f32; 3]> {
 /// rotated-page decision: the box is placed correctly at every rotation, and
 /// it is only the editor that cannot be.
 ///
-/// # ★ It asks nothing about geometry
+/// # It asks nothing about geometry
 ///
 /// The geometry a click is tested against does not come from `Widget::rect`
 /// — [`place`] takes it from each page's `/Annots` instead. Asking about it
@@ -556,7 +556,7 @@ pub fn classify(field: &Field, widget: &Widget, rotate: u16) -> Result<BoxKind, 
 /// `annots[i]` is page `i`'s `EditSession::widget_rects(i)` — every `/Widget`
 /// annotation that page's `/Annots` lists, with its `/Rect` already normalised.
 ///
-/// # ★ Which page a widget is on is answered by `/Annots`, never by `/P`
+/// # Which page a widget is on is answered by `/Annots`, never by `/P`
 ///
 /// The obvious implementation reads `pdfcer_core::forms::Widget::page` — the
 /// widget's `/P` entry — and looks the page object up by id. It is
@@ -634,7 +634,7 @@ pub fn place(form: &AcroForm, pages: &[Page], annots: &[Vec<(ObjId, [f64; 4])>])
                 reasons.push(NotOnCanvas::NotPlaced);
                 continue;
             };
-            // ★★ SELECTABLE FROM HERE, and the position of this push is the
+            // SELECTABLE FROM HERE, and the position of this push is the
             // whole point: it is **above** the `classify` call and below the
             // rectangle, so a widget is selectable exactly when it has a place
             // on the canvas and regardless of whether it can be filled. A
@@ -650,7 +650,7 @@ pub fn place(form: &AcroForm, pages: &[Page], annots: &[Vec<(ObjId, [f64; 4])>])
                     rect: canvas,
                 },
             ));
-            // ★★★ `reachable` is answered by `classify` and NOT by the
+            // `reachable` is answered by `classify` and NOT by the
             // rectangle pushed above, and the two are easy to conflate.
             //
             // `reachable` means *"some widget of this field can be FILLED on

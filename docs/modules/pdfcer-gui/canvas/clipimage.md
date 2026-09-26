@@ -14,7 +14,7 @@ which is the right payload for pdfcer→pdfcer work and meaningless to Word.
 This module is the other half of the same copy: a picture any program can
 paste.
 
-## ★★★ Where the pixels come from, and why not the page
+## Where the pixels come from, and why not the page
 
 From **the clip's own one-page PDF**, not from a crop of the rendered page.
 
@@ -36,7 +36,7 @@ neighbourhood and the operator would have to explain to themselves why.
 ⇒ A **snapshot** tool — Acrobat's, where the rectangle IS the request — is a
 different feature and would rightly crop the page. It is not this one.
 
-## ★★ Why it composites onto white
+## Why it composites onto white
 
 `CF_DIB` at 32 bits has no alpha channel consumers agree about
 (`native_window::clipboard`'s header has the detail). Some read the fourth

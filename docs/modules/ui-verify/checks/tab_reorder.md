@@ -22,7 +22,7 @@ frame-level facts none of them can reach:
 nothing else by default, and a strip built from plain buttons looks
 completely correct until somebody tries to drag one.
 
-# ★ The second assertion is the one worth having
+# The second assertion is the one worth having
 
 **The document on screen does not change.** Reordering tabs is tidying, not
 navigation, and the failure — the active document following an *index*

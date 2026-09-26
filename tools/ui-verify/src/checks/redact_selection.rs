@@ -14,13 +14,13 @@ use crate::trace::Trace;
 
 /// Edit mode, the redact panel for its census, then the verb under test.
 ///
-/// ★ The panel is opened for its **census line**, not to be clicked: it is the
+/// The panel is opened for its **census line**, not to be clicked: it is the
 /// only surface that counts marks, and this check needs the count before and
 /// after. `mode.edit` first, because a mode change reconfigures the dock and
 /// would close a panel opened before it — learned the hard way on the bookmark
 /// clipboard the day before.
 ///
-/// ★★ `edit.redact`, and there is deliberately **no `view.panel_redact`**. The
+/// `edit.redact`, and there is deliberately **no `view.panel_redact`**. The
 /// panels module says why in as many words: a second id for the same surface
 /// would put it on a tab Read is shown, and Read must not be able to reach a
 /// marking surface at all. The mode taxonomy does that work with no capability
@@ -38,7 +38,7 @@ const SELECTION: &str = "canvas-selection";
 
 /// The ribbon control for the verb under test.
 ///
-/// ★ A `ui_rect` region published by the ribbon for every drawn command, named
+/// A `ui_rect` region published by the ribbon for every drawn command, named
 /// after the command id. Pressed rather than invoked because
 /// `PDFCER_DIAG_INVOKE` runs at start-up and this verb needs a selection that
 /// does not exist then.
@@ -130,7 +130,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
-    // ★ Normalise the saved dock layout, or a panel TOGGLE alternates between
+    // Normalise the saved dock layout, or a panel TOGGLE alternates between
     // opening and closing across runs. Same rule, same file, as the bookmark
     // clipboard check — and it is the application that writes this state, not
     // the check.
@@ -185,7 +185,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- the verb under test ------------------------------------------------
     //
-    // ★★ Clicked on the ribbon, because `PDFCER_DIAG_INVOKE` runs only at
+    // Clicked on the ribbon, because `PDFCER_DIAG_INVOKE` runs only at
     // START-UP and the selection this verb needs does not exist then. That is a
     // real constraint rather than a preference: an invoke chain cannot express
     // *"select something, then run this"*.
@@ -193,7 +193,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ⇒ So this check does depend on the Redact band being drawn where the
     // manifest says. Named rather than hidden: if it fails at this step and
     // `the_ribbon_has_the_documented_shape` also fails, believe that one first.
-    // ★★★ THE EDIT TAB FIRST. `mode.edit` sets the MODE, which decides which
+    // THE EDIT TAB FIRST. `mode.edit` sets the MODE, which decides which
     // tabs exist — it does not decide which one is showing, and the shell opens
     // on File. The first version of this check went straight to the item lookup
     // and reported the control missing while the trace held nine
@@ -204,7 +204,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // looking at.
     let Some(tab) = crate::checks::driving::declared(&session.trace()?, ui_rect, "ribbon.tab.edit")
     else {
-        // ★ The tab list is built HERE rather than in an `ok_or_else`
+        // The tab list is built HERE rather than in an `ok_or_else`
         // closure: building it needs `session.trace()?` and a closure cannot
         // carry the `?`. Worth the extra lines — a skip that names the tabs
         // that ARE there is diagnosable; one that says "not found" is not.
@@ -219,7 +219,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.click_at(session.frame()?.declared_center(tab))?;
     session.settle(18);
 
-    // ★★ `declared_or_in_overflow`, not `declared`. The harness drives an
+    // `declared_or_in_overflow`, not `declared`. The harness drives an
     // 1100 pt window, at which the ribbon correctly folds its rightmost groups
     // into an overflow menu — and a collapsed GROUP is a third place a command
     // can be. A check looking only at the tab surface reports *"the command is
@@ -265,7 +265,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "★★ marks went from {before} to {after} — the mark reached the document"
     ));
 
-    // --- ★★ and NOTHING was applied ----------------------------------------
+    // --- and NOTHING was applied ----------------------------------------
     //
     // The most dangerous defect this feature can have is marking that silently
     // applies: the operator sees a mark, believes the content is gone, stops

@@ -75,7 +75,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
 
-    // ★ The second document must be a DIFFERENT FILE, and the check skips
+    // The second document must be a DIFFERENT FILE, and the check skips
     // rather than falling back to `--pdf`.
     //
     // `crate::app::documents` §3 makes opening an already-open path **activate

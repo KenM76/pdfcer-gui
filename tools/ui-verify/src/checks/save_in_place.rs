@@ -22,7 +22,7 @@ const FILE_TAB: (&str, &str) = ("ribbon.tab.file", "file");
 const MARKUP_TAB: (&str, &str) = ("ribbon.tab.markup", "markup");
 /// The rectangle tool.
 const RECTANGLE: (&str, &str) = ("ribbon.item.markup.rectangle", "markup.rectangle");
-/// ★ The control this check is about.
+/// The control this check is about.
 const SAVE: (&str, &str) = ("ribbon.item.file.save", "file.save");
 /// `add-markup …` — the document changed.
 const EDIT_EVENT: &str = "add-markup";
@@ -55,7 +55,7 @@ impl Check for SaveWritesOverTheFileYouOpened {
 
 /// Copy the fixture somewhere this check may destroy.
 ///
-/// ★ **Never the operator's own fixture.** This check exists to prove a verb
+/// **Never the operator's own fixture.** This check exists to prove a verb
 /// that overwrites, so pointing it at `--pdf` directly would mean a harness run
 /// modifies the file the next run measures — and a fixture that changes under
 /// the suite is the thing `crate::fixture`'s header refuses.
@@ -147,7 +147,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("a markup was authored, so the document is modified");
 
-    // --- 2: ★ Save -------------------------------------------------------
+    // --- 2: Save -------------------------------------------------------
     click_tab(&session, &driver, ui_rect, FILE_TAB)?;
     let trace = session.trace()?;
     if declared(&trace, ui_rect, SAVE.0).is_none() {
@@ -179,7 +179,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note(format!("★ Save reported success: `{}`", line.raw));
 
-    // --- 3: ★★ the file on disk is a WHOLE pdf, not a truncated one --------
+    // --- 3: the file on disk is a WHOLE pdf, not a truncated one --------
     //
     // The property the temporary-and-rename exists for. A partial write would
     // leave a file that is larger than nothing and smaller than a document, and

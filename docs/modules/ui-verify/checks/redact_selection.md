@@ -17,7 +17,7 @@ wants redacting is in the gap — a title-block value drawn as vector strokes,
 a scanned stamp, a logo, a signature image. None is findable by typing, so
 *"it couldn't"* was true about the route rather than a defect in it.
 
-# ★★★ Why the oracle is the MARK COUNT and not the trace
+# Why the oracle is the MARK COUNT and not the trace
 
 `redact-mark-selection-requested` says the shell built some quads. It says
 nothing about whether the engine accepted them — and this verb has a whole
@@ -33,7 +33,7 @@ family of ways to be accepted and do nothing:
 That is the number the operator sees in the review list, and it is the only
 one that means *a redaction now exists*.
 
-# ★★ And it asserts the mark is NOT applied
+# And it asserts the mark is NOT applied
 
 Marking is not applying. A `/Redact` annotation removes no content, and the
 single most dangerous mistake this feature can produce is an operator who

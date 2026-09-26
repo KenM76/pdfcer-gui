@@ -28,7 +28,7 @@ pub struct Need<'a> {
     pub secondary_clicked: bool,
     /// Whether a measure tool is armed.
     ///
-    /// ★ The one term that is true on **every** frame rather than on the frame
+    /// The one term that is true on **every** frame rather than on the frame
     /// of an event, and deliberately: the snap indicator has to appear while
     /// the operator is still deciding where to click, and an indicator that
     /// arrived only on the click it exists to guide would be useless. The cost
@@ -60,7 +60,7 @@ impl Need<'_> {
             || gesture_needs_model(self.outcome)
     }
 
-    /// ★★★ **The term a list of gesture outcomes structurally cannot hold.**
+    /// **The term a list of gesture outcomes structurally cannot hold.**
     ///
     /// Delete at the Part or Node rung reaches
     /// [`crate::canvas::deleting::subject`], which needs the decomposition to
@@ -99,7 +99,7 @@ impl Need<'_> {
 
 /// **Does this gesture outcome need the page's object model?**
 ///
-/// ★★★ An exhaustive `match` with **no wildcard arm**, and that is the whole
+/// An exhaustive `match` with **no wildcard arm**, and that is the whole
 /// point of the function. A new [`GestureOutcome`] variant is a compile error
 /// here until somebody answers this question for it — where the `matches!`
 /// this replaces would have answered `false` in silence, which is exactly how
@@ -118,7 +118,7 @@ pub fn gesture_needs_model(outcome: &GestureOutcome) -> bool {
         // A click has to know what is under the pointer in order to select it.
         GestureOutcome::Click { .. } => true,
 
-        // ★★ A **move drag** is in the set at either phase, and it is the one
+        // A **move drag** is in the set at either phase, and it is the one
         // member that is not a hit test — which is why the flag this feeds is
         // named for what it gates rather than for what most of its members do.
         // It needs the model to answer two questions the selection alone
@@ -133,7 +133,7 @@ pub fn gesture_needs_model(outcome: &GestureOutcome) -> bool {
         // gesture.
         GestureOutcome::Move { .. } => true,
 
-        // ★★ `Resize` joined this set on 2026-08-19, and its absence was the
+        // `Resize` joined this set on 2026-08-19, and its absence was the
         // second defect the first driven resize found. The decomposition is
         // what `canvas::resizing` reads every node position out of, so without
         // it the commit declined with `NoObjectModel` — a refusal that is
@@ -141,20 +141,20 @@ pub fn gesture_needs_model(outcome: &GestureOutcome) -> bool {
         // *"nobody asked for it"*. The list was written when a resize
         // committed nothing, so there was genuinely nothing for it to need.
         GestureOutcome::Resize { .. }
-        // ★ Same reason as `Resize`, and it was learned there: the commit
+        // Same reason as `Resize`, and it was learned there: the commit
         // needs the object model to refuse a stale index, and a gesture on a
         // canvas that never asked for a provider gets `None` and declines. The
         // resize spent a whole driving session on exactly this.
         | GestureOutcome::Handle { .. }
         | GestureOutcome::DimensionVertex { .. }
-        // ★ …and `Rotate`, for `Resize`'s reason: the commit resolves
+        // …and `Rotate`, for `Resize`'s reason: the commit resolves
         // paint-order indices, and a gesture on a canvas that never asked for
         // a provider would address indices nothing has verified.
         | GestureOutcome::Rotate { .. } => true,
 
         // ---- the marquee, which is two different gestures ------------------
         //
-        // ★ A **zoom** marquee is deliberately NOT in the set. It selects
+        // A **zoom** marquee is deliberately NOT in the set. It selects
         // nothing, so it hit-tests nothing, so it decomposes nothing — a
         // region zoom over a 129,758-object drawing costs one scroll offset.
         // That falls out of the intent being carried on the outcome rather

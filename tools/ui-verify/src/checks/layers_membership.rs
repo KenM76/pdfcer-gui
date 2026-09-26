@@ -35,7 +35,7 @@ const EXPECTED_LAYER: &str = "Visible Box";
 /// A point on the grey bar (`0 600 612 60 re f`), which is painted after every
 /// `EMC` and is therefore on **no** optional-content group.
 ///
-/// ★ `x = 150` rather than the bar's centre at 306: the fixture leaves a
+/// `x = 150` rather than the bar's centre at 306: the fixture leaves a
 /// `0 0 300 792 re W n` clip in force with no `Q` to restore it, so the right
 /// two thirds of the bar may or may not be painted depending on how a renderer
 /// treats a clip inside a switched-off group. The object's page bbox spans the
@@ -46,7 +46,7 @@ const ON_AN_UNLAYERED_OBJECT: (f64, f64) = (150.0, 630.0);
 /// The commands that put the shell in a state where this can be measured, one
 /// per frame in this order.
 ///
-/// ★ `mode.edit` first and it is not optional: Read mode refuses a canvas
+/// `mode.edit` first and it is not optional: Read mode refuses a canvas
 /// click on content by design (`DEFECTS.md` D6), and a check that skipped this
 /// step once reported the mode gate as a selection defect.
 const INVOKE: &str = "mode.edit,view.panel_layers";
@@ -118,7 +118,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
     if let Some(supplied) = ctx.pdf.as_ref() {
-        // ★ Said out loud. A sweep that silently ignored a flag is
+        // Said out loud. A sweep that silently ignored a flag is
         // indistinguishable from one that honoured it, and this project has
         // twice spent a session on a check that had thrown its fixture away
         // without saying so.
@@ -204,7 +204,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★ Nothing is selected yet, so nothing may be highlighted. This is the
+    // Nothing is selected yet, so nothing may be highlighted. This is the
     // baseline that makes the later assertions mean something: without it, a
     // build that highlights the first row unconditionally would satisfy step B
     // and the check would report a constant as a relation.
@@ -306,7 +306,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★★ And the panel actually lit that row — the operator's literal word was
+    // And the panel actually lit that row — the operator's literal word was
     // "highlights". Exactly one, because a build that lit every row would
     // satisfy "the right row is lit" and say nothing.
     let rows = row_states(&after);
@@ -329,7 +329,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // -----------------------------------------------------------------
     // C. …AND A CLICK ON AN OBJECT THAT IS ON NO LAYER SAYS SO INSTEAD.
     //
-    // ★★★ This is the half that cannot be faked. Everything in B passes
+    // This is the half that cannot be faked. Everything in B passes
     // against a build that ignores the selection and always answers with the
     // first layer; nothing here does.
     // -----------------------------------------------------------------
@@ -402,7 +402,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
 /// The final highlight state of every layer row, keyed by name.
 ///
-/// # ★ Why the LAST line per name rather than a count
+/// # Why the LAST line per name rather than a count
 ///
 /// `panels::layers` traces one `layer-row` per drawn row **per frame**, so a
 /// run of a few seconds leaves hundreds of lines and any count is a count of
@@ -416,7 +416,7 @@ fn row_states(trace: &crate::trace::Trace) -> BTreeMap<String, bool> {
         let Some(name) = line.get("name") else {
             continue;
         };
-        // ★ `unwrap_or(false)` is wrong here and `continue` is right: a build
+        // `unwrap_or(false)` is wrong here and `continue` is right: a build
         // that never publishes `highlighted=` would read as "no row is
         // highlighted", which is this check's pass condition in section C. A
         // missing field must not be able to manufacture an assertion.
@@ -437,7 +437,7 @@ fn highlighted_row(rows: &BTreeMap<String, bool>) -> Option<String> {
 
 /// Resolve a fixture under the engine repository's synthetic corpus.
 ///
-/// ★ The path is derived, not configured. `D:\Dev\pdfcer` is READ-ONLY to this
+/// The path is derived, not configured. `D:\Dev\pdfcer` is READ-ONLY to this
 /// project and its corpus is the only place this shape exists, so the check
 /// reads from it and writes nowhere near it. `None` rather than a panic turns
 /// a missing corpus into a SKIP with a reason instead of a crash mid-suite.

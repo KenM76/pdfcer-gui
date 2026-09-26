@@ -1,6 +1,6 @@
 # `app::settings` — the live configuration, and the funnel that makes it real
 
-## ★ Why this module exists, and it is not "to hold a struct"
+## Why this module exists, and it is not "to hold a struct"
 
 `pdfcer_core::settings::Settings` is the operator's answers to questions
 the PDF standard declines to answer. Loading them is easy; **honouring**
@@ -62,7 +62,7 @@ syntax tree contains no comments at all.
 3. **Redaction's `SaveOptions::identity()`.** Deliberately NOT funnelled,
    and this is the interesting one — see [`Settings::save_options`].
 
-## ★★★ The funnel also guards a field it deliberately never SETS — O137
+## The funnel also guards a field it deliberately never SETS — O137
 
 [`Settings::render_options`] does not mention `stroke_display`, and that
 silence is the feature. `RenderOptions::default()` is

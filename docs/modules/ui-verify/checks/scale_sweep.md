@@ -28,7 +28,7 @@ Both boundaries are *derived from the page*, never written down as a zoom:
 | [`render::strategy::Strategy::Region`] | `longest_pt × raster_scale > MAX_PIXMAP_EDGE − 1` | 2,068 % and up |
 | + the `f64` position anchor | `longest_pt × zoom > SUB_PIXEL_CONTENT_EXTENT` | 132,396 % and up |
 
-★★ The rungs this check walks are chosen **just below, at, and just above**
+The rungs this check walks are chosen **just below, at, and just above**
 each of those, plus one far inside the region tier. This project's own
 `strategy.rs` records why: *"two samples either side of a transition look
 exactly like no transition at all if the transition is not where it was
@@ -62,7 +62,7 @@ So the probe moves the pointer a known number of screen points and asserts
 the reported canvas point moved by exactly that over the zoom. It is a
 linearity test, and it needs no fixture knowledge at all.
 
-# ★ Why the zoom is driven by Ctrl+wheel and not by the status bar's `+`
+# Why the zoom is driven by Ctrl+wheel and not by the status bar's `+`
 
 Zoom-to-cursor keeps the point under the pointer fixed, so the content this
 check aims at stays under the aim point all the way down. The `+` button
@@ -84,7 +84,7 @@ were wrong, and none of them was the application:
 | the **click** | *"clicking directly on the content selected nothing"* above 6,957 % | the closed-loop aim had lost the target — 312 screen px away — because the pan probe scrolled the view and never scrolled it back. See `scale_aim::re_aim` |
 | the **pan** | *"the canvas published no coverage line after the wheel"* at every rung including 104 % | `canvas-coverage` is a CHANGE LOG. No new line means the coverage did not move, which is the healthy answer |
 
-⇒ ★★ **A uniform failure at every rung of a scale sweep is evidence about
+⇒ **A uniform failure at every rung of a scale sweep is evidence about
 the probe, not about scale.** The baseline rung is the control, and a
 control that fails is the finding. The repaired check now drives every
 gesture successfully from 104 % to **2,298,019 %**, with an aim residual of

@@ -37,7 +37,7 @@ pub struct LaunchSpec {
     /// **Default `true`, which is what every check that clicks anything wants**
     /// -- see `place`'s own documentation for the on-screen keyboard it dodges.
     ///
-    /// ★★ Set `false` ONLY by a launch that sends no input at all. `place`
+    /// Set `false` ONLY by a launch that sends no input at all. `place`
     /// overrules the position half of `PDFCER_DIAG_VIEWPORT` unconditionally,
     /// so a check that asks for a window off the desktop -- because it reads
     /// the trace and never a pixel, and would rather not cover the operator's
@@ -76,7 +76,7 @@ impl LaunchSpec {
 /// **Where every launched window is put**, in desktop pixels.
 ///
 ///
-/// ★ This is a **mitigation, not the guard.** `Driver::confirm_uncovered`
+/// This is a **mitigation, not the guard.** `Driver::confirm_uncovered`
 /// refuses a click on a point another window owns, wherever the window is;
 /// this only makes that refusal rare. A machine whose furniture docks
 /// somewhere else will still be caught, and will be told so.
@@ -94,7 +94,7 @@ const MIN_CLIENT_PX: u32 = 200;
 
 /// A running application, its captured trace, and its window.
 pub struct Session {
-    /// ★ `RefCell` so that liveness can be asked with `&self`.
+    /// `RefCell` so that liveness can be asked with `&self`.
     ///
     /// `Child::try_wait` needs `&mut`, and [`Session::trace`] — which every
     /// check calls, and which is where the liveness guard has to live to be
@@ -338,7 +338,7 @@ impl Session {
     /// Maximise the window, so a ribbon control past the fold is on screen
     /// rather than in the overflow menu.
     ///
-    /// # ★ Call this before looking for a control the tab lists LAST
+    /// # Call this before looking for a control the tab lists LAST
     ///
     /// A ribbon overflows when it is wider than its window, and a control in
     /// the overflow **stops publishing a rect** — which a check cannot tell
@@ -397,7 +397,7 @@ impl Session {
     /// and every trace line the check greps for already written — see
     /// [`Self::trace`].
     ///
-    /// # ★★★ The one caller, and why a panic is the MECHANISM there
+    /// # The one caller, and why a panic is the MECHANISM there
     ///
     /// [`TheRasterWallStopsTheZoomInsteadOfPaintingAnError`] drives the zoom
     /// until the rasterizer gives out, because that is the only way to observe
@@ -413,7 +413,7 @@ impl Session {
     /// `pdfcer-render` wraps the rasterizer in `catch_unwind` and converts that
     /// into a `RasterizerLimit` refusal, which the canvas turns into a learned
     /// ceiling (`raster-ceiling-learned`, backing off ×0.75 and ratcheting) and
-    /// a bottom-bar sentence in `status-group:raster-stop`. ★★ **So the panic is
+    /// a bottom-bar sentence in `status-group:raster-stop`. **So the panic is
     /// not something that check tripped over; it is the delivered fix working.**
     /// A harness that treats every thread panic as a failure reports the fix as
     /// broken — which is precisely what happened the first time that check was
@@ -444,7 +444,7 @@ impl Session {
     /// with it. `dialogs_open_in_their_own_window` drives that exact dialog and
     /// had been reporting
     ///
-    /// > ★ Keyboard shortcuts is a real OS window: [[186.0 209.0] - [606.0 689.0]]
+    /// > Keyboard shortcuts is a real OS window: [[186.0 209.0] - [606.0 689.0]]
     ///
     /// **PASS, on the crashing build.** Not by luck: the `viewport-inner` line
     /// the check reads is written *before* the panic, so by the time the
@@ -514,7 +514,7 @@ impl Session {
                  `session.expect_exit()` before reading the trace.",
                 self.stderr_path.display()
             ))
-            // ★ FATAL, so it is reported RED. Without this it would take the
+            // FATAL, so it is reported RED. Without this it would take the
             // harness's ordinary `Err` -> SKIPPED route, and a crashed program
             // reported as "did not run" is barely better than one reported as a
             // pass. See `Error::fatal`.
@@ -546,7 +546,7 @@ If this check provokes a panic on purpose, say so with                  `session
     /// a scan of what was already parsed. A panic message is exactly what that
     /// field was kept for; see its own documentation.
     ///
-    /// ★ **Two lines, not one.** Rust's panic hook writes the location first
+    /// **Two lines, not one.** Rust's panic hook writes the location first
     /// and the payload second:
     ///
     /// ```text
@@ -621,12 +621,12 @@ If this check provokes a panic on purpose, say so with                  `session
     /// has advanced by `frames`. Fast when idle, patient when loaded — which is
     /// what the name always claimed.
     ///
-    /// ★ **The old sleep is the floor, not the ceiling.** A short wall-clock
+    /// **The old sleep is the floor, not the ceiling.** A short wall-clock
     /// wait still happens first, because some of what a check waits for is not a
     /// frame at all — a file written, a child viewport created, an OS window
     /// map. Removing it would trade one class of flake for another.
     ///
-    /// ★★ **And there is a cap**, after which it returns rather than blocking.
+    /// **And there is a cap**, after which it returns rather than blocking.
     /// An application that has stopped drawing is a finding for the check's own
     /// assertions to report, in their own words, against the state they can see.
     /// A settle that waited forever would turn every such defect into a hung
@@ -686,7 +686,7 @@ impl Session {
     /// `try_wait` rather than `wait`: it must never block. A check calling this
     /// is asking a question, not waiting for an answer.
     ///
-    /// ★ `&mut self` is why `Session` is held mutably by the one check that
+    /// `&mut self` is why `Session` is held mutably by the one check that
     /// uses it. Reaping here is harmless — `Drop` kills and waits again, and
     /// both tolerate an already-exited child.
     pub fn has_exited(&self) -> Result<bool> {
@@ -746,7 +746,7 @@ pub fn staleness_complaint(exe: &Path, source_root: &Path) -> Option<String> {
     if t <= exe_time {
         return None;
     }
-    // ★ The GAP, in words, rather than two `SystemTime` debug prints.
+    // The GAP, in words, rather than two `SystemTime` debug prints.
     //
     let behind = t.duration_since(exe_time).map_or_else(
         |_| "an unmeasurable amount".to_owned(),

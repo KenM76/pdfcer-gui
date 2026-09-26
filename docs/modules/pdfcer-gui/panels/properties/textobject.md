@@ -18,7 +18,7 @@ O89 listed three candidates and picked none. This module is the first —
 *"a colour control on a selected text object that sweeps it for you"*, which
 O89 itself called *"closest to what you tried"*.
 
-★★★ **The other two were already built**, which was measured rather than
+**The other two were already built**, which was measured rather than
 assumed and is recorded in O89 in place of the sentences that said
 otherwise. The Properties panel's *"press T and sweep"* sentence existed
 from 2026-08-29 until 2026-09-14, when O198 made the route it named
@@ -30,7 +30,7 @@ button saying so on hover"* — for exactly **one** of the five controls: the
 ribbon's Colour swatch answered a greyed hover with the CMYK-and-spot-ink
 sentence, a claim about text it had not read. Fixed in `app::fontband`.
 
-## ★★★ THE OPERAND IS THE OBJECT'S OWN BYTE SPAN, NOT A GUESS AT GEOMETRY
+## THE OPERAND IS THE OBJECT'S OWN BYTE SPAN, NOT A GUESS AT GEOMETRY
 
 [`super::text`]'s header states, correctly, that the object selection and
 the text selection are unrelated index spaces and that an inference between
@@ -52,7 +52,7 @@ produces, through the same `Action::TextStyle`, into the same
 `EditSession::format_text` calls. This module chooses *which* runs; it
 changes nothing about what a restyle is.
 
-## ★★ Why the range and not the exact set — "sweeps it for you", literally
+## Why the range and not the exact set — "sweeps it for you", literally
 
 The operand is `first_run..=last_run`, which is precisely what
 `TextSelection::runs` produces for a hand sweep (`(start.run..=end.run)`).
@@ -62,7 +62,7 @@ things that usually agree and diverge on a document nobody tested. They can
 differ only where another object's show operators interleave inside this
 one's `BT`…`ET`, which §9.4's grammar forbids.
 
-## ★★★ Why COLOUR is the only control still drawn here
+## Why COLOUR is the only control still drawn here
 
 
 ⇒ **The premise was true and the conclusion did not follow.** "No single
@@ -80,7 +80,7 @@ clicked object as well as for a sweep, reading the first run for its
 read-back, and the route sentence is **deleted** rather than re-aimed —
 every clause of it had become false.
 
-★★ **Colour stays here, and only colour.** It is the one property whose
+**Colour stays here, and only colour.** It is the one property whose
 disagreement this shell must act on rather than merely render: a run
 painted in a `/Separation` gets **no swatch at all**, which [`Colour`]
 decides by looking at every run in the object. `super::text`'s own colour
@@ -89,7 +89,7 @@ of them — so that section draws its colour row only for a swept operand
 and defers to this one for an object. Exactly one Colour control is on
 screen in any frame.
 
-## ★★★ The spot-ink guard survives the object route
+## The spot-ink guard survives the object route
 
 `pdfcer_core::text_extract::TextColor::Other` means *"set in a colour space
 this extraction does not decode"* — a `/Separation`, a `/DeviceN`, an
@@ -111,12 +111,12 @@ how many of how many runs are affected. Two properties of that rule matter:
   disagree about which spaces are safe. That is why `rgb_of` was widened to
   `pub(super)` rather than copied.
 
-★ Note what this does NOT do: it does not name the ink.
+Note what this does NOT do: it does not name the ink.
 `TextColor::Other` is a fieldless variant and carries no `/Separation` name,
 unlike `PathPaint::Other`. [`t::ink_present`]'s doc comment carries that
 distinction; a sentence naming a spot colour here would be invented.
 
-## ★★ The canvas selection is NOT changed by a press, and that is on purpose
+## The canvas selection is NOT changed by a press, and that is on purpose
 
 An early design had this control set `doc.text_selection` to the object's
 runs after applying, so the operator would end the gesture with the words
@@ -129,7 +129,7 @@ what happens after a swept-text restyle, and `app::conditions`' note on
 `selection.text` argues it is the honest behaviour. Producing a selection
 that is dead on arrival would have looked like a bug in the feature.
 
-## ★★ The cost, and where it is paid
+## The cost, and where it is paid
 
 [`TextObjectDraft::sync`] runs one page extraction with provenance capture
 on — **392 ms on the operator's benchmark sheet** — behind a

@@ -62,7 +62,7 @@ pub const REGION_BODY: &str = "dialog:export-image"; // ui-text-exempt: trace re
 /// The region the format radio GROUP publishes — all four radios together.
 pub const REGION_FORMAT: &str = "export-image.format"; // ui-text-exempt: trace region name, never displayed
 
-/// ★★ The region ONE format's radio publishes, so a driven check can press a
+/// The region ONE format's radio publishes, so a driven check can press a
 /// named format rather than a coordinate.
 ///
 /// # Why the group region was not enough, and what it cost to find out
@@ -74,7 +74,7 @@ pub const REGION_FORMAT: &str = "export-image.format"; // ui-text-exempt: trace 
 /// the height by the number of radios — which is a guess that silently selects
 /// the wrong format the day a hint wraps onto a second line.
 ///
-/// ⇒ ★ **A driven check that clicks a computed offset inside a container is a
+/// ⇒ **A driven check that clicks a computed offset inside a container is a
 /// check that will one day pass while pressing something else.** So each radio
 /// declares its own rectangle, named after the format, and the harness clicks
 /// what it asked for.
@@ -96,14 +96,14 @@ pub const fn region_for_format(format: ImageFormat) -> &'static str {
 }
 /// The region the resolution field publishes.
 pub const REGION_DPI: &str = "export-image.dpi"; // ui-text-exempt: trace region name, never displayed
-/// ★★ The region ONE page-scope radio publishes.
+/// The region ONE page-scope radio publishes.
 ///
 /// Same argument as [`region_for_format`], which states it in full and is
 /// not repeated here: a check that presses the group's rectangle plus an
 /// offset is a check that presses the wrong control the day a hint gains a
 /// line.
 ///
-/// ★ These exist for O196. Until the export windows remembered anything, a
+/// These exist for O196. Until the export windows remembered anything, a
 /// driven check had nothing to assert about a radio beyond "it is drawn";
 /// now the question is which one is *selected on open*, and that cannot be
 /// asked of a group.
@@ -162,7 +162,7 @@ pub struct ExportImageDialog {
     dpi: f32,
     /// Whether the page's own transparency survives.
     ///
-    /// ★ **Not cleared when JPEG is selected.** The checkbox goes dead and says
+    /// **Not cleared when JPEG is selected.** The checkbox goes dead and says
     /// why; the stored answer stays as the operator left it, so choosing JPEG
     /// to look at the quality control and choosing PNG again does not silently
     /// turn transparency off. The refusal is what makes that safe: a plan built
@@ -229,7 +229,7 @@ impl ExportImageDialog {
             close_requested: false,
         };
 
-        // ★★★ **Traced from the BUILT dialog, and the position of these
+        // **Traced from the BUILT dialog, and the position of these
         // lines is the whole point of them.**
         //
         //
@@ -243,7 +243,7 @@ impl ExportImageDialog {
                  dpi={} transparent={} quality={} keep_text={}",
                 dialog.page_index,
                 dialog.page_count,
-                // ★ Stable lowercase tokens, never `{:?}`. This project's
+                // Stable lowercase tokens, never `{:?}`. This project's
                 // standing lesson, and the preferences file's own `*_key`
                 // functions are what produce them, so the token a check reads
                 // here and the token on disk cannot drift.
@@ -314,7 +314,7 @@ impl ExportImageDialog {
         if std::mem::take(&mut self.export_requested)
             && let Some(plan) = self.plan()
         {
-            // ★★★ O196, and the POSITION is the decision: the habits are
+            // O196, and the POSITION is the decision: the habits are
             // written when the operator presses Export, never when the window
             // closes. Closing without exporting is how a person says *"not
             // this"*. The argument is in
@@ -363,7 +363,7 @@ impl ExportImageDialog {
 
     /// The plan, or `None` when there is nothing to export.
     ///
-    /// ★ Deliberately does **not** refuse an impossible combination. The window
+    /// Deliberately does **not** refuse an impossible combination. The window
     /// prevents it (the checkbox is dead while JPEG is selected) and the writer
     /// refuses it by name; a third refusal here would silently drop the press
     /// with no sentence anywhere, which is the one outcome worse than either.
@@ -421,7 +421,7 @@ impl ExportImageDialog {
 
         ui.separator();
         ui.horizontal(|ui| {
-            // ★ Disabled rather than absent when there is nothing to export.
+            // Disabled rather than absent when there is nothing to export.
             // P3's rule: a greyed control the operator can see, beside the
             // sentence saying why, teaches what to change; a control that
             // vanishes teaches that the window is unpredictable.
@@ -443,7 +443,7 @@ impl ExportImageDialog {
         let start = ui.cursor();
         for format in ImageFormat::ALL {
             let response = ui.radio_value(&mut self.format, format, t::format_name(format));
-            // ★ Each radio's OWN rectangle, so `tools/ui-verify` can press a
+            // Each radio's OWN rectangle, so `tools/ui-verify` can press a
             // named format instead of dividing the group's height by four. See
             // [`region_for_format`] for why a computed offset inside a
             // container is a check that eventually presses the wrong control.
@@ -463,7 +463,7 @@ impl ExportImageDialog {
     fn pages_group(&mut self, ui: &mut Ui) -> Option<Vec<usize>> {
         ui.label(t::pages_heading());
         let start = ui.cursor();
-        // ★ Each radio publishes its OWN rectangle, for the reason
+        // Each radio publishes its OWN rectangle, for the reason
         // [`region_for_scope`] states and [`Self::format_group`] twenty lines
         // above already honours: a check that presses the group's rectangle
         // plus a computed offset presses the wrong control the day the range
@@ -544,7 +544,7 @@ impl ExportImageDialog {
         });
         ui.weak(t::dpi_hint(self.format));
 
-        // ★ The pixel count, live. A resolution is an abstraction and a pixel
+        // The pixel count, live. A resolution is an abstraction and a pixel
         // count is the file. Shown for the vector case too — an SVG's embedded
         // rasters are sampled at exactly this size, so the number is a real
         // statement about the file's weight there as well.
@@ -563,7 +563,7 @@ impl ExportImageDialog {
         }
     }
 
-    /// ★★★ Whether the page's transparency survives — and, for JPEG, the
+    /// Whether the page's transparency survives — and, for JPEG, the
     /// refusal by name.
     fn background_group(&mut self, ui: &mut Ui) {
         ui.label(t::background_heading());
@@ -581,7 +581,7 @@ impl ExportImageDialog {
                 t::flatten_hint()
             });
         } else {
-            // ★★★ **The refusal, by name, beside the control that would offer
+            // **The refusal, by name, beside the control that would offer
             // the impossible combination.** Not `weak`: this is the sentence
             // the operator's own parenthesis asked for, and a grey line under a
             // greyed checkbox is two ways of being ignored at once.

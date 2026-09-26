@@ -10,7 +10,7 @@ let **fourteen of twenty-one declared shortcuts ship dead** — `Ctrl+Z`,
 
 Undo had a keyboard shortcut everywhere except the keyboard.
 
-# ★★ Why a headless gate is not enough, and why this one is not either
+# Why a headless gate is not enough, and why this one is not either
 
 The unit gate presses each chord into a bare `egui::Context` and asserts the
 command comes back. That covers the dispatcher and the manifest. It does
@@ -24,7 +24,7 @@ list, so a chord added to the manifest tomorrow is silently unswept here.
 the argument that killed the last driven attempt was that the keymap test
 already covered it. It did not: that test swept `Ctrl+<digit>` only.
 
-# ★ How the belief that this was impossible survived for months
+# How the belief that this was impossible survived for months
 
 Nine module headers in this crate recorded, as a fact about the machine,
 that *"synthetic keyboard input does not reach the target window from the

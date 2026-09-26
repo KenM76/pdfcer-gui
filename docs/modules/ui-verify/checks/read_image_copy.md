@@ -16,12 +16,12 @@ while reading, press Ctrl+C, and it is on the Windows clipboard.**
 | 1 | a click in **Read** selects an image | the click was swallowed by the text sweep; content selection needs `edit_content`, which Read does not have |
 | 2 | `Ctrl+C` puts a **picture** on the OS clipboard | the clipboard got a marker sentence and an in-memory clip; Word got the sentence |
 
-★★ Half 1 alone would be a feature nobody could use — a selection in a mode
+Half 1 alone would be a feature nobody could use — a selection in a mode
 with nothing to do with it. Half 2 alone was already reachable in Edit and
 is not what he asked for. The check drives both in one sequence for that
 reason.
 
-## ★★★ Why the oracle is a trace line and not the clipboard
+## Why the oracle is a trace line and not the clipboard
 
 **Because reading the clipboard back would be testing Windows.** The
 clipboard is one system-wide resource that any process can take at any
@@ -52,7 +52,7 @@ operator cannot use.
 | C | …and a picture went with it | `clipboard-image w=… h=…`, at least 1:1 |
 | D | **right-click it** | `canvas-menu context=canvas.read-object` |
 
-★★ Step D is the route somebody finds without being told, and it was added
+Step D is the route somebody finds without being told, and it was added
 after the first three shipped. A chord is a feature for an operator who has
 read a release note; Acrobat Reader puts *Copy Image* on the right-click,
 and until 2026-09-01 a right-click anywhere in Read produced **no menu at

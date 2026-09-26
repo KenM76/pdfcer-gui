@@ -11,7 +11,7 @@ Four small commands — single page, continuous, facing, facing continuous —
 that had been sitting in one long row and pushing everything to their right
 toward the overflow.
 
-# ★★★ Why this is a DRIVEN check and not a unit test, when the layout is
+# Why this is a DRIVEN check and not a unit test, when the layout is
 pure arithmetic
 
 It looks like the ideal unit-test subject: `egui_shell::ribbon::plan`
@@ -30,13 +30,13 @@ the planner's own tests can see:
    fit at almost any width, so a `prefer_rows` that is consulted *after*
    that test is a `prefer_rows` that never does anything.
 
-★★ The fourth is the one that matters, and it is why this check pins the
+The fourth is the one that matters, and it is why this check pins the
 window to a **fixed wide viewport** before measuring. At a narrow width the
 group might wrap for the ordinary reason and the check would pass over a
 build where the hint is dead. At 2560 pt there is abundant room, so **the
 only reason these four can be on two rows is that somebody asked for it.**
 
-★ A fixed viewport rather than "maximise", because maximise gives whatever
+A fixed viewport rather than "maximise", because maximise gives whatever
 monitor the run happens to be on — reproducible on one machine and not
 across two, and silently weaker on a laptop.
 

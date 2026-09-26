@@ -4,7 +4,7 @@ something out
 The copy for [`crate::dialogs::unembed`], and the destructive twin of
 [`crate::text::embed`].
 
-## ★★★ This is the window `tools.unembed_fonts` was blocked on, and the
+## This is the window `tools.unembed_fonts` was blocked on, and the
 blocker was TRUE
 
 Nine of the project's scaffolded commands turned out to be sitting behind
@@ -19,7 +19,7 @@ It is built here. Every sentence below exists because of one of those four,
 and the module is worth reading as the argument for why the window could not
 have been skipped.
 
-## ★★★ The FOURTH consequence, which nobody had written down
+## The FOURTH consequence, which nobody had written down
 
 **Unembedding does not make the file smaller when pdfcer saves it.**
 
@@ -30,7 +30,7 @@ so the deleted objects get free cross-reference entries in a new section and
 incremental save after an unembed produces a *larger* file. Only a full
 rewrite drops the bytes.
 
-★★ `crate::app::save` writes **incrementally, always**, by design and by a
+`crate::app::save` writes **incrementally, always**, by design and by a
 promise in a tooltip that has been on an operator-visible surface since the
 command was registered. So this shell cannot deliver the reclaimed bytes at
 all today.

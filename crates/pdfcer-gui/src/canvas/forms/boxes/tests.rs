@@ -26,7 +26,7 @@
 //! `/Rect`, a page rotation that swaps the axes. A fixture-driven suite would
 //! test the documents that happen to be on disk; this one tests the predicate.
 
-//! ## ★ `#![cfg(test)]` as well as the parent's `#[cfg(test)] mod tests;`
+//! ## `#![cfg(test)]` as well as the parent's `#[cfg(test)] mod tests;`
 //!
 //! Redundant to the compiler, load-bearing to three instruments, and the
 //! reason this split was not free.
@@ -91,7 +91,7 @@ fn text_field() -> Field {
 
 /// A widget with a drawn appearance.
 ///
-/// # ★ `page: None` and `rect: None` are the point of this fixture
+/// # `page: None` and `rect: None` are the point of this fixture
 ///
 /// Both keys are Optional in the spec and **both are frequently absent in
 /// real files** — and `pdfcer-core` additionally reads `/P` without
@@ -112,18 +112,18 @@ fn drawn_widget() -> Widget {
         rect: None,
         appearance_state: None,
         on_states: Vec::new(),
-        // ★ `None` means the file states no `/MK /R`, which is what every
+        // `None` means the file states no `/MK /R`, which is what every
         // fixture in this shell wants: an unrotated widget.
         rotation: None,
         has_off_appearance: false,
         page: None,
         caption: None,
-        // ★ The appearance group — `/MK /BG`, `/MK /BC`, `/MK /BW` and the
+        // The appearance group — `/MK /BG`, `/MK /BC`, `/MK /BW` and the
         // annotation flags. `None` is the honest value for a synthetic
         // widget: it means "this file states nothing", which is exactly true
         // of one built in a test rather than read from a document.
         background: None,
-        // ★ /BG IS consumed — it tints the in-place editor, see
+        // /BG IS consumed — it tints the in-place editor, see
         // `editor_fill`. /BC is read and not yet drawn, and that is the only
         // half of this pair still outstanding.
         border_color: None,
@@ -177,7 +177,7 @@ fn page(rotate: u16) -> Page {
     }
 }
 
-/// ★ **A field with no `/AP` is not offered on the page.**
+/// **A field with no `/AP` is not offered on the page.**
 ///
 /// The decision the module header §5.1 argues for, pinned. `demo-form.pdf`
 /// carries this case, and the failure if it regressed is the worst kind:
@@ -198,7 +198,7 @@ fn an_undrawn_widget_is_not_offered_on_the_canvas() {
     assert!(classify(&field, &drawn_widget(), 0).is_ok());
 }
 
-/// ★ **A rotated page withholds the EDITOR, not the click.**
+/// **A rotated page withholds the EDITOR, not the click.**
 ///
 /// Both halves, because the interesting content of the decision is the
 /// asymmetry: a text field cannot be edited in place on a `/Rotate 90`
@@ -231,7 +231,7 @@ fn a_rotated_page_withholds_a_text_editor_but_not_a_button() {
     }
 }
 
-/// ★ **The canvas refuses exactly what the panel's `block_reason` refuses.**
+/// **The canvas refuses exactly what the panel's `block_reason` refuses.**
 ///
 /// Asserted against the panel's own function rather than a re-derivation,
 /// so the test cannot pass by agreeing with a third copy of the rule. The
@@ -284,7 +284,7 @@ fn the_canvas_declines_every_field_the_panel_blocks() {
     );
 }
 
-/// ★ **A radio widget carries its OWN on-state, not the field's first.**
+/// **A radio widget carries its OWN on-state, not the field's first.**
 ///
 /// The defect this prevents is a radio group in which every button selects
 /// the first option: the field's `/V` would be set to the same name
@@ -331,7 +331,7 @@ fn a_button_with_no_on_state_is_not_offered() {
     );
 }
 
-/// ★ **A widget with no `/P` entry is still placed** — the defect no
+/// **A widget with no `/P` entry is still placed** — the defect no
 /// fixture in the corpus can catch.
 ///
 /// `/P` is Optional (§12.5.2 Table 164) and frequently absent, and
@@ -388,7 +388,7 @@ fn a_widget_no_page_lists_is_unreachable_and_counted() {
     );
 }
 
-/// ★ **The hit test is containment, and it is exclusive between
+/// **The hit test is containment, and it is exclusive between
 /// neighbours.**
 ///
 /// The property the no-tolerance decision buys, asserted as the thing an
@@ -468,7 +468,7 @@ fn a_widget_drawn_over_another_claims_the_click() {
     );
 }
 
-/// ★ **A tiny field still gets a legible editor, and the box stays
+/// **A tiny field still gets a legible editor, and the box stays
 /// centred on it.**
 ///
 /// A 12 pt field at 25 % zoom is three screen points tall. Without the
@@ -513,7 +513,7 @@ fn the_editor_text_size_is_clamped_at_both_ends() {
     assert!(small < large, "{small} !< {large}");
 }
 
-/// ★★★ **A field's `/Q` reaches the box a click makes, and it reaches it
+/// **A field's `/Q` reaches the box a click makes, and it reaches it
 /// per field.**
 ///
 /// The half of the quadding contract that lives in [`classify`]. A
@@ -537,7 +537,7 @@ fn a_fields_quadding_reaches_the_box_a_click_makes() {
     }
 }
 
-/// ★★ **The three `/Q` codes map to the three ends of the box, and the
+/// **The three `/Q` codes map to the three ends of the box, and the
 /// centre one is not an end.**
 ///
 /// A silent transposition is the failure this guards: swapping `Center`
@@ -572,7 +572,7 @@ fn max_len_counts_characters_not_bytes() {
     assert_eq!(truncate("", Some(0)), "");
 }
 
-/// ★ **Filling is offered in the select tool and in no other.**
+/// **Filling is offered in the select tool and in no other.**
 ///
 /// The whole of the "no `CanvasTool` variant" decision, expressed as the
 /// one line it is. The markup rows matter most: a pen that also filled a
@@ -590,7 +590,7 @@ fn only_the_select_tool_fills_a_form() {
     }
 }
 
-/// ★ **A whole document's boxes, from a real form fixture.**
+/// **A whole document's boxes, from a real form fixture.**
 ///
 /// The end-to-end shape of the read path — parse, place, project — on the
 /// document the panel's own disclosures were written against. It asserts
@@ -641,7 +641,7 @@ fn a_real_form_produces_boxes_inside_its_own_pages() {
         );
     }
 
-    // ★ And the fixture's undrawn field really is absent from the list —
+    // And the fixture's undrawn field really is absent from the list —
     // the panel already discloses that this document has one, so this is
     // the same fact asserted from the other end.
     let undrawn: Vec<&str> = form
@@ -694,7 +694,7 @@ fn the_three_field_fixture_offers_three_clickable_text_boxes() {
         assert_eq!(b.page, 0, "{} is not on the single page", b.field);
     }
 }
-/// ★ **A generator, not a check: build a form with a DRAWN text field.**
+/// **A generator, not a check: build a form with a DRAWN text field.**
 ///
 /// ```text
 /// cargo test -p pdfcer-gui a_drawn_text_field_fixture -- --ignored --nocapture
@@ -764,7 +764,7 @@ fn a_drawn_text_field_fixture() {
     std::fs::write(&out, bytes).expect("the temp directory is writable");
     println!("wrote {}", out.display());
 
-    // ★ …and the same document turned a quarter-turn, because the ROTATED
+    // …and the same document turned a quarter-turn, because the ROTATED
     // decision has no fixture either. §5.2 says a rotated page withholds
     // the text EDITOR and keeps the button click, and that asymmetry is
     // only checkable by opening a rotated form and reading the `form-box`
@@ -796,7 +796,7 @@ fn a_drawn_text_field_fixture() {
     );
 }
 
-/// ★★★ **A kind that cannot be FILLED on the canvas can still be
+/// **A kind that cannot be FILLED on the canvas can still be
 /// SELECTED there**, which is the whole reason [`FieldTarget`] exists.
 ///
 /// The fixture is a `/Ch` field with an **empty `/Opt`**: there is nothing to
@@ -893,7 +893,7 @@ fn the_selection_hit_test_prefers_the_widget_drawn_last() {
     );
 }
 
-/// ★★★ **`/MK` `/BG`, every variant, and the two different `None`s.**
+/// **`/MK` `/BG`, every variant, and the two different `None`s.**
 ///
 /// The subject is [`editor_fill`], which decides what colour the in-place
 /// editor tints itself. Its whole job is a mapping, so the test is the
@@ -902,7 +902,7 @@ fn the_selection_hit_test_prefers_the_widget_drawn_last() {
 /// error in the module and a missing case in this list, not as a silent
 /// `None`.
 ///
-/// ★ **The case worth reading twice** is the pair at the top. Table 189 lets
+/// **The case worth reading twice** is the pair at the top. Table 189 lets
 /// a file state `/BG []` — an EMPTY array, meaning *explicitly no colour* —
 /// and that is a different fact from `/BG` being absent. The engine keeps
 /// them apart ([`MkColor::None`] versus the enclosing `Option` being `None`),
@@ -939,7 +939,7 @@ fn a_background_is_read_and_stating_none_is_not_the_same_as_stating_nothing() {
     );
 }
 
-/// ★★ **A CMYK background goes through the ENGINE's calibrated conversion,
+/// **A CMYK background goes through the ENGINE's calibrated conversion,
 /// not an arithmetic one.**
 ///
 /// This shell refuses to convert DeviceCMYK in two other places on purpose
@@ -980,7 +980,7 @@ fn a_cmyk_background_uses_the_engines_own_table_and_not_one_minus_k() {
     );
 }
 
-/// ★★★ **`/Ff` bit 18 reaches the box census, because it decides where the
+/// **`/Ff` bit 18 reaches the box census, because it decides where the
 /// options are drawn.**
 ///
 /// A combo box drops its list below the widget; a list box draws its options
@@ -1017,7 +1017,7 @@ fn the_combo_flag_reaches_the_box_census() {
     }
 }
 
-/// ★★★ **`/Ff` bit 19 is only a capability when bit 18 is also set.**
+/// **`/Ff` bit 19 is only a capability when bit 18 is also set.**
 ///
 /// Table 230 states it outright — *"used only with Combo"* — and the engine
 /// enforces the same conjunction: `set_choice_value`'s free-text branch is

@@ -34,18 +34,18 @@ document set on every frame:
 4. nothing dirty left → **close for real**;
 5. Cancel at any point clears the flag and the program stays open.
 
-★★ A remembered queue would be a second model of the document set, and it
+A remembered queue would be a second model of the document set, and it
 would go stale the moment a save, a discard or a close changed one — which is
 exactly what every answer here does. Re-deriving cannot drift, and the cost
 is a scan of at most a handful of slots on the frames where a modal is up.
 
-★ Step 2 is the operator's second requirement and it is not decoration: a
+Step 2 is the operator's second requirement and it is not decoration: a
 modal asking *"save changes?"* over a document you cannot see is asking about
 a file you have to guess at. `crate::dialogs::unsaved`'s own `PendingIntent`
 already documents that rule for the single-tab case; this applies the same
 one to the quit cycle.
 
-## ★★ Why Cancel abandons the whole quit, not one question
+## Why Cancel abandons the whole quit, not one question
 
 Because that is what the operator meant by it, and it is what Word, VS Code
 and Notepad++ all do. The alternative — Cancel skips this document and asks

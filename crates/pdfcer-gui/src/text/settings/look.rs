@@ -1,6 +1,6 @@
 //! # `text::settings::look` — what changing it makes you see in the DOCUMENT
 //!
-//! ## ★ The split is by BLAST RADIUS, which is the window's own taxonomy
+//! ## The split is by BLAST RADIUS, which is the window's own taxonomy
 //!
 //! Not by dialog group, and not alphabetically. Every setting in this window
 //! carries a `*_radius` line stating *which way costs what*, and that line is
@@ -115,7 +115,7 @@ pub const fn polarity_never_label() -> &'static str {
     "Take the values as stored (pdfcer's default)"
 }
 
-/// ★ **The one positively-sourced default in the window, and it says so.**
+/// **The one positively-sourced default in the window, and it says so.**
 ///
 /// Every other note either says "this is a guess" or says nothing about
 /// provenance. This one claims the opposite, and it is entitled to: `"invert"`
@@ -152,7 +152,7 @@ pub const fn polarity_invert_note() -> &'static str {
 // Colour — where a page's blending space comes from
 // ===========================================================================
 
-/// ★★ **The ceiling on the buffer pages are blended in** — the answer to his
+/// **The ceiling on the buffer pages are blended in** — the answer to his
 /// 2026-08-26 question.
 ///
 /// > *"can the size of the buffer be increased? Allow the user to set the size
@@ -174,7 +174,7 @@ pub const fn polarity_invert_note() -> &'static str {
 ///   (1.4 s against 0.9 s at the boundary) — the trade is *correct colours are
 ///   slower*, and an operator raising a ceiling deserves to know that before
 ///   they notice it;
-/// * ★ **up to about four times the number chosen**, because the ceiling bounds
+/// * **up to about four times the number chosen**, because the ceiling bounds
 ///   ONE buffer and a page with nested transparency holds several page-sized
 ///   ones at once — the page buffer, a group's child, a retained spare, and a
 ///   whole backdrop copy for a knockout group.
@@ -264,7 +264,7 @@ pub const fn blend_space_label(src: pdfcer_core::settings::PageBlendSpaceSource)
             "Follow the file's print intent, when it has one (pdfcer's default)"
         }
         S::OutputIntentAlways => "Always follow the file's output intent",
-        // ★ `PageBlendSpaceSource` is `#[non_exhaustive]`, so the engine may
+        // `PageBlendSpaceSource` is `#[non_exhaustive]`, so the engine may
         // add a source without breaking this build. A new one must not render
         // as a blank radio label, and it must not be silently mapped onto a
         // neighbour either -- both would be a control lying about what it
@@ -298,7 +298,7 @@ pub const fn blend_space_note(src: pdfcer_core::settings::PageBlendSpaceSource) 
 
 /// Author name: what it is.
 ///
-/// ★★ The title says **your comments**, not *"annotation title"* and not
+/// The title says **your comments**, not *"annotation title"* and not
 /// *"the /T entry"*. §12.5.6.4 calls the field a title, which is a word from
 /// the format rather than a word about the job, and an operator scanning
 /// headings for *"why do my comments say nobody"* would not stop at it.
@@ -309,7 +309,7 @@ pub const fn author_name_title() -> &'static str {
 
 /// What happens if you never touch it.
 ///
-/// ★★★ It states the consequence plainly rather than calling the empty value
+/// It states the consequence plainly rather than calling the empty value
 /// a problem. An anonymous comment is legal, is what pdfcer wrote before this
 /// existed, and is a reasonable choice for a drawing leaving the firm. The
 /// window's job is to say what silence does, not to nag.
@@ -320,7 +320,7 @@ pub const fn author_name_silence() -> &'static str {
 
 /// What it costs, and what it does not affect.
 ///
-/// ★ It names the two boundaries that matter: it goes into the file, and it
+/// It names the two boundaries that matter: it goes into the file, and it
 /// does not apply retroactively. Somebody who sets it after a review session
 /// should not expect yesterday's comments to be signed.
 #[must_use]
@@ -336,7 +336,7 @@ pub const fn author_name_label() -> &'static str {
 
 /// The note under the field.
 ///
-/// ★ It answers the question the empty box provokes — *"why does pdfcer not
+/// It answers the question the empty box provokes — *"why does pdfcer not
 /// already know this?"* — because the answer is a decision rather than an
 /// omission, and one an operator would agree with if told.
 #[must_use]
@@ -445,7 +445,7 @@ pub const fn minify_point_label() -> &'static str {
     "Take one pixel in each area"
 }
 
-/// ★ **The guess disclosure the old window omitted.**
+/// **The guess disclosure the old window omitted.**
 ///
 /// `pdfcer-core` grades this default tier (d) — reasoned inference — as
 /// explicitly as it grades the mask filter beside it, and the old note read as

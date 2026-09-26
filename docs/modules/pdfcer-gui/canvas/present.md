@@ -24,7 +24,7 @@ lines of *drawing*, which is a different subject from *what the canvas is
 made of*. They change for different reasons, which is the test this project
 applies to every split it makes.
 
-## ★ Nothing moved except its address
+## Nothing moved except its address
 
 The move is textual: the same items, in the same order, with the same
 documentation. `show` and [`Sampled`] are re-exported from `canvas`, so

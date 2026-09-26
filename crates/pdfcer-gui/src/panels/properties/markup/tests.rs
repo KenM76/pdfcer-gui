@@ -1,6 +1,6 @@
 //! # `panels::properties::markup` tests — the restyle section's assertions
 //!
-//! ## ★★ Why they live in a file of their own
+//! ## Why they live in a file of their own
 //!
 //! **R2.** `markup.rs` crossed 1,500 lines on 2026-09-06, when the line-style
 //! row and the deletion of this crate's copy of the engine's subtype list
@@ -8,7 +8,7 @@
 //! module beside module, `#[cfg(test)] mod tests;` — and it is a subject seam:
 //! the parent draws rows, this file asserts what decides them.
 //!
-//! ## ★★★ What these can and cannot prove
+//! ## What these can and cannot prove
 //!
 //! They cannot prove an operator can restyle a mark; nothing here draws a
 //! pixel or reaches `set_markup_style` (R1). What they prove is the set of
@@ -16,7 +16,7 @@
 //!
 //!
 
-// ★★ The INNER attribute, not just the `mod tests;` declaration in the parent.
+// The INNER attribute, not just the `mod tests;` declaration in the parent.
 // `check-ui-strings.sh`'s exclusion 2b recognises a whole test file **from the
 // file** rather than from its name, and without it every assertion message here
 // is reported as operator-facing copy. `canvas::annotnodes::tests` carries the
@@ -26,7 +26,7 @@
 
 use super::*;
 
-// ★ Named explicitly rather than picked up by the glob above, because it is
+// Named explicitly rather than picked up by the glob above, because it is
 // not in the parent: `ALL_ENDINGS` lives in `rows.rs` with `ending_chooser`,
 // the only code that iterates it, and **nothing in the library reads it from
 // outside that file.** Re-exporting it through the parent to keep the glob
@@ -35,13 +35,13 @@ use super::*;
 // table lives.
 use super::rows::ALL_ENDINGS;
 
-// ★ `page_tree::Rect`, not `annot_author::Rect`. `annot_author` imports the
+// `page_tree::Rect`, not `annot_author::Rect`. `annot_author` imports the
 // type privately, so the path that reads naturally is not a path that
 // resolves — the one place in this module where the engine's own module
 // layout leaks.
 use pdfcer_core::page_tree::Rect;
 
-// ★ The second verb's vocabulary. `Reach`, `Face` and `Reading` live in
+// The second verb's vocabulary. `Reach`, `Face` and `Reading` live in
 // `super::textannot` under R2 — see `Reach`'s own doc for the seam — and are
 // imported by name so an assertion reads as `Reach::TextAnnot` and not as a
 // path three modules long.
@@ -62,7 +62,7 @@ fn square(interior: Option<Color>) -> MarkupSpec {
 /// A [`Current`] for a spec and the `/Subtype` the file would carry it
 /// under.
 ///
-/// ★ The subtype is a **separate argument** rather than inferred from the
+/// The subtype is a **separate argument** rather than inferred from the
 /// spec arm, and that is the shape of the whole change: the arm is where a
 /// value comes from, the `/Subtype` is what the engine's capability
 /// question is asked about, and a helper that derived the second from the
@@ -71,7 +71,7 @@ fn square(interior: Option<Color>) -> MarkupSpec {
 fn current(spec: &MarkupSpec, subtype: &[u8]) -> Current {
     Current::from_spec(
         Some(spec),
-        // ★ `None` — `Current::read` only calls the second reader when the
+        // `None` — `Current::read` only calls the second reader when the
         // first refuses, so a fixture that supplied both would describe a state
         // the production path cannot be in.
         None,
@@ -116,7 +116,7 @@ fn a_swatch_shows_grey_and_rgb_without_calling_them_converted() {
     assert_eq!(swatch_of(None).rgb, None);
 }
 
-/// ★★★ **A CMYK `/C` shows, and says it is a conversion.**
+/// **A CMYK `/C` shows, and says it is a conversion.**
 ///
 ///
 #[test]
@@ -135,7 +135,7 @@ fn a_cmyk_colour_is_shown_as_a_conversion_and_is_flagged_as_one() {
     );
 }
 
-/// ★★★ **A mark the style verb cannot reach gets NO rows.**
+/// **A mark the style verb cannot reach gets NO rows.**
 ///
 /// `spec_from_dict` answers `UnsupportedSubtype` for `/Text`, `/FreeText`
 /// and `/Stamp` — verified against the engine source — and `None` here is
@@ -147,12 +147,12 @@ fn a_cmyk_colour_is_shown_as_a_conversion_and_is_flagged_as_one() {
 ///
 #[test]
 fn a_subtype_the_style_verb_refuses_offers_no_controls() {
-    // ★ `/FreeText` is the honest subtype for this case: it is one of the
+    // `/FreeText` is the honest subtype for this case: it is one of the
     // three `spec_from_dict` refuses, and `for_subtype` answers `false` to
     // everything for it, so both halves of the verdict come from the engine.
     let refused = Current::from_spec(
         None,
-        // ★ Also `None` from the second reader, which is what makes this a
+        // Also `None` from the second reader, which is what makes this a
         // `Reach::Neither` rather than a `/FreeText`'s own `TextBoxWithheld`.
         // The `/FreeText` case has its own test below.
         None,
@@ -193,7 +193,7 @@ fn a_subtype_the_style_verb_reads_offers_its_controls() {
     assert_eq!(ok.alpha, Some(0.5));
 }
 
-/// ★★ **The Fill row follows the `/Subtype`, and the ENGINE is what maps
+/// **The Fill row follows the `/Subtype`, and the ENGINE is what maps
 /// one to the other.**
 ///
 /// A square, a circle, a polygon and a cloud have an interior; a line, an
@@ -226,7 +226,7 @@ fn only_a_shape_with_an_interior_gets_a_fill_row() {
                 width: 1.0,
                 intensity: 1.0,
             },
-            // ★ The `/Subtype` a revision cloud actually carries. That it
+            // The `/Subtype` a revision cloud actually carries. That it
             // is a `/Polygon` in the file and a `MarkupSpec::Cloud` here is
             // the case the old subtype-string list would have got wrong,
             // and it is now the engine that gets it right.
@@ -257,7 +257,7 @@ fn the_fill_swatch_reads_back_the_interior_and_knows_when_it_is_absent() {
     assert_eq!(unfilled.interior.rgb, None, "…with no Clear beside it");
 }
 
-/// ★★ **The line-ending choosers appear for a `/Line` and for nothing
+/// **The line-ending choosers appear for a `/Line` and for nothing
 /// else** — the set `MarkupStyleSupport::takes_endings` names, and the set
 /// `EditError::StylePropertyNotApplicable` refuses everything outside of.
 ///
@@ -286,7 +286,7 @@ fn only_a_line_gets_the_ending_choosers() {
     assert_eq!(square.endings, None);
 }
 
-/// ★★★ **The chooser's list covers every ending the engine can draw.**
+/// **The chooser's list covers every ending the engine can draw.**
 ///
 /// `LineEnding` has no `ALL` of its own, so [`ALL_ENDINGS`] is written by
 /// hand — and a hand-written list of an enum's variants is exactly the thing
@@ -312,7 +312,7 @@ fn the_ending_list_covers_every_variant_the_engine_has() {
     assert_eq!(seen.len(), 3, "Table 176's three that pdfcer authors");
 }
 
-/// ★ The width range is the same one the markup pen offers.
+/// The width range is the same one the markup pen offers.
 ///
 /// Two ranges for one quantity would let an operator author a 2 pt mark and
 /// then be unable to set 2 pt on it — or, worse, set a width here the pen
@@ -324,7 +324,7 @@ fn the_width_range_matches_the_pen_that_authors() {
     assert!((MAX_WIDTH_PT - crate::canvas::markup::pen::MAX_WIDTH_PTS).abs() < f64::EPSILON);
 }
 
-/// ★★★ **What hides a row is the ENGINE's answer, not the shape of the
+/// **What hides a row is the ENGINE's answer, not the shape of the
 /// `MarkupSpec` arm this module read.**
 ///
 /// The assertion that the workaround is gone. Until 2026-09-06 the Fill row
@@ -334,11 +334,11 @@ fn the_width_range_matches_the_pen_that_authors() {
 /// `pdfcer-core` owns, filed as: *"the first subtype that gains or loses a
 /// border is the day our copy is wrong and nothing tells us."*
 ///
-/// ★ Every `Current` here is built with **every value present**, so a value
+/// Every `Current` here is built with **every value present**, so a value
 /// cannot be what differs. A row withheld below is withheld because
 /// `MarkupStyleSupport::for_subtype` said so.
 ///
-/// ★★ Both directions, per the engine's methodology note: the `Highlight`
+/// Both directions, per the engine's methodology note: the `Highlight`
 /// row alone would pass with every predicate hard-coded to `false`. The
 /// `Square` and `Line` rows are the positive control that makes it mean
 /// something.
@@ -362,7 +362,7 @@ fn the_engines_answer_is_what_hides_a_row_not_the_spec_arm() {
                 narrowed: false,
             },
             width: Some(2.0),
-            // ★ `Solid` is a value, not an absence — `linestyle::read` is
+            // `Solid` is a value, not an absence — `linestyle::read` is
             // total — so there is no "no dash" state to over-supply, which
             // is why `offers_dash` is `takes_border` and nothing else.
             dash: crate::canvas::markup::linestyle::DashReading::Solid,
@@ -408,7 +408,7 @@ fn the_engines_answer_is_what_hides_a_row_not_the_spec_arm() {
     }
 }
 
-/// ★★★ **The removal is offered only when `/LE` is actually in the file.**
+/// **The removal is offered only when `/LE` is actually in the file.**
 ///
 /// The fifth state's guard, and the field it needs exists because
 /// `spec_from_dict` cannot answer the question: Table 176's default makes
@@ -416,7 +416,7 @@ fn the_engines_answer_is_what_hides_a_row_not_the_spec_arm() {
 /// [`Current::endings`] is `Some((None, None))` either way. Only the
 /// dictionary knows, which is why [`Current::read`] looks.
 ///
-/// ★ Both directions. *"Absent when the key is absent"* on its own passes
+/// Both directions. *"Absent when the key is absent"* on its own passes
 /// with the button deleted, which is precisely the vacuous shape the
 /// engine's reply warned about.
 ///
@@ -482,7 +482,7 @@ fn the_removal_is_offered_only_when_the_file_carries_a_line_ending_entry() {
 /// A mark whose dictionary could not be read offers nothing, and gets that
 /// answer from the engine rather than from three literal `false`s.
 ///
-/// ★ An all-`false` literal in [`Current::default`] would have been the last
+/// An all-`false` literal in [`Current::default`] would have been the last
 /// surviving copy of the engine's list in this module, three entries long.
 #[test]
 fn a_mark_that_could_not_be_read_offers_nothing() {
@@ -542,11 +542,11 @@ fn text_current(reading: Option<Option<Reading>>, subtype: &[u8]) -> Current {
     )
 }
 
-/// ★★★ **A sticky note and a stamp route to the SECOND verb; a shape still
+/// **A sticky note and a stamp route to the SECOND verb; a shape still
 /// routes to the first.**
 ///
 ///
-/// ★★ The `Square` row is the **positive control** and it is not decoration.
+/// The `Square` row is the **positive control** and it is not decoration.
 /// Asserting only that a `/Text` reaches `TextAnnot` would pass on a
 /// `from_spec` that had come to answer `TextAnnot` for everything, which would
 /// send every rectangle in the document to a verb that refuses it — the exact
@@ -590,14 +590,14 @@ fn each_family_routes_to_its_own_verb() {
     );
 }
 
-/// ★★★ **Only a sticky note is offered an icon.**
+/// **Only a sticky note is offered an icon.**
 ///
 /// `set_text_annot_style` refuses an icon on anything but a `/Text` **by name**
 /// — `EditError::StylePropertyNotApplicable`, raised before anything is
 /// written — so a chooser on a stamp would be live and would be refused. R9
 /// says absent, and this is the predicate that makes it absent.
 ///
-/// ★★ The `Sticky` half is the positive control the negative half needs. *"No
+/// The `Sticky` half is the positive control the negative half needs. *"No
 /// icon chooser for a stamp"* passes on a `takes_icon` hard-coded to `false`,
 /// which would withhold the chooser from the one mark the whole request was
 /// about.
@@ -615,7 +615,7 @@ fn the_icon_chooser_belongs_to_a_sticky_note_alone() {
     );
 }
 
-/// ★★★ **A text box is withheld, and it is NOT the same answer as an
+/// **A text box is withheld, and it is NOT the same answer as an
 /// unreadable mark.**
 ///
 /// `set_text_annot_style` reaches a `/FreeText` and this shell declines to send
@@ -624,7 +624,7 @@ fn the_icon_chooser_belongs_to_a_sticky_note_alone() {
 /// `multiline: true` — so a colour change would re-lay a wrapped callout as one
 /// line. `super::textannot`'s header carries the full account.
 ///
-/// ★★ The two arms must stay **distinguishable**, which is what the last
+/// The two arms must stay **distinguishable**, which is what the last
 /// assertion is for: they show different sentences, because one says a
 /// capability is missing and the other says this shell declines one that
 /// exists. Collapsing them would put a false premise under a true-looking
@@ -638,7 +638,7 @@ fn a_text_box_is_withheld_and_an_unreadable_mark_is_not_the_same_case() {
         font_size: 11.0,
         color: pdfcer_core::vartext::TextColor::Rgb(0.0, 0.0, 0.0),
         quadding: pdfcer_core::vartext::Quadding::Left,
-        // ★ The value the reader ALWAYS reports, which is the whole hazard:
+        // The value the reader ALWAYS reports, which is the whole hazard:
         // this is what the verb would re-bake from, whatever the file draws.
         multiline: false,
         border: Some(Color::Rgb(1.0, 0.0, 0.0)),
@@ -659,7 +659,7 @@ fn a_text_box_is_withheld_and_an_unreadable_mark_is_not_the_same_case() {
     );
 }
 
-/// ★★★ **A note whose `/Name` pdfcer does not model is CARRIED, and reported
+/// **A note whose `/Name` pdfcer does not model is CARRIED, and reported
 /// as one pdfcer does not draw** — rewritten 2026-09-07 with the engine's fix.
 ///
 /// §12.5.6.4's seven names are *"a standard set, not a closed one"*, so
@@ -679,14 +679,14 @@ fn a_text_box_is_withheld_and_an_unreadable_mark_is_not_the_same_case() {
 /// *pdfcer draws its own picture for this* rather than *this is about to be
 /// destroyed*.
 ///
-/// ★★ Three cases, and the third is what makes the first mean something. A
+/// Three cases, and the third is what makes the first mean something. A
 /// `/Sparkle` is foreign; a `/Key` is not; and an **absent** `/Name` is not
 /// either — Table 172's own default is `Note`, so a note carrying no `/Name`
 /// arrives as `Note` and reporting it as such is reporting the standard rather
 /// than inventing anything. Warning about the commonest case there is would
 /// teach an operator to ignore the warning.
 ///
-/// ★ The engine's reader does the absent-vs-foreign discrimination now, which
+/// The engine's reader does the absent-vs-foreign discrimination now, which
 /// is why this test builds its specs the way the reader would produce them
 /// rather than passing raw bytes alongside.
 #[test]
@@ -713,7 +713,7 @@ fn an_unmodelled_icon_name_is_carried_and_disclosed_and_a_modelled_one_is_not() 
     assert_eq!(absent.icon, Some(StickyIcon::Note));
 }
 
-/// ★★ **The three sources are three distinct words, and none of them is the
+/// **The three sources are three distinct words, and none of them is the
 /// tripwire word.**
 ///
 /// `super::textannot::source_token` is the vocabulary a driven check matches on

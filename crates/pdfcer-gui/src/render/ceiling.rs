@@ -39,7 +39,7 @@ impl RasterCeiling {
     /// when it did not — either because the entry already stood at or below the
     /// new value, or because the inputs were not finite and positive.
     ///
-    /// ★ The return value is what the caller traces and what it decides to pull
+    /// The return value is what the caller traces and what it decides to pull
     /// the zoom back on, so that **re-learning the same wall is not an event**.
     /// A refusal can be absorbed more than once for the same key (a repaint
     /// ordering the same render after a cache eviction, a strip page becoming
@@ -78,7 +78,7 @@ impl RasterCeiling {
     /// distinguishable from *no limit*, because a caller that read `None` as a
     /// number would have to invent one.
     ///
-    /// # ★★ There is no `forget_all`, and that is a measurement rather than an
+    /// # There is no `forget_all`, and that is a measurement rather than an
     /// omission
     ///
     /// Pages are identified by INDEX here, as they are in every other per-page
@@ -99,7 +99,7 @@ impl RasterCeiling {
     /// path would have been a second rule to keep in step with the first, for
     /// no behaviour.
     ///
-    /// ★ **And if that ever stops being true, the failure is bounded and
+    /// **And if that ever stops being true, the failure is bounded and
     /// self-healing** — which is why it is safe to depend on. A stale entry can
     /// only cap one sheet's zoom at a number measured on a different sheet; the
     /// canvas still draws, nothing is lost, and the first refusal at the new
@@ -149,7 +149,7 @@ mod tests {
         assert_eq!(ceiling.for_page(5, 0), None);
     }
 
-    /// ★★★ The ratchet: a second refusal lowers the ceiling, a repeat does not
+    /// The ratchet: a second refusal lowers the ceiling, a repeat does not
     /// move it, and a *higher* refusal does not raise it.
     ///
     /// All three in one test because they are one property — `learn` keeps the
@@ -208,7 +208,7 @@ mod tests {
     /// bounded — a far worse failure than the one being guarded against, and
     /// one that would look like the document being broken.
     ///
-    /// ★★ **A plausibly SMALL scale is deliberately not rejected here**, and the
+    /// **A plausibly SMALL scale is deliberately not rejected here**, and the
     /// reason is worth stating because it looks like a hole. A raster scale
     /// below 1.0 is an ordinary render of a page zoomed out below 100 %, so a
     /// floor in this function would reject real measurements. The case that
@@ -231,7 +231,7 @@ mod tests {
         assert_eq!(ceiling.for_page(0, 0), None);
     }
 
-    /// ★ **A page is known INDEPENDENTLY of its neighbours**, which is the
+    /// **A page is known INDEPENDENTLY of its neighbours**, which is the
     /// property that makes a per-page map the right shape rather than a single
     /// document-wide number.
     ///

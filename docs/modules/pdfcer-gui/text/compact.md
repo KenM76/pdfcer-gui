@@ -3,7 +3,7 @@ throws anything away
 
 The copy for [`crate::dialogs::compact`].
 
-## ★★★ Why this command exists, and it is the operator's own request
+## Why this command exists, and it is the operator's own request
 
 `OPERATOR_REQUESTS.md` **O48**, answered *"yes to all three"* on 2026-08-28.
 It was raised by this project rather than by him, from a limit found while
@@ -19,7 +19,7 @@ operation pdfcer has — unembedding a font, deleting a page, deleting an image
 Only a full rewrite drops the bytes, and until now this shell had no way to
 ask for one.
 
-## ★★★ Why it is a SEPARATE command and not a better Save
+## Why it is a SEPARATE command and not a better Save
 
 Because incremental saving is not a limitation pdfcer is working around — it
 is a promise it makes, on an operator-visible surface, and has since the day
@@ -33,7 +33,7 @@ Save-a-copy was registered:
 accident, **always to a new file**, with what it discards said plainly
 before the picker opens.
 
-## ★★ Every sentence here is about a LOSS, and that is deliberate
+## Every sentence here is about a LOSS, and that is deliberate
 
 The gain — a smaller file — is why the operator pressed it and needs no
 advocacy. What they cannot see is what is being dropped: a revision history

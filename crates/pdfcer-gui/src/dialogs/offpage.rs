@@ -1,7 +1,7 @@
 //! # `dialogs::offpage` — **which of my drawings have marks outside the sheet?**
 //!
 //!
-//! ## ★★★ The third of the operator's question that was still open
+//! ## The third of the operator's question that was still open
 //!
 //! **Ken, 2026-09-10:** *"how do I view and edit objects that are off of the
 //! page? we added this feature but I didn't see how to enable it."*
@@ -25,7 +25,7 @@ pub const REGION_MARK: &str = "offpage.mark";
 
 /// How many pages the scan advances per frame.
 ///
-/// ★★ One, and the constant exists to be *named* rather than to be tuned. The
+/// One, and the constant exists to be *named* rather than to be tuned. The
 /// worst sheet this project has measured costs 469 ms to decompose; two per
 /// frame would be a second of unresponsiveness per frame on that document,
 /// which is the freeze this design exists to avoid, merely chopped up.
@@ -42,7 +42,7 @@ pub struct OffPageDialog {
     next_page: usize,
     /// How many pages the document had **when the window opened**.
     ///
-    /// ★ Snapshotted rather than re-read per frame, and it is load-bearing: an
+    /// Snapshotted rather than re-read per frame, and it is load-bearing: an
     /// edit that deletes a page while this window is open would otherwise walk
     /// off the end of a shortened `doc.pages`, and — worse — the progress line
     /// would count down to a total that moved. The walk is bounds-checked
@@ -51,7 +51,7 @@ pub struct OffPageDialog {
     total_pages: usize,
     /// Every page that has something outside its boundary, in page order.
     ///
-    /// ★★ **Clean pages are dropped, not stored.** A `PageScan` for a clean
+    /// **Clean pages are dropped, not stored.** A `PageScan` for a clean
     /// sheet carries a page box, a drawn extent and an empty object list — all
     /// of it true and none of it anything this window draws or the marking
     /// action uses (`offpage_bands` answers with an empty vec for a clean scan).
@@ -60,7 +60,7 @@ pub struct OffPageDialog {
     scans: Vec<PageScan>,
     /// Pages whose content streams would not decode, with the engine's reason.
     ///
-    /// ★★★ Kept **separately** from `scans` and never merged into it, on the
+    /// Kept **separately** from `scans` and never merged into it, on the
     /// engine's own instruction: *"'no findings' and 'I could not look' must not
     /// print the same way."* This is the one list that stops this window from
     /// issuing a clean bill it has not earned.
@@ -75,13 +75,13 @@ pub struct OffPageDialog {
 impl OffPageDialog {
     /// Open, showing nothing yet.
     ///
-    /// ★ Infallible and unconditional for a document that is open, unlike every
+    /// Infallible and unconditional for a document that is open, unlike every
     /// other window in this folder that computes a plan first. See the header:
     /// the empty answer is an answer.
     #[must_use]
     pub fn open(doc: &OpenDoc) -> Self {
         let total_pages = doc.pages.len();
-        // ★ Traced on open, for `crate::dialogs::unembed`'s stated reason: a
+        // Traced on open, for `crate::dialogs::unembed`'s stated reason: a
         // driven check that cannot tell "the scan has not started" from "the
         // scan found nothing" reports the fixture as a defect in the program.
         crate::diag::trace(|| {
@@ -107,7 +107,7 @@ impl OffPageDialog {
 
     /// Scan up to [`PAGES_PER_FRAME`] more pages.
     ///
-    /// ★★ The bounds check against the **live** `doc.pages` rather than against
+    /// The bounds check against the **live** `doc.pages` rather than against
     /// the snapshotted total is the guard described on [`Self::total_pages`]: a
     /// page deleted under an open window ends the walk where the document now
     /// ends, and the window then shows a complete answer about a shorter
@@ -132,7 +132,7 @@ impl OffPageDialog {
                 Err(error) => self.unreadable.push((index, error.to_string())),
             }
             if !self.scanning() {
-                // ★★★ The line a driven check reads, and the only place this
+                // The line a driven check reads, and the only place this
                 // window states a FINISHED result. It is emitted once, on the
                 // frame the walk completes, rather than every frame — a trace
                 // that repeats is one a `Trace::last()` assertion cannot use to
@@ -160,13 +160,13 @@ impl OffPageDialog {
         actions: &mut Vec<Action>,
         appearance: pdfcer_core::annot_author::RedactAppearance,
     ) -> bool {
-        // ★★ BEFORE the frame is drawn, so the page just scanned is in the list
+        // BEFORE the frame is drawn, so the page just scanned is in the list
         // the operator sees this frame rather than next frame. Drawing first
         // would make the window one page stale throughout the walk — invisible
         // on a fast document and a whole page's lag on a slow one.
         if self.scanning() {
             self.advance(doc);
-            // ★★★ The line that makes this a scan rather than a stall. egui is
+            // The line that makes this a scan rather than a stall. egui is
             // an immediate-mode library that draws when something asks it to;
             // without this the window would paint once, sit there having scanned
             // exactly one page, and resume only when the operator jiggled the
@@ -202,7 +202,7 @@ impl OffPageDialog {
                 .filter(|(_, rects)| !rects.is_empty())
                 .collect();
             let total: usize = bands.iter().map(|(_, rects)| rects.len()).sum();
-            // ★ `-requested`, and the suffix is not decoration: `Trace::last()`
+            // `-requested`, and the suffix is not decoration: `Trace::last()`
             // matches on a line's first token, and the funnel writes
             // `redact-mark-offpage page=…` when the edit lands. Two lines with
             // the same first token would make a driven check unable to tell the
@@ -221,7 +221,7 @@ impl OffPageDialog {
                 unreadable: self.unreadable.len(),
                 appearance,
             }));
-            // ★★ Closes on the press, unlike `crate::dialogs::unembed` which
+            // Closes on the press, unlike `crate::dialogs::unembed` which
             // also does — and here there is an extra reason worth naming. The
             // marks it just authored change the document, so every scan in this
             // window becomes a statement about a revision that no longer exists.
@@ -236,7 +236,7 @@ impl OffPageDialog {
         ui.label(t::intro());
         ui.add_space(8.0);
 
-        // ★★★ The progress line FIRST and above everything, because during the
+        // The progress line FIRST and above everything, because during the
         // walk it is the only thing on screen that distinguishes an incomplete
         // answer from a complete one. See the header.
         if self.scanning() {
@@ -248,7 +248,7 @@ impl OffPageDialog {
         } else if !self.scans.is_empty() {
             ui.label(t::summary(self.scans.len(), self.objects));
             ui.add_space(4.0);
-            // ★★★ The residual disclosure, and it is owed rather than
+            // The residual disclosure, and it is owed rather than
             // decorative: a picture that only CROSSES the edge is still on
             // this list after a clean, because clearing erases ink and
             // cannot move a placement. See `text::offpage::partial_image_note`
@@ -290,7 +290,7 @@ impl OffPageDialog {
                     }
                     ui.add_space(6.0);
                 }
-                // ★★★ LAST in the list and never filtered out, however long the
+                // LAST in the list and never filtered out, however long the
                 // findings above it are. A page pdfcer could not read is the one
                 // row in this window that is about the limits of the answer
                 // rather than about the document.
@@ -302,7 +302,7 @@ impl OffPageDialog {
         ui.add_space(8.0);
         ui.separator();
         ui.horizontal(|ui| {
-            // ★★ Greyed while the walk is still running, as well as when there
+            // Greyed while the walk is still running, as well as when there
             // is nothing to mark — R9's *temporarily* unavailable, which is
             // exactly what this is. Marking from a half-finished census would
             // author marks on the sheets that happened to be checked first and

@@ -18,7 +18,7 @@ happening to that meaning now?"* across the frames of one gesture — the
 press that decides nothing, the drag in flight, the release that commits,
 and the Escape or interruption that abandons.
 
-## ★ Invariant 2, and it lives entirely in this file
+## Invariant 2, and it lives entirely in this file
 
 **A selection is cleared by a completed click with no drag, never by a
 press** — `GUI_ROADMAP.md`'s selection rule. A pan, a marquee and a move

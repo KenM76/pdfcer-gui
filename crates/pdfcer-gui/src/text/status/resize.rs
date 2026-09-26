@@ -20,17 +20,17 @@
 /// | proportional | *Scale line weight* — the resize then comes out **exact** |
 /// | not proportional | nothing fixes it; only *Allow the artwork to distort* proceeds |
 ///
-/// ★★★ **It does not say "cannot".** The operator resized a shape and got
+/// **It does not say "cannot".** The operator resized a shape and got
 /// nothing; what they need is the next click, not a diagnosis. Both sentences
 /// name a switch by the words on it, and the non-uniform one is honest that the
 /// result will be imperfect rather than dressing the option up.
 ///
-/// ★★ Neither sentence mentions appearance streams, placement matrices or
+/// Neither sentence mentions appearance streams, placement matrices or
 /// §12.5.5. The *reason* is real and is written down in `canvas::scaling`; what
 /// belongs in a status bar is what to do. A sentence that explained the matrix
 /// would be correct, unactionable, and too long to read where it appears.
 ///
-/// ★ *"pdfcer did not draw this shape"* is in the uniform sentence because it is
+/// *"pdfcer did not draw this shape"* is in the uniform sentence because it is
 /// the part an operator can verify and act on — shapes pdfcer drew resize
 /// perfectly, so the message quietly tells them the difference between the two
 /// kinds of object on their page.
@@ -46,7 +46,7 @@ pub const fn resize_not_rebuildable(uniform: bool) -> &'static str {
 /// **A resize was refused because the annotation is a fixed-size marker**
 /// (`EditError::ResizeFixedSizeMarker`, engine `Pass 277.0`).
 ///
-/// # ★ Move is the remedy, and the sentence says so first
+/// # Move is the remedy, and the sentence says so first
 ///
 /// A sticky note's box has no size a reader honours — it draws the icon at one
 /// size and reads the box only for **where**. The operator who dragged a
@@ -54,7 +54,7 @@ pub const fn resize_not_rebuildable(uniform: bool) -> &'static str {
 /// object, which is a drag of the note itself. Neither sentence says
 /// "cannot": the object has a property, position, and the sentence names it.
 ///
-/// # ★★ Why two sentences
+/// # Why two sentences
 ///
 /// The engine's error carries a `why` that is either the subtype's rule (a
 /// `/Text` is always fixed-size, 12.5.6.4) or the annotation's own `NoZoom`
@@ -63,7 +63,7 @@ pub const fn resize_not_rebuildable(uniform: bool) -> &'static str {
 /// editor, so the sentence states the fact without promising a switch. When
 /// one exists it belongs in the `by_flag` sentence and nowhere else.
 ///
-/// # ★ Neither sentence mentions `NoZoom` by its PDF name for a sticky
+/// # Neither sentence mentions `NoZoom` by its PDF name for a sticky
 ///
 /// An operator who placed a sticky note did not set a flag and would not know
 /// what one is; "drawn at one fixed size" is the fact in their terms. For the

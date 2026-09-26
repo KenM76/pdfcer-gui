@@ -37,7 +37,7 @@ use pdfcer_core::object::ObjId;
 /// `DEFECTS.md` D1's failure exactly: a canvas taking a chord that belonged to
 /// the widget the operator was looking at.
 ///
-/// # ★ Why "the sweep produced no text" is not checked here
+/// # Why "the sweep produced no text" is not checked here
 ///
 /// A live-but-empty selection still counts as text owning the chord. The
 /// alternative — falling through to the object clipboard when the sweep turns
@@ -79,7 +79,7 @@ pub const PASTE_OFFSET_PT: f64 = 10.0;
 /// spec would make that a rewrite of every caller.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Clipped {
-    /// ★★★ **A copied selection** — page content, annotations, or both, as one
+    /// **A copied selection** — page content, annotations, or both, as one
     /// `ObjectClip`.
     ///
     /// This variant is what the type's own docs predicted: *"the day page
@@ -95,7 +95,7 @@ pub enum Clipped {
     /// `Selection` is what the engine calls it too, which removes one
     /// translation between the two vocabularies.
     ///
-    /// # ★★ Why the BYTES and not the `ObjectClip`
+    /// # Why the BYTES and not the `ObjectClip`
     ///
     /// Three reasons, and the third is the one that decides it:
     ///
@@ -109,7 +109,7 @@ pub enum Clipped {
     ///    the live struct here would mean serialising at the moment of
     ///    registration instead — a second code path, for the same bytes.
     ///
-    /// ★ The clip **owns its resources**, transitively, by value. So copying
+    /// The clip **owns its resources**, transitively, by value. So copying
     /// from one document, closing it, and pasting into another works — and
     /// cross-document paste is not a special case but the same call.
     Selection {
@@ -130,7 +130,7 @@ pub enum Clipped {
         /// separate payload on the clip and a separate address space on the
         /// way in.
         ///
-        /// ★★ Kept apart from `count` rather than summed, and the reason is
+        /// Kept apart from `count` rather than summed, and the reason is
         /// the same one the engine gives for taking two index lists: a total
         /// makes *"three objects"* and *"two objects and a comment"*
         /// indistinguishable on the trace, and those are the two builds a wrong
@@ -142,7 +142,7 @@ pub enum Clipped {
         /// The annotations' object ids, in the order they were copied — for
         /// the **cut**'s delete half only.
         ///
-        /// ★ A delete is raised by `ObjId` through the funnel, and an
+        /// A delete is raised by `ObjId` through the funnel, and an
         /// `/Annots` position is not one. Re-deriving the ids from the indices
         /// after the clip was taken would be a second walk of the page that
         /// could disagree with the first — and the window between them is
@@ -152,7 +152,7 @@ pub enum Clipped {
         /// document, both of which are the same fact: nothing here is to be
         /// removed.
         annot_ids: Vec<ObjId>,
-        /// ★★★ **What the copy could not carry**, as the `/Subtype`s the
+        /// **What the copy could not carry**, as the `/Subtype`s the
         /// engine refused, verbatim.
         ///
         /// Carried on the clip rather than said at copy time and forgotten,
@@ -162,7 +162,7 @@ pub enum Clipped {
         /// *partial*, and rule 4's "fuzzy never sneaky" makes disclosing that
         /// mandatory: the paste will look complete.
         ///
-        /// ★ Almost always empty today, because the only annotations the
+        /// Almost always empty today, because the only annotations the
         /// engine refuses — `/Widget`, `/Popup`, `/Redact` — are either routed
         /// elsewhere or refuse the whole copy. It becomes reachable the day a
         /// selection can hold more than one annotation, which is the same day
@@ -172,7 +172,7 @@ pub enum Clipped {
         /// therefore arrive **without** `/CA`, `/T`, `/M` or `/Contents`.
         ///
         thin: usize,
-        /// ★★★ **The point that is placed under the cursor on a paste** —
+        /// **The point that is placed under the cursor on a paste** —
         /// the clip's centre, in **PDF user space**.
         ///
         /// `OPERATOR_REQUESTS.md` O73: *"when I paste it should paste where
@@ -194,7 +194,7 @@ pub enum Clipped {
         /// caret rather than to a drawing canvas. Acrobat drops a pasted
         /// comment centred on the click too.
         ///
-        /// ★ It is also what preserves relative geometry inside a
+        /// It is also what preserves relative geometry inside a
         /// multi-object paste **by construction**: one anchor for the whole
         /// clip means one delta, applied to everything, so the arrangement
         /// cannot drift no matter how many items are in it.
@@ -205,7 +205,7 @@ pub enum Clipped {
         /// sheet and read as data loss.
         anchor: Option<(f64, f64)>,
     },
-    /// ★★★ **A form field**, as of 2026-08-29 — `OPERATOR_REQUESTS.md` O58.
+    /// **A form field**, as of 2026-08-29 — `OPERATOR_REQUESTS.md` O58.
     ///
     ///
     /// # Why it is a variant here and not a second clipboard
@@ -219,20 +219,20 @@ pub enum Clipped {
     /// **An embedded file** — its name, its decoded bytes and its description.
     ///
     ///
-    /// ★★ **Carries the DECODED bytes**, which is the engine's choice and worth
+    /// **Carries the DECODED bytes**, which is the engine's choice and worth
     /// restating: `AttachmentClip` holds what `extract-attachment` would give
     /// you and what `attach_file` expects on the way back in. Carrying the raw
     /// stream instead would carry its filter chain with it, and a paste would
     /// have to re-derive whether that chain still applied in the destination.
     ///
-    /// ★ It carries **no page**, unlike every other variant here. A
+    /// It carries **no page**, unlike every other variant here. A
     /// document-level embedded file does not live on a sheet, so there is no
     /// same-page/different-page question and no paste offset — which is why the
     /// paste is in the Attachments panel rather than on the canvas.
     Attachment(Box<pdfcer_core::attachments::AttachmentClip>),
-    /// ★★★ **Whole pages** — `OPERATOR_REQUESTS.md` O59, 2026-08-29.
+    /// **Whole pages** — `OPERATOR_REQUESTS.md` O59, 2026-08-29.
     ///
-    /// # ★★ The bytes ARE a PDF, and that is not an implementation detail
+    /// # The bytes ARE a PDF, and that is not an implementation detail
     ///
     /// `PageClip::bytes` is a complete document, openable by anything — the
     /// engine's own choice, because `pageops::assemble` already does object
@@ -253,9 +253,9 @@ pub enum Clipped {
     /// operator can plausibly believe both are live at once. Sharing one slot
     /// makes the last one they pressed the one that pastes, which is the only
     /// rule they can hold in their head.
-    /// ★★★ **A bookmark and everything filed under it** — O59 item 3.
+    /// **A bookmark and everything filed under it** — O59 item 3.
     ///
-    /// # ★★ Why this one is NOT bytes, unlike its two neighbours
+    /// # Why this one is NOT bytes, unlike its two neighbours
     ///
     /// `Clipped::Content` and `Clipped::Pages` carry serialised clips because
     /// the engine gives them one — `ObjectClip::to_bytes` and a `PageClip` that
@@ -271,7 +271,7 @@ pub enum Clipped {
     /// bookmark subtree pasted into another program has no meaning, and the
     /// pdfcer-to-pdfcer case this variant serves works entirely in memory.
     ///
-    /// ★ `Box`ed for `FormField`'s reason: this enum is cloned on every read
+    /// `Box`ed for `FormField`'s reason: this enum is cloned on every read
     /// and an `OutlineClip` carries a whole subtree of titles, destinations and
     /// colours.
     Outline {
@@ -279,7 +279,7 @@ pub enum Clipped {
         clip: Box<pdfcer_core::outline::OutlineClip>,
         /// The deepest 0-based page any destination in the clip names.
         ///
-        /// ★★ Carried rather than re-walked because it answers the one question
+        /// Carried rather than re-walked because it answers the one question
         /// that must be asked **before** the paste: a destination naming a page
         /// the destination document does not have is **dropped, not clamped**,
         /// and a dropped-destination bookmark still shows, still has its title,
@@ -311,7 +311,7 @@ pub enum Clipped {
 ///
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Refusal {
-    /// ★★★ **The cut's DELETE half would be refused, so its copy half did not
+    /// **The cut's DELETE half would be refused, so its copy half did not
     /// run either.**
     ///
     /// Only `cut` can answer this, and only `cut` returns it: a plain copy
@@ -325,7 +325,7 @@ pub enum Refusal {
     /// `app::status::decline`, which is the same surface the three other doors
     /// onto this verb use.
     DeleteRefused(crate::panels::properties::annotdelete::Refusal),
-    /// ★★★ **The clipboard could not carry it, so the cut was refused before
+    /// **The clipboard could not carry it, so the cut was refused before
     /// anything was removed.**
     ///
     /// `pdfcer-core`'s `CutWouldNotSurvive { subtype }`, and the subtype travels
@@ -339,7 +339,7 @@ pub enum Refusal {
     /// the paste declines by name. A cut of the same thing is a deletion
     /// wearing a clipboard's clothes."*
     ///
-    /// ★ `&'static str` rather than an enum, matching `canvas::cutgate::Blocker`
+    /// `&'static str` rather than an enum, matching `canvas::cutgate::Blocker`
     /// and for its reason: the set of subtypes is the file format's, and a
     /// second taxonomy here would be one more thing to keep in step with
     /// another crate.
@@ -348,7 +348,7 @@ pub enum Refusal {
     NothingSelected,
     /// The engine refused to copy the selection.
     ///
-    /// ★★ **This variant was `ContentNotAnnotation` until 2026-08-20**, and it
+    /// **This variant was `ContentNotAnnotation` until 2026-08-20**, and it
     /// said: *"`EditSession` has no verb that puts page content back, so a copy
     /// would be offering a paste that could never happen."* True when it was
     /// written, and `Pass 120.0` made it false — the operator had been asking
@@ -361,7 +361,7 @@ pub enum Refusal {
     /// modelled the engine's internals a second time is decision 058's failure
     /// mode, and this module has just watched one of those expire.
     EngineRefused,
-    /// ★★★ **The engine refuses to put that annotation on a clipboard at
+    /// **The engine refuses to put that annotation on a clipboard at
     /// all**, and the `/Subtype`s it named travel with the refusal.
     ///
     /// `/Widget`, `/Popup` and `/Redact` — `EditSession::raw_copy_refusal`,
@@ -372,7 +372,7 @@ pub enum Refusal {
     /// destructive operation** — pasting one arms a redaction in a document
     /// nobody reviewed.
     ///
-    /// ★ The list is read off the clip, never mirrored here. `canvas::cutgate`
+    /// The list is read off the clip, never mirrored here. `canvas::cutgate`
     /// does keep a mirror of the same three, and its own header explains why
     /// that one has to exist — it greys a control *before* the gesture, where
     /// nothing but a compile-time string will do. This is after the gesture,
@@ -417,7 +417,7 @@ pub fn store(ctx: &egui::Context, clipped: Clipped) {
 /// **Copy what is selected** — page content, an annotation, or both — and say
 /// what reached the clipboard.
 ///
-/// # ★★★ ONE ENGINE CALL, TWO ADDRESS SPACES
+/// # ONE ENGINE CALL, TWO ADDRESS SPACES
 ///
 /// `EditSession::copy_selection` takes an object-index list **and** an
 /// annotation-index list, and its own doc comment says why they cannot be one
@@ -430,7 +430,7 @@ pub fn store(ctx: &egui::Context, clipped: Clipped) {
 /// * neither list can be built from the other's numbering, which is the mistake
 ///   the two-argument signature exists to make impossible.
 ///
-/// # ★★★ AND THEN IT ASKS THE ENGINE WHAT IT DID
+/// # AND THEN IT ASKS THE ENGINE WHAT IT DID
 ///
 ///
 /// ⇒ **The fork is read off the payload, never off a subtype list here.** A
@@ -445,7 +445,7 @@ pub fn store(ctx: &egui::Context, clipped: Clipped) {
 pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
     use crate::canvas::annotclip;
 
-    // ★ The annotation's OWN page wins where there is one. A selected
+    // The annotation's OWN page wins where there is one. A selected
     // annotation and `view.page_index` can differ — the view can be scrolled
     // onto the next sheet with a comment still selected on this one — and the
     // clip must describe the page the thing is actually on, because that is the
@@ -457,10 +457,10 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
         return Err(Refusal::NothingSelected);
     }
     let indices: Vec<usize> = annots.iter().map(|a| a.index).collect();
-    // ★ `&self`, and it commits nothing — which is what makes `cut` below one
+    // `&self`, and it commits nothing — which is what makes `cut` below one
     // undo entry without a `cut_selection` call: only the deletion is an edit.
     //
-    // ★★ `copy_selection`, not `copy_objects` and not `copy_annotations`. The
+    // `copy_selection`, not `copy_objects` and not `copy_annotations`. The
     // two narrow verbs are one-line wrappers over this one body, so calling it
     // directly costs nothing and removes the
     // branch that would otherwise have to decide which wrapper to use — a
@@ -482,7 +482,7 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
         return Err(Refusal::CannotCarry(plan.refused));
     }
 
-    // ★★ The clip's OWN bbox, unioned by the engine over both content items
+    // The clip's OWN bbox, unioned by the engine over both content items
     // and annotation `/Rect`s, converted to a centre.
     //
     let anchor = (!clip.bbox().is_empty()).then(|| {
@@ -500,7 +500,7 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
         anchor,
     };
     store(ctx, clipped.clone());
-    // ★★★ AND A MARKER ON THE OS CLIPBOARD, WITHOUT WHICH CTRL+V DOES NOT
+    // AND A MARKER ON THE OS CLIPBOARD, WITHOUT WHICH CTRL+V DOES NOT
     // ARRIVE AT ALL.
     //
     // Not a nicety and not a placeholder. `egui-winit` turns `Ctrl+V` into
@@ -515,7 +515,7 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
     // it is not random, it is not reproducible, and the thing that fixes it has
     // nothing to do with pdfcer.
     //
-    // ★ What goes there is a SENTENCE RATHER THAN THE BYTES, and both halves of
+    // What goes there is a SENTENCE RATHER THAN THE BYTES, and both halves of
     // that are deliberate:
     //
     // * a human who pastes into a text editor gets something that says what
@@ -529,7 +529,7 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
     // Until then the marker is what makes the chord arrive and the in-memory
     // clip is what is pasted, so a pdfcer→pdfcer paste is already lossless. What
     // is missing is pdfcer→pdfcer **across two processes**.
-    // ★★★ **AND A PICTURE BESIDE IT, as of 2026-08-31** —
+    // **AND A PICTURE BESIDE IT, as of 2026-08-31** —
     // `OPERATOR_REQUESTS.md` O71: *"so we can copy and paste them … outside of
     // the pdfcergui."*
     //
@@ -540,13 +540,13 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
     // reason the paragraphs above set out. `native_window::clipboard` writes
     // both or neither.
     //
-    // ★ It FALLS BACK rather than failing. A clipboard another process is
+    // It FALLS BACK rather than failing. A clipboard another process is
     // holding, a render that declines, a degenerate clip — each of those loses
     // the picture and none of them loses the copy, so the marker still goes on
     // by the route it always did and the operator's `Ctrl+V` still works. What
     // they lose is the paste into Word, and the trace says which.
     //
-    // ★★ An ANNOTATION-only clip reaches `publish` with `clip.items` empty, so
+    // An ANNOTATION-only clip reaches `publish` with `clip.items` empty, so
     // the raster is degenerate and the picture declines — by the same path a
     // zero-area content clip already took, with no new branch. That is the
     // right outcome rather than a gap: `clipimage` renders the page content a
@@ -563,12 +563,12 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
-        // ★ The COUNT and the BYTE LENGTH, because those are what a wrong build
+        // The COUNT and the BYTE LENGTH, because those are what a wrong build
         // gets wrong: a clip that copied the operators and dropped the
         // resources is a plausible-looking clip that pastes the right glyphs in
         // the wrong typeface, and it is several hundred bytes shorter.
         //
-        // ★★ And `annots=` and `thin=` beside them, because a wrong build gets
+        // And `annots=` and `thin=` beside them, because a wrong build gets
         // THOSE wrong: `annots=0` on a copy of a sticky note is the whole
         // failure, and `thin=1` is the build that took the engine's model
         // carrier where the faithful route was available. Neither is visible in
@@ -594,7 +594,7 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
 
 /// Copy, then delete — cut.
 ///
-/// # ★ Why this is copy-then-delete and not a verb of its own
+/// # Why this is copy-then-delete and not a verb of its own
 ///
 /// Because a cut *is* those two acts, and expressing it as two calls to
 /// functions that are each independently tested is how it stays correct. The
@@ -615,7 +615,7 @@ pub fn cut(
     doc: &OpenDoc,
     actions: &mut Vec<Action>,
 ) -> Result<Clipped, Refusal> {
-    // ★★★ **ASK WHETHER THE DELETE CAN HAPPEN BEFORE THE COPY DOES.**
+    // **ASK WHETHER THE DELETE CAN HAPPEN BEFORE THE COPY DOES.**
     //
     //
     // On a certified or encrypted document, `Ctrl+X` over a markup **copied it
@@ -631,7 +631,7 @@ pub fn cut(
     // exists to prevent — stated there for the copy half and never asked for
     // the delete half.
     //
-    // ★★ The whole gesture is refused rather than degraded to a copy. A cut
+    // The whole gesture is refused rather than degraded to a copy. A cut
     // that silently becomes a copy is a different verb wearing the operator's
     // chord, and they would find out by pasting.
     //
@@ -642,7 +642,7 @@ pub fn cut(
     // *"pdfcer could not put it back"*. An operator meeting the wrong one of the
     // two goes looking in the wrong place.
     //
-    // ★ `edit.cut` is already greyed on this predicate (`selection.cut_permitted`),
+    // `edit.cut` is already greyed on this predicate (`selection.cut_permitted`),
     // so a pointer never reaches here. A CHORD does: `Ctrl+X` is dispatched
     // through the keymap without consulting command enablement. Greying removes
     // the invitation; this removes the silence.
@@ -663,7 +663,7 @@ pub fn cut(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             format!("clipboard-cut-refused reason=delete-gated why={why:?}")
         });
-        // ★ The REASON travels out; the sentence is written where every other
+        // The REASON travels out; the sentence is written where every other
         // clipboard refusal's is. This module changes no document and words no
         // decline — its own header's contract — and `crate::app::status::decline`
         // is `pub(super)` inside `crate::app` and deliberately out of reach from
@@ -673,13 +673,13 @@ pub fn cut(
         return Err(Refusal::DeleteRefused(why));
     }
     let clipped = copy(ctx, doc)?;
-    // ★★ COPY RUNS FIRST, and the engine makes the same point about its own
+    // COPY RUNS FIRST, and the engine makes the same point about its own
     // `cut_objects`: *"a selection that cannot be copied is refused with
     // nothing deleted. Reversed, a cut whose copy half failed would take the
     // objects away with nothing on the clipboard — the one outcome the operator
     // cannot recover from by pasting."* The `?` above is that ordering.
     //
-    // ★ And this is deliberately NOT `EditSession::cut_objects`, though that
+    // And this is deliberately NOT `EditSession::cut_objects`, though that
     // verb exists and would work. `cut_objects` is copy-then-delete inside the
     // engine; doing it here as copy-then-`DeleteSelection` keeps the delete
     // going through the funnel like every other edit, so it lands one
@@ -693,7 +693,7 @@ pub fn cut(
     // than performed here: this module changes no document.
     match (&clipped, doc.selection.annot()) {
         //
-        // ★★ SO A MIXED CUT IS TWO UNDO ENTRIES, and that is stated rather
+        // SO A MIXED CUT IS TWO UNDO ENTRIES, and that is stated rather
         // than hidden. It is not reachable today (the selection model holds
         // content or an annotation, never both), and when it becomes reachable
         // the honest fix is a `cut_selection` on the engine side rather than a
@@ -701,7 +701,7 @@ pub fn cut(
         // `ENGINE_BACKLOG.md`. A pure-content cut and a pure-annotation cut are
         // each ONE entry, which is every cut an operator can make today.
         //
-        // ★ The ids come off the CLIP, not from a fresh read of the selection.
+        // The ids come off the CLIP, not from a fresh read of the selection.
         // Re-deriving them here would be a second walk of the page between the
         // copy and the delete, and the window between two walks is exactly
         // where a cut removes the annotation next to the one it copied.
@@ -730,17 +730,17 @@ pub fn cut(
                 ));
             }
         }
-        // ★ A form field's cut is `canvas::fieldclip::cut`, which raises
+        // A form field's cut is `canvas::fieldclip::cut`, which raises
         // `FieldAction::DeleteWidget` -- a widget is addressed by its FIELD's
         // name and an index within it, not by the `ObjId` this arm's siblings
         // use, because one field can draw boxes on three pages. Reaching this
         // arm means `app::dispatch::clipboard` routed a field copy into the
         // markup path.
-        // ★ A page cut is `dispatch::pageclip`, which raises
+        // A page cut is `dispatch::pageclip`, which raises
         // `PageAction::DeletePages` -- pages are addressed by index in the
         // document, not by an `ObjId` on a page, so nothing in this arm's
         // vocabulary can express one. Same tripwire as the field arm below.
-        // ★ A bookmark cut is `panels::bookmarks::clip`, which raises
+        // A bookmark cut is `panels::bookmarks::clip`, which raises
         // `BookmarkAction::Delete` -- an outline item is addressed by `ObjId`
         // in a document-level tree, not by a page and an index, so this arm's
         // vocabulary cannot express one either. Third tripwire, same shape.
@@ -765,7 +765,7 @@ pub fn cut(
                 "a form field cut must route to canvas::fieldclip::cut; app::dispatch::clipboard owns that fork"
             );
         }
-        // ★ An attachment cut is `panels::attachments::clip`, which raises
+        // An attachment cut is `panels::attachments::clip`, which raises
         // `AttachmentAction::Detach` -- an embedded file is addressed by its
         // `/EmbeddedFiles` name-tree KEY, which is neither a page nor an
         // `ObjId` on one, so this arm's vocabulary cannot express it. Fourth
@@ -807,12 +807,12 @@ pub fn paste(
     actions: &mut Vec<Action>,
 ) -> Result<(), Refusal> {
     match read(ctx) {
-        // ★ A clip takes its own path: it is bytes and the verb is
+        // A clip takes its own path: it is bytes and the verb is
         // `paste_objects`, which takes a page-space MATRIX rather than a
         // displacement — so the offset below cannot be shared even though the
         // rule that decides it is.
         //
-        // ★★ ONE verb plants BOTH halves. `paste_objects` commits the content
+        // ONE verb plants BOTH halves. `paste_objects` commits the content
         // command and then calls the private `paste_clip_annotations`, so this
         // shell raises **one** action for a mixed clip and does not have to
         // sequence two. The engine's own note is that the annotation half
@@ -837,12 +837,12 @@ pub fn paste(
             target,
             actions,
         ),
-        // ★★ Same fork as the cut above, and the same tripwire. A field paste
+        // Same fork as the cut above, and the same tripwire. A field paste
         // needs `&OpenDoc` -- to find a free name, and to know what the source
         // field could not carry -- which this function does not take and must
         // not grow, because every other paste here is a pure function of the
         // clip. `app::dispatch::clipboard` branches before calling either.
-        // ★ Same fork, same tripwire. A page paste needs `&mut PdfcerApp` for
+        // Same fork, same tripwire. A page paste needs `&mut PdfcerApp` for
         // the current page index and raises a `PageAction`; this function is a
         // pure function of the clip.
         Some(Clipped::Outline { .. }) => {
@@ -885,7 +885,7 @@ pub fn paste(
 /// content, annotations, or both**.
 ///
 ///
-/// # ★ The offset rule is the markup one, and the geometry is not
+/// # The offset rule is the markup one, and the geometry is not
 ///
 /// Same page offsets so the copy is visible; a different page or document lands
 /// in place, so a shape copied to sheet 12 is where it was on sheet 1. That
@@ -954,7 +954,7 @@ fn paste_clip(
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
-            // ★★ `annots=` is on this line because a wrong build gets it wrong
+            // `annots=` is on this line because a wrong build gets it wrong
             // invisibly: a clip whose annotation payload the serialiser dropped
             // pastes its content perfectly and traces `objects=3` either way.
             // It is the number the annotation half of this feature lives or
@@ -968,7 +968,7 @@ fn paste_clip(
         crate::app::actions::VectorAction::PasteObjects {
             page,
             clip: bytes.to_vec(),
-            // ★ Down the page is NEGATIVE in PDF user space because y increases
+            // Down the page is NEGATIVE in PDF user space because y increases
             // upward — the identical trap `paste` names one function up, and
             // worth repeating rather than cross-referencing because getting it
             // backwards produces a paste that goes up-and-right, which looks

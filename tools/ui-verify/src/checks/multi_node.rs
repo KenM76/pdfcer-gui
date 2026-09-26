@@ -121,7 +121,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 2: click the shape, then descend twice -----------------------------
     //
-    // ★ Two double-clicks at the SAME point, which is the ladder this shell
+    // Two double-clicks at the SAME point, which is the ladder this shell
     // defines: a click selects the object, a double-click descends to the part,
     // a second descends to the node. Aiming the second descent somewhere else
     // would be a different gesture — `click_inside` ascends the moment a click
@@ -163,7 +163,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 4: click a MARKED anchor, then Shift-pick a second -----------------
     //
-    // ★★ Both aims come from the application's own published anchor rects, and
+    // Both aims come from the application's own published anchor rects, and
     // the first version of this check had neither. It descended twice at the
     // same point and asserted the Node rung had been entered — which failed,
     // because the Node rung is reached by clicking **near an anchor**, and a
@@ -188,7 +188,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
     let frame = session.frame()?;
     let first = frame.declared_center(first_rect);
-    // ★ A DOUBLE click, because the Node rung is descended into and not merely
+    // A DOUBLE click, because the Node rung is descended into and not merely
     // clicked. `SelectionState::click_inside` picks an anchor only when
     // `self.level` is already `Node` — a plain click at the Part rung re-picks
     // the *part*. Driving it is what showed this: two double-clicks at the aim
@@ -202,7 +202,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.double_click_at(first)?;
     session.settle(16);
 
-    // ★★ The second anchor's rect is read AFTER the descent, and the first
+    // The second anchor's rect is read AFTER the descent, and the first
     // version of this check read it before. Driving it is the only reason that
     // is known: descending to the Node rung enters a *subpath*, and the marks
     // are subpath-scoped, so the whole published set changes — the trace shows
@@ -254,7 +254,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- 5: drag the set ----------------------------------------------------
-    // ★ The drag starts from the anchor's CURRENT published rect, not from
+    // The drag starts from the anchor's CURRENT published rect, not from
     // `first` — the position that was read before the descent. Third time this
     // check has been bitten by the same interval, and the third distinct cause:
     // the marks are re-laid out when the rung changes, so a screen position

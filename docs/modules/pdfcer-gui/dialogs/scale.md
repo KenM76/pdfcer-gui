@@ -5,7 +5,7 @@ Measure ▸ Scale, and inert; `shell::commands::reach` recorded it as *"the
 clearest statement of a missing arm in the crate"*, and the block on it was
 never the model — it was this window.
 
-## ★ Why this is the sharpest gap in the measure feature
+## Why this is the sharpest gap in the measure feature
 
 Phase 7 shipped three tools that place dimensions: Linear, Two-line, and
 Radius/diameter. All three work. **None of the numbers they produce means
@@ -45,7 +45,7 @@ ratio path exists because it needs no drawn line — which makes it the only
 path reachable from a dialog opened cold, and, as the source notes, an
 accessibility win: a scale can be set entirely by typing.
 
-**A cold-opened dialog offers the ratio path.** ★ This paragraph used to
+**A cold-opened dialog offers the ratio path.** This paragraph used to
 end *"drawing one is a canvas gesture (`ScalePick`) that is not yet armed by
 any command"*, and that stopped being true on 2026-08-17: the **Measure it
 on the drawing…** button in this very window arms it, and the dialog

@@ -1,6 +1,6 @@
 //! # `canvas::markup` — what a markup annotation IS, and the pen it is drawn with
 //!
-//! ## ★ The defect this module exists so that we never ship again
+//! ## The defect this module exists so that we never ship again
 //!
 //! The old shell's `canvas.rs` records it in the doc comment of the tool
 //! variant this one is modelled on, and it is worth carrying across verbatim
@@ -21,7 +21,7 @@ pub mod band;
 /// Freehand: press, follow the pointer, release. `/Ink`.
 pub mod ink;
 
-/// ★★★ **Solid or dashed** — `/BS` `/S` and `/D` (§12.5.4, Table 166), as the
+/// **Solid or dashed** — `/BS` `/S` and `/D` (§12.5.4, Table 166), as the
 /// four choices this shell offers and the one reading it can only report.
 ///
 pub mod linestyle;
@@ -30,7 +30,7 @@ pub mod linestyle;
 /// `canvas::interact` under R2; its header carries the fallback ordering.
 pub mod route;
 
-/// ★★★ **Acrobat's own markup colours, measured** — the ten values Adobe
+/// **Acrobat's own markup colours, measured** — the ten values Adobe
 /// authors comments in, and the grid the Style swatch offers them from.
 ///
 /// The data half of the operator's ask of 2026-09-06: *"make sure you've used
@@ -39,7 +39,7 @@ pub mod route;
 /// than chosen here; the module header carries the reading and the evidence.
 pub mod palette;
 
-/// ★ The colour and width the next markup is authored with — the **Style**
+/// The colour and width the next markup is authored with — the **Style**
 /// group `RIBBON_IA.md` §5.5 specifies and this shell shipped without.
 ///
 /// §5.5 named the consequence in advance: *"Both must exist; today only the
@@ -48,7 +48,7 @@ pub mod pen;
 /// Underline, strikeout and squiggly — the kinds whose operand is a text
 /// selection rather than a pointer gesture. See this module's header for why
 /// they are not [`MarkupKind`] variants.
-/// ★ The Markup ▸ Style group's control — the `colour_swatch` custom item the
+/// The Markup ▸ Style group's control — the `colour_swatch` custom item the
 /// manifest declared at S2 and nothing ever drew, so the group rendered a
 /// caption over an empty band.
 pub mod swatch;
@@ -100,7 +100,7 @@ pub enum MarkupKind {
     /// the cloudy border effect on it. *"Click each corner; double-click the
     /// last."*
     ///
-    /// # ★ It is a `/Polygon` in the file, and that is the specification's doing
+    /// # It is a `/Polygon` in the file, and that is the specification's doing
     ///
     /// There is no `/Cloud` subtype in ISO 32000. A revision cloud **is** a
     /// polygon whose border is drawn cloudy — Table 181 declares `/BE` on
@@ -203,7 +203,7 @@ impl MarkupKind {
     /// that placed a vertex and replaced the selection.
     #[must_use]
     pub fn is_vertex(self) -> bool {
-        // ★ Cloud joins here and NOWHERE ELSE in this impl, which is the
+        // Cloud joins here and NOWHERE ELSE in this impl, which is the
         // property that made it a two-line change rather than a feature: every
         // reader of this predicate — `gesture::press_kind`'s live click,
         // `canvas::interact`'s routing away from the selection, `vertex`'s
@@ -245,7 +245,7 @@ pub const PEN_WIDTH_PTS: f64 = 2.0;
 
 /// **The geometry one completed markup gesture produced**, in PDF user space.
 ///
-/// # ★ Why one enum rather than three `Action` variants
+/// # Why one enum rather than three `Action` variants
 ///
 /// Because [`spec`] is *"the single place a gesture becomes a `MarkupSpec`"*,
 /// and that claim is what the whole equivalence argument rests on: a
@@ -279,7 +279,7 @@ pub enum Geometry {
     /// Un-normalised on purpose: [`spec`] normalises per kind, at the last point
     /// at which the raw pair is still available, because an arrow's head is at
     /// `end` and a normalised rect cannot say which corner the operator started
-    /// at. See [`spec`]'s own ★ section.
+    /// at. See [`spec`]'s own section.
     Band {
         /// Where the press landed. For [`MarkupKind::Arrow`] this is the **tail**.
         start: (f64, f64),
@@ -351,7 +351,7 @@ pub enum Refusal {
     /// A vertex run too short for its kind: fewer than two for a `/PolyLine`,
     /// fewer than **three** for a `/Polygon`.
     ///
-    /// ★ **This is the one place the shell is deliberately stricter than the
+    /// **This is the one place the shell is deliberately stricter than the
     /// engine.** `pdfcer-core`'s `validate_geometry` refuses `vertices.len() < 2`
     /// for both, so a two-vertex `/Polygon` would be accepted and authored: a
     /// closed shape drawn from A to B and back to A, which renders as a single
@@ -398,7 +398,7 @@ const CLOUD_INTENSITY: f64 = 1.0;
 /// Returns `None` for a kind/geometry pair no gesture constructs — see
 /// [`Refusal::Mismatched`], which is where the apply arm's refusal is named.
 ///
-/// # ★ An arrow keeps its RAW endpoints; a rectangle kind is normalised
+/// # An arrow keeps its RAW endpoints; a rectangle kind is normalised
 ///
 /// Carried across from the old shell's `commit_markup`,
 /// which states it in one sentence: *"the direction the operator dragged is the
@@ -418,7 +418,7 @@ const CLOUD_INTENSITY: f64 = 1.0;
 /// `llx > urx` is not a rectangle any reader will draw, and the operator may
 /// drag in any of the four directions.
 ///
-/// # ★ A vertex run is never re-ordered, and neither is an ink stroke
+/// # A vertex run is never re-ordered, and neither is an ink stroke
 ///
 /// The same rule as the arrow's, one dimension up. `/Vertices` and `/InkList`
 /// are **sequences**, and their order is the order the operator drew: a
@@ -436,7 +436,7 @@ const CLOUD_INTENSITY: f64 = 1.0;
 /// belongs to the surface that will set the pen colour too.
 #[must_use]
 pub fn spec(kind: MarkupKind, geometry: &Geometry, pen: pen::Pen) -> Option<MarkupSpec> {
-    // ★ The pen is a PARAMETER as of 2026-08-17, and this is the seam
+    // The pen is a PARAMETER as of 2026-08-17, and this is the seam
     // `MarkupKind::rgb`'s own doc comment named in advance: *"give it a colour
     // and a width from the document's markup state and nothing else in the
     // module changes."* Nothing else in this module did.
@@ -483,7 +483,7 @@ pub fn spec(kind: MarkupKind, geometry: &Geometry, pen: pen::Pen) -> Option<Mark
                     interior: None,
                     border_width: width,
                 },
-                // ★ RAW `start` and `end` — see this function's docs.
+                // RAW `start` and `end` — see this function's docs.
                 MarkupKind::Arrow => MarkupSpec::Line {
                     start: *start,
                     end: *end,
@@ -514,7 +514,7 @@ pub fn spec(kind: MarkupKind, geometry: &Geometry, pen: pen::Pen) -> Option<Mark
             interior: None,
             width,
         }),
-        // ★ **The revision cloud**, and the ONLY line in this module that
+        // **The revision cloud**, and the ONLY line in this module that
         // distinguishes it from the arm above.
         //
         // `intensity` is the whole of the difference in the file. Table 167's
@@ -615,7 +615,7 @@ pub fn action(
     }
     match (&geometry, kind) {
         (Geometry::Band { start, end }, k) if k.is_band() => {
-            // ★ No second threshold, and none in page space. egui's own drag
+            // No second threshold, and none in page space. egui's own drag
             // threshold has already separated a click from a drag in SCREEN
             // space; all that is refused here is a drag that ended exactly where
             // it began, which would author a 1-point mark nobody can see. See
@@ -632,7 +632,7 @@ pub fn action(
                 return Err(Refusal::NoExtent);
             }
         }
-        // ★ Polygon and Cloud share this arm, and sharing it is the assertion.
+        // Polygon and Cloud share this arm, and sharing it is the assertion.
         //
         // A cloud IS a polygon in the file — `MarkupSpec::Cloud` writes
         // `/Subtype /Polygon` and differs only by `/BE` — so a vertex run that
@@ -714,7 +714,7 @@ pub(crate) fn decline(kind: MarkupKind, page: usize, reason: Refusal) {
 
 /// Report a markup that is about to be authored, with its geometry.
 ///
-/// ★ **Traced with numbers, not a success flag.** The old shell's own note says
+/// **Traced with numbers, not a success flag.** The old shell's own note says
 /// why, and it is the sharpest sentence in that file: *"the whole defect this
 /// Pass fixes was a shape landing somewhere the operator did not choose, and a
 /// trace saying only 'committed' would have been equally true before and after

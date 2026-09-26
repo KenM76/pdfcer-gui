@@ -11,7 +11,7 @@ else.**
 > or resized yet."*
 
 
-## ★★★ Why the failure it guards is worse than "the drag does nothing"
+## Why the failure it guards is worse than "the drag does nothing"
 
 Before this, an annotation drag was **consumed and discarded**.
 `canvas::interact` forks on *"is an annotation selected?"* and the only
@@ -24,7 +24,7 @@ anywhere.
 ⇒ A fork whose branches can **both** answer *"not mine"* is worse than a
 missing feature: the gesture is eaten. This check exists at the fork.
 
-## ★★★ What this check CANNOT see, stated first because it is the point
+## What this check CANNOT see, stated first because it is the point
 
 A move has two halves and **only one of them shows up in a render**:
 `/Rect` moves the painted result for free, while `/L`, `/Vertices`,
@@ -34,7 +34,7 @@ the annotation looks right here, right in a screenshot, right in a pixel
 check — and is rebuilt **in its old place** by the next viewer that rebuilds
 it.
 
-★★ **So a pixel oracle is the wrong instrument for this feature**, and that
+**So a pixel oracle is the wrong instrument for this feature**, and that
 is not a limitation of this check but a fact about the format. Every
 screenshot this project can take reads the appearance stream. The trace line
 is the only place the second half is visible from here, through
@@ -57,4 +57,4 @@ implementation; the engine's tests establish that both halves are written.
 | 4 | a second drag reaches `annotdrag` rather than `dimdrag` | `canvas::interact` | **no** — the fork is wiring |
 | 5 | the action reaches `move_annotation` | `app::actions::annots` | yes |
 
-★ Link 4 is the one this check is for, and it is the one that was broken.
+Link 4 is the one this check is for, and it is the one that was broken.

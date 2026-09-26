@@ -22,7 +22,7 @@ const FIXTURE: &str = "fixtures/four-pages.pdf";
 /// Review — the mode markup is authored in, and the mode whose `edit_content`
 /// is **false**.
 ///
-/// ★ Driving this in Edit would exercise the same code with the interesting
+/// Driving this in Edit would exercise the same code with the interesting
 /// half of every gate short-circuited: `press_kind`'s markup-node rung is
 /// gated on `author_markup` precisely so it fires where `edit_content` does
 /// not, and Edit has both.
@@ -38,7 +38,7 @@ const ARM_VALUE: &str = "Markup(Polygon)";
 /// `markup-vertex kind=… page=… n=… x=… y=…` — one line per click while the
 /// shape is being **drawn**.
 ///
-/// ★★ Note how close this is to the node-editing lines below, and that the
+/// Note how close this is to the node-editing lines below, and that the
 /// closeness is exactly why they are spelled `markup-node-*`. This event
 /// belongs to `canvas::markup::vertex` and has since polygons became
 /// authorable; a node-move line under the same first token would make
@@ -61,7 +61,7 @@ const SHELL_DECLINED: &str = "markup-node-declined";
 /// `move-annotation-vertex page=0 n=1 epoch=… disclosures=…` — the **funnel's**
 /// line, which is the engine's acknowledgement that the document changed.
 ///
-/// ★★ Distinct from [`SHELL_MOVE`] deliberately, and asserting both is the
+/// Distinct from [`SHELL_MOVE`] deliberately, and asserting both is the
 /// point: one says the gesture was understood, the other says the document
 /// changed. A check that read only the first could not tell a shell that never
 /// asked from an engine that refused.
@@ -85,7 +85,7 @@ const CORNERS: [(f64, f64); 4] = [(0.25, 0.25), (0.55, 0.25), (0.55, 0.55), (0.2
 /// drag cannot coincide with the shape before it by arithmetic accident, and so
 /// the sampled box is paper the polygon has never covered.
 ///
-/// ★★ **Upper right, and the first run is why it is not lower right.** The
+/// **Upper right, and the first run is why it is not lower right.** The
 /// first draft aimed at `(0.80, 0.15)` and the "before" box came back holding
 /// 423 ink pixels of 1,406 — because `four-pages.pdf`'s page 1 carries a
 /// coloured **title block** in exactly that corner. The assertion still passed,
@@ -96,7 +96,7 @@ const CORNERS: [(f64, f64); 4] = [(0.25, 0.25), (0.55, 0.25), (0.55, 0.55), (0.2
 const DESTINATION: (f64, f64) = (0.85, 0.75);
 /// **The smallest ink change this check will call a change.**
 ///
-/// ★ Four pixels, and the reasoning is `InkReport::is_text`'s: one or two
+/// Four pixels, and the reasoning is `InkReport::is_text`'s: one or two
 /// pixels either way is antialiasing on an edge that did not move, while a
 /// 2 pt stroke crossing a box contributes a run. A strict `>` on a raw count
 /// would let noise decide the verdict, and this project's standing rule is
@@ -106,7 +106,7 @@ const DESTINATION: (f64, f64) = (0.85, 0.75);
 const INK_DELTA_FLOOR: usize = 4;
 /// Half-width of the box sampled for ink, as a fraction of the page's width.
 ///
-/// ★ A fraction and not a constant in points, and the first run is why: 22 pt
+/// A fraction and not a constant in points, and the first run is why: 22 pt
 /// on this fixture at fit-page zoom is an **8 x 9 pixel** window, which is too
 /// few pixels for `ink_run_into` to say anything with. Small enough that the
 /// square's original edges are nowhere near it — the nearest is a quarter of
@@ -149,7 +149,7 @@ impl Check for AMarkupShapesNodesCanBeEdited {
 
 /// Drag from `from` to `to` with `modifiers` held for the WHOLE gesture.
 ///
-/// ★★★ **Held across the press, the walk and the release, and that is not
+/// **Held across the press, the walk and the release, and that is not
 /// politeness.** `Driver::press_held`'s own note records the finding: a
 /// modifier that goes down and up inside one frame's event batch can be applied
 /// and undone before the event it was meant to carry is dispatched, because
@@ -184,7 +184,7 @@ fn sample_box(page: PageGeometry, at: (f64, f64)) -> (DocPoint, DocPoint) {
 /// Capture the window once, and count the ink in **both** boxes this check
 /// watches — where the node is going, and where it came from.
 ///
-/// ★★★ **Two boxes from ONE capture, and the pair is the assertion.** A single
+/// **Two boxes from ONE capture, and the pair is the assertion.** A single
 /// "ink arrived at the destination" reading is satisfied by anything that puts
 /// dark pixels there, including a build that drew a stray anchor. A single "ink
 /// left the origin" reading is satisfied by a build that simply stopped drawing
@@ -342,7 +342,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))?));
     }
 
-    // ★★★ **THREE single clicks and then a DOUBLE on the fourth corner — the
+    // **THREE single clicks and then a DOUBLE on the fourth corner — the
     // ending CONSUMES a click, and the first run of this check got it wrong.**
     //
     // `canvas::markup::vertex::click` states it in its own header: *"`click,
@@ -386,7 +386,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("a four-node polygon was drawn and reached the engine");
 
-    // ★★★ THE "BEFORE" CAPTURE — the shape is on the page, drawn by
+    // THE "BEFORE" CAPTURE — the shape is on the page, drawn by
     // `pdfcer-render` from its own appearance stream, and **nothing is
     // selected**, so there is no outline and no anchor anywhere in either box.
     //
@@ -406,7 +406,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         before_there.summary(),
         before_here.summary()
     ));
-    // ★★ The baseline is asserted rather than assumed, because a check whose
+    // The baseline is asserted rather than assumed, because a check whose
     // baseline is wrong cannot report anything honestly. If the corner is not
     // there to begin with, "ink left the origin" is vacuous — and this is
     // exactly the class of thing that goes unnoticed when a fixture changes.
@@ -423,7 +423,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: select it, so its node anchors are published ------------------
     //
-    // ★ Press `V` FIRST. With the Polygon tool still armed a click on the page
+    // Press `V` FIRST. With the Polygon tool still armed a click on the page
     // is another vertex, not a selection — `sys::vk::V`'s own doc comment says
     // so, and the first run of the ce-dimension check ignored it and then
     // reported "the shape could not be selected" about a build whose selection
@@ -451,7 +451,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
 
-    // --- 4: ★★★ drag node 1 — it MOVES, and the pixels move with it -------
+    // --- 4: drag node 1 — it MOVES, and the pixels move with it -------
     let frame = session.frame()?;
     let from = frame.declared_center(node_one);
     let out = frame.to_screen(mapping.doc_to_window(DocPoint::new(
@@ -495,7 +495,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    // ★★ The shell's own applied line carries the node count and the `/Rect`
+    // The shell's own applied line carries the node count and the `/Rect`
     // pair, which is what says the reshape rewrote BOTH halves rather than only
     // the geometry array.
     let applied = trace.last(&format!("{ENGINE_MOVE}{APPLIED_SUFFIX}"));
@@ -513,7 +513,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         shell.raw
     ));
 
-    // ★★★ …AND THE PIXELS. Deselect first, so what is counted is the
+    // …AND THE PIXELS. Deselect first, so what is counted is the
     // annotation's own appearance and not its selection outline or its anchors.
     //
     // The click goes to a corner of the sheet the polygon has never occupied
@@ -562,7 +562,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 5: arm the Points tool, and DELETE a node ------------------------
     //
-    // ★ The `A` chord and not a ribbon press: `view.tool_node`'s ribbon and
+    // The `A` chord and not a ribbon press: `view.tool_node`'s ribbon and
     // rail items both carry `shown_when("mode.edit_content")`, so in Review
     // there is no control to click. A chord is filtered by TAB visibility and
     // View is in every mode, so the key gets through.
@@ -653,7 +653,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         shell.raw
     ));
 
-    // --- 6: ★★★ take it below the floor — the refusal must be SHOWN -------
+    // --- 6: take it below the floor — the refusal must be SHOWN -------
     //
     // A `/Polygon` keeps three. The shape now has three, so this gesture cannot
     // be honoured — and the whole subject of the operator's report is what
@@ -691,7 +691,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    // ★★★ …and it is ON SCREEN. The trace line says the shell knows; this says
+    // …and it is ON SCREEN. The trace line says the shell knows; this says
     // the OPERATOR was told. They are different claims and only the second is
     // the operator's complaint.
     let trace = session.trace()?;

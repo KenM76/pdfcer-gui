@@ -80,7 +80,7 @@ pub enum StateReading {
     /// Table 171's value **in Table 171's model for that value** — the closed
     /// set [`ReviewState`] holds, which is exactly what pdfcer authors.
     ///
-    /// ★ The model has to agree. `/State (Accepted) /StateModel (Marked)` is
+    /// The model has to agree. `/State (Accepted) /StateModel (Marked)` is
     /// **not** this variant: `Accepted` belongs to `Review`
     /// ([`ReviewState::model`] derives it, and `add_review_state` writes the
     /// derived one so *"the one non-conforming combination cannot be
@@ -182,7 +182,7 @@ impl StateReading {
     /// **The `/StateModel` pdfcer would author into, given this reading** —
     /// `None` for [`Self::Foreign`] alone.
     ///
-    /// ★★★ This is where the `Unmodelled`/`Foreign` distinction actually
+    /// This is where the `Unmodelled`/`Foreign` distinction actually
     /// **bites**, and it is the reason the two are separate variants rather
     /// than one "unrecognised". `Some` means *pdfcer can continue this
     /// vocabulary*; `None` means it cannot, and the row says so instead of
@@ -284,7 +284,7 @@ impl Statuses {
     /// pdfcer's own seven would be this shell telling the operator their
     /// document does not contain what it contains.
     ///
-    /// ★ Only **tip** values appear. A value that occurs solely in the middle
+    /// Only **tip** values appear. A value that occurs solely in the middle
     /// of somebody's chain is a status they have since superseded, and offering
     /// it would filter to zero rows — an entry that can only disappoint.
     ///
@@ -304,7 +304,7 @@ impl Statuses {
     /// **Does one row survive a status filter?**
     ///
     ///
-    /// ★ `Is` matches if **any** reviewer's current status is that value, not
+    /// `Is` matches if **any** reviewer's current status is that value, not
     /// if every one is. Two people may disagree, and a reviewer asking *"what
     /// has been rejected"* wants the mark somebody rejected even though
     /// somebody else accepted it — the conservative direction on a work list is
@@ -327,7 +327,7 @@ impl Statuses {
 /// for — see [`crate::text::reviewstate::filter_status_unrecorded`]. `None` on
 /// [`super::filter::Filter::status`] is *any status, and none*.
 ///
-/// ★ [`Self::Unrecorded`] is **not** a `/State` of `None`. Table 171 makes
+/// [`Self::Unrecorded`] is **not** a `/State` of `None`. Table 171 makes
 /// `None` a writable value in the `Review` model and `Annotation::state`'s doc
 /// is explicit that it *"is a writable value, not a spelling of 'the key is
 /// absent'"*. A reviewer who withdrew their status has done something; a
@@ -362,13 +362,13 @@ pub enum StatusChoice {
 ///    annotations, counting them, until the parent is not one. That parent is
 ///    the annotation being reviewed.
 ///
-/// ★ Same-author comparison treats an absent `/T` as **never equal**, matching
+/// Same-author comparison treats an absent `/T` as **never equal**, matching
 /// `deepest_state_for_author`'s `a.title.as_deref() == Some(author)` exactly.
 /// An unsigned status therefore neither continues a chain nor is continued by
 /// one, which is a fact about the file and is what
 /// [`crate::text::reviewstate::row_status_unsigned`] tells the operator.
 ///
-/// ★ A state annotation with **no** `/IRT` describes nothing — §12.5.6.3 puts
+/// A state annotation with **no** `/IRT` describes nothing — §12.5.6.3 puts
 /// the state on an annotation *"that refers to the original annotation by means
 /// of its `IRT` entry"* — so it is recorded in [`Statuses::is_status`], where
 /// it will still name itself on its own row, and reaches no target. Dropping it
@@ -401,7 +401,7 @@ pub fn read<G: ObjectGraph + ?Sized>(graph: &G, pages: &[Page]) -> Statuses {
         })
         .collect();
     let read = assemble(&states);
-    // ★★★ THE ONLY ORACLE FOR THIS FEATURE THAT A SCREENSHOT CANNOT GIVE.
+    // THE ONLY ORACLE FOR THIS FEATURE THAT A SCREENSHOT CANNOT GIVE.
     //
     // A review status is **invisible on the page** by construction — R8b puts it
     // off-canvas, and the annotation carrying it has an empty `/Contents` — so a
@@ -415,7 +415,7 @@ pub fn read<G: ObjectGraph + ?Sized>(graph: &G, pages: &[Page]) -> Statuses {
     // | `reviewed` | how many COMMENTS have a status | every chain collapsed to its own target, or none reached one |
     // | `values` | how many distinct statuses can be filtered to | the chooser is empty on a document that has statuses |
     //
-    // ★ `reviewed` is the one worth having. `states` and `values` would both be
+    // `reviewed` is the one worth having. `states` and `values` would both be
     // right on a build whose `/IRT` walk was broken; `reviewed` is the number
     // that changes when a chain fails to reach the comment it describes, and
     // that is the failure the engine calls invisible.
@@ -439,7 +439,7 @@ pub fn read<G: ObjectGraph + ?Sized>(graph: &G, pages: &[Page]) -> Statuses {
 /// **One `/State`-carrying annotation**, reduced to the four facts the chain
 /// walk and the row need.
 ///
-/// # ★ Why the walk does not run over `pdfcer_core::annot::Annotation`
+/// # Why the walk does not run over `pdfcer_core::annot::Annotation`
 ///
 /// Two reasons, and the second is the one that matters.
 ///
@@ -448,7 +448,7 @@ pub fn read<G: ObjectGraph + ?Sized>(graph: &G, pages: &[Page]) -> Statuses {
 ///    twenty-four-field literal that changes whenever the engine's read model
 ///    grows a field. That is a test suite bound to the engine's *shape* rather
 ///    than to its *behaviour*.
-/// 2. ★★ **The `/T` trim happens exactly once**, on the way in.
+/// 2. **The `/T` trim happens exactly once**, on the way in.
 ///    `deepest_state_for_author` compares `/T` bytes as the file carries them,
 ///    and this panel's `super::keeps_author_name` trims — so a chain rule
 ///    written against the raw field and a display rule written against the
@@ -494,7 +494,7 @@ fn assemble(states: &[StateAnnot]) -> Statuses {
         });
     }
 
-    // ★ Sorted for a STABLE draw. The input is in page-then-`/Annots` order,
+    // Sorted for a STABLE draw. The input is in page-then-`/Annots` order,
     // which is stable in itself — but two reviewers' tips arrive in whatever
     // order each happened to be placed, and a list of statuses that reshuffled
     // between frames reads as the panel flickering. The rule is
@@ -563,7 +563,7 @@ fn walk_up(states: &[StateAnnot], tip: &StateAnnot) -> (Option<ObjId>, usize) {
 /// **Narrow a list of rows by status**, after [`super::filter::apply`] has
 /// narrowed and ordered it.
 ///
-/// ★ Ordering is deliberately untouched here. [`super::filter::apply`] owns it,
+/// Ordering is deliberately untouched here. [`super::filter::apply`] owns it,
 /// and a second sort would be a second answer to a question that already has
 /// one — the failure [`super::model`]'s header names for the *list* ordering
 /// and the same argument applies to the *filter* pipeline.
@@ -580,7 +580,7 @@ pub fn narrow(
 
 /// **The status chooser**, drawn beneath the existing filter strip.
 ///
-/// # ★ Built from the document, not from [`OFFERED`]
+/// # Built from the document, not from [`OFFERED`]
 ///
 /// [`Statuses::values`] carries the argument: the engine reads `/State`
 /// verbatim, so the values a reviewer needs to filter by are whatever the file
@@ -588,7 +588,7 @@ pub fn narrow(
 /// two different lists, and deliberately so — [`record_control`] offers
 /// pdfcer's seven because those are the ones it can write.
 ///
-/// # ★★ Drawn only when the document has any status at all
+/// # Drawn only when the document has any status at all
 ///
 /// R9's shape applied to a control that would do nothing: on a document nobody
 /// has reviewed, this chooser's only entries are *Any status* and *No status
@@ -599,7 +599,7 @@ pub fn narrow(
 pub fn status_strip(ui: &mut egui::Ui, statuses: &Statuses, chosen: &mut Option<StatusChoice>) {
     let values = statuses.values();
     if values.is_empty() {
-        // ★ …and the filter is LIFTED, not merely hidden. A chooser that
+        // …and the filter is LIFTED, not merely hidden. A chooser that
         // vanished while still narrowing would leave rows hidden with no
         // control to restore them — the trap version of R9, and the exact
         // failure `super::filter`'s *Show all* exists to prevent.
@@ -647,7 +647,7 @@ pub fn status_strip(ui: &mut egui::Ui, statuses: &Statuses, chosen: &mut Option<
 /// | *no status recorded* | only under the **No status recorded** filter, where the row's emptiness is the answer to the question asked |
 /// | the *Record status* chooser | the stance authors markup, the row has an id, and it is neither a ce dimension nor itself a status |
 ///
-/// # ★★ Why the control is withheld in three cases, and each is R83
+/// # Why the control is withheld in three cases, and each is R83
 ///
 /// R83 — *an affordance that cannot be honoured is not drawn* — rather than R9,
 /// with one exception noted below:
@@ -698,7 +698,7 @@ pub fn row_status(
             None => t::row_status_unsigned(&status),
         };
         ui.label(egui::RichText::new(line).small().weak());
-        // ★ Only when there IS history. Printing "1 status recorded" beside
+        // Only when there IS history. Printing "1 status recorded" beside
         // every row would be a caption with the same information content as
         // nothing at all — this panel's rule for its other four disclosures.
         if entry.depth > 1 {
@@ -710,7 +710,7 @@ pub fn row_status(
         }
     }
 
-    // ★ Said only where the operator ASKED the question. Under the *No status
+    // Said only where the operator ASKED the question. Under the *No status
     // recorded* filter the emptiness is the answer and the caption confirms it;
     // on an unfiltered list it would repeat "nothing has happened here" on
     // forty rows.
@@ -718,7 +718,7 @@ pub fn row_status(
         ui.label(egui::RichText::new(t::row_status_none()).small().weak());
     }
 
-    // ★★ The `Foreign` note, and this is the one place the fourth reading
+    // The `Foreign` note, and this is the one place the fourth reading
     // changes what the operator is told. Drawn when EVERY status on the row is
     // in a model pdfcer will not author — if any reading has an authorable
     // model, recording continues a vocabulary that is already here and there is
@@ -869,7 +869,7 @@ mod tests {
     // normalised.
     // ---------------------------------------------------------------------
 
-    /// ★★★ **THE CONTROL FOR THE NEGATIVE BELOW.**
+    /// **THE CONTROL FOR THE NEGATIVE BELOW.**
     ///
     /// A test asserting *an unknown state is not normalised* is **vacuous if
     /// nothing is ever recognised** — a `StateReading::of` that returned
@@ -899,7 +899,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **An unrecognised value in a model pdfcer authors is SHOWN, not
+    /// **An unrecognised value in a model pdfcer authors is SHOWN, not
     /// normalised** — and pdfcer still offers to continue that model.
     ///
     /// The `Unmodelled` half of `crate::text::buttonaction`'s table. Both
@@ -925,7 +925,7 @@ mod tests {
         );
     }
 
-    /// ★★ **An unknown MODEL is foreign, and pdfcer offers nothing in it.**
+    /// **An unknown MODEL is foreign, and pdfcer offers nothing in it.**
     ///
     /// The other half of the distinction. `authorable_model` is `None`, which
     /// is the single observable the row's note is keyed off.
@@ -947,7 +947,7 @@ mod tests {
         );
     }
 
-    /// ★ **A Review value in the Marked model is not modelled**, because
+    /// **A Review value in the Marked model is not modelled**, because
     /// `ReviewState::model` derives the pairing and pdfcer cannot express this
     /// one.
     ///
@@ -965,7 +965,7 @@ mod tests {
         );
     }
 
-    /// ★ Matching is **exact**: a case variant is a value pdfcer did not decode.
+    /// Matching is **exact**: a case variant is a value pdfcer did not decode.
     #[test]
     fn matching_is_case_sensitive() {
         assert!(matches!(
@@ -974,7 +974,7 @@ mod tests {
         ));
     }
 
-    /// ★ `/State` with no `/StateModel` — Table 171's one non-conforming
+    /// `/State` with no `/StateModel` — Table 171's one non-conforming
     /// combination — is surfaced rather than guessed at.
     #[test]
     fn a_state_without_a_model_is_named_as_such() {
@@ -983,7 +983,7 @@ mod tests {
         assert_eq!(reading.raw(), "Accepted");
     }
 
-    /// ★★ `None` is a **value**, not the absence of one, and the two are
+    /// `None` is a **value**, not the absence of one, and the two are
     /// different entries the operator can act on.
     ///
     /// `Annotation::state`: *"`None` is a writable value, not a spelling of
@@ -1005,7 +1005,7 @@ mod tests {
     // The chain: appended, not set.
     // ---------------------------------------------------------------------
 
-    /// ★★★ **A SECOND STATUS DOES NOT REPLACE THE FIRST — it chains onto it,
+    /// **A SECOND STATUS DOES NOT REPLACE THE FIRST — it chains onto it,
     /// and the panel reports the depth.**
     ///
     /// The property the whole feature is shaped around. Annotation 1 is the
@@ -1026,7 +1026,7 @@ mod tests {
         assert_eq!(on[0].depth, 2);
     }
 
-    /// ★★ **Two reviewers are two entries, not one winner.**
+    /// **Two reviewers are two entries, not one winner.**
     ///
     /// §12.5.6.3 chains per user, so the file genuinely holds both. A resolver
     /// that picked one would be inventing the currency rule the engine
@@ -1044,7 +1044,7 @@ mod tests {
         assert_eq!(on[1].who.as_deref(), Some("Ken"));
     }
 
-    /// ★★ **An unsigned status never chains**, mirroring the engine's own
+    /// **An unsigned status never chains**, mirroring the engine's own
     /// `title.as_deref() == Some(author)`.
     ///
     /// Both statuses stay tips and both are reported, because neither can be
@@ -1066,13 +1066,13 @@ mod tests {
         assert_eq!(s.on(Some(ObjId::new(2, 0))).len(), 1);
     }
 
-    /// ★★ A `/IRT` **cycle** terminates rather than hanging, and the walk is
+    /// A `/IRT` **cycle** terminates rather than hanging, and the walk is
     /// what has to survive it.
     ///
     /// Legal syntax — nothing in §12.5.6.2 forbids one — and the engine bounds
     /// its own walk at 64 for exactly this reason.
     ///
-    /// ★ **The obvious fixture does not test the bound**, which is worth
+    /// **The obvious fixture does not test the bound**, which is worth
     /// recording because the first attempt was that fixture: two statuses
     /// pointing at each other are BOTH superseded, so [`assemble`] skips both
     /// before [`walk_up`] is ever called and removing [`MAX_CHAIN`] leaves the
@@ -1109,10 +1109,10 @@ mod tests {
         );
     }
 
-    /// ★ A status with **no `/IRT`** describes nothing, and is still named on
+    /// A status with **no `/IRT`** describes nothing, and is still named on
     /// its own row rather than dropped.
     ///
-    /// ★★★ **The first version of this test was VACUOUS, and the mutation
+    /// **The first version of this test was VACUOUS, and the mutation
     /// sweep is what found it.** It asserted `s.on(1).is_empty()` — that the
     /// status did not reach annotation 1 — and stayed **green** when
     /// [`walk_up`] was broken to return `Some(current.id)` for an `/IRT`-less
@@ -1178,7 +1178,7 @@ mod tests {
         assert_eq!(kept[0].id, Some(ObjId::new(1, 0)));
     }
 
-    /// ★★ **The work-list filter**: the comments nobody has reviewed.
+    /// **The work-list filter**: the comments nobody has reviewed.
     #[test]
     fn filtering_to_unrecorded_keeps_the_untouched_comments() {
         let s = statuses(&[annot(3, Some("Ken"), Some(1), "Accepted", Some("Review"))]);
@@ -1188,7 +1188,7 @@ mod tests {
         assert!(kept.iter().all(|r| r.id != Some(ObjId::new(1, 0))));
     }
 
-    /// ★ **A value pdfcer never heard of is filterable**, in the file's own
+    /// **A value pdfcer never heard of is filterable**, in the file's own
     /// spelling — the operator-facing consequence of the engine reading
     /// `/State` verbatim.
     #[test]
@@ -1203,7 +1203,7 @@ mod tests {
         assert_eq!(kept.len(), 1);
     }
 
-    /// ★ The chooser offers **tip** values only. A status somebody has since
+    /// The chooser offers **tip** values only. A status somebody has since
     /// superseded would be a menu entry that filters to nothing.
     #[test]
     fn the_chooser_does_not_offer_a_superseded_value() {
@@ -1214,7 +1214,7 @@ mod tests {
         assert_eq!(s.values(), vec!["Accepted"]);
     }
 
-    /// ★ **Any reviewer, not every reviewer.** Two people disagreeing must both
+    /// **Any reviewer, not every reviewer.** Two people disagreeing must both
     /// be findable, because a work list's job is to surface what may need
     /// attention.
     #[test]

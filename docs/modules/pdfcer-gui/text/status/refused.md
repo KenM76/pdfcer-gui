@@ -10,7 +10,7 @@ subject boundary is what decided where it fell. `super`'s `mod.rs` stands at
 1,479 lines, so a paragraph added there would be a paragraph added to a file
 two dozen lines from the ceiling.
 
-## ★★★ Why the sentence lives HERE and not with a surface
+## Why the sentence lives HERE and not with a surface
 
 [`crate::app::status::decline::Declined::line`] reaches out of
 [`crate::text::status`] five times — to [`crate::text::tool`], to

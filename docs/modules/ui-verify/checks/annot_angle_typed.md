@@ -12,7 +12,7 @@ after a `-89.15` drag. The **write** half had not been driven at all, and by
 this project's founding rule that means it was not done, however many unit
 tests stood behind it.
 
-## ★★★ The two things only a driven run can see, and they are the whole risk
+## The two things only a driven run can see, and they are the whole risk
 
 | # | link | its own test |
 |---|---|---|
@@ -28,7 +28,7 @@ number the panel handed the verb, against the number that was typed. A build
 that passed a delta through would show `asked=` equal to the *change*
 rather than to the destination.
 
-## ★★ Why it turns the mark FIRST, before typing
+## Why it turns the mark FIRST, before typing
 
 Because an absolute setter and a delta setter are **indistinguishable on an
 unturned mark**: from 0°, *set 30* and *turn by 30* are the same edit. The
@@ -40,7 +40,7 @@ That is the same shape as the engine's own note about its A/B test: an
 oracle that cannot distinguish the correct implementation from the plausible
 wrong one is not measuring the thing its name claims.
 
-## ★ What it deliberately does NOT assert
+## What it deliberately does NOT assert
 
 **The final `/Rect`.** The engine reports the delta it worked out
 (`deg=`), the rule it derived the rectangle from (`rect_derived=`) and the

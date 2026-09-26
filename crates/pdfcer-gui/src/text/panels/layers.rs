@@ -8,7 +8,7 @@ use crate::panels::layers::highlight::{Membership, Unresolved};
 /// Where the answer's optional-content group sits **relative to the list the
 /// panel is actually drawing**.
 ///
-/// # ★★★ Why this is not simply `Option<&str>`
+/// # Why this is not simply `Option<&str>`
 ///
 /// Because a highlight that lands on a row nobody can see is
 /// indistinguishable from no highlight at all, and this panel has **two**
@@ -48,7 +48,7 @@ pub enum RowOfAnswer<'a> {
 ///
 /// Shown for `Membership::None` and for nothing else.
 ///
-/// ## ★★★ Why this sentence exists, when silence would be simpler
+/// ## Why this sentence exists, when silence would be simpler
 ///
 /// It is the disambiguating half of a pair. A selection either highlights a
 /// row or does not, and "does not" has several causes the operator cannot
@@ -56,14 +56,14 @@ pub enum RowOfAnswer<'a> {
 /// spanning two layers. This line is said only in the first case, so its
 /// *presence* is the answer and its absence is not a claim.
 ///
-/// ## ★★ "Not on a layer", not "on no layer"
+/// ## "Not on a layer", not "on no layer"
 ///
 /// The operator's mental model is that things are *put on* layers. "Not on a
 /// layer" describes the mark; "on no layer" describes a set, and reads like
 /// the beginning of a fault report. The sentence is a statement about the
 /// document, as ordinary as a layer's name, so it is phrased as one.
 ///
-/// ## ★ It says "selected", not "this object"
+/// ## It says "selected", not "this object"
 ///
 /// Because it covers an annotation — a stamp, a cloud, a note, a dimension —
 /// as well as a content object, and the two need one sentence rather than two
@@ -86,7 +86,7 @@ pub fn layer_selection_unlayered() -> &'static str {
 ///   Repeating it in prose would make the panel narrate its own highlight, and
 ///   the operator would read the sentence as a *second* fact.
 ///
-/// # ★ Every other state owes one, including the unknowns
+/// # Every other state owes one, including the unknowns
 ///
 /// That is a reversal, and it is deliberate. `Unknown` used to be silent, on
 /// the argument that a line reading *"pdfcer cannot tell you which layer this
@@ -104,7 +104,7 @@ pub fn layer_selection_report(m: Membership, row: RowOfAnswer<'_>) -> Option<Str
             "What you have selected is on \"{name}\", which your search has narrowed out of the \
              list."
         ),
-        // ★ The `NotAGroup` pairing is unreachable — the panel derives `row`
+        // The `NotAGroup` pairing is unreachable — the panel derives `row`
         // from the same `Membership` — and it is answered rather than
         // `unreachable!()`d, because a panic in a readout is a worse outcome
         // than a slightly vague sentence, and because the pairing is not
@@ -162,7 +162,7 @@ const fn unresolved_long(why: Unresolved) -> &'static str {
 /// row is on screen, because the bar is the surface reached with no panel open
 /// and it cannot lean on a plate the operator may not be looking at.
 ///
-/// # ★ `name` and the `Membership` are not independent
+/// # `name` and the `Membership` are not independent
 ///
 /// `Some(name)` is meaningful only alongside `Group`, and a caller with a
 /// group it could not name passes `None` — which is the OCMD and
@@ -184,7 +184,7 @@ pub fn layer_clause(m: Membership, name: Option<&str>) -> Option<String> {
 
 /// The short form of each reason, for the bar.
 ///
-/// ★ Every one of these is a **cause**, not an apology. *"layer not known"*
+/// Every one of these is a **cause**, not an apology. *"layer not known"*
 /// alone would be the hedge this catalog's header forbids; the clause after
 /// the dash is what tells the operator whether to look at their file, their
 /// selection, or pdfcer.
@@ -208,7 +208,7 @@ pub fn selection_with_layer(line: &str, clause: &str) -> String {
     format!("{line} · {clause}")
 }
 
-/// ★★★ **The operator's own finding, said back to him: the unit of selection
+/// **The operator's own finding, said back to him: the unit of selection
 /// is not his.**
 ///
 /// He measured it on his own drawing — *one PDF path object holds 6,681
@@ -251,7 +251,7 @@ mod tests {
     /// Every state of the answer, named **once**, so the tests below cannot
     /// quietly stop covering one.
     ///
-    /// ★ The `match` beneath it is the mechanism: adding a variant to
+    /// The `match` beneath it is the mechanism: adding a variant to
     /// `Membership` makes this file fail to compile, which is what a
     /// hand-written array in a completeness test cannot do. This project has
     /// shipped four defects into exactly that gap (`RESUME.md`, three
@@ -309,7 +309,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **A highlighted row that is off screen still owes words.**
+    /// **A highlighted row that is off screen still owes words.**
     ///
     /// The failure this forbids is silent and reads as a broken feature: the
     /// operator types in the search, the matching layer is narrowed out, the
@@ -375,7 +375,7 @@ mod tests {
         }
     }
 
-    /// ★★ **A group pdfcer cannot name does not render as empty quotes.**
+    /// **A group pdfcer cannot name does not render as empty quotes.**
     ///
     /// `on layer ""` is the shape of a placeholder, and R9 forbids one. The
     /// unnamed case is a different sentence, not the same sentence with a hole

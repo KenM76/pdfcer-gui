@@ -33,7 +33,7 @@ describing a click that never happened.
 `egui::Memory` is where per-frame and per-gesture UI state lives in this
 shell, and it drops on its own when the context does.
 
-## ★ It is deliberately NOT part of the selection
+## It is deliberately NOT part of the selection
 
 `SelectionState` is the answer to *"what is being worked on"*, and it is
 read by the overlay, by every transform verb and by two panels. A depth is

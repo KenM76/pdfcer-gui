@@ -9,7 +9,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/text/mod.md`.
 
 pub mod about;
-/// ★★★ **Every word `OPERATOR_REQUESTS.md` O122 puts on screen** — the
+/// **Every word `OPERATOR_REQUESTS.md` O122 puts on screen** — the
 /// *Open in Acrobat* control beside the mode selector, the three things it can
 /// say before it acts, and the Settings field that says where Acrobat is. One
 /// module for four surfaces because they are one conversation; see its header.
@@ -19,26 +19,26 @@ pub mod acrobat;
 /// Every word the About dialog shows, plus the structured attribution catalog
 /// naming the third-party material this binary redistributes. Consumed by
 /// `crate::dialogs::about`.
-/// ★★★ **Reading a comment where the comment is** — every word the canvas
+/// **Reading a comment where the comment is** — every word the canvas
 /// note pop-up and its hover tooltip show. Consumed by
 /// `crate::canvas::notepopup`, which is the only route to a note's `/Contents`
 /// that works in Read mode. Its header carries the two capabilities that are
 /// deliberately WORDLESS here, under R9, because the engine cannot reach them.
 pub mod annotpopup;
-/// ★★★ **What the file said twice, and which reading pdfcer used** — every
+/// **What the file said twice, and which reading pdfcer used** — every
 /// word of the load-anomaly disclosure that engine `Pass 283.0` made owed.
 /// Consumed by `crate::app::status::disclosure` for the status bar's census
 /// line and by `crate::panels::docprops` for the per-object detail. Its header
 /// argues why there is deliberately no "this file opened cleanly" string.
 pub mod anomalies;
-/// ★★★ **Moving a mark that is already on the page** — the four refusals an
+/// **Moving a mark that is already on the page** — the four refusals an
 /// arrow-key nudge can owe and the five disclosures a *Bring to front* can.
 /// Consumed by `crate::canvas::moving::nudge` and
 /// `crate::app::actions::reorder`. One catalog for two gestures because they
 /// refuse for the same three reasons in the same words; its header argues why
 /// the lock sentence is deliberately NOT the Properties panel's.
 pub mod arrange;
-/// ★★★ **Every word `OPERATOR_REQUESTS.md` O173 puts on screen** — the
+/// **Every word `OPERATOR_REQUESTS.md` O173 puts on screen** — the
 /// ask-once offer, the Settings group it lives in afterwards, the line that says
 /// what Windows actually opens PDFs with, and the two strings Windows itself
 /// displays in its *Open with* menu. Consumed by `crate::app::assoc`,
@@ -49,7 +49,7 @@ pub mod assoc;
 /// The attachment clipboard's words, including the one question a paste must
 /// ask before the press: the engine REPLACES a same-named attachment.
 pub mod attachclip;
-/// ★★★ **What a push button DOES** — every word the placement dialog's action
+/// **What a push button DOES** — every word the placement dialog's action
 /// chooser says, including the submit disclosure. Its own module because two of
 /// the seven choices write an address into the document that some other program
 /// may act on, and the operator cannot see that by looking at the page.
@@ -72,7 +72,7 @@ pub mod compact;
 /// The three sentences a held Shift puts on the status row while it is
 /// constraining a drag. Consumed by [`crate::canvas::constrain::caption`].
 pub mod constrain;
-/// ★★ **The three sentences a Delete that removed nothing shows** — for
+/// **The three sentences a Delete that removed nothing shows** — for
 /// [`crate::canvas::deleting`], the module that routes a Delete to the verb for
 /// the rung the operator is on.
 ///
@@ -125,7 +125,7 @@ pub mod embed;
 /// says nothing, so a 1:2 detail arrives at half size **looking plausible**.
 pub mod export_dxf;
 pub mod export_form;
-/// ★★★ Every word the Export-image window shows, and every sentence an image
+/// Every word the Export-image window shows, and every sentence an image
 /// export owes afterwards. `OPERATOR_REQUESTS.md` O120.
 ///
 /// Its header carries the operator's own parenthesis — *"(including
@@ -135,7 +135,7 @@ pub mod export_form;
 pub mod export_image;
 /// The SVG/EMF keep-text choice and what an export that kept text owes afterwards.
 pub mod export_keeptext;
-/// ★★★ Every word the Export-text window shows, and every sentence a text
+/// Every word the Export-text window shows, and every sentence a text
 /// export owes afterwards.
 ///
 /// Its header carries the sentence the whole feature is arranged around — **a
@@ -144,7 +144,7 @@ pub mod export_keeptext;
 /// losses are said twice, in the window and in the receipt, in two different
 /// registers.
 pub mod export_text;
-/// ★ The FORM-FIELD clipboard's sentences — five refusals and the paste's
+/// The FORM-FIELD clipboard's sentences — five refusals and the paste's
 /// off-canvas loss note. Separate from [`clipboard`] because the loss note is
 /// not a refusal: the paste worked, and the sentence exists because part of the
 /// field could not travel and the operator cannot see which part.
@@ -164,12 +164,12 @@ pub mod fonts;
 pub mod formfield;
 pub mod forms;
 pub mod images;
-/// ★ **The words of the Import-text window** — the return journey's chooser.
+/// **The words of the Import-text window** — the return journey's chooser.
 /// Its header carries the one way it departs from `export_text`'s shape:
 /// exporting names LOSSES and importing names INVENTIONS, so this window is a
 /// chooser rather than a warning.
 pub mod import_text;
-/// ★ **What the import says AFTERWARDS** — the receipt and the refusals. Its
+/// **What the import says AFTERWARDS** — the receipt and the refusals. Its
 /// header records why the engine's own `PlaceTextReport::disclosures` are not
 /// printed: they are correct, useful to a developer, and written in the
 /// implementer's voice.
@@ -177,13 +177,13 @@ pub mod importtext;
 /// Every word the Recognise-text surface says — the dialog that runs OCR and
 /// discloses what it inferred, and the offer the Find bar makes on a page with
 /// no text on it. Consumed by `crate::dialogs::ocr` and `crate::find::bar`.
-/// ★ What the program says about a **link it cannot follow** — four
+/// What the program says about a **link it cannot follow** — four
 /// sentences for four different causes, plus one for a `/Link` with no
 /// destination at all. A link that WORKS says nothing: it navigates, and
 /// that is the feedback. See its header.
 pub mod links;
 pub mod markup;
-/// ★ Every word the **maximum-zoom** control says — the popup behind the
+/// Every word the **maximum-zoom** control says — the popup behind the
 /// status bar's zoom readout (O24).
 ///
 /// Its header carries why the copy is unusually plain: the operator settled
@@ -201,14 +201,14 @@ pub mod merge;
 /// `crate::dialogs::new_document`.
 pub mod new_document;
 pub mod ocr;
-/// ★★★ The words for **content that is in the file but not on the
+/// The words for **content that is in the file but not on the
 /// sheet** — the census window's copy. Its header carries the sentence the
 /// whole module exists for: off-page marks do not render and are still
 /// extractable, so the disclosure leads with WHAT THEY SAY rather than with a
 /// count. Consumed by `crate::dialogs::offpage` and
 /// `crate::app::actions::offpage`.
 pub mod offpage;
-/// ★★★ The words for **changing the paper an open drawing sits on** — the
+/// The words for **changing the paper an open drawing sits on** — the
 /// sheet-size window and the disclosures its commit raises. Consumed by
 /// `crate::dialogs::page_size` and `crate::app::actions::pagesize`. Its header
 /// carries the one sentence the whole module exists for: a `/MediaBox` change
@@ -216,12 +216,12 @@ pub mod offpage;
 /// page — which is the opposite of what every other "page size" control an
 /// operator has ever used does.
 pub mod page_size;
-/// ★ The PAGE clipboard's four sentences — three of which are facts the
+/// The PAGE clipboard's four sentences — three of which are facts the
 /// operator cannot see. Its header carries why a page paste is rule 4's
 /// sharpest case.
 pub mod pageclip;
 pub mod pages;
-/// ★★ The two sentences a save refused by [`crate::pagetree`]'s structural
+/// The two sentences a save refused by [`crate::pagetree`]'s structural
 /// guard says — *"this document says it has 36 pages and only 34 are really
 /// there"*. Consumed by `crate::app::save`. Its header carries the wording
 /// rule that makes them recognisable to the operator who reported the defect:
@@ -236,7 +236,7 @@ pub mod pagetree;
 pub mod paint;
 /// Every string the dock's panel bodies show. Consumed by `crate::panels`.
 pub mod panels;
-/// ★ Every word the **selection filter** says — the status-bar control, the
+/// Every word the **selection filter** says — the status-bar control, the
 /// eleven class rows, and the standing line that appears when nothing at all
 /// is selectable. Consumed by `crate::app::status` and driven by
 /// `crate::canvas::pick`.
@@ -254,7 +254,7 @@ pub mod pick;
 /// colour swatch and a number, so the tooltip is the only place they can say
 /// what they are, and the only place an operator learns the setting applies to
 /// the **next** mark rather than to one already drawn.
-/// ★ What pdfcer says after combining files — `OPERATOR_REQUESTS.md` O68.
+/// What pdfcer says after combining files — `OPERATOR_REQUESTS.md` O68.
 ///
 /// Separate from [`files`], which owns the dialog HEADINGS the operating
 /// system draws. These are what pdfcer says afterwards, on its own status row.
@@ -271,7 +271,7 @@ pub mod print;
 pub mod protect;
 /// The left rail's own words — O123 part 7.
 pub mod rail;
-/// ★★★ The sentence a document that reaches outside itself earns — a submit
+/// The sentence a document that reaches outside itself earns — a submit
 /// button, a launch action, a script that runs on open. Its header carries the
 /// two opposite ways to word it wrongly.
 pub mod reachout;
@@ -280,19 +280,19 @@ pub mod redact;
 /// report, the two acknowledgements, and the residual lines. Consumed by
 /// `crate::panels::redact` and `crate::dialogs::redact`.
 ///
-/// ★ The catalog with the strictest wording rules in the crate, and its header
+/// The catalog with the strictest wording rules in the crate, and its header
 /// carries all three: never say "removed" when anything was left, never say
 /// "verified" unless a verification step ran, and never put the word "Undo"
 /// near a post-apply state. This is the one feature where a comfortable
 /// sentence is a security defect.
-/// ★ Every sentence the eight resize grips show — six refusals and one
+/// Every sentence the eight resize grips show — six refusals and one
 /// disclosure.
 ///
 /// Its header carries why the refusals matter more than the feature: the grips
 /// were drawn, cursored and drag-consuming for the whole life of this shell and
 /// committed nothing, which is `DEFECTS.md` D4a's shape exactly.
 pub mod resizing;
-/// ★★★ Every word the **review-status** control says — `/State` and
+/// Every word the **review-status** control says — `/State` and
 /// `/StateModel` (§12.5.6.3, Table 171), consumed by
 /// `crate::panels::comments::reviewstate` and by
 /// `crate::app::actions::reviewstate`.
@@ -306,7 +306,7 @@ pub mod reviewstate;
 /// The ribbon's structural strings: tab labels and questions, group
 /// captions, mode labels. Consumed by `crate::shell::manifest`.
 pub mod ribbon;
-/// ★ Every sentence the **ninth handle** shows — four refusals and two
+/// Every sentence the **ninth handle** shows — four refusals and two
 /// disclosures, for `crate::canvas::rotating` and the two rotation verbs.
 ///
 /// The sibling of [`resizing`], and its header carries the one thing worth
@@ -315,7 +315,7 @@ pub mod ribbon;
 /// is why this catalog is half the size of its neighbour despite covering three
 /// kinds of target rather than one.
 ///
-/// ★★ It carries the disclosure `pdfcer-core` asked for by name: a `Linear` ce
+/// It carries the disclosure `pdfcer-core` asked for by name: a `Linear` ce
 /// dimension's axis lock cannot survive a rotation, and *"an operator whose
 /// dimension silently stopped being axis-locked will find out later and blame
 /// something else."*
@@ -371,7 +371,7 @@ pub mod signature;
 
 pub mod settings;
 
-/// ★ **Custom stamp collections** — the Save-as-stamp-collection window and
+/// **Custom stamp collections** — the Save-as-stamp-collection window and
 /// the Document Properties section that discloses a collection someone else
 /// wrote. One catalog for two surfaces because they share a vocabulary, and
 /// its header fixes that vocabulary: *stamp*, *collection*, *category*,
@@ -384,7 +384,7 @@ pub mod stamps;
 /// Every string the status bar shows. Consumed by `crate::app::status`.
 pub mod status;
 
-/// ★★ **Why a committed text edit was refused** — split out of [`textedit`] on
+/// **Why a committed text edit was refused** — split out of [`textedit`] on
 /// 2026-09-06 under R2, along the seam that file's own section banner had
 /// already drawn. Everything in it is re-exported from [`textedit`], so no call
 /// site moved.
@@ -397,7 +397,7 @@ pub mod textedit;
 /// Copy for the three markup kinds that carry words. Its header carries the
 /// one distinction every string in it has to preserve: a text box prints and a
 /// sticky note does not.
-/// ★ Every word the TOOLS say, wherever they are said — the one-line status
+/// Every word the TOOLS say, wherever they are said — the one-line status
 /// strip, the Properties panel's armed-tool section, and the canvas refusals.
 ///
 /// It was *"every word the Tool panel says"* until `OPERATOR_REQUESTS.md` O123
@@ -409,14 +409,14 @@ pub mod textedit;
 /// owns, no sentence that is a tip rather than a fact, and no instruction that
 /// fails to say how its gesture ends.
 pub mod tool;
-/// ★ The one-line tool status's own two strings — `OPERATOR_REQUESTS.md` O123.
+/// The one-line tool status's own two strings — `OPERATOR_REQUESTS.md` O123.
 ///
 /// Deliberately tiny. Everything else the strip says is already written down
 /// somewhere authoritative — the tool's NAME in the command registry, its
 /// SENTENCE in [`tool`], its verb in [`tool::put_down_button`] — and its
 /// header tabulates which is which and why none of them was copied.
 pub mod toolstatus;
-/// ★★★ Whether a signature's signer can be trusted — and the four different
+/// Whether a signature's signer can be trusted — and the four different
 /// sentences for the four ways trust can go unchecked.
 ///
 /// Kept apart from [`signature`], which is about a save that would INVALIDATE a
@@ -435,7 +435,7 @@ pub mod trust;
 /// because this build has no Save and a button that claimed one would be the
 /// same lie as the tooltip that exposed the defect.
 pub mod unsaved;
-/// ★★ Every sentence *"give this page its own copy"* can say — seven refusals,
+/// Every sentence *"give this page its own copy"* can say — seven refusals,
 /// the disclosure a **successful** unshare owes, and the remedy sentence this
 /// shell appends to the engine's `SHARED CONTENT` report.
 ///
@@ -477,7 +477,7 @@ pub fn window_title() -> &'static str {
 
 /// Shown on the canvas when nothing is open.
 ///
-/// ★ **This sentence changed when `file.open` was wired**, and the change is
+/// **This sentence changed when `file.open` was wired**, and the change is
 /// the rule rather than an edit. It used to read *"No document open. Start
 /// pdfcer with a PDF path, for example: pdfcer-gui drawing.pdf"*, because at S0
 /// there was no Open command and *"a message that names a control the
@@ -545,7 +545,7 @@ pub fn canvas_render_failed(detail: &str) -> String {
 /// # What it covers
 ///
 ///
-/// # ★★★ Why the engine's `Display` is deliberately thrown away here
+/// # Why the engine's `Display` is deliberately thrown away here
 ///
 ///
 /// **Until `Pass 296.5` (`4f6f5a5`)**, `RasterizerLimit`'s `Display` was
@@ -597,7 +597,7 @@ pub fn canvas_zoom_past_rasterizer() -> &'static str {
 // The three things a page with no picture says about itself
 // ---------------------------------------------------------------------------
 //
-// ★ These exist because `PROJECT_PLAN.md` §3 forbids placeholders, and a white
+// These exist because `PROJECT_PLAN.md` §3 forbids placeholders, and a white
 // rectangle where a page will be is exactly one. Under a continuous
 // page-display mode several pages are on screen and the renderer fills them in
 // one at a time (see `crate::render::strip`), so at any moment some of them
@@ -669,7 +669,7 @@ pub fn canvas_page_waiting(page_number: usize) -> String {
 /// same reason, and the two sentences are deliberately close: one is about the
 /// sheet he is reading, this one is about a sheet beside it.
 ///
-/// ★ It names the page because a strip shows several at once and an unqualified
+/// It names the page because a strip shows several at once and an unqualified
 /// sentence in one rectangle reads as a statement about the document.
 #[must_use]
 pub fn canvas_page_beyond_raster(page_number: usize) -> String {
@@ -709,7 +709,7 @@ pub fn canvas_page_refused(page_number: usize, detail: &str) -> String {
 /// decides which by reading the two pixel counts the variant carries, never by
 /// reading its prose.
 ///
-/// # ★★ Why it names the page box rather than the zoom
+/// # Why it names the page box rather than the zoom
 ///
 /// Because a real page cannot reach this by zooming out.
 /// `crate::viewer::MIN_ZOOM` is 0.10, so rounding a pixmap's width to zero at
@@ -719,11 +719,11 @@ pub fn canvas_page_refused(page_number: usize, detail: &str) -> String {
 /// `/CropBox` with no area, which is a property of the **file** and is the
 /// thing the operator can act on: the page is malformed, not mis-displayed.
 ///
-/// ★ Saying *"zoom out and it will draw"* here would be the worse failure. It
+/// Saying *"zoom out and it will draw"* here would be the worse failure. It
 /// is false, it is actionable, and an operator who follows it concludes the
 /// program is broken rather than the sheet.
 ///
-/// ★ It says *this page* and not *this document*, because a drawing set with
+/// It says *this page* and not *this document*, because a drawing set with
 /// one degenerate sheet navigates perfectly and the other thirty-five draw.
 #[must_use]
 pub fn canvas_page_has_no_area() -> &'static str {
@@ -780,7 +780,7 @@ pub fn open_unsupported(path: &Path, detail: &str) -> String {
 /// A third thing: neither damaged nor unsupported. pdfcer *can* decrypt this
 /// file and has not been told how.
 ///
-/// # ★★★ IT SAID "THIS BUILD CANNOT YET PROMPT FOR A PASSWORD" WHILE PROMPTING
+/// # IT SAID "THIS BUILD CANNOT YET PROMPT FOR A PASSWORD" WHILE PROMPTING
 ///
 ///
 /// The old doc comment is worth keeping because it is the whole diagnosis:
@@ -796,7 +796,7 @@ pub fn open_unsupported(path: &Path, detail: &str) -> String {
 /// they did not exist. R9 stopped applying the moment the capability stopped
 /// being unavailable.
 ///
-/// ★ This is the sixth time this project has recorded the same shape: **a claim
+/// This is the sixth time this project has recorded the same shape: **a claim
 /// that was true when written, cited later as evidence, with nothing re-reading
 /// its premise.** It is also the reason the canvas arm in `app::surfaces` no
 /// longer draws anything for this status: the dialog IS the surface now, and a
@@ -839,7 +839,7 @@ mod tests {
         }
     }
 
-    /// ★★ **The engine's own sentence must still be free of panic text.**
+    /// **The engine's own sentence must still be free of panic text.**
     ///
     /// This is a tripwire on `pdfcer-render`, not on this crate, and that is
     /// the point. Until `Pass 296.5` (`4f6f5a5`), `RasterizerLimit`'s
@@ -879,7 +879,7 @@ mod tests {
         );
     }
 
-    /// ★ **This shell's sentence is an instruction, not a paraphrase of the
+    /// **This shell's sentence is an instruction, not a paraphrase of the
     /// engine's fact.**
     ///
     /// [`canvas_zoom_past_rasterizer`] outlived the leak it was written to

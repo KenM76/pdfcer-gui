@@ -25,7 +25,7 @@ pub const fn mode_for(crossing: bool) -> MarqueeMode {
 
 /// **Drop the page's own wrapper from a crossing selection.**
 ///
-/// # ★★★ Why this exists, and it was measured rather than anticipated
+/// # Why this exists, and it was measured rather than anticipated
 ///
 /// The first cut of the direction-sensitive band failed
 /// `a_marquee_encloses_objects_inside_a_form` with `[Object(0), Leaf(1)]` where
@@ -38,7 +38,7 @@ pub const fn mode_for(crossing: bool) -> MarqueeMode {
 /// include the whole sheet in the selection, and the operator's next gesture —
 /// a move, a delete, a cut — would act on all of it.
 ///
-/// ★★ Under `Enclosed` this could not happen and that is exactly why it is new:
+/// Under `Enclosed` this could not happen and that is exactly why it is new:
 /// a band that *surrounds* a page-sized form has to surround the page, which
 /// cannot be drawn. Touching one is unavoidable.
 ///
@@ -54,7 +54,7 @@ pub const fn mode_for(crossing: bool) -> MarqueeMode {
 ///
 /// Nothing new is measured here and no second threshold exists.
 ///
-/// # ★ Only a hit that CONTAINS another hit is tested
+/// # Only a hit that CONTAINS another hit is tested
 ///
 /// A lone path covering the whole sheet — a drawing border, which is on almost
 /// every sheet this program is for — is **not** a container and must stay
@@ -107,7 +107,7 @@ pub enum Combine {
     Add,
     /// Ctrl: the hits are taken OUT of what is already selected.
     ///
-    /// ★ Ctrl rather than Shift, even though AutoCAD spells subtract with
+    /// Ctrl rather than Shift, even though AutoCAD spells subtract with
     /// Shift. Shift-adds is already shipped here and in every vector editor
     /// this shell's operators also use, so re-pointing it would break a gesture
     /// they have — and it would contradict `Ctrl+click`, which now means
@@ -198,13 +198,13 @@ pub struct Band {
 /// the wiring and this module holds the behaviour.
 ///
 ///
-/// ★★★ **THE DIRECTION DECIDES WHAT THE BAND TAKES** (O88): left to right
+/// **THE DIRECTION DECIDES WHAT THE BAND TAKES** (O88): left to right
 /// encloses, right to left touches — AutoCAD's window / crossing-window rule.
 /// This module's header carries the operator's report, why the fix is geometric
 /// rather than about hit tests, and the page-wrapper hazard a crossing band
 /// introduces.
 ///
-/// ★★ And [`Combine`] decides what it does to what was already selected. The
+/// And [`Combine`] decides what it does to what was already selected. The
 /// two are independent: *what the band reaches* and *what it then does with
 /// it*, which is why they are separate arguments rather than one flag.
 pub fn on_release(
@@ -215,7 +215,7 @@ pub fn on_release(
     band: Band,
     selection: &mut SelectionState,
 ) {
-    // ★★★ Inside a text block, the band takes CHUNKS — O215 ask 4. See
+    // Inside a text block, the band takes CHUNKS — O215 ask 4. See
     // [`take_chunks`] for the whole of that decision, including what it does
     // when the band reaches none.
     if take_chunks(ctx, doc, page_index, band, selection) {
@@ -370,7 +370,7 @@ pub fn select_with(
     selection: &mut crate::canvas::selection::SelectionState,
 ) {
     let mode = mode_for(crossing);
-    // ★ `Include` — the container comes back alongside its leaves. The long
+    // `Include` — the container comes back alongside its leaves. The long
     // argument is on the live provider's `hit_test_rect`; the short one is
     // that a leaf is not an edit operand in this shell and the form is, so a
     // band that returned leaves alone would select things nothing can move.
@@ -401,12 +401,12 @@ pub fn select_with(
     // A band returning 3 is a substantial fraction of the sheet, and the
     // threshold was rejecting a correct result.
     //
-    // ★★ His complaint is about a KIND being missing — *"it only picks up the
+    // His complaint is about a KIND being missing — *"it only picks up the
     // lines of each table"* — and a count cannot express that at any
     // threshold. One path and one text is a pass; nine paths and no text is the
     // defect, and the count ranks them the wrong way round.
     //
-    // ★ `object_class` is the provider's own classifier, the same one the pick
+    // `object_class` is the provider's own classifier, the same one the pick
     // filter reads, so what this line reports and what a filter would exclude
     // cannot disagree.
     let (mut paths, mut text, mut other) = (0usize, 0usize, 0usize);
@@ -420,7 +420,7 @@ pub fn select_with(
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
-        // ★ The MODE is on the line, not only the hit count. A crossing band
+        // The MODE is on the line, not only the hit count. A crossing band
         // and a window band over the same rect differ only in what they
         // return, so a count alone cannot tell a working crossing window from
         // a window that happened to enclose everything -- which is exactly the
@@ -436,7 +436,7 @@ pub fn select_with(
 #[cfg(test)]
 mod tests {
 
-    /// **★★ Ctrl subtracts, Shift adds, neither replaces** —
+    /// **Ctrl subtracts, Shift adds, neither replaces** —
     /// `OPERATOR_REQUESTS.md` O104.
     ///
     /// Pinned as a table rather than three separate tests because the value of
@@ -450,7 +450,7 @@ mod tests {
         assert_eq!(mode(false, true), Combine::Subtract);
     }
 
-    /// **★ Shift wins when both are held.**
+    /// **Shift wins when both are held.**
     ///
     /// Adding is the non-destructive answer, and a band dragged with every
     /// modifier at once is an operator who has not decided yet — so the
@@ -464,7 +464,7 @@ mod tests {
     /// The two directions map to the two engine modes, and not to one of them
     /// twice.
     ///
-    /// ★ Trivial, and pinned anyway: the whole feature is one boolean choosing
+    /// Trivial, and pinned anyway: the whole feature is one boolean choosing
     /// between two enum variants, and a build in which both arms returned
     /// `Enclosed` would behave exactly as this shell did before the change —
     /// which is to say it would look like the feature had never been merged,
@@ -476,7 +476,7 @@ mod tests {
         assert_ne!(mode_for(false), mode_for(true));
     }
 
-    /// ★★★ **A page-sized wrapper is dropped; its contents are kept.**
+    /// **A page-sized wrapper is dropped; its contents are kept.**
     ///
     /// The case the failing test surfaced. `Object(0)` wraps `Leaf(1)`, and
     /// `Object(0)` covers the page — so a crossing band takes the leaf and not
@@ -493,7 +493,7 @@ mod tests {
         assert_eq!(kept, vec![TargetId::Leaf(1)]);
     }
 
-    /// ★★ **A container that is NOT the whole sheet survives.**
+    /// **A container that is NOT the whole sheet survives.**
     ///
     /// The falsifying half, and the one that stops this from being "drop every
     /// container". A 320×220 form on a 400×300 page is a real object an
@@ -512,7 +512,7 @@ mod tests {
         assert_eq!(kept, hits);
     }
 
-    /// ★★★ **A lone page-covering object that contains nothing is KEPT.**
+    /// **A lone page-covering object that contains nothing is KEPT.**
     ///
     /// The drawing border, and the reason the container set is derived from the
     /// hits rather than by asking `worth_selecting` of everything. A border
@@ -552,7 +552,7 @@ mod tests {
         );
     }
 
-    /// ★ Order is preserved.
+    /// Order is preserved.
     ///
     /// The selection's paint order is what the ladder and the Objects panel
     /// both read, and a filter that reordered would change which object a

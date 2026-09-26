@@ -8,7 +8,7 @@ module owns every answer.
 
 ---
 
-# ★ Small does not mean fast. The whole design follows from that.
+# Small does not mean fast. The whole design follows from that.
 
 The obvious mental model of a thumbnail grid — *200 pages, 200 cheap
 little pictures* — is **wrong on this application's flagship document**,
@@ -66,7 +66,7 @@ binary
 | `ncored-benchmark-cad-drawing.pdf` — 1 sheet | page 1 drew in **921 ms**, tripped the then-400 ms `SLOW_PAGE`, and the panel reported `previews=0` on the same frame. |
 
 
-## ★ Why this renders on the UI thread, when a cancellable off-thread
+## Why this renders on the UI thread, when a cancellable off-thread
 worker already exists
 
 `crate::render::worker::RenderWorker` is the right tool and this module
@@ -120,7 +120,7 @@ reads a rail one screenful at a time. One page per frame means the window
 repaints, the scroll responds, and the operator can turn previews off,
 *between* every page.
 
-## ★★★ The skipping rule — per page, and the checkbox NEVER moves itself
+## The skipping rule — per page, and the checkbox NEVER moves itself
 
 
 > *"the drawing page previews checkbox should never automatically turn

@@ -15,7 +15,7 @@ use crate::trace::Trace;
 
 /// The document this check opens, pinned, with `--pdf` ignored.
 ///
-/// ★ An A1 CAD sheet fits at about 30 %, so six rungs of zoom-in land at
+/// An A1 CAD sheet fits at about 30 %, so six rungs of zoom-in land at
 /// 125 % — a discrete climb that stays entirely under the whole-page raster
 /// ceiling. The suite's usual clean control opens near 100 % and the same
 /// ladder would run into the refusal, which would make a rung's silence
@@ -161,12 +161,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(failure));
     }
 
-    // --- 2: ★ `spelled=` is read from something --------------------------
+    // --- 2: `spelled=` is read from something --------------------------
     if let Some(failure) = check_spelling(&rungs, &list) {
         return Ok(Some(failure));
     }
 
-    // --- 3: ★★★ the application's own zoom, rung by rung -------------------
+    // --- 3: the application's own zoom, rung by rung -------------------
     walk_the_ladder(&trace, &rungs, report)
 }
 
@@ -227,7 +227,7 @@ fn check_delivery(rungs: &[Rung], list: &[&str]) -> Option<String> {
     None
 }
 
-/// ★ `spelled=` must vary with the chord, or it is decoration.
+/// `spelled=` must vary with the chord, or it is decoration.
 fn check_spelling(rungs: &[Rung], list: &[&str]) -> Option<String> {
     for (rung, chord) in rungs.iter().zip(list) {
         let want = if *chord == UNSPELLABLE { "no" } else { "yes" };
@@ -288,7 +288,7 @@ fn walk_the_ladder(
     rungs: &[Rung],
     report: &mut CheckReport,
 ) -> Result<Option<String>> {
-    // ★★★ The baseline, and the first place the unpaced seam went red.
+    // The baseline, and the first place the unpaced seam went red.
     //
     // A chord delivered before the application has published any view state at
     // all is a chord delivered before the canvas has been laid out — and the
@@ -355,7 +355,7 @@ fn walk_the_ladder(
             )));
         };
 
-        // ★★ A rung that moved the number while a fit mode is STILL STANDING
+        // A rung that moved the number while a fit mode is STILL STANDING
         // has not really moved it: the next layout pass solves fit from the
         // canvas rect and writes the zoom again. That is the mechanism behind
         // the swallowed rung, and this is the reading that names it directly
@@ -471,7 +471,7 @@ fn launch_scripted(ctx: &CheckContext, exe: &Path, list: &[&str]) -> Result<Sess
     if let Some(name) = ctx.profile.viewport_env {
         spec.env.push((name.to_owned(), OFFSCREEN.to_owned()));
     }
-    // ★ Without this the line above is decoration: `Session::place` would move
+    // Without this the line above is decoration: `Session::place` would move
     // the window to `(780, 40)` the moment it appeared, onto the desktop the
     // operator is using — and an on-screen window would also be taking his
     // keystrokes, which would make this check's subject ambiguous.
@@ -481,7 +481,7 @@ fn launch_scripted(ctx: &CheckContext, exe: &Path, list: &[&str]) -> Result<Sess
 
 /// Wait until the seam has delivered the last chord, then let its effect land.
 ///
-/// ★ Not [`Session::settle`]. That polls the frame counter, and this
+/// Not [`Session::settle`]. That polls the frame counter, and this
 /// application stops drawing the moment the seam stops asking it to — so a
 /// settle asked for more frames than the run has left would spin out its whole
 /// cap on every green run. The thing being waited for is a trace line, so the

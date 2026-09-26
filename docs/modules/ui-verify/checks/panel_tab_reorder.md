@@ -25,7 +25,7 @@ The crate's own driven tests cover the same three in a headless
 `egui::Context`. This one covers what they cannot: the real binary, its
 real arrangement, and a pointer driven through the OS.
 
-# ★ Which strip, and why it is not the left one
+# Which strip, and why it is not the left one
 
 **The left side draws no tab strip in this application.** The operator
 asked for *"no tabs in the left side bar when the left rail is visible"*,
@@ -36,7 +36,7 @@ the tab bars out of the trace rather than named here. A check that hard-
 coded a compartment would start reporting a broken feature the day the
 default arrangement moved a panel.
 
-# ★★ The two assertions that are the point
+# The two assertions that are the point
 
 **The caret was drawn.** A reorder that commits correctly and marks nothing
 while the pointer is down has answered the wrong half of the feature — and

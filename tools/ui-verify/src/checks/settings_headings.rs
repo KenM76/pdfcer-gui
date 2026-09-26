@@ -142,7 +142,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     // ITS OWN background — D2 was a foreground/background pairing, and a
     // pairing only exists once something is drawn.
     let declared_regions = ctx.profile.vocab.declared_regions(&trace);
-    // ★★★ A REGION BELOW THE FOLD IS NOT A REGION THIS CHECK CAN MEASURE, and
+    // A REGION BELOW THE FOLD IS NOT A REGION THIS CHECK CAN MEASURE, and
     // leaving that out produced a confident 1.53:1 about a heading that renders
     // perfectly well.
     //
@@ -156,7 +156,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     // measurement of a broken one.** That is the same sentence the capture
     // fix above carries, and this is its second instance in one afternoon: the
     // first was the wrong WINDOW, this is the wrong part of the right one.
-    // ★ Tested on the RAW rect, NOT through `logical_to_capture_pixels`, and
+    // Tested on the RAW rect, NOT through `logical_to_capture_pixels`, and
     // the first version of this filter made exactly that mistake and changed
     // nothing. That conversion **clamps to the client area** — which is right
     // for aiming a sampler and fatal for asking whether something is inside it,
@@ -186,7 +186,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         declared: declared_regions.iter().map(|r| r.name.clone()).collect(),
         convention: CONVENTION,
     };
-    // ★ A NAMED LIMIT, reported rather than left for a reader to infer from a
+    // A NAMED LIMIT, reported rather than left for a reader to infer from a
     // small number.
     //
     // The application only declares a heading it can actually draw (see
@@ -226,7 +226,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     // that reports a subset in the confident voice of a whole is worse than a
     // stated limit.
     //
-    // ⇒ Reverted to this note. ★ The one thing that survives is
+    // ⇒ Reverted to this note. The one thing that survives is
     // `driving::scroll_to`, which is now shared and does work on dock panels —
     // three callers in `form_field` rely on it.
     //
@@ -274,7 +274,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 /// declared"*, which was true, and not the whole truth: the trace it printed
 /// contained `ribbon.group.file.pdfcer.collapsed` five lines down.
 ///
-/// ★ **It SKIPped rather than FAILed, and that is the only reason this was
+/// **It SKIPped rather than FAILed, and that is the only reason this was
 /// cheap.** A check that had claimed the Settings control was missing would
 /// have sent somebody looking for a defect in a ribbon that was behaving
 /// exactly as designed — the false-failure-believed pattern this suite has paid
@@ -314,7 +314,7 @@ fn open_settings(
     driver.click_at(session.frame()?.declared_center(item))?;
     session.settle(24);
 
-    // ★ Assert the dialog actually appeared before measuring anything.
+    // Assert the dialog actually appeared before measuring anything.
     //
     // Without this the contrast pass would run against a window with no
     // dialog, find no heading regions, and report whatever `resolve_set` makes

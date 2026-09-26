@@ -56,7 +56,7 @@ pub fn document() -> Result<(Document, Vec<Page>), String> {
 
 /// The blank document, **resized** to `rect` before anybody sees it.
 ///
-/// # ★ Why this exists at all
+/// # Why this exists at all
 ///
 /// The module header's §3a sets out the alternative and why it is refused: one
 /// checked-in template asset per size — ten with landscape, more with ANSI,
@@ -65,7 +65,7 @@ pub fn document() -> Result<(Document, Vec<Page>), String> {
 /// `pdfcer_core::paper`: one asset and one dialog, every size, both
 /// orientations, custom included, with [`TEMPLATE`] unchanged.
 ///
-/// # ★ Why the document is serialized and re-parsed rather than handed over
+/// # Why the document is serialized and re-parsed rather than handed over
 ///
 /// The obvious implementation is to build the [`EditSession`], resize page 0,
 /// and give the caller the session. **That produces a document that is already
@@ -93,7 +93,7 @@ pub fn document() -> Result<(Document, Vec<Page>), String> {
 /// digital signatures — cannot apply: the input is [`TEMPLATE`], which has
 /// none.
 ///
-/// # ★ `SaveOptions::identity()`, and why this is not a hole in the funnel
+/// # `SaveOptions::identity()`, and why this is not a hole in the funnel
 ///
 /// `crate::app::settings`' funnel exists because an option struct built at a
 /// call site discards every setting the operator chose, and a test parses this
@@ -143,7 +143,7 @@ pub fn document_sized(rect: pdfcer_core::page_tree::Rect) -> Result<(Document, V
     let doc = Document::from_bytes(bytes).map_err(|err| err.to_string())?;
     let pages = pdfcer_core::page_tree::pages(&doc).map_err(|err| err.to_string())?;
 
-    // ★ Traced AFTER the re-parse, and reporting the page as the RE-PARSED
+    // Traced AFTER the re-parse, and reporting the page as the RE-PARSED
     // document states it rather than the rectangle that was asked for.
     //
     // The distinction is the whole value of the line. A trace of the request
@@ -174,7 +174,7 @@ pub fn document_sized(rect: pdfcer_core::page_tree::Rect) -> Result<(Document, V
 mod tests {
     use super::*;
 
-    /// ★ **The compiled-in template really is a document.**
+    /// **The compiled-in template really is a document.**
     ///
     /// The one assertion that makes [`document`]'s error arm unreachable, and
     /// therefore the one that lets `file.new` be described as a command that
@@ -186,7 +186,7 @@ mod tests {
         assert_eq!(pages.len(), 1, "New makes a one-page document");
     }
 
-    /// ★ **The page is A4, to the tenth of a point.**
+    /// **The page is A4, to the tenth of a point.**
     ///
     /// This is the decision in §3 of the module header being *checked* rather
     /// than merely written down. A future edit that regenerated the asset at
@@ -208,7 +208,7 @@ mod tests {
         );
     }
 
-    /// ★ **The page has a content stream, empty though it is.**
+    /// **The page has a content stream, empty though it is.**
     ///
     /// A page with no `/Contents` is legal (§7.7.3.3) and would render
     /// identically — which is exactly why this needs an assertion rather than

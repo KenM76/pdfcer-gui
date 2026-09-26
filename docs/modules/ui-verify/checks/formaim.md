@@ -3,7 +3,7 @@
 `checks::formaim` — **where a check must click so that a form-field
 selection CHANGES**, and the census parsing that finds it.
 
-# ★★★ The finding this module exists to encode
+# The finding this module exists to encode
 
 Three driven checks — `form_field`, `widget_move` and `field_menu` — all
 begin the same way: arm `edit.form_text_field`, click the page, and get a
@@ -53,7 +53,7 @@ did not move between the two clicks (`paint=` is identical on every
 `canvas-pos` line of `form_field.trace.txt`, from the placement through the
 selection), and the widget was hit dead centre.
 
-# ★★ The repair, and why it makes the checks say MORE than they did
+# The repair, and why it makes the checks say MORE than they did
 
 A check that wants to observe *"clicking a widget selects it"* has to make
 the selection different first. The program documents exactly one gesture
@@ -73,7 +73,7 @@ evidence only once the thing that would have produced a presence is shown
 working. A build that stopped tracing selection at all now fails at the
 clearing step, naming the trace channel rather than the hit test.
 
-# ★ Why "blank paper" is computed rather than named
+# Why "blank paper" is computed rather than named
 
 The three callers place their field at different points on different
 documents — `form_field` at the sweep's `--doc-point`, the other two at page

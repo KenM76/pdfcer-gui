@@ -14,7 +14,7 @@ use crate::sys::vk;
 
 /// The mode the Bookmarks panel is **authored** in.
 ///
-/// ★★★ `review`, and the choice is a claim about the PRODUCT rather than a
+/// `review`, and the choice is a claim about the PRODUCT rather than a
 /// convenient route to a panel.
 ///
 /// ⚠ **The mode a check drives in is an assertion, whether or not anybody meant
@@ -37,7 +37,7 @@ const MODE: &str = "review";
 const PANEL_ITEM: &str = "ribbon.item.view.panel_bookmarks";
 /// The panel's own dock tab, declared by the dock whenever it is showing.
 ///
-/// ★ The evidence that the panel is OPEN, independent of anything its body
+/// The evidence that the panel is OPEN, independent of anything its body
 /// draws — which is what lets an absence test tell "nothing is offered"
 /// from "nothing opened".
 const PANEL_TAB: &str = "dock.tab.view.panel_bookmarks";
@@ -88,7 +88,7 @@ impl Check for BookmarkCanBeWritten {
 /// Cut and a drag hint, drawn in the mode whose entire promise is that it
 /// cannot change the document.
 ///
-/// # ★★ Why this exists as well as its sibling, and not instead of it
+/// # Why this exists as well as its sibling, and not instead of it
 ///
 /// `BookmarkCanBeWritten` proves the authoring row is REACHABLE in Review.
 /// This one proves it is ABSENT in Read. Either alone is
@@ -97,7 +97,7 @@ impl Check for BookmarkCanBeWritten {
 /// draws it everywhere passes a presence test perfectly. **The pair is the
 /// assertion**; neither half is.
 ///
-/// ★ And it is what stops the sibling's choice of mode from being read as a
+/// And it is what stops the sibling's choice of mode from being read as a
 /// decision when it was only ever the cheapest route. **A presence test
 /// standing alone turns whatever mode it happened to drive in into a
 /// specification**; the absence test beside it is what makes the pair say
@@ -171,7 +171,7 @@ fn drive_read(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
     // Read is where the application starts, but say so anyway: a check that
     // relied on the default would stop testing Read the day the default moved.
     click_mode_segment(&session, &driver, ui_rect, "read")?;
-    // ★ Only if it is not already showing. The ribbon item is a TOGGLE, and
+    // Only if it is not already showing. The ribbon item is a TOGGLE, and
     // the sibling check records what pressing it over an open panel does:
     // it closes the thing under test. That produced a SKIP on the first run
     // of this check and a FAIL on the second, from the same build — the
@@ -179,7 +179,7 @@ fn drive_read(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
     if declared(&session.trace()?, ui_rect, PANEL_TAB).is_none() {
         open_bookmarks(&session, &driver, ui_rect)?;
     }
-    // ★★ …and then SELECT it. A dock tab is declared whether or not it is the
+    // …and then SELECT it. A dock tab is declared whether or not it is the
     // selected tab in its stack, and only the selected one draws its body. In
     // Read's default layout Bookmarks shares a stack with Pages and is not the
     // one in front, so the ribbon toggle alone leaves the panel present and
@@ -191,12 +191,12 @@ fn drive_read(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
     }
     let trace = session.trace()?;
 
-    // ★★★ THE PANEL MUST BE THERE. Without this the check passes on a build
+    // THE PANEL MUST BE THERE. Without this the check passes on a build
     // where the Bookmarks panel is missing altogether, or where the ribbon
     // control never opened it — an absence proving nothing, which is the
     // failure this project has recorded more than any other. Read must still be
     // able to NAVIGATE by bookmark; only authoring goes.
-    // ★★ THE PANEL'S OWN DOCK TAB, not a `bookmarks.*` region — corrected the
+    // THE PANEL'S OWN DOCK TAB, not a `bookmarks.*` region — corrected the
     // same hour it was written.
     //
     // The first version asked for any region beginning `bookmarks`, and SKIPPED
@@ -208,7 +208,7 @@ fn drive_read(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
     // The dock declares the tab whenever the panel is showing, whatever its
     // body draws. That separates the two, which is the only property this
     // check needs from it.
-    // ★★★ THE PANEL'S BODY MUST HAVE RUN, and the dock tab does NOT prove it.
+    // THE PANEL'S BODY MUST HAVE RUN, and the dock tab does NOT prove it.
     //
     // Second correction, and the falsification is what forced it. With the old
     // behaviour planted back — `authoring = true` — this check still PASSED,

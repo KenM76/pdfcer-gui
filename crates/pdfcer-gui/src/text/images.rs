@@ -48,7 +48,7 @@ pub fn source_size(format: ImageFormat, width_px: u32, height_px: u32) -> String
 
 /// A raster format's name — **the engine's own**, never a local table.
 ///
-/// ★ `ImageFormat` is `#[non_exhaustive]`, so a match here could not be
+/// `ImageFormat` is `#[non_exhaustive]`, so a match here could not be
 /// exhaustive and could never fail to compile when a format is added: the
 /// wildcard the compiler forces is the wildcard that silences it for ever
 /// (recorded in `D:/dev/rag/rust/` under that name). This function was first
@@ -66,7 +66,7 @@ pub const fn format_name(format: ImageFormat) -> &'static str {
 
 /// The picture's natural size on paper, and where that number came from.
 ///
-/// ★ **The provenance is half the fact.** `ImportNotes::dpi_source`
+/// **The provenance is half the fact.** `ImportNotes::dpi_source`
 /// distinguishes *"the file said 300 dpi"* from *"pdfcer assumed 72"*, and the
 /// engine keeps them apart deliberately. A natural size derived from an assumed
 /// 72 dpi is not a claim about the picture — it is one pixel per point, which
@@ -104,7 +104,7 @@ pub fn placement_page(page_number: usize) -> String {
     format!("On page {page_number}")
 }
 
-/// ★ Why the page is stated and not chosen.
+/// Why the page is stated and not chosen.
 ///
 /// The image goes on the page the operator is looking at, which is the answer
 /// every other page-scoped verb in this application gives, and stating it is
@@ -125,7 +125,7 @@ pub const fn placement_x() -> &'static str {
 
 /// The label on the bottom-edge field.
 ///
-/// ★ **From the BOTTOM**, because PDF user space has its origin at the
+/// **From the BOTTOM**, because PDF user space has its origin at the
 /// bottom-left and y increases upward (§8.3.2.3). Measuring from the top here
 /// would be friendlier for one field and would disagree with every coordinate
 /// the Properties panel, the object tree and the rulers report — and an
@@ -162,7 +162,7 @@ pub const fn fit_heading() -> &'static str {
 
 /// A fit mode's name.
 ///
-/// ★ Named by **what happens to the picture**, not by the engine's identifier.
+/// Named by **what happens to the picture**, not by the engine's identifier.
 /// "Contain" and "Stretch" are precise and are words about a box; an operator
 /// deciding this is thinking about their photograph.
 #[must_use]
@@ -195,7 +195,7 @@ pub const fn fit_hint(fit: ImageFit) -> &'static str {
     }
 }
 
-/// ★ **What resolution this placement will be**, before it is committed.
+/// **What resolution this placement will be**, before it is committed.
 ///
 /// The number `pdfcer-core` insists is *"not a warning — a number"*, shown
 /// beside the spinners that decide it rather than after the commit that fixes
@@ -218,7 +218,7 @@ pub fn dpi_preview(effective_dpi: (f64, f64), below_screen_resolution: bool) -> 
     }
 }
 
-/// ★ Where the picture will actually land, previewed from the engine's own
+/// Where the picture will actually land, previewed from the engine's own
 /// arithmetic.
 ///
 /// `NewImage::placed_rect()` is public *for this*, and its doc says why:
@@ -249,7 +249,7 @@ pub const fn cancel_button() -> &'static str {
 
 /// A placement that is not on the page.
 ///
-/// ★ Refused rather than clamped. A picture silently moved back onto the sheet
+/// Refused rather than clamped. A picture silently moved back onto the sheet
 /// is a placement the operator did not make, and they would find it by looking
 /// at the drawing rather than at this window. The same posture
 /// `Tolerance::validate` takes: *"a corrected value the operator never saw is
@@ -265,7 +265,7 @@ pub const fn no_area() -> &'static str {
     "Give the box a width and a height."
 }
 
-/// ★ **Why pdfcer re-encoded the picture instead of storing the file's bytes.**
+/// **Why pdfcer re-encoded the picture instead of storing the file's bytes.**
 ///
 /// `RecompressReason` carries no `Display`, and that absence is a decision
 /// rather than an omission: these are *pdfcer's* reasons, in pdfcer's vocabulary
@@ -285,7 +285,7 @@ pub const fn no_area() -> &'static str {
 /// reason its own doc gives: conflating them *"tells a TIFF owner their file
 /// was uncompressed"*. There were bytes; they were simply not reusable.
 ///
-/// # ★ The wildcard is forced, not chosen
+/// # The wildcard is forced, not chosen
 ///
 /// `RecompressReason` is `#[non_exhaustive]`, so this match cannot be
 /// exhaustive and can never fail to compile when pdfcer grows a sixth reason —
@@ -319,7 +319,7 @@ pub const fn recompress_reason(reason: RecompressReason) -> &'static str {
 
 /// The file could not be read as an image, in the engine's own words.
 ///
-/// ★ Passed through, unlike a `TwoLineRefusal`, and the difference is worth
+/// Passed through, unlike a `TwoLineRefusal`, and the difference is worth
 /// stating because the two look like the same case. `ImageImportError`'s
 /// messages **name the operator's file** — *"pdfcer does not place GIF images —
 /// it places PNG, JPEG, BMP and TIFF"*, *"this image uses {feature}, which
@@ -335,7 +335,7 @@ pub fn import_failed(detail: &str) -> String {
 // After the fact — what the placement did that the operator cannot see
 // ---------------------------------------------------------------------------
 
-/// ★ **The disclosures image placement owes**, assembled into the sentences the
+/// **The disclosures image placement owes**, assembled into the sentences the
 /// status bar shows.
 ///
 /// Every one of these is a fact the operator **cannot see on screen at editing
@@ -407,7 +407,7 @@ pub fn placement_disclosures(
 
 /// How the stored size compares with the source file's.
 ///
-/// ★ Both numbers, never a ratio alone. *"38 % larger"* on a 4 KB logo and on a
+/// Both numbers, never a ratio alone. *"38 % larger"* on a 4 KB logo and on a
 /// a 40 MB scan are the same sentence about very different documents, and the
 /// operator's question is what happened to **their file**.
 #[must_use]
@@ -425,7 +425,7 @@ fn byte_change(source: usize, stored: usize) -> String {
 mod tests {
     use super::*;
 
-    /// ★ A soft placement says so, and a fine one still states the number.
+    /// A soft placement says so, and a fine one still states the number.
     ///
     /// The number is always given because `pdfcer-core` insists it is *"not a
     /// warning — a number"*: an operator placing a 4000-pixel photo in a 2-inch
@@ -495,7 +495,7 @@ mod tests {
         assert!(last.contains("4.0 KB"), "{last}");
     }
 
-    /// ★ Every known re-encode reason has its own sentence, and none reaches
+    /// Every known re-encode reason has its own sentence, and none reaches
     /// the forced fallback.
     ///
     /// The alarm `#[non_exhaustive]` takes away from the compiler. It cannot
@@ -539,7 +539,7 @@ mod tests {
         "PDF could not carry the file's own bytes unchanged"
     }
 
-    /// ★ The preview and the after-the-fact disclosure say the same number the
+    /// The preview and the after-the-fact disclosure say the same number the
     /// same way.
     ///
     /// They are two functions, and the engine went to the trouble of making the

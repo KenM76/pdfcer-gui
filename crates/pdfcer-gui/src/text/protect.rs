@@ -13,7 +13,7 @@ use super::commands::CommandText;
 
 /// The **Security** group's caption, on the File tab.
 ///
-/// ★ It lives here rather than in [`crate::text::ribbon`] with the other group
+/// It lives here rather than in [`crate::text::ribbon`] with the other group
 /// captions, on the precedent [`crate::text::acrobat::file_open_in_acrobat`]
 /// set: when a feature's copy is one subject and one module, the caption is
 /// part of that subject, and splitting three words off into another file buys
@@ -33,13 +33,13 @@ pub const fn group_file_security() -> &'static str {
 /// *Password…* reads as "set one". Encryption is what the file gains or loses;
 /// the password is how it is keyed.
 ///
-/// ★ **The tooltip names all three jobs**, because the control's most surprising
+/// **The tooltip names all three jobs**, because the control's most surprising
 /// property is that the one button also takes protection OFF. A user who wants
 /// to unprotect a drawing will not look under a button called Encrypt unless it
 /// says so, and the alternative — three ribbon controls for one subject — is
 /// three chances to press the wrong one.
 ///
-/// ★★ And it names the refusal in the same sentence. A signed document is
+/// And it names the refusal in the same sentence. A signed document is
 /// refused by the engine, by name, and finding that out by pressing is the R9
 /// failure this project has paid for: *an unavailable capability renders
 /// nothing, and a button that fails on press is worse than either.* The control
@@ -58,7 +58,7 @@ pub const fn file_encrypt() -> CommandText {
 
 /// `file.permissions` — what the document says it allows.
 ///
-/// ★★★ The tooltip's **first job is the disclosure**, not the description. This
+/// The tooltip's **first job is the disclosure**, not the description. This
 /// is the one control in pdfcer whose plain reading is false: a list of
 /// tick-boxes labelled Print, Copy and Change looks exactly like a set of
 /// locks, and it is not one. The full sentence is on screen the moment the
@@ -94,7 +94,7 @@ pub const fn title_permissions() -> &'static str {
 
 /// The heading over the read-back of what the document says **today**.
 ///
-/// ★★★ This section exists because of one line in the build brief, and it is
+/// This section exists because of one line in the build brief, and it is
 /// the strongest requirement on this surface: *"A permissions dialog that opens
 /// with everything ticked, on a document that forbids printing, has told the
 /// operator a falsehood before he touches anything."*
@@ -121,7 +121,7 @@ pub const fn job_set() -> &'static str {
 
 /// The radio label for *change the passwords a protected document has*.
 ///
-/// ★ It says **passwords**, plural, and *keep* what it keeps. The one thing an
+/// It says **passwords**, plural, and *keep* what it keeps. The one thing an
 /// operator fears about this button is that it silently re-opens a document
 /// they had restricted, and saying so at the control is cheaper than a receipt
 /// that says it afterwards.
@@ -138,7 +138,7 @@ pub const fn job_remove() -> &'static str {
 
 /// What removing actually leaves behind, at the control that does it.
 ///
-/// ★ Not a scold. The operator asked for this verb by name; what the sentence
+/// Not a scold. The operator asked for this verb by name; what the sentence
 /// adds is the fact a label cannot carry — that the *result* is a file anybody
 /// can open, which is the point and is also the thing to be sure of.
 #[must_use]
@@ -156,7 +156,7 @@ pub const fn passwords_heading() -> &'static str {
     "Passwords"
 }
 
-/// ★★★ **The sentence that stops the two passwords being collapsed into one.**
+/// **The sentence that stops the two passwords being collapsed into one.**
 ///
 /// The build brief made this explicit: *"Owner and user passwords are different
 /// things; do not collapse them into one field without saying what you did."*
@@ -206,7 +206,7 @@ pub const fn current_owner_password_label() -> &'static str {
     "The document's current owner password"
 }
 
-/// ★★★ **Disclosure 3 of O119's three: re-permissioning needs the owner
+/// **Disclosure 3 of O119's three: re-permissioning needs the owner
 /// password.**
 ///
 /// The engine asked for this to be surfaced by name, in its 2026-09-03 reply:
@@ -214,10 +214,10 @@ pub const fn current_owner_password_label() -> &'static str {
 /// `remove_encryption` will refuse a user-authenticated session and the operator
 /// should see WHY before pressing it."*
 ///
-/// ★ It is drawn **above the field**, not after a refusal. A refusal that
+/// It is drawn **above the field**, not after a refusal. A refusal that
 /// arrives on press is a program that knew the answer and waited.
 ///
-/// ★★ And it says *typed here even if you already used it*, because the honest
+/// And it says *typed here even if you already used it*, because the honest
 /// alternative is worse. pdfcer does not keep the password that opened the
 /// document — [`crate::secret::Secret`] exists so it does not linger — so a
 /// session opened with the owner password still cannot re-key without being
@@ -253,7 +253,7 @@ pub const fn permissions_now_heading() -> &'static str {
     "What it allows today"
 }
 
-/// ★★ Why every box starts ticked on a document that is not protected yet.
+/// Why every box starts ticked on a document that is not protected yet.
 ///
 /// The build brief's rule is that the dialog must show the CURRENT state before
 /// offering to change it, and on an unprotected document the current state is
@@ -269,7 +269,7 @@ pub const fn permissions_start_open() -> &'static str {
 /// The note beside a bit whose current value is `None` — the document's
 /// encryption revision has no such concept.
 ///
-/// ★ `Permissions::granted` returns three values and the third one is not
+/// `Permissions::granted` returns three values and the third one is not
 /// "refused". `text::security::permission_state` already renders it; what this
 /// adds is the consequence *for the change about to be made*: pdfcer writes
 /// `/R` 6, where every one of the eight bits means something, so a box that is
@@ -282,7 +282,7 @@ pub const fn permission_becomes_stated() -> &'static str {
 /// **One row of a permission list: the permission's name, and what is said
 /// about it.**
 ///
-/// ★ A catalogued function rather than a `format!` at the two call sites, and
+/// A catalogued function rather than a `format!` at the two call sites, and
 /// the reason is not bookkeeping. The window draws this shape **twice** — once
 /// under *"What it allows today"*, reporting the document's own three-valued
 /// answer, and once in the editable list, where the one row that cannot be a
@@ -298,7 +298,7 @@ pub fn permission_row(name: &str, said: &str) -> String {
     format!("{name}  —  {said}")
 }
 
-/// ★★★ **Why one permission on the list has no tick-box.**
+/// **Why one permission on the list has no tick-box.**
 ///
 ///
 /// `pdfcer-core` sets bit 10 on **every** file it writes, regardless of what the
@@ -306,7 +306,7 @@ pub fn permission_row(name: &str, said: &str) -> String {
 /// pdfcer cannot produce a document that declines accessibility extraction, and
 /// a tick-box the operator could clear would come back ticked in the file.
 ///
-/// ★ The sentence says what the program cannot do **and** why the limitation is
+/// The sentence says what the program cannot do **and** why the limitation is
 /// benign, in that order. An operator who reads only the first clause has been
 /// told the truth; one who reads both knows it is not worth working around.
 #[must_use]
@@ -322,7 +322,7 @@ pub const fn encrypt_metadata_label() -> &'static str {
 
 /// What that switch is actually for.
 ///
-/// ★ The default is ON, and the reason to turn it off is a real one rather than
+/// The default is ON, and the reason to turn it off is a real one rather than
 /// an expert's curiosity: a search indexer that cannot read the title and author
 /// of a drawing cannot find it. That is the trade, stated as a trade.
 #[must_use]
@@ -334,7 +334,7 @@ pub const fn encrypt_metadata_note() -> &'static str {
 // REFUSALS
 // ===========================================================================
 
-/// ★★★ **Disclosure 2 of O119's three: a signed document is refused.**
+/// **Disclosure 2 of O119's three: a signed document is refused.**
 ///
 /// The engine refuses it by name (`EncryptError::SignedDocument`) and this
 /// surface refuses it *before* the form is drawn — there is nothing to fill in,
@@ -348,7 +348,7 @@ pub const fn encrypt_metadata_note() -> &'static str {
 /// longer match"* is a fact about how signing works, and it tells them the real
 /// remedy: protect first, sign second.
 ///
-/// ★ It names the count, because a document with one approval signature and a
+/// It names the count, because a document with one approval signature and a
 /// document with a certification plus four approvals are different problems and
 /// the operator is the one who knows which theirs is.
 #[must_use]
@@ -369,7 +369,7 @@ pub const fn signed_refusal_late() -> &'static str {
 /// The refusal when **Permissions…** is opened on a document that carries no
 /// encryption at all.
 ///
-/// ★ Not an empty list and not eight greyed boxes. Permissions live inside the
+/// Not an empty list and not eight greyed boxes. Permissions live inside the
 /// `/Encrypt` dictionary — an unprotected document does not permit everything,
 /// it *says nothing*, and drawing eight ticked boxes would be this surface
 /// inventing a declaration the file never made.
@@ -383,7 +383,7 @@ pub const fn not_encrypted_refusal() -> &'static str {
 
 /// The refusal when the document has never been written to disk.
 ///
-/// ★ Reachable only in theory, and refused rather than unwrapped. Changing the
+/// Reachable only in theory, and refused rather than unwrapped. Changing the
 /// protection on an already-protected document is done by re-opening the FILE
 /// with the owner password (see [`crate::protect`] for the whole argument), and
 /// a document created in this session has no file to re-open. A document created
@@ -398,7 +398,7 @@ pub const fn no_file_refusal() -> &'static str {
 /// The refusal when a deferred redaction is armed and the operator asks to
 /// change the document's protection.
 ///
-/// ★★ **Deliberately the same shape as
+/// **Deliberately the same shape as
 /// [`crate::text::sign::refusal_redaction_pending`], because it is the same
 /// engine refusal reaching a second surface.** One step, not a wall: the
 /// operator armed the removal, and Edit ▸ Redact holds both the button that
@@ -407,7 +407,7 @@ pub const fn no_file_refusal() -> &'static str {
 /// two different problems.
 ///
 ///
-/// ★ It names **encrypting** rather than the three operations the engine's
+/// It names **encrypting** rather than the three operations the engine's
 /// message lists, because the reason is identical for all three and the
 /// operator only ever pressed one of them. Naming the other two would describe
 /// a decision they did not make.
@@ -421,7 +421,7 @@ pub const fn redaction_pending_refusal() -> &'static str {
 
 /// The engine refused the operation after the operator pressed.
 ///
-/// ★ One function with a match rather than six strings at six call sites,
+/// One function with a match rather than six strings at six call sites,
 /// because the whole value of `EncryptError` is that every variant names
 /// something the operator can act on, and a `to_string()` of the engine's own
 /// message would put an implementer's sentence in front of a draughtsman.
@@ -436,7 +436,7 @@ pub fn engine_refusal(refusal: &crate::protect::EngineRefusal) -> String {
             "This document is not protected, so there is nothing to change or remove.".to_owned()
         }
         R::NotOwner { opened_as } => not_owner(*opened_as),
-        // ★ No count here, and that is not laziness. This arm is reached only
+        // No count here, and that is not laziness. This arm is reached only
         // when the engine refused AFTER the press — i.e. a signature the
         // pre-flight census did not see, which by construction means the count
         // this surface holds is the one that was wrong. `signed_refusal`, drawn
@@ -452,7 +452,7 @@ pub fn engine_refusal(refusal: &crate::protect::EngineRefusal) -> String {
 
 /// The password opened the file, and it was not the owner's.
 ///
-/// ★★ It names which password DID work, which is the fact that turns a dead end
+/// It names which password DID work, which is the fact that turns a dead end
 /// into a next step: an operator told only *"wrong password"* re-types the one
 /// they have, and an operator told *"that is the user password"* goes and finds
 /// the other one.
@@ -472,7 +472,7 @@ pub fn not_owner(opened_as: AuthKind) -> String {
 
 /// The password did not open the file at all.
 ///
-/// ★ It carries the engine's own detail rather than flattening every failure to
+/// It carries the engine's own detail rather than flattening every failure to
 /// "wrong password", for `crate::dialogs::password`'s reason: pdfcer reports a
 /// non-ASCII password that it cannot normalise as a **different** error
 /// precisely so the operator is not sent to re-check a password that was
@@ -496,7 +496,7 @@ pub const fn passwords_differ() -> &'static str {
 
 /// The owner-password box is empty.
 ///
-/// ★★ Refused rather than allowed, and this is a decision the standard does not
+/// Refused rather than allowed, and this is a decision the standard does not
 /// make for us: `EncryptionSettings` will happily take an empty owner password.
 /// A document with one is a document whose protection **anybody can remove**,
 /// which is the opposite of what the operator pressed the button for, and it
@@ -508,7 +508,7 @@ pub const fn owner_password_required() -> &'static str {
 
 /// The two passwords are the same.
 ///
-/// ★ Refused for the reason that makes the permission list mean anything: the
+/// Refused for the reason that makes the permission list mean anything: the
 /// owner password ignores `/P` entirely, so if it is also the password that
 /// opens the document, every reader authenticates as owner and the permissions
 /// are decoration. The engine does not enforce this (*"because the standard does
@@ -524,7 +524,7 @@ pub const fn current_owner_password_required() -> &'static str {
     "Type the document's current owner password to authorise this change."
 }
 
-/// ★★ Why the confirm control is greyed, naming the outstanding condition.
+/// Why the confirm control is greyed, naming the outstanding condition.
 ///
 /// `OPERATOR_REQUESTS.md` O77's sweep found seven greyed controls with no hover
 /// explanation, and the reasoning `crate::text::redact::confirm_disabled`
@@ -573,7 +573,7 @@ pub const fn overwrite_outstanding() -> &'static str {
 
 /// The heading over the destination radios.
 ///
-/// ★★★ The whole destination mechanism is `crate::dialogs::redact`'s, followed
+/// The whole destination mechanism is `crate::dialogs::redact`'s, followed
 /// deliberately rather than re-invented — see [`crate::dialogs::protect`]'s
 /// header. The wording differs only where the act differs: a redaction destroys
 /// content, and this replaces a file.
@@ -602,7 +602,7 @@ pub fn destination_replace(file_name: &str) -> String {
 
 /// The consequence of replacing, stated where it is chosen.
 ///
-/// ★ Softer than the redaction's equivalent, and deliberately: nothing here
+/// Softer than the redaction's equivalent, and deliberately: nothing here
 /// destroys content. What it destroys is the **unprotected copy**, and on the
 /// remove-protection job the opposite — the protected copy. Both are recoverable
 /// only by having kept the other one, which is what the sentence says.
@@ -625,7 +625,7 @@ pub const fn save_dialog_title() -> &'static str {
 
 /// The suffix appended to the original file's stem to suggest a name.
 ///
-/// ★ A suggestion, and it is never the source file — the standing rule this
+/// A suggestion, and it is never the source file — the standing rule this
 /// project applies to every write that produces a second document
 /// (`crate::text::redact::suggested_suffix`,
 /// `crate::text::files::save_copy_suffix`). Here the reason is milder and still
@@ -649,7 +649,7 @@ pub const fn suggested_suffix_unprotected() -> &'static str {
 
 /// The confirm control's label when a picker is still to come.
 ///
-/// ★ The label is the consequence and the ellipsis is a promise that a further
+/// The label is the consequence and the ellipsis is a promise that a further
 /// question is coming — `crate::text::redact::confirm_button`'s rule, and the
 /// same one decides the replace form below.
 #[must_use]
@@ -685,7 +685,7 @@ pub const fn cancel_button() -> &'static str {
 // OUTCOMES
 // ===========================================================================
 
-/// ★★ **The sentence shown once bytes are on disk.**
+/// **The sentence shown once bytes are on disk.**
 ///
 /// It carries the fact the operator would otherwise discover by looking at a
 /// window that disagrees with the file: **the open document is unchanged.**
@@ -725,7 +725,7 @@ pub fn write_failed(detail: &str) -> String {
     format!("Nothing was written: {detail}")
 }
 
-/// ★ The SASLprep gap, surfaced only when a typed password contains a non-ASCII
+/// The SASLprep gap, surfaced only when a typed password contains a non-ASCII
 /// byte.
 ///
 /// The engine hands this over as `EncryptionSettings::SASLPREP_GAP` and asks for
@@ -734,7 +734,7 @@ pub fn write_failed(detail: &str) -> String {
 /// warning that is always on screen is a warning nobody reads, and this one is
 /// irrelevant to the overwhelming majority of passwords.
 ///
-/// ★★ It is a warning rather than a refusal, because the password may well be
+/// It is a warning rather than a refusal, because the password may well be
 /// perfectly interoperable and pdfcer cannot know. Refusing every accented
 /// character would be this program declining to write a file the standard
 /// permits.

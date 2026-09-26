@@ -39,7 +39,7 @@ pub(super) const REGION_CHOOSE_CERTIFICATE: &str = "sign-choose-certificate"; //
 
 /// The passphrase field.
 ///
-/// ★ Its RECTANGLE, which carries nothing about what is typed into it — a
+/// Its RECTANGLE, which carries nothing about what is typed into it — a
 /// region name is a position, and `crate::diag::ui_rect` publishes a rect and a
 /// name and never a value. A driven check needs somewhere to click before it
 /// types, and this is it.
@@ -58,7 +58,7 @@ pub(super) const REGION_EXISTING: &str = "sign-existing-field"; // ui-text-exemp
 
 /// **The scrolling body's own viewport**, declared every frame it is drawn.
 ///
-/// ★★★ NOT [`REGION_DIALOG`], and the difference cost a driven run. The window
+/// NOT [`REGION_DIALOG`], and the difference cost a driven run. The window
 /// region is `ui.max_rect()` for the whole host and includes the separator and
 /// the button row **below** the scroll area. A control scrolled to just above
 /// that footer is inside the window rectangle and **clipped out of the scroll
@@ -72,7 +72,7 @@ pub(super) const REGION_BODY: &str = "sign-body"; // ui-text-exempt: trace regio
 
 /// The radio that chooses *draw a signature box on the page*.
 ///
-/// ★ Declared unconditionally, unlike its two neighbours: it is always an
+/// Declared unconditionally, unlike its two neighbours: it is always an
 /// option, so its presence carries no evidence and its only job is to give a
 /// driven check somewhere to press. [`REGION_EXISTING`] and
 /// [`REGION_BOX_WHERE`] are the ones whose presence is a measurement.
@@ -81,7 +81,7 @@ pub(super) const REGION_PLACE_BOX: &str = "sign-place-box"; // ui-text-exempt: t
 /// The line stating where a box this shell places will go, declared **only
 /// while that is the choice**.
 ///
-/// ★★★ Its whole job is to make *retirement* measurable on a ONE-PAGE document.
+/// Its whole job is to make *retirement* measurable on a ONE-PAGE document.
 /// [`REGION_PAGE`] is the obvious probe and it is not drawn on a single-page
 /// document at all — a chooser with one possible value is a label pretending to
 /// be a choice — so a check aimed at it could not tell *"the page control
@@ -92,7 +92,7 @@ pub(super) const REGION_BOX_WHERE: &str = "sign-box-where"; // ui-text-exempt: t
 
 /// The page chooser, declared only while a box is being placed by the operator.
 ///
-/// ★★★ Named so that its **absence** is measurable. `--visible`/`--page` are
+/// Named so that its **absence** is measurable. `--visible`/`--page` are
 /// refused by the engine alongside a field name, so this control retires when a
 /// pre-placed box is chosen; a driven check can only prove *"retired"* rather
 /// than *"greyed"* if the region has a name to be missing under.
@@ -104,7 +104,7 @@ pub(super) const REGION_CERTIFY: &str = "sign-certify"; // ui-text-exempt: trace
 
 /// One row in the list of pre-placed signature fields, by index.
 ///
-/// ★ A function rather than a constant because there is one per field and a
+/// A function rather than a constant because there is one per field and a
 /// check has to aim at a particular one. The index is the position in
 /// [`crate::sign::Standing::empty_fields`], which is the order the engine's own
 /// form projection returns — stable for a given document, which is all a check
@@ -150,7 +150,7 @@ enum Phase {
     Refused(Refusal),
     /// The action has been raised and the handler has not answered yet.
     ///
-    /// ★ A state of its own rather than a flag, because it is the one moment
+    /// A state of its own rather than a flag, because it is the one moment
     /// on this surface when pressing the confirm control again would sign
     /// twice. It normally lasts one frame; it is drawn anyway, because "one
     /// frame" is an assumption about a machine and the state is cheap.
@@ -215,7 +215,7 @@ pub struct SignDialog {
     certificate: Option<PathBuf>,
     /// The passphrase, as typed.
     ///
-    /// ★ A `String` because that is what `egui::TextEdit` binds to; it becomes
+    /// A `String` because that is what `egui::TextEdit` binds to; it becomes
     /// a [`Secret`] the instant it leaves this struct. See this module's §3 and
     /// `crate::sign`'s §5.
     passphrase: String,
@@ -231,7 +231,7 @@ pub struct SignDialog {
     /// Where the signature goes: nothing drawn, a box this shell places, or a
     /// box somebody else already placed.
     ///
-    /// ★ The page and the chosen field are kept **beside** this rather than
+    /// The page and the chosen field are kept **beside** this rather than
     /// inside it, so that switching to *draw nothing* and back does not lose
     /// either. A radio group that forgets its neighbour's value is one people
     /// learn not to touch.
@@ -241,7 +241,7 @@ pub struct SignDialog {
     /// Which pre-placed field is chosen — an index into
     /// [`crate::sign::Standing::empty_fields`].
     ///
-    /// ★★ An index HERE and a name in the request, and the asymmetry is
+    /// An index HERE and a name in the request, and the asymmetry is
     /// deliberate. A radio group binds to a value it can compare, and an index
     /// is that; but an index that reached the engine would silently name the
     /// wrong field if the list it indexes had changed, whereas a name that no
@@ -252,7 +252,7 @@ pub struct SignDialog {
     certify: bool,
     /// The `/DocMDP` level a certification would carry.
     ///
-    /// ★ Table 254's own default, `P = 2`, which the engine's bare `--certify`
+    /// Table 254's own default, `P = 2`, which the engine's bare `--certify`
     /// also takes and *prints that it defaulted*. Form fill-in and further
     /// signatures are what a drawing sent out for approval needs to allow; `P =
     /// 1` would break the next person's signature, which is rarely what an
@@ -260,7 +260,7 @@ pub struct SignDialog {
     mdp: MdpPermission,
     /// `/M`, captured when the window opened and shown on screen.
     ///
-    /// ★★★ Captured **once**, not read per frame, and that is what makes
+    /// Captured **once**, not read per frame, and that is what makes
     /// [`crate::text::sign::signing_time`] the source of the written value
     /// rather than a report about it. A clock read at the press would write a
     /// different moment from the one on screen, and the difference would be
@@ -291,7 +291,7 @@ pub struct SignDialog {
 }
 
 impl std::fmt::Debug for SignDialog {
-    /// ★★★ **Hand-written, and the whole point of it is what it omits.**
+    /// **Hand-written, and the whole point of it is what it omits.**
     ///
     /// Two fields here touch a private key: [`Self::passphrase`], which is a
     /// `String` only because `egui::TextEdit` binds to one, and
@@ -300,7 +300,7 @@ impl std::fmt::Debug for SignDialog {
     /// costs — a `{:?}` anywhere on the path writes it into the trace file
     /// `tools/ui-verify` keeps as evidence.
     ///
-    /// ★★ The **certificate's path is omitted too**, which goes further than
+    /// The **certificate's path is omitted too**, which goes further than
     /// `crate::dialogs::protect`'s equivalent. A path is not key material; it
     /// is a durable pointer at where somebody keeps their digital ID, and a
     /// trace file is kept and shared. What is printed is whether one was
@@ -332,7 +332,7 @@ impl SignDialog {
     fn open(doc: &OpenDoc) -> Self {
         let standing = Standing::read(&doc.session, &doc.path, &doc.pages);
         let signing_time = crate::app::clock::pdf_date_utc();
-        // ★ The clock failure is a REFUSAL, not a warning. PAdES requires `/M`
+        // The clock failure is a REFUSAL, not a warning. PAdES requires `/M`
         // and the engine will not invent one, so a machine whose clock is
         // before the epoch cannot sign — and finding that out after filling in
         // the form is exactly the R9 failure this window is shaped to avoid.
@@ -349,7 +349,7 @@ impl SignDialog {
             // is a refusal, which one — without which a check asserting a
             // refusal cannot tell the right refusal from any refusal.
             //
-            // ★★ `empty_fields=` and `signable_fields=` are two numbers rather
+            // `empty_fields=` and `signable_fields=` are two numbers rather
             // than one, and the difference is the whole of `Pass 10.13`'s
             // list-with-a-reason rule: a field that is present and cannot be
             // signed into is listed WITH its reason rather than filtered out,
@@ -392,7 +392,7 @@ impl SignDialog {
             identity_error: None,
             reason: String::new(),
             location: String::new(),
-            // ★★★ The DEFAULT is *nothing drawn*, even on a document that
+            // The DEFAULT is *nothing drawn*, even on a document that
             // carries a pre-placed box — deliberately, and it is the one place
             // this design could reasonably have gone the other way. Pre-selecting
             // the sender's box would be helpful and would also mean the first
@@ -422,7 +422,7 @@ impl SignDialog {
         doc: &OpenDoc,
         actions: &mut Vec<Action>,
     ) -> bool {
-        // ★ Read BEFORE the body draws its fields, so a box ticked or a
+        // Read BEFORE the body draws its fields, so a box ticked or a
         // character typed on this frame does not enable the confirm control
         // until the next one. `crate::dialogs::redact` §4's rule, and it is
         // owed here for the replace branch, which writes over the operator's
@@ -493,7 +493,7 @@ impl SignDialog {
     /// 3. **The replace acknowledgement**, when and only when the operator has
     ///    chosen to replace.
     ///
-    /// ★ There is deliberately **no** condition on `/Reason` or `/Location`.
+    /// There is deliberately **no** condition on `/Reason` or `/Location`.
     /// Both are optional in the standard, both are omitted when empty, and a
     /// surface that required a reason would be inventing an obligation the
     /// format does not impose — on a control where inventing obligations is how
@@ -514,7 +514,7 @@ impl SignDialog {
     /// matters most: *Existing* falling back to [`Placement::Invisible`] when
     /// there is no field at that index.
     ///
-    /// ★★★ The fallback is `Invisible`, never `Visible`, and the choice is a
+    /// The fallback is `Invisible`, never `Visible`, and the choice is a
     /// safety one rather than an arbitrary default. `Invisible` writes
     /// `/Rect [0 0 0 0]` and draws nothing; `Visible` would stamp a box with the
     /// operator's name on a page he did not ask to have marked. When a surface
@@ -568,7 +568,7 @@ impl SignDialog {
     fn pick_certificate(&mut self) {
         if let crate::app::files::Picked::Path(path) = crate::app::files::pick_certificate() {
             self.certificate = Some(path);
-            // ★ A new file retires the old identity AND the old error. Leaving
+            // A new file retires the old identity AND the old error. Leaving
             // either would show the operator a read-back of the certificate
             // they just replaced, which is the one sentence on this window that
             // must never describe a different file from the one that will sign.
@@ -583,7 +583,7 @@ impl SignDialog {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             //
-            // ★ Emitted BEFORE the attempt, so "the operator pressed Open
+            // Emitted BEFORE the attempt, so "the operator pressed Open
             // certificate" and "the container opened" are two facts a reader
             // can tell apart. Without it, a press that produced nothing is
             // indistinguishable from a press that never happened — which cost
@@ -610,7 +610,7 @@ impl SignDialog {
             }
             Err(failure) => {
                 self.identity = None;
-                // ★★★ TRACED, and this line was MISSING on the first driven
+                // TRACED, and this line was MISSING on the first driven
                 // run — which is worth recording because of what the silence
                 // cost. `Identity::open` traces its SUCCESS and said nothing at
                 // all about a failure, so the harness saw
@@ -692,7 +692,7 @@ impl SignDialog {
                 location: self.location.clone(),
                 placement: self.placement(),
                 signing_time,
-                // ★ `certify` is `None` unless the operator both chose it AND
+                // `certify` is `None` unless the operator both chose it AND
                 // the document permits it. The second half is asked again here
                 // rather than trusted from the draw: the flag survives a
                 // document that changed under the window, and sending a
@@ -711,7 +711,7 @@ impl SignDialog {
     fn body(&mut self, ui: &mut egui::Ui) {
         let theme = Theme::of(ui.ctx());
         match &self.phase {
-            // ★★★ R9's *explained* branch: the refusal replaces the form
+            // R9's *explained* branch: the refusal replaces the form
             // rather than greying it. Whether THIS document can be signed is
             // not knowable when the ribbon is built, so the control is present
             // and the window states the reason.
@@ -738,7 +738,7 @@ impl SignDialog {
                 // The rule-4 disclosure: what pdfcer actually wrote.
                 ui.label(details.clone());
                 ui.add_space(10.0);
-                // ★★ What the OPEN document now is — `crate::sign` §3. Not a
+                // What the OPEN document now is — `crate::sign` §3. Not a
                 // footnote: an operator who pressed Ctrl+S after this without
                 // being told would append a revision onto a stale base.
                 ui.label(
@@ -753,7 +753,7 @@ impl SignDialog {
                 }
             }
             Phase::Filling | Phase::Failed(_) => {
-                // ★ The failure sentence is drawn ABOVE the form rather than
+                // The failure sentence is drawn ABOVE the form rather than
                 // instead of it, and that is the difference between this and
                 // the refusal above. A refusal is about the document and
                 // nothing the operator does here can change it; a failure is
@@ -770,7 +770,7 @@ impl SignDialog {
                     .auto_shrink([false, true])
                     .max_height((ui.available_height() - FOOTER_RESERVE).max(BODY_FLOOR))
                     .show(ui, |ui| {
-                        // ★ The viewport, not the content — see `REGION_BODY`.
+                        // The viewport, not the content — see `REGION_BODY`.
                         crate::diag::ui_rect(REGION_BODY, ui.clip_rect());
                         ui.label(t::intro());
                         if self.standing.prior_signatures > 0 {
@@ -786,7 +786,7 @@ impl SignDialog {
                         ui.separator();
                         ui.add_space(6.0);
                         self.certificate_section(ui, &theme);
-                        // ★★★ §1: NOTHING below the identity is drawn while
+                        // §1: NOTHING below the identity is drawn while
                         // there is no identity. Not greyed — absent. R9's other
                         // half: greying is for temporarily unavailable, and
                         // these controls are not unavailable, they are
@@ -799,7 +799,7 @@ impl SignDialog {
                             ui.add_space(10.0);
                             ui.separator();
                             ui.add_space(6.0);
-                            // ★ BEFORE placement, deliberately. *What kind of
+                            // BEFORE placement, deliberately. *What kind of
                             // signature this is* is the bigger of the two
                             // decisions — a certification states what anybody
                             // may change afterwards — and *where the box goes*
@@ -839,7 +839,7 @@ impl SignDialog {
     /// seven greyed controls with no explanation; this is the shape that
     /// discharges it.
     ///
-    /// ★ It stays HERE rather than moving to [`sections`] with the row that
+    /// It stays HERE rather than moving to [`sections`] with the row that
     /// draws it, because it is a statement about the window's gate — the same
     /// gate [`Self::ready_to_confirm`] enforces two functions above — and the
     /// two must be read together or they drift into disagreeing about which

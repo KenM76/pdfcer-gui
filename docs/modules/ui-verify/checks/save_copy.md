@@ -46,7 +46,7 @@ only thing that authors an annotation from a *drag* is the running canvas.
 | E | compare the copy's prefix with the source | the source's bytes are the copy's prefix, verbatim |
 | F | **launch a second process on the copy** | `comments-panel listed=N+1`, again with `with_note` and `authors` unmoved |
 
-# ★ Three falsifying phases, and the build each one catches
+# Three falsifying phases, and the build each one catches
 
 Phases D, E and F each fail against a *different* plausible wrong
 implementation, and **no two of them catch the same one**. That is what makes
@@ -127,7 +127,7 @@ is derived by walking the **session's own annotation list** through
 saved file from disk, so `listed=` there is a statement about the *file*,
 made by the engine, in a process that never saw the first one.
 
-## ★★★ Every census here is ANCHORED, and the day that started mattering
+## Every census here is ANCHORED, and the day that started mattering
 
 This paragraph used to say that in Review the panel is the first tab of the
 right stack and *"is therefore active on the first frame"*, with a click on
@@ -163,7 +163,7 @@ RAG note it quotes: *"Don't try to script the dialog."* That is what makes
 phase C an assertion about **a file on disk** rather than about a button
 having been pressed.
 
-★ **Say plainly which path was driven, because it is not the whole of the
+**Say plainly which path was driven, because it is not the whole of the
 operator's one.** Everything from the ribbon click to the write is the real
 code path: the click, the dispatch arm, `Action::SaveCopy`, the apply phase,
 `app::save::save_copy`, `pick_save_path`, `to_incremental_bytes`,
@@ -181,7 +181,7 @@ Every gesture is a real `SetCursorPos` + `mouse_event`. **`Ctrl+S` is not
 driven here**, and the keymap binding is covered only by
 
 
-★★ `Ctrl+S` was one of the fourteen dead chords. It is now dispatchable and
+`Ctrl+S` was one of the fourteen dead chords. It is now dispatchable and
 this check SHOULD drive it — that is unwritten work, not a limitation.
 Continuing the original note:
 `shell::manifest`'s keymap test and by the one dispatcher every route shares.

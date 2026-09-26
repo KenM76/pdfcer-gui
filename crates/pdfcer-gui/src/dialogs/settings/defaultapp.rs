@@ -12,7 +12,7 @@ use crate::text::assoc as t;
 
 /// The state line's region.
 ///
-/// ★ Named for [`super::acrobat::REGION_RESOLVED`]'s reason exactly: the whole
+/// Named for [`super::acrobat::REGION_RESOLVED`]'s reason exactly: the whole
 /// value of this line is that it is **on screen and legible**, and a driven
 /// check that read the trace instead would learn what pdfcer found and nothing
 /// about whether the operator can see it.
@@ -23,7 +23,7 @@ pub const REGION_ACTION: &str = "settings:defaultapp.action"; // ui-text-exempt:
 
 /// What this group knows about the machine, for one opening of the window.
 ///
-/// ★★★ **The `Option` is the whole design.** Every field in [`Status`] costs a
+/// **The `Option` is the whole design.** Every field in [`Status`] costs a
 /// `reg.exe` process to obtain, and a Settings pane redraws on **every frame**
 /// — so probing from [`group`] unconditionally would spawn two processes sixty
 /// times a second. `super::acrobat`'s header states the identical rule for the
@@ -50,7 +50,7 @@ pub struct State {
 impl State {
     /// Forget what was read, so the next paint reads the machine again.
     ///
-    /// ★ Called after the button acts, because the act changes two of the three
+    /// Called after the button acts, because the act changes two of the three
     /// things the line reports. It does **not** clear [`Self::note`]: the note
     /// says what pdfcer just did, the status says what Windows now thinks, and
     /// conflating them is how a surface starts claiming an outcome it caused
@@ -66,7 +66,7 @@ impl State {
 /// operator arrives with one of them: *"why did Edge open?"* is answered by the
 /// first, and *"did the button work?"* by the second.
 ///
-/// ★★ The second is suppressed when pdfcer already **is** the default, because
+/// The second is suppressed when pdfcer already **is** the default, because
 /// then it says nothing the first has not: being the chosen program implies
 /// being in the list, and a second sentence restating it would train the reader
 /// to skip the pair.
@@ -101,10 +101,10 @@ pub fn group(ui: &mut Ui, state: &mut State) {
     ui.label(egui::RichText::new(t::body()).small().weak());
     ui.add_space(4.0);
 
-    // ★★ `notice` rather than the body ink, and a theme role rather than a
+    // `notice` rather than the body ink, and a theme role rather than a
     // colour: it is a report about the machine rather than part of a setting,
     // and `tools/gates/check-theme-colors.sh` forbids the literal either way.
-    // ★ The note wins when there is one. It is the newer fact — it describes
+    // The note wins when there is one. It is the newer fact — it describes
     // something that happened since the status was read — and showing both
     // would put a sentence about what pdfcer just did beside a sentence about
     // what Windows thought beforehand.
@@ -116,7 +116,7 @@ pub fn group(ui: &mut Ui, state: &mut State) {
 
     ui.add_space(6.0);
     ui.horizontal(|ui| {
-        // ★ R9: no greying. The button is offered whatever the machine's state
+        // R9: no greying. The button is offered whatever the machine's state
         // is, including when pdfcer already IS the default — because Windows'
         // own page is also where somebody goes to change their mind, and a
         // control that vanished on success would strand them there.
@@ -131,7 +131,7 @@ pub fn group(ui: &mut Ui, state: &mut State) {
 
 /// Register, then hand over to Windows. Returns the sentence to show.
 ///
-/// ★★★ **Two steps, and the second runs only if the first succeeded.** Opening
+/// **Two steps, and the second runs only if the first succeeded.** Opening
 /// Windows' Default-apps page having failed to register would deep-link the
 /// operator to a list pdfcer is not in — a page that proves the feature is
 /// broken, with no explanation on it, in an application pdfcer does not own. A
@@ -178,7 +178,7 @@ mod tests {
     /// **A registration pointing at a DIFFERENT copy is reported as that**, not
     /// as registered.
     ///
-    /// ★ The state that looks like success from the inside — the key exists and
+    /// The state that looks like success from the inside — the key exists and
     /// names pdfcer — and opens a build the operator thought they had replaced.
     /// A line that folded it into *"pdfcer is in the list"* would be true and
     /// useless.

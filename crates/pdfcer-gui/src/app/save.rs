@@ -23,7 +23,7 @@ use outcome::{SaveError, Written};
 /// which is bounded (`signature::MAX_FIELD_TREE_NODES`), and produces no
 /// string, no allocation past the census and no row on the bar.
 ///
-/// # ★★ It is computed BEFORE the bytes are written, and the reason is the
+/// # It is computed BEFORE the bytes are written, and the reason is the
 /// engine's contract rather than caution
 ///
 /// `EditSession::signature_impact_of_save`'s own documentation: *"A front end
@@ -85,7 +85,7 @@ fn signature_note(doc: &OpenDoc) -> Option<String> {
 /// `tools/ui-verify`'s `save_copy_round_trip`, which answers the dialog through
 /// the seam and then re-opens the file that came out.
 ///
-/// ★ **Returns whether a file was actually written.**
+/// **Returns whether a file was actually written.**
 ///
 /// The caller that needs the answer is `crate::dialogs::unsaved`'s *Save a
 /// copy…* button, which **only proceeds with the close or open it is standing
@@ -107,7 +107,7 @@ fn signature_note(doc: &OpenDoc) -> Option<String> {
 /// is no member of that set it would be safe to proceed on.
 /// **Save As** — write the document somewhere new, and *keep editing THAT file*.
 ///
-/// # ★★★ Why this is a different command from [`save_copy`], and not a flag
+/// # Why this is a different command from [`save_copy`], and not a flag
 ///
 /// Operator, `OPERATOR_REQUESTS.md` O95:
 ///
@@ -127,7 +127,7 @@ fn signature_note(doc: &OpenDoc) -> Option<String> {
 /// | **Save a copy** | a snapshot, somewhere else | **the original** |
 /// | **Save As** | the document, somewhere else | **the new file** |
 ///
-/// ★★ Keeping both is deliberate. *Save a copy* is the right verb for "send
+/// Keeping both is deliberate. *Save a copy* is the right verb for "send
 /// this to somebody" and collapsing it into Save As would take that away; a
 /// single command with a checkbox would make the destructive difference a
 /// setting nobody reads.
@@ -139,7 +139,7 @@ fn signature_note(doc: &OpenDoc) -> Option<String> {
 /// label, the window title, the recent list — happens in the caller, which
 /// holds `&mut` and can see all of them.
 ///
-/// ★ That split is not tidiness. Rebinding is the dangerous half: a document
+/// That split is not tidiness. Rebinding is the dangerous half: a document
 /// whose path moved while its bytes did not is a document whose next `Ctrl+S`
 /// writes the wrong file. Keeping the write pure and the rebinding in one
 /// visible place means there is exactly one statement to read to know when the
@@ -153,7 +153,7 @@ fn signature_note(doc: &OpenDoc) -> Option<String> {
 /// reason: **there is no member of that set on which it would be safe to
 /// rebind the document.**
 ///
-/// # ★★ The undo stack survives, and that is a decision
+/// # The undo stack survives, and that is a decision
 ///
 /// Nothing is closed and nothing is reopened, so the session, its history and
 /// the operator's selection all continue. That is what every other editor does
@@ -168,7 +168,7 @@ pub fn save_as(doc: &OpenDoc) -> Option<std::path::PathBuf> {
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     //
-                    // ★★ The OLD path is on the line as well as the new one,
+                    // The OLD path is on the line as well as the new one,
                     // and that is the point of tracing this at all. "The
                     // document moved" and "a copy was written" produce the
                     // same `save-copy` line today; only the pair says which
@@ -244,7 +244,7 @@ pub fn has_a_file(doc: &OpenDoc) -> bool {
     doc.path.is_file()
 }
 
-/// ★★★ **Does this document have edits that are not on disk?** — the one
+/// **Does this document have edits that are not on disk?** — the one
 /// question, in the one place.
 ///
 /// `OPERATOR_REQUESTS.md` row **O65**, the operator:
@@ -274,7 +274,7 @@ pub fn has_a_file(doc: &OpenDoc) -> bool {
 /// the document close. Exactly what he reported, arrived at without Save ever
 /// closing anything.
 ///
-/// ★ Driven, not inferred: with `PDFCER_DIAG_INVOKE="mode.edit,pages.rotate_right,file.save,file.close"`
+/// Driven, not inferred: with `PDFCER_DIAG_INVOKE="mode.edit,pages.rotate_right,file.save,file.close"`
 /// the shipped build traces `save-in-place outcome=ok` → `save-epoch-recorded
 /// epoch=1` → `diag-invoke id=file.close` → `unsaved-asked`, and no `close
 /// slot=` line anywhere.
@@ -298,7 +298,7 @@ pub fn has_a_file(doc: &OpenDoc) -> bool {
 /// | edited, saved, edited again | yes | yes | **dirty** |
 /// | edited, then undone | no | yes | clean |
 ///
-/// # ★★ What this must NOT be confused with
+/// # What this must NOT be confused with
 ///
 /// [`save_pending`](crate::app::PdfcerApp::save_pending) asks *"is a save in
 /// flight"*, which is a different question with a different consumer, and
@@ -308,7 +308,7 @@ pub fn has_a_file(doc: &OpenDoc) -> bool {
 /// And `saved_epoch` must never be reset to make an answer come out right:
 /// `edit_epoch` is the cache key for the decomposition, the page text, the
 /// texture and every live rule-4 disclosure. Two numbers, one question each.
-/// # ★★★ The third term, and the silent loss it closes
+/// # The third term, and the silent loss it closes
 ///
 /// **`session.has_pending_redaction()` — and it must be the *pending* verb,
 /// never `has_applied_redaction()`.** [`crate::redact::stage_into_session`]
@@ -338,7 +338,7 @@ pub fn has_a_file(doc: &OpenDoc) -> bool {
 /// `edit_epoch != saved_epoch` term is what turns it off again once the
 /// redaction has actually been written.
 ///
-/// ★ **It is the better behaved of the two terms in the one way that
+/// **It is the better behaved of the two terms in the one way that
 /// matters.** `has_applied_redaction()` is permanently sticky — once true,
 /// true for the life of the session — so `redact → save → edit → undo` answers
 /// **dirty** on a document that matches its file, costing a spurious prompt
@@ -357,7 +357,7 @@ pub fn has_unsaved_edits(doc: &OpenDoc) -> bool {
         && doc.edit_epoch != doc.saved_epoch
 }
 
-/// ★★★ **Save. In place. The one every other program has.**
+/// **Save. In place. The one every other program has.**
 ///
 /// The operator:
 ///
@@ -372,7 +372,7 @@ pub fn has_unsaved_edits(doc: &OpenDoc) -> bool {
 /// suite that asks *"does the thing I built work?"* never asks *"does the thing
 /// everyone expects exist?"*.
 ///
-/// # ★★ It writes to a TEMPORARY FILE and renames, and that is not ceremony
+/// # It writes to a TEMPORARY FILE and renames, and that is not ceremony
 ///
 /// `std::fs::write` truncates the target and then streams into it. Everything
 /// between those two acts is a window in which **the operator's only copy of
@@ -418,7 +418,7 @@ pub fn has_unsaved_edits(doc: &OpenDoc) -> bool {
 pub fn save_in_place(doc: &OpenDoc) -> bool {
     let target = doc.path.clone();
     let temporary = target.with_extension("pdfcer-tmp");
-    // ★ Asked before a byte moves — see [`signature_note`]'s ★★ for why the
+    // Asked before a byte moves — see [`signature_note`]'s for why the
     // engine documented this as a pre-save question, and why asking after
     // would return the same answer today and be wrong on principle.
     let signature = signature_note(doc);
@@ -426,7 +426,7 @@ pub fn save_in_place(doc: &OpenDoc) -> bool {
     // Step 1 - materialise the whole replacement somewhere else on the same
     // volume. A failure here has touched nothing the operator owns.
     //
-    // ★★ On a staged redaction the "replacement" is a single-revision full
+    // On a staged redaction the "replacement" is a single-revision full
     // rewrite with the marked content gone (§1.1), and the temp-then-rename
     // below matters more here than anywhere else in this module: the target is
     // the operator's own document, and it is the last remaining copy of the
@@ -471,12 +471,12 @@ pub fn save_in_place(doc: &OpenDoc) -> bool {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!("save-in-place outcome=ok path={:?}", target)
     });
-    // ★ A receipt, not a celebration. The operator pressed a button and the
+    // A receipt, not a celebration. The operator pressed a button and the
     // only observable change is that a marker disappeared from a tab - which is
     // a change you have to already know about to notice. One line naming the
     // file it went into, on the channel every other edit reports on.
     //
-    // ★★ And, for a signed document, the sentence that receipt owes beside it.
+    // And, for a signed document, the sentence that receipt owes beside it.
     // `record_notes` rather than two `record_note` calls: the slot holds ONE
     // disclosure, so a second call replaces the first, and the sentence it
     // would have dropped would have been chosen by statement order rather than
@@ -487,7 +487,7 @@ pub fn save_in_place(doc: &OpenDoc) -> bool {
     let mut notes = vec![crate::text::files::saved_in_place(&target)];
     notes.extend(signature);
     crate::app::actions::record_notes(doc.edit_epoch, notes);
-    // ★★★ …and, when the save performed a staged redaction, the sentence that
+    // …and, when the save performed a staged redaction, the sentence that
     // says so — recorded AFTER `record_notes`, deliberately, so it is the
     // disclosure that stands.
     //
@@ -510,7 +510,7 @@ fn write_and_report(doc: &OpenDoc, target: &Path) -> bool {
     // Before the write, for [`signature_note`]'s reason.
     let signature = signature_note(doc);
     match write_copy(doc, target) {
-        // ★★★ The staged-redaction save — §1.1. A different event with
+        // The staged-redaction save — §1.1. A different event with
         // different fields, so a different trace line and a different sentence.
         Ok(Written::RedactionApplied(report)) => {
             redaction_receipt(doc, target, &report);
@@ -524,7 +524,7 @@ fn write_and_report(doc: &OpenDoc, target: &Path) -> bool {
                 format!(
                     // ui-text-exempt: diagnostic trace, never displayed.
                     //
-                    // ★ `appended=` beside `bytes=`, on the ink-trail rule:
+                    // `appended=` beside `bytes=`, on the ink-trail rule:
                     // a build that writes a plain copy of the base file — no
                     // revision appended, the operator's edits silently absent
                     // — produces a file that opens, has the right page count
@@ -561,7 +561,7 @@ fn write_and_report(doc: &OpenDoc, target: &Path) -> bool {
                     doc.origin,
                 )
             });
-            // ★★ The one sentence a successful save-a-copy is allowed to put
+            // The one sentence a successful save-a-copy is allowed to put
             // on the bar, and §5's *"no sentence is added"* ruling is not
             // being overturned by it.
             //
@@ -624,7 +624,7 @@ fn redaction_receipt(doc: &OpenDoc, target: &Path, report: &pdfcer_core::redact:
             // `path` is Debug-quoted, exactly as `save-copy`'s is: a Windows
             // path routinely contains a space.
             //
-            // ★ `still_staged=true` is unconditional and is the field worth
+            // `still_staged=true` is unconditional and is the field worth
             // having. `save_applying_redaction` takes `&self` and does not
             // clear the flag, so the removal is armed again the instant this
             // returns — and a build that had started clearing it would emit an
@@ -661,12 +661,12 @@ fn redaction_receipt(doc: &OpenDoc, target: &Path, report: &pdfcer_core::redact:
 /// removal is armed over marks that no longer exist, and the remedy is a
 /// control in a dialog he would have no reason to open.
 ///
-/// ★ It is added **beside** the failure rather than instead of it, on
+/// It is added **beside** the failure rather than instead of it, on
 /// `crate::text::redact::save_kept_pending_marks`'s standing reason: the save
 /// genuinely did not happen, and replacing that fact with an explanation would
 /// leave an operator unsure whether a file appeared.
 ///
-/// ★ Silent for every other [`SaveError`]. A missing folder and a broken
+/// Silent for every other [`SaveError`]. A missing folder and a broken
 /// provenance span have their own sentence already and do not want a second.
 fn redaction_refusal_note(doc: &OpenDoc, error: &SaveError) {
     if let SaveError::RedactionRefused { refusal } = error {
@@ -687,12 +687,12 @@ fn redaction_refusal_note(doc: &OpenDoc, error: &SaveError) {
 /// agrees with itself about how many pages it has, and a file written from it
 /// would open elsewhere with blank pages in it.
 ///
-/// ★ Added **beside** the failure rather than instead of it, on the same
+/// Added **beside** the failure rather than instead of it, on the same
 /// standing reason [`redaction_refusal_note`] gives: the save genuinely did not
 /// happen, and replacing that fact with an explanation would leave an operator
 /// unsure whether a file appeared.
 ///
-/// ★ A **separate function** rather than a second arm inside
+/// A **separate function** rather than a second arm inside
 /// [`redaction_refusal_note`], and the reason is territorial rather than
 /// aesthetic: that function belongs to the deferred-redaction work, which is in
 /// flight in another track, and a shared `match` is a merge conflict in a file
@@ -700,13 +700,13 @@ fn redaction_refusal_note(doc: &OpenDoc, error: &SaveError) {
 /// [`SaveError`] value reaches both — so calling both costs nothing and neither
 /// can overwrite the other's note.
 ///
-/// ★★ **Which of the two sentences** is decided from structured data, never
+/// **Which of the two sentences** is decided from structured data, never
 /// from a message: [`crate::pagetree::Audit::root_disagreement`]. A root that
 /// disagrees has an exact symptom the operator can verify (*n* blank pages at
 /// the end); an interior-only disagreement does not, and promising one would be
 /// the sneaky half of rule 4. See [`crate::text::pagetree`]'s header.
 ///
-/// ★ Silent for every other [`SaveError`], exactly as its sibling is.
+/// Silent for every other [`SaveError`], exactly as its sibling is.
 fn page_tree_refusal_note(doc: &OpenDoc, error: &SaveError) {
     let SaveError::PageTreeStale { audit } = error else {
         return;
@@ -753,7 +753,7 @@ fn page_tree_refusal_note(doc: &OpenDoc, error: &SaveError) {
 ///   salvaged settings dialog lands and offers them, this is the call site that
 ///   reads it.
 ///
-/// # ★ Why not `SaveOptions::identity()`
+/// # Why not `SaveOptions::identity()`
 ///
 /// Because it names a **byte-comparison posture** for a harness, not an
 /// operator-facing save. Its only difference from the default on this path is
@@ -770,7 +770,7 @@ fn page_tree_refusal_note(doc: &OpenDoc, error: &SaveError) {
 /// has to cancel, one is a pdfcer defect, and one is a folder that does not
 /// exist or cannot be written to.
 fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
-    // ★ Through the funnel, not `SaveOptions::default()`.
+    // Through the funnel, not `SaveOptions::default()`.
     //
     // Two settings ride on this — the cross-reference entry line ending and the
     // trailing newline — and both change the bytes of the file the operator is
@@ -786,14 +786,14 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
     use crate::app::settings::SettingsExt;
     let options = doc.settings.save_options();
 
-    // ★★★ THE FORK — see §1.1.
+    // THE FORK — see §1.1.
     //
     // Asked of the SESSION rather than of a flag this module keeps, for
     // `has_a_file`'s reason applied to a different question: a second source of
     // truth about whether a removal is armed would drift, and the direction it
     // would drift in is a save that quietly wrote the un-redacted document.
     //
-    // ★ There is no `else` that could fall back. While the flag is set, both
+    // There is no `else` that could fall back. While the flag is set, both
     // ordinary save modes return `WriteError::RedactionPending`, so a build
     // that did not fork here would not leak — it would stop being able to save
     // at all. That is the engine refusing rather than this module guarding, and
@@ -801,7 +801,7 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
     let (bytes, written, claims) = if doc.session.has_pending_redaction() {
         let (bytes, report) = crate::redact::save_applying_pending(&doc.session, &options)
             .map_err(|refusal| SaveError::RedactionRefused { refusal })?;
-        // ★★ The claims that describe THESE bytes are the ones the removal that
+        // The claims that describe THESE bytes are the ones the removal that
         // produced them made — not the preview the staging recorded on the
         // document. The engine re-runs the removal over the current state, so
         // an operator who undid one mark of three between staging and saving
@@ -820,7 +820,7 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
         )
     };
 
-    // ★★★ THE ABSENCE PROOF, between the bytes and the syscall — the
+    // THE ABSENCE PROOF, between the bytes and the syscall — the
     // shell's own, independent of the engine, on every save verb.
     //
     // `crate::redact::PreparedRedaction::write_to` makes this check one
@@ -832,18 +832,18 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
     // engine request ruled out in writing: *"the proof is not negotiable at
     // this end regardless of what the engine does."*
     //
-    // ★★ What it is NOT. It is not a save gate on `has_applied_redaction()`,
+    // What it is NOT. It is not a save gate on `has_applied_redaction()`,
     // which the engine asked us not to build. It is a sweep over the bytes,
     // whichever writer produced them, and it is expected to pass forever — a
     // check that is expected to pass is exactly the kind this project keeps
     // discovering was never wired, which is why `app::save::tests` falsifies
     // its bite rather than assuming it.
     //
-    // ★ It costs nothing on an ordinary save: `redaction_absence_claims` is
+    // It costs nothing on an ordinary save: `redaction_absence_claims` is
     // empty on every document that has not been staged, and `prove_saved_bytes`
     // returns without decoding a single stream.
     //
-    // ★ On the staged path it is deliberately the SECOND sweep of the same
+    // On the staged path it is deliberately the SECOND sweep of the same
     // bytes — `crate::redact::save_applying_pending` has already run one before
     // returning them. That is §2.2's rule twice rather than once, and the
     // reason is the same one it gives: the guarantee must not depend on how the
@@ -860,7 +860,7 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
         return Err(SaveError::RedactionLeak { survivors });
     }
 
-    // ★★★ THE STRUCTURAL GUARD — the second proof this shell keeps
+    // THE STRUCTURAL GUARD — the second proof this shell keeps
     // at this boundary, and it is here for the identical reason the first one
     // is. `crate::pagetree` carries the whole argument, the measured cost, and
     // the lesson; the three facts a reader of THIS function needs are:
@@ -878,7 +878,7 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
     //    healthy 34-page document while the root still declares 36. The audit
     //    reads `/Count` raw and compares.
     //
-    // ★ Ungated, and NOT free: 1.78 ms on his 1.8 MB drawing set, 3.51 ms on
+    // Ungated, and NOT free: 1.78 ms on his 1.8 MB drawing set, 3.51 ms on
     // the 129,758-object CAD sheet — which on the first of those is MORE than
     // `to_incremental_bytes` cost to build the bytes it is checking. Measured
     // rather than assumed, and the first draft of this comment guessed and was
@@ -891,7 +891,7 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
-        // ★ `walked=` is the field worth having and is why this line is emitted
+        // `walked=` is the field worth having and is why this line is emitted
         // on the SUCCESS path too. A clean audit and an audit that never ran
         // produce the same `bad=0`, and this project's most-repeated failure
         // shape is a check that reported success having looked at nothing.
@@ -900,7 +900,7 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
             audit.walked,
             audit.reachable_pages,
             audit.declared_pages,
-            // ★ `levels=` because a flat tree (2) CANNOT exhibit the defect
+            // `levels=` because a flat tree (2) CANNOT exhibit the defect
             // this guard is for, and a reader of a trace who does not know
             // that will read a clean line as evidence the writer is sound.
             audit.depth,
@@ -946,7 +946,7 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
 /// | opened from `D:\jobs\sheet.pdf` | `D:\jobs\sheet-copy.pdf` | beside the original, where the operator will look for it, and **never the original itself** |
 /// | created by `file.new`, called `Untitled 1.pdf` | `Untitled 1.pdf`, with no directory | there is no original to avoid overwriting, and no folder it came from; the OS picker supplies its own starting directory and the operator has a name to accept |
 ///
-/// # ★ Why the suffix, and why not for a created document
+/// # Why the suffix, and why not for a created document
 ///
 /// `crate::text::files::save_copy_suffix` carries the copy argument and the
 /// reference-application head-count. The mechanical half is here: the promise
@@ -996,7 +996,7 @@ fn suggested_path(doc: &OpenDoc) -> PathBuf {
 /// `OPERATOR_REQUESTS.md` **O48**, and the counterpart to [`save_copy`] one
 /// question along: that one asks *where*, this one has already asked *whether*.
 ///
-/// # ★★★ Why this does not serialise
+/// # Why this does not serialise
 ///
 /// `crate::dialogs::compact` did, before it opened, and its headline number is a
 /// measurement of the result rather than an estimate. Serialising again here
@@ -1004,7 +1004,7 @@ fn suggested_path(doc: &OpenDoc) -> PathBuf {
 /// the file they receive — see `Action::SaveCompacted`, which carries the bytes
 /// for exactly that reason.
 ///
-/// # ★★ Why it never writes in place
+/// # Why it never writes in place
 ///
 /// Because it destroys things the original still has: the earlier revision, and
 /// every digital signature (§12.8.1). A command that could overwrite the
@@ -1012,7 +1012,7 @@ fn suggested_path(doc: &OpenDoc) -> PathBuf {
 /// nothing can undo — so this offers only [`files::pick_save_path`], and the
 /// window says *"this always writes a new one"* before the picker opens.
 ///
-/// ★ The suggested name is [`suggested_path`]'s, shared with save-a-copy: the
+/// The suggested name is [`suggested_path`]'s, shared with save-a-copy: the
 /// operator's own file with a suffix, in its own folder. A second naming scheme
 /// for the same act is how two commands come to disagree about what a copy is
 /// called.

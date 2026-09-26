@@ -14,7 +14,7 @@ with ask 1 — *selecting one chunk is repeatable* — and ask 6 — *all on the
 left button, the right-click route stays*. Ask 3 (the boxes) is
 [`crate::checks::text_chunks`]; this is the gesture the boxes made aimable.
 
-# ★★★ What "repeatable" means here, and why it needs three clicks
+# What "repeatable" means here, and why it needs three clicks
 
 His report is that the same gesture *"sometimes takes the whole block"*. So
 the claim under test is not *a chunk can be selected* — a unit test can say
@@ -28,14 +28,14 @@ measured with fewer:
 | the same point twice | nothing: the state did not change, and the trace collapses (below) |
 | A, B, A | that A is reachable, that B is a *different* chunk, and that A comes back |
 
-★★ `canvas-selection` is written through `diag::trace_changed` under its own
+`canvas-selection` is written through `diag::trace_changed` under its own
 slot, so **an identical repeat writes nothing**. A check that clicked one
 chunk twice would read silence and could not tell *it selected the same
 chunk again* from *the second click did nothing at all* — the two verdicts
 this whole row exists to separate. Alternating is what makes the channel
 answer.
 
-# ★★ The chunk index is compared, never assumed
+# The chunk index is compared, never assumed
 
 The check never asserts *the click on the top line selects chunk 0*. Which
 index the provider gives a line is the provider's business, and pinning it
@@ -44,14 +44,14 @@ selection defect. What is asserted is the shape the operator experiences:
 two aim points give two **different** indices, and returning to the first
 gives back the **first** index.
 
-# ★ Ask 6 — the left button, and only the left button
+# Ask 6 — the left button, and only the left button
 
 Every gesture below is [`Driver::click_at`], a plain left click with no
 modifier. A build where the chunk is reachable only through the context
 menu passes `chunk_boxes_show_what_a_text_block_is_made_of` and fails here,
 which is the distinction ask 6 makes.
 
-# ★★ What the first click must NOT do
+# What the first click must NOT do
 
 It must select the **block**, not a chunk. A build that descended on first
 contact would make dragging a whole text block unreachable while the boxes

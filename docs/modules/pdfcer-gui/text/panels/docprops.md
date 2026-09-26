@@ -24,10 +24,10 @@ within a couple of sentences, and it is a split along a subject boundary
 rather than an arithmetic one: what remains in `properties` describes **what
 is selected**; what is here describes **the file**.
 
-## ★ The names lost their `properties_` prefix, deliberately
+## The names lost their `properties_` prefix, deliberately
 
 
-★ The three `recovered_*` functions kept their names: they were never
+The three `recovered_*` functions kept their names: they were never
 prefixed, they name the *event* rather than the surface, and renaming them
 would have been churn with no reader served.
 

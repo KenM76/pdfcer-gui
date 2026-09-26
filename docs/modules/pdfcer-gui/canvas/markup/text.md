@@ -8,7 +8,7 @@ subsystem, one rule applied to a selection that already exists.
 
 ---
 
-## 1. ★ THE INTERACTION DECISION, and it is the whole of this module
+## 1. THE INTERACTION DECISION, and it is the whole of this module
 
 [`super`]'s four kinds are **drag-shaped**: press, rubber-band, release,
 commit. These three are not, and there were two honest ways to build them:
@@ -61,7 +61,7 @@ taste:
 What is deliberately **not** claimed: that (b) is wrong. It is the tool half
 of Acrobat's answer and it is a reasonable thing to add later.
 
-★ **[`crate::canvas::tool::CanvasTool::Text`] makes (b) cheap and does not
+**[`crate::canvas::tool::CanvasTool::Text`] makes (b) cheap and does not
 make it right.** (b)'s cost was never mainly the tool enum; it is objection 1
 — a marking sweep is a **second text-range resolver** beside `drag` and
 `click`, and the moment it exists the wash the operator sees and the
@@ -70,7 +70,7 @@ That objection is untouched by the variant's existence. What the variant does
 settle is reachability: model (a) works in Edit, by the route that costs no
 second derivation.
 
-### 1.1 ★ The route is the ribbon, and Acrobat's is a menu on the selection
+### 1.1 The route is the ribbon, and Acrobat's is a menu on the selection
 
 Half of model (a) is *where the operator finds the verb*, and here the
 shipped answer and Acrobat's differ: Acrobat pops a context menu — and, in
@@ -99,7 +99,7 @@ at nineteen bindings.
 
 ---
 
-## 2. ★ THE MODE INTERSECTION, and it is narrower than either half
+## 2. THE MODE INTERSECTION, and it is narrower than either half
 
 This is the finding a reader most needs, because neither capability alone
 predicts it. Marking text needs **both** halves, and they do not overlap in
@@ -111,7 +111,7 @@ the way anybody would guess:
 | `review` | ✓ | ✓ | **YES** |
 | `edit` | ✓ **with the text tool armed** | ✓ | **YES** |
 
-★ **The Edit row is the one that costs a tool.** Edit's primary button is
+**The Edit row is the one that costs a tool.** Edit's primary button is
 the content marquee, so `textsel::takes_the_press` refuses Edit a text
 selection unless [`crate::canvas::tool::CanvasTool::Text`] is armed — by
 **`view.tool_text`**, in View ▸ Navigate beside the hand tool. An editor arms
@@ -151,7 +151,7 @@ and reserves greying for *temporarily unavailable, explained on hover*. Every
 greyed state these three controls can reach is temporary in that sense: sweep
 some text and it ends.
 
-★ The rule is worth stating as a rule, because the tempting move when P3 is
+The rule is worth stating as a rule, because the tempting move when P3 is
 uncomfortable is to argue the greying is *nearly* temporary, or to invent a
 hiding mechanism. **A rule being uncomfortable to satisfy is evidence about
 the feature, not about the rule** — here it was evidence that Edit needed a
@@ -198,7 +198,7 @@ recorded here and not taken.
 
 ---
 
-## 4. ★ There is no second preview, and that is the decision
+## 4. There is no second preview, and that is the decision
 
 `D:\Dev\FeatureRequests\pdfce_FeatureRequests\README.md` rule 4 permits a
 pre-commit affordance and requires that it describe *what will actually

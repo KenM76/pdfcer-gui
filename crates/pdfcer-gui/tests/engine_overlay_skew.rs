@@ -16,7 +16,7 @@
 //! control and updates weekly. The history below is kept deliberately — a
 //! reader who finds one of these red needs the whole story, not the verdict.
 //!
-//! ★ Two of the three now assert an **outcome**, not merely a `Ok`/`Err`: a
+//! Two of the three now assert an **outcome**, not merely a `Ok`/`Err`: a
 //! verb that transformed nothing and reported success, or two models that had
 //! each missed the same object, would satisfy the naive shape of every one of
 //! these tests while the operator's gesture still did nothing.
@@ -57,7 +57,7 @@
 //! red test in a green repository for as long as the request stayed open, and
 //! would have been muted within the week.
 //!
-//! ★★ The value of that shape is now measured rather than argued. All three
+//! The value of that shape is now measured rather than argued. All three
 //! went red on the day the engine landed the fix, each printed the sentence
 //! telling the reader what to do, and inverting them took minutes rather than
 //! an investigation. **A tripwire that names its own deletion is worth more
@@ -116,7 +116,7 @@ fn tiny_png() -> Vec<u8> {
     ]
 }
 
-/// ★★★ **The two models of one page, stated with no gesture at all.**
+/// **The two models of one page, stated with no gesture at all.**
 ///
 /// After `add_image` the shell's decomposition — what the canvas hit-tests and
 /// what the Objects panel lists — and `EditSession::page_objects` — the
@@ -198,7 +198,7 @@ fn the_engine_sees_the_content_this_session_added() {
     );
 }
 
-/// ★★ **And the consequence, driven through the verb the operator's drag
+/// **And the consequence, driven through the verb the operator's drag
 /// actually calls.**
 ///
 /// Moving a placed image goes through `MoveSubject::Transform` →
@@ -245,7 +245,7 @@ fn a_just_inserted_image_can_be_transformed() {
          2026-08-31. A refusal here means it has come back",
     );
 
-    // ★ The COUNT, not merely the `Ok`. A verb that transformed nothing and
+    // The COUNT, not merely the `Ok`. A verb that transformed nothing and
     // reported success would satisfy `is_ok()` and would be the same defect
     // wearing another face: the operator drags the image and it does not
     // move.
@@ -255,7 +255,7 @@ fn a_just_inserted_image_can_be_transformed() {
     );
 }
 
-/// ★★★ **The half nobody had reported, and the one with teeth: after a page
+/// **The half nobody had reported, and the one with teeth: after a page
 /// is deleted, the engine's content verbs address a DIFFERENT SHEET.**
 ///
 /// `delete_pages` commits into the overlay, so `EditSession::pages()` returns
@@ -318,7 +318,7 @@ fn fixture_four_pages() -> pdfcer_core::document::Document {
         .expect("fixture four-pages.pdf must load")
 }
 
-/// ★★★ **A `/Name` pdfcer does not model survives a COLOUR-ONLY restyle** —
+/// **A `/Name` pdfcer does not model survives a COLOUR-ONLY restyle** —
 /// the operator-visible half of `pdfcer-core` `Pass 253.5`, asserted end to end
 /// against a real file.
 ///
@@ -356,11 +356,11 @@ fn a_foreign_icon_name_survives_a_colour_only_restyle() {
 
     let pages = pdfcer_core::page_tree::pages_in(&session.graph()).expect("a page tree");
 
-    // ★★★ **The sticky is found by what its `/Name` READS AS, over every
+    // **The sticky is found by what its `/Name` READS AS, over every
     // `/Text` on the page — not by taking the first one.**
     //
     //
-    // ★ Requiring **exactly one** match is what keeps this from becoming
+    // Requiring **exactly one** match is what keeps this from becoming
     // vacuous. A build whose reader flattens finds zero and fails naming that;
     // a fixture that grew a second foreign name would make the restyle
     // assertion ambiguous and fails naming that instead.
@@ -398,7 +398,7 @@ fn a_foreign_icon_name_survives_a_colour_only_restyle() {
     );
     let sticky = foreign[0];
 
-    // ★★ The colour ALONE, with `icon: None`, which is exactly what this
+    // The colour ALONE, with `icon: None`, which is exactly what this
     // shell's `colour_row` raises. The old defect was invisible from here:
     // the call succeeded, the colour changed, and the name changed too.
     session

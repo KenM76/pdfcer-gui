@@ -25,7 +25,7 @@ removal** — see §2 — so by the time anything is drawn the numbers on screen
 are measurements of the exact bytes that will be written, not predictions
 about bytes that do not exist yet.
 
-## ★ 1. Why the report comes BEFORE the write, and the operator chooses the
+## 1. Why the report comes BEFORE the write, and the operator chooses the
 destination
 
 `crate::dialogs::ocr`'s argument, one operation further along the scale of
@@ -40,7 +40,7 @@ dropped a file picker in front of the operator would be technically
 disclosive and practically a program that quietly shipped a partially
 redacted document.
 
-★★★ **2026-09-04 — the destination is the operator's, not this dialog's.**
+**2026-09-04 — the destination is the operator's, not this dialog's.**
 This section used to end by arguing that the write must always be to a new
 file. The operator overruled that: *"why does it have to save to a new file
 right away? Why can't it just wait on saving until I choose to save over the
@@ -48,7 +48,7 @@ existing file or save as a new file?"* [`Destination`] carries the whole
 argument and what survives of the old ruling (the safe default, and
 [`suggested_path`] never proposing the source).
 
-★★★ **CORRECTED the same evening.** That paragraph ended, at midday, by
+**CORRECTED the same evening.** That paragraph ended, at midday, by
 naming *"the one half of his request the engine cannot express — deferring
 the write to a later Save, which would need a redaction that mutates an
 `EditSession` and there is no such verb."* **There is now.** `Pass 250.1`
@@ -58,7 +58,7 @@ destination it makes possible — **and it is the default**. There are three
 destinations now, not two, and the write-now pair is what is left of the
 original design rather than the whole of it.
 
-## ★ 2. Why the removal runs synchronously, on open
+## 2. Why the removal runs synchronously, on open
 
 It is the salvage source's shape and it is kept, with the trade stated
 rather than inherited.
@@ -79,7 +79,7 @@ cost is a frame that takes as long as a full rewrite of the document —
 visible on a large sheet, and paid once, on a deliberate click, for the one
 operation in the program where a stale answer would be a security defect.
 
-## ★ 3. What confirmation actually consists of, and why it is not one click
+## 3. What confirmation actually consists of, and why it is not one click
 
 Four gates, and each closes a different failure:
 
@@ -92,7 +92,7 @@ Four gates, and each closes a different failure:
    a program becomes worthless. It is also enforced below the UI, at
    [`crate::redact::PreparedRedaction::write_to`], because a greyed control
    is a drawing decision and not a mechanism.
-3. ★ **[`crate::text::redact::overwrite_acknowledgement_checkbox`]** —
+3. **[`crate::text::redact::overwrite_acknowledgement_checkbox`]** —
    present **only when the operator has chosen to replace the open file**
    (2026-09-04). A different fact from gate 1: that one is about the
    *content*, this one is about the *document*. Somebody can have taken in
@@ -111,7 +111,7 @@ Four gates, and each closes a different failure:
    asks nothing more is a lie the operator acts on, and so is a label
    claiming a removal that has not happened.
 
-★★★ …and, between the destination choice and the button, **a disclosure
+…and, between the destination choice and the button, **a disclosure
 rather than a gate**: [`crate::text::redact::removal_happens_at_save`], drawn
 only on the deferred destination. It is deliberately NOT a fourth checkbox —
 §3's own argument about conditional boxes applies to their multiplication
@@ -124,7 +124,7 @@ binding.** The footer says so in words rather than leaving it to be noticed.
 Every other destructive verb in this shell is chorded and reversible; this
 one is neither, and the asymmetry is deliberate.
 
-## ★ 4. The `ready` flag is read one frame late, on purpose
+## 4. The `ready` flag is read one frame late, on purpose
 
 [`RedactDialog::show`] computes whether the confirm control may be enabled
 **before** the checkboxes are drawn, so a checkbox ticked on this frame does
@@ -159,12 +159,12 @@ work not run part-way through a layout pass — and it does not, on any of
 them: every control sets a flag, and the push, the picker and the write all
 happen after the window's closure returns.
 
-★★ **After a replace, the open document is deliberately STALE, and the
+**After a replace, the open document is deliberately STALE, and the
 outcome sentence says so.** The session was not touched, so the canvas goes
 on drawing the marks and the content underneath them while the file those
 bytes came from contains neither.
 
-★★★ The reason that used to be given for it — *"`EditSession` has no verb
+The reason that used to be given for it — *"`EditSession` has no verb
 that could"* — is no longer true, and the staleness is now a **consequence
 of the destination the operator chose** rather than a limit of the program.
 It is still not tidied away by swapping the session underneath, and the old

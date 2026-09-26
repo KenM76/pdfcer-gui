@@ -21,7 +21,7 @@ use crate::sys::vk;
 
 /// The scrollable region the sheet sits inside.
 ///
-/// ★ Every measured rectangle is clipped to it, and the check reads blank
+/// Every measured rectangle is clipped to it, and the check reads blank
 /// panel furniture as content without that. A line of this fixture is 267 pt
 /// wide and the canvas at [`WANT_ZOOM`] is narrower than that, so the band a
 /// document rectangle converts to runs off the right-hand edge of the canvas
@@ -51,7 +51,7 @@ const DROP_DY_PT: f64 = -150.0;
 
 /// The zoom this check measures at.
 ///
-/// ★ Not a preference — an arithmetic requirement, and the check reports SKIP
+/// Not a preference — an arithmetic requirement, and the check reports SKIP
 /// rather than a verdict without it. The subject is one 8.4 pt line of text;
 /// at the zoom a letter sheet arrives fitted to the window it is six device
 /// pixels tall, which leaves nothing at all once [`INSET_PX`] has taken the
@@ -338,7 +338,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- the geometry, converted once, after the zoom and before any gesture -
     //
-    // ★ One mapping for every rectangle and both endpoints. A conversion taken
+    // One mapping for every rectangle and both endpoints. A conversion taken
     // between gestures would re-read a canvas rect that the gesture itself had
     // already changed, and the displacement the copy is measured against would
     // then not be the displacement the pointer travelled.

@@ -109,7 +109,7 @@ fn pick_generation(found: &[(String, bool)]) -> Option<String> {
 /// `/Title`, so the filename is ours to choose and a readable one is strictly
 /// better for anyone who ever opens that folder.
 ///
-/// ★ **`set_file_name`, never `set_extension`** is the rule at the picker; the
+/// **`set_file_name`, never `set_extension`** is the rule at the picker; the
 /// same hazard applies to building the string. A category of `Rev. 2` would
 /// have `set_extension` replace `2` and produce `Rev..pdf`, so the extension
 /// is concatenated, never substituted. The finding is

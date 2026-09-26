@@ -20,7 +20,7 @@ right font. What differs is a `Tm` belonging to something else, twenty bytes
 further down the content stream, and the only oracle that can see it is the
 stream.
 
-## ★ The falsifying run is the point of the module
+## The falsifying run is the point of the module
 
 Every assertion here is made **twice**: once through
 [`super::disposition::options`], which is the shipped decision, and once

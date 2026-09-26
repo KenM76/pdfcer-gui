@@ -2,7 +2,7 @@
 outline, in the one place they can be tested
 
 
-## ★★ Generic over the tree, because `OutlineItem` is `#[non_exhaustive]`
+## Generic over the tree, because `OutlineItem` is `#[non_exhaustive]`
 
 This crate **cannot construct a `pdfcer_core::outline::OutlineItem`**. A
 recursion written directly over one is therefore a recursion no unit test in
@@ -28,7 +28,7 @@ outline that made them not so is exactly the malformed case
 `read_outline`'s cycle-breaking exists for, which means it is a case that
 reaches this code rather than one that cannot.
 
-## ★ What [`descendants`] counts, and what it deliberately does not
+## What [`descendants`] counts, and what it deliberately does not
 
 It counts **the nodes below a node in the tree the panel drew**. It does
 *not* read `/Count`, and the distinction is the whole §12.3.3 trap the

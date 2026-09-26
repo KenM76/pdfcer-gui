@@ -41,7 +41,7 @@ const REGION_LANDSCAPE: &str = "page-size.landscape";
 /// The commit button.
 const REGION_APPLY: &str = "page-size.apply";
 
-/// ★★ The line that says what happens to the drawing — the one control in this
+/// The line that says what happens to the drawing — the one control in this
 /// window whose *content* is the product.
 ///
 /// Published so a driven check can assert that the sentence changed when the
@@ -103,7 +103,7 @@ pub struct PageSizeDialog {
     /// What the picked sheets are and what is drawn on them, read **once**
     /// when the window opened.
     ///
-    /// # ★ Why a snapshot rather than a live read
+    /// # Why a snapshot rather than a live read
     ///
     /// Two reasons, and the second is the load-bearing one. It is cheap —
     /// nothing is re-walked per frame while the operator scrolls a size list.
@@ -137,7 +137,7 @@ pub struct PageSizeDialog {
 impl PageSizeDialog {
     /// Open the window over `pages`, the operand sheets.
     ///
-    /// # ★★ It opens on what the sheets ALREADY ARE, not on A4
+    /// # It opens on what the sheets ALREADY ARE, not on A4
     ///
     /// The opposite of [`crate::dialogs::new_document`], and for the opposite
     /// reason. That window opens on A4 because its sibling `file.new` makes an
@@ -186,7 +186,7 @@ impl PageSizeDialog {
         // millimetres otherwise, for `new_document`'s reason: zeros would draw
         // the refusal line the instant Custom was picked, which reads as the
         // window objecting to a choice nobody has finished making.
-        // ★ Rounded through the one table, half away from zero. This is a
+        // Rounded through the one table, half away from zero. This is a
         // pt -> mm round trip whose other half is `size_pt` below; when the two
         // halves spelled the constant differently, reopening this window on a
         // sheet it had just made could seed a millimetre that was not the one
@@ -210,7 +210,7 @@ impl PageSizeDialog {
             )
         });
 
-        // ★★★ **Every sheet in the DOCUMENT, not only the operands, and this
+        // **Every sheet in the DOCUMENT, not only the operands, and this
         // line exists for a check rather than for the operator.**
         //
         // R1's rule is that a passing unit test is not a report of working
@@ -227,7 +227,7 @@ impl PageSizeDialog {
         // trace of the request says what the code was told; a trace of the page
         // tree says what a reader of the file will see.*
         //
-        // ★★ Whole-document rather than operand-scoped, because the property
+        // Whole-document rather than operand-scoped, because the property
         // worth asserting has **two halves**: the picked sheet became the size
         // that was asked for, AND the sheet beside it did not. A line covering
         // only the operands could not carry the second, and a check whose
@@ -313,7 +313,7 @@ impl PageSizeDialog {
     /// The sheet this window currently describes, in points, **after**
     /// orientation.
     ///
-    /// # ★ One function, read by four callers, and that is the point
+    /// # One function, read by four callers, and that is the point
     ///
     /// The summary line, the diagram, the outcome sentence and the commit all
     /// ask this. Four separate computations of "what did they pick" is how a
@@ -352,7 +352,7 @@ impl PageSizeDialog {
     /// The engine's **stable machine identifier** for the chosen size —
     /// `"a6"`, `"ansi-d"` — or `"custom"`.
     ///
-    /// # ★★★ Why this exists, and why the `choice={:?}` beside it is not enough
+    /// # Why this exists, and why the `choice={:?}` beside it is not enough
     ///
     /// A driven check has to be able to say *which size the entry it clicked
     /// actually was*, and it cannot ask `pdfcer-core`: `ui-verify` has exactly
@@ -403,7 +403,7 @@ impl PageSizeDialog {
 
     /// Whether committing would write anything at all.
     ///
-    /// ★ Not a validity question and not folded into one. The engine reaches
+    /// Not a validity question and not folded into one. The engine reaches
     /// §11.1's net-zero rule by itself — a page asked for the size it already
     /// has records no command — so pressing the button on an unchanged size is
     /// safe, and it is also a control the operator pressed that did nothing and
@@ -462,14 +462,14 @@ impl PageSizeDialog {
             if ui.button(t::cancel()).clicked() {
                 self.close_requested = true;
             }
-            // ★ ABSENT, not greyed, when the size is out of range — R9, and
+            // ABSENT, not greyed, when the size is out of range — R9, and
             // `new_document`'s argument in full: the refusal line naming both
             // limits is already on screen immediately above, so a greyed button
             // would be a second, quieter statement of a fact already made
             // loudly. The button reappearing as the number crosses the bound is
             // also visible from the field the operator's eye is on.
             //
-            // ★★ It is PRESENT for an unchanged size, deliberately. That is not
+            // It is PRESENT for an unchanged size, deliberately. That is not
             // an invalid choice, it is a no-op the engine handles correctly, and
             // hiding the control would leave an operator who opened the window
             // to look rather than to change with nothing to press but Cancel —
@@ -574,7 +574,7 @@ impl PageSizeDialog {
         }
     }
 
-    /// ★★★ **The sentence that says what happens to the drawing.**
+    /// **The sentence that says what happens to the drawing.**
     ///
     /// Three states, and keeping them three is the whole point:
     ///
@@ -619,13 +619,13 @@ impl PageSizeDialog {
             ui.label(egui::RichText::new(t::no_change()).small().weak());
         }
 
-        // ★★ Traced so a driven check can assert the sentence **changed** with
+        // Traced so a driven check can assert the sentence **changed** with
         // the size, rather than only that a region was published. A window that
         // said "everything fits" for every size would satisfy a presence check
         // forever — which is `text::security::cannot_author`'s failure mode
         // (corrected three times, zero call sites) turned inside out.
         //
-        // ★ `trace_changed`, not `trace`, and the difference matters to the
+        // `trace_changed`, not `trace`, and the difference matters to the
         // reader of the artefact rather than to the program: this runs once per
         // FRAME the window draws, so a plain trace would publish an identical
         // line thirty times per settle and bury the two lines that say
@@ -646,7 +646,7 @@ impl PageSizeDialog {
         });
     }
 
-    /// ★★ **The pre-commit preview: the old sheet, the new sheet and the
+    /// **The pre-commit preview: the old sheet, the new sheet and the
     /// drawing, to scale.**
     ///
     /// A cursor affordance under R8b rule 4, drawn off-canvas. It exists
@@ -669,7 +669,7 @@ impl PageSizeDialog {
     /// anything. Two independently-fitted outlines would draw A4 and A1 the
     /// same size.
     ///
-    /// ★ No raw `Color32`: the three colours are theme roles
+    /// No raw `Color32`: the three colours are theme roles
     /// (`Theme::accent_pair`, `weak_text_color`, `warn_fg_color`), so a preset
     /// change moves them with everything else.
     fn diagram(&self, ui: &mut Ui) {
@@ -783,7 +783,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **Landscape transposes, and it transposes both kinds of sheet.**
+    /// **Landscape transposes, and it transposes both kinds of sheet.**
     ///
     /// The single most likely defect in a window with a size list and an
     /// orientation pair: a standard size that turns and a custom size that does
@@ -822,7 +822,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The window opens on the size the sheets ALREADY ARE.**
+    /// **The window opens on the size the sheets ALREADY ARE.**
     ///
     /// The decision this file's `open` doc comment argues, checked rather than
     /// merely written down. A default that drifted back to A4 — the sized-New
@@ -843,7 +843,7 @@ mod tests {
         );
     }
 
-    /// ★★ **An unchanged size is offerable and is announced as a no-op.**
+    /// **An unchanged size is offerable and is announced as a no-op.**
     ///
     /// Both halves. `would_change` false must not hide the button — an operator
     /// who opened the window to look would be left with nothing to press but
@@ -862,7 +862,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **Picking A4 for an A1 drawing is seen as a crop, with his own
+    /// **Picking A4 for an A1 drawing is seen as a crop, with his own
     /// numbers.**
     ///
     /// The property the whole window exists for. `overhang` is
@@ -894,7 +894,7 @@ mod tests {
         assert!(top > 700.0, "and past its top: {top}");
     }
 
-    /// ★★ **Growing the sheet is not reported as a crop.**
+    /// **Growing the sheet is not reported as a crop.**
     ///
     /// The falsifying direction of the test above, and it is not redundant: a
     /// sign error in the overhang arithmetic passes that test and fails this
@@ -916,7 +916,7 @@ mod tests {
         );
     }
 
-    /// ★ **The bounds are checked on the millimetres the operator typed**,
+    /// **The bounds are checked on the millimetres the operator typed**,
     /// both directions, on the sized-New window's argument and with its
     /// numbers.
     #[test]
@@ -943,7 +943,7 @@ mod tests {
         assert!(dialog.is_valid(), "the floor itself must be allowed");
     }
 
-    /// ★ **The two custom bounds are the sized-New window's**, because two
+    /// **The two custom bounds are the sized-New window's**, because two
     /// windows in one program that disagree about the smallest sheet a PDF may
     /// have would be a defect whichever of them was right.
     #[test]

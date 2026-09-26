@@ -76,7 +76,7 @@ fn options() -> Vec<(String, String)> {
     ]
 }
 
-/// ★★★ The guard that stops a field the operator only **looked at** from
+/// The guard that stops a field the operator only **looked at** from
 /// being written.
 ///
 /// `/V` legally holds either half of an option, and the box shows the display

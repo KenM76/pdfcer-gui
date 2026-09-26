@@ -43,7 +43,7 @@ pub enum PageAction {
     ///
     /// Raised by `pages.insert_from_file` once the picker has answered.
     ///
-    /// # ★ Why this is an editing verb and not an open
+    /// # Why this is an editing verb and not an open
     ///
     /// `pdfcer_core::pageops::insert` also inserts pages, and returns the bytes
     /// of a **new document**. Wiring that would have meant replacing
@@ -72,7 +72,7 @@ pub enum PageAction {
     /// **Merge a whole document into this one**, with its form, bookmarks and
     /// named destinations.
     ///
-    /// ★ It carries a path and nothing else, where [`Self::InsertPagesFromFile`]
+    /// It carries a path and nothing else, where [`Self::InsertPagesFromFile`]
     /// carries a page list and a position. That asymmetry IS the difference
     /// between the two verbs: a merge takes the whole document and appends it,
     /// so there is nothing to choose. See [`super::merge_into`] for why
@@ -95,7 +95,7 @@ pub enum PageAction {
         pages: Vec<usize>,
         /// Where they land, in the engine's own vocabulary.
         ///
-        /// ★ `pdfcer_core::pageops::InsertPosition` directly rather than a
+        /// `pdfcer_core::pageops::InsertPosition` directly rather than a
         /// local enum mapped at the boundary. Four choices — `Start`, `End`,
         /// `Before(n)`, `After(n)` — and a second spelling of them would be a
         /// second place for "before" and "after" to drift, where the drift is
@@ -127,7 +127,7 @@ pub enum PageAction {
         /// A relative turn in degrees, a multiple of 90.
         delta: i32,
     },
-    /// ★★★ **Put the operand pages on a different size of paper**, as one
+    /// **Put the operand pages on a different size of paper**, as one
     /// undoable command however many sheets it touched.
     ///
     /// Raised by `crate::dialogs::page_size` and by nothing else — the
@@ -169,7 +169,7 @@ pub enum PageAction {
     /// Raised by `pages.delete` from the ribbon's Pages tab and from the page
     /// tile's context menu.
     ///
-    /// # ★ This is the one action in the enum that renumbers pages
+    /// # This is the one action in the enum that renumbers pages
     ///
     /// A selection is an identity — page, object, subpath, node — not a
     /// position, and this is that rule's page-level instance. After the
@@ -190,12 +190,12 @@ pub enum PageAction {
     /// application consults before a destructive path, the engine records the
     /// removal as an undoable command already, and **nothing is written to
     /// disk** — the operator's file on disk is untouched until they save a
-    /// ★★★ **Put copied pages into this document**, after `after`.
+    /// **Put copied pages into this document**, after `after`.
     ///
     /// `OPERATOR_REQUESTS.md` **O59**, item 2. Raised by
     /// `app::dispatch::pageclip::paste` and by nothing else.
     ///
-    /// # ★★ It carries BYTES, and those bytes are a whole PDF
+    /// # It carries BYTES, and those bytes are a whole PDF
     ///
     /// `PageClip::bytes` is a complete document. The engine chose that
     /// deliberately — `pageops::assemble` already does object copying,
@@ -240,7 +240,7 @@ pub enum PageAction {
     /// The engine refuses anything that is not a permutation of
     /// `0..page_count`, and `move_order` builds one by construction.
     ///
-    /// # ★ A reorder renumbers positions without destroying anything
+    /// # A reorder renumbers positions without destroying anything
     ///
     /// Which makes it the *middle* case between a move (nothing changes
     /// identity) and a delete (identities cease to exist), and the two
@@ -269,7 +269,7 @@ pub enum PageAction {
     /// what the Review mode's stance requires — `crate::panels::pages`' header
     /// quotes the operator: *"an extraction writes a different file."*
     ///
-    /// # ★ Why it is an action at all, when it mutates nothing
+    /// # Why it is an action at all, when it mutates nothing
     ///
     /// For [`Self::SaveCopy`]'s reason and only that one: it opens a **native
     /// save dialog**, and `crate::app::files::pick_save_path` carries a
@@ -337,7 +337,7 @@ pub(super) fn resync(doc: &mut OpenDoc) {
     };
     let now: Vec<(ObjId, u16)> = after.iter().map(|p| (p.id, p.rotate)).collect();
 
-    // ★ The identity sequence, which is the fact that decides whether an INDEX
+    // The identity sequence, which is the fact that decides whether an INDEX
     // changed meaning. A rotation leaves it alone; a delete and a reorder do
     // not. Compared before `doc.pages` is overwritten, because afterwards
     // there is nothing left to compare against.
@@ -347,7 +347,7 @@ pub(super) fn resync(doc: &mut OpenDoc) {
         .ne(now.iter().map(|(id, _)| *id));
     let structure_changed = now != before;
 
-    // ★★★ **THE PAGE VECTOR IS REPLACED ON EVERY EDIT, NOT ONLY A STRUCTURAL
+    // **THE PAGE VECTOR IS REPLACED ON EVERY EDIT, NOT ONLY A STRUCTURAL
     // ONE.**
     //
     // An early return on `now == before` is the tempting shape and it is
@@ -380,7 +380,7 @@ pub(super) fn resync(doc: &mut OpenDoc) {
     // saved one `Vec` assignment and bought a class of stale-view defect.
     doc.pages = after;
 
-    // ★ Keep the per-page revision vector the same length as the document
+    // Keep the per-page revision vector the same length as the document
     // (O74). Growth fills with the document-wide floor, so a page that has
     // just arrived reports the most conservative number available and no cache
     // mistakes it for one it has a picture of. This is deliberately NOT a
@@ -406,7 +406,7 @@ pub(super) fn resync(doc: &mut OpenDoc) {
     // visible set on the next frame anyway.
     doc.strip_rasters.clear();
 
-    // ★ …and the CURRENT page's raster, for the same reason and only for that
+    // …and the CURRENT page's raster, for the same reason and only for that
     // reason.
     //
     // `vector_edit` keeps the raster and signals staleness through
@@ -421,7 +421,7 @@ pub(super) fn resync(doc: &mut OpenDoc) {
     doc.page_texture = None;
 
     if renumbered {
-        // ★★★ **Every per-page revision is now meaningless** (O74). Page *n*
+        // **Every per-page revision is now meaningless** (O74). Page *n*
         // is a different sheet, so a thumbnail whose stored epoch matches page
         // n's counter is a picture of the WRONG DRAWING — the one failure mode
         // that outranks the slowness the counter exists to fix, because it is
@@ -536,7 +536,7 @@ fn delete_disclosures(
 
 /// **Insert another document's pages after `after_page`.**
 ///
-/// # ★ Why this uses the SESSION verb and not `pageops::insert`
+/// # Why this uses the SESSION verb and not `pageops::insert`
 ///
 /// `pdfcer_core::pageops::insert` also inserts pages and returns the bytes of a
 /// **new document**. Wiring that would have meant replacing `OpenDoc::session`
@@ -573,7 +573,7 @@ fn delete_disclosures(
 ///
 /// Raised by `pages.merge_into` on the Pages tab.
 ///
-/// # ★★★ It is not [`insert_from_file`] with "all pages" ticked
+/// # It is not [`insert_from_file`] with "all pages" ticked
 ///
 /// `insert_pages` takes some pages and **orphans** the widgets on them: a form
 /// field arriving that way is drawn and cannot be filled. `merge_document`
@@ -585,7 +585,7 @@ fn delete_disclosures(
 /// the things that make its pages work"*, and an operator choosing between them
 /// has no way to find that out except from the tooltips.
 ///
-/// # ★★ The blocker this had was real, and it was answered
+/// # The blocker this had was real, and it was answered
 ///
 /// Its `SCAFFOLDED` entry read: *"`insert` returns the bytes of a NEW document
 /// rather than mutating the session … wiring it means replacing
@@ -594,7 +594,7 @@ fn delete_disclosures(
 /// around, and the engine answered it with an in-session verb that is one undo
 /// entry.
 ///
-/// ★ What the entry then said — that this *"wants a destination document, and a
+/// What the entry then said — that this *"wants a destination document, and a
 /// shell that can only edit the open document has nowhere to put it"* — had the
 /// destination backwards: the manifest's own taxonomy is that Pages ▸ Merge
 /// *adds to this document* and Tools ▸ Merge *combines files into a new one*.
@@ -631,7 +631,7 @@ pub(super) fn merge_into(doc: &mut OpenDoc, path: &Path) {
             .merge_document(&view, pdfcer_core::pageops::InsertPosition::End)
             .map(|outcome| {
                 crate::diag::trace(|| {
-                    // ★ `-applied`, not the bare `merge-document` `vector_edit`
+                    // `-applied`, not the bare `merge-document` `vector_edit`
                     // writes. Two lines sharing a trace name is how a driven
                     // check reads the wrong one and reports that a verb did
                     // nothing — this project has made that mistake twice, and
@@ -714,7 +714,7 @@ pub(super) fn insert_from_view(
     }
     let count = pages.len();
 
-    // ★ Where the first inserted sheet will land, computed BEFORE the edit.
+    // Where the first inserted sheet will land, computed BEFORE the edit.
     //
     // Afterwards the document has more pages and `position` no longer names a
     // slot in it — `End` in particular means something different once the
@@ -735,7 +735,7 @@ pub(super) fn insert_from_view(
     super::apply::vector_edit(doc, "insert-pages", landing, count, |session| {
         session
             .insert_pages(view, pages, position)
-            // ★ `InsertOutcome`, not a `usize`, and the second field is the
+            // `InsertOutcome`, not a `usize`, and the second field is the
             // one this shell needs. `orphaned_widgets`
             // is EXACT rather than an upper bound (the engine's reply: no field
             // in the target can be claiming a widget that just arrived, because
@@ -743,7 +743,7 @@ pub(super) fn insert_from_view(
             // the number goes in front of the operator unhedged and a zero drops
             // the clause entirely.
             //
-            // ★ `orphaned_widgets_unrecoverable` is beside it, and the two
+            // `orphaned_widgets_unrecoverable` is beside it, and the two
             // numbers are two different pieces of news. The engine
             // measured its own output and found that of 13 orphans, 11 could be
             // registered and 2 had lost their identity permanently — and said
@@ -765,7 +765,7 @@ pub(super) fn insert_from_view(
             })
     });
 
-    // ★★ GO TO WHAT WAS INSERTED — the half that makes this a feature rather
+    // GO TO WHAT WAS INSERTED — the half that makes this a feature rather
     // than a verb.
     //
     // An operator who inserts four sheets wants to see them; leaving the view
@@ -829,7 +829,7 @@ pub(super) fn delete(
     pages: &[usize],
     separations: pdfcer_core::pageops::SeparationPolicy,
 ) -> Result<Vec<String>, pdfcer_core::edit::EditError> {
-    // ★★★ `delete_pages_with`, not `delete_pages` — the latter is what makes
+    // `delete_pages_with`, not `delete_pages` — the latter is what makes
     // the operator's separation policy a broken promise.
     //
     // `delete_pages` delegates to this verb with `SeparationPolicy::Repair`
@@ -839,7 +839,7 @@ pub(super) fn delete(
     // exists so a print-production file cannot be quietly half-separated — got
     // Repair.
     //
-    // ★★ The engine named this call as the fix in advance: *"Exists so the
+    // The engine named this call as the fix in advance: *"Exists so the
     // policy is reachable before there is a settings store to reach it from …
     // when operator settings land this is the entry point they drive."* The
     // store landed months ago and the entry point was never taken. Found by
@@ -847,7 +847,7 @@ pub(super) fn delete(
     // calls; this one was a MISS sitting next to a HIT for the same act, which
     // is the shape a reader skims past.
     //
-    // ★ Under `Refuse` the engine returns `EditError::SeparationSplit` and
+    // Under `Refuse` the engine returns `EditError::SeparationSplit` and
     // `vector_edit` traces the refusal. That is the operator's own instruction
     // being honoured, not a fault.
     session
@@ -891,7 +891,7 @@ pub(super) fn reorder(
 
 /// Apply one page verb, and do the invalidation it owes the shell.
 ///
-/// ## ★ Why this takes `panels` as well as `doc`
+/// ## Why this takes `panels` as well as `doc`
 ///
 /// Because the answer to *"what does this edit do to what is on screen?"* is
 /// **different for each of the five**, and three of the answers are about the
@@ -911,7 +911,7 @@ pub(super) fn reorder(
 /// the table above in one place instead of spread across five arms in the
 /// interpreter.
 ///
-/// ## ★ Every guard is on the EPOCH, not on a return value
+/// ## Every guard is on the EPOCH, not on a return value
 ///
 /// A refused delete — the engine refuses removing every page, §7.7.3.3 — must
 /// leave the operator's selection exactly as they built it. Testing whether
@@ -922,14 +922,14 @@ pub(super) fn apply(
     doc: &mut OpenDoc,
     panels: &mut crate::panels::PanelsState,
     action: PageAction,
-    // ★ The one setting any page verb consults, threaded in rather than read
+    // The one setting any page verb consults, threaded in rather than read
     // here: this function is handed `&mut OpenDoc`, and the configuration
     // belongs to the application rather than to the document. See `delete`.
     separations: pdfcer_core::pageops::SeparationPolicy,
 ) {
     match action {
         // ===============================================================
-        // ★ THE PAGE VERBS
+        // THE PAGE VERBS
         //
         // Four arms, each one call, because everything that could be a
         // rule lives elsewhere: the operand list and the permutation in
@@ -953,12 +953,12 @@ pub(super) fn apply(
                 });
             }
         }
-        // ★★★ **The paper changes and the drawing does not.** The body, the
+        // **The paper changes and the drawing does not.** The body, the
         // measurement behind that sentence and the rule-4 disclosures are all
         // in `super::pagesize`; this arm only routes, exactly as the rotate arm
         // above it does.
         //
-        // ★ The funnel label is `page-size-changed`, and the suffix is not
+        // The funnel label is `page-size-changed`, and the suffix is not
         // decoration: `vector_edit` publishes `<label> page= n= epoch=
         // disclosures=`, `ui-verify` matches a trace line on its FIRST token,
         // and `super::pagesize` publishes `page-size-sheet` and
@@ -981,7 +981,7 @@ pub(super) fn apply(
                 );
             }
         }
-        // ★ **The destructive one**, and the one that renumbers.
+        // **The destructive one**, and the one that renumbers.
         //
         // Two things happen here that no other arm needs, and both are
         // about a *position* ceasing to mean what it meant:
@@ -1012,7 +1012,7 @@ pub(super) fn apply(
         // they choose to save a copy. A modal here would be the only one
         // in the application and would be asking about the one destructive
         // act that is already reversible in the session.
-        // ★★★ **The page paste** — O59 item 2 — and it is three lines because
+        // **The page paste** — O59 item 2 — and it is three lines because
         // it is a THIRD SOURCE for a path that already exists.
         //
         // `insert_from_view` is the shared half of `insert_from_file`, reached
@@ -1043,11 +1043,11 @@ pub(super) fn apply(
                 }
             };
             let view = source.view();
-            // ★ EVERY page of the clip, because the clip is exactly what was
+            // EVERY page of the clip, because the clip is exactly what was
             // copied — the operator already chose which sheets when they pressed
             // Copy, and asking again at the paste would be a second selection
             // for one decision.
-            // ★ `pages_in` returns the page list or a tree error, and a clip
+            // `pages_in` returns the page list or a tree error, and a clip
             // whose page tree will not walk is a clip that cannot be pasted at
             // all -- reported rather than silently pasting nothing, because the
             // operator pressed Paste and is owed an answer either way.
@@ -1083,7 +1083,7 @@ pub(super) fn apply(
                 }
             }
         }
-        // ★ **The middle case**: every page survives, and every index
+        // **The middle case**: every page survives, and every index
         // means a different sheet.
         //
         // The canvas selection is cleared by the resync; the panel's picks
@@ -1105,11 +1105,11 @@ pub(super) fn apply(
                 }
             }
         }
-        // ★ The one page verb that goes nowhere near `vector_edit`: it
+        // The one page verb that goes nowhere near `vector_edit`: it
         // changes no document, it opens a native save dialog, and it is an
         // `Action` for `Action::SaveCopy`'s frame-timing reason and only
         // that one. See `super::pages::extract`.
-        // ★ The one verb that reads a SECOND document, and the only page
+        // The one verb that reads a SECOND document, and the only page
         // action whose consequence is a navigation rather than an
         // invalidation: `insert_from_file` goes to what it inserted, because
         // an operator who inserts four sheets wants to see them.
@@ -1156,7 +1156,7 @@ mod tests {
         doc.selection.marquee(page, &[TargetId::Object(0)], false);
     }
 
-    /// ★★ **A delete shortens the page vector, and the view follows it.**
+    /// **A delete shortens the page vector, and the view follows it.**
     ///
     /// The defect this catches is silent and total: `OpenDoc::pages` is
     /// *"resolved once at open"*, so without [`resync`] the panel would go on
@@ -1187,7 +1187,7 @@ mod tests {
         );
     }
 
-    /// **★ A delete clears the canvas selection, because its page index now
+    /// **A delete clears the canvas selection, because its page index now
     /// names a different sheet.**
     ///
     /// A selection is an identity, not a position, and this is that rule at
@@ -1212,7 +1212,7 @@ mod tests {
         );
     }
 
-    /// **★ A reorder renumbers without shortening, and is treated as such.**
+    /// **A reorder renumbers without shortening, and is treated as such.**
     ///
     /// The middle case, and the one a length comparison alone would miss
     /// entirely: the page count is unchanged, so a resync that only watched
@@ -1242,7 +1242,7 @@ mod tests {
         );
     }
 
-    /// **★★ A rotation is NOT a renumbering, and the selection survives it.**
+    /// **A rotation is NOT a renumbering, and the selection survives it.**
     ///
     /// The falsifying half of the two tests above. A resync that cleared the
     /// selection on any change at all would pass both of them and would make

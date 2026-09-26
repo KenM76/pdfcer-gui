@@ -24,7 +24,7 @@ const BOX_PT: f64 = 220.0;
 
 /// The label size this check types into the properties box.
 ///
-/// ★ **30, and the number is load-bearing in three directions.** It must not be
+/// **30, and the number is load-bearing in three directions.** It must not be
 /// `12` (`StampStyle::default()`'s flat size, which a build that threw the typed
 /// value away and re-defaulted would produce); it must not be `24` (what
 /// [`super::stamp_size`] presses in the placing dialog, so a build that somehow
@@ -35,7 +35,7 @@ const WANTED_PT: f64 = 30.0;
 
 /// How close two point sizes have to be before this check calls them the same.
 ///
-/// ★ Half a point, and it is a tolerance rather than an equality because the
+/// Half a point, and it is a tolerance rather than an equality because the
 /// number makes a round trip through a `/DA` string and back. The engine writes
 /// what it was given; the reader parses what it finds. A build that wrote 30 and
 /// read back `29.999999` is not the defect the operator reported, and a check
@@ -183,7 +183,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 2: place a stamp, at whatever size the dialog defaults to ----------
     //
-    // ★ The placing size is deliberately left alone. This check is about the
+    // The placing size is deliberately left alone. This check is about the
     // OTHER route, and pressing the dialog's chooser here would leave it unable
     // to tell "the properties box wrote 30" from "the placing dialog did".
     let trace = session.trace()?;
@@ -238,7 +238,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: put the tool down, then select the stamp ------------------------
     //
-    // ★★★ THE TOOL MUST GO DOWN FIRST. With the stamp tool still armed, a click
+    // THE TOOL MUST GO DOWN FIRST. With the stamp tool still armed, a click
     // on the page starts a SECOND stamp — and the check would then report that
     // the mark could not be selected, about a build whose selection works.
     if !driving::arm_select_from_ribbon(&session, &driver, ui_rect, report)? {
@@ -277,7 +277,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.click_at(session.frame()?.declared_at(tab, 0.5, 0.5))?;
     session.settle(24);
 
-    // --- 5: ★★★ IS THE SIZE ROW EVEN THERE? --------------------------------
+    // --- 5: IS THE SIZE ROW EVEN THERE? --------------------------------
     let trace = session.trace()?;
     let Some(field) = declared(&trace, ui_rect, SIZE_REGION) else {
         let row = trace.events(ROW_EVENT).last().map(|l| l.raw.clone());
@@ -301,7 +301,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note("★★ the properties panel drew a label-size field for the placed stamp");
 
-    // ★ A SEPARATE defect, asserted separately. See the module header: a size
+    // A SEPARATE defect, asserted separately. See the module header: a size
     // the operator can change with no way to say what gives when the words stop
     // fitting is a different failure from no size at all.
     if declared(&trace, ui_rect, FIT_REGION).is_none() {
@@ -333,7 +333,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("the field is seeded at {before} pt from the file"));
 
-    // ★★★ THE HARNESS'S OWN FALSIFICATION. See the module header.
+    // THE HARNESS'S OWN FALSIFICATION. See the module header.
     if (before - WANTED_PT).abs() < SAME_PT {
         return Err(Error::new(format!(
             "the placed stamp's label is already {before} pt, which is what this check types. \
@@ -346,7 +346,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 7: type a new size ------------------------------------------------
     //
-    // ★★ A CLICK, then select-all, then the digits, then Enter. egui's
+    // A CLICK, then select-all, then the digits, then Enter. egui's
     // `DragValue` enters keyboard-edit mode on `clicked()` and selects its own
     // text as it does; the explicit Ctrl+A is belt and braces, because a build
     // that lost the select-all would otherwise append the digits to what was
@@ -357,7 +357,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // || lost_focus()`, and clicking away to blur would also land a click on
     // whatever is under it — on this panel, another row.
     //
-    // ★★★ The anchor is taken BEFORE the click, not before the Enter. A
+    // The anchor is taken BEFORE the click, not before the Enter. A
     // `DragValue` that has been clicked is already in keyboard-edit mode and the
     // row keeps drawing while it is; anchoring later would let a line the click
     // itself provoked count as evidence that the *typing* landed.
@@ -403,7 +403,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("the engine reports it wrote a new label size");
 
-    // --- 9: ★★★ and does it come BACK? -------------------------------------
+    // --- 9: and does it come BACK? -------------------------------------
     //
     // The round trip is the operator's sentence. A build that writes a `/DA` its
     // own reader cannot then parse leaves the panel showing the old number after
@@ -439,7 +439,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
 /// The size the properties panel is currently **displaying**, in points.
 ///
-/// # ★★ Why the panel's own line and not the `ui-rect` line
+/// # Why the panel's own line and not the `ui-rect` line
 ///
 /// `ui-rect` carries a name and a rectangle and no text whatsoever, so a check
 /// that tried to read the number out of it would answer `None` on every build
@@ -447,7 +447,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 /// nothing"*, narrating an absence it never measured. The application grew
 /// `stamp-label-row` for this. Every caller here treats `None` as a **failure to
 /// observe** and reports it as such, never as a reading.
-/// # ★★★ `last`, and why a fossil is the RIGHT reading here
+/// # `last`, and why a fossil is the RIGHT reading here
 ///
 /// This suite's standing hazard is reading a whole capture's `last()` and
 /// getting a line the surface stopped emitting some time ago — three wrong
@@ -468,7 +468,7 @@ fn row_size(session: &Session) -> Option<f64> {
 /// The size the row **re-reported after** line `after`, or `None` if it has not
 /// re-reported since.
 ///
-/// ★★ The distinction [`row_size`] cannot draw. After a successful edit
+/// The distinction [`row_size`] cannot draw. After a successful edit
 /// there are three outcomes and only two of them are visible to a whole-capture
 /// read: the row re-reported a new size (good), the row re-reported the same
 /// size (a failed round trip), or **the row said nothing at all** — which means
@@ -488,7 +488,7 @@ fn parse_row(line: Option<&crate::trace::TraceLine>) -> Option<f64> {
 mod tests {
     use super::{FIT_REGION, SAME_PT, SIZE_REGION, WANTED_PT};
 
-    /// ★ **The number typed is not one another route could have produced.**
+    /// **The number typed is not one another route could have produced.**
     ///
     /// `12` is `StampStyle::default()`; `24` is what `stamp_size` presses in the
     /// placing dialog. A build that ignored this field and re-defaulted, or one
@@ -512,7 +512,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The two regions are distinct and share the row's prefix.**
+    /// **The two regions are distinct and share the row's prefix.**
     ///
     /// They are the harness's hand-written copies of two constants in the
     /// application, and a hand-written copy is exactly where two ends drift.

@@ -88,7 +88,7 @@ pub const fn markup_polygon() -> CommandText {
 
 /// `markup.cloud`
 ///
-/// ★ **"Revision cloud", not "Cloud".** The operator's own words, three times,
+/// **"Revision cloud", not "Cloud".** The operator's own words, three times,
 /// were *"still no revision cloud tool"* — never "cloud" alone — and in AEC the
 /// two-word phrase is the term of art: it means *this area changed on this
 /// revision*, which a one-word "Cloud" beside "Polygon" and "Freehand" does not
@@ -139,20 +139,20 @@ pub const fn markup_finish() -> CommandText {
 // ---------------------------------------------------------------------------
 // THE TWO NODE COMMANDS — the right-click route to a drawn shape's corners.
 //
-// ★★★ Their words are the ENGINE'S words, and that is deliberate rather than
+// Their words are the ENGINE'S words, and that is deliberate rather than
 // lazy. `pdfcer-core`'s note on the vertex verbs describes them as *"add a
 // point here"* and *"remove this point"*, and the shell's own filed note asked
 // for exactly those two phrases on the right-click menu. Using them unchanged
 // means the operator, the shell and the engine's own documentation all call one
 // operation one thing.
 //
-// ★★ **"Point", not "vertex" and not "node".** `/Vertices` is the PDF key,
+// **"Point", not "vertex" and not "node".** `/Vertices` is the PDF key,
 // `node` is what this crate's modules are named after, and *point* is the word
 // on the tool that arms them — `view.tool_node` is labelled **Points**. The same
 // split as Rectangle/`/Square` and Freehand/`/Ink`, resolved the same way: the
 // operator's vocabulary wins on a label, the specification's wins in the code.
 //
-// ★ Both labels are DEICTIC — "here", "this" — where every other label in this
+// Both labels are DEICTIC — "here", "this" — where every other label in this
 // file names a thing in the abstract. That is correct for these two and only
 // these two: they are the only commands in the catalog whose operand is *the
 // place the operator was pointing at when they opened the menu*, and a label
@@ -163,13 +163,13 @@ pub const fn markup_finish() -> CommandText {
 
 /// `markup.add_node`
 ///
-/// ★ The tooltip names the four shapes it works on rather than the one it
+/// The tooltip names the four shapes it works on rather than the one it
 /// does not, because a `/Line`'s row is **absent** and not greyed — nobody
 /// reads a tooltip for a row they cannot see. What it does have to explain is
 /// where the new corner lands, since the answer is *on the outline*, not under
 /// the pointer: the click is allowed to be several points off the line.
 ///
-/// ★ *"a freehand mark"* joined the list on 2026-09-09 with `pdfcer-core`
+/// *"a freehand mark"* joined the list on 2026-09-09 with `pdfcer-core`
 /// `Pass 278.0`. A tooltip that listed three shapes while the row appeared on
 /// a fourth would be the surface disagreeing with itself.
 #[must_use]
@@ -183,13 +183,13 @@ pub const fn markup_add_node() -> CommandText {
 
 /// `markup.remove_node`
 ///
-/// ★★ The tooltip carries **the floor**, and it is the reason this command is
+/// The tooltip carries **the floor**, and it is the reason this command is
 /// greyed rather than absent when the shape is down to its last corners. R9
 /// asks that a greyed control always explain itself on hover, and the
 /// explanation has to say what would make it live again — *draw another
 /// corner* — or greying is just a locked door.
 ///
-/// ★ The freehand floor is **per stroke** (`Pass 278.0`): a mark of three
+/// The freehand floor is **per stroke** (`Pass 278.0`): a mark of three
 /// strokes can lose points from a long stroke while a two-point stroke beside
 /// it greys this row. The tooltip says *each stroke* so the operator is not
 /// left counting the whole mark.
@@ -317,7 +317,7 @@ pub const fn measure_radius_diameter() -> CommandText {
 
 /// `measure.perimeter`
 ///
-/// ★ The description names all three endings, because a tool with three ways
+/// The description names all three endings, because a tool with three ways
 /// to stop has to say so before the first click. Discovering the closing
 /// convention by accident works; discovering it after tracing thirty vertices
 /// the wrong way does not.
@@ -336,7 +336,7 @@ pub const fn measure_perimeter() -> CommandText {
 
 /// `measure.length`
 ///
-/// ★ The operator's ask of 2026-08-20: *"add a length tool that works like the
+/// The operator's ask of 2026-08-20: *"add a length tool that works like the
 /// perimeter tool without needing to close the profile."*
 ///
 /// The label is `Length`, not `Path length` or `Open perimeter`: the operator

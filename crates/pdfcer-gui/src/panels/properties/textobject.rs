@@ -17,7 +17,7 @@ use crate::text::panels::textobject as t;
 pub const REGION: &str = "properties.textobject";
 /// The colour swatch's own region.
 ///
-/// ★ Published separately from [`REGION`] for the reason
+/// Published separately from [`REGION`] for the reason
 /// [`super::text::BOLD_REGION`] gives: a check that computed a control's
 /// position from a section's bounds is a check that passes on a build where the
 /// controls moved.
@@ -26,7 +26,7 @@ pub const SWATCH_REGION: &str = "properties.textobject.swatch";
 /// The region of the sentence drawn **instead of** a swatch over an ink pdfcer
 /// will not overwrite.
 ///
-/// ★ Its own name, because *"the section said something about this text"* must
+/// Its own name, because *"the section said something about this text"* must
 /// not pass in the state where what it said is *"there is no control here"*.
 /// The same argument every other region here makes about its own state.
 // ui-text-exempt: trace region name, never displayed
@@ -92,7 +92,7 @@ struct Reading {
 impl TextObjectDraft {
     /// Re-read if the stamp moved. `true` when a reading is available.
     ///
-    /// ★ The expensive call is behind the stamp comparison and nothing else, so
+    /// The expensive call is behind the stamp comparison and nothing else, so
     /// the ordinary frame — the operator looking at a selection they made three
     /// seconds ago — costs one tuple comparison.
     fn sync(&mut self, doc: &OpenDoc, page: usize, object: usize) -> bool {
@@ -152,7 +152,7 @@ fn classify(found: &ObjectText) -> Colour {
     }
     match agreed {
         Some(rgb) if !mixed => Colour::Agreed(rgb),
-        // ★ No glyph-bearing run at all reads as **mixed**, not as black. A
+        // No glyph-bearing run at all reads as **mixed**, not as black. A
         // text object whose every string failed to decode has no colour this
         // shell may claim to have read, and `Agreed(black)` would be a claim.
         // The control still works: `format_text` acts on whatever operators are
@@ -166,7 +166,7 @@ fn classify(found: &ObjectText) -> Colour {
 /// Returns whether it drew, so [`super::body_sections`] knows the panel has
 /// said something about the selection.
 ///
-/// # ★ The four gates, in the order they are cheapest
+/// # The four gates, in the order they are cheapest
 ///
 /// An annotation is not page text; more than one object has no single subject
 /// (the rule [`super::geometry::section`] states and this shares); an object
@@ -179,7 +179,7 @@ pub fn section(
     actions: &mut Vec<Action>,
 ) -> bool {
     //
-    // ★★ A **swept** operand means the section above owns the whole editor
+    // A **swept** operand means the section above owns the whole editor
     // including its Colour row, so this one stands down. Drawing both would put
     // two Colour controls with different operands one above the other, which is
     // a way to recolour the wrong thing while looking straight at it.
@@ -209,7 +209,7 @@ pub fn section(
     ui.horizontal(|ui| {
         ui.label(t::colour_label());
         match read.colour {
-            // ★★★ NO SWATCH. See the header: one opened over a `/Separation`
+            // NO SWATCH. See the header: one opened over a `/Separation`
             // is a click away from a destroyed plate, and it would look
             // entirely normal while it happened.
             Colour::Ink { affected, total } => {
@@ -262,7 +262,7 @@ pub fn section(
     }
 
     crate::diag::ui_rect_visible(REGION, ui.min_rect(), ui.clip_rect());
-    // ★ The separator for the WHOLE text block, this section and the editor
+    // The separator for the WHOLE text block, this section and the editor
     // above it. `super::text::section` draws its own only when it owns the
     // Colour row, which is exactly when this section did not draw at all.
     ui.separator();
@@ -282,7 +282,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **A spot ink anywhere in the object removes the swatch**, even when
+    /// **A spot ink anywhere in the object removes the swatch**, even when
     /// every other run agrees.
     ///
     /// The assertion this module exists for. If the ink check ran *after* the
@@ -305,7 +305,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **CMYK counts as an ink that must not be flattened**, not as a
+    /// **CMYK counts as an ink that must not be flattened**, not as a
     /// colour that disagrees.
     ///
     /// A mixed swatch over CMYK would still apply sRGB to it. The whole point
@@ -325,7 +325,7 @@ mod tests {
         ));
     }
 
-    /// ★★★ **An absent colour operator is BLACK and therefore disagrees with
+    /// **An absent colour operator is BLACK and therefore disagrees with
     /// red.**
     ///
     /// The [`RunFill`] distinction, asserted where it is consumed. Written as

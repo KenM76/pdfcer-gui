@@ -25,7 +25,7 @@ pub(super) enum Value {
 /// PDF §8.6.8's default fill, and where the picker opens over a selection that
 /// has no agreed colour of its own.
 ///
-/// ★ It is **never applied unless the operator moves the picker** — [`show`]
+/// It is **never applied unless the operator moves the picker** — [`show`]
 /// returns `None` when nothing changed — so this is a starting position on
 /// screen and not a proposed value. "Opens on nothing in particular" is what a
 /// mixed control is required to do; opening on the *first member's* colour is
@@ -37,7 +37,7 @@ const NO_PARTICULAR_COLOUR: [u8; 3] = [0, 0, 0];
 
 /// The width of the swatch, as a multiple of the row height.
 ///
-/// ★ Wider than tall, which is what a colour *swatch* looks like everywhere
+/// Wider than tall, which is what a colour *swatch* looks like everywhere
 /// this operator works — Word's font-colour button, Illustrator's fill chip,
 /// SolidWorks' line-colour control. A square reads as a button with a coloured
 /// glyph; a bar reads as a sample of the colour itself.
@@ -50,7 +50,7 @@ const ASPECT: f32 = 1.7;
 /// one panel are two controls and must not share a popup. `region` is published
 /// for a driven check.
 ///
-/// # ★★★ `mixed_hint` is a PARAMETER, and it was a hard-coded string for about
+/// # `mixed_hint` is a PARAMETER, and it was a hard-coded string for about
 /// # twenty minutes
 ///
 /// The sentence shown at the top of the picker over a disagreeing selection
@@ -106,7 +106,7 @@ pub(super) fn show(
     };
     crate::diag::ui_rect_visible(region, response.rect, ui.clip_rect());
 
-    // ★ A fresh open re-seeds. Without this, a swatch opened over object A,
+    // A fresh open re-seeds. Without this, a swatch opened over object A,
     // closed, and re-opened over object B would show A's colour in the picker —
     // a stale value presented as B's, which is the failure that makes a
     // properties panel untrustworthy.
@@ -135,7 +135,7 @@ pub(super) fn show(
                 state.working = [colour.r(), colour.g(), colour.b()];
                 state.dirty = true;
             }
-            // ★★★ The picker's own rectangle, published so a DRIVEN check can
+            // The picker's own rectangle, published so a DRIVEN check can
             // aim a real pointer inside it.
             //
             // It has to be its own name rather than [`region`], and this is the
@@ -146,7 +146,7 @@ pub(super) fn show(
             // popup, so the *button* would become unclickable to the harness the
             // moment it opened once.
             //
-            // ★ `ui_rect`, not `ui_rect_visible`. A popup is drawn in its own
+            // `ui_rect`, not `ui_rect_visible`. A popup is drawn in its own
             // `Area` on the tooltip layer, so its clip rect is the whole screen
             // and the visibility fraction is meaningless — the gated form would
             // be asserting a property that is trivially true here while reading
@@ -155,7 +155,7 @@ pub(super) fn show(
         });
 
     let open_after = egui::Popup::is_id_open(ui.ctx(), popup_id);
-    // ★★★ The commit. The picker CLOSED and something moved while it was open,
+    // The commit. The picker CLOSED and something moved while it was open,
     // so the whole gesture becomes one action and one undo entry — see the
     // module header for the sixty-edits-a-second defect this avoids.
     let committed = (state.was_open && !open_after && state.dirty).then_some(state.working);
@@ -169,7 +169,7 @@ pub(super) fn show(
 
 /// What one `/MK` colour key says, as far as a swatch is concerned.
 ///
-/// ★★★ Deliberately **not** [`Value`], and the difference is the subject.
+/// Deliberately **not** [`Value`], and the difference is the subject.
 /// [`Value`] models a *selection of document objects*, which has exactly two
 /// states — they agree or they do not. One widget's `/MK` `/BG` is one key on
 /// one dictionary, and Table 189 gives it four: absent, the empty array that
@@ -226,7 +226,7 @@ pub(crate) struct MkControl<'a> {
     /// `/MK` key can be put into are a fact about `/MK` and this file does not
     /// know about `/MK`. An empty slice draws no entries and no separator.
     ///
-    /// ★★ The border colour offers one entry where the background offers two,
+    /// The border colour offers one entry where the background offers two,
     /// and that asymmetry is R9 rather than an omission:
     /// `WidgetChrome::stroke` resolves an empty `/BC` and an absent `/BC` to
     /// the same black, so an entry writing the empty array would change a
@@ -235,7 +235,7 @@ pub(crate) struct MkControl<'a> {
     pub entries: &'a [MkEntry<'a>],
     /// Draw the swatch as a disc rather than a bar.
     ///
-    /// ★ A radio button's background is filled as a **circle** by the engine's
+    /// A radio button's background is filled as a **circle** by the engine's
     /// own builder, which says so in as many words. A rectangular preview over
     /// a control that will come out round is this panel mis-stating the result
     /// of the operator's own press.
@@ -271,7 +271,7 @@ pub(crate) struct MkEntry<'a> {
 /// sixty-content-stream-rewrites-a-second defect — and the two functions share
 /// [`Editing`] so there is one implementation of it rather than two that drift.
 ///
-/// ★ The *no colour* entry commits **immediately** rather than on close, and
+/// The *no colour* entry commits **immediately** rather than on close, and
 /// that is not an inconsistency: it is a discrete press, not a drag, so there
 /// is no run of intermediate values for a close-edge to collapse. It closes the
 /// popup itself, because `PopupCloseBehavior::CloseOnClickOutside` would
@@ -286,7 +286,7 @@ pub(crate) fn show_mk(
     let popup_id = id.with("popup"); // ui-text-exempt: an egui id salt, never displayed
     let seed = match control.value {
         MkValue::Shown(rgb) => rgb,
-        // ★ Black, never a conversion of the CMYK the widget may be carrying.
+        // Black, never a conversion of the CMYK the widget may be carrying.
         // Converting would put a number in the picker that the file does not
         // contain, and the operator's first nudge would commit pdfcer's guess
         // at their separation as though it were their own.
@@ -396,7 +396,7 @@ pub(crate) fn show_mk(
 
 /// A round swatch, for a control whose background the engine fills as a circle.
 ///
-/// ★ Hand-drawn rather than a `Button` with a rounded corner radius, because a
+/// Hand-drawn rather than a `Button` with a rounded corner radius, because a
 /// rounded rectangle at this size reads as a button with a tint and the point
 /// of the shape is that the operator sees a **disc** — the thing a radio
 /// button's background will actually be. It keeps the button's own interaction
@@ -421,7 +421,7 @@ fn disc(ui: &mut Ui, size: egui::Vec2, fill: egui::Color32) -> egui::Response {
 
 /// The picker's in-progress value, across the frames it is open for.
 ///
-/// ★ In `egui`'s temp data rather than on a draft struct, and that is a
+/// In `egui`'s temp data rather than on a draft struct, and that is a
 /// deliberate difference from [`super::text::TextStyleDraft`]. A draft holds a
 /// *reading of the document*, which has to be invalidated when the document
 /// moves; this holds *where the operator's finger is*, which is meaningless the
@@ -433,7 +433,7 @@ struct Editing {
     working: [u8; 3],
     /// Has the operator moved it since this open?
     ///
-    /// ★★ Without this, opening the picker to *look* at a colour and closing it
+    /// Without this, opening the picker to *look* at a colour and closing it
     /// would author an edit — a document changed, an undo entry added and a
     /// file marked dirty, by a gesture that changed nothing.
     dirty: bool,
@@ -446,7 +446,7 @@ struct Editing {
 mod tests {
     use super::*;
 
-    /// ★★★ **The mixed state must not carry a colour.**
+    /// **The mixed state must not carry a colour.**
     ///
     /// The one assertion this type exists for. If [`Value`] ever gained a way
     /// to represent "mixed, and here is a colour anyway", the next caller would

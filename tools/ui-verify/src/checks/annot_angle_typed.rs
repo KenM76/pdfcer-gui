@@ -18,7 +18,7 @@ const INVOKE: &str = "mode.review,markup.rectangle";
 const COMMIT_EVENT: &str = "markup-commit";
 /// The line the canvas writes when a click selects an annotation.
 const SELECT_EVENT: &str = "annot-select";
-/// ★★★ The line the **absolute** rotation verb writes. `Rotate`'s own line is
+/// The line the **absolute** rotation verb writes. `Rotate`'s own line is
 /// `rotate-annotation-applied`, and a build that raised the wrong action would
 /// write that one instead — which is why this is asserted by name.
 const SET_EVENT: &str = "set-annotation-rotation-applied";
@@ -173,7 +173,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 2: put the pen down, then select it --------------------------------
     //
-    // ★★★ THE TOOL MUST GO DOWN FIRST. With a markup tool armed a click on the
+    // THE TOOL MUST GO DOWN FIRST. With a markup tool armed a click on the
     // page is a PICK rather than a selection, so a check that skipped this
     // would draw a *second* rectangle and then report that the shape could not
     // be selected, about a build whose selection works perfectly.
@@ -197,7 +197,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("★ the shape was selected");
 
-    // --- 3: ★★ TURN IT FIRST, so absolute and relative can be told apart -----
+    // --- 3: TURN IT FIRST, so absolute and relative can be told apart -----
     //
     let trace = session.trace()?;
     let (Some(handle), Some(outline)) = (
@@ -247,7 +247,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.click_at(session.frame()?.declared_at(tab, 0.5, 0.5))?;
     session.settle(24);
 
-    // --- 5: ★★★ IS THE ANGLE FIELD EVEN THERE? ------------------------------
+    // --- 5: IS THE ANGLE FIELD EVEN THERE? ------------------------------
     let trace = session.trace()?;
     let Some(field) = declared(&trace, ui_rect, ANGLE_REGION) else {
         let seeded = trace
@@ -288,7 +288,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 6: scrub it --------------------------------------------------------
     //
-    // ★ Fractions rather than added pixels: a coordinate is produced by a
+    // Fractions rather than added pixels: a coordinate is produced by a
     // conversion and never assembled. The fraction is computed from the
     // spinner's own width, so the travel is the same number of screen pixels
     // whatever the panel's width happens to be.
@@ -343,7 +343,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.settle(12);
     }
     let Some(apply) = apply else {
-        // ★ Evidence before the verdict, on the path that gives up. A layout
+        // Evidence before the verdict, on the path that gives up. A layout
         // question has exactly one oracle — a rendered screenshot.
         let shot = ctx.out("annot-angle-typed.no-apply.png");
         if crate::capture::window_to_png(&session, &shot).is_ok() {
@@ -359,7 +359,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
 
-    // --- 8: ★★★ PRESS IT, AND SEE WHICH VERB IT REACHED ---------------------
+    // --- 8: PRESS IT, AND SEE WHICH VERB IT REACHED ---------------------
     let before_set = session.trace()?.events(SET_EVENT).count();
     let before_delta = session.trace()?.events(DELTA_EVENT).count();
     driver.click_at(session.frame()?.declared_at(apply, 0.5, 0.5))?;
@@ -367,7 +367,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let trace = session.trace()?;
     let Some(applied) = trace.events(SET_EVENT).nth(before_set) else {
-        // ★★ The wrong-verb diagnosis, ruled IN before any guess is offered.
+        // The wrong-verb diagnosis, ruled IN before any guess is offered.
         // This is the whole reason the delta counter was taken.
         if trace.events(DELTA_EVENT).count() > before_delta {
             return Ok(Some(format!(
@@ -405,7 +405,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         applied.raw
     ));
 
-    // --- 9: ★★★ AND THE NUMBER THAT TRAVELLED IS THE ABSOLUTE ANGLE ---------
+    // --- 9: AND THE NUMBER THAT TRAVELLED IS THE ABSOLUTE ANGLE ---------
     let asked: f64 = applied
         .get("asked")
         .and_then(|v| v.parse().ok())
@@ -431,7 +431,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         typed - before
     ));
 
-    // ★ Reported, not asserted — see the module header. The engine owns this
+    // Reported, not asserted — see the module header. The engine owns this
     // arithmetic and has its own tests for it; a second copy of the expected
     // numbers here would be a third place to maintain them.
     report.note(format!(
@@ -441,7 +441,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         applied.get("to").unwrap_or("?"),
     ));
 
-    // ★★ …and it did not ALSO raise the delta verb. Asserted separately,
+    // …and it did not ALSO raise the delta verb. Asserted separately,
     // because a build that raised both would satisfy every assertion above and
     // turn the mark twice.
     if trace.events(DELTA_EVENT).count() > before_delta {

@@ -224,7 +224,7 @@ fn drag_and_read_ghost(
         )));
     }
 
-    // ★★★ THE LITERAL ASK — *the chunk follows the pointer, not a
+    // THE LITERAL ASK — *the chunk follows the pointer, not a
     // rectangle.* The outline above is the floor. This is the half that makes
     // the drag legible, and it is asserted on the SAME gesture: a second drag
     // would be a second sample of something that has to be true of this one.
@@ -370,7 +370,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED. The band's
+    // PINNED: `--pdf` and `--doc-point` are read and IGNORED. The band's
     // rectangle is stated against this document's baselines.
     let (pdf, anchor) = crate::fixture::text_chunk_point(ANCHOR_CHUNK);
     if !pdf.is_file() {
@@ -456,7 +456,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         aim(ctx, &session, page, WIDE_BAND.0)?,
         aim(ctx, &session, page, WIDE_BAND.1)?,
     );
-    // ★★ The direction is the gesture's meaning, and it is asserted about the
+    // The direction is the gesture's meaning, and it is asserted about the
     // SCREEN points rather than assumed from the document ones. The band is
     // written right-to-left so that it is a crossing band; a mapping that
     // mirrored the x axis would turn it into an enclosing one without changing
@@ -510,7 +510,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- D: and require that the preview was of a move that could happen ----
     //
-    // ★★ A ghost is a promise. A build that drew one and then declined the
+    // A ghost is a promise. A build that drew one and then declined the
     // release would show the operator the line moving and put it back, which is
     // a worse defect than drawing nothing — so the preview is only honoured if
     // the release committed.
@@ -531,7 +531,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- E: build a set of THREE with a band --------------------------------
     //
-    // ★★ The selection is deliberately NOT cleared first. `marquee::take_chunks`
+    // The selection is deliberately NOT cleared first. `marquee::take_chunks`
     // offers the chunk rung only to a band drawn while a chunk of that object
     // is already selected — a band drawn from nothing is the object-rung
     // gesture, which writes `marquee-mode` and ascends. Line 4 is still held

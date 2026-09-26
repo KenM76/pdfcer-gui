@@ -13,7 +13,7 @@ The operator asked for this by name and named the reference himself:
 > have **clear markers** of where the field is going to move to."*
 
 
-# ★★ Why this cannot be a unit test, and the shape of the failure it catches
+# Why this cannot be a unit test, and the shape of the failure it catches
 
 [`crate`]'s standing lesson, in its sharpest form. The permutation
 arithmetic — `panels::forms::tab_order::drag::reordered` — has seven unit
@@ -34,7 +34,7 @@ produce:
 This is the same shape as the two founding defects: a green suite over a
 feature that does nothing when a human touches it.
 
-# ★ The assertion that is the point of the feature
+# The assertion that is the point of the feature
 
 **The caret was drawn.** He did not ask to be able to drag rows; he asked
 for *"clear markers of where the field is going to move to"*. A drag that

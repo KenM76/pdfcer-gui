@@ -39,7 +39,7 @@ pub struct Selected {
 /// one entry today, and the plural is not aspirational padding — see the note
 /// below, which is the finding a reader of this signature most needs.
 ///
-/// # ★★★ Why this returns a `Vec` when the selection can hold exactly one
+/// # Why this returns a `Vec` when the selection can hold exactly one
 ///
 /// `canvas::selection::SelectionState` makes content and annotations
 /// **mutually exclusive by construction**: `select_annot` clears the content
@@ -124,7 +124,7 @@ pub struct Plan {
     /// The `/Subtype`s the engine refuses to put on a clipboard at all,
     /// verbatim from `ClipAnnotation::Unsupported`.
     ///
-    /// ★ Carried as owned `String`s taken off the clip rather than mapped onto
+    /// Carried as owned `String`s taken off the clip rather than mapped onto
     /// a `&'static str` table here. `canvas::cutgate::Blocker` does keep such a
     /// table, and it has a test asserting the complement, which is what makes
     /// it survivable there — but that table is about *greying a control before
@@ -137,7 +137,7 @@ pub struct Plan {
 impl Plan {
     /// Read a clip back and say what it will and will not carry.
     ///
-    /// ★ The wildcard arm is required — `ClipAnnotation` is
+    /// The wildcard arm is required — `ClipAnnotation` is
     /// `#[non_exhaustive]` — and it counts toward [`Self::whole`] rather than
     /// toward [`Self::thin`] or [`Self::refused`], which is the safe direction
     /// on all three counts: a carrier this build has not heard of is one the
@@ -147,7 +147,7 @@ impl Plan {
     /// as `thin` — would put a false warning on the status row for every
     /// annotation of a kind a newer engine handles better.
     ///
-    /// ★★★ **When an engine bump makes an arm here stop compiling, the compile
+    /// **When an engine bump makes an arm here stop compiling, the compile
     /// error is a notification, not a chore.** The tempting repair — widening
     /// the pattern to swallow the new field and keep the old count — compiles,
     /// and leaves this shell warning the operator about a loss that is no
@@ -193,14 +193,14 @@ impl Plan {
 /// one pasting at `(0, 0)` — the bottom-left corner of the sheet — reads as
 /// data loss.
 ///
-/// ★ Read from the raw dictionary rather than from a `MarkupSpec`: a spec is a
+/// Read from the raw dictionary rather than from a `MarkupSpec`: a spec is a
 /// *translation* of the annotation, and every kind translates its geometry
 /// differently — an ink stroke into a point list, a line into two ends, a
 /// square into corners. `/Rect` is the one place every annotation states its
 /// extent in the same terms (§12.5.2), so reading it needs no per-kind match
 /// and therefore cannot silently omit a kind.
 ///
-/// ★★ Not used by the clip route, which anchors on the clip's own
+/// Not used by the clip route, which anchors on the clip's own
 /// `ObjectClip::bbox` — unioned by the engine over both content items and
 /// annotation rects. One number from the payload rather than a second reading
 /// of the document is what makes a clip pasted after the source document was
@@ -225,14 +225,14 @@ pub fn rect_centre_of(dict: &pdfcer_core::object::Dict) -> Option<(f64, f64)> {
 }
 
 // ===========================================================================
-// ★★★ DUPLICATE — `edit.duplicate`, Ctrl+D
+// DUPLICATE — `edit.duplicate`, Ctrl+D
 // ===========================================================================
 
 /// **Place a second copy of the selected annotation on the same page**, offset
 /// so it is visible, as one undoable command — **without touching the
 /// clipboard**.
 ///
-/// # ★★★ Why this is a verb and not "copy then paste"
+/// # Why this is a verb and not "copy then paste"
 ///
 /// Because the two are different acts and the difference is the clipboard.
 ///
@@ -247,7 +247,7 @@ pub fn rect_centre_of(dict: &pdfcer_core::object::Dict) -> Option<(f64, f64)> {
 /// `mockups/app.html`'s approved canvas context menu already draws
 /// *"Duplicate — Ctrl+D"*; this is the verb behind that line.
 ///
-/// # ★★ Why it is NOT an extension of `edit.paste_duplicate`, which was checked
+/// # Why it is NOT an extension of `edit.paste_duplicate`, which was checked
 /// first
 ///
 /// `app::dispatch::clipboard`'s header names `edit.paste_duplicate` as *"the
@@ -264,7 +264,7 @@ pub fn rect_centre_of(dict: &pdfcer_core::object::Dict) -> Option<(f64, f64)> {
 /// instead, which is what a shell that registers, binds, places and mode-gates
 /// per id can express and a modifier read inside a handler cannot (R8).
 ///
-/// # ★★★ The route is decided by the ENGINE, exactly as the copy's is
+/// # The route is decided by the ENGINE, exactly as the copy's is
 ///
 /// This runs the same `copy_selection` the copy runs and asks [`Plan::of`]
 /// which carrier each annotation landed on, so a refusal is disclosed by name
@@ -279,7 +279,7 @@ pub fn rect_centre_of(dict: &pdfcer_core::object::Dict) -> Option<(f64, f64)> {
 /// engine change away from an **anonymous, undated, opaque** copy of a signed
 /// revision cloud, silently, and it would look right on the page.
 ///
-/// # ★ The clip is assembled before the refusal check, and that is the point
+/// # The clip is assembled before the refusal check, and that is the point
 ///
 /// `copy_selection` takes `&self` and commits nothing, so the cost is one walk
 /// and one allocation. Asking the engine first is deliberate: the alternative
@@ -291,11 +291,11 @@ pub fn rect_centre_of(dict: &pdfcer_core::object::Dict) -> Option<(f64, f64)> {
 /// [`crate::canvas::clipboard::PASTE_OFFSET_PT`] down and to the right — the
 /// **same** constant and the same signs a same-page paste uses, because a
 /// duplicate is a same-page paste in everything but where the payload came
-/// from. ★ Down the page is **negative** in PDF user space; getting it
+/// from. Down the page is **negative** in PDF user space; getting it
 /// backwards produces a copy that goes up-and-right, which looks deliberate
 /// and is the kind of thing nobody reports as a defect.
 ///
-/// ★★ There is deliberately **no cursor rule** here, where a paste has one
+/// There is deliberately **no cursor rule** here, where a paste has one
 /// (`OPERATOR_REQUESTS.md` O73). A paste is invoked with the pointer over the
 /// place the operator wants the thing; a duplicate is invoked from a chord, a
 /// menu row or a ribbon button while they are looking at the original, and
@@ -304,7 +304,7 @@ pub fn rect_centre_of(dict: &pdfcer_core::object::Dict) -> Option<(f64, f64)> {
 /// it is what makes `Ctrl+D Ctrl+D Ctrl+D` walk a diagonal row of marks —
 /// which is the gesture the feature exists for.
 ///
-/// # ★ One undo entry
+/// # One undo entry
 ///
 /// Whichever route it takes, exactly one action is raised, and each of the two
 /// goes through `app::actions::apply::vector_edit` as a single `EditSession`
@@ -330,7 +330,7 @@ pub fn duplicate(doc: &OpenDoc, actions: &mut Vec<Action>) -> Result<(), Refusal
         return Err(Refusal::NothingSelected);
     };
     let page = target.page;
-    // ★ No content indices. A duplicate's subject is the selected annotation,
+    // No content indices. A duplicate's subject is the selected annotation,
     // and `SelectionState` cannot hold both — passing `object_indices_on(page)`
     // here would be asking a question whose answer is always the empty list,
     // and would read as though a mixed duplicate were supported.
@@ -356,7 +356,7 @@ pub fn duplicate(doc: &OpenDoc, actions: &mut Vec<Action>) -> Result<(), Refusal
         -crate::canvas::clipboard::PASTE_OFFSET_PT,
     );
 
-    // ★ The whole-carrier route: a raw dictionary with its baked `/AP`, or a ce
+    // The whole-carrier route: a raw dictionary with its baked `/AP`, or a ce
     // dimension with its group. `paste_objects` takes a page-space MATRIX
     // rather than a displacement, which is why the offset cannot simply be
     // shared with the branch above even though the rule that decides it is.
@@ -414,7 +414,7 @@ mod tests {
         doc
     }
 
-    /// ★★★ **The engine's own carrier choice, asserted rather than assumed.**
+    /// **The engine's own carrier choice, asserted rather than assumed.**
     ///
     /// This is the test that pins the module header's rule, and it is written
     /// against `pdfcer-core`'s behaviour rather than against a sentence about
@@ -429,7 +429,7 @@ mod tests {
     /// | 1 | `/Text` | not modelled, so the clip carries it **whole** |
     /// | 2 | `/FreeText` | not modelled, so the clip carries it **whole** |
     ///
-    /// ★ Every index must read `whole`. One reading `thin` means a lossy
+    /// Every index must read `whole`. One reading `thin` means a lossy
     /// carrier is back and the disclosure on [`Plan::thin`] has a subject
     /// again — the moment this project most needs to notice and is worst at
     /// noticing.
@@ -442,7 +442,7 @@ mod tests {
                 .copy_annotations(0, &[0])
                 .expect("the square copies"),
         );
-        // ★★★ A `/Square` is the kind this shell authors most and the kind the
+        // A `/Square` is the kind this shell authors most and the kind the
         // model carrier claims, so it is the one whose carrier choice decides
         // whether an operator's revision cloud copies faithfully. It must be
         // counted CARRIED WHOLE; `(1, 0)` means a lossy carrier is back.
@@ -454,7 +454,7 @@ mod tests {
              being told a copy loses four keys, and one of those two claims is now false."
         );
 
-        // ★★ The count alone is not evidence: `Plan` is a census, and a
+        // The count alone is not evidence: `Plan` is a census, and a
         // carrier that dropped these keys would still be counted whole. So the
         // properties are asserted on the PAYLOAD as well.
         let clip = doc
@@ -487,7 +487,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **The lossless route is lossless — asserted key by key against the
+    /// **The lossless route is lossless — asserted key by key against the
     /// SOURCE dictionary, not against a list written here.**
     ///
     /// The vacuous shape to avoid: a fixture annotation carrying only the keys
@@ -592,7 +592,7 @@ mod tests {
         );
     }
 
-    /// ★★ **An annotation the engine carries WHOLE duplicates through the clip
+    /// **An annotation the engine carries WHOLE duplicates through the clip
     /// route**, with its baked appearance.
     ///
     /// The `/Text` sticky note at index 1 is not modelled by `spec_from_dict`,
@@ -621,7 +621,7 @@ mod tests {
 
     /// Nothing selected refuses by name and raises nothing.
     ///
-    /// ★ The `actions` emptiness is half the assertion. A verb that refuses and
+    /// The `actions` emptiness is half the assertion. A verb that refuses and
     /// still pushes is worse than one that does neither, because the refusal
     /// sentence then contradicts the undo entry beside it.
     #[test]
@@ -632,7 +632,7 @@ mod tests {
         assert!(actions.is_empty(), "a refusal raises nothing: {actions:?}");
     }
 
-    /// ★ **A selection that has outlived its annotation refuses**, through the
+    /// **A selection that has outlived its annotation refuses**, through the
     /// same [`selected`] guard the copy uses, rather than duplicating whichever
     /// annotation now sits at that `/Annots` position.
     #[test]
@@ -656,7 +656,7 @@ mod tests {
         assert!(actions.is_empty());
     }
 
-    /// ★★★ **The duplicate does not touch the clipboard**, which is the whole
+    /// **The duplicate does not touch the clipboard**, which is the whole
     /// reason the command exists.
     ///
     /// Asserted **structurally** rather than by reading `egui` memory: this

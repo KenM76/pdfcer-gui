@@ -14,7 +14,7 @@ consulted, §4 the primary-source reading of `/Tabs` (including the finding
 that it is **not** inheritable), §5 what is counted rather than listed. This
 file is the drawing, the disclosures and the one action the view can raise.
 
-## ★★★ The affordance exists because the verb exists, and not before
+## The affordance exists because the verb exists, and not before
 
 The drag is offered here only because `EditSession::reorder_annotations` can
 commit it. R9 is the rule, and it is the one to apply to the next gap in
@@ -42,7 +42,7 @@ never once for the section as a whole.
   conforming file non-conforming with nobody asking. Acrobat's own manual
   tab order is an `/Annots` permutation with no `/Tabs` written.
 
-★★ Which means the per-page `/Tabs` sentence this view has always shown is
+Which means the per-page `/Tabs` sentence this view has always shown is
 now doing a second job. On a page whose `/Tabs` says `/S` or `/R` or `/C`,
 a drag changes the array and **a conforming reader may still tab in the
 order the file states**. The sentence is what stops that reading as a bug in
@@ -95,7 +95,7 @@ in order of weight:
    by `crate::panels::Panel::show` before any body runs, and this section
    inherits it through the `Ui` it is handed.
 2. **A fixed-size child inside a scroll area needs the container's width
-   stated.** ★ **There is no fixed-size child here**, so
+   stated.** **There is no fixed-size child here**, so
    `crate::panels::content_width` is deliberately not called — stated rather
    than left to look like an omission, because skipping it silently is
    exactly how the Objects panel shipped clipped rows. Every child is a
@@ -104,7 +104,7 @@ in order of weight:
    that opens at 320. `crate::panels::comments` records the same reasoning
    for the same shape.
 
-### ★ The one layout thing this section does that no panel body does
+### The one layout thing this section does that no panel body does
 
 Its list is inside a scroll area with a **stated maximum height**
 ([`MAX_LIST_HEIGHT`]). Every other list in this crate is the last thing in

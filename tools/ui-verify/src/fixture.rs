@@ -63,7 +63,7 @@ fn parse_first_mediabox(text: &str) -> Option<PageGeometry> {
 /// folder — which he is entitled to do and which no check can be expected to be
 /// told about.
 ///
-/// ★★ The cost of getting this wrong is the shape this project keeps meeting: a
+/// The cost of getting this wrong is the shape this project keeps meeting: a
 /// **SKIP is not red**, so three checks whose subjects are a table marquee, a
 /// nested `/FitR` bookmark and text over a scan sat reporting nothing, for ever,
 /// while the suite showed its ordinary cheerful INCOMPLETE. Nobody was going to
@@ -75,7 +75,7 @@ fn parse_first_mediabox(text: &str) -> Option<PageGeometry> {
 /// list is ordered by how canonical the location is, and every entry is a real
 /// directory on this machine as of the date above.
 ///
-/// ★ It still returns `None` rather than guessing when the name is nowhere: a
+/// It still returns `None` rather than guessing when the name is nowhere: a
 /// check that could not find its subject must SKIP saying so, and
 /// [`operator_file_complaint`] builds the sentence that lists where it looked —
 /// because a reason that names only the first candidate is what produced the
@@ -119,7 +119,7 @@ pub fn operator_file_complaint(name: &str) -> String {
 /// # The one measurement that explains sixteen skips
 ///
 ///
-/// ★★★ And a second fact would have survived fixing the aim: that sheet is
+/// And a second fact would have survived fixing the aim: that sheet is
 /// **2383.9 × 1683.8 pt carrying 123 characters**, so at the fit zoom the
 /// sweep drives at, **the tallest text on it is 2.4 screen pixels**. A sweep
 /// or a click measured in whole screen pixels cannot reliably land inside a
@@ -314,7 +314,7 @@ pub fn grip_gesture_target() -> (std::path::PathBuf, DocPoint) {
 /// worth aiming at: a click that lands on it is a click the operator could make
 /// and the harness only just can.
 ///
-/// # ★ Two unrelated checks want this point for two unrelated reasons
+/// # Two unrelated checks want this point for two unrelated reasons
 ///
 /// `the_font_controls_are_live_on_the_drawing_you_open` wants **text under the
 /// cursor**, because a click on blank paper is symptom-identical to a hit test

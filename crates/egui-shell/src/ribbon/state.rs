@@ -22,7 +22,7 @@
 //! second serialization format that then has to be migrated into the
 //! first — and a format that shipped is a format somebody has a file in.
 //!
-//! # ★ Why the base `egui::Id` lives here
+//! # Why the base `egui::Id` lives here
 //!
 //! `egui` keeps focus, hover and popup state per widget id. Two ribbons in
 //! one context — two document windows in one viewport — that shared ids
@@ -52,7 +52,7 @@ pub struct RibbonState {
     /// **Auto-hide.** Whether the band hides itself, and whether it is
     /// currently revealed. See [`crate::peek`].
     ///
-    /// ★ It belongs here for the same reason the active tab does — it is a
+    /// It belongs here for the same reason the active tab does — it is a
     /// fact the *ribbon itself* decided and would lose if this value were
     /// dropped. The **setting** half of it is an operator preference the
     /// application persists and pushes in through [`RibbonState::set_auto_hide`]
@@ -99,7 +99,7 @@ impl RibbonState {
     /// start-up and when it dispatches the command that toggles it. Takes
     /// effect on the next frame, like every other setting on this struct.
     ///
-    /// ★ Turning it **off** always shows the band, immediately — that is the
+    /// Turning it **off** always shows the band, immediately — that is the
     /// way back, and it is why the command exists as well as the setting. See
     /// [`crate::peek::Peek::set_mode`].
     pub fn set_auto_hide(&mut self, mode: crate::peek::AutoHide) {
@@ -109,7 +109,7 @@ impl RibbonState {
     /// **Push a stored preference in, once per frame, without disturbing the
     /// reveal.**
     ///
-    /// ★★★ This exists because [`Self::set_auto_hide`] is *not* idempotent and
+    /// This exists because [`Self::set_auto_hide`] is *not* idempotent and
     /// must not be: it clears the reveal, which is exactly right when the
     /// operator changes the setting and exactly wrong when an application calls
     /// it every frame to keep the shell in step with its own preferences store.

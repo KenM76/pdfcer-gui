@@ -170,7 +170,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // away: a hit test that misses everywhere is not a hit test, it is a
     // gate.
     //
-    // ★ Two checks in this suite were asserting OPPOSITE things about the
+    // Two checks in this suite were asserting OPPOSITE things about the
     // same gesture and only one of them established the mode.
     // `read_mode_refuses_canvas_edits` clicks the Review segment, then the
     // Read segment, and asserts the click selects nothing. This one asserts

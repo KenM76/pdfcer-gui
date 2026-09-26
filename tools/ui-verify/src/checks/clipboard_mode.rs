@@ -17,7 +17,7 @@ const COPY_MODE: &str = "edit";
 const PASTE_MODE: &str = "review";
 /// The fixture, pinned. Any `--pdf` is ignored and the check says so.
 ///
-/// ★ Pinned because `Ctrl+A` must find something: this check's subject is what
+/// Pinned because `Ctrl+A` must find something: this check's subject is what
 /// happens to a **content** clip, and on a page with no page content
 /// `edit.select_all` copies nothing, the paste gate takes the markup branch,
 /// Review permits it, and the check would report a pass having exercised the
@@ -98,7 +98,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              the paste takes the markup branch — the opposite of the case under test."
         )));
     }
-    // ★ A sweep that supplied `--pdf` and had it thrown away must be told so: a
+    // A sweep that supplied `--pdf` and had it thrown away must be told so: a
     // run that silently ignored a flag is indistinguishable from one that
     // honoured it.
     if ctx.pdf.is_some() {
@@ -192,7 +192,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 4: …and was refused THERE, on what the clipboard holds --------------
     //
-    // ★ Without this, assertion 3 alone passes on a build where the paste
+    // Without this, assertion 3 alone passes on a build where the paste
     // SUCCEEDED — a successful paste also emits no `chord-not-offered` — which
     // would be Review quietly adding a drawing's geometry to somebody else's
     // sheet. The gate opened in the wrong direction is a worse defect than the

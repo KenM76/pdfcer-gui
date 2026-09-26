@@ -23,7 +23,7 @@ fit. ⚠ Meanwhile `OPERATOR_REQUESTS.md` **O86** told him, under a ✅, that
 text, which will overflow"* — true of the engine and the CLI, and **false of
 this shell for three days**.
 
-# ★★★ Why this check exists when two other tests already cover it
+# Why this check exists when two other tests already cover it
 
 Because neither of them is the operator.
 
@@ -44,7 +44,7 @@ that honoured it. `panels::forms::edit` now appends `autosize=` and
 `bound=`, for `place.rs`'s standing reason: *a trace line must carry the
 number a wrong build would get wrong.*
 
-★ `bound=` is spelled by this shell's own `bound_token`, never `{:?}`.
+`bound=` is spelled by this shell's own `bound_token`, never `{:?}`.
 `Debug` is another crate's unstable rendering; a check keyed on it goes
 quiet — or reports the opposite of the truth while quoting the truth — the
 day upstream renames a variant.

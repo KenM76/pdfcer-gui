@@ -7,7 +7,7 @@ will show in its own menu
 > feature too with the same import/export to make the stamps as Adobe has
 > and is compatible with adobe's"*
 
-## ★★ The finding that decided the whole shape of this window
+## The finding that decided the whole shape of this window
 
 **There is no interchange format, because Acrobat has none.** A stamp
 collection *is an ordinary PDF* — one file per category, one page per stamp,
@@ -23,7 +23,7 @@ exactly what this window does.
 and **what is each page called** — and writes a file measured against the
 four Adobe collections on this machine.
 
-## ★★★ The trap this window is arranged around
+## The trap this window is arranged around
 
 `pdfcer_core::stamp_file::name_stamp_pages` names `stamps[i]` to **page `i`
 of the document it is given — by counting, not by lookup.** Untick page 1,

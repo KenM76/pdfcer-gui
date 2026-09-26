@@ -14,7 +14,7 @@ Because the operator asked to *"open multiple PDFs at once"*, and every
 application that does answers with tabs — Acrobat, Bluebeam, PDF-XChange,
 Foxit, Illustrator, VS Code, every browser.
 
-★★ **Where the applications an operator already uses agree, their agreement
+**Where the applications an operator already uses agree, their agreement
 is the specification** — not a starting point for a better idea. It is the
 standing rule for every interaction decision in this shell, and it is what
 settles this one.
@@ -31,7 +31,7 @@ below two documents would save 26 points of a CAD sheet and cost the
 feature its discoverability — an operator who has never seen a tab has no
 reason to believe a second document is possible.
 
-★ **"It works and nobody can find it" is never a documentation problem.** A
+**"It works and nobody can find it" is never a documentation problem.** A
 capability with no visible entry point has not shipped, whatever the tests
 say; the fix belongs in the chrome, not in the manual.
 
@@ -39,7 +39,7 @@ Its height is a **constant** ([`egui_shell::tabstrip::STRIP_HEIGHT`]) in an
 `exact_size` panel, for R128's reason: a chrome surface whose height varies
 above a viewport that fits a page to itself is a measured feedback loop.
 
-## 3. ★ Spring-loading — the gesture that makes a cross-document drag
+## 3. Spring-loading — the gesture that makes a cross-document drag
 possible
 
 With one canvas and one Pages panel, only one document's page list is on

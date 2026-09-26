@@ -54,7 +54,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
+    // PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
     //
     // `fixture::text_point_target` holds the document, the point, and the
@@ -150,7 +150,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let frame = session.frame()?;
     let start =
         frame.to_screen(mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?);
-    // ★ Sweep to the RIGHT along the same baseline. A diagonal drag would also
+    // Sweep to the RIGHT along the same baseline. A diagonal drag would also
     // select, and would make a failure ambiguous between "the sweep missed the
     // line" and "the copy did not fire". Same y, a generous run in x.
     let end = frame.to_screen(mapping.doc_to_window(DocPoint::new(
@@ -242,7 +242,7 @@ const SWEEP_PT: f64 = 60.0;
 /// The trace line that says a sweep produced a selection, and **how many
 /// characters** it took.
 ///
-/// ★ The first version of this check watched `text-selection`, which no build
+/// The first version of this check watched `text-selection`, which no build
 /// has ever emitted — the event is `canvas-text-selection`. The sweep worked
 /// perfectly and the check reported SKIPPED with a message blaming the fixture
 /// and `--doc-point`. A wrong event name and a genuinely missing feature are

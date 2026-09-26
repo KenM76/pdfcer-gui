@@ -10,7 +10,7 @@
 // The dialog
 // ---------------------------------------------------------------------------
 
-/// ★★★ **The run ended where the operator asked it to** — said on the outcome
+/// **The run ended where the operator asked it to** — said on the outcome
 /// screen, above the reassurance that the words are in the document.
 ///
 /// A stopped run is a success and an incomplete one at the same time, and this
@@ -19,7 +19,7 @@
 /// document is done; they find out otherwise months later, searching for a word
 /// on page 150 that is not in the layer.
 ///
-/// ★ It names both numbers. "Stopped early" alone leaves them to guess how much
+/// It names both numbers. "Stopped early" alone leaves them to guess how much
 /// they have, and the answer is the whole point of having pressed Stop rather
 /// than Cancel.
 #[must_use]
@@ -31,7 +31,7 @@ pub fn stopped_early(attempted: usize, of: usize) -> String {
 
 /// **Everything was thrown away**, which is what Cancel means.
 ///
-/// ★ It says the document is untouched, because that is the fact the operator
+/// It says the document is untouched, because that is the fact the operator
 /// is actually checking for — a half-written layer is the thing they pressed
 /// Cancel to avoid, and silence about it leaves them to wonder.
 #[must_use]
@@ -50,7 +50,7 @@ pub fn cancelled(attempted: usize) -> String {
 /// Operator request, 2026-09-01: *"so that the user can see that it is doing
 /// something and hasn't frozen on large documents."*
 ///
-/// ★★ Three moving numbers, and each answers a different worry. The page count
+/// Three moving numbers, and each answers a different worry. The page count
 /// answers *"how far"*; the character count answers *"is it still alive"* —
 /// it moves on a dense sheet where the word count barely does; and naming the
 /// page it is ON rather than only the count tells an operator whose scan is bad
@@ -109,7 +109,7 @@ pub fn intro() -> &'static str {
 
 /// The label on the control that starts recognition.
 ///
-/// ★ **No longer "Recognise this page".** It said that because that was all it
+/// **No longer "Recognise this page".** It said that because that was all it
 /// could do, and the operator's 2026-08-26 report — *"how do I OCR more than
 /// one page? Why does the tool stop at one?"* — was as much about the label as
 /// about the capability: a button naming one page is a button that has already
@@ -135,7 +135,7 @@ pub fn scope_heading() -> &'static str {
 
 /// Every page of the document — the default.
 ///
-/// ★ First in the list **and** pre-selected, which are two decisions and both
+/// First in the list **and** pre-selected, which are two decisions and both
 /// deliberate. First because the surveyed tools put it first; pre-selected
 /// because recognising a scan means recognising the scan, not one sheet of it.
 /// The old behaviour is the second option and one click away.
@@ -155,7 +155,7 @@ pub fn scope_current(page: usize) -> String {
     format!("This page only (page {page})")
 }
 
-/// ★★★ **The pages picked in the thumbnail rail** —
+/// **The pages picked in the thumbnail rail** —
 /// `OPERATOR_REQUESTS.md` O79.
 ///
 /// The operator: *"I should have options to do the whole document, or the
@@ -167,7 +167,7 @@ pub fn scope_current(page: usize) -> String {
 /// is a run that can take minutes, so the number is the part that decides
 /// whether he presses the button.
 ///
-/// # ★ Why it is drawn only when something is picked
+/// # Why it is drawn only when something is picked
 ///
 /// R9. With an empty rail selection this option has no operand at all, and a
 /// greyed radio saying *"Selected pages (0)"* would be a control explaining
@@ -205,7 +205,7 @@ pub fn scope_range_hint() -> &'static str {
 
 /// Said under the range field when what was typed names no page.
 ///
-/// ★ Not an error — a **status**. A half-typed `1-` is an ordinary state of a
+/// Not an error — a **status**. A half-typed `1-` is an ordinary state of a
 /// text field the operator is in the middle of using, and colouring it red or
 /// popping a message would be scolding them for typing. The Recognise button is
 /// simply not available until the range resolves, and this says why.
@@ -254,7 +254,7 @@ pub fn what_was_inferred() -> &'static str {
     "What was recognised, and what that is worth"
 }
 
-/// ★ **The confidence sentence, and the most load-bearing string here.**
+/// **The confidence sentence, and the most load-bearing string here.**
 ///
 /// Worded to refuse a specific wrong reading rather than to state a neutral
 /// fact, because the wrong reading is the one a reader arrives with: a page of
@@ -310,7 +310,7 @@ pub const fn engine_tooltip(engine: crate::ocr::EngineId) -> &'static str {
     }
 }
 
-/// ★★★ **The sentence that replaced the whole save apparatus.**
+/// **The sentence that replaced the whole save apparatus.**
 ///
 /// It says three things in one line, and each was a separate control before:
 /// the words are *in the document*, an ordinary Save writes them, and an
@@ -366,7 +366,7 @@ pub fn close() -> &'static str {
 /// the files or — just as often — that they put them somewhere pdfcer never
 /// looks.
 ///
-/// ★ It takes a **list**, not a pre-joined string, and the separator below is
+/// It takes a **list**, not a pre-joined string, and the separator below is
 /// why: a comma and a space between two paths is punctuation an operator reads,
 /// so it is copy and belongs in this file rather than at the call site.
 /// `tools/gates/check-ui-strings.sh` caught exactly that `", "` sitting in
@@ -404,7 +404,7 @@ pub fn nothing_recognised() -> &'static str {
 
 /// Every page in the run already had text, so nothing was recognised.
 ///
-/// ★ Distinct from [`nothing_recognised`], which reports that the recogniser
+/// Distinct from [`nothing_recognised`], which reports that the recogniser
 /// looked and found nothing. This reports that it **declined to look**, which
 /// is a different fact with a different remedy — one is "there is nothing
 /// readable here", the other is "there is already text here and I did not want
@@ -449,7 +449,7 @@ pub fn failed(reason: &str) -> String {
 // The Find offer
 // ---------------------------------------------------------------------------
 
-/// ★ **The sentence the Find bar shows when the page has no text at all.**
+/// **The sentence the Find bar shows when the page has no text at all.**
 ///
 /// It reports the *page*, not the search. That distinction is the whole rule
 /// and the operator stated it: the trigger is *"this document is images"*, and
@@ -641,7 +641,7 @@ mod tests {
         }
     }
 
-    /// ★ **The confidence sentence says the absence is not a clean bill.**
+    /// **The confidence sentence says the absence is not a clean bill.**
     ///
     /// The one string on this surface that must not be softened. It is here as
     /// a test rather than only as a doc comment because "no confidence
@@ -669,7 +669,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The outcome sentence names the document, the save and the undo.**
+    /// **The outcome sentence names the document, the save and the undo.**
     ///
     /// This replaced a test called
     /// `the_write_control_offers_a_new_file_and_never_an_overwrite`, which
@@ -699,7 +699,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The two "nothing happened" sentences are not interchangeable.**
+    /// **The two "nothing happened" sentences are not interchangeable.**
     ///
     /// `nothing_recognised` means the recogniser looked and found nothing;
     /// `already_has_text` means it declined to look. Different facts, different
@@ -716,7 +716,7 @@ mod tests {
         );
     }
 
-    /// ★ **The Find offer talks about the page, not about the search.**
+    /// **The Find offer talks about the page, not about the search.**
     ///
     /// The trap the operator named, pinned. A sentence mentioning matches
     /// would be the collapse of *"the document is images"* into *"this search

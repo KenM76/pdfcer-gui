@@ -17,7 +17,7 @@ It is split along the seams of that pipeline:
 | [`cache`] | one raster per (icon, physical size, weight), memoized |
 | [`paint`] | the `egui-shell` painter seam, and the missing-icon mark |
 
-## ★ Why a hand-rolled SVG subset parser instead of a crate
+## Why a hand-rolled SVG subset parser instead of a crate
 
 egui renders no vector art natively, so an SVG has to become a raster
 somewhere. The three candidate pipelines, and why this one won:
@@ -56,7 +56,7 @@ guesses (see [`svg`]), and [`tests::every_icon_parses`] parses every
 shipped asset, so a malformed or out-of-subset icon fails the test gate
 instead of shipping as a wrong glyph.
 
-## ★ Theming: one raster per icon, tinted at draw time
+## Theming: one raster per icon, tinted at draw time
 
 Every asset is `stroke="currentColor"` — a single-colour outline with no
 palette — so each icon is rasterized ONCE as a white-on-transparent
@@ -80,7 +80,7 @@ Consequences, all of them deliberate:
   textured meshes exactly as it applies to text — so an icon fades
   precisely the way the text beside it does.
 
-## ★ Weight, and why selected state is not colour alone
+## Weight, and why selected state is not colour alone
 
 [`IconWeight::Bold`] rasterizes the same art with the stroke width
 multiplied. It exists because of the standing rule that **selected state
@@ -92,7 +92,7 @@ carry the control's selected state, so the ribbon path cannot apply the
 weight cue today. It is fully implemented and reachable through
 [`toggle_image`] for anything the application draws itself.
 
-## ★ DPI
+## DPI
 
 Icons are laid out in **logical points** ([`ICON_PTS`], or whatever
 square the ribbon reserved) but rasterized at

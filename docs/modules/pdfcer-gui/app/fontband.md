@@ -16,7 +16,7 @@ gets out of the way.
 
 This module is what goes in that `Ui`.
 
-## ★★★ The shell reserves the slot; everything else is ours, including the
+## The shell reserves the slot; everything else is ours, including the
 greying
 
 This is the sentence to read before changing anything here, because it is
@@ -40,14 +40,14 @@ sweeping with the Text tool is what gives them something to act on. That is
 O37's *"nothing on screen tells you to press T"*, answered where the
 question is asked.
 
-★ The rect is published under `ribbon.item.<command id>` — the same name
+The rect is published under `ribbon.item.<command id>` — the same name
 `egui_shell::ribbon::report::band_item` builds for a command control — so a
 driven check finds a face chooser the same way it finds a Delete button. A
 second naming scheme for "the same kind of thing, drawn by the other half
 of the program" is how a harness comes to have two lookup paths, which is
 the defect `driving::declared_or_in_overflow` was written to end.
 
-## ★★ It reports; it does not dispatch
+## It reports; it does not dispatch
 
 Every control here parks a [`StyleChange`] and returns the command's
 `HandlerToken`. It raises no `Action` and touches no document.
@@ -63,7 +63,7 @@ touched the ribbon then gets the same answer as a click.
 `app::recent::menu` is the precedent and the shape is identical: the
 picker asks, the command acts.
 
-## ★ Why these read the registry rather than `crate::text::commands`
+## Why these read the registry rather than `crate::text::commands`
 
 The label and tooltip could be fetched straight from
 `crate::text::commands::format_font()`, which is where the registry got

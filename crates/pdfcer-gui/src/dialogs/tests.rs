@@ -3,7 +3,7 @@
 //!
 //! > the tests were the seam and the code was not.
 //!
-//! ★ [`super`] is one subject — **who owns which window, and when is it
+//! [`super`] is one subject — **who owns which window, and when is it
 //! dropped** — and it cannot be cut in half without putting the field, the
 //! draw call and the close rule for one dialog in different files. That is the
 //! arrangement `check-file-size.sh`'s own header warns against ("a reviewer
@@ -26,7 +26,7 @@
 
 use super::*;
 
-/// ★★★ **A window that closed BECAUSE it was answered is not retired
+/// **A window that closed BECAUSE it was answered is not retired
 /// until the answer has been taken out of it.**
 ///
 ///
@@ -90,7 +90,7 @@ fn a_closed_document_closes_every_document_scoped_dialog() {
     assert!(dialogs.redact.is_none());
 }
 
-/// ★ **Apply redactions cannot be opened without a document, and a second
+/// **Apply redactions cannot be opened without a document, and a second
 /// invocation does not rebuild it.**
 ///
 /// Both guards matter more for this dialog than for any of its neighbours,
@@ -172,7 +172,7 @@ fn no_document_means_no_recognition_dialog() {
 
 /// About opens with no document, and survives the document closing.
 ///
-/// ★ The one property that would have been lost by reusing print's shape.
+/// The one property that would have been lost by reusing print's shape.
 /// `open_about` takes no `Status` precisely so this cannot regress by
 /// someone adding a guard "for consistency"; the assertion is here so
 /// that if they do, something says why it was not consistent in the first

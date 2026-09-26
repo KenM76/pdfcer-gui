@@ -22,7 +22,7 @@ possible at all: `TextAnnotStyle` grew `font_size` and `stamp_fit`, and
 `EditSession::stamp_label_parameters` grew the read half, so a panel can now
 both show what size a placed stamp's words are and write a new one.
 
-# ★★★ Why every unit test in the crate can be green while this fails
+# Why every unit test in the crate can be green while this fails
 
 Because the panel sits at the far end of a chain that no test in the crate
 can stand at the near end of. The hops, and the test in front of each:
@@ -43,7 +43,7 @@ sentence is a report about the last hop, and only a hand on the control can
 measure it.
 
 
-# ★★ The oracle, and why it is two trace lines rather than a screenshot
+# The oracle, and why it is two trace lines rather than a screenshot
 
 A driven check cannot read a number off a picture. Two lines carry it:
 
@@ -66,7 +66,7 @@ record: **a trace line must carry the number a wrong build would get wrong**,
 and before these two, every line this route emitted was byte-identical
 between a build that carried the operator's number and one that dropped it.
 
-# ★★★ The falsifications, which are what make this a test
+# The falsifications, which are what make this a test
 
 **The size typed is checked against the size already there.** The stamp is
 placed with the dialog's default (*Fit the box I drew*), so its label size is

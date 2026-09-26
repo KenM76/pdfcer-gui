@@ -114,7 +114,7 @@ pub struct NewDocumentDialog {
 impl NewDocumentDialog {
     /// Open the dialog, on A4 portrait.
     ///
-    /// ★ **A4 portrait and not something cleverer.** It is what `file.new`
+    /// **A4 portrait and not something cleverer.** It is what `file.new`
     /// makes, and the two commands sit next to each other in the same ribbon
     /// group: an operator who opens this window to check what it offers should
     /// see the state the plain command would have produced, so the difference
@@ -175,7 +175,7 @@ impl NewDocumentDialog {
     /// The sheet this dialog currently describes, in points, **after**
     /// orientation.
     ///
-    /// # ★ One function, read by three callers, and that is the point
+    /// # One function, read by three callers, and that is the point
     ///
     /// The summary line, the validity check and the action all ask this. Three
     /// separate computations of "what did they pick" is how a window comes to
@@ -312,7 +312,7 @@ impl NewDocumentDialog {
         }
 
         ui.add_space(8.0);
-        // ★ The summary reports the sheet that will land, or says why none
+        // The summary reports the sheet that will land, or says why none
         // will. One line, two states, never both — an operator whose numbers
         // are out of range does not also need to be told what 0 × 0 mm would
         // be in points.
@@ -332,7 +332,7 @@ impl NewDocumentDialog {
             if ui.button(t::cancel()).clicked() {
                 self.close_requested = true;
             }
-            // ★ ABSENT, not greyed, when the size is out of range — and this is
+            // ABSENT, not greyed, when the size is out of range — and this is
             // the one place in this dialog where that rule is arguable, so the
             // argument is written down.
             //
@@ -362,7 +362,7 @@ impl NewDocumentDialog {
 mod tests {
     use super::*;
 
-    /// ★ Landscape transposes, and it transposes both kinds of sheet.
+    /// Landscape transposes, and it transposes both kinds of sheet.
     ///
     /// The single most likely defect in this window: a standard size that
     /// turns and a custom size that does not, or the reverse. Both go through
@@ -397,7 +397,7 @@ mod tests {
         );
     }
 
-    /// ★ A standard size comes from the ENGINE's table, to the last decimal.
+    /// A standard size comes from the ENGINE's table, to the last decimal.
     ///
     /// Not a tautology test. The failure it exists for is a shell that
     /// hand-rounds A1 to `1683.78 × 2383.94` — numbers that look right, are
@@ -418,7 +418,7 @@ mod tests {
         );
     }
 
-    /// ★ The bounds are checked on the millimetres the operator typed.
+    /// The bounds are checked on the millimetres the operator typed.
     ///
     /// Both directions, because a check written as `> 0` would let a 12-metre
     /// sheet through and one written as `< MAX` would let a zero through, and
@@ -447,7 +447,7 @@ mod tests {
         assert!(dialog.is_valid(), "the floor itself must be allowed");
     }
 
-    /// ★ The dialog opens on exactly what `file.new` makes.
+    /// The dialog opens on exactly what `file.new` makes.
     ///
     /// The two commands sit beside each other in one ribbon group, and the
     /// difference between them must be "one asks" and nothing else. A default

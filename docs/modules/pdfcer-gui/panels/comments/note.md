@@ -10,7 +10,7 @@ drafted or remembered."* That sentence is now false and is corrected there;
 this file is what made it false, and it is worth its own file so the
 argument for the correction is in one place.
 
-## ★★★ Why a draft at all, rather than writing on every keystroke
+## Why a draft at all, rather than writing on every keystroke
 
 Because a keystroke is not an operator act. `EditSession::set_markup_note`
 is **one undoable command**, so a live binding would raise one per letter
@@ -21,7 +21,7 @@ singular verb.
 
 ⇒ So: type freely, press **Save note** once, get one undo entry.
 
-## ★★★ The stamp is `(annotation, edit epoch)`, and the epoch is the member
+## The stamp is `(annotation, edit epoch)`, and the epoch is the member
 that is easy to leave out
 
 The annotation half is obvious — a draft belongs to the row it was opened
@@ -40,7 +40,7 @@ when the document moves under it, and the operator retypes, which is the
 honest outcome: **the alternative is words landing somewhere nobody asked
 for, silently.**
 
-★ Dropped rather than *refused at Save time*, because a stale draft on
+Dropped rather than *refused at Save time*, because a stale draft on
 screen is a lie for however long it stays there — it shows text next to a
 shape that no longer has that text — and the moment to stop lying is the
 moment it goes stale, not the moment somebody presses a button.
@@ -61,7 +61,7 @@ reply path to keep words alive across an edit that the note path drops, and
 the consequence of that divergence is an operator's answer landing on an
 object id the writer has since reused.
 
-★ What is NOT shared is the **seed**: [`NoteDraft::begin`] fills the box
+What is NOT shared is the **seed**: [`NoteDraft::begin`] fills the box
 with the existing words and [`NoteDraft::begin_reply`] leaves it empty, for
 the reason on that method — a reply carries the operator's own byline, so
 anything pre-filled goes out signed by them.

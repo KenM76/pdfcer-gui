@@ -9,7 +9,7 @@ One preference, read and written through the egui context, shared by the
 * `panels::properties::markup::textannot` — retyping the size of a stamp
   already on the page, which `pdfcer-core` `Pass 292.0` made possible.
 
-## ★★★ Why this is a preference and not a property read off the file
+## Why this is a preference and not a property read off the file
 
 Because **nothing in a PDF records the author's fit intent**, and the
 engine says so in the field's own doc rather than leaving it to be
@@ -29,7 +29,7 @@ with nothing to compare against. A **standing preference** is the honest
 shape: it says *this is what I want done*, which is a fact about the
 operator and is exactly what it claims to be.
 
-## ★★ Why the two surfaces share ONE preference rather than each keeping
+## Why the two surfaces share ONE preference rather than each keeping
 ## their own
 
 Because they are the same question asked twice about the same stamp, and

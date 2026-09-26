@@ -117,11 +117,11 @@ pub enum MoveSubject {
         /// `move_objects` needs in order to succeed rather than refuse.
         objects: Vec<usize>,
     },
-    /// ★★★ **The Object rung for things painted INSIDE a form XObject**:
+    /// **The Object rung for things painted INSIDE a form XObject**:
     /// `move_objects_in_form`.
     ///
     ///
-    /// ## ★★ A separate variant, not `Objects` with leaf indices in it
+    /// ## A separate variant, not `Objects` with leaf indices in it
     ///
     /// Because the indices are in **different address spaces** and the whole
     /// safety property of `TargetId` is that they cannot be confused. `objects`
@@ -142,7 +142,7 @@ pub enum MoveSubject {
         /// refuses the whole batch.
         leaves: Vec<usize>,
     },
-    /// ★★ The Part rung **inside a form XObject**: `move_subpath_in_form`.
+    /// The Part rung **inside a form XObject**: `move_subpath_in_form`.
     ///
     /// Its own variant beside [`Self::Subpath`] for [`Self::LeavesInForm`]'s
     /// reason: the enclosing object is a leaf index, and the two spaces must
@@ -155,7 +155,7 @@ pub enum MoveSubject {
         /// The subpath, in decomposition order.
         subpath: usize,
     },
-    /// ★★ The Node rung inside a form, one anchor: `move_node_in_form`.
+    /// The Node rung inside a form, one anchor: `move_node_in_form`.
     NodeInForm {
         /// The page.
         page: usize,
@@ -164,7 +164,7 @@ pub enum MoveSubject {
         /// The anchor, object-scoped.
         node: usize,
     },
-    /// ★★ The Node rung inside a form, several anchors: `move_nodes_in_form`.
+    /// The Node rung inside a form, several anchors: `move_nodes_in_form`.
     NodesInForm {
         /// The page.
         page: usize,
@@ -229,7 +229,7 @@ pub enum MoveSubject {
     /// entry** — `VectorAction::MoveTextLines` translates each line to its run
     /// range, calls `move_text_run` once per run, and coalesces the lot.
     ///
-    /// # ★ Why this is a second variant and not `TextLine` with a `Vec`
+    /// # Why this is a second variant and not `TextLine` with a `Vec`
     ///
     /// [`Self::Nodes`]' argument, one rung up: the singular case is a member
     /// and the plural case is a set, and which of the two the shell is holding
@@ -292,7 +292,7 @@ pub enum MoveSubject {
     },
     /// The Node rung with **several** anchors selected: `move_nodes`.
     ///
-    /// # ★ Why this is a second variant and not `Node` with a `Vec`
+    /// # Why this is a second variant and not `Node` with a `Vec`
     ///
     /// Because the singular case has a verb of its own in `EditSession`, and
     /// `docs/core-api/02`'s rule cuts the other way too: the plural verb is
@@ -342,7 +342,7 @@ pub struct MoveContext {
     /// What kind of part the entered object decomposes into, at the Part and
     /// Node rungs. `None` for an object with no Part rung at all (an image).
     pub part_kind: Option<PartKind>,
-    /// ★★★ **Whether the engine would refuse to move any SELECTED chunk**,
+    /// **Whether the engine would refuse to move any SELECTED chunk**,
     /// and why — `None` when every one of them would move, or when the
     /// selection is not text at all.
     ///
@@ -356,7 +356,7 @@ pub struct MoveContext {
     /// prove it never have to build a decomposition. The decomposition-shaped
     /// question is asked once, by [`context`], which owns the provider.
     ///
-    /// ★★ It is the ENGINE's answer, not this crate's —
+    /// It is the ENGINE's answer, not this crate's —
     /// [`ObjectModelProvider::text_line_move_refusal_of`] calls the same
     /// function `plan_move_text_run` runs first. That is what makes the ghost
     /// and the commit structurally unable to disagree; see [`RunMoveBlock`] for
@@ -367,7 +367,7 @@ pub struct MoveContext {
 
 /// Convert a **canvas-space** drag delta into a **PDF page-space** one.
 ///
-/// # ★ Why this is the only zoom-safe way to do it, and why no zoom appears
+/// # Why this is the only zoom-safe way to do it, and why no zoom appears
 ///
 /// The zoom has already been divided out, once, before this is ever called.
 /// `canvas/mod.rs` builds the frame's [`PageMapping`] and converts the
@@ -438,7 +438,7 @@ pub fn eligible(
             // entry refuses the whole batch.
             let objects = selection.object_indices_on(page);
             if objects.is_empty() {
-                // ★★ **An empty operand list is not the same as an empty
+                // **An empty operand list is not the same as an empty
                 // selection**, and saying so was a flat contradiction of what
                 // was on screen.
                 //
@@ -449,7 +449,7 @@ pub fn eligible(
                 // entirely of those, and this arm reported it as *"nothing
                 // selected"* while the operator was looking at an outline round
                 // the thing they were dragging.
-                // ★★★ **A pure form-interior selection MOVES, as of
+                // **A pure form-interior selection MOVES, as of
                 // 2026-09-01** — O70's second slice.
                 //
                 // This arm returned `Refusal::InsideForm` for the life of the
@@ -457,7 +457,7 @@ pub fn eligible(
                 // address a leaf. `pdfcer-core` Pass 188.0 shipped six that can,
                 // and this is the first of them to be wired.
                 //
-                // ★ The refusal is KEPT for the case it is still true of — an
+                // The refusal is KEPT for the case it is still true of — an
                 // empty selection is still nothing selected, and a leaf list
                 // the engine later declines still produces a worded decline
                 // from the apply arm rather than silence.
@@ -468,7 +468,7 @@ pub fn eligible(
                     Ok(MoveSubject::LeavesInForm { page, leaves })
                 };
             }
-            // ★★★ THE REFUSAL BECAME A FORK — 2026-08-20, and it is the
+            // THE REFUSAL BECAME A FORK — 2026-08-20, and it is the
             // operator's *"can I please please please have the capability to
             // move the text after?"*
             //
@@ -484,7 +484,7 @@ pub fn eligible(
             // in `q <cm> … Q`, which never looks at an operand — so it moves
             // anything.
             //
-            // ★★ WHY THIS IS A FORK AND NOT A REPLACEMENT, which is the part a
+            // WHY THIS IS A FORK AND NOT A REPLACEMENT, which is the part a
             // reader will want to argue with.
             //
             // Both verbs move things and both are one command and one undo
@@ -518,7 +518,7 @@ pub fn eligible(
                         subpath,
                     }),
                     //
-                    // ★ The pre-check is the same one the page arm runs and
+                    // The pre-check is the same one the page arm runs and
                     // it was asked of the same `TargetId`, so a leaf and a page
                     // object cannot come to disagree about whether a run moves.
                     Some(PartKind::TextLine) => match ctx.run_move {
@@ -556,7 +556,7 @@ pub fn eligible(
                 // planner.
                 Some(PartKind::TextLine) => match ctx.run_move {
                     Some(block) => Err(Refusal::TextRunCannotMove(block)),
-                    // ★★ **Every selected chunk, not just the entered one** — the
+                    // **Every selected chunk, not just the entered one** — the
                     // Node rung's lesson one rung up. `pick_within` has always
                     // pushed a Shift-clicked part in as its own entry, so the
                     // model could hold a multi-chunk selection from the day the
@@ -580,7 +580,7 @@ pub fn eligible(
         SelectionLevel::Node => {
             let entry = entered_entry(selection, page)?;
             let node = entry.node.ok_or(Refusal::NoNodeEntered)?;
-            // ★★★ …and the Node rung, for the Part rung's reason.
+            // …and the Node rung, for the Part rung's reason.
             if let Some(leaf) = entry.object.leaf_index() {
                 let nodes = selection.selected_nodes_on(page, entry.object);
                 return match ctx.part_kind {
@@ -596,7 +596,7 @@ pub fn eligible(
                 .object
                 .page_object_index()
                 .ok_or(Refusal::UnaddressableObject)?;
-            // ★★ **Every selected anchor on the entered object, not just the
+            // **Every selected anchor on the entered object, not just the
             // entered one.** `SelectionState::pick_within` has always added a
             // Shift-clicked anchor as its own entry — the model could hold a
             // multi-node selection from the day the Node rung landed — and this
@@ -660,7 +660,7 @@ pub fn action(
         return Err(Refusal::NoTravel);
     }
     match subject {
-        // ★ `translate` in PAGE space, which is what `PageDelta` already is —
+        // `translate` in PAGE space, which is what `PageDelta` already is —
         // `page_delta` did the one canvas → page conversion and this is the
         // same pair of numbers `MoveSelection` below hands to `move_objects`.
         // Two rungs, one displacement, no second derivation.
@@ -690,7 +690,7 @@ pub fn action(
         }
         .into()),
         MoveSubject::NodeInForm { page, leaf, node } => {
-            // ★ Absolute, exactly as the page-level arm below: the verb takes
+            // Absolute, exactly as the page-level arm below: the verb takes
             // where the point IS GOING, not how far it moved, because the
             // operand it rewrites is a coordinate pair. `node_at` is the
             // anchor's current page-space position and comes from the same
@@ -705,7 +705,7 @@ pub fn action(
             .into())
         }
         MoveSubject::NodesInForm { page, leaf, nodes } => {
-            // ★ A selected anchor the current decomposition does not have
+            // A selected anchor the current decomposition does not have
             // refuses the WHOLE drag, for the page-level arm's reason: a
             // partial application reads as a rendering fault rather than as a
             // refusal, and the operator cannot tell which anchor was dropped.
@@ -726,7 +726,7 @@ pub fn action(
             dy: delta.dy,
         }
         .into()),
-        // ★★★ A displacement, not a destination, and that is the engine's
+        // A displacement, not a destination, and that is the engine's
         // signature rather than this shell's preference: `move_text_run`
         // rewrites the operands of a positioning operator (or inserts one), so
         // the natural operand is how far, exactly as it is for `move_subpath`
@@ -797,7 +797,7 @@ pub fn action(
             object,
             nodes,
         } => {
-            // ★ A selected anchor that the current decomposition does not have
+            // A selected anchor that the current decomposition does not have
             // refuses the WHOLE drag rather than moving the ones it recognises.
             // The same call `move_objects` makes over a non-path member, and
             // for the same reason: a partial application reads as a rendering
@@ -883,7 +883,7 @@ fn context(
 /// and then refuse at the commit — the operator watching an outline slide
 /// across the sheet and snap back, which is the exact failure O188 is about.
 ///
-/// # ★ Asked at the Part rung only
+/// # Asked at the Part rung only
 ///
 /// At the Node rung the entries carry a `subpath` too, naming the *enclosing*
 /// part of each selected anchor, so
@@ -941,14 +941,14 @@ fn node_point(provider: &ObjectModelProvider, object: usize, node: usize) -> Opt
 /// | [`Self::ghost`] | *where is the selection going?* — the bounding outline, which is the SELECTION indicator |
 /// | [`Self::shape`] | *what will it look like?* — the real geometry, which is what the operator asked for |
 ///
-/// ★★ The second is `None` on every rung the shell cannot draw honestly: a text
+/// The second is `None` on every rung the shell cannot draw honestly: a text
 /// run, an image, a form XObject, a page that will not decompose, or a selection
 /// past `canvas::shapes`' cap. In every one of those cases the outline alone is
 /// drawn, which is exactly what this canvas did before the shape preview
 /// existed — so the fallback is a known-good behaviour rather than a degraded
 /// one.
 ///
-/// ★ Not folded into one enum. `dragroute::Previews` gives the argument and it
+/// Not folded into one enum. `dragroute::Previews` gives the argument and it
 /// applies here: the painter reads each independently, and one value whose
 /// meaning depends on which rung is live is a value the paint loop has to
 /// interrogate.
@@ -958,7 +958,7 @@ pub struct MovePreview {
     pub ghost: Option<Vec2>,
     /// The selection's own geometry at its new position, in page space.
     pub shape: Option<crate::canvas::shapes::ShapePreview>,
-    /// ★★★ **The same geometry, on the frame the gesture RELEASED**, for the
+    /// **The same geometry, on the frame the gesture RELEASED**, for the
     /// canvas to hold until the page raster catches up (O63's third piece).
     ///
     /// `Some` on exactly one frame per gesture — the one that pushed the
@@ -1025,7 +1025,7 @@ pub fn drag(
     };
 
     if phase == Phase::InFlight {
-        // ★★★ THE LIVE SHAPE, `OPERATOR_REQUESTS.md` O63.
+        // THE LIVE SHAPE, `OPERATOR_REQUESTS.md` O63.
         //
         // **Ken, 2026-08-30:** *"if I moved the end of a line, it didn't show me
         // the shape change of the line, it just had a perimeter box around it …
@@ -1037,7 +1037,7 @@ pub fn drag(
         // what the commit will do. Convention D2 — *derived from commit* —
         // enforced by control flow rather than by discipline.
         //
-        // ★ The bounding ghost is returned as well, not instead. It is the
+        // The bounding ghost is returned as well, not instead. It is the
         // SELECTION indicator and it stays; what changes is that the shape now
         // moves with it. And on a rung the shape preview cannot serve — a text
         // run, an image, a form XObject, or a selection past the cap — the
@@ -1085,7 +1085,7 @@ pub fn drag(
         _ => Vec::new(),
     };
 
-    // ★ Cloned before `action` consumes it, so the hold below describes the
+    // Cloned before `action` consumes it, so the hold below describes the
     // SAME subject the Action carries. A hold rebuilt from the selection would
     // be a second derivation of what the release decided, and the two could
     // disagree on exactly the rung where a disagreement is invisible.
@@ -1105,14 +1105,14 @@ pub fn drag(
         }
         Err(reason) => {
             decline(selection, reason, actions);
-            // ★★ A refused release holds NOTHING. The document did not change,
+            // A refused release holds NOTHING. The document did not change,
             // so there is nothing for a preview to be true about, and holding
             // one would show the operator a move that was declined — the
             // "placeholder" failure R9 forbids, in its most misleading form.
             return MovePreview::default();
         }
     }
-    // ★★★ HOLD IT. `OPERATOR_REQUESTS.md` O63, third piece.
+    // HOLD IT. `OPERATOR_REQUESTS.md` O63, third piece.
     //
     // **Ken, 2026-08-30:** *"the live preview should remain while the update to
     // the pdf structure runs in the background."*
@@ -1123,7 +1123,7 @@ pub fn drag(
     // this function did until today — makes the object appear to snap back to
     // its old position and then jump forward when the raster lands.
     //
-    // ★ Built from the SAME `delta` and the SAME `subject` the Action carries,
+    // Built from the SAME `delta` and the SAME `subject` the Action carries,
     // one line below where it was pushed. There is no second computation to
     // drift, and a hold cannot describe a move the engine was not asked to make.
     let hold = provider
@@ -1144,7 +1144,7 @@ pub fn drag(
 /// and finds the cause on the same line rather than inferring it from an
 /// absence — the same contract `canvas-delete-declined` already honours.
 fn decline(selection: &SelectionState, reason: Refusal, actions: &mut Vec<Action>) {
-    // ★★ **Two refusals out of the eleven have something to say to the
+    // **Two refusals out of the eleven have something to say to the
     // operator, and they are the two you meet without having made a mistake.**
     //
     // Which two, and why, is [`Refusal::worded`]'s subject and the argument
@@ -1152,7 +1152,7 @@ fn decline(selection: &SelectionState, reason: Refusal, actions: &mut Vec<Action
     // adding a twelfth refusal a compile error until somebody decides.
     //
     //
-    // ★ Recorded from the CANVAS, which no other decline in this application
+    // Recorded from the CANVAS, which no other decline in this application
     // does. It is sound for the reason `status::decline`'s header gives for the
     // store being a thread-local at all: `eframe`'s update loop is one thread,
     // the writer and the reader are the same thread, and this changes no
@@ -1160,7 +1160,7 @@ fn decline(selection: &SelectionState, reason: Refusal, actions: &mut Vec<Action
     // of `dispatch_command`, so the operator's next command ends the sentence,
     // and `Declined::InsideForm::still_true` ends it the moment they select
     // something that is not in a form.
-    // ★ Raised as an **action**, not written to the decline store directly.
+    // Raised as an **action**, not written to the decline store directly.
     //
     // The store is `pub(super)` inside `crate::app` on purpose — *"a decline is
     // written by the one dispatcher and read by the one bar"* — and widening it
@@ -1183,7 +1183,7 @@ fn decline(selection: &SelectionState, reason: Refusal, actions: &mut Vec<Action
     });
 }
 
-/// ★★★ **The keyboard's way of asking for the same move** — the arrow keys.
+/// **The keyboard's way of asking for the same move** — the arrow keys.
 ///
 ///
 /// It is under `moving` rather than under `keys` because the shared thing is the

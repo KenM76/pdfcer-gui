@@ -13,7 +13,7 @@ carrying a third of its lines.
 a press land on*. This owns *what does a completed click do about it*, and
 the pair is easier to reason about than either was inside `interact`.
 
-## ★★ The whole subject is a LADDER, and its order is the design
+## The whole subject is a LADDER, and its order is the design
 
 A click is exactly one thing. Never two. The arms of [`click`] are tried in
 order and the first that answers consumes it. **Twelve rungs**, and the
@@ -34,12 +34,12 @@ table is the arms of one `if` / `else if` chain — if you add one, add a row:
 | 11 | **a measure pick** | the dimension tools |
 | 12 | **content selection** | what a click meant before any of the above existed |
 
-★ Two rungs carry the same warning and it is the one to read first: **a
+Two rungs carry the same warning and it is the one to read first: **a
 rung placed below an arm that answers for the whole canvas never runs.**
 Rung 4's position was got wrong that way once and cost the operator four
 reports; rung 5's comment records the same trap being avoided deliberately,
 for the second feature in a row.
 
-★ A click on a comment pop-up is resolved **before** the ladder and returns,
+A click on a comment pop-up is resolved **before** the ladder and returns,
 rather than being a rung: it is a click on a floating surface the shell drew
 over the page, not a click on the page.

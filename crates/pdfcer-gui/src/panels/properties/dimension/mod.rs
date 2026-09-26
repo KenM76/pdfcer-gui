@@ -45,7 +45,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     // No `.strong()` — R84 / DEFECTS.md D11. See `dialogs::dimension_groups`.
     ui.label(t::heading());
 
-    // ★ Read from the SESSION, every frame. `dimension_model()` clones out of
+    // Read from the SESSION, every frame. `dimension_model()` clones out of
     // the `/PieceInfo` sidecar, so this is the model as the document stands
     // including unsaved edits — and a cached copy would be stale for exactly
     // the frame after the operator changed something, which is the frame they
@@ -108,7 +108,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
         }));
     }
 
-    // ★ The measurement comes from the model's own `display`, which is the
+    // The measurement comes from the model's own `display`, which is the
     // producer the `/AP` label is baked from — including the branch that sends
     // an ANGULAR kind to `format_angle_degrees` and never applies the group
     // scale. Formatting it here instead would produce a plausible, wrong number
@@ -136,7 +136,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     ui.weak(t::overrides_hint());
     let mut next = record.style;
     let valid = overrides::show(ui, group, &mut next);
-    // ★ Raised only when the draft VALIDATES and differs. The validity gate is
+    // Raised only when the draft VALIDATES and differs. The validity gate is
     // the tolerance's: an inverted limit pair or a negative magnitude is
     // refused by the engine with a sentence, and pushing the action anyway
     // would turn a refusal the operator can read into an edit that silently
@@ -154,7 +154,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
 /// **Say something other than the measurement**, without changing it.
 ///
 ///
-/// # ★★★ It does NOT destroy the measurement, and that is the whole design
+/// # It does NOT destroy the measurement, and that is the whole design
 ///
 /// The engine's own note is titled for it: *"dimension text override ships and
 /// it does not destroy the measurement."* The override is a **caption**; the
@@ -167,7 +167,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
 /// changing what was measured, and on a drawing that is the difference between
 /// a note and a lie.
 ///
-/// # ★★ Why the measured value is shown even while overridden
+/// # Why the measured value is shown even while overridden
 ///
 /// `DimensionLabelChange` carries `measured` and `printed` separately, and this
 /// shows both whenever they differ. An operator looking at a ce dimension that
@@ -198,7 +198,7 @@ fn label_row(
     crate::diag::ui_rect(LABEL_REGION, response.rect);
     ui.data_mut(|d| d.insert_temp(id, draft.clone()));
 
-    // ★ On focus loss OR Enter — the two ways a person finishes typing. Neither
+    // On focus loss OR Enter — the two ways a person finishes typing. Neither
     // alone is enough: an operator who tabs away has finished, and one who
     // presses Enter without moving has too.
     let done = response.lost_focus();
@@ -214,7 +214,7 @@ fn label_row(
         });
         actions.push(Action::Dimension(DimensionAction::SetLabel {
             dimension: record.id,
-            // ★★ EMPTY MEANS RESTORE, and the engine says so in as many words:
+            // EMPTY MEANS RESTORE, and the engine says so in as many words:
             // *"pass `None` to restore the measurement instead."* Clearing the
             // box is the operator saying "go back to the number", which is
             // exactly what `None` means — so there is no separate Clear button
@@ -223,7 +223,7 @@ fn label_row(
         }));
     }
 
-    // ★★ The measured value is NOT shown here, and it is a real gap rather
+    // The measured value is NOT shown here, and it is a real gap rather
     // than a decision: `DimensionRecord` does not carry it — the measurement is
     // computed from the geometry and the group's scale, and only
     // `DimensionLabelChange` hands it back, at the moment of a change.
@@ -241,7 +241,7 @@ fn label_row(
 
 /// The radius / diameter choice, for a circular ce dimension only.
 ///
-/// # ★ Why it is offered only for a circular kind
+/// # Why it is offered only for a circular kind
 ///
 /// `set_dimension_display` refuses a non-circular target by name
 /// (`EditError::NotACircularDimension`) and refuses **before** mutating. R9's
@@ -249,7 +249,7 @@ fn label_row(
 /// linear or angular ce dimension gets no control rather than a greyed one —
 /// and the engine's refusal stays as the backstop rather than as the path.
 ///
-/// # ★ Why the action is raised only on a CHANGE
+/// # Why the action is raised only on a CHANGE
 ///
 /// `set_dimension_display` is documented as committing **even when nothing
 /// changes** — flagged in `02-editing-and-saving.md` §1.19 as *"the opposite of

@@ -4,7 +4,7 @@ A module header out of proportion to its two functions — because *"what time i
 than it looks, and because the crate below this one has **deliberately
 refused to answer it**.
 
-## ★★★ Why the engine will not do this and the shell must
+## Why the engine will not do this and the shell must
 
 `pdfcer-core`'s `MarkupNote::modified` takes a PDF date string **from the
 caller** and its own note says why:
@@ -27,7 +27,7 @@ in front of.** *"When did I write this comment"* has a true answer here and
 does not down there. So this module exists, and the obligation it inherits
 is that the answer must be **true or absent** — never plausible.
 
-## ★★ Why UTC, when the operator is in a time zone
+## Why UTC, when the operator is in a time zone
 
 Because §7.9.4 permits `Z` and this crate has no way to learn the local
 offset without a dependency. The three options were:
@@ -43,11 +43,11 @@ down: it produces the string that looks right to the person who typed the
 comment, and it is wrong in a way nobody would ever notice until two
 reviewers in two countries compared notes.
 
-★ The day a timezone crate is worth adding, this function is the only place
+The day a timezone crate is worth adding, this function is the only place
 that changes, and `Z` is a correct value it will be replacing rather than a
 bug it will be fixing.
 
-## ★ The calendar arithmetic is Hinnant's, not a guess
+## The calendar arithmetic is Hinnant's, not a guess
 
 `days_from_civil`'s inverse — the standard days-to-civil algorithm, shifted
 to a March-based year so the leap day falls at the end and the leap rule

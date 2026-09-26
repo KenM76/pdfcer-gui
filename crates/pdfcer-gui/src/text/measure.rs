@@ -13,7 +13,7 @@ use pdfcer_core::dimension::TwoLineRefusal;
 
 /// Why a two-line pick could not author anything.
 ///
-/// ★ Both sentences say **what to do next**, not only what went wrong. A
+/// Both sentences say **what to do next**, not only what went wrong. A
 /// refusal an operator cannot act on is a dead end with better manners: the
 /// gesture is still armed, both picks are still there, and the corrective is
 /// one more click on a different line.
@@ -39,7 +39,7 @@ pub const fn two_line_refused(refusal: TwoLineRefusal) -> &'static str {
     }
 }
 
-/// ★ **What the two-line tool read the pair as** — the disclosure obligation
+/// **What the two-line tool read the pair as** — the disclosure obligation
 /// this build was not meeting.
 ///
 /// Returns `None` when there is nothing an operator could not already see: an
@@ -104,7 +104,7 @@ pub fn two_line_reading(
     }
 }
 
-/// ★★ **The disclosure a dragged perimeter vertex owes**: what the dimension
+/// **The disclosure a dragged perimeter vertex owes**: what the dimension
 /// read before, and what it reads now.
 ///
 /// # Why BOTH numbers, when one of them is on the page
@@ -137,14 +137,14 @@ pub fn vertex_remeasured(previous: &str, current: &str) -> String {
     format!("That corner changed the measurement: {previous} is now {current}.")
 }
 
-/// ★★ **The disclosure an ADDED corner owes** — 2026-09-05.
+/// **The disclosure an ADDED corner owes** — 2026-09-05.
 ///
 /// Same obligation as [`vertex_remeasured`] and one fact more. Adding a corner
 /// re-measures the shape, so the two labels are owed for that function's
 /// reason: the operator can see the new number and cannot see the old one,
 /// because the geometry it was measured from no longer exists.
 ///
-/// # ★ Why the COUNT is in the sentence and the move's is not
+/// # Why the COUNT is in the sentence and the move's is not
 ///
 /// Because the count is what the operator asked to change, and it is the one
 /// thing a mis-aimed gesture gets wrong *invisibly*. A corner dropped on the
@@ -166,7 +166,7 @@ pub fn vertex_inserted(corners: usize, previous: &str, current: &str) -> String 
     format!("A corner was added — {corners} corners now, and {previous} is now {current}.")
 }
 
-/// ★★ **The disclosure a REMOVED corner owes** — [`vertex_inserted`]'s twin,
+/// **The disclosure a REMOVED corner owes** — [`vertex_inserted`]'s twin,
 /// and the sentence the operator's own report of 2026-09-05 was about:
 ///
 /// > *"I also can't edit or delete nodes of a markup shape once it is drawn."*
@@ -184,7 +184,7 @@ pub fn vertex_removed(corners: usize, previous: &str, current: &str) -> String {
 /// **Why a corner could not be added or taken away** — the shell's own reading
 /// of the engine's refusals, 2026-09-05.
 ///
-/// # ★ A `Copy` enum rather than a `String`, and the reason is structural
+/// # A `Copy` enum rather than a `String`, and the reason is structural
 ///
 /// `crate::app::status::decline::Declined` is `Copy` and its `line()` returns
 /// `&'static str`. Both properties are load-bearing there — see that type — and
@@ -194,7 +194,7 @@ pub fn vertex_removed(corners: usize, previous: &str, current: &str) -> String {
 /// text through an error type"*. This is [`crate::text::status::TextStyleRefusal`]'s
 /// shape, adopted rather than re-argued.
 ///
-/// # ★★ Why every one of these is worded, including the two that should be
+/// # Why every one of these is worded, including the two that should be
 /// unreachable
 ///
 /// Because a corner handle is a **grip**, and this project's founding defect
@@ -274,7 +274,7 @@ impl VertexEditRefusal {
 #[cfg(test)]
 mod tests {
     use super::*;
-    /// ★ **The number an override overrode is in the sentence.**
+    /// **The number an override overrode is in the sentence.**
     ///
     /// The one assertion this module exists for. A build that says "read as
     /// parallel" without the angle has a checkbox hiding the fact that makes

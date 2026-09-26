@@ -74,7 +74,7 @@ pub(super) struct Frame<'a> {
     /// a gesture means what it meant when it started, and a mode change
     /// mid-drag is handled by cancelling the drag, not by re-reading it here.
     pub(super) caps: Capabilities,
-    /// ★ **What the operator is allowing clicks to land on** — the
+    /// **What the operator is allowing clicks to land on** — the
     /// selection filter (`OPERATOR_REQUESTS.md` O17).
     ///
     /// The fourth member of the sampled-once-per-frame set, and it belongs
@@ -89,13 +89,13 @@ pub(super) struct Frame<'a> {
     /// [`crate::canvas::pick`]'s header carries the argument for why those
     /// are two questions with two owners rather than one flag.
     pub(super) pick: PickFilter,
-    /// ★ **The operator's configured maximum zoom**, as a percentage — O24.
+    /// **The operator's configured maximum zoom**, as a percentage — O24.
     ///
     /// The fifth member of the sampled-once-per-frame set, here for the same
     /// reason as the other four: a marquee-zoom's ceiling must be the one that
     /// was in force when the gesture started, not one re-read mid-drag.
     pub(super) max_zoom_percent: f32,
-    /// ★ The colour and width the next markup will be authored with.
+    /// The colour and width the next markup will be authored with.
     ///
     /// Beside `caps` and `tool` because it belongs to the same triple: `tool`
     /// is *what* the operator armed, `caps` is *whether* the mode permits it,
@@ -136,7 +136,7 @@ pub(super) struct Frame<'a> {
 /// Step 4 sitting *after* step 3 is what makes the whole thing affordable:
 /// the expensive work is behind the gesture, not in front of it.
 ///
-/// # ★ Why Escape is read in step 1 and honoured in step 6
+/// # Why Escape is read in step 1 and honoured in step 6
 ///
 /// Two things want the key and exactly one may have it per press: a drag in
 /// flight wants to abandon itself, and the selection ladder wants to ascend a
@@ -147,7 +147,7 @@ pub(super) struct Frame<'a> {
 /// also cost the operator the rung they were working in. With no drag in
 /// flight, nothing is consumed and Escape ascends exactly as it always did.
 ///
-/// # ★ Where the right-click sits, and why it is not step 5's business
+/// # Where the right-click sits, and why it is not step 5's business
 ///
 /// The secondary button never reaches [`gesture`]: that machine reads
 /// `PointerButton::Primary` throughout, deliberately, because the middle
@@ -163,7 +163,7 @@ pub(super) struct Frame<'a> {
 /// is not yet outlined, which is the "which of these is it about?" ambiguity
 /// the select-first rule exists to remove.
 ///
-/// # ★ Why the selection is moved out of the document and back again
+/// # Why the selection is moved out of the document and back again
 ///
 /// The selection now lives on [`OpenDoc`], and the decomposition it resolves
 /// against is a [`std::cell::Ref`] **borrowed from the same `OpenDoc`**. Those
@@ -185,7 +185,7 @@ pub(super) struct Frame<'a> {
 ///   selection**, not a half-updated one — a state the operator can see and
 ///   recover from with one click.
 ///
-/// # ★ The hand tool suppresses the whole of step 1, and that is the fix
+/// # The hand tool suppresses the whole of step 1, and that is the fix
 ///
 /// When [`tool::active`] reports `Hand` — chosen, or borrowed by a held space
 /// bar — the primary button pans, and a `PointerFrame` describing that drag
@@ -229,13 +229,13 @@ pub(super) fn interact(
     // function's docs. The `&mut doc` borrow ends on this line, which is what
     // lets the decomposition below be borrowed out of `doc` at all.
     //
-    // ★ Notice what is NOT here: no document token is compared, because none
+    // Notice what is NOT here: no document token is compared, because none
     // exists. A selection belongs to the `OpenDoc` it is a field of, so a
     // different document is a different `OpenDoc` carrying its own empty one.
     // A page change is not a document change and neither is an edit — both
     // re-resolve at step 7. See `selection`'s invariant 3.
     let mut selection = std::mem::take(&mut doc.selection);
-    // ★ …and the **text** selection, out for the same duration and for exactly
+    // …and the **text** selection, out for the same duration and for exactly
     // the same borrow reason: the page's extraction is a `Ref` borrowed out of
     // this same `OpenDoc` (`OpenDoc::page_text`), so the value cannot be
     // mutated in place while the thing it is resolved against is being read.
@@ -255,7 +255,7 @@ pub(super) fn interact(
         .interact_pointer_pos()
         .or_else(|| ctx.pointer_latest_pos());
     let shift = ctx.input(|i| i.modifiers.shift);
-    // ★ Ctrl, read beside Shift — `OPERATOR_REQUESTS.md` O104. It means "take
+    // Ctrl, read beside Shift — `OPERATOR_REQUESTS.md` O104. It means "take
     // this OUT of the selection", for a click and for a band; the argument for
     // that spelling lives with the mechanism, in `canvas::marquee::Combine`.
     //
@@ -291,7 +291,7 @@ pub(super) fn interact(
             // downstream has to order them.
             triple_clicked: response.triple_clicked_by(PointerButton::Primary),
             pos: screen_pos.map(|p| map.to_page(p)),
-            // ★ Where the button actually went down, through the frame's ONE
+            // Where the button actually went down, through the frame's ONE
             // map. Without it every drag begins wherever the pointer had got to
             // by the frame egui called it a drag — measured at 94 page points
             // on an A1 sheet. See `gesture::PointerFrame::press_origin`.
@@ -310,11 +310,11 @@ pub(super) fn interact(
     // ---- 2. what a press would land on -------------------------------
     //
     //
-    // ★ Its header carries the **precedence** — handle, then anchor, then grip,
+    // Its header carries the **precedence** — handle, then anchor, then grip,
     // then the selection body — and the three separate defects that taught it.
     // That rule is the single most bug-prone thing on this canvas and it now
     // lives in one place with its own reasoning beside it.
-    // ★★★ **1b. A press on an unselected object selects it.**
+    // **1b. A press on an unselected object selects it.**
     //
     // Moved to `canvas::presspick` under R2 on 2026-08-27, and it is a real
     // seam rather than a convenient cut: `canvas::pressing`'s header opens with
@@ -352,7 +352,7 @@ pub(super) fn interact(
 
     // ---- 3. advance the gesture --------------------------------------
     //
-    // ★ 3a. The freehand trail's whole lifetime, in one line — and it is read
+    // 3a. The freehand trail's whole lifetime, in one line — and it is read
     // **before** the machine advances, which is the load-bearing half.
     //
     // `canvas::markup::ink` keeps the pointer trail of an in-flight `/Ink` drag
@@ -367,7 +367,7 @@ pub(super) fn interact(
     // while `active()` says a freehand markup drag is in flight, and there is no
     // restore step to miss.
     //
-    // ★ **Before `update`, not after, and the difference is the whole stroke.**
+    // **Before `update`, not after, and the difference is the whole stroke.**
     // `update` clears its own `drag` on the frame it reports `Complete`, so an
     // `active()` read *afterwards* answers `None` on exactly the frame the
     // release arrives — the trail would be discarded a few lines before the arm
@@ -385,7 +385,7 @@ pub(super) fn interact(
 
     // ---- 4. the decomposition, only if something this frame does needs one -
     //
-    // ★★★ **THE QUESTION IS NOT ASKED HERE ANY MORE**, and moving it out was
+    // **THE QUESTION IS NOT ASKED HERE ANY MORE**, and moving it out was
     // the fix rather than a tidy-up. What stood on these lines was a
     // hand-maintained `matches!` over `GestureOutcome`, and that list had been
     // the defect **four times** — `Resize`, `Handle` and `DimensionVertex` each
@@ -416,10 +416,10 @@ pub(super) fn interact(
         selection: &selection,
     }
     .wanted();
-    // ★ Drop a held preview that has stopped being live — the raster caught up,
+    // Drop a held preview that has stopped being live — the raster caught up,
     // the edit was refused, or the backstop fired.
     //
-    // ★★ Placed ABOVE the provider borrow deliberately, and it is not a style
+    // Placed ABOVE the provider borrow deliberately, and it is not a style
     // choice: `page_objects()` returns a `Ref` that lives until `drop(targets)`
     // a few hundred lines below, and nothing may take `&mut doc` while it is
     // held. Every mutation of the document in this function is either above
@@ -434,13 +434,13 @@ pub(super) fn interact(
 
     //
     let mut pv = crate::canvas::previews::Slots::default();
-    // ★ The one preview value that does NOT live in `pv`, because it does not
+    // The one preview value that does NOT live in `pv`, because it does not
     // belong to this frame: it is handed to the document to keep on screen
     // until the raster catches up. Parked here and applied after
     // `drop(targets)`, since taking `&mut doc` inside the match is impossible
     // while the provider `Ref` is alive.
     let mut hold_after_drop: Option<crate::canvas::shapes::ShapePreview> = None;
-    // ★★★ **R9's other half: a shape with no nodes says so.** `Pass 255.0`.
+    // **R9's other half: a shape with no nodes says so.** `Pass 255.0`.
     //
     // A rectangle, an ellipse and a text mark draw no node anchors (a freehand
     // mark did too, until `pdfcer-core` `Pass 278.0` gave it point verbs),
@@ -452,7 +452,7 @@ pub(super) fn interact(
     // and its header carries the argument.
     crate::canvas::annotnodes::explain_unreshapable(&ctx, doc, &selection, actions);
     match outcome {
-        // ★ A click is EITHER a measure pick or a selection, never both.
+        // A click is EITHER a measure pick or a selection, never both.
         //
         // The branch is on the armed tool rather than on a capability, and the
         // two are mutually exclusive by construction: there is one armed tool
@@ -502,7 +502,7 @@ pub(super) fn interact(
             },
             &mut selection,
         ),
-        // ★ The same rubber band, released with the other intent. **The
+        // The same rubber band, released with the other intent. **The
         // selection is not touched** — not cleared, not replaced, not even
         // read: a navigation gesture that rearranged the selection would break
         // the invariant this whole stage is accountable for, and the way to not
@@ -532,13 +532,13 @@ pub(super) fn interact(
             phase: Phase::InFlight,
             ..
         } => pv.marquee = Some(rect),
-        // ★ The move. `moving::drag` owns every rule — which verb the rung
+        // The move. `moving::drag` owns every rule — which verb the rung
         // reaches, whether the operands qualify, the canvas→page delta — and
         // returns the ghost's canvas-space offset when, and only when, the
         // release would commit. Nothing about the move is decided here, on
         // purpose: this arm is wiring, and the rules are unit-tested without a
         // window in `moving`.
-        // ★★★ The move, routed. Three verbs share this one gesture and the
+        // The move, routed. Three verbs share this one gesture and the
         // selection decides which — `canvas::dragroute` is that decision and
         // carries the whole argument, including what the ABSENCE of its third
         // branch cost: an annotation drag that was consumed and discarded for
@@ -561,7 +561,7 @@ pub(super) fn interact(
             );
             pv.ghost = previews.ghost;
             pv.shape = previews.shape;
-            // ★★★ O63's third piece. On the release frame `moving::drag` hands
+            // O63's third piece. On the release frame `moving::drag` hands
             // back the geometry it just committed; the document keeps it on
             // screen until the raster carries the edit, so the object does not
             // appear to snap back to where it started.
@@ -572,7 +572,7 @@ pub(super) fn interact(
             pv.annot_ghost = previews.annot.or(previews.widget);
             pv.dimension = previews.dimension;
         }
-        // ★ The markup band. `markup::drag` owns every rule — the canvas→page
+        // The markup band. `markup::drag` owns every rule — the canvas→page
         // conversion, the degenerate-drag refusal, which endpoints stay raw —
         // and hands back a band only when the release would commit, which is
         // the same honesty contract the move ghost is held to. Nothing about a
@@ -580,7 +580,7 @@ pub(super) fn interact(
         // unit-tested without a window in `markup`. Note what it does NOT need:
         // a decomposition. A markup hit-tests nothing, which is why this
         // outcome is absent from `needs_targets` above.
-        // ★ The text sweep. `textsel::drag` owns every rule — the canvas→PDF
+        // The text sweep. `textsel::drag` owns every rule — the canvas→PDF
         // hop, the range between the two ends, the line-grouped boxes and the
         // string, all from one pass — and hands back a whole
         // `TextSelection` or `None`. Nothing about a text selection is decided
@@ -598,7 +598,7 @@ pub(super) fn interact(
         GestureOutcome::TextSelect { from, to, phase } => {
             text_selection = textsel::sweep(doc, page_index, from, to, phase);
         }
-        // ★ Two gesture modules behind one outcome, split on the family rather
+        // Two gesture modules behind one outcome, split on the family rather
         // than on a list of kinds.
         //
         // `markup::band::drag` owns the two-point rule — the canvas→page
@@ -639,7 +639,7 @@ pub(super) fn interact(
             pv.ink_trail = previews.trail;
             pv.text_marks = previews.text_marks;
         }
-        // ★ A text-annotation band. It draws exactly as a markup band does and
+        // A text-annotation band. It draws exactly as a markup band does and
         // COMMITS NOTHING — on `Phase::Complete` it raises the request that
         // opens the dialog, and the words decide whether anything is authored.
         //
@@ -683,7 +683,7 @@ pub(super) fn interact(
                 }
             }
         }
-        // ★★ A FORM CONTROL's rectangle, and it behaves exactly as the
+        // A FORM CONTROL's rectangle, and it behaves exactly as the
         // text-annotation band above: the same band pixels, and a release that
         // AUTHORS NOTHING.
         //
@@ -751,7 +751,7 @@ pub(super) fn interact(
         // rather than the point: without it the drag would fall through to a
         // marquee, so aiming at a grip would replace the selection the operator
         // was trying to act on.
-        // ★★ THE NINTH GRIP. `ui-conventions/handles.md` H2, and the third word
+        // THE NINTH GRIP. `ui-conventions/handles.md` H2, and the third word
         // of the operator's *"reposition, resize, or rotate"*.
         //
         // Everything about the gesture is `canvas::rotating`'s: the bearing
@@ -759,7 +759,7 @@ pub(super) fn interact(
         // Shift, the wrap that stops a drag past 180° spinning a whole turn, and
         // the single negation at the page crossing. This arm is wiring.
         //
-        // ★ It needs the decomposition for the same reason `Resize` and
+        // It needs the decomposition for the same reason `Resize` and
         // `Handle` do — the commit addresses paint-order indices and this shell
         // will not send unverified ones to a verb that rewrites bytes — so
         // `DimensionVertex`'s note in `needs_targets` applies to it too, and it
@@ -771,7 +771,7 @@ pub(super) fn interact(
                     from,
                     at,
                     phase,
-                    // ★★★ `grabbable`, NOT `overlay::grip_box` — the one line
+                    // `grabbable`, NOT `overlay::grip_box` — the one line
                     // the annotation rotation hangs on; `canvas::rotating`'s
                     // header is the argument.
                     bounds: crate::canvas::pressing::grabbable(&ctx, doc, map, &selection)
@@ -781,7 +781,7 @@ pub(super) fn interact(
                     constrain: shift,
                     map: Some(map),
                     page: doc.current_page(),
-                    // ★ Resolved HERE so a dimension with no sidecar record
+                    // Resolved HERE so a dimension with no sidecar record
                     // declines in words rather than in silence.
                     dimension: dimdrag::selected(doc, &selection).map(|(id, _)| id),
                 },
@@ -789,7 +789,7 @@ pub(super) fn interact(
                 actions,
             );
         }
-        // ★★★ A TEXT BOX being dragged out. `ui-conventions` has no row for
+        // A TEXT BOX being dragged out. `ui-conventions` has no row for
         // this because it is not a convention question — it is the file
         // format's: a PDF has no paragraph, so multi-line text needs a width to
         // wrap against, and a width is a rectangle the operator draws.
@@ -831,7 +831,7 @@ pub(super) fn interact(
             });
             pv.resize_ghost = crate::canvas::resizing::drag(
                 crate::canvas::resizing::Frame {
-                    // ★ Read live from `egui::Memory`, at the frame the commit
+                    // Read live from `egui::Memory`, at the frame the commit
                     // happens. See `canvas::scaling` for why they are a
                     // per-drag modifier rather than a preference.
                     modifiers: crate::canvas::scaling::read(&ctx),
@@ -853,7 +853,7 @@ pub(super) fn interact(
             )
             .map(|f| (grip, f));
         }
-        // ★★★ A NODE DRAG, ROUTED — two subjects, two engine verb families, and
+        // A NODE DRAG, ROUTED — two subjects, two engine verb families, and
         // `canvas::vertexroute` is where they part. It applies Shift and Alt
         // once above its own fork (`drag-moves` D5, D6) and its header carries
         // the whole argument; this file is wiring, which is the seam
@@ -901,7 +901,7 @@ pub(super) fn interact(
             at,
             phase,
         } => {
-            // ★★ SHIFT LOCKS A CONTROL POINT TO ITS ANCHOR'S AXIS — the
+            // SHIFT LOCKS A CONTROL POINT TO ITS ANCHOR'S AXIS — the
             // reference point is the ANCHOR, not the press, and that is the one
             // place the four constrained drags differ. A handle's meaning is
             // the tangent it defines, so the line that matters runs through the
@@ -991,12 +991,12 @@ pub(super) fn interact(
         keys::Keys {
             ctx: &ctx,
             page_index,
-            // ★ The object ring's stops are filtered by it, for the reason on
+            // The object ring's stops are filtered by it, for the reason on
             // `keys::Keys::pick`. Dereferenced from the frame's borrow, which
             // is the same value the click path reads this frame.
             pick: *pick,
             caps,
-            // ★ The third surface Delete has to know about, and the one it
+            // The third surface Delete has to know about, and the one it
             // could not see. See the field's own doc on `keys::Keys`.
             selected_field: doc.selected_field.as_ref(),
             annot_delete_refused: crate::panels::properties::annotdelete::refuses(doc, &selection),
@@ -1004,13 +1004,13 @@ pub(super) fn interact(
             escape_consumed: matches!(outcome, GestureOutcome::Cancelled),
             targets: targets.as_deref(), // ★★ the drag's own borrow, never a second decompose
             edit_epoch: doc.edit_epoch,  // for a refusal's sentence; both argued on `keys::Keys`
-            // ★★★ Whether this frame ASKED, which is a different fact from
+            // Whether this frame ASKED, which is a different fact from
             // whether it GOT one — see `keys::Keys::model_attempted` for the
             // two-row table, and `canvas::modelneed` for what decides it.
             // Passing `targets.is_some()` here would collapse the two causes
             // back together and disarm the tripwire.
             model_attempted: needs_targets,
-            // ★ The page dictionary, for the arrow-key nudge's one crossing
+            // The page dictionary, for the arrow-key nudge's one crossing
             // into PDF space. A `&Page`, not the document — the same parameter
             // `annotdrag::drag` takes and for its stated reason. See
             // `keys::Keys::page`.
@@ -1023,7 +1023,7 @@ pub(super) fn interact(
 
     // ---- 7. re-resolve -------------------------------------------------
     //
-    // ★ A decomposition is attempted whenever a resolve is due, and `resolve`
+    // A decomposition is attempted whenever a resolve is due, and `resolve`
     // records the key either way. Both halves matter and the pairing is easy
     // to get wrong:
     //
@@ -1051,7 +1051,7 @@ pub(super) fn interact(
     // the operator clicked away and back; `SelectionState::annot_resolved_for`
     // carries the measurement that found it.
     //
-    // ★ It takes the session graph rather than the decomposition: an
+    // It takes the session graph rather than the decomposition: an
     // annotation is not page content and `targets` has nothing to say about
     // one. That is also why an undecodable page — `targets == None` — still
     // refreshes the annotation correctly.
@@ -1061,7 +1061,7 @@ pub(super) fn interact(
         page_index,
         doc.edit_epoch,
     );
-    // ★ Both measure affordances, resolved in one call while the
+    // Both measure affordances, resolved in one call while the
     // decomposition is still borrowed.
     //
     // They were forty lines of this function until R2 asked for four back.
@@ -1086,7 +1086,7 @@ pub(super) fn interact(
     // constraint worth naming: nothing below this line may read the
     // decomposition.
     drop(targets);
-    // ★★★ O63's third piece, applied at the first point in this function where
+    // O63's third piece, applied at the first point in this function where
     // `&mut doc` is available again. See `hold_after_drop`'s declaration.
     if let Some(hold) = hold_after_drop {
         doc.hold_preview(hold);
@@ -1153,7 +1153,7 @@ pub(super) fn interact(
         // be permanently false, so the caret would never take a keystroke.
         let owns_keyboard = !ctx.text_edit_focused();
         let _ = crate::canvas::textedit::keys::typing(ui, &ctx, doc, owns_keyboard, actions);
-        // ★ Evidence for *"it doesn't type anything in the box when I type and
+        // Evidence for *"it doesn't type anything in the box when I type and
         // nothing gets added"* — the operator, 2026-08-18. Four facts, each
         // killing a different hypothesis: `draft=false` (the click stored
         // none), `owns_keyboard=false` (a `TextEdit` has focus, so `typing`
@@ -1161,7 +1161,7 @@ pub(super) fn interact(
         // are not reaching this window), `len` not rising (read and stored,
         // insert not landing).
         //
-        // ★ Why a trace rather than a test: the driven check for text editing
+        // Why a trace rather than a test: the driven check for text editing
         // seeds the draft through `PDFCER_DIAG_TYPE`, the one path that BYPASSES
         // the event loop, so it passes on a build where real typing is dead.
         // Until a check types for real, this line is what tells them apart.
@@ -1175,7 +1175,7 @@ pub(super) fn interact(
             });
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
-                // ★ The ANCHOR, added 2026-08-21. `kind` is the armed TOOL and
+                // The ANCHOR, added 2026-08-21. `kind` is the armed TOOL and
                 // the anchor is what the caret is actually on, and the two can
                 // disagree: an `Add` tool whose click landed on a run edits it,
                 // and a dragged box is an `Add` tool with a rectangle. The
@@ -1194,7 +1194,7 @@ pub(super) fn interact(
         });
     }
 
-    // ★ The cursor — the whole precedence in one pure function, in `tool`,
+    // The cursor — the whole precedence in one pure function, in `tool`,
     // where the first rung of it already lived. See [`tool::cursor_for`]; this
     // is only the gathering of the four facts that are knowable nowhere but
     // here. `clip` is the scroll VIEWPORT rather than the page's rect, because
@@ -1212,7 +1212,7 @@ pub(super) fn interact(
         ctx.set_cursor_icon(icon);
     }
 
-    // ★ …and where that answer is a CROSSHAIR, supply our own bitmap.
+    // …and where that answer is a CROSSHAIR, supply our own bitmap.
     //
     // The operator, 2026-08-18: *"The crosshairs when over the canvas are white
     // making it hard to see them."* Nothing in this crate drew them — the
@@ -1233,7 +1233,7 @@ pub(super) fn interact(
     // application a screenshot cannot contain: Windows composites the pointer
     // separately, so `ui-verify`'s window capture returns an image with no
     // cursor in it at any price.
-    // ★★ …and where that answer is an I-BEAM, turn it to match the text under
+    // …and where that answer is an I-BEAM, turn it to match the text under
     // the pointer.
     //
     // The operator, 2026-08-26: *"In Adobe when I hover over it the I cursor
@@ -1244,7 +1244,7 @@ pub(super) fn interact(
     // and the reason this shell can do it at all where most applications
     // cannot.
     //
-    // ★ **The cost question answers itself here, and that is why the tilt is
+    // **The cost question answers itself here, and that is why the tilt is
     // applied at this point and not in `tool::cursor_for`.** Turning the beam
     // needs the page's EXTRACTION — 355 ms on the benchmark sheet the first
     // time, cached on `(page, edit epoch)` thereafter — and `arm.rs` records at

@@ -17,7 +17,7 @@ use pdfcer_core::object::{ObjId, Object};
 /// fact that short strings are still verified against **content-bearing**
 /// streams (where the same match *is* meaningful, because it is being drawn).
 ///
-/// ★ The floor governs the whole disclosure half — raw bytes **and** opaque
+/// The floor governs the whole disclosure half — raw bytes **and** opaque
 /// decoded streams — not the raw bytes alone. A two-character run inside a
 /// compressed font program is the same coincidence this constant exists to
 /// refuse to draw conclusions from, merely wearing a `/FlateDecode`.
@@ -27,7 +27,7 @@ use pdfcer_core::object::{ObjId, Object};
 /// [`crate::text::redact::verification_limit_line`], which is the sentence that
 /// puts the number in front of the operator.
 ///
-/// ★ The floor governs BOTH halves of the proof — the refusal as well as the
+/// The floor governs BOTH halves of the proof — the refusal as well as the
 /// disclosure. See [`leaked_in_content_streams`] for the per-glyph producer
 /// that makes a refusal-half floor necessary.
 pub const MIN_VERIFIABLE_LEN: usize = 4;
@@ -35,7 +35,7 @@ pub const MIN_VERIFIABLE_LEN: usize = 4;
 /// **Where a disclosed residual was found**, so the sentence about it can name
 /// the place rather than say *"somewhere in the saved file"*.
 ///
-/// ★ This exists because the disclosure it feeds has to be **actionable**. A
+/// This exists because the disclosure it feeds has to be **actionable**. A
 /// residual an operator cannot place is a warning they can only ignore, and a
 /// warning that is always ignored is worse than none, because it also trains
 /// them to ignore the real one.
@@ -53,7 +53,7 @@ pub enum ResidualSite {
     /// **In drawn content — a page's content stream, a form XObject, a
     /// pattern or a Type 3 glyph procedure — somewhere in the document.**
     ///
-    /// ★★★ **A hit here is a doubt, not a proven leak.** The proof greps the
+    /// **A hit here is a doubt, not a proven leak.** The proof greps the
     /// WHOLE output for each removed string while the mark covered one region
     /// of one page, so a hit is far more often than not another occurrence of
     /// the same word that was never selected — a title-block label, a note
@@ -72,7 +72,7 @@ pub enum ResidualSite {
     DrawnContent,
     /// An embedded font program — `/FontFile`, `/FontFile2` or `/FontFile3`.
     ///
-    /// ★ By far the most common site, and the one that made this whole
+    /// By far the most common site, and the one that made this whole
     /// classification necessary: a font's `name` table carries its family name,
     /// its copyright, its licence URL and the English descriptions of every
     /// OpenType feature it implements. Ordinary words live there by
@@ -180,7 +180,7 @@ pub struct AbsenceVerification {
     /// tell an un-recognised carrier from a coincidental byte run (module
     /// docs).
     ///
-    /// ★ The name is deliberately not `raw_byte_residuals`: an opaque decoded
+    /// The name is deliberately not `raw_byte_residuals`: an opaque decoded
     /// hit is a disclosure too, so this field carries more than raw-byte hits,
     /// and a name that is a lie about half its contents is, on this screen,
     /// the one thing that must never happen.
@@ -259,7 +259,7 @@ pub(super) fn survivors_in_content_streams(
 /// decoded stream — bytes a renderer draws and an extractor reads — and `None`
 /// when the output is clean by that measure.
 ///
-/// # ★★★ The floor applies HERE too
+/// # The floor applies HERE too
 ///
 /// Checking strings of any length on this half assumes the needle is a WORD —
 /// *inside a content stream even a two-character survival is the redacted
@@ -284,14 +284,14 @@ pub(super) fn survivors_in_content_streams(
 /// `a_short_string_is_counted_as_unverifiable_and_the_long_one_still_refuses`
 /// holds both halves of that line.
 ///
-/// # ★★ The engine joins per mark — keep the floor anyway
+/// # The engine joins per mark — keep the floor anyway
 ///
 /// `pdfcer_core::redact::RedactionReport::redacted_text` is **one entry per
 /// `/Redact` mark**, carrying the concatenation of what that mark removed, so
 /// `3.5 TYP` arrives as one seven-character needle rather than seven
 /// one-character ones and this half refuses on it as it should.
 ///
-/// ★ **[`MIN_VERIFIABLE_LEN`] is not thereby obsolete, and must not be
+/// **[`MIN_VERIFIABLE_LEN`] is not thereby obsolete, and must not be
 /// removed as a workaround whose cause is gone.** It is not only about
 /// per-glyph producers: a mark covering a genuinely short string still yields
 /// a genuinely short needle, and `"3"` on a drawing is `"3"` whoever wrote the
@@ -299,12 +299,12 @@ pub(super) fn survivors_in_content_streams(
 /// not whether it is right when it is. Belt and braces is the right posture on
 /// the one operation where a false *clean* is an incident.
 ///
-/// ★ A test written on an ordinary producer cannot tell those two worlds
+/// A test written on an ordinary producer cannot tell those two worlds
 /// apart — a file that draws the run in a single `Tj` reports `["3.5 TYP"]`
 /// whether the engine joins per mark or not. A plausible-looking test that is
 /// incapable of failing measures nothing.
 ///
-/// ★ The filter on [`StreamRole::Content`] is the whole of what keeps this
+/// The filter on [`StreamRole::Content`] is the whole of what keeps this
 /// refusal honest. Without it this function sees every stream in the file, and
 /// a font program's own description of its ligatures vetoes a completed
 /// redaction. See the module docs.
@@ -383,7 +383,7 @@ fn verify_absence(
             out.strings_too_short_for_raw_check += 1;
             continue;
         }
-        // ★ A content hit is DISCLOSED here, and refused only if it is still
+        // A content hit is DISCLOSED here, and refused only if it is still
         // undisclosed at write time. See `ResidualSite::DrawnContent`.
         if in_content(decoded, needle) {
             out.residuals.push(Residual {
@@ -440,7 +440,7 @@ fn decoded_streams_of(bytes: &[u8]) -> Vec<DecodedStream> {
 /// out of it (engine rule R38). Decoding the container like any other stream is
 /// what lets a grep see that copy at all.
 ///
-/// ★ The narrowing is in the **verdict**, never in the sweep. Every stream is
+/// The narrowing is in the **verdict**, never in the sweep. Every stream is
 /// decoded and searched; only a blob [`role_of`] calls [`StreamRole::Content`]
 /// can refuse a write. The rest can only disclose. See the module docs for the
 /// measurement behind that.
@@ -478,7 +478,7 @@ fn decode_every_stream(doc: &Document) -> Vec<DecodedStream> {
 /// glyph procedure is the same shape. They have to be found from the other end,
 /// by walking what refers to them.
 ///
-/// ★ That asymmetry is why the classification is a whitelist reached two ways
+/// That asymmetry is why the classification is a whitelist reached two ways
 /// rather than a blacklist of known-opaque kinds. A blacklist gets the default
 /// wrong in the safe-looking direction and then has to be complete forever; this
 /// gets the default wrong in the *disclosing* direction, where being wrong costs
@@ -614,7 +614,7 @@ mod tests {
         ])
     }
 
-    /// ★ **The instrument registers a survival.**
+    /// **The instrument registers a survival.**
     ///
     /// The first thing to establish about any absence proof: a check that only
     /// ever reports "clean" is satisfied by any build at all. So this asserts
@@ -647,7 +647,7 @@ mod tests {
         assert_eq!(proof.verification.strings_too_short_for_raw_check, 0);
     }
 
-    /// ★ **A string in the raw bytes but in no decoded stream is a disclosed
+    /// **A string in the raw bytes but in no decoded stream is a disclosed
     /// residual, not a refusal.**
     ///
     /// The middle row of the module's table, which is the row a simpler design
@@ -688,7 +688,7 @@ mod tests {
         assert!(!proof.verification.is_clean());
     }
 
-    /// ★★★ **A short string is counted, not silently skipped — and it is not
+    /// **A short string is counted, not silently skipped — and it is not
     /// refused on, even inside drawn content.**
     ///
     /// Refusing on a two-character needle surviving in a content stream — on
@@ -728,7 +728,7 @@ mod tests {
         assert_eq!(proof.verification.strings_checked, 1);
     }
 
-    /// ★★★ **The operator's file, in miniature.** A per-glyph producer's
+    /// **The operator's file, in miniature.** A per-glyph producer's
     /// `redacted_text` — every character of `3.5 TYP` as its own string — over
     /// a page that still draws those characters elsewhere (every drawing does)
     /// is clean by the refusal half, and the disclosure half says exactly how
@@ -808,7 +808,7 @@ mod tests {
         ])
     }
 
-    /// ★★★ **THE REGRESSION TEST. A removed word that also occurs inside an
+    /// **THE REGRESSION TEST. A removed word that also occurs inside an
     /// embedded font program is DISCLOSED, and the redaction goes ahead.**
     ///
     /// The defect this closes, in its smallest reproducing shape: a tool that
@@ -823,7 +823,7 @@ mod tests {
     /// on `fixtures/a1-titleblock.pdf`, and the body it is hidden in is a
     /// three-word excerpt of the JetBrains Mono `name` table that caused it.
     ///
-    /// ★ Three assertions, and each one closes a different way of "fixing" this
+    /// Three assertions, and each one closes a different way of "fixing" this
     /// badly:
     ///
     /// 1. `survivors` is `None` — it does not refuse. A build that still
@@ -866,7 +866,7 @@ mod tests {
         );
     }
 
-    /// ★ **Each opaque site is recognised and named**, so the sentence the
+    /// **Each opaque site is recognised and named**, so the sentence the
     /// operator reads is about the place the bytes actually are.
     ///
     /// One fixture per site rather than one assertion over a table: a table
@@ -902,7 +902,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **A survivor in drawn content IS listed as a residual — at its own
+    /// **A survivor in drawn content IS listed as a residual — at its own
     /// site — so the window can show it and the operator can decide.**
     ///
     /// One finding, two consumers. A whole-file grep finds the same word on
@@ -927,7 +927,7 @@ mod tests {
         assert!(!proof.verification.is_clean());
     }
 
-    /// ★ **A tiling pattern and a Type 3 glyph procedure are drawn content.**
+    /// **A tiling pattern and a Type 3 glyph procedure are drawn content.**
     ///
     /// Neither can be recognised the way a form XObject can. A tiling pattern's
     /// stream carries `/PatternType 1` and no `/Subtype`; a Type 3 glyph
@@ -985,7 +985,7 @@ mod tests {
     /// `/Contents` would report this file clean while the string sat in a form
     /// XObject that every renderer draws.
     ///
-    /// ★ This test holds the line the content/opaque classification
+    /// This test holds the line the content/opaque classification
     /// deliberately does not move: a form XObject — which is also the shape of
     /// every annotation appearance stream — is drawn, so a survival in one is
     /// a content hit and never an opaque one.

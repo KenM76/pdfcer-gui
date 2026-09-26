@@ -23,7 +23,7 @@
 //! A compass painted on every stack at once is the affordance most of this
 //! product class abandoned: it turns a hover into a search.
 //!
-//! ## ★ Why this runs after both sides have drawn
+//! ## Why this runs after both sides have drawn
 //!
 //! The resolution needs the *whole* geometry — a drop against the left edge of
 //! a right-hand stack is a column boundary on that side, and the replay walks

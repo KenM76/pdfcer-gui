@@ -8,7 +8,7 @@ alone.
 # What this is about
 
 
-# ★★★ HOW I WOULD FALSIFY THIS CHECK
+# HOW I WOULD FALSIFY THIS CHECK
 
 Stated first, because a check nobody can falsify is a claim rather than a
 measurement, and this one asserts an absence in phase D as well as a
@@ -44,8 +44,8 @@ were ignored.
 | **A** | 1 | the fixture's page sizes **as this build resolves them** — the baseline every later number is compared against, so the check does not depend on a hard-coded fixture geometry |
 | **B** | 1 | Pages ▸ Sheet size opens a window, and picking A6 portrait reaches its commit |
 | **C** | 1 | Save a copy writes a file |
-| **D** | **2** | ★★★ **THE VERDICT** — a fresh binary opens the written file and reports the page sizes *it* resolves from the bytes |
-| **D′** | 2 | ★ **THE NEGATIVE CONTROL, in the same trace line family, from the same instrument, in the same run** — page 1 was not an operand and must read exactly what phase A read for it |
+| **D** | **2** | **THE VERDICT** — a fresh binary opens the written file and reports the page sizes *it* resolves from the bytes |
+| **D′** | 2 | **THE NEGATIVE CONTROL, in the same trace line family, from the same instrument, in the same run** — page 1 was not an operand and must read exactly what phase A read for it |
 
 ⇒ **The oracle is not the code under test.** Phase A and phase D are the
 same reader over two different files; the thing being judged is the

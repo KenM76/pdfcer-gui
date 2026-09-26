@@ -56,7 +56,7 @@ that authored it. Acrobat keeps its selection across a markup and this does
 not. The check pins the behaviour so that a future change to the staleness
 rule is a decision rather than an accident.
 
-# ★ The assertion that spans the process boundary
+# The assertion that spans the process boundary
 
 `canvas-text-selection … quads=N` and `text-markup-commit … quads=N` are
 written by two different modules about two different values — the boxes the

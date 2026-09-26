@@ -16,7 +16,7 @@ use pdfcer_core::dimension::{ArrowForm, DimStandard, ScaleState, Unit};
 
 /// The heading over the rename and delete controls.
 ///
-/// ★ Not "Name". The section carries **both** verbs that act on the group's
+/// Not "Name". The section carries **both** verbs that act on the group's
 /// identity, and a fold captioned "Name" would read as a text field — which is
 /// exactly what it looks like when folded shut, with Delete hidden inside it.
 /// A caption is a promise about what is under it and this one has to name the
@@ -63,7 +63,7 @@ pub const fn draw_into_heading() -> &'static str {
 
 /// The hint under the draw-into column.
 ///
-/// ★ This is the control the operator asked for by name and could not find —
+/// This is the control the operator asked for by name and could not find —
 /// *"I still can't get to edit dimension groups when I click on it."* The
 /// authoring group was fixed at the default for the whole life of the build
 /// before this window, so a second group could be created from nowhere and
@@ -86,7 +86,7 @@ pub fn member_count(n: usize) -> String {
 
 /// A group's scale, as a phrase.
 ///
-/// ★ The `NeverSet` arm renders `pdfcer_core::dimension::NO_SCALE_DISCLOSURE`
+/// The `NeverSet` arm renders `pdfcer_core::dimension::NO_SCALE_DISCLOSURE`
 /// **verbatim**. That string lives in the engine precisely so shells cannot
 /// invent their own wording for it, and
 /// `docs/core-api/03-capabilities.md` §1.5 obligation 2 requires it be shown
@@ -141,7 +141,7 @@ pub const fn standard_heading() -> &'static str {
 
 /// What the drafting standard governs.
 ///
-/// ★ Deliberately does **not** claim conformance. `pdfcer-core`'s own
+/// Deliberately does **not** claim conformance. `pdfcer-core`'s own
 /// `DimStandard` doc applies the same discipline — pdfcer draws *ISO-style*,
 /// never *ISO 129-1 conformant*, because the standard is paywalled and was not
 /// obtained. A window that promised conformance would be making a claim the
@@ -168,7 +168,7 @@ pub const fn layer_visible() -> &'static str {
 /// What hiding a layer actually does, said once so nobody assumes it is a view
 /// toggle.
 ///
-/// ★ It is not `View ▸ Layers`. That one changes what *this window* draws and
+/// It is not `View ▸ Layers`. That one changes what *this window* draws and
 /// nothing a save would write; this one writes the group's default visibility
 /// into the document's optional-content configuration, so it is what the file
 /// tells the next reader — in any viewer that honours optional content.
@@ -258,7 +258,7 @@ pub const fn delete_button() -> &'static str {
     "Delete group"
 }
 
-/// ★ Why the default group has no Delete.
+/// Why the default group has no Delete.
 ///
 /// R9 again, and the same shape as the layer switch above it: the engine
 /// refuses, so the control is **absent** rather than offered and declined. The
@@ -269,7 +269,7 @@ pub const fn delete_default_group() -> &'static str {
      other group has been chosen."
 }
 
-/// ★ **A populated group is not deleted; the operator is asked.**
+/// **A populated group is not deleted; the operator is asked.**
 ///
 /// The engine refuses by default and puts the **count** in the refusal, and its
 /// reply says why in a line worth keeping: *"this group is not empty"* and
@@ -300,7 +300,7 @@ pub const fn delete_move_to() -> &'static str {
     "Move them to"
 }
 
-/// ★ What moving members to another group DOES to them, said before it happens.
+/// What moving members to another group DOES to them, said before it happens.
 ///
 /// Not a warning — a fact, and the one an operator would otherwise discover by
 /// reading a drawing. A ce dimension's label is derived from its group's scale,
@@ -317,7 +317,7 @@ pub const fn delete_move_changes_labels() -> &'static str {
 
 /// Why *delete the dimensions as well* is not on offer.
 ///
-/// ★ Stated because it is the answer an operator may be reaching for, and its
+/// Stated because it is the answer an operator may be reaching for, and its
 /// absence is a decision on the engine's side with a reason worth passing on
 /// rather than a gap. Deleting a ce dimension also removes its annotation from
 /// the page, so doing it inside the group verb would be a second implementation
@@ -335,7 +335,7 @@ pub const fn unit_label() -> &'static str {
     "Unit"
 }
 
-/// ★ Why changing a group's unit is a bigger act than it looks.
+/// Why changing a group's unit is a bigger act than it looks.
 ///
 /// It goes through `set_group_scale`, because a unit lives inside the group's
 /// `NumberFormat` and there is no narrower verb — the engine's reply called
@@ -367,7 +367,7 @@ pub const fn appearance_hint() -> &'static str {
 
 /// The label of the checkbox that turns a group default on.
 ///
-/// ★ **The checkbox IS the `Option`.** `GroupStyle`'s seven fields are each an
+/// **The checkbox IS the `Option`.** `GroupStyle`'s seven fields are each an
 /// `Option`: clear means *this group has not spoken, use the factory value*,
 /// ticked means *this group says this*. Rendering the tick as "set by this
 /// group" rather than as "enabled" is what keeps the two states legible —
@@ -384,7 +384,7 @@ pub fn using_factory(value: &str) -> String {
     format!("using pdfcer's default, {value}")
 }
 
-/// ★ **How many members a group edit will visibly move.**
+/// **How many members a group edit will visibly move.**
 ///
 /// `moving` is computed by the caller from `StyleProvenance::follows_group()`
 /// over the group's members, **before** the edit. It is deliberately not the
@@ -411,7 +411,7 @@ pub fn members_that_will_move(moving: usize, total: usize) -> String {
 
 /// The names of the seven group-level appearance properties.
 ///
-/// ★ **One vocabulary, shared with the CLI.** `pdfcer group-style` uses
+/// **One vocabulary, shared with the CLI.** `pdfcer group-style` uses
 /// `text-height`, `line-width`, `arrow-length`, `arrow-form`, `color`,
 /// `tolerance` and `tolerance-places` for these same seven, and the ui-spec's
 /// Amendment B §B.5 names the hazard of diverging: *"a panel using different
@@ -487,7 +487,7 @@ mod tests {
 
     /// The never-set scale phrase is the engine's own string, unaltered.
     ///
-    /// ★ Asserted against the constant rather than against a literal, which is
+    /// Asserted against the constant rather than against a literal, which is
     /// the difference between a test that pins the *relation* and one that pins
     /// two copies of a magnitude. `NO_SURFACE.md` records the day a test in
     /// this crate asserted a literal triple against a function returning the

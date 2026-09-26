@@ -2,7 +2,7 @@
 decides it**
 
 
-## ★★★ The operator's report, `OPERATOR_REQUESTS.md` O88
+## The operator's report, `OPERATOR_REQUESTS.md` O88
 
 > *"I can't box select the tables in the left or right top corners using the
 > mouse — it only picks up the lines of each table, so I can't drag the
@@ -36,12 +36,12 @@ both inventions here: Illustrator touches always, Inkscape puts touch on
 `Alt`. The direction rule is the drawing-office one, and this is a drawing
 program.
 
-★ The enclosing band's answer does **not** change. `Enclosed` remains what a
+The enclosing band's answer does **not** change. `Enclosed` remains what a
 left-to-right drag does and remains the right default on a dense sheet —
 decision 011's reasoning is untouched. What was wrong was that it was the
 only answer available.
 
-## ★★ The half that was found by a failing test rather than by thinking
+## The half that was found by a failing test rather than by thinking
 
 See [`without_page_wrappers`]. A crossing band touches a page-sized form
 XObject on **every** drag, so on a wrapped drawing every crossing selection

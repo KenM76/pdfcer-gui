@@ -18,7 +18,7 @@
 /// Returning an empty `Vec` there would make every caller write the same
 /// `if lines.is_empty()` guard, which is the shape a function should absorb.
 ///
-/// ★ A trailing `\n` produces a **final empty line**, and that is correct
+/// A trailing `\n` produces a **final empty line**, and that is correct
 /// rather than tolerated: an operator who has just pressed Enter is standing on
 /// a new, empty line and expects Home, End, Up and Backspace to behave as if
 /// they are on it — because they are.
@@ -103,7 +103,7 @@ pub fn down(text: &str, caret: usize) -> Option<usize> {
 
 /// **Press Home.** The first character of the line the caret is on.
 ///
-/// ★ The LINE's start, not the draft's, which is the whole difference this
+/// The LINE's start, not the draft's, which is the whole difference this
 /// module makes to that key. On a one-line draft the two are the same answer,
 /// so the behaviour the operator already had is unchanged by construction.
 #[must_use]
@@ -136,7 +136,7 @@ pub fn is_multi_line(text: &str) -> bool {
 mod tests {
     use super::*;
 
-    /// ★ **A draft with no break is one line, and every key still works on
+    /// **A draft with no break is one line, and every key still works on
     /// it.**
     ///
     /// The regression guard for the whole module: the overwhelmingly common
@@ -154,7 +154,7 @@ mod tests {
         assert_eq!(down(s, 5), None, "and none below it");
     }
 
-    /// ★★★ **Up and Down keep the column**, which is the property that makes
+    /// **Up and Down keep the column**, which is the property that makes
     /// them feel like arrow keys rather than like jumps.
     #[test]
     fn vertical_movement_keeps_the_column() {
@@ -173,7 +173,7 @@ mod tests {
         );
     }
 
-    /// ★★ **A short line clamps the column**, exactly as every editor does.
+    /// **A short line clamps the column**, exactly as every editor does.
     ///
     /// The case a naive implementation gets wrong by landing past the end of
     /// the line, which is an index into the *next* line's text and puts the
@@ -195,7 +195,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **Home and End are the LINE's, not the draft's.**
+    /// **Home and End are the LINE's, not the draft's.**
     ///
     /// The defect this module fixes for those two keys. Before it, End on the
     /// middle line of a three-line box jumped to the bottom of the draft.
@@ -215,7 +215,7 @@ mod tests {
         );
     }
 
-    /// ★★ **A trailing break leaves the caret on a real, empty line.**
+    /// **A trailing break leaves the caret on a real, empty line.**
     ///
     /// The state an operator is in the instant after pressing Enter, and the
     /// one an off-by-one drops: if the final empty line did not exist, Home,
@@ -236,7 +236,7 @@ mod tests {
         assert_eq!(up(s, caret), Some(0), "and Up reaches the line just typed");
     }
 
-    /// ★★★ **A caret survives an accent on every line.**
+    /// **A caret survives an accent on every line.**
     ///
     /// The one arithmetic property that cannot be seen in an ASCII test and
     /// panics in production. `café` is four characters and five bytes; every

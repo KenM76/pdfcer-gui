@@ -17,7 +17,7 @@ use crate::text::panels::properties as t;
 pub const REGION: &str = "properties.text";
 /// The Bold button's own region.
 ///
-/// ★ Published per control rather than leaving a driven check to divide
+/// Published per control rather than leaving a driven check to divide
 /// [`REGION`] by eye — `geometry`'s own note on this is the precedent, and the
 /// reason is that a check computing a control's position from a section's
 /// bounds is a check that passes on a build where the controls moved.
@@ -66,7 +66,7 @@ pub struct TextStyleDraft {
     /// The fill colour as sRGB bytes, or `None` when the run is painted in a
     /// space this control cannot round-trip.
     ///
-    /// ★ `None` is shown as *"not a plain colour"* rather than as black. A
+    /// `None` is shown as *"not a plain colour"* rather than as black. A
     /// swatch that renders a CMYK or Separation fill as its nearest RGB and
     /// then writes that back on the next press would silently convert the
     /// operator's ink — the exact narrowing pdfcer refuses to do on their
@@ -75,7 +75,7 @@ pub struct TextStyleDraft {
     /// The size the operator is typing, kept separate from [`Self::size`] so a
     /// half-typed number does not become an edit.
     typed_size: f64,
-    /// ★★★ **Which faces on this page `set_font` would accept for this run**,
+    /// **Which faces on this page `set_font` would accept for this run**,
     /// and the string to pass for each — `Pass 142.1`, consumed 2026-08-27.
     ///
     /// Read behind the same stamp as everything else here, because it costs
@@ -92,7 +92,7 @@ pub struct TextStyleDraft {
     /// `Pass 144.0` — has no face to offer, and the chooser says so rather than
     /// falling back to a list of entries that cannot work.
     faces: Vec<FaceChoice>,
-    /// ★★★ **What pressing Bold would actually do to this run** —
+    /// **What pressing Bold would actually do to this run** —
     /// `EditSession::preview_style_ladder`, consumed 2026-09-11.
     ///
     /// Behind the same stamp as everything else here, because it costs a third
@@ -103,14 +103,14 @@ pub struct TextStyleDraft {
     /// was there before any of this landed, and which is still the honest thing
     /// to say when nothing is known.
     ///
-    /// ★★ It was `preview_style_resolution` from 2026-08-29 to 2026-09-11 and
+    /// It was `preview_style_resolution` from 2026-08-29 to 2026-09-11 and
     /// previewed the **R90 gate**, which is a different question from *"what
     /// will this button do?"* the moment a rung exists that binds a face the
     /// page does not carry. [`StyleOutlook`]'s header has the whole account.
     bold_outlook: Option<StyleForecast>,
     /// The italic twin of [`Self::bold_outlook`], probed **separately**.
     ///
-    /// ★★ Two probes and not one, and it is not symmetry for its own sake.
+    /// Two probes and not one, and it is not symmetry for its own sake.
     /// `gate_synthesis` is all-or-nothing per *combined* request: a page holding
     /// a real `Arial-Bold` but no `Arial-BoldItalic` answers a Bold+Italic
     /// request with *"no real face — synthesize both"*, silently passing over
@@ -123,7 +123,7 @@ pub struct TextStyleDraft {
     /// this module: it can only fire for a combined request, and this shell
     /// never issues one.
     italic_outlook: Option<StyleForecast>,
-    /// ★★★ **Which runs the controls act on when the operator CLICKED the text
+    /// **Which runs the controls act on when the operator CLICKED the text
     /// instead of sweeping it** — `OPERATOR_REQUESTS.md` O198, and the reason
     /// this struct is shared rather than duplicated.
     ///
@@ -152,7 +152,7 @@ pub struct TextStyleDraft {
 pub(crate) mod style;
 
 //
-// ★★ `style` is `pub(crate)` rather than private, and the reason is a lint
+// `style` is `pub(crate)` rather than private, and the reason is a lint
 // rather than a caller: [`TextStyleDraft::bold_outlook`] is `pub(crate)` and
 // returns a `StyleForecast`, so a private module would make the return type
 // less visible than the function that returns it — `private_interfaces`, which
@@ -166,7 +166,7 @@ use style::{bold_hint, italic_hint};
 use super::face::FaceChoice;
 
 impl TextStyleDraft {
-    /// ★★★ **Which runs a restyle would act on** — swept, or the single
+    /// **Which runs a restyle would act on** — swept, or the single
     /// selected text object. `OPERATOR_REQUESTS.md` O198.
     ///
     /// The one question both font surfaces ask before anything else, delegated
@@ -199,7 +199,7 @@ impl TextStyleDraft {
         self.bold_outlook = None;
         self.italic_outlook = None;
 
-        // ★ The expensive call, made exactly here and nowhere else in this
+        // The expensive call, made exactly here and nowhere else in this
         // module. See the module header on the 392 ms.
         let Some(read) = crate::canvas::textedit::pin::inspect(doc, page, run) else {
             // The unresolved run still gets a line. A failed `inspect` is the
@@ -217,7 +217,7 @@ impl TextStyleDraft {
         };
         self.size = f64::from(read.style.size);
         self.typed_size = self.size;
-        // ★ The join. `GlyphProvenance` records the RESOURCE KEY the content
+        // The join. `GlyphProvenance` records the RESOURCE KEY the content
         // stream used — `F1` — and an operator needs the `/BaseFont`. The
         // document's font inventory is the only place both appear, so this is
         // the one hop that turns a machine name into a human one.
@@ -232,12 +232,12 @@ impl TextStyleDraft {
                 .and_then(|record| record.base_font.clone())
         });
         self.colour = read.style.fill.and_then(rgb_of);
-        // ★★ The pre-flight, in the same stamped read as everything else. It
+        // The pre-flight, in the same stamped read as everything else. It
         // costs a second extraction, which is why it is here and not in the
         // chooser: a combo is drawn every frame it is open.
         //
         //
-        // ★ `accepted()` for the page half. A refused entry is deliberately
+        // `accepted()` for the page half. A refused entry is deliberately
         // **not** offered greyed-with-a-reason, though the engine hands us the
         // reason: the refusals are per-character encoding facts (*"'o' has no
         // code in Times-Bold's encoding"*), and a list of twelve faces with nine
@@ -251,7 +251,7 @@ impl TextStyleDraft {
             // about a candidate here would be asking about nothing.
             crate::canvas::textedit::pin::font_preflight(doc, page, &read, None).as_ref(),
         );
-        // ★★★ **What the two weight buttons would do**, asked here for the
+        // **What the two weight buttons would do**, asked here for the
         // reason everything else in this function is asked here: it costs a
         // content-stream read and a plan, and the answer changes only when the
         // stamp does. Twice — once per axis — because the two buttons issue two
@@ -274,7 +274,7 @@ impl TextStyleDraft {
         self.italic_outlook = self.forecast(doc, page, &read, false);
         let forecast_ms = forecast_started.elapsed().as_millis();
 
-        // ★★★ **The only instrument on this path, and it was added the day
+        // **The only instrument on this path, and it was added the day
         // the path got more expensive.**
         //
         // Before 2026-09-11 this module emitted nothing at all. It now makes
@@ -286,13 +286,13 @@ impl TextStyleDraft {
         // report that arrives as *"selecting text got slow"* and has nothing
         // behind it to read.
         //
-        // ★★ Measured rather than assumed, and reported even when it is
+        // Measured rather than assumed, and reported even when it is
         // cheap: a number nobody logged until somebody complained is a number
         // with no baseline, and this project has already spent a session
         // reasoning about where time went instead of reading it
         // (`BENCHMARK.md`'s opening argument).
         //
-        // ★ `whole_ms` is the outer figure the operator would feel;
+        // `whole_ms` is the outer figure the operator would feel;
         // `forecast_ms` is this change's share of it. Both, because the ratio
         // is the actionable part — a slow sync whose forecast is 2 ms is not
         // this code's problem, and saying so takes one subtraction.
@@ -310,7 +310,7 @@ impl TextStyleDraft {
     }
 
     //
-    // ★★ **One draft, two surfaces, and that is the whole reason these exist.**
+    // **One draft, two surfaces, and that is the whole reason these exist.**
     //
     // The ribbon's Font group and this panel's *This text* section show the
     // same four values and both need them read back from the document. The
@@ -334,7 +334,7 @@ impl TextStyleDraft {
 
     /// The `Tf` size the document currently holds, in points.
     ///
-    /// ★ Not [`Self::typed_size`]. This is what was **read**; that is what the
+    /// Not [`Self::typed_size`]. This is what was **read**; that is what the
     /// operator is **typing**, and the difference between them is what decides
     /// whether a release is an edit or a no-op.
     #[must_use]
@@ -401,7 +401,7 @@ impl TextStyleDraft {
 /// [`crate::app::textoperand`], which answers with a sweep if there is one and
 /// otherwise with the single selected text object.
 ///
-/// ★ **The Colour row is the one control that does NOT follow.** For a clicked
+/// **The Colour row is the one control that does NOT follow.** For a clicked
 /// object it stays with [`super::textobject`], which draws the row immediately
 /// below this section, because a whole object can hold runs painted in
 /// different inks and that section is the one that classifies them —
@@ -419,11 +419,11 @@ pub fn section(
     draft: &mut TextStyleDraft,
     actions: &mut Vec<Action>,
 ) -> bool {
-    // ★ The staleness gate is inside the resolver, not here — a stale run
+    // The staleness gate is inside the resolver, not here — a stale run
     // ordinal restyles the WRONG text, so the check lives with the data rather
     // than with each of its readers.
     //
-    // ★ `false`, not a sentence. Nothing text-shaped is selected, and a panel
+    // `false`, not a sentence. Nothing text-shaped is selected, and a panel
     // that explained its own silence in that state would be explaining it on
     // most frames of most sessions.
     let Some(operand) = draft.operand(doc) else {
@@ -434,7 +434,7 @@ pub fn section(
     let Some(&first) = runs.first() else {
         return false;
     };
-    // ★ Whether the Colour row below belongs to this section. See the header:
+    // Whether the Colour row below belongs to this section. See the header:
     // a clicked object's ink is classified by [`super::textobject`], which can
     // tell `Mixed` from `Agreed` from a spot ink and refuses a swatch over the
     // third. A sweep has no such problem — every run in it was swept
@@ -493,7 +493,7 @@ pub fn section(
 
 /// The face: what this page carries, and what pdfcer can add to the document.
 ///
-/// # ★★★ The list was the page's fonts and no longer only is
+/// # The list was the page's fonts and no longer only is
 ///
 /// This doc comment used to open *"`set_font` **selects** an existing resource;
 /// it does not **create** one. Offering Helvetica on a page that carries only
@@ -503,7 +503,7 @@ pub fn section(
 /// Helvetica on a page built from Arial is a change that works rather than a
 /// refusal.
 ///
-/// ★ The old sentence is kept above rather than deleted because the *rule* it
+/// The old sentence is kept above rather than deleted because the *rule* it
 /// states has not changed — a chooser must not offer entries that cannot work —
 /// only the set of entries that can. `super::face::choices` is where that set is
 /// computed and it carries the argument.
@@ -516,7 +516,7 @@ pub fn section(
 /// [`super::face::popup_body`], shared verbatim with the ribbon's Format ▸ Font
 /// chooser in [`crate::app::fontband`].
 ///
-/// ★★ Shared rather than copied, and that is the change this project keeps
+/// Shared rather than copied, and that is the change this project keeps
 /// having to make: the two were two copies of one loop, and *"a face offered in
 /// one surface and not the other"* is the divergence found here more than once.
 /// A disclosure added to one copy and not the other would be worse than either.
@@ -539,7 +539,7 @@ fn face_row(
                 chosen = super::face::popup_body(ui, FACE_REGION, draft.faces(), shorten(&current));
             });
         crate::diag::ui_rect_visible(FACE_REGION, combo.response.rect, ui.clip_rect());
-        // ★ The action is raised HERE, outside the popup closure, because
+        // The action is raised HERE, outside the popup closure, because
         // nothing mutates from a widget — `app::actions`' founding invariant.
         // The closure reports which row was pressed and this row turns that into
         // one `Action`, exactly as the ribbon's copy turns it into one parked
@@ -556,7 +556,7 @@ fn face_row(
 
 /// The size, in points.
 ///
-/// ★ Committed on `drag_stopped` or `lost_focus`, never on `.changed()`. Each
+/// Committed on `drag_stopped` or `lost_focus`, never on `.changed()`. Each
 /// commit is a content-stream rewrite and an undo entry, so a drag across the
 /// spinner would author one edit per pixel — the same rule
 /// [`super::markup`]'s width and opacity rows follow, for the same reason.
@@ -662,7 +662,7 @@ fn render_row(ui: &mut Ui, page: usize, runs: &[usize], actions: &mut Vec<Action
 
 /// The fill colour.
 ///
-/// ★ `None` renders a sentence, not a swatch. A run painted in DeviceCMYK, a
+/// `None` renders a sentence, not a swatch. A run painted in DeviceCMYK, a
 /// Separation or an ICC space has no faithful `[u8; 3]`, and a swatch showing
 /// its nearest RGB would write that RGB back on the next press — converting
 /// the operator's ink without being asked. `pdfcer-core` deliberately does not
@@ -683,12 +683,12 @@ fn colour_row(
     //
     //     Colour  Set in CMYK or a spot colour — pdfcer will not offer to
     //
-    // with the rest against the window edge. ★ That is the disclosure failing
+    // with the rest against the window edge. That is the disclosure failing
     // in the precise way Rule 4 exists to prevent: the control is withheld AND
     // the reason is unreadable, so the operator is left with a missing swatch
     // and no account of it.
     //
-    // ★★ It also hid itself. `diag::ui_rect_visible` publishes a region only
+    // It also hid itself. `diag::ui_rect_visible` publishes a region only
     // when 60 % of it survives the clip, so `properties.text` was never
     // published at all, and
     // `tools/ui-verify/src/checks/restyle_text.rs` read that absence as the
@@ -743,14 +743,14 @@ fn colour_row(
 // applied the wrong font with no refusal to show for it. The Fonts panel's own
 // survey puts that at 87 % of embedding files.
 //
-// ★ The filed request said the superset was "usually right". It was, and
+// The filed request said the superset was "usually right". It was, and
 // "usually right" about which font is applied to an operator's drawing is not
 // a standard this program should have been holding itself to. The pre-flight is
 // not an optimisation of it; it is the correct answer where that was a guess.
 
 /// A `/BaseFont` without its §9.6.4 subset tag, for display only.
 ///
-/// ★ Display only, and the distinction matters: the **value** pushed on the
+/// Display only, and the distinction matters: the **value** pushed on the
 /// action is the full name, because `set_font` accepts either and handing it
 /// the full one keeps the shell from having to know the stripping rule. What
 /// an operator gains from `ABCDEF+ArialMT` being shown as `ArialMT` is the
@@ -767,7 +767,7 @@ pub(crate) fn shorten(base_font: &str) -> &str {
 
 /// sRGB bytes for a fill colour, or `None` when the space cannot round-trip.
 ///
-/// # ★★ Why CMYK is `None` rather than converted
+/// # Why CMYK is `None` rather than converted
 ///
 /// A conversion here would be a **one-way** trip the operator never asked for.
 /// The swatch would show DeviceCMYK ink as its nearest RGB; the next press

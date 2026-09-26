@@ -19,7 +19,7 @@
 //! [`a_drag_carried_back_onto_the_dock_docks_it`] is the second: it says the
 //! same gesture, carried out and back, ends as a dock.
 //!
-//! # ★ What this file does NOT measure, and where that is measured instead
+//! # What this file does NOT measure, and where that is measured instead
 //!
 //! Three affordances read one drag, and only one of them may answer it. Every
 //! absence asserted here — *no window over a compartment*, *no window under a

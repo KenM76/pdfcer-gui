@@ -1,6 +1,6 @@
 //! # `panels::properties` — the detail of what is selected, and nothing else
 //!
-//! ## ★★★ Every section here is scoped to a SELECTION
+//! ## Every section here is scoped to a SELECTION
 //!
 //! The file's `/Info` fields and the seven facts about the file itself are
 //! [`crate::panels::docprops`], a panel of its own, reached by
@@ -13,7 +13,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/properties/mod.md`.
 
-/// ★★★ **Whether the selected annotation can be deleted, and what would go with
+/// **Whether the selected annotation can be deleted, and what would go with
 /// it** — `EditSession::annotation_deletion_refusal` and
 /// `annotation_deletion_preview`.
 ///
@@ -29,7 +29,7 @@ pub mod annotdelete;
 /// [`fieldedit`] draws a field's flags, this draws the list those flags
 /// describe.
 pub mod choiceopts;
-/// ★ The **selected ce dimension's** own properties — a contextual section
+/// The **selected ce dimension's** own properties — a contextual section
 /// drawn above this panel's object form.
 ///
 /// It makes this panel's founding premise false and says so: the ui-spec's
@@ -37,14 +37,14 @@ pub mod choiceopts;
 /// canvas selection became a second claimant on it. Its own header carries the
 /// argument for broadening this panel's purpose rather than inventing a ninth.
 mod dimension;
-/// ★★★ **The Tool panel's disclosure block, re-homed** —
+/// **The Tool panel's disclosure block, re-homed** —
 /// `OPERATOR_REQUESTS.md` O123.
 ///
 /// The 47-word refusal sentence that has never been readable needed a surface
 /// whose width is decided before its body draws. The status bar is not one
 /// (R128), and its own header checks that rather than assuming it.
 mod disclose;
-/// ★★★ The **face chooser**, which is one control drawn on two surfaces — this
+/// The **face chooser**, which is one control drawn on two surfaces — this
 /// panel's [`text`] section and the ribbon's Format ▸ Font group in
 /// [`crate::app::fontband`], which draw the one loop from the one place.
 ///
@@ -59,7 +59,7 @@ mod disclose;
 /// write itself, and why the fourteen are offered without being
 /// coverage-tested first.
 pub mod face;
-/// ★★ The **form field** clicked on the page in Edit mode. `pub` for the same
+/// The **form field** clicked on the page in Edit mode. `pub` for the same
 /// reason [`geometry`] is: its rename box holds a draft in
 /// `crate::panels::PanelsState`.
 /// The editable half of a placed form field's properties —
@@ -68,19 +68,19 @@ pub mod face;
 pub mod fieldedit;
 pub mod formfield;
 pub mod geometry;
-// ★★★ The document's own properties are `crate::panels::docprops`, a panel of
+// The document's own properties are `crate::panels::docprops`, a panel of
 // its own, and never a section here: a block that draws with no reference to
 // the selection is on screen whenever nothing else has anything to say. See
 // that module's header for the argument, and [`body_sections`] for the rule
 // this panel keeps because of it.
-/// ★★ Restyling a markup that is already on the page — colour, line width and
+/// Restyling a markup that is already on the page — colour, line width and
 /// opacity, through `EditSession::set_markup_style`.
 ///
 /// Its header carries why this is the PANEL rather than the Format tab
 /// (`RIBBON_IA.md` §5.8) and why every control raises one action carrying one
 /// field.
 mod markup;
-/// ★★★ **One colour control, three honest states** — a swatch, an
+/// **One colour control, three honest states** — a swatch, an
 /// indeterminate swatch, and nothing at all over an ink pdfcer will not
 /// overwrite. Shared by [`paint`] and [`textobject`], because O89's two pieces
 /// have to answer the same three questions the same way.
@@ -97,7 +97,7 @@ pub mod mkcolour;
 /// the colour of a whole **selection** of paths, with the indeterminate state
 /// the product class already agrees on.
 mod paint;
-/// ★★★ **The character an edit was refused for, and the face that can type it**
+/// **The character an edit was refused for, and the face that can type it**
 /// — `OPERATOR_REQUESTS.md` O141.
 ///
 /// > *"if the character isn't available in a pdf are we able to change to a
@@ -116,7 +116,7 @@ pub mod refusedchar;
 mod runwidth;
 
 pub mod swatch;
-/// ★ The **selected text's** face, size, weight and colour — O37's Font
+/// The **selected text's** face, size, weight and colour — O37's Font
 /// controls, built panel-first as §5.8 says to.
 ///
 /// `pub` rather than private, like [`geometry`] and unlike [`markup`], because
@@ -124,7 +124,7 @@ pub mod swatch;
 /// provenance extraction, so it is stamped and kept rather than re-taken every
 /// frame.
 pub mod text;
-/// ★★★ **The colour of the text the operator CLICKED** — `OPERATOR_REQUESTS.md`
+/// **The colour of the text the operator CLICKED** — `OPERATOR_REQUESTS.md`
 /// O89, piece 1.
 ///
 /// Every text colour control in the program was gated on a swept range, and
@@ -137,7 +137,7 @@ pub mod text;
 /// `pub` for [`text`]'s reason: `crate::panels::PanelsState` holds its draft,
 /// because the read-back costs a provenance extraction.
 pub mod textobject;
-/// ★★★ **The armed tool's own settings** — the text pen's face, size and
+/// **The armed tool's own settings** — the text pen's face, size and
 /// colour, the circular measure's pick list, and the three resize switches.
 ///
 /// `OPERATOR_REQUESTS.md` O123: *"I never understood why there is a tool dock
@@ -207,7 +207,7 @@ pub fn font_embedded(
 
 /// Draw the Properties panel.
 ///
-/// ## ★ Every section is scoped to a selection, and that is the whole rule
+/// ## Every section is scoped to a selection, and that is the whole rule
 ///
 /// | section | subject | when |
 /// |---|---|---|
@@ -217,7 +217,7 @@ pub fn font_embedded(
 /// | [`text`] / [`textobject`] / [`paint`] / [`geometry`] | the **content** swept or clicked | only while something is |
 /// | [`object_section`] | the **page object** the canvas selection names | only while one is |
 ///
-/// ★★ **The row that would break that pattern is the file's own title, author,
+/// **The row that would break that pattern is the file's own title, author,
 /// subject and keywords**, which have no selection to be scoped to and so draw
 /// with no condition of any kind — on screen every frame under everything else.
 /// They are [`crate::panels::docprops`], with a tab of their own. See this
@@ -230,7 +230,7 @@ pub fn font_embedded(
 /// would skip everything after it. Nothing follows it today, so the shape costs
 /// one function and buys the guarantee back the moment a section is appended.
 pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut Vec<Action>) {
-    // ★★★ **ONE SCROLL AREA, ROUND EVERYTHING**, and its absence is a defect an
+    // **ONE SCROLL AREA, ROUND EVERYTHING**, and its absence is a defect an
     // operator cannot work around.
     //
     // This body draws its selection-scoped sections straight into `ui`. With a
@@ -249,14 +249,14 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // > the only control that commits it cannot be reached at any window size
     // > the dock will give this panel.
     //
-    // ★ It reads as *"the Width field was scrubbed and Apply committed
+    // It reads as *"the Width field was scrubbed and Apply committed
     // nothing"* — a dead button — and is not one: the button is never pressed.
     // The coordinates say so — `properties.geometry.apply` at y 776 in a
     // viewport ending at 762 — and readings of them still reach the wrong
     // conclusion. **A screenshot settles it in one look**, which is the
     // standing rule: a layout defect has exactly one oracle.
     //
-    // ★ Nothing nests a second `ScrollArea` inside this one: a scroll area
+    // Nothing nests a second `ScrollArea` inside this one: a scroll area
     // inside a scroll area steals the wheel from its parent depending on where
     // the pointer happens to be, which is a worse surface than the one being
     // fixed. `crate::panels::docprops` carries a wrapper of its own — one per
@@ -279,7 +279,7 @@ fn body_sections(
     state: &mut PanelsState,
     actions: &mut Vec<Action>,
 ) {
-    // ★★★ **The disclosure block, FIRST** — `OPERATOR_REQUESTS.md` O123.
+    // **The disclosure block, FIRST** — `OPERATOR_REQUESTS.md` O123.
     //
     // Above everything, on the rule that a disclosure sits above the thing it
     // qualifies: a caveat below a list arrives after the operator has already
@@ -288,14 +288,14 @@ fn body_sections(
     // description arrives too late to explain it. See its header for why the
     // status bar could not be the home and this panel can.
     //
-    // ★ Its answer is deliberately NOT part of `something_drew`. That
+    // Its answer is deliberately NOT part of `something_drew`. That
     // predicate is O75's, and O75 is about whether a **selection**-scoped
     // section has spoken; a refusal from the last edit is not a description of
     // the current selection, and letting it collapse the document section
     // would make the panel change shape for a reason unconnected to what is
     // picked.
     let _drew_disclosure = disclose::section(ui, doc);
-    // ★★★ **The character an edit was refused for, and the way out of it** —
+    // **The character an edit was refused for, and the way out of it** —
     // `OPERATOR_REQUESTS.md` O141.
     //
     // Directly under the disclosure block and above everything else, on the same
@@ -306,13 +306,13 @@ fn body_sections(
     // face chooser, which is the control this block exists to hand them, so the
     // operator would meet the answer before the question.
     //
-    // ★ NOT part of `something_drew`, for `disclose::section`'s reason stated one
+    // NOT part of `something_drew`, for `disclose::section`'s reason stated one
     // notch more sharply: this block is scoped to an **edit**, not to a
     // selection, and by the time it draws the caret that raised it has already
     // been abandoned. Folding it in would let a refusal suppress *"nothing is
     // selected"* while genuinely nothing is.
     let _drew_refused_char = refusedchar::section(ui, doc, state.refused_char_mut(), actions);
-    // ★★★ **The armed tool's settings, second** — the controls that were in
+    // **The armed tool's settings, second** — the controls that were in
     // the Tool panel until O123 moved them here.
     //
     // Above the selection-scoped sections because an armed tool is the more
@@ -324,7 +324,7 @@ fn body_sections(
     // and suppress *"nothing is selected"* for ever. That is O75 answered
     // backwards.
     let _drew_tool = tool::armed_section(ui);
-    // ★★ The markup restyle section, first among the selection-scoped ones.
+    // The markup restyle section, first among the selection-scoped ones.
     //
     // Before the ce-dimension section and before the object one, because the
     // three are **mutually exclusive by construction** — `SelectionState` holds
@@ -334,7 +334,7 @@ fn body_sections(
     // because it is the one that WRITES: the other two describe.
     let drew_markup = markup::section(ui, doc, actions);
     let drew_dimension = dimension::section(ui, doc, actions);
-    // ★★★ Directly under the two sections that restyle the selected annotation,
+    // Directly under the two sections that restyle the selected annotation,
     // and above everything that describes a *content* object — because this is
     // about the same subject those two are about, and the panel's reading order
     // is "what you can change about this thing", then "what is true of it".
@@ -345,28 +345,28 @@ fn body_sections(
     // R9 sends a permanently-refused capability's explanation to the surface
     // that describes what is selected, and this is that surface.
     //
-    // ★ It draws for an annotation of ANY kind — a markup, a ce dimension, a
+    // It draws for an annotation of ANY kind — a markup, a ce dimension, a
     // stamp — where `markup` and `dimension` each draw for one. Deletion is the
     // one verb they share, and `annotation_deletion_refusal` is a document-wide
     // question that does not care which `/Subtype` is selected.
     let drew_annot_delete = annotdelete::section(ui, doc, state.annot_delete_mut());
-    // ★ The geometry fields sit between the sections that WRITE and the
+    // The geometry fields sit between the sections that WRITE and the
     // section that describes, because that is what they are: the only editable
     // thing about a selected *content* object, where the two above it are the
     // only editable things about a selected *annotation*. Reading the panel top
     // to bottom therefore goes "what you can change" then "what is true", which
     // is the order `RIBBON_IA.md` §5.6 asks a properties surface to use.
-    // ★ The form-field section, above the geometry fields and below the two
+    // The form-field section, above the geometry fields and below the two
     // that restyle. It is a fourth claimant on this panel and it is mutually
     // exclusive with all three by construction: a form field is selected by
     // `doc.selected_field`, which the object and annotation selections neither
     // set nor read. See `app::state::SelectedField` for why they are separate.
     let drew_form_field = formfield::section(ui, doc, state, actions);
-    // ★★ Before geometry, after markup. The restyle controls sit with the other
+    // Before geometry, after markup. The restyle controls sit with the other
     // "change how this looks" rows and above the read-only facts, which is the
     // order `RIBBON_IA.md` §5.6 asks a properties surface to use.
     //
-    // ★★★ This section and `geometry` DO both draw for one selection
+    // This section and `geometry` DO both draw for one selection
     // (`OPERATOR_REQUESTS.md` O198): a **clicked** text object resolves through
     // `app::textoperand` into runs, so this section draws for an object
     // selection and `geometry` draws for the same selection in the same frame.
@@ -374,7 +374,7 @@ fn body_sections(
     // object, and "what you can change about how it looks" reads before "where
     // it is".
     let drew_text = text::section(ui, doc, state.text_style_mut(), actions);
-    // ★★★ **The clicked-text colour, directly under the swept-text editor** —
+    // **The clicked-text colour, directly under the swept-text editor** —
     // `OPERATOR_REQUESTS.md` O89, piece 1.
     //
     // The two are **mutually exclusive by construction**: `textobject::section`
@@ -385,7 +385,7 @@ fn body_sections(
     // colour swatches with different operands one above the other is a way to
     // recolour the wrong thing while looking straight at it.
     //
-    // ★ Above `geometry` for the same reason `text` is: "what you can change
+    // Above `geometry` for the same reason `text` is: "what you can change
     // about how this looks" comes before "where it is" and before "what is true
     // of it", which is the order `RIBBON_IA.md` §5.6 asks a properties surface
     // to use.
@@ -393,7 +393,7 @@ fn body_sections(
     let drew_run_width = runwidth::section(ui, doc, actions);
     let drew_geometry = geometry::section(ui, doc, state.geometry_mut(), actions);
     let drew_paint = paint::section(ui, doc, actions);
-    // ★★★ **BOUND** — `OPERATOR_REQUESTS.md` O75: *has anything in this panel
+    // **BOUND** — `OPERATOR_REQUESTS.md` O75: *has anything in this panel
     // described the selection?*
     //
     // A block drawn with **no condition of any kind** is the only thing on
@@ -402,7 +402,7 @@ fn body_sections(
     // selection; this disjunction is what lets anything below them ask whether
     // they spoke.
     //
-    // ★★ One consumer: `object_section` needs it to decide whether *"nothing
+    // One consumer: `object_section` needs it to decide whether *"nothing
     // is selected"* is true. Each term below keeps its own note, because each
     // records a case where omitting it puts a wrong sentence on screen.
     let something_drew = drew_dimension
@@ -411,13 +411,13 @@ fn body_sections(
         || drew_geometry
         || drew_form_field
         || drew_text
-        // ★★ Part of the predicate, and not for symmetry. A selected text
+        // Part of the predicate, and not for symmetry. A selected text
         // object makes the COLOUR row speak, and omitting this term would put
         // *"Pick a row in the Objects panel"* under a live colour control for a
         // selected label. The term is load-bearing whatever else the panel
         // ends with; what changes is only which wrong sentence it prevents.
         //
-        // ★★ It is not the only thing standing between a clicked label and
+        // It is not the only thing standing between a clicked label and
         // that sentence: `drew_text` above is true in the same state, because
         // the face, size and weight rows draw for a clicked object too
         // (`OPERATOR_REQUESTS.md` O198). Keeping this one is still right — the
@@ -427,7 +427,7 @@ fn body_sections(
         // gated on something new.
         || drew_text_object
         || drew_run_width
-        // ★★★ And so is the PAINT section, whose answer must not be discarded.
+        // And so is the PAINT section, whose answer must not be discarded.
         //
         // Discarding it is harmless only while `paint::section` draws for a
         // single selected path, because `object_section` speaks for that same
@@ -438,7 +438,7 @@ fn body_sections(
         // panel draws a live Fill and Line control under *"Pick a row in the
         // Objects panel"* — the O75 shape exactly.
         || drew_paint;
-    // ★★ …and `object_section` is what USES that predicate, rather than
+    // …and `object_section` is what USES that predicate, rather than
     // contributing to it. It is the last section, it is the only one that can
     // say *"nothing is selected"*, and it must say that only when nothing above
     // it has spoken — `annotdelete::section` returns false for an ordinary
@@ -446,11 +446,11 @@ fn body_sections(
     // object, so for a selected **image or path** (the commonest selection in a
     // CAD file) this is the only section that speaks at all.
     //
-    // ★★★ Its own return value is discarded, because nothing is drawn below it
+    // Its own return value is discarded, because nothing is drawn below it
     // to inform. **The binding above is still read**, by this call, which is
     // the whole of what O75 needs it for.
     let _drew_object = object_section(ui, doc, something_drew);
-    // ★★★ **THE STANDING PREFERENCES, LAST** — `OPERATOR_REQUESTS.md` O198.
+    // **THE STANDING PREFERENCES, LAST** — `OPERATOR_REQUESTS.md` O198.
     //
     // The three *When you resize something* switches are on screen whenever
     // the Select tool is armed, which is the resting state, so drawn at the top
@@ -459,7 +459,7 @@ fn body_sections(
     // clipped and the Colour swatch below the viewport altogether. See
     // `tool::Slot` for the measurement.
     //
-    // ★ The rule is O75's, restated: a section that draws with no reference to
+    // The rule is O75's, restated: a section that draws with no reference to
     // the selection must not sit above the sections that describe it. `tool`
     // answers WHICH of its blocks that applies to, through `tool::slot_of`, so
     // the text pen and the measure pick list keep the top of the panel and only
@@ -473,11 +473,11 @@ fn body_sections(
 /// whether the panel is already saying something — see the *nothing focused*
 /// arm.
 ///
-/// ★ The parameter is named `something_drew` and not after any one section: it
+/// The parameter is named `something_drew` and not after any one section: it
 /// carries a disjunction of every section above, and a name that points at one
 /// of them is a trap for the next reader.
 ///
-/// # ★ It returns whether it DREW, and nothing reads that
+/// # It returns whether it DREW, and nothing reads that
 ///
 /// `true` on the two paths that draw property rows, `false` on both early
 /// returns **including** the *nothing is selected* label — that sentence draws,
@@ -488,12 +488,12 @@ fn body_sections(
 /// is one line, and the next section appended here will want it. Deleting it
 /// leaves the next author to rediscover that *"nothing is selected"* must not
 /// count as having spoken.
-/// ★ **No `PanelsState`**, deliberately. Taking one to read a panel-local
+/// **No `PanelsState`**, deliberately. Taking one to read a panel-local
 /// `focus` is what the read below replaces; the absent parameter is what keeps
 /// a future reader from wiring panel-local state back in without noticing they
 /// are recreating it.
 fn object_section(ui: &mut egui::Ui, doc: &OpenDoc, something_drew: bool) -> bool {
-    // ★★★ **THE CANVAS SELECTION**, and never a panel-local focus.
+    // **THE CANVAS SELECTION**, and never a panel-local focus.
     //
     // A `PanelsState::focus` — written **only** by an Objects-panel row click
     // and read **only** here — leaves the canvas selection, which is what an
@@ -507,7 +507,7 @@ fn object_section(ui: &mut egui::Ui, doc: &OpenDoc, something_drew: bool) -> boo
     // from both ends: the Objects panel's row click raises
     // `Action::SelectObject`, and this reads the selection those two share.
     //
-    // ★ **The first object on the current page**, and the choice is stated
+    // **The first object on the current page**, and the choice is stated
     // rather than incidental. A multi-selection has no single set of properties
     // to show; the *"3 objects selected (2 paths, 1 text)"* orientation line
     // belongs to the status bar and the Objects panel's header, which both take
@@ -524,7 +524,7 @@ fn object_section(ui: &mut egui::Ui, doc: &OpenDoc, something_drew: bool) -> boo
         .first()
         .copied();
     let Some(index) = selected else {
-        // ★ Silent when the section drew, because it is not true otherwise. A
+        // Silent when the section drew, because it is not true otherwise. A
         // ce dimension selected on the canvas with nothing focused in the
         // object tree is the ordinary state the instant an operator clicks one,
         // and *"nothing is selected"* under a section describing the thing that
@@ -572,7 +572,7 @@ fn object_section(ui: &mut egui::Ui, doc: &OpenDoc, something_drew: bool) -> boo
     );
     ui.separator();
 
-    // ★ No `ScrollArea` here — `body` wraps the whole panel in one, and nesting
+    // No `ScrollArea` here — `body` wraps the whole panel in one, and nesting
     // a second inside it steals the wheel from the outer depending on where the
     // pointer sits.
     {
@@ -597,7 +597,7 @@ fn object_section(ui: &mut egui::Ui, doc: &OpenDoc, something_drew: bool) -> boo
         }
     }
 
-    // ★ The region the panel's largest section has never published — O75.
+    // The region the panel's largest section has never published — O75.
     // `ui_rect_visible` rather than `ui_rect`, on `geometry::section`'s
     // recorded precedent: this panel is a `ScrollArea`, and a rect published
     // for a scrolled-out control gets CLICKED by the harness.
@@ -615,7 +615,7 @@ fn object_section(ui: &mut egui::Ui, doc: &OpenDoc, something_drew: bool) -> boo
 /// The region [`object_section`] publishes when it has drawn an object's
 /// properties — `OPERATOR_REQUESTS.md` O75.
 ///
-/// ★ Published only on the frames it draws, so its ABSENCE is evidence that
+/// Published only on the frames it draws, so its ABSENCE is evidence that
 /// the panel is not describing a selection. That is the distinction the row is
 /// about, and without a region a driven check could only observe the document
 /// section being present — which it always was.
@@ -745,7 +745,7 @@ mod tests {
             .map(|(_, v)| v.as_str())
     }
 
-    /// **★ The four facts `RIBBON_IA.md` §5.8 commissions this panel for are
+    /// **The four facts `RIBBON_IA.md` §5.8 commissions this panel for are
     /// all present.**
     ///
     /// > the read-only facts (winding rule, node count, embedded-font
@@ -839,7 +839,7 @@ mod tests {
         assert_eq!(value(&rows, t::field_line_width()), Some("2.00 pt"));
     }
 
-    /// **★ An ambiguous font name is disclosed, never resolved.**
+    /// **An ambiguous font name is disclosed, never resolved.**
     ///
     /// The join is by `/BaseFont`, and a name is not a key. Two dictionaries
     /// with one name need not agree about embedding, so pdfcer declines —

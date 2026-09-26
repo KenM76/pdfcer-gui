@@ -1,7 +1,7 @@
 //! # `text::unshare` — every sentence "give this page its own copy" can say
 //!
 //!
-//! ## ★★★ Why this feature needs the biggest refusal catalog on the canvas
+//! ## Why this feature needs the biggest refusal catalog on the canvas
 //!
 //! Because **the refusals are the feature's whole shape**, and because the
 //! commonest one is not an error at all.
@@ -10,7 +10,7 @@
 
 /// **Why this page did not get its own copy of the shared drawing.**
 ///
-/// # ★★★ A `Copy` enum rather than the engine's own `Display`
+/// # A `Copy` enum rather than the engine's own `Display`
 ///
 /// [`crate::text::status::TextStyleRefusal`]'s reason, adopted unchanged and
 /// for the third time: a `format!` of an `EditError` would route **diagnostic
@@ -21,7 +21,7 @@
 /// returning `&'static str`, and keeps every operator-visible word in this
 /// file under **R1**.
 ///
-/// # ★★ The one variant that carries no number, and why that is deliberate
+/// # The one variant that carries no number, and why that is deliberate
 ///
 /// [`Self::WouldExposeHiddenObjects`] is raised by the engine with a `count` —
 /// how many cross-reference entries the file's `/Size` is currently hiding —
@@ -38,7 +38,7 @@
 ///    goes to the trace, where evidence belongs — the same split
 ///    `canvas::textedit::report` makes for `followers_repositioned`.
 ///
-/// # ★ Ordering
+/// # Ordering
 ///
 /// The variants are in **the order the engine checks them**, which is also the
 /// order of decreasing "this is about the whole document" and increasing "this
@@ -57,7 +57,7 @@ pub enum UnshareRefusal {
     /// The document carries an enforced certification signature (§12.8.4,
     /// `/Perms /DocMDP`).
     ///
-    /// `EditError::CertificationForbidsChange`. ★ The variant an operator has
+    /// `EditError::CertificationForbidsChange`. The variant an operator has
     /// no way whatsoever to guess at: a signed drawing looks exactly like an
     /// unsigned one on the canvas, and the sentence is the only surface that
     /// says otherwise.
@@ -71,12 +71,12 @@ pub enum UnshareRefusal {
     /// document is frequently loadable **only** because the filter is hiding
     /// them."*
     ///
-    /// ★ The count is deliberately not carried — see the enum's docs.
+    /// The count is deliberately not carried — see the enum's docs.
     WouldExposeHiddenObjects,
     /// The drawing is reached on this page only from **inside another
     /// drawing**.
     ///
-    /// `EditError::FormNestedInAnotherForm`. ★★★ **The one refusal here that is
+    /// `EditError::FormNestedInAnotherForm`. **The one refusal here that is
     /// a decision rather than a limit**, and the only one with a real remedy
     /// the operator can reach from where they are standing.
     ///
@@ -113,14 +113,14 @@ pub enum UnshareRefusal {
     /// Nothing that is selected on this page is drawn inside a shared drawing,
     /// so the verb has no operand.
     ///
-    /// ★★ **Shell-side, raised before the engine is called**, and it is the
+    /// **Shell-side, raised before the engine is called**, and it is the
     /// only variant here that is not an `EditError`. It is the state the
     /// command's `enabled_when("selection.in_form")` greys the ribbon item for
     /// — and greying enforces nothing, because the context menu, a chord and a
     /// future script all reach the dispatcher without consulting it. This is
     /// what those routes get.
     ///
-    /// ★ It is deliberately **not**
+    /// It is deliberately **not**
     /// [`crate::app::status::decline::Declined::InsideForm`], although that
     /// variant is one line away and is about the same fact. That sentence reads
     /// *"That object is inside a form — pdfcer cannot edit inside one yet"*,
@@ -128,7 +128,7 @@ pub enum UnshareRefusal {
     /// in a form. This verb refuses because it is **not**. Reusing the sentence
     /// would state the exact inverse of what happened.
     NothingInAForm,
-    /// ★★★ **Nothing else draws this drawing, so there is nothing to unshare.**
+    /// **Nothing else draws this drawing, so there is nothing to unshare.**
     ///
     /// Shell-side, like [`Self::NothingInAForm`], raised before the engine is
     /// called — and the second of the two variants here that is a **considered
@@ -137,7 +137,7 @@ pub enum UnshareRefusal {
     /// once, and told the operator *"every other page still shares the
     /// original"* about a document that had no other page.
     ///
-    /// # ★★★ Why declining is the service and performing it is not
+    /// # Why declining is the service and performing it is not
     ///
     /// `EditSession::unshare_form` has **no is-shared guard** — it checks
     /// encryption, certification, `/Size` suppression, form-not-on-page and
@@ -158,7 +158,7 @@ pub enum UnshareRefusal {
     /// defect rather than merely a waste. Declining changes nothing, costs one
     /// document walk, and replaces a false claim with a true one.
     ///
-    /// # ★★★ It is NOT a fault, and the sentence must not read as one
+    /// # It is NOT a fault, and the sentence must not read as one
     ///
     /// This is the only variant in this enum where the operator has done
     /// nothing wrong, the document is in perfect health, and the answer to
@@ -169,7 +169,7 @@ pub enum UnshareRefusal {
     /// type into something safe, and telling them to be careful would be as
     /// wrong as telling them nothing.
     ///
-    /// # ★★ Why it is a decline and not a silent success
+    /// # Why it is a decline and not a silent success
     ///
     /// R9. The condition is a **whole-document walk** and cannot be asked
     /// sixty times a second, so the control is not greyed on it — see
@@ -179,7 +179,7 @@ pub enum UnshareRefusal {
     /// project's founding rule. Performing a pointless edit so that *something*
     /// happened would be the silence, wearing a success.
     ///
-    /// # ★ What "not shared" is measured as, exactly
+    /// # What "not shared" is measured as, exactly
     ///
     /// **No page other than this one draws it**, from
     /// `pdfcer_core::text_edit::invocation_set` — which is
@@ -191,7 +191,7 @@ pub enum UnshareRefusal {
     /// original — the same no-benefit edit, and no true sentence to describe
     /// it.
     ///
-    /// ★★ And it is raised **only when the walk was complete**. A page whose
+    /// And it is raised **only when the walk was complete**. A page whose
     /// scan hit the depth guard or a broken form makes the count a *lower
     /// bound*, and declining on a lower bound would be asserting *"nothing else
     /// draws it"* from a measurement that did not finish — the same class of
@@ -199,7 +199,7 @@ pub enum UnshareRefusal {
     NotShared,
     /// Anything else the engine declined.
     ///
-    /// ★ A catch-all with a **hand-written** sentence, not a rendered error.
+    /// A catch-all with a **hand-written** sentence, not a rendered error.
     /// `TextStyleRefusal::Other` and `RotateRefusal::Other` set the precedent
     /// and the reasoning is unchanged: wording a decline is catalog work per
     /// refusal, and the honest fallback says *nothing changed* rather than
@@ -214,7 +214,7 @@ pub enum UnshareRefusal {
 impl UnshareRefusal {
     /// The sentence.
     ///
-    /// # ★★★ Every one of them ends by saying the sharing is unchanged
+    /// # Every one of them ends by saying the sharing is unchanged
     ///
     /// That clause is not padding, and it is the clause that took the longest
     /// to get right. The operator pressed this button **because they are about
@@ -226,7 +226,7 @@ impl UnshareRefusal {
     /// the safe state might have been reached. Every sentence below therefore
     /// closes the loop explicitly: the page still shares the drawing.
     ///
-    /// ★★★ **[`Self::NotShared`] is the one exception, and it is the same rule
+    /// **[`Self::NotShared`] is the one exception, and it is the same rule
     /// rather than a break from it.** The clause exists to tell the operator
     /// *what is true about the sharing before they type*. For every other
     /// variant that fact is "you still share it"; for that one it is "there was
@@ -236,7 +236,7 @@ impl UnshareRefusal {
     /// test below (`every_refusal_says_where_the_sharing_stands`) asserts the
     /// property that way rather than pinning one of the two answers.
     ///
-    /// # ★★ Remedy first where there is one
+    /// # Remedy first where there is one
     ///
     /// [`crate::text::resizing`]'s rule, inherited: the operator is looking at
     /// something that did not happen, and the useful half is *what to do now*.
@@ -245,7 +245,7 @@ impl UnshareRefusal {
     #[must_use]
     pub const fn line(self) -> &'static str {
         match self {
-            // ★ "Encrypted" is a word the operator will have met — it is what
+            // "Encrypted" is a word the operator will have met — it is what
             // the password dialog in every other reader calls it — and the
             // limit is placed on pdfcer, not on the document, because the file
             // is not malformed and there is nothing in it to fix.
@@ -253,7 +253,7 @@ impl UnshareRefusal {
                 "This document is encrypted, and pdfcer cannot add anything to an encrypted file \
                  yet. This page still shares that drawing with every other page that uses it."
             }
-            // ★★ "Signed", not "certified" — `RotateRefusal::Certified` made
+            // "Signed", not "certified" — `RotateRefusal::Certified` made
             // the same call and the argument is the same: the operator's word
             // for what happened to the file is that somebody signed it. And it
             // says the limit is the DOCUMENT's, because an operator told only
@@ -262,7 +262,7 @@ impl UnshareRefusal {
                 "This document has been signed, and the signature does not allow a change of this \
                  kind. pdfcer copied nothing, so this page still shares that drawing."
             }
-            // ★★ It says the file is DAMAGED, in those words, because that is
+            // It says the file is DAMAGED, in those words, because that is
             // the actionable fact and because the alternative reading — "pdfcer
             // is being fussy" — invites somebody to go looking for an override.
             // There is none, and there should be none: the hidden objects are
@@ -273,11 +273,11 @@ impl UnshareRefusal {
                  adding anything to the file would expose them. pdfcer copied nothing, so this \
                  page still shares that drawing."
             }
-            // ★★★ The remedy is the whole sentence. "Select the form" is the
+            // The remedy is the whole sentence. "Select the form" is the
             // command one row above this one in the same menu, so the operator
             // is told to do a thing they can see.
             //
-            // ★ It names the CONSEQUENCE of the alternative rather than
+            // It names the CONSEQUENCE of the alternative rather than
             // forbidding it: an operator who genuinely wants every sheet to
             // change is doing nothing wrong, and this feature exists to make
             // that a choice instead of an accident.
@@ -287,7 +287,7 @@ impl UnshareRefusal {
                  Use Select the form first to pick the outer one, or edit in place and accept \
                  that every page using it changes."
             }
-            // ★ It sends them to re-select rather than reporting a fault,
+            // It sends them to re-select rather than reporting a fault,
             // because the reachable cause is a stale operand — the page changed
             // between the click and the command draining — and "select it again
             // and press this again" is a complete instruction.
@@ -295,14 +295,14 @@ impl UnshareRefusal {
                 "That drawing is not on this page any more, so there was nothing to copy. Select \
                  something inside it again and try once more."
             }
-            // ★ No remedy, because there is none short of rebuilding the file
+            // No remedy, because there is none short of rebuilding the file
             // in another tool. What it does say is the one thing that is true
             // and useful: nothing was changed.
             Self::NumbersExhausted => {
                 "This file has no room left for another object, so pdfcer could not make the copy. \
                  Nothing was changed, and this page still shares that drawing."
             }
-            // ★★ It explains what the command is FOR in the same breath as
+            // It explains what the command is FOR in the same breath as
             // refusing, because the reachable route to this state is a chord or
             // a menu row on a selection that has nothing to do with forms — an
             // operator who has not yet learned what the command does. The
@@ -312,7 +312,7 @@ impl UnshareRefusal {
                  to give this page a copy of. Click something inside the title block or border \
                  first, then use this."
             }
-            // ★★★ The one sentence in this file that reports GOOD NEWS, and
+            // The one sentence in this file that reports GOOD NEWS, and
             // every word of it is chosen so it cannot be read as a fault.
             //
             // "only used here" — the measured fact, in the operator's terms.
@@ -326,7 +326,7 @@ impl UnshareRefusal {
             // this because they are about to edit, and the useful half of the
             // answer is that they may now go ahead.
             //
-            // ★ It deliberately does NOT say "pdfcer could not" or "there was
+            // It deliberately does NOT say "pdfcer could not" or "there was
             // nothing to copy" as its opening clause. Both are true and both
             // put the reader in a failure frame for an outcome that is a pass.
             Self::NotShared => {
@@ -334,7 +334,7 @@ impl UnshareRefusal {
                  alone. Nothing was copied and nothing was changed — editing it here changes no \
                  other page."
             }
-            // ★ No cause named, because none is known. It says the page is
+            // No cause named, because none is known. It says the page is
             // exactly as it was, and — the clause every sentence here carries —
             // that the sharing is untouched.
             Self::Other => {
@@ -347,7 +347,7 @@ impl UnshareRefusal {
 
 /// **Disclosure: this page now has its own copy, and here is what moved.**
 ///
-/// # ★★★ Why a SUCCESS owes a sentence at all, which is unusual
+/// # Why a SUCCESS owes a sentence at all, which is unusual
 ///
 /// Most disclosures in this crate exist because a consequence is invisible.
 /// This one exists because **the whole act is invisible, by design**.
@@ -364,13 +364,13 @@ impl UnshareRefusal {
 /// rule 4 as narrowed by pdfcer's decision 059 (*render normally, report
 /// separately*) applies with unusual force: there is nothing to render.
 ///
-/// # ★★ What the engine asked a shell to say, verbatim
+/// # What the engine asked a shell to say, verbatim
 ///
 /// [`pdfcer_core::edit::UnshareFormReport`] is documented as naming the copy and
 /// how many references moved *"so a shell can say what happened rather than
 /// only that it worked"*. This is that sentence.
 ///
-/// # ★★ What it does NOT say: the object numbers
+/// # What it does NOT say: the object numbers
 ///
 /// `UnshareFormReport::original` and `::copy` are `ObjId`s, and neither reaches
 /// the status row. That is the split `canvas::textedit::report` states as a
@@ -412,13 +412,13 @@ impl UnshareRefusal {
 /// why "at least" is not a hedge.
 #[must_use]
 pub fn unshared(references_moved: usize, fanout: Fanout) -> String {
-    // ★ Two independent clauses, assembled rather than nested, because they
+    // Two independent clauses, assembled rather than nested, because they
     // answer two different questions and a four-arm `match` over their product
     // would repeat each half twice and let the copies drift.
     //
     // Clause 1 — what happened ON THIS PAGE.
     let here = if references_moved > 1 {
-        // ★ The count is named because it is the whole point of this branch —
+        // The count is named because it is the whole point of this branch —
         // it is the number the operator would otherwise have to trust — and
         // because it is a count of things they can see on the sheet in front of
         // them, which is what separates a disclosure from evidence.
@@ -437,7 +437,7 @@ pub fn unshared(references_moved: usize, fanout: Fanout) -> String {
 
 /// **How widely the drawing was drawn, measured before the copy was made.**
 ///
-/// # ★★★ Why this type exists rather than two loose parameters
+/// # Why this type exists rather than two loose parameters
 ///
 /// Because the two fields are only ever meaningful **together**, and read apart
 /// they produce the exact sentence this type was introduced to delete. `3`
@@ -452,7 +452,7 @@ pub fn unshared(references_moved: usize, fanout: Fanout) -> String {
 /// pairing undo and redo: *"a caller that had to pass two loose booleans in the
 /// right order would eventually pass them in the wrong one."*
 ///
-/// # ★★★ Where the numbers come from, and what they are NOT
+/// # Where the numbers come from, and what they are NOT
 ///
 /// `crate::app::actions::xobject::fanout` walks the document once, on the
 /// press, through `pdfcer_core::text_edit::invocation_set`. Both fields are read
@@ -463,7 +463,7 @@ pub fn unshared(references_moved: usize, fanout: Fanout) -> String {
 /// | [`Self::other_pages`] | `set.pages`, minus this page | **before** |
 /// | [`Self::lower_bound`] | `InvocationSet::is_lower_bound()` | **before** |
 ///
-/// ★★ *Before* is load-bearing and is not an implementation detail. After the
+/// *Before* is load-bearing and is not an implementation detail. After the
 /// copy is made, this page's invocations name the copy, and a walk run then
 /// would report the original's fan-out with this page already subtracted. The
 /// number the operator needs — *how many sheets are still on the original* — is
@@ -471,7 +471,7 @@ pub fn unshared(references_moved: usize, fanout: Fanout) -> String {
 /// the file. Measuring after would give the right answer for the wrong reason
 /// and would break the moment the verb's granularity changed.
 ///
-/// # ★★ "At least" is a statement of fact, not a hedge
+/// # "At least" is a statement of fact, not a hedge
 ///
 /// `InvocationSet::is_lower_bound()` is true when some page's scan hit the
 /// depth guard or a form pdfcer could not decode. Those pages may or may not
@@ -507,7 +507,7 @@ impl Fanout {
     /// | exactly one | *"1 other page that draws it keeps the original."* |
     /// | more than one | *"N other pages that draw it keep the original."* |
     ///
-    /// ★★ The zero case does **not** print "0 other pages" and does not claim
+    /// The zero case does **not** print "0 other pages" and does not claim
     /// there are none. It is reachable only from an incomplete walk (or from a
     /// form the walk could not see at all), and on an incomplete walk *"no
     /// other page draws it"* is precisely the claim that has not been measured.
@@ -515,7 +515,7 @@ impl Fanout {
     /// whether that set is empty or not, which is the only kind of sentence a
     /// failed measurement is entitled to.
     ///
-    /// ★ Verb agreement is why one and many are separate arms rather than one
+    /// Verb agreement is why one and many are separate arms rather than one
     /// `format!` with a pluralised noun: *"1 other page … keeps"* against *"3
     /// other pages … keep"* differ in two places, and "page(s) … keep(s)" is
     /// the shape [`crate::text`]'s rules exist to keep out of an operator's
@@ -534,7 +534,7 @@ impl Fanout {
 /// **Disclosure appended to a text edit that changed shared content: how to
 /// avoid it next time.**
 ///
-/// # ★★★ Why the shell adds a sentence to the engine's own list
+/// # Why the shell adds a sentence to the engine's own list
 ///
 /// `pdfcer-core` already puts a `"SHARED CONTENT: …"` sentence into
 /// `text_edit::EditReport::disclosures`, worded for direct display, and
@@ -556,7 +556,7 @@ impl Fanout {
 /// nothing about a pinned tail because from its side pinning is what was asked
 /// for, and the operator still owes it.
 ///
-/// # ★★★ The sequence is UNDO first, and getting that wrong would be a lie
+/// # The sequence is UNDO first, and getting that wrong would be a lie
 ///
 /// This is the sentence's load-bearing clause and it is worth the paragraph.
 ///
@@ -572,7 +572,7 @@ impl Fanout {
 /// The order that works is **undo, unshare, edit again**, and it is stated in
 /// that order with no room to read it otherwise.
 ///
-/// # ★★ Why it is worded as a future-tense offer, not a warning
+/// # Why it is worded as a future-tense offer, not a warning
 ///
 /// Because at the moment it is read, the fan-out has already happened and may
 /// well have been wanted — §8.10.1's whole purpose for the feature is that one
@@ -580,7 +580,7 @@ impl Fanout {
 /// block is *supposed* to reach all of them. This shell must not imply the
 /// operator has made a mistake. It names the option they did not know they had.
 ///
-/// # ★ Why it is appended rather than replacing the engine's sentence
+/// # Why it is appended rather than replacing the engine's sentence
 ///
 /// The engine's sentence carries `InvocationSet::describe()` — the actual
 /// counts, "3 pages, 5 places" or whatever this document is — and that is the
@@ -599,7 +599,7 @@ pub fn shared_content_remedy() -> String {
 mod tests {
     use super::*;
 
-    /// ★★ **Every refusal is a sentence, and none of them is empty.**
+    /// **Every refusal is a sentence, and none of them is empty.**
     ///
     /// The check that a variant added later cannot ship silent — the founding
     /// rule applied to the enum that exists to serve it. Copied deliberately
@@ -628,7 +628,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **Every refusal says the sharing is unchanged**, which is the one
+    /// **Every refusal says the sharing is unchanged**, which is the one
     /// clause the operator acts on.
     ///
     /// The reachable failure this pins: somebody adds a variant, writes a
@@ -637,14 +637,14 @@ mod tests {
     /// block that is still shared by thirty-six sheets. The refusal would read
     /// as complete and would omit the only part that prevents damage.
     ///
-    /// ★ Asserted on a **word**, not on a phrase, because the wording of each
+    /// Asserted on a **word**, not on a phrase, because the wording of each
     /// sentence is deliberately different and pinning a phrase would either
     /// force a set of identical endings or fail on the first rewrite. Every
     /// sentence must mention what is *shared* or that nothing *changed*; that
     /// is the property, and it is the weakest assertion that still catches the
     /// omission.
     ///
-    /// ★★ [`UnshareRefusal::NotShared`] satisfies it by saying *nothing was
+    /// [`UnshareRefusal::NotShared`] satisfies it by saying *nothing was
     /// changed* while asserting the opposite about the sharing — see
     /// [`UnshareRefusal::line`]'s docs. The property is *"the sentence settles
     /// where the sharing stands"*, not *"the sentence says the page still
@@ -674,7 +674,7 @@ mod tests {
         }
     }
 
-    /// ★★ **The plural branch names the count and the singular does not.**
+    /// **The plural branch names the count and the singular does not.**
     ///
     /// Both halves matter. A build that dropped the count on the multi-name
     /// case would leave an operator who knows the sheet draws its title block
@@ -696,7 +696,7 @@ mod tests {
         assert!(three.contains("this page only"));
     }
 
-    /// ★★★ **The disclosure never claims other pages share it unless the walk
+    /// **The disclosure never claims other pages share it unless the walk
     /// measured some** — the defect this file was corrected for on 2026-08-29.
     ///
     /// The shipped sentence ended *"every other page still shares the
@@ -735,7 +735,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **An incomplete walk says "at least", and a complete one does not.**
+    /// **An incomplete walk says "at least", and a complete one does not.**
     ///
     /// `InvocationSet::is_lower_bound`'s own documentation is the reason:
     /// *"an under-count presented as a total is the same class of defect as a
@@ -771,7 +771,7 @@ mod tests {
         assert!(total.contains("2 other pages that draw it keep the original"));
     }
 
-    /// ★★ **The singular clause agrees with its verb.**
+    /// **The singular clause agrees with its verb.**
     ///
     /// One other page "keeps" the original; three "keep" it. The arm exists
     /// because the alternative — one `format!` with a pluralised noun — puts
@@ -792,7 +792,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The "not shared" decline does not read as a fault.**
+    /// **The "not shared" decline does not read as a fault.**
     ///
     /// The sentence reports the one outcome in this enum where the operator did
     /// nothing wrong and the document is in perfect health, and the whole
@@ -800,7 +800,7 @@ mod tests {
     /// the truthful sentence is better than the edit. A rewrite that opened it
     /// with "pdfcer could not" would keep every fact and lose that.
     ///
-    /// ★ Asserted on the absence of failure vocabulary and the presence of the
+    /// Asserted on the absence of failure vocabulary and the presence of the
     /// two facts the operator acts on — *it is already private* and *nothing
     /// was changed* — rather than on the sentence itself, which is free to be
     /// reworded.
@@ -825,7 +825,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The shared-content remedy states undo BEFORE unshare.**
+    /// **The shared-content remedy states undo BEFORE unshare.**
     ///
     /// The one assertion in this file that pins a *sequence* rather than a
     /// property, and it is pinned because getting it backwards produces a

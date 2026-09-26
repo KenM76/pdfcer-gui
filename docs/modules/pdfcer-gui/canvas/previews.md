@@ -12,7 +12,7 @@ convenient cut: `interact` answers *"what does this frame's pointer mean?"*
 and these answer *"what is drawn while the answer is still provisional?"*.
 The painter reads them; `interact` only fills them in.
 
-## ★★★ The one argument every field here shares, stated once
+## The one argument every field here shares, stated once
 
 **They are separate values and not one `enum`.** The reasoning was repeated
 nine times in the source this was extracted from, and it is worth keeping

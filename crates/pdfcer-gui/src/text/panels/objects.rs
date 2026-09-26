@@ -333,7 +333,7 @@ pub fn quoted_text(text: &str, truncated: bool) -> String {
     quoted_text_preview(text, truncated, PANEL_TEXT_CHARS)
 }
 
-/// ★★★ **THE SUBSET TAG IS STRIPPED HERE AND NOWHERE ELSE — 2026-09-04.**
+/// **THE SUBSET TAG IS STRIPPED HERE AND NOWHERE ELSE — 2026-09-04.**
 ///
 /// A subsetted font's `/BaseFont` is `AAAAAA+JetBrainsMono-Regular`: six
 /// arbitrary uppercase letters, a `+`, then the name. §9.6.4 requires the tag
@@ -354,12 +354,12 @@ pub fn quoted_text(text: &str, truncated: bool) -> String {
 /// costs the operator nothing: every other clause — the paint style, the colour
 /// hex, the node count, the size — is a fact he might act on.
 ///
-/// ★★ It was already the approved answer. `mockups/pdfcer-shell.html`'s legend
+/// It was already the approved answer. `mockups/pdfcer-shell.html`'s legend
 /// carries it as its own line — *"Strip the AAAAAA+ subset tag in the row only.
 /// Kept in Properties"* — with the argument that two subsets of one face
 /// otherwise read identically in the list while naming different font objects.
 ///
-/// ★ **In the ROW only.** Properties keeps the whole `/BaseFont`, because there
+/// **In the ROW only.** Properties keeps the whole `/BaseFont`, because there
 /// the tag is the handle that tells two subsets apart, and that panel has the
 /// room to show it. A list optimises for scanning; a detail pane optimises for
 /// identity.
@@ -503,7 +503,7 @@ pub fn object_row(index: usize, summary: &ObjectSummary) -> String {
     }
 }
 
-/// ★★★ **The mark a row wears when the object it names carries a
+/// **The mark a row wears when the object it names carries a
 /// disclosure** — added 2026-09-05 with [`object_row_headline`].
 ///
 /// One character in place of a phrase between nineteen and thirty characters
@@ -519,7 +519,7 @@ pub fn object_row(index: usize, summary: &ObjectSummary) -> String {
 /// row could wear one it did not mean.
 pub const OBJECT_ROW_DISCLOSURE_MARK: char = '\u{26a0}';
 
-/// ★★★ **The MASTER row's label — what the Objects tree actually draws**,
+/// **The MASTER row's label — what the Objects tree actually draws**,
 /// since 2026-09-05. `OPERATOR_REQUESTS.md` **O123** part 6, defect 2.
 ///
 /// [`object_row`] is the full description and stays exactly as it was; this is
@@ -528,7 +528,7 @@ pub const OBJECT_ROW_DISCLOSURE_MARK: char = '\u{26a0}';
 /// the short form can never disagree with the long one about a fact — it can
 /// only carry fewer of them.
 ///
-/// # ★★★ 1. Why a second form exists: every row was elided, on every fixture
+/// # 1. Why a second form exists: every row was elided, on every fixture
 ///
 /// The driven check `the_inspector_is_one_master_detail_column` reported
 /// **8 of 8 object rows do not fit at the default width**, and the panel's own
@@ -542,7 +542,7 @@ pub const OBJECT_ROW_DISCLOSURE_MARK: char = '\u{26a0}';
 /// measurement fed back into a size (**R128**), and this change deliberately
 /// feeds nothing back: the width is a constant, the row is what changed.
 ///
-/// # ★★ 2. What is dropped, and where each dropped fact went
+/// # 2. What is dropped, and where each dropped fact went
 ///
 /// | dropped from the row | still shown |
 /// |---|---|
@@ -558,7 +558,7 @@ pub const OBJECT_ROW_DISCLOSURE_MARK: char = '\u{26a0}';
 /// one fact and eliding the identity — the index and the words — that only the
 /// master carries.
 ///
-/// # ★ 3. What is kept, and why each earns its characters
+/// # 3. What is kept, and why each earns its characters
 ///
 /// - **the index**, verbatim: it is the operand `pdfcer object-list`,
 ///   `object-delete` and `node-move` all take, and nothing else on screen
@@ -574,7 +574,7 @@ pub const OBJECT_ROW_DISCLOSURE_MARK: char = '\u{26a0}';
 /// - **[`OBJECT_ROW_DISCLOSURE_MARK`]** when the object carries any note at
 ///   all.
 ///
-/// ★★ The mark is raised by `!notes.is_empty()` rather than by
+/// The mark is raised by `!notes.is_empty()` rather than by
 /// [`headline_note`], and the difference is load-bearing: `headline_note` skips
 /// `ObjectNote::PaintsNothing` **because [`paint_style_label`] already says
 /// it**, and this form no longer prints that label. Using `headline_note` here
@@ -582,7 +582,7 @@ pub const OBJECT_ROW_DISCLOSURE_MARK: char = '\u{26a0}';
 /// nothing — wearing no mark at all, which is the one disclosure on this panel
 /// that explains a box the operator can see and cannot find ink for.
 ///
-/// # ★ 4. A long row still elides, and that is the mechanism working
+/// # 4. A long row still elides, and that is the mechanism working
 ///
 /// The quoted preview is capped at [`ROW_TEXT_CHARS`] characters, so a row
 /// quoting a full-length string plus a mark can still exceed a narrow pane —
@@ -686,7 +686,7 @@ pub fn object_note_short(note: ObjectNote) -> &'static str {
         ObjectNote::FormNotDecomposed => "a whole nested drawing",
         ObjectNote::TextUndecodable => "text cannot be read",
         ObjectNote::TextPartlyUndecodable => "some characters cannot be read",
-        // ★ NO CATCH-ALL ARM, deliberately. `ObjectNote` and
+        // NO CATCH-ALL ARM, deliberately. `ObjectNote` and
         // `TextBoundsBasis` are both closed enums, so this match is
         // exhaustive and adding a variant to either **breaks the build**.
         // That is a stronger guard than a `_` arm returning a placeholder,
@@ -766,7 +766,7 @@ inside the font itself. The text still displays and prints correctly; it simply 
 turned back into letters. Rather than show a row of question marks, pdfcer says so."
         }
         ObjectNote::TextPartlyUndecodable => {
-            // ★ The replacement character is **named, not shown**.
+            // The replacement character is **named, not shown**.
             //
             //
             // Naming it is better than substituting a drawable stand-in
@@ -790,7 +790,7 @@ mod tests {
     use super::*;
     use pdfcer_core::vector::TextFont;
 
-    /// **★ Every note in the catalog has both a short form and a full
+    /// **Every note in the catalog has both a short form and a full
     /// sentence, and no two notes share either.**
     ///
     /// This is the sweep the `ObjectNote::ALL` array exists for. A note
@@ -929,7 +929,7 @@ mod tests {
 
     /// A font is named by its typeface when the file gives one, and by its
     /// resource name when that is all there is.
-    /// ★★★ A subset tag is six arbitrary letters and a plus, and it is stripped
+    /// A subset tag is six arbitrary letters and a plus, and it is stripped
     /// from the ROW because it means nothing and costs seven characters on
     /// every text row.
     ///
@@ -948,7 +948,7 @@ mod tests {
         );
     }
 
-    /// ★★ And a `+` that is not a subset tag is left alone — losing half of a
+    /// And a `+` that is not a subset tag is left alone — losing half of a
     /// real face name would be a silent corruption of the one thing this label
     /// exists to say.
     #[test]
@@ -1117,7 +1117,7 @@ mod tests {
         describe_object(&objects.objects[0])
     }
 
-    /// ★★★ **The headline keeps the identity and drops the description** —
+    /// **The headline keeps the identity and drops the description** —
     /// O123 defect 2, asserted clause by clause.
     ///
     /// Both directions, and both are needed. Asserting only what survives
@@ -1156,7 +1156,7 @@ mod tests {
         );
     }
 
-    /// ★★ **An object that paints nothing wears the mark**, which
+    /// **An object that paints nothing wears the mark**, which
     /// [`headline_note`] alone would not give it.
     ///
     /// `headline_note` skips `ObjectNote::PaintsNothing` because

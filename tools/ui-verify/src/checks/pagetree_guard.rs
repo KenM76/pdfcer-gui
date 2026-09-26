@@ -11,13 +11,13 @@ use crate::report::CheckReport;
 
 /// Delete a page, then save a copy — the operator's own two presses.
 ///
-/// ★ `mode.edit` first, for the reason every driven check in this suite gives:
+/// `mode.edit` first, for the reason every driven check in this suite gives:
 /// driving from a named mode makes the run reproducible rather than dependent
 /// on whatever mode the last session left behind. It is also load-bearing here
 /// rather than merely tidy — `pages.delete` changes page content, and Read's
 /// posture is that the document is not the operator's to alter.
 ///
-/// ★★ `pages.delete` with nothing picked acts on the **current page**, which is
+/// `pages.delete` with nothing picked acts on the **current page**, which is
 /// page 1 — a defined answer rather than a disabled state
 /// (`app::dispatch::pages`' own note). Page 1 hangs from node `A1` under `A`
 /// under the root, so removing it leaves two ancestors stale and not one, which
@@ -94,7 +94,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
 
-    // ★★★ The fixture is PINNED and `--pdf` is discarded — see the header. Said
+    // The fixture is PINNED and `--pdf` is discarded — see the header. Said
     // out loud in the notes, because a sweep that silently ignored a flag is
     // indistinguishable from one that honoured it.
     let pdf = ctx.source_root.clone().unwrap_or_default().join(FIXTURE);
@@ -119,7 +119,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ));
     }
 
-    // ★ Deleted first, and that is not tidiness: a file left by a previous run
+    // Deleted first, and that is not tidiness: a file left by a previous run
     // would make assertion 2 fail on a build that is behaving perfectly, and —
     // worse — a file the run itself wrote would be indistinguishable from one
     // that was already there.

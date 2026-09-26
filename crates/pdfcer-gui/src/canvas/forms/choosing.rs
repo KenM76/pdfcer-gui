@@ -60,7 +60,7 @@ const LIST_PAD: f32 = 4.0;
 /// The floor is deliberately this low rather than a comfortable minimum: a
 /// larger one would exceed the room on the chosen side for a widget near the
 /// edge of the screen, and `constrain_to` would then slide the popup back over
-/// the widget, which is the failure the module header's ★ is about.
+/// the widget, which is the failure the module header's is about.
 const LIST_MIN_H: f32 = 24.0;
 
 /// Space above and below a row's text, in screen points.
@@ -142,7 +142,7 @@ pub(super) fn focus_choice(
         } => (first_selected(options, selected).unwrap_or(0), *editable),
         _ => (0, false),
     };
-    // ★ An **editable** combo opens its list only when the click landed on the
+    // An **editable** combo opens its list only when the click landed on the
     // drop button; a click in its text area asks for a caret instead. Every
     // other choice widget opens unconditionally, because a click on one has no
     // second meaning to tell apart. `point` and `widget_box.rect` are both in
@@ -197,7 +197,7 @@ pub(super) fn choose(
         return false;
     };
 
-    // ★★★ An editable combo is a live text box with a drop button, not a ring
+    // An editable combo is a live text box with a drop button, not a ring
     // over the appearance stream, and everything below this line assumes the
     // second: it locks the arrow keys to a highlight the text box needs for
     // its caret, draws no box over the widget, and treats Enter as a pick
@@ -216,7 +216,7 @@ pub(super) fn choose(
     if !focus.seated {
         response.request_focus();
     } else if !response.has_focus() {
-        // ★★★ **A PRESS ON THE POPUP'S OWN ROW IS NOT A CLICK ELSEWHERE** —
+        // **A PRESS ON THE POPUP'S OWN ROW IS NOT A CLICK ELSEWHERE** —
         // O209, *"the drop-down options don't remember what I've clicked on."*
         //
         // `egui`'s default `SurrenderFocusOn::Presses` takes focus away from a
@@ -226,7 +226,7 @@ pub(super) fn choose(
         // else. `Response::has_focus` reads memory live, so the surrender is
         // already visible on the very frame of the press.
         //
-        // ★★ What that cost: this branch then forgot the focus and the list
+        // What that cost: this branch then forgot the focus and the list
         // state, so on the RELEASE frame — which is the frame a row's
         // `clicked()` would fire on — there was no focused field, no popup was
         // drawn, and the row the operator was pointing at did not exist. The
@@ -234,7 +234,7 @@ pub(super) fn choose(
         // `form-choice-open`, then `form-choice-unfocused`, and no
         // `form-choice-pick` line.
         //
-        // ★ The question asked is deliberately *where the pointer is*, not
+        // The question asked is deliberately *where the pointer is*, not
         // *what was pressed*: the `Area`'s rectangle is read from memory, which
         // holds last frame's geometry, so it is available on the press frame
         // before this frame's popup has been laid out. Re-requesting focus
@@ -277,7 +277,7 @@ pub(super) fn choose(
     let mut claimed = false;
     let mut leaving = false;
 
-    // ★ Escape's two rungs, innermost first. An open list is the most
+    // Escape's two rungs, innermost first. An open list is the most
     // transient thing on the surface, so Escape closes it and leaves the ring;
     // a second press gives up the field. Collapsing the two would make one key
     // do both, which is decision 025's L1 in miniature.
@@ -305,7 +305,7 @@ pub(super) fn choose(
     } else if ctx.input(|i| i.key_pressed(Key::Enter) || i.key_pressed(Key::Space))
         || arrow(&ctx).is_some()
     {
-        // ★ Opening rather than selecting, and that is the conservative half
+        // Opening rather than selecting, and that is the conservative half
         // of the keyboard story. Windows changes a closed combo's value on an
         // arrow press; doing that here would write a document edit — and an
         // undo entry — for a key the operator pressed to *look* at the
@@ -346,7 +346,7 @@ pub(super) fn choose(
             })
             .into(),
         );
-        // ★ A single-select **combo** pick is finished, and closes. Everything
+        // A single-select **combo** pick is finished, and closes. Everything
         // else stays open, for two different reasons that happen to agree:
         //
         // * a multi-select pick is the first of several, and closing after
@@ -389,13 +389,13 @@ pub(super) fn choose(
 
 /// Draw the option list and answer which row was clicked.
 ///
-/// # ★★★ Two presentations, and they are not styling variants
+/// # Two presentations, and they are not styling variants
 ///
 /// `/Ff` `Combo` decides **where the options are drawn**, and the two answers
 /// are structurally different surfaces:
 ///
 /// * a **combo box** drops its list *outside* the widget, below it when there
-///   is room and above it otherwise — the module header's ★ governs the side,
+///   is room and above it otherwise — the module header's governs the side,
 ///   the constraint and the scroll height;
 /// * a **list box** draws its options **inside its own rectangle**, opaquely
 ///   covering the appearance stream, with a scroll bar the moment they do not
@@ -417,7 +417,7 @@ pub(super) fn choose(
 /// click on it, then I can select options and if the box is too small for all
 /// of the options it gives a scroll bar."*
 ///
-/// # ★★ Why the frame is built here instead of using [`egui::Frame::popup`]
+/// # Why the frame is built here instead of using [`egui::Frame::popup`]
 ///
 /// `Frame::popup` is a rounded, shadowed, generously padded card — correct for
 /// a menu floating over an application's own chrome, wrong for a control
@@ -544,7 +544,7 @@ fn list(
 
 /// Draw one option row and answer whether it was clicked.
 ///
-/// # ★ Why the row is painted rather than assembled from `selectable_label`
+/// # Why the row is painted rather than assembled from `selectable_label`
 ///
 /// Three things have to be true at once and no stock widget delivers them
 /// together: the row is the **full width** of the list (a click anywhere along
@@ -629,7 +629,7 @@ fn pressed_in_list(ctx: &egui::Context, id: Id) -> bool {
 /// Single-select is the one option picked. Multi-select toggles it against
 /// what is already selected.
 ///
-/// # ★ Rebuilt from `/Opt`, which is not what the panel does
+/// # Rebuilt from `/Opt`, which is not what the panel does
 ///
 /// The current selection is recovered by asking each *option* whether it is
 /// selected, rather than by copying `/V` and editing it. The difference shows

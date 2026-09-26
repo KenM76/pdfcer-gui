@@ -1,6 +1,6 @@
 //! # `text::tool` — the words the tools say, wherever they are said
 //!
-//! ## ★★★ This file OUTLIVED the panel it was written for
+//! ## This file OUTLIVED the panel it was written for
 //!
 //!
 //! | what | who says it now |
@@ -22,7 +22,7 @@ use crate::canvas::textedit::TextEditKind;
 
 /// What a press means in a mode that can select page content — Edit.
 ///
-/// ★ **This sentence exists nowhere else in the application**, which is the
+/// **This sentence exists nowhere else in the application**, which is the
 /// whole reason the unarmed panel is not a placeholder. The identical drag
 /// means *marquee objects* here and *sweep text* in Read, decided by
 /// `canvas::textsel::takes_the_press` reading the mode — and no surface has
@@ -52,7 +52,7 @@ pub const fn pointer_reading() -> &'static str {
 
 /// The put-the-tool-down button.
 ///
-/// ★ Named for what it does to the **tool**, never "Close" — the dock tab's ✕
+/// Named for what it does to the **tool**, never "Close" — the dock tab's ✕
 /// closes the panel and this does not, and two controls a click apart that both
 /// read as closing something is how an operator loses a surface they wanted.
 #[must_use]
@@ -68,7 +68,7 @@ pub const fn put_down_hint() -> &'static str {
 
 /// What the **Node tool** does, in the Tool panel's live stage.
 ///
-/// ★ Written as the two gestures in the order an operator performs them, and
+/// Written as the two gestures in the order an operator performs them, and
 /// naming the *thing* rather than the rung. "Anchor" is what a draughtsman
 /// calls the point; `SelectionLevel::Node` is what this program calls the
 /// state, and the panel speaks the first vocabulary — `text::commands`' rule
@@ -103,7 +103,7 @@ pub const fn put_down_hint() -> &'static str {
 /// operator shown only two of a tool's three subjects never learns the
 /// third exists.
 ///
-/// ★ *picks out just the line you clicked* rather than *selects the run*.
+/// *picks out just the line you clicked* rather than *selects the run*.
 /// **Run** is the format's word and appears in the Objects panel, where a
 /// reader is already looking at a tree of format objects; this strip speaks
 /// the operator's, and his word for it — verbatim — is *line*.
@@ -117,7 +117,7 @@ pub const fn node_instruction() -> &'static str {
 /// The line under it: how to take more than one, and how to change how many
 /// corners a measurement has.
 ///
-/// ## ★★★ This is where the two chords are spelled, and it is the ONLY place
+/// ## This is where the two chords are spelled, and it is the ONLY place
 ///
 /// `canvas::dimdrag` gates adding and removing a corner on this tool being
 /// armed — deliberately, so that a stray Ctrl during an ordinary corner drag
@@ -126,7 +126,7 @@ pub const fn node_instruction() -> &'static str {
 /// line: arm the tool, and the sentence under it tells you what the modifiers
 /// do.
 ///
-/// ★★ It is a **stopgap and is recorded as one.** The discoverable form of
+/// It is a **stopgap and is recorded as one.** The discoverable form of
 /// these two verbs is a right-click menu on the shape — *"add a point here"*,
 /// *"remove this point"* — which is the shape `pdfcer-core`'s own doc comments
 /// on `insert_dimension_vertex` and `remove_dimension_vertex` describe them
@@ -158,7 +158,7 @@ pub const fn text_select_instruction() -> &'static str {
     "Drag across the words you want. Click once to put the cursor in a word."
 }
 
-/// ★ What arming the sweep takes away, in the mode where it takes something.
+/// What arming the sweep takes away, in the mode where it takes something.
 ///
 /// Rendered only in a mode that can select page content. Everywhere else the
 /// select tool already swept text, so there is nothing to disclose and the line
@@ -170,7 +170,7 @@ pub const fn text_select_takes_the_press() -> &'static str {
 
 /// One markup kind's instruction. The gesture, and how it ends.
 ///
-/// ★ These came from `MarkupKind`'s own variant doc comments, where they had
+/// These came from `MarkupKind`'s own variant doc comments, where they had
 /// been written — correctly, and in the operator's words — since the day each
 /// kind landed, with no surface able to render them. Moving them here is what
 /// `check-ui-strings.sh` requires and is also what makes them reachable.
@@ -190,7 +190,7 @@ pub const fn markup_instruction(kind: MarkupKind) -> &'static str {
 
 /// How many corners are down, and what ends the run.
 ///
-/// ★ **The number is why this panel exists rather than a canvas readout.** A
+/// **The number is why this panel exists rather than a canvas readout.** A
 /// rubber band and a snap indicator are the cursor and are welcome; a *number*
 /// floated near the pointer would be pdfcer putting a surface over the drawing
 /// on its own initiative, which `MODES_AND_PANELS.md` sets to **never**. So the
@@ -216,7 +216,7 @@ pub const fn text_annot_instruction(kind: TextAnnotKind) -> &'static str {
     }
 }
 
-/// ★ What a release does for a text-bearing annotation, which is NOT what it
+/// What a release does for a text-bearing annotation, which is NOT what it
 /// does for a shape.
 ///
 /// The distinction `CanvasTool` was split for: *"A markup band authors on
@@ -244,7 +244,7 @@ pub const fn text_edit_live() -> &'static str {
     "Enter commits what you have typed. Esc abandons it."
 }
 
-/// ★★ The heading over the refusal, when a click was declined.
+/// The heading over the refusal, when a click was declined.
 ///
 /// The refusal sentences themselves are `crate::text::textedit::refusal`'s and
 /// are **not** duplicated here. They were written well, are tested, and have
@@ -289,7 +289,7 @@ pub fn measure_perimeter_live(vertices: usize, length: &str) -> String {
 /// The radius/diameter tool's LIVE sentence — how many points are in the fit,
 /// and what circle they currently make.
 ///
-/// # ★★ Why the SIZE is in it, and why that is the whole ask
+/// # Why the SIZE is in it, and why that is the whole ask
 ///
 /// `OPERATOR_REQUESTS.md` O105: *"selecting more points around a hole doesn't
 /// always get it to narrow down to the size of the hole."* An operator adding
@@ -312,7 +312,7 @@ pub fn measure_circular_live(points: usize, measurement: &str) -> String {
 
 /// The radius/diameter tool's sentence while the fit is still degenerate.
 ///
-/// ★ It states the count AND what is missing, because "nothing yet" is exactly
+/// It states the count AND what is missing, because "nothing yet" is exactly
 /// the report that sent the operator looking for a broken tool. Two points on
 /// an arc is not a failure, it is halfway.
 #[must_use]
@@ -333,7 +333,7 @@ pub const fn measure_points_heading() -> &'static str {
 /// One row in that list: its position in the set, where it came from, and where
 /// it is.
 ///
-/// # ★★ Why the ORIGIN is on the row
+/// # Why the ORIGIN is on the row
 ///
 /// Because a point snapped to the drawing's own geometry and a point the
 /// operator placed by eye on a scanned image produce the same numbers and are
@@ -341,7 +341,7 @@ pub const fn measure_points_heading() -> &'static str {
 /// deliberately — it is what makes a bitmap measurable — and the honest
 /// consequence is that the operator can see which of their points are which.
 ///
-/// ★★★ That disclosure is here and **not on the canvas**, and the placement is
+/// That disclosure is here and **not on the canvas**, and the placement is
 /// the rule rather than a preference. Rule 4: applied content renders exactly
 /// as saved content will, and a tint or a dashed marker saying *"this one is a
 /// guess"* would be pdfcer marking its own uncertainty into the page view. The
@@ -359,7 +359,7 @@ pub fn measure_point_row(ordinal: usize, origin: &str, x: f64, y: f64) -> String
 
 /// What a point's row does when it is clicked.
 ///
-/// ★ A row that removes on a single click needs to say so before it is pressed,
+/// A row that removes on a single click needs to say so before it is pressed,
 /// because the gesture is not recoverable through undo — a pick set is
 /// pre-commit state and never enters the document's history. One click to put
 /// it back is the whole cost, and the tooltip says which click.
@@ -370,7 +370,7 @@ pub const fn measure_point_remove_hint() -> &'static str {
 
 /// The line drawn in place of the list when nothing has been picked.
 ///
-/// ★ Not a placeholder row and not a greyed one: R9 reserves greying for a
+/// Not a placeholder row and not a greyed one: R9 reserves greying for a
 /// *temporarily* unavailable control, and an empty set is not that. This is a
 /// sentence, and it is the only thing this section renders until there is
 /// something to list.
@@ -381,7 +381,7 @@ pub const fn measure_points_empty() -> &'static str {
 
 /// The operator-facing name for where a picked point came from.
 ///
-/// # ★ Why this is a separate vocabulary from the trace's
+/// # Why this is a separate vocabulary from the trace's
 ///
 /// `canvas::measure::circular::origin_tag` produces short machine tags that a
 /// driven check matches on. Those are a contract with `tools/ui-verify` and must
@@ -425,20 +425,20 @@ pub const fn measure_instruction(kind: MeasureKind) -> &'static str {
                                 dimension line should sit."
         }
         MeasureKind::Circular => "Click three or more points around the arc, then finish it.",
-        // ★ All three endings, in one sentence, in the order an operator meets
+        // All three endings, in one sentence, in the order an operator meets
         // them. A tool with three ways to stop needs to say so before the first
         // click - discovering the closing convention by accident works, and
         // discovering it AFTER tracing thirty vertices the wrong way does not.
         MeasureKind::Perimeter => {
             "Click around the shape. Click the first point again to close it, or double-click to finish an open path."
         }
-        // ★ Two endings, not three - and the sentence says so, because the
+        // Two endings, not three - and the sentence says so, because the
         // difference between this tool and Perimeter IS the missing ending.
         MeasureKind::PathLength => {
             "Click along what you are measuring. Double-click the last point to finish."
         }
         MeasureKind::TwoLine => "Click one line, then the other.",
-        // ★ The calibration pick, which is armed from inside the Set-scale
+        // The calibration pick, which is armed from inside the Set-scale
         // window rather than from the Measure tab — it is deliberately absent
         // from `MeasureKind::ALL` for that reason.
         //
@@ -459,7 +459,7 @@ pub const fn measure_instruction(kind: MeasureKind) -> &'static str {
 
 /// The label over the group the next dimension will join.
 ///
-/// ★ **Read-only here, and the button beside it is a route rather than a
+/// **Read-only here, and the button beside it is a route rather than a
 /// picker.** A second group picker would be two copies of the one control that
 /// decides where every ce dimension goes, which is precisely the duplication
 /// this project has already been bitten by. The panel that owns it is one click
@@ -481,7 +481,7 @@ pub const fn manage_groups_button() -> &'static str {
 
 /// The heading over the Select tool's three scale switches.
 ///
-/// ★★ *"When you resize something"*, not *"Scaling"* or *"Transform options"*.
+/// *"When you resize something"*, not *"Scaling"* or *"Transform options"*.
 /// It names the **gesture** these modify, because that is how the operator will
 /// arrive: they have just dragged a grip and something did or did not come with
 /// it. A noun heading would be correct and would not connect to anything they
@@ -493,7 +493,7 @@ pub const fn scale_heading() -> &'static str {
 
 /// The stroke-width switch.
 ///
-/// ★★★ **His own vocabulary.** `OPERATOR_REQUESTS.md` O51 says *"scaling line
+/// **His own vocabulary.** `OPERATOR_REQUESTS.md` O51 says *"scaling line
 /// weight, etc with resize"* — *line weight*, which is the drafting term and
 /// the one on every CAD program's layer table. The PDF calls it a border width
 /// and Inkscape calls it a stroke width; neither is what he said.
@@ -504,7 +504,7 @@ pub const fn scale_stroke_label() -> &'static str {
 
 /// The `/RD` switch.
 ///
-/// ★★★ **Phrased as KEEPING, matching the field it sets.** `/RD` scales by
+/// **Phrased as KEEPING, matching the field it sets.** `/RD` scales by
 /// default, so the switch is an opt-out, and `canvas::scaling` spells it that
 /// way deliberately so `Default::default()` is correct in every field.
 ///
@@ -513,7 +513,7 @@ pub const fn scale_stroke_label() -> &'static str {
 /// way to ship a control that does the opposite of what it says, and no test
 /// catches it — both states are legal and both produce a plausible picture.
 ///
-/// ★ *"inner margins"* rather than *"rect differences"*: `/RD` is the gap
+/// *"inner margins"* rather than *"rect differences"*: `/RD` is the gap
 /// between an annotation's rectangle and the drawing inside it, which is a
 /// margin, and nobody outside the specification says *rect difference*.
 #[must_use]
@@ -523,7 +523,7 @@ pub const fn scale_insets_label() -> &'static str {
 
 /// The distortion escape.
 ///
-/// ★★★ **It says the result will be uneven, in the label itself.** This is the
+/// **It says the result will be uneven, in the label itself.** This is the
 /// one switch whose ON state makes the output worse, and O51's ruling on it is
 /// explicit: proceed and **state** the residual distortion, *"never silently
 /// pick a fudge factor, which is the one thing the parity reference does."*
@@ -536,12 +536,12 @@ pub const fn scale_distort_label() -> &'static str {
 
 /// The note under the three switches.
 ///
-/// ★★ It states the default in the operator's terms and names **why** the line
+/// It states the default in the operator's terms and names **why** the line
 /// weight stays put — *a drafting standard* — because on his documents that is
 /// not a preference, it is a convention his drawings are read against. Without
 /// the reason, "off by default" reads as an arbitrary choice somebody made.
 ///
-/// ★ It also says the switches apply to the **next** resize, which is the fact
+/// It also says the switches apply to the **next** resize, which is the fact
 /// that makes them a per-drag modifier rather than a setting, and the fact an
 /// operator needs in order to use them at all: tick, then drag.
 #[must_use]
@@ -555,7 +555,7 @@ pub const fn scale_note() -> &'static str {
 
 /// The heading over the Add-text options.
 ///
-/// ★ Says **new text**, not "text", and the distinction is the whole reason
+/// Says **new text**, not "text", and the distinction is the whole reason
 /// these controls are in the Tool panel rather than on the Format tab: they
 /// decide what the *next* thing typed looks like, not what a run already on the
 /// page looks like. An operator who reads "Text" here and expects it to restyle
@@ -573,7 +573,7 @@ pub const fn text_pen_font_label() -> &'static str {
 
 /// One bundled face's name, as an operator would say it.
 ///
-/// ★ *"Helvetica Bold"*, not `HelveticaBold` — the engine's identifier is a
+/// *"Helvetica Bold"*, not `HelveticaBold` — the engine's identifier is a
 /// Rust variant and this is a font menu. The four Courier faces say
 /// *"Courier Oblique"* rather than *"Courier Italic"*, because oblique is what
 /// the Standard-14 set actually contains and a menu that renamed it would
@@ -596,7 +596,7 @@ pub const fn text_pen_font_name(face: pdfcer_core::fontdata::Std14) -> &'static 
         F::CourierBoldOblique => "Courier Bold Oblique",
         F::Symbol => "Symbol",
         F::ZapfDingbats => "Zapf Dingbats",
-        // ★ NO wildcard, and its absence is deliberate. `Std14` is not
+        // NO wildcard, and its absence is deliberate. `Std14` is not
         // `#[non_exhaustive]` — checked, rather than assumed from its
         // neighbours in that module, several of which are — so this match is
         // exhaustive by the compiler's own count and a fifteenth face would be
@@ -624,7 +624,7 @@ pub const fn text_pen_colour_label() -> &'static str {
     "Colour"
 }
 
-/// ★ The sentence under the three controls.
+/// The sentence under the three controls.
 ///
 /// It says what they DO NOT do, because that is the thing an operator will
 /// otherwise assume: these set the next run's appearance and change nothing
@@ -643,7 +643,7 @@ pub const fn text_pen_note() -> &'static str {
 
 /// The heading over the disclosures block.
 ///
-/// ★ Rendered only when there is something under it. R9: an unavailable
+/// Rendered only when there is something under it. R9: an unavailable
 /// capability renders **nothing**, and a heading over an empty region is the
 /// placeholder that rule exists to forbid.
 #[must_use]
@@ -657,7 +657,7 @@ pub const fn disclosures_heading() -> &'static str {
 
 /// What the Tool panel says while a form-field tool is armed.
 ///
-/// ★★★ It names BOTH gestures, and that is the point of the line. The whole
+/// It names BOTH gestures, and that is the point of the line. The whole
 /// feature is *"click to place, or drag for the exact size"*, and an operator
 /// who clicks once, gets a standard-sized box and is never told about dragging
 /// will conclude that sizing is not offered. A panel that teaches only the
@@ -669,7 +669,7 @@ pub const fn form_instruction() -> &'static str {
 
 /// The second line: what happens next, and what this kind needs.
 ///
-/// ★ Radio buttons get their own sentence because they are the only kind whose
+/// Radio buttons get their own sentence because they are the only kind whose
 /// behaviour depends on ANOTHER field — two sharing a group name are one
 /// control. An operator who does not know that places two buttons that both
 /// stay on and reasonably reports it as a bug.
@@ -698,7 +698,7 @@ pub const fn form_kind_hint(kind: crate::canvas::formfield::FormFieldKind) -> &'
 /// reach the decline is the bare `A` chord — a chord is filtered by TAB
 /// visibility, not by item visibility, and View is in every mode.
 ///
-/// ★ **So this sentence exists for a route the ribbon can no longer produce**,
+/// **So this sentence exists for a route the ribbon can no longer produce**,
 /// and that is deliberate rather than belt-and-braces. R83's rule is *a
 /// refusal must be a sentence, never a silence*, and a chord that does nothing
 /// is the worst kind of silence: there is no control to look at, so there is
@@ -748,7 +748,7 @@ mod tests {
     /// Every markup kind has an instruction, and every instruction says how the
     /// gesture ends.
     ///
-    /// ★ The second half is the assertion worth having. *"Click each corner"*
+    /// The second half is the assertion worth having. *"Click each corner"*
     /// is not a complete instruction — nothing in it says when to stop — and
     /// the failure it produces is an operator clicking forever, which is
     /// exactly what the two endings exist to prevent. Asserted as a property

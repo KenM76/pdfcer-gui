@@ -33,7 +33,7 @@ pub fn has_edge_whitespace(raw: &str) -> bool {
 /// has no edge whitespace — which is nearly every search — this returns the
 /// caller's own string and costs nothing.
 ///
-/// ★ A query that is ENTIRELY whitespace trims to the empty string, and that is
+/// A query that is ENTIRELY whitespace trims to the empty string, and that is
 /// correct rather than a hole: `find::search` treats an empty needle as *"you
 /// have not typed anything"* rather than as *"there is nothing here"*, which is
 /// exactly the right reading of a box containing one space. Without the trim
@@ -55,7 +55,7 @@ mod tests {
         assert!(has_edge_whitespace("TR-0180 "));
     }
 
-    /// ★ The reader who MEANT the space keeps it, and is the reason this is a
+    /// The reader who MEANT the space keeps it, and is the reason this is a
     /// setting rather than an unconditional trim.
     #[test]
     fn the_setting_off_hands_the_query_over_exactly_as_typed() {
@@ -71,7 +71,7 @@ mod tests {
         assert_eq!(for_search("part\t", true), "part");
     }
 
-    /// ★ Interior whitespace survives, deliberately — see the module header.
+    /// Interior whitespace survives, deliberately — see the module header.
     #[test]
     fn two_spaces_in_the_middle_are_left_alone() {
         assert_eq!(for_search("PART  NUMBER", true), "PART  NUMBER");

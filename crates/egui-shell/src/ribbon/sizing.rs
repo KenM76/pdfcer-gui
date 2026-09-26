@@ -19,7 +19,7 @@
 //! label is not what makes `B` findable; its position in a cluster of type
 //! controls is.
 //!
-//! ## ★★★ The rule that keeps `Small` honest
+//! ## The rule that keeps `Small` honest
 //!
 //! A control renders icon-only **only when it has earned it**: it names an
 //! icon, it carries a **tooltip**, and a painter is actually installed. That
@@ -45,7 +45,7 @@
 //! horizontal run at the group's left, at full height; everything else wraps
 //! into the rows to their right.
 //!
-//! ★ That is a real constraint on the manifest and it is worth stating rather
+//! That is a real constraint on the manifest and it is worth stating rather
 //! than discovering: a Large item written in the middle of a group is hoisted
 //! to the front. It is also how every group in Word is actually built — Paste
 //! leads Clipboard, the three Acrobat buttons are the whole group — so the
@@ -63,7 +63,7 @@ use crate::ribbon::plan::ItemWidths;
 
 /// The gap between a Large control's icon and its label, in points.
 ///
-/// ★ `4`, from the mockup's `.rb.big { gap: 4px }`. Two points is enough when
+/// `4`, from the mockup's `.rb.big { gap: 4px }`. Two points is enough when
 /// the glyph is 16 pt — vertically the two parts are already separated by the
 /// icon's own bottom edge and the label's ascent — but the glyph here is 24 pt
 /// ([`crate::theme::Metrics::ribbon_icon_large_pts`]), and a two-point gap
@@ -76,7 +76,7 @@ pub(super) const LARGE_STACK_GAP: f32 = 4.0;
 /// symmetric breathing room; the ordinary button padding is tuned for a row of
 /// text and looks tight around a centred icon.
 ///
-/// ★ `8` — `.rb.big { padding: 5px 8px 2px }`, the horizontal figure. Narrow
+/// `8` — `.rb.big { padding: 5px 8px 2px }`, the horizontal figure. Narrow
 /// on purpose: a Large control pays for its presence with **height and glyph
 /// size**, not with width, so a row of them sits closer together than the side
 /// padding alone would suggest.
@@ -85,7 +85,7 @@ pub(super) const LARGE_SIDE_PADDING: f32 = 8.0;
 /// The narrowest a Large control may be drawn, in points —
 /// `.rb.big { min-width: 52px }`.
 ///
-/// ★ Why a floor is needed at all, when the control is already as wide as its
+/// Why a floor is needed at all, when the control is already as wide as its
 /// widest part plus padding: because its widest part can be *tiny*. A Large
 /// control whose label is `Save` and whose glyph is 24 pt measures
 /// `24 + 16 = 40` pt, and a run of Large controls that changed width with
@@ -101,7 +101,7 @@ pub(super) const LARGE_MIN_WIDTH: f32 = 52.0;
 /// The width a Large control's label wraps at, in points —
 /// `.rb.big .lb { max-width: 76px }`.
 ///
-/// ★★★ **The label WRAPS.**
+/// **The label WRAPS.**
 ///
 /// This is the half of the operator's *"text label location"* complaint that
 /// is not a manifest change. A Large
@@ -124,7 +124,7 @@ pub(super) const LARGE_LABEL_WRAP: f32 = 76.0;
 /// **The one layout of a Large control's label**, shared by the measuring
 /// path and the drawing path.
 ///
-/// ★★ [`width`] and [`render_large`] are one decision written twice and must
+/// [`width`] and [`render_large`] are one decision written twice and must
 /// not diverge — the module's own standing warning, and the reason
 /// `crate::ribbon::width_tests`'s `a_band_that_claims_to_fit_really_does_fit`
 /// exists. A wrapped label makes that warning sharper, because the wrap point
@@ -158,7 +158,7 @@ fn large_label(ui: &egui::Ui, ctx: &Ctx<'_>, text: &str) -> std::sync::Arc<egui:
 /// group reserves space for a control that never appears and the band's plan
 /// is wrong by exactly the width of every hidden item.
 ///
-/// ★★★ This is **visibility**, not enablement, and R9 draws the line: *an
+/// This is **visibility**, not enablement, and R9 draws the line: *an
 /// unavailable capability renders nothing; greying is reserved for
 /// **temporarily** unavailable and is always explained on hover.*
 /// [`Command::enable`] is the greying — no document open, empty undo stack.
@@ -180,7 +180,7 @@ pub(crate) fn visible(item: &Item, conditions: &crate::commands::ConditionSet) -
 /// icon-only controls in a build with no icons would otherwise draw a band of
 /// empty rectangles.
 ///
-/// ★ `Large` is **not** conditional on an icon. A large button with no icon is
+/// `Large` is **not** conditional on an icon. A large button with no icon is
 /// a large label, which is odd-looking but legible and unambiguous; a large
 /// button with an icon and no label would be the mystery, and `Large` always
 /// draws its label.
@@ -196,7 +196,7 @@ pub(crate) fn resolved(command: &Command, asked: ItemSize, can_paint: bool) -> I
 
 /// The width one command control occupies at `size`.
 ///
-/// ★★ This and [`render`] are one decision written twice, and they must not
+/// This and [`render`] are one decision written twice, and they must not
 /// diverge: a control measured at one width and drawn at another is how a band
 /// that "claims to fit" clips its last group. `band`'s own comment makes the
 /// same point about the icon slot. Every branch here has a matching branch
@@ -231,7 +231,7 @@ pub(crate) fn width(ui: &egui::Ui, ctx: &Ctx<'_>, command: &Command, size: ItemS
         // Stacked: the wider of the two parts decides, and neither is a gap
         // away from the other horizontally.
         //
-        // ★ Three decisions, each visible in the arithmetic:
+        // Three decisions, each visible in the arithmetic:
         //
         // 1. The icon term is the **Large** icon (24 pt, not 16), because a
         //    Large control draws a bigger picture rather than the same picture
@@ -265,7 +265,7 @@ pub(crate) fn width(ui: &egui::Ui, ctx: &Ctx<'_>, command: &Command, size: ItemS
 /// changes — or this: allocate the rect, take a real `Response`, and paint the
 /// button's own `WidgetVisuals` into it.
 ///
-/// ★ Painting from `ui.style().interact(&response)` rather than from theme
+/// Painting from `ui.style().interact(&response)` rather than from theme
 /// colours directly is what keeps a Large control identical to every other
 /// button under hover, focus, disabled and selected. A hand-drawn control that
 /// picked its own colours is the shape of the defect this project's
@@ -279,11 +279,11 @@ pub(crate) fn render_large(
     height: f32,
 ) -> egui::Response {
     let icon_size = ctx.theme.metrics.ribbon_icon_large_pts;
-    // ★ The label is laid out ONCE, here, and the same galley is measured for
+    // The label is laid out ONCE, here, and the same galley is measured for
     // the control's height and painted into it — see [`large_label`] for why
     // one call rather than two.
     let galley = large_label(ui, ctx, &command.label);
-    // ★★★ NEVER SHORTER THAN ITS OWN CONTENT.
+    // NEVER SHORTER THAN ITS OWN CONTENT.
     //
     // `height` is the band's row area, which a Large control spans. In the
     // **overflow menu** there is no row area: a group in the menu is drawn
@@ -299,7 +299,7 @@ pub(crate) fn render_large(
     // So: span the rows when there are rows, and be as tall as the content
     // otherwise. Both are the same expression.
     let content_height = icon_size + LARGE_STACK_GAP + galley.size().y + LARGE_STACK_GAP * 2.0;
-    // ★★ **CAPPED AT [`crate::theme::Metrics::ribbon_large_pts`].**
+    // **CAPPED AT [`crate::theme::Metrics::ribbon_large_pts`].**
     //
     // `height` is the band's row area, and a Large control is not simply that
     // area. The mockup's arithmetic:
@@ -321,7 +321,7 @@ pub(crate) fn render_large(
             .min(ctx.theme.metrics.ribbon_large_pts)
             .max(content_height),
     );
-    // ★★★ **ALLOCATED FROM A DISABLED SCOPE WHEN IT IS DISABLED**, and this
+    // **ALLOCATED FROM A DISABLED SCOPE WHEN IT IS DISABLED**, and this
     // is the only thing that makes `enabled` mean anything here.
     //
     // `Ui::interact` passes `self.enabled` into the response's `ENABLED` flag
@@ -335,7 +335,7 @@ pub(crate) fn render_large(
     //    caller in `ribbon::control`, which attaches the same explanation the
     //    same way. A Large band command would be greyed with no explanation,
     //    and R9 requires one.
-    // 2. ★★★ **And the click still fires.** `ribbon::control` does
+    // 2. **And the click still fires.** `ribbon::control` does
     //    `if response.clicked() { ctx.invoke(command.handler) }` with no
     //    second gate, so pressing a greyed Large control would **invoke its
     //    command**. The band says no and the shell does it anyway.
@@ -361,7 +361,7 @@ pub(crate) fn render_large(
     } else {
         ui.style().visuals.widgets.inactive
     };
-    // ★★★ **FRAMELESS AT REST** — the operator's single biggest complaint
+    // **FRAMELESS AT REST** — the operator's single biggest complaint
     // about this band, and the one that held at every width:
     //
     // > "Every ribbon item in the real build is drawn with a visible button
@@ -378,14 +378,14 @@ pub(crate) fn render_large(
     // instant the control is hovered, focused, pressed or selected the full
     // frame appears at the size it always occupied.
     //
-    // ★ **The disabled state is frameless too**, deliberately.
+    // **The disabled state is frameless too**, deliberately.
     // `.rb[disabled]` in the mockup changes the *ink*
     // (`color: var(--ink-quiet); opacity: .45`) and nothing else. Painting a
     // greyed plate behind a greyed label says "unavailable" by drawing MORE
     // ink than an available control — which is backwards, and is what makes a
     // tab of mostly-greyed groups read as louder than one with none.
     //
-    // ★★ **Feedback is not lost, it is relocated** — see the sibling note in
+    // **Feedback is not lost, it is relocated** — see the sibling note in
     // `super::control::command_button`, which reaches the same behaviour
     // through `egui::Button::frame_when_inactive` rather than by hand.
     let interacting =
@@ -425,7 +425,7 @@ pub(crate) fn render_large(
         );
         ctx.icons = Some(painter);
     }
-    // ★ `painter.galley` rather than `painter.text`, and the difference is
+    // `painter.galley` rather than `painter.text`, and the difference is
     // the wrap. `Painter::text` lays a string out **unwrapped**
     // at the point it is given — there is no width to wrap against — so a
     // Large control's label could only ever be one line, however long. Here
@@ -464,7 +464,7 @@ mod tests {
         Command::new(id, "Label", HandlerToken::new(1))
     }
 
-    /// ★★★ **A response allocated from an ENABLED `Ui` is enabled, however it
+    /// **A response allocated from an ENABLED `Ui` is enabled, however it
     /// is painted** — the assumption [`render_large`] would otherwise be
     /// making.
     ///
@@ -480,7 +480,7 @@ mod tests {
     /// `ui.disable()`'s scope produces a response that reports itself
     /// disabled, which is what both the tooltip and the click gate read.
     ///
-    /// ★ Written as a table over both cases rather than asserting only the
+    /// Written as a table over both cases rather than asserting only the
     /// second, because a build in which BOTH were disabled would satisfy a
     /// one-sided assertion and would grey every Large control permanently.
     #[test]
@@ -513,7 +513,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **`frame_when_inactive(false)` removes the resting frame and
+    /// **`frame_when_inactive(false)` removes the resting frame and
     /// nothing else** — the egui contract the whole frameless change rests on.
     ///
     /// Asserted **against egui**, in the shape of
@@ -538,7 +538,7 @@ mod tests {
     ///    would pass against an implementation where the flag did nothing at
     ///    all — which is precisely the vacuity this test exists to avoid.
     ///
-    /// ★ The second assertion counts `Shape::Rect`s recursively, because
+    /// The second assertion counts `Shape::Rect`s recursively, because
     /// `egui` nests shapes (`Shape::Vec`) and a top-level count would miss a
     /// frame painted inside a group. Counting *fewer* rather than an exact
     /// number is deliberate: the button also paints its text and, in the band,
@@ -549,7 +549,7 @@ mod tests {
         /// How many rectangles this shape tree paints that a person could
         /// SEE — a fill that is not transparent, or a stroke with width.
         ///
-        /// ★ Counting bare `Shape::Rect`s does not work, and finding that out
+        /// Counting bare `Shape::Rect`s does not work, and finding that out
         /// is the useful half of this test. `egui`'s margin-only branch still
         /// emits a `RectShape` — `Frame::paint` always does — just one whose
         /// fill is `TRANSPARENT` and whose stroke is `Stroke::NONE`. A count
@@ -606,7 +606,7 @@ mod tests {
         );
     }
 
-    /// ★★★ `Small` is earned three ways, and failing any one of them falls
+    /// `Small` is earned three ways, and failing any one of them falls
     /// back to `Medium` rather than drawing an unlabelled rectangle.
     ///
     /// Asserted as a table over all eight combinations, because the rule is a
@@ -642,7 +642,7 @@ mod tests {
 
     /// `Medium` and `Large` are never downgraded — only `Small` is earned.
     ///
-    /// ★ `Large` deliberately does not require an icon: a large button with no
+    /// `Large` deliberately does not require an icon: a large button with no
     /// icon is a large label, which is legible. The mystery this rule guards
     /// against is an icon with no name, and `Large` always draws its label.
     #[test]

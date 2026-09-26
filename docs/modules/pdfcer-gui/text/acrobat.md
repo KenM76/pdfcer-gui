@@ -14,7 +14,7 @@ change to any one of them is nearly always a wording change to another, and
 catalog entries that must move together are entries that should be read
 together.
 
-## ★★★ The sentence this whole module is written around
+## The sentence this whole module is written around
 
 > **The file will be closed.**
 
@@ -26,7 +26,7 @@ disappears; so pdfcer gives the file up rather than keeping it open
 alongside. The operator is told **before** it happens, because closing
 somebody's document is not a thing to do quietly.
 
-## ★★ The button that is not offered, and the reason it is not
+## The button that is not offered, and the reason it is not
 
 There is no *"open without saving"*. [`crate::dialogs::unsaved`] offers
 exactly that shape — *Save · Don't save · Cancel* — and is right to, because

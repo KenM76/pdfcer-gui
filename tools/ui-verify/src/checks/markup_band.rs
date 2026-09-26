@@ -30,7 +30,7 @@ const APPLY_EVENT: &str = "add-markup";
 const SELECT_EVENT: &str = "annot-select";
 /// `set-markup-style …` — `vector_edit`'s line for the restyle.
 ///
-/// ★ The bare name and not `-applied`: `apply::vector_edit` names the edit
+/// The bare name and not `-applied`: `apply::vector_edit` names the edit
 /// itself, and a refusal traces `set-markup-style-refused`, which the failure
 /// message points at.
 const RESTYLE_EVENT: &str = "set-markup-style";
@@ -42,7 +42,7 @@ const INVOKE_EVENT: &str = "ribbon-command-invoked";
 
 /// The four controls a `/Square` must be given.
 ///
-/// ★ A `/Square` and not "a markup", because which controls apply is a property
+/// A `/Square` and not "a markup", because which controls apply is a property
 /// of the subtype: a highlight has no border to widen, an arrow has no interior
 /// to fill. This check draws a rectangle, so this is the list for a rectangle.
 const EXPECTED: [(&str, &str); 4] = [
@@ -70,7 +70,7 @@ const ITEM_PREFIX: &str = "ribbon.item.format.";
 /// The smallest logical width **and** height a control must occupy to count as
 /// drawn.
 ///
-/// # ★ Why "declared" is not enough, in both directions
+/// # Why "declared" is not enough, in both directions
 ///
 /// `markupband::draw` publishes its `ui-rect` from the response of an
 /// `add_enabled_ui` **whether or not the closure drew anything**, so an absent
@@ -128,7 +128,7 @@ const START_WIDTH_PT: f64 = 2.0;
 
 /// How much more ink the strip must hold after the restyle, as a multiple.
 ///
-/// # ★★ Why 1.5 and not 6
+/// # Why 1.5 and not 6
 ///
 /// The width goes from 2 pt to 12 pt, which is **six times** the line — and the
 /// ink count does not go up sixfold, because the strip is a fixed box and a
@@ -155,7 +155,7 @@ const SHAPE: ((f64, f64), (f64, f64)) = ((0.35, 0.35), (0.55, 0.50));
 /// Half-height of the strip laid along the top edge, as a fraction of the page
 /// height.
 ///
-/// ★ Four times `markup_palette`'s, and the difference is the subject: that
+/// Four times `markup_palette`'s, and the difference is the subject: that
 /// check reads a *colour* and wants as little paper in the box as possible, this
 /// one reads a *thickness* and needs room above and below for the line to grow
 /// into. A strip only as tall as the thin line would saturate at the first
@@ -168,7 +168,7 @@ const STRIP_SPAN: f64 = 0.6;
 
 /// Where the pointer is parked before a capture, as fractions of the page.
 ///
-/// ★★ Blank paper in a corner, and `markup_palette`'s first run is why: a
+/// Blank paper in a corner, and `markup_palette`'s first run is why: a
 /// pointer left on the shape pops the *"No note has been written on this
 /// markup."* tooltip, a floating dark panel that lands on the very box being
 /// measured and reads as ink. A driven check photographs the pointer as well as
@@ -410,7 +410,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- select it ----------------------------------------------------------
     //
-    // ★ Put the pen down first. With the Rectangle tool still armed a click on
+    // Put the pen down first. With the Rectangle tool still armed a click on
     // the page draws a second shape rather than selecting the first —
     // `sys::vk::V`'s own doc comment records a check that did not, and reported
     // "the shape could not be selected" about a build whose selection is fine.
@@ -504,7 +504,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         list(&declared_names(&trace, ui_rect, ITEM_PREFIX))
     ));
 
-    // ★★★ R9, and it is the half with no other oracle. Paired with the four
+    // R9, and it is the half with no other oracle. Paired with the four
     // positives above **from the same trace**, which is what stops it being the
     // vacuous negative this project has already shipped once: a "did not
     // happen" assertion that passed with the whole feature switched off. Here
@@ -541,7 +541,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              mean the selection was lost. SKIPPED: nothing was driven.",
         ));
     };
-    // ★★★ **The LEFT of the published rect, not its centre — and the first run
+    // **The LEFT of the published rect, not its centre — and the first run
     // of this check is why.**
     //
     // `markupband::width` draws a `DragValue` and then calls
@@ -584,7 +584,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )
     });
 
-    // ★★★ **The typed route, and it is a DIAGNOSTIC and not a fallback.**
+    // **The typed route, and it is a DIAGNOSTIC and not a fallback.**
     //
     // A drag and a typed entry reach `markupband::width`'s commit through two
     // different gates — `drag_stopped()` and `lost_focus()` — and everything
@@ -617,7 +617,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     let trace = session.trace()?;
-    // ★★★ **HELD, not returned.** The drag defect is real and it is reported — but
+    // **HELD, not returned.** The drag defect is real and it is reported — but
     // returning here would stop the check before its most valuable assertion,
     // which is that the restyle reaches the **page**. Link 7 has no other oracle
     // in the workspace, and a check that stops short of it every run until
@@ -741,7 +741,7 @@ mod tests {
 
     /// A degenerate rect is not a control.
     ///
-    /// ★ The property the whole of link 4 rests on: `markupband::draw` publishes
+    /// The property the whole of link 4 rests on: `markupband::draw` publishes
     /// a `ui-rect` for an item whose closure drew nothing, so *declared* and
     /// *drawn* are different questions and this is what tells them apart.
     #[test]
@@ -763,7 +763,7 @@ mod tests {
     /// The strip is centred on the shape's top edge and does not reach its
     /// sides.
     ///
-    /// ★ A check aimed at the wrong box produces an articulate failure message
+    /// A check aimed at the wrong box produces an articulate failure message
     /// about nothing, which is this project's commonest wasted afternoon. The
     /// arithmetic that decides where this one looks is therefore asserted rather
     /// than eyeballed.

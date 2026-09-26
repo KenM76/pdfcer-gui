@@ -17,7 +17,7 @@ const SCAN: &str = "reach-out";
 
 /// The line carrying the operator-facing sentence.
 ///
-/// ★ `record_note` puts prose on the status bar and traces nothing, so the
+/// `record_note` puts prose on the status bar and traces nothing, so the
 /// shell emits this beside it. Without it a check could prove the scan ran and
 /// could not prove the operator was TOLD — which is the whole subject.
 const NOTE: &str = "reach-out-disclosed";
@@ -127,7 +127,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    // ★ The tone, asserted rather than trusted: the sentence must say pdfcer
+    // The tone, asserted rather than trusted: the sentence must say pdfcer
     // does NOT do this. Without that clause it is an alarm about something that
     // cannot happen in this program, and an operator who learns pdfcer cries
     // wolf stops reading the status row entirely.
@@ -145,7 +145,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("★★ the disclosure names the submit AND says pdfcer never does it");
 
-    // --- ★★ and an ordinary drawing says nothing ----------------------------
+    // --- and an ordinary drawing says nothing ----------------------------
     let (clean_session, clean_trace) = open(ctx, &exe, &clean, "clean")?;
     report.artifact(clean_session.trace_path().to_path_buf());
     if clean_trace.last(SCAN).is_none() {

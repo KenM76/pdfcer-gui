@@ -12,12 +12,12 @@ use pdfcer_core::stamp_file::{StampCollection, StampEntry};
 /// Where Acrobat looks for the operator's own stamps, so the picker can
 /// suggest it. Read-only discovery; it creates nothing.
 pub mod folder;
-/// ★ **The operator's own stamps, found and offered** — O172's half, and the
+/// **The operator's own stamps, found and offered** — O172's half, and the
 /// answer to the "What is NOT here" note below, which was true until engine
 /// `Pass 293.0` shipped `place_page_artwork`.
 pub mod library;
 
-/// ★★ **Which stamp he reached for last** -- O172's *"and it remembers the
+/// **Which stamp he reached for last** -- O172's *"and it remembers the
 /// last one used"* clause. A NAME re-resolved against a fresh scan, never a
 /// stored `CustomStamp`, because editing a collection in Acrobat renumbers its
 /// pages and a remembered index would silently name a different stamp.
@@ -54,7 +54,7 @@ pub enum Adjustment {
     CharactersRemoved(usize),
     /// A leading `#` was removed because it marks a **dynamic** stamp.
     ///
-    /// ★ The one adjustment that is about correctness rather than tidiness.
+    /// The one adjustment that is about correctness rather than tidiness.
     /// Keeping it would write a stamp Acrobat believes recomputes its own text
     /// and which never will.
     DynamicMarkerRemoved,
@@ -86,7 +86,7 @@ pub struct PlannedStamp {
     pub adjustments: Vec<Adjustment>,
     /// Whether this page is included in the collection at all.
     ///
-    /// ★ A page can be excluded. The engine's `name_stamp_pages` names
+    /// A page can be excluded. The engine's `name_stamp_pages` names
     /// `stamps[i]` to page `i` positionally, so an excluded page is not a
     /// gap in that list — [`Plan::for_engine`] rebuilds the list so the
     /// positional contract still holds. Getting this wrong would name the
@@ -97,7 +97,7 @@ pub struct PlannedStamp {
 /// A name a collection already carries, reduced to the two fields a plan
 /// needs.
 ///
-/// ★ **Why this exists rather than passing `&StampCollection` around.** Two
+/// **Why this exists rather than passing `&StampCollection` around.** Two
 /// reasons, and the second is the one that matters:
 ///
 /// 1. `StampEntry` and `StampCollection` are both `#[non_exhaustive]`, so no
@@ -166,7 +166,7 @@ impl Plan {
     /// already says rather than a fresh set of defaults — an operator fixing
     /// one typo in a twelve-stamp set should not have to retype eleven names.
     ///
-    /// ★ `existing` is matched **by page index, not by position in the tree**.
+    /// `existing` is matched **by page index, not by position in the tree**.
     /// The tree is sorted lexicographically (§7.9.6) and the pages are not, so
     /// zipping the two lists would attach `SBCompleted`'s name to page 1.
     #[must_use]
@@ -208,7 +208,7 @@ impl Plan {
     /// per-row update would leave row 7 as `Approved2` forever with a stale
     /// [`Adjustment::MadeUnique`] disclosure attached to it.
     ///
-    /// ★ That stale-disclosure case is the reason this is not an optimisation
+    /// That stale-disclosure case is the reason this is not an optimisation
     /// target. A disclosure has a subject; when the subject goes, the sentence
     /// must go with it.
     pub fn rederive(&mut self) {
@@ -233,7 +233,7 @@ impl Plan {
     /// The `(internal, display)` list, positionally aligned to the pages that
     /// will exist in the written document.
     ///
-    /// ★★ **This is the contract that is easy to get wrong.**
+    /// **This is the contract that is easy to get wrong.**
     /// [`pdfcer_core::stamp_file::name_stamp_pages`] names `stamps[i]` to page
     /// `i` — **it counts, it does not look up.** So the returned list must be
     /// dense from page 0 of *the document being written*, which is not the
@@ -353,9 +353,9 @@ pub fn default_display(page_index: usize) -> String {
 /// 2. **Strip a leading `#` — after step 1, not before.** `# Approved` and
 ///    `#Approved` must both lose the marker, and only step 1 makes those the
 ///    same string. Doing this first would let `# Approved` through as
-///    `#Approved`. ★ This is the clause with a correctness consequence rather
+///    `#Approved`. This is the clause with a correctness consequence rather
 ///    than a cosmetic one; see the module header.
-/// 3. **Fall back when nothing survives.** A name of `★★★` sanitises to
+/// 3. **Fall back when nothing survives.** A name of `` sanitises to
 ///    nothing, and a name tree key of `""` is a file Acrobat shows an empty
 ///    menu row for.
 /// 4. **Truncate**, then
@@ -445,7 +445,7 @@ pub fn dynamic_count(collection: &StampCollection) -> usize {
 
 /// Why this document's page tree could not be read, when it could not be.
 ///
-/// # ★★★ The field that makes every count below mean one thing again
+/// # The field that makes every count below mean one thing again
 ///
 /// Until engine `Pass 290.1` (2026-09-10, `bce4703`) `stamp_file::read` built
 /// its page list with `page_tree::pages(doc).map(…).unwrap_or_default()`, so a
@@ -477,7 +477,7 @@ pub fn page_tree_unreadable(collection: &StampCollection) -> Option<&str> {
 /// Stamps whose named page is not one of the document's own — or `None` when
 /// that question is unanswerable.
 ///
-/// ★ **`None` is not zero and must never be rendered as zero.** It means the
+/// **`None` is not zero and must never be rendered as zero.** It means the
 /// page tree could not be read, so no `page_index` in the collection carries
 /// information; see [`page_tree_unreadable`] for why the two used to be
 /// indistinguishable and what it cost. A caller that unwrapped this to `0`

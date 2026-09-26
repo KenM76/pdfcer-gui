@@ -12,7 +12,7 @@ of unrelated pictures with nothing to say that it is anything else. That is
 what this section exists to end. [`crate::dialogs::stamp_collection`]
 authors a collection; this one **discloses** one.
 
-## ★★ Why this is disclosure and not decoration
+## Why this is disclosure and not decoration
 
 **R8b rule 4 — "fuzzy, never sneaky".** Everything pdfcer infers about a
 file it did not write is reported **off-canvas**, and this is as off-canvas
@@ -22,14 +22,14 @@ thumbnail, or marks a collection's pages as special in the page list. A
 screenshot of the canvas with this panel closed is identical to a screenshot
 of the same file opened by a build with no stamp support at all.
 
-★ The half of rule 4 that is easy to drop is the half that binds here: *the
+The half of rule 4 that is easy to drop is the half that binds here: *the
 inferences the operator cannot see still owe a report.* Every fact in this
 section is invisible in the page view — the category is a metadata string,
 the names are name-tree keys, and *dynamic* is a `#` on an identifier no
 rendering will ever show. Precisely because none of it is visible, all of it
 is owed.
 
-## ★ Why nothing here is editable
+## Why nothing here is editable
 
 The rows are labels, not fields. Renaming a stamp in place would need
 `EditSession` verbs against the name tree that do not exist — the engine

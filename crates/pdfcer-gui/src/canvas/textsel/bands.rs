@@ -117,7 +117,7 @@ impl Accum {
 
     /// The band as four PDF-user-space corners.
     ///
-    /// ★ The corner naming is `/QuadPoints`' (§12.5.6.10) and is relative to
+    /// The corner naming is `/QuadPoints`' (§12.5.6.10) and is relative to
     /// **the text's own baseline**, not to the page: `ul`/`ur` are the ascender
     /// side and `ll`/`lr` the descender side, `ll`/`ul` the start of the text
     /// and `lr`/`ur` its end. For `dir = (1, 0)` that is exactly

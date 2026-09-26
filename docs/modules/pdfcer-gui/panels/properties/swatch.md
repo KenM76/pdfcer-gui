@@ -11,7 +11,7 @@ surfaces have to answer the same three questions the same way:
 | the selection **disagrees** | the indeterminate plate and a dash | sets **all** of them |
 | the colour cannot be shown | *nothing — the caller draws a sentence* | — |
 
-★ The third row is a caller's job on purpose. What to say about an ink
+The third row is a caller's job on purpose. What to say about an ink
 pdfcer will not overwrite differs between a path (whose `/Separation` name
 the file records and `pdfcer_core::vector::PathPaint::Other` carries) and a
 text run (whose `pdfcer_core::text_extract::TextColor::Other` carries **no
@@ -19,7 +19,7 @@ name at all**), and a widget that tried to word both would word one of them
 wrongly. This widget refuses to draw a control; the sentence that stands in
 its place belongs to whoever knows what the ink is.
 
-## ★★★ Why "mixed" exists at all, and why it is not an invention
+## Why "mixed" exists at all, and why it is not an invention
 
 O89 recorded multi-object recolouring as *not offered*, with a reason:
 
@@ -34,13 +34,13 @@ project's standing rule is that *the convergence of the product class IS the
 specification, and an invented interaction is a defect even when it works*,
 so the mixed state is the answer rather than one of several.
 
-★ And the em dash is not a new marker either: this shell already writes one
+And the em dash is not a new marker either: this shell already writes one
 for *no value*, in `crate::text::panels::properties::text_value_absent`,
 whose own doc comment makes precisely this argument — *"every property grid
 in this class shows a blank or a dash for no value and for mixed values,
 which are the same state as far as a single field is concerned."*
 
-## ★★★ ONE UNDO STEP PER GESTURE, and why this widget could not be
+## ONE UNDO STEP PER GESTURE, and why this widget could not be
 ## `ui.color_edit_button_srgb`
 
 This is the load-bearing reason the widget is hand-built.
@@ -53,7 +53,7 @@ therefore authors **one document edit per frame** while the operator drags
 across the saturation square — sixty content-stream rewrites a second, sixty
 undo entries, and a `Ctrl+Z` stack the operator cannot get back through.
 
-★★ That is the same defect `super::text`'s size field already avoids by
+That is the same defect `super::text`'s size field already avoids by
 committing on `drag_stopped`/`lost_focus` and never on `.changed()`, with
 the same stated reason. A colour popup has no `drag_stopped` to hang it on,
 so the equivalent event has to be *the popup closing* — which means owning

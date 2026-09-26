@@ -1,6 +1,6 @@
 //! # `app::prefs::tests` — split out under R2 on 2026-08-28
 //!
-//! ★★ **The inner `#![cfg(test)]` is load-bearing and is not a duplicate of
+//! **The inner `#![cfg(test)]` is load-bearing and is not a duplicate of
 //! the outer `#[cfg(test)] mod tests;`.** Without it, `tools/gates/check-ui-strings.sh`
 //! walks this file as ordinary source and reports every assertion message as a
 //! user-visible string that should live in `ui_text` — exclusion 2b in that
@@ -22,7 +22,7 @@ use crate::app::actions::imageexport::{ImageFormat, PageScope};
 use crate::viewer::{FitMode, ViewState};
 use pdfcer_core::export::dxf::{DxfText, DxfUnits};
 
-/// ★ Every value round-trips through the file.
+/// Every value round-trips through the file.
 ///
 /// The property a preferences store exists for, and the one a hand-written
 /// writer and a hand-written parser get wrong first: they are two spellings
@@ -37,31 +37,31 @@ fn every_preference_round_trips_through_the_file() {
         for fit in OpeningFit::ALL {
             for reach in RedactionReach::ALL {
                 let original = Prefs {
-                    // ★ Non-default, like every field here. O70: `false`, because
+                    // Non-default, like every field here. O70: `false`, because
                     // the shipped default is `true` and a writer that emitted a
                     // constant would otherwise pass.
                     smart_select: false,
                     text_chunks: false,
-                    // ★ Non-default, identically. O163 ships `true`, so a
+                    // Non-default, identically. O163 ships `true`, so a
                     // writer emitting a constant would round-trip a preference
                     // the operator had turned OFF without this test noticing.
                     find_zoom_on_jump: false,
-                    // ★ Non-default, identically. O180 ships `true`.
+                    // Non-default, identically. O180 ships `true`.
                     find_trim_query: false,
                     page_previews: false,
-                    // ★ Non-default, and specifically NOT `0`: O225 ships
+                    // Non-default, and specifically NOT `0`: O225 ships
                     // *no limit*, which is spelled `0`, so a writer emitting a
                     // constant zero would round-trip an operator's chosen time
                     // limit into no limit at all and pass.
                     page_preview_budget_ms: 2000,
                     ribbon_auto_hide: false,
                     rail_auto_hide: false,
-                    // ★ Non-default for the identical reason — O96 ships `true`,
+                    // Non-default for the identical reason — O96 ships `true`,
                     // so a writer emitting a constant `true` would round-trip a
                     // preference the operator had turned OFF and this test would
                     // not notice.
                     shade_form_fields: false,
-                    // ★ Non-default, and with no repeated byte and no digit
+                    // Non-default, and with no repeated byte and no digit
                     // that is its own nibble doubled — O229. A writer that
                     // emitted the shorthand notation, or a parser that shifted
                     // a nibble instead of doubling it, both round-trip
@@ -69,7 +69,7 @@ fn every_preference_round_trips_through_the_file() {
                     ocr_layer_colour: [1, 130, 255],
                     // Non-default, and OPTIONAL: a writer that omitted it fails here.
                     ocr_engine: Some(crate::ocr::EngineId::Ocrcer),
-                    // ★ Non-default, like every field here — and this one is
+                    // Non-default, like every field here — and this one is
                     // the only OPTIONAL key in the file, so a writer that emitted
                     // nothing for it would fail this round trip. `Facing` rather
                     // than `Single` so it cannot coincide with the compiled-in
@@ -77,7 +77,7 @@ fn every_preference_round_trips_through_the_file() {
                     default_page_display: Some(crate::viewer::PageDisplay::Facing),
                     font_folders: vec![std::path::PathBuf::from("C:/Fonts")],
                     use_os_fonts: true,
-                    // ★ Non-default, like every field here, and with a SPACE in
+                    // Non-default, like every field here, and with a SPACE in
                     // it — a path a person would really type on Windows. O122.
                     // Non-default, like every field here. O173 ships `true`, so a
                     // writer that emitted a constant would round-trip the offer as
@@ -85,15 +85,15 @@ fn every_preference_round_trips_through_the_file() {
                     // which is the one failure this preference exists to prevent.
                     ask_default_app: false,
                     acrobat_path: r"D:\Apps\Acrobat DC\Acrobat.exe".to_owned(),
-                    // ★ Non-default, and deliberately a DIFFERENT string from the
+                    // Non-default, and deliberately a DIFFERENT string from the
                     // field above: two paths that happened to be equal would pass on a
                     // writer that emitted one of them twice.
                     acrobat_trust_store_path: r"D:\Certs\addressbook.acrodata".to_owned(),
-                    // ★ Non-default, like every other field here: a `None`
+                    // Non-default, like every other field here: a `None`
                     // would pass on a build whose writer emitted no
                     // `chosen_standard` key at all.
                     chosen_standard: Some("pdf-x1a".to_owned()),
-                    // ★ Non-default, and with a SPACE in it: the writer emits
+                    // Non-default, and with a SPACE in it: the writer emits
                     // the value raw and the parser trims, so a name of one word
                     // would pass on a reader that split on whitespace.
                     author_name: "Ken Mantle".to_owned(),
@@ -102,7 +102,7 @@ fn every_preference_round_trips_through_the_file() {
                     // own rule: a non-default in every field, so no emitted
                     // value can coincide with what a failed parse left behind.
                     render_quality: *quality,
-                    // ★ Swept rather than pinned, like the two enums above, and
+                    // Swept rather than pinned, like the two enums above, and
                     // this is the one where a constant token would be worst: the
                     // three values differ in what a redaction DESTROYS, so a
                     // writer that emitted `hidden-carriers` whatever the operator
@@ -116,7 +116,7 @@ fn every_preference_round_trips_through_the_file() {
                     // than on 800.
                     max_zoom_percent: 1_000_000.0,
                     opening_fit: *fit,
-                    // ★ The non-default, so a writer that emitted no
+                    // The non-default, so a writer that emitted no
                     // `wheel_paging` key at all would fail here rather than
                     // pass by landing back on `Scroll`.
                     paste_chords: PasteChords::AcrobatOrder,
@@ -134,7 +134,7 @@ fn every_preference_round_trips_through_the_file() {
                     ui_scale: 1.25,
                     // Non-default: O232 ships `false`.
                     colour_icons: true,
-                    // ★★ O166's thirteen keys, every one non-default, per this
+                    // O166's thirteen keys, every one non-default, per this
                     // test's own rule. This is the only group whose parser and
                     // writer live outside `prefs::file` (they are in
                     // `prefs::printing`, together), so this assertion is the one
@@ -148,7 +148,7 @@ fn every_preference_round_trips_through_the_file() {
                         duplex: Duplex::ShortEdge,
                         pick_tray_by_page_size: true,
                         paper: PaperChoice::AutoFromPages,
-                        // ★ `Custom(1.0)` and not `Custom(2.5)`, deliberately, and
+                        // `Custom(1.0)` and not `Custom(2.5)`, deliberately, and
                         // this is the one place in this test where a "more
                         // non-default" value would be WRONG. `ScaleMode::Custom`'s
                         // payload is not persisted — the percentage has its own
@@ -165,7 +165,7 @@ fn every_preference_round_trips_through_the_file() {
                         scope: pdfcer_render::AnnotationScope::DocumentAndMarkups,
                         max_dpi: 600,
                         copies: 3,
-                        // ★ Non-default, and it is the field that proves the
+                        // Non-default, and it is the field that proves the
                         // INVERSION: the file says `print_collate` and the struct
                         // holds `uncollated`, so a writer and parser that inverted
                         // differently would land back on `false` here.
@@ -188,7 +188,7 @@ fn every_preference_round_trips_through_the_file() {
                             width_mm: 0.35,
                         },
                     },
-                    // ★★★ Off-page display, and every one of these three is
+                    // Off-page display, and every one of these three is
                     // the OPPOSITE of what that mode ships — Read ships off,
                     // Review and Edit ship on. That is not decoration: this
                     // group stores only the answers actually GIVEN, so a
@@ -197,7 +197,7 @@ fn every_preference_round_trips_through_the_file() {
                     // if the values here agreed with the defaults. Inverted,
                     // either bug lands on the wrong bool and fails.
                     //
-                    // ★ The fourth key is a mode this build does not ship. The
+                    // The fourth key is a mode this build does not ship. The
                     // family is a PREFIX rather than three fixed keys, because
                     // ribbon modes come from the manifest and an operator may
                     // customize it; a parser that closed over the three shipped
@@ -211,13 +211,13 @@ fn every_preference_round_trips_through_the_file() {
                         p.set("proof", true);
                         p
                     },
-                    // ★★ O196's twelve keys, every one non-default, per this
+                    // O196's twelve keys, every one non-default, per this
                     // test's own rule. The second group whose parser and writer
                     // live outside `prefs::file` -- in `prefs::exporting`, together
                     // -- so this assertion is what proves the THIRD link of the
                     // delegation chain reaches both halves.
                     //
-                    // ★ The two page scopes are set to OPPOSITE values, and that
+                    // The two page scopes are set to OPPOSITE values, and that
                     // is the pair worth looking at: the image window ships
                     // `CurrentPage` and the text window ships `AllPages`, so a
                     // writer or parser that collapsed them onto one key would land
@@ -261,7 +261,7 @@ fn every_preference_round_trips_through_the_file() {
     }
 }
 
-/// ★ The three overlays are three independent keys.
+/// The three overlays are three independent keys.
 ///
 /// The failure this catches is a copy-paste in either the writer or the
 /// parser sending two overlays to one field — which the round-trip above
@@ -318,7 +318,7 @@ fn the_defaults_are_the_constants_they_replaced() {
     assert!(prefs.chrome.all_hidden());
 }
 
-/// ★ **The shipped preferences change nothing about a freshly opened view.**
+/// **The shipped preferences change nothing about a freshly opened view.**
 ///
 /// The strongest form of the rule above, and the one a reordering or a
 /// typo in [`Prefs::seed_view`] would break: seeding a default `ViewState`
@@ -356,7 +356,7 @@ fn the_opening_fit_reaches_the_view() {
     }
 }
 
-/// ★ **A document's remembered guides survive a preference that hides them.**
+/// **A document's remembered guides survive a preference that hides them.**
 ///
 /// Row two of [`Prefs::seed_view`]'s table, and the whole reason that one
 /// field ORs. `canvas::guides::opening` turns the layer on for a document
@@ -409,7 +409,7 @@ fn rulers_and_grid_follow_the_preference_in_both_directions() {
     assert!(!view.grid, "the grid preference could not turn it off");
 }
 
-/// ★ One bad line never discards the rest of the file.
+/// One bad line never discards the rest of the file.
 ///
 /// The fail-soft contract, and the reason it matters here rather than being
 /// inherited politeness: this file is *meant* to be hand-edited, and a
@@ -464,7 +464,7 @@ fn a_bad_line_costs_only_its_own_key() {
     );
 }
 
-/// ★★★ **A trillion percent is accepted**, which is the figure the
+/// **A trillion percent is accepted**, which is the figure the
 /// operator named — `OPERATOR_REQUESTS.md` O24.
 ///
 /// The point of the setting is that the performance trade is his; a ceiling
@@ -483,7 +483,7 @@ fn a_trillion_percent_is_accepted_and_the_page_actually_draws_there() {
     );
 }
 
-/// ★★ **A non-finite value is refused, not clamped.**
+/// **A non-finite value is refused, not clamped.**
 ///
 /// `inf` would propagate into a scroll extent and blank the canvas, which is
 /// the failure `canvas::geometry`'s guards exist for. Reporting it as
@@ -519,12 +519,12 @@ fn the_default_maximum_is_the_highest_available() {
     );
 }
 
-/// ★ **The file says a whole number, not `1e12`.**
+/// **The file says a whole number, not `1e12`.**
 ///
 /// The preferences file is the operator's to read and edit; a machine-shaped
 /// number there means he cannot tell at a glance what he set.
 ///
-/// ★★ And it records something the operator will otherwise discover by
+/// And it records something the operator will otherwise discover by
 /// reading his own file: **`f32` cannot hold a trillion exactly.** It
 /// stores `999,999,995,904` — a rounding of four thousand parts in a
 /// trillion, four ten-millionths of one percent. At a zoom where one screen
@@ -591,7 +591,7 @@ fn an_off_step_ui_scale_is_rounded_and_reported() {
     assert!(notes.is_empty(), "a clean value was reported: {notes:?}");
 }
 
-/// ★ **A UI scale of `nan` or `inf` is refused, not clamped.**
+/// **A UI scale of `nan` or `inf` is refused, not clamped.**
 ///
 /// The one parse arm in this file that needs a guard beyond `parse()`
 /// succeeding. `"nan"` and `"inf"` are both valid `f32` literals, and
@@ -636,7 +636,7 @@ fn an_empty_file_produces_defaults_and_no_notes() {
     assert!(notes.is_empty());
 }
 
-/// ★ Every key the writer emits is a key the parser knows.
+/// Every key the writer emits is a key the parser knows.
 ///
 /// The drift this catches is the one that would be silent in both
 /// directions: a key added to [`Prefs::write_to_string`] and not to
@@ -653,30 +653,30 @@ fn the_writer_emits_no_key_the_parser_rejects() {
     // A non-default in every field, so no emitted value can coincide with
     // what a failed parse would have left behind.
     let prefs = Prefs {
-        // ★ Non-default, for this test's stated reason. O70.
+        // Non-default, for this test's stated reason. O70.
         text_chunks: false,
         smart_select: false,
-        // ★ …and O163, which also ships `true`.
+        // …and O163, which also ships `true`.
         find_zoom_on_jump: false,
-        // ★ …and O180, which also ships `true`.
+        // …and O180, which also ships `true`.
         find_trim_query: false,
         page_previews: false,
-        // ★ Non-default, for this test's stated reason — and specifically
+        // Non-default, for this test's stated reason — and specifically
         // not `0`, which O225 ships.
         page_preview_budget_ms: 2000,
         ribbon_auto_hide: false,
         rail_auto_hide: false,
-        // ★ …and O96, which also ships `true`.
+        // …and O96, which also ships `true`.
         shade_form_fields: false,
-        // ★ Non-default, for this test's stated reason. O229.
+        // Non-default, for this test's stated reason. O229.
         ocr_layer_colour: [1, 130, 255],
         ocr_engine: Some(crate::ocr::EngineId::Ocrcer),
-        // ★ Non-default, and the only OPTIONAL key in the file. O80.
+        // Non-default, and the only OPTIONAL key in the file. O80.
         default_page_display: Some(crate::viewer::PageDisplay::Facing),
-        // ★ Non-default: the Acrobat order, so a writer emitting a constant
+        // Non-default: the Acrobat order, so a writer emitting a constant
         // token would fail here rather than pass.
         paste_chords: PasteChords::AcrobatOrder,
-        // ★ Non-default, like every field here — and this one is the only
+        // Non-default, like every field here — and this one is the only
         // REPEATED key in the file, so it is the only field whose writer
         // emits a variable number of lines. Two entries rather than one,
         // so a writer that emitted only the first would fail here.
@@ -687,30 +687,30 @@ fn the_writer_emits_no_key_the_parser_rejects() {
         ],
         // Non-default, for the reason this test states about every field.
         chosen_standard: Some("pdf-x4".to_owned()),
-        // ★ Non-default and with a space in it — O122. A path is the one
+        // Non-default and with a space in it — O122. A path is the one
         // value in this file most likely to contain the character that
         // breaks a naive writer.
         // Non-default, for the reason this test states about every field, and
         // in the direction that matters: O173 ships `true`.
         ask_default_app: false,
         acrobat_path: r"D:\Apps\Acrobat DC\Acrobat.exe".to_owned(),
-        // ★ Non-default, and deliberately a DIFFERENT string from the
+        // Non-default, and deliberately a DIFFERENT string from the
         // field above: two paths that happened to be equal would pass on a
         // writer that emitted one of them twice.
         acrobat_trust_store_path: r"D:\Certs\addressbook.acrodata".to_owned(),
-        // ★ Non-default, with a space and a non-ASCII character. The file
+        // Non-default, with a space and a non-ASCII character. The file
         // is UTF-8 and a name is the one field an operator will put an
         // accent in; a writer or reader that mangled it would put mojibake
         // into every comment they sign.
         author_name: "Ken Mantlé".to_owned(),
         // Non-default, for the reason stated below about every other field.
         render_quality: RenderQuality::Sharper,
-        // ★ Non-default, for this test's stated reason, and `WholeDocument`
+        // Non-default, for this test's stated reason, and `WholeDocument`
         // rather than `MarkedOnly` because it is the value whose loss would
         // be silent in the dangerous direction: a build that failed to write
         // it would leave the operator at the middle, which still edits.
         redaction_reach: RedactionReach::WholeDocument,
-        // ★ Not the default, deliberately, and this test's own comment says
+        // Not the default, deliberately, and this test's own comment says
         // why: "a non-default in every field, so no emitted value can
         // coincide with what a failed parse would have left behind". A
         // `PageCache::Large` here would pass on a build whose writer emitted
@@ -727,14 +727,14 @@ fn the_writer_emits_no_key_the_parser_rejects() {
         },
         ui_scale: 1.65,
         colour_icons: true,
-        // ★ O166. Deliberately a DIFFERENT set of values from the round-trip
+        // O166. Deliberately a DIFFERENT set of values from the round-trip
         // test above — a shared constant would make both tests depend on one
         // combination, and this one is asking a different question: does every
         // token this writer can emit parse back cleanly? So the enums are the
         // arms the other test does not use, and the numbers are at the ENDS of
         // their ranges, which is where a writer's formatting breaks.
         print: PrintPrefs {
-            // ★ A name with a non-ASCII character. The file is UTF-8 and a
+            // A name with a non-ASCII character. The file is UTF-8 and a
             // printer's name is set by whoever installed it; a writer or reader
             // that mangled it would silently print to the Windows default
             // forever after, with nothing on screen to say so.
@@ -770,7 +770,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
                 width_mm: 5.0,
             },
         },
-        // ★ Off-page display. A DIFFERENT set from the round-trip test
+        // Off-page display. A DIFFERENT set from the round-trip test
         // above, per this test's own rule, and one of the mode ids carries
         // a SPACE — which a manifest's mode id legitimately may, and which
         // is the character most likely to break a writer or a parser that
@@ -784,7 +784,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
             p.set("drawing review", false);
             p
         },
-        // ★ O196. A DIFFERENT set from the round-trip test above, per this
+        // O196. A DIFFERENT set from the round-trip test above, per this
         // test's own rule, and chosen for what it asks: does every token this
         // writer can emit parse back cleanly? So the enums are the arms the
         // other test does not use, and the numbers sit at the ENDS of their
@@ -794,7 +794,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
                 // The one format whose token the other test does not emit.
                 format: ImageFormat::Svg,
                 scope: PageScope::CurrentPage,
-                // ★ The very top of the control's range. A resolution this
+                // The very top of the control's range. A resolution this
                 // large is exactly where a writer that formatted through an
                 // exponent would start emitting `4.8e3`, which this module's
                 // own parser reads fine -- and which the file's comment block
@@ -846,7 +846,7 @@ fn the_preferences_file_lives_beside_the_settings_file() {
 
 // ---- O80: the standing page-display preference ------------------------
 
-/// ★★★ **An absent key means "he has not said", and the writer must not
+/// **An absent key means "he has not said", and the writer must not
 /// invent one** — `OPERATOR_REQUESTS.md` O80.
 ///
 /// The whole reason `default_page_display` is an `Option` rather than a
@@ -895,7 +895,7 @@ fn an_unstated_page_display_preference_writes_no_key_and_reads_back_as_unstated(
     );
 }
 
-/// ★★ **The three tiers resolve in the order the design states.**
+/// **The three tiers resolve in the order the design states.**
 ///
 /// | tier | wins over |
 /// |---|---|

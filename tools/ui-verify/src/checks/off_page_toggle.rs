@@ -77,7 +77,7 @@ const PAPER_INK_FRACTION: f64 = 0.05;
 /// viewport, the conversion refuses — correctly — and the check SKIPS, which
 /// is not red.
 ///
-/// ★ `mode.read` is named EXPLICITLY on every Read rung rather than relied on
+/// `mode.read` is named EXPLICITLY on every Read rung rather than relied on
 /// as the default, because the profile remembers the mode it was last in.
 /// Rung 5 follows a rung that ended in Edit, and a rung that assumed Read
 /// because the first launch was in Read would be reading Edit's answer while
@@ -278,7 +278,7 @@ fn one_rung(
     session.settle(40);
     // Maximising widens the grey the off-sheet square has to fit into.
     session.maximize();
-    // ★ A long settle, for `off_page_visible`'s measured reason: the halo
+    // A long settle, for `off_page_visible`'s measured reason: the halo
     // cannot appear on the first frame. The page must be decomposed before the
     // shell knows where its ink reaches, and that build happens AFTER the first
     // picture is asked for. The sequence is page → decomposition → halo raster,
@@ -317,7 +317,7 @@ fn one_rung(
     let tier = last.get("tier").unwrap_or("?").to_owned();
     let offpage = last.get("offpage").unwrap_or("?").to_owned();
 
-    // ★ The LAYOUT half. A missing line is a SKIP rather than a failure for
+    // The LAYOUT half. A missing line is a SKIP rather than a failure for
     // the same reason the tier line is: a binary that predates the
     // instrument cannot be interrogated with it, and reporting that as a
     // defect would send somebody after a feature that is present.
@@ -427,7 +427,7 @@ fn one_rung(
 
 /// Assert one rung against what it measured. `Ok(None)` is a pass.
 fn judge(rung: &Rung, seen: &Observed, trace: &crate::trace::Trace) -> Option<String> {
-    // ★★★ THE CONTROL FIRST, on every rung including the positive ones. If the
+    // THE CONTROL FIRST, on every rung including the positive ones. If the
     // on-sheet square is not painted, nothing measured off the sheet means
     // anything — and on a NEGATIVE rung the absence this check is looking for
     // would be supplied by the broken window rather than by the preference.
@@ -529,7 +529,7 @@ fn judge(rung: &Rung, seen: &Observed, trace: &crate::trace::Trace) -> Option<St
         ));
     }
 
-    // ★★★ THE GAP. Asserted before the ink on a positive rung and before the
+    // THE GAP. Asserted before the ink on a positive rung and before the
     // absence of ink on a negative one, because it is the cheaper, more
     // specific oracle: it names the function that got it wrong.
     if rung.want_on {
@@ -654,7 +654,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★★★ THE PROFILE IS SHARED BETWEEN THE RUNGS AND PRIVATE TO THE CHECK.
+    // THE PROFILE IS SHARED BETWEEN THE RUNGS AND PRIVATE TO THE CHECK.
     // `main` gives every check a `Sandbox` — its own copy of the binary, and
     // therefore its own `userdata/` — and hands it in as `--exe`. That is what
     // makes rungs 3 and 5 mean anything: they read what rungs 2 and 4 wrote,
@@ -666,7 +666,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         if let Some(failure) = judge(rung, &seen, &trace) {
             return Ok(Some(failure));
         }
-        // ★ A pause between launches, for the reason `main` gives about the
+        // A pause between launches, for the reason `main` gives about the
         // suite: window teardown, GPU release and Windows' foreground
         // arbitration all lag process exit, and the next launch starts into
         // that wake. Here the lag matters more than usual, because the next
@@ -702,7 +702,7 @@ mod tests {
     /// The fixture's media box, which is also its crop box: it declares none.
     const MEDIA: (f64, f64, f64, f64) = (0.0, 0.0, 200.0, 200.0);
 
-    /// ★★★ The off-sheet sample is wholly inside the off-page square, with
+    /// The off-sheet sample is wholly inside the off-page square, with
     /// margin on every side — otherwise the check measures antialiasing and
     /// its threshold becomes a coin toss.
     #[test]
@@ -713,7 +713,7 @@ mod tests {
         assert!(OFF_SHEET_AT.1 + PATCH_PT < SQUARE_B.3, "top margin");
     }
 
-    /// ★★ …and that square really is off the page, which is the premise of
+    /// …and that square really is off the page, which is the premise of
     /// every rung.
     #[test]
     fn the_off_page_square_is_entirely_off_the_page() {
@@ -725,7 +725,7 @@ mod tests {
         );
     }
 
-    /// ★★★ The CONTROL is inside the on-page square, with margin — and inside
+    /// The CONTROL is inside the on-page square, with margin — and inside
     /// the media box. A control that strayed off the sheet would be switched
     /// off by the very setting it exists to be independent of, and every
     /// negative rung would then report a harness error.
@@ -751,7 +751,7 @@ mod tests {
         const { assert!(PAPER_INK_FRACTION < INK_FRACTION) };
     }
 
-    /// ★★★ The ladder asserts both directions, in both modes, and at least one
+    /// The ladder asserts both directions, in both modes, and at least one
     /// rung reads its answer from each of the three writers.
     ///
     /// The failure this catches is a later edit that trims the ladder into
@@ -778,7 +778,7 @@ mod tests {
         }
     }
 
-    /// ★★ The independence rung must come AFTER the rung that changes the other
+    /// The independence rung must come AFTER the rung that changes the other
     /// mode's answer, or it proves nothing at all.
     #[test]
     fn the_independence_rung_follows_the_edit_toggle() {

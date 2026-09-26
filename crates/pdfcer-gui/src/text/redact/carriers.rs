@@ -20,14 +20,14 @@
 /// unused arm is nothing and the cost of a missing one is the raw key on
 /// screen.
 ///
-/// ★ Grep `add_carrier(` in the engine to re-measure the emitted set; it is a
+/// Grep `add_carrier(` in the engine to re-measure the emitted set; it is a
 /// set that grows without a signature change, which is exactly why this match
 /// falls through to the key itself rather than to an `unreachable!`.
 ///
 /// Returns the input unchanged for a key it does not know — see the module
 /// header for why that beats returning nothing.
 ///
-/// ★ Each phrase is a **noun phrase**, because every caller drops it into the
+/// Each phrase is a **noun phrase**, because every caller drops it into the
 /// subject slot of a sentence it does not control (*"⚠ {name}: present in this
 /// document…"*, *"pdfcer also checked … — {list} —"*). A phrase that read as a
 /// clause would break both.
@@ -38,7 +38,7 @@ pub fn carrier_name(carrier: &str) -> &str {
         // ever written, not for the trailer key it comes from.
         "info" => "the document properties — title, author, subject, keywords",
         "xmp" => "the document's embedded metadata record (XMP)",
-        // ★ The sweep is not a place; it is the search of every other place.
+        // The sweep is not a place; it is the search of every other place.
         // `residual_sweep_line` exists because that difference matters in the
         // residual list. This phrase is for the clean census, where it is one
         // item in a list and reads correctly as one.
@@ -65,7 +65,7 @@ pub fn carrier_name(carrier: &str) -> &str {
 /// One residual line for a carrier the engine detected and could not scrub.
 ///
 ///
-/// ★ Dispatches to [`residual_sweep_line`] for the one carrier the generic
+/// Dispatches to [`residual_sweep_line`] for the one carrier the generic
 /// sentence is **false** about. Selecting the sentence here rather than at the
 /// call site is deliberate: the call site is a `.map` over the whole carrier
 /// list and has no business knowing that one member of that list is a different
@@ -81,7 +81,7 @@ pub fn residual_carrier_line(carrier: &str) -> String {
     )
 }
 
-/// ★★ **The residual sentence for the whole-file sweep, which is not a carrier
+/// **The residual sentence for the whole-file sweep, which is not a carrier
 /// at all.**
 ///
 /// The engine reports `residual_sweep` as `DisclosedNotScrubbed` for two
@@ -93,12 +93,12 @@ pub fn residual_carrier_line(carrier: &str) -> String {
 /// | the sweep never ran | `carrier_residual_sweep`, its `evidence.is_empty()` branch | every removed piece is shorter than the engine's match floor, so searching for them would edit on a coincidence |
 /// | the sweep ran and stopped short | `carrier_residual_sweep`, its `disclosed` branch | some stream objects hold the text and are not safe to blank — a font programme, an image, or text drawn through a subset font whose operand bytes are glyph codes rather than characters |
 ///
-/// ★★★ **The second cause is the operator's own files.** `OPERATOR_REQUESTS.md`
+/// **The second cause is the operator's own files.** `OPERATOR_REQUESTS.md`
 /// O142's finding is that his CAD sheets draw text one glyph at a time through
 /// subset fonts, which is exactly the shape the engine names here. So this is
 /// not the rare arm; on his sheets it is the likely one.
 ///
-/// ★ It ends by pointing at [`engine_notes_heading`]'s section, because that is
+/// It ends by pointing at [`engine_notes_heading`]'s section, because that is
 /// where the *object numbers* are — the engine puts them in a note, and a
 /// sentence that says "some objects" while the numbers sit four inches below is
 /// withholding the only part he can act on.
@@ -111,7 +111,7 @@ pub fn residual_sweep_line() -> &'static str {
 // The two things that were never said at all
 // ---------------------------------------------------------------------------
 
-/// ★★★ **The diligence census: what pdfcer checked and found clean.**
+/// **The diligence census: what pdfcer checked and found clean.**
 ///
 /// This is [`CarrierAction::CheckedClean`][cc] reaching the screen, and the
 /// argument for it is the engine's, quoted in the module header: *"checked,
@@ -120,12 +120,12 @@ pub fn residual_sweep_line() -> &'static str {
 ///
 /// [cc]: pdfcer_core::redact::CarrierAction::CheckedClean
 ///
-/// ★ It obeys rule 2 without needing the word. It does not say **verified** —
+/// It obeys rule 2 without needing the word. It does not say **verified** —
 /// that word belongs to [`crate::text::redact::verified_line`] alone and is
 /// earned by this shell's own byte sweep of the finished file. It says
 /// *checked*, and *checked* is exactly what the engine did.
 ///
-/// ★★ It obeys rule 1 too, and that is the subtler half: this sentence never
+/// It obeys rule 1 too, and that is the subtler half: this sentence never
 /// appears **instead of** a residual, only alongside one. The residual section
 /// is derived from a different verdict and drawn from a different branch, so
 /// there is no arrangement of this report in which a clean census can displace
@@ -143,7 +143,7 @@ pub fn checked_clean_line(names: &[&str]) -> String {
     )
 }
 
-/// ★★ **What the whole-file sweep found and will remove, beyond the pages.**
+/// **What the whole-file sweep found and will remove, beyond the pages.**
 ///
 /// The three counters `pdfcer-core` `369d4de` added, in one sentence. They are
 /// reported separately by the engine and stay separate here for the reason its
@@ -158,7 +158,7 @@ pub fn checked_clean_line(names: &[&str]) -> String {
 ///   streams blanked.
 /// * `content_streams` — of those, the ones that are **drawing instructions**.
 ///
-/// ★★★ The third gets its own clause and no other treatment would do. Every
+/// The third gets its own clause and no other treatment would do. Every
 /// other member of the sweep removes a metadata string, which changes nothing
 /// anybody looks at. This one changes what a page would paint if anything still
 /// pointed at it — and the engine's own note on the field says a shell
@@ -192,7 +192,7 @@ pub fn sweep_scrubbed_line(entries: u64, objects: u64, content_streams: u64) -> 
 ///
 /// [notes]: pdfcer_core::redact::RedactionReport::notes
 ///
-/// ★★★ **Collapsed, and that is the whole design.** These notes are the
+/// **Collapsed, and that is the whole design.** These notes are the
 /// engine's own prose: they cite ISO 32000-1 by table number, they name objects
 /// by number, and there can be a dozen of them on an ordinary sheet. Opened by
 /// default they would bury the residual section under spec citations — and
@@ -211,7 +211,7 @@ pub fn engine_notes_heading(count: usize) -> String {
 
 /// The one line above the notes, saying whose voice they are in.
 ///
-/// ★ Rule 1 territory: some of these notes ARE residuals — the retained-mark
+/// Rule 1 territory: some of these notes ARE residuals — the retained-mark
 /// note, the sweep's object list — and some are cosmetic. They are shown
 /// unedited rather than summarised because a note pdfcer wrote about its own
 /// uncertainty is the one thing this report must not paraphrase, and because

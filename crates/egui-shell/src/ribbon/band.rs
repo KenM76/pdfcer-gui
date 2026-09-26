@@ -144,7 +144,7 @@ use super::sizing;
 /// it rather than as a line of its own. The salvage source used the same
 /// constant for the same reason.
 ///
-/// ★ **2 → 3 on 2026-09-04**, from `mockups/pdfcer-shell.html`'s
+/// **2 → 3 on 2026-09-04**, from `mockups/pdfcer-shell.html`'s
 /// `.grp .cap { padding: 3px 0 5px }` — the first figure. One point, and it
 /// is here rather than left alone because the operator's instruction was
 /// *"exactly like that including sizing"* and because the caption's font
@@ -384,7 +384,7 @@ pub(crate) fn render_band(
 
     let gutter = ctx.theme.metrics.gutter;
     let separator = separator_width(ui);
-    // ★★★ A GROUP WITH NOTHING LEFT IS NOT DRAWN AT ALL —
+    // A GROUP WITH NOTHING LEFT IS NOT DRAWN AT ALL —
     // `RIBBON_SCALING.md` §5.3, and R9.
     //
     // An item can be hidden by its `visible_when`; a group all of whose items
@@ -404,7 +404,7 @@ pub(crate) fn render_band(
     let measured: Vec<(GroupRows, f32)> =
         groups.iter().map(|g| measure_group(ui, ctx, g)).collect();
 
-    // ★★★ S3 — THE COLLAPSE LADDER, run before the overflow planner.
+    // S3 — THE COLLAPSE LADDER, run before the overflow planner.
     //
     // The order is the whole point and it is Word's, measured rather than
     // assumed: at 800 pt Word's Font and Paragraph are single captioned
@@ -413,7 +413,7 @@ pub(crate) fn render_band(
     // commands into a menu while the space to show them, collapsed, was still
     // there. See `plan::collapse`'s header for the three photographs this
     // ordering comes from.
-    // ★ When the theme's numbers cannot fit three legible rows into the band's
+    // When the theme's numbers cannot fit three legible rows into the band's
     // fixed row area, the re-wrapped measurement is simply the natural one — so
     // `Candidate::gains_from` sees no gain, the ladder skips the rung, and no
     // group is ever drawn with clipped icons. The feature disables itself on a
@@ -451,7 +451,7 @@ pub(crate) fn render_band(
     let reserve = overflow::arrow_width(ctx);
 
     ui.horizontal(|ui| {
-        // ★ R128. The band's height is reserved here, from the theme, before
+        // R128. The band's height is reserved here, from the theme, before
         // anything is drawn and regardless of what the plan is about to
         // decide — so a tab whose groups all went into the overflow menu is
         // exactly as tall as one whose groups all fitted. A height taken
@@ -484,7 +484,7 @@ pub(crate) fn render_band(
         let states = plan::collapse::fit(&candidates, full.width(), separator);
         let widths = plan::collapse::widths_after(&candidates, &states);
 
-        // ★★★ S4 — WHERE THE BAND IS SCROLLED TO, clamped before anything is
+        // S4 — WHERE THE BAND IS SCROLLED TO, clamped before anything is
         // drawn.
         //
         // The remembered index is an INPUT to layout, so a stale one — left
@@ -501,7 +501,7 @@ pub(crate) fn render_band(
         let visible_widths = &widths[scrolled.min(widths.len())..];
         let band_plan = plan::plan_band(full.width(), visible_widths, separator, reserve);
 
-        // ★ The reservation, taken from the right edge BEFORE any group
+        // The reservation, taken from the right edge BEFORE any group
         // is drawn. `overflow_rect` is computed from `full.right()` and
         // from nothing the group loop can influence, so failure mode #8
         // — the overflow control being the thing that gets squeezed out —
@@ -528,7 +528,7 @@ pub(crate) fn render_band(
             )
         });
 
-        // ★★★ THE LEFT ARROW'S RESERVATION, taken before any group is laid
+        // THE LEFT ARROW'S RESERVATION, taken before any group is laid
         // out — exactly as the right one's is, and for the identical reason.
         //
         //
@@ -537,7 +537,7 @@ pub(crate) fn render_band(
         // clicking it scrolls the ribbon instead. A control drawn normally,
         // looking normal, doing something else entirely.
         //
-        // ★ Note the asymmetry that hid it. The right-hand affordance has had
+        // Note the asymmetry that hid it. The right-hand affordance has had
         // `no_visible_group_overlaps_the_overflow_affordance` since the band was
         // written, and that test sweeps every width — but it renders a FRESH,
         // UNSCROLLED band each time, and there is no width at which an
@@ -583,7 +583,7 @@ pub(crate) fn render_band(
                             box_,
                             &mut outcome,
                         ),
-                        // ★ The row split handed to the renderer MUST be the
+                        // The row split handed to the renderer MUST be the
                         // one the ladder priced. Passing `measured` here while
                         // the plan spent `rewrapped`'s width is the exact shape
                         // of the plan/renderer disagreement `GroupRows`' own
@@ -731,7 +731,7 @@ pub(crate) fn captioned_group(
 ) {
     outcome.groups_rendered += 1;
 
-    // ★ The group's own horizontal padding — `.group { padding: 0 13px }`.
+    // The group's own horizontal padding — `.group { padding: 0 13px }`.
     //
     // `horizontal_top` rather than `horizontal`: the latter is
     // `left_to_right(Align::Center)` and would centre a group vertically
@@ -801,13 +801,13 @@ fn group_body(
         // The controls FIRST: the widest row's width is what the
         // caption is then centred within, and that width only exists
         // after the rows have been emitted.
-        // ★ The same partition `measure_group` planned against, recomputed
+        // The same partition `measure_group` planned against, recomputed
         // from the same inputs rather than threaded through: two call sites
         // agreeing by construction beats two call sites agreeing by a
         // parameter somebody can forget to pass.
         let (large, items) = partition(ctx, group);
         let top = ui.cursor().top();
-        // ★ The band's top padding, spent here so it lands *above the rows*
+        // The band's top padding, spent here so it lands *above the rows*
         // rather than beside the first group — see [`GroupBox::pad_top`].
         // `top` is read before it, so the caption arithmetic at the bottom of
         // this function measures from the band's own top edge and the padding
@@ -825,7 +825,7 @@ fn group_body(
                 }
                 if !items.is_empty() {
                     ui.vertical(|ui| {
-                        // ★★★ A RE-WRAPPED GROUP DIVIDES THE SAME ROW AREA INTO
+                        // A RE-WRAPPED GROUP DIVIDES THE SAME ROW AREA INTO
                         // MORE ROWS — the band's height does not move.
                         //
                         // `Theme::apply` pins `spacing.interact_size.y` to
@@ -848,7 +848,7 @@ fn group_body(
                             };
                             ui.spacing_mut().item_spacing.y = BAND_ROW_SPACING;
                             ui.spacing_mut().interact_size.y = h;
-                            // ★ `interact_size` is a FLOOR, not a ceiling. A
+                            // `interact_size` is a FLOOR, not a ceiling. A
                             // button is as tall as its own text plus
                             // `button_padding.y` either side, and with the
                             // shipped theme that is 14 + 2×4 = 22 pt — taller
@@ -857,7 +857,7 @@ fn group_body(
                             // (112 pt against 104). Compressing the row means
                             // compressing the padding that sets its floor.
                             //
-                            // ★ And the floor is the ICON, not the text. A
+                            // And the floor is the ICON, not the text. A
                             // ribbon button is an `Atom` icon of `icon_pts`
                             // beside an optional label, so its content height
                             // is `max(icon, text)` — 16 against 14 with the
@@ -891,7 +891,7 @@ fn group_body(
             .rect;
         widest = widest.max(content.width());
 
-        // ★ The caption is pinned to the bottom of the band's row area,
+        // The caption is pinned to the bottom of the band's row area,
         // not to the bottom of whatever this group happened to draw. A
         // one-row group and a two-row group therefore caption on the
         // same baseline — `justify-content: space-between`, and the
@@ -915,7 +915,7 @@ fn group_body(
         ctx.reporter
             .report(caption.rect, || report::group_caption(tab_id, &group.id));
 
-        // ★ And out to the band's own height. `allocate_space` rather
+        // And out to the band's own height. `allocate_space` rather
         // than `add_space`, because only an allocation grows a `Ui`'s
         // `min_rect` — `add_space` moves the cursor, which is what the
         // padding above it wanted and is exactly not what this wants.
@@ -954,7 +954,7 @@ fn measure_group(ui: &egui::Ui, ctx: &Ctx<'_>, group: &Group) -> (GroupRows, f32
 
 /// The same measurement, at a stated row ceiling.
 ///
-/// ★ S5's whole implementation on the measuring side. `wrap_group` already
+/// S5's whole implementation on the measuring side. `wrap_group` already
 /// searches for the **narrowest** packing that fits within the row limit it is
 /// handed, so asking it for three rows instead of two returns the three-row
 /// layout when that is narrower and the two-row one when it is not — no new
@@ -1017,7 +1017,7 @@ fn measure_group_rows(
         // fits-already test"*, which is precisely what a band with three rows
         // of budget and one row of content needs.
         //
-        // ★ `OPERATOR_REQUESTS.md` O97's per-group answer still wins where it
+        // `OPERATOR_REQUESTS.md` O97's per-group answer still wins where it
         // exists: View ▸ Page display asks for 2 and gets its 2 x 2 block.
         Some(
             group
@@ -1052,7 +1052,7 @@ fn measure_group_rows(
             .size()
             .x
     });
-    // ★ `lead + rows.width` is the whole of what the controls occupy: the
+    // `lead + rows.width` is the whole of what the controls occupy: the
     // Large run, then the wrapped rows beside it. With no Large run this is
     // exactly what the planner computed before sizes existed, so every width
     // test that pins the old arithmetic still pins it.
@@ -1139,7 +1139,7 @@ fn measure_item(ui: &egui::Ui, ctx: &Ctx<'_>, item: &Item) -> f32 {
             // a control that will not appear and the plan is wrong by
             // exactly the width of every stale reference in the manifest.
             None => 0.0,
-            // ★ Through `sizing::width`, which is the one place the three
+            // Through `sizing::width`, which is the one place the three
             // sizes are turned into a number, and whose every branch has a
             // matching branch in `render_command`. Measuring here and drawing
             // there from two different rules is how a band that claims to fit
@@ -1158,7 +1158,7 @@ fn measure_item(ui: &egui::Ui, ctx: &Ctx<'_>, item: &Item) -> f32 {
 mod tests {
     use super::*;
 
-    /// **★ A caption is never empty, whatever the manifest says.**
+    /// **A caption is never empty, whatever the manifest says.**
     ///
     /// The fallback chain — caption → id → a literal — is what makes
     /// "every rendered group emits a caption" a *total* claim rather than

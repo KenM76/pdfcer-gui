@@ -90,7 +90,7 @@ pub fn crosshair(pixels_per_point: f32) -> CustomCursorImage {
 /// **How far the I-beam is turned from upright**, in whole degrees, folded into
 /// `0..180` and quantised.
 ///
-/// # ★★ Why the cursor has an angle at all
+/// # Why the cursor has an angle at all
 ///
 ///
 /// > *"In Adobe when I hover over it the I cursor re-orients itself to match
@@ -101,7 +101,7 @@ pub fn crosshair(pixels_per_point: f32) -> CustomCursorImage {
 /// between two glyphs"*, and over a 90° stamp an upright beam says it about the
 /// wrong axis.
 ///
-/// # ★ Why pdfcer can do this at all, where most applications cannot
+/// # Why pdfcer can do this at all, where most applications cannot
 ///
 /// `egui::CursorIcon` has no rotated I-beam and neither does Win32 —
 /// `IDC_IBEAM` is one fixed monochrome bitmap. Acrobat ships its own artwork
@@ -177,7 +177,7 @@ impl Tilt {
 /// The two-tone I-beam at `tilt`, cached per `(pixel size, tilt)` exactly as
 /// [`crosshair`] is cached per pixel size.
 ///
-/// # ★ Why an I-beam and not simply a smaller crosshair
+/// # Why an I-beam and not simply a smaller crosshair
 ///
 /// Because the two answer different questions and the shape IS the answer. A
 /// crosshair says *"the point under the intersection is what you are picking"*;
@@ -235,7 +235,7 @@ static IBEAM_CACHE: OnceLock<Mutex<Vec<(u32, Tilt, CustomCursorImage)>>> = OnceL
 /// other way round leaves a light glyph with a dark outline, which is thinner
 /// in its dark part than its light one and reads as blurry.
 ///
-/// # ★ Drawn by inverse rotation, not by rotating a drawn bitmap
+/// # Drawn by inverse rotation, not by rotating a drawn bitmap
 ///
 /// Each destination pixel is mapped **back** into the beam's own upright frame
 /// and tested for membership there. Rotating an already-drawn bitmap forward
@@ -281,7 +281,7 @@ fn render_ibeam(size: u32, scale: f32, tilt: Tilt) -> CustomCursorImage {
         rgba[at + 2] = value;
         rgba[at + 3] = 0xFF;
     };
-    // ★★ How wide a pixel is, measured across the beam's own axes.
+    // How wide a pixel is, measured across the beam's own axes.
     //
     // **Without it a tilted hairline comes out dotted.** The core is one device
     // pixel wide at ordinary scales (deliberately — see below), so a bare test
@@ -289,7 +289,7 @@ fn render_ibeam(size: u32, scale: f32, tilt: Tilt) -> CustomCursorImage {
     // is not axis-aligned, consecutive scanlines can then step two columns
     // apart and the line breaks into dashes.
     //
-    // ★ The value is derived rather than fudged, and the derivation is what
+    // The value is derived rather than fudged, and the derivation is what
     // stops it being too generous. Walking one step along the beam's dominant
     // axis changes `across` by `max(|cos|, |sin|)`, so a tolerance of **half
     // that** guarantees at least one pixel per scanline and nothing more:
@@ -378,7 +378,7 @@ fn render(size: u32, scale: f32) -> CustomCursorImage {
 
     let px = |points: f32| -> i32 { (points * scale).round().max(1.0) as i32 };
 
-    // ★ The core stays a HAIRLINE and the halo grows. That asymmetry is the
+    // The core stays a HAIRLINE and the halo grows. That asymmetry is the
     // design, not an oversight in the scaling.
     //
     // A crosshair is an aiming device: its value is that the operator can see
@@ -452,7 +452,7 @@ static LAST_APPLIED: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32
 /// Called once per frame from [`crate::canvas::interact`], which is the one
 /// place that knows whether the cursor's answer is a crosshair.
 ///
-/// # ★ Why this is traced at all, when nothing else about a cursor is
+/// # Why this is traced at all, when nothing else about a cursor is
 ///
 /// **A cursor cannot be verified by screenshot.** Windows composites the
 /// pointer separately from window contents, so `BitBlt` and `PrintWindow` — the
@@ -489,7 +489,7 @@ static LAST_APPLIED: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32
 /// not here.
 /// Which of pdfcer's own cursors a frame wants, if any.
 ///
-/// # ★★ The I-beam is here for the SAME reason the crosshair is, reported
+/// # The I-beam is here for the SAME reason the crosshair is, reported
 /// the same way, three weeks apart
 ///
 /// 2026-08-18: *"the crosshairs when over the canvas are white making it hard
@@ -502,7 +502,7 @@ static LAST_APPLIED: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32
 /// crosshair works here unchanged: stop asking the platform, supply a two-tone
 /// glyph with a dark core and a light halo.
 ///
-/// ★ It is filed as a defect in this module rather than a new feature
+/// It is filed as a defect in this module rather than a new feature
 /// because the first fix should have been made here. The header already argued
 /// that the platform's monochrome cursors are unusable over a document, and
 /// then fixed exactly one of them — the one that had been reported. Every
@@ -615,7 +615,7 @@ pub fn apply(ctx: &egui::Context, wanted: Option<Shape>) {
 #[cfg(test)]
 mod tests {
 
-    /// ★★ The I-beam has a DARK core, which is the whole of the operator's
+    /// The I-beam has a DARK core, which is the whole of the operator's
     /// report.
     ///
     /// *"The I cursor turns white for text selection so I cant see it on a
@@ -672,7 +672,7 @@ mod tests {
 
     /// The two shapes map from the two `egui` icons and nothing else does.
     ///
-    /// ★ The negative half matters: every other `CursorIcon` this application
+    /// The negative half matters: every other `CursorIcon` this application
     /// asks for is over CHROME, where the platform's stock cursor is correct
     /// and a custom one would be wrong. Only the two drawn over the operator's
     /// document need replacing.
@@ -726,7 +726,7 @@ mod tests {
         }
     }
 
-    /// ★ The hotspot is the crossing point, and it is not painted.
+    /// The hotspot is the crossing point, and it is not painted.
     ///
     /// Two properties in one test because they are the same claim from two
     /// sides: the hotspot pixel is the geometric centre, and the centre gap
@@ -750,7 +750,7 @@ mod tests {
         );
     }
 
-    /// ★ Both tones are present, and the dark one is surrounded by the light.
+    /// Both tones are present, and the dark one is surrounded by the light.
     ///
     /// This is the whole feature: a cursor of one tone is exactly the defect
     /// reported. Sampling the arm rather than counting pixels, because what
@@ -786,7 +786,7 @@ mod tests {
         );
     }
 
-    /// ★ Repeated calls at one scale return the SAME allocation.
+    /// Repeated calls at one scale return the SAME allocation.
     ///
     /// `egui-winit` dedupes its upload to the OS by `Arc::as_ptr`. A fresh
     /// `Arc` per frame would convert a bitmap to a platform cursor handle sixty
@@ -847,7 +847,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **A 90° I-beam is a HORIZONTAL bar**, which is the whole of what the
+    /// **A 90° I-beam is a HORIZONTAL bar**, which is the whole of what the
     /// operator asked for.
     ///
     /// The upright test above this one asserts `tall > wide * 2`; this asserts
@@ -869,7 +869,7 @@ mod tests {
         );
     }
 
-    /// ★★ **And it keeps its dark core**, at every angle.
+    /// **And it keeps its dark core**, at every angle.
     ///
     /// The operator's *other* cursor report — *"the I cursor turns white for
     /// text selection so I cant see it on a white background"* — is a property
@@ -892,7 +892,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **The cache tells two angles apart.**
+    /// **The cache tells two angles apart.**
     ///
     /// This is the test for the failure the cache's own header names: keyed by
     /// size alone, the first angle asked for would be stored and every later
@@ -984,7 +984,7 @@ mod preview {
         }
     }
 
-    /// ★ **Print the I-beam as ASCII at several angles**, so a human can check
+    /// **Print the I-beam as ASCII at several angles**, so a human can check
     /// the shape with their eyes. `--ignored`.
     ///
     /// This exists because of the constraint `apply`'s docs set out: **a cursor

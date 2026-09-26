@@ -27,7 +27,7 @@ upload and draw with nothing but a `Painter` in hand — which is why the
 texture cache is a thread-local (see [`super::cache`]) rather than
 something threaded through a call chain that has no room for it.
 
-## ★ Supplying a painter is what turns the ribbon into a ribbon
+## Supplying a painter is what turns the ribbon into a ribbon
 
 `egui_shell::ribbon::qat`'s `shows_label` draws a QAT control icon-only
 only when **all three** hold: the command names an icon, it has a tooltip
@@ -38,7 +38,7 @@ supplied a painter*. Its doc comment records why the third clause exists:
 Until a painter is supplied the whole ribbon falls back to text buttons.
 Supplying one is the difference between a toolbar and a ribbon.
 
-## ★ An unknown key draws a VISIBLE MARK, never nothing
+## An unknown key draws a VISIBLE MARK, never nothing
 
 This is the decision this module most needs a reader to understand,
 because the obvious alternative is wrong in a way that is easy to miss.

@@ -3,7 +3,7 @@
 `a_bookmark_subtree_can_be_copied_and_pasted` — the driven proof of
 `OPERATOR_REQUESTS.md` **O59**'s third and last item.
 
-# ★★ The one operation in this program Acrobat cannot do
+# The one operation in this program Acrobat cannot do
 
 `pdfcer-core`, 2026-08-29: *"Acrobat cannot do this between two files at all;
 Adobe's own documentation says so by name."*
@@ -24,7 +24,7 @@ time, or not at all.
 | `bookmark-paste-applied items=N` | `paste_outline_item` returned `Ok` with a count |
 | **the panel's own census grew** | **the operator got more bookmarks** |
 
-★ The third is very nearly enough and is still not, for one specific
+The third is very nearly enough and is still not, for one specific
 reason: `paste_outline_item` returns `Ok(default())` — `items_pasted: 0` —
 on an **empty clip**, without touching the document. So a build whose copy
 produced an empty clip would emit every line above, report success, and add
@@ -42,7 +42,7 @@ what it is actually drawing.
 4. press **Copy**, then **Paste**;
 5. assert the census grew.
 
-★★ Step 2 exists because the fixture corpus is **not uniform** —
+Step 2 exists because the fixture corpus is **not uniform** —
 `bookmark_move`'s header records the same discovery — and a check that
 assumed a bookmark was already there would SKIP on half the corpus while
 reporting the fixture as the fault. Authoring one first makes the check

@@ -20,7 +20,7 @@ const DECLINED_EVENT: &str = "resize-declined";
 /// The trace label `vector_edit` traces when the edit reached the engine.
 ///
 ///
-/// ★ The stale constant did not make this check pass wrongly; it made it FAIL
+/// The stale constant did not make this check pass wrongly; it made it FAIL
 /// against a build where the resize had just got better — reporting *"the
 /// action was raised and its apply arm never ran"* while the trace plainly
 /// carried `transform-objects … transformed=1`. Worth knowing, because a check
@@ -69,7 +69,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
+    // PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
     //
     // ⇒ `fixture::grip_gesture_target` holds the point and the reason. A
@@ -171,7 +171,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: find the south-east grip ---------------------------------------
     //
-    // ★ Computed from the SELECTION OUTLINE's own trace rect rather than from
+    // Computed from the SELECTION OUTLINE's own trace rect rather than from
     // the click point. A grip is at a corner of the selection, and the
     // selection's extent is a fact only the application knows — a harness that
     // guessed "a few pixels down and right of where I clicked" would be aiming
@@ -186,13 +186,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              pass while measuring the wrong gesture."
         ))
     })?;
-    // ★ `declared_at(1.0, 1.0)` — the box's bottom-right corner, which is where
+    // `declared_at(1.0, 1.0)` — the box's bottom-right corner, which is where
     // `handles::grip_rects` centres the south-east grip. Not the centre: the
     // centre of a selection box is `Grip::Move`, and a drag from there is a
     // MOVE, which would pass every assertion below for the wrong gesture.
     let frame = session.frame()?;
     let from = frame.declared_at(outline, 1.0, 1.0);
-    // ★ Beyond the box, by fractions rather than by adding pixels to a
+    // Beyond the box, by fractions rather than by adding pixels to a
     // `ScreenPoint`: `coords`' own rule is that a coordinate is produced by a
     // conversion and never assembled, and `declared_at` does not clamp its
     // fractions precisely so a check can aim past a control's edge. The
@@ -237,7 +237,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             // accusation naming `canvas::interact`. **A check that cannot say
             // what it aimed at cannot be believed about what it found.**
             //
-            // ★ The verdict is unchanged — a page-sized selection is still a
+            // The verdict is unchanged — a page-sized selection is still a
             // legitimate thing to fail on, and weakening the assertion would
             // be the wrong repair. What changes is whether the reader spends
             // the next hour in the right file.
@@ -250,7 +250,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  work'. Look at `canvas::interact`'s `GestureOutcome::Resize` arm. Trace: {}.",
                 w,
                 h,
-                // ★ Compared against the CANVAS region rather than the window:
+                // Compared against the CANVAS region rather than the window:
                 // the sheet is fitted into the canvas, so "the selection is
                 // nearly the canvas" is what "the selection is the whole page"
                 // looks like from here. A window-relative test would also count
@@ -274,7 +274,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }));
     };
 
-    // --- 5: ★★ the numbers a wrong build would get wrong -------------------
+    // --- 5: the numbers a wrong build would get wrong -------------------
     // Parsed from the field rather than read through a typed accessor, because
     // the trace is text and `TraceLine` offers `usize` and `Rect` only. A
     // missing or unparsable field answers 0.0, which fails the assertion below

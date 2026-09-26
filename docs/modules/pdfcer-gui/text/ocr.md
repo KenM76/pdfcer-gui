@@ -4,7 +4,7 @@ Consumed by [`crate::dialogs::ocr`] (the dialog that runs recognition and
 reports what it inferred) and by [`crate::find::bar`] (the offer that
 appears when a search found nothing on a page that has no text to find).
 
-## ★ Why this catalog is unusually careful, and it is not house style
+## Why this catalog is unusually careful, and it is not house style
 
 **OCR is the single largest inference pdfcer makes.** `pdfcer-core`'s own
 `ocr::layer` header says it in those words — *"every word here is a
@@ -22,7 +22,7 @@ way it is:
 2. **The uncertainty must be stated anyway**, off-canvas, before the
    recognition becomes a file. That is what this dialog is for.
 
-## ★ The one fact this surface exists to carry
+## The one fact this surface exists to carry
 
 **`ocrs` reports no confidence at all.** Not "low confidence", not
 "confidence pending" — its output type is a character and a rectangle, and

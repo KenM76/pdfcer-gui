@@ -57,7 +57,7 @@
 //! [`super::super::width_tests`] then asserts the same properties of the
 //! rendered row.
 //!
-//! # ★ The one measured number everything here turns on
+//! # The one measured number everything here turns on
 //!
 //! [`super::super::measure::min_button_width`] records it:
 //! **`Button::truncate()` stops shrinking** at padding-plus-ellipsis,
@@ -160,7 +160,7 @@ pub(crate) struct RowPlan {
     pub trailing: f32,
     /// Whether a trailing region that wanted space got none.
     ///
-    /// ★ Its own flag rather than `trailing < demand.trailing`, because the
+    /// Its own flag rather than `trailing < demand.trailing`, because the
     /// two cases that produce a zero grant are *"there was nothing to draw"*
     /// and *"there was something and the row could not hold it"* — the first
     /// is the ordinary state of this region and must not be announced, the
@@ -193,11 +193,11 @@ pub(crate) struct RowPlan {
 ///    the right edge past the selector, out of what the QAT and the floors
 ///    left. It is the one reserved region that may be granted **nothing**,
 ///    because it is an optional extra rather than a promise the interface has
-///    already made; see the ★★ comment in the body.
+///    already made; see the comment in the body.
 /// 4. **The tabs** — and the affordance that reaches the ones that do not
 ///    fit — get the remainder.
 ///
-/// # ★ The floors: no reservation may consume the row
+/// # The floors: no reservation may consume the row
 ///
 /// Ordering alone is not enough, and the reason is the defect this
 /// function was written for. A QAT wider than the window, reserved first
@@ -223,7 +223,7 @@ pub(crate) struct RowPlan {
 /// `tabs_floor + selector_floor`, the selector compresses further, because
 /// the tabs' floor outranks it and there is nothing left to take.
 ///
-/// # ★ `grant`: a sliver is worse than nothing
+/// # `grant`: a sliver is worse than nothing
 ///
 /// The QAT goes through [`grant`] rather than a plain `min`, because a
 /// `min` hands back a sliver and a sliver is a control drawn outside its own
@@ -259,7 +259,7 @@ pub(crate) fn plan_strip_row(row: f32, demand: RowDemand) -> RowPlan {
     let trailing_floor = sane(demand.trailing_floor);
 
     let qat = grant(qat_wanted, row - tabs_floor - selector_floor, qat_floor);
-    // ★★ THE TRAILING REGION IS RESERVED LAST AMONG THE RESERVED REGIONS, AND
+    // THE TRAILING REGION IS RESERVED LAST AMONG THE RESERVED REGIONS, AND
     // IT IS THE ONLY ONE ALLOWED TO VANISH.
     //
     // The header's ordering argument is about controls that must SURVIVE, and
@@ -382,7 +382,7 @@ impl StripPlan {
 /// - `button_floor` — the narrowest an `egui::Button` can be drawn; see
 ///   [`super::super::measure::min_button_width`].
 ///
-/// # ★ Why the active tab is pinned, and why a band needs no such rule
+/// # Why the active tab is pinned, and why a band needs no such rule
 ///
 /// A band and a strip look like the same problem and differ in exactly one
 /// respect: **everything a band hides is still reachable through its
@@ -412,7 +412,7 @@ impl StripPlan {
 /// other tab, it cannot displace the active one (that one is already paid
 /// for), and it is announced by the affordance's count going up.
 ///
-/// # ★ When the area is too narrow for both: the strip collapses
+/// # When the area is too narrow for both: the strip collapses
 ///
 /// The pin has a hard limit, and pretending otherwise would reintroduce
 /// the defect it exists to prevent. Below `2 × button_floor + gap` — about
@@ -493,7 +493,7 @@ pub(crate) fn plan_tab_strip(
         return nothing_hidden((0..n).collect(), false);
     }
 
-    // ★ THE COLLAPSE. See the header: below this width the only choice is
+    // THE COLLAPSE. See the header: below this width the only choice is
     // between "one tab and no route to the rest" and "a route to
     // everything", and #8 decides it.
     if available < 2.0 * button_floor + gap {
@@ -517,7 +517,7 @@ pub(crate) fn plan_tab_strip(
         };
     }
 
-    // ★ THE SPLIT. Both the affordance and the pinned tab keep a floor;
+    // THE SPLIT. Both the affordance and the pinned tab keep a floor;
     // see the header on why this differs from the band's "affordance takes
     // absolute priority".
     let reserve = overflow_width
@@ -525,7 +525,7 @@ pub(crate) fn plan_tab_strip(
         .min(available - button_floor - gap);
     let tab_budget = (available - reserve - gap).max(0.0);
 
-    // ★ THE PIN. Charged before any other tab is measured.
+    // THE PIN. Charged before any other tab is measured.
     let active = active.filter(|&i| i < n);
     let pinned_wanted = active.map_or(0.0, |i| sane(tab_widths[i]));
     let pinned = pinned_wanted.min(tab_budget);
@@ -624,7 +624,7 @@ mod tests {
         }
     }
 
-    /// **★ The QAT is not allowed to consume the strip.**
+    /// **The QAT is not allowed to consume the strip.**
     ///
     /// Without the floors, measured against the synthetic face at a 180 pt
     /// viewport, the QAT runs from x = −6 to x = 160 with both tabs
@@ -693,7 +693,7 @@ mod tests {
         assert!(!bare.qat_truncated && !bare.selector_truncated);
     }
 
-    /// **★ A wide QAT cannot compress the mode selector to a sliver.**
+    /// **A wide QAT cannot compress the mode selector to a sliver.**
     ///
     /// The QAT is reserved first, so without
     /// [`RowDemand::selector_floor`] it takes everything the tabs do not
@@ -797,7 +797,7 @@ mod tests {
     /// be drawn. Below it [`plan_tab_strip`] collapses — see its header.
     const BOTH: f32 = 2.0 * FLOOR + GAP;
 
-    /// **★ The active tab is never in the overflow menu.**
+    /// **The active tab is never in the overflow menu.**
     ///
     /// The rule the whole pin exists for. A band may legitimately degrade
     /// to "no groups, one working affordance" because everything it hid is
@@ -843,7 +843,7 @@ mod tests {
         }
     }
 
-    /// **★ Failure mode #8 for the strip: nothing is ever lost.**
+    /// **Failure mode #8 for the strip: nothing is ever lost.**
     ///
     /// Every tab is either drawn in the strip or reachable through the
     /// menu, and the menu exists exactly when it has something in it.
@@ -925,7 +925,7 @@ mod tests {
         assert!(p.hidden.contains(&4), "{p:?}");
     }
 
-    /// **★ A contextual tab arriving into a full strip goes into the menu
+    /// **A contextual tab arriving into a full strip goes into the menu
     /// and does not displace the active one.**
     ///
     /// [`super::super::tabs::visible_tabs`] appends contextual tabs last,
@@ -1004,7 +1004,7 @@ mod tests {
         }
     }
 
-    /// **★ Above the collapse width, the pinned tab and the affordance
+    /// **Above the collapse width, the pinned tab and the affordance
     /// share the shortfall and neither is reduced below what `egui` will
     /// draw.**
     ///
@@ -1055,7 +1055,7 @@ mod tests {
         );
     }
 
-    /// **★ Below the collapse width the strip becomes the affordance, and
+    /// **Below the collapse width the strip becomes the affordance, and
     /// the affordance reaches every tab — the active one included.**
     ///
     /// The one place the pin is deliberately given up, and the reasoning is
@@ -1176,7 +1176,7 @@ mod tests {
         }
     }
 
-    /// **★ A row with no trailing region is arithmetically unchanged.**
+    /// **A row with no trailing region is arithmetically unchanged.**
     ///
     /// The first thing a claimant on a shared budget owes the others: it
     /// costs nothing when it is not there. Every other assertion in this
@@ -1200,7 +1200,7 @@ mod tests {
         }
     }
 
-    /// **★★ The trailing region never eats the selector, the QAT or the tabs'
+    /// **The trailing region never eats the selector, the QAT or the tabs'
     /// floor — at any width.**
     ///
     /// `no_reservation_may_leave_the_tabs_with_nothing` restated for the
@@ -1237,7 +1237,7 @@ mod tests {
         }
     }
 
-    /// **★★ A trailing region that cannot have a whole control gets NOTHING,
+    /// **A trailing region that cannot have a whole control gets NOTHING,
     /// and says so.**
     ///
     /// The three-way `grant` rule, which this module's header measures: a

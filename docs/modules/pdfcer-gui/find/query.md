@@ -26,7 +26,7 @@ almost never what a person searching a drawing means, and the one reader who
 field was padded — is a reader who knows precisely what they are doing and
 will find a switch.
 
-★★ But trimming silently would be the same defect wearing the other coat:
+But trimming silently would be the same defect wearing the other coat:
 the operator would type a space, get hits, and have no way to learn that the
 space was discarded. So the bar discloses it whenever the raw query has
 whitespace at either end — see [`has_edge_whitespace`] and

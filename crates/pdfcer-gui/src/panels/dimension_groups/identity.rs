@@ -160,7 +160,7 @@ impl super::DimensionGroupsUi {
     /// Raise the deletion, and put the selection somewhere that will still
     /// exist.
     ///
-    /// ★ The selection move is not tidiness. `body` falls back to the default
+    /// The selection move is not tidiness. `body` falls back to the default
     /// group when the selected one has gone, which is correct and arrives **one
     /// frame late** — for that frame the lower half of the panel would draw
     /// against a group the document no longer has. Moving it here means the
@@ -196,7 +196,7 @@ impl super::DimensionGroupsUi {
     /// the epoch and changes `group.name`, and the next frame's draft is
     /// re-seeded because... it is not, and this is the honest limitation.
     ///
-    /// ★ **The draft does NOT follow the document while it is being typed**,
+    /// **The draft does NOT follow the document while it is being typed**,
     /// deliberately, and that differs from `panels::docprops`'s
     /// epoch-reseed. The difference is what the two fields are: a metadata box
     /// commits on focus loss and is otherwise idle, so re-seeding it costs

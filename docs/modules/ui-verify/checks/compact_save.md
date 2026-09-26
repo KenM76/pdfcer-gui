@@ -14,7 +14,7 @@ wiring Remove-embedded-fonts:
 pdfcer has produced a file that was very slightly **larger**. Only a full
 rewrite drops the bytes, and this is the command that asks for one.
 
-## ★★★ The oracle is the FILE ON DISK, and nothing else would do
+## The oracle is the FILE ON DISK, and nothing else would do
 
 Every link in this chain can be satisfied by a build that saves nothing.
 The window opens on a serialisation, quotes a number, and hands bytes to an
@@ -31,12 +31,12 @@ how badly each one fails:
 | 2 | it begins `%PDF-` | something was written and it is not a PDF |
 | 3 | it is **smaller** than the original | the rewrite reclaimed nothing, which is the entire feature |
 
-★★ Assertion 3 is the one this check exists for and the one no unit test can
+Assertion 3 is the one this check exists for and the one no unit test can
 make: it is a claim about two real files on a real disk, produced by two
 different code paths in `pdfcer-core` — the incremental writer that made the
 fixture and the full writer that made the copy.
 
-## ★★★ The fixture IS the operator-visible problem, built by the CLI
+## The fixture IS the operator-visible problem, built by the CLI
 
 A tidy file compacts to roughly its own size, and the window says so in words
 — *"this file has nothing unused in it"* — which is a correct answer and
@@ -49,14 +49,14 @@ a1-titleblock.pdf                                    39,509 bytes
   unembed-font --all-removable --apply   ->       1,709,629     (fonts removed)
 ```
 
-★★ **Look at the last line.** Removing 1.6 MB of font programs made the file
+**Look at the last line.** Removing 1.6 MB of font programs made the file
 **889 bytes bigger**, because §7.5.6 appends the removal as a new revision
 and leaves the programs in the old one. That is the sentence O48 was written
 about, reproduced in a file, and it is what this check measures the fix
 against: a compacted copy of `reclaimable.pdf` should be tens of kilobytes,
 not 1.7 MB.
 
-★ Built by `pdfcer` rather than by this check, and committed. A check that
+Built by `pdfcer` rather than by this check, and committed. A check that
 manufactured its own multi-megabyte fixture on every run would spend most of
 its wall clock building the thing it measures, and the two CLI calls are a
 provenance line rather than a program.

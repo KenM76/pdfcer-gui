@@ -65,7 +65,7 @@ fn margin(display: f32, viewport: f32) -> f32 {
 /// a page corner at the screen's centre, a whole one puts it at the opposite
 /// corner, and the operator asked for the second.
 ///
-/// ★★★ **A whole viewport is also, exactly, the placement at which the sheet
+/// **A whole viewport is also, exactly, the placement at which the sheet
 /// stops being visible at all** — and that is what O186 turned out to be. The
 /// fraction is NOT reduced to fix it: it is still one viewport, because the
 /// operator's sentence is still the rule. [`MIN_SHEET_ON_SCREEN`] is
@@ -74,7 +74,7 @@ fn margin(display: f32, viewport: f32) -> f32 {
 /// first place. See that constant for the measurement.
 const PASTEBOARD_FRACTION: f32 = 1.0;
 
-/// ★★★ **The band of the strip the pasteboard must always leave on screen**,
+/// **The band of the strip the pasteboard must always leave on screen**,
 /// in logical points, at every zoom and on both axes.
 ///
 /// # The defect this exists for, measured rather than reasoned
@@ -92,14 +92,14 @@ const PASTEBOARD_FRACTION: f32 = 1.0;
 /// next frame     canvas-unavailable reason=nothing-visible
 /// ```
 ///
-/// ★★ **Read `at.y` against the viewport height: they are the same number.**
+/// **Read `at.y` against the viewport height: they are the same number.**
 /// The view is parked at exactly `lo` — one whole pasteboard, which is one
 /// whole viewport, above the strip — so the strip's top edge lands on the
 /// viewport's **bottom** edge and the page occupies zero of the canvas. The
 /// published page rect says so in the other direction: `1324.3` against a
 /// viewport bottom of `1324.0`.
 ///
-/// # ★★★ Three things this measurement overturned, and they matter more than the constant
+/// # Three things this measurement overturned, and they matter more than the constant
 ///
 /// 1. **The reported defect is NOT in the deep tier.** It reproduces at
 ///    2,320 %, and the `f64` hand-over on this sheet is at a zoom of about
@@ -132,7 +132,7 @@ const PASTEBOARD_FRACTION: f32 = 1.0;
 /// width — wide enough to see the sheet's edge and to put a pointer on it,
 /// small enough that it costs 2.8 % of the 1,158 pt freedom measured above.
 ///
-/// ★ It is **not** a tolerance and must not be tuned by widening it when
+/// It is **not** a tolerance and must not be tuned by widening it when
 /// something looks wrong. Any positive value removes the blank frame; this one
 /// is the smallest that is also *usable*, and usable is the requirement.
 ///
@@ -158,7 +158,7 @@ fn sheet_sliver(viewport: f32) -> f32 {
     MIN_SHEET_ON_SCREEN.min(viewport / 2.0)
 }
 
-/// ★★★ **The pasteboard on one axis, in logical points — and it is NOT a
+/// **The pasteboard on one axis, in logical points — and it is NOT a
 /// count of screen pixels.**
 ///
 /// `overhang` is how far the drawn content reaches past the strip on this
@@ -167,7 +167,7 @@ fn sheet_sliver(viewport: f32) -> f32 {
 /// *"nothing hangs over, or nobody has looked"* and gives exactly the original
 /// one-viewport pasteboard.
 ///
-/// # ★★★ Why the overhang term exists, in the operator's own words
+/// # Why the overhang term exists, in the operator's own words
 ///
 /// O23, 2026-08-21: *"objects should still be reachable even if they are off
 /// the page."* Three weeks later, with the reach and the sight both shipped:
@@ -192,7 +192,7 @@ fn sheet_sliver(viewport: f32) -> f32 {
 /// overwhelming majority of documents — nothing off the sheet — are byte for
 /// byte unchanged.
 ///
-/// # ★★ The bound, and why it is tied to the tier boundary rather than picked
+/// # The bound, and why it is tied to the tier boundary rather than picked
 ///
 /// The overhang term is **multiplied by the zoom**, so it grows without limit
 /// where the fixed pasteboard never could. Left unbounded it would push the
@@ -217,7 +217,7 @@ fn pasteboard(viewport: f32, overhang: f32) -> f32 {
     if !(viewport.is_finite() && viewport > 0.0) {
         return 0.0;
     }
-    // ★★★ The sliver is subtracted HERE, from the fraction-based slack only.
+    // The sliver is subtracted HERE, from the fraction-based slack only.
     // The overhang branch below already guarantees its own visibility — it
     // reserves `overhang + viewport / 2`, and `present`'s visibility query
     // expands the viewport by `overhang`, so the content's far scrap lands
@@ -254,7 +254,7 @@ pub fn content_extent(display: f32, viewport: f32, overhang: f32) -> f32 {
 /// How far the **strip's** origin sits from the **content's**: the centring
 /// margin plus the pasteboard.
 ///
-/// ★★ Not the same function as [`margin`], and must not become it. Two
+/// Not the same function as [`margin`], and must not become it. Two
 /// offset spaces exist and only one is padded — the scroll offset egui is
 /// given is measured from the content's origin, the page-local offset the
 /// view stores is measured from the page's. [`strip_offset`] and
@@ -266,7 +266,7 @@ pub fn content_extent(display: f32, viewport: f32, overhang: f32) -> f32 {
 /// functions and are **page-local** — `canvas::mod` converts before building
 /// the `CanvasFrame` — so they keep [`margin`]. Padding them doubles the pad.
 ///
-/// ★ `pub` since O26g, because `canvas::show` must place the strip from it
+/// `pub` since O26g, because `canvas::show` must place the strip from it
 /// **symbolically** rather than by subtracting two large rectangles. See
 /// [`strip_origin_offset`].
 #[must_use]
@@ -278,7 +278,7 @@ pub fn strip_margin(display: f32, viewport: f32, overhang: f32) -> f32 {
 /// axis** — the number `canvas::show` adds to `outer_rect.min` to place the
 /// strip.
 ///
-/// # ★★★ Why this is not `(outer − display) / 2`
+/// # Why this is not `(outer − display) / 2`
 ///
 /// It *is* that, algebraically. Evaluated that way in `f32` it is a
 /// catastrophic cancellation, and at deep zoom in a continuous mode it is the
@@ -292,7 +292,7 @@ pub fn strip_margin(display: f32, viewport: f32, overhang: f32) -> f32 {
 /// rect derived from it, and therefore the zoom anchor's `frac`, the raster
 /// region and the pointer mapping, were all quantised to 32 points.
 ///
-/// ★★ Measured, and the arithmetic predicts the measurement: an anchored zoom
+/// Measured, and the arithmetic predicts the measurement: an anchored zoom
 /// notch slid the view 10 points at 292,415 % (strip 1.3 × 10⁸, step 8) and
 /// 16 points at 1,045,114 % (strip 4.6 × 10⁸, step 32). That is why zooming
 /// deep in a *multi-page* document creeps while the same zoom on a single page
@@ -332,7 +332,7 @@ pub fn strip_origin_offset(display: f32, viewport: f32, avail: f32, overhang: f3
 /// [`strip_to_scroll`], and the one every consumer that thinks in strip
 /// coordinates needs.
 ///
-/// ★★★ Its absence was O23's whole failure, through three attempts. The
+/// Its absence was O23's whole failure, through three attempts. The
 /// canvas builds its visible-region rect from `last_scroll_offset`, which is a
 /// **content-space** offset, and then intersects it with the strip's own
 /// layout. Before the pasteboard those were the same space and the omission
@@ -379,7 +379,7 @@ pub fn strip_to_scroll(in_strip: f32, strip: f32, viewport: f32, overhang: f32) 
 /// means the viewport starts before the strip does, which is what the
 /// pasteboard is for.
 ///
-/// # ★★★ Why this exists: the `f64` tier has no clamp, and `f32` had one for free
+/// # Why this exists: the `f64` tier has no clamp, and `f32` had one for free
 ///
 /// `OPERATOR_REQUESTS.md` **O186**, stage one. Below the deep-position
 /// threshold the reachable range is enforced by nobody in this codebase —
@@ -399,7 +399,7 @@ pub fn strip_to_scroll(in_strip: f32, strip: f32, viewport: f32, overhang: f32) 
 /// the anchor wants       1684.32
 /// ```
 ///
-/// ★★ **Read the last two lines together: the anchor is 0.05 pt past the end
+/// **Read the last two lines together: the anchor is 0.05 pt past the end
 /// of the range the view can place.** Not nonsense, not far out — a hair
 /// beyond, from an unbounded `panned`/`zoomed_about` walk. Multiplied by the
 /// zoom that is 27 screen pixels, which is enough to carry the whole strip off
@@ -409,7 +409,7 @@ pub fn strip_to_scroll(in_strip: f32, strip: f32, viewport: f32, overhang: f32) 
 /// overhang being treated as though it were inside the sheet, not the operator
 /// zooming past an edge.
 ///
-/// # ★★★ Why this is not a new formula, and what measuring the draft one found
+/// # Why this is not a new formula, and what measuring the draft one found
 ///
 /// The range is stated **as [`strip_to_scroll`]'s own clamp, moved into strip
 /// space by subtracting [`strip_margin`]** — the same subtraction
@@ -435,7 +435,7 @@ pub fn strip_to_scroll(in_strip: f32, strip: f32, viewport: f32, overhang: f32) 
 ///   the centring margin. A clamp that is *narrower* than the real one is
 ///   invisible until someone reaches the part of the window it removed.
 ///
-/// ★ Expressed through the existing functions neither can arise: `hi − lo` is
+/// Expressed through the existing functions neither can arise: `hi − lo` is
 /// `content_extent − viewport` **by construction**, which is `2 × pasteboard`
 /// plus a non-negative term, so the interval is never inverted for any input
 /// and its width is the scroll area's own reachable span rather than a
@@ -506,7 +506,7 @@ pub fn anchor_screen_pos(
     )
 }
 
-/// ★★★ **Which page point is in the middle of the view** —
+/// **Which page point is in the middle of the view** —
 /// `OPERATOR_REQUESTS.md` O78.
 ///
 /// The operator: *"when I change the size of the canvas window, whatever area
@@ -526,7 +526,7 @@ pub fn anchor_screen_pos(
 /// let off  = offset_holding_anchor_at(frac, (v.x / 2.0, v.y / 2.0), display, v);
 /// ```
 ///
-/// # ★★★ Why this SUBSUMES a fit's re-placement, which is the whole design
+/// # Why this SUBSUMES a fit's re-placement, which is the whole design
 ///
 /// It is a theorem rather than a hope, and it is pinned by
 /// `centring_agrees_with_the_pinned_fit_answer` in this module's tests.
@@ -617,7 +617,7 @@ pub fn offset_holding_anchor_at(
 // The strip ⟷ page-local bridge  (Phase 4)
 // ---------------------------------------------------------------------------
 //
-// ★ **Why this pair exists, and what it buys.**
+// **Why this pair exists, and what it buys.**
 //
 // Before Phase 4 the scroll area's content was one page, so a scroll offset and
 // a page-relative offset were the same number. Under a continuous mode the
@@ -652,7 +652,7 @@ pub fn offset_holding_anchor_at(
 
 /// **The page-local offset, MEASURED from where the page was actually drawn.**
 ///
-/// # ★★★ Why this exists beside [`page_local_offset`], which computes the same
+/// # Why this exists beside [`page_local_offset`], which computes the same
 /// number
 ///
 /// `page_local_offset` *reconstructs* the offset from the scroll area's own
@@ -664,7 +664,7 @@ pub fn offset_holding_anchor_at(
 /// zero yields "the page is centred in the pasteboard", which is a statement
 /// about a page nobody is looking at.
 ///
-/// ★★★ **That lie was `OPERATOR_REQUESTS.md` O26e.** `CanvasFrame::offset` is
+/// **That lie was `OPERATOR_REQUESTS.md` O26e.** `CanvasFrame::offset` is
 /// the `offset_before` of the next zoom, so every frame spent at deep zoom
 /// recorded a fictitious "before". Nothing went wrong while the tier held —
 /// the deep branch does not consult it — but the moment a zoom-out crossed
@@ -687,7 +687,7 @@ pub fn offset_holding_anchor_at(
 /// this frame really drew. **It cannot disagree with the pixels, because it is
 /// derived from them.**
 ///
-/// ★ It is not an approximation of [`page_local_offset`] and not a second
+/// It is not an approximation of [`page_local_offset`] and not a second
 /// spelling of it: on the shallow tier the two are *algebraically identical*,
 /// which [`tests::measuring_the_offset_from_the_drawn_rect_matches_the_solved_one`]
 /// asserts against the same inputs rather than trusting this paragraph. What
@@ -754,7 +754,7 @@ pub fn offset_from_drawn(
 ///   does not throw them back to the top of the sheet; clamping it is what
 ///   stops "kept" meaning "still looking at pasteboard".
 ///
-/// ★ The clamp collapses to `[0, 0]` whenever the page is no larger than the
+/// The clamp collapses to `[0, 0]` whenever the page is no larger than the
 /// viewport on that axis — the fit-page case, and the landscape-sheet case —
 /// and `0` is centred there, so the two rules agree at the boundary rather
 /// than fighting over it.
@@ -914,7 +914,7 @@ pub fn strip_offset(
 /// - Non-finite inputs yield `offset_before` unchanged: refusing to move is the
 ///   only safe answer, since a NaN offset would blank the canvas.
 ///
-/// # ★ Expressed as "measure, then re-place", and why that is not a
+/// # Expressed as "measure, then re-place", and why that is not a
 /// refactor for its own sake
 ///
 /// The body below is literally *"find where the anchor is on screen
@@ -958,7 +958,7 @@ pub fn zoom_anchor_offset(
     }
 
     let held = anchor_screen_pos(anchor_frac, offset_before, display_before, viewport);
-    // ★★★ RETURNED UNCLAMPED — `OPERATOR_REQUESTS.md` O24e.
+    // RETURNED UNCLAMPED — `OPERATOR_REQUESTS.md` O24e.
     //
     //
     //
@@ -969,7 +969,7 @@ pub fn zoom_anchor_offset(
     // Not "near" by accident: it is the centre, and it is the centre because
     // zero page-local offset means the page sits centred in the pasteboard.
     //
-    // ★ The clamp is not gone, it has moved to the one place that can do it
+    // The clamp is not gone, it has moved to the one place that can do it
     // correctly. [`strip_offset`] already clamps to
     // `content_extent(strip, v) - v` — the true range, pasteboard included —
     // and it is the value actually handed to the `ScrollArea`. That is the
@@ -987,7 +987,7 @@ mod tests;
 
 /// **A PDF-space rectangle as a canvas-space one**, for a `/FitR` destination.
 ///
-/// ★ Both corners go through [`crate::viewer::pdf_space_to_canvas`], the one
+/// Both corners go through [`crate::viewer::pdf_space_to_canvas`], the one
 /// bridge between the two spaces, rather than through a local flip. PDF is
 /// y-up and canvas is y-down, so a hand-rolled conversion mirrors the
 /// rectangle about the page centre when it is wrong — and a mirrored

@@ -17,7 +17,7 @@ The clauses of that ask are split across modules:
 | the limit **binds every later gesture** | [`crate::viewer::zoom_ceiling`]'s fourth parameter |
 | *"the error can still be shown on the bottom bar"* | **here** |
 
-★ Without this module the others produce a `+` button and a Ctrl+wheel that
+Without this module the others produce a `+` button and a Ctrl+wheel that
 stop responding with nothing anywhere saying why — a silently-inert control,
 which is the defect class this shell exists to refuse. A clamp the operator
 cannot account for is worse than the error sentence it replaced, because an

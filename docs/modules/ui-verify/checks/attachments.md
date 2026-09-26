@@ -6,7 +6,7 @@ the real binary, with no native dialog answered by hand.**
 # What this proves
 
 
-# ★★★ Why the round trip rather than "a file was attached"
+# Why the round trip rather than "a file was attached"
 
 Because every step of this feature is **invisible on the page**. An embedded
 file changes no pixel; a screenshot of a document with three attachments and
@@ -23,7 +23,7 @@ Four claims, in order, each of which can be true while the next is false:
 | 3 | **the panel reads it back out of the session** | `attachments-panel count=1` |
 | 4 | **the bytes come back out byte-for-byte** | the saved copy compares equal |
 
-★★ Claim 4 is the one that cannot be faked. A build that stored the path
+Claim 4 is the one that cannot be faked. A build that stored the path
 instead of the bytes, or that wrote a truncated stream, or that saved the
 wrong attachment on a multi-row list, passes 1 to 3 and fails here. It is
 also the only claim in this suite that compares **file contents** rather
@@ -38,7 +38,7 @@ one variable would make exactly this check unwritable — the round trip needs
 to name an input file and an output file in one session — which is why the
 shell declares two rather than reusing `PDFCER_DIAG_SAVE_PATH`.
 
-★ Both are answered by the application, not by synthetic input: a native
+Both are answered by the application, not by synthetic input: a native
 modal is a window this harness cannot reach, and every other picker in this
 suite is answered the same way.
 
@@ -53,7 +53,7 @@ suite is answered the same way.
 | E | compare the saved bytes with the file attached in B | identical |
 | F | click **Remove** | `detach-file …`, then `count=0` |
 
-# ★ Phase A is a precondition, not a formality
+# Phase A is a precondition, not a formality
 
 `count=0` is asserted before anything is attached, so phase C's `count=1`
 cannot be satisfied by a fixture that arrived carrying an attachment — the

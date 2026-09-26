@@ -1,6 +1,6 @@
 # `canvas::selection::annot` — clicking the things pdfcer itself put on the page
 
-## ★ The gap this closes, and how long it was open
+## The gap this closes, and how long it was open
 
 `FEATURES.md` recorded it on 2026-08-17, under the Format contextual tab:
 
@@ -43,7 +43,7 @@ enforces that in one place rather than by convention — see its `annot`
 field. One canvas, one selection; `panels::ObjectTreeUi::focus`' refusal of
 *"a second selection"* stands.
 
-## ★ Why the KIND is in the type
+## Why the KIND is in the type
 
 [`AnnotKind`] distinguishes a **ce dimension** from ordinary markup, and it
 is carried on the target rather than re-derived where it is needed. That is

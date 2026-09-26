@@ -50,7 +50,7 @@ pub enum Refusal {
     /// **The selection is inside a form XObject**, so no page paint-order
     /// verb can address it.
     ///
-    /// ★ Distinct from [`Self::NothingSelected`], and the distinction is the
+    /// Distinct from [`Self::NothingSelected`], and the distinction is the
     /// whole point: something *is* selected, the operator can see its outline,
     /// and answering "nothing selected" would be a flat contradiction of what
     /// is on screen. This is the refusal that has an explanation to give, and
@@ -101,7 +101,7 @@ pub enum Refusal {
     /// driven check that could not tell them apart would be asserting the
     /// wrong cause.
     NoVerbForPart(PartKind),
-    /// ★★★ **The engine would refuse to move this line, and it said so before
+    /// **The engine would refuse to move this line, and it said so before
     /// the operator let go of the mouse.**
     ///
     /// `OPERATOR_REQUESTS.md` O188. Distinct from [`Self::NoVerbForPart`] in
@@ -112,7 +112,7 @@ pub enum Refusal {
     /// and a sentence that got them the wrong way round would send the
     /// operator looking for a setting that does not exist.
     ///
-    /// ★★ **Raised from [`super::eligible`], not from the edit funnel**, which is
+    /// **Raised from [`super::eligible`], not from the edit funnel**, which is
     /// the placement that makes it honest. The engine would refuse this move
     /// too, and would do it after the gesture — so the operator would have
     /// watched an outline slide across the sheet and then snap back. Asking
@@ -137,7 +137,7 @@ pub enum Refusal {
 impl Refusal {
     /// The stable identifier this refusal is **traced** under.
     ///
-    /// # ★★★ Why a token, when `{reason:?}` was already printing something
+    /// # Why a token, when `{reason:?}` was already printing something
     ///
     /// Because `Debug` renders the **source**, not a contract. The trace line
     /// below is grepped by `tools/ui-verify`, and a `{:?}` field moves whenever
@@ -146,13 +146,13 @@ impl Refusal {
     /// on an absence. Two of the eleven variants below already put a `usize`
     /// inside the field.
     ///
-    /// ★★ **The `Debug` rendering is kept, beside this rather than instead of
+    /// **The `Debug` rendering is kept, beside this rather than instead of
     /// it**, in the trace's `detail=` field. [`Self::NotAPath`] and
     /// [`Self::NodeNotFound`] carry the only indication of *which object*, and
     /// dropping it to gain stability would have traded one loss for another.
     /// One field a machine reads, one field a human reads.
     ///
-    /// ★ Kebab-case, one word per concept, on
+    /// Kebab-case, one word per concept, on
     /// [`crate::canvas::pick::PickClass::token`]'s precedent — including the
     /// per-arm `// ui-text-exempt:` comment, which `check-ui-strings.sh`
     /// requires arm by arm rather than once per function.
@@ -177,7 +177,7 @@ impl Refusal {
             Self::NotAPath(_) => "not-a-path",
             // ui-text-exempt: stable diagnostic tokens, never displayed.
             Self::NoPartEntered => "no-part-entered",
-            // ★★★ Split by part kind. **The unit a token names is a
+            // Split by part kind. **The unit a token names is a
             // distinguishable CAUSE, not an enum variant.** Both of these are
             // silent to the operator, so the status bar cannot tell them
             // apart and only the trace can: the text-line case is a selection
@@ -189,7 +189,7 @@ impl Refusal {
             Self::NoVerbForPart(PartKind::TextLine) => "no-verb-for-text-line",
             // ui-text-exempt: stable diagnostic tokens, never displayed.
             Self::NoVerbForPart(PartKind::Subpath) => "no-verb-for-subpath",
-            // ★★★ Split by BLOCK, for the reason the pair above is split by
+            // Split by BLOCK, for the reason the pair above is split by
             // part kind: these are three distinguishable causes wearing one
             // variant, and two of them put different sentences on the status
             // bar. A driven check asserting "the drag was refused" learns
@@ -215,7 +215,7 @@ impl Refusal {
     /// What this refusal owes the operator in words, or `None` if the answer
     /// is silence.
     ///
-    /// # ★★★ Exhaustive on purpose — a `_ => None` would be the defect
+    /// # Exhaustive on purpose — a `_ => None` would be the defect
     ///
     /// Four arms return a sentence and the rest return `None`, and it would be
     /// shorter to write the four and catch the rest with a wildcard. That
@@ -238,7 +238,7 @@ impl Refusal {
     /// stops being read, which would cost the two sentences that matter. The
     /// test is not *is this a refusal* but **can the operator see the cause**.
     ///
-    /// ★★ [`PartKind::Subpath`] is answered explicitly rather than folded in
+    /// [`PartKind::Subpath`] is answered explicitly rather than folded in
     /// with `NoVerbForPart(_)`. `eligible` routes a subpath at the Part rung to
     /// `move_subpath`, so that combination is unreachable today — and an
     /// unreachable arm that is written down is a claim the next reader can
@@ -259,7 +259,7 @@ impl Refusal {
             // Unreachable: `eligible` sends a subpath at the Part rung to
             // `move_subpath`. Named anyway — see the docs above.
             Self::NoVerbForPart(PartKind::Subpath) => None,
-            // ★★★ **The replacement pair, and they say opposite things about
+            // **The replacement pair, and they say opposite things about
             // WHICH line is the problem** — which is exactly why they are two
             // sentences and not one parameterised one. `NoPositionOfItsOwn` is
             // about the line the operator grabbed; `WouldMoveNextRun` is about
@@ -272,7 +272,7 @@ impl Refusal {
             Self::TextRunCannotMove(RunMoveBlock::WouldMoveNextRun) => {
                 Some(CanvasDecline::TextRunWouldDragTheNextLine)
             }
-            // ★ Silence, deliberately. The selection named a run the object
+            // Silence, deliberately. The selection named a run the object
             // does not have — it outlived an edit — and the operator did
             // nothing wrong and has nothing to do differently. Saying so would
             // be the bar narrating this program's own bookkeeping.

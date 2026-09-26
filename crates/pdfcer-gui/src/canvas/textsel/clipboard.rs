@@ -30,7 +30,7 @@ pub enum TextKey {
     Copy,
 }
 
-/// ★ **Whether either text chord was pressed this frame** — the cheap half,
+/// **Whether either text chord was pressed this frame** — the cheap half,
 /// asked before the page's extraction is fetched.
 ///
 /// # The defect this split closes, and it was found by driving the binary
@@ -85,7 +85,7 @@ pub fn pending_key(ui_ctx: &egui::Context) -> Option<TextKey> {
         return None;
     }
     ui_ctx.input(|i| {
-        // ★★★ COPY IS READ AS AN EVENT, NOT AS A KEY, AND THAT DISTINCTION IS
+        // COPY IS READ AS AN EVENT, NOT AS A KEY, AND THAT DISTINCTION IS
         // THE WHOLE OF DEFECT O18.
         //
         //
@@ -105,7 +105,7 @@ pub fn pending_key(ui_ctx: &egui::Context) -> Option<TextKey> {
         if i.events.iter().any(|e| matches!(e, egui::Event::Copy)) {
             return Some(TextKey::Copy);
         }
-        // ★ Ctrl+A is NOT intercepted by winit and does arrive as a key event,
+        // Ctrl+A is NOT intercepted by winit and does arrive as a key event,
         // so it is still read as one. The asymmetry is winit's, not ours, and
         // collapsing the two into one style would break whichever half was
         // made to match the other.
@@ -195,7 +195,7 @@ pub fn copy(ui_ctx: &egui::Context, text: &str, source: &str) {
 mod tests {
     use super::*;
 
-    /// ★ **A frame with no chord costs one input read and nothing else.**
+    /// **A frame with no chord costs one input read and nothing else.**
     ///
     ///
     /// It is asserted at the level of the **predicate** rather than by counting
@@ -215,7 +215,7 @@ mod tests {
         );
     }
 
-    /// ★ **A focused text field keeps Ctrl+A and Ctrl+C** — `DEFECTS.md` D1's
+    /// **A focused text field keeps Ctrl+A and Ctrl+C** — `DEFECTS.md` D1's
     /// guard, at the sharpest instance of it in the product.
     ///
     /// These are the two chords an operator presses *inside* the Find field. A
@@ -309,7 +309,7 @@ mod tests {
             assert_eq!(found, Some(want), "{event:?}");
         }
 
-        // ★ And the regression itself, stated as its own assertion: a bare
+        // And the regression itself, stated as its own assertion: a bare
         // `Ctrl+C` KEY EVENT must no longer be what copy listens for. If a
         // future edit reinstates `key_pressed(Key::C)` this fails, and the
         // failure names the reason rather than leaving somebody to rediscover

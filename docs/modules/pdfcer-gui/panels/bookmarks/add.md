@@ -4,7 +4,7 @@ comes with it
 ## The gap this closes
 
 
-## ★★ The `/Count` trap, and why nothing here diffs a number
+## The `/Count` trap, and why nothing here diffs a number
 
 The engine flagged it as *"not a footnote … the entire difficulty of the
 feature"*, and it is the one thing that would produce a wrong disclosure:
@@ -24,7 +24,7 @@ So a surface reporting *"added N bookmarks"* by diffing the root count
 reports **zero for a correct save**. Nothing here diffs anything: one call
 adds one bookmark, and that is what is said.
 
-## ★ And the collapsed case is DISCLOSED, not merely survived
+## And the collapsed case is DISCLOSED, not merely survived
 
 Getting the count right is the low bar. The operator's actual problem is
 that they will add a bookmark under a collapsed parent, look at the panel,

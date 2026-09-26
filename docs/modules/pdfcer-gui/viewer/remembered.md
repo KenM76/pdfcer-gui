@@ -7,7 +7,7 @@
 One file, `page-display.txt`, holding one line per document. Nothing else
 is stored and nothing else should be.
 
-## ★ Why this is a third file rather than a field in one of the two
+## Why this is a third file rather than a field in one of the two
 
 `PROJECT_PLAN.md`'s brief for this work named the two existing stores and
 asked which fits. Neither does, and both say so themselves:
@@ -46,7 +46,7 @@ reason rather than a restatement:
    format it replaced, and a half-upgraded file would read old paths as
    mode ids.
 
-## ★ Why it lives in `viewer/` rather than beside the other two in `app/`
+## Why it lives in `viewer/` rather than beside the other two in `app/`
 
 Because what it persists is [`PageDisplay`], and the on-disk spelling of
 that enum is [`PageDisplay::id`]. Keeping the reader and the writer beside
@@ -81,7 +81,7 @@ Like `recent.txt`, this is a flat text file rather than RON because
 `egui-shell`, not of `pdfcer-gui`, and `Cargo.toml` is not this work's to
 edit.
 
-## ★ Why there is no in-memory store held on the application
+## Why there is no in-memory store held on the application
 
 Because there is nothing to hold. The file is read **once per document
 open** and written **once per mode change** — two of the rarest events in

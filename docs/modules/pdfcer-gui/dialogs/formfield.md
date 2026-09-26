@@ -11,7 +11,7 @@ after the fact: a form field is invisible on a printed page and swallows
 every keystroke aimed near it, so a mis-drag that left one behind would be
 both hard to notice and annoying to find.
 
-## ★★★ The tooltip field is not a nicety — it is the feature's blocker
+## The tooltip field is not a nicety — it is the feature's blocker
 
 Every one of `pdfcer-core`'s five authoring verbs refuses a spec whose
 tooltip is `TooltipChoice::Undecided`, because an interactive control owes a
@@ -25,7 +25,7 @@ decision the engine accepts and is sometimes right — and a filled one becomes
 `Text`. What the engine will not accept is nobody having been asked, and now
 somebody has.
 
-## ★★ Why one dialog for five kinds, and how it stays legible
+## Why one dialog for five kinds, and how it stays legible
 
 [`crate::canvas::formfield::draft::Draft`]'s header argues the model side:
 the five engine specs share nine fields and differ in one to five, so five

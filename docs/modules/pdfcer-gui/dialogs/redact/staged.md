@@ -2,7 +2,7 @@
 already armed
 
 
-## ★ The seam, argued
+## The seam, argued
 
 [`super`] answers *"what will applying do, and may the operator commit
 it?"*. Every part of it — the measured report, the destination choice, the
@@ -19,7 +19,7 @@ Sharing a file with the transaction would have meant a `match` arm inside
 which is the shape [`super`]'s own §3 warns about in a different context: a
 control whose meaning depends on state somewhere else.
 
-## ★★★ Why it quotes no numbers, which is the decision worth reading
+## Why it quotes no numbers, which is the decision worth reading
 
 The obvious body for this phase is the report the operator agreed to: *"4
 regions across 2 pages will be removed"*. It is not drawn, and the reason is

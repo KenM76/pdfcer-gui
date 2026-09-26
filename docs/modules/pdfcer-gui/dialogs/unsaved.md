@@ -19,7 +19,7 @@ It is the worst defect this project has found: it destroys work, it destroys
 it on the operator's own instruction so it never looks like a crash, and the
 surface **told them it would not happen**.
 
-## ★ Why `save_pending` was not the bug, and must not become the fix
+## Why `save_pending` was not the bug, and must not become the fix
 
 The obvious repair is to make `save_pending` return `edit_epoch != 0`. That
 would be wrong, and `crate::app::lifecycle`'s own header says why in
@@ -40,7 +40,7 @@ So this is a **second** predicate beside the first, not a redefinition of it,
 and the two guards compose: a save in flight declines outright; unsaved edits
 ask. See [`PendingIntent`].
 
-## ★★ The button that is not "Save"
+## The button that is not "Save"
 
 Every three-way close prompt an operator has ever seen offers *Save · Don't
 save · Cancel*, and this one **cannot**, because this build has no Save.

@@ -16,7 +16,7 @@
 //! 4. **Out-of-range clamps; unreadable is reported.** The ruling inherited
 //!    from `printing`, checked at both ends of both numeric keys.
 //!
-//! ★★ **The inner `#![cfg(test)]` is load-bearing and is not a duplicate of
+//! **The inner `#![cfg(test)]` is load-bearing and is not a duplicate of
 //! the outer `#[cfg(test)] mod tests;` in `exporting.rs`.** Without it,
 //! `tools/gates/check-ui-strings.sh` walks this file as ordinary source and
 //! reports every assertion message as a user-visible string that should live
@@ -32,7 +32,7 @@ use super::*;
 
 /// Every [`ImageFormat`], written out here rather than taken from the type.
 ///
-/// ★ Deliberately **not** `ImageFormat::ALL`. A round-trip test that draws its
+/// Deliberately **not** `ImageFormat::ALL`. A round-trip test that draws its
 /// input from the same accessor the production code uses proves the two agree
 /// with each other; it does not prove either agrees with the file format. This
 /// list is the test's own statement of what the file must carry, so a variant
@@ -65,7 +65,7 @@ const DXF_TEXTS: [DxfText; 2] = [DxfText::Entities, DxfText::Omit];
 // 1. The defaults
 // ---------------------------------------------------------------------------
 
-/// ★ The Export-image window opens exactly as it did before O196.
+/// The Export-image window opens exactly as it did before O196.
 #[test]
 fn the_image_default_is_what_the_dialog_used_to_hard_code() {
     let prefs = ExportImagePrefs::default();
@@ -77,7 +77,7 @@ fn the_image_default_is_what_the_dialog_used_to_hard_code() {
     assert!(!prefs.keep_text);
 }
 
-/// ★ The Export-text window opens exactly as it did before O196.
+/// The Export-text window opens exactly as it did before O196.
 ///
 /// The `AllPages` line is the one worth looking at: it disagrees with the image
 /// window's `CurrentPage` on purpose, and that disagreement is why the two
@@ -91,7 +91,7 @@ fn the_text_default_is_what_the_dialog_used_to_hard_code() {
     assert!(!prefs.byte_order_mark);
 }
 
-/// ★ The Export-to-DXF window opens exactly as it did before O196.
+/// The Export-to-DXF window opens exactly as it did before O196.
 #[test]
 fn the_dxf_default_is_what_the_dialog_used_to_hard_code() {
     let prefs = ExportDxfPrefs::default();
@@ -100,7 +100,7 @@ fn the_dxf_default_is_what_the_dialog_used_to_hard_code() {
     assert_eq!(prefs.text, DxfText::Entities);
 }
 
-/// ★★ Our DXF defaults are still the engine's.
+/// Our DXF defaults are still the engine's.
 ///
 /// [`ExportDxfPrefs::default`] writes literals rather than delegating to
 /// `DxfOptions::default()`, so that an engine change to a default cannot alter
@@ -200,7 +200,7 @@ fn every_token_round_trips_and_is_distinct_within_its_enum() {
     }
 }
 
-/// ★★ [`PageScope::Typed`] has no token, and degrades to the caller's own
+/// [`PageScope::Typed`] has no token, and degrades to the caller's own
 /// default rather than to a third behaviour.
 ///
 /// The failure this prevents is specific and invisible from the code: a window
@@ -270,7 +270,7 @@ fn fields_of(source: &str, decl: &str) -> Vec<String> {
         .collect()
 }
 
-/// ★★★ Every field of all three groups is both written to the file and read
+/// Every field of all three groups is both written to the file and read
 /// back out of it.
 ///
 /// # Why a source-text check rather than a value round trip
@@ -315,7 +315,7 @@ fn every_field_of_every_group_is_both_written_and_parsed() {
 
     for (decl, group, expected) in groups {
         let fields = fields_of(&own, decl);
-        // ★ A FLOOR, not an equality, and the difference is which failure
+        // A FLOOR, not an equality, and the difference is which failure
         // each one reports. A field ADDED to the struct must be reported by
         // the loop below, as "nothing writes it" — which is the true
         // finding. An equality here would intercept it first and report
@@ -352,7 +352,7 @@ fn every_field_of_every_group_is_both_written_and_parsed() {
     }
 }
 
-/// ★★★ **Every remembered field is actually read back into its window.**
+/// **Every remembered field is actually read back into its window.**
 ///
 /// The half of O196 that no compiler and no other test in this file can see,
 /// and the half most likely to rot. Ported from `super::super::printing`'s
@@ -465,7 +465,7 @@ fn every_remembered_field_is_read_back_by_its_dialog() {
     }
 }
 
-/// ★★ The two number boxes in the Export-image window name these constants
+/// The two number boxes in the Export-image window name these constants
 /// rather than repeating their numbers.
 ///
 /// # The rule this makes structural
@@ -580,7 +580,7 @@ fn parse_block(text: &str, into: &mut ExportPrefs) -> usize {
     accepted
 }
 
-/// ★★ Every remembered value survives a trip through the file.
+/// Every remembered value survives a trip through the file.
 #[test]
 fn every_export_preference_round_trips_through_the_file() {
     let written = everything_changed();
@@ -638,7 +638,7 @@ fn the_defaults_are_written_too_so_the_file_teaches_its_own_vocabulary() {
     }
 }
 
-/// ★ A number outside the control's own range is pulled back to the nearest
+/// A number outside the control's own range is pulled back to the nearest
 /// end; a value that is not a number is reported.
 #[test]
 fn out_of_range_numbers_clamp_and_unreadable_ones_are_reported() {
@@ -674,7 +674,7 @@ fn out_of_range_numbers_clamp_and_unreadable_ones_are_reported() {
     );
     assert_eq!(prefs.image.quality, MIN_JPEG_QUALITY);
 
-    // ★ Unreadable is a BadValue, and the field keeps whatever it had —
+    // Unreadable is a BadValue, and the field keeps whatever it had —
     // per-key recovery, as everywhere else in this file format.
     let before = prefs.image.dpi;
     assert_eq!(
@@ -684,7 +684,7 @@ fn out_of_range_numbers_clamp_and_unreadable_ones_are_reported() {
     assert!((prefs.image.dpi - before).abs() < f32::EPSILON);
 }
 
-/// ★★ `inf` and `NaN` parse as `f32` and neither is a resolution.
+/// `inf` and `NaN` parse as `f32` and neither is a resolution.
 ///
 /// This is the arm most likely to be written as a bare `.parse().ok()`, and a
 /// NaN is the worse of the two: it survives `clamp` unchanged, so it would be
@@ -721,7 +721,7 @@ fn a_key_from_another_group_is_not_mine() {
     assert_eq!(prefs, ExportPrefs::default());
 }
 
-/// ★ A resolution survives the file exactly, at every value the control can
+/// A resolution survives the file exactly, at every value the control can
 /// reach in one drag.
 ///
 /// `f32::to_string` is shortest-round-trip, which is why the file can hold a

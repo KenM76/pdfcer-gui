@@ -15,7 +15,7 @@ Click, drag, grips and Delete all reached a form field by 2026-08-28. The
 view menu, and a `/Widget` is neither — it is not in `SelectionState` at all
 — so right-clicking a text box offered *"zoom to fit width"*.
 
-## ★★★ Why this check is the FIRST of its kind, which is the finding
+## Why this check is the FIRST of its kind, which is the finding
 
 **This harness had driven 92 checks and had never once opened a context
 menu.** pdfcer has had canvas right-click menus since Phase 1. Everything
@@ -28,10 +28,10 @@ gesture R1 cannot reach, and **the gap left no failing test behind to
 advertise itself**. It surfaced only because a fourth menu was added and
 somebody went looking for the driver to exercise it with.
 
-★ The same shape as `DEFECTS.md`'s two headline bugs: invisible to a green
+The same shape as `DEFECTS.md`'s two headline bugs: invisible to a green
 suite, obvious within thirty seconds of using the program.
 
-## ★★ The oracle is `canvas-menu context=…`, and it is not a screenshot
+## The oracle is `canvas-menu context=…`, and it is not a screenshot
 
 An `egui` popup is positioned by the pointer and sized by its content, so a
 harness that clicked *"the second row"* would be encoding a layout, and
@@ -41,7 +41,7 @@ The application publishes which menu it resolved. That line is the fact
 under test — *did a right-click on a field produce the FIELD menu* — with no
 coordinate in it to go stale.
 
-## ★★★ What would be missed without the second assertion
+## What would be missed without the second assertion
 
 `canvas-menu-invoked` is written only when the resolved menu **has something
 to offer**, and for ten minutes this feature's menu had nothing: both its
@@ -61,7 +61,7 @@ shape reached through a new door, and it is why both lines are asserted.
 | C | **right-click it** | `canvas-menu context=canvas.field` |
 | D | …and the menu had something in it | a `menu.item.canvas.field.*` region per row, inside `menu.body.canvas.field` |
 
-★★★ **D's oracle was `canvas-menu-invoked` and that was a misreading**, kept
+**D's oracle was `canvas-menu-invoked` and that was a misreading**, kept
 here because the misreading is instructive. `MenuHost::attach_with` returns
 *"the commands the operator CHOSE"*, and the line is written only when that
 vector is non-empty — so it reports an ACTIVATION, not an offer, and a check
@@ -70,6 +70,6 @@ published rects are the offer, they name which commands were drawn, and they
 exist for the same reason this check does: `MenuHost::attach_with` began
 reporting them on 2026-08-28 precisely so a harness could see a menu.
 
-★ Steps A and B are `widget_move`'s, identical in shape including the
+Steps A and B are `widget_move`'s, identical in shape including the
 Escape — see that file for why the placement tool staying armed is recorded
 there as a defect rather than as scenery.

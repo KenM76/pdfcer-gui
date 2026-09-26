@@ -20,7 +20,7 @@ pub const REGION_REMOVE: &str = "unembed.commit";
 pub struct UnembedDialog {
     /// What the engine says would happen, computed once when the window opens.
     ///
-    /// ★ Once, not per frame, for [`crate::dialogs::embed`]'s reason applied to
+    /// Once, not per frame, for [`crate::dialogs::embed`]'s reason applied to
     /// a cheaper computation: `unembed_preview` walks every font-bearing
     /// surface in the document to build an inventory, and nothing it reads can
     /// change while this window is open.
@@ -29,13 +29,13 @@ pub struct UnembedDialog {
     request: pdfcer_core::font_unembed::UnembedRequest,
     /// The blocked rows worth drawing, by index into `plan.blocked`.
     ///
-    /// ★★ NOT the whole list, and the filter is the opposite of the embed
+    /// NOT the whole list, and the filter is the opposite of the embed
     /// window's. Under `AllRemovable` the engine reports *"every other font in
     /// the document, including the ones that are simply not embedded"* — and
     /// says outright that a shorter list *"is not actionable, which is the
     /// divergence from Acrobat this whole feature is built around"*.
     ///
-    /// ★ So the full list is the engine's deliberate position and this filter
+    /// So the full list is the engine's deliberate position and this filter
     /// removes exactly one class from it: a font with **no embedded program at
     /// all**, which is not a refusal in this window's terms — there was nothing
     /// to remove. Every real refusal is drawn.
@@ -50,7 +50,7 @@ impl UnembedDialog {
     /// Build the plan and open, or answer `None` when there is nothing to show.
     #[must_use]
     pub fn open(doc: &OpenDoc) -> Option<Self> {
-        // ★ `all_removable`, with the default subset-tag policy of `Strip`. A
+        // `all_removable`, with the default subset-tag policy of `Strip`. A
         // §9.6.4 tag asserts *"this file holds part of that face"*, and once
         // the program is gone that assertion is false — so stripping it is the
         // correct default rather than a convenience, and `keeping_subset_tag`
@@ -74,7 +74,7 @@ impl UnembedDialog {
         if plan.targets.is_empty() && shown.is_empty() {
             return None;
         }
-        // ★★★ The window's own plan counts, traced when it opens.
+        // The window's own plan counts, traced when it opens.
         //
         // Not decoration. A window with `targets=0` draws a greyed button and a
         // list of refusals, which is CORRECT for a document whose embedded
@@ -140,7 +140,7 @@ impl UnembedDialog {
         ui.label(t::intro());
         ui.add_space(8.0);
 
-        // ★★★ The two document-level warnings FIRST, above the list, and both
+        // The two document-level warnings FIRST, above the list, and both
         // are conditional. They are the only sentences here about the file as a
         // whole rather than about one font, and an operator scanning twenty
         // rows should meet them before the rows rather than under them.
@@ -185,7 +185,7 @@ impl UnembedDialog {
             });
 
         ui.add_space(8.0);
-        // ★★★ The size note, LAST and outside the scroll area, so it cannot be
+        // The size note, LAST and outside the scroll area, so it cannot be
         // scrolled past. It is the sentence that contradicts the operator's own
         // reason for opening this window, and it is the one the engine's docs
         // say must never be omitted.

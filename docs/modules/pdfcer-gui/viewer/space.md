@@ -21,7 +21,7 @@ formula anywhere else is a second thing to keep in sync with the renderer.
   [`canvas_to_pdf_space`] and [`pdf_space_to_canvas`] cross between canvas
   and user space.
 
-## ★★ Why the second bridge inverts the renderer instead of deriving
+## Why the second bridge inverts the renderer instead of deriving
 
 The canvas⟷user pair reuses — and inverts — the **same** device transform
 `pdfcer_render::page_device_geometry` computes to rasterize the page, so

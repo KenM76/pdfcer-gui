@@ -10,7 +10,7 @@ takes it back.**
 > they want, but it is easy to accidentally press escape and lose a lot of
 > text that has been entered."*
 
-# ★★★ Why this is a correctness rule and not a preference
+# Why this is a correctness rule and not a preference
 
 The operator's sentence carries its own argument, and it is about
 **asymmetric cost**. A draft written by mistake is one `Ctrl+Z`. A draft
@@ -24,7 +24,7 @@ ruling is not *"Escape commits"*; it is *"Escape commits **and** the commit
 is recoverable"*, and a build that did the first without the second would
 have replaced an unrecoverable loss with an unrecoverable gain.
 
-# ★★ The oracle the wrong build cannot produce
+# The oracle the wrong build cannot produce
 
 `canvas-escape outcome=SettledTextDraft` says the Escape ladder reached the
 text-draft rung. It does **not** say the text landed: the rung could fire

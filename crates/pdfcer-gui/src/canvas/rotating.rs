@@ -61,7 +61,7 @@ const MIN_TRAVEL_DEGREES: f32 = 0.1;
 /// `centre`, and the pointer's *distance* from it is discarded — see the module
 /// header for why that is the whole shape of the gesture rather than a detail.
 ///
-/// # ★ Screen space in, screen space out, and the sign survives the hop
+/// # Screen space in, screen space out, and the sign survives the hop
 ///
 /// `centre`, `from` and `at` are all screen positions, where y runs **down**.
 /// `atan2` therefore answers a bearing in a left-handed frame, so a clockwise
@@ -85,7 +85,7 @@ pub fn angle(centre: Pos2, from: Pos2, at: Pos2, constrain: bool) -> Option<f32>
         return None;
     }
     let delta = b.y.atan2(b.x) - a.y.atan2(a.x);
-    // ★ Normalised into (-π, π] so a drag that crosses the ray behind the
+    // Normalised into (-π, π] so a drag that crosses the ray behind the
     // centre turns the short way rather than jumping a full turn. Without it a
     // pointer moving smoothly through 180° makes the object spin the other way
     // round in one frame — a real defect in every naive implementation of this
@@ -113,7 +113,7 @@ pub fn normalise(mut radians: f32) -> f32 {
 
 /// Round a radian angle to the nearest [`STEP_DEGREES`].
 ///
-/// ★ It snaps the **total turn**, not the increment. Accumulating snapped
+/// It snaps the **total turn**, not the increment. Accumulating snapped
 /// increments would let a slow drag through 90° arrive at 87°, because each
 /// frame's small delta rounds to zero — the classic error, and the reason this
 /// takes the whole angle rather than a per-frame one.
@@ -131,7 +131,7 @@ pub fn is_travel(radians: f32) -> bool {
 
 /// Rotate a screen point about a screen centre, for the ghost.
 ///
-/// ★ The ghost is drawn from **this** function and the commit from
+/// The ghost is drawn from **this** function and the commit from
 /// `Matrix::rotate(θ).about(centre)`, which are the same map in two spaces —
 /// and that is the one duplication in this module. It is not avoidable: the
 /// preview must be drawn in screen space before the page conversion, and the
@@ -155,7 +155,7 @@ pub fn rotate_about(centre: Pos2, p: Pos2, radians: f32) -> Pos2 {
 /// Returns `Some(radians)` only when a ghost should be drawn — which, by this
 /// project's honesty contract, is exactly when a release would commit.
 ///
-/// # ★★ The negation, and it happens exactly once
+/// # The negation, and it happens exactly once
 ///
 /// [`angle`] measures in **screen** space, where y runs down, so a clockwise
 /// drag comes back positive. `Matrix::rotate` turns anticlockwise in PDF user
@@ -186,7 +186,7 @@ pub fn drag(
         dimension,
     } = frame;
     let bounds = bounds?;
-    // ★ The pivot is the CENTRE, taken from `Grip::pivot` rather than from
+    // The pivot is the CENTRE, taken from `Grip::pivot` rather than from
     // `bounds.center()` here. Same number today; one statement of "what does a
     // rotate turn about", so the ghost, the commit and any future third reader
     // cannot drift.
@@ -215,7 +215,7 @@ pub fn drag(
     // order, through the same two functions — screen → canvas → PDF user space.
     let pdf = crate::viewer::canvas_to_pdf_space(map.to_page(centre), page)?;
     let pivot = pdfcer_core::vector::Point::new(f64::from(pdf.x), f64::from(pdf.y));
-    // ★★★ AN ANNOTATION TAKES A DIFFERENT VERB, and the branch is here — after
+    // AN ANNOTATION TAKES A DIFFERENT VERB, and the branch is here — after
     // the angle and the pivot, before the content action.
     //
     // The same seam `canvas::resizing` cuts, in the same place, for the same
@@ -225,7 +225,7 @@ pub fn drag(
     // and the screen→page conversion are one gesture whatever is under it. What
     // differs is which verb the angle is handed to.
     //
-    // ★★ And the operand shape is the SAME for all three — pivot plus a scalar
+    // And the operand shape is the SAME for all three — pivot plus a scalar
     // angle — because the engine chose it that way deliberately: *"the same
     // anchor+factors shape as move and resize, so your grip code needs no third
     // convention."* This branch is therefore a **routing decision** rather than
@@ -251,7 +251,7 @@ pub fn drag(
     // this project's founding defect shape, D4a, reproduced inside the module
     // written to close it.
     //
-    // ## ★★★ THIS IS THE SIXTH INSTANCE OF ONE HAZARD IN THIS CANVAS
+    // ## THIS IS THE SIXTH INSTANCE OF ONE HAZARD IN THIS CANVAS
     //
     //
     // > **A guard that must agree with another module has to CALL it, not
@@ -268,7 +268,7 @@ pub fn drag(
     // for the **content** verb, which the annotation branch returns before ever
     // reaching.
     //
-    // ## ★★ And it now SPEAKS, which the old guard did not
+    // ## And it now SPEAKS, which the old guard did not
     //
     // A leaf-only selection is the reachable case: `object_indices_on` keeps
     // entries with a `page_object_index` and drops the ones with only a
@@ -283,12 +283,12 @@ pub fn drag(
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             //
-            // ★ It carries the page, because the guard is per-page: a selection
+            // It carries the page, because the guard is per-page: a selection
             // made on another sheet is the commonest way to arrive here with a
             // non-empty selection and no operand.
             format!("rotate-declined reason=nothing-selected page={page_index}")
         });
-        // ★ Epoch zero, for `resizing::decline`'s stated reason: a refusal
+        // Epoch zero, for `resizing::decline`'s stated reason: a refusal
         // changed nothing, so there is no edit for it to be about, and it must
         // retire on the operator's NEXT act rather than on the document's next
         // edit.
@@ -303,7 +303,7 @@ pub fn drag(
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
-        // ★ It carries the ANGLE IN DEGREES and the pivot, which is what a
+        // It carries the ANGLE IN DEGREES and the pivot, which is what a
         // wrong build gets wrong: one that turned the other way, one that
         // pivoted about a corner instead of the centre, and one that snapped
         // when it should not are all `rotate-commit` otherwise.
@@ -320,7 +320,7 @@ pub fn drag(
         crate::app::actions::VectorAction::TransformObjects {
             page: page_index,
             objects,
-            // ★★ NEGATED here, and nowhere else. See this function's header.
+            // NEGATED here, and nowhere else. See this function's header.
             matrix: pdfcer_core::vector::Matrix::rotate(f64::from(-theta)).about(pivot),
         }
         .into(),
@@ -357,7 +357,7 @@ pub struct Frame<'a> {
     /// **The selected ce dimension's sidecar record id**, when the selection is
     /// one.
     ///
-    /// ★★★ Carried rather than looked up, exactly as
+    /// Carried rather than looked up, exactly as
     /// [`crate::canvas::resizing::Frame::selected_field`] is, and for a
     /// stronger version of that field's reason.
     ///
@@ -369,7 +369,7 @@ pub struct Frame<'a> {
     /// it is a pure function of its [`Frame`], which is what lets the whole
     /// gesture be unit-tested without a window or a document.
     ///
-    /// ★★ Resolving it in the **gesture** rather than in the apply arm is also
+    /// Resolving it in the **gesture** rather than in the apply arm is also
     /// what lets a rotation with no record behind it **decline in words**. An
     /// action raised with no operand would reach the engine, be refused, and —
     /// on the generic arm — say nothing at all. See [`drag`]'s commit path.
@@ -381,13 +381,13 @@ pub struct Frame<'a> {
 
 /// **Raise the right rotation verb for a selected annotation.**
 ///
-/// ★★★ The routing, in one `match` the compiler checks — which is the whole
+/// The routing, in one `match` the compiler checks — which is the whole
 /// reason `canvas::selection::annot::AnnotKind` is an enum rather than an
 /// `is_ce_dimension: bool` on the target. Its header states the rule this
 /// function is the newest instance of: *"a bool is a fact a caller may forget
 /// to read, while a variant is one the compiler makes them handle."*
 ///
-/// # ★★★ The two verbs are NOT interchangeable, and the engine refuses to let
+/// # The two verbs are NOT interchangeable, and the engine refuses to let
 /// them be
 ///
 /// `rotate_annotation` returns `AnnotationMoveWrongVerb` for a ce dimension and
@@ -405,7 +405,7 @@ pub struct Frame<'a> {
 /// forces. The refusal stays as the backstop; this is what stops it being
 /// reached.
 ///
-/// # ★★ A widget cannot arrive here at all, and that is the R9 answer
+/// # A widget cannot arrive here at all, and that is the R9 answer
 ///
 /// `rotate_annotation` also refuses a **widget** by name — a widget's rotation
 /// is `/MK /R` (§12.5.6.19 Table 189), a quantised 0/90/180/270 *declaration*
@@ -426,13 +426,13 @@ fn commit_annotation(
     theta: f32,
     actions: &mut Vec<crate::app::actions::Action>,
 ) {
-    // ★★ NEGATED here, on the same line of reasoning as the content commit
+    // NEGATED here, on the same line of reasoning as the content commit
     // below and at the same point in the flow: `angle` measures in SCREEN
     // space, where y runs down, and `rotate_annotation` takes degrees
     // ANTICLOCKWISE in PDF user space, where y runs up. One negation, at the
     // one crossing. See this module's header.
     //
-    // ★ Degrees rather than radians, because that is what both verbs take —
+    // Degrees rather than radians, because that is what both verbs take —
     // and unlike the content path, which builds a `Matrix::rotate(radians)`,
     // there is no matrix here to hide the unit in. The conversion is explicit
     // so a reader can check it against the trace, which also reports degrees.
@@ -442,7 +442,7 @@ fn commit_annotation(
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 //
-                // ★ It carries the ANGLE and the PIVOT — what a wrong build
+                // It carries the ANGLE and the PIVOT — what a wrong build
                 // gets wrong. A build that turned the other way, or pivoted
                 // about a corner instead of the centre, is `rotate-annot-commit`
                 // otherwise, and both are perfectly good rotations that look
@@ -461,18 +461,18 @@ fn commit_annotation(
             ));
         }
         crate::canvas::selection::AnnotKind::CeDimension => {
-            // ★★★ **A REFUSAL MUST BE A SENTENCE, NEVER A SILENCE.**
+            // **A REFUSAL MUST BE A SENTENCE, NEVER A SILENCE.**
             //
             // Without this arm a dimension whose sidecar record could not be
             // resolved would produce the exact defect this project was started
             // to remove: the operator drags the handle, watches the ghost turn,
             // lets go, and the dimension snaps back with nothing said anywhere.
             //
-            // ★ It is a refusal the SHELL can answer — a query, not something
+            // It is a refusal the SHELL can answer — a query, not something
             // only the engine knows — so it is worded here rather than from the
             // apply phase.
             //
-            // ★★★ **Through `record_note`, not through
+            // **Through `record_note`, not through
             // `app::status::decline`,** and the difference is a module boundary
             // that is deliberate rather than incidental. `app::status::decline`
             // is `pub(super)` inside `crate::app`, with its own argument
@@ -487,14 +487,14 @@ fn commit_annotation(
             // `app::actions::annots`, inside the boundary. One sentence
             // catalog, `crate::text::rotating`, serves both.
             //
-            // ★ **Epoch zero**, exactly as `resizing::decline` uses and for its
+            // **Epoch zero**, exactly as `resizing::decline` uses and for its
             // stated reason: a refusal changed nothing, so there is no edit for
             // it to be about, and `record_note` keys on the epoch so a
             // disclosure retires when the document moves past it. Passing the
             // live epoch would leave this sentence on screen through every
             // subsequent edit.
             //
-            // ★★ Unreachable while `pressing::grabbable` holds:
+            // Unreachable while `pressing::grabbable` holds:
             // `dimdrag::grab_box` answers `Some` only for a dimension
             // `dimdrag::selected` resolved, which is where this id comes from.
             // It is worded anyway, for `crate::text::rotating::RotateRefusal`'s
@@ -519,7 +519,7 @@ fn commit_annotation(
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 //
-                // ★ It carries BOTH ids. A wrong build here is one that
+                // It carries BOTH ids. A wrong build here is one that
                 // resolved the reverse lookup to a different record — a
                 // perfectly good rotation of the wrong dimension — and the two
                 // numbers side by side are the only place that is visible.
@@ -548,7 +548,7 @@ mod tests {
         d.to_radians()
     }
 
-    /// ★ **A quarter turn clockwise on screen reads as +90°.**
+    /// **A quarter turn clockwise on screen reads as +90°.**
     ///
     /// The base case, and the one whose sign is easy to get backwards: screen y
     /// is DOWN, so a pointer moving from due-east to due-south of the centre has
@@ -563,7 +563,7 @@ mod tests {
         assert!((got - deg(90.0)).abs() < 1e-4, "got {}", got.to_degrees());
     }
 
-    /// ★★ **The pointer's DISTANCE from the centre changes nothing.**
+    /// **The pointer's DISTANCE from the centre changes nothing.**
     ///
     /// The property that separates this gesture from a resize, asserted rather
     /// than assumed: an operator swinging a long arc for precision is doing what
@@ -577,7 +577,7 @@ mod tests {
         assert!((near - far).abs() < 1e-4, "{near} vs {far}");
     }
 
-    /// ★★ **A drag past 180° turns the SHORT way rather than spinning back.**
+    /// **A drag past 180° turns the SHORT way rather than spinning back.**
     ///
     /// Without the normalisation a pointer moving smoothly through the ray
     /// behind the centre makes the object jump a full turn in one frame. It
@@ -603,7 +603,7 @@ mod tests {
         }
     }
 
-    /// ★ **The TOTAL turn snaps, not each increment.**
+    /// **The TOTAL turn snaps, not each increment.**
     ///
     /// Accumulating snapped increments lets a slow drag through 90° arrive at
     /// 87°, because each frame's small delta rounds to zero. Asserted as the
@@ -636,7 +636,7 @@ mod tests {
         assert!(angle(c, Pos2::new(60.0, 50.0), c, false).is_none());
     }
 
-    /// ★ **The ghost's rotation agrees with the angle that produced it.**
+    /// **The ghost's rotation agrees with the angle that produced it.**
     ///
     /// `rotate_about` is the one duplication in this module — the ghost is drawn
     /// from it and the commit from `Matrix::rotate`. This pins the half that can

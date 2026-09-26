@@ -15,13 +15,13 @@ rule this module exists to reverse:
 > *"a preview shows the cursor, the render shows the document."*
 
 That was a defensible position while the alternative looked like a second
-rendering path. ★★★ **It is overruled by operator ruling, by name, against a
+rendering path. **It is overruled by operator ruling, by name, against a
 named comparison** — Inkscape shows the line bend while you drag its end, and
 so must this. Recorded as *reversed* rather than quietly contradicted,
 because the sentence is repeated across several modules and the next session
 would otherwise re-derive it and delete this file.
 
-## ★★ Why this is cheap, when the rest of O63 is not
+## Why this is cheap, when the rest of O63 is not
 
 The measurement that framed O63 says a **rasterised** preview is impossible:
 on the operator's CAD drawing a *two-pixel* render costs 691 ms, because ~99 %
@@ -49,7 +49,7 @@ This draws a shape that has not been applied yet, in the selection stroke, and
 it disappears the moment the real one is rendered. Nothing already in the
 document is marked, tinted, badged or outlined because of it.
 
-★ And it is **derived from the commit**, which is this canvas's standing
+And it is **derived from the commit**, which is this canvas's standing
 convention D2: the transform painted here is the *same* transform the release
 hands to `EditSession`, so the operator cannot be shown one shape and given
 another.

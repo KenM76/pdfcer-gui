@@ -135,7 +135,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- B: the menu drew rows ---------------------------------------------
     //
-    // ★ Asserted before the icons, and separately, because the two failures
+    // Asserted before the icons, and separately, because the two failures
     // have nothing to do with each other: no rows means the menu declined to
     // open (the empty-menu rule, `plan::offers_anything`), which is a
     // conditions problem; rows with no icon slots is the painter problem this
@@ -162,13 +162,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- C: ...and at least one of them was handed to a painter ------------
     //
-    // ★★★ THE ASSERTION. `menu.icon.<context>.<id>` is published only from
+    // THE ASSERTION. `menu.icon.<context>.<id>` is published only from
     // inside the branch that calls the application's icon painter — never for a
     // blank slot, never when no painter was supplied — so its presence is the
     // one fact a driven check can establish about this surface and its absence
     // is the defect.
     //
-    // ★ Admissible as evidence because phase B proved rows were laid out on
+    // Admissible as evidence because phase B proved rows were laid out on
     // this very frame: the absence below can only mean "rows drew and none was
     // given a glyph", never "no menu opened".
     let slots = declared_names(&trace, ui_rect, &format!("menu.icon.{context}."));

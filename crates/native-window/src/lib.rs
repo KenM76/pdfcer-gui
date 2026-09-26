@@ -13,7 +13,7 @@
 //! must be OWNED by the window it belongs to.** [`cursor_position`] and
 //! [`clipboard`] carry their own arguments where they are declared.
 //!
-//! ## ★★★ Why ownership, and why it is not cosmetic
+//! ## Why ownership, and why it is not cosmetic
 //!
 //! `ui-conventions/dialogs.md` G3 states the rule, and its absence costs two
 //! different things:
@@ -35,7 +35,7 @@
 //!    The operator's version: *drag out a note box, type without clicking the
 //!    field first, and the words go nowhere.*
 //!
-//! ★ **Asking again does not work.** Half a second of
+//! **Asking again does not work.** Half a second of
 //! `ViewportCommand::Focus`, one per pass, straight through the moment of the
 //! loss, and the root still takes the foreground back. Windows refuses the
 //! foreground to a process that does not already hold it, silently, which is
@@ -47,7 +47,7 @@
 //! that can be declined. It is the mechanism every native dialog on this
 //! machine already uses, which is why none of them has this problem.
 //!
-//! ## ★ Why `eframe` cannot express it, and why this is not a workaround
+//! ## Why `eframe` cannot express it, and why this is not a workaround
 //!
 //! Not one of `ViewportBuilder`'s options in `egui 0.35` is an owner, and
 //! `egui-winit` never passes down the parent relationship egui itself
@@ -60,7 +60,7 @@
 //! the application asked the platform to call the window, so it is the one name
 //! both sides already agree on.
 //!
-//! ★★ **The process check is not optional.** `FindWindowExW` searches every
+//! **The process check is not optional.** `FindWindowExW` searches every
 //! window on the desktop, so a title match alone could name another
 //! application's window — and `SetWindowLongPtrW` on somebody else's window is
 //! a real thing to do to somebody else's program. Every function here confirms

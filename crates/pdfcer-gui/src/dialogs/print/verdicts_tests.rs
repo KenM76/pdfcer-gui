@@ -4,7 +4,7 @@
 //! ## What is proved here, and why none of it needs a window
 //!
 //!
-//! ★ **Every failure mode here is silent.** A cache key that never matches
+//! **Every failure mode here is silent.** A cache key that never matches
 //! produces the *old* count, which is the correct answer to a different
 //! question and looks exactly like the feature working on a job where nothing
 //! is blank. A cache key that matches too readily produces a smaller count,
@@ -39,7 +39,7 @@ fn placed(clipped: bool) -> Placement {
 /// A job whose sheets are the given `(document page, clipped)` pairs, in send
 /// order.
 ///
-/// ★ The page indices are deliberately not `0, 1, 2`. `PagePlan::index` names
+/// The page indices are deliberately not `0, 1, 2`. `PagePlan::index` names
 /// a **document** page and the plan list is the job's *sequence*; a cache that
 /// confused the two would pass every test built on a whole-document forward
 /// job and fail on the first custom range an operator typed.
@@ -105,7 +105,7 @@ fn examine(
 // The arithmetic
 // ===========================================================================
 
-/// ★★★ **Printing without ever opening the preview reports the geometric
+/// **Printing without ever opening the preview reports the geometric
 /// count, in the geometric words.** The ruling this feature degrades to.
 ///
 /// Every clipped sheet is unexamined, nothing is subtracted, and the claim is
@@ -137,7 +137,7 @@ fn a_job_nobody_has_previewed_reports_the_plain_geometric_count() {
     );
 }
 
-/// ★★★ **The operator's own case: one sheet, blank overhang, no warning at
+/// **The operator's own case: one sheet, blank overhang, no warning at
 /// all.** Operator request O113.
 ///
 /// A 1:1 CAD drawing whose overhang is empty paper. The placement reports a
@@ -166,7 +166,7 @@ fn a_single_sheet_examined_and_found_blank_removes_the_warning_entirely() {
     );
 }
 
-/// ★★ **Blank, inked and unexamined together — the mixed case the whole
+/// **Blank, inked and unexamined together — the mixed case the whole
 /// design is for.**
 ///
 /// Five sheets clipped: one examined and blank, one examined and inked, three
@@ -196,7 +196,7 @@ fn blank_inked_and_unexamined_sheets_produce_a_ceiling() {
     );
 }
 
-/// ★★ **Examine every clipped sheet and the count becomes exact.**
+/// **Examine every clipped sheet and the count becomes exact.**
 ///
 /// Three clipped, two found blank, one found inked. Nothing is left
 /// unresolved, so the number is not a bound — it is the number of sheets that
@@ -224,7 +224,7 @@ fn examining_every_clipped_sheet_makes_the_count_a_measurement() {
     assert!(label.contains("lose content"), "{label}");
 }
 
-/// ★★ **"We could not look" is not "we looked and it was fine".**
+/// **"We could not look" is not "we looked and it was fine".**
 ///
 /// [`Overhang::Unknown`] is what `preview::lost_regions` returns when the page
 /// would not render and the whole band was hatched as the honest fallback. It
@@ -247,7 +247,7 @@ fn a_sheet_that_would_not_render_stays_counted() {
     );
 }
 
-/// ★ **A second copy of the same sheet inherits the verdict, and that is
+/// **A second copy of the same sheet inherits the verdict, and that is
 /// derivation rather than invention.**
 ///
 /// An uncollated two-copy job sends the same document page twice. The two
@@ -274,7 +274,7 @@ fn both_copies_of_one_examined_sheet_are_subtracted() {
 // The key — every one of these is a verdict that must NOT survive
 // ===========================================================================
 
-/// ★★★ **A rendering setting changes ⇒ every verdict is void.**
+/// **A rendering setting changes ⇒ every verdict is void.**
 ///
 /// The verdict is a claim about pixels, and this is the field that decides
 /// them. `PreviewKey` carries the whole `Settings` for the reason its own docs
@@ -293,7 +293,7 @@ fn a_verdict_does_not_survive_a_change_of_rendering_settings() {
 
     let mut moved = pdfcer_core::settings::Settings::default();
     moved.cmyk_intent = pdfcer_core::settings::CmykIntent::NeutralBlack;
-    // ★ The perturbation has to LAND. One that happened to equal the default
+    // The perturbation has to LAND. One that happened to equal the default
     // would make this test pass by never testing anything, which reads
     // exactly like a cache key that works.
     assert_ne!(
@@ -315,7 +315,7 @@ fn a_verdict_does_not_survive_a_change_of_rendering_settings() {
     );
 }
 
-/// ★★ **The annotation scope changes ⇒ every verdict is void.**
+/// **The annotation scope changes ⇒ every verdict is void.**
 ///
 /// Turning markup on can put a comment out in the border — which is the
 /// difference between a blank overhang and a lost annotation, and is exactly
@@ -341,7 +341,7 @@ fn a_verdict_does_not_survive_a_change_of_annotation_scope() {
     );
 }
 
-/// ★★ **The printable rectangle changes ⇒ every verdict is void.**
+/// **The printable rectangle changes ⇒ every verdict is void.**
 ///
 /// A different printer, a different paper, or an orientation that re-plans the
 /// geometry moves the boundary the band is measured from. Same pixels,
@@ -367,7 +367,7 @@ fn a_verdict_does_not_survive_a_change_of_printable_area() {
     );
 }
 
-/// ★★★ **The placement changes ⇒ that sheet's verdict is void**, and this is
+/// **The placement changes ⇒ that sheet's verdict is void**, and this is
 /// the one the texture's own key would have missed.
 ///
 /// `PreviewKey` deliberately omits the placement: it scales the drawn
@@ -402,7 +402,7 @@ fn a_verdict_does_not_survive_a_change_of_placement() {
     );
 }
 
-/// ★★ **The page's own size changes ⇒ that sheet's verdict is void.**
+/// **The page's own size changes ⇒ that sheet's verdict is void.**
 ///
 /// The band is computed as a fraction of the page, so the same placement over
 /// a page of a different size is a different band. This is the safe direction
@@ -433,7 +433,7 @@ fn a_verdict_does_not_survive_the_page_being_resized() {
     );
 }
 
-/// ★ **A verdict is remembered for the page it names, not for a position in
+/// **A verdict is remembered for the page it names, not for a position in
 /// the plan list.**
 ///
 /// The job here sends document page 7 first. If the cache filed the verdict
@@ -474,7 +474,7 @@ fn a_plan_naming_a_missing_page_records_nothing_rather_than_panicking() {
 // The decision table itself
 // ===========================================================================
 
-/// ★★ **Every arm of the claim decision, stated as a table.**
+/// **Every arm of the claim decision, stated as a table.**
 ///
 /// The bucket counts go in and the claim comes out, with no `Job` in the way.
 /// This is the one place the *rule* is asserted rather than an instance of it,
@@ -503,7 +503,7 @@ fn the_claim_decision_table_holds_in_every_arm() {
     }
 }
 
-/// ★★★ **The count is a CEILING on what will be lost, and never a claim that
+/// **The count is a CEILING on what will be lost, and never a claim that
 /// something is safe.**
 ///
 /// The property, over the whole decision table rather than over one instance:
@@ -544,7 +544,7 @@ fn the_count_is_never_below_what_is_known_lost_nor_above_the_geometric_count() {
 /// The four claim states put four different things on the button, and the
 /// trace word separates them from outside the process.
 ///
-/// ★ The trace is the only headless evidence of which state a frame was in:
+/// The trace is the only headless evidence of which state a frame was in:
 /// `Geometric(2)` and `AtMost(2)` are the same number and a different truth,
 /// and a driven check reading only the count could not tell a working
 /// correction from a cache that silently never matched.

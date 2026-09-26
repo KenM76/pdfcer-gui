@@ -1,14 +1,14 @@
 # `app::dispatch::routes` — the commands that perform nothing and point
 somewhere else
 
-## ★★★ The seam, and it is a subject rather than a size
+## The seam, and it is a subject rather than a size
 
 Every arm here raises `Action::Command(other_id)` and does nothing else:
 
 > `Action::Command` exists so a second route to an existing command cannot
 > become a second implementation of it.
 
-★ It is **not** every such arm in the shell. `format.properties` has the
+It is **not** every such arm in the shell. `format.properties` has the
 same shape and stays in [`super::format`], because an id must have exactly
 one claimant and moving it would have given it two. This file claims the
 shape, not a monopoly on it.

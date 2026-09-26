@@ -145,7 +145,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     report.artifact(session.trace_path().to_path_buf());
     session.settle(40);
-    // ★★ MAXIMISE — at the harness's default 1,100 pt window the File tab's
+    // MAXIMISE — at the harness's default 1,100 pt window the File tab's
     // last two groups fold away entirely and a check reports a lost command.
     // `about.rs` holds the measurement; four checks now share it.
     session.maximize();
@@ -199,7 +199,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     drop(session);
 
-    // --- 2: ★★ the control, with the panel OPEN ----------------------------
+    // --- 2: the control, with the panel OPEN ----------------------------
     //
     // Stronger than an absence read off a closed panel: `properties.info` is
     // declared, so the panel is provably up, and the stamp section is still not
@@ -276,7 +276,7 @@ fn ui_rect_event(ctx: &CheckContext) -> Result<&'static str> {
 
 /// This module's fixtures, resolved by [`crate::checks::driving::repo_fixture`].
 ///
-/// ★ See that function for why the path is compile-time resolved. The sentence
+/// See that function for why the path is compile-time resolved. The sentence
 /// kept here is the one about this check's own method.
 fn repo_fixture(name: &str) -> Result<PathBuf> {
     crate::checks::driving::repo_fixture(
@@ -289,7 +289,7 @@ fn repo_fixture(name: &str) -> Result<PathBuf> {
 
 /// **Launch on a document this check names, with whatever extra seams it needs.**
 ///
-/// ★ Takes a `&Path` rather than a fixture name because the author half's third
+/// Takes a `&Path` rather than a fixture name because the author half's third
 /// launch opens a file that did not exist when the check started — the
 /// collection pdfcer itself just wrote, under `--out`. A helper that could only
 /// open things in `fixtures/` would have made the round trip unwritable, and the
@@ -325,7 +325,7 @@ fn launch(ctx: &CheckContext, exe: &Path, fixture: &str, trace_name: &str) -> Re
 
 /// Bring the Document properties panel to the front, if it is not already.
 ///
-/// ★ Reuses `properties_metadata`'s opener rather than spelling the two clicks
+/// Reuses `properties_metadata`'s opener rather than spelling the two clicks
 /// again. It is the same ribbon item and the same toggle hazard — pressing
 /// `file.document_properties` while the panel is up CLOSES it — and two copies
 /// of that guard would be two places for the next ribbon move to be applied.
@@ -342,7 +342,7 @@ fn open_properties(session: &Session, driver: &Driver, ui_rect: &str) -> Result<
 
 /// **An ordinary document becomes a stamp collection Acrobat will accept.**
 ///
-/// # ★★★ The method: the reader is the oracle for the writer
+/// # The method: the reader is the oracle for the writer
 ///
 /// This check writes a collection and then **reopens it in pdfcer**, asserting
 /// that Document properties discloses it as a collection with one row per page.
@@ -374,7 +374,7 @@ fn open_properties(session: &Session, driver: &Driver, ui_rect: &str) -> Result<
 /// `/Names` → `/Pages` tree, which is the only thing Acrobat looks at. The
 /// round trip asks the question Acrobat asks.
 ///
-/// # ★★ What the same fixture proves twice
+/// # What the same fixture proves twice
 ///
 /// The source document is `four-pages.pdf`, which is also the *control* in the
 /// read half — the file whose whole job there is to be provably **not** a
@@ -441,7 +441,7 @@ fn drive_author(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
         ));
     }
 
-    // ★★ Cleared before the run, not merely named. A collection left behind by
+    // Cleared before the run, not merely named. A collection left behind by
     // an earlier run would let a build that writes NOTHING satisfy every
     // assertion from `target.exists()` onward — including the round trip, which
     // would cheerfully reopen last week's file and report four stamps. That is
@@ -536,7 +536,7 @@ fn drive_author(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
         }));
     }
 
-    // --- 3: ★ what the window READ from the document ------------------------
+    // --- 3: what the window READ from the document ------------------------
     //
     // The plan is one row per page, every row included, so `pages=` is also the
     // stamp count that must survive to disk. Asserted here rather than only at
@@ -615,7 +615,7 @@ fn drive_author(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
             requested.raw
         )));
     }
-    // ★ `category=` is Debug-formatted, so it arrives quoted; `TraceLine::get`
+    // `category=` is Debug-formatted, so it arrives quoted; `TraceLine::get`
     // strips the quotes. Its VALUE is not asserted — the seeding chain prefers
     // the document's own `/Title` over the file stem, and pinning one of those
     // here would make this check fail the day the fixture gains a title, which
@@ -706,7 +706,7 @@ fn drive_author(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
     report.note(format!("{} bytes on disk, beginning %PDF", bytes.len()));
     drop(session);
 
-    // --- 7: ★★★ THE ROUND TRIP ----------------------------------------------
+    // --- 7: THE ROUND TRIP ----------------------------------------------
     //
     // Reopen what pdfcer wrote, with the reader the header argues is an
     // independent oracle, and require it to disclose a collection of exactly

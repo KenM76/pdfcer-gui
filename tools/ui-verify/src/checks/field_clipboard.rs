@@ -45,7 +45,7 @@ const PLACE_AT: (f64, f64) = (0.30, 0.45);
 
 /// The paste order a run is driving, and the chord it expects for each sense.
 ///
-/// ★★ Carried rather than assumed, because the whole subject of the second
+/// Carried rather than assumed, because the whole subject of the second
 /// check is that the SAME keystroke means the OTHER thing. A check that hard-
 /// coded `Ctrl+V` -> new field could only ever test one of the two orders, and
 /// would pass against a build whose setting did nothing at all.
@@ -107,7 +107,7 @@ impl Order {
 /// See the module documentation.
 pub struct AFormFieldCanBeCopiedAndPastedBothWays;
 
-/// ★★★ The same three chords under the **Acrobat** paste order — O58.
+/// The same three chords under the **Acrobat** paste order — O58.
 ///
 /// Ken, 2026-08-29: *"let's make it an option to have it swap to match Acrobat
 /// or work the way we have it now."*
@@ -128,7 +128,7 @@ pub struct AFormFieldCanBeCopiedAndPastedBothWays;
 /// rewrites the map, and the keystroke can still reach the old command if any
 /// link between them is missed.
 ///
-/// ★ The assertion is deliberately the MIRROR of the first check's, not a copy
+/// The assertion is deliberately the MIRROR of the first check's, not a copy
 /// of it: under this order `Ctrl+V` must add a **box without a name** and
 /// `Ctrl+Shift+V` must add a **name**. A build that ignored the setting would
 /// pass the first check and fail this one on its first assertion.
@@ -201,7 +201,7 @@ fn boxes(trace: &Trace) -> Vec<(usize, String, (f64, f64))> {
 
 /// How many DISTINCT field names have a box on page 0.
 ///
-/// ★ Distinct **names**, not lines. The census is re-emitted every frame it
+/// Distinct **names**, not lines. The census is re-emitted every frame it
 /// changes, so counting lines counts repaints. And it is names rather than
 /// boxes because a paste-as-new must raise the count and this is the number
 /// that says so unambiguously.
@@ -215,7 +215,7 @@ fn field_names(trace: &Trace) -> std::collections::BTreeSet<String> {
 
 /// The DISTINCT boxes on page 0 — a set of `(field, centre)`, not a line count.
 ///
-/// ★★★ **The first version of this function counted trace lines and it was
+/// **The first version of this function counted trace lines and it was
 /// wrong, and it was wrong in the direction that still passes.** The census is
 /// re-emitted on every frame it changes, so the cumulative line count went
 /// 1 → 3 → 6 across the two pastes: 1, then 1+2, then 3+3. Both assertions held
@@ -292,7 +292,7 @@ fn drive_order(
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.env
         .push((ACCEPT_ENV.0.to_owned(), ACCEPT_ENV.1.to_owned()));
-    // ★ The paste order for this run. Absent means the operator's own setting,
+    // The paste order for this run. Absent means the operator's own setting,
     // which on a clean checkout is pdfcer's order — see `PasteChords::from_environment`
     // for why this seam exists rather than a check writing his preferences file.
     if let Some(value) = order.env {
@@ -336,7 +336,7 @@ fn drive_order(
 
     // --- B: disarm, clear, select ------------------------------------------
     //
-    // ★ Escape first, or the next click places a SECOND field rather than
+    // Escape first, or the next click places a SECOND field rather than
     // selecting one — the tool stays armed after a placement, as a markup pen
     // does. `field_menu`'s phase B carries the full argument for all three
     // steps and this is the same sequence, deliberately.
@@ -445,7 +445,7 @@ fn drive_order(
             session.trace_path().display()
         )));
     }
-    // ★★ AND THE ENGINE ANSWERED. `fieldclip-paste` says the shell RAISED a
+    // AND THE ENGINE ANSWERED. `fieldclip-paste` says the shell RAISED a
     // paste; this says `EditSession::paste_field` returned `Ok`. The two are one
     // action-queue drain apart, and that gap is exactly where a missing arm
     // hides — a build whose `FieldAction::Paste` was never applied emits the
@@ -472,10 +472,10 @@ fn drive_order(
             session.trace_path().display()
         )));
     }
-    // ★★★ WHAT it was called, not just that there is one more.
+    // WHAT it was called, not just that there is one more.
     //
     //
-    // ★ The assertion is on the SHAPE rather than the literal: it forbids the
+    // The assertion is on the SHAPE rather than the literal: it forbids the
     // two spellings that are wrong for a stated reason — a space (which breaks
     // the scripting rationale the convention exists for) and a dot (which is
     // the fully-qualified-name separator, so `Text.2` is a CHILD field, a
@@ -504,7 +504,7 @@ fn drive_order(
 
     // --- E: Ctrl+Shift+V — paste as a DUPLICATE -----------------------------
     //
-    // ★ Against the clipboard written in step C, not against anything step D
+    // Against the clipboard written in step C, not against anything step D
     // left behind. An operator copies once and pastes several times, and a
     // clipboard that emptied itself on paste would break that.
     let boxes_before_dup = distinct_boxes(&after_new).len();
@@ -533,7 +533,7 @@ fn drive_order(
             session.trace_path().display()
         )));
     }
-    // ★★★ TWO applied lines now, not one. Counting them rather than asking
+    // TWO applied lines now, not one. Counting them rather than asking
     // "is there one" is what separates "the duplicate was applied" from "the
     // first paste's line is still in the trace" — the same class of mistake the
     // box oracle made earlier today when it counted repaints.

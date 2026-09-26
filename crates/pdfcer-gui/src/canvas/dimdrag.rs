@@ -27,7 +27,7 @@
 //!   an abandoned drag leaves the document untouched by construction.
 //! - D4 one-undo-entry: `place_dimension`, `move_dimension_vertex`,
 //!   `insert_dimension_vertex` and `remove_dimension_vertex` are each one
-//!   engine command, so one gesture is one Ctrl+Z. ★ For the three vertex
+//!   engine command, so one gesture is one Ctrl+Z. For the three vertex
 //!   verbs that is not an accident of granularity — they share one body,
 //!   `EditSession::apply_vertex_edit`, which plans the edit, rewrites the
 //!   record, regenerates the annotation **and its baked `/AP`**, rewrites the
@@ -168,7 +168,7 @@ pub fn grab_box(doc: &OpenDoc, map: &PageMapping, selection: &SelectionState) ->
 /// rather than approximated.
 #[must_use]
 pub fn placed(kind: &DimensionKind, dx: f64, dy: f64) -> Option<(DimensionKind, f64, f64)> {
-    // ★★ A PERIMETER'S PLACEMENT IS IN PAGE AXES, AND THAT IS WHY IT NEEDS NO
+    // A PERIMETER'S PLACEMENT IS IN PAGE AXES, AND THAT IS WHY IT NEEDS NO
     // PROJECTION.
     //
     // A linear dimension's `offset` and `text_along` are measured along its own
@@ -186,7 +186,7 @@ pub fn placed(kind: &DimensionKind, dx: f64, dy: f64) -> Option<(DimensionKind, 
     // "away from the thing" and for a perimeter that direction is page +y by
     // definition rather than by derivation.
     //
-    // ★ It is strictly MORE expressive than the linear case: a linear label
+    // It is strictly MORE expressive than the linear case: a linear label
     // dragged diagonally is flattened onto its axis, and this one lands where
     // the operator dropped it. That is not an inconsistency to fix — it is the
     // difference between a label that belongs to a line and one that belongs to
@@ -359,7 +359,7 @@ pub fn vertices(doc: &OpenDoc, selection: &SelectionState) -> Vec<egui::Pos2> {
 
 /// **Which vertex a press at `screen` landed on**, if any.
 ///
-/// # ★ The comparison is in SCREEN space, and that is the whole of why this
+/// # The comparison is in SCREEN space, and that is the whole of why this
 /// function converts rather than the caller
 ///
 /// A handle is a screen-space affordance of a fixed size. Comparing in canvas
@@ -396,7 +396,7 @@ pub fn vertex_at(
 /// Returns the page-space segments the shape would be drawn as if the operator
 /// released now, or `None` when the drag reaches no verb.
 ///
-/// # ★★ This one RE-MEASURES, and that is the difference from every other
+/// # This one RE-MEASURES, and that is the difference from every other
 /// gesture in this module
 ///
 /// [`drag`] writes `offset` and `text_along` — two fields the value function
@@ -480,7 +480,7 @@ pub struct VertexFrame<'a> {
 /// see [`intent`] for the decision and the module header for why it is read
 /// live rather than sampled at the press.
 ///
-/// ★ Three variants rather than a `bool` pair, for [`DimensionPress`]'s own
+/// Three variants rather than a `bool` pair, for [`DimensionPress`]'s own
 /// reason one module over: the three reach **three different engine verbs**,
 /// and the one thing that must never happen on this canvas is a gesture aimed
 /// at the wrong verb. A pair of booleans has a fourth state that means nothing
@@ -503,7 +503,7 @@ pub enum VertexIntent {
 /// **What this frame's corner drag means**, from the armed tool and the live
 /// modifiers.
 ///
-/// # ★★ The Points tool is a gate and not a shortcut
+/// # The Points tool is a gate and not a shortcut
 ///
 /// With any other tool armed this returns [`VertexIntent::Move`] whatever is
 /// held, so a Ctrl that the operator was using for something else — subtracting
@@ -535,7 +535,7 @@ pub fn intent(ctx: &egui::Context) -> VertexIntent {
 
 /// What one frame of a vertex drag produced.
 ///
-/// ★ Two fields rather than one, because the preview and the snap indicator are
+/// Two fields rather than one, because the preview and the snap indicator are
 /// different pictures with different lifetimes: the polyline is drawn in page
 /// space through the dimension painter, and the marker is a screen-space glyph
 /// at the candidate. Folding them would make the caller unpack a tuple whose
@@ -547,7 +547,7 @@ pub struct VertexDrag {
     pub segments: Option<Vec<(Point, Point)>>,
     /// What the corner is snapping to, if anything.
     ///
-    /// ★ `drag-moves` D6: *"a snap is an inference. It is announced by an
+    /// `drag-moves` D6: *"a snap is an inference. It is announced by an
     /// indicator at the target while the drag is live — never applied
     /// silently."* This is what the painter draws that indicator from, and it
     /// is the **same candidate** the release commits — one derivation, which is
@@ -586,12 +586,12 @@ fn inner(
     // does the identical job correctly in one hop, eleven lines long, in the
     // module next door.
     //
-    // ★ This is the second instance in this codebase and both were written by
+    // This is the second instance in this codebase and both were written by
     // somebody who had read the first one's post-mortem. `egui::Pos2` is screen,
     // canvas AND page space, so the compiler cannot object. The durable fix is
     // typed coordinates, not care — see `drag-moves` D1a.
     //
-    // ★★ And the GRAB POINT is preserved (D8): the vertex moves by the
+    // And the GRAB POINT is preserved (D8): the vertex moves by the
     // pointer's DELTA, not to the pointer's position. Assigning the pointer
     // straight to the vertex teleports the corner under the cursor on the first
     // frame, so an operator who grabbed a handle three pixels off centre sees
@@ -608,7 +608,7 @@ fn inner(
     #[allow(clippy::cast_lossless)]
     let free = Point::new(f64::from(new.x), f64::from(new.y));
 
-    // ★★ THE SNAP, and it deliberately OVERRIDES the grab point.
+    // THE SNAP, and it deliberately OVERRIDES the grab point.
     //
     // D8 (the grab point is preserved) and D6 (snapping) pull in opposite
     // directions here, and every program in the class resolves it the same way:
@@ -621,7 +621,7 @@ fn inner(
     // is computed from the delta above; it is only the final placement that
     // yields.
     //
-    // ★ The same query, the same tolerance and the same operator settings the
+    // The same query, the same tolerance and the same operator settings the
     // measure tools use. See `measure::snap_point` for why that is one function
     // and not two.
     let (target, snap) =
@@ -656,7 +656,7 @@ fn inner(
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             //
-            // ★ `snap=` carries the candidate KIND, not a boolean. A wrong
+            // `snap=` carries the candidate KIND, not a boolean. A wrong
             // build that snapped to the nearest thing of any sort still reports
             // `snap=1`; one that reports `snap=Endpoint` when the operator was
             // over a midpoint is telling a driven check something a bool
@@ -750,7 +750,7 @@ fn preview_of(points: &[Point], closed: bool) -> Vec<(Point, Point)> {
 
 /// Which of the shell's three sentences an engine refusal is.
 ///
-/// ★ The mapping lives here rather than in `crate::text::measure` for
+/// The mapping lives here rather than in `crate::text::measure` for
 /// `app::actions::annots::refusal_for`'s reason, which is this project's
 /// standing division: the engine's error enum is a *shell* concern, and the
 /// catalog holds operator prose only. A `crate::text::` module that matched on
@@ -777,7 +777,7 @@ fn refusal_for(error: &pdfcer_core::edit::EditError) -> crate::text::measure::Ve
 
 /// Advance one frame of an **add-a-corner** or **remove-a-corner** drag.
 ///
-/// # ★★★ The preflight is asked FIRST, and the preview is derived from its
+/// # The preflight is asked FIRST, and the preview is derived from its
 /// answer
 ///
 /// `vertex_edit_preview` shares one body with the mutating verb
@@ -790,7 +790,7 @@ fn refusal_for(error: &pdfcer_core::edit::EditError) -> crate::text::measure::Ve
 /// worst reading of a gesture, because it looks like it worked until the next
 /// frame repaints.
 ///
-/// ★ It costs one `read_dimension_model` per frame of a count-editing drag.
+/// It costs one `read_dimension_model` per frame of a count-editing drag.
 /// That is a sidecar read on a gesture that lasts a second or two and is
 /// deliberate: the alternative is a second copy of the minimum-count rule in
 /// this shell, which is the *"two things that must agree and eventually will
@@ -837,7 +837,7 @@ fn count_edit(edit: CountEdit<'_>) -> Option<VertexDrag> {
                     id.0
                 )
             });
-            // ★ Handed INWARD as an action rather than recorded here: the
+            // Handed INWARD as an action rather than recorded here: the
             // decline store is `pub(super)` inside `crate::app` and the canvas
             // is outside that boundary. See `DimensionAction::DeclineVertexEdit`
             // for the argument, and for why this is not `record_note`.
@@ -860,7 +860,7 @@ fn count_edit(edit: CountEdit<'_>) -> Option<VertexDrag> {
 
     let mut shape: Vec<Point> = points.to_vec();
     match intent {
-        // ★ `index + 1`, and `index + 1 == len` is an APPEND rather than a
+        // `index + 1`, and `index + 1 == len` is an APPEND rather than a
         // panic — which is the case the engine went out of its way to make
         // meaningful: on a closed perimeter `after == len - 1` names the
         // closing segment back to corner 0, and on an open path it extends the
@@ -877,7 +877,7 @@ fn count_edit(edit: CountEdit<'_>) -> Option<VertexDrag> {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             //
-            // ★ `corners=` carries the count AFTER the edit, which is the one
+            // `corners=` carries the count AFTER the edit, which is the one
             // number a wrong build gets wrong: an insert that landed on the
             // wrong segment, a remove that took the neighbour, and a working
             // gesture all move the shape. Only the count and the index
@@ -934,7 +934,7 @@ fn count_edit(edit: CountEdit<'_>) -> Option<VertexDrag> {
 /// the entire footprint. Hit-testing that box meant the operator could not
 /// select the drawing underneath their own dimensions.
 ///
-/// ★ The segments come from `measure::pick::dimension_preview_segments` — **the
+/// The segments come from `measure::pick::dimension_preview_segments` — **the
 /// same function the dimension is previewed and drawn from**. That is this
 /// module's standing rule applied to hit testing: what is clickable and what is
 /// visible are one derivation, so they cannot drift apart. A second "where is

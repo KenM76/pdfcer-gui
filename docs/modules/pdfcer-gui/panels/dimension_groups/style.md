@@ -12,7 +12,7 @@ The **middle tier** of `pdfcer-core`'s three-tier style cascade
 Two of the seven — `tolerance` and `tolerance_places` — are not drawn here
 and the reason is at [`show`].
 
-## ★ The count beside every control, and why it is not the engine's
+## The count beside every control, and why it is not the engine's
 
 The operator's own words, quoted in
 `docs/ui_specs/tool-options-dock-and-ce-dimension-properties.md` §C.11.1:
@@ -33,7 +33,7 @@ edit. [`will_move`] is that computation, and it is called every frame for
 every drawn property so the sentence under a control is always about the
 model as it stands.
 
-## ★ `Factory` counts as following the group, and this is the easy thing to
+## `Factory` counts as following the group, and this is the easy thing to
 get wrong
 
 `StyleSource::follows_group()` is `true` for **both** `Factory` and

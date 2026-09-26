@@ -160,7 +160,7 @@ pub enum TabIntent {
     /// it; a strip whose order is fixed is the one thing about a tab strip an
     /// operator notices as missing.
     ///
-    /// # ★ `gap` is a BOUNDARY, not a destination index
+    /// # `gap` is a BOUNDARY, not a destination index
     ///
     /// `0` is before the first tab and `len` is after the last, which is the
     /// same vocabulary an insertion caret is drawn in and the same one a page
@@ -195,7 +195,7 @@ pub struct TabStrip {
     pub hovered: Option<usize>,
     /// Every tab that was actually drawn, with the rectangle it was drawn in.
     ///
-    /// ★ Published rather than left to be derived. A harness that computes a
+    /// Published rather than left to be derived. A harness that computes a
     /// tab's position from an index and a width can be wrong in the same
     /// direction as the code under test — `D:\dev\rag\egui\a_ui_rect_change_log_produces_confident_wrong_failures_in_BOTH_directions.md`
     /// and the *"do not compute a coordinate the application could publish"*
@@ -208,7 +208,7 @@ pub struct TabStrip {
     /// **Each drawn tab's own `Response`**, handed out so the caller can attach
     /// a context menu to it.
     ///
-    /// ★ Handed out rather than used here, and that is a hard constraint rather
+    /// Handed out rather than used here, and that is a hard constraint rather
     /// than a preference. A `Response` carries exactly **one** popup id
     /// (`response.id.with("popup")`), so a widget can host exactly one context
     /// menu: if this module attached its own, an application could never add
@@ -303,7 +303,7 @@ pub fn strip(ui: &mut egui::Ui, theme: &Theme, tabs: &[TabItem], active: usize) 
         x += width + plan::TAB_GAP;
     }
 
-    // ★★ **Which tab the pointer is over, resolved GEOMETRICALLY.**
+    // **Which tab the pointer is over, resolved GEOMETRICALLY.**
     //
     // NOT from `Response::hovered()`, and the difference is the whole
     // spring-loading feature.
@@ -421,7 +421,7 @@ fn settle_reorder(ui: &mut egui::Ui, theme: &Theme, strip_rect: Rect, out: &mut 
     );
     ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
 
-    // ★ The release is read from RAW POINTER INPUT, not from the tab's own
+    // The release is read from RAW POINTER INPUT, not from the tab's own
     // `Response`.
     //
     // A drag begun on a tab may end anywhere — past the last tab, over the
@@ -459,7 +459,7 @@ fn draw_tab(
     rect: Rect,
     out: &mut TabStrip,
 ) {
-    // ★ The close control is laid out FIRST and the label takes what is left.
+    // The close control is laid out FIRST and the label takes what is left.
     //
     // The other order is the obvious one and it is wrong: a label allowed to
     // claim the whole tab pushes the ✕ out of the rect on exactly the tabs
@@ -467,7 +467,7 @@ fn draw_tab(
     // open. Reserving the control and truncating the label is the same
     // discipline the overflow affordance gets one level up, applied inside the
     // tab.
-    // ★★★ THE SELECTED TAB'S PLATE, PAINTED ACROSS THE WHOLE RECT AND BEFORE
+    // THE SELECTED TAB'S PLATE, PAINTED ACROSS THE WHOLE RECT AND BEFORE
     // IT IS SPLIT. Two contrast failures meet here and one paint closes both.
     //
     // (1) The label button below is `.selected(selected)` with no `.fill()`,
@@ -491,7 +491,7 @@ fn draw_tab(
     // for. The ✕'s own colour choice below then becomes correct rather than
     // being worked around, which is why it is left untouched.
     //
-    // ★ Before the split, deliberately: after it there are two rects, and the
+    // Before the split, deliberately: after it there are two rects, and the
     // one the ✕ sits in is drawn frameless, so a plate painted per-rect would
     // miss precisely the control that needs it most.
     if selected {
@@ -515,7 +515,7 @@ fn draw_tab(
     // R84 — a selected tab is never distinguished by colour alone, because
     // colour-fill-only selection is a recurring blind spot.
     //
-    // ★ `.strong()` is **not** the second cue: in `egui` 0.35 it resolves to a
+    // `.strong()` is **not** the second cue: in `egui` 0.35 it resolves to a
     // colour and not to a heavier face, so it sharpens the label against the
     // plate rather than adding a cue that survives greyscale. It is safe here
     // only because the colour is stated on the next line instead of inherited
@@ -543,7 +543,7 @@ fn draw_tab(
                         .min_size(label_rect.size())
                         .truncate()
                         .selected(selected)
-                        // ★ States the fill, so `egui` cannot substitute the
+                        // States the fill, so `egui` cannot substitute the
                         // canvas tint OVER the plate painted above. Without
                         // this the wash composites on `accent` and the label's
                         // background becomes a third value again — see the
@@ -553,7 +553,7 @@ fn draw_tab(
                         } else {
                             ui.visuals().widgets.inactive.weak_bg_fill
                         })
-                        // ★ `click_and_drag`, so the tab can be **reordered**.
+                        // `click_and_drag`, so the tab can be **reordered**.
                         //
                         // A `Button` senses clicks only, and adding the drag
                         // does not cost the click: `egui` still reports
@@ -572,7 +572,7 @@ fn draw_tab(
     if response.clicked() {
         out.intents.push(TabIntent::Activate(index));
     }
-    // ★ `drag_started_by(Primary)`, not `drag_started()`. `egui`'s plain
+    // `drag_started_by(Primary)`, not `drag_started()`. `egui`'s plain
     // predicate is button-agnostic, so a middle-press that wandered a few
     // pixels before releasing would start a reorder the operator meant as a
     // close — and a right-press one they meant as a context menu.
@@ -596,7 +596,7 @@ fn draw_tab(
     response.widget_info(|| {
         egui::WidgetInfo::selected(egui::WidgetType::SelectableLabel, true, selected, &tooltip)
     });
-    // ★ Handed out for the caller's context menu, AFTER the accessible name is
+    // Handed out for the caller's context menu, AFTER the accessible name is
     // published and before anything else can claim the response's one popup id.
     // See [`TabStrip::responses`].
     out.responses.push((index, response));
@@ -730,7 +730,7 @@ mod tests {
         assert_eq!(out.hidden, 0);
     }
 
-    /// ★ **The route to the hidden tabs survives the tabs.**
+    /// **The route to the hidden tabs survives the tabs.**
     ///
     /// `MODES_AND_PANELS.md` failure mode #8, asserted from this side of the
     /// reuse: the arithmetic is `dock::plan`'s and is tested there, and this

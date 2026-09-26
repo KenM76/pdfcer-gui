@@ -3,7 +3,7 @@
 Test-only. Builds `fixtures/rotated-text.pdf`: one US-Letter page carrying
 the same sentence set five times, at 0°, 90°, 180°, 270° and 30°.
 
-## ★★ Why a synthetic page and not the operator's own drawing
+## Why a synthetic page and not the operator's own drawing
 
 The report that started this work names a real file — `SW41177.pdf`, whose
 title block carries a vertical SolidWorks path stamp — and that file is what

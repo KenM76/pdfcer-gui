@@ -69,7 +69,7 @@ pub(in crate::canvas) fn snapped(
 /// **Snap a point the way a measure pick would**, for a caller that is not a
 /// measure tool.
 ///
-/// ★★ The perimeter's vertex drag is the caller. It routes here rather than
+/// The perimeter's vertex drag is the caller. It routes here rather than
 /// snapping by its own rules because **a predicate with two claimants must
 /// exist exactly once**: *"where would this land if it snapped"* is one
 /// question, and the operator's answer to it — the master toggle, the Alt
@@ -86,7 +86,7 @@ pub(in crate::canvas) fn snapped(
 /// for the one gesture whose entire purpose is correcting a corner that landed
 /// wrong.
 ///
-/// # ★ It builds a `MeasureState` rather than requiring one
+/// # It builds a `MeasureState` rather than requiring one
 ///
 /// [`super::load`] persists nothing and [`super::read`] answers `None` until
 /// the operator has clicked a measure tool at least once. A vertex drag can
@@ -115,7 +115,7 @@ pub(in crate::canvas) fn snap_point(
 
 /// **Where the pointer would pick, resolved once for the frame.**
 ///
-/// ★ The indicator and the click read *this same value*, which is the whole
+/// The indicator and the click read *this same value*, which is the whole
 /// reason it exists as a type rather than as two calls to [`snapped`]. A
 /// preview that re-ran the query would be a second derivation of the same
 /// answer, and the two would agree right up until they did not — the operator
@@ -130,7 +130,7 @@ pub(in crate::canvas) struct Resolved {
     /// Which candidate produced it, if any. `None` means the raw pointer, and
     /// no marker is drawn.
     pub candidate: Option<SnapCandidate>,
-    /// ★★ What the pointer is OVER, which is a different question from where
+    /// What the pointer is OVER, which is a different question from where
     /// the click will land.
     ///
     /// The operator's report this answers: *"the measuring tools don't give me
@@ -155,7 +155,7 @@ pub(in crate::canvas) struct Resolved {
 /// Called from `canvas::interact` **before** it drops the provider, which is
 /// the constraint that shaped this API: the draw happens after the drop, so the
 /// query cannot happen there.
-/// ★ `canvas_pos` is **CANVAS** space, not screen space, and the name says so
+/// `canvas_pos` is **CANVAS** space, not screen space, and the name says so
 /// because getting it wrong is invisible.
 ///
 /// # ⚠ Why the name is load-bearing
@@ -184,7 +184,7 @@ pub(in crate::canvas) fn resolve_hover(
     map: &PageMapping,
     kind: MeasureKind,
 ) -> Option<Resolved> {
-    // ★★ Traced at ENTRY, naming the gate that declines.
+    // Traced at ENTRY, naming the gate that declines.
     //
     // An instrument below the five `?` early returns emits **nothing at all**
     // on a run where the pointer is demonstrably over the page, which tells a
@@ -211,7 +211,7 @@ pub(in crate::canvas) fn resolve_hover(
         x: f64::from(pdf.x),
         y: f64::from(pdf.y),
     };
-    // ★★ NO state means a freshly armed tool, not a reason to decline. A `?`
+    // NO state means a freshly armed tool, not a reason to decline. A `?`
     // here is what the operator reports as *"the measuring tools don't give me
     // any indication of what is being selected"*.
     //
@@ -224,7 +224,7 @@ pub(in crate::canvas) fn resolve_hover(
     // affordance has to appear while the operator is still deciding **where to
     // click first**; that is when it does its work.
     //
-    // ★ A read must not write, which is why this builds a value rather than
+    // A read must not write, which is why this builds a value rather than
     // calling `load` and storing it. `resolve_hover` runs on every frame the
     // pointer moves; persisting from here would make a hover an edit to shared
     // state, and the arming path is the only thing that should decide what is
@@ -239,7 +239,7 @@ pub(in crate::canvas) fn resolve_hover(
         .unwrap_or_else(|| MeasureState::for_kind(page_index, kind));
     let alt_held = ctx.input(|i| i.modifiers.alt);
     let (at, candidate) = snapped(&st, raw, alt_held, targets, page_index, map);
-    // ★ Resolved from the RAW pointer, not from the snapped point, and the
+    // Resolved from the RAW pointer, not from the snapped point, and the
     // difference is the case the highlight was asked for.
     //
     // Snapping moves the query to the nearest target, and at an intersection
@@ -249,7 +249,7 @@ pub(in crate::canvas) fn resolve_hover(
     // the operator's hand has already decided.
     let model = targets.and_then(|t| t.page_objects_model(page_index));
     let entity = model.and_then(|m| hover::resolve(m, raw, map.snap_tolerance()));
-    // ★★ Traced whether or not anything was found, and that is the point.
+    // Traced whether or not anything was found, and that is the point.
     //
     // A hover affordance that draws nothing has three indistinguishable causes
     // from outside: the pointer is over blank paper, the decomposition is not
@@ -276,7 +276,7 @@ pub(in crate::canvas) fn resolve_hover(
     })
 }
 
-/// ★★ The measure hover for this frame, resolved while the decomposition is
+/// The measure hover for this frame, resolved while the decomposition is
 /// still borrowed.
 ///
 /// The constraint that shapes it: the page decomposition is borrowed **only
@@ -284,7 +284,7 @@ pub(in crate::canvas) fn resolve_hover(
 /// at paint time — and it must not be repeated. See this module's header for
 /// what two derivations of one answer cost.
 ///
-/// ★ One value out, not two. The circular pick set is a list of POINTS
+/// One value out, not two. The circular pick set is a list of POINTS
 /// (`pick::CircularPick`) which the preview reads straight out of
 /// `egui::Memory` and projects itself, so it needs no decomposition and no
 /// channel back through three call sites; only the hover needs the borrow.
@@ -301,7 +301,7 @@ pub(in crate::canvas) fn frame(
     targets: Option<&dyn CanvasTargetProvider>,
     map: &PageMapping,
 ) -> Option<Resolved> {
-    // ★ The snap hover, resolved HERE because this is the last line at which
+    // The snap hover, resolved HERE because this is the last line at which
     // the decomposition is still borrowed.
     //
     // The indicator is drawn in the draw section far below, after the `drop`,
@@ -316,7 +316,7 @@ pub(in crate::canvas) fn frame(
     kind.and_then(|kind| {
         resolve_hover(
             ctx, doc, page_index,
-            // ★ CONVERTED — `resolve_hover` takes CANVAS space. Hand it
+            // CONVERTED — `resolve_hover` takes CANVAS space. Hand it
             // `screen_pos` raw and the click still lands correctly while the
             // marker sits away from the pointer by the scroll origin over the
             // zoom: *"the crosshairs click the right place under them, but the
@@ -327,7 +327,7 @@ pub(in crate::canvas) fn frame(
             // which is what would make an odd one out invisible — it names the
             // same variable as the rest.
             canvas_pos, targets, map,
-            // ★ The armed kind, which this closure already had and was
+            // The armed kind, which this closure already had and was
             // throwing away. `resolve_hover` needs it so a freshly armed tool
             // — one that has never been clicked, which is every tool at the
             // moment the operator most needs to see what it would pick — can
@@ -346,7 +346,7 @@ mod tests {
     use crate::canvas::measure::{MeasureKind, MeasureState};
     use crate::canvas::target::StubTargets;
 
-    /// ★ **Snapping off means the raw pointer, unchanged.**
+    /// **Snapping off means the raw pointer, unchanged.**
     ///
     /// The master toggle is the operator's, and a tool that snapped anyway
     /// would be applying an inference they had switched off — which is rule 4's
@@ -367,7 +367,7 @@ mod tests {
         assert!(candidate.is_none(), "nothing to draw an indicator for");
     }
 
-    /// ★★ **A caller with no stored `MeasureState` still snaps.**
+    /// **A caller with no stored `MeasureState` still snaps.**
     ///
     /// The vertex drag's case, and the reason [`snap_point`] exists rather than
     /// the caller doing `read(ctx)?`. [`load`] persists nothing and [`read`]
@@ -393,7 +393,7 @@ mod tests {
         assert_eq!(fresh.snap_cycle, 0, "and with no Tab cycle carried in");
     }
 
-    /// ★ **Alt refuses the snap for one pick**, which is what makes a generous
+    /// **Alt refuses the snap for one pick**, which is what makes a generous
     /// catch radius affordable — see `PageMapping::snap_tolerance`.
     #[test]
     fn alt_overrides_an_enabled_master_toggle() {
@@ -428,7 +428,7 @@ mod tests {
         assert!(candidate.is_none());
     }
 
-    /// ★ **The snap radius is wider than the selection radius, and stays so at
+    /// **The snap radius is wider than the selection radius, and stays so at
     /// every zoom.**
     ///
     /// Both are screen-pixel constants divided by the same zoom, so the

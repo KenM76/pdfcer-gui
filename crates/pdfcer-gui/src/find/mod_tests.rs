@@ -12,7 +12,7 @@
 //! None of those would look broken in a screenshot; all of them change what
 //! the operator is shown.
 //!
-//! ★ What is NOT proved here, deliberately: anything about where the view
+//! What is NOT proved here, deliberately: anything about where the view
 //! ends up. That is `tools/ui-verify`'s, because it is a property of a
 //! running window and R1 says a passing test is not a report of working
 //! software. The O179 fix - the *Zoom* option holding the position as well
@@ -54,10 +54,10 @@ fn searched(query: &str, page: usize, hits: usize) -> FindState {
 }
 
 // =======================================================================
-// ★ The trap
+// The trap
 // =======================================================================
 
-/// ★ **The default search is literal.**
+/// **The default search is literal.**
 ///
 /// The regression test for the defect this whole module's header is
 /// about: the old shell's Find bar ran through `EditSession::find_text`,
@@ -81,7 +81,7 @@ fn the_default_search_is_literal() {
     assert_eq!(core.word_boundary, WordBoundary::Alphanumeric);
 }
 
-/// ★ **Wildcards are only ever on because the operator asked.**
+/// **Wildcards are only ever on because the operator asked.**
 ///
 /// The other direction, which matters as much: the control has to work,
 /// or the escape hatch from the literal default would be a dead
@@ -195,7 +195,7 @@ fn a_fruitless_search_reports_that_it_ran() {
     assert_eq!(state.readout(0), Readout::Empty);
 }
 
-/// ★ **Editing the document makes the results stale, not merely old.**
+/// **Editing the document makes the results stale, not merely old.**
 ///
 /// The staleness rule this module's header argues for, asserted through
 /// both surfaces it governs: the readout says so, and the highlights stop.
@@ -219,7 +219,7 @@ fn an_edit_makes_the_results_stale_and_stops_the_highlights() {
     );
 }
 
-/// ★ **Staleness is reported ahead of emptiness.**
+/// **Staleness is reported ahead of emptiness.**
 ///
 /// A document edited after a fruitless search must not say "No matches":
 /// that would be a claim about the current revision, which the search
@@ -259,7 +259,7 @@ fn changing_an_option_blanks_the_readout() {
 // Stepping
 // =======================================================================
 
-/// ★ **Stepping wraps in both directions**, including the underflow case
+/// **Stepping wraps in both directions**, including the underflow case
 /// that a naive `- 1` gets wrong.
 #[test]
 fn stepping_wraps_at_both_ends() {
@@ -337,7 +337,7 @@ fn the_toggle_reports_where_it_landed() {
     assert!(!state.toggle());
 }
 
-/// ★ **A document change forgets the hits and keeps the operator's
+/// **A document change forgets the hits and keeps the operator's
 /// settings.**
 ///
 /// Page indices and page-space rectangles describe one file. Carrying
@@ -418,7 +418,7 @@ fn a_hit_with_no_geometry_still_counts() {
 // The whole thing, against a real document
 // =======================================================================
 
-/// ★ **A real search runs, reports its cost, and lands on its first
+/// **A real search runs, reports its cost, and lands on its first
 /// hit.**
 ///
 /// The end-to-end check that the borrow protocol works: the render worker

@@ -1,14 +1,14 @@
 # `panels::properties::face` — the face chooser, once, for both surfaces
 
 
-★ That divergence is the reason this module exists at all, and it is worth
+That divergence is the reason this module exists at all, and it is worth
 stating as a rule rather than as a tidy-up: **a control drawn twice is a
 control that will be built twice**, and the second build is always the one
 that misses the disclosure. The two callers now differ in exactly two
 things — the region prefix they publish under, and what they do with the
 selector that comes back — and in nothing else.
 
-## ★★★ The list has two kinds of row now, and they are two different acts
+## The list has two kinds of row now, and they are two different acts
 
 `pdfcer-core` v0.15.0 (`Pass 162.0`):
 
@@ -29,7 +29,7 @@ Those are different enough that presenting them as one undifferentiated list
 would be hiding a write behind a menu. [`choices`] tags every row and
 [`popup_body`] draws them under two headings with the disclosure between.
 
-## ★★ Who writes the resource — asked, and answered by reading the engine
+## Who writes the resource — asked, and answered by reading the engine
 
 `FormatPlan::created_font` is documented as *"a `/Font` resource the caller
 must CREATE for `new_content` to be valid"*, and its own note says the caller
@@ -90,14 +90,14 @@ second.
 > `preview_font_resources` that also surveyed the fourteen would let this
 > list be as exact as its first half already is."*
 
-★★ **That last sentence is the request, and `Pass 142.2` is the answer.**
+**That last sentence is the request, and `Pass 142.2` is the answer.**
 The refusal to copy `R221`'s rule into this crate is why the fix arrived as
 an engine capability rather than as drift — worth keeping, because the
 tempting shortcut was one afternoon's work and would have been wrong on the
 first day the encoding rule changed.
 
 
-★ The old `carried` filter is subsumed, and more exactly. It compared
+The old `carried` filter is subsumed, and more exactly. It compared
 *shortened* names against the page's entries; `Std14Presence::OnPage` is the
 engine answering the same question from the resource dictionary it actually
 resolved. A face already on the page reaches the list through the

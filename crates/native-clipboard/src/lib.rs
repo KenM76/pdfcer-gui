@@ -22,7 +22,7 @@
 //! | **a GDI handle** | `CF_ENHMETAFILE` is an `HENHMETAFILE`, not an `HGLOBAL`. Handing the clipboard a byte block under that format id gives GDI the wrong handle type; the bytes must go through `SetEnhMetaFileBits` first |
 //! | **together or not at all** | see [`place`]'s staging argument — a half-placed set is not a smaller success, it is a *different and silently wrong* paste |
 //!
-//! ## ★★★ It knows nothing about documents, and that is enforced by shape
+//! ## It knows nothing about documents, and that is enforced by shape
 //!
 //! This crate takes **bytes** and **format names**. It does not know what an
 //! SVG is, does not know why one entry should precede another, and has never
@@ -36,7 +36,7 @@
 //! this dependency unchanged. `crates/native-window`'s manifest calls that
 //! being R7-clean, and it is the same claim for the same reason.
 //!
-//! ## ★★ Why `unsafe` is here and not at the call site
+//! ## Why `unsafe` is here and not at the call site
 //!
 //! `crates/pdfcer-gui/src/lib.rs` and `main.rs` both open with
 //! `#![forbid(unsafe_code)]`. `forbid` cannot be relaxed by an inner `allow` —
@@ -106,7 +106,7 @@ pub const CF_ENHMETAFILE: u32 = 14;
 
 /// How one entry's bytes become a clipboard handle.
 ///
-/// ★ Three variants rather than a bare `u32` format id, because the three
+/// Three variants rather than a bare `u32` format id, because the three
 /// take genuinely different code paths through Win32 and a `u32` cannot say
 /// which. A registered name has no id until run time; a metafile is not an
 /// `HGLOBAL` at all. Collapsing them would push that decision into the caller,
@@ -129,7 +129,7 @@ pub enum Slot {
     /// `CF_ENHMETAFILE`. The bytes are [MS-EMF] and become a **GDI handle**
     /// through `SetEnhMetaFileBits` before `SetClipboardData` sees them.
     ///
-    /// ★★ Its own variant rather than `Predefined(CF_ENHMETAFILE)`, because
+    /// Its own variant rather than `Predefined(CF_ENHMETAFILE)`, because
     /// the difference is not the number — it is that the byte block must be
     /// converted into a different kind of handle first, and giving GDI an
     /// `HGLOBAL` under this id is undefined rather than refused.
@@ -163,7 +163,7 @@ pub struct Entry<'a> {
 
 /// Why a placement did not happen.
 ///
-/// ★ Every variant names the format where one is implicated, because the
+/// Every variant names the format where one is implicated, because the
 /// operator-facing sentence a caller writes is different for *"another program
 /// is holding the clipboard"* (try again) and *"the metafile was refused"*
 /// (this document's vector form is the problem, the picture would still work).
@@ -175,7 +175,7 @@ pub enum PlaceError {
     /// what you wanted" are different claims and a caller that cannot tell them
     /// apart will report the second.
     ///
-    /// ★ It is refused **before** the clipboard is opened, so an empty
+    /// It is refused **before** the clipboard is opened, so an empty
     /// transaction cannot destroy what the operator had copied.
     Nothing,
     /// A format name could not be registered. Not expected for any name in
@@ -185,7 +185,7 @@ pub enum PlaceError {
     /// Global memory for a payload could not be allocated, or a metafile
     /// handle could not be created from the bytes. Names the format.
     ///
-    /// ★★ `SetEnhMetaFileBits` returning null is the interesting member of
+    /// `SetEnhMetaFileBits` returning null is the interesting member of
     /// this variant: it means Windows itself rejected the metafile's record
     /// structure. Because staging happens **before** the clipboard is opened
     /// (see [`place`]), that refusal costs the operator nothing — the clipboard
@@ -225,12 +225,12 @@ impl std::fmt::Display for PlaceError {
 
 impl std::error::Error for PlaceError {}
 
-/// ★★★ **Place every entry, in the given order, in one transaction.**
+/// **Place every entry, in the given order, in one transaction.**
 ///
 /// Returns the names that landed, in placement order, so a caller can disclose
 /// exactly what a pasting application will be offered.
 ///
-/// # ★★★ The staging rule, which is what makes this all-or-nothing
+/// # The staging rule, which is what makes this all-or-nothing
 ///
 /// The clipboard has one destructive step — `EmptyClipboard` — and everything
 /// after it is visible to the rest of the machine. So **every operation that
@@ -258,7 +258,7 @@ impl std::error::Error for PlaceError {}
 /// and an allocation failure inside the open would mean deciding whether to
 /// publish half a transaction."*
 ///
-/// ★ It also discharges a check `pdfcer-gui`'s exporter explicitly logged as
+/// It also discharges a check `pdfcer-gui`'s exporter explicitly logged as
 /// owed. `app::actions::export`'s `emf_bytes` notes that a *file* export need
 /// not validate its metafile but *"the clipboard path is the one that owes this
 /// check, because there `SetEnhMetaFileBits` is handed a raw buffer and a bad
@@ -299,7 +299,7 @@ pub fn place(_entries: &[Entry<'_>]) -> Result<Vec<&'static str>, PlaceError> {
 mod tests {
     use super::*;
 
-    /// ★★★ **An empty transaction is refused, and refusing is what keeps
+    /// **An empty transaction is refused, and refusing is what keeps
     /// whatever the operator had copied.**
     ///
     /// The check happens before any Win32 call — which is the point, and is
@@ -310,7 +310,7 @@ mod tests {
         assert_eq!(place(&[]), Err(PlaceError::Nothing));
     }
 
-    /// ★ The error type says which format failed, in words a caller can put in
+    /// The error type says which format failed, in words a caller can put in
     /// a trace.
     #[test]
     fn every_failure_names_the_format_where_one_is_implicated() {

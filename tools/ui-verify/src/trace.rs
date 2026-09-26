@@ -25,7 +25,7 @@ impl TraceLine {
     #[must_use]
     pub fn get(&self, key: &str) -> Option<&str> {
         self.fields.get(key).map(|v| {
-            // ★ A quoted value is returned WITHOUT its quotes.
+            // A quoted value is returned WITHOUT its quotes.
             //
             // The application quotes any value that may contain a character
             // this parser gives structural meaning to — a chord spelled `[`
@@ -81,7 +81,7 @@ impl TraceLine {
 
     /// A field parsed as a comma-separated list of floats: `1.5,2,3,4`.
     ///
-    /// # ★ Why a list accessor exists at all
+    /// # Why a list accessor exists at all
     ///
     #[must_use]
     pub fn get_f64_list(&self, key: &str) -> Option<Vec<f64>> {
@@ -183,7 +183,7 @@ impl Trace {
     /// The last line with this event name that the application traced **after**
     /// `after` — where `after` is a [`TraceLine::lineno`] taken earlier.
     ///
-    /// # ★★★ Why this exists: [`Trace::last`] cannot tell "unchanged" from
+    /// # Why this exists: [`Trace::last`] cannot tell "unchanged" from
     /// "stopped"
     ///
     /// A trace is an append-only log, so `last` answers *"what is the newest

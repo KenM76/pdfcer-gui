@@ -28,7 +28,7 @@ fix was to make the **tool the rung**: press `T`, click, type; press `A`,
 click, see the points. That is Illustrator, Inkscape, Figma, CorelDRAW and
 Word, and it is what these two checks assert.
 
-# ★★ Why the assertion is "ONE click"
+# Why the assertion is "ONE click"
 
 Because the count is the feature. A check that armed the tool from the
 ribbon, clicked, and asserted a caret would pass on the **old** build too —
@@ -36,7 +36,7 @@ the old build could do all of that, it just needed four steps to get there.
 So each check performs exactly one press of one key and exactly one click,
 and asserts the outcome. Anything that needs a second click fails.
 
-★ And the key is pressed as a **bare letter through the OS**, not as a
+And the key is pressed as a **bare letter through the OS**, not as a
 command dispatched by name. `V`/`A`/`T`/`H` being bare is the whole
 convention being adopted, and a bare letter is the one chord shape that can
 be broken by a stray focus — `canvas::keys` gates every keystroke on

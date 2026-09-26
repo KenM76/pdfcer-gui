@@ -1,7 +1,7 @@
 //! # `text::settings::overprint` — the zero-tint rule, in the operator's words
 //!
 //!
-//! ## ★★★ What this module exists to keep straight
+//! ## What this module exists to keep straight
 //!
 //! ISO 32000-1 §8.6.7 says a zero tint in an overprinting colour leaves what is
 //! underneath it showing. The argument is over *which* colours count, and pdfcer
@@ -17,7 +17,7 @@
 
 /// Zero-tint scope: what it is.
 ///
-/// ★★★ **The title asks about GREY, not about "OPM 1's scope".** The engine's
+/// **The title asks about GREY, not about "OPM 1's scope".** The engine's
 /// own account of this setting is four screens on a genuine ambiguity in
 /// §8.6.7; the operator's version of the same question is *"does a grey fill
 /// wipe out the spot colour underneath it, or not?"* — which is what he would
@@ -39,7 +39,7 @@ pub const fn zero_tint_silence() -> &'static str {
 
 /// What it costs, and what it does not affect.
 ///
-/// ★ It names the same narrow reach the blend-space setting does, because it
+/// It names the same narrow reach the blend-space setting does, because it
 /// has the same one: nothing happens on a file that never asked for overprint,
 /// which is nearly every file that is not print-ready.
 #[must_use]
@@ -55,7 +55,7 @@ pub const fn zero_tint_label(scope: pdfcer_core::settings::OverprintZeroTintScop
         S::GreyAsKOnly => "Let grey behave like black ink",
         S::DeviceCmykOnly => "What the standard literally says",
         S::AllProcessSpaces => "Let every colour behave like ink",
-        // ★ `#[non_exhaustive]`, so a newer engine may add a scope. Named as
+        // `#[non_exhaustive]`, so a newer engine may add a scope. Named as
         // unknown rather than folded onto a neighbour — see `blend_space_label`
         // for the argument, which is the same one and is made once there.
         _ => "A newer pdfcer added this option; this build cannot describe it",
@@ -64,7 +64,7 @@ pub const fn zero_tint_label(scope: pdfcer_core::settings::OverprintZeroTintScop
 
 /// **The suffix that marks whichever scope is currently the default.**
 ///
-/// ★★★ DERIVED from `OverprintZeroTintScope::default()`, never written into a
+/// DERIVED from `OverprintZeroTintScope::default()`, never written into a
 /// label — and that is the whole point of it existing.
 ///
 ///
@@ -86,7 +86,7 @@ pub fn zero_tint_default_suffix(
 
 /// One scope's description.
 ///
-/// ★★ Each note says what comes out on paper, with the measured numbers where
+/// Each note says what comes out on paper, with the measured numbers where
 /// there are any and an admission where there are none. The third option is
 /// unmeasured and its note says so in the operator's terms — *"nobody has
 /// checked"* — rather than leaving him to infer it from the absence of a
@@ -113,11 +113,11 @@ mod tests {
     use super::*;
     use pdfcer_core::settings::OverprintZeroTintScope as Scope;
 
-    /// **★★★ Exactly one scope is marked as the default, and it is the one the
+    /// **Exactly one scope is marked as the default, and it is the one the
     /// ENGINE says is the default.**
     ///
     ///
-    /// ★ Asserting **exactly one** rather than "the right one carries it"
+    /// Asserting **exactly one** rather than "the right one carries it"
     /// catches the other half: a suffix added to a second label by hand, which
     /// would leave two options both claiming to be what pdfcer does.
     #[test]
@@ -138,7 +138,7 @@ mod tests {
         );
     }
 
-    /// **★★ No label may hard-code the word "default".**
+    /// **No label may hard-code the word "default".**
     ///
     /// The suffix is derived; a label that spells it out would be a second,
     /// unsynchronised claim about the same fact — which is exactly how the

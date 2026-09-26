@@ -8,13 +8,13 @@
 //! prove the panel, the combo box or the disclosure line, and the driven check
 //! in `tools/ui-verify` is what does that.
 //!
-//! ★ Every assertion below is on the **document after the edit**, read back
+//! Every assertion below is on the **document after the edit**, read back
 //! through a fresh extraction — never on the return value of the thing under
 //! test. A test that asserts "the function returned Ok" is a test of the
 //! function's own opinion of itself.
 
 #![cfg(test)]
-// ★ The INNER attribute, load-bearing rather than redundant beside the
+// The INNER attribute, load-bearing rather than redundant beside the
 // `#[cfg(test)] mod tests;` that declares this file.
 //
 // `tools/gates/check-ui-strings.sh` and `check-theme-colors.sh` both recognise
@@ -43,7 +43,7 @@ fn run_count(doc: &OpenDoc) -> usize {
     doc.page_text().map_or(0, |t| t.runs.len())
 }
 
-/// ★★★ **The headline: a size change reaches the file.**
+/// **The headline: a size change reaches the file.**
 ///
 /// The operator's ask, reduced to its smallest true statement — press a number,
 /// and the text on the page is that size afterwards.
@@ -104,7 +104,7 @@ fn a_restyle_is_one_undoable_command() {
 /// **The epoch moves**, which is what makes every cached read — the panel's own
 /// stamp among them — notice.
 ///
-/// ★ Its own test rather than an assertion inside the one above, because it is
+/// Its own test rather than an assertion inside the one above, because it is
 /// a different failure: an edit that lands in the file and does not bump the
 /// epoch shows the operator the *old* size in the panel for ever after, and the
 /// page they are looking at is right while the numbers beside it are wrong.
@@ -117,7 +117,7 @@ fn a_restyle_bumps_the_edit_epoch() {
     assert_ne!(doc.edit_epoch, before, "the edit epoch must move");
 }
 
-/// ★★ **Every run of a multi-run selection is restyled, not just the first.**
+/// **Every run of a multi-run selection is restyled, not just the first.**
 ///
 /// The case the descending-order argument exists for. It is asserted on the
 /// *last* run as well as the first, because an implementation that restyled
@@ -169,7 +169,7 @@ fn an_empty_selection_edits_nothing() {
     assert_eq!(doc.edit_epoch, before, "an empty run list must not edit");
 }
 
-/// ★★★ **A run ordinal that does not exist is declined, not guessed at.**
+/// **A run ordinal that does not exist is declined, not guessed at.**
 ///
 /// The failure this guards is the expensive one: an out-of-range ordinal that
 /// fell back to "the first run whose text matches" would restyle a piece of
@@ -185,13 +185,13 @@ fn an_out_of_range_run_edits_nothing() {
     );
 }
 
-/// ★★★ **Bold binds a REAL `Helvetica-Bold` on a page carrying no bold face**
+/// **Bold binds a REAL `Helvetica-Bold` on a page carrying no bold face**
 /// — the standard-14 rung, and the reason `set_style` was wired.
 ///
 ///
 /// One thing: that `doc.edit_epoch` moved. Its own comment argued the point —
 ///
-/// > ★ Asserted by the *absence of a refusal* and the presence of an edit
+/// > Asserted by the *absence of a refusal* and the presence of an edit
 /// > rather than by reading a "synthetic" flag out of the file: `R90`'s
 /// > synthesis is deliberately not recorded in the PDF — it is re-detectable
 /// > from the bytes, which is a different question from the one this test asks.
@@ -205,7 +205,7 @@ fn an_out_of_range_run_edits_nothing() {
 /// was green throughout. A test equally green on both outcomes is not evidence
 /// about which one shipped.
 ///
-/// # ★★ What separates them, and it IS in the file
+/// # What separates them, and it IS in the file
 ///
 /// The synthesis argument is right that `R90` leaves no marker: a faux bold is
 /// `Tr 2` plus a stroke width, and the run keeps its original `/Font` resource
@@ -217,7 +217,7 @@ fn an_out_of_range_run_edits_nothing() {
 /// face was bound. That is exactly the distinction the operator sees on a
 /// plotter and exactly the one the old assertion could not make.
 ///
-/// ★ **Falsified, not assumed:** reverting `StyleChange::stamp`'s `Weight` arm
+/// **Falsified, not assumed:** reverting `StyleChange::stamp`'s `Weight` arm
 /// to `req.synthetic(…)` turns this red on the second assertion while the first
 /// stays green — which is the whole finding, reproduced on demand.
 #[test]
@@ -251,7 +251,7 @@ fn bold_binds_a_real_standard_face_on_a_page_with_no_bold_face() {
         "rung 2 must bind the standard-14 sibling as a NEW /Font resource; an unchanged \
          resource key means the letters were stroke-thickened instead"
     );
-    // ★ The size is checked because binding a font resource re-emits `Tf`,
+    // The size is checked because binding a font resource re-emits `Tf`,
     // which carries the size in the same operator. A rung that bound the right
     // face and lost the size would satisfy the assertion above and wreck the
     // drawing.
@@ -261,7 +261,7 @@ fn bold_binds_a_real_standard_face_on_a_page_with_no_bold_face() {
     );
 }
 
-/// ★★★ **The ladder SAYS which rung it took**, and rung 2's sentence is the
+/// **The ladder SAYS which rung it took**, and rung 2's sentence is the
 /// one that did not exist until the verb was wired.
 ///
 /// # Why the sentence needs its own test and the edit does not cover it
@@ -273,12 +273,12 @@ fn bold_binds_a_real_standard_face_on_a_page_with_no_bold_face() {
 /// answer looks exactly like one of its right answers cannot be checked by
 /// reading it.
 ///
-/// ★★ The operator's symptom would be silence: the text changes, correctly,
+/// The operator's symptom would be silence: the text changes, correctly,
 /// and pdfcer says nothing about how. That is the quietest defect this module
 /// can ship and it would survive every other test in this file, all of which
 /// assert on the document rather than on what was disclosed.
 ///
-/// ★ Read through `last_edit_disclosure` — the **status bar's own door**, keyed
+/// Read through `last_edit_disclosure` — the **status bar's own door**, keyed
 /// on the epoch — rather than by calling `ladder_note` directly, so a break
 /// anywhere between the mapping and the operator's eye fails here. It is a
 /// thread-local, so this is safe beside the parallel tests around it.
@@ -300,7 +300,7 @@ fn the_standard_face_rung_tells_the_operator_it_used_a_real_face() {
     let shown = crate::app::actions::disclosure::last_edit_disclosure(doc.edit_epoch)
         .expect("binding a standard-14 sibling owes the operator a sentence");
     let joined = shown.notes.join(" ");
-    // ★ Asserted on the SUBSTANCE, not on the whole sentence. A catalog string
+    // Asserted on the SUBSTANCE, not on the whole sentence. A catalog string
     // is reworded for clarity often and that is not a regression; what must not
     // change is that the operator is told a real typeface was used and which
     // one. Matching the full sentence would make this test an obstacle to
@@ -319,7 +319,7 @@ fn the_standard_face_rung_tells_the_operator_it_used_a_real_face() {
     );
 }
 
-/// ★★★ **The two-verb retry, and the engine defect it found — now FIXED, and
+/// **The two-verb retry, and the engine defect it found — now FIXED, and
 /// this test predicted its own failure.**
 ///
 /// `textedit/format_family.pdf` is a `/Times-Roman` run `hello world` on a page
@@ -348,7 +348,7 @@ fn the_standard_face_rung_tells_the_operator_it_used_a_real_face() {
 /// run's characters — and moved the four acceptance conditions into one shared
 /// predicate so a gate and a commit cannot disagree.
 ///
-/// ★ Their own note on it is worth keeping: it is R221's third instance — *a
+/// Their own note on it is worth keeping: it is R221's third instance — *a
 /// predicate deciding whether a capability applies, written by hand at a
 /// different call site as a parallel description of when the real function
 /// succeeds* — and it **inverts** the usual risk analysis, because a false
@@ -366,7 +366,7 @@ fn the_standard_face_rung_tells_the_operator_it_used_a_real_face() {
 /// 2. **the epoch moves**, because the page really changed;
 /// 3. **nothing is declined**, because nothing refused.
 ///
-/// ★ The **face is asserted by name**, not merely "something changed". A build
+/// The **face is asserted by name**, not merely "something changed". A build
 /// that fell back to synthesis would also change the run and bump the epoch,
 /// and would be a *worse* answer on a page that carries a covering real face —
 /// so a test that only checked for movement would pass on the second-best
@@ -424,7 +424,7 @@ fn bold_takes_the_covering_real_face_on_a_page_that_has_one() {
 // sentences because of it
 // ===========================================================================
 
-/// ★★★ **THE DEFECT THIS FILE HAD NO TEST FOR, until 2026-09-07.**
+/// **THE DEFECT THIS FILE HAD NO TEST FOR, until 2026-09-07.**
 ///
 /// `reflow_refusal` mapped **every** `ReflowApplyError::Unsupported` to
 /// `ReflowRefusal::PageSetChanged`, which told the operator *"pages have been
@@ -469,7 +469,7 @@ fn an_engine_decline_with_no_discriminant_names_no_cause_and_promises_no_remedy(
         );
     }
 
-    // ★★ And the sentence must not name a cause. This is the actual assertion:
+    // And the sentence must not name a cause. This is the actual assertion:
     // the old wording was not wrong because it was `PageSetChanged`, it was
     // wrong because it CLAIMED SOMETHING about the operator's document that the
     // shell had no way to know.
@@ -498,7 +498,7 @@ fn an_engine_decline_with_no_discriminant_names_no_cause_and_promises_no_remedy(
 /// The two variants that still carry a named cause must only be reachable from
 /// an engine variant that actually names it.
 ///
-/// ★ `Encrypted` is the control here and it is the reason this test is worth
+/// `Encrypted` is the control here and it is the reason this test is worth
 /// writing: it proves the mapping CAN carry a specific cause, so the general
 /// answer above is a considered choice rather than the only thing that works.
 #[test]
@@ -531,7 +531,7 @@ fn a_named_cause_comes_from_a_named_engine_variant() {
     );
 }
 
-/// ★★★ **THE TRAP THE ENGINE WARNED ABOUT, MADE INTO AN ASSERTION.**
+/// **THE TRAP THE ENGINE WARNED ABOUT, MADE INTO AN ASSERTION.**
 ///
 /// ⚠⚠ **Read the name of this test as historical.** At engine `025d703d`
 /// `PageEditedThisSession` is no longer recoverable, because it is no
@@ -574,7 +574,7 @@ fn the_one_recoverable_refusal_keeps_its_remedy() {
          which is the defect corrected twice on 2026-09-07."
     );
 
-    // ★★ And the remedy must actually be IN the sentence. Reaching the right
+    // And the remedy must actually be IN the sentence. Reaching the right
     // variant while its wording lost the instruction would satisfy the
     // assertion above and help nobody.
     let line = got.line();
@@ -589,7 +589,7 @@ fn the_one_recoverable_refusal_keeps_its_remedy() {
     );
 }
 
-/// ★★★ **Every format refusal an operator can cause gets its OWN sentence**,
+/// **Every format refusal an operator can cause gets its OWN sentence**,
 /// and the posture refusal is the one the wildcard would have eaten.
 ///
 /// # Why a wildcard needs a test and a review will not do
@@ -601,7 +601,7 @@ fn the_one_recoverable_refusal_keeps_its_remedy() {
 /// ending in `_` just gained a variant it will not distinguish, and the one it
 /// will not distinguish is the one you care about."*
 ///
-/// ★★ [`FormatError::SynthesisRefusedByPosture`] became reachable on
+/// [`FormatError::SynthesisRefusedByPosture`] became reachable on
 /// 2026-09-11, when `StyleChange::stamp` moved from `set_synthetic` to
 /// `set_style`. It fires **only** when the operator explicitly chose
 /// `StylePolicy::Refuse` and pdfcer then walked every real rung and found
@@ -609,7 +609,7 @@ fn the_one_recoverable_refusal_keeps_its_remedy() {
 /// *"pdfcer could not change that text"*: their own instruction, obeyed
 /// exactly, reported back as a malfunction.
 ///
-/// ★ The **distinctness** sweep is the assertion that does the work. Checking
+/// The **distinctness** sweep is the assertion that does the work. Checking
 /// that each variant maps to something passes trivially; checking that no two
 /// map to the same thing is the property a wildcard destroys, one variant at a
 /// time, and it is what fails the moment somebody deletes a named arm.
@@ -620,7 +620,7 @@ fn every_actionable_format_refusal_keeps_its_own_sentence() {
     use crate::text::status::TextStyleRefusal as R;
     use pdfcer_core::text_edit::FormatError as E;
 
-    // ★ The two faces the fixture claims WOULD show the run. Named once so
+    // The two faces the fixture claims WOULD show the run. Named once so
     // the construction and the sentence assertion cannot drift apart while
     // both keep passing.
     const REMEDY_A: &str = "Times-Roman";
@@ -651,7 +651,7 @@ fn every_actionable_format_refusal_keeps_its_own_sentence() {
         // — which is right; it reserves the right to add a fifth field — and
         // removed the side effect nobody chose.
         //
-        // ★★ The arm it covers is `FaceLacksCharacters`, the refusal that fires
+        // The arm it covers is `FaceLacksCharacters`, the refusal that fires
         // on `Times-Bold`-with-a-remapped-`o`: the exact page that produced this
         // project's `Pass 144.0` request, and the one of the named arms most
         // likely to be broken by a careless edit. `RInvTrigger::TargetAbsent`
@@ -664,7 +664,7 @@ fn every_actionable_format_refusal_keeps_its_own_sentence() {
                 Some('o'),
                 "Times-Bold",
                 "R-INV-1: character U+006F 'o' has no code in font 'Times-Bold'",
-                // ★★ A REAL remedy list, not `Vec::new()`. `Pass 296.1`
+                // A REAL remedy list, not `Vec::new()`. `Pass 296.1`
                 // added this fifth argument and `rustc`'s own suggestion was
                 // `/* Vec<String> */`. An empty vec compiles, keeps every
                 // assertion below green, and silently declines the feature the
@@ -676,7 +676,7 @@ fn every_actionable_format_refusal_keeps_its_own_sentence() {
             )),
             R::FaceLacksCharacters(vec![REMEDY_A.to_owned(), REMEDY_B.to_owned()]),
         ),
-        // ★ `rung_one` carries a WHOLE CLAUSE since `Pass 295.0`, not the face
+        // `rung_one` carries a WHOLE CLAUSE since `Pass 295.0`, not the face
         // list it used to (`passed`). The old field was interpolated straight
         // after the words `page faces`, which ran them together — `page
         // facesHelvetica-Bold` — and, worse, read as *"X was used"* where it
@@ -726,7 +726,7 @@ fn every_actionable_format_refusal_keeps_its_own_sentence() {
         }
     }
 
-    // ★★★ The variant is half the delivery. `refusal_of` reaching
+    // The variant is half the delivery. `refusal_of` reaching
     // `FaceLacksCharacters` was already true when the payload did not exist,
     // so an assertion on the variant alone passes just as happily against
     // `Vec::new()` — which is exactly the shape of a consumed-in-name-only
@@ -746,7 +746,7 @@ fn every_actionable_format_refusal_keeps_its_own_sentence() {
         "the coverage sentence must NAME the faces the engine says would show this run, and it said: {named}"
     );
 
-    // ★★ Empty is a REAL value, not a missing one. An engine that knows of no
+    // Empty is a REAL value, not a missing one. An engine that knows of no
     // covering face sends an empty list, and the shell must answer with a
     // whole sentence of its own rather than a dangling "can show this text"
     // with nothing in front of it.
@@ -767,7 +767,7 @@ fn every_actionable_format_refusal_keeps_its_own_sentence() {
         "the remedy list changed nothing about the sentence, which means it was not consumed"
     );
 
-    // ★ The control. `NoOp` is the variant this shell raises internally to
+    // The control. `NoOp` is the variant this shell raises internally to
     // abort a `vector_edit`, and it is CORRECT for it to land in `Other` — the
     // operator never sees it. Asserted so that "everything maps to something
     // distinct" cannot be satisfied by deleting the wildcard.
@@ -781,7 +781,7 @@ fn every_actionable_format_refusal_keeps_its_own_sentence() {
 /// Every engine decline reaches a shell refusal that suits it, and none of them
 /// collapses into the general one.
 ///
-/// ★ This is the test that would have caught the original defect on the day
+/// This is the test that would have caught the original defect on the day
 /// `Pass 257.0` landed. It walks **every** `ReflowDecline` — the type is not
 /// `#[non_exhaustive]`, so this list cannot silently fall behind — and asserts
 /// the four are not all the same answer, which is the whole reason the
@@ -831,7 +831,7 @@ fn each_engine_decline_reaches_a_refusal_that_suits_it() {
     );
 }
 
-/// ★★★ **A composite-font reflow refusal names the FONT, and does so from the
+/// **A composite-font reflow refusal names the FONT, and does so from the
 /// engine's own discriminant rather than from its prose.**
 ///
 /// # Why this test exists, and what it is really guarding
@@ -845,10 +845,10 @@ fn each_engine_decline_reaches_a_refusal_that_suits_it() {
 /// honest, and useless: it gave him no way to know that trying the paragraph
 /// next to it was pointless for exactly the same reason.
 ///
-/// # ★★ The assertion that matters is the SECOND one
+/// # The assertion that matters is the SECOND one
 ///
 ///
-/// ★ *A tripwire keyed on the other side's data survives the other side
+/// *A tripwire keyed on the other side's data survives the other side
 /// changing; one keyed on our reading of it does not.*
 #[test]
 fn a_composite_font_refusal_says_it_is_the_font() {
@@ -877,7 +877,7 @@ fn a_composite_font_refusal_says_it_is_the_font() {
          filed about"
     );
 
-    // ★★★ The falsification. Same engine VARIANT, different TRIGGER.
+    // The falsification. Same engine VARIANT, different TRIGGER.
     let other_trigger = E::Refused(Refusal::new(
         RInvTrigger::TargetAbsent,
         Some('o'),

@@ -8,7 +8,7 @@ the two auto-hide toggles for the ribbon and the rail. The seam is the
 operand: these are the commands in the program whose subject is *the
 shell's arrangement* rather than the document.
 
-# ★★★ The operand problem, which is the whole reason this file has a
+# The operand problem, which is the whole reason this file has a
 shape at all
 
 Float, dock and close act on **the panel the operator right-clicked**.
@@ -31,7 +31,7 @@ uses, and `crate::app::surfaces`' own comment on that one states the
 rule it follows: the parking site and the draining site are **adjacent**,
 so the value cannot be stale.
 
-★★ **It is set from the token's own origin, not from a hover.** The
+**It is set from the token's own origin, not from a hover.** The
 tab-menu handler runs once per drawn tab per frame — for *every* tab,
 whether or not anything was clicked — so a naive `dock_menu_panel =
 tab.panel()` inside the handler would leave the field naming whichever

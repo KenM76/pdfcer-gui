@@ -35,7 +35,7 @@ pub(super) const NOTES_OPEN_ID: &str = "pdfcer-status-notes-open"; // ui-text-ex
 ///
 /// **Opening this does not make the bar taller.** The line is drawn beside
 /// the triangle, inside the same row, elided at [`NOTES_WIDTH_FRACTION`] of
-/// the bar with the whole text on hover. See the ★ R128 section of this
+/// the bar with the whole text on hover. See the R128 section of this
 /// module's header for why that is a requirement rather than a layout
 /// preference.
 pub(super) fn show(ui: &mut egui::Ui, doc: &OpenDoc) {
@@ -116,7 +116,7 @@ fn notes_line(d: &pdfcer_render::Diagnostics) -> String {
 
 /// **Annotations the file carries that the operator was shown nothing for.**
 ///
-/// ## ★★★ Why this is computed here rather than read off one counter
+/// ## Why this is computed here rather than read off one counter
 ///
 /// The engine reports two numbers and refuses to combine them, for a reason it
 /// states in its own doc comment: `annotations_without_ap` is a **fact about
@@ -192,7 +192,7 @@ fn annotations_not_drawn(d: &pdfcer_render::Diagnostics) -> usize {
 /// to skip it. Listing them **here** would put two numbers that mean "nothing
 /// is wrong" in front of the seven that mean something is.
 ///
-/// ★ They are not lost: the Render-diagnostics dialog shows them, separately
+/// They are not lost: the Render-diagnostics dialog shows them, separately
 /// and with a sentence saying they are not faults
 /// ([`crate::text::diagnostics::absorbed`]). That is the distinction this
 /// exclusion has always rested on — *"this is a status bar, not a report"* —
@@ -210,7 +210,7 @@ fn annotations_not_drawn(d: &pdfcer_render::Diagnostics) -> usize {
 pub(crate) fn findings(d: &pdfcer_render::Diagnostics) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
 
-    // ★★★ FIRST, and it is not in the table below because it is not a count —
+    // FIRST, and it is not in the table below because it is not a count —
     // it is a `bool`, and it is the CAUSE of several of the lines that can
     // appear under it.
     //
@@ -232,7 +232,7 @@ pub(crate) fn findings(d: &pdfcer_render::Diagnostics) -> Vec<String> {
             d.contents_streams_unresolved,
             t::diagnostics_contents_missing,
         ),
-        // ★ Second, above every other absence, and the order is the argument.
+        // Second, above every other absence, and the order is the argument.
         // A missing font leaves a hole an operator can SEE; an annotation with
         // no appearance leaves clean paper, and clean paper is what a drawing
         // nobody commented on looks like. It is the one finding in this table
@@ -270,7 +270,7 @@ mod tests {
         assert_eq!(notes_line(&d), t::diagnostics_clean());
     }
 
-    /// ★★★ **A page pdfcer had to supply a resource dictionary for says so,
+    /// **A page pdfcer had to supply a resource dictionary for says so,
     /// and says it FIRST.**
     ///
     /// Two assertions in one test because the ordering is the substance, not
@@ -306,7 +306,7 @@ mod tests {
 
     /// The other direction: a page that named its own resources is silent.
     ///
-    /// ★ Without this, the assertion above would pass on a build that printed
+    /// Without this, the assertion above would pass on a build that printed
     /// the line unconditionally — which would put a permanent, meaningless
     /// sentence in the status bar of every document the operator opens.
     #[test]
@@ -339,7 +339,7 @@ mod tests {
 
     /// **The icon painter's rescues are subtracted, not counted twice.**
     ///
-    /// ★ This is the whole reason the subtraction lives in this crate. The
+    /// This is the whole reason the subtraction lives in this crate. The
     /// engine counts an appearance-less annotation into `annotations_without_ap`
     /// **and then** into `annotations_icon_painted` if it drew the standard icon
     /// anyway (`Pass 289.0`), and refuses to fold them because the map is a fact
@@ -385,7 +385,7 @@ mod tests {
     /// request**. Those are opposite facts and the engine's own row insists they
     /// stay distinguishable.
     ///
-    /// ★ Dormant today: the only `AnnotationScope` this crate sets is the print
+    /// Dormant today: the only `AnnotationScope` this crate sets is the print
     /// dialog's, and printing does not feed this bar. Pinned anyway, because the
     /// day somebody adds a *View ▸ Display ▸ Comments* toggle is the day this
     /// sentence would start accusing the file of something the operator did.
@@ -439,7 +439,7 @@ mod tests {
             unknown_ops: 9,
             ..Default::default()
         };
-        // ★ The tenth, and it cannot be set in the struct literal above
+        // The tenth, and it cannot be set in the struct literal above
         // because it is a map rather than a count — which is precisely why it
         // was the one a `[NoteEntry; 9]` table could not hold. Ten so that a
         // finding silently dropped from the table is a MISSING NUMBER rather

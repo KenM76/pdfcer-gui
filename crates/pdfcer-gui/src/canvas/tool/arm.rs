@@ -61,7 +61,7 @@ pub fn cursor_for(
     }
     if let Some(kind) = gesture {
         return Some(match kind {
-            // ★★ **One crosshair for every rubber band**, whatever the band will
+            // **One crosshair for every rubber band**, whatever the band will
             // become. All six are the same gesture — a rectangle dragged out —
             // and `gesture`'s header refuses a second set of pixels for it.
             // What says which of them is armed is off-canvas: the pressed
@@ -69,7 +69,7 @@ pub fn cursor_for(
             // instruction, because the window that would have said so has
             // stepped aside.
             //
-            // ★ Every kind is spelled rather than wildcarded, including the
+            // Every kind is spelled rather than wildcarded, including the
             // ones rung 1 already claims. A drag cannot be in flight without
             // the tool that started it, so those arms are unreachable today;
             // naming them is what keeps the six answers one answer the day one
@@ -82,21 +82,21 @@ pub fn cursor_for(
             | DragKind::TextBox => CursorIcon::Crosshair,
             DragKind::Move => CursorIcon::Grabbing,
             DragKind::Resize(grip) => grip.cursor(),
-            // ★ `Grabbing` too, and it names the same limit `Grip::Rotate`'s
+            // `Grabbing` too, and it names the same limit `Grip::Rotate`'s
             // cursor records: egui 0.35 has no rotate cursor. What it says is
             // *"you are holding something"*, which is true; what it does not say
             // is *"and turning it"*, which `handles.md` H6 asks for. Spelled out
             // rather than folded into the `Move` arm above, so the day a rotate
             // cursor exists there is one line to change and it is findable.
             DragKind::Rotate => CursorIcon::Grabbing,
-            // ★ `Grabbing`, the same as a move, and deliberately NOT a bespoke
+            // `Grabbing`, the same as a move, and deliberately NOT a bespoke
             // icon. A handle drag IS a move — of a control point rather than of
             // an object — and the operator learns one grammar: the closed hand
             // means "you have hold of something and it follows the pointer".
             // A distinct cursor would be teaching a distinction that changes
             // nothing about what the gesture does.
             //
-            // ★ A markup shape's node joins them, and it is stated rather than
+            // A markup shape's node joins them, and it is stated rather than
             // wildcarded for the reason the marquee arm above states: a
             // deliberate answer that happens to equal its neighbour's is one
             // line to change the day it stops being equal, and a wildcard is
@@ -104,7 +104,7 @@ pub fn cursor_for(
             DragKind::Handle { .. }
             | DragKind::DimensionVertex { .. }
             | DragKind::MarkupVertex { .. } => CursorIcon::Grabbing,
-            // ★★★ The I-beam for a sweep that began under the MODE rule rather
+            // The I-beam for a sweep that began under the MODE rule rather
             // than under an armed tool, which is the whole of what this arm is
             // for.
             //
@@ -207,7 +207,7 @@ pub fn toggle_hand(ctx: &egui::Context) -> CanvasTool {
         // one press mean "put the pen down" and a second one mean "pick the
         // hand up". The text tool joins that arm rather than earning its own for
         // the identical reason: pressing Hand while sweeping text means Hand.
-        // ★ `Place` joins this arm: pressing Hand while a placement is armed
+        // `Place` joins this arm: pressing Hand while a placement is armed
         // means Hand. The pending record is cleared by `retire_forbidden`'s
         // sibling below and by `canvas::keys`' Escape claimant, so the window
         // it was hiding comes straight back — see `canvas::placing`.
@@ -294,7 +294,7 @@ pub fn toggle_text(ctx: &egui::Context) -> CanvasTool {
 /// again retires the tool, which is what makes a mis-click cheap and what stops
 /// an operator hunting for a way to cancel.
 ///
-/// ★ The trace line is not decoration. A canvas armed with a form tool and an
+/// The trace line is not decoration. A canvas armed with a form tool and an
 /// un-armed one are **the same picture** — a crosshair is a cursor — so this is
 /// the only way a driven check can prove the ribbon button armed anything at
 /// all. It is the lesson of defect 8, applied to a new tool before the defect
@@ -316,7 +316,7 @@ pub fn arm_form(ctx: &egui::Context, kind: crate::canvas::formfield::FormFieldKi
 /// Arm the markup tool with `kind`, or retire it if that kind is already
 /// armed. **The entry point every `markup.*` shape command calls.**
 ///
-/// # ★ Why pressing the armed button again retires the tool
+/// # Why pressing the armed button again retires the tool
 ///
 /// *"Make it work the way other programs do"* is the operator's stated
 /// tie-breaker, and every drawing application treats a tool button as a toggle:
@@ -420,7 +420,7 @@ pub fn arm_measure(ctx: &egui::Context, kind: MeasureKind) -> CanvasTool {
 /// **Escape's claimant, alongside [`disarm_markup`]**, and it sits at the same
 /// rung for the same reason — see [`crate::canvas::keys`]'s precedence table.
 ///
-/// ★ Note what this does **not** do: it does not discard a half-finished pick.
+/// Note what this does **not** do: it does not discard a half-finished pick.
 /// A linear dimension with point A taken and point B not is in-progress work
 /// held by [`crate::canvas::measure::pick`], and Escape retires *one* thing per
 /// press (decision 025's L1). So the first Escape abandons the pick and the
@@ -455,7 +455,7 @@ pub fn disarm_markup(ctx: &egui::Context) -> bool {
     true
 }
 
-/// ★★★ **Put down whatever is armed**, and report whether anything was.
+/// **Put down whatever is armed**, and report whether anything was.
 ///
 /// The operator: *"Escape should get me out of a tool."*
 ///
@@ -503,7 +503,7 @@ pub fn disarm_any(ctx: &egui::Context) -> bool {
 /// Called from `PdfcerApp`'s mode-change arm, once, on the frame the operator
 /// moves the selector.
 ///
-/// # ★ Why arming has to be undone rather than merely refused
+/// # Why arming has to be undone rather than merely refused
 ///
 /// The armed tool lives in `egui::Memory` and is **application**-scoped, not
 /// per-mode — see this module's header. So a Rectangle armed in Edit is still
@@ -532,7 +532,7 @@ pub fn retire_forbidden(ctx: &egui::Context, caps: Capabilities) -> bool {
         // of them would take a navigation or reading tool away from the mode that
         // navigates and reads.
         //
-        // ★ **Text is on this arm and NOT on the markup arm below, and the
+        // **Text is on this arm and NOT on the markup arm below, and the
         // difference is the operator's own ruling rather than a judgement made
         // here.** The obvious move when adding a tool is to copy the line above
         // the cursor and swap the capability — `CanvasTool::Text => caps.???` —
@@ -563,7 +563,7 @@ pub fn retire_forbidden(ctx: &egui::Context, caps: Capabilities) -> bool {
         // its own, so that a future reader adding a fifth tool has to decide which
         // of the two groups it joins.
         CanvasTool::Select | CanvasTool::Hand | CanvasTool::Text => true,
-        // ★★★ **Node is on the OTHER side of the line the paragraph above
+        // **Node is on the OTHER side of the line the paragraph above
         // draws, and it answers to TWO capabilities.**
         //
         // It is the first tool in this enum whose whole purpose is to *change*
@@ -587,7 +587,7 @@ pub fn retire_forbidden(ctx: &egui::Context, caps: Capabilities) -> bool {
         // being armed, which is what makes the arming mean something here
         // rather than being a widened gate for its own sake.
         //
-        // ★★ **Keeping the tool armed in Review does NOT put anchor marks on a
+        // **Keeping the tool armed in Review does NOT put anchor marks on a
         // page whose every drag is refused**, and this is the thing that must
         // not regress. Three independent gates say so:
         //
@@ -607,20 +607,20 @@ pub fn retire_forbidden(ctx: &egui::Context, caps: Capabilities) -> bool {
         // What the arming buys in that mode is reach to the tool whose sentence
         // explains those handles, and a Ctrl-drag that adds or removes one.
         CanvasTool::Node => caps.edit_content || caps.author_measure,
-        // ★ Authoring a form field is a change to the DOCUMENT's content, not
+        // Authoring a form field is a change to the DOCUMENT's content, not
         // an annotation over it — a `/Widget` and its field are page objects
         // the operator is adding. So it answers to `edit_content` and retires
         // when a mode that cannot edit is chosen, exactly like the node tool.
         // Pairing it with `author_markup` would let Review mode place form
         // controls, which is not a review activity.
         CanvasTool::Form(_) => caps.edit_content,
-        // ★ A placement answers to the capability of the thing being placed,
+        // A placement answers to the capability of the thing being placed,
         // which each kind states for itself — see `PlaceKind::capability`.
         // Asking here would put the mapping in a second place and let the two
         // disagree about whether Review may drop an image on a drawing.
         CanvasTool::Place(kind) => kind.capability(caps),
         CanvasTool::Markup(_) => caps.author_markup,
-        // ★ Gated on `author_markup`, not on a capability of its own.
+        // Gated on `author_markup`, not on a capability of its own.
         //
         // A text box, a sticky and a stamp ARE markup — they are annotations
         // added on top of the page, they appear in the Comments panel beside
@@ -630,7 +630,7 @@ pub fn retire_forbidden(ctx: &egui::Context, caps: Capabilities) -> bool {
         // wants one without the other.
         CanvasTool::TextAnnot(_) => caps.author_markup,
         CanvasTool::Measure(_) => caps.author_measure,
-        // ★ …and the caret tool joins the *authoring* group, which is the
+        // …and the caret tool joins the *authoring* group, which is the
         // decision the paragraph above asks a fifth tool's author to make.
         //
         // It joins it on the same three steps read the other way. Step 1: this
@@ -651,7 +651,7 @@ pub fn retire_forbidden(ctx: &egui::Context, caps: Capabilities) -> bool {
         return false;
     }
     select(ctx, CanvasTool::Select);
-    // ★★★ …and a PENDING PLACEMENT goes with it, or the mode change leaves a
+    // …and a PENDING PLACEMENT goes with it, or the mode change leaves a
     // hidden dialog with nothing coming back for it — `OPERATOR_REQUESTS.md`
     // O66.
     //
@@ -661,7 +661,7 @@ pub fn retire_forbidden(ctx: &egui::Context, caps: Capabilities) -> bool {
     // it here is all "bring the window back" means — there is no second flag to
     // remember. Cheap on every other retirement: one `egui::Memory` read.
     crate::canvas::placing::cancel(ctx);
-    // ★ …and the draft goes with the tool, but it is **written** on the way
+    // …and the draft goes with the tool, but it is **written** on the way
     // out rather than dropped. A retirement that left one in `egui::Memory`
     // would leave a keystroke buffer aimed at a document the mode being entered
     // says is not the operator's to change, and it would still be there on the
@@ -680,7 +680,7 @@ pub fn retire_forbidden(ctx: &egui::Context, caps: Capabilities) -> bool {
 /// identical reason — *the button is pressed, so pressing it is how you un-press
 /// it* — and to the discarded return value at the call sites.
 ///
-/// ★ **Changing the kind settles the draft, and that is not the same as the
+/// **Changing the kind settles the draft, and that is not the same as the
 /// mid-drag rule above it.** `arm_markup` can be careless about a drag in flight
 /// because a drag is owned by the gesture machine and carries the kind it
 /// started with, so a kind change cannot reach it. A draft is not owned that
@@ -717,7 +717,7 @@ pub fn arm_text_edit(ctx: &egui::Context, kind: TextEditKind) -> CanvasTool {
 
 /// Whether the space bar is down **and the canvas is entitled to it**.
 ///
-/// # ★★★ It must ask `textedit::composing`, and nothing narrower
+/// # It must ask `textedit::composing`, and nothing narrower
 ///
 /// `ctx.text_edit_focused()` is **false** for an operator typing into the
 /// canvas caret: that caret is deliberately not an `egui::TextEdit`, so egui
@@ -766,7 +766,7 @@ const CAPABILITIES_KEY: &str = "pdfcer.canvas.capabilities"; // ui-text-exempt: 
 
 /// **Park what this mode may do, so a surface that is not handed it can ask.**
 ///
-/// # ★ Why this exists at all, when `Capabilities` is already threaded
+/// # Why this exists at all, when `Capabilities` is already threaded
 ///
 /// It is threaded to everything that *gates a gesture* — `retire_forbidden`,
 /// `takes_the_press`, `press_kind` — because those are called from the canvas
@@ -795,7 +795,7 @@ pub fn store_capabilities(ctx: &egui::Context, caps: Capabilities) {
 
 /// What this mode may do, as last parked by [`store_capabilities`].
 ///
-/// ★ Falls back to [`Capabilities::FULL`], and the fallback is the same
+/// Falls back to [`Capabilities::FULL`], and the fallback is the same
 /// decision `Capabilities::for_mode` makes for an unknown mode, for the same
 /// reason recorded there: a build with no validated manifest has no mode
 /// taxonomy, and a shell that silently withheld every capability would be a

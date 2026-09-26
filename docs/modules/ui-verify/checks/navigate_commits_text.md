@@ -11,7 +11,7 @@ typing is on the page before the operator looks for it.
 
 `OPERATOR_REQUESTS.md` O222.
 
-# ★★★ What the operator is actually reporting
+# What the operator is actually reporting
 
 Not a rendering bug. The text was never committed. A canvas draft lives in
 `egui::Memory` and is drawn by the caret layer, not by the page; the only
@@ -26,7 +26,7 @@ The reading matters because it names what the fix had to be. "Redraw after a
 tool change" would have been a second rendering path for provisional
 content, which is the thing `R8b` forbids. The draft has to **land**.
 
-# ★★ The oracle, and why the tool line is not enough on its own
+# The oracle, and why the tool line is not enough on its own
 
 Two lines, and each is worthless without the other.
 

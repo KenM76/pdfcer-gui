@@ -11,7 +11,7 @@ against every query shape, with no window open. A predicate written
 inline in a `for` loop inside a `ScrollArea` closure can only be tested
 by looking at it.
 
-# ★★★ Decision 1: it matches THE NAME THE ROW SHOWS, and nothing else
+# Decision 1: it matches THE NAME THE ROW SHOWS, and nothing else
 
 The operator's ask was *"there is a search to implement on the layers"*.
 The question that leaves open is whether a query also matches a layer's
@@ -37,7 +37,7 @@ different control — a pair of tick boxes, like `app::status::filter`'s
 eleven-class pick filter — and it composes with this rather than hiding
 inside it.
 
-★★ **"The name the ROW shows"**, not `Layer::name`. A layer whose
+**"The name the ROW shows"**, not `Layer::name`. A layer whose
 `/Name` is absent — a real malformation, since Table 98 makes it
 Required — is drawn as [`crate::text::panels::layer_unnamed`]'s
 placeholder rather than as an invented "Layer 3". A search that matched
@@ -45,7 +45,7 @@ the *underlying* field would leave that row unmatchable by anything the
 operator can read, which is the same defect as matching state: the
 result would not be explicable from the row.
 
-# ★★ Decision 2: case-insensitive, substring, literal
+# Decision 2: case-insensitive, substring, literal
 
 Taken wholesale from [`crate::find::FindOptions`]'s default rather than
 decided again, because this shell has already argued it and a second
@@ -70,7 +70,7 @@ in the wild are overwhelmingly CAD layer names — `HIDDEN`, `DIM`,
 `A-WALL-FULL` — and a Turkish dotted İ in one would match on its bytes
 rather than on its case-folded form. Worth the trade; worth saying.
 
-# ★ Decision 3: the query is TRIMMED, and an all-whitespace query is no
+# Decision 3: the query is TRIMMED, and an all-whitespace query is no
 query
 
 `redact`'s search field does the same and for the same reason: a

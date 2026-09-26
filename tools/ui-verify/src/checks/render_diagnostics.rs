@@ -94,7 +94,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
-    // ★ Long, and the length is load-bearing rather than cautious. The dialog
+    // Long, and the length is load-bearing rather than cautious. The dialog
     // draws one sentence — "this page has not been drawn yet" — until a raster
     // exists, and that branch would satisfy every assertion below while telling
     // the operator nothing. Waiting for the first page of a dense CAD sheet is
@@ -132,7 +132,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 
     // --- A. Edit mode, then the Tools tab ----------------------------------
     //
-    // ★ The mode click is a precondition rather than a flourish. pdfcer opens in
+    // The mode click is a precondition rather than a flourish. pdfcer opens in
     // **Read**, whose tab list is `["file", "view"]` — so Tools does not exist
     // in the mode this process starts in, and a check that went straight for
     // the tab would SKIP with *"the tab strip is too narrow"*, which is a

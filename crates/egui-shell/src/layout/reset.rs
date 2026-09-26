@@ -116,7 +116,7 @@ pub fn reset(layout: &mut DockLayout, scope: ResetScope, default: &DockLayout) -
             *layout.side_mut(side) = default.side(side).clone();
         }
     }
-    // ★★★ **A reset re-docks every float whose HOME is in scope**, and this
+    // **A reset re-docks every float whose HOME is in scope**, and this
     // is the deterministic recovery for a window nobody can reach.
     //
     // A float has no side, so a scoped reset that only touched sides would
@@ -127,14 +127,14 @@ pub fn reset(layout: &mut DockLayout, scope: ResetScope, default: &DockLayout) -
     // *heuristic* about that case and says so; this is the part that is
     // not a guess.
     //
-    // ★★ Re-docked rather than dropped. The alternative — clearing
+    // Re-docked rather than dropped. The alternative — clearing
     // `floating` and letting the default arrangement decide — loses a panel
     // the operator floated *out of the side they are not resetting*, which
     // would make "reset the left dock" delete something on the right. This
     // way the panel comes back where it came from, and if that side is also
     // in scope the copy from `default` immediately governs anyway.
     //
-    // ★ Scoped by HOME rather than by "all floats", so the promise in this
+    // Scoped by HOME rather than by "all floats", so the promise in this
     // module's header — *"the sides outside the scope are not read, not
     // written"* — still holds for the floats too. An operator resetting the
     // right dock keeps the panel they floated out of the left one.
@@ -194,7 +194,7 @@ mod tests {
         )
     }
 
-    /// ★★★ **Reset recovers a floated panel** — the deterministic half of
+    /// **Reset recovers a floated panel** — the deterministic half of
     /// the off-screen-window answer.
     ///
     /// `crate::dock::float::honour_position` is a *heuristic* about a
@@ -220,7 +220,7 @@ mod tests {
         assert!(layout.is_normalized());
     }
 
-    /// ★★ **A scoped reset only re-docks the floats whose HOME is in
+    /// **A scoped reset only re-docks the floats whose HOME is in
     /// scope.**
     ///
     /// The module header promises that a side outside the scope is *"not
@@ -256,7 +256,7 @@ mod tests {
         assert!(!reset(&mut layout, ResetScope::All, &default_layout()));
     }
 
-    /// ★ **The rule, asserted directly: resetting the right dock leaves
+    /// **The rule, asserted directly: resetting the right dock leaves
     /// the left one bit-identical.**
     ///
     /// *"An operator who only wanted the right dock back must not lose
@@ -303,7 +303,7 @@ mod tests {
         assert!(!reset(&mut layout, ResetScope::Left, &default_layout()));
     }
 
-    /// ★ **A partial reset cannot leave a panel mounted twice.**
+    /// **A partial reset cannot leave a panel mounted twice.**
     ///
     /// The operator dragged `pages` — which the default mounts on the
     /// left — over to the right, then reset the left. Without the
@@ -330,7 +330,7 @@ mod tests {
         assert_eq!(layout.panels().filter(|p| **p == pages).count(), 1);
     }
 
-    /// ★ **A reset never destroys a named workspace.**
+    /// **A reset never destroys a named workspace.**
     ///
     /// The judgement call in this module's header, asserted so that a
     /// later "make reset thorough" edit fails a test instead of costing

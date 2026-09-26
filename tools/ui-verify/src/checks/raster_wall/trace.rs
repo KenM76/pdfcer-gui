@@ -53,7 +53,7 @@ pub(super) fn latest_canvas(trace: &Trace) -> Option<CanvasState> {
 /// The reason the canvas is drawing **nothing**, if that is the verdict that
 /// currently stands.
 ///
-/// ★ `canvas` and `canvas-unavailable` share one trace slot, so the channel
+/// `canvas` and `canvas-unavailable` share one trace slot, so the channel
 /// emits whichever changed and the other's last line stays in the file for
 /// ever. Asking `events("canvas").last()` alone would read a fossil from before
 /// the canvas went empty and report a healthy frame over a blank screen. The
@@ -87,7 +87,7 @@ pub(super) fn beyond_after(trace: &Trace, after: usize) -> Option<usize> {
 /// legible, because `absorb_render` learns a ceiling from it and everything
 /// after is a consequence of that.
 ///
-/// ★ The line number is returned because the attribution depends on what came
+/// The line number is returned because the attribution depends on what came
 /// BEFORE the refusal — see [`went_blank_between`]. Three different defects can
 /// produce this one line and the only way to tell them apart is the order of the
 /// trace.
@@ -104,7 +104,7 @@ pub(super) fn first_bad_raster_after(
 /// Did the canvas report itself EMPTY between `after` and `before`, and on which
 /// line?
 ///
-/// ★★★ This is the discriminator between O186's third route and its first.
+/// This is the discriminator between O186's third route and its first.
 /// `canvas-unavailable reason=nothing-visible` says no part of any page was on
 /// screen, which is upstream of everything: with nothing visible there is no
 /// region, with no region the request is the whole sheet, and above the pixmap

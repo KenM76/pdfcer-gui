@@ -43,10 +43,10 @@ const CARET_EVENT: &str = "text-edit-caret";
 /// row for the operator, and this goes to the channel for a check.
 /// The status bar's decline slot, as `app::status::decline` publishes it.
 ///
-/// ★★ This is a SECOND COPY of a string, and nothing enforces the pair.
+/// This is a SECOND COPY of a string, and nothing enforces the pair.
 ///
 ///
-/// ★★★ What makes the duplication tolerable is the DIRECTION it fails in.
+/// What makes the duplication tolerable is the DIRECTION it fails in.
 /// Rename the region in the application and this check stops matching, so it
 /// reports *"the operator was told nothing"* — a **false failure**, loud, on
 /// the very check whose subject is silence. The dangerous direction would be a
@@ -67,7 +67,7 @@ const TARGET_EVENT: &str = "edit-text-target";
 /// than *there is nothing here*. So its presence carries a precise claim:
 /// **the aim was not on text, and everything else was fine.**
 ///
-/// ★ Quoted rather than merely detected. The conversion is a design the
+/// Quoted rather than merely detected. The conversion is a design the
 /// operator asked for by name, and a reader meeting this skip for the first
 /// time needs to see that the program ANNOUNCED what it did — otherwise the skip
 /// reads as the harness excusing a silence, which is a failure mode this
@@ -77,7 +77,7 @@ const BECAME_ADD_EVENT: &str = "text-edit-became-add";
 /// How many following absolutely-placed `Tm`s one edit may reposition before
 /// this check calls it a defect.
 ///
-/// ★★ **This bound is a fact about the BUILD, not about the fixture.** Reflow
+/// **This bound is a fact about the BUILD, not about the fixture.** Reflow
 /// shifts *the rest of the line* by the advance delta; a line is a handful of
 /// show operators in prose and often exactly one on a drawing. A number in the
 /// hundreds means the scan did not find the end of the line and ran on into the
@@ -108,7 +108,7 @@ const LEFT_EDGE_EVENT: &str = "edit-text-left-edge";
 
 /// How far the corrected line's left edge may move, in points.
 ///
-/// ★★ **Zero is the correct answer and the tolerance is for arithmetic, not for
+/// **Zero is the correct answer and the tolerance is for arithmetic, not for
 /// behaviour.** Replacing a run's glyphs does not touch the text-positioning
 /// operand that put it there, so the left edge before and after are the same
 /// number arrived at twice. Half a point is a fraction of the smallest
@@ -229,7 +229,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 1: Edit mode, so the Edit tab exists at all -----------------------
     //
-    // ★ Worth stating because it is a candidate explanation for the operator's
+    // Worth stating because it is a candidate explanation for the operator's
     // report all by itself: in Review the Edit tab is not shown and `Ctrl+E` is
     // refused by the chord gate, so an operator marking up a drawing — which is
     // the mode marking up puts them in — genuinely cannot reach either text
@@ -294,7 +294,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .filter_map(|l| l.get("reason").map(str::to_owned))
         .last();
 
-    // ★★ THE ASSERTION, and it is deliberately two-sided.
+    // THE ASSERTION, and it is deliberately two-sided.
     //
     // A caret is a pass. A decline is a FAIL **with the reason quoted**, and
     // that is the shape this check has to have: the operator's report is not
@@ -308,7 +308,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // working and refusing, and the question moves to whether the operator can
     // READ the refusal. `NoText` on a page `find-text` just matched on would be
     // the strangest of the three.
-    // ★★★ `InsideForm` WAS A SKIP FOR ONE DAY. IT IS NOW A FAILURE.
+    // `InsideForm` WAS A SKIP FOR ONE DAY. IT IS NOW A FAILURE.
     //
     //
     // > *"The day the engine gains form editing, this branch stops being
@@ -318,7 +318,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // That day was **the same day**. `Pass 119.0` landed form-XObject text
     // editing that evening, and the shell's refusal was deleted.
     //
-    // ★ So the branch is kept and INVERTED, which is worth more than deleting
+    // So the branch is kept and INVERTED, which is worth more than deleting
     // it: a build that reports this reason again has reinstated a guard that
     // refuses a caret on **99 % of the text on a CAD drawing** — the operator's
     // own estimate, and the reason that Pass jumped the queue. That is a
@@ -342,7 +342,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(decline_message(&session, declined.as_deref())));
     };
 
-    // --- 4b: ★★★ DID THE CLICK LAND ON TEXT AT ALL? THE AIM GUARD ------------
+    // --- 4b: DID THE CLICK LAND ON TEXT AT ALL? THE AIM GUARD ------------
     //
     //
     // The sweep hands every check `--pdf fixtures/a1-titleblock.pdf
@@ -367,13 +367,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // `edit-text-refused` line followed — so the shell built no plan"*, which
     // was false in every clause: the plan was built, committed and traced.
     //
-    // ★★ The tell costs nothing to read and was already in hand.
+    // The tell costs nothing to read and was already in hand.
     // `Anchor::Run` prints `run=N`; `Anchor::Origin` prints `origin=x,y`.
     // **A caret with no `run=` is by construction a click that resolved no
     // run**, and on any document whose text the operator can see, that is the
     // harness's aim rather than the program's behaviour.
     //
-    // ★ SKIPPED, not failed, and for the reason
+    // SKIPPED, not failed, and for the reason
     // `font_group::aimed_at_one_text_object` gives in its own header: a guard
     // against a bad aim is only worth having if every check that can be handed
     // a bad aim uses one. That function is the fuller instrument — it reads
@@ -422,7 +422,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         line.raw
     ));
 
-    // --- 5: ★★ the multi-run DISCLOSURE, which is the half the refusal was
+    // --- 5: the multi-run DISCLOSURE, which is the half the refusal was
     //           right about --------------------------------------------------
     //
     // A CAD table row is one show operator per cell, so the pieces beside the
@@ -455,7 +455,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 6: type, and commit through the ONE path a commit takes ------------
     //
-    // ★ Real keystrokes. `add_text_takes_real_keystrokes` established that the
+    // Real keystrokes. `add_text_takes_real_keystrokes` established that the
     // OS → egui → draft link holds; what is unproven here is that it holds for
     // the EDIT variant on a run that already has text in it, where the draft
     // starts seeded rather than empty.
@@ -481,7 +481,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // failure about the wrong subject, produced by a check that had gone stale
     // against a deliberate, tested change in the program.
     //
-    // ★ The tell was in the trace and not in the message: `text-edit-enter` is
+    // The tell was in the trace and not in the message: `text-edit-enter` is
     // present, so the key arrived and was *understood*. A commit that never
     // reached the shell and a commit that was never requested are different
     // states, and only one of them is a defect.
@@ -490,7 +490,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let trace = session.trace()?;
 
-    // ★★ A REFUSAL IS ASKED ABOUT FIRST, AND THE REASON IS WHY.
+    // A REFUSAL IS ASKED ABOUT FIRST, AND THE REASON IS WHY.
     //
     // Until 2026-08-20 this check tested only for the ABSENCE of a commit line
     // and, on finding none, reported *"THE COMMIT NEVER REACHED THE ENGINE."*
@@ -511,7 +511,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // half of the system. The refusal detail is quoted verbatim because the
     // engine's sentence is the whole of the diagnosis and any paraphrase here
     // would be a second account of it that could drift.
-    // ★★★ A REFUSAL ON A SPLIT RUN IS THE PROGRAM WORKING, AND THIS CHECK CALLED
+    // A REFUSAL ON A SPLIT RUN IS THE PROGRAM WORKING, AND THIS CHECK CALLED
     // IT A DEFECT.
     //
     // `pdfcer-core` `Pass 152.0` lets an empty `find` beside a pin mean *"this
@@ -533,7 +533,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // this, and it answered `one_operator=false find_len=30` on the very first
     // run.
     //
-    // ★ Note the distinction the old note blurred: it said *"this point is on a
+    // Note the distinction the old note blurred: it said *"this point is on a
     // single-run line"*, and a **run** is not an **operator**. One run, two
     // operators, is exactly this case.
     if let Some(pin) = trace.last("edit-text-pin")
@@ -570,20 +570,20 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // that region is the program behaving correctly and is reported as such; a
     // refusal followed by silence is O116 and fails.
     //
-    // ★★ Deliberately keyed on the REGION rather than on the sentence. The
+    // Deliberately keyed on the REGION rather than on the sentence. The
     // harness cannot read rendered text — there is no accessibility reader and
     // no OCR — so a check for the wording would have to assert against a string
     // the application also publishes, which is the application agreeing with
     // itself. The region is the honest available oracle: it says a disclosure
     // was DRAWN, which is precisely the half that was missing.
     //
-    // ★ And it must come AFTER the refusal in the trace. A decline left in the
+    // And it must come AFTER the refusal in the trace. A decline left in the
     // slot by an earlier gesture would otherwise satisfy this, and a stale
     // sentence is exactly what `app::status::decline`'s retirement rule exists
     // to prevent — a check that could be passed by one would be blessing the
     // bug it is written to catch.
     if let Some(refused) = trace.last("edit-text-refused") {
-        // ★ `lineno`, which is the trace's own ordering key — the 1-based line
+        // `lineno`, which is the trace's own ordering key — the 1-based line
         // in the stderr capture. Ordering matters here and is argued above: a
         // decline left in the slot by an earlier gesture must not satisfy this.
         let refusal_at = refused.lineno;
@@ -632,7 +632,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("★★ the edit reached the engine on the operator's own drawing");
 
-    // --- 7: ★★★ AND IT EDITED THE BUFFER THE CARET MEASURED --------------
+    // --- 7: AND IT EDITED THE BUFFER THE CARET MEASURED --------------
     //
     // The assertion that makes step 6 mean something on THIS document. On a CAD
     // sheet the text the operator clicks lives in a form XObject, and the shell
@@ -647,7 +647,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // provenance record it takes the pin from — the two fields are one fact —
     // and `edit-text-target` is that decision, observable.
     //
-    // ★ What is asserted is that the line EXISTS and carries a form, not a
+    // What is asserted is that the line EXISTS and carries a form, not a
     // particular object number. Which object holds the title block is a fact
     // about the fixture; that the edit went into a form at all, on a document
     // whose editable text is inside one, is a fact about the build. A
@@ -664,7 +664,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("★ the edit named its buffer: `{}`", target.raw));
 
-    // --- 8: ★★★ AND IT DID NOT MOVE THE REST OF THE DRAWING ---------------
+    // --- 8: AND IT DID NOT MOVE THE REST OF THE DRAWING ---------------
     //
     // The assertion that would have caught `Pass 121.1` before the operator
     // did — and the engine's own request when it shipped the fix:
@@ -675,7 +675,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // > you show one number from an edit report beyond the disclosures, make it
     // > that one."*
     //
-    // ★ Note what this is NOT: it is not a pixel oracle, and the standing rule
+    // Note what this is NOT: it is not a pixel oracle, and the standing rule
     // says a trace cannot tell you the screen changed. It does not need to. The
     // claim being checked is about the SCOPE of a rewrite — how many operators
     // in the content stream were touched — and that is a number the engine
@@ -714,7 +714,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "★★ the edit stayed inside its own line: {followers} following operator(s) \
          repositioned, against 1,676 on the same drawing before the engine's `Pass 121.1`"
     ));
-    // ★★ …and the shared-content fan-out, REPORTED rather than asserted.
+    // …and the shared-content fan-out, REPORTED rather than asserted.
     //
     // A form XObject may legally be painted from several pages, so an edit
     // inside one can change every sheet it appears on — and the engine puts a
@@ -734,20 +734,20 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ));
     }
 
-    // --- 9: ★★★ AND THE LINE IT CORRECTED IS STILL WHERE IT WAS -----------
+    // --- 9: AND THE LINE IT CORRECTED IS STILL WHERE IT WAS -----------
     //
     // `OPERATOR_REQUESTS.md` O213, in his own words: *`when I edit some of the
     // lines like #2 USE SPACERS … the entire line shifts to the right after
     // instead of staying in place`*.
     //
-    // ★★ Step 8 is not this, and the difference is the whole reason step 9
+    // Step 8 is not this, and the difference is the whole reason step 9
     // exists. `followers_repositioned` counts how many operators AFTER the
     // edited one were moved; it is silent about the edited one itself. On his
     // sheet the defective commit reports a follower count step 8 is happy with
     // and moves the corrected line anyway, which is how this reached him
     // through a check already asserting on reflow scope.
     //
-    // ★ A trace number and not pixels, deliberately. The standing rule is that
+    // A trace number and not pixels, deliberately. The standing rule is that
     // layout defects have one oracle and it is a rendered screenshot — and a
     // title block is the case that rule did not have in mind: the leftmost ink
     // in the strip holding `#2 USE SPACERS` is the box rule, not the text, so a

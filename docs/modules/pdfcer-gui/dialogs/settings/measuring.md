@@ -3,7 +3,7 @@
 One setting: the angular tolerance below which two lines are dimensioned as
 a **distance** rather than as an **angle**.
 
-## ★ Why this is a group of its own
+## Why this is a group of its own
 
 In the old shell `parallel_epsilon_degrees` lived under *Copying and
 extracting text*, where it has nothing whatever to do with either. It was

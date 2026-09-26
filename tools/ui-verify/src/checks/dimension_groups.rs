@@ -20,14 +20,14 @@ use crate::sys::vk;
 const MODE: &str = "review";
 /// The panel body's own region.
 ///
-/// ★ The `panel:` prefix is load-bearing in the trace — a reader scanning for
+/// The `panel:` prefix is load-bearing in the trace — a reader scanning for
 /// what drew has to be able to tell a floating window from a docked body — so
 /// the region names the kind of surface rather than being kept short for the
 /// harness's convenience.
 const PANEL: &str = "panel:dimension-groups";
 /// The dock's own region for this panel's body.
 ///
-/// ★ The DOCK's name, not the panel's: `egui-shell` publishes
+/// The DOCK's name, not the panel's: `egui-shell` publishes
 /// `dock.body.<panel command id>` for every mounted panel, and it is the one
 /// rect that says where the panel actually is this frame. `PANEL` below is the
 /// application's own region for the same surface, and the two are not
@@ -38,7 +38,7 @@ const PANEL_BODY: &str = "dock.body.measure.manage_groups";
 /// `panel-closed id=… closed=…` — the line `app::panels::toggle_panel` writes
 /// when a press took the **closing** branch.
 ///
-/// ★ Read only to improve a failure message, and it is the one line that can
+/// Read only to improve a failure message, and it is the one line that can
 /// tell a press that SHUT the panel apart from a panel that never drew.
 /// The two look identical from outside — no body region either way — and they
 /// have opposite fixes: one is the harness's precondition, the other is the
@@ -53,7 +53,7 @@ const ADD: &str = "dimension-groups.add";
 /// The prefix of the per-group authoring radios.
 const DRAW_INTO: &str = "dimension-groups.draw_into.";
 /// The appearance-defaults block, which proves the lower half drew at all.
-/// ★ Kept and unused, with an `allow`, because it is the name the fold phases
+/// Kept and unused, with an `allow`, because it is the name the fold phases
 /// will aim at again the day the harness can reach a control inside a
 /// just-raised dock panel. Deleting it would make that day's work start by
 /// re-deriving a string this file already knew.
@@ -82,7 +82,7 @@ const APPLIED: &str = "add-dimension-group";
 const NAME_KEYS: [u16; 6] = [vk::D, vk::E, vk::T, vk::A, vk::I, vk::L];
 /// One more letter, appended when renaming.
 ///
-/// ★ **Appended rather than retyped**, and that is what makes the rename
+/// **Appended rather than retyped**, and that is what makes the rename
 /// observable without reading the text back. The field opens seeded with the
 /// group's current name, and the Rename button is drawn **only while the draft
 /// differs from it** — so a single extra letter producing a commit is itself
@@ -94,7 +94,7 @@ const RENAME_KEY: u16 = vk::L;
 
 /// Press one of the panel's fold headings, and wait for the frame that answers.
 ///
-/// # ★ Why this exists, and why it returns `Option` rather than failing
+/// # Why this exists, and why it returns `Option` rather than failing
 ///
 /// Five of the panel's six sections start shut, so the regions this check aims
 /// at — the name field, the Add button, Rename, Delete, the appearance block —
@@ -115,7 +115,7 @@ const RENAME_KEY: u16 = vk::L;
 /// and is reported by the caller in its own words — a fold whose heading cannot
 /// be found is a section that is unreachable, not a section that is shut.
 fn fold(session: &Session, driver: &Driver, ui_rect: &str, key: &str) -> Result<Option<LRect>> {
-    // ★★ SETTLE BEFORE READING, and this line is a defect report.
+    // SETTLE BEFORE READING, and this line is a defect report.
     //
     // The first driven run of this check failed with *"the Appearance heading
     // was pressed and no `dimension-groups.appearance` region followed"*, and
@@ -133,12 +133,12 @@ fn fold(session: &Session, driver: &Driver, ui_rect: &str, key: &str) -> Result<
     // This is `D:/dev/rag/egui/`'s ui-rect finding arriving from a third
     // direction, and the general form is worth stating: **a harness that reads
     // a coordinate and then acts on it owns the interval between the two.**
-    // ★★ `stable_rect`, not `declared` — see its own header for the measurement.
+    // `stable_rect`, not `declared` — see its own header for the measurement.
     // Raising this panel changes the DOCK's layout and it lands over several
     // frames, so a rect read once is a coordinate that is about to be wrong.
     let region = format!("{HEADING}{key}");
     let Some(heading) = crate::checks::driving::stable_rect(session, ui_rect, &region, 12)? else {
-        // ★★★ **Two very different reasons to have no rect, and they must not
+        // **Two very different reasons to have no rect, and they must not
         // share an answer.** The caller reports `Ok(None)` as a FAIL reading
         // *"the panel declares no `dimension-groups.heading.add` region, so
         // there is no way to open the new-group controls"* — and that same
@@ -153,7 +153,7 @@ fn fold(session: &Session, driver: &Driver, ui_rect: &str, key: &str) -> Result<
         // **SKIP**, exactly as the body-precondition below does and for the
         // identical reason — *a check that could not aim has learned nothing*.
         // Only genuinely-absent stays `Ok(None)`.
-        // ★ `declared_names`, not `declared` — and the difference is exactly
+        // `declared_names`, not `declared` — and the difference is exactly
         // what produced the self-contradicting report. `declared` answers with
         // the LAST rect published for a name and gives back nothing once a
         // `ui-rect-gone` has retired it; `declared_names` answers *has this
@@ -175,7 +175,7 @@ fn fold(session: &Session, driver: &Driver, ui_rect: &str, key: &str) -> Result<
         }
         return Ok(None);
     };
-    // ★★★ **The precondition, and it is the finding this helper exists to
+    // **The precondition, and it is the finding this helper exists to
     // report rather than to work around.**
     //
     // Aim only if the heading is still inside the panel's own body. Raising
@@ -308,7 +308,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: show the panel -------------------------------------------------
     //
-    // ★★★ **The precondition comes first, because the control is a TOGGLE.**
+    // **The precondition comes first, because the control is a TOGGLE.**
     //
     // `app::panels::toggle_panel` closes a panel that is already **on screen**
     // — mounted, the active tab of its stack, on a visible side — and raises it
@@ -319,14 +319,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // panel body appears — because the panel was the active tab and the click
     // SHUT it. The check then reports a defect in a panel that works.
     //
-    // ★ The guard is the convention this suite already has, in
+    // The guard is the convention this suite already has, in
     // `properties_metadata` and `bookmark_add`: press a panel toggle only if
     // the panel is not already up, because pressing it when the panel is open
     // closes the thing under test. Written the same way here rather than
     // invented differently — three copies of one rule that read alike are one
     // rule; three that read differently are three rules that will drift.
     //
-    // ★★ `PANEL` is the oracle for "already showing" and it is the right one
+    // `PANEL` is the oracle for "already showing" and it is the right one
     // because the application declares that region **from inside the panel's
     // own body function**. A panel behind a sibling tab is not drawn, so it
     // declares nothing, and `declared` retires a region the moment the
@@ -351,7 +351,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              behind another' half is not asserted on this run.",
         );
     } else {
-        // ★ Through `declared_or_in_overflow`, not `declared`. At the harness's
+        // Through `declared_or_in_overflow`, not `declared`. At the harness's
         // window width a band legitimately folds controls into the overflow, so
         // a check that looks only at the band reports a present control as
         // missing. Looking in both places is what keeps that false failure from
@@ -374,7 +374,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             )));
         };
         driver.click_at(session.frame()?.declared_center(item))?;
-        // ★ Generous, and measured rather than chosen. Raising this panel
+        // Generous, and measured rather than chosen. Raising this panel
         // changes the DOCK's own layout — its stack's tab strip loses a row
         // when the panel takes the stack — and that lands a frame after the
         // panel itself, moving every heading in the body up by one row height.
@@ -397,7 +397,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             .filter(|l| l.get("id") == Some("measure.manage_groups"))
             .filter_map(|l| l.get("reason").map(str::to_owned))
             .last();
-        // ★★ The toggle's OWN line, and it is here because the guard above is
+        // The toggle's OWN line, and it is here because the guard above is
         // not proof. `app::panels::toggle_panel` traces `panel-closed id=… `
         // whenever it took the closing branch, so this separates *"the press
         // shut a panel that was up"* — which the precondition is supposed to
@@ -454,7 +454,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              failing to read `dimension_model()` rather than a document with no groups."
         )));
     }
-    // ★★★ **The fold phases are NOT DRIVEN, and this note is the finding.**
+    // **The fold phases are NOT DRIVEN, and this note is the finding.**
     //
     // Pressing `dimension-groups.heading.appearance`, asserting the appearance
     // block drew, pressing it again and asserting it was gone fails against a
@@ -535,7 +535,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 6: add it ---------------------------------------------------------
     //
-    // ★★★ **Scroll to it first**, and the reason is not the one the harness
+    // **Scroll to it first**, and the reason is not the one the harness
     // reports first.
     //
     // The panel body is a `ScrollArea::vertical`, so `dimension-groups.add`
@@ -617,7 +617,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("the group reached the document through the action funnel");
 
-    // --- 7: ★ and it comes BACK, with a radio on it ------------------------
+    // --- 7: and it comes BACK, with a radio on it ------------------------
     let after = live_names(&session.trace()?, ui_rect, DRAW_INTO);
     if after.len() <= before.len() {
         return Ok(Some(format!(
@@ -637,7 +637,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 8: rename it, and delete it ---------------------------------------
     //
-    // ★ A ROUND TRIP, deliberately: create, rename, delete, ending with the
+    // A ROUND TRIP, deliberately: create, rename, delete, ending with the
     // list exactly as long as it started. Each verb alone would only show that
     // its arm exists; together they show that the panel's three controls act
     // on the SAME group — which is the failure a per-row surface actually has,

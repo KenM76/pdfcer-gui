@@ -5,7 +5,7 @@ The catalogue for [`crate::dialogs::page_size`] and for the disclosures
 [`crate::app::actions::pagesize`] raises after the commit. R1: every string
 a human can read is defined here and nowhere else.
 
-## ★★★ The one thing this whole catalogue exists to say
+## The one thing this whole catalogue exists to say
 
 **Changing a `/MediaBox` changes the paper. It does not move, scale or
 shrink anything drawn on the page.**
@@ -24,13 +24,13 @@ that repetition is deliberate rather than sloppy:
    rule 4 says a consequence the operator cannot see on the page is owed a
    sentence off it.
 
-## ★★ Rule 15 — "dimension" is never written bare here
+## Rule 15 — "dimension" is never written bare here
 
 Two different things on a CAD sheet are called dimensions and a paper change
 affects them differently, so R8b rule 15 forbids the bare word:
 
 
-★ The second row is *why the honest answer is "nothing moves"* rather than a
+The second row is *why the honest answer is "nothing moves"* rather than a
 hedge. A verb that scaled the drawing to fit would have to rescale every ce
 dimension group's calibration to keep its numbers true, and would silently
 falsify every one it missed. This verb cannot get that wrong because it does

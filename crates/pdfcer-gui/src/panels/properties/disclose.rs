@@ -7,7 +7,7 @@ use crate::app::state::OpenDoc;
 
 /// The region this block publishes when it has something to say.
 ///
-/// ★ Published only on the frames it draws, so its **absence** is the evidence
+/// Published only on the frames it draws, so its **absence** is the evidence
 /// that there is no disclosure — which is the distinction a driven check about
 /// a refusal is actually asking about.
 pub const REGION: &str = "properties.disclosures"; // ui-text-exempt: trace region name, never displayed
@@ -22,13 +22,13 @@ pub(super) fn section(ui: &mut egui::Ui, doc: &OpenDoc) -> bool {
         return false;
     }
     ui.label(crate::text::tool::disclosures_heading());
-    // ★ `ui_rect_visible`, not `ui_rect`. This panel is one `ScrollArea`, and a
+    // `ui_rect_visible`, not `ui_rect`. This panel is one `ScrollArea`, and a
     // rect published for a scrolled-out region is a coordinate the harness will
     // click — landing on whatever is really drawn there, and reporting the
     // resulting failure against this block.
     crate::diag::ui_rect_visible(REGION, ui.min_rect(), ui.clip_rect());
     for note in &disclosure.notes {
-        // ★ VERBATIM, and wrapped rather than elided — `ui-spec` §6, and the
+        // VERBATIM, and wrapped rather than elided — `ui-spec` §6, and the
         // whole reason this block is in a panel rather than in the status row:
         // a disclosure shortened to fit is a disclosure edited by the program
         // doing the disclosing.
@@ -42,7 +42,7 @@ pub(super) fn section(ui: &mut egui::Ui, doc: &OpenDoc) -> bool {
 mod tests {
     /// The region names the Properties panel, and no other.
     ///
-    /// ★ Worth a test because a driven check sweeping for a region name that
+    /// Worth a test because a driven check sweeping for a region name that
     /// nothing publishes finds nothing and SKIPs — and a SKIP is not red, so a
     /// region renamed out from under a check costs no build and all coverage.
     #[test]

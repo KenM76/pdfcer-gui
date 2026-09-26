@@ -432,7 +432,7 @@ pub const OCR_OVERLAY_DEFAULT: f32 = 0.65;
 
 /// A slider position brought into `0.0..=1.0`, with a non-finite one refused.
 ///
-/// ★ The guard is `is_finite` **before** the clamp, not after: `f32::clamp`
+/// The guard is `is_finite` **before** the clamp, not after: `f32::clamp`
 /// propagates a NaN rather than rejecting it, so a NaN that reached the veil's
 /// alpha would paint an undefined rectangle over the page. The same ordering
 /// `crate::app::prefs::normalise_ui_scale` uses, for the same reason.
@@ -769,7 +769,7 @@ pub fn raster_scale(
 /// The factor between a **zoom** and a **raster scale**, in device pixels per
 /// logical unit.
 ///
-/// # ★★★ Why this is a function and not two multiplications
+/// # Why this is a function and not two multiplications
 ///
 /// A raster scale is `zoom × pixels_per_point × quality.multiplier()`, and four
 /// places in the shell need to run that conversion **backwards**:
@@ -1023,7 +1023,7 @@ mod tests {
         assert_eq!(raster_scale(1.5, 1.0, NORMAL), 1.5);
     }
 
-    /// ★★★ **[`zoom_for_raster_scale`] is the exact inverse of
+    /// **[`zoom_for_raster_scale`] is the exact inverse of
     /// [`raster_scale`], at every quality** — O218.
     ///
     /// The defect this pins is not that either function was wrong. Each was
@@ -1035,7 +1035,7 @@ mod tests {
     /// exists to rescue him landed by the same factor too high and refused
     /// again.
     ///
-    /// ★ The repair is structural rather than arithmetic: both directions now
+    /// The repair is structural rather than arithmetic: both directions now
     /// run through [`raster_density`], so this test cannot be made to fail by
     /// changing one of them. That is the point of it — it is here to fail if
     /// somebody re-opens the two into separate expressions.
@@ -1059,7 +1059,7 @@ mod tests {
         }
     }
 
-    /// ★★ **A nonsense density is the identity in BOTH directions.**
+    /// **A nonsense density is the identity in BOTH directions.**
     ///
     /// `sane_pixels_per_point` lives inside [`raster_density`], so the guard is
     /// stated once and both directions inherit it. Were it applied in the
@@ -1074,7 +1074,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **The page ceiling moves with the render quality** — O218's other
+    /// **The page ceiling moves with the render quality** — O218's other
     /// half, and the assertion that fails on the old arithmetic.
     ///
     /// Sharper rasterizes at 1.5×, so the zoom at which a page fills

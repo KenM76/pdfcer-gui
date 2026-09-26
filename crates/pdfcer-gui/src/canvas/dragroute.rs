@@ -1,7 +1,7 @@
 //! # `canvas::dragroute` — which of THREE move verbs one drag reaches
 //!
 //!
-//! ## ★★★ The seam is a subject, and it is the one this project got wrong
+//! ## The seam is a subject, and it is the one this project got wrong
 //!
 //! One gesture — press inside the thing, drag it — reaches three different
 //! engine verbs, and **which one is decided entirely by what is selected**:
@@ -18,7 +18,7 @@ use crate::canvas::{annotdrag, dimdrag, moving};
 
 /// The previews one move frame produced — at most one is `Some`.
 ///
-/// ★ Three fields rather than an `enum`, matching the seven preview slots
+/// Three fields rather than an `enum`, matching the seven preview slots
 /// `interact` already carries and for their stated reason: the painter reads
 /// each one independently, and folding them together would put a branch in the
 /// paint loop for a value that is `None` on every frame nobody is dragging.
@@ -30,12 +30,12 @@ pub struct Previews {
     pub annot: Option<egui::Rect>,
     /// Where a dragged form-field box would land, in canvas space.
     ///
-    /// ★ A fourth field rather than sharing [`Self::annot`], even though the
+    /// A fourth field rather than sharing [`Self::annot`], even though the
     /// two are the same shape and can never both be `Some`. The painter reads
     /// each independently, and one rectangle whose meaning depends on which
     /// selection is live is a value the paint loop has to interrogate.
     pub widget: Option<egui::Rect>,
-    /// ★★★ **The selection's own geometry at its new position**, in page space
+    /// **The selection's own geometry at its new position**, in page space
     /// (`OPERATOR_REQUESTS.md` O63).
     ///
     /// `None` on every rung `canvas::shapes` cannot draw honestly — a text run,
@@ -43,7 +43,7 @@ pub struct Previews {
     /// past the cap — in which case [`Self::ghost`]'s bounding outline is the
     /// whole answer, exactly as it was before this field existed.
     pub shape: Option<crate::canvas::shapes::ShapePreview>,
-    /// ★★★ The geometry to **hold** on screen after the gesture ends, until the
+    /// The geometry to **hold** on screen after the gesture ends, until the
     /// page raster catches up (`OPERATOR_REQUESTS.md` O63).
     ///
     /// `Some` on exactly one frame per gesture: the one that raised the Action.
@@ -55,7 +55,7 @@ pub struct Previews {
 
 /// Everything one move frame needs that is not the delta.
 ///
-/// ★ A struct because the argument list reached nine and clippy is right that
+/// A struct because the argument list reached nine and clippy is right that
 /// nine positional parameters is a call nobody can read — five of the six here
 /// are borrows of similar-looking things, and transposing two would compile.
 /// `dimdrag::Frame` and `annotdrag::Frame` take the same shape for the same
@@ -91,15 +91,15 @@ pub fn moved(frame: &Frame<'_>, delta: Vec2, phase: Phase, actions: &mut Vec<Act
         shift,
     } = frame;
     let mut out = Previews::default();
-    // ★★ SHIFT LOCKS THE MOVE TO ONE AXIS — once, above the fork
+    // SHIFT LOCKS THE MOVE TO ONE AXIS — once, above the fork
     // below, so both verbs get the same constrained delta from one
     // filter. `ui-conventions/drag-moves.md` D5.
     //
-    // ★ `shift` is THIS FRAME's modifier, not the press-time flag the
+    // `shift` is THIS FRAME's modifier, not the press-time flag the
     // gesture machine carries. See `resizing::Frame::constrain` for why
     // those are two different facts that happen to read one key.
     let delta = crate::canvas::constrain::translate(ctx, shift, delta);
-    // ★★ Two different verbs share one gesture, and the selection
+    // Two different verbs share one gesture, and the selection
     // decides which.
     //
     // A content move reaches `move_objects` / `move_nodes`; a ce
@@ -141,7 +141,7 @@ pub fn moved(frame: &Frame<'_>, delta: Vec2, phase: Phase, actions: &mut Vec<Act
             selection,
             actions,
         );
-        // ★★ Ordered, not exclusive-by-guard, and the order is the
+        // Ordered, not exclusive-by-guard, and the order is the
         // safe one: `dimdrag` is the NARROWER claim -- it answers only
         // for `AnnotKind::CeDimension` -- so asking it first and
         // falling through means a kind neither module claims moves
@@ -159,7 +159,7 @@ pub fn moved(frame: &Frame<'_>, delta: Vec2, phase: Phase, actions: &mut Vec<Act
                 actions,
             );
         }
-    // ★★★ A FORM FIELD's box, and it needs its own top-level arm because a
+    // A FORM FIELD's box, and it needs its own top-level arm because a
     // widget is not an annotation selection.
     //
     // `canvas::selection::annot` excludes `/Widget` outright — *"the form field
@@ -188,13 +188,13 @@ pub fn moved(frame: &Frame<'_>, delta: Vec2, phase: Phase, actions: &mut Vec<Act
             actions,
         );
         out.ghost = preview.ghost;
-        // ★★★ O63: the selection's own geometry, moving with the pointer.
+        // O63: the selection's own geometry, moving with the pointer.
         //
         // Carried through unchanged. `moving::drag` decides whether there is one
         // — it is the only place that knows what the release will commit — and
         // this is a wire, not a decision.
         out.shape = preview.shape;
-        // ★★★ O63's third piece: the geometry to keep drawing after the gesture
+        // O63's third piece: the geometry to keep drawing after the gesture
         // ends, until the page raster carries the edit. `Some` on exactly one
         // frame per gesture — see `MovePreview::hold`.
         out.hold = preview.hold;

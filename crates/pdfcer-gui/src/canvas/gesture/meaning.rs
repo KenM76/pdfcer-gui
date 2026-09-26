@@ -77,7 +77,7 @@ pub enum DimensionPress {
 
 /// **Which family the selected annotation under a rotate handle belongs to.**
 ///
-/// ★★★ Carried as a *variant* rather than as a bool, for
+/// Carried as a *variant* rather than as a bool, for
 /// `canvas::selection::annot::AnnotKind`'s own stated reason and for a second
 /// one this function needs: the two families are **gated by different
 /// capabilities**, and a bool would have to be paired with a second bool
@@ -88,7 +88,7 @@ pub enum DimensionPress {
 /// | [`Self::Markup`] | `rotate_annotation` | `author_markup` | markup is authored in **Review**, where `edit_content` is false — an operator who has just drawn a shape there and wants to turn it is in the mode the content branch does not run in |
 /// | [`Self::CeDimension`] | `rotate_dimension` | `author_measure` | turning a dimension is a **measure** edit: it writes the sidecar and one annotation and touches no page content. The same ruling the vertex drag already ships under, and for the same reason — a mode that may author a dimension may adjust the one it just authored |
 ///
-/// ★★ Resolved by [`crate::canvas::pressing`] while it has the document and the
+/// Resolved by [`crate::canvas::pressing`] while it has the document and the
 /// mapping in hand, so this module stays free of geometry — the same division
 /// `grip`, `handle` and [`DimensionPress`] already follow. **It is `Some` only
 /// when the press origin is actually on the handle**, because it is derived
@@ -118,7 +118,7 @@ pub enum DragKind {
     Marquee(MarqueeIntent),
     /// The press was inside the selection's body: move it.
     Move,
-    /// ★★ The press began a **text box** — a rectangle to type a paragraph
+    /// The press began a **text box** — a rectangle to type a paragraph
     /// into.
     ///
     /// Carries nothing: the rectangle is the drag's own two endpoints, which
@@ -126,7 +126,7 @@ pub enum DragKind {
     /// sample. Compare [`Self::Markup`], which carries a `MarkupKind` because
     /// *which shape* was armed decides what the release authors.
     ///
-    /// # ★ Why it is not `Markup(MarkupKind::Rectangle)` with a flag
+    /// # Why it is not `Markup(MarkupKind::Rectangle)` with a flag
     ///
     /// Because what it authors is **page content**, not an annotation. A markup
     /// rectangle is a `/Square` the operator can select, restyle and delete as a
@@ -136,7 +136,7 @@ pub enum DragKind {
     TextBox,
     /// The press was on one of the eight resize grips.
     Resize(Grip),
-    /// ★★ The press was on the **rotate handle**, above the top edge.
+    /// The press was on the **rotate handle**, above the top edge.
     ///
     /// Carries nothing, and that is the difference from [`Self::Resize`]: a
     /// resize needs to know WHICH grip, because each one pivots about a
@@ -145,7 +145,7 @@ pub enum DragKind {
     /// the drag reads is a bearing rather than a displacement — so the press
     /// has nothing to sample that the frame does not already have.
     ///
-    /// # ★ Why it is a drag kind rather than `Resize(Grip::Rotate)`
+    /// # Why it is a drag kind rather than `Resize(Grip::Rotate)`
     ///
     /// Because everything downstream of `Resize` computes scale factors from a
     /// delta and a box. Routing the handle there would have produced a
@@ -163,7 +163,7 @@ pub enum DragKind {
     /// drag that passed near the other handle silently switch to dragging that
     /// one instead.
     ///
-    /// # ★ Why this outranks `Move` in [`press_kind`]
+    /// # Why this outranks `Move` in [`press_kind`]
     ///
     /// A handle sits **inside** the selection's box, so `grip_at` would answer
     /// `Grip::Move` for every press on one and the handle would be undraggable
@@ -180,7 +180,7 @@ pub enum DragKind {
     /// The press was on a **vertex of a selected perimeter ce dimension**:
     /// drag that corner and re-measure the shape.
     ///
-    /// # ★ Why the index is sampled at the PRESS
+    /// # Why the index is sampled at the PRESS
     ///
     /// The same rule [`MarqueeIntent`] states — *a gesture means what it meant
     /// when it began*. A vertex drag moves the vertex, which moves every other
@@ -189,7 +189,7 @@ pub enum DragKind {
     /// neighbour it passed over. Carrying it here means one press picks one
     /// corner and keeps it.
     ///
-    /// # ★★ And why it is a THIRD drag kind rather than a mode of `Handle`
+    /// # And why it is a THIRD drag kind rather than a mode of `Handle`
     ///
     /// A Bézier handle belongs to a path node and commits `move_handle`; this
     /// belongs to a sidecar dimension record and commits
@@ -206,7 +206,7 @@ pub enum DragKind {
     /// `Pass 255.0`, and the operator's *"I also can't edit or delete nodes of
     /// a markup shape once it is drawn."*
     ///
-    /// # ★★ A FOURTH vertex-shaped drag kind, and it has to be its own
+    /// # A FOURTH vertex-shaped drag kind, and it has to be its own
     ///
     /// The three that exist already are [`Self::Handle`] (a Bézier control
     /// point, `move_handle`), [`Self::DimensionVertex`] (a ce dimension's
@@ -218,7 +218,7 @@ pub enum DragKind {
     /// against folding two of them into one variant with a discriminator; this
     /// is that argument applied a third time rather than re-derived.
     ///
-    /// # ★ Why the index is sampled at the PRESS
+    /// # Why the index is sampled at the PRESS
     ///
     /// The rule [`MarqueeIntent`] states — *a gesture means what it meant when
     /// it began*. Resolving "which node" per frame would let a drag hop onto a
@@ -238,7 +238,7 @@ pub enum DragKind {
     /// [`GestureOutcome::TextSelect`]. There is no per-drag choice to sample at
     /// the press — no kind, no intent, no grip.
     ///
-    /// ★ That emptiness used to carry an extra claim: *"which is itself the
+    /// That emptiness used to carry an extra claim: *"which is itself the
     /// reason the gate for it is a mode question rather than an armed-tool one."*
     /// The inference was wrong and is corrected rather than deleted, because it
     /// is a tempting one. Carrying no per-drag state says nothing about **who
@@ -261,7 +261,7 @@ pub enum DragKind {
     /// Dragging out the **rectangle a text-bearing annotation will occupy** —
     /// a text box or a stamp.
     ///
-    /// # ★ Its own variant rather than `Markup(kind)`, and the reason is the
+    /// # Its own variant rather than `Markup(kind)`, and the reason is the
     /// completion rule
     ///
     /// A `Markup` drag authors on release. This one does not: the release
@@ -282,13 +282,13 @@ pub enum DragKind {
     /// **it** because the dialog is a different dialog and the kind is a
     /// different enum.
     ///
-    /// ★ There is no click/drag split here, unlike the text-annotation family:
+    /// There is no click/drag split here, unlike the text-annotation family:
     /// **every** form kind is placed either way. A click means "the default
     /// size for this kind, here", which is a real answer because a form control
     /// has a conventional size — see [`FormFieldKind::default_size_pt`]. A
     /// text box's default size, by contrast, would be a number nobody chose.
     Form(FormFieldKind),
-    /// ★★★ **A window stepped aside and is waiting for a box** —
+    /// **A window stepped aside and is waiting for a box** —
     /// `OPERATOR_REQUESTS.md` O66.
     ///
     /// Like [`Self::Form`] and unlike the text-annotation family there is no
@@ -297,7 +297,7 @@ pub enum DragKind {
     /// dialog — which already has one, typed or defaulted. A **drag** gives
     /// the whole box.
     ///
-    /// ★ The commit does not live on this canvas. It is the requesting
+    /// The commit does not live on this canvas. It is the requesting
     /// dialog's own Insert, which is why `canvas::placing` writes the answer to
     /// `egui::Memory` for `app::frame` to hand back rather than raising an
     /// `Action` — the operator has not pressed Insert yet and may still change
@@ -314,7 +314,7 @@ impl DragKind {
     /// has produced **two** false failure reports here, one of which reported
     /// the opposite of the truth while quoting the truth in its own message.
     ///
-    /// ★ The **kind** and not the payload. *"Which grip"* is already in the
+    /// The **kind** and not the payload. *"Which grip"* is already in the
     /// `grip=` field beside it, and two spellings of one fact can disagree.
     ///
     /// ⚠ Exhaustive with no wildcard, on purpose. A new drag kind is then a
@@ -361,7 +361,7 @@ impl DragKind {
 ///    and the one the operator armed *last* is not knowable here — but the one
 ///    that authors content is the one whose loss would be silent.
 ///
-///    ★ This rung sees only the **band** and **freehand** kinds. The two
+///    This rung sees only the **band** and **freehand** kinds. The two
 ///    vertex kinds are answered by an early return above, beside the measure
 ///    tools, because their gesture is clicks and they have no drag at all —
 ///    [`crate::canvas::markup::MarkupKind::is_vertex`], and the comment at the
@@ -383,7 +383,7 @@ impl DragKind {
 /// classified. One state machine, one meaning per frame — see the module
 /// header.
 ///
-/// # ★ The mode gate lives here, and it is two answers rather than one
+/// # The mode gate lives here, and it is two answers rather than one
 ///
 /// The mode's [`Capabilities`] are applied **here**, at the point where a press
 /// is given its meaning, rather than at the several places that act on one.
@@ -420,7 +420,7 @@ impl DragKind {
 /// | [`DragKind::Marquee`] with [`MarqueeIntent::Zoom`] | **nothing** — it is a navigation gesture that reads the document and changes none of it, so it is offered in every mode, Read included |
 /// | [`DragKind::TextSelect`], and the click that goes with it | **nothing** — either because the operator armed the text tool, or *because* `edit_content` is absent, which is the one row here that reads backwards |
 ///
-/// # ★ The text row, and why it is not an inconsistency
+/// # The text row, and why it is not an inconsistency
 ///
 /// Every other row above asks *"does this mode permit the gesture?"*. The text
 /// row asks *"is the primary button free, or has the operator claimed it?"* —
@@ -436,7 +436,7 @@ impl DragKind {
 ///   at rung 2 above, which is the rule `DragKind::Markup` has always used.
 ///
 ///
-/// # ★ Why two fields rather than one `Option<DragKind>`
+/// # Why two fields rather than one `Option<DragKind>`
 ///
 /// Because the canvas has two kinds of authoring tool and they take the primary
 /// button in genuinely different ways:
@@ -518,7 +518,7 @@ impl PressMeaning {
 /// Everything a press landed on, resolved by [`crate::canvas::pressing`] while
 /// it has the geometry in hand.
 ///
-/// ★★ A struct because the argument list reached eight, and clippy is right
+/// A struct because the argument list reached eight, and clippy is right
 /// that eight positional parameters is a call nobody can read — three of them
 /// are now bare `bool`s, and transposing two would compile and produce a
 /// gesture aimed at the wrong verb. `dimdrag::Frame`, `annotdrag::Frame` and
@@ -537,7 +537,7 @@ pub struct Press {
     /// **The selected annotation whose rotate handle this press is on**, if it
     /// is on one. See [`RotatableAnnot`].
     pub annot_rotate: Option<RotatableAnnot>,
-    /// ★★★ **Which node of a selected markup shape this press landed on**, if
+    /// **Which node of a selected markup shape this press landed on**, if
     /// any. `Pass 255.0`.
     ///
     /// Resolved in `canvas::pressing` with the other hit tests, so a press has
@@ -545,7 +545,7 @@ pub struct Press {
     /// geometry. It answers `None` immediately unless a markup shape with
     /// editable geometry is selected.
     ///
-    /// ★★ **It outranks [`Self::markup_body`] and [`Self::markup_grip`], and it
+    /// **It outranks [`Self::markup_body`] and [`Self::markup_grip`], and it
     /// must.** A node anchor sits ON the shape's outline, so every press that
     /// hits one also hits the body, and a node at a corner of the `/Rect` also
     /// hits a resize grip. Of the three readings, the one the operator aimed at
@@ -557,7 +557,7 @@ pub struct Press {
     /// Whether it landed on one of that annotation's **resize grips**, which
     /// lie half outside its box.
     ///
-    /// ★★ A second flag rather than a wider `markup_body`, and the distinction
+    /// A second flag rather than a wider `markup_body`, and the distinction
     /// is load-bearing: the arm below reads them for **different verbs** — the
     /// body means Move, a grip means Resize — so collapsing them would make a
     /// press on a corner ambiguous exactly where the precedence matters. See
@@ -586,7 +586,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
         widget_grip,
         zoom_armed,
     } = press;
-    // ★ A measure tool takes the click and leaves the drag alone.
+    // A measure tool takes the click and leaves the drag alone.
     //
     // Highest precedence, above the markup tool, for the same reason the
     // markup tool sits above the grips: the operator armed it, and it is the
@@ -607,7 +607,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
             click: caps.author_measure,
         };
     }
-    // ★ …and the **caret** tool does the same third time, which is what makes
+    // …and the **caret** tool does the same third time, which is what makes
     // this rung a family rather than three special cases.
     //
     // A caret is placed, not dragged: one click says *where*, and the keyboard
@@ -625,7 +625,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // `MODES_AND_PANELS.md`'s gesture table calls Review — places dimensions and
     // comments and still may not put a caret in a word.
     //
-    // ★ It sits **above** the text-selection question below rather than beside
+    // It sits **above** the text-selection question below rather than beside
     // it, and that ordering is load-bearing in the direction that is easy to get
     // backwards. `textsel::takes_the_press` is false for this tool by
     // construction (it asks `is_text`, which is `matches!(tool, Text)`), so the
@@ -634,7 +634,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // caret tool the content branch below would answer first and a press would
     // marquee objects under an I-beam. Returning early is what makes that
     // unreachable rather than merely unlikely.
-    // ★ …and a text-annotation tool splits BOTH ways, which is why it needs its
+    // …and a text-annotation tool splits BOTH ways, which is why it needs its
     // own rung rather than joining either family above.
     //
     // A text box and a stamp are **dragged** — the operator is choosing how
@@ -646,7 +646,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // `is_dragged` is the predicate the whole family branches on, so the two
     // shapes cannot drift apart here from the way they are authored — the same
     // welding `uses_gallery` does for the stamp's text.
-    // ★★ A FORM tool, and it is placed BOTH ways at once — which is why it
+    // A FORM tool, and it is placed BOTH ways at once — which is why it
     // needs no `is_dragged` predicate of its own.
     //
     // The operator, 2026-08-26: *"when I click one I should be able to click on
@@ -655,7 +655,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // — it is the primary gesture for a check box, whose conventional size is
     // 14 pt square and which nobody wants to drag out by hand.
     //
-    // ★ It sits ABOVE the text-annotation rung rather than below, and the
+    // It sits ABOVE the text-annotation rung rather than below, and the
     // ordering is currently unobservable: the two tools cannot both be armed,
     // because `CanvasTool` is one value. It is written in a fixed order anyway
     // so that the precedence is a decision on the page rather than an accident
@@ -666,7 +666,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // which is the same reasoning that put these commands in Edit mode. Pairing
     // it with markup would let a reviewer author form fields, and authoring an
     // interactive control is not a review activity.
-    // ★★★ **A pending placement takes the press before anything else** —
+    // **A pending placement takes the press before anything else** —
     // `OPERATOR_REQUESTS.md` O66.
     //
     // FIRST, and like the measure rung above it that is a statement rather
@@ -713,7 +713,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     }
     if tool.text_edit_kind().is_some() {
         return PressMeaning {
-            // ★★★ A DRAG WITH THE TEXT TOOL DRAWS A BOX TO TYPE IN — the
+            // A DRAG WITH THE TEXT TOOL DRAWS A BOX TO TYPE IN — the
             // operator, 2026-08-21: *"I should be able to make it multi line."*
             //
             // It has to be a drag, and the reason is the file format rather
@@ -722,7 +722,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
             // must decide where the second line starts. A width to wrap against
             // is that something, and a width is a rectangle.
             //
-            // ★ The CLICK still means what it meant, and both live at once.
+            // The CLICK still means what it meant, and both live at once.
             // Click for a single line at a point, drag for a paragraph in a
             // box — the same pair the markup band and the sticky note already
             // form one rung above, and the same pair the old shell had (*"in
@@ -736,7 +736,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
             click: caps.edit_content,
         };
     }
-    // ★ …and a **vertex** markup tool does exactly the same thing, for exactly
+    // …and a **vertex** markup tool does exactly the same thing, for exactly
     // the same reason — which is why it is written here, immediately beside it,
     // rather than as a special case inside the markup rung below.
     //
@@ -768,12 +768,12 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
             click: caps.author_markup,
         };
     }
-    // ★ Does the press mean TEXT? Asked once, here, and asked again by
+    // Does the press mean TEXT? Asked once, here, and asked again by
     // `canvas::interact` when it routes the click — through the same function,
     // so the drag's meaning and the click's routing cannot drift apart. See
-    // this function's ★ section on the text row.
+    // this function's section on the text row.
     let text = crate::canvas::textsel::takes_the_press(tool, caps);
-    // ★ The two worlds, split on the one flag that separates them, rather than
+    // The two worlds, split on the one flag that separates them, rather than
     // one `match` with a capability test on every arm.
     //
     //
@@ -783,7 +783,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // there are no grips.
     let drag = if let Some(kind) = tool.markup_kind() {
         caps.author_markup.then_some(DragKind::Markup(kind))
-    // ★ **The armed TEXT tool, and it sits above the content branch on purpose.**
+    // **The armed TEXT tool, and it sits above the content branch on purpose.**
     //
     // This is the one rung the text-tool work added, and its placement is the
     // whole of what it does. Below `caps.edit_content` it would be dead in Edit —
@@ -801,7 +801,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // construction to precedence, including the consequence that an object
     // selection and a text selection can now both be non-empty in Edit.
     //
-    // ★ The region zoom is the one thing it yields to, and the ordering is
+    // The region zoom is the one thing it yields to, and the ordering is
     // **borrowed rather than decided**: the reading-mode text row four branches
     // below already yields to `zoom_armed`, on the argument that the zoom is a
     // one-shot the operator armed deliberately from the ribbon and that a text
@@ -842,7 +842,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // grabbable, and produced nothing in the one mode that draws the things it
     // turns.
     //
-    // ## ★★★ And in Edit it would have been WORSE than nothing
+    // ## And in Edit it would have been WORSE than nothing
     //
     // In Edit `caps.edit_content` is true, so the press would have reached the
     // content branch's `(None, Some(Grip::Rotate)) => DragKind::Rotate` arm —
@@ -882,7 +882,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
         })
     {
         Some(DragKind::Rotate)
-    // ★★★ **A SELECTED CE DIMENSION GETS ITS OWN RUNG, ABOVE `edit_content`.**
+    // **A SELECTED CE DIMENSION GETS ITS OWN RUNG, ABOVE `edit_content`.**
     //
     //
     // Everything below is gated on `caps.edit_content`, which **Review does not
@@ -943,7 +943,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     //   who has just drawn a shape there and wants to nudge it is in the mode
     //   where the content branch does not run at all.
     //
-    // ★★ TWO capability gates, one verb, and the asymmetry is the mode
+    // TWO capability gates, one verb, and the asymmetry is the mode
     // selector's ruling rather than this function's. Markup is authored in
     // Review; a form field is only SELECTABLE in Edit, because `canvas::forms`
     // gives the selection surface to Edit and the fill surface to Read and
@@ -1012,7 +1012,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     } else if (caps.author_markup && (markup_body || markup_grip))
         || (caps.edit_content && (widget_body || widget_grip))
     {
-        // ★★★ A resize grip OUTRANKS the body, and the arm has to say so
+        // A resize grip OUTRANKS the body, and the arm has to say so
         // itself rather than inherit it.
         //
         // The content branch below states this precedence in its own `match`,
@@ -1023,7 +1023,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
         // gesture aimed at the wrong verb, which is the failure mode
         // `Grip::Rotate` was given its own arm below to prevent.
         //
-        // ★★ `is_resize()` rather than "not Move", enumerated for that same
+        // `is_resize()` rather than "not Move", enumerated for that same
         // reason. `Grip::Rotate` is not a resize and must not fall in here.
         //
         // ⚠ **The reason given here was stale and is corrected 2026-09-05.** It
@@ -1037,7 +1037,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
         // property rather than on "not Move" was right for a reason better than
         // the one written down.
         //
-        // ★ `markup_grip` and `widget_grip` are `is_resize()`-gated at their
+        // `markup_grip` and `widget_grip` are `is_resize()`-gated at their
         // source (`canvas::pressing`), so a rotate press cannot enter this arm
         // through the new route either.
         match grip {
@@ -1046,7 +1046,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
         }
     } else if caps.edit_content {
         match (handle, grip) {
-            // ★★ A Bézier handle outranks everything below it, and it has to.
+            // A Bézier handle outranks everything below it, and it has to.
             //
             // A handle sits INSIDE the selection's box, so `grip_at` answers
             // `Grip::Move` for every press on one — which would make handles
@@ -1059,7 +1059,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
             // deeper than anything a grip describes, so it wins.
             (Some((node, handle)), _) => Some(DragKind::Handle { node, handle }),
             (None, Some(grip)) if grip.is_resize() => Some(DragKind::Resize(grip)),
-            // ★ Matched by NAME rather than falling into the `Move` arm below,
+            // Matched by NAME rather than falling into the `Move` arm below,
             // which is where it would have gone silently: `Grip::Move` and
             // `Grip::Rotate` are the two non-resize grips, so a wildcard that
             // meant "the body" now covers both. A press on the handle would
@@ -1070,7 +1070,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
             (None, None) if zoom_armed => Some(DragKind::Marquee(MarqueeIntent::Zoom)),
             (None, None) => Some(DragKind::Marquee(MarqueeIntent::Select)),
         }
-    // ★ An armed region zoom outranks a text sweep, and that ordering is the
+    // An armed region zoom outranks a text sweep, and that ordering is the
     // operator's own arming decision rather than a preference: the zoom is a
     // one-shot they armed *deliberately* from the ribbon, and a reading mode is
     // exactly where they are most likely to have armed it. A text sweep is the
@@ -1093,7 +1093,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // it did before this gate existed. That is behaviour carried across
     // deliberately rather than decided here — see `canvas::markup`.
     //
-    // ★ …and the text press reports a click too, because a text gesture's
+    // …and the text press reports a click too, because a text gesture's
     // click carries three of its four meanings: double-click takes a word,
     // triple-click takes a line, Shift+click extends, and a plain click clears.
     // Suppressing it would leave a drag that selects and no way to unselect —

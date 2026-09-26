@@ -18,7 +18,7 @@ read `entered_object()`, which is the **first** entry. Four anchors picked,
 one moved. Nothing failed; both halves' unit tests passed; the capability
 was present in the data model and absent from every consumer.
 
-# ★★ And the operator could not see the anchors AT ALL
+# And the operator could not see the anchors AT ALL
 
 `FEATURES.md` recorded, against `view.show_points`, that *"this build draws
 no anchor mark at any rung"*. So the Node rung could be entered, a set could

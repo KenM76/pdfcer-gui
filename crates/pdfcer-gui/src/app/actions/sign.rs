@@ -156,7 +156,7 @@ fn run(
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
-        // ★ `shown` is counted against the SENTENCE, not against the report:
+        // `shown` is counted against the SENTENCE, not against the report:
         // reading the slice's length twice would be satisfied by a call site
         // that handed the composer nothing. See `text::sign::appearance_shown`,
         // and `ui-verify`'s `signing`, which is that link's only oracle.

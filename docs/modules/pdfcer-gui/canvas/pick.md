@@ -16,7 +16,7 @@ it does not vary with the pointer, and it is exactly the thing a CAD
 package parks permanently on screen so it can be glanced at rather than
 remembered.
 
-## ★ Why this replaced a pair of ribbon buttons, in the operator's words
+## Why this replaced a pair of ribbon buttons, in the operator's words
 
 
 > *"On the bottom bar I want a filter menu that pops up with all the
@@ -43,7 +43,7 @@ A filter on the status bar has none of those properties: it is always
 visible, it is one click from anywhere, and it says what it is doing while
 you do it.
 
-## ★★ The invariant: a filter is SUBTRACTIVE, always
+## The invariant: a filter is SUBTRACTIVE, always
 
 **A [`PickFilter`] can only ever take candidates away. It can never make
 something pickable that was not pickable without it.**
@@ -79,7 +79,7 @@ Two properties fall out of subtractiveness, and both are load-bearing:
 - **The filter can never contradict a capability.** It is an `AND`, not an
   override — see the next section.
 
-## ★ The filter sits ABOVE the mode, which is not the same as replacing it
+## The filter sits ABOVE the mode, which is not the same as replacing it
 
 O17 is explicit: *"In all three modes the filter is authoritative. A class
 switched off in the filter is not selectable in Read, not selectable in
@@ -121,7 +121,7 @@ has no row is a thing the operator cannot reach.
 | [`PickClass::Link`] | `/Link` annotations | same |
 | [`PickClass::Characters`] | the character sweep | `canvas::textsel` |
 
-### ★ Two rows are RUNGS, not object kinds, and they belong here anyway
+### Two rows are RUNGS, not object kinds, and they belong here anyway
 
 `Part` and `Node` are levels of
 [`crate::canvas::selection::SelectionLevel`], not variants of any object

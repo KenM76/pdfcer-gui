@@ -24,7 +24,7 @@ installed, `File ▸ Print…` opened a window that said
 button. Every one of those absences was **correct behaviour for the state
 the adapter reported**, which is why nothing looked broken from the inside.
 
-# ★ Why the entire test suite was green
+# Why the entire test suite was green
 
 This is the part worth keeping, because it is a new shape of the failure
 this project was founded on.

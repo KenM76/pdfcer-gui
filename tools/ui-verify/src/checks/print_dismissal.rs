@@ -35,7 +35,7 @@ const DISMISS_EVENT: &str = "print-dismissed";
 
 /// The paper combo, and the entry inside it this check clicks.
 ///
-/// ★ `print.paper.auto` is deliberately outside the `print.paper.item.N`
+/// `print.paper.auto` is deliberately outside the `print.paper.item.N`
 /// namespace — see that constant's own doc in `dialogs/print/mod.rs`, which
 /// says numbering it would have silently re-aimed an existing driven check.
 /// This check depends on that separation: it wants *pdfcer's policy*, at a
@@ -49,7 +49,7 @@ const BUTTON_KEEP: &str = "dialog.buttons.keep";
 
 /// The preferences file, beside the executable under test.
 ///
-/// ★ **Reset to the bare sandbox seed** before each of the two runs — never
+/// **Reset to the bare sandbox seed** before each of the two runs — never
 /// deleted. The two are not the same act: deletion takes `ask_default_app =
 /// false` with it, and the symptom is the O173 offer opening a real OS window
 /// in front of the very click this check is about to make. That cost
@@ -307,7 +307,7 @@ fn one_run(
     let opened_on = opened.get("paper").unwrap_or("<absent>").to_owned();
     report.note(format!("{}: opened on `{}`", route.label(), opened.raw));
 
-    // ★ The gesture has to CHANGE something, and this is where that is
+    // The gesture has to CHANGE something, and this is where that is
     // established rather than assumed. If the window already opens on Auto —
     // because a future build ships it as the default, or because a previous
     // check left it in the file — then clicking Auto changes nothing, the
@@ -328,7 +328,7 @@ fn one_run(
 
     // --- C. change one setting, in the dialog's own OS window -----------------
     //
-    // ★★ FROM HERE THE REGIONS ARE IN A SECOND OS WINDOW. The dialog is a real
+    // FROM HERE THE REGIONS ARE IN A SECOND OS WINDOW. The dialog is a real
     // viewport (`dialogs::host`, G1), so its `ui-rect` rectangles are relative
     // to ITS client area. `session.frame()` is the wrong origin for every one
     // of them and produces coordinates that look entirely reasonable and land
@@ -470,7 +470,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     let prefs_path = dir.join(PREFS_FILE);
 
-    // ★★★ Reset on the way out, on every path, and RESET rather than remove.
+    // Reset on the way out, on every path, and RESET rather than remove.
     //
     // The Keep run deliberately leaves a print preference on disk — that is the
     // thing it proves — so unlike most checks this one really does dirty the
@@ -509,7 +509,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- the two runs, each from the same starting state ---------------------
     //
-    // ★ The reset happens before EACH run, not once before both. The Keep run
+    // The reset happens before EACH run, not once before both. The Keep run
     // writes a print preference, and a Cancel run that started from it would be
     // opening on `match-pages` — the value it is about to click — which is the
     // vacuous state guarded against inside `one_run`. It would SKIP rather than
@@ -540,7 +540,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let cancel = &cancel.1;
     let keep = &keep.1;
 
-    // ★★ The cross-run comparison below assumes the two runs STARTED level,
+    // The cross-run comparison below assumes the two runs STARTED level,
     // and this is where that is established rather than hoped for. Each run
     // resets the preferences to the bare seed, so both windows should open on
     // the same token; if they did not, one of the resets did not take, and a
@@ -561,7 +561,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 1. ★★★ they are not the same button ---------------------------------
+    // --- 1. they are not the same button ---------------------------------
     //
     // **First, because it is the coarsest true thing and the one the request is
     // about.** A build in which the two routes are wired identically is the
@@ -569,7 +569,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // two buttons, both close the window, and which one you press changes
     // nothing.
     //
-    // ★ It is first for a second reason, and it is the one worth reading. When
+    // It is first for a second reason, and it is the one worth reading. When
     // this check was written the order was 2, 3, then this — and in that order
     // **this assertion could never fire**. The per-run guard establishes
     // `opened_on != CHOSEN_TOKEN`; assertion 2 passing means the Cancel run
@@ -625,7 +625,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 2. Cancel put it back ----------------------------------------------
     //
-    // ★ Reachable past assertion 1, and here is the input that reaches it: the
+    // Reachable past assertion 1, and here is the input that reaches it: the
     // **swapped** wiring, where Cancel remembers and Keep restores. The two
     // reopens then differ — so assertion 1 passes — and this one fires, which
     // is the right outcome, because "the buttons are transposed" deserves a
@@ -663,7 +663,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // as a loss, and the day `paper_key` grows a third token this is the only
     // line that would catch a Keep which wrote the wrong one.
     //
-    // ★ The distinction worth carrying away: an assertion that cannot fire
+    // The distinction worth carrying away: an assertion that cannot fire
     // because of how the check is ORDERED is a defect — that was assertion 1
     // before it was moved. An assertion that cannot fire because the system's
     // domain is currently too small is a guard, and the honest thing is to

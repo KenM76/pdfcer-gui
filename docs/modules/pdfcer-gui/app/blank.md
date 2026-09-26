@@ -6,7 +6,7 @@ decisions behind them, and nothing else — the lifetime transition itself is
 [`crate::app::PdfcerApp::new_document`]'s, beside `open_path` and
 `close_document`, because that is one subject and this is another.
 
-## ★ 1. The engine cannot create a document, and that is deliberate
+## 1. The engine cannot create a document, and that is deliberate
 
 Every constructor on `pdfcer_core::document::Document` — `load`,
 `from_bytes`, and their password and options variants — **parses existing
@@ -40,7 +40,7 @@ deliberately-minimal PDFs is a testing tool, not part of the engine's API,
 and exposing it would invite production code to construct documents outside
 the one object model."*
 
-## ★ 2. So New opens a file, which is the thing this shell already does
+## 2. So New opens a file, which is the thing this shell already does
 
 [`TEMPLATE`] is a real PDF, authored once, checked in, and compiled into the
 binary. `file.new` hands it to `Document::from_bytes` and marks the result
@@ -59,7 +59,7 @@ which exempts it from that gate's notice surfaces (checks 4 and 5) and from
 nothing else. Read that note before touching the bytes; the cross-reference
 table stores absolute offsets and the file is not hand-editable.
 
-## ★ 3. The page is A4, and Letter was rejected on the evidence
+## 3. The page is A4, and Letter was rejected on the evidence
 
 The standing instruction: *match what Inkscape, Acrobat and SolidWorks do
 — but first ask which of them actually has the surface.*
@@ -97,7 +97,7 @@ right size for this operator's next new sheet — it very plausibly is not.
 That is what the size picker is for, and it is a follow-up row rather than a
 silent guess dressed up as a default.
 
-### ★ 3a. The size picker is one asset and one engine verb, never ten assets
+### 3a. The size picker is one asset and one engine verb, never ten assets
 
 §2 forbids authoring PDF bytes at runtime, so a shell that cannot ask the
 engine to resize a page has exactly one implementation open to it: **one
@@ -119,7 +119,7 @@ refusal are the engine's questions, and the narrow answer (*"only on a page
 with no content"*) is **entirely sufficient** here: `file.new`'s page is
 empty by construction.
 
-## ★ 4. What a document with no file is, and what must not happen to it
+## 4. What a document with no file is, and what must not happen to it
 
 `crate::app::state::OpenDoc::path` means *where this came from*. A created
 document came from nowhere, so its path is a **name** —
@@ -137,7 +137,7 @@ Everything else in the shell treats `path` as an identity or a label — the
 forms cache key, the Pages panel caption, the trace — and all of those are
 correct for a name. See the field's own documentation.
 
-## ★ 5. A new document CAN be saved
+## 5. A new document CAN be saved
 
 **Save a copy is a shell task, not an engine gap.** Both engine write verbs
 take `&self`, so an `Arc<EditSession>` can call either;

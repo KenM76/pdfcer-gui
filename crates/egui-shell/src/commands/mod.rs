@@ -486,7 +486,7 @@ mod tests {
         assert!(!cmd.is_enabled(&ConditionSet::new().with("doc.open").with("doc.scanned")));
     }
 
-    /// **★ A manifest referencing an unregistered command id fails
+    /// **A manifest referencing an unregistered command id fails
     /// validation, and the failure names that id.**
     ///
     /// This is the invariant the whole registry exists to make

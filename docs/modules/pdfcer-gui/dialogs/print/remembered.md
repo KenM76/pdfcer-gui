@@ -10,7 +10,7 @@ that would still be the right answer for a **different document**;
 reading half is in [`super::PrintDialog::open`], which seeds every one of
 those fields from what it is handed.
 
-# ★★ The second direction, added at O185
+# The second direction, added at O185
 
 [`PrintDialog::restore`] writes [`super::PrintDialog::opened_with`] back --
 the settings the window opened with -- and it exists because Cancel has to

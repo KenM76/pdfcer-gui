@@ -37,7 +37,7 @@ const RESET: &str = "view.reset_layout";
 /// **The mode this check must be in before it resets anything**, and the
 /// reason it is now stated instead of inherited.
 ///
-/// # ★★★ This check was passing because a DIFFERENT check leaked its mode
+/// # This check was passing because a DIFFERENT check leaked its mode
 ///
 /// `view.panel_layers` is not in every mode's default dock. Read mounts five
 /// panels, Review seven, Edit thirteen — measured off `mode-changed … panels=`
@@ -109,7 +109,7 @@ fn run_once(ctx: &CheckContext, tag: &str, invoke: &str) -> Result<crate::trace:
     ));
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
-    // ★ MODE first, then the reset, then the work. One command per frame, and
+    // MODE first, then the reset, then the work. One command per frame, and
     // the order is the precondition chain: the reset must be asked of the mode
     // this check needs, or it resets a dock that was never going to mount the
     // panel. See [`MODE`] for why this is stated rather than inherited.
@@ -123,7 +123,7 @@ fn run_once(ctx: &CheckContext, tag: &str, invoke: &str) -> Result<crate::trace:
     // same reason and records that a settle tuned to the fastest surface
     // reports "no window" for one that was a frame from having it.
     //
-    // ★ One frame more than before, because the reset now takes the first
+    // One frame more than before, because the reset now takes the first
     // frame — `PDFCER_DIAG_INVOKE` fires exactly one command per frame, and
     // the ordering is what makes the reset a precondition rather than a race.
     //
@@ -226,7 +226,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )),
     }
 
-    // ★★★ And the body DREW IN IT. Two regions, both required, and both
+    // And the body DREW IN IT. Two regions, both required, and both
     // required to carry THIS window's viewport tag — see the module header on
     // why the previous "any viewport-tagged rect" oracle could never pass.
     if let Some(id) = &viewport {
@@ -325,7 +325,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              is still open and the operator has no way to put the panel back"
         ));
     }
-    // ★★ The window has to GO, and this is the half a state-only assertion
+    // The window has to GO, and this is the half a state-only assertion
     // cannot reach: a dock-back that rebuilt the stack and left the window
     // open would draw the same panel twice, from two `Ui`s with the same
     // widget ids, and `panel-dock moved=true` would still be true.
@@ -396,7 +396,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     )?;
     report.artifact(ctx.out("panel-float-dock-all.trace.txt"));
     failures.extend(reset_landed(&trace, "D"));
-    // ★★★ The precondition, asserted rather than assumed. `docked=0` is a
+    // The precondition, asserted rather than assumed. `docked=0` is a
     // TRUE answer when nothing was floating, and for days this section was
     // reporting the recovery verb broken on the strength of a state its own
     // earlier launch had left behind. Assert the float first, and `docked=0`
@@ -466,7 +466,7 @@ mod tests {
         )
     }
 
-    /// ★★★ **The retirement key survives the parser**, which is the one
+    /// **The retirement key survives the parser**, which is the one
     /// place this check could go silently blind.
     ///
     /// `diag` spells the census key `viewport-inner:"F83E"` — a value with a
@@ -503,7 +503,7 @@ mod tests {
         assert!(!window_retired(&trace, "F83E"));
     }
 
-    /// ★★★ **A run whose layout was never reset is REPORTED, not believed.**
+    /// **A run whose layout was never reset is REPORTED, not believed.**
     ///
     /// This is the whole of the fix for the `moved=false` / `docked=0`
     /// family: without it a section inherits the previous launch's saved

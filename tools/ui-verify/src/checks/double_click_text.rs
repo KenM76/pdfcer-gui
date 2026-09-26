@@ -23,7 +23,7 @@ const PAGE_REGION: &str = "page"; // ui-text-exempt: a trace region name, never 
 /// **The Tool panel's armed block** — drawn only while a tool with a gesture is
 /// selected, and the arrow is not one.
 ///
-/// ★ Chosen over `ribbon.item.view.tool_text`'s pressed state after the first
+/// Chosen over `ribbon.item.view.tool_text`'s pressed state after the first
 /// run SKIPPED on it: the ribbon shows one tab at a time, and this check leaves
 /// the operator on whichever tab the mode selector last drew, so the View row
 /// is simply not on screen. A region that is absent because it is on another
@@ -71,7 +71,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
+    // PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
     //
     // `fixture::text_point_target` holds the document, the point, and the
@@ -165,7 +165,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let trace = session.trace()?;
     let Some(caret) = trace.last(CARET) else {
-        // ★ Say which of the two happened instead. Descending is the old
+        // Say which of the two happened instead. Descending is the old
         // behaviour and is a different diagnosis from a double-click that did
         // nothing at all — the first sends a reader to `canvas::clicking`'s
         // text arm, the second to whether the gesture arrived.

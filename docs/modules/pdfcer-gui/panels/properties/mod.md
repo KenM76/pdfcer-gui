@@ -1,6 +1,6 @@
 # `panels::properties` — the detail of what is selected, and nothing else
 
-## ★★★ Every section here is scoped to a SELECTION
+## Every section here is scoped to a SELECTION
 
 The file's `/Info` fields and the seven facts about the file itself are
 [`crate::panels::docprops`], a panel of its own, reached by
@@ -17,7 +17,7 @@ foot of this one puts something on screen that is true of no selection, and
 it takes an operator report to find, because every test in this file stays
 green.
 
-★★ An egui finding kept here because it is about the toolkit rather than
+An egui finding kept here because it is about the toolkit rather than
 about any one section: a
 `CollapsingHeader` whose open state must follow a condition **and** stay
 overridable by the operator cannot use `default_open` (consulted only

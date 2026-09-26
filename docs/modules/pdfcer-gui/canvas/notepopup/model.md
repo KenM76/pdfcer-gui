@@ -32,7 +32,7 @@ A pop-up on the canvas is the fix that cannot regress that way, because it
 is **canvas behaviour rather than a ribbon item** — it is mode-independent
 by construction, and no future tab-list edit can take it away.
 
-## ★★ What the file already contained, and what it did not
+## What the file already contained, and what it did not
 
 `pdfcer-core`'s sticky author — the private `sticky_note` behind
 `annot_author::TextAnnotSpec::Sticky` — writes a `/Popup` companion for
@@ -40,14 +40,14 @@ every sticky note it authors, carrying the note's own `/Open` state and a
 rectangle 150 pt wide placed to the right of the note. So the data is in
 the operator's files already; this module is what draws it.
 
-### ★★★ `/Open` is READ from the file, never defaulted
+### `/Open` is READ from the file, never defaulted
 
 §12.5.6.4 Table 172 gives `/Open` on a `/Text` annotation as *"a flag
 specifying whether the annotation shall initially be displayed open"*, and
 §12.5.6.14 Table 183 gives the same key the same meaning on the `/Popup`.
 A note authored open must therefore **open on load**, with no click.
 
-★★★ **The workaround that was here is GONE — 2026-09-06.** This paragraph
+**The workaround that was here is GONE — 2026-09-06.** This paragraph
 read: *"`pdfcer_core::annot::Annotation` does not model `/Open`. Confirmed
 by audit on 2026-09-05: `b"Open"` appears exactly twice in the whole crate,
 both write sites in `annot_author.rs`. So this module reads the raw
@@ -70,7 +70,7 @@ page to find its rectangle, and `page_annotations` returns each one with its
 own `open`. Table 170 gives geometric markup no `/Open` of its own, so for a
 `/Square` the companion is the entire answer.
 
-## ★ Where a pop-up is drawn, in priority order
+## Where a pop-up is drawn, in priority order
 
 1. **The `/Popup`'s own `/Rect`**, when it has one. The file said where the
    window goes and honouring it is what makes a document look the same here
@@ -82,7 +82,7 @@ own `open`. Table 170 gives geometric markup no `/Open` of its own, so for a
 [`PopupBox::rect`] is `None` in case 2 and [`super`] does the placing,
 because case 2 needs the *drawn* size of a window this module cannot see.
 
-## ★★ Rule 15: a ce dimension is a `/Line` and it is NOT excluded here
+## Rule 15: a ce dimension is a `/Line` and it is NOT excluded here
 
 `crate::panels::comments`' header settles this and the argument is not
 re-derived: **ce dimensions** (the ones pdfcer authors, `/Line` with `/IT

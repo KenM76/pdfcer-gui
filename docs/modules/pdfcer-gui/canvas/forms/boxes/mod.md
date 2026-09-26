@@ -13,7 +13,7 @@ the other needs a window — applied one level down. It is a subject and not
 a line count: [`super`] contains no decision at all, only the wiring that
 spends the decisions below.
 
-## ★ "Redraw appearances" is only half the remedy for an undrawn field
+## "Redraw appearances" is only half the remedy for an undrawn field
 
 [`super`]'s §5 reason 1 offers `RegenerateAppearances` to an operator whose
 field draws nothing. `EditSession::regenerate_appearances` writes an `/AP`

@@ -86,7 +86,7 @@ impl CheckContext {
     /// A path under the run's output directory — **and the directory is made
     /// to exist before the path is handed back.**
     ///
-    /// # ★★★ Why the `create_dir_all` is here and not at every call site
+    /// # Why the `create_dir_all` is here and not at every call site
     ///
     /// [`crate::launch`] creates the parent of the trace file it is about to
     /// open and [`crate::image`] creates the parent of a PNG it is about to
@@ -101,7 +101,7 @@ impl CheckContext {
     /// — and for those, nothing has created the directory yet when `--out`
     /// points at a fresh per-check path.
     ///
-    /// ★★ **A path that cannot resolve produces a SKIP, and a SKIP is not a
+    /// **A path that cannot resolve produces a SKIP, and a SKIP is not a
     /// failure, so a check can be dead for ever while the suite looks
     /// healthy.** That is why the guarantee is a FUNNEL and not a
     /// `create_dir_all` at each of the writing call sites: a sixth such check

@@ -66,7 +66,7 @@ impl LastStamp {
     /// read here so this module does not acquire an opinion about what the
     /// default should be.
     ///
-    /// ★ A custom memory that fails to resolve deliberately produces **no
+    /// A custom memory that fails to resolve deliberately produces **no
     /// disclosure**. It is indistinguishable, to the operator, from the first
     /// stamp of a session — and a sentence explaining that a stamp he deleted
     /// is not being pre-selected would be noise attached to a window he opened
@@ -109,7 +109,7 @@ impl LastStamp {
 
 /// The stable trace spelling of a standard stamp face.
 ///
-/// ★★ **Deliberately an exhaustive match with no wildcard arm.** `StampName`
+/// **Deliberately an exhaustive match with no wildcard arm.** `StampName`
 /// is not `#[non_exhaustive]`, so the day the engine adds a fifteenth face this
 /// function stops compiling and names itself, which is the whole point. A
 /// `_ => "other"` arm would keep building and quietly collapse two stamps into
@@ -186,7 +186,7 @@ mod tests {
         );
     }
 
-    /// ★★★ The test this module exists for. A collection edited between two
+    /// The test this module exists for. A collection edited between two
     /// openings renumbers its pages; the memory must survive that by naming,
     /// and must come back carrying the NEW page index, not the old one.
     #[test]

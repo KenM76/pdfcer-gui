@@ -18,7 +18,7 @@ parent, living in its own file, with `use super::*` giving it exactly the
 access an inline module had. Nothing about visibility changes, so nothing
 about what these tests can reach changes.
 
-## ★ The two fixtures, and the thing they exist to make possible
+## The two fixtures, and the thing they exist to make possible
 
 Most tests here build their model with
 [`pdfcer_core::vector::decompose`] over a hand-written content stream,
@@ -44,7 +44,7 @@ filename is a restatement of it that goes stale the moment a third such
 module is written.
 
 
-★ **The line gate still counts these lines.** `check-file-size.sh` counts
+**The line gate still counts these lines.** `check-file-size.sh` counts
 total lines, tests included, on purpose — its own header says so — so
 this split is not a way of hiding lines from R2. It is the split R2 asked
 for, taken on the seam that was already there.

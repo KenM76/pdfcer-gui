@@ -7,7 +7,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/ocr/fixture.md`.
 
-// ★ REDUNDANT TO THE COMPILER, LOAD-BEARING TO A GATE — do not tidy away.
+// REDUNDANT TO THE COMPILER, LOAD-BEARING TO A GATE — do not tidy away.
 //
 // `crate::ocr` already declares this module `#[cfg(test)]`, so the attribute
 // below changes nothing about what is compiled. What it changes is what
@@ -53,7 +53,7 @@ const PAGE_H: f64 = 396.0;
 /// chooses either.
 const FIXTURE_DPI: f32 = 200.0;
 
-/// ★★ **The page's text, and why it is a PAGE rather than a caption.**
+/// **The page's text, and why it is a PAGE rather than a caption.**
 ///
 /// The first version of this fixture was two words in 28 pt on an otherwise
 /// blank card, on the reasoning that a legible fixture is one that fails only
@@ -92,7 +92,7 @@ const FIXTURE_DPI: f32 = 200.0;
 /// became one: fourteen lines at a realistic size and spacing, which is both
 /// what the feature will meet and what the model was trained against.
 ///
-/// ### ★ The finding stands regardless of this fixture
+/// ### The finding stands regardless of this fixture
 ///
 /// **`ocrs` at its default threshold can fail catastrophically on a sparse,
 /// clean page** -- not degrade, fail: one whole-page "word" and three
@@ -136,7 +136,7 @@ pub(crate) const MULTIPAGE_NAME: &str = "synthetic-image-only-8pages.pdf";
 
 /// How many sheets [`MULTIPAGE_NAME`] carries.
 ///
-/// ★ **Eight, and the number was measured rather than chosen.** One page of
+/// **Eight, and the number was measured rather than chosen.** One page of
 /// this fixture recognises in roughly a second in a release build, and a page
 /// of the operator's own scanned parts manual measured **2.6 s** through
 /// `pdfcer ocr`. Eight pages is therefore a run of eight to twenty seconds:
@@ -282,7 +282,7 @@ fn image_only_pdf(grey: &[u8], width: u32, height: u32) -> Vec<u8> {
 
 /// The same document with `pages` identical sheets, all sharing **one** image.
 ///
-/// # ★★★ Why a multi-page image-only fixture has to exist
+/// # Why a multi-page image-only fixture has to exist
 ///
 /// The one-page fixture is the right subject for *"did the recogniser read this
 /// page"*. It is the wrong subject for pages-done, words-and-characters
@@ -310,7 +310,7 @@ fn image_only_pdf(grey: &[u8], width: u32, height: u32) -> Vec<u8> {
 /// * a page that is skipped or dropped is visible as an arithmetic hole rather
 ///   than as a plausible smaller number.
 ///
-/// ★ The pages sharing an XObject is *also* representative: it is what a real
+/// The pages sharing an XObject is *also* representative: it is what a real
 /// scanner-produced PDF does not do, but what every stamp, logo and repeated
 /// figure in a real document does, and a recogniser that assumed one image per
 /// page would break on both.
@@ -328,7 +328,7 @@ fn image_only_pdf_pages(grey: &[u8], width: u32, height: u32, pages: usize) -> V
     std::io::Write::write_all(&mut encoder, grey).expect("in-memory write cannot fail");
     let compressed = encoder.finish().expect("in-memory flush cannot fail");
 
-    // ★ The entire content stream. One `Do`, and nothing else — no `BT`, no
+    // The entire content stream. One `Do`, and nothing else — no `BT`, no
     // `Tf`, no `Tj`. That is what makes this fixture image-ONLY rather than
     // image-heavy, and `tests::the_fixture_contains_no_text_operator_at_all`
     // asserts it against these bytes after the fact rather than trusting this
@@ -424,7 +424,7 @@ fn raster() -> (Vec<u8>, u32, u32) {
 mod tests {
     use super::*;
 
-    /// ★ **Regenerate `fixtures/synthetic-image-only.pdf`.**
+    /// **Regenerate `fixtures/synthetic-image-only.pdf`.**
     ///
     /// `#[ignore]`d because it writes into the repository, exactly like
     /// `shell::ron::tests::rewrite_built_in_ron`. Run it when the page content
@@ -443,7 +443,7 @@ mod tests {
         println!("wrote {} ({} bytes)", path.display(), bytes.len());
     }
 
-    /// ★ **Regenerate `fixtures/synthetic-image-only-8pages.pdf`.**
+    /// **Regenerate `fixtures/synthetic-image-only-8pages.pdf`.**
     ///
     /// ```text
     /// cargo test -p pdfcer-gui-base --lib write_synthetic_image_only_multipage -- --ignored
@@ -458,7 +458,7 @@ mod tests {
         println!("wrote {} ({} bytes)", path.display(), bytes.len());
     }
 
-    /// ★★★ **The multi-page fixture really has eight pages, and the engine
+    /// **The multi-page fixture really has eight pages, and the engine
     /// agrees.**
     ///
     /// Pinned because the whole value of that fixture is the page COUNT, and
@@ -484,7 +484,7 @@ mod tests {
         );
     }
 
-    /// ★★ **Eight pages cost barely more than one, because the image is shared.**
+    /// **Eight pages cost barely more than one, because the image is shared.**
     ///
     /// The property that makes committing this fixture reasonable. Asserted as
     /// a ratio rather than an absolute size so it survives a change to the
@@ -511,7 +511,7 @@ mod tests {
 
     /// The multi-page fixture is image-only too.
     ///
-    /// ★ Separate from [`the_fixture_contains_no_text_operator_at_all`] rather
+    /// Separate from [`the_fixture_contains_no_text_operator_at_all`] rather
     /// than folded into it. The two documents are built by two functions, and
     /// the assertion that matters — *any text on this page came from the
     /// recogniser* — has to hold of the one the checks actually drive. A shared
@@ -535,7 +535,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The fixture contains no text-showing operator anywhere.**
+    /// **The fixture contains no text-showing operator anywhere.**
     ///
     /// The property that makes it a valid test of OCR rather than a test of
     /// nothing, asserted against the **emitted bytes** rather than against the
@@ -587,7 +587,7 @@ mod tests {
         }
     }
 
-    /// ★ **pdfcer extracts nothing from it**, which is the condition the Find
+    /// **pdfcer extracts nothing from it**, which is the condition the Find
     /// offer keys on.
     ///
     /// The previous test asserts the *bytes*; this asserts what the **engine
@@ -610,7 +610,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The measurement behind [`super::super::TARGET_PIXELS`].**
+    /// **The measurement behind [`super::super::TARGET_PIXELS`].**
     ///
     /// Recognition accuracy against DPI, on the two real documents this project
     /// has, using **each page's own vector text as ground truth**. That is what
@@ -693,7 +693,7 @@ mod tests {
 
     /// The source page, by contrast, DOES have the two lines on it.
     ///
-    /// ★ The control, and it is the load-bearing half of the pair: rule 4 of
+    /// The control, and it is the load-bearing half of the pair: rule 4 of
     /// `tools/ui-verify`'s own checks — *never treat an absence as evidence
     /// unless you have shown the thing that would have produced it was
     /// working* — applies just as much to a unit test. Without this, an
@@ -713,7 +713,7 @@ mod tests {
         }
     }
 
-    /// ★★ **The whole OCR chain, end to end, against the fixture.**
+    /// **The whole OCR chain, end to end, against the fixture.**
     ///
     /// Recognise the image-only page, write the invisible layer, and read the
     /// words back out of the resulting document with the ordinary text
@@ -726,7 +726,7 @@ mod tests {
     /// directly rather than from beside the test binary, because `cargo test`
     /// runs out of `target/debug/deps` where no packaging has put them.
     ///
-    /// ★ **A green result here does not mean OCR works on scans.** See the
+    /// **A green result here does not mean OCR works on scans.** See the
     /// module header; the fixture has none of the degradation that makes real
     /// recognition hard.
     ///
@@ -811,7 +811,7 @@ mod tests {
         let out = super::super::Job::spawn(super::super::Request {
             session,
             pages: vec![0],
-            // ★ OFF, deliberately. The fixture's page is an image of words with
+            // OFF, deliberately. The fixture's page is an image of words with
             // no text layer, so the guard would not fire — but pinning it off
             // states that what this measures is the recogniser rather than the
             // guard, and it keeps the test honest if the fixture ever grows a
@@ -827,7 +827,7 @@ mod tests {
         let mut job = out;
         let recognised = loop {
             if let Some(answer) = job.poll() {
-                // ★ The fixture asserts the ORDINARY ending. `Stopped` and
+                // The fixture asserts the ORDINARY ending. `Stopped` and
                 // `Cancelled` are reachable only by pressing a button, and
                 // nothing presses one here — so meeting either would mean the
                 // control flag was set by something other than an operator,
@@ -852,7 +852,7 @@ mod tests {
             elapsed.as_millis()
         );
 
-        // ★★★ **Apply it the way the application does** — through
+        // **Apply it the way the application does** — through
         // `EditSession::add_ocr_layer`, as an edit, not by writing a file.
         //
         // A second session over the same bytes rather than the one the worker
@@ -887,12 +887,12 @@ mod tests {
             }
         }
 
-        // ★ The verdict is what the ORDINARY extractor reads back, not what the
+        // The verdict is what the ORDINARY extractor reads back, not what the
         // recogniser claimed. A layer that was written into the wrong place, or
         // at a rendering mode a reader ignores, would satisfy every count above
         // and produce nothing here.
         //
-        // ★★ And it reads the **session's own view**, which is a stronger
+        // And it reads the **session's own view**, which is a stronger
         // assertion than the old one made: the old test serialised to bytes and
         // re-parsed them, so it could not have caught a layer that reached the
         // file and not the live session. That is precisely the direction this

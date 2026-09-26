@@ -7,7 +7,7 @@ this point, right now, what would happen?* — and nothing here changes
 anything. `canvas::interact`'s remaining sections advance a gesture, route a
 click and paint; this one only looks.
 
-## ★★ The precedence, in one place
+## The precedence, in one place
 
 Four different things can be under the pointer at once, and the order they
 are asked in is the whole behaviour. **The most specific thing under the
@@ -29,7 +29,7 @@ pointer wins, and specificity is depth down the selection ladder:**
 press on a **handle** moves the whole object instead of shaping the curve,
 and that is entirely plausible from a chair, because the object *did* move.
 
-## ★ Everything here reads `press_origin`, not the current pointer
+## Everything here reads `press_origin`, not the current pointer
 
 `egui` does not call an interaction a drag until the pointer has travelled a
 threshold, so by the frame it says so the pointer is **already that far from

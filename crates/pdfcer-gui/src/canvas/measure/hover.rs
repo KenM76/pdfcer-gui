@@ -38,7 +38,7 @@ pub(in crate::canvas) struct Entity {
 /// radii would produce the state this whole module exists to prevent: a marker
 /// on one line and a highlight on another.
 ///
-/// # ★ Why `hit_test_point` rather than the snap candidate's `source_object`
+/// # Why `hit_test_point` rather than the snap candidate's `source_object`
 ///
 /// Because a snap candidate is often **not** owned by one object, and the two
 /// questions genuinely differ. `SnapCandidate::source_object` is documented as
@@ -98,7 +98,7 @@ pub(in crate::canvas) fn resolve(
 
 /// How much wider than a hairline the highlight is drawn, in points.
 ///
-/// ★ Deliberately heavier than the geometry it sits on. A CAD drawing's lines
+/// Deliberately heavier than the geometry it sits on. A CAD drawing's lines
 /// are hairlines, and a highlight the same weight as its subject is a line that
 /// changed colour — which on a monochrome drawing viewed at a distance is not a
 /// change at all. It is a screen-space width, so it does not thicken with zoom.
@@ -106,7 +106,7 @@ const HIGHLIGHT_WIDTH_PT: f32 = 3.0;
 
 /// How transparent the highlight is.
 ///
-/// ★ Under 1.0 for a reason rule 4 cares about: the operator must still be able
+/// Under 1.0 for a reason rule 4 cares about: the operator must still be able
 /// to **see the line underneath**. A solid overlay would replace the geometry
 /// with a coloured bar, and *"is this the line I meant"* is a question about the
 /// geometry, not about the bar.
@@ -165,7 +165,7 @@ mod tests {
 
     /// A straight run is drawn as the run, not as its bounding box.
     ///
-    /// ★ The distinction is the whole feature for a diagonal. A box around a
+    /// The distinction is the whole feature for a diagonal. A box around a
     /// 45° line highlights a square region containing every other line that
     /// crosses it, which on a CAD drawing is most of them — it would answer
     /// *"somewhere around here"* to a question that means *"which one"*.
@@ -225,7 +225,7 @@ mod tests {
 
     /// A segment with an unmappable end draws NOTHING rather than half a line.
     ///
-    /// ★ The failure this prevents is not a missing highlight, it is a
+    /// The failure this prevents is not a missing highlight, it is a
     /// **misleading** one: a line drawn from a real endpoint to a fallback
     /// position points at geometry that is not there, and the operator would
     /// aim at it.
@@ -248,7 +248,7 @@ mod tests {
     /// bar over it replaces the evidence with the affordance.
     #[test]
     fn the_highlight_does_not_hide_what_it_marks() {
-        // ★ Asserted on the RENDERED stroke rather than on the constants.
+        // Asserted on the RENDERED stroke rather than on the constants.
         //
         // `assert!(HIGHLIGHT_ALPHA < 255)` is a constant comparison — clippy
         // says so, and clippy is right that it tests the source rather than the

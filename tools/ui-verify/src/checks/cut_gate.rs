@@ -23,7 +23,7 @@ const COPIED: &str = "clipboard-copy";
 
 /// What the canvas says when an ANNOTATION is selected.
 ///
-/// ★★ `annot-select`, not `canvas-selection`. The general selection line
+/// `annot-select`, not `canvas-selection`. The general selection line
 /// carries `sel=`, `level=` and `first=` — all about the **content** index
 /// spaces — and an annotation selection is not in either of them. Reaching for
 /// the familiar line would have made the hunt below click twenty-five times and
@@ -141,7 +141,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         mapping.image_rect, mapping.zoom
     ));
 
-    // ★ A sweep of candidate points rather than one. The fixture's marks cover
+    // A sweep of candidate points rather than one. The fixture's marks cover
     // the redacted words, and this check does not know where those words are —
     // pinning a coordinate would make it fail the day the fixture is
     // regenerated with a different sentence. It clicks a coarse grid and stops
@@ -155,7 +155,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             driver.click_at(session.frame()?.to_screen(window))?;
             session.settle(10);
             let trace = session.trace()?;
-            // ★ The SUBTYPE, not merely "something was selected". A click that
+            // The SUBTYPE, not merely "something was selected". A click that
             // landed on some other annotation would otherwise send this check
             // on to press Ctrl+X on a square and report the cut gate broken.
             if trace
@@ -220,7 +220,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★★★ AND IT REFUSED **BEFORE** THE COPY. The half that is easy to omit:
+    // AND IT REFUSED **BEFORE** THE COPY. The half that is easy to omit:
     // a cut that refused after copying would leave the mark on the page AND a
     // copy of it on the clipboard, so the next Ctrl+V arms a redaction
     // elsewhere — the exact outcome the refusal exists to prevent.

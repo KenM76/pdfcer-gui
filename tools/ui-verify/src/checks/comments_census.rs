@@ -249,7 +249,7 @@ pub fn refresh(
 /// round-trip check compares have to be produced by the identical sequence, or
 /// the comparison at the end is between two different measurements.
 ///
-/// # ★★★ The anchor is the application's own `mode-changed` line
+/// # The anchor is the application's own `mode-changed` line
 ///
 ///
 /// So the anchor is `mode-changed … to=<mode>`, written by

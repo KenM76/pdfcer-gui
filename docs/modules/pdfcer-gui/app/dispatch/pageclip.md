@@ -3,7 +3,7 @@
 `OPERATOR_REQUESTS.md` **O59**, item 2 — Ken: *"can you make sure we have
 cut, copy, and paste available for everything and if not implement?"*
 
-## ★★★ Why these are their own commands and NOT `Ctrl+C`
+## Why these are their own commands and NOT `Ctrl+C`
 
 This is the decision that shapes the whole module, and getting it the other
 way round would have taken the clipboard away from the canvas permanently.
@@ -25,7 +25,7 @@ context menu, and the canvas keeps `Ctrl+C`. That is also what R8 asks for:
 the capability exists because a command is registered, and it is reachable
 by pointing at it rather than by knowing a rule.
 
-★ Acrobat resolves the same collision by **focus** — `Ctrl+C` in its page
+Acrobat resolves the same collision by **focus** — `Ctrl+C` in its page
 thumbnails copies pages. That is a legitimate answer and it is not available
 here: this shell's thumbnails are a dock panel whose focus egui does not
 model in a way a chord dispatcher can read, and inventing a focus notion to
@@ -44,14 +44,14 @@ the clip is captured first, and the existing delete arm — which already
 resyncs the panel selection, clears the canvas and is one undo entry — does
 the removal.
 
-★★ The engine ships `cut_pages`, which does both in one call, and it is
+The engine ships `cut_pages`, which does both in one call, and it is
 **not** used. Not an oversight: the clipboard lives in `egui::Memory` and
 the action applier has no `egui::Context`, so a single-call cut could not
 put its own clip anywhere. Copy-then-delete costs one extra page-tree walk
 and keeps the undo entry count at one, which was the property the engine's
 verb existed to guarantee.
 
-## ★★ What the operator must be told, and when
+## What the operator must be told, and when
 
 Two disclosures, and they are at opposite ends of the gesture because they
 answer different questions:
@@ -61,7 +61,7 @@ answer different questions:
 | **at the copy** | *"a form field was left behind"* | `PageClip::fields_dropped` — a field whose boxes straddle a copied and an uncopied sheet cannot travel, and the operator selected **pages**, not fields, so nothing they did says a field is about to go missing |
 | **at the paste** | *"boxes arrived that nothing can fill"* | `InsertOutcome::orphaned_widgets` — a page's `/Annots` reaches its widgets and the `/AcroForm` that owns them does not travel, so they draw like fields and are dead |
 
-★★★ The second is the one that **produces a document that looks right and
+The second is the one that **produces a document that looks right and
 is not**, and it is invisible by construction: an orphaned widget draws
 exactly like a live field. There is no screenshot that shows the difference,
 so the status row is the only place it can be said — which is rule 4's

@@ -198,7 +198,7 @@ fn seed_prefs(dir: &Path) {
 /// The header every sandbox-written preferences file carries, including the
 /// one key that must survive any check's own seeding.
 ///
-/// ★★★ **A header of the only write path, rather than a line each caller
+/// **A header of the only write path, rather than a line each caller
 /// remembers to add.** That distinction is the whole point — see
 /// [`write_prefs`].
 const PREFS_HEADER: &str = "\
@@ -218,7 +218,7 @@ ask_default_app = false
 /// `body` is the caller's own keys, one `key = value` per line, appended after
 /// [`PREFS_HEADER`]. Pass `""` for the bare seed.
 ///
-/// # ★★★ Why this function exists, and what it cost not to have it
+/// # Why this function exists, and what it cost not to have it
 ///
 /// `seed_prefs` has written `ask_default_app = false` into every sandbox since
 /// the offer shipped, and the reasoning above it is correct. It had one hole:
@@ -232,7 +232,7 @@ ask_default_app = false
 /// | `a_page_display_choice_survives_a_close…` | **deleted** the file to normalise | seed gone |
 ///
 ///
-/// ## ★★★ What this function did NOT fix, for a day, and it is in the table above
+/// ## What this function did NOT fix, for a day, and it is in the table above
 ///
 /// **A guard centralised into "the only write path" does not cover the delete
 /// path, because deleting is not writing.** A default state has two routes into
@@ -296,7 +296,7 @@ pub fn write_prefs(userdata: &Path, body: &str) -> std::io::Result<()> {
 /// `a_page_display_choice_survives_a_close_and_reaches_a_new_document` grew
 /// the startup offer in front of its own second launch. See [`write_prefs`].
 ///
-/// ★★ **And how `the_print_window_opens_on_the_settings_you_last_used` grew it in
+/// **And how `the_print_window_opens_on_the_settings_you_last_used` grew it in
 /// front of its own FIRST launch, a day after [`write_prefs`] was written to stop
 /// exactly that.** Its control run needs the shipped print defaults, and the
 /// argument it made for deleting rather than resetting was good: the neutral state
@@ -516,7 +516,7 @@ mod tests {
 
     /// The binary in the sandbox carries the source's modification time.
     ///
-    /// ★ Load-bearing: [`crate::launch::staleness_complaint`] compares that
+    /// Load-bearing: [`crate::launch::staleness_complaint`] compares that
     /// timestamp against the sources and is on by default, because *a missing
     /// trace from an unbuilt change looks exactly like a broken feature*. A
     /// sandbox that refreshed the mtime would disarm the gate for every check

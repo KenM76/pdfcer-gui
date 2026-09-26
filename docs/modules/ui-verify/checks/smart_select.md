@@ -11,7 +11,7 @@
 > recall this is similar to how Inscape does things and we should follow
 > that convention."*
 
-## ★★★ The trace field this whole check turns on
+## The trace field this whole check turns on
 
 `canvas-selection … first=` says **which of two index spaces** the selection
 landed in — `object:N` for a page object, `leaf:N` for something painted
@@ -35,21 +35,21 @@ project's own definition of measuring nothing.
 | B | double-click at the same point | `smart-enter`, then `first=leaf:M` |
 | C | Escape, Escape | `canvas-escape outcome=LeftContainer` |
 
-★★ Step A is the half that sounds backwards and is the actual change. Before
+Step A is the half that sounds backwards and is the actual change. Before
 this feature a click selected the **leaf** — the engine excludes forms from a
 deep hit test, so the interior was all a click could reach and the wrapped
 drawing itself was unselectable except through a Format-tab command. So a
 build with the feature missing fails step A, not step B: it goes straight to
 `first=leaf:…` on the first click.
 
-★ Step C is two presses, not one, and the count is the assertion. `canvas::keys`
+Step C is two presses, not one, and the count is the assertion. `canvas::keys`
 puts the container **below** the selection on the Escape ladder — one press
 clears what is selected, a second steps out — because the selection is the
 more transient of the two. A build that leaves on the first press would strand
 an operator who pressed Escape to drop a selection outside the container they
 were working in.
 
-## ★★★ Why it opens its OWN fixture and ignores `--pdf`
+## Why it opens its OWN fixture and ignores `--pdf`
 
 
 | document | forms | what a driven click selected |
@@ -72,6 +72,6 @@ DOCUMENT the wrong instrument, not the feature wrong, and the answer is
 content is one `Do` on a form holding three fat crossing strokes. Its header
 carries the measurements above and why each dimension is what it is.
 
-★ The real drawings keep their checks — this suite drives them for
+The real drawings keep their checks — this suite drives them for
 everything whose subject IS a real drawing. This one's subject is a
 containment relationship, and a fixture states it exactly.

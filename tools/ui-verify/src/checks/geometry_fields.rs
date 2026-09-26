@@ -30,7 +30,7 @@ const SCROLL_ATTEMPTS: usize = 6;
 /// `resize-scale sx=… sy=… ax=… ay=…` — raised by `resizing::action` itself,
 /// so it is the line BOTH routes emit.
 ///
-/// ★ Deliberately not `resize-commit`, which is the *gesture's* line and
+/// Deliberately not `resize-commit`, which is the *gesture's* line and
 /// carries the grip that was dragged — the typed route never writes it, so an
 /// oracle naming it reports a working Apply as inert. See the module header.
 const COMMIT_EVENT: &str = "resize-scale";
@@ -38,7 +38,7 @@ const COMMIT_EVENT: &str = "resize-scale";
 const DECLINED_EVENT: &str = "resize-declined";
 /// The label `vector_edit` traces when the edit reached the engine.
 ///
-/// ★★ The typed route shares `resizing::action` with the grips, so whatever
+/// The typed route shares `resizing::action` with the grips, so whatever
 /// verb that function reaches is the verb this check must name — which is the
 /// whole reason the two routes share it. ⚠ Naming a MECHANISM rather than an
 /// outcome is what makes this constant a liability: the check goes red on the
@@ -160,13 +160,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: the section must be on screen ----------------------------------
     //
-    // ★ A SKIP, not a FAIL, and the distinction is the whole reason this branch
+    // A SKIP, not a FAIL, and the distinction is the whole reason this branch
     // has its own paragraph. The section draws only in an arrangement where the
     // Properties panel is mounted, and which panels are mounted is the
     // operator's saved dock layout — a property of the profile the harness
     // launched with, not of the feature. Failing here would report "editable
     // geometry is broken" for a run whose only fault was a dock arrangement,
-    // ★★ A harness must not blame the program for a condition the harness
+    // A harness must not blame the program for a condition the harness
     // itself set up.
     let trace = session.trace()?;
     let Some(_section) = driving::declared(&trace, ui_rect, SECTION_REGION) else {
@@ -202,18 +202,18 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 5: press Apply ----------------------------------------------------
     //
-    // ★ The rect is re-read AFTER the scrub. Apply is `add_enabled`, and an
+    // The rect is re-read AFTER the scrub. Apply is `add_enabled`, and an
     // enabled button and a disabled one are the same size — but the section
     // above it is not: a wider number is a wider spinner row under
     // `horizontal`, and a panel narrow enough to wrap moves everything below.
     // Reading the rect before the scrub would be the read-then-act interval
     // `driving::stable_rect`'s doc comment describes, in its cheapest form.
-    // ★★★ SCROLL TO IT FIRST. The Properties panel is a `ScrollArea`, and in
+    // SCROLL TO IT FIRST. The Properties panel is a `ScrollArea`, and in
     // an ordinary dock layout its slot is shorter than its content, so Apply —
     // which sits directly under the four fields — can be a dozen points below
     // the panel's viewport while still having a declared rect.
     //
-    // ★★ **A rect outside its own scroll viewport is a coordinate that clicks
+    // **A rect outside its own scroll viewport is a coordinate that clicks
     // the canvas.** Pressing it hits nothing, the trace shows no commit and no
     // decline, and the check reports a dead button over an application in which
     // the button was never broken because it was never pressed. That failure
@@ -225,7 +225,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // cannot be clicked. And this loop does what the operator would do: scrolls
     // the panel until Apply is on screen.
     //
-    // ★ Scrolling at the WIDTH FIELD's centre rather than at the section's,
+    // Scrolling at the WIDTH FIELD's centre rather than at the section's,
     // because the section rect shrinks as its content scrolls out of view and a
     // point derived from it walks. The width field is what the scrub just
     // used, so it is known-good and known-inside the panel.
@@ -253,7 +253,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         driver.scroll_at(session.frame()?.declared_center(field), -1)?;
         session.settle(12);
     }
-    // ★ Evidence before the verdict, on the path that gives up. A layout
+    // Evidence before the verdict, on the path that gives up. A layout
     // question has exactly one oracle — a rendered screenshot — and "the button
     // is not on screen" is a layout question. Without this, the next reader has
     // six scroll notches and a coordinate and no way to see what the panel

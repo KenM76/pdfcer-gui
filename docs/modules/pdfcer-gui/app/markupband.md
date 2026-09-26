@@ -18,7 +18,7 @@ twin: same shape, same four obligations, same park-and-report contract. Read
 that module's header first; what is below is what differs, and every
 difference is argued rather than inherited.
 
-## ★★★ The shell reserves the slot; everything else is ours, including the
+## The shell reserves the slot; everything else is ours, including the
 greying
 
 `egui_shell::ribbon::control::render_command` does four things for a command
@@ -37,7 +37,7 @@ drawn by the other half of the program* is how a harness comes to have two
 lookup paths, which is the defect `driving::declared_or_in_overflow` was
 written to end.
 
-## ★★ It reports; it does not dispatch
+## It reports; it does not dispatch
 
 Every control here parks a [`MarkupEdit`] and returns the command's
 `HandlerToken`. It raises no `Action` and touches no document.
@@ -57,7 +57,7 @@ built its own `Action` would put the operand derivation — *which annotation,
 on which page* — in the renderer, where a chord never reaches it, and the
 copy in `app::dispatch::format` would be the one that went stale.
 
-## ★★★ One field per raised action, never a struct reassembled from widgets
+## One field per raised action, never a struct reassembled from widgets
 
 [`MarkupEdit`] carries exactly one property and [`MarkupEdit::into_style`]
 sets exactly one field of `MarkupStyle`. `MarkupStyle`'s own doc comment is
@@ -74,7 +74,7 @@ earlier. `panels::properties::markup` §"Every control is `None` unless the
 operator touched it" argues it at length; this module obeys the same rule
 through a type rather than through care.
 
-## ★★ Absence and greying, and why this group's answers differ from Font's
+## Absence and greying, and why this group's answers differ from Font's
 
 | state | Font group | Markup group |
 |---|---|---|
@@ -96,7 +96,7 @@ sentence is `text::panels::properties::markup_locked`, which is the string
 the Properties panel shows, so the two surfaces cannot refuse for different
 reasons.
 
-## ★★★ WHICH subtype takes WHICH property is the ENGINE's question, and this
+## WHICH subtype takes WHICH property is the ENGINE's question, and this
 module no longer holds an answer to it
 
 
@@ -126,7 +126,7 @@ no API for. What is gone is the arm deciding whether the control exists.
 `canvas::annotnodes`' header draws the third distinction and is right; this
 module does not touch it.
 
-### ★★ Belt and braces — a predicate to ask, and a refusal if you ask anyway
+### Belt and braces — a predicate to ask, and a refusal if you ask anyway
 
 The engine also refuses: `set_markup_style` raises
 `EditError::StylePropertyNotApplicable { id, subtype, property }` **before**
@@ -136,7 +136,7 @@ here and neither replaces the other: the predicate shapes the UI so the
 refusal is unreachable, and the refusal is what makes a drifted shell loud
 instead of silent.
 
-★ Surfacing it costs this module nothing, and that is by design rather than
+Surfacing it costs this module nothing, and that is by design rather than
 by omission: `app::actions::funnel::vector_edit`'s `Err` arm
 already routes every `EditError` to the decline channel —
 `crate::text::status::edit_declined_by_engine` on screen, the engine's own
@@ -145,7 +145,7 @@ in as many words that an error's `Display` is *"not permission to route UI
 text through an error type"*. So the refusal arrives; it arrives through the
 one channel every refusal uses, and this module does not build a second.
 
-## ★★★ The genuine fifth state of the arrowhead chooser
+## The genuine fifth state of the arrowhead chooser
 
 `MarkupStyle::endings` became `Option<StyleEdit<(LineEnding, LineEnding)>>`
 on the same day: `Set` writes `/LE`, **`Clear` removes it**. The four
@@ -153,7 +153,7 @@ positions this chooser offers all *write* the key, so *"no arrowheads"* —
 `/LE [/None /None]` — and *"no line-ending entry at all"* are two different
 files that draw the same line, and only the first was reachable.
 
-### ★★ It is an ACTION below a separator, not a fifth peer — and here is why
+### It is an ACTION below a separator, not a fifth peer — and here is why
 
 A fifth position in the list would be a fifth answer to the question the
 list asks (*which ends carry a head?*) that **draws identically to the
@@ -181,12 +181,12 @@ and each of them is the reason:
   their mind about arrowheads; the way back to the file they were given is
   in the same popup, not on a second control they must go looking for.
 
-★ The wording is a drafter's and lives in the catalog, once, read by **both**
+The wording is a drafter's and lives in the catalog, once, read by **both**
 surfaces: `text::panels::properties::markup_endings_clear` and its hover.
 One string, so the tab and the panel cannot come to describe one act two
 ways.
 
-## ★ Rule 15 — a ce dimension is a different verb and must not appear here
+## Rule 15 — a ce dimension is a different verb and must not appear here
 
 **ce dimensions** are the ones pdfcer authors; **pdf dimensions** are CAD
 page content. A ce dimension is `panels::properties::dimension`'s and uses
@@ -201,7 +201,7 @@ publication of the condition. It is deliberately not a comparison of
 exactly like an arrow's — a string test would restyle the operator's
 dimensions into bare lines and would look correct while doing it.
 
-## ★ Why this module reads the session itself rather than sharing the
+## Why this module reads the session itself rather than sharing the
 panel's reader
 
 [`Current::read`] is a twenty-line dictionary read that

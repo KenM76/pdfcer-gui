@@ -229,7 +229,7 @@ fn a_marquee_encloses_objects_inside_a_form() {
         "a crossing window must reach a form's interior, or the two index spaces \
          disagree about what a right-to-left drag means"
     );
-    // ★★ …and `Object(0)` — the page-sized WRAPPER — comes with it, which is
+    // …and `Object(0)` — the page-sized WRAPPER — comes with it, which is
     // the honest answer from THIS function and is NOT what the operator gets.
     //
     // A crossing band touches a page-sized form wherever it is drawn, so on a
@@ -240,15 +240,15 @@ fn a_marquee_encloses_objects_inside_a_form() {
     // and it is dropped THERE rather than here because this function is a hit
     // test and that is a selection policy.
     //
-    // ★ Asserting the raw answer keeps the seam visible. An expectation written
+    // Asserting the raw answer keeps the seam visible. An expectation written
     // as the filtered result would pass whether the filter existed or not.
 
-    // ★★★ …and the SAME band under `Exclude` drops the wrapper and keeps the
+    // …and the SAME band under `Exclude` drops the wrapper and keeps the
     // leaf — which is the one assertion that proves `FormMarquee` travels all
     // the way to the engine.
     //
     //
-    // ★★ This is also the closest thing to a direct test of the engine's
+    // This is also the closest thing to a direct test of the engine's
     // interleave that this crate should own: `Object(0)` is the form, `Leaf(1)`
     // is inside it, and under `Include` the container sorts FIRST because a
     // leaf of the form at index n sorts after the form itself. Reverse that
@@ -454,7 +454,7 @@ fn part_kind_and_part_count_answer_for_every_object_kind() {
     assert_eq!(p.part_kind(0), Some(PartKind::Subpath));
     assert_eq!(p.part_count(0), 2);
 
-    // ★ `provider` builds from a bare content stream, which has no
+    // `provider` builds from a bare content stream, which has no
     // `/Resources` and therefore no font; every run closes with empty bounds
     // and is dropped, so this object has zero runs AND zero lines. What is
     // asserted here is the KIND — that text routes to the line rung at all.

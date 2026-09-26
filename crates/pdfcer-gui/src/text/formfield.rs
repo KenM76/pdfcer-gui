@@ -36,7 +36,7 @@ pub fn intro(kind: FormFieldKind) -> String {
 
 /// The label above the name box.
 ///
-/// ★★ It reads differently for a radio button, and that is the most important
+/// It reads differently for a radio button, and that is the most important
 /// wording decision in this file. For every other kind the name identifies
 /// **this control**; for a radio it identifies **the group**, and two radios
 /// sharing it is what makes them exclusive. An operator who reads the same
@@ -80,7 +80,7 @@ pub fn tooltip_hint() -> String {
     "What this field is for".to_owned()
 }
 
-/// ★ The consequence of leaving the tooltip empty, stated always.
+/// The consequence of leaving the tooltip empty, stated always.
 ///
 /// Not a warning and not conditional on the box being empty: it is a fact about
 /// what a tooltip *does*, which is entirely invisible on screen. Rule 4's
@@ -117,7 +117,7 @@ pub fn password() -> String {
     "Hide what is typed".to_owned()
 }
 
-/// ★★ What "hide what is typed" does **not** mean.
+/// What "hide what is typed" does **not** mean.
 ///
 /// Salvaged in substance from the old shell's `form_field_password_tooltip`,
 /// which exists because a masked box reads as "secure" to anyone not told
@@ -171,7 +171,7 @@ pub fn export_note() -> String {
         .to_owned()
 }
 
-/// ★★ How a radio group works, said before the operator names one.
+/// How a radio group works, said before the operator names one.
 ///
 /// The single sentence that stops the most common form-authoring mistake:
 /// placing three radio buttons with three different names and getting three
@@ -239,7 +239,7 @@ pub fn sort() -> String {
 
 /// Who does the sorting, and when.
 ///
-/// ★ Worth a hover because the answer is surprising: the flag asks the *viewer*
+/// Worth a hover because the answer is surprising: the flag asks the *viewer*
 /// to sort, so what the operator typed and what a reader sees can differ, and
 /// pdfcer is not the one doing it.
 #[must_use]
@@ -263,7 +263,7 @@ pub fn required() -> String {
 
 /// What "required" actually enforces, and where.
 ///
-/// ★ Not in pdfcer. The flag is a request to whatever software submits the form,
+/// Not in pdfcer. The flag is a request to whatever software submits the form,
 /// and nothing stops a document being saved with the field empty — which is
 /// worth saying, because "required" reads as a guarantee.
 #[must_use]
@@ -398,7 +398,7 @@ pub const fn background_no_colour_note() -> &'static str {
 
 /// The popup note over `/BC` — the same sentence in both of its unset states.
 ///
-/// ★★ Black, not *nothing*. `WidgetChrome::stroke` resolves an unstated `/BC`
+/// Black, not *nothing*. `WidgetChrome::stroke` resolves an unstated `/BC`
 /// AND an empty one to the same black, so the honest sentence is that the
 /// outline will be drawn — and the way to have none is a border width of 0,
 /// which is the control directly above this one. Because those two states are
@@ -431,7 +431,7 @@ mod tests {
         assert_eq!(intros.len(), before, "two kinds share an opening line");
     }
 
-    /// ★★★ **The radio button's name label says "group", and no other does.**
+    /// **The radio button's name label says "group", and no other does.**
     ///
     /// The wording that prevents the most common form-authoring mistake. Tested
     /// rather than left to review because "Name" is the obvious label, it is
@@ -450,7 +450,7 @@ mod tests {
         }
     }
 
-    /// ★★ **The password hover refuses the word "secure" and says "not
+    /// **The password hover refuses the word "secure" and says "not
     /// encryption".**
     ///
     /// A masked box reads as secure to anyone not told otherwise, and the value
@@ -469,7 +469,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The inert-button note is gone, and this test is its headstone.**
+    /// **The inert-button note is gone, and this test is its headstone.**
     ///
     /// It said pdfcer *"cannot yet give it something to do"*.
     /// `set_button_action` shipped on 2026-08-30 and that sentence stayed on

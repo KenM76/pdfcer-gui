@@ -18,12 +18,12 @@ use crate::text::toolstatus as ts;
 /// One row of text plus the padding a button needs around it.
 /// [`egui_shell::dock::banner::resolve_height`] clamps this, so a window too
 /// short to afford it gets no strip rather than a sliver — see that function's
-/// ★ section.
+/// section.
 pub const BANNER_HEIGHT_PTS: f32 = 26.0;
 
 /// The region the strip publishes when it has drawn.
 ///
-/// ★ Distinct from `egui-shell`'s own `dock.right.banner`, which reports the
+/// Distinct from `egui-shell`'s own `dock.right.banner`, which reports the
 /// **compartment**. This one reports the **content**, and the two answer
 /// different questions: the dock's says *the strip is on screen*, this one says
 /// *the application put something in it*. A check that asserted only the former
@@ -56,7 +56,7 @@ pub fn banner(ui: &mut Ui, doc: Option<&OpenDoc>, host: Option<&MenuHost<'_>>) {
         None => line.clone(),
     };
 
-    // ★★★ **The button is allocated BEFORE the sentence, and that order is the
+    // **The button is allocated BEFORE the sentence, and that order is the
     // whole of the layout.**
     //
     // `Label::truncate` fills the width it is given, so a sentence laid out
@@ -73,7 +73,7 @@ pub fn banner(ui: &mut Ui, doc: Option<&OpenDoc>, host: Option<&MenuHost<'_>>) {
             put_down(ui, &ctx);
         }
         ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-            // ★★ `truncate`, never `wrap`. The strip's height is a constant the
+            // `truncate`, never `wrap`. The strip's height is a constant the
             // dock has already taken off the side; a second line would be drawn
             // over the first stack's tab bar and clipped away, which reads as a
             // rendering fault. The full text is on hover, which is the same
@@ -122,7 +122,7 @@ fn name_of<'a>(tool: CanvasTool, host: Option<&'a MenuHost<'_>>) -> Option<&'a s
 
 /// The one sentence, plus whatever the old stage said on a **second** line.
 ///
-/// # ★★★ Why this returns a pair instead of one string
+/// # Why this returns a pair instead of one string
 ///
 /// Six of the armed stages drew two labels, and the second was never
 /// decoration. `t::text_annot_release` is described in its own module as *"The
@@ -137,7 +137,7 @@ fn name_of<'a>(tool: CanvasTool, host: Option<&'a MenuHost<'_>>) -> Option<&'a s
 /// [`crate::app::status::disclosure`] states as *"eliding defers rather than
 /// loses"*.
 ///
-/// # ★ The primary is the LIVE stage where there is one
+/// # The primary is the LIVE stage where there is one
 ///
 /// One slot, two contents — the armed block's rule, and it applies here with
 /// more force rather than less. *"3 vertices placed"* is worth more than
@@ -168,7 +168,7 @@ fn sentence(ctx: &egui::Context, doc: &OpenDoc, tool: CanvasTool) -> (String, Op
             Some(t::hand_borrow().to_owned()),
         ),
         CanvasTool::Text => {
-            // ★ The second sentence is rendered only where it is TRUE. In Read
+            // The second sentence is rendered only where it is TRUE. In Read
             // and Review the select tool already swept text, so arming this
             // takes nothing away and the sentence would be describing a change
             // that did not happen. Absent rather than reworded — R9 applied to
@@ -182,7 +182,7 @@ fn sentence(ctx: &egui::Context, doc: &OpenDoc, tool: CanvasTool) -> (String, Op
             t::form_instruction().to_owned(),
             Some(t::form_kind_hint(kind).to_owned()),
         ),
-        // ★★★ O66 — the ONLY surface that states this gesture and its way out,
+        // O66 — the ONLY surface that states this gesture and its way out,
         // because the window that asked for the placement has hidden itself.
         CanvasTool::Place(_) => (crate::text::placing::armed_instruction().to_owned(), None),
         CanvasTool::TextAnnot(kind) => (
@@ -258,7 +258,7 @@ fn perimeter_stage(ctx: &egui::Context, doc: &OpenDoc) -> String {
 /// points to a fit is watching a number converge, and with no number to watch
 /// every correction is a commit and an undo.
 ///
-/// ★ **Radius or diameter follows the pick set's own display toggle**, so the
+/// **Radius or diameter follows the pick set's own display toggle**, so the
 /// number the strip shows is the number the placed dimension will show. A
 /// readout that always reported the radius would disagree with a committed
 /// diameter label by a factor of two, silently.
@@ -288,7 +288,7 @@ fn circular_stage(ctx: &egui::Context, doc: &OpenDoc) -> String {
 
 /// The command that arms `tool`, if one does.
 ///
-/// # ★ Derived from the existing id maps, never written a second time
+/// # Derived from the existing id maps, never written a second time
 ///
 /// `shell::commands::markup_command` and `measure_for_command`'s inverse are
 /// the single binding between an id and a kind, exactly as
@@ -306,17 +306,17 @@ fn command_for(tool: CanvasTool) -> Option<&'static str> {
         CanvasTool::Hand => Some("view.tool_hand"),
         CanvasTool::Text => Some("view.tool_text"),
         CanvasTool::Markup(kind) => Some(crate::shell::commands::markup_command(kind)),
-        // ★ Each kind names its own command, which is what lets the strip show
+        // Each kind names its own command, which is what lets the strip show
         // the armed field type. The mapping lives on the kind rather than here
         // so the two cannot drift.
         CanvasTool::Form(kind) => Some(kind.command_id()),
-        // ★ **None** — a placement is armed from inside a dialog and has no
+        // **None** — a placement is armed from inside a dialog and has no
         // ribbon control to name, so the NAME is absent. The sentence is not;
         // see this module's O66 section. Written as its own arm rather than
         // folded into a `_` so that a second `PlaceKind` has to be ruled on
         // rather than inheriting this silently.
         CanvasTool::Place(_) => None,
-        // ★ The empty string is `MeasureKind::Scale`'s id, and it is not a
+        // The empty string is `MeasureKind::Scale`'s id, and it is not a
         // command — that kind is armed from inside the Set-scale window and
         // deliberately maps to nothing.
         CanvasTool::Measure(kind) => {
@@ -341,7 +341,7 @@ mod tests {
         assert!(!REGION.starts_with("panel:"));
     }
 
-    /// ★ The reserved height is inside the band `egui-shell` will honour at a
+    /// The reserved height is inside the band `egui-shell` will honour at a
     /// realistic window, so the strip cannot silently resolve to nothing.
     ///
     /// Falsifiable in one edit: drop `BANNER_HEIGHT_PTS` below the shell's
@@ -356,7 +356,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **Every tool that had a name has one still, and the two that never
+    /// **Every tool that had a name has one still, and the two that never
     /// did still do not.**
     ///
     /// The table moved modules, and a move is where an arm gets dropped. This

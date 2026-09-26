@@ -12,14 +12,14 @@ Two halves, in two places, and this is the second:
 | what a destination MEANS — the five `/XYZ`-family views | `app::actions::destination` |
 | where the view actually LANDS — viewport, margin, zoom ceiling | here |
 
-## ★★★ Why the landing cannot happen in the apply phase
+## Why the landing cannot happen in the apply phase
 
 Arriving needs the canvas rectangle, the page's drawn extent and the scroll
 offset. None of those exists where actions are applied, so the action parks
 a [`crate::app::state::PendingDestination`] and this drains it on the next
 frame — `OpenDoc::fit_placement`'s own pattern, for its own reason.
 
-## ★★ It frames through `zoom::zoom_to_rect`, which is the zoom marquee's
+## It frames through `zoom::zoom_to_rect`, which is the zoom marquee's
 ## own code
 
 Deliberately, and it is what makes the fix trustworthy rather than merely
@@ -28,14 +28,14 @@ close: a bookmark and a rubber band drawn over the same region arrive
 drift would present as a bookmark that lands *nearly* right — harder to
 diagnose than one that does not move at all.
 
-## ★★★ And it must not frame until the canvas is drawing the right page
+## And it must not frame until the canvas is drawing the right page
 
 
 [`arrive_step`] is the gate, and it carries the whole argument — including
 why the repair is a bounded wait on the *destination* path rather than a
 change to the framing every zoom in the product shares.
 
-## ★ A rectangle is framed; a point is scrolled to
+## A rectangle is framed; a point is scrolled to
 
 `/FitR` asks for a magnification and gets one, through `zoom_to_rect`.
 `/XYZ` and the two one-axis fits ask for a *position*, and go to

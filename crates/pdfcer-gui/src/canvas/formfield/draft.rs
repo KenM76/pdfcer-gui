@@ -30,11 +30,11 @@ pub struct Draft {
     pub kind: FormFieldKind,
     /// The field's `/T` — its name, and its identity.
     ///
-    /// ★ Two widgets with the same name are **one field**. See the header.
+    /// Two widgets with the same name are **one field**. See the header.
     pub name: String,
     /// The `/TU` — what a screen reader announces.
     ///
-    /// ★★ Empty is meaningful and is not the same as absent: an empty string
+    /// Empty is meaningful and is not the same as absent: an empty string
     /// here becomes `TooltipChoice::Declined`, which is the operator saying
     /// *"this control needs no name"* rather than the engine's default
     /// `Undecided`, which it refuses to author. That refusal is the entire
@@ -70,7 +70,7 @@ pub struct Draft {
     pub password: bool,
     /// **Text** — whether characters sit in equal cells.
     ///
-    /// ★ Comb needs a maximum length: the cells are `max_len` divisions of the
+    /// Comb needs a maximum length: the cells are `max_len` divisions of the
     /// width, so without one there is nothing to divide by. [`Draft::comb_ok`]
     /// is the predicate, and the dialog uses it rather than restating the rule.
     pub comb: bool,
@@ -106,7 +106,7 @@ pub struct Draft {
     /// > not say what it currently is."*
     ///
     ///
-    /// ★ What is still true, and is the reason this field exists at all: a
+    /// What is still true, and is the reason this field exists at all: a
     /// button *being placed* has no action yet, so this is the one place the
     /// question is asked before there is anything to read.
     pub action: super::action::ButtonDoes,
@@ -115,7 +115,7 @@ pub struct Draft {
 impl Draft {
     /// The options, one per line, with blanks discarded and ends trimmed.
     ///
-    /// ★ A trailing newline is what a text box has after the last line the
+    /// A trailing newline is what a text box has after the last line the
     /// operator typed, so discarding empties is not tidying — without it every
     /// choice field would carry a final option that is the empty string, which
     /// renders as a selectable blank row.
@@ -173,7 +173,7 @@ impl Draft {
             password: false,
             comb: false,
             max_len: None,
-            // ★ "Yes" rather than "On": `/AS` may be any name, and the one a
+            // "Yes" rather than "On": `/AS` may be any name, and the one a
             // check box carries is what a form-filling script reads back. "Yes"
             // is what Acrobat writes and is therefore what most scripts expect.
             export_value: "Yes".to_owned(), // ui-text-exempt: a PDF /AS name written into the file, never displayed as UI copy
@@ -194,7 +194,7 @@ impl Draft {
 
 /// The last settings the operator accepted, per session.
 ///
-/// ★ Per **session**, deliberately not persisted to `userdata`. A remembered
+/// Per **session**, deliberately not persisted to `userdata`. A remembered
 /// setting is a convenience within one sitting — "I am placing a row of
 /// identical check boxes" — and one that survived a restart would silently
 /// govern a different document days later, which is the shape of a setting
@@ -218,7 +218,7 @@ impl Remembered {
     ///    check box does not inherit a text field's multiline flag, because it
     ///    has none; but the *next* check box inherits the previous one's export
     ///    value, which is exactly what placing a column of them wants.
-    /// 3. **★★ The name never carries over — except for a radio.** See the
+    /// 3. **The name never carries over — except for a radio.** See the
     ///    header: sharing a name merges two widgets into one field, and for
     ///    radio buttons that merging *is* the group.
     #[must_use]
@@ -243,7 +243,7 @@ impl Remembered {
         draft.kind = kind;
 
         if matches!(kind, FormFieldKind::Radio) && !draft.name.trim().is_empty() {
-            // ★★ The group persists and the EXPORT VALUE advances — the
+            // The group persists and the EXPORT VALUE advances — the
             // inverse of every other kind. Three radios in one group are three
             // widgets sharing `/T` with distinct export names.
             draft.export_value = next_free(&draft.export_value, &collected_exports(&self.last));
@@ -272,7 +272,7 @@ fn collected_exports(last: &Option<Draft>) -> Vec<String> {
 
 /// `prefix` with the lowest positive integer suffix that is not in `taken`.
 ///
-/// ★ It starts at 1 and scans upward rather than counting `taken`, because
+/// It starts at 1 and scans upward rather than counting `taken`, because
 /// counting gives a collision the moment anything has been deleted: a document
 /// with `Text1` and `Text3` has two fields, and `Text2` is free while `Text2`
 /// derived from the count would collide with nothing and `Text3` would.
@@ -312,7 +312,7 @@ mod tests {
         );
     }
 
-    /// ★★ **A second radio DOES inherit the name** — the deliberate inverse,
+    /// **A second radio DOES inherit the name** — the deliberate inverse,
     /// because a shared name is what makes radios exclusive.
     #[test]
     fn a_second_radio_joins_the_group() {

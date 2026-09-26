@@ -19,7 +19,7 @@ pressed, and read back the next time each window opens. **This check is the
 evidence that the reading half works in a running process**, which is the
 half the operator experiences as *"it remembered"*.
 
-# ★★★ What this check deliberately CANNOT establish, said first
+# What this check deliberately CANNOT establish, said first
 
 **It never presses Export, and no future edit may make it.** Committing
 opens a native save picker — a hard wall for synthetic input — and then
@@ -37,9 +37,9 @@ What stands in for it:
 | every field of each `Export*Prefs` is written | each `habits()` is one struct literal with **no** `..Default::default()`, so a field added to the prefs type is a compile error there |
 | every field is read back by `open` | the three dialogs' own unit tests, plus the trace this check reads, which is formatted from `dialog.*` and not from `remembered.*` |
 | the file survives a round trip | `app::prefs`' round-trip and writer/parser-agreement tests |
-| the file the operator gets is the file this check writes | ★ **this check**, below — the seed is written in the writer's own token vocabulary |
+| the file the operator gets is the file this check writes | **this check**, below — the seed is written in the writer's own token vocabulary |
 
-# ★★ Why this one needs no mouse, and what that buys
+# Why this one needs no mouse, and what that buys
 
 `print_remembered` reaches its window by clicking a ribbon tab and then a
 ribbon control. That costs it two skip reasons it cannot avoid —
@@ -85,7 +85,7 @@ Two things prevent it:
    naming it rather than a pass, because that field would read back
    correctly whether the file was consulted or ignored.
 
-★ The second rule is what keeps the seed maintainable. When a shipped
+The second rule is what keeps the seed maintainable. When a shipped
 default moves, this check does not silently become decorative: it goes
 yellow and says which value to change.
 
@@ -98,7 +98,7 @@ export-dxf-open page=0 groups=0 suggestion=uncalibrated scale=1 units=millimetre
 ```
 
 
-# ★★ Why the seed table has five columns where `print_remembered`'s has three
+# Why the seed table has five columns where `print_remembered`'s has three
 
 Its table can make the file value and the trace token the same string by
 construction, because both sides are spelled by a `*_key` function. Three
@@ -124,7 +124,7 @@ A row is therefore identified by `(event, field)` and never by `field`
 alone; `each_seeded_row_reads_a_different_event_and_field` is the guard,
 and it asserts the duplication rather than merely tolerating it.
 
-# ★★★ The DXF calibration trap, which is a feature and not a defect
+# The DXF calibration trap, which is a feature and not a defect
 
 `dialogs::export_dxf::seeded_options` does two things in order: ① it takes
 the operator's habit from the file, then ② **a calibrated ce dimension

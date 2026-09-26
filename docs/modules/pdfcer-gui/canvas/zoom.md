@@ -1,6 +1,6 @@
 # `canvas::zoom` — the anchor rule, decided once, and the five paths that route through it
 
-## ★ The rule
+## The rule
 
 > **A zoom holds one page point still, and that point is where the operator
 > is looking: the pointer when it is over the canvas, the centre of the
@@ -52,7 +52,7 @@ size that [`crate::app::state::ZoomAnchor`] carries, is
 be computed before the new zoom is known, which is exactly the situation
 every one of these commands is in.
 
-## ★ The two-frame handshake, and the gate that makes it work for commands
+## The two-frame handshake, and the gate that makes it work for commands
 
 `ZoomAnchor`'s own docs explain why it spans two frames: *"the new zoom is
 not known when the wheel is seen … recording the inputs and solving later

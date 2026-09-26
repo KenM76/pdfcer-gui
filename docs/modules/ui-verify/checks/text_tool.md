@@ -26,7 +26,7 @@ Both close with `CanvasTool::Text`, armed by **`view.tool_text`** in
 View ▸ Navigate. This check is the evidence that they actually did, **in one
 mode, in one run, with the same control observed dead and then live.**
 
-# ★ Why the trace is the only possible oracle here
+# Why the trace is the only possible oracle here
 
 Two independent reasons, and either alone would be enough:
 

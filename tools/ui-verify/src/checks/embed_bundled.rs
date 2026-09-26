@@ -16,7 +16,7 @@ use crate::report::CheckReport;
 const INVOKE: &str = "mode.edit,tools.embed_fonts";
 /// The variable this check deliberately does **not** set.
 ///
-/// ★ Named as a constant it never uses, so a reader grepping for the font-dir
+/// Named as a constant it never uses, so a reader grepping for the font-dir
 /// seam finds this file and its reason rather than concluding it was forgotten.
 /// The whole point of this run is that no folder is configured.
 #[allow(dead_code)]
@@ -38,7 +38,7 @@ const OWN_FONTS_TOGGLED: &str = "embed-fonts-own-fonts";
 const REQUESTED: &str = "embed-fonts-requested";
 /// The line the dispatcher writes when there is nothing to open.
 ///
-/// ★★★ Since O47 this has exactly ONE meaning — *every font in this document
+/// Since O47 this has exactly ONE meaning — *every font in this document
 /// is already embedded* — so it aims the check, it does not fail it. See the
 /// module header.
 const DECLINED: &str = "embed-fonts-declined";
@@ -103,7 +103,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
-    // ★★★ No `PDFCER_DIAG_FONT_DIR`. That absence IS the check.
+    // No `PDFCER_DIAG_FONT_DIR`. That absence IS the check.
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 

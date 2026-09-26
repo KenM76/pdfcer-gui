@@ -1,7 +1,7 @@
 # `canvas::keys` tests — the Delete ladder enumerated, and the two keys
 # that only pass through
 
-## ★★ The seam, and why the half left behind is the interesting one
+## The seam, and why the half left behind is the interesting one
 
 [`super`] is **two precedence ladders** — which claimant a Delete reaches,
 and which a press of Escape does — and each is a short function whose whole
@@ -36,7 +36,7 @@ arrow*, *every case passes `page: None`* — are gone rather than edited. Each
 was true of the Delete and Escape ladders and was written as though it were
 true of the file.
 
-## ★★★ Every **ladder** case passes `targets: None` **and**
+## Every **ladder** case passes `targets: None` **and**
 ## `model_attempted: true`, and the pairing is deliberate
 
 Those two fields answer different questions and a unit test is the one place

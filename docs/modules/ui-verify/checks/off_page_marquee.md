@@ -17,7 +17,7 @@ tracked as the same defect as O88: the band only took what it completely
 surrounded.
 
 
-# ★★★ Why the assertion is `hits == 1` and why that is airtight
+# Why the assertion is `hits == 1` and why that is airtight
 
 `fixtures/off-page-object.pdf` is a 200 × 200 page with exactly **two**
 filled squares and nothing else:
@@ -42,10 +42,10 @@ and downward to `(−100, 120)`, so it covers x −100…160, y 120…170.
 ⇒ **One hit can only be B**, so the count alone proves the band reached off
 the page. No index, no ordering assumption, no kind census needed.
 
-★ And zero hits is the previous behaviour exactly: an `Enclosed` band over
+And zero hits is the previous behaviour exactly: an `Enclosed` band over
 that rect surrounds nothing at all.
 
-# ★★ What had to be added to the harness, and why it is narrow
+# What had to be added to the harness, and why it is narrow
 
 `CanvasMapping::doc_to_window` **refuses every point outside the media box**,
 and that refusal is right for every other caller — a point off the page is

@@ -57,7 +57,7 @@ pub fn intent(ui: &mut Ui, draft: &mut Draft) {
         t::cmyk_intent_calibrated_label(),
         Some(t::cmyk_intent_calibrated_note()),
     );
-    // ★★★ TWO options now, and the third is gone with its copy and — once the
+    // TWO options now, and the third is gone with its copy and — once the
     // engine lands it — its arithmetic. `OPERATOR_REQUESTS.md` **O52**:
     // *"you can also remove the The old pdfcer formula from that section, even
     // the code for it."*
@@ -68,7 +68,7 @@ pub fn intent(ui: &mut Ui, draft: &mut Draft) {
     // justification expires with time, which is a shape worth naming — nothing
     // fails when it stops being useful, so nothing prompts anybody to remove it.
     //
-    // ★★ AND THE DIVERGENCE NOTE IS DELETED RATHER THAN REWORDED.
+    // AND THE DIVERGENCE NOTE IS DELETED RATHER THAN REWORDED.
     //
     // It said *"pdfcer's default deliberately differs from Acrobat here"*, and
     // it existed so a future session would not investigate a render-parity
@@ -84,7 +84,7 @@ pub fn intent(ui: &mut Ui, draft: &mut Draft) {
 
 /// **Which colours get overprint's zero-tint rule** — `Pass 143.0`.
 ///
-/// ## ★★ Why it sits with the blend-space setting and not on its own
+/// ## Why it sits with the blend-space setting and not on its own
 ///
 /// Because it is meaningless without it. `page_blend_space` decides *whether a
 /// page is composited in ink at all*; this decides *which source colours the
@@ -93,7 +93,7 @@ pub fn intent(ui: &mut Ui, draft: &mut Draft) {
 /// downward and each setting has the context of the one above — is what makes
 /// that legible without a cross-reference.
 ///
-/// ## ★ It is a spec ambiguity, not a preference, and the copy says so
+/// ## It is a spec ambiguity, not a preference, and the copy says so
 ///
 /// §8.6.7 scopes the zero-tint rule to `DeviceCMYK`. `DeviceGray` is not one,
 /// so pdfcer's original literal reading was defensible; Acrobat converts grey to
@@ -112,7 +112,7 @@ pub fn zero_tint(ui: &mut Ui, draft: &mut Draft) {
         t::zero_tint_silence(),
         t::zero_tint_radius(),
     );
-    // ★★★ THE DEFAULT FIRST, and it is now ASKED rather than assumed.
+    // THE DEFAULT FIRST, and it is now ASKED rather than assumed.
     //
     let mut scopes = [
         Scope::GreyAsKOnly,
@@ -139,7 +139,7 @@ pub fn zero_tint(ui: &mut Ui, draft: &mut Draft) {
 
 /// **Whether a spot ink keeps its own plate, or is mixed down first.**
 ///
-/// ★ New in `pdfcer-core 0.20` (`OPERATOR_REQUESTS.md` O100), and placed
+/// New in `pdfcer-core 0.20` (`OPERATOR_REQUESTS.md` O100), and placed
 /// immediately after [`zero_tint`] because the two are the same subject seen
 /// from two sides: that one is *what overprints a spot colour*, this one is
 /// *what a spot colour IS*. An operator who has arrived at either has arrived
@@ -156,7 +156,7 @@ pub fn spot_model(ui: &mut Ui, draft: &mut Draft) {
         t::spot_model_silence(),
         t::spot_model_radius(),
     );
-    // ★ Default first, as every radio in this window is — an operator reads
+    // Default first, as every radio in this window is — an operator reads
     // what pdfcer is doing now before they read the alternative.
     for model in [
         Model::SimulateSeparations,
@@ -174,7 +174,7 @@ pub fn spot_model(ui: &mut Ui, draft: &mut Draft) {
 
 /// Whether a CMYK JPEG's ink values are stored inverted.
 ///
-/// # ★ The one well-sourced default in the whole window
+/// # The one well-sourced default in the whole window
 ///
 /// Every other default here is *reasoned inference* — a guess — and says so.
 /// This one is not, and says that instead: `"invert"` occurs **zero times** in
@@ -248,7 +248,7 @@ pub fn polarity(ui: &mut Ui, draft: &mut Draft) {
 /// or greyscale intent cannot drag a page into ink, so the only files it moves
 /// are ones that already declare themselves destined for print.
 ///
-/// ★ The three options are ordered **strict → shipped → most literal reading
+/// The three options are ordered **strict → shipped → most literal reading
 /// of Annex P**, and the middle one is the default. That is deliberate: an
 /// operator scanning this group meets the conforming-but-degenerate answer
 /// first, so *why is the default not the one the standard says* is answered
@@ -287,7 +287,7 @@ pub fn page_blend_space(ui: &mut Ui, draft: &mut Draft) {
     );
 }
 
-/// ★★ **How much memory ink blending may use** — the ceiling that decides
+/// **How much memory ink blending may use** — the ceiling that decides
 /// whether a page's colours change with the zoom.
 ///
 /// # Why it is in Colour, and why its title is not "buffer"
@@ -312,7 +312,7 @@ pub fn page_blend_space(ui: &mut Ui, draft: &mut Draft) {
 /// ceiling this machine cannot honour refuses down the ordinary disclosed path
 /// rather than aborting. **State the cost; do not prevent the choice.**
 ///
-/// ★ It parses with `pdfcer_core::settings::parse_byte_size` and displays with
+/// It parses with `pdfcer_core::settings::parse_byte_size` and displays with
 /// `format_byte_size` — the engine's own pair, which is what `settings.txt`
 /// uses. So the window and the file accept and show identical strings, and
 /// `256mb` and `256mib` both mean 1,048,576 × 256 here, deliberately: every
@@ -345,7 +345,7 @@ pub fn cmyk_ceiling(ui: &mut Ui, draft: &mut Draft) {
 /// which would file it under nothing an operator can name; the symptom is
 /// *"this smooth fill came out as noise"*, and that is what the title says.
 ///
-/// # ★ It is observable in very few files, and the note says so honestly
+/// # It is observable in very few files, and the note says so honestly
 ///
 /// The two readings agree unless `BitsPerFlag + k·BitsPerCoordinate +
 /// m·BitsPerComponent` fails to be a multiple of 8. Every combination the

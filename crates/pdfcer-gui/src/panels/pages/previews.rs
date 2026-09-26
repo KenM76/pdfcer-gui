@@ -25,7 +25,7 @@ const BUDGET_REGION: &str = "panel-pages-budget"; // ui-text-exempt: trace regio
 /// therefore the call site.
 ///
 pub fn row(ui: &mut egui::Ui, pages: &mut PagesUi, actions: &mut Vec<Action>) {
-    // ★★★ THE PREVIEWS ROW — a checkbox and the time limit beside it (O151).
+    // THE PREVIEWS ROW — a checkbox and the time limit beside it (O151).
     //
     // Both controls read from the cache and write straight back, so "is the
     // box ticked" and "will anything be drawn" are one expression rather than
@@ -49,7 +49,7 @@ pub fn row(ui: &mut egui::Ui, pages: &mut PagesUi, actions: &mut Vec<Action>) {
         }
         let _ = crate::diag::ui_rect_visible(PREVIEWS_REGION, checkbox.rect, ui.clip_rect());
 
-        // ★ The per-page time limit. A `DragValue` rather than a slider, for
+        // The per-page time limit. A `DragValue` rather than a slider, for
         // the same reason `canvas::markup::swatch` gives for the pen width: an
         // operator setting a time limit has a specific number in mind — one
         // second, five — rather than a value they want to explore, and a drag
@@ -63,7 +63,7 @@ pub fn row(ui: &mut egui::Ui, pages: &mut PagesUi, actions: &mut Vec<Action>) {
         // would make the limit reachable only from the state it is meant to
         // fix.
         //
-        // ★★★ THE DRAFT, AND WHY THIS CONTROL IS NOT WRITTEN THE OBVIOUS WAY.
+        // THE DRAFT, AND WHY THIS CONTROL IS NOT WRITTEN THE OBVIOUS WAY.
         //
         //
         //   1. **A drag would have committed nothing, ever.** `DragValue`
@@ -162,7 +162,7 @@ pub fn row(ui: &mut egui::Ui, pages: &mut PagesUi, actions: &mut Vec<Action>) {
 /// be a second copy of the same two facts for a future edit to get out of
 /// step with.
 ///
-/// ★ One action, therefore one `Prefs::save`, therefore one whole-file write
+/// One action, therefore one `Prefs::save`, therefore one whole-file write
 /// per operator gesture.
 /// [`PrefAction::PagePreviews`](crate::app::actions::prefs::PrefAction::PagePreviews)' own doc
 /// carries the
@@ -218,7 +218,7 @@ mod tests {
 
     /// The parser accepts everything the formatter can produce.
     ///
-    /// ★ Written as a **round trip through the formatter's own output**, not
+    /// Written as a **round trip through the formatter's own output**, not
     /// against hand-typed strings: the two are one convention, and a test that
     /// quoted the rendered text verbatim would keep passing after somebody
     /// changed the suffix.
@@ -256,7 +256,7 @@ mod tests {
         assert_eq!(parse_budget("No Limit"), Some(0.0));
     }
 
-    /// ★★ Gibberish keeps the value the operator had.
+    /// Gibberish keeps the value the operator had.
     ///
     /// The clause that matters: it must NOT come back as `Some(0.0)`. Zero is
     /// *no limit at all*, so a parser that mapped a typo to zero would arm an

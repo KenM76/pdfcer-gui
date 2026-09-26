@@ -19,7 +19,7 @@ whose copy is about pictures, page geometry and the cost of drawing —
 vocabulary that has nothing in common with a font inventory or a signature
 byte range, and that would be read past by anyone maintaining either.
 
-## ★ The posture: an undrawn thumbnail must SAY it is undrawn
+## The posture: an undrawn thumbnail must SAY it is undrawn
 
 This is the whole reason half the strings below exist, and it is the
 project's no-placeholders rule (`RIBBON_IA.md` P3) applied to a picture

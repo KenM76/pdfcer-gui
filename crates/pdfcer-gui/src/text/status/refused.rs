@@ -6,7 +6,7 @@
 /// **An edit reached the engine, the engine refused it, and this shell cannot
 /// say why** — `OPERATOR_REQUESTS.md` **O116**, 2026-09-04.
 ///
-/// # ★★★ What this sentence is for, and what it replaces
+/// # What this sentence is for, and what it replaces
 ///
 /// It replaces **silence**, which is this project's founding defect class:
 /// *"I did the thing and nothing happened and nothing said why."* The state it
@@ -21,7 +21,7 @@
 /// parse genuinely cannot be edited safely — which is the point. **A right
 /// answer delivered as a silence is indistinguishable from a broken feature.**
 ///
-/// # ★★★ Three deliberate properties, each of which will look like an omission
+/// # Three deliberate properties, each of which will look like an omission
 ///
 /// ## 1. It names NO cause, and cannot
 ///
@@ -48,7 +48,7 @@
 /// charter: **ship ONE un-categorised sentence rather than leave it silent, and
 /// replace it when the discriminant lands.**
 ///
-/// ★ So this function is written to be **deleted**. The day `EditError` gains a
+/// So this function is written to be **deleted**. The day `EditError` gains a
 /// `kind()`, this becomes four sentences that name the four buckets, and
 /// `Declined::EditRefused` becomes four variants. Nothing else about the
 /// mechanism changes; the wiring, the retirement rule and the slot are already
@@ -88,7 +88,7 @@
 /// reading `PDFCER_DIAG` wants §9.6.6.4, and the operator wants to know their
 /// drawing is intact.
 ///
-/// # ★★ Why "and the document is unchanged" is half the sentence
+/// # Why "and the document is unchanged" is half the sentence
 ///
 /// Because the failure this ends is not *"I was not told why"* — the operator
 /// can live with that — it is *"I do not know whether it took."* A refused edit
@@ -100,7 +100,7 @@
 /// error arm bumps no epoch, drops no texture, writes no undo entry and never
 /// reaches `pages::resync`.
 ///
-/// # ★ Why it does not apologise, name a remedy, or suggest a workaround
+/// # Why it does not apologise, name a remedy, or suggest a workaround
 ///
 /// It cannot name a remedy without knowing the cause (property 1), and an
 /// invented one — *"try a different font"* — would be advice about a document

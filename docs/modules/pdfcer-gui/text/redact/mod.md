@@ -47,7 +47,7 @@ membership list is now the load-bearing half — a sentence about a
 *pre*-save state belongs out of it, and one about a post-save state belongs
 in it.
 
-## ★ The one distinction every string here has to keep alive
+## The one distinction every string here has to keep alive
 
 `crate::text::commands::edit_redact`'s shipped tooltip states it in four
 words — ***"Marking is reversible; applying is not"*** — and
@@ -59,7 +59,7 @@ believes marking **is** redacting and ships the marked file. So the marking
 copy never says "removed", the review count says the content is *still
 there*, and the apply copy leads with permanence rather than burying it.
 
-## ★ A departure from the source, and it is about this shell rather than
+## A departure from the source, and it is about this shell rather than
 about copy
 
 The old shell's permanence statement already deviated from its own ui-spec,

@@ -16,7 +16,7 @@ use crate::trace::Trace;
 
 /// `link-click page=… index=… kind=…` — the shell's record of a link press.
 ///
-/// ★ The **kind** is on the line, not merely the fact of a click. The whole
+/// The **kind** is on the line, not merely the fact of a click. The whole
 /// defect class here is a viewer collapsing five destinations into two
 /// behaviours, and a trace that said `link-followed` for all five could not
 /// show it.
@@ -48,7 +48,7 @@ const ACTION_FIXTURE: &str = "fixtures/non-navigation-links.pdf";
 /// The centre of `goto-actions.pdf`'s **third** link — rect 36,620–200,650,
 /// `/FitH`, targeting page 4.
 ///
-/// ★ The third rather than the first, and the furthest target rather than the
+/// The third rather than the first, and the furthest target rather than the
 /// nearest. A shell that resolved nothing and defaulted to page 0 reaches page 1
 /// and would satisfy a check aimed at the first link's neighbourhood; nothing
 /// reaches page 4 by accident.
@@ -86,7 +86,7 @@ fn page_of(trace: &Trace) -> Option<usize> {
 /// **The whole view state**, as the canvas last reported it: page, zoom and
 /// scroll offset.
 ///
-/// # ★★★ Three numbers rather than one, and the reason is a falsification that
+/// # Three numbers rather than one, and the reason is a falsification that
 /// FAILED to falsify
 ///
 /// The first cut of [`ALinkItCannotFollowSaysSo`] asserted only that the *page*
@@ -113,7 +113,7 @@ fn view_of(trace: &Trace) -> Option<(usize, String, String)> {
 // 1 — a link that resolves
 // ---------------------------------------------------------------------------
 
-/// ★ **Clicking a `/GoTo` link arrives at the page it names.**
+/// **Clicking a `/GoTo` link arrives at the page it names.**
 pub struct ALinkGoesToThePageItNames;
 
 impl Check for ALinkGoesToThePageItNames {
@@ -167,7 +167,7 @@ fn set_up(
         )));
     }
 
-    // ★ The fixture is PINNED and `--pdf` is ignored, for the same reason
+    // The fixture is PINNED and `--pdf` is ignored, for the same reason
     // `checks::ocr` pins its own: this check's assertions name a specific link
     // at a specific rectangle targeting a specific page. Pointed at the
     // operator's drawing it would click empty paper and report a working
@@ -319,7 +319,7 @@ fn drive_goto(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
 // 2 — a link that cannot be followed
 // ---------------------------------------------------------------------------
 
-/// ★★ **A `/URI` link is disclosed, not performed, and not silently ignored.**
+/// **A `/URI` link is disclosed, not performed, and not silently ignored.**
 ///
 /// The falsifying half of the pair. See the module header on why this is the
 /// check that matters and why its assertion is a conjunction.
@@ -354,7 +354,7 @@ fn drive_action(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
         .ok_or_else(|| Error::new("no ui-rect event in this profile"))?;
     let (session, driver, mapping) = set_up(ctx, report, ACTION_FIXTURE, "link-action.trace.txt")?;
 
-    // ★★★ **ZOOM IN BEFORE CLICKING**, and this is the assertion's teeth rather
+    // **ZOOM IN BEFORE CLICKING**, and this is the assertion's teeth rather
     // than a convenience. See [`view_of`] for the falsification that failed
     // without it: the fixture opens on page 0, and the plausible wrong
     // implementation resolves an unresolvable destination to a defaulted page 0
@@ -425,7 +425,7 @@ fn drive_action(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
         click.raw
     ));
 
-    // ★★★ HALF ONE: an ABSENCE — and it is the WHOLE view, not just the page.
+    // HALF ONE: an ABSENCE — and it is the WHOLE view, not just the page.
     let after = view_of(&session.trace()?).unwrap_or_else(|| before.clone());
     if after != before {
         return Ok(Some(format!(
@@ -452,7 +452,7 @@ fn drive_action(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
         after.0, after.1, after.2
     ));
 
-    // ★★★ HALF TWO: a PRESENCE. It must have said why.
+    // HALF TWO: a PRESENCE. It must have said why.
     //
     // Both halves, because either alone passes against a wrong build: a shell
     // that ignored the click entirely satisfies the absence, and one that
@@ -486,7 +486,7 @@ fn drive_action(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
 mod tests {
     use super::*;
 
-    /// ★★★ **The `/GoTo` target is not page 0 and not page 1.**
+    /// **The `/GoTo` target is not page 0 and not page 1.**
     ///
     /// The single assertion that makes the first check worth running. A
     /// destination resolver's likeliest defect is returning a defaulted `0`,
@@ -496,7 +496,7 @@ mod tests {
     /// than assumed.
     #[test]
     fn the_goto_target_cannot_be_reached_by_a_defaulted_index() {
-        // ★ NOT a `const` block, even though clippy suggests one: a
+        // NOT a `const` block, even though clippy suggests one: a
         // const-evaluated `assert!` cannot format, and the message is most of
         // this test's value — a bare "assertion failed" sends a reader to the
         // line rather than to the reasoning.
@@ -512,7 +512,7 @@ mod tests {
 
     /// The two aim points are inside the rectangles the engine reports.
     ///
-    /// ★ Pinned because a click on empty paper is symptom-identical to a broken
+    /// Pinned because a click on empty paper is symptom-identical to a broken
     /// hit test — the confusion that produced a filed-then-retracted defect in
     /// this codebase — and the numbers here are transcribed from
     /// `pdfcer list-links` output by hand, which is exactly the kind of
@@ -532,7 +532,7 @@ mod tests {
         }
     }
 
-    /// ★ The two aim points are far enough apart to be different links.
+    /// The two aim points are far enough apart to be different links.
     ///
     /// They are read from two different fixtures, so this cannot fail today —
     /// and it is pinned against the plausible future edit that points both

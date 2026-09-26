@@ -15,7 +15,7 @@ fn registry() -> CommandRegistry {
     reg
 }
 
-/// **★ No two commands share a handler token.**
+/// **No two commands share a handler token.**
 ///
 /// The shell explicitly permits it — two ids may share a token if the
 /// application wants two names for one handler — which is exactly why
@@ -79,12 +79,12 @@ fn every_handler_token_is_in_its_tabs_block() {
 #[test]
 fn every_predicate_names_a_documented_condition() {
     const KNOWN: &[&str] = &[
-        // ★ NOT nested inside `doc.open` where it is published, and the
+        // NOT nested inside `doc.open` where it is published, and the
         // header says why: the one state that needs it most is a failed
         // open with other documents behind it.
         "docs.multiple",
         //
-        // ★ Deliberately NOT `!panels.floating` on anything. Nothing is
+        // Deliberately NOT `!panels.floating` on anything. Nothing is
         // hidden by a panel being floated; a float is a place a panel is,
         // not a state the application is in.
         "panels.floating",
@@ -93,14 +93,14 @@ fn every_predicate_names_a_documented_condition() {
         "undo.available",
         "redo.available",
         "selection.any",
-        // ★★ WIDER than `selection.any`, not a refinement: it is also set
+        // WIDER than `selection.any`, not a refinement: it is also set
         // for a selected form field, which lives in `doc.selected_field`
         // rather than in `SelectionState`. `format.delete` and
         // `format.properties` take this one because both can act on a
         // field; the contextual Format TAB still takes `selection.any`,
         // because a field has no font or stroke for it to offer.
         "selection.actionable",
-        // ★★★ **NOT a refinement of either neighbour, and its default is
+        // **NOT a refinement of either neighbour, and its default is
         // TRUE.** It answers *would the engine refuse a delete?* rather
         // than *is there anything to delete?*, so it is set in almost every
         // state including the empty one, and cleared only for a selected
@@ -111,7 +111,7 @@ fn every_predicate_names_a_documented_condition() {
         // predicates, two questions, and R9 decides which gets greying and
         // which gets absence. See `PdfcerApp::conditions`.
         "selection.delete_permitted",
-        // ★★★ **NOT a refinement of the one above, and they disagree in
+        // **NOT a refinement of the one above, and they disagree in
         // BOTH directions.** A redaction mark can be deleted and cannot be
         // cut — deleting it removes a pending operation, which is a thing
         // an operator may want; cutting it would put it on a clipboard that
@@ -122,13 +122,13 @@ fn every_predicate_names_a_documented_condition() {
         // Not a refinement of `selection.any` — see `PdfcerApp::conditions`.
         // A selection can exist and resolve to no box.
         "selection.bounds",
-        // ★ This one IS a refinement of `selection.any`, unlike its
+        // This one IS a refinement of `selection.any`, unlike its
         // neighbour above, and it is still its own name because it answers
         // a question `selection.any` cannot: is there a **container** to
         // select? Set when something selected on the current page is drawn
         // from inside a form XObject.
         "selection.in_form",
-        // ★ The only condition about a **gesture in progress** rather
+        // The only condition about a **gesture in progress** rather
         // than about the document, the selection or the view.
         //
         // `measure.finish` ends the radius/diameter gesture, which is the
@@ -140,7 +140,7 @@ fn every_predicate_names_a_documented_condition() {
         // command's own arm asks, so the control cannot be enabled while
         // pressing it would do nothing.
         "measure.finishable",
-        // ★ **A live text selection**, and the second condition here about
+        // **A live text selection**, and the second condition here about
         // something other than the document or the view.
         //
         // The three Text markup commands act on the selection rather than
@@ -157,7 +157,7 @@ fn every_predicate_names_a_documented_condition() {
         // question so the control cannot be enabled while the press would
         // decline.
         "selection.text",
-        // ★★★ **A restyle has an operand** — the union of a swept range and
+        // **A restyle has an operand** — the union of a swept range and
         // a single selected text object. `OPERATOR_REQUESTS.md` O198.
         //
         // Deliberately NOT a synonym for `selection.text` above, and the
@@ -174,7 +174,7 @@ fn every_predicate_names_a_documented_condition() {
         // control cannot be enabled while the press would find nothing to act
         // on.
         "selection.text_runs",
-        // ★ **A vertex run ready to be committed** — `measure.finishable`'s
+        // **A vertex run ready to be committed** — `measure.finishable`'s
         // twin, and the second condition here about a **gesture in progress**.
         //
         // `markup.finish` ends the PolyLine and Polygon gestures, which are
@@ -193,7 +193,7 @@ fn every_predicate_names_a_documented_condition() {
         // that collapsed them would light one tab's Finish from the other
         // tab's gesture.
         "markup.finishable",
-        // ★★ A condition NOTHING SETS, and that is its whole purpose.
+        // A condition NOTHING SETS, and that is its whole purpose.
         //
         //
         // Expressing "permanently disabled until a capability arrives" as
@@ -223,12 +223,12 @@ fn every_predicate_names_a_documented_condition() {
         // predicate is a **named fact** — see `manifest::format`'s
         // `MARKUP_VISIBLE_WHEN`, which carries the whole argument.
         //
-        // ★ It is NOT a refinement of `selection.any`. That is the object
+        // It is NOT a refinement of `selection.any`. That is the object
         // selection — a paint-order index into page content — and an
         // annotation is an `ObjId`; nothing maps between the two index
         // spaces, which is why `AnnotTarget` exists at all.
         //
-        // ★★ The **lock** is deliberately outside it. §12.5.3 Table 165 bit
+        // The **lock** is deliberately outside it. §12.5.3 Table 165 bit
         // 8 is a fact about one annotation rather than about the build or
         // the mode, so it greys with a sentence rather than making the
         // group vanish — and `app::markupband` does that greying itself,
@@ -244,7 +244,7 @@ fn every_predicate_names_a_documented_condition() {
         // could get wrong, because `markup.add_node` and `markup.remove_node`
         // are in `manifest::TAB_SCOPED` and have no ribbon control at all.
         //
-        // ★★ The answer itself is the ENGINE's, per frame the popup is open:
+        // The answer itself is the ENGINE's, per frame the popup is open:
         // `EditSession::reshape_annotation_preview`, asked with the exact
         // `VertexEdit` the row would commit. `Ok` sets the name; the one
         // *temporary* refusal (`ReshapeWouldBreachVertexFloor` — draw another
@@ -254,7 +254,7 @@ fn every_predicate_names_a_documented_condition() {
         // R9's two halves on one row, derived rather than declared — see
         // `canvas::annotnodes::menu`.
         //
-        // ★ Named here rather than exempted: this list asserts what a COMMAND
+        // Named here rather than exempted: this list asserts what a COMMAND
         // may wait on, and these two are waited on by two commands. Where the
         // name is *set* is a different question, and the answer being "a menu
         // host rather than `conditions`" is exactly the kind of fact this list
@@ -262,7 +262,7 @@ fn every_predicate_names_a_documented_condition() {
         "markup.node_insertable",
         "markup.node_removable",
         //
-        // ★★ **One name where the node pair needed two, and the asymmetry is
+        // **One name where the node pair needed two, and the asymmetry is
         // the finding rather than an oversight.** `markup.node_insertable` and
         // `markup.node_removable` are two because each has a *temporary*
         // refusal worth greying for — draw another corner and Remove comes
@@ -314,7 +314,7 @@ fn with_no_document_only_the_document_free_commands_are_enabled() {
         // About describes pdfcer, so it is offered before anything is
         // open — see its registration.
         "file.about",
-        // ★ New has no predicate for the strongest version of `file.open`'s
+        // New has no predicate for the strongest version of `file.open`'s
         // reason: an empty shell is not a state New is *tolerated* in, it is
         // the state New exists for. A `doc.open` gate here would grey the
         // one control that answers "there is nothing here".
@@ -339,7 +339,7 @@ fn with_no_document_only_the_document_free_commands_are_enabled() {
         "tools.font_folders",
         "tools.merge_files",
         "view.fullscreen",
-        // ★★ The three panel-layout verbs need no document, and that is
+        // The three panel-layout verbs need no document, and that is
         // deliberate rather than an omission. A panel arrangement is
         // CHROME: it belongs to the operator, it is persisted beside the
         // settings rather than in the file, and it survives closing every
@@ -350,7 +350,7 @@ fn with_no_document_only_the_document_free_commands_are_enabled() {
         "view.panel_close",
         "view.panel_dock",
         "view.panel_float",
-        // ★ The two auto-hide toggles are document-free ON PURPOSE. They
+        // The two auto-hide toggles are document-free ON PURPOSE. They
         // are settings about the application's own chrome, and a chrome
         // setting that could only be changed with a drawing open would be
         // unreachable in the state the application STARTS in — which is
@@ -434,7 +434,7 @@ fn every_command_has_a_tooltip() {
     }
 }
 
-/// ★★★ **Every icon key a command names is a key the icon set has.**
+/// **Every icon key a command names is a key the icon set has.**
 ///
 ///
 /// | test | question |
@@ -461,7 +461,7 @@ fn every_command_has_a_tooltip() {
 /// `MODES_AND_PANELS.md` is clear that a defect an oracle found deserves
 /// a test that would have found it too.
 ///
-/// ★ Asserted over the **whole registry** rather than over the ribbon
+/// Asserted over the **whole registry** rather than over the ribbon
 /// manifest, and that is the wider claim on purpose: a command's icon is
 /// drawn wherever the command is drawn — the band, the quick-access
 /// toolbar, the overflow menu, a context menu, the collapsed-group popup,
@@ -499,7 +499,7 @@ fn every_icon_key_a_command_names_resolves_to_real_art() {
     );
 }
 
-/// ★★ **…and the check above can fail**, which is the half a green test
+/// **…and the check above can fail**, which is the half a green test
 /// cannot demonstrate about itself.
 ///
 /// `PROJECT_PLAN.md` §4.1 records a gate that printed "clean" while

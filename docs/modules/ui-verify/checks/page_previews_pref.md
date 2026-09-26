@@ -21,7 +21,7 @@ one without the other:
    is *no limit*, and `0` is the operator's own notation for it in both the
    control and the file.
 
-★★ The second is the one most at risk from the first, and that is the whole
+The second is the one most at risk from the first, and that is the whole
 reason this check exists in the shape it does. Every other small number in
 that control is raised to a 100 ms floor, because a one-millisecond budget
 is an off switch wearing a number. `0` has to pass through the same clamp
@@ -31,7 +31,7 @@ its neighbours would quietly turn *no limit at all* into the default, and
 the operator would experience that as *the box refusing to keep the zero he
 typed*.
 
-# ★★★ Why this is a THREE-PROCESS check
+# Why this is a THREE-PROCESS check
 
 Because the subject is a value **surviving a process**, and one launch
 cannot express that. Neither can two, for this particular pair:
@@ -48,7 +48,7 @@ Splitting the two gestures across two processes is what makes the third
 launch's `previews=0 budget_ms=0` a statement about **both** halves of the
 whole-file write rather than about whichever one happened to go last.
 
-# ★★★ Why each process is KILLED and not closed gracefully
+# Why each process is KILLED and not closed gracefully
 
 This is the deliberate opposite of [`super::page_display_pref`], and the
 contrast is the point. That check presses `Alt+F4` because its subject is a
@@ -72,20 +72,20 @@ check closes in the way that gives the feature no help at all.
 | the next launch | `pages-panel … previews=… budget_ms=…` | the file was read back into the live cache |
 | the file | `page_preview_budget_ms = 0` in `preferences.txt` | the number on disk, independent of either trace |
 
-★ The third is not redundant. The first two are both written by the program
+The third is not redundant. The first two are both written by the program
 under test, in the same run, from values that could in principle both come
 from the same wrong place. Reading the file is the one observation this
 harness makes that the application cannot have coloured — an oracle built
 from the system under test needs an independent calibration, and the file is
 it.
 
-★★ `budget_ms` is deliberately **not** compared against whatever
+`budget_ms` is deliberately **not** compared against whatever
 `thumbnails::PAGE_BUDGET_DEFAULT` currently holds. The starting state is
 asserted against the number this harness planted and the end state as
 *"zero"*, which is a real change in a known direction that no program
 constant can make true by accident.
 
-# ★★★ The starting limit is PLANTED, because the shipped default is the
+# The starting limit is PLANTED, because the shipped default is the
 value this check types
 
 `previews=1` and `budget_ms != 0` before the first gesture — and the second
@@ -116,7 +116,7 @@ preference as broken. A [`RestorePrefs`] guard puts the seed back however
 this check ends, because a suite that shares state measures the order it ran
 in.
 
-★★ Safe because the suite is **never** pointed at a published build — that
+Safe because the suite is **never** pointed at a published build — that
 is the standing rule, and a check that rewrites `userdata/preferences.txt`
 is one of the reasons for it.
 

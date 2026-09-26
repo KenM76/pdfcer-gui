@@ -29,7 +29,7 @@ operator has no way to know that from a font list alone. Telling them
 *why* a font is refused is the panel's main reason to exist — and it does
 that with no verb attached.
 
-## ★ Why the panel says *why*, when the parity reference does not
+## Why the panel says *why*, when the parity reference does not
 
 Acrobat refuses to unembed a font whose character codes are glyph indices
 into its own embedded program, and it refuses **silently** — the font
@@ -43,7 +43,7 @@ A shorter list is not actionable. "This font's character codes are
 positions inside this specific embedded program" is. That is project rule
 4 applied to a refusal rather than to a suggestion.
 
-## ★ The verdict words are TWO WORDS EACH, and that is a measurement
+## The verdict words are TWO WORDS EACH, and that is a measurement
 
 [`font_verdict_removable`] and its four siblings were sentences ("No
 blocking condition found.", "Locked to this embedded program.") until a

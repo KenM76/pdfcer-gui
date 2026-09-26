@@ -26,7 +26,7 @@ const MOVE_SETTLE: Duration = Duration::from_millis(80);
 /// How long between the RELEASE of one click and the press of the next, in a
 /// double click.
 ///
-/// ★ `egui`'s own threshold is **300 ms between PRESSES**, and it is a
+/// `egui`'s own threshold is **300 ms between PRESSES**, and it is a
 /// compiled-in constant rather than the operator's Windows double-click speed —
 /// which is the thing a reader assumes and which would make this harness behave
 /// differently on a machine where that setting had been changed.
@@ -95,7 +95,7 @@ mod observed;
 pub struct Driver {
     original_cursor: Option<(i32, i32)>,
     target: Option<WindowHandle>,
-    /// ★★ **The window the last pointer action put the focus in.**
+    /// **The window the last pointer action put the focus in.**
     ///
     ///
     /// It now has one per open dialog, and the failure without this field is
@@ -143,7 +143,7 @@ impl Driver {
 
     /// Move the pointer and click the **secondary** button.
     ///
-    /// ## ★★★ The first driver for a gesture class this project has shipped
+    /// ## The first driver for a gesture class this project has shipped
     /// ## since Phase 1
     ///
     /// pdfcer has had canvas context menus for months and **not one driven check
@@ -156,7 +156,7 @@ impl Driver {
     /// software*. A gesture with no driver is a gesture R1 cannot reach, and
     /// the gap left no failing test behind to advertise itself.
     ///
-    /// ## ★★ What this deliberately does NOT do
+    /// ## What this deliberately does NOT do
     ///
     /// It does not click a menu **item**. An `egui` popup is positioned by the
     /// pointer and sized by its content, so a harness that aimed at "the second
@@ -166,7 +166,7 @@ impl Driver {
     /// resolved and how many items it offered — the fact under test, without a
     /// coordinate to go stale.
     ///
-    /// ★ Escape is **not** pressed afterwards, deliberately: leaving the popup
+    /// Escape is **not** pressed afterwards, deliberately: leaving the popup
     /// open is what lets a following screenshot show it. A check that wants it
     /// closed presses Escape itself, and says why.
     pub fn right_click_at(&self, p: ScreenPoint) -> Result<()> {
@@ -261,7 +261,7 @@ impl Driver {
         // landed on the first stamp"* — an accusation against a feature that
         // works, naming two causes that were both disproved by the same trace.
         //
-        // ★ The sibling check `stamp_size_reaches_the_engine`, driven in the
+        // The sibling check `stamp_size_reaches_the_engine`, driven in the
         // same minute against the same desktop, SKIPPED with *"the point
         // (1212, 605) is owned by \"Internet Email — ken@toprops.com\""*. Same
         // machine, same obstruction, same second — and one of the two said so
@@ -312,7 +312,7 @@ impl Driver {
     /// against a *frame clock* on a machine that is also rasterizing a CAD
     /// sheet is not a dwell measured against a stopwatch.
     ///
-    /// ★ The pointer is **moved slightly** during the dwell rather than being
+    /// The pointer is **moved slightly** during the dwell rather than being
     /// held perfectly still, in the same place, for a second. A stationary
     /// pointer generates no input, and an application that only repaints on
     /// input would never run the frame its own timer fires on. pdfcer asks for a
@@ -326,7 +326,7 @@ impl Driver {
     /// As [`Self::drag`].
     /// `modifier` is held down for the **whole** gesture, press to release.
     ///
-    /// ★ Which is more than the application strictly needs — pdfcer samples the
+    /// Which is more than the application strictly needs — pdfcer samples the
     /// drag modifier at the *release*, as Windows does — and it is deliberately
     /// more. Holding it throughout is what an operator's hand actually does,
     /// and it also exercises the frames in between, where the caption has to
@@ -358,7 +358,7 @@ impl Driver {
         to: ScreenPoint,
     ) -> Result<()> {
         self.raise_and_confirm()?;
-        // ★ All three, for the reason in [`Self::drag`]. The waypoint matters
+        // All three, for the reason in [`Self::drag`]. The waypoint matters
         // as much as the endpoints here: this gesture RESTS on `via` until a
         // dwell timer fires, so a covered waypoint is a second of the pointer
         // sitting inside somebody else's window with the button down.
@@ -435,7 +435,7 @@ impl Driver {
     /// still would be relying on the application asking for repaints it is not
     /// obliged to ask for.
     ///
-    /// ★ One pixel is safe against a zone boundary because every caller aims at
+    /// One pixel is safe against a zone boundary because every caller aims at
     /// a zone *centre*; a verb that aimed at an edge would have to say so.
     ///
     /// # Errors
@@ -465,7 +465,7 @@ impl Driver {
     /// Click twice in the same place, fast enough for the application to read
     /// it as a double click.
     ///
-    /// # ★ Why the gap is a named constant and not a guess
+    /// # Why the gap is a named constant and not a guess
     ///
     /// `egui` decides a double click from the interval between two presses, and
     /// its threshold is a fixed 300 ms — it does **not** read the operator's
@@ -479,7 +479,7 @@ impl Driver {
     ///
     /// As [`Self::click_at`].
     pub fn double_click_at(&self, p: ScreenPoint) -> Result<()> {
-        // ★★ NOT two `click_at` calls, and the first version of this WAS.
+        // NOT two `click_at` calls, and the first version of this WAS.
         //
         // `click_at` sleeps `MOVE_SETTLE` before its press and again after its
         // release, so two of them put **390 ms** between the presses — past
@@ -493,7 +493,7 @@ impl Driver {
         // pointer is positioned and settled once, and the two press/release
         // pairs follow with only `CLICK_HOLD` between them.
         self.raise_and_confirm()?;
-        // ★ Not two `click_at` calls, so it does not inherit their guard — see
+        // Not two `click_at` calls, so it does not inherit their guard — see
         // [`Self::drag`] for the day that distinction cost a false FAIL.
         self.confirm_uncovered(p)?;
         sys::set_cursor_position(p.x(), p.y())?;
@@ -510,7 +510,7 @@ impl Driver {
 
     /// Click with a modifier key held — Shift-click to extend a selection.
     ///
-    /// # ★ Why this is not `press_chord` plus `click_at`
+    /// # Why this is not `press_chord` plus `click_at`
     ///
     /// Because the modifier has to be held **across** the mouse press, and
     /// `press_chord` releases it as part of sending a keystroke. The
@@ -532,7 +532,7 @@ impl Driver {
     /// **Press `vk` `times` times with `modifiers` HELD DOWN throughout**, the
     /// way a hand does it.
     ///
-    /// # ★★ Why this exists beside [`Self::press_chord`], which looks identical
+    /// # Why this exists beside [`Self::press_chord`], which looks identical
     ///
     /// Because they are not identical and the difference is a whole class of
     /// silent failure. `press_chord` posts the modifier down, sleeps, posts the
@@ -547,7 +547,7 @@ impl Driver {
     /// uses `with_modifiers` — the modifier held across the whole gesture —
     /// which is what this is.
     ///
-    /// ★ The finding is about the toolkit, not about this harness: modifier
+    /// The finding is about the toolkit, not about this harness: modifier
     /// state reaches `egui` through winit's `ModifiersChanged`, and a modifier
     /// that goes down and up again inside one frame's event batch can be
     /// applied and undone before the key that was supposed to carry it is
@@ -563,7 +563,7 @@ impl Driver {
     pub fn press_held(&self, modifiers: &[u16], vk: u16, times: usize) -> Result<()> {
         self.raise_and_confirm()?;
         sys::with_modifiers(modifiers, || {
-            // ★★★ A WHOLE FRAME BEFORE THE FIRST KEY, and this is the fix, not
+            // A WHOLE FRAME BEFORE THE FIRST KEY, and this is the fix, not
             // padding. Measured: with `with_modifiers`' own 12 ms gap the
             // application traced `ev=Modifiers::NONE frame=Modifiers { shift:
             // true }` — the modifier HAD arrived and the key that was supposed
@@ -586,7 +586,7 @@ impl Driver {
     /// the pointer off a widget before a screenshot, and for putting it inside
     /// the pane a wheel event is meant for.
     ///
-    /// ★★★ Guarded by [`Self::confirm_on_the_desktop`], which is the ONE place
+    /// Guarded by [`Self::confirm_on_the_desktop`], which is the ONE place
     /// the silent clamp can be caught for every gesture at once: this is the
     /// call every wheel, hover and drag makes, and `SetCursorPos` rewrites an
     /// off-screen coordinate rather than refusing it. `click_at` has the same
@@ -603,7 +603,7 @@ impl Driver {
     /// Moves the pointer there first, because a wheel event goes to whatever is
     /// under the cursor — scrolling "the panel" means putting the pointer in it.
     ///
-    /// # ★ Why a check needs this, and what its absence looked like
+    /// # Why a check needs this, and what its absence looked like
     ///
     /// A dock panel is a few hundred points tall and a real document's content
     /// is not, so a check that can only reach what is on screen at launch can
@@ -616,7 +616,7 @@ impl Driver {
     ///
     /// If the pointer cannot be moved.
     pub fn scroll_at(&self, p: ScreenPoint, notches: i32) -> Result<()> {
-        // ★ A wheel notch goes to the window under the pointer, exactly as a
+        // A wheel notch goes to the window under the pointer, exactly as a
         // press does, so this asks the same question a press asks. See
         // [`Self::drag`]. `move_to` alone only checks the point is on a
         // monitor, which a covered point always is.
@@ -630,7 +630,7 @@ impl Driver {
     /// Roll the wheel at `p` with modifiers held — Ctrl+wheel, which in a
     /// document viewer is **zoom about the pointer**.
     ///
-    /// # ★★ Why this is not `scroll_at` with a flag
+    /// # Why this is not `scroll_at` with a flag
     ///
     /// It shares `with_modifiers`' whole-frame lead-in, and that lead-in is
     /// load-bearing for the same reason [`Self::press_held`]'s is: a modifier
@@ -640,7 +640,7 @@ impl Driver {
     /// Ctrl+wheel that loses its Ctrl is an ordinary scroll — the view pans
     /// instead of zooming, and the check reports the zoom as broken.
     ///
-    /// # ★ Why a check wants this rather than the status bar's `+`
+    /// # Why a check wants this rather than the status bar's `+`
     ///
     /// Zoom-to-cursor keeps the point under the pointer fixed, so a check can
     /// put the pointer on the content it cares about **once** and keep
@@ -657,7 +657,7 @@ impl Driver {
         times: usize,
     ) -> Result<()> {
         self.raise_and_confirm()?;
-        // ★ As [`Self::scroll_at`]. Ctrl+wheel into a foreign window is worse
+        // As [`Self::scroll_at`]. Ctrl+wheel into a foreign window is worse
         // than a plain notch: it zooms whatever owns the pixel.
         self.confirm_uncovered(p)?;
         self.move_to(p)?;
@@ -728,7 +728,7 @@ impl Driver {
 
     /// **Type an ASCII string, one real keystroke per character.**
     ///
-    /// # ★★ Why this refuses rather than skipping what it cannot type
+    /// # Why this refuses rather than skipping what it cannot type
     ///
     /// It handles lowercase letters, uppercase letters (with Shift) and digits,
     /// and returns an error for anything else. The alternative — silently
@@ -738,7 +738,7 @@ impl Driver {
     /// mistypes and blames the program is the worst failure available to it,
     /// and this project has recorded several.
     ///
-    /// ★ It is **real keystrokes through the OS**, not a seeded buffer. That is
+    /// It is **real keystrokes through the OS**, not a seeded buffer. That is
     /// the whole point: a password field is a focused `TextEdit` behind a real
     /// viewport, and a check that wrote the string into memory would be
     /// asserting about a program nobody can operate.
@@ -755,11 +755,11 @@ impl Driver {
         // it typed against anything reported the application as rejecting a
         // correct password.
         //
-        // ★ Read once, before the loop, rather than per character: the latch
+        // Read once, before the loop, rather than per character: the latch
         // cannot change during a synthetic burst, and reading it per key would
         // make the cost linear in the string for no gain.
         //
-        // ★★ Compensating rather than clearing is deliberate. CapsLock belongs
+        // Compensating rather than clearing is deliberate. CapsLock belongs
         // to the operator; a harness that toggles it leaves his keyboard in a
         // state he did not put it in, and this suite runs unattended.
         let caps = crate::sys::caps_lock_is_on();
@@ -793,7 +793,7 @@ impl Driver {
                 // have been a check quietly testing a string no operator would
                 // ever type, because of a limitation in the instrument.
                 //
-                // ★ `VK_SPACE` is `0x20`, the same as the ASCII code, and it is
+                // `VK_SPACE` is `0x20`, the same as the ASCII code, and it is
                 // the one printable key that is **immune to both Shift and
                 // CapsLock** — so it needs none of the latch compensation the
                 // letter arms above carry, and cannot acquire the defect that
@@ -851,7 +851,7 @@ impl Driver {
     /// **Which of the application's windows owns this point**, decided by
     /// geometry rather than by z-order.
     ///
-    /// # ★★★ Why z-order cannot be the answer
+    /// # Why z-order cannot be the answer
     ///
     ///
     /// 1. the check aims at a control inside a dialog, correctly;
@@ -867,7 +867,7 @@ impl Driver {
     /// windows by **whose client rectangle contains the point**, which no
     /// raise can change.
     ///
-    /// ★ Ties go to the SMALLEST window. A dialog is inside the application's
+    /// Ties go to the SMALLEST window. A dialog is inside the application's
     /// bounds on screen, so both contain the point; the dialog is the one in
     /// front of the other in every arrangement an operator would produce, and
     /// it is always the smaller. Stated rather than implied because the
@@ -926,7 +926,7 @@ impl Driver {
     /// `driving::arm_select_from_ribbon` earned for the `V` chord, and the same
     /// remedy: refuse, and say the arithmetic out loud.
     ///
-    /// # ★★ Why this is not folded into the cover guard's own test
+    /// # Why this is not folded into the cover guard's own test
     ///
     /// The first attempt was, and **it never fired.** `WindowFromPoint`
     /// hit-tests window rectangles rather than monitors, so it returns the
@@ -935,7 +935,7 @@ impl Driver {
     /// for a point over nothing. Measured on the falsification run for this
     /// fix. Only [`sys::desktop_bounds`] knows where the screen stops.
     ///
-    /// # ★ It does not care whether the point is on the window
+    /// # It does not care whether the point is on the window
     ///
     /// A check aiming deliberately off-window — `off_page_marquee` is the
     /// standing example — is entitled to a point no window owns, and gets it,
@@ -1010,7 +1010,7 @@ impl Driver {
         // it exists to remove: a check that did not run has told you nothing,
         // and "told you nothing" rendered as a skip is read as "nothing to see".
         //
-        // ★ ONE retry, not a loop, and the sentence below is why: a foreground
+        // ONE retry, not a loop, and the sentence below is why: a foreground
         // held by a stray system modal is a real condition that no amount of
         // retrying fixes, and turning it into a slow timeout would hide the one
         // message that names the culprit.
@@ -1040,7 +1040,7 @@ impl Driver {
 
     /// Raise the target and confirm it is actually in front.
     ///
-    /// ★ **`raise()` is a request, not a result.** `SetForegroundWindow` is
+    /// **`raise()` is a request, not a result.** `SetForegroundWindow` is
     /// refused outright for a process without foreground rights — silently,
     /// via a boolean return nobody is obliged to read — so a window that was
     /// created behind an already-active one can stay behind it through any
@@ -1088,7 +1088,7 @@ impl Driver {
     /// step from diagnosing a feature that was never clicked.
     ///
     fn raise_and_confirm(&self) -> Result<()> {
-        // ★ The window the last pointer action focused, if any, and the
+        // The window the last pointer action focused, if any, and the
         // application's own window otherwise. A keystroke follows the focus.
         let Some(w) = self.focus.get().or(self.target) else {
             return Err(Error::new(
@@ -1097,7 +1097,7 @@ impl Driver {
         };
         self.raise();
         std::thread::sleep(MOVE_SETTLE);
-        // ★ The same single retry `raise_and_confirm_at` takes, and for the
+        // The same single retry `raise_and_confirm_at` takes, and for the
         // measurement recorded there: the foreground lock does not settle
         // between one launched-and-killed application and the next, so the
         // first ask after a churn is refused and the second is granted.
@@ -1128,7 +1128,7 @@ impl Driver {
     ///
     fn raise(&self) {
         if self.application_has_the_foreground() {
-            // ★★★ LEAVE IT ALONE. Raising here would take focus away from a
+            // LEAVE IT ALONE. Raising here would take focus away from a
             // sibling window of the same application — see
             // [`Self::application_has_the_foreground`].
             return;
@@ -1140,7 +1140,7 @@ impl Driver {
 
     /// **Is the foreground window one of the application's?**
     ///
-    /// # ★★★ Why a harness must not raise when the answer is yes
+    /// # Why a harness must not raise when the answer is yes
     ///
     /// Because the application now opens windows *of its own accord*, and a
     /// window it opened has the foreground without anybody having clicked it.
@@ -1196,7 +1196,7 @@ impl Driver {
     /// stop. An error becomes a SKIP, which is *"this did not run"*, rather
     /// than a FAIL, which is an accusation.
     ///
-    /// ★ It asks [`Self::confirm_on_the_desktop`] first, because a coordinate
+    /// It asks [`Self::confirm_on_the_desktop`] first, because a coordinate
     /// that is not on the screen at all cannot meaningfully be *covered* — and
     /// because the two failures have completely different remedies.
     fn confirm_uncovered(&self, p: ScreenPoint) -> Result<()> {
@@ -1213,7 +1213,7 @@ impl Driver {
         if self.window_owning(p) == Some(owner) {
             return Ok(());
         }
-        // ★★★ **"OUTSIDE THE WINDOW" AND "COVERED BY ANOTHER WINDOW" ARE
+        // **"OUTSIDE THE WINDOW" AND "COVERED BY ANOTHER WINDOW" ARE
         // DIFFERENT DIAGNOSES**, and this guard reported both as the second
         // until 2026-08-27.
         //

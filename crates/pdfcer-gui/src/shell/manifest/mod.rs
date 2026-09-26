@@ -57,7 +57,7 @@ use egui_shell::manifest::{Group, Item, ItemSize, Mode, Shell};
 /// what either command does, not its label, not its tooltip, not whether it is
 /// on the ribbon.
 ///
-/// ★★ That is the whole design. Swapping what the *commands* do would make the
+/// That is the whole design. Swapping what the *commands* do would make the
 /// labels lie: a button reading **Paste as duplicate** would paste a new field.
 /// Swapping the *keys* leaves every surface honest by construction, because the
 /// ribbon, the context menu, the shortcuts dialog and the keyboard dispatcher
@@ -178,7 +178,7 @@ pub fn built_in() -> Shell {
         // the tab-strip row, past the mode selector, which is a region
         // `egui-shell` grew for this and which nothing else uses.
         //
-        // ★★★ `shown_when("acrobat.available")` is the whole of R9 for this
+        // `shown_when("acrobat.available")` is the whole of R9 for this
         // control, and it is the reason the command is registered
         // unconditionally rather than only on a machine that has an Acrobat.
         // The registry is built once at start-up; the path to Acrobat is a
@@ -186,7 +186,7 @@ pub fn built_in() -> Shell {
         // button appear without a restart. A condition is re-read every frame
         // and a registration is not.
         //
-        // ★ It is on NO tab, which is the first command in this manifest of
+        // It is on NO tab, which is the first command in this manifest of
         // which that is true, and it is deliberate rather than an oversight.
         // `RIBBON_IA.md` P1 says a command has one discoverable home; this
         // one's home is a fixed position in the chrome that is visible in every
@@ -206,7 +206,7 @@ pub fn built_in() -> Shell {
         // mockup (the lasso, and `edit.select_all`) and the ⚠ that putting
         // rotate here lets Read dirty a document.
         //
-        // ★★ Data on the manifest rather than a builder callback, for the
+        // Data on the manifest rather than a builder callback, for the
         // reason `SHELL_FRAMEWORK.md` states in one line: *"a rail that only
         // `pdfcer-gui` knows about breaks it quietly."* `Shell::validate` walks
         // it, `merge` filters it, and an operator overlay can reorder it —
@@ -227,7 +227,7 @@ pub fn built_in() -> Shell {
         // as two separate bindings for redo — is what stops the shortcut
         // list and the keymap from being two sources of truth.
         //
-        // ★ THIS KEYMAP IS THE ONLY PLACE A CHORD IS BOUND TO A MEANING.
+        // THIS KEYMAP IS THE ONLY PLACE A CHORD IS BOUND TO A MEANING.
         //
         //
         // The list below is therefore load-bearing rather than explanatory,
@@ -263,7 +263,7 @@ pub fn built_in() -> Shell {
         //                        own keyboard layer against the view state.
         //                        They are not ribbon commands and putting
         //                        them here would give them a second owner.
-        // ★ Ctrl+F IS bound here now, and the comment it replaces is worth
+        // Ctrl+F IS bound here now, and the comment it replaces is worth
         // keeping visible because it was right about the control and wrong
         // about the chord:
         //
@@ -284,7 +284,7 @@ pub fn built_in() -> Shell {
         // a reason for the command to be on no TAB, not a reason for its chord
         // to be bound somewhere else.
         // -------------------------------------------------------------------
-        // ★ Ctrl+N — the universal chord, bound the day its command landed.
+        // Ctrl+N — the universal chord, bound the day its command landed.
         //
         // Acrobat, Inkscape and SolidWorks all bind Ctrl+N to New, as does
         // every other document application; there was nothing to decide here
@@ -298,7 +298,7 @@ pub fn built_in() -> Shell {
         // table cannot spell is a chord no keypress delivers. That is the
         // defect `Ctrl+O` sat in for the whole life of the ribbon.
         .with_binding("Ctrl+N", "file.new")
-        // ★ Ctrl+Alt+N — Inkscape's own chord for the same split, which is the
+        // Ctrl+Alt+N — Inkscape's own chord for the same split, which is the
         // split this pair copies: Ctrl+N makes a document, Ctrl+Alt+N chooses
         // what kind. `RIBBON_IA.md` §5.1 specifies the row and not a chord, so
         // this is the shell's choice rather than the IA's, and it is a cheap
@@ -310,7 +310,7 @@ pub fn built_in() -> Shell {
         // the File band, so a layout that cannot spell it loses nothing.
         .with_binding("Ctrl+Alt+N", "file.new_from_template")
         .with_binding("Ctrl+O", "file.open")
-        // ★ **Ctrl+P**, 2026-08-20, on the operator's report: *"still no ctrl+c,
+        // **Ctrl+P**, 2026-08-20, on the operator's report: *"still no ctrl+c,
         // ctrl+v, ctrl+x or ctrl+p shortcuts that were requested ages ago"*.
         //
         //
@@ -340,13 +340,13 @@ pub fn built_in() -> Shell {
         // it collides"*, and none of these collides: this shell binds no bare
         // letter to anything else.
         //
-        // ★ Bare, not `Ctrl+`. A bare letter is safe here precisely because
+        // Bare, not `Ctrl+`. A bare letter is safe here precisely because
         // `canvas::keys` gates every keystroke on `text_edit_focused()` — the
         // guard whose ABSENCE was `DEFECTS.md` D1, the old shell's Delete key
         // dying after any canvas click. Typing `v` into a form field or into the
         // canvas caret must never arm a tool, and the one place that could go
         // wrong is the place this project has already been burned and fixed.
-        // ★★ The three every program has bound since 1983.
+        // The three every program has bound since 1983.
         //
         // `Ctrl+C` is bound here **and** claimed by `canvas::textsel::clipboard`
         // when a text range is swept. That is not a collision to resolve, it is
@@ -360,7 +360,7 @@ pub fn built_in() -> Shell {
         .with_binding("Ctrl+V", "edit.paste")
         .with_binding("Ctrl+Shift+V", "edit.paste_duplicate")
         //
-        // ★★ **The chord was FREE and was measured to be free**, not assumed:
+        // **The chord was FREE and was measured to be free**, not assumed:
         // no `D` appears in this keymap in any form, `app::keyboard::OWNED`
         // does not claim it, `canvas::keys` reads only Escape, Delete,
         // Backspace and Tab, and no `egui::Key::D` exists anywhere in the tree.
@@ -369,7 +369,7 @@ pub fn built_in() -> Shell {
         // `Event::Copy`/`Cut`/`Paste` before a key event exists, and `D` has no
         // such interception.
         //
-        // ★★ It is also the chord the APPROVED MOCKUP already reserves:
+        // It is also the chord the APPROVED MOCKUP already reserves:
         // `mockups/app.html:198` draws *"Duplicate  Ctrl+D"* in the canvas
         // object menu. So this binding is not a new claim on the keyboard, it
         // is a claim being honoured — and it is the chord Acrobat, Illustrator
@@ -387,7 +387,7 @@ pub fn built_in() -> Shell {
         // three every tabbed application on this desktop has bound, and
         // therefore the three an operator will try first.
         //
-        // ★ `Ctrl+Tab` is safe to bind here and a bare `Tab` would not be.
+        // `Ctrl+Tab` is safe to bind here and a bare `Tab` would not be.
         // egui's own focus system claims `Tab` — `Memory` matches
         // `Key::Tab if !modifiers.any()` for the next widget and
         // `modifiers.shift_only()` for the previous — so both of these carry a
@@ -410,7 +410,7 @@ pub fn built_in() -> Shell {
         .with_binding("Alt+Up", "pages.move_up")
         .with_binding("Alt+Down", "pages.move_down")
         //
-        // ★★ **Measured, not assumed**, and the measurement is what makes them
+        // **Measured, not assumed**, and the measurement is what makes them
         // safe to take next to the two lines above:
         //
         // * bare `[` and `]` are `pages.rotate_left` / `pages.rotate_right` —
@@ -425,7 +425,7 @@ pub fn built_in() -> Shell {
         // * `check-clipboard-chords.sh` is about `C`, `X` and `V` as KEYS and
         //   is untouched by any of these.
         //
-        // ★ The pairing is the mnemonic and is worth stating: `]` is forward,
+        // The pairing is the mnemonic and is worth stating: `]` is forward,
         // `[` is back, and **Shift makes it all the way** — one step without,
         // the whole stack with. That is the opposite sense to the arrow nudge's
         // Ctrl (which makes the step *smaller*), and the two do not collide
@@ -503,7 +503,7 @@ pub fn built_in() -> Shell {
 /// to `selection.formattable`; this one stayed where it was and kept its two
 /// honest readers.
 ///
-/// ★ The alias is what made the drift dangerous rather than merely untidy.
+/// The alias is what made the drift dangerous rather than merely untidy.
 /// Changing [`format::VISIBLE_WHEN`] in place would have silently retargeted
 /// the **canvas context menu**, which has nothing to do with the Format tab
 /// and whose Delete would then have been enabled by a text sweep -- a
@@ -517,7 +517,7 @@ pub const SELECTION_ANY: &str = "selection.any"; // ui-text-exempt: a condition 
 /// `doc.selected_field`, not in `SelectionState`, so `selection.any` is false
 /// while one is selected.
 ///
-/// ★ The Format **tab** still takes `SELECTION_ANY`. A field has no font, no
+/// The Format **tab** still takes `SELECTION_ANY`. A field has no font, no
 /// stroke and no fill for that tab to offer, so widening the tab's own
 /// predicate would draw a band of controls that cannot act on what is
 /// selected.
@@ -527,7 +527,7 @@ pub const SELECTION_ACTIONABLE: &str = "selection.actionable"; // ui-text-exempt
 /// pdfcer at one** — the condition under which `file.open_in_acrobat` is
 /// DRAWN AT ALL. `OPERATOR_REQUESTS.md` O122.
 ///
-/// # ★★★ Why this is a `visible_when` and never an `enabled_when`
+/// # Why this is a `visible_when` and never an `enabled_when`
 ///
 /// R9, exactly: *an unavailable capability renders nothing; greying is
 /// reserved for **temporarily** unavailable and is always explained on hover.*
@@ -541,7 +541,7 @@ pub const SELECTION_ACTIONABLE: &str = "selection.actionable"; // ui-text-exempt
 /// legitimate case: *no document open* is temporary, is the operator's to fix
 /// in one click, and IS explained on hover.
 ///
-/// # ★★ Published by `PdfcerApp::conditions` from ONE resolved viewer
+/// # Published by `PdfcerApp::conditions` from ONE resolved viewer
 ///
 /// Not from a fresh registry read per frame — see `crate::acrobat`. The
 /// resolution is cached on the application and recomputed when the setting
@@ -552,7 +552,7 @@ pub const ACROBAT_AVAILABLE: &str = "acrobat.available"; // ui-text-exempt: a co
 /// **The engine would not refuse a delete of what is selected** — the
 /// condition under which `format.delete` is DRAWN AT ALL.
 ///
-/// # ★★★ Why it lives here rather than in [`format`], and the precedent is one
+/// # Why it lives here rather than in [`format`], and the precedent is one
 /// screen up
 ///
 /// [`SELECTION_ANY`] carries the account of what an alias cost: while it read
@@ -562,7 +562,7 @@ pub const ACROBAT_AVAILABLE: &str = "acrobat.available"; // ui-text-exempt: a co
 /// has — `manifest::format`'s Selection group and `menus`' `CANVAS_OBJECT` — so
 /// it is spelled out in the one place both can see, and neither owns it.
 ///
-/// # ★★★ It is a `visible_when`, and [`SELECTION_ACTIONABLE`] is still the
+/// # It is a `visible_when`, and [`SELECTION_ACTIONABLE`] is still the
 /// `enabled_when`. Two predicates on one control
 ///
 /// | predicate | asks | when false |
@@ -623,7 +623,7 @@ pub const RECENT_FILES: &str = "recent_files"; // ui-text-exempt: a custom-item 
 /// prevent — the shell reserves the item's space, the application declines to
 /// draw it, and nothing anywhere reports a mismatch.
 ///
-/// ★ It is deliberately **not** in [`CUSTOM_BACKED`]. That register is for
+/// It is deliberately **not** in [`CUSTOM_BACKED`]. That register is for
 /// commands whose only ribbon control is a custom item, and this item backs no
 /// command at all: it edits `PdfcerApp::pen`, raises no `Action`, has no undo,
 /// and returns no handler token. Listing it there would claim a command id
@@ -637,12 +637,12 @@ pub const COLOUR_SWATCH: &str = "colour_swatch"; // ui-text-exempt: a custom-ite
 /// operand is a position on a continuum, and the whole point of it is that the
 /// operator watches the page change while dragging.
 ///
-/// ★ It is deliberately **not** in [`CUSTOM_BACKED`], for [`COLOUR_SWATCH`]'s
+/// It is deliberately **not** in [`CUSTOM_BACKED`], for [`COLOUR_SWATCH`]'s
 /// reason exactly: it edits `ViewState::ocr_overlay` — what is drawn on
 /// screen, no document, no undo entry — and raises no `Action`. Listing it
 /// there would claim a command id that does not exist.
 ///
-/// ★★ R8 is satisfied by the item's `shown_when`, not by a registration. The
+/// R8 is satisfied by the item's `shown_when`, not by a registration. The
 /// condition is the *toggle's* own selected-condition, so the slider is drawn
 /// exactly while `view.ocr_layer` is pressed. A build whose registry has no
 /// `view.ocr_layer` cannot press it, cannot turn the mode on, and therefore
@@ -661,7 +661,7 @@ pub const OCR_BLEND: &str = "ocr_blend"; // ui-text-exempt: a custom-item kind, 
 /// cannot ask for** — two colours that must also *show* the current one, a
 /// number the operator drags, a percentage, and two multi-way choices.
 ///
-/// ★★ They are **registered commands**, unlike [`COLOUR_SWATCH`] one screen up,
+/// They are **registered commands**, unlike [`COLOUR_SWATCH`] one screen up,
 /// and the difference is the same one that separates the Font group from the
 /// pen: `COLOUR_SWATCH` edits `PdfcerApp::pen` — application state, no
 /// document, no undo entry — while these five raise an
@@ -732,11 +732,11 @@ pub const CUSTOM_BACKED: &[(&str, &str, &str)] = &[
          from a file dialog: the picker asks, the command acts.",
     ),
     //
-    // ★ They are drawn this way because the alternative for each is absurd
+    // They are drawn this way because the alternative for each is absurd
     // in exactly the way `file.recent`'s is: a button per font on the page, a
     // button per point size, a button per colour.
     //
-    // ★★ And they are REGISTERED, rather than being three anonymous custom
+    // And they are REGISTERED, rather than being three anonymous custom
     // items like `COLOUR_SWATCH` beside them in Markup ▸ Style. The
     // difference is not presentational: those edit `PdfcerApp::pen` —
     // application state, no document, no undo entry — while these three raise
@@ -775,7 +775,7 @@ pub const CUSTOM_BACKED: &[(&str, &str, &str)] = &[
     // editing working for the Markup tools."*
     //
     //
-    // ★ Every entry clears the bar for one reason in a different shape — the
+    // Every entry clears the bar for one reason in a different shape — the
     // command needs an OPERAND a button cannot ask for — and the alternative
     // for each is absurd in exactly `file.recent`'s way: a button per colour, a
     // button per point width, a button per percentage.
@@ -839,7 +839,7 @@ fn group(id: &str, caption: &str, items: impl IntoIterator<Item = Item>) -> Grou
 
 /// The same, laid out on **two rows** even when one would fit.
 ///
-/// ★ `OPERATOR_REQUESTS.md` O97 — *"our display buttons should be on two rows to
+/// `OPERATOR_REQUESTS.md` O97 — *"our display buttons should be on two rows to
 /// save space."* For a cluster of icon-only peers that is a **choice** rather
 /// than a list: four square buttons in a row is a strip, and the same four as a
 /// 2 × 2 block is half the width and reads as one control. See
@@ -871,7 +871,7 @@ pub(super) fn command(id: &str) -> Item {
 /// **position in a labelled group teaches the meaning**, not the label on each
 /// control.
 ///
-/// ★ Safe to ask for even when it cannot be honoured. `sizing::resolved` falls
+/// Safe to ask for even when it cannot be honoured. `sizing::resolved` falls
 /// back to the labelled form unless the command names an icon, carries a
 /// tooltip **and** a painter is installed, so a command that gains or loses an
 /// icon does not need this list audited.
@@ -948,7 +948,7 @@ mod tests {
             .collect()
     }
 
-    /// ★★★ **Every `Large` item already leads its group**, so promoting one
+    /// **Every `Large` item already leads its group**, so promoting one
     /// never reorders the band.
     ///
     /// This is the rule that replaced [`super::large`]'s old *"only for a
@@ -977,7 +977,7 @@ mod tests {
     /// which is the strict reading — a `Recent ⌄` gallery hoisted past is just
     /// as reordered as a command.
     ///
-    /// ★ Written as a scan for the first non-Large item followed by a Large
+    /// Written as a scan for the first non-Large item followed by a Large
     /// one, rather than as a whitelist of blessed groups. A whitelist is a
     /// second copy of the manifest and goes stale; this cannot, because it is
     /// derived from the manifest it checks.
@@ -1005,7 +1005,7 @@ mod tests {
         }
     }
 
-    /// ★★ **…and the manifest actually contains some Large items**, so the
+    /// **…and the manifest actually contains some Large items**, so the
     /// scan above is not vacuous.
     ///
     /// A manifest with no Large item at all satisfies
@@ -1129,7 +1129,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The chords every document application has, asserted as a LIST.**
+    /// **The chords every document application has, asserted as a LIST.**
     ///
     /// Added 2026-08-20, on the operator: *"still no ctrl+c, ctrl+v, ctrl+x or
     /// ctrl+p shortcuts that were requested ages ago."* Three of the four were
@@ -1294,7 +1294,7 @@ mod tests {
                 "view.close_other_documents",
                 "view.read_mode",
                 "view.fullscreen",
-                // ★ Before Reset layout: the cheap remedy above the
+                // Before Reset layout: the cheap remedy above the
                 // destructive one. See the manifest's own note at the item.
                 "view.dock_all_panels",
                 "view.ribbon_auto_hide",

@@ -24,7 +24,7 @@ corrected in place there, and the short form is: a tooltip is a disclosure
 available to somebody who already knows where to point, and a bound chord
 can be pressed from memory or by accident having pointed at nothing.
 
-## ★★ These sentences are CLAIM-BEARING, and that governs their shape
+## These sentences are CLAIM-BEARING, and that governs their shape
 
 A sentence that says *press this key to get your application back* is a
 promise the operator will act on while already frustrated. If the key has

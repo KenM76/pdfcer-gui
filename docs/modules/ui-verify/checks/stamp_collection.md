@@ -36,7 +36,7 @@ operator can read them, and — the half that matters most — whether it stays
 away from the files that are not collections. That is R1, and that is this
 file.
 
-# ★★★ The second launch is the check
+# The second launch is the check
 
 This launches **twice**: once on `fixtures/stamp-collection.pdf`, asserting
 the section is THERE with a row per stamp, and once on
@@ -58,7 +58,7 @@ that runs on every `cargo test`, because a driven check runs only when
 somebody has the machine's pointer to spare — and an absence assertion
 against an unverified control is an assertion about nothing.
 
-# ★★ Why the row count is three and not "at least one"
+# Why the row count is three and not "at least one"
 
 Because the failure this check is most likely to catch is a section that
 draws its heading and its count and then nothing — the shape a regression

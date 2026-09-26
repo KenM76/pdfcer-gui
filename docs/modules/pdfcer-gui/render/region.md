@@ -23,19 +23,19 @@ precisely the property that matters, because getting one of the two slightly
 wrong produces a page that is drawn *almost* in the right place, which reads
 as a rendering bug rather than as a coordinate one.
 
-## ★★ The y flip, which is the part that goes wrong
+## The y flip, which is the part that goes wrong
 
 Canvas space is y-**down** from the page's top-left; PDF user space is
 y-**up** from its bottom-left. `render_page_region` documents its rectangle
 as *"page space, pre-scale — the same coordinate system as `Page::crop_box`,
 y-up"*, so the flip happens here, once, in both directions.
 
-★ A flip that is applied twice is the identity, and a flip that is missed
+A flip that is applied twice is the identity, and a flip that is missed
 shows the operator the *opposite end* of the page from the one they are
 pointing at — which at 2382 % is a uniform field of whatever happens to be
 there, and looks exactly like a blank raster.
 
-## ★★★ `/Rotate` — O174, and why a y flip alone was never enough
+## `/Rotate` — O174, and why a y flip alone was never enough
 
 
 > *"this pdf causes problems zooming past about 1600% — the view appears to
@@ -73,7 +73,7 @@ where `render::strategy` hands over from the whole-page tier to this one —
 `MAX_PIXMAP_EDGE / 1224 pt ≈ 13.4×`, i.e. about **1,340 %** on his page at a
 100 % display, which is the *"about 1600%"* he reported.
 
-### ★★ Why the existing round-trip test could not see it
+### Why the existing round-trip test could not see it
 
 `a_region_maps_to_screen_and_back_to_itself` asserts that [`page_region`]
 and [`region_on_screen`] are inverses **of each other**. They were — both

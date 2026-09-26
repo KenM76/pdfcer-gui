@@ -22,7 +22,7 @@
 //! `/Fields [(Amount)]` into `/Fields [4 0 R]`, which would make both
 //! disclosures untestable again while every test still compiled.
 //!
-//! # ★★ What this still does not prove
+//! # What this still does not prove
 //!
 //! That the sentences reach the **status bar**. This asserts the engine reports
 //! the counts and that the shell's own disclosure functions produce the right
@@ -46,7 +46,7 @@ fn session() -> EditSession {
     EditSession::new(doc)
 }
 
-/// ★★★ **A rename repoints the button, reports that it did, and the shell says
+/// **A rename repoints the button, reports that it did, and the shell says
 /// so in words that promise the button still works.**
 #[test]
 fn renaming_a_named_field_retargets_the_button_and_discloses_it() {
@@ -77,7 +77,7 @@ fn renaming_a_named_field_retargets_the_button_and_discloses_it() {
     );
 }
 
-/// ★★★ **A delete cannot repoint anything, reports the orphan, and the shell
+/// **A delete cannot repoint anything, reports the orphan, and the shell
 /// says the buttons will now do less than they say.**
 ///
 /// ⚠ This is the operator-facing half that matters: nothing in the saved file
@@ -110,7 +110,7 @@ fn deleting_a_named_field_orphans_the_button_and_discloses_it() {
     );
 }
 
-/// ★★ **The control**, and it is doing real work rather than decorating the
+/// **The control**, and it is doing real work rather than decorating the
 /// file.
 ///
 /// Renaming the **button itself** touches no action target — nothing names

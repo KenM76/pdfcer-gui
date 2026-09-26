@@ -14,7 +14,7 @@ a place on the screen**. The parent re-exports all four, so
 `crate::canvas::selection::SelectionLevel` is still the path every caller
 uses; the file boundary is for the reader, not for the type system.
 
-## ★ Selection is an identity, not a position
+## Selection is an identity, not a position
 
 
 > *"if I select a node or something for a tool, I should be able to pan

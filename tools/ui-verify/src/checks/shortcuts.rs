@@ -62,7 +62,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
 
-    // ★ No `--pdf`, and that is an assertion rather than a saving.
+    // No `--pdf`, and that is an assertion rather than a saving.
     //
     // `DialogsState::show` draws this window **above** the no-document guard,
     // beside About, with a comment saying why: a keyboard reference an operator
@@ -88,7 +88,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     report.artifact(session.trace_path().to_path_buf());
     session.settle(40);
-    // ★★ MAXIMISE — at the harness's default 1,100 pt window the File tab's
+    // MAXIMISE — at the harness's default 1,100 pt window the File tab's
     // last two groups fold away entirely and this check reports a lost
     // command. See `about.rs` for the measurement; three checks shared it.
     session.maximize();
@@ -148,7 +148,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★ THE assertion. See this module's header for why zero is required and
+    // THE assertion. See this module's header for why zero is required and
     // why it is not tautological.
     //
     // ⚠ If pdfcer is ever built with a capability stripped — the exe-to-DLL move

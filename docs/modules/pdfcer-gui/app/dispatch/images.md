@@ -12,7 +12,7 @@ It sits beside [`super::pages`], which is here for the same reason: that
 module holds the Pages tab's ids, whose bodies share an operand rule, and
 this one holds a single id whose body is longer than most tabs.
 
-## ★ Why the import happens BEFORE the window opens
+## Why the import happens BEFORE the window opens
 
 So a file that cannot be placed is refused **at the moment it is chosen**,
 naming the file's own problem — *"pdfcer does not place GIF images — it
@@ -25,7 +25,7 @@ its pixel size **as displayed** (an EXIF-rotated photograph is transposed by
 the importer, and the stored shape is not on screen anywhere), and whether
 its resolution is one the file declared or one pdfcer assumed.
 
-## ★ The refusal is the ENGINE's, passed through
+## The refusal is the ENGINE's, passed through
 
 Unlike a `TwoLineRefusal`, whose wording lives in
 [`crate::text::measure`]. The difference is what the message is **about**:

@@ -12,7 +12,7 @@ offered any of the three: `RIBBON_IA.md`'s Edit ▸ Clipboard group had been
 deleted rather than shipped empty, on the correct P3 grounds that a caption
 over nothing is worse than no caption.
 
-## ★★ What is expressible, and what is not — measured, not assumed
+## What is expressible, and what is not — measured, not assumed
 
 **This table was written 2026-08-19 and every "blocked" row in it has since
 expired. Corrected in place on 2026-09-05 rather than left standing beside
@@ -24,7 +24,7 @@ citation with a shelf life measured in hours.**
 
 
 
-★ **What the annotation row changed, in the operator's terms.** Until
+**What the annotation row changed, in the operator's terms.** Until
 2026-09-05 this module copied an annotation by reading a `MarkupSpec` out of
 its dictionary and authoring a *new* annotation from it — so the eight
 subtypes `pdfcer-core` models could be copied and **everything else could
@@ -32,7 +32,7 @@ not**. A sticky note, a stamp, a text box, a link and a file attachment all
 answered `Ctrl+C` with *"that annotation is not one pdfcer authors."* A
 sticky note is the most-copied comment in a review workflow.
 
-★★★ **And the lossless route turned out to be lossy in the other
+**And the lossless route turned out to be lossy in the other
 direction.** `copy_selection` carries a markup pdfcer *models* as a spec and
 plants it with `add_markup` — not `add_markup_with` — so it drops `/CA`,
 `/T`, `/M` and `/Contents` on exactly the kinds this module could already
@@ -41,7 +41,7 @@ copy faithfully. The fork that keeps both halves is
 `file:line` for every claim in it. **Read that before changing anything
 here.**
 
-## ★★ A mixed marquee — content AND annotations in one gesture
+## A mixed marquee — content AND annotations in one gesture
 
 The copy below is **one call to `copy_selection` with both index lists**,
 which is the engine's own prescription: *"the verb a shell should call when
@@ -58,7 +58,7 @@ this file can change that, and nothing in this file pretends otherwise: the
 clipboard is the half that is ready. Recorded on the clipboard row of
 `ENGINE_BACKLOG.md` and in [`crate::canvas::annotclip::selected`].
 
-## ★ Why the clipboard is in `egui::Memory` and not the OS clipboard
+## Why the clipboard is in `egui::Memory` and not the OS clipboard
 
 Because a `MarkupSpec` is not text and the OS clipboard carries bytes with a
 declared format. Putting one there would mean inventing a pdfcer-specific
@@ -73,7 +73,7 @@ possible at all — this shell opens one document at a time, so a
 document-scoped clipboard would make cross-drawing copying impossible rather
 than merely awkward.
 
-## ★★ Where the paste lands, and why it is not "in place"
+## Where the paste lands, and why it is not "in place"
 
 Offset by [`PASTE_OFFSET_PT`], down and to the right, **except** when the
 paste is onto a different page — where it lands at the original coordinates.

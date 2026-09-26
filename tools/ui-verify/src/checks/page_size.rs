@@ -62,7 +62,7 @@ const A6_INDEX: usize = 6;
 /// which the engine documents as *"ASCII, lowercase, hyphenated, and must not
 /// change once shipped"*.
 ///
-/// ★ Read from `size_id=` and **never** from the `choice=` field beside it.
+/// Read from `size_id=` and **never** from the `choice=` field beside it.
 /// That one is a `Debug` spelling, present for a human reading a trace;
 /// Debug-formatting a domain type and then parsing it produced two false
 /// failure reports in this project in a single week.
@@ -73,7 +73,7 @@ const PT_PER_MM: f64 = 72.0 / 25.4;
 
 /// A6 portrait, in points: 105 × 148 mm.
 ///
-/// ★ Converted from the **defining millimetres** rather than written out as
+/// Converted from the **defining millimetres** rather than written out as
 /// `297.64 x 419.53`, for the reason `dialogs::new_document`'s own test states:
 /// a hand-rounded number looks right, is wrong in the fourth significant
 /// figure, and will not compare equal to what the engine writes. Pinned against
@@ -131,7 +131,7 @@ struct Sheet {
 
 /// Every `page-size-document` line in `trace`, by page index.
 ///
-/// ★ Reads the LAST line per index rather than the first. The window can be
+/// Reads the LAST line per index rather than the first. The window can be
 /// opened more than once in a run — phase B opens it, phase D opens it again —
 /// and the census is republished each time. Taking the first would hand phase D
 /// a fossil from phase B, which is the *"`.last()` returns a fossil"* trap
@@ -218,7 +218,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         ));
     }
 
-    // ★ The fixture is PINNED and any `--pdf` is ignored. See the module
+    // The fixture is PINNED and any `--pdf` is ignored. See the module
     // header: this check needs MORE THAN ONE PAGE, because the sheet it does
     // not touch is its negative control, and a single-page fixture would make
     // the check unable to detect a build that resized every sheet in the
@@ -282,7 +282,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     // either. The same idiom is in `attachment_clip` and `attachments`, which
     // learned it the same way.
     //
-    // ★ Worth stating because the SKIP was honest and useless in the same
+    // Worth stating because the SKIP was honest and useless in the same
     // breath: it named the missing region precisely and its own guidance even
     // offered the right diagnosis as an alternative reading. A check that
     // cannot establish its own preconditions reports the absence of its subject
@@ -309,7 +309,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
             ctx.profile.vocab.start_event
         )));
     }
-    // ★ The outcome event must be ABSENT before anything is clicked. Rule 4 of
+    // The outcome event must be ABSENT before anything is clicked. Rule 4 of
     // `checks::mod`: never treat a presence as evidence without showing the
     // channel was silent beforehand.
     if trace.events(COMMIT_EVENT).next().is_some() {
@@ -396,7 +396,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         commit.get("h_pt").and_then(|v| v.parse::<f64>().ok()),
     );
 
-    // ★★★ **Did the entry this check clicked turn out to be A6?**
+    // **Did the entry this check clicked turn out to be A6?**
     //
     // A SKIP rather than a FAIL, because a size the engine inserted into the
     // middle of `PaperSize::ALL` is a change to the table and not a defect in
@@ -459,7 +459,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     spec2
         .env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
-    // ★ The verdict process needs `mode.edit` for the same reason phase A does,
+    // The verdict process needs `mode.edit` for the same reason phase A does,
     // and it is easy to miss: this launch only READS the saved file, so it looks
     // like it needs no authoring mode — but it reads by opening the sheet-size
     // window, which lives on the Pages tab, which does not exist in Read. The
@@ -531,7 +531,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 
     // -- PHASE D′: THE NEGATIVE CONTROL -------------------------------------
     //
-    // ★★★ Without this the check has no dynamic range. Its positive arm is
+    // Without this the check has no dynamic range. Its positive arm is
     // satisfied by a build that sets EVERY page to A6 — which is not a
     // hypothetical wrong build, it is the shape you get by passing
     // `0..pages.len()` where the operand list belongs, and it is a data-loss
@@ -607,7 +607,7 @@ fn click_dialog_region(
 mod tests {
     use super::*;
 
-    /// ★★ **A6 is 105 × 148 mm, and this check's constant is that conversion
+    /// **A6 is 105 × 148 mm, and this check's constant is that conversion
     /// rather than a rounded copy of it.**
     ///
     /// The failure this exists for is the one `dialogs::new_document`'s own
@@ -643,7 +643,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The fixture can carry the defect**, which is the property that
+    /// **The fixture can carry the defect**, which is the property that
     /// makes this check able to fail at all.
     ///
     /// Two requirements, and each is a way this check silently stops meaning

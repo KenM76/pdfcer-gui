@@ -208,7 +208,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **THE CASE THE MODULE EXISTS FOR.** With nothing selected on a
+    /// **THE CASE THE MODULE EXISTS FOR.** With nothing selected on a
     /// sheet whose whole body is one page-sized wrapper, the ring is the
     /// wrapper's contents — not the wrapper.
     ///
@@ -241,7 +241,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The filter narrows the ring, and a filter that excludes
+    /// **The filter narrows the ring, and a filter that excludes
     /// everything empties it rather than falling back to something the next
     /// click could not select.**
     ///

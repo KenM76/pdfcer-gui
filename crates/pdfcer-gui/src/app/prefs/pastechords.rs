@@ -8,7 +8,7 @@
 /// `OPERATOR_REQUESTS.md` **O58**. Ken, 2026-08-29: *"let's make it an option to
 /// have it swap to match Acrobat or work the way we have it now."*
 ///
-/// # ★★★ Why this is a setting rather than a decision
+/// # Why this is a setting rather than a decision
 ///
 /// Copying a form field has two legitimate meanings: **a new, independent
 /// field**, and **another box for the same field** that fills in step with the
@@ -36,7 +36,7 @@
 ///   field gets one, and does not have to hold a second rule in their head for
 ///   one program.
 ///
-/// # ★★ It swaps the CHORDS, never what a command means
+/// # It swaps the CHORDS, never what a command means
 ///
 /// The two commands keep their meanings and their labels for ever: `edit.paste`
 /// is always *"paste as a new field"*, `edit.paste_duplicate` is always *"paste
@@ -55,7 +55,7 @@
 /// **manifest**, not code — so an operator preference about keys is a data edit
 /// rather than a branch anywhere in the dispatcher.
 ///
-/// # ★ Both chords always exist, whichever way round they are
+/// # Both chords always exist, whichever way round they are
 ///
 /// This never takes a capability away — it exchanges two keys. Both commands
 /// stay on the ribbon and in the context menu under their own names, so an
@@ -87,7 +87,7 @@ impl PasteChords {
     /// `PDFCER_DIAG_PASTE_CHORDS=acrobat` (or `new_field_first`) forces the
     /// order for one run, ahead of whatever is in the preferences file.
     ///
-    /// # ★★★ Why a test seam exists here at all
+    /// # Why a test seam exists here at all
     ///
     /// Because the alternative is worse in two directions, and one of them is
     /// destructive.
@@ -108,7 +108,7 @@ impl PasteChords {
     /// anything. `D:/dev/rag/egui/` carries the lesson this avoids needing —
     /// `a_driven_check_that_mutates_persisted_state_must_normalise_at_the_start`.
     ///
-    /// ★ An unrecognised value is ignored rather than refused. The variable is
+    /// An unrecognised value is ignored rather than refused. The variable is
     /// a harness affordance, and a typo in it should degrade to "the operator's
     /// own setting" rather than to a start-up failure on a machine where
     /// somebody exported it once and forgot.
@@ -170,7 +170,7 @@ impl PasteChords {
 mod tests {
     use super::*;
 
-    /// ★★★ The two orders must be an EXCHANGE, not two independent choices.
+    /// The two orders must be an EXCHANGE, not two independent choices.
     ///
     /// The failure this forbids is a build where both commands end up on the
     /// same chord — one silently unreachable from the keyboard, with the
@@ -190,7 +190,7 @@ mod tests {
 
     /// The two orders are each other's mirror, and nothing else.
     ///
-    /// ★ Asserted as a property rather than by restating the four literals,
+    /// Asserted as a property rather than by restating the four literals,
     /// because restating them is how a table and its test come to agree with
     /// each other and disagree with the operator.
     #[test]
@@ -207,7 +207,7 @@ mod tests {
 
     /// Every value survives the preferences file.
     ///
-    /// ★ Over `ALL`, not over two literals: a third order added later is
+    /// Over `ALL`, not over two literals: a third order added later is
     /// covered without anybody remembering to extend this.
     #[test]
     fn every_order_round_trips_through_its_file_token() {

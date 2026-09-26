@@ -2,7 +2,7 @@
 # something
 
 
-## ★★ Why this is the seam
+## Why this is the seam
 
 It is the same one `crate::panels::comments::editor` took the same day, and
 for the same reason: the rest of the pop-up **reads** — a heading, a byline,
@@ -15,7 +15,7 @@ land here; a caption about a group subordinate would land next door; and the
 question *"which file?"* has an answer that does not depend on how many
 lines are left in either.
 
-## ★★★ TWO controls write, and they write to different things
+## TWO controls write, and they write to different things
 
 This is the distinction the whole file is arranged around, and it is the one
 an operator can most easily get wrong:

@@ -30,7 +30,7 @@ pub const fn window_title() -> &'static str {
 
 /// The paragraph under the title.
 ///
-/// ★ **The most important sentence in this window**, and it is a disclosure
+/// **The most important sentence in this window**, and it is a disclosure
 /// rather than an instruction: it says what the numbers mean *right now*.
 ///
 /// A fresh group's scale is the tri-state's *never-set* value, so every label
@@ -49,7 +49,7 @@ pub const fn intro() -> &'static str {
 
 /// Why the ratio path is what a cold-opened dialog offers.
 ///
-/// ★ **This string used to say the other path could not be armed at all**, and
+/// **This string used to say the other path could not be armed at all**, and
 /// it was accurate until 2026-08-17: *"needs a reference line drawn on the
 /// page, which this build cannot arm yet."* That was exactly the gap the
 /// operator reported — *"still missing the feature where we set the scale by
@@ -120,7 +120,7 @@ pub const fn group_label() -> &'static str {
 /// under them reads the same number back (see
 /// `crate::canvas::measure::scale::ScaleEntryFields::for_group`).
 ///
-/// ★ Deliberately phrased as a statement of fact about the document and not as
+/// Deliberately phrased as a statement of fact about the document and not as
 /// a warning. The scale that is set is not a problem, it is the context; a
 /// window that greeted an operator with a caution every time they opened it
 /// would be the nagging the ribbon spec forbids, and he has said as much about
@@ -193,7 +193,7 @@ pub fn unit_name(unit: Unit) -> &'static str {
 
 /// A number style's name, including the *"use the unit's own default"* state.
 ///
-/// ★ The `None` entry is a **real choice**, not an absence, and its wording
+/// The `None` entry is a **real choice**, not an absence, and its wording
 /// says so. It is what an operator who never opens this control gets, and the
 /// field stores `Option<FractionMode>` rather than re-deriving from the unit
 /// precisely so that an explicit choice survives a unit change — somebody who
@@ -233,7 +233,7 @@ pub fn fraction_name(fraction: Option<FractionMode>) -> &'static str {
 
 /// The live preview of what the entry back-calculates to.
 ///
-/// ★ Takes the engine's own `ratio_label` rather than formatting the scale
+/// Takes the engine's own `ratio_label` rather than formatting the scale
 /// here. `ScalePreview::ratio_label` is documented as the `/R`-style label —
 /// `1:100`, or `25 ft = 42.3 pt` — and it is DISPLAY-ONLY, which is exactly
 /// what this line is. Formatting a scale in the GUI would be a second
@@ -300,7 +300,7 @@ pub const fn cancel_tooltip() -> &'static str {
 
 /// The button that starts the two-point pick.
 ///
-/// ★ Not "Calibrate". That is a word from our side of the fence — it names
+/// Not "Calibrate". That is a word from our side of the fence — it names
 /// the operation rather than the action — and an operator scanning this
 /// window is looking for a way to avoid computing a ratio. This says what the
 /// click does.
@@ -327,7 +327,7 @@ pub const fn calibrate_note() -> &'static str {
 
 /// What pdfcer measured, once the two points are picked.
 ///
-/// ★ The number is shown, and that is a disclosure rather than decoration.
+/// The number is shown, and that is a disclosure rather than decoration.
 /// It is the half of the equation pdfcer contributed, and an operator checking
 /// their work needs to see that pdfcer measured the line they meant to pick —
 /// a snap that landed on the wrong endpoint is visible here and nowhere else
@@ -382,7 +382,7 @@ pub fn length_parse_error(engine_message: &str) -> String {
 mod tests {
     use super::*;
 
-    /// ★ The intro discloses that dimensions are currently measuring the paper.
+    /// The intro discloses that dimensions are currently measuring the paper.
     ///
     /// The sentence this whole window exists to deliver. An operator who has
     /// placed dimensions and read numbers has been given plausible answers to

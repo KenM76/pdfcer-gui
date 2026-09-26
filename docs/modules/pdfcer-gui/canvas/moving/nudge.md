@@ -7,7 +7,7 @@ precision the zoom happened to give them. At 100 % that is a two-pixel drag
 nobody can make reliably, and the correction is the one edit an operator
 makes most often.
 
-## ★★★ Why this is small, and why it is in `canvas::moving` rather than in
+## Why this is small, and why it is in `canvas::moving` rather than in
 `canvas::keys`
 
 **Because the verb already exists and is already called.** A nudge is a
@@ -32,7 +32,7 @@ precise failure `viewer`'s header warns about:
 > silent — the page looks perfect until someone selects a line and gets a
 > different one."*
 
-## ★★★ THE Y SIGN, and how it is got right without deciding it here
+## THE Y SIGN, and how it is got right without deciding it here
 
 An operator's **Up arrow means up on the screen.** PDF user space has y
 increasing *upward* from the bottom-left corner (§8.3.2.3), canvas space has
@@ -55,7 +55,7 @@ makes the assertion *"Up produces the same delta a one-point upward drag
 produces"*, which is a claim about agreement between two surfaces rather than
 about arithmetic.
 
-## ★★★ The step, and which program it is borrowed from
+## The step, and which program it is borrowed from
 
 **One PDF point bare, a quarter point with Ctrl. That is Acrobat's
 convention**, and it is chosen over the drawing programs' for one reason that
@@ -77,14 +77,14 @@ shall be along one axis* — and a fourth gesture in which it meant *ten times
 further* would be the chord that means two things, which is worse than a
 missing chord.
 
-★ There is a tempting counter-argument and it is worth writing down so it is
+There is a tempting counter-argument and it is worth writing down so it is
 not re-made: an arrow key is **already** axis-locked by construction, so
 Shift's existing meaning is vacuous for a nudge and the chord is "free". That
 is true and it is not enough. What the operator learns is *Shift constrains*;
 a Shift that multiplied would teach them that Shift means whatever the
 current gesture felt like, which is the thing a convention exists to prevent.
 
-★★ **Alt is spoken for too**, and mechanically rather than by convention:
+**Alt is spoken for too**, and mechanically rather than by convention:
 the built-in keymap binds `Alt+Up` and `Alt+Down` to `pages.move_up` and
 `pages.move_down`. So this module refuses **any** modifier shape but the two
 it claims, and does so by reading the modifiers itself rather than trusting
@@ -93,7 +93,7 @@ it claims, and does so by reading the modifiers itself rather than trusting
 pattern of `NONE` would have fired on `Alt+Up` and nudged a mark while
 reordering a page. See [`step_for`].
 
-## ★ One undo entry per keypress, including auto-repeat
+## One undo entry per keypress, including auto-repeat
 
 `egui`'s `key_pressed` counts key-repeat events, and this raises one
 `AnnotAction::Move` per press — so holding the key walks the mark across the

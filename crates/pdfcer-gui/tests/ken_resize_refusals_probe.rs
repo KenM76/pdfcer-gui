@@ -42,7 +42,7 @@ fn rect() -> pdfcer_core::page_tree::Rect {
     }
 }
 
-/// ★★★ **Author each kind pdfcer can draw, then try to resize it, and print
+/// **Author each kind pdfcer can draw, then try to resize it, and print
 /// the verdict.**
 ///
 /// Two resizes per kind, because they are refused by different rules:
@@ -70,7 +70,7 @@ fn which_markup_kinds_does_a_corner_drag_actually_resize() {
     // refusal there would say the probe is wrong rather than the kind.
     /// One row of the table: a label and the verb that authors that kind.
     ///
-    /// ★ Named rather than written inline because the inline form is a type
+    /// Named rather than written inline because the inline form is a type
     /// clippy calls "very complex", and it is right — a reader meeting
     /// `Vec<(&str, Box<dyn Fn(&mut EditSession) -> Option<ObjId>>)>` has to
     /// decode it before learning that it means "a name and a way to make one".
@@ -107,7 +107,7 @@ fn which_markup_kinds_does_a_corner_drag_actually_resize() {
                 s.add_text_annotation(0, &spec).ok()
             }),
         ),
-        // ★★★ **THE CONTROL, and the doc comment above promised it while the
+        // **THE CONTROL, and the doc comment above promised it while the
         // first draft of this list did not contain it.**
         //
         // A `/Square` is pdfcer's own artwork end to end, authored through

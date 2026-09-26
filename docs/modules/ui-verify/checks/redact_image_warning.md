@@ -17,12 +17,12 @@ cannot yet destroy image pixels … apply refused rather than producing a
 false redaction
 ```
 
-★ The refusal was right. What was wrong is *when* he found out — apply was
+The refusal was right. What was wrong is *when* he found out — apply was
 all-or-nothing for the document, so twelve careful marks and one that grazed
 a logo produced a single refusal naming no region, after the work rather than
 during it.
 
-# ★★★ THE REFUSAL IS GONE, and this check's subject changed with it
+# THE REFUSAL IS GONE, and this check's subject changed with it
 
 
 The disclosure did not become unnecessary — it changed subject, and to the
@@ -38,7 +38,7 @@ string, compiles and passes for ever after the limitation lifts. See
 `crate::checks::driving::declared_or_in_overflow` for the same shape found
 the same morning in this harness's own code.
 
-# ★★★ Why this check asserts BOTH directions, and would be worthless with one
+# Why this check asserts BOTH directions, and would be worthless with one
 
 A check that only proves *"the warning appears on a document with an image"*
 passes just as happily on a build that warns about **every** mark on every

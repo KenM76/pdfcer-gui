@@ -5,7 +5,7 @@ anything visible. That is stated in all three radius lines in nearly the same
 words, and it is the whole reason they are grouped together rather than filed
 with the settings whose effects an operator can look at.
 
-## ★ The third one is stronger than "nothing visible", and its wording says so
+## The third one is stronger than "nothing visible", and its wording says so
 
 [`xref_entry_eol`] and [`trailing_eol`] are invisible *in a viewer*.
 [`quad_point_order`] is invisible **in pdfcer specifically**, and for a

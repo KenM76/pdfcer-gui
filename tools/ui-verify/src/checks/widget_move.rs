@@ -17,7 +17,7 @@ const INVOKE: &str = "mode.edit,edit.form_text_field";
 const ACCEPT_ENV: (&str, &str) = ("PDFCER_DIAG_FORM_ACCEPT", "1");
 /// The per-widget census line the canvas publishes, carrying each box's rect.
 ///
-/// ★ Parsed by `checks::formaim::targets` rather than by a copy in this file.
+/// Parsed by `checks::formaim::targets` rather than by a copy in this file.
 /// Three checks read this census, and the third copy is where copies start to
 /// disagree; the shared module's header carries the finding that made one worth
 /// having.
@@ -31,7 +31,7 @@ const DRAG_EVENT: &str = "widget-drag";
 const RESIZE_EVENT: &str = "resize-widget-commit";
 /// The line the apply arm writes when the engine has moved it.
 ///
-/// ★ `-applied`, per the convention this project adopted after making the
+/// `-applied`, per the convention this project adopted after making the
 /// same-name mistake twice: `vector_edit` writes its own `move-widget …` line
 /// for the identical edit and `.last()` on the bare name reads that one.
 const MOVED: &str = "move-widget-applied";
@@ -40,7 +40,7 @@ const PAGE_REGION: &str = "page";
 
 /// Where the field is placed and where it is dragged to, as page fractions.
 ///
-/// ★ Both well inside the sheet: the first so the placement lands on paper, the
+/// Both well inside the sheet: the first so the placement lands on paper, the
 /// second so the move has somewhere to go. Diagonal, for the `dy` reason in the
 /// module header.
 const PLACE_AT: (f64, f64) = (0.30, 0.55);
@@ -167,7 +167,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- B: disarm, CLEAR, then select it ----------------------------------
     //
-    // ★ Escape first. The tool stays armed after a placement, exactly as a
+    // Escape first. The tool stays armed after a placement, exactly as a
     // markup pen does, so a second click without this would place a SECOND
     // field rather than select one — and the check would fail with a message
     // about selection when the cause was arming. `form_field` records the same
@@ -175,7 +175,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.press(crate::sys::vk::ESCAPE)?;
     session.settle(12);
 
-    // ★★★ AND THEN A CLICK ON BLANK PAPER, WHICH IS NOT SCENERY — see
+    // AND THEN A CLICK ON BLANK PAPER, WHICH IS NOT SCENERY — see
     // `checks::formaim`'s header for the trace lines that put it here.
     //
     // The field this check just authored is ALREADY SELECTED: the authoring arm
@@ -210,7 +210,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(20);
 
     let trace = session.trace()?;
-    // ★ `field=` absent IS the cleared line: the application writes
+    // `field=` absent IS the cleared line: the application writes
     // `form-field-selected none` with no key/value pairs at all for a cleared
     // selection, and `field=…` for every other one.
     if !trace.events(SELECTED).any(|l| l.get("field").is_none()) {
@@ -255,7 +255,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- C: drag it ---------------------------------------------------------
     //
-    // ★★★ THE PRESS IS AT A QUARTER OF THE BOX'S WIDTH, NOT AT ITS CENTRE, AND
+    // THE PRESS IS AT A QUARTER OF THE BOX'S WIDTH, NOT AT ITS CENTRE, AND
     // THAT IS THE ONE PLACE ON A SHORT BOX WHERE THE CENTRE IS THE WORST
     // CHOICE.
     //
@@ -281,7 +281,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // vertical position stays at the centre; on a short box every y is equally
     // near an edge and on a tall one the centre is the safest.
     //
-    // ★ `markup_move` presses ITS shape's centre and is right to: it draws a
+    // `markup_move` presses ITS shape's centre and is right to: it draws a
     // 0.20 × 0.15 page-fraction rectangle, 154 × 89 px here, whose centre is
     // dozens of pixels from every grip. The difference is the size of the
     // object, not the gesture.
@@ -317,7 +317,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let trace = session.trace()?;
     let Some(dragged) = trace.events(DRAG_EVENT).last() else {
-        // ★ If the press became a RESIZE, say so instead of telling the reader
+        // If the press became a RESIZE, say so instead of telling the reader
         // to go and look at the router. That is what happened on the run that
         // moved the press point off the centre, and a check that cannot tell
         // "the gesture was dropped" from "the gesture went to another verb"
@@ -386,7 +386,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         moved.get("siblings").unwrap_or("?")
     ));
 
-    // ★ `siblings` is REPORTED and never asserted. It is zero for the
+    // `siblings` is REPORTED and never asserted. It is zero for the
     // single-widget field this check authors, and a non-zero value is a
     // disclosure about a field drawn on several pages — a fact about the
     // document, not about the move.

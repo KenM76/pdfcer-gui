@@ -11,7 +11,7 @@ thing-you-just-clicked touches this.
 Format is a small tab and this file grows with it: every `format.*` entry
 in `manifest::PLANNED` lands here when it ships.
 
-## ★ What the selection arms have in common, and it is not the tab
+## What the selection arms have in common, and it is not the tab
 
 They act on **the selection**, and each has to answer the same question
 first: *which of the two index spaces is this?* A selection can name a page
@@ -29,7 +29,7 @@ side:
 | `format.select_form` | selects the leaf's outermost enclosing form, which *is* an operand |
 | `format.properties` | opens the panel, which describes either kind |
 
-## ★★ Why the arms re-ask what `enabled_when` already asked
+## Why the arms re-ask what `enabled_when` already asked
 
 Because `enabled_when` greys a ribbon item and **enforces nothing**. Every
 non-ribbon route — the context menu, a chord, a future script — reaches the

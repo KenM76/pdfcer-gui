@@ -11,7 +11,7 @@ the view deliberately thrown away first.
 
 > *"Adobe has fit height, so add that too."*
 
-# ★★★ Why the run must pan into the pasteboard FIRST
+# Why the run must pan into the pasteboard FIRST
 
 
 So the run scrolls hard into the pasteboard, **asserts that it got there**
@@ -29,7 +29,7 @@ rect on screen, against `canvas-viewport`'s:
 | **Fit width** | both vertical edges are flush with the viewport's, so the full width is what is on screen |
 | **Fit height** | the mirror: both horizontal edges flush |
 
-★★ Fit page's claim is *contained and centred*, not "fills both axes". A
+Fit page's claim is *contained and centred*, not "fills both axes". A
 landscape sheet in a tall window fills the width and floats in the middle
 vertically, and a check that demanded both axes fill would fail on every
 page whose aspect differs from the window's. **Equal margins is the direct
@@ -38,7 +38,7 @@ fit that set only the scale cannot produce: a page can be entirely inside
 the viewport and still jammed against one edge with a viewport of
 pasteboard on the other.
 
-★ "Flush" within a tolerance, not exactly: the fit divides in `f32` and the
+"Flush" within a tolerance, not exactly: the fit divides in `f32` and the
 page rect is rounded to the pixel grid, so demanding exact equality would
 be a check that fails on arithmetic rather than on behaviour. A few points
 — far below the *hundreds* the defect moves the page by, and far above the

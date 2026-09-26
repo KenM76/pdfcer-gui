@@ -167,7 +167,7 @@ pub fn no_matches_tooltip() -> &'static str {
 
 /// Shown when the document has been edited since the search ran.
 ///
-/// ★ **The hits are not merely out of date; their geometry may name text
+/// **The hits are not merely out of date; their geometry may name text
 /// that is no longer there.** A `delete_*` renumbers and re-splices the
 /// content stream, so a quad recorded before an edit can cover different
 /// glyphs after it — and rule 4 forbids painting a mark over content that
@@ -251,7 +251,7 @@ pub fn whole_word_tooltip() -> &'static str {
 
 /// The wildcard control's label.
 ///
-/// ★ The label **names the two characters and what each does**. See this
+/// The label **names the two characters and what each does**. See this
 /// module's header: a bare "Wildcards" would leave the operator exactly
 /// where the old shell's silent pattern search left them, one checkbox
 /// later.
@@ -276,7 +276,7 @@ pub fn wildcards_tooltip() -> &'static str {
 
 /// The zoom control's label.
 ///
-/// ★ **The operator named this control.** His words, 2026-09-09: *"add a
+/// **The operator named this control.** His words, 2026-09-09: *"add a
 /// checkbox option to our search bar called zoom — when I uncheck it just jump
 /// to the page and highlight the found item as before but don't change the
 /// zoom."* A request that carries a name is a request for that name, so the
@@ -292,7 +292,7 @@ pub fn find_zoom() -> &'static str {
 
 /// Hover text for the zoom control.
 ///
-/// ★ **It names the mechanism, because the mechanism is not guessable.**
+/// **It names the mechanism, because the mechanism is not guessable.**
 ///
 /// Nothing in Find has ever set a zoom. What changes the zoom on a jump is
 /// **Fit page** / **Fit width** still being switched on: a fit is a standing
@@ -391,7 +391,7 @@ pub fn word_rule_non_space_or_dash_tooltip() -> &'static str {
 /// What a zero-result search says when part of the document could never have
 /// matched.
 ///
-/// ★ Worded as a fact about the DOCUMENT, not about the search and not about
+/// Worded as a fact about the DOCUMENT, not about the search and not about
 /// pdfcer. "No matches" is still the answer to what they asked; the second
 /// clause tells them why the answer may be incomplete. It deliberately does not
 /// say "pdfcer cannot read" — Acrobat cannot read it either, the file simply
@@ -420,7 +420,7 @@ pub fn unsearchable_tooltip() -> &'static str {
     "Some PDFs store text as drawings with no record of which letters they are. It renders correctly and can be printed, but nothing can search or copy it. Recognising the page adds a searchable layer."
 }
 
-/// ★ **The sentence when the blank was IGNORED** — `OPERATOR_REQUESTS.md`
+/// **The sentence when the blank was IGNORED** — `OPERATOR_REQUESTS.md`
 /// **O180**, 2026-09-12.
 ///
 /// Trimming silently would be the reported defect wearing the other coat.
@@ -438,7 +438,7 @@ pub fn blanks_trimmed() -> &'static str {
     "Blanks at the ends of your search were ignored."
 }
 
-/// ★ **The sentence when the blank was KEPT** — the same fact, the other
+/// **The sentence when the blank was KEPT** — the same fact, the other
 /// setting.
 ///
 /// Owed for the mirror-image reason: with trimming off, an invisible

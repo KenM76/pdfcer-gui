@@ -96,7 +96,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 
     // --- 0. prove the input channel works, BEFORE testing the feature ------
     //
-    // ★ Without this the check cannot tell "Find is broken" from "nothing was
+    // Without this the check cannot tell "Find is broken" from "nothing was
     // ever typed at it", and it will confidently report the first. That is
     // not hypothetical: this check's own first run reported "Ctrl+F did not
     // dispatch `edit.find`" against a build in which Ctrl+F works, and the

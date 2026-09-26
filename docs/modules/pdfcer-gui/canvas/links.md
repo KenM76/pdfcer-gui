@@ -25,7 +25,7 @@ shell half, and it is short because the hard half is elsewhere: hit-test a
 rectangle, hand the destination to the pipeline the bookmarks panel already
 uses.
 
-## ★★ The five destinations, and why collapsing four of them is the defect
+## The five destinations, and why collapsing four of them is the defect
 
 `Destination` has five variants and **only one navigates**. The engine's own
 note on shipping the reader states the failure modes exactly:
@@ -40,7 +40,7 @@ four fail for different reasons with different remedies. A deleted target
 page, a lost name table, another file, and an action pdfcer deliberately does
 not run are four situations, not one.
 
-## ★★★ The affordance is a CURSOR, and there is no mark on the page
+## The affordance is a CURSOR, and there is no mark on the page
 
 [`cursor`] sets a pointing hand over a link that can be followed and does
 nothing over one that cannot. That is the whole of the pre-click disclosure,
@@ -54,12 +54,12 @@ and it is bounded by rule 4 in both directions:
   to a screenshot of the same document saved and reopened, which is the
   one-line test rule 4 is judged by.
 
-★ A hand cursor over the **non**-navigable four was considered and rejected:
+A hand cursor over the **non**-navigable four was considered and rejected:
 it advertises a capability that does not exist, and R9 says an unavailable
 capability renders nothing. Their disclosure arrives on the click, where the
 operator has actually asked.
 
-★★ The disclosure is raised on a **click only, never on hover.** A sentence
+The disclosure is raised on a **click only, never on hover.** A sentence
 that appeared because the pointer crossed a rectangle would fire dozens of
 times crossing a contents sheet, and a status line that changes without the
 operator doing anything is a status line they stop reading.

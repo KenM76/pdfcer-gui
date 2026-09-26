@@ -9,7 +9,7 @@
 /// How much extra to rasterize around the viewport, as a fraction of the
 /// viewport on **each** side.
 ///
-/// ★★ This is the dial the operator's constraint turns on, and its cost is
+/// This is the dial the operator's constraint turns on, and its cost is
 /// quadratic, so it is written down rather than tuned by feel:
 ///
 /// | overscan | pixels | pans that cost nothing |
@@ -24,7 +24,7 @@
 /// scaling with the zoom**, so a constant multiple of the window is affordable
 /// where a constant multiple of the page would not be.
 ///
-/// # ★★★ The middle column is the budget; the right column is what SURVIVES
+/// # The middle column is the budget; the right column is what SURVIVES
 /// the snap
 ///
 /// This table said *"up to half a screen in any direction"* against `0.5` until
@@ -35,7 +35,7 @@
 /// because this is the number a future reader will reach for when they want a
 /// bigger margin, and reaching for it would have been the wrong fix.
 ///
-/// ★★ The right-hand column is now a **guarantee at the worst grid phase**
+/// The right-hand column is now a **guarantee at the worst grid phase**
 /// rather than a best case, which is the only form of it worth writing down:
 /// what the operator experiences is the worst side of the worst phase, because
 /// that is the edge the fade appears along. The spread exists because the snap
@@ -43,7 +43,7 @@
 /// `OVERSCAN − 0.25` and `OVERSCAN + 0.25` viewports on each side as the view
 /// moves through the grid.
 ///
-/// # ★★ What a bigger number would cost, priced rather than guessed
+/// # What a bigger number would cost, priced rather than guessed
 ///
 /// `BENCHMARK.md` carries the engine's own measurement of the region path on
 /// the benchmark CAD sheet: **691 ms of fixed cost** (a one-by-one-*point*
@@ -57,7 +57,7 @@
 /// | `0.75` | 6.25× | ~2.1 s (**+0.5 s**) | 0.5 screens |
 /// | `1.0` | 9× | ~2.8 s (**+1.2 s**) | 0.75 screens |
 ///
-/// ★ Which is why this is an operator decision and not a tuning exercise. He
+/// Which is why this is an operator decision and not a tuning exercise. He
 /// has already ruled on this trade once — *"I don't want the affect that other
 /// readers have where you always have to wait for detail to render after
 /// panning"* — and both columns of that ruling move together: a wider margin
@@ -94,11 +94,11 @@ pub enum Strategy {
 /// keeps free panning for as long as it is physically available, on every page
 /// size, without anybody choosing a number per document class.
 ///
-/// ★ It also means the switch **moves with the display scale**, which is
+/// It also means the switch **moves with the display scale**, which is
 /// correct and would be easy to get wrong: `raster_scale` already includes
 /// `pixels_per_point`, so a 150 % display reaches the ceiling at two-thirds the
 /// zoom, exactly as it should.
-/// ★★ **Whether this page is blended in ink, and at what ceiling** — the
+/// **Whether this page is blended in ink, and at what ceiling** — the
 /// second thing that ends the whole-page tier.
 ///
 /// # Why the tier has two ceilings now
@@ -118,7 +118,7 @@ pub enum Strategy {
 /// because the buffer is sized to the region. So ending the whole-page tier at
 /// whichever ceiling bites first is the repair, and it needs no new tier.
 ///
-/// # ★★★ Why it is OBSERVED and not assumed, which is the whole design
+/// # Why it is OBSERVED and not assumed, which is the whole design
 ///
 /// The obvious implementation applies the ink ceiling to every page. It would
 /// be a serious regression, and the numbers say so plainly:
@@ -143,7 +143,7 @@ pub enum Strategy {
 /// document opens at a fit zoom and renders once before any zoom is possible,
 /// so the observation is in hand before it can matter.
 ///
-/// ★★★ **The engine CAN now be asked directly, and this shell asks
+/// **The engine CAN now be asked directly, and this shell asks
 /// first.** `interpret::page_blend_space` is still private, but `Pass 296.4`
 /// made `pdfcer_render::page_composites_in_ink` public, and it is that same
 /// function with the policy taken out of the `RenderOptions` handed in.
@@ -151,7 +151,7 @@ pub enum Strategy {
 /// the page dictionary rather than one raster later. The paragraph this
 /// replaces described the request that produced it as still open.
 ///
-/// ★ **The observation below is KEPT, as a second observer that can only
+/// **The observation below is KEPT, as a second observer that can only
 /// agree.** The engine ships a test asserting the two match on every fixture,
 /// so this is not a union of two opinions and must not be read as one — it is
 /// one answer reachable by two routes, and the render route survives for the
@@ -208,7 +208,7 @@ pub enum Ink {
 /// `render::settle::fill_strip` asked for every visible page without ever
 /// asking whether the order could be filled.
 ///
-/// ★ And the union would have been the *wrong* predicate for the strip even so:
+/// And the union would have been the *wrong* predicate for the strip even so:
 /// an ink page above the CMYK buffer ceiling but below the pixmap one answers
 /// `Region` from [`for_page`] while its whole-page raster allocates perfectly
 /// well. Skipping it would have left a neighbour sheet undrawn at an ordinary
@@ -243,7 +243,7 @@ pub fn whole_page_raster_fits(page_pts: (f32, f32), raster_scale: f32) -> bool {
 /// arithmetic, same degenerate-input rule — one definition of where the wall
 /// is, because two would eventually disagree about it.
 ///
-/// # ★★★ Why a region needs asking at all
+/// # Why a region needs asking at all
 ///
 /// Two different rectangles arrive here wearing one type, and they behave
 /// oppositely as the operator zooms:
@@ -286,7 +286,7 @@ pub fn for_page(page_pts: (f32, f32), raster_scale: f32, ink: Ink) -> Strategy {
         // product to `u32`.
         return Strategy::WholePage;
     }
-    // ★ The hard ceiling, through [`whole_page_raster_fits`] rather than
+    // The hard ceiling, through [`whole_page_raster_fits`] rather than
     // restated here. One definition of `MAX_PIXMAP_EDGE`'s arithmetic, so the
     // tier the canvas picks and the order the strip declines to place cannot
     // come to disagree about where the wall is — which is the class of defect
@@ -295,7 +295,7 @@ pub fn for_page(page_pts: (f32, f32), raster_scale: f32, ink: Ink) -> Strategy {
         return Strategy::Region;
     }
 
-    // ★ The ink ceiling, second, and only for a page that has been seen asking
+    // The ink ceiling, second, and only for a page that has been seen asking
     // for it. See [`Ink`].
     let Ink::Subtractive(max_bytes) = ink else {
         return Strategy::WholePage;
@@ -312,7 +312,7 @@ pub fn for_page(page_pts: (f32, f32), raster_scale: f32, ink: Ink) -> Strategy {
         (page_pts.0 * raster_scale).ceil() as u32,
         (page_pts.1 * raster_scale).ceil() as u32,
     );
-    // ★★ `will_composite_in_cmyk`, NOT a pixel count computed here. The
+    // `will_composite_in_cmyk`, NOT a pixel count computed here. The
     // engine's request reply is explicit about why: *"the predicate exists so
     // the 20-B/px arithmetic stays on this side of the crate boundary; a copy
     // of a measured limit is a copy that rots the next time the buffer's
@@ -334,7 +334,7 @@ pub fn for_page(page_pts: (f32, f32), raster_scale: f32, ink: Ink) -> Strategy {
 /// that grew it differently would produce a cache that never hits, because two
 /// requests for the same view would ask for different rectangles.
 #[must_use]
-/// ★★ `f64`, since 2026-08-22 — see [`region_for`] for what `f32` cost here.
+/// `f64`, since 2026-08-22 — see [`region_for`] for what `f32` cost here.
 pub fn overscanned(visible: (f64, f64, f64, f64)) -> (f64, f64, f64, f64) {
     let (x0, y0, x1, y1) = visible;
     let w = (x1 - x0).abs();
@@ -356,18 +356,18 @@ pub fn overscanned(visible: (f64, f64, f64, f64)) -> (f64, f64, f64, f64) {
 /// | **the overscan** | gives margin, so a pan inside it needs no new raster |
 /// | **the quantisation** | makes the SAME view produce the SAME rect, so the cache hits |
 ///
-/// ★★ Without the snap the rect would change on every pixel of movement, every
+/// Without the snap the rect would change on every pixel of movement, every
 /// request would be a cache miss, and the operator would wait for a redraw
 /// continuously — which is precisely the *"wait for detail to render after
 /// panning"* he refused. The snap turns that into at most one redraw per half
 /// viewport of travel.
 ///
-/// ★ The grid step is half the visible extent rather than a constant: a
+/// The grid step is half the visible extent rather than a constant: a
 /// constant in page points would be a different distance on screen at every
 /// zoom, so the redraw cadence would vary with magnification for no reason the
 /// operator could see.
 ///
-/// # ★★★ The snap moves the WINDOW, and it must move it about its CENTRE
+/// # The snap moves the WINDOW, and it must move it about its CENTRE
 ///
 ///
 /// > *"the canvas does a fading around the edges on stuff shown at the edges of
@@ -399,13 +399,13 @@ pub fn overscanned(visible: (f64, f64, f64, f64)) -> (f64, f64, f64, f64) {
 /// | left / top | `0.5` … `1.0` |
 /// | **right / bottom** | **`0.0` … `0.5`** |
 ///
-/// ★★ Measured over a full grid step in 2,000 increments, before the fix:
+/// Measured over a full grid step in 2,000 increments, before the fix:
 /// **left `0.5000`, top `0.5002`, right `0.0002`, bottom `0.0000`.** At the
 /// worst phase the sharp raster stops *exactly at the bottom edge of the
 /// window* while a full half-screen of it is spent off the left, where nothing
 /// can ever see it.
 ///
-/// ## ★★ Why that reads as a permanent fade rather than an occasional one
+/// ## Why that reads as a permanent fade rather than an occasional one
 ///
 /// The raster in hand lags the view: `canvas::present` computes the wanted
 /// region from `last_scroll_offset`, which is the *previous* frame's, and the
@@ -430,7 +430,7 @@ pub fn overscanned(visible: (f64, f64, f64, f64)) -> (f64, f64, f64, f64) {
 /// window    = (centre_x - w/2, centre_x + w/2)
 /// ```
 ///
-/// ★★★ **This costs nothing.** The window is the same size, the returned rect
+/// **This costs nothing.** The window is the same size, the returned rect
 /// is still exactly `(1 + 2 × OVERSCAN)` viewports across, the grid step is
 /// unchanged, and the cache-hit cadence is unchanged — `round(c / step)` steps
 /// exactly as often as `floor(x0 / step)` did, once per half viewport of
@@ -440,7 +440,7 @@ pub fn overscanned(visible: (f64, f64, f64, f64)) -> (f64, f64, f64, f64) {
 /// Measured after the fix, same sweep: **left `0.2500`, right `0.2502`, top
 /// `0.2502`, bottom `0.2500`.**
 ///
-/// ## ★ What it does NOT fix, stated rather than glossed
+/// ## What it does NOT fix, stated rather than glossed
 ///
 /// A quarter viewport is a guarantee about where the raster *reaches*, not
 /// about how fast the operator moves. A pan of more than a quarter of the
@@ -453,7 +453,7 @@ pub fn overscanned(visible: (f64, f64, f64, f64)) -> (f64, f64, f64, f64) {
 /// where you always have to wait for detail"*), so the constant is left where
 /// he set it and this function stops wasting what it buys.
 ///
-/// # ★★★ `f64`, and this is the arithmetic that forces it
+/// # `f64`, and this is the arithmetic that forces it
 ///
 /// `OPERATOR_REQUESTS.md` **O24i**. The snap divides a page coordinate by the
 /// grid step:
@@ -473,14 +473,14 @@ pub fn overscanned(visible: (f64, f64, f64, f64)) -> (f64, f64, f64, f64) {
 /// already lost its integer part, and the snapped origin comes back quantised
 /// to tens of `f32` ULPs.
 ///
-/// ★ Measured before it was fixed: from about 10⁷ % the region stopped
+/// Measured before it was fixed: from about 10⁷ % the region stopped
 /// shrinking and floored at 2.4414 × 10⁻³ × 3.0213 × 10⁻³ pt — **fifty
 /// thousand times** the 4.8 × 10⁻⁸ × 6.2 × 10⁻⁸ the viewport actually showed.
 /// The raster was still produced and `drawn=1` was still traced, so every
 /// existing check passed; what the operator saw was a fraction of one texel
 /// stretched across the window, which reads as blank paper.
 ///
-/// ★★ The magnitudes here are the reason. This function mixes an **absolute
+/// The magnitudes here are the reason. This function mixes an **absolute
 /// page position** with a **relative extent**, and at deep zoom those differ by
 /// ten orders of magnitude — which is exactly the shape `f32` cannot hold. The
 /// rest of the region path was already `f64` (`page_region` returns a `f64`
@@ -497,7 +497,7 @@ pub fn region_for(visible: (f64, f64, f64, f64)) -> (f64, f64, f64, f64) {
     // Snap the window to a half-viewport grid, then grow from there. Snapping
     // after growing would move the margin around instead of the window.
     //
-    // ★★★ It is the window's CENTRE that lands on the grid, not its origin.
+    // It is the window's CENTRE that lands on the grid, not its origin.
     // `.floor()` on the origin only ever moves the window one way — towards the
     // page origin, by up to a whole step — so the overscan added around it is
     // spent off the left and top and the right and bottom are left with as
@@ -506,7 +506,7 @@ pub fn region_for(visible: (f64, f64, f64, f64)) -> (f64, f64, f64, f64) {
     // function's header for the measurement and for the operator's report.
     let step_x = w * 0.5;
     let step_y = h * 0.5;
-    // ★ `step` and half the window are the same number today, and they are
+    // `step` and half the window are the same number today, and they are
     // still written as two ideas: the grid step is the *cadence* (how far the
     // operator may travel before a redraw) and the half-window is the
     // *geometry* (where the window's centre sits relative to its origin). Only
@@ -524,7 +524,7 @@ mod tests {
     /// The A1 sheet this project's benchmark and fixtures are built from.
     const A1_LONG_PT: f32 = 1584.0;
 
-    /// ★★★ **The zoom the operator uses today does not change tiers.**
+    /// **The zoom the operator uses today does not change tiers.**
     ///
     /// `viewer::MAX_ZOOM` is 8.0 — 800 % — and at one device pixel per point an
     /// A1 sheet's whole-page raster is comfortably inside the ceiling there. If
@@ -560,7 +560,7 @@ mod tests {
         );
     }
 
-    /// ★ **A smaller page keeps free panning for longer**, which is the reason
+    /// **A smaller page keeps free panning for longer**, which is the reason
     /// the switch is a pixmap size and not a zoom percentage.
     #[test]
     fn a_smaller_page_survives_to_a_higher_zoom() {
@@ -576,7 +576,7 @@ mod tests {
         );
     }
 
-    /// ★ The display scale is already inside `raster_scale`, so a 150 % display
+    /// The display scale is already inside `raster_scale`, so a 150 % display
     /// reaches the ceiling at two-thirds the zoom. Asserted because it is the
     /// kind of thing that is correct by accident and then broken by a
     /// refactor that "tidies up" the units.
@@ -598,7 +598,7 @@ mod tests {
         );
     }
 
-    /// ★ [`whole_page_raster_fits`] is the pixmap ceiling and **the pixmap
+    /// [`whole_page_raster_fits`] is the pixmap ceiling and **the pixmap
     /// ceiling only** — it agrees with [`for_page`] about the wall and has no
     /// opinion about anything else.
     ///
@@ -631,7 +631,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **An ink page that `for_page` sends to the region tier still FITS.**
+    /// **An ink page that `for_page` sends to the region tier still FITS.**
     ///
     /// The regression guard for the mistake O186's fix was one keystroke from
     /// making. `render::settle::fill_strip` declines to order a strip page whose
@@ -676,7 +676,7 @@ mod tests {
                 for_page((bad, bad), 1.0, Ink::Additive),
                 Strategy::WholePage
             );
-            // ★ And the order gate says "orderable" on the same input, for the
+            // And the order gate says "orderable" on the same input, for the
             // same reason: the whole-page path refuses a degenerate page with
             // its own sentence, and answering "it does not fit" here would
             // instead make a strip page silently claim it was zoomed past when
@@ -686,7 +686,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **Panning does not redraw continuously** — the property the
+    /// **Panning does not redraw continuously** — the property the
     /// operator's constraint turns on.
     ///
     /// He refused *"the affect that other readers have where you always have to
@@ -712,7 +712,7 @@ mod tests {
     /// *is*. It passed only because `1000, 1000` happened to sit mid-cell under
     /// the old grid.
     ///
-    /// ★★ Measured rather than argued, because it is the difference between a
+    /// Measured rather than argued, because it is the difference between a
     /// test that was over-specified and a change that broke something. Sweeping
     /// the base across a full grid step in 400 increments and applying the same
     /// four pans, **the old implementation fails its own assertion in 320 of the
@@ -752,14 +752,14 @@ mod tests {
         }
     }
 
-    /// ★ …and most small pans reuse the raster outright.
+    /// …and most small pans reuse the raster outright.
     ///
     /// The other half of the bound above: three is a **ceiling**, and a test
     /// that only checked a ceiling would pass on an implementation that
     /// returned three different rects for every pan. This asserts the floor —
     /// that the snap is doing the job it exists for.
     ///
-    /// ## ★★ Why a proportion of phases, and not one hand-picked base
+    /// ## Why a proportion of phases, and not one hand-picked base
     ///
     /// *No* snapping implementation reuses the raster for *every* small pan:
     /// a pan that crosses a grid line must change the rect, and roughly a fifth
@@ -811,7 +811,7 @@ mod tests {
         assert_ne!(base, far);
     }
 
-    /// ★★ **The raster is bounded by the WINDOW, not by the zoom** — which is
+    /// **The raster is bounded by the WINDOW, not by the zoom** — which is
     /// the whole reason the region tier exists and the answer to the operator's
     /// `MAX_PIXMAP_EDGE` failure at 2382 %.
     ///
@@ -850,7 +850,7 @@ mod tests {
         assert!((y1 - 500.0).abs() < 0.001);
     }
 
-    /// ★★ **The overscanned rect is a pure function of the visible rect**, so
+    /// **The overscanned rect is a pure function of the visible rect**, so
     /// two requests for the same view ask for the same rectangle.
     ///
     /// That is what makes a raster cache possible at all. A caller that grew
@@ -864,7 +864,7 @@ mod tests {
     }
 
     // =======================================================================
-    // ★★★ The MARGIN — what is sharp beyond the edge of the view
+    // The MARGIN — what is sharp beyond the edge of the view
     // =======================================================================
 
     /// The smallest gap, on any of the four sides, between the view and the
@@ -872,7 +872,7 @@ mod tests {
     /// of the viewport**, which is the unit [`OVERSCAN`]'s own table is
     /// written in.
     ///
-    /// ★ Returned as a fraction rather than in points so the answer is the
+    /// Returned as a fraction rather than in points so the answer is the
     /// same number at every zoom, which is the whole claim being made: the
     /// region tier's margin is supposed to be a constant multiple of the
     /// window.
@@ -893,7 +893,7 @@ mod tests {
         .fold(f64::INFINITY, f64::min)
     }
 
-    /// ★★★ **[`OVERSCAN`]'s promise holds in every direction, not just two of
+    /// **[`OVERSCAN`]'s promise holds in every direction, not just two of
     /// them.**
     ///
     /// That constant's table says of the shipped `0.5`:
@@ -904,7 +904,7 @@ mod tests {
     /// > *"the canvas does a fading around the edges on stuff shown at the
     /// > edges of the view. I don't want this. it should render true."*
     ///
-    /// ## ★★ Why a sweep, and why over exactly one grid step
+    /// ## Why a sweep, and why over exactly one grid step
     ///
     /// The margin is not a constant: it is a function of **where in the snap
     /// grid the view happens to sit**, and that phase repeats every
@@ -946,7 +946,7 @@ mod tests {
             }
         }
         assert!(
-            // ★ A quarter, less a hair for `f64`. The snap quantises the
+            // A quarter, less a hair for `f64`. The snap quantises the
             // window to a half-viewport grid, so half a screen on all four
             // sides at once is not achievable at every phase by ANY
             // implementation that keeps the raster at 2× the window: the
@@ -965,7 +965,7 @@ mod tests {
         );
     }
 
-    /// ★★★ O24i — **the region must keep shrinking all the way to the
+    /// O24i — **the region must keep shrinking all the way to the
     /// ceiling.**
     ///
     /// The snap divides an absolute page coordinate by the grid step. At a
@@ -978,7 +978,7 @@ mod tests {
     /// existing check passed while the operator saw a fraction of one texel
     /// stretched across the window — blank paper.
     ///
-    /// ★ Asserted as a RATIO against the visible extent rather than against
+    /// Asserted as a RATIO against the visible extent rather than against
     /// absolute sizes: what matters is that the rect stays proportional to
     /// what is on screen, at every depth, and a test of fixed numbers would
     /// have to be rewritten the next time `OVERSCAN` moves.
@@ -994,7 +994,7 @@ mod tests {
             let got_w = r.2 - r.0;
             let want_w = w * (1.0 + 2.0 * OVERSCAN);
             assert!(
-                // ★★ A part in a thousand, and the slack is `f64`'s own.
+                // A part in a thousand, and the slack is `f64`'s own.
                 //
                 // The extent is computed as `(x0 + w) - x0` at an absolute
                 // position near 540, where an `f64` ULP is 1.1e-13. At a
@@ -1002,7 +1002,7 @@ mod tests {
                 // subtraction returns a relative error near 1e-4 and no
                 // implementation can do better while the position is absolute.
                 //
-                // ★ Which is also the real ceiling of this design, worth
+                // Which is also the real ceiling of this design, worth
                 // stating: 8,800 representable steps across a 484-pixel
                 // viewport is 18 per pixel, so the arithmetic is still
                 // comfortable at the maximum zoom the shell offers. The tier
@@ -1015,7 +1015,7 @@ mod tests {
         }
     }
 
-    /// ★★ …and the snapped origin must stay WITHIN one grid step of the view.
+    /// …and the snapped origin must stay WITHIN one grid step of the view.
     ///
     /// The size test above would pass on an implementation that returned a
     /// correctly-sized rect somewhere else entirely — which is close to what
@@ -1047,13 +1047,13 @@ mod tests {
     }
 
     // =======================================================================
-    // ★★ The ink ceiling — the operator's "colours change with zoom"
+    // The ink ceiling — the operator's "colours change with zoom"
     // =======================================================================
 
     /// A4 in points, which is what every figure the engine published about this
     /// ceiling is stated against.
     ///
-    /// ★ Written out rather than reused from a fixture because the *label* is
+    /// Written out rather than reused from a fixture because the *label* is
     /// the thing that went wrong once: every "A4" percentage in this project's
     /// request and in the engine's first reply was computed on a 596 × 791 pt
     /// page, which is neither A4 (595 × 842) nor US Letter (612 × 792). The
@@ -1061,7 +1061,7 @@ mod tests {
     /// through both repositories. This constant is the label, pinned.
     const A4: (f32, f32) = (595.0, 842.0);
 
-    /// ★★★ **An additive page is not touched by any of this.**
+    /// **An additive page is not touched by any of this.**
     ///
     /// The regression guard, and the reason [`Ink`] exists as a two-state value
     /// instead of the ceiling simply being applied. About 0.4 % of real files
@@ -1082,7 +1082,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **A page blended in ink switches to the region tier at the colour
+    /// **A page blended in ink switches to the region tier at the colour
     /// ceiling**, which is far below the pixmap one.
     ///
     /// This is the whole repair: between the two ceilings, a whole-page raster
@@ -1138,7 +1138,7 @@ mod tests {
         );
     }
 
-    /// ★★ **Raising the operator's ceiling moves the switch up**, which is the
+    /// **Raising the operator's ceiling moves the switch up**, which is the
     /// entire point of the setting existing.
     ///
     /// Without this, the Colour group's control could be wired to the renderer

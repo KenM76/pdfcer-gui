@@ -28,7 +28,7 @@ until it read as the operator's own ruling. A missing line and a considered
 refusal are indistinguishable from inside the source; they are
 distinguishable from a running window.
 
-# ★★★ Why this check needs a name the QAT's check did not
+# Why this check needs a name the QAT's check did not
 
 `qat_controls_are_icon_only` asserts a **shape**: an icon-only button is
 roughly square, a text button is a word wide, and the reserved rectangle
@@ -70,7 +70,7 @@ blanks — so whichever menu opens must publish at least one painted slot.
 Pinning a context here would make the check fail on a fixture change for a
 reason that has nothing to do with icons.
 
-★ The blank rows are the reason this is "at least one" rather than "one per
+The blank rows are the reason this is "at least one" rather than "one per
 row". `view.zoom_actual` and `view.panel_close` are argued refusals, not
 gaps, and a check that demanded a glyph per row would be demanding art the
 project has decided against — the wrong-picture failure, arriving through a

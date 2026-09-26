@@ -31,7 +31,7 @@ below is nine lines of code and sixty of argument, and the argument is what
 makes it right; a paraphrase of it beside the restyle verb would compile,
 would look correct, and would drift.
 
-## ★★ The extraction here is NOT the shared page-text cache
+## The extraction here is NOT the shared page-text cache
 
 `crate::app::cache`'s extraction runs with `ExtractOptions::default()`, and
 `capture_provenance` **defaults to off** — the engine's own words:
@@ -50,6 +50,6 @@ shell does (392 ms on the benchmark sheet). Paying it **once per edit**, in
 [`resolve`], is the whole cost, and an edit is already an operation that
 saves and re-rasters.
 
-★ The run index is shared between the two extractions, which is safe and is
+The run index is shared between the two extractions, which is safe and is
 worth stating: `capture_provenance` populates a field and changes no
 segmentation, so `runs[i]` names the same run under both options.

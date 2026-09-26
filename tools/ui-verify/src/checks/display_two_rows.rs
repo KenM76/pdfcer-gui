@@ -25,7 +25,7 @@ const WANTED_ROWS: usize = 2;
 /// Where and how large the window is placed, as `PDFCER_DIAG_VIEWPORT` takes
 /// it: `x,y,w,h`.
 ///
-/// ★★★ **The width IS the precondition of the assertion**, not a convenience.
+/// **The width IS the precondition of the assertion**, not a convenience.
 /// See the module header's point 4. It also does not steal the desktop:
 /// `PDFCER_DIAG_VIEWPORT` switches `with_active` off, so the window lays out
 /// fully without taking focus.
@@ -33,7 +33,7 @@ const VIEWPORT: &str = "0,0,2560,1000";
 /// How far apart two rectangles' tops may be and still count as the same row,
 /// in logical points.
 ///
-/// ★ Deliberately small. Buttons on one row share a `y` exactly in `egui`'s
+/// Deliberately small. Buttons on one row share a `y` exactly in `egui`'s
 /// layout, so any tolerance at all is generous; 4 pt allows for the harness
 /// rounding a scaled coordinate and nothing else. A large tolerance here would
 /// quietly merge two genuinely-stacked rows on a compact theme and report the
@@ -123,7 +123,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
     session.settle(14);
 
-    // ★ The View tab has to be CLICKED. The manifest's first tab is `file`, so
+    // The View tab has to be CLICKED. The manifest's first tab is `file`, so
     // the group this check measures is not on screen at launch — which is why
     // the `--no-input` path is a SKIP rather than a best-effort measure.
     // "Measure it if the right tab happens to be showing" is how a check comes
@@ -204,7 +204,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★ The rows must be genuinely STACKED, not two bands a few points apart
+    // The rows must be genuinely STACKED, not two bands a few points apart
     // that overlap on screen. The separation has to be at least a button's own
     // height or the second row is drawn over the first.
     let height = rects[0].1.height();

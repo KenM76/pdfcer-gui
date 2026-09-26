@@ -13,7 +13,7 @@ hoping.
 
 ---
 
-# 1. ★★★ The window's shape follows one sentence of the build brief
+# 1. The window's shape follows one sentence of the build brief
 
 > *"Show the document's CURRENT state before offering to change it. A
 > permissions dialog that opens with everything ticked, on a document that
@@ -34,7 +34,7 @@ and [`crate::text::protect::permissions_start_open`] says so **in words**,
 because eight ticks that are true and eight ticks that are a convenient
 default look identical.
 
-# 2. ★★★ The three disclosures O119 named, and where each one is
+# 2. The three disclosures O119 named, and where each one is
 
 The operator listed three things he already knows and would notice missing.
 All three are on screen, none of them is behind a hover, and none of them
@@ -46,12 +46,12 @@ waits for a press:
 | 2 | **a signed document is refused** — [`crate::text::protect::signed_refusal`] | **instead of** the entire form | whenever the document carries a signature |
 | 3 | **re-permissioning needs the owner password** — [`crate::text::protect::owner_password_note`] | **above** the current-owner field | on every job that touches an already-protected file |
 
-★ Disclosure 1 is not re-worded here and must not be. The engine supplies it
+Disclosure 1 is not re-worded here and must not be. The engine supplies it
 as `EncryptionSettings::PERMISSIONS_DISCLOSURE`, the CLI prints it, and
 `crate::text::security` catalogued it. Two surfaces wording one limitation
 differently is worse than either wording.
 
-★★ Disclosure 2 is **R9** in its strongest form. The ribbon controls stay
+Disclosure 2 is **R9** in its strongest form. The ribbon controls stay
 present — whether *this* document is signed is not known when the registry is
 built — so the window opens, states the refusal, names the count, explains
 the mechanism (*it rewrites every byte the signature covers*) and offers
@@ -59,7 +59,7 @@ nothing. There is no greyed form behind it and no button that fails on press.
 
 # 3. Saving: `dialogs::redact`'s answer, followed rather than re-invented
 
-★★★ **This is deliberate and it is stated rather than left to be noticed.**
+**This is deliberate and it is stated rather than left to be noticed.**
 Protecting a document rewrites every byte, exactly as applying a redaction
 does, so it raises exactly the question the operator settled hours earlier on
 that surface, in his own words:
@@ -80,13 +80,13 @@ here is `crate::dialogs::redact`'s, part for part:
 | confirm control | the label IS the consequence; an ellipsis promises a picker, naming the file promises none | **the same** |
 | the open document afterwards | untouched, and the outcome sentence says so | **the same**, and it matters more — see §5 |
 
-★ Replacing takes **no picker**, and that is the deliberate half. A picker
+Replacing takes **no picker**, and that is the deliberate half. A picker
 pre-filled with the source is a dialog whose safe answer is to change the
 field, which is the shape of every accidental overwrite there has ever been.
 The consent is taken before the click, in words, at a control the operator
 had to select.
 
-★★ The half of his request the engine cannot express is the same half as
+The half of his request the engine cannot express is the same half as
 there — *defer the write to a later Save*. All three encryption verbs
 **return bytes**; none stages anything in a session, and `EditSession` has no
 `replace_document`. Approximating it would mean swapping a second session
@@ -102,7 +102,7 @@ which is load-bearing rather than cautious: two of the three engine verbs
 take `&mut EditSession` and what they clear is the guard that stops the next
 ordinary `Ctrl+S` writing plaintext objects into a file of AES ciphertext.
 
-# 5. ★★ After a replace the window is deliberately STALE, and it says so
+# 5. After a replace the window is deliberately STALE, and it says so
 
 `crate::dialogs::redact`'s outcome, and the divergence matters more here
 because it is **invisible**: a redacted page looks different, and a protected
@@ -110,7 +110,7 @@ file looks identical to the one it came from. So
 [`crate::text::protect::written`]'s replace form names the file to re-open.
 Rule 4: report separately, and do not pretend.
 
-# ★ 6. The section headings are NOT `.strong()`, and that is deliberate
+# 6. The section headings are NOT `.strong()`, and that is deliberate
 
 Every heading here was written `RichText::new(…).strong()` in the first
 draft, and `tools/gates/check-strong-text.sh` caught all six. Its rule, and

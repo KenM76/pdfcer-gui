@@ -9,7 +9,7 @@ Explorer onto the page grid and its sheets go in where you pointed.**
 > *"I should be able to drag and drop documents into the thumbnails section
 > of another pdf to import the pages."*
 
-## ★★★ The one part that cannot be driven, and everything that can
+## The one part that cannot be driven, and everything that can
 
 A harness moves a pointer and presses keys. It cannot **originate an OLE
 drag** — that is Explorer's side of a protocol between two processes, and
@@ -17,7 +17,7 @@ no amount of `SendInput` produces one. So `app::filedrag` carries the same
 kind of seam `app::dropped` already had (`PDFCER_DIAG_DROP_PATH`), which
 makes the application behave as though a file had been dropped.
 
-★★ **But the seam alone would test the wrong thing.** This feature is
+**But the seam alone would test the wrong thing.** This feature is
 entirely about *where* the file landed, and a drop simulated at startup
 lands nowhere in particular — so a check built on it would pass on a build
 that ignored the position completely, which is precisely the build that
@@ -30,7 +30,7 @@ genuine drop uses (`native_window::cursor_position`). The position is real,
 the geometry is real, the insert is real. Only the payload is synthetic, and
 the payload is the one part that cannot be otherwise.
 
-## ★★ Why the pointer is jiggled while waiting
+## Why the pointer is jiggled while waiting
 
 `egui` repaints on events. An idle window with a file hovering over it
 produces exactly one (`HoveredFile`, on entry) — which is why the
@@ -49,10 +49,10 @@ coming without leaving the half of the tile the check is aiming at.
 | D | the panel claims it | `pages-import-dropped files=1 pages=M gap=1` |
 | E | and the document actually grew | `canvas … pages=N+M` |
 
-★ Step D asserts the **gap**, not merely that an import happened. The left
+Step D asserts the **gap**, not merely that an import happened. The left
 half of tile 1 means *before page 2*, so `gap=1` is the answer that
 distinguishes "the drop used the pointer" from "the drop appended at the
 end", and appending is what every position-blind build would do.
 
-★★ Step E is the one that cannot be satisfied by wiring alone. A build that
+Step E is the one that cannot be satisfied by wiring alone. A build that
 raised the action and never reached the engine passes A–D and fails here.

@@ -19,7 +19,7 @@ selected, the mark is locked, the mode may not author markup — and a reader
 who found "this mark is locked" written twice, once per gesture, would be
 reading the beginning of a drift.
 
-## ★★★ Why the lock sentence is NOT
+## Why the lock sentence is NOT
 [`crate::text::panels::properties::markup_locked`]
 
 That one is on screen from the moment a locked mark is selected and it reads:
@@ -40,11 +40,11 @@ two sentences name the same bit and different consequences, which is the
 case this project's *"one fact, one wording"* rule does **not** cover: the
 fact is shared, the consequence is not.
 
-★ Noted for whoever owns that string: it says *appearance* where the bit
+Noted for whoever owns that string: it says *appearance* where the bit
 says *appearance, position and size*. Correcting it is not this file's to
 make.
 
-## ★★ Why a refused nudge is worth a sentence at all, when a refused Delete
+## Why a refused nudge is worth a sentence at all, when a refused Delete
 is not
 
 [`crate::canvas::keys`]' Delete rung declines a locked annotation **to the
@@ -60,7 +60,7 @@ nothing relevant before the press, and silence after it is the shape this
 project keeps finding — a key that works everywhere else doing nothing here,
 with no way on screen to learn why.
 
-## ★★★ The one contradiction inside this file, named rather than left
+## The one contradiction inside this file, named rather than left
 for an operator to find
 
 [`not_a_markup`] answers an arrow key pressed on page content, and it says:
@@ -76,7 +76,7 @@ the first sentence sends the operator straight into the second. Press an
 arrow, be told to drag, drag, be told to press Escape.
 
 
-★★ **It is recorded and not “fixed”, deliberately.** The obvious repair is to
+**It is recorded and not “fixed”, deliberately.** The obvious repair is to
 widen `not_a_markup` with an *unless it is one line of text* clause, and that
 would make the common case — a whole object, a whole annotation, anything the
 pointer really does move — read like a legal notice in order to pre-empt a

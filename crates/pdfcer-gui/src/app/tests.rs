@@ -1,6 +1,6 @@
 //! # `app::tests` — split out under R2 on 2026-08-28
 //!
-//! ★★ **The inner `#![cfg(test)]` is load-bearing and is not a duplicate of
+//! **The inner `#![cfg(test)]` is load-bearing and is not a duplicate of
 //! the outer `#[cfg(test)] mod tests;`.** Without it, `tools/gates/check-ui-strings.sh`
 //! walks this file as ordinary source and reports every assertion message as a
 //! user-visible string that should live in `ui_text` — exclusion 2b in that
@@ -51,7 +51,7 @@ fn token_for(app: &PdfcerApp, id: &str) -> egui_shell::commands::HandlerToken {
         .handler
 }
 
-/// ★ **The hand tool and the armed region zoom report a pressed state.**
+/// **The hand tool and the armed region zoom report a pressed state.**
 ///
 /// The two controls that had none. Both halves are asserted: unarmed must
 /// be *unset*, armed must be set. Asserting only the armed half would pass
@@ -109,7 +109,7 @@ fn opened_with_a_form() -> PdfcerApp {
     let mut app = PdfcerApp::new();
     app.open_path(engine_fixture("forms-xobject/page-sized-form.pdf"));
     assert!(matches!(app.status, Status::Open(_)), "the fixture opens");
-    // ★★★ EDIT, and the mode is stated here rather than in each caller — every
+    // EDIT, and the mode is stated here rather than in each caller — every
     // test built on this fixture drives a CONTENT-EDITING verb
     // (`format.select_form`, `format.unshare_form`, `format.delete`).
     //
@@ -135,7 +135,7 @@ fn select_leaf(app: &mut PdfcerApp, index: u64) {
     );
 }
 
-/// ★★ `selection.in_form` is set for a form-interior selection and for
+/// `selection.in_form` is set for a form-interior selection and for
 /// nothing else — which is what greys `format.select_form` correctly.
 ///
 /// The two negatives are the load-bearing half. A condition that were
@@ -164,7 +164,7 @@ fn the_in_form_condition_is_set_only_for_a_form_interior_selection() {
     assert!(app.conditions(&ctx).is_set("selection.in_form"));
 }
 
-/// ★★★ **`format.select_form` selects the container**, and what it lands on
+/// **`format.select_form` selects the container**, and what it lands on
 /// is an edit operand — which is the whole point of offering it.
 ///
 /// Before this command the operator could reach an object inside a form and
@@ -212,11 +212,11 @@ fn select_the_form_lands_on_the_container_and_it_is_deletable() {
 
 /// Pressing it with nothing selected says so rather than doing nothing.
 ///
-/// ★ `enabled_when` greys the ribbon item and enforces nothing — every
+/// `enabled_when` greys the ribbon item and enforces nothing — every
 /// other route reaches the dispatcher unchecked — so the arm asks again,
 /// and the arm's answer is a sentence rather than silence.
 ///
-/// # ★★★ This test passed for the whole time the sentence was invisible
+/// # This test passed for the whole time the sentence was invisible
 ///
 /// It asserted `recorded_for_test()` and stopped. That reads the store the
 /// dispatcher writes to, which is one link of a two-link chain — the bar
@@ -245,7 +245,7 @@ fn select_the_form_with_no_form_selected_says_why() {
         "the operator pressed something that did nothing; it owes them a reason"
     );
 
-    // ★ The link the old assertion could not see. `live` is what the bar
+    // The link the old assertion could not see. `live` is what the bar
     // calls; a sentence that does not survive it is a sentence nobody reads.
     let crate::app::state::Status::Open(doc) = &app.status else {
         panic!("the fixture opened a document");
@@ -257,7 +257,7 @@ fn select_the_form_with_no_form_selected_says_why() {
     );
 }
 
-/// ★★★ **The ribbon's Delete removes a form-interior object, exactly as the
+/// **The ribbon's Delete removes a form-interior object, exactly as the
 /// key does** — and until 2026-09-05 it did not.
 ///
 ///
@@ -267,7 +267,7 @@ fn select_the_form_with_no_form_selected_says_why() {
 /// [`crate::canvas::deleting::subject`], so they cannot differ; what is asserted
 /// here is that they do not.
 ///
-/// # ★ The sentence did not disappear — the state it described did
+/// # The sentence did not disappear — the state it described did
 ///
 /// `Declined::InsideForm` is still recorded, by `format.select_form` with
 /// nothing selected (asserted one test up) and by `canvas::moving` on a drag it
@@ -315,7 +315,7 @@ fn delete_on_a_form_interior_selection_removes_it_exactly_as_the_key_does() {
     ));
 }
 
-/// ★ **`selection.any` is published, and only when something is
+/// **`selection.any` is published, and only when something is
 /// selected.**
 ///
 /// The condition powers two surfaces the manifest has been carrying
@@ -369,7 +369,7 @@ fn the_selection_condition_follows_the_selection() {
     );
 }
 
-/// ★ **The ribbon's Delete raises the same action the Delete key does.**
+/// **The ribbon's Delete raises the same action the Delete key does.**
 ///
 /// `format.delete` was drawn and enabled from the moment the Format tab
 /// landed, and did nothing — the live instance of D1's shape that this
@@ -468,7 +468,7 @@ fn the_ribbon_delete_raises_the_delete_action() {
     );
 }
 
-/// ★ **The ribbon's Delete obeys the same rung rule as the key.**
+/// **The ribbon's Delete obeys the same rung rule as the key.**
 ///
 /// Inside an object the selection names a subpath, and the only wired verb
 /// removes whole objects — one measured CAD export holds an entire drawing
@@ -521,7 +521,7 @@ fn the_ribbon_delete_declines_inside_an_object_just_as_the_key_does() {
     );
 }
 
-/// ★ **`file.properties` puts the Properties panel on screen, from any
+/// **`file.properties` puts the Properties panel on screen, from any
 /// mode.**
 ///
 /// The command was named by File ▸ Document, named by the `objects.row`
@@ -574,7 +574,7 @@ fn the_properties_command_puts_the_panel_on_screen_in_every_mode() {
     }
 }
 
-/// ★ **`view.reset_layout` restores the active mode's default
+/// **`view.reset_layout` restores the active mode's default
 /// arrangement.**
 ///
 /// The other command with no arm. `Modes::reset` existed and was tested;
@@ -628,7 +628,7 @@ fn the_reset_layout_command_restores_the_modes_default_arrangement() {
     assert_eq!(app.dock.layout(), &default);
 }
 
-/// ★ **A keyboard chord and the control that shares its command do the
+/// **A keyboard chord and the control that shares its command do the
 /// same thing.**
 ///
 /// The structural half of the two-owner fix. `crate::app::keyboard` no

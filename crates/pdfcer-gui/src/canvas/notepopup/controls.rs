@@ -2,7 +2,7 @@
 //! # something
 //!
 //!
-//! ## ★★ Why this is the seam
+//! ## Why this is the seam
 //!
 //! It is the same one `crate::panels::comments::editor` took the same day, and
 //! for the same reason: the rest of the pop-up **reads** — a heading, a byline,
@@ -21,7 +21,7 @@ use crate::panels::comments::note::NoteDraft;
 /// The controls under the note: edit, save, remove, delete — or the sentence
 /// that says why there are none.
 ///
-/// # ★★★ Four states, and each is a fact about the document or the mode rather
+/// # Four states, and each is a fact about the document or the mode rather
 /// than about what this build can do
 ///
 /// | state | what is drawn |
@@ -105,7 +105,7 @@ pub(super) fn controls(
 
 /// **Write the open draft to the note and close the editor.**
 ///
-/// # ★★★ Escape saves here, and the labelled buttons still mean what they say
+/// # Escape saves here, and the labelled buttons still mean what they say
 ///
 /// The operator's rule: *"for adding and editing text when using any tool that
 /// has text escape should also save changes to the text. The user can always
@@ -129,7 +129,7 @@ pub(super) fn controls(
 /// on an editor you opened and did not type in — so the guard is here rather
 /// than at either caller.
 ///
-/// # ★★ Why the authority test is repeated rather than inherited
+/// # Why the authority test is repeated rather than inherited
 ///
 /// The three early returns in [`controls`] are a **disclosure** ladder: each
 /// names a different reason and draws a different sentence. This is the
@@ -165,10 +165,10 @@ pub(super) fn save_draft(
     draft.close();
 }
 
-/// ★★★ **Record this comment's window state in the FILE** —
+/// **Record this comment's window state in the FILE** —
 /// `EditSession::set_annotation_open`, `pdfcer-core` `Pass 253.3`.
 ///
-/// # ★★★ THE UNDO DECISION, and it is the whole reason this is a separate
+/// # THE UNDO DECISION, and it is the whole reason this is a separate
 /// control
 ///
 /// `/Open` is a key in the document, so writing it is a document change and
@@ -217,7 +217,7 @@ pub(super) fn save_draft(
 /// document, and only the ones the operator meant as changes.** A pen colour
 /// fails the first test; opening a bubble to read it fails the second.
 ///
-/// # ★★ Why the on-screen state is pinned when the document's is written
+/// # Why the on-screen state is pinned when the document's is written
 ///
 /// The override is set to the window's **current** state — open, because this
 /// control is only drawn inside an open window — at the same moment the
@@ -252,7 +252,7 @@ fn open_default(ui: &mut egui::Ui, f: &Ctx<'_>, note: &NoteView, actions: &mut V
         .on_hover_text(t::popup_open_default_tooltip());
     crate::diag::ui_rect_visible(REGION_OPEN_DEFAULT, response.rect, f.clip);
     if response.changed() {
-        // ★ Pin the window open FIRST, before the action is queued. The action
+        // Pin the window open FIRST, before the action is queued. The action
         // drains after the frame and bumps the edit epoch; the override is
         // read on the very next frame's draw. Setting it here means there is
         // no frame in between on which `authored_open` has changed and nothing
@@ -267,7 +267,7 @@ fn open_default(ui: &mut egui::Ui, f: &Ctx<'_>, note: &NoteView, actions: &mut V
 
 /// *Delete comment*, and the guard that decides whether it is drawn at all.
 ///
-/// # ★★★ The Comments panel's *"this build has no Delete"* was true and is not
+/// # The Comments panel's *"this build has no Delete"* was true and is not
 ///
 /// That paragraph was written on 2026-08-14 and its stated reason —
 /// *"`crate::app::actions::Action` has no variant that could carry the

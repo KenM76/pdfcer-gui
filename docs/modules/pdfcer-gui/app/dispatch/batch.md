@@ -6,7 +6,7 @@ ceiling and this codebase's comment density means an inline arm carrying its
 own argument would consume most of the remaining headroom. It is the seventh
 such split and the reasoning is the one the six before it recorded.
 
-## ★★★ What this closes, and what it says about the check that missed it
+## What this closes, and what it says about the check that missed it
 
 `OPERATOR_REQUESTS.md` row **O68**: *"the Merge files and Split files
 buttons don't do anything."*

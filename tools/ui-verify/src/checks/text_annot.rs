@@ -199,7 +199,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 .to_owned(),
         ));
     }
-    // ★★ THE ASSERTION THIS CHECK EXISTS FOR.
+    // THE ASSERTION THIS CHECK EXISTS FOR.
     let after_drag = annot_count(&session);
     if after_drag > before {
         return Ok(Some(format!(
@@ -292,7 +292,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 /// annotation has not been saved and only the session knows about it. That is
 /// the same reason `panels::redact`'s census reads the session graph.
 ///
-/// ★ It counts COMMITS, which is exactly the question this check asks: "did
+/// It counts COMMITS, which is exactly the question this check asks: "did
 /// the release author?" and "did Accept author?" are both about whether the
 /// funnel ran, not about what the page contains. A page census would also
 /// answer, and would additionally move if some unrelated arm authored

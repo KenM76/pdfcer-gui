@@ -3,7 +3,7 @@
 `an_encrypted_document_can_be_opened_with_its_password` — the capability the
 audit found missing, driven end to end.
 
-# ★★★ The defect
+# The defect
 
 `OPERATOR_REQUESTS.md` O108. Found 2026-09-03 by
 `tools/security-coverage.py` — an instrument keyed on `pdfcer-core`'s own API
@@ -17,13 +17,13 @@ perfectly and had nowhere to type a password:
 exactly one place in the crate — a doc comment listing the loading entry
 points — and nothing called either.
 
-★★ That doc comment is why the coverage tool strips comment-only lines
+That doc comment is why the coverage tool strips comment-only lines
 before it searches. Its first run reported `load_with_password` as
 **reached**, on the strength of that one sentence, which would have recorded
 the single most important missing capability in the area as already built —
 in the instrument written to find exactly this.
 
-# ★★★ Why a driven check and not the four unit tests
+# Why a driven check and not the four unit tests
 
 Because every link in this chain is a **call site**, and this project was
 founded on the observation that a call site's effect is observable only in a
@@ -44,7 +44,7 @@ That link is the one that did not exist for as long as the detection did.
 | C | type the right one | `password-accepted`, the prompt retires, and the canvas reports a page |
 | D | read back the whole trace | **the password appears nowhere in it** |
 
-★★★ **D is not decoration and it is the phase most worth having.** The
+**D is not decoration and it is the phase most worth having.** The
 password travels through an `Action` in a queue, this crate traces liberally
 to stderr under `PDFCER_DIAG`, and *this harness captures that stderr to a
 file it keeps as evidence*. One `format!("{action:?}")` anywhere on the path

@@ -1,7 +1,7 @@
 //! # `panels::comments::editor` — everything on a row that WRITES
 //!
 //!
-//! ## ★★ Why this is the seam, and not "split the rows from the strip"
+//! ## Why this is the seam, and not "split the rows from the strip"
 //!
 //! R2's rule is *find the seam*, and the file genuinely comes apart here.
 //! [`super::body`], [`super::row`], [`super::delete_control`] and
@@ -34,7 +34,7 @@ use crate::text::panels::comments as t;
 /// | an annotation with **no object id** | a caption saying why pdfcer cannot address it |
 /// | anything else | *Add note* / *Edit note*, and the editor when it is open |
 ///
-/// # ★★★ R9: neither caption is a greyed button
+/// # R9: neither caption is a greyed button
 ///
 /// *"An unavailable capability renders nothing, not a disabled stub. Greying is
 /// reserved for temporarily unavailable."* Neither of these is temporary: a ce
@@ -45,7 +45,7 @@ use crate::text::panels::comments as t;
 /// greyed *Edit note* would promise that some state of the program would let
 /// the operator press it, and none would.
 ///
-/// # ★★ Why a `/Link` is offered the editor
+/// # Why a `/Link` is offered the editor
 ///
 /// `/Contents` is dual-purpose (§12.5.2): note text on a subtype that displays
 /// text, an accessibility description on one that does not — and
@@ -54,7 +54,7 @@ use crate::text::panels::comments as t;
 /// withholding a capability the engine has, on a guess about the operator's
 /// intent. The caption is the honest half; the button is the useful half.
 ///
-/// ★ It is worth knowing what this costs: on a `/Link` with no `/Contents` at
+/// It is worth knowing what this costs: on a `/Link` with no `/Contents` at
 /// all the control still says *Add note*, because `Note::Absent` carries no
 /// subtype interpretation to distinguish "nobody wrote a comment" from "nobody
 /// wrote a description". Named here rather than left to be found.
@@ -65,7 +65,7 @@ pub(super) fn note_controls(
     epoch: u64,
     sink: &mut RowSink<'_>,
 ) {
-    // ★★★ **Nothing to type into in a reading stance.** Same finding, same
+    // **Nothing to type into in a reading stance.** Same finding, same
     // frame and same argument as the Delete control — see `RowSink::deletable`
     // at its assignment. `Add note` and `Edit note` both **write** to the
     // document, so a mode that does not author markup is offered neither.
@@ -125,7 +125,7 @@ pub(super) fn note_controls(
     });
 }
 
-/// ★★★ **Answer this comment** — `EditSession::add_reply`, `Pass 253.0`.
+/// **Answer this comment** — `EditSession::add_reply`, `Pass 253.0`.
 ///
 /// # The gap this closes, in this shell's own words
 ///
@@ -135,7 +135,7 @@ pub(super) fn note_controls(
 /// `crate::canvas::notepopup::thread` draws the conversation inside a comment's
 /// window. What was missing was a destination, and this is it.
 ///
-/// # ★★ Beside *Add note*, not under it, and the pairing is the explanation
+/// # Beside *Add note*, not under it, and the pairing is the explanation
 ///
 /// The two controls do the two things a reviewer does to a comment: **change
 /// what it says** and **say something back**. Putting them on one row makes the
@@ -155,7 +155,7 @@ pub(super) fn note_controls(
 /// has already returned for a ce dimension and for a row with no object id, so
 /// this is only ever reached for an annotation the engine can name.
 ///
-/// ★ **The parent is the ROW's own annotation**, never the thread root. The
+/// **The parent is the ROW's own annotation**, never the thread root. The
 /// file therefore records the real depth of the conversation even though both
 /// of this shell's surfaces draw it flat — see [`body`]'s threading paragraph.
 /// A shell that rewrote the parent to the root on the way in would be
@@ -181,7 +181,7 @@ fn reply_control(
     }
 }
 
-/// ★★★ **Whether there is anything to post** — the shell's own R83 guard, and
+/// **Whether there is anything to post** — the shell's own R83 guard, and
 /// the reason it cannot be delegated.
 ///
 ///
@@ -193,7 +193,7 @@ fn reply_control(
 /// offers no later way to give words to, and that reads to the next reviewer
 /// as a defect rather than as a remark.
 ///
-/// ★ **Trimmed**, for [`keeps_author_name`]'s reason one screen down: a reply
+/// **Trimmed**, for [`keeps_author_name`]'s reason one screen down: a reply
 /// of `"   "` renders in every surface exactly as an empty one does, and a
 /// guard that let it through would be a guard that only stopped the operator
 /// who pressed Post with the cursor at position zero.
@@ -202,7 +202,7 @@ pub(crate) fn reply_is_postable(text: &str) -> bool {
     !text.trim().is_empty()
 }
 
-/// ★★★ **Whether this annotation already carries a byline that is not ours to
+/// **Whether this annotation already carries a byline that is not ours to
 /// move** — the one decision in this panel with a consequence in the file.
 ///
 /// `true` means the `SetNote` action sends **no `/T` at all**, and
@@ -226,7 +226,7 @@ pub(crate) fn reply_is_postable(text: &str) -> bool {
 /// can assert that a `/T` was **not**. Pulled out, the rule has a name, a
 /// suite, and one caller that also feeds the sentence the operator reads.
 ///
-/// # ★ Whitespace counts as absent
+/// # Whitespace counts as absent
 ///
 /// A `/T` of `"  "` is a byline nobody wrote — the commonest way for one to
 /// exist is a producer writing an empty string — and preserving it would leave
@@ -281,7 +281,7 @@ fn note_text(note: &Note) -> &str {
     }
 }
 
-/// ★★★ **What Escape writes** — the draft, not nothing.
+/// **What Escape writes** — the draft, not nothing.
 ///
 /// # The ruling, and it is about asymmetric cost rather than about convention
 ///
@@ -335,7 +335,7 @@ pub(super) fn escape_commits(
 /// The open editor: the box, the hint, the signature disclosure and the three
 /// controls.
 ///
-/// # ★★ The signature line is a rule-4 disclosure, not a caption
+/// # The signature line is a rule-4 disclosure, not a caption
 ///
 /// What `/T` will say is **invisible on the page** — a sticky's byline lives in
 /// a pop-up window this shell does not draw, and a shape's lives nowhere at all
@@ -344,7 +344,7 @@ pub(super) fn escape_commits(
 /// their name on it. Two sentences, one per case, and the case is decided by
 /// the row rather than by a preference this panel cannot see.
 ///
-/// # ★★★ Escape writes what was typed and then closes — see [`escape_commits`]
+/// # Escape writes what was typed and then closes — see [`escape_commits`]
 ///
 /// It is detected through egui rather than by reading the keyboard: `TextEdit`
 /// surrenders focus on Escape, so `lost_focus()` plus the key is the idiomatic
@@ -397,7 +397,7 @@ fn editor(
     // entry — so the sentence became false while still reading as caution,
     // which is the kind of lie nobody notices. Deleted rather than reworded.
     //
-    // ★★ And it could not be reworded to cover what survives. The one case
+    // And it could not be reworded to cover what survives. The one case
     // still owed a sentence is a text box whose appearance **another program**
     // drew, which pdfcer preserves rather than replaces — and that is decided
     // by baking the words and comparing bytes, *inside* `set_markup_note`.
@@ -410,7 +410,7 @@ fn editor(
     // R8b is unchanged and still met: the report is off-canvas, and the box
     // renders exactly as it will save.
 
-    // ★★★ **The destination decides everything below this line**, and it is
+    // **The destination decides everything below this line**, and it is
     // asked once. `NoteDraft::target` is `None` only when nothing is open,
     // which cannot be the case here — the caller reached this function through
     // `draft.editing(id, epoch)` — so the fallback is the note case rather
@@ -468,7 +468,7 @@ fn editor(
     });
 }
 
-/// ★★★ **The reply editor** — the same box, pointed at `add_reply`.
+/// **The reply editor** — the same box, pointed at `add_reply`.
 ///
 /// Reached from [`editor`] when the draft's destination is
 /// [`DraftTarget::Reply`], *after* that function has already drawn the text
@@ -477,7 +477,7 @@ fn editor(
 /// stale-draft rule are written once and cannot come to differ between
 /// writing a note and answering one.
 ///
-/// # ★★ What differs, and every difference is a fact rather than a style
+/// # What differs, and every difference is a fact rather than a style
 ///
 /// | | note editor | this |
 /// |---|---|---|
@@ -487,7 +487,7 @@ fn editor(
 /// | *Remove note* | offered when there is one | never — there is nothing yet to remove |
 /// | an empty box | permitted; an empty comment is a comment | **refused**, see [`reply_is_postable`] |
 ///
-/// # ★ The threading disclosure, and why it is here rather than in a document
+/// # The threading disclosure, and why it is here rather than in a document
 ///
 /// A row that is itself a reply gets [`t::comment_row_reply_to_a_reply`]. The
 /// `/IRT` this writes is the **row's own** annotation, so the file keeps the

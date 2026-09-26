@@ -16,7 +16,7 @@ fell through to the *content* copy, found an empty content selection, and
 refused with *"nothing is selected"* over an object with visible grips
 around it.
 
-# ★★★ Why a unit test cannot discharge this, and it is R1's argument again
+# Why a unit test cannot discharge this, and it is R1's argument again
 
 `canvas::fieldclip::tests` proves the offset rule and the loss list, and
 `text::fieldclip::tests` proves the sentences. Neither can see the six
@@ -24,7 +24,7 @@ things standing between those functions and the operator's keyboard, and
 **every one of them has been a real defect on this project**:
 
 
-★ The last row is the one that matters most. This shell **asserts to the
+The last row is the one that matters most. This shell **asserts to the
 operator** that a duplicate paste keeps the original's font, colour and
 calculation script, and the whole basis of that claim is one branch inside
 `pdfcer-core`. A green unit suite would restate the claim; only a driven run
@@ -41,7 +41,7 @@ question the others cannot:
 | `fieldclip-paste` | was a paste raised, and in which of the two senses? |
 | `form-target` | did a **second box** actually appear on the page? |
 
-★★ The third is the one that makes this check worth running. `fieldclip-paste`
+The third is the one that makes this check worth running. `fieldclip-paste`
 proves an *intent* was raised; it does not prove the engine accepted it. A
 build whose `FieldAction::Paste` arm was never written would emit the paste
 line and add no field, and a check reading only the first two would pass
@@ -59,7 +59,7 @@ difference between "the shell asked" and "the document changed".
 5. `Ctrl+Shift+V` — assert `fieldclip-paste mode=Duplicate` **and one more
    box again**.
 
-★ Step 5 runs against the clipboard written in step 3, not against anything
+Step 5 runs against the clipboard written in step 3, not against anything
 step 4 left behind, which is the property that makes the two chords
 independent: an operator copies once and pastes several times.
 

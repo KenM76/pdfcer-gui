@@ -42,7 +42,7 @@ const CHANGED_KEY: &str = "pdfcer-canvas-press-changed"; // ui-text-exempt: inte
 
 /// Did the press that began the gesture in flight change the selection?
 ///
-/// ★★★ **The one fact that tells a first click from a second.** A click is a
+/// **The one fact that tells a first click from a second.** A click is a
 /// press and a release, and [`at_press`] runs on the press while
 /// [`crate::canvas::clicking`] runs on the release — by which time the state
 /// they would both read is identical: one object selected, at the Object rung.
@@ -86,7 +86,7 @@ pub(super) fn at_press(
     pick: PickFilter,
     shift: bool,
 ) {
-    // ★★★ **1b. A press on an unselected object selects it — before the
+    // **1b. A press on an unselected object selects it — before the
     // gesture machine is asked what the press means.**
     //
     // The operator: *"if I add an image I Expect to click on it to resize but
@@ -123,7 +123,7 @@ pub(super) fn at_press(
     //    row makes: it is a one-shot the operator armed deliberately from the
     //    ribbon, and it is spent on the next press.
     //
-    // ★ And `Shift` declines, because a Shift-press is the *extend* gesture and
+    // And `Shift` declines, because a Shift-press is the *extend* gesture and
     // the click path owns it. Selecting on press would replace the selection the
     // operator was adding to — the same mid-gesture loss as case 2, arrived at
     // from the other direction.
@@ -162,7 +162,7 @@ pub(super) fn at_press(
 /// Three outcomes, in precedence order, and the first two are what O215 ask 1
 /// is about.
 ///
-/// # ★★★ 1. A press that is already inside this object stays inside it
+/// # 1. A press that is already inside this object stays inside it
 ///
 /// The operator: *"sometimes it moves the chunk and sometimes it takes the
 /// whole block."* [`covers`] declined a moment ago, which at the Part rung
@@ -209,7 +209,7 @@ fn take(
         // conservative answer and it is the one that keeps a drag begun just
         // outside a glyph on the chunk it was aimed at.
         //
-        // ★ The test is *membership of the whole set*, never
+        // The test is *membership of the whole set*, never
         // `entered.subpath`: [`SelectionState::entered_object`] answers with the
         // FIRST entry and [`SelectionState::select_part`] replaces the entry
         // list outright, so a Shift-built set of four chunks would re-pick — and
@@ -263,7 +263,7 @@ fn holds_part(
 /// predicate reads in one place — a reader asking *"when does a press select?"*
 /// gets one answer rather than a function plus a condition beside it.
 ///
-/// # ★★★ The first condition: the press must have landed on this canvas
+/// # The first condition: the press must have landed on this canvas
 ///
 /// `OPERATOR_REQUESTS.md` row **O75**:
 ///
@@ -283,7 +283,7 @@ fn holds_part(
 /// test misses. Zoom past fit on a CAD sheet — which is every working session
 /// on an A1 drawing — and the whole window maps inside the page.
 ///
-/// ★★ **This is `DEFECTS.md` D1's class, arrived at through the pointer
+/// **This is `DEFECTS.md` D1's class, arrived at through the pointer
 /// instead of the keyboard**: a guard asking exactly the right question of
 /// exactly the wrong object. Every signal in [`interact`]'s `PointerFrame` must
 /// come from the page's own [`egui::Response`], never from the `Context`.
@@ -304,7 +304,7 @@ fn holds_part(
 /// dragged off the page and out over a dock — which [`interact`]'s step 1
 /// explicitly protects — is unaffected.
 ///
-/// ★ **Do not substitute [`egui::Context::egui_wants_pointer_input`].** It is
+/// **Do not substitute [`egui::Context::egui_wants_pointer_input`].** It is
 /// true whenever *any* egui widget wants the pointer, and this canvas's page
 /// **is** an egui widget, so it would be true during a legitimate canvas press
 /// and would suppress selection entirely. It is the pointer twin of the D1
@@ -345,7 +345,7 @@ fn press_selects(
         && ctx.input(|i| i.pointer.button_pressed(egui::PointerButton::Primary))
 }
 
-/// ★★★ **Whether the current selection already claims this point** — its body,
+/// **Whether the current selection already claims this point** — its body,
 /// its eight resize grips, or its rotate handle.
 ///
 /// # The guard that keeps a press on an existing selection from re-selecting
@@ -357,7 +357,7 @@ fn press_selects(
 /// here would disagree with the gesture machine at the margins, and every
 /// disagreement is a press that selects when it should have transformed.
 ///
-/// # ★★ Why the grips, and not just the box
+/// # Why the grips, and not just the box
 ///
 /// **The rotate handle sits OUTSIDE the box** — `handles::rotate_rect` puts it
 /// above the top edge — so a press on it is not "covered" by the body. Testing
@@ -372,7 +372,7 @@ fn press_selects(
 /// mode, and it is worth naming because it never *looks* broken from a chair —
 /// something moves.
 ///
-/// # ★★★ The box must come from `pressing::grabbable`, not `overlay::grip_box`
+/// # The box must come from `pressing::grabbable`, not `overlay::grip_box`
 ///
 /// `overlay::grip_box` derives its answer from the selection's cached
 /// **content** outlines, which `select_annot` clears — an annotation is not
@@ -389,12 +389,12 @@ fn press_selects(
 /// grabbable box — page content, a markup, a ce dimension and a form field's
 /// widget — which is why it is the one called here.
 ///
-/// ★ **The rule is about phrasing, not about this call.** "The same two
+/// **The rule is about phrasing, not about this call.** "The same two
 /// functions `pressing::look` asks" is a claim about a call site somewhere
 /// else, held together by nothing. A guard that must agree with another module
 /// has to **call that module**, not resemble it.
 ///
-/// # ★★★ The companion rule: order against the fork
+/// # The companion rule: order against the fork
 ///
 /// **A guard written in one destination's vocabulary must stand AFTER the
 /// branch that picks the destination, never before it.** Three destinations
@@ -404,7 +404,7 @@ fn press_selects(
 /// and returns before the routing decision is reached at all.
 /// `canvas::rotating`'s header carries the same rule for its own fork.
 ///
-/// # ★ `GripSet::all()` here, where `pressing::look` narrows it
+/// # `GripSet::all()` here, where `pressing::look` narrows it
 ///
 /// `look` passes `grabbable`'s own `offer`, which is narrower for three of the
 /// four kinds. This passes `all()` unconditionally, and the difference errs
@@ -413,7 +413,7 @@ fn press_selects(
 /// of re-selecting under a node the operator is in the middle of editing.
 /// Erring the other way would be a press that silently leaves node editing.
 ///
-/// ★★ It matters in the new direction too. A selected **ce dimension** is
+/// It matters in the new direction too. A selected **ce dimension** is
 /// offered `GripSet::rotate_only()`, so `look` will not call a corner press a
 /// resize — but `all()` here still claims that corner for the *existing
 /// selection*, which is right: whatever the press turns out to mean, it is
@@ -434,7 +434,7 @@ fn covers(
     let Some(grip) = grip else {
         return false;
     };
-    // ★★★ **ONLY `Grip::Move` is second-guessed.**
+    // **ONLY `Grip::Move` is second-guessed.**
     //
     // The O72 downgrade below asks whether the press really landed on the
     // selected object. A press on a RESIZE GRIP or the ROTATE HANDLE does not:
@@ -449,7 +449,7 @@ fn covers(
     // making this function and `pressing::look` agree on the PREDICATE and not
     // on which grip it applies to.
     //
-    // ★ The eight grips and the handle are DRAWN. The operator can see them,
+    // The eight grips and the handle are DRAWN. The operator can see them,
     // and a press on one is unambiguous. `Grip::Move` is the only member with
     // no visible affordance of its own — it is "anywhere inside" — which is
     // exactly why it is the one that can be claimed by mistake, and the only
@@ -457,7 +457,7 @@ fn covers(
     if !matches!(grip, crate::canvas::handles::Grip::Move) {
         return true;
     }
-    // ★★★ **…and for page CONTENT, inside the box is not the same as on the
+    // **…and for page CONTENT, inside the box is not the same as on the
     // object** — `OPERATOR_REQUESTS.md` O72.
     //
     // For a ce dimension, a markup annotation and a form field the box IS the
@@ -468,7 +468,7 @@ fn covers(
     // makes every subsequent press on the drawing "already covered", so nothing
     // can be selected and no marquee can be started.
     //
-    // ★★ It calls `pressing::body_under` rather than asking its own version.
+    // It calls `pressing::body_under` rather than asking its own version.
     // This function's header is explicit that a second opinion computed
     // differently here would disagree with the gesture machine at the margins,
     // and every disagreement is a press that selects when it should have
@@ -483,7 +483,7 @@ fn covers(
             page_index,
             point,
             crate::canvas::pick::PickFilter::all(),
-            // ★ As in `pressing::look`: the same scope the click resolves in.
+            // As in `pressing::look`: the same scope the click resolves in.
             crate::canvas::smart::scope(ctx, page_index),
         )
 }

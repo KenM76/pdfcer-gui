@@ -16,9 +16,9 @@ use crate::text::export_dxf as t;
 pub const REGION_BODY: &str = "dialog:export-dxf"; // ui-text-exempt: trace region name, never displayed
 /// The region the scale field publishes.
 pub const REGION_SCALE: &str = "export-dxf.scale"; // ui-text-exempt: trace region name, never displayed
-/// ★★ The region ONE units radio publishes.
+/// The region ONE units radio publishes.
 ///
-/// ★ These exist for `OPERATOR_REQUESTS.md` **O196**. Until this window
+/// These exist for `OPERATOR_REQUESTS.md` **O196**. Until this window
 /// remembered anything, a driven check had nothing to assert about a radio
 /// beyond *"it is drawn"*; now the question is which one is **selected on
 /// open**, and that cannot be asked of a group rectangle.
@@ -44,7 +44,7 @@ pub const REGION_TEXT: &str = "export-dxf.text"; // ui-text-exempt: trace region
 /// The region the Export button publishes.
 pub const REGION_EXPORT: &str = "export-dxf.export"; // ui-text-exempt: trace region name, never displayed
 
-/// ★★ Which of the three answers `suggest_scale_for_groups` gave, as a stable
+/// Which of the three answers `suggest_scale_for_groups` gave, as a stable
 /// lowercase token.
 ///
 /// # Why this exists rather than a `{:?}` on the suggestion
@@ -93,7 +93,7 @@ pub struct ExportDxfDialog {
     /// What pdfcer inferred, kept so the disclosure can be redrawn without
     /// re-querying the model every frame.
     ///
-    /// ★ Also kept because it is **evidence**, not a default: the operator may
+    /// Also kept because it is **evidence**, not a default: the operator may
     /// type over the scale, and the sentence naming where the suggestion came
     /// from stays true and stays on screen. A window that forgot its own
     /// inference the moment it was overridden would leave the operator unable
@@ -130,7 +130,7 @@ impl ExportDxfDialog {
     /// omission is the most important sentence in
     /// [`crate::app::prefs::ExportDxfPrefs`]'s module. Read it there.
     ///
-    /// # ★★★ THE ORDERING RULE, and it is the one part of O196 that can be
+    /// # THE ORDERING RULE, and it is the one part of O196 that can be
     /// wrong by 25.4× and silent
     ///
     /// The operator's habit is written **first**; a calibrated ce dimension
@@ -159,7 +159,7 @@ impl ExportDxfDialog {
     pub fn open(doc: &OpenDoc, remembered: &crate::app::prefs::ExportDxfPrefs) -> Self {
         let page_index = doc.view.page_index;
         let model = doc.session.dimension_model();
-        // ★ The page's OWN groups. See the module header for what the
+        // The page's OWN groups. See the module header for what the
         // document-wide query costs here.
         let groups = doc.session.dimension_groups_on_page(page_index);
         let suggestion = suggest_scale_for_groups(&model, &groups);
@@ -179,7 +179,7 @@ impl ExportDxfDialog {
                 "export-dxf-open page={} groups={} suggestion={} scale={} units={} arcs={} text={}",
                 dialog.page_index,
                 groups.len(),
-                // ★ Stable lowercase tokens, never `{:?}` — see
+                // Stable lowercase tokens, never `{:?}` — see
                 // [`suggestion_key`], which states at length why the old
                 // `{suggestion:?}` could not be asserted on.
                 suggestion_key(&dialog.suggestion),
@@ -238,7 +238,7 @@ impl ExportDxfDialog {
         let open = !frame.closed;
 
         if std::mem::take(&mut self.export_requested) {
-            // ★★★ O196, and the POSITION is the decision: the habits are
+            // O196, and the POSITION is the decision: the habits are
             // written when the operator presses Export, never when the window
             // closes. Closing without exporting is how a person says *"not
             // this"*. The argument is in
@@ -304,7 +304,7 @@ impl ExportDxfDialog {
             for option in [DxfUnits::Millimetres, DxfUnits::Inches] {
                 let response =
                     ui.radio_value(&mut self.options.units, option, t::units_name(option));
-                // ★ Each radio's OWN rectangle, for O196 — see
+                // Each radio's OWN rectangle, for O196 — see
                 // [`region_for_units`].
                 crate::diag::ui_rect(region_for_units(option), response.rect);
             }
@@ -318,7 +318,7 @@ impl ExportDxfDialog {
         crate::diag::ui_rect(REGION_ARCS, response.rect);
         ui.weak(t::fit_arcs_hint());
 
-        // ★ `DxfText` is a two-state enum and is presented as a checkbox,
+        // `DxfText` is a two-state enum and is presented as a checkbox,
         // because "write the text or not" is what the operator is deciding and
         // a radio pair would spend two rows saying it. Read and written through
         // the enum rather than mirrored into a local `bool`: a shadow copy is
@@ -374,7 +374,7 @@ impl ExportDxfDialog {
             }
             DxfScaleSuggestion::Conflicting { candidates } => {
                 ui.label(t::scale_conflicting(candidates.len()));
-                // ★ Every candidate offered, none pre-selected. Selecting one
+                // Every candidate offered, none pre-selected. Selecting one
                 // writes BOTH the scale and its units, because a candidate is a
                 // group's whole opinion — a 1:50 metre group and a 1:50 inch
                 // group are different answers wearing the same number.
@@ -407,7 +407,7 @@ impl ExportDxfDialog {
     }
 }
 
-/// ★★★ The two seedings, in the order that matters — **the operator's habit
+/// The two seedings, in the order that matters — **the operator's habit
 /// first, the page's own calibration second**.
 ///
 /// Lifted out of [`ExportDxfDialog::open`] so the ordering rule has something a
@@ -499,7 +499,7 @@ mod tests {
 
     /// Habits that differ from the engine's defaults on **every** field.
     ///
-    /// ★ The anti-vacuity fixture, and it is asserted rather than trusted. A
+    /// The anti-vacuity fixture, and it is asserted rather than trusted. A
     /// `seeded_options` that ignored `remembered` entirely and returned
     /// `DxfOptions::default()` would satisfy every assertion below if the
     /// fixture happened to equal that default. So each field is checked
@@ -550,7 +550,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **A calibrated ce dimension group overrules the remembered units**,
+    /// **A calibrated ce dimension group overrules the remembered units**,
     /// and this is the assertion the rest of O196 is dangerous without.
     ///
     /// The operator habitually exports millimetres. This page was dimensioned
@@ -573,7 +573,7 @@ mod tests {
         else {
             unreachable!("the fixture is calibrated") // ui-text-exempt: test panic, never displayed
         };
-        // ★ The falsification guard. If the habit and the measurement agreed,
+        // The falsification guard. If the habit and the measurement agreed,
         // this test would pass under BOTH orderings and would assert nothing
         // while reading exactly like a test that did.
         assert_ne!(
@@ -591,7 +591,7 @@ mod tests {
             (options.scale - 0.5).abs() < f64::EPSILON,
             "the measured scale must survive the seeding"
         );
-        // ★ The other two habits are untouched by a calibration, which speaks
+        // The other two habits are untouched by a calibration, which speaks
         // only about units and scale. A seeding that reset them would be O196
         // half-undone by its own guard, and every assertion above would still
         // pass.

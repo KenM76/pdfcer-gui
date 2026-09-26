@@ -7,13 +7,13 @@
 the **old** in-repo shell and became false, untouched, when the column's
 referent moved to this build.
 
-★ **Nothing was blocking it.** `EditSession::move_handle` has existed since
+**Nothing was blocking it.** `EditSession::move_handle` has existed since
 Pass 30.1, with a `Handle` enum, a planner, a `v`/`y` re-spelling path and a
 disclosure contract — the whole capability, documented, waiting. What was
 missing was a way to *see* a handle and a way to *grab* one, and both are
 this shell's.
 
-## ★★ Why this is a distinct verb from moving a node
+## Why this is a distinct verb from moving a node
 
 Because the two change different things and the engine says so in the type.
 `move_node` moves a point the curve passes **through**; `move_handle` moves
@@ -22,7 +22,7 @@ A single "move a point" verb would have to infer which the operator meant
 from what they grabbed — exactly the inference `pdfcer_core::vector::Handle`
 exists to remove.
 
-## ★ The gesture priority, and the rule behind it
+## The gesture priority, and the rule behind it
 
 A handle sits **inside** the selection's bounding box, so `handles::grip_at`
 answers `Grip::Move` for every press on one. Left alone, that makes handles
@@ -33,7 +33,7 @@ Both are the same rule: **the most specific thing under the pointer wins**,
 and specificity is depth down the selection ladder. So the press is tested
 against handles first, then anchors, then the box.
 
-## ★★ The disclosure this owes, and it is invisible by construction
+## The disclosure this owes, and it is invisible by construction
 
 `move_handle` returns a list of sentences that is **empty unless a `v`/`y`
 segment had to be re-spelled as `c`**. ISO 32000-1 §8.5.2.1 Table 59 gives a

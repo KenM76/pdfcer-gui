@@ -9,7 +9,7 @@
 
 /// **The page is still being redrawn** — `OPERATOR_REQUESTS.md` O63.
 ///
-/// # ★★★ The two ways this sentence could be wrong, and they are opposite
+/// # The two ways this sentence could be wrong, and they are opposite
 ///
 /// **Too alarming** and it reads as a fault. Nothing is wrong: the edit
 /// happened, the document is correct, and a picture is being made of it. A
@@ -26,7 +26,7 @@
 /// first: **the change is already made**. The redraw is described as something
 /// happening to the *picture*, never to the document.
 ///
-/// # ★★ Why it does not name a duration or show a progress bar
+/// # Why it does not name a duration or show a progress bar
 ///
 /// Because nothing here knows one. A page's render time is a property of its
 /// content — 8.97 ms for a text page against 877 ms for a CAD sheet — and a
@@ -41,7 +41,7 @@ pub const fn page_catching_up() -> &'static str {
 /// **Line weights are off, so this is not what will print** —
 /// `OPERATOR_REQUESTS.md` **O137**.
 ///
-/// # ★★★ Why a reading aid the operator asked for still owes a disclosure
+/// # Why a reading aid the operator asked for still owes a disclosure
 ///
 /// This is not Rule 4's usual case. Rule 4 covers **pdfcer marking its own
 /// uncertainty** — an inference the operator cannot see and did not request.
@@ -58,11 +58,11 @@ pub const fn page_catching_up() -> &'static str {
 /// three sheets deeper. So the canvas's own claim is suspended, and a suspended
 /// claim is stated.
 ///
-/// ★★ It is **off-canvas**, in the status bar, never a badge on the page. A
+/// It is **off-canvas**, in the status bar, never a badge on the page. A
 /// mark on the page would break the same rule it exists to honour, and would
 /// also be the nagging `DEFECTS.md` §5 records.
 ///
-/// # ★★★ Every clause, and what each one is against
+/// # Every clause, and what each one is against
 ///
 /// **"Line weights are off"** names the control, in the label's own words, so
 /// the sentence and the button that caused it are recognisably the same thing.
@@ -80,19 +80,19 @@ pub const fn page_catching_up() -> &'static str {
 /// send him looking for an undo. This is the guarantee the feature was built
 /// around, so it is stated where he is looking.
 ///
-/// ★ It does **not** say how to turn it back off. The button is on the View tab
+/// It does **not** say how to turn it back off. The button is on the View tab
 /// rendered pressed, which is where a toggle's own state belongs; a status line
 /// that carried instructions would be twice as long, and length in this bar is
 /// paid for by the sentences beside it.
 ///
-/// ★ It does not apologise and does not warn. He chose this.
+/// It does not apologise and does not warn. He chose this.
 #[must_use]
 pub const fn line_weights_off() -> &'static str {
     "Line weights are off \u{2014} every line is drawn one pixel wide. Printing and exporting \
      still use the real widths."
 }
 
-/// ★★★ **The line-weights mode is on and it changed NOTHING in view** —
+/// **The line-weights mode is on and it changed NOTHING in view** —
 /// `OPERATOR_REQUESTS.md` **O137**, and the half this shell asked the engine
 /// for by name.
 ///
@@ -110,7 +110,7 @@ pub const fn line_weights_off() -> &'static str {
 /// `Diagnostics::strokes_hairlined` (`Pass 254.1`) is that count, and it counts
 /// strokes **thinned**, not strokes drawn.
 ///
-/// # ★★★ IT SAYS "IN VIEW", AND THAT WORD IS LOAD-BEARING
+/// # IT SAYS "IN VIEW", AND THAT WORD IS LOAD-BEARING
 ///
 /// The count is a property of **the region that was rasterised**, not of the
 /// document or even of the page. Scroll to a corner with no linework and it

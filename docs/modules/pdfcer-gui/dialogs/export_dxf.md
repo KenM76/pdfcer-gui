@@ -3,7 +3,7 @@ defend
 
 ## The gap this closes
 
-`file.export_dxf` was registered, drawn on File ▸ Export, marked `★ P3` in
+`file.export_dxf` was registered, drawn on File ▸ Export, marked `P3` in
 `shell::commands::reach`'s `SCAFFOLDED` list, and its recorded reason was
 **"No recorded reason anywhere. Scaffolded by omission, not by decision."**
 It was the *first* entry in that list and one of only three with no reason
@@ -14,7 +14,7 @@ yesterday: no blocker, only an entry nobody had looked at.
 has the feature (`FEATURES.md`'s `gui` column, which is this project's
 acceptance criteria).
 
-## ★ The sentence the whole window is arranged around
+## The sentence the whole window is arranged around
 
 `DxfOptions::scale`'s own doc:
 
@@ -30,7 +30,7 @@ pdfcer can do better than guess because it already has the operator's own
 calibration — the ce dimensions they drew and the group scale they set — and
 `suggest_scale_for_groups` is the query that turns that into an answer.
 
-## ★ Three answers, and the window says which one it has
+## Three answers, and the window says which one it has
 
 `DxfScaleSuggestion` is deliberately not an `Option<f64>`:
 
@@ -40,7 +40,7 @@ calibration — the ce dimensions they drew and the group scale they set — and
 | `Uncalibrated` | seeds 1.0 and says in words that this is a **choice rather than a measurement**, and how to make it a measurement |
 | `Conflicting` | lists every candidate and makes the operator pick. A sheet with a 1:50 plan and a 1:5 detail is a *correct drawing*; one DXF scale cannot serve both, and only the operator knows which half they are exporting for |
 
-## ★ The PAGE-scoped query, not the document one
+## The PAGE-scoped query, not the document one
 
 `suggest_scale_for_groups` with `dimension_groups_on_page`, never
 `suggest_scale`. The engine spells out what the document-wide one costs a

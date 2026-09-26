@@ -10,7 +10,7 @@ This module is its model: locating a store, reading it, and turning
 `signature::verify_all_with_trust` into something a panel can render without
 ever saying more than the engine said.
 
-## ★★★ THE RULE THAT GOVERNS THIS WHOLE MODULE
+## THE RULE THAT GOVERNS THIS WHOLE MODULE
 
 **This is the one place in the product where a wrong answer is worse than no
 answer.**

@@ -7,7 +7,7 @@ crate**:
 > *called* from exactly one FILE — `redact/mod.rs` — and exactly the number
 > of times that module accounts for by name.
 
-★★★ **The subject is a TABLE, not one identifier.** The engine's removal is
+**The subject is a TABLE, not one identifier.** The engine's removal is
 more than one surface: `apply_redactions` itself, plus
 `apply_redactions_deferred` (stage), `save_applying_redaction` (perform, at
 save) and `cancel_pending_redaction` (disarm).
@@ -17,11 +17,11 @@ module the day the engine splits the verb.** So [`SUBJECTS`] is a table of
 (identifier, expected count) rather than a constant, and the argument for
 each row is in [`super`] §2.4 beside the function that owns it.
 
-★ And each row is an exact **count**, never a ceiling. A route that is
+And each row is an exact **count**, never a ceiling. A route that is
 deleted lowers the number, and an exact count makes that deletion an edit
 somebody has to write down rather than a figure that quietly still fits.
 
-★ `cancel_pending_redaction` is pinned even though it removes nothing. It
+`cancel_pending_redaction` is pinned even though it removes nothing. It
 *disarms* a removal, which is the same surface seen from behind: a second
 caller that un-staged a redaction the operator had confirmed would be the
 quietest possible way to hand him a file he believes is redacted, and it
@@ -46,7 +46,7 @@ at the engine's HEAD and exits `SUCCESS` on a file it never verified. The
 failure has a worked example living in the same repository, written by
 people who knew about the proof.
 
-## ★ Why the syntax tree rather than a grep, and rather than a gate script
+## Why the syntax tree rather than a grep, and rather than a gate script
 
 `crate::shell::commands::reach`'s header makes the general argument at
 length; this is the same one aimed at a narrower question, and the specific

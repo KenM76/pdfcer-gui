@@ -14,7 +14,7 @@ use crate::app::state::OpenDoc;
 
 /// How far the wheel must travel, in logical points, to turn one page.
 ///
-/// # ★★ Why a distance and not an event count
+/// # Why a distance and not an event count
 ///
 /// The two devices that produce a wheel do not agree on what an event is. A
 /// mouse delivers one detent as a single large delta; a trackpad delivers one
@@ -62,7 +62,7 @@ pub(super) fn flips_pages(doc: &OpenDoc) -> bool {
 /// works and feels wrong, which is harder to notice than one that is broken;
 /// [`tests::rolling_the_wheel_up_goes_back_and_down_goes_on`] pins it.
 ///
-/// # ★ Why the accumulator is zeroed rather than decremented
+/// # Why the accumulator is zeroed rather than decremented
 ///
 /// Subtracting the threshold and keeping the remainder would let a long
 /// trackpad swipe page continuously at a rate set by the hand — which sounds
@@ -71,7 +71,7 @@ pub(super) fn flips_pages(doc: &OpenDoc) -> bool {
 /// turn cost a full threshold of fresh travel, which is what "one notch, one
 /// sheet" means.
 ///
-/// ★★ The accumulator is also **reset on a direction change**, so a wheel
+/// The accumulator is also **reset on a direction change**, so a wheel
 /// rolled half a notch forward and then back does not arrive at a page turn by
 /// cancellation. Travel toward a page turn is travel in one direction.
 pub(super) fn flip(ui: &egui::Ui, doc: &mut OpenDoc, hovered: bool, actions: &mut Vec<Action>) {
@@ -118,7 +118,7 @@ mod tests {
         doc
     }
 
-    /// ★★★ The predicate refuses under every condition that makes the choice
+    /// The predicate refuses under every condition that makes the choice
     /// meaningless — and the status bar asks the same one, so the control and
     /// the behaviour cannot disagree about which frames are which.
     #[test]
@@ -157,7 +157,7 @@ mod tests {
     /// Travel below the threshold banks and does not turn a page; travel that
     /// reaches it turns exactly one and spends the whole accumulator.
     ///
-    /// ★ Asserted through the accumulator rather than by driving `egui`,
+    /// Asserted through the accumulator rather than by driving `egui`,
     /// because the arithmetic is the part that can be wrong. The gesture
     /// itself is `zooming`-harness territory.
     #[test]
@@ -188,7 +188,7 @@ mod tests {
         assert!(!back(-POINTS_PER_PAGE), "a negative delta is a next page");
     }
 
-    /// ★ A direction change discards the banked travel, so half a notch
+    /// A direction change discards the banked travel, so half a notch
     /// forward and half a notch back is not a page turn by cancellation.
     #[test]
     fn a_direction_change_discards_the_banked_travel() {

@@ -34,7 +34,7 @@ deliberately absent is a *gesture* that fills more than one entry.
 
 ---
 
-## 2. ★ THE TRAIL IS DERIVED, NEVER STORED — which is what makes its lifetime
+## 2. THE TRAIL IS DERIVED, NEVER STORED — which is what makes its lifetime
 ## impossible to get wrong
 
 A trail is state that outlives a frame, and this codebase has a standing
@@ -57,7 +57,7 @@ exactly while that answer is yes. Every one of the four endings is covered by
 the same line, because all four make `active()` answer `None` — there is no
 restore step to miss, and a dropped frame costs nothing.
 
-### ★ It is asked BEFORE the machine advances, and that is not a detail
+### It is asked BEFORE the machine advances, and that is not a detail
 
 `GestureState::update` clears its own drag on the frame it reports
 `Phase::Complete`. An `active()` read *after* it therefore answers `None` on
@@ -83,7 +83,7 @@ no trail, which is every frame nobody is drawing on.
 
 ---
 
-## 3. ★ SIMPLIFICATION — what was measured, and the rule the tolerance comes
+## 3. SIMPLIFICATION — what was measured, and the rule the tolerance comes
 ## from
 
 A raw pointer trail is hundreds of points. Every one of them is written into
@@ -115,7 +115,7 @@ about a lossy simplification.
 At the shipped [`super::PEN_WIDTH_PTS`] of 2 pt that is
 [`SIMPLIFY_TOLERANCE_PTS`] = **0.5 pt**, which is what §3.3 measures.
 
-#### ★ The tolerance FOLLOWS the pen, and a `const` cannot follow anything
+#### The tolerance FOLLOWS the pen, and a `const` cannot follow anything
 
 The pen width is an operator control from 0.25 to 12 pt, so the derivation
 has to be read per stroke: [`drag`] calls
@@ -168,7 +168,7 @@ and **the measured deviation never exceeds the tolerance** — which is RDP's
 guarantee, checked rather than assumed, and which is what licenses deriving the
 tolerance from the pen at all.
 
-★ **The first version of that fixture was wrong and its numbers were too
+**The first version of that fixture was wrong and its numbers were too
 good**, which is worth recording because it is how a measured claim goes bad.
 It offset both disturbances along `(sin, -cos)` — the arc's **tangent** — so
 they only re-spaced the samples along a path whose shape they never changed,

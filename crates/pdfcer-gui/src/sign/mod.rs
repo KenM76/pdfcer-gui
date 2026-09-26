@@ -69,7 +69,7 @@ pub struct Standing {
     /// [`Self`]'s stated reason — a list re-read per frame could change under
     /// the choice seeded from it.
     ///
-    /// ★ Empty in the ordinary case, and that is the point of listing rather
+    /// Empty in the ordinary case, and that is the point of listing rather
     /// than assuming: most documents carry none, and offering *"sign into an
     /// existing box"* on one of them would be an option whose only outcome is a
     /// question.
@@ -115,7 +115,7 @@ pub struct SigField {
     /// `/Action` name — `All`, `Include`, `Exclude` — so the sentence beside the
     /// field can say *which* freeze it is.
     ///
-    /// ★★★ Disclosed **before** the press, not in the summary afterwards. The
+    /// Disclosed **before** the press, not in the summary afterwards. The
     /// engine reports it on `SignReport::field_lock` and this shell shows that
     /// too, but a consequence an operator learns about after the file is written
     /// is a consequence he did not consent to.
@@ -169,7 +169,7 @@ impl SigField {
 /// signature field, which is a different refusal
 /// (`SignApplyError::FieldNotSignature`) and equally not worth offering.
 ///
-/// # ★★ Two of the five values are read from the raw dictionary, and that is
+/// # Two of the five values are read from the raw dictionary, and that is
 /// not a shortcut
 ///
 /// `pdfcer_core::forms::Field` models `/FT`, `/T`, `/V`, `/Kids` and the
@@ -179,7 +179,7 @@ impl SigField {
 /// projected. So there is no projection to read them from, and this function
 /// asks the object graph the same question the engine asks.
 ///
-/// ★ It asks only whether they are **present**, never what they say. Parsing
+/// It asks only whether they are **present**, never what they say. Parsing
 /// `/SV`'s seven `/Ff` bits here would be a second implementation of a rule the
 /// engine enforces in full — see [`SigField::constrained`].
 ///
@@ -220,7 +220,7 @@ pub fn read_empty_signature_fields(session: &EditSession, pages: &[Page]) -> Vec
                         )
                 });
             let constrained = dict.is_some_and(|d| d.contains_key(b"SV"));
-            // ★ `merged` is the projection's own answer to the same question
+            // `merged` is the projection's own answer to the same question
             // `/Kids` asks, and it is the one the engine's refusal keys on.
             let unusable = (!f.merged).then_some(FieldBar::HasKids);
             let widget = f.widgets.first();
@@ -274,7 +274,7 @@ impl Standing {
     /// window opens, so the option is absent with a sentence rather than offered
     /// and then refused.
     ///
-    /// ★ The order is the engine's own guard order — `AlreadyCertified` is
+    /// The order is the engine's own guard order — `AlreadyCertified` is
     /// checked before `CertificationNotFirst` — so a document that is both
     /// gets the same sentence here that it would get from the engine. Two
     /// surfaces disagreeing about which of two true things to say is how an
@@ -402,7 +402,7 @@ impl Identity {
     /// and a `Vec<u8>` of them passed around the dialog is a copy nobody is
     /// tracking.
     ///
-    /// ★ A read failure and a parse failure are **different** answers, because
+    /// A read failure and a parse failure are **different** answers, because
     /// they send the operator to different places — one to the file picker, one
     /// to the passphrase field. Flattening them into "could not open the
     /// certificate" is the shape of an afternoon spent retyping a correct
@@ -418,7 +418,7 @@ impl Identity {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             //
-            // ★★★ WHAT IS ABSENT HERE IS THE DESIGN. No passphrase, no length
+            // WHAT IS ABSENT HERE IS THE DESIGN. No passphrase, no length
             // of one, no path, no serial, no key bytes. §5 of this module's
             // header argues the length; the PATH is left out because a trace
             // file is kept as evidence and a durable pointer at where somebody
@@ -476,7 +476,7 @@ pub enum IdentityFailure {
 
 /// **Whether the signature is drawn on a page, and where.**
 ///
-/// ★★★ THE DEFAULT IS INVISIBLE, AND IT IS A DECISION RATHER THAN A COPY OF
+/// THE DEFAULT IS INVISIBLE, AND IT IS A DECISION RATHER THAN A COPY OF
 /// THE ENGINE'S.
 ///
 /// `SignRequest::visible`'s own documentation says invisible *"is the default
@@ -487,7 +487,7 @@ pub enum IdentityFailure {
 /// nothing, the box is offered, and the copy on the control says what will be
 /// inside it before it is chosen.
 ///
-/// ★★ **What is inside it changed under this shell on 2026-09-06.** At the old
+/// **What is inside it changed under this shell on 2026-09-06.** At the old
 /// pin the appearance was *"a thin frame only — no text"*, and this type's
 /// documentation and [`crate::text::sign::placement_note`] both said so. Engine
 /// `Pass 10.14` (`187fa09`, in the pin since `d6b998f`) **composes** the signer
@@ -502,7 +502,7 @@ pub enum IdentityFailure {
 /// operator did not draw."* An operator who wants the box now gets a box with
 /// his name in it.
 ///
-/// ★★★ **The third arm is not a placement at all, and that is the point.**
+/// **The third arm is not a placement at all, and that is the point.**
 /// [`Self::ExistingField`] names a box **somebody else already placed**; its own
 /// `/Rect` and page decide where the appearance goes, and the engine refuses a
 /// `visible` rectangle beside it by name. Modelling all three as one enum makes
@@ -539,14 +539,14 @@ pub enum Placement {
 /// The visible signature's box, in PDF points: **180 × 60, inset 36 pt from
 /// the page's bottom-right corner.**
 ///
-/// ★★ Every number here is stated rather than tuned, because this is content
+/// Every number here is stated rather than tuned, because this is content
 /// written into the operator's file and *"about a third of the way up"* is not
 /// a specification anyone can check. 36 pt is a half-inch margin — the same
 /// inset a title block leaves and the value ISO 32000-1's own examples use;
 /// 180 × 60 is the box Acrobat's own signature appearance defaults to at 100 %,
 /// which is the size an operator's eye already expects.
 ///
-/// ★ Bottom-**right** rather than bottom-left because a CAD sheet's title block
+/// Bottom-**right** rather than bottom-left because a CAD sheet's title block
 /// is bottom-right and a signature belongs beside it — and because the
 /// alternative, bottom-left, is where every drawing frame in this operator's
 /// own files puts its revision table.
@@ -615,7 +615,7 @@ pub struct Authored {
     /// default. §2d argues why it lives in this window rather than on a command
     /// of its own, and [`Standing::may_certify`] why it is sometimes absent.
     ///
-    /// ★ The engine's own type, `MdpPermission`, rather than a local mirror.
+    /// The engine's own type, `MdpPermission`, rather than a local mirror.
     /// The three levels ARE Table 254's three values, their meanings are the
     /// standard's, and `MdpPermission::meaning` already renders each in plain
     /// words — a parallel enum here would be a second spelling of a fixed list
@@ -684,7 +684,7 @@ impl Prepared {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             //
-            // ★ `path` is Debug-quoted for `protect-written`'s reason: a
+            // `path` is Debug-quoted for `protect-written`'s reason: a
             // Windows path routinely contains a space, and a consumer splitting
             // the line into `key=value` pairs would lose every field after it.
             //
@@ -692,7 +692,7 @@ impl Prepared {
             // report the operator reads, which is where a disclosure about
             // whose key was used belongs. A trace file is kept and shared.
             //
-            // ★★ `field_reused=` is here as well as on `sign-prepared`, and the
+            // `field_reused=` is here as well as on `sign-prepared`, and the
             // duplication is deliberate: this is the line that says a FILE
             // exists, and *"the signature went into the box the sender placed"*
             // is a claim about that file. A check reading only the written line
@@ -759,7 +759,7 @@ impl std::fmt::Display for WriteFailure {
 /// The one place `EditSession::sign` is called. See §3 for why it is the open
 /// session and not a throwaway, and why nothing is undone afterwards.
 ///
-/// # ★ The reservation is the engine's default and is not offered as a control
+/// # The reservation is the engine's default and is not offered as a control
 ///
 /// `SignRequest::reserve` defaults to 12 KiB, which the engine's own note says
 /// *"fits a SHA-256/RSA-4096 CAdES signature with a three-certificate chain
@@ -792,17 +792,17 @@ pub fn prepare(
     // was nothing, which is not what an untouched field means.
     request.reason = non_empty(&authored.reason);
     request.location = non_empty(&authored.location);
-    // ★ `/Name` is deliberately NEVER set — see `crate::text::sign`'s header.
+    // `/Name` is deliberately NEVER set — see `crate::text::sign`'s header.
     // The engine: "`None` omits the key and a verifier falls back to the
     // certificate subject (Table 252 says it should anyway)." A free-text name
     // beside a certificate is a second, unverifiable claim about who signed.
-    // ★★★ `Pass 10.12`. Written before the placement, so the request is
+    // `Pass 10.12`. Written before the placement, so the request is
     // assembled in the order the engine guards it: certification is refused
     // before any field is resolved.
     request.certify = authored.certify;
     request.visible = match &authored.placement {
         Placement::Invisible => None,
-        // ★★★ `Pass 10.13`: the field's OWN `/Rect` and page place the
+        // `Pass 10.13`: the field's OWN `/Rect` and page place the
         // appearance, so `visible` stays `None`. Setting both is
         // `SignApplyError::RectRefusedForExistingField` — which cannot be
         // reached from here, because `Placement`'s three arms are exclusive.
@@ -814,7 +814,7 @@ pub fn prepare(
         }
         Placement::Visible { page } => {
             let page = *page;
-            // ★ The CROP box, not the media box, and the difference is what
+            // The CROP box, not the media box, and the difference is what
             // the operator sees. Content is clipped to `/CropBox` at display
             // time (Table 30), so a box placed against a larger `/MediaBox` on
             // a trimmed sheet would be laid partly or wholly outside the
@@ -835,7 +835,7 @@ pub fn prepare(
 
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
-        // ★ `into_field=` is a BIT, not the field's name. A field name is text
+        // `into_field=` is a BIT, not the field's name. A field name is text
         // out of the operator's own document — a title block's wording, a
         // customer's name — and this line goes into a file the harness keeps as
         // evidence. `sign-prepared` below carries what the engine wrote, which
@@ -868,7 +868,7 @@ pub fn prepare(
 
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
-        // ★★ `field_reused=`, `locked=`, `notes=` and `certified=` are what
+        // `field_reused=`, `locked=`, `notes=` and `certified=` are what
         // `Pass 10.12`–`10.14` added, and each is the ONE fact a check needs to
         // tell "the signature went into the sender's box" from "a new box was
         // created beside it" — two outcomes whose byte counts and field names
@@ -917,7 +917,7 @@ impl Identity {
 
 /// `None` for a field the operator left alone.
 ///
-/// ★ Trims first. A field holding one space is an untouched field as far as
+/// Trims first. A field holding one space is an untouched field as far as
 /// anybody looking at the screen is concerned, and writing `/Reason ( )` into a
 /// legal document because of a stray keystroke is the kind of thing nobody ever
 /// finds.

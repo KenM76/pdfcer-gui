@@ -15,7 +15,7 @@ use crate::report::CheckReport;
 /// Single-page display, then **100 %**. See the module header — fit-page puts
 /// the aim outside the viewport and the check skips without saying so.
 ///
-/// ★★★ `mode.edit` is named FIRST, and it is not decoration. Since
+/// `mode.edit` is named FIRST, and it is not decoration. Since
 /// 2026-09-11 the display of off-sheet content is a per-mode preference and
 /// **Read ships with it OFF** — the operator's request: *"by default, read
 /// doesn't show off page items, review and edit do show off page items."*
@@ -57,7 +57,7 @@ const INK_AT: (f64, f64) = (-100.0, 120.0);
 /// **Paper, off the page** — inside the widened raster, 60 pt below the square,
 /// 100 pt left of the sheet. Paper is expected here.
 ///
-/// ★ This is the control, and the module header says why a check that samples
+/// This is the control, and the module header says why a check that samples
 /// only its subject cannot tell a working feature from a mis-aimed probe.
 const PAPER_AT: (f64, f64) = (-100.0, 40.0);
 
@@ -191,7 +191,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(40);
     // Maximising widens the grey the off-page square has to fit into.
     session.maximize();
-    // ★ A long settle, on purpose. The halo cannot appear on the first frame:
+    // A long settle, on purpose. The halo cannot appear on the first frame:
     // the page must be decomposed before the shell knows where its ink reaches,
     // and that build happens in `render::settle` AFTER the picture is asked
     // for. Then the widened raster itself has to be rendered and uploaded. The
@@ -329,7 +329,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         INK_AT.0, INK_AT.1, PAPER_AT.0, PAPER_AT.1
     ));
 
-    // ★★★ THE CONTROL FIRST. If the paper patch is dark, the probe is not
+    // THE CONTROL FIRST. If the paper patch is dark, the probe is not
     // looking at the page and nothing said about the ink patch would mean
     // anything — including a pass.
     if paper > PAPER_INK_FRACTION {
@@ -398,7 +398,7 @@ mod tests {
     /// The fixture's media box, which is also its crop box: it declares none.
     const MEDIA: (f64, f64, f64, f64) = (0.0, 0.0, 200.0, 200.0);
 
-    /// ★★★ The ink patch is wholly inside the off-page square, with margin on
+    /// The ink patch is wholly inside the off-page square, with margin on
     /// every side. If this ever stops holding, the check measures antialiasing
     /// and its threshold becomes a coin toss.
     #[test]
@@ -409,7 +409,7 @@ mod tests {
         assert!(INK_AT.1 + PATCH_PT < SQUARE_B.3, "top margin");
     }
 
-    /// ★★ …and that square really is off the page, which is the entire premise.
+    /// …and that square really is off the page, which is the entire premise.
     #[test]
     fn the_off_page_square_is_entirely_off_the_page() {
         assert!(
@@ -420,7 +420,7 @@ mod tests {
         );
     }
 
-    /// ★★★ The control patch touches NEITHER square, and is off the page. A
+    /// The control patch touches NEITHER square, and is off the page. A
     /// control that could overlap a mark would fire the harness-defect branch
     /// on a perfectly good build.
     #[test]
@@ -440,7 +440,7 @@ mod tests {
         );
     }
 
-    /// ★ The control patch is inside the halo box, or it would be sampling the
+    /// The control patch is inside the halo box, or it would be sampling the
     /// canvas's grey rather than the raster's paper — which is a different
     /// colour and a different claim.
     #[test]

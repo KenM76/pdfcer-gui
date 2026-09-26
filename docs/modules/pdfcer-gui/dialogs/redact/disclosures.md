@@ -17,14 +17,14 @@ dialog, which is a transaction: a destination choice, two acknowledgements
 and an irreversible verb. Keeping the two apart means an edit to the wording
 of a disclosure cannot reach the transaction by accident.
 
-★ **The derivations live here too**, and that is deliberate but conditional.
+**The derivations live here too**, and that is deliberate but conditional.
 `crate::redact` is where a derivation belongs when two surfaces must agree
 on it — [`crate::redact::residual_count`]'s doc comment argues that at length
 and it is right. Nothing else consumes these; the moment something does,
 they move down into `crate::redact` and this file keeps only the painting.
 Putting them there today would have been a layer for one caller.
 
-## ★★ Rule 1 and the reassuring sentence
+## Rule 1 and the reassuring sentence
 
 [`crate::text::redact`]'s rule 1 — *never say "removed" without
 qualification when anything was left* — is the reason the census in
@@ -36,7 +36,7 @@ A future edit that made this block conditional on the residual list being
 empty would break that property, and would be the defect this note exists to
 prevent.
 
-## ★★★ What guards the wiring, and it is not a test
+## What guards the wiring, and it is not a test
 
 Everything below paints into a `&mut Ui`, which is not an oracle, so no unit
 test in this crate can observe that any of it is **drawn**. The derivations

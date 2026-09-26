@@ -23,7 +23,7 @@ const BAND_PARTS_EVENT: &str = "marquee-parts"; // ui-text-exempt: a trace event
 
 /// `marquee-mode crossing=… mode=… hits=… …` — the **object-rung** band's line.
 ///
-/// ★★★ Read as a failure witness, never as a success one. The two bands are
+/// Read as a failure witness, never as a success one. The two bands are
 /// mutually exclusive in one release, so this line appearing where
 /// [`BAND_PARTS_EVENT`] was required is the defect this check exists for,
 /// quotable rather than describable.
@@ -379,7 +379,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED. The header's
+    // PINNED: `--pdf` and `--doc-point` are read and IGNORED. The header's
     // geometry table is why the document has to be this one.
     let (pdf, anchor) = crate::fixture::text_chunk_point(ANCHOR_CHUNK);
     if !pdf.is_file() {
@@ -468,7 +468,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         aim(ctx, &session, page, NARROW_BAND.0)?,
         aim(ctx, &session, page, NARROW_BAND.1)?,
     );
-    // ★★ The direction is the gesture's meaning, and it is asserted about the
+    // The direction is the gesture's meaning, and it is asserted about the
     // SCREEN points rather than assumed from the document ones. Both bands are
     // written right-to-left in document space precisely so they are crossing
     // bands; a mapping that mirrored the x axis would turn them into enclosing
@@ -485,7 +485,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- A: the control — the undo log is EMPTY -----------------------------
     //
-    // ★★★ Step H asserts `undo_depth=1`, and that number means *the move added
+    // Step H asserts `undo_depth=1`, and that number means *the move added
     // exactly one entry* only if the log was empty before it. Established by
     // pressing undo and requiring a decline, because the depth is not published
     // any other way.
@@ -579,7 +579,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- E: Ctrl refines it back down ---------------------------------------
     //
-    // ★★ The SAME band as step D, so the subtraction's required answer is the
+    // The SAME band as step D, so the subtraction's required answer is the
     // set step C left. A build whose subtract arm cleared instead would leave
     // nothing; one that added instead would leave the grown set; both are a
     // count away from the required one, on a line that names which arm ran.
@@ -609,7 +609,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- F: the surface that tells him what he is holding -------------------
     //
-    // ★★ Read with `last`, not `last_after`: `status-rung` goes through
+    // Read with `last`, not `last_after`: `status-rung` goes through
     // `diag::trace_changed`, keyed on the rendered line, so the bar re-states
     // itself only when the clause CHANGES. The newest line is the current
     // state, which is what a check about disclosure wants.

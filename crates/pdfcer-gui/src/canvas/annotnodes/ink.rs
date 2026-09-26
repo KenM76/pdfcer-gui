@@ -14,7 +14,7 @@ use crate::canvas::dimdrag::VertexIntent;
 /// sum) rather than stored beside the lengths, so there is one number per
 /// stroke and no pair of numbers that has to agree.
 ///
-/// ★ A stroke of length 0 or 1 is kept rather than dropped. `Annotation::
+/// A stroke of length 0 or 1 is kept rather than dropped. `Annotation::
 /// ink_list` reads a malformed stroke as *empty* precisely so that stroke
 /// indices stay aligned with the file's — its doc says so — and a table that
 /// dropped it would put every later stroke one index off from what the engine

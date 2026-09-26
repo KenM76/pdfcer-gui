@@ -25,7 +25,7 @@ was already written. The count is now [`CanvasMenu`]'s variant list, which
 > drag a handle, press Delete, change the colour — either does nothing
 > or does not exist.
 
-# ★ A right-click over an unselected object selects it first
+# A right-click over an unselected object selects it first
 
 This is the behaviour every editor has and the reason is not
 convenience. A context menu's implicit promise is *"these verbs apply to
@@ -64,7 +64,7 @@ wrong:
    Escape should still have their selection. Clearing here would make a
    mis-aimed right-click destroy work.
 
-# ★ Rule 4: a right-click marks nothing
+# Rule 4: a right-click marks nothing
 
 `D:\Dev\FeatureRequests\pdfce_FeatureRequests\README.md`, first
 non-negotiable:
@@ -84,7 +84,7 @@ differ from a screenshot of the same document saved and reopened?* — is
 answered by the selection overlay in exactly the way it already was, and
 this file adds no second answer.
 
-# ★ Why the chosen menu is remembered rather than recomputed
+# Why the chosen menu is remembered rather than recomputed
 
 `egui` opens a context-menu popup on the secondary click and then draws
 it on **every subsequent frame** until it is dismissed. The pointer

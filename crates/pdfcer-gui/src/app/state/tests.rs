@@ -1,7 +1,7 @@
 #![cfg(test)]
 //! # `app::state::tests` — the document record's own assertions
 //!
-//! ★ The inner `#![cfg(test)]` at the top is **load-bearing beyond the
+//! The inner `#![cfg(test)]` at the top is **load-bearing beyond the
 //! compiler**. `check-ui-strings.sh` recognises that exact attribute as "this
 //! whole file is out of the shipped binary" and stops reporting its assertion
 //! messages as operator copy — matched on the attribute rather than on the
@@ -22,7 +22,7 @@ use pdfcer_core::object::ObjId;
 // The staleness keys
 // =======================================================================
 
-/// **★ Every input that changes the picture changes the render key.**
+/// **Every input that changes the picture changes the render key.**
 ///
 /// The acceptance criterion for the `RenderKey` completion, from the
 /// shell's side rather than the worker's.
@@ -75,7 +75,7 @@ fn a_layer_or_annotation_change_commits_at_once_rather_than_settling() {
     assert_eq!(hidden.scale_bits(), after.scale_bits());
 }
 
-/// **★ "Obey the document" and "hide nothing" are different renders.**
+/// **"Obey the document" and "hide nothing" are different renders.**
 ///
 /// Core API trap T-12.9: [`LayerVisibility`] REPLACES the document's
 /// default configuration rather than merging with it, so `None` and
@@ -190,7 +190,7 @@ fn hiding_annotations_or_a_layer_is_not_an_edit() {
 // Selection lifetime
 // =======================================================================
 
-/// **★ A selection cannot outlive the document it was made on.**
+/// **A selection cannot outlive the document it was made on.**
 ///
 /// The property holds by construction: opening a document builds a whole new
 /// `OpenDoc`, so its selection is `SelectionState::default()`. There is no
@@ -243,7 +243,7 @@ fn a_selection_cannot_outlive_the_document_it_was_made_on() {
 /// Build a document with a hold already in place, `captured_at_epoch` frames
 /// old, captured `age` ago.
 ///
-/// ★ The `ShapePreview` is **empty**, and that is deliberate: every assertion
+/// The `ShapePreview` is **empty**, and that is deliberate: every assertion
 /// below is about the liveness *decision*, and a preview carrying real geometry
 /// would make the tests depend on a fixture decomposing — a second reason to
 /// fail, in tests about a rule that has nothing to do with geometry.
@@ -255,7 +255,7 @@ fn with_hold(
 ) -> OpenDoc {
     let mut doc = open_local_fixture("polyline-nodes.pdf");
     doc.edit_epoch = edit_epoch;
-    // ★★★ THE TEXTURE'S EPOCH IS SET THROUGH ITS REAL RELATIONSHIP, never by
+    // THE TEXTURE'S EPOCH IS SET THROUGH ITS REAL RELATIONSHIP, never by
     // assignment. `page_texture_epoch` carries a **`PageEpochs`** value and
     // `render::settle` is its only writer — `self.page_texture_epoch =
     // self.page_epochs.get(page)`. It is not an `edit_epoch`.
@@ -301,7 +301,7 @@ fn a_committed_edit_whose_raster_has_not_landed_keeps_its_preview() {
 /// The raster landed. The document's own picture is correct now and is better
 /// than the preview in every way, so the preview goes.
 ///
-/// ★ A preview left up over a correct raster would be drawing a
+/// A preview left up over a correct raster would be drawing a
 /// selection-coloured tracing over the real thing — the operator's own
 /// complaint about the old GUI's marking, arriving by a new route.
 #[test]
@@ -313,7 +313,7 @@ fn the_preview_goes_the_moment_the_page_catches_up() {
     );
 }
 
-/// ★★★ THE ONE THAT MATTERS: a refused edit holds nothing for long.
+/// THE ONE THAT MATTERS: a refused edit holds nothing for long.
 ///
 /// # The failure this pins
 ///
@@ -348,7 +348,7 @@ fn an_edit_the_epoch_never_moved_for_stops_drawing_almost_at_once() {
 
 /// The backstop fires even when everything else says "keep drawing".
 ///
-/// ★ It exists because *"the raster will arrive"* is an assumption, and a stuck
+/// It exists because *"the raster will arrive"* is an assumption, and a stuck
 /// preview is indistinguishable from a corrupted document. Four seconds is
 /// roughly four times the measured whole-page raster on the operator's hardest
 /// drawing, so it cannot fire on a render that is merely slow.
@@ -383,7 +383,7 @@ fn retiring_clears_a_dead_hold_and_keeps_a_live_one() {
     );
 }
 
-/// ★★★ The page-is-catching-up line is silent under the threshold, and speaks
+/// The page-is-catching-up line is silent under the threshold, and speaks
 /// past it — and speaks for EVERY edit, not only the ones with a shape.
 ///
 /// # Why the silent half is the one worth pinning
@@ -397,7 +397,7 @@ fn retiring_clears_a_dead_hold_and_keeps_a_live_one() {
 fn the_catching_up_line_waits_before_it_speaks() {
     let mut doc = open_local_fixture("polyline-nodes.pdf");
     doc.edit_epoch = 5;
-    // ★ One behind THIS PAGE's epoch — the quantity `page_is_catching_up`
+    // One behind THIS PAGE's epoch — the quantity `page_is_catching_up`
     // reads. See `with_hold` for why this is not `edit_epoch - 1`.
     doc.page_texture_epoch = doc.page_epochs.get(doc.view.page_index).wrapping_sub(1);
 
@@ -419,7 +419,7 @@ fn the_catching_up_line_waits_before_it_speaks() {
 
 /// It stops the moment the picture is correct.
 ///
-/// ★ No retirement rule and nothing to remember to clear: it is a STATE, unlike
+/// No retirement rule and nothing to remember to clear: it is a STATE, unlike
 /// every other line in that half of the bar, which are events keyed on the
 /// epoch. A test rather than a comment because "it stops on its own" is exactly
 /// the kind of claim that quietly stops being true.
@@ -427,7 +427,7 @@ fn the_catching_up_line_waits_before_it_speaks() {
 fn the_catching_up_line_stops_when_the_raster_lands() {
     let mut doc = open_local_fixture("polyline-nodes.pdf");
     doc.edit_epoch = 5;
-    // ★ Exactly this page's epoch — the texture carries the current revision.
+    // Exactly this page's epoch — the texture carries the current revision.
     doc.page_texture_epoch = doc.page_epochs.get(doc.view.page_index);
     doc.last_edit_at = Some(std::time::Instant::now() - std::time::Duration::from_secs(30));
     assert!(
@@ -449,7 +449,7 @@ fn the_catching_up_line_stops_when_the_raster_lands() {
 /// catching up"* sits on the bar for the rest of the session over a correct
 /// picture.
 ///
-/// ★ This test drives the counters through their **own issuers** rather than
+/// This test drives the counters through their **own issuers** rather than
 /// assigning both fields, which is what makes it able to fail at all.
 #[test]
 fn a_page_edit_elsewhere_does_not_strand_the_catching_up_line() {
@@ -483,7 +483,7 @@ fn a_page_edit_elsewhere_does_not_strand_the_catching_up_line() {
 
 /// A document nobody has edited says nothing, however far apart the epochs are.
 ///
-/// ★ The guard this pins is `last_edit_at: None`. Without it, a freshly opened
+/// The guard this pins is `last_edit_at: None`. Without it, a freshly opened
 /// document whose first raster has not landed would announce that it is catching
 /// up — on open, before the operator has done anything at all, which is the
 /// worst possible first sentence for a program to say about itself.

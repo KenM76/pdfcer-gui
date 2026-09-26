@@ -42,7 +42,7 @@ for each read review edit modes"*. A single global flag passes rungs 1–4
 and fails rung 5, and a single global flag is exactly what a first
 implementation of this reaches for.
 
-# ★★★ Why each rung asserts BOTH a trace line and pixels
+# Why each rung asserts BOTH a trace line and pixels
 
 `off_page_visible`'s header carries the argument and it is unchanged here:
 *layout and clipping defects have exactly one oracle, and it is a rendered
@@ -64,7 +64,7 @@ for an operator. A pixel-only check cannot tell "Read hides it" from "the
 renderer broke", and the report would send the next session into the
 engine.
 
-# ★★ The control that makes a negative rung mean anything
+# The control that makes a negative rung mean anything
 
 Rungs 1 and 4 assert an **absence**, and this suite's memory is explicit
 that an absence assertion is worth exactly as much as its control: *"a
@@ -78,7 +78,7 @@ centre of the fixture's **on-page** square, and that patch must be ink. If
 it is not, the check reports a harness finding and refuses to say anything
 about the off-page patch — including that it was clean.
 
-# ★★★ The gap, which is the operator's OTHER sentence
+# The gap, which is the operator's OTHER sentence
 
 > *"when not showing the stuff that is off page there shouldn't be a gap
 > between pages where the stuff is, so it just goes back to looking before

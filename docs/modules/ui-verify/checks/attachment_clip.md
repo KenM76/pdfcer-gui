@@ -10,7 +10,7 @@ verb-coverage gate found on its first honest run.**
 shape is worth keeping: the gate found the gap, and the gate cannot close
 it, because a gate reads source and a capability is a thing you drive.
 
-## ★★★ Why it must cross a document boundary
+## Why it must cross a document boundary
 
 A same-document copy-then-paste would exercise every line of the code and
 **would not test the defect**. The defect was *"an attachment cannot be moved
@@ -20,7 +20,7 @@ that passes on a build where the clipboard is a per-document field.
 That is this project's standing failure mode wearing a new hat — a check
 whose subject is narrower than the report it answers.
 
-## ★★ And why the disclosure is asserted by its ABSENCE here
+## And why the disclosure is asserted by its ABSENCE here
 
 `attach_file` builds its name-tree patch with
 `entries.retain(|(k, _)| k != &name_bytes)` before pushing, so a same-named
@@ -44,7 +44,7 @@ check that only asserted the warning appears when it should.
 | D | the Paste control is drawn, and the replace note is NOT | `attachments.paste` declared, `attachments.paste.replaces` absent |
 | E | press Paste | `paste-attachment-requested … replacing=false`, then a census of 1 |
 
-★ Step D's first half is also an R9 assertion: before step B the clipboard
+Step D's first half is also an R9 assertion: before step B the clipboard
 is empty and `attachments.paste` must be **absent**, not greyed. That is
 checked at the top, and it is the control point — without it, a build that
 always drew the button would pass every later step.

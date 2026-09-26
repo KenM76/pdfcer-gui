@@ -44,7 +44,7 @@ pub const fn pen_width_tooltip() -> &'static str {
 
 /// Hover text for the opacity control.
 ///
-/// # ★★★ Why this sentence names the CAD case rather than describing the slider
+/// # Why this sentence names the CAD case rather than describing the slider
 ///
 /// Because the reason to reach for it is specific and is not obvious from a
 /// percentage: a comment sits on top of the thing it is about, and on a dense
@@ -53,7 +53,7 @@ pub const fn pen_width_tooltip() -> &'static str {
 /// that, and a tooltip reading *"the opacity of the next mark"* would restate
 /// the label.
 ///
-/// # ★ It says the mark stays selectable, because faint is not gone
+/// # It says the mark stays selectable, because faint is not gone
 ///
 /// The bottom of the range is a tenth, deliberately (`canvas::markup::pen`'s
 /// `MIN_OPACITY` carries the argument), and at a tenth over dark linework a
@@ -80,7 +80,7 @@ pub const fn opacity_suffix() -> &'static str {
 
 /// Hover text for the pen's line-style chooser.
 ///
-/// # ★★★ Why this sentence is about the DRAWING and not about the dash
+/// # Why this sentence is about the DRAWING and not about the dash
 ///
 /// "Choose a dash pattern" tells an operator what the widget obviously is. What
 /// they cannot see from the control is *when* it applies — this is the pen, so
@@ -88,7 +88,7 @@ pub const fn opacity_suffix() -> &'static str {
 /// is the half every tooltip in this module leads with, for the reason its
 /// header gives.
 ///
-/// ★ It also names the one subtype family the setting does nothing for.
+/// It also names the one subtype family the setting does nothing for.
 /// `MarkupOptions::dash` is *"ignored by the text-markup family"*: a highlight
 /// is a colour wash and an underline is its own line, and neither draws a
 /// `/BS` border for a dash to be in. The chooser is on the Style group beside
@@ -106,21 +106,21 @@ pub const fn pen_dash_tooltip() -> &'static str {
 // The line styles — the five things a border can be called
 // ---------------------------------------------------------------------------
 //
-// ★★ FOUR ENTRIES AND A FIFTH STATE, and the fifth is not an entry.
+// FOUR ENTRIES AND A FIFTH STATE, and the fifth is not an entry.
 //
 // `canvas::markup::linestyle::LineStyle` has four variants and every one of
 // them is offered. `DashReading::Foreign` is a fifth thing the closed chooser
 // can say and is deliberately NOT in the list: it means *the file states a dash
 // this shell does not offer*, and there is no press that produces it.
 //
-// ★ THE NAMES ARE WHAT A DRAUGHTSMAN SAYS, NOT WHAT THE FILE STORES. Not
+// THE NAMES ARE WHAT A DRAUGHTSMAN SAYS, NOT WHAT THE FILE STORES. Not
 // "[8 3 1 3]", not "/S /D" — the run lengths are in `LineStyle::pattern` where a
 // number is useful, and a combo entry reading `[8 3 1 3]` would make an operator
 // open all four to find out which is which.
 
 /// The chooser's first entry — no dash at all.
 ///
-/// ★ *Solid*, not *None*. "None" is the word this shell uses for the **absence
+/// *Solid*, not *None*. "None" is the word this shell uses for the **absence
 /// of a property** — `markup_fill_none`, the arrowhead chooser's first position
 /// — and a solid line is not an absence, it is a line. Table 166 agrees: `/S`
 /// is a named border style, not a missing one.
@@ -141,7 +141,7 @@ pub const fn line_style_dashed() -> &'static str {
 
 /// `[8 4]`.
 ///
-/// ★ Named by its **appearance**, not by what it is conventionally used for. The
+/// Named by its **appearance**, not by what it is conventionally used for. The
 /// tempting name was "Hidden" — the draughting convention this pattern echoes —
 /// and it was rejected for `text::markup`'s standing reason about the palette
 /// cells: a mark drawn in it is not thereby hidden, and a name that describes a
@@ -165,7 +165,7 @@ pub const fn line_style_dash_dot() -> &'static str {
 /// What the closed chooser says for a dash the file states and this shell does
 /// not offer.
 ///
-/// # ★★★ It names the FILE, and that is the whole job of this string
+/// # It names the FILE, and that is the whole job of this string
 ///
 /// The engine preserves a foreign dash through a restyle that does not mention
 /// one, so this state is not a defect and is not going to be corrected by
@@ -175,7 +175,7 @@ pub const fn line_style_dash_dot() -> &'static str {
 /// file's, which the operator would discover by pressing something else and
 /// watching the pattern change.
 ///
-/// ★ The parenthetical is what keeps it from reading as an error. *"Dashed (the
+/// The parenthetical is what keeps it from reading as an error. *"Dashed (the
 /// file's own pattern)"* says **this is fine and it is theirs**; a bare
 /// *"Unknown dash"* would read as damage and would send an operator looking for
 /// a repair that is not needed.
@@ -188,7 +188,7 @@ pub const fn line_style_foreign() -> &'static str {
 // The palette grid — the name of each colour Acrobat marks up in
 // ---------------------------------------------------------------------------
 //
-// ★★★ THESE WORDS ARE THE ONLY LABEL A COLOUR CELL HAS.
+// THESE WORDS ARE THE ONLY LABEL A COLOUR CELL HAS.
 //
 // A cell in `canvas::markup::palette::ACROBAT` is a filled square about twelve
 // points on a side. It cannot carry text, so the tooltip is the whole of its
@@ -196,7 +196,7 @@ pub const fn line_style_foreign() -> &'static str {
 // swatches, one size down and one step more acute, because there are ten of
 // them and they differ only by hue.
 //
-// ★★ THEY ARE PLAIN COLOUR WORDS, NOT ACROBAT ROLES, AND THAT IS A DECISION.
+// THEY ARE PLAIN COLOUR WORDS, NOT ACROBAT ROLES, AND THAT IS A DECISION.
 //
 // The tempting alternative was "Underline blue", "Sticky-note violet" — naming
 // each cell after the Acrobat tool whose default it is. Rejected: one grid is
@@ -206,7 +206,7 @@ pub const fn line_style_foreign() -> &'static str {
 // constant's own doc comment, where the reader who wants it is; the operator
 // gets the word they would say out loud.
 //
-// ★ NO HEX, NO RGB TRIPLE. A tooltip reading "Blue (#1373E8)" tells an operator
+// NO HEX, NO RGB TRIPLE. A tooltip reading "Blue (#1373E8)" tells an operator
 // choosing a pen colour nothing they can act on, and pushes the useful word off
 // the front of a narrow tip. The numbers are in the code and in the palette
 // module's table, which is where a number is useful.
@@ -278,7 +278,7 @@ pub const fn colour_black() -> &'static str {
 
 /// The palette cell at [`crate::canvas::markup::palette::WHITE`].
 ///
-/// ★ The one cell whose tooltip earns a second clause. A white mark on a
+/// The one cell whose tooltip earns a second clause. A white mark on a
 /// black-on-white CAD sheet is invisible everywhere except over the drawing's
 /// own linework, so an operator who picks it by accident sees a tool that has
 /// stopped working. Saying so at the moment of choosing is cheaper than the
@@ -301,7 +301,7 @@ pub const fn palette_heading() -> &'static str {
 
 /// The route out of the grid to the full colour picker.
 ///
-/// ★ The trailing ellipsis is the platform convention for *"this opens
+/// The trailing ellipsis is the platform convention for *"this opens
 /// something"* and is load-bearing here: every other cell in the popup applies
 /// immediately, and this one does not.
 #[must_use]
@@ -339,7 +339,7 @@ pub use edits::{
 mod tests {
     use super::*;
 
-    /// ★ Every tooltip says the setting applies to the NEXT mark.
+    /// Every tooltip says the setting applies to the NEXT mark.
     ///
     /// The disclosure this module exists for. `RIBBON_IA.md` §5.5 puts
     /// "restyle what is already there" on the contextual Format tab, whose
@@ -363,7 +363,7 @@ mod tests {
         }
     }
 
-    /// ★★ **The ten palette names are ten different words.**
+    /// **The ten palette names are ten different words.**
     ///
     /// A cell's name is its whole accessible label — see this module's palette
     /// section — so two cells reading "Purple" would be two controls an operator
@@ -394,7 +394,7 @@ mod tests {
         }
     }
 
-    /// ★ **The palette heading names Adobe, and the white cell warns.**
+    /// **The palette heading names Adobe, and the white cell warns.**
     ///
     /// Two disclosures that a shortening edit would take out first, and both are
     /// the kind this project does not leave to convention:
@@ -424,7 +424,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The header's count of what this module holds is checked.**
+    /// **The header's count of what this module holds is checked.**
     ///
     /// It read *"Three tooltips and one suffix"* for four months after a fourth
     /// tooltip and a second suffix were added. Nothing was broken by it and
@@ -461,13 +461,13 @@ mod tests {
         assert!(first_line.contains("two suffixes"), "{first_line:?}");
     }
 
-    /// ★★ **The five line-style names are distinct, and none of them is a
+    /// **The five line-style names are distinct, and none of them is a
     /// pattern.**
     ///
     /// The first half is the ordinary anti-collision assertion: a combo whose
     /// two entries read the same is a control an operator cannot use.
     ///
-    /// ★ The second half is the one worth having. These names are the whole
+    /// The second half is the one worth having. These names are the whole
     /// reason `LineStyle::pattern`'s run lengths never reach an operator, and
     /// the cheap way to add a fifth style is to name it after its array. This
     /// asserts no name contains a digit — which is what a `[8 4]` or an

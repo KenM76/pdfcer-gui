@@ -12,7 +12,7 @@ use crate::report::CheckReport;
 
 /// Supplied at launch: **Edit mode, and nothing else.**
 ///
-/// # ★★★ `edit.attachments` was here until a smoke launch showed it CLOSING the
+/// # `edit.attachments` was here until a smoke launch showed it CLOSING the
 /// panel
 ///
 /// The command is a **toggle** — `app::panels::toggle_panel` closes a panel that
@@ -26,7 +26,7 @@ use crate::report::CheckReport;
 /// have failed on a correct build**, at phase A, reporting that the panel was
 /// not on screen — which it had been, until this check shut it.
 ///
-/// ⇒ ★★ It is the fourth "cannot pass" in this suite and the only one a
+/// ⇒ It is the fourth "cannot pass" in this suite and the only one a
 /// **reading** could not have found: an audit that walked all eleven checks
 /// two hours earlier marked this one SOUND, correctly, because which tab a
 /// stack activates by default is a property of the running program and not of
@@ -130,7 +130,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
 
-    // ★ The file attached is the FIXTURE ITSELF.
+    // The file attached is the FIXTURE ITSELF.
     //
     // Deliberate, and not laziness: it is a real file of a known size that is
     // certain to exist wherever this check runs, and attaching a PDF to a PDF is
@@ -261,7 +261,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("the save reported: `{}`", saved.raw));
 
-    // ★★★ THE ASSERTION THAT CANNOT BE FAKED.
+    // THE ASSERTION THAT CANNOT BE FAKED.
     //
     // Everything above is the program's own account of itself. This is the
     // bytes. A build that stored the path rather than the stream, truncated the

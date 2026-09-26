@@ -43,7 +43,7 @@ write — see [`super`]'s "Actions, not mutations" section for the whole
 argument, and [`interact`]'s own docs for why the selection is taken out of
 the document by value and put back at the bottom.
 
-## ★ Selection survives navigation — the invariant this stage is accountable for
+## Selection survives navigation — the invariant this stage is accountable for
 
 `GUI_ROADMAP.md` Phase 1 states it and names three ways it is lost.
 [`selection`](super::selection)'s header carries the full table; the
@@ -67,7 +67,7 @@ the *outlines* have to catch up, which the epoch bump already handles. The
 `delete_*` family is the one that renumbers. See [`moving`]'s header for the
 full table.
 
-## ★ The two seams that were wiring, and how they were closed
+## The two seams that were wiring, and how they were closed
 
 Both were recorded here as *"one-line changes once the field they want
 exists"*. The field exists; both are closed. They are written up rather

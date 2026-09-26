@@ -20,7 +20,7 @@ first half of the third phase and because they cannot be exercised
 separately without paying twice for a launch, a mode click, a panel open and
 two authored bookmarks.
 
-# ★★★ The collapse oracle is the DISAGREEMENT between two numbers
+# The collapse oracle is the DISAGREEMENT between two numbers
 
 This is the assertion the whole check is built around, and it is the one no
 unit test in the workspace can make:
@@ -34,13 +34,13 @@ test about the tree, passes the funnel-line assertion below, and fails this.
 A build that "collapsed" by deleting the subtree fails the item count. There
 is no third build that passes both.
 
-★ **Every count in this check is a DELTA**, measured against the outline the
+**Every count in this check is a DELTA**, measured against the outline the
 fixture arrived with. The corpus is not uniform — `fixtures/four-pages.pdf`
 ships with a six-item outline and the CAD exports have none — and a check
 that hard-coded either number would SKIP on half of it while blaming the
 fixture.
 
-# ★★ The move oracle is the LEVEL, not the order
+# The move oracle is the LEVEL, not the order
 
 `bookmark-row level=` is `OutlineItem::level` — `0` for a top-level
 bookmark, `1` for its child. The drag in phase B drops TAIL on the middle of
@@ -52,12 +52,12 @@ should have re-parented, which is precisely the defect a three-band drop
 model can produce by mis-reading the pointer's y. The level cannot be
 reached by a reorder at all.
 
-★ And `bookmark-move-report reparented=` is asserted beside it, from the
+And `bookmark-move-report reparented=` is asserted beside it, from the
 engine's own report. Two independent witnesses to one fact: the shell's
 read of the tree afterwards, and the engine's account of what it did. They
 agree on a correct build and a build that lies has to lie twice.
 
-# ★★★ Two rectangles per row, and using the wrong one aims at nothing
+# Two rectangles per row, and using the wrong one aims at nothing
 
 `bookmark-row` carries `rect=` (the **label**) and `row=` (the **full-width
 strip**). They are different questions:
@@ -72,7 +72,7 @@ at the strip's centre lands on nothing and starts no drag, and a drop aimed
 at the label's centre is over the row but tells you nothing about whether
 the strip was the thing being tested.
 
-★ Neither is a `ui_rect`. Both come from the panel's own per-row diagnostic
+Neither is a `ui_rect`. Both come from the panel's own per-row diagnostic
 line, which is written for **every** row whether or not it is on screen —
 see [`visible_rows`] and the incident it carries.
 

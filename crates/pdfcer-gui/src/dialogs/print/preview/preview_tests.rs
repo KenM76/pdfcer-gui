@@ -12,7 +12,7 @@
 //! strip, a caption contradicting the picture beside it — and none of them
 //! would look broken enough in a screenshot to investigate.
 //!
-//! ★ The one thing a capture genuinely cannot distinguish is
+//! The one thing a capture genuinely cannot distinguish is
 //! [`super::Overhang::BlankBand`] from a mask that found no ink anywhere: both
 //! draw nothing. That is what
 //! [`a_blank_overhang_hatches_nothing_and_says_so`]'s second assertion, and the
@@ -41,7 +41,7 @@ fn on_screen(
     origin + point_in_sheet * s
 }
 
-/// ★ The point under the pointer does not move when you zoom on it.
+/// The point under the pointer does not move when you zoom on it.
 ///
 /// This is the whole reason the anchor term exists, and it is the one
 /// property a reader can check without re-deriving the algebra. Asserted
@@ -88,7 +88,7 @@ fn a_button_zoom_scales_the_existing_pan_about_the_centre() {
     assert!((pan.y + 15.0).abs() < 1e-4, "pan.y was {}", pan.y);
 }
 
-/// ★ A zoom the clamp refuses must not pan either.
+/// A zoom the clamp refuses must not pan either.
 ///
 /// The bug this pins is subtle and would look like a hardware fault: at
 /// maximum zoom the wheel stops magnifying but keeps sliding the sheet
@@ -149,7 +149,7 @@ fn a_letter_page_previews_at_the_target_resolution() {
     );
 }
 
-/// ★ A large-format sheet is capped by PIXELS, not by DPI.
+/// A large-format sheet is capped by PIXELS, not by DPI.
 ///
 /// The bound that matters. An ANSI E sheet at the target DPI would be
 /// 5100 x 6600 px and about 134 MB of RGBA for a picture drawn 300 pt
@@ -170,7 +170,7 @@ fn a_large_format_sheet_is_capped_by_pixels() {
     );
 }
 
-/// ★ Where the pixel ceiling starts to bind, asserted from both sides.
+/// Where the pixel ceiling starts to bind, asserted from both sides.
 ///
 /// The regression the ceiling's own doc comment records is a value chosen
 /// too low: 1600 px silently downgraded Letter, Legal and A4 — the common
@@ -218,7 +218,7 @@ fn a_zero_sized_page_yields_a_finite_scale() {
     assert!(scale.is_finite() && scale > 0.0, "got {scale}");
 }
 
-/// ★★★ **The overhang band maps into page space correctly under zoom and
+/// **The overhang band maps into page space correctly under zoom and
 /// pan** — the half of operator request O113 that lives in this file.
 ///
 /// [`super::ink::InkMask`] speaks 0..1 page space and knows nothing about
@@ -296,7 +296,7 @@ fn mask_with(size: u32, ink: &[(u32, u32, u32, u32)]) -> super::ink::InkMask {
     super::ink::InkMask::from_rgba_premultiplied(size, size, &data)
 }
 
-/// ★★★ **The operator's case, end to end: nothing hatched AND the caption
+/// **The operator's case, end to end: nothing hatched AND the caption
 /// says so.** Operator request O113.
 ///
 /// The page overhangs on both axes — the placement reports a clip and the
@@ -326,7 +326,7 @@ fn a_blank_overhang_hatches_nothing_and_says_so() {
     );
 }
 
-/// ★ **A mark out in the border is hatched, and the hatch is a small part
+/// **A mark out in the border is hatched, and the hatch is a small part
 /// of the band rather than the whole of it.**
 ///
 /// The distinction the old code could not make. Before O113 this case and
@@ -372,7 +372,7 @@ fn an_inked_overhang_hatches_only_the_ink_and_says_so() {
     );
 }
 
-/// ★★ **A failed render hatches the WHOLE band and says `Unknown`.**
+/// **A failed render hatches the WHOLE band and says `Unknown`.**
 ///
 /// The degraded state [`texture_for`] documents. "We could not look" must
 /// not present as "nothing is lost" — a missing raster is not allowed to
@@ -395,7 +395,7 @@ fn no_raster_falls_back_to_the_whole_band_rather_than_to_silence() {
     );
 }
 
-/// ★★ **The far-edge bands are disjoint**, which fixes a second
+/// **The far-edge bands are disjoint**, which fixes a second
 /// over-hatch that was hiding inside the first.
 ///
 /// This fixture's page sits inside the printable area on its left and top, so
@@ -429,7 +429,7 @@ fn the_far_edge_overhang_bands_do_not_overlap_or_reach_into_the_printable_area()
     }
 }
 
-/// ★★ **A page dragged off all four edges hatches four disjoint
+/// **A page dragged off all four edges hatches four disjoint
 /// bands whose union is exactly the overhang** — operator request O208.
 ///
 /// This state was unreachable before the operator could move the page:
@@ -477,7 +477,7 @@ fn a_page_dragged_off_all_four_edges_hatches_four_disjoint_bands() {
     );
 }
 
-/// ★ **A page dragged off only the NEAR edge hatches only that edge.**
+/// **A page dragged off only the NEAR edge hatches only that edge.**
 ///
 /// The half of O208 a two-band hatch was silent about: an operator who drags a
 /// drawing left to bring its right-hand side onto the paper is choosing to lose
@@ -524,7 +524,7 @@ fn a_zero_sized_page_maps_to_nothing_rather_than_to_nan() {
     );
 }
 
-/// ★ The preview reads pixels as premultiplied, exactly as the canvas does.
+/// The preview reads pixels as premultiplied, exactly as the canvas does.
 ///
 /// The same fixture `render::raster`'s own test uses — a half-transparent
 /// red pixel stored the way `tiny-skia` stores it (`R·A, G·A, B·A, A`).

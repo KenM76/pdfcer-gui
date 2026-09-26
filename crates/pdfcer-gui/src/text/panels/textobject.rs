@@ -7,7 +7,7 @@
 
 /// The section heading.
 ///
-/// ★ The same word the swept-text section uses (`super::properties`'s
+/// The same word the swept-text section uses (`super::properties`'s
 /// `text_heading`) and deliberately so: an operator who reaches the colour by
 /// clicking and an operator who reaches it by sweeping must not think they
 /// found two different features. The two sections are mutually exclusive, so
@@ -19,7 +19,7 @@ pub const fn heading() -> &'static str {
 
 /// **What the control is about to act on**, stated before it is used.
 ///
-/// ★★ The count is the disclosure that makes this control safe to press, and
+/// The count is the disclosure that makes this control safe to press, and
 /// it is not decoration. A `BT`…`ET` on a CAD export is free to hold every
 /// label on the sheet: `pdfcer_core::vector::TextObject::runs`' own docs record
 /// a measured SolidWorks export where **one** text object's bounds ran
@@ -27,7 +27,7 @@ pub const fn heading() -> &'static str {
 /// thing to ask for and a terrible thing to do by accident, so the number of
 /// runs is on screen **before** the swatch, not in a report afterwards.
 ///
-/// ★ "runs" is the program's own word for the unit, and it is the unit the
+/// "runs" is the program's own word for the unit, and it is the unit the
 /// operator will meet again in the status line after the press
 /// (`super::properties`'s `text_covers`). Two different nouns for one thing
 /// across two adjacent surfaces is how a disclosure stops being read.
@@ -42,14 +42,14 @@ pub const fn colour_label() -> &'static str {
     "Colour"
 }
 
-/// ★★★ Drawn **instead of** a swatch when some of the object's text is painted
+/// Drawn **instead of** a swatch when some of the object's text is painted
 /// in a colour space this shell will not round-trip.
 ///
 /// The same guard `crate::text::paint::undecoded` states for a path, with the
 /// one difference the module header argues: the ink **cannot be named** here,
 /// so this sentence does not pretend to name it.
 ///
-/// ★ It says *"some of"* whenever more than one run is involved, because a
+/// It says *"some of"* whenever more than one run is involved, because a
 /// single object can be part CMYK and part RGB and a sentence claiming all of
 /// it would be false half the time. The absent swatch is per **object**, not
 /// per run, and that is deliberate: this control's operand is the whole object,
@@ -70,7 +70,7 @@ pub fn ink_present(affected: usize, total: usize) -> String {
     }
 }
 
-// ★★★ THE ROUTE SENTENCE IS NOT HERE, AND THERE IS NO LONGER A ROUTE TO NAME.
+// THE ROUTE SENTENCE IS NOT HERE, AND THERE IS NO LONGER A ROUTE TO NAME.
 //
 // Until 2026-09-14 this comment pointed at `super::properties::text_object_route`,
 // a sentence that told the operator to *"press T for the Text tool and sweep
@@ -80,25 +80,25 @@ pub fn ink_present(affected: usize, total: usize) -> String {
 // `crate::app::textoperand`, so the face, size, bold and italic controls are
 // live on the click and there is nowhere to send anybody.
 //
-// ★★ What survives here is the COLOUR refusal above, and it is a different
+// What survives here is the COLOUR refusal above, and it is a different
 // kind of sentence. It is not a route around a missing capability; it is a
 // disclosure that pdfcer will not repaint a CMYK or spot-colour run with a
 // screen colour, which is true no matter how the operator reached the control.
 // The sweep it suggests is a narrower operand, not a workaround.
 //
-// ★★ Its test, `the_text_route_sentence_names_the_bound_chord`, went with it.
+// Its test, `the_text_route_sentence_names_the_bound_chord`, went with it.
 // That test was the only reader of `view.tool_text`'s chord outside the keymap,
 // so if a future string ever writes a chord into prose again, restore it from
 // git rather than re-deriving the idea.
 
-/// ★★ Drawn where the swatch would be when the object's runs **disagree**.
+/// Drawn where the swatch would be when the object's runs **disagree**.
 ///
 /// Not an error and not a refusal: the control still applies. This is the
 /// indeterminate state every editor in the class shows — Illustrator,
 /// Inkscape, Figma, Word — and its meaning is *"there is no one colour to open
 /// on; pick one and they all become it."*
 ///
-/// ★ The marker itself is `super::properties`' `text_value_absent` — the em
+/// The marker itself is `super::properties`' `text_value_absent` — the em
 /// dash — because that string's own doc comment already made this exact
 /// argument for the size field: *"every property grid in this class shows a
 /// blank or a dash for no value and for mixed values, which are the same state

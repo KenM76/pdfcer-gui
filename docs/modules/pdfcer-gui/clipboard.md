@@ -12,7 +12,7 @@
 | **the bytes and the order** | this file | [`ORDER`], [`svg_payload`]'s trailing NUL, [`dib_v5`]'s premultiplied top-down `BI_BITFIELDS` framing, [`pixels_per_metre`], and [`CopyPayload::degrades_word_to_a_picture`] |
 | **the placement** | [`place`], over `crates/native-clipboard` | producing the payload from a real page or selection, refusing a set that would degrade, and the one ordered transaction |
 
-★★★ The seam is not tidiness. **What decides whether a paste into Word
+The seam is not tidiness. **What decides whether a paste into Word
 arrives as an editable graphic or as a flat picture is entirely in this
 file**, and none of it needs a syscall:
 
@@ -27,7 +27,7 @@ file**, and none of it needs a syscall:
 Every one of those is pure and every one is asserted below, against bytes
 rather than against a clipboard.
 
-## ★★★ The property the whole feature rests on: half is worse than none
+## The property the whole feature rests on: half is worse than none
 
 A copy-out that places only the raster formats is *worse than no copy-out at
 all*, because Word silently degrades such a paste to a flat picture and the
@@ -41,7 +41,7 @@ module's `staged`. `native-clipboard` completes the property from the other
 end by creating every OS handle *before* the clipboard is opened, so a
 refusal anywhere leaves the operator's clipboard exactly as it was.
 
-## ★★ Why `native-clipboard` is a crate and not a module here
+## Why `native-clipboard` is a crate and not a module here
 
 `CF_ENHMETAFILE` is a **GDI handle**, not an `HGLOBAL`, so the metafile must
 go on through `SetEnhMetaFileBits` followed by `SetClipboardData` — two
@@ -51,7 +51,7 @@ failure). `crates/pdfcer-gui/src/lib.rs` and `main.rs` both open with
 `#![forbid(unsafe_code)]`, and `forbid` cannot be relaxed from the inside —
 that is the whole point of choosing it over `deny`.
 
-★ **This project had already answered the same question once.**
+**This project had already answered the same question once.**
 `crates/native-window` exists for four `user32` calls, and its manifest says
 why in one sentence: *"Its own crate rather than a module here, because this
 crate's `#![forbid(unsafe_code)]` is a claim worth keeping and `forbid`
@@ -67,7 +67,7 @@ land as an editable graphic. The engine's note says so in one line:
 *"`arboard` cannot do 1 or 4 (no registered-format API); use
 `clipboard-win` directly as the CLI does."*
 
-## ★★ Why this file stays pure
+## Why this file stays pure
 
 Because the part that is easy to get wrong is the part that needs no
 dependency, and keeping the two apart is what makes the hard half testable

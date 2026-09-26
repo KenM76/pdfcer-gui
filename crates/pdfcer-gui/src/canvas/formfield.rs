@@ -18,7 +18,7 @@ use crate::canvas::markup::MarkupKind;
 
 /// The five kinds of form control pdfcer can author.
 ///
-/// ★ Exactly the five `pdfcer-core` has verbs for — `add_text_field`,
+/// Exactly the five `pdfcer-core` has verbs for — `add_text_field`,
 /// `add_check_box`, `add_radio_button`, `add_choice_field`, `add_push_button`.
 /// The list is not a design choice here and must not become one: a sixth entry
 /// would be a button with nothing behind it, which is the placeholder R9
@@ -31,7 +31,7 @@ pub enum FormFieldKind {
     CheckBox,
     /// One of a group, where choosing one clears the others.
     ///
-    /// ★ The only kind whose meaning depends on a *group* rather than on the
+    /// The only kind whose meaning depends on a *group* rather than on the
     /// field alone: radio buttons that share a name are one control. The dialog
     /// therefore asks for the group name, and two radios placed with the same
     /// name become alternatives rather than two independent buttons.
@@ -73,7 +73,7 @@ impl FormFieldKind {
     /// said why.
     ///
     ///
-    /// ★★ **The predicate is kept rather than deleted**, and not out of
+    /// **The predicate is kept rather than deleted**, and not out of
     /// sentiment. `app::dispatch::forms` decides its worded refusal on it and
     /// the ribbon's `enabled_when` is welded to it by a catalog test — so a
     /// future kind that pdfcer can author and not use has one place to say so,
@@ -81,7 +81,7 @@ impl FormFieldKind {
     /// kind ships a control that does nothing, silently, which is the whole
     /// class of defect this predicate exists to make impossible.
     ///
-    /// ★ It is a `const fn` returning a literal `true`, which clippy would
+    /// It is a `const fn` returning a literal `true`, which clippy would
     /// otherwise call trivial. That is the point: the interesting state is that
     /// **nothing** is currently in the excluded set.
     #[must_use]
@@ -93,7 +93,7 @@ impl FormFieldKind {
 
     /// The command id that arms this kind.
     ///
-    /// ★ Ids rather than a shared command with a parameter, because R8 says
+    /// Ids rather than a shared command with a parameter, because R8 says
     /// **registering a command is the only way the GUI learns a capability
     /// exists** — and it is what lets a build without one of these simply not
     /// register it, with the ribbon item disappearing rather than being
@@ -112,7 +112,7 @@ impl FormFieldKind {
     /// The default size, in points, for a field placed by a single **click**
     /// rather than by a drag.
     ///
-    /// ★★ A click has to mean something, and a zero-sized field is not it. The
+    /// A click has to mean something, and a zero-sized field is not it. The
     /// numbers are per-kind because the kinds are not the same shape: a text
     /// box is wide and one line tall, and a check box is square. Sizing them
     /// alike would make every click need a resize afterwards, which defeats
@@ -132,7 +132,7 @@ impl FormFieldKind {
 
     /// What to call this kind in a sentence to the operator.
     ///
-    /// ★ Returns the **text function**, not a string, so the words themselves
+    /// Returns the **text function**, not a string, so the words themselves
     /// stay in `crate::text` where `check-ui-strings.sh` can see them. The
     /// contrast with [`Self::name_prefix`] two functions down is the whole
     /// point and is easy to get backwards: that one is a PDF `/T` written into
@@ -151,7 +151,7 @@ impl FormFieldKind {
 
     /// The stem an auto-generated field name is built from.
     ///
-    /// ★★ **A PDF name, not UI copy, and the distinction is load-bearing** —
+    /// **A PDF name, not UI copy, and the distinction is load-bearing** —
     /// which is why these are literals here rather than in `crate::text`. This
     /// string is written into the file as the field's `/T`, is what a
     /// form-filling script keys on, and is what an FDF import matches against.
@@ -201,7 +201,7 @@ mod tests {
 
     /// **A click places something with real area**, for every kind.
     ///
-    /// ★ The guard that stops a click producing an invisible field. A zero or
+    /// The guard that stops a click producing an invisible field. A zero or
     /// negative default would author a control that exists in the document,
     /// cannot be seen, and cannot be clicked to select — the exact shape of the
     /// zero-height Large control this project shipped once before.
@@ -213,7 +213,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **NO KIND IS AUTHORABLE-BUT-INERT ANY MORE**, and the test that
+    /// **NO KIND IS AUTHORABLE-BUT-INERT ANY MORE**, and the test that
     /// used to say otherwise did its job.
     ///
     /// It read *"exactly one kind is authorable-but-inert, and it is the push
@@ -221,7 +221,7 @@ mod tests {
     /// test fails and the failure is the prompt to un-grey the button."* On
     /// 2026-09-01 it failed for exactly that reason and this is what it became.
     ///
-    /// ★★ Inverted rather than deleted, because the WELD is the point. Three
+    /// Inverted rather than deleted, because the WELD is the point. Three
     /// surfaces have to agree about whether a kind is useful once placed — the
     /// ribbon's `enabled_when`, `app::dispatch::forms`' worded refusal, and this
     /// predicate — and a build where they disagree is one where a greyed control
@@ -245,7 +245,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The push button in particular**, named rather than left to the
+    /// **The push button in particular**, named rather than left to the
     /// blanket above.
     ///
     #[test]

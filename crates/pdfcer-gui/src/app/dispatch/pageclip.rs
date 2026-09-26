@@ -34,7 +34,7 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mu
 
 /// Copy the operand sheets, and on a cut also raise their deletion.
 ///
-/// ★ The copy runs **first and unconditionally**, so a cut whose delete is
+/// The copy runs **first and unconditionally**, so a cut whose delete is
 /// refused still leaves the pages on the clipboard rather than losing them —
 /// the opposite of `canvas::clipboard::cut`'s ordering, and deliberately so.
 /// There the refusal is *about the thing being cut* and a half-executed cut
@@ -73,7 +73,7 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, cutting: bool, actions:
         )
     });
 
-    // ★★ The disclosure the operator cannot see: they picked SHEETS, and a form
+    // The disclosure the operator cannot see: they picked SHEETS, and a form
     // field whose boxes straddle a picked and an unpicked one is left behind.
     // Nothing about the thumbnails says so.
     if clip.fields_dropped > 0 {
@@ -90,7 +90,7 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, cutting: bool, actions:
             count: clip.pages,
         },
     );
-    // ★ The OS clipboard, for `canvas::clipboard::copy_content`'s reason and
+    // The OS clipboard, for `canvas::clipboard::copy_content`'s reason and
     // not as a courtesy: this shell's paste is a command rather than a chord,
     // so `Event::Paste` is not in play here — but a person who copies pages and
     // then pastes into an email deserves an explanation rather than silence,
@@ -104,7 +104,7 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, cutting: bool, actions:
 
 /// Paste the clipboard's pages after the current sheet.
 ///
-/// # ★ Why after the current page, and not at the end
+/// # Why after the current page, and not at the end
 ///
 /// Because the operator is looking at a sheet, and *"put these here"* is what a
 /// paste means everywhere else in this shell — a markup lands where the page is
@@ -149,7 +149,7 @@ mod tests {
 
     /// This module's ids, and none of the `pages.*` verbs that are not ours.
     ///
-    /// ★ The negative half is the half that matters. `dispatch::pages` owns
+    /// The negative half is the half that matters. `dispatch::pages` owns
     /// `pages.delete` and this module raises `PageAction::DeletePages`, so a
     /// prefix rule here would claim the very command the cut delegates to and
     /// route it back into this module — a loop that compiles.

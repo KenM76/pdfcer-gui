@@ -32,7 +32,7 @@ const MAX_WIDTH_PT: f64 = 12.0;
 
 /// The width of the two numeric fields, in points.
 ///
-/// ★ Chosen against `egui_shell::ribbon::plan::CUSTOM_ITEM_WIDTH`, which is
+/// Chosen against `egui_shell::ribbon::plan::CUSTOM_ITEM_WIDTH`, which is
 /// **96** and is what the band budgets for a custom item it cannot measure.
 /// That module is explicit about the asymmetry — *"an estimate that is too
 /// small costs a clipped group; it cannot cost the overflow control"* — so
@@ -51,7 +51,7 @@ const ENDINGS_WIDTH: f32 = 84.0;
 
 /// The width of the line-style chooser, in points.
 ///
-/// ★ Narrower than [`ENDINGS_WIDTH`] even though its list has a longer entry,
+/// Narrower than [`ENDINGS_WIDTH`] even though its list has a longer entry,
 /// and that is a deliberate acceptance of one clipped reading rather than a
 /// measurement mistake. The four *entries* are short — the longest is
 /// *"Dash-dot"* — and the only long string this combo can show is
@@ -70,13 +70,13 @@ const DASH_WIDTH: f32 = 88.0;
 
 /// **One property of one mark, parked for the dispatcher.**
 ///
-/// ★★★ The type is the enforcement of this module's central rule. Each variant
+/// The type is the enforcement of this module's central rule. Each variant
 /// carries exactly one field of `MarkupStyle`, so there is no expressible value
 /// that restates a property the operator did not touch — which is what
 /// `MarkupStyle`'s own doc requires and what a `MarkupStyle` parked directly
 /// would have made merely a matter of care.
 ///
-/// ★ It is this module's own type rather than a reuse of `MarkupStyle`, and
+/// It is this module's own type rather than a reuse of `MarkupStyle`, and
 /// that is worth one sentence: `MarkupStyle` is an **input struct** the engine
 /// deliberately left non-`#[non_exhaustive]` so callers can build it, and it is
 /// perfectly buildable here. What it cannot express is *"exactly one field, and
@@ -99,14 +99,14 @@ pub enum MarkupEdit {
     /// `/LE` — the pair of line endings, or the **removal of the key**.
     /// `/Line` only.
     ///
-    /// ★★ A `StyleEdit` since 2026-09-06, and the two arms are two different
+    /// A `StyleEdit` since 2026-09-06, and the two arms are two different
     /// files that draw the same line: `Set` writes the array — including
     /// `Set((None, None))`, which is *"no arrowheads"* stated explicitly — and
     /// `Clear` removes `/LE` altogether, so the mark goes back out the way it
     /// came in. See this module's header for why the second is offered as an
     /// action rather than as a fifth position in the chooser.
     Endings(StyleEdit<(LineEnding, LineEnding)>),
-    /// ★★★ `/BS` `/S` + `/D` — the **line style**: dashed, or solid.
+    /// `/BS` `/S` + `/D` — the **line style**: dashed, or solid.
     ///
     /// `RIBBON_IA.md` §5.8's eighth control, and the only one of the eight
     /// that had *"no engine verb at all"* until the afternoon of 2026-09-06.
@@ -114,7 +114,7 @@ pub enum MarkupEdit {
     /// this chooser can mean: `Set(dash)` makes the border dashed with that
     /// pattern, `Clear` makes it solid.
     ///
-    /// ★★ **The third arm is `None`, and it is what NOT touching the control
+    /// **The third arm is `None`, and it is what NOT touching the control
     /// does.** A restyle that does not mention `dash` preserves whatever the
     /// annotation has, *including a dash pdfcer never authored* — so an
     /// operator who changes a foreign-dashed mark's colour keeps their dash,
@@ -174,7 +174,7 @@ impl MarkupEdit {
 /// about. `None` means *nothing was invoked*, which is what the shell expects
 /// for a frame in which the operator merely looked at the control.
 ///
-/// # ★ `kind` is matched, not asserted
+/// # `kind` is matched, not asserted
 ///
 /// An unrecognised kind returns `None` and draws nothing, exactly as
 /// `PdfcerApp::ribbon_band`'s renderer does for one it does not know. A
@@ -193,7 +193,7 @@ pub(super) fn draw(
     let command = registry.get(id)?;
     let enabled = command.is_enabled(conditions);
 
-    // ★ The read-back is attempted only when the control could be live, and
+    // The read-back is attempted only when the control could be live, and
     // unlike `fontband`'s equivalent that is **correctness** rather than
     // performance: `Current::read` walks one annotation dictionary and is
     // cheap, but with no markup selected there is nothing to read and a control
@@ -210,7 +210,7 @@ pub(super) fn draw(
     let mut invoked = false;
     let response = ui
         .add_enabled_ui(live, |ui| {
-            // ★ The `Ready` values, or the defaults a greyed control shows. The
+            // The `Ready` values, or the defaults a greyed control shows. The
             // `let else` rather than an `expect`: a paint-loop panic on a state
             // that is merely unexpected is a worse failure than a control that
             // draws inert, and `add_enabled_ui(false, ..)` has already made it
@@ -247,7 +247,7 @@ pub(super) fn draw(
 
     crate::diag::ui_rect(&egui_shell::ribbon::report::band_item(id), response.rect);
 
-    // ★★★ **The sentence depends on WHY the control is not live**, which is the
+    // **The sentence depends on WHY the control is not live**, which is the
     // defect `fontband::colour` records paying for over eight days: one hover
     // string answering two unrelated states, confidently and wrongly for one of
     // them. There are exactly two here and they are told apart by
@@ -299,7 +299,7 @@ fn command_for(kind: &str) -> Option<&'static str> {
 
 /// What these controls have to act on, and — when they have nothing — *why*.
 ///
-/// ★ Three variants and not an `Option`, because the two failure states get
+/// Three variants and not an `Option`, because the two failure states get
 /// different hovers and an `Option` would force the caller to re-derive which
 /// one it was. That re-derivation is exactly the shape of `fontband::colour`'s
 /// recorded defect, where one arm answered two reasons with one sentence for
@@ -318,7 +318,7 @@ enum Operand {
 
 /// The annotation these controls would act on, read fresh from the session.
 ///
-/// # ★★ Read from the SESSION every frame, never from a cache
+/// # Read from the SESSION every frame, never from a cache
 ///
 /// The verb these controls raise rewrites the very values they display, and an
 /// action is applied *after* the frame that raised it — so a cached copy would
@@ -326,7 +326,7 @@ enum Operand {
 /// frame they judge the result on. `panels::properties::markup` states the same
 /// rule for the same reason.
 ///
-/// # ★ The `AnnotKind` guard is here AND in `app::conditions`, deliberately
+/// # The `AnnotKind` guard is here AND in `app::conditions`, deliberately
 ///
 /// The condition already refuses a ce dimension, so this looks redundant. It is
 /// not: a condition is a hint published for the ribbon's benefit and is
@@ -360,7 +360,7 @@ fn resolved(doc: Option<&OpenDoc>) -> Operand {
 
 /// The placeholder a greyed control shows in place of a value it does not have.
 ///
-/// ★★★ **A greyed field shows the PLACEHOLDER, not a number.**
+/// **A greyed field shows the PLACEHOLDER, not a number.**
 /// `fontband::size` records what the alternative costs: with nothing swept the
 /// draft held its `Default` — zero — and `DragValue`'s own range clamped it up,
 /// so the greyed control read `1.0 pt`, which is a claim about the operator's
@@ -384,7 +384,7 @@ fn placeholder(ui: &mut Ui, kind: &str) {
 /// What the selected mark's dictionary currently says, in the five terms this
 /// band can change.
 ///
-/// # ★★ Why it is read through `spec_from_dict` and not from `annot::Annotation`
+/// # Why it is read through `spec_from_dict` and not from `annot::Annotation`
 ///
 /// `pdfcer_core::annot::Annotation` is the **reader's** view — id, subtype,
 /// rect, flags, `/CA`, appearance — and it deliberately carries no `/C`, no
@@ -397,18 +397,18 @@ fn placeholder(ui: &mut Ui, kind: &str) {
 /// the values these controls show are the values `set_markup_style` will read
 /// when it plans: one derivation, not two.
 ///
-/// ★ Its refusals are absent values here rather than an error, and that is
+/// Its refusals are absent values here rather than an error, and that is
 /// honest rather than lax. `SpecReadError`'s own doc says every variant is *"a
 /// refusal to guess"* — geometry that is missing, or is not something pdfcer
 /// models. A mark like that can still be **given** a colour; what cannot be
 /// done is show the one it has.
 #[derive(Debug, Clone, Copy)]
 struct Current {
-    /// ★★★ **Which of these properties this `/Subtype` can take at all — the
+    /// **Which of these properties this `/Subtype` can take at all — the
     /// ENGINE's answer, not this module's.**
     ///
     ///
-    /// ★ Distinct from a value being `None`, and the distinction is the whole
+    /// Distinct from a value being `None`, and the distinction is the whole
     /// of why a control is **absent** rather than greyed: `false` means the
     /// property is *"a property of the shape and not an error"*, so a control
     /// offered there would be inert — which this project forbids — and a greyed
@@ -421,7 +421,7 @@ struct Current {
     interior: Option<[u8; 3]>,
     /// Whether `/IC` is set at all — showable or not.
     ///
-    /// ★ Tracked apart from [`Self::interior`] because a CMYK fill is *set* and
+    /// Tracked apart from [`Self::interior`] because a CMYK fill is *set* and
     /// *unshowable*, and the two questions have different answers: the swatch
     /// falls back to its default, and *No fill* must still be offered, because
     /// there is genuinely something to remove.
@@ -432,7 +432,7 @@ struct Current {
     alpha: Option<f64>,
     /// **`/BS` `/S` and `/D`, as the Line style chooser can show them.**
     ///
-    /// ★ Read off the **dictionary**, not off the spec, and that is not a
+    /// Read off the **dictionary**, not off the spec, and that is not a
     /// departure from this struct's rule — it is the same exception `/CA` is,
     /// one property along. A dash cuts across `MarkupSpec`'s variants rather
     /// than belonging to any of them, so the engine carries it in
@@ -447,13 +447,13 @@ struct Current {
     /// The `/LE` pair the mark currently draws, when [`Self::support`] says it
     /// has one.
     ///
-    /// ★ This is a **value**, and it comes from `MarkupSpec::Line`'s own field
+    /// This is a **value**, and it comes from `MarkupSpec::Line`'s own field
     /// because only that arm has one — a fact the compiler checks and the
     /// engine publishes no API for. Whether the control is offered at all is
     /// `support.takes_endings`, which is a different question with a different
     /// owner. The header's table draws the line.
     endings: Option<(LineEnding, LineEnding)>,
-    /// ★★ **Whether `/LE` is actually IN the dictionary**, as opposed to being
+    /// **Whether `/LE` is actually IN the dictionary**, as opposed to being
     /// supplied by Table 176's default on the way through `spec_from_dict`.
     ///
     /// The one thing [`Self::endings`] cannot tell anybody: the spec reader
@@ -468,7 +468,7 @@ struct Current {
     endings_key_present: bool,
 }
 
-/// ★ Even "nothing to show" asks the engine what the properties are.
+/// Even "nothing to show" asks the engine what the properties are.
 ///
 /// `MarkupStyleSupport` is `#[non_exhaustive]` and has no `Default`, so this
 /// impl is written out — and that is a small piece of luck worth keeping,
@@ -507,13 +507,13 @@ impl Current {
         let Some(Object::Dict(dict)) = doc.session.value(id) else {
             return Self::default();
         };
-        // ★ `/CA` straight off the dictionary rather than through the spec: it
+        // `/CA` straight off the dictionary rather than through the spec: it
         // is not part of `MarkupSpec` at all — the engine composites the
         // annotation onto the page rather than letting the appearance draw it,
         // which is why `set_markup_style` applies it to the dictionary
         // directly.
         //
-        // ★ `ObjectGraph::resolve` comes from the TRAIT, so it has to be in
+        // `ObjectGraph::resolve` comes from the TRAIT, so it has to be in
         // scope; there is no inherent method, and reaching for one is the error
         // a reader hits first. Following the reference through the session's
         // overlay rather than through the base file is what makes an unsaved
@@ -523,14 +523,14 @@ impl Current {
             .map(|o| graph.resolve(o))
             .and_then(Object::as_number);
 
-        // ★★★ **The capability question, asked of the engine, off the same key
+        // **The capability question, asked of the engine, off the same key
         // the engine itself reads.** `set_markup_style` derives its
         // `MarkupStyleSupport` from `/Subtype` on the annotation dictionary; so
         // does this. One key, one function, one
         // answer — which is what makes a control shown here and a call refused
         // there impossible to disagree.
         //
-        // ★ Read through `graph.resolve` for the same reason `/CA` is: an
+        // Read through `graph.resolve` for the same reason `/CA` is: an
         // indirect `/Subtype` is legal, and following it through the session's
         // overlay is what makes an unsaved edit visible.
         let subtype = dict
@@ -540,7 +540,7 @@ impl Current {
             .map_or_else(Vec::new, |n| n.as_bytes().to_vec());
         let support = MarkupStyleSupport::for_subtype(&subtype);
 
-        // ★★ Presence, not value. See `Self::endings_key_present`: this is the
+        // Presence, not value. See `Self::endings_key_present`: this is the
         // one fact `spec_from_dict` deliberately erases, because Table 176's
         // default makes an absent `/LE` and a written `[/None /None]` the same
         // picture — and the *Clear the setting* action exists precisely to tell
@@ -550,7 +550,7 @@ impl Current {
             .map(|o| graph.resolve(o))
             .is_some_and(|o| !matches!(o, Object::Null));
 
-        // ★★ Read BEFORE `spec_from_dict`, and carried across its refusal —
+        // Read BEFORE `spec_from_dict`, and carried across its refusal —
         // deliberately, and unlike `endings`. `/BS` is a dictionary key that
         // reads fine off an annotation whose *geometry* pdfcer cannot model, and
         // the Line style chooser can commit on such a mark for the same reason
@@ -575,7 +575,7 @@ impl Current {
             endings_key_present,
             ..Self::default()
         };
-        // ★★★ **This `match` reads VALUES; it no longer decides CAPABILITIES.**
+        // **This `match` reads VALUES; it no longer decides CAPABILITIES.**
         //
         //
         // ⚠ What stays is what only an arm can say: `border_width` lives in
@@ -644,7 +644,7 @@ impl Current {
     }
 
     // -----------------------------------------------------------------------
-    // ★★★ WHETHER a control is drawn — one question, one place, testable
+    // WHETHER a control is drawn — one question, one place, testable
     //
     // These four are the whole of what replaced this module's copy of the
     // engine's subtype list, and they are functions rather than expressions
@@ -680,7 +680,7 @@ impl Current {
 
     /// Whether the Line style chooser draws.
     ///
-    /// ★★ **Purely the engine's answer, with no second term** — unlike
+    /// **Purely the engine's answer, with no second term** — unlike
     /// [`Self::offers_width`], which also asks whether a width was read. The
     /// asymmetry is real rather than an oversight: a width has to be *shown* in
     /// its field, so a mark whose width this build could not read has nothing to
@@ -707,7 +707,7 @@ impl Current {
     /// Whether the chooser's *Clear the setting* action draws under its
     /// separator.
     ///
-    /// ★ Strictly narrower than [`Self::offers_endings`]: there has to be a
+    /// Strictly narrower than [`Self::offers_endings`]: there has to be a
     /// chooser to put it in **and** a `/LE` in the file to take out.
     const fn offers_endings_clear(self) -> bool {
         self.offers_endings() && self.endings_key_present
@@ -716,7 +716,7 @@ impl Current {
 
 /// The outline colour, `/C`.
 ///
-/// # ★ A swatch alone, where the Properties panel has a swatch and a Clear
+/// # A swatch alone, where the Properties panel has a swatch and a Clear
 ///
 /// `StyleEdit` has two arms and they mean different things in the file: `Set`
 /// writes `/C` and `Clear` removes it, restoring the standard's default. The
@@ -735,7 +735,7 @@ fn stroke(
     target: &AnnotTarget,
     parked: &mut Option<(AnnotTarget, MarkupEdit)>,
 ) -> bool {
-    // ★ The default is BLACK rather than an invented colour, and it is the same
+    // The default is BLACK rather than an invented colour, and it is the same
     // default `panels::properties::markup` shows. A mark whose `/C` is CMYK, a
     // separation, or absent gets it — see `rgb_of` for why a converted
     // near-match would be worse than a default: pick the swatch up, put it down
@@ -754,7 +754,7 @@ fn stroke(
 
 /// The interior colour, `/IC`, and its removal.
 ///
-/// # ★★★ *No fill* is a first-class state, and it is why this control is two
+/// # *No fill* is a first-class state, and it is why this control is two
 /// widgets where [`stroke`] is one
 ///
 /// `canvas::markup::spec` authors every shape with `interior: None`, and its
@@ -773,7 +773,7 @@ fn stroke(
 /// reversing the authoring default is the operator's call, and offering a
 /// restyle control does not make it.
 ///
-/// ★ The clear button is **absent** when there is nothing to clear rather than
+/// The clear button is **absent** when there is nothing to clear rather than
 /// greyed — the panel's rule, and its reason: a Clear beside a mark that has no
 /// `/IC` is a control whose only possible effect is an undo entry the operator
 /// did not earn.
@@ -788,7 +788,7 @@ fn fill(
         return false;
     }
     let existing = current.interior;
-    // ★ WHITE, not black, and it is the one default in this module that differs
+    // WHITE, not black, and it is the one default in this module that differs
     // from the Properties panel's. A fill swatch that opens on black offers, as
     // its most likely single click, the colour that hides the most of the
     // drawing underneath — which is the exact outcome pdfcer authors
@@ -822,13 +822,13 @@ fn fill(
 /// a ribbon band has no room for a sentence and the hover is the surface that
 /// does.
 ///
-/// ★ Committed on `drag_stopped` or `lost_focus`, **never** on `.changed()`. A
+/// Committed on `drag_stopped` or `lost_focus`, **never** on `.changed()`. A
 /// `DragValue` reports a change on every pixel of a drag, and each one here
 /// regenerates the appearance and is one undo entry — so a single drag across
 /// the control would leave forty entries on a `Ctrl+Z` stack the operator could
 /// not get back through, and would re-plan the annotation forty times.
 ///
-/// ★ **Absent** rather than greyed when the mark has no border to widen: a
+/// **Absent** rather than greyed when the mark has no border to widen: a
 /// highlight is `/QuadPoints` and has nothing to stroke. R9, and the same
 /// answer `panels::properties::markup::width_row` gives.
 ///
@@ -852,7 +852,7 @@ fn width(
     let Some(was) = current.width else {
         return false;
     };
-    // ★ The draft, not the document — see `drafted`. Re-seeding from `was`
+    // The draft, not the document — see `drafted`. Re-seeding from `was`
     // every frame is what made this control undraggable for its whole life.
     let draft_id = ui.id().with("markup.width.draft");
     let mut value = drafted::<f64>(ui, draft_id, was);
@@ -877,16 +877,16 @@ fn width(
 
 /// The constant opacity, `/CA`.
 ///
-/// ★ Shown as a **percentage**, because that is the unit every other
+/// Shown as a **percentage**, because that is the unit every other
 /// application an operator has used states opacity in, and `/CA`'s own
 /// `0.0..=1.0` is a file-format detail they should never meet. The Properties
 /// panel's twin makes the same choice and this reads the same suffix from the
 /// same catalog entry, so the two surfaces cannot come to call it different
 /// things.
 ///
-/// ★ Release-not-change, for [`width`]'s reason exactly.
+/// Release-not-change, for [`width`]'s reason exactly.
 ///
-/// ★ No Clear. `/CA` absent and `/CA` at 100 % render identically, so removing
+/// No Clear. `/CA` absent and `/CA` at 100 % render identically, so removing
 /// the key is a change with no visible consequence — and the panel, which has
 /// room for a control whose effect is invisible, is where that belongs. Here it
 /// would spend a slot on a button an operator could not tell had worked.
@@ -900,7 +900,7 @@ fn opacity(
     let was = (current.alpha.unwrap_or(1.0) * 100.0)
         .round()
         .clamp(0.0, 100.0) as u8;
-    // ★ Same draft as `width`, and it had the same defect — the driven check
+    // Same draft as `width`, and it had the same defect — the driven check
     // named width and flagged this one as "built the same way and worth
     // checking". It was. Both are fixed by the same two calls.
     let draft_id = ui.id().with("markup.opacity.draft");
@@ -928,10 +928,10 @@ fn opacity(
 
 /// **The border line style, `/BS` `/S` and `/D` — the eighth control.**
 ///
-/// # ★★★ What this closes
+/// # What this closes
 ///
 ///
-/// # ★★ The preserve half is why this control is SAFE, and it is why it
+/// # The preserve half is why this control is SAFE, and it is why it
 /// # shipped at all
 ///
 /// Before that Pass, a dashed mark in the operator's file was **silently
@@ -946,7 +946,7 @@ fn opacity(
 /// an engine that dropped every dash it did not author would have been a control
 /// whose neighbours undid it.
 ///
-/// # ★ There is no Clear beside it, and the reason is Table 166
+/// # There is no Clear beside it, and the reason is Table 166
 ///
 /// The other two `StyleEdit` controls in this group put `Clear` on its own
 /// button — `fill`'s *No fill*, `endings`' *Clear the setting* — because in both
@@ -978,7 +978,7 @@ fn dash(
     ) else {
         return false;
     };
-    // ★ The one place `BorderDash::new`'s `Option` is answered on this surface,
+    // The one place `BorderDash::new`'s `Option` is answered on this surface,
     // and the answer is to **do nothing**: no park, no token, no undo entry.
     // Substituting Table 166's default would be this shell writing a pattern the
     // operator did not choose. It is unreachable for the four offered styles —
@@ -995,7 +995,7 @@ fn dash(
 /// Which ends of a `/Line` carry an arrowhead.
 ///
 ///
-/// # ★★★ Four positions, and the SHAPE is preserved rather than chosen
+/// # Four positions, and the SHAPE is preserved rather than chosen
 ///
 /// `/LE` is two independent endings over three shapes each (§12.5.6.7, Table
 /// 176) — nine combinations, which is not a list anybody reads on a ribbon
@@ -1009,7 +1009,7 @@ fn dash(
 /// would silently rewrite a `/ClosedArrow` the operator's producer had set, and
 /// the change would be visible in another viewer.
 ///
-/// # ★★★ …and a fifth state that is not a fifth position
+/// # …and a fifth state that is not a fifth position
 ///
 /// The four positions all **write** `/LE`. `StyleEdit::Clear` **removes** it,
 /// which is a different file drawing the same line, and it is offered here as
@@ -1019,7 +1019,7 @@ fn dash(
 /// drafter cannot check by looking, and that it would leave the combo's
 /// `selected_text` with two equal claimants when `/LE` is absent.
 ///
-/// ★ It is **absent unless `/LE` is in the dictionary**
+/// It is **absent unless `/LE` is in the dictionary**
 /// ([`Current::endings_key_present`]), which is [`fill`]'s Clear rule: a
 /// removal offered where there is nothing to remove has no possible effect but
 /// an undo entry the operator did not earn.
@@ -1052,7 +1052,7 @@ fn endings(
                     invoked = true;
                 }
             }
-            // ★ The separator is the whole of the presentation decision: what
+            // The separator is the whole of the presentation decision: what
             // is above it are four answers to *which ends?*, and what is below
             // it is an act on the file. A `Button` rather than a
             // `selectable_label`, so it cannot render as a selected position.
@@ -1125,7 +1125,7 @@ impl Ends {
 /// The arrowhead **shape** a `/LE` pair is drawn in, to be carried through a
 /// change of position.
 ///
-/// ★ `ClosedArrow` wins when the two ends disagree, and `OpenArrow` is the
+/// `ClosedArrow` wins when the two ends disagree, and `OpenArrow` is the
 /// answer for a line that has no head at all. Both choices are about not
 /// destroying information: a mark with one closed head is a mark whose author
 /// chose closed, so adding a second head should match it rather than convert
@@ -1142,7 +1142,7 @@ fn arrow_shape(pair: (LineEnding, LineEnding)) -> LineEnding {
 
 /// An annotation colour as sRGB bytes, if it is one a swatch can show.
 ///
-/// ★ `None` for anything that is not RGB or grey, and that is honest rather
+/// `None` for anything that is not RGB or grey, and that is honest rather
 /// than lossy: §12.5.2 lets `/C` be a 0-, 1-, 3- or 4-component array, and a
 /// swatch showing a CMYK mark's *converted* colour would be a control whose
 /// readback is a conversion the operator never asked for — pick it up, put it
@@ -1169,7 +1169,7 @@ fn rgb_of(color: Color) -> Option<[u8; 3]> {
 
 /// sRGB bytes as the engine's device colour.
 ///
-/// ★ Always `DeviceRGB`, never a grey collapsed from three equal channels. The
+/// Always `DeviceRGB`, never a grey collapsed from three equal channels. The
 /// swatch is an sRGB picker, so what the operator chose *is* an RGB triple; a
 /// mark silently written as `DeviceGray` because its channels happened to match
 /// would be pdfcer inferring a colour space the operator did not ask for, which

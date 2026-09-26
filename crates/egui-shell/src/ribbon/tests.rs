@@ -19,7 +19,7 @@
 //!    stops a width assertion being written here, where it would be
 //!    vacuous under one of the two commands below.
 //!
-//! # ★ A WARNING ABOUT WIDTHS IN THIS FILE
+//! # A WARNING ABOUT WIDTHS IN THIS FILE
 //!
 //! `egui = { default-features = false }` means this crate has no font data
 //! *when it is built alone*, so every galley measures near zero. That is
@@ -62,7 +62,7 @@ use egui::{Pos2, Rect, Vec2};
 // drawn, an overflow control that cannot be reached — are properties
 // of what was drawn and are invisible to a test that inspects a plan.
 //
-// ★ A WARNING ABOUT WIDTHS IN THIS MODULE.
+// A WARNING ABOUT WIDTHS IN THIS MODULE.
 //
 // `default-features = false` means this crate has no font data *when
 // it is built alone*, so every galley measures near zero. That is
@@ -151,7 +151,7 @@ pub(super) fn shell() -> Shell {
                         Item::command("view.thin_lines"),
                         Item::custom("quality_slider"),
                     ]),
-                    // ★ No caption. `validate` would refuse this
+                    // No caption. `validate` would refuse this
                     // manifest; the renderer must survive it and must
                     // still emit a caption, because a band of
                     // unlabelled controls is the defect this whole
@@ -208,7 +208,7 @@ fn render_view_tab(width: f32) -> (RibbonState, Vec<(String, Rect)>, Vec<Handler
     (state, seen, invoked)
 }
 
-/// **★ Every rendered group emits a caption — including a group the
+/// **Every rendered group emits a caption — including a group the
 /// manifest forgot to caption.**
 ///
 /// This is the invariant the band exists to make structural. Two
@@ -287,7 +287,7 @@ fn every_rendered_group_emits_a_caption() {
     );
 }
 
-/// **★ Every command control in the band publishes where it was drawn.**
+/// **Every command control in the band publishes where it was drawn.**
 ///
 /// # The gap this closes
 ///
@@ -396,7 +396,7 @@ fn every_band_command_publishes_the_rect_it_was_drawn_in() {
     );
 }
 
-/// **★ `MODES_AND_PANELS.md` failure mode #8: at a width narrow
+/// **`MODES_AND_PANELS.md` failure mode #8: at a width narrow
 /// enough to hide groups, the overflow control is still there and
 /// still hit-testable.**
 ///
@@ -502,7 +502,7 @@ fn a_wide_enough_band_shows_every_group_and_no_affordance() {
     );
 }
 
-/// **★ Every mode publishes its own labelled, positive-area segment.**
+/// **Every mode publishes its own labelled, positive-area segment.**
 ///
 /// `MODES_AND_PANELS.md` Part 1 forbids *"a bare track with a knob,
 /// where the available positions are invisible until you drag."* The
@@ -554,7 +554,7 @@ fn the_mode_selector_sits_right_of_the_tab_strip() {
     );
 }
 
-/// **★ The shell reports intent and executes nothing.**
+/// **The shell reports intent and executes nothing.**
 ///
 /// A synthetic click on a QAT control returns that command's handler
 /// token — and returns *only* that. Nothing in this crate can act on
@@ -861,7 +861,7 @@ fn an_empty_manifest_draws_an_empty_ribbon() {
     assert_eq!(state.last_frame().tabs_visible, 0);
 }
 
-/// **★ The mode selector is operable from the keyboard.**
+/// **The mode selector is operable from the keyboard.**
 ///
 /// `MODES_AND_PANELS.md` Part 1, behavioural rule 6: *"the selector
 /// is a real focusable control with arrow-key movement — not a
@@ -924,7 +924,7 @@ fn the_mode_selector_moves_with_the_arrow_keys() {
     );
 }
 
-/// **★ Groups in the overflow menu are captioned too.**
+/// **Groups in the overflow menu are captioned too.**
 ///
 /// The menu is the place a second, simpler drawing path would be
 /// most tempting — it is a vertical list, the band's centring does
@@ -938,7 +938,7 @@ fn the_mode_selector_moves_with_the_arrow_keys() {
 #[test]
 fn a_group_in_a_popup_is_captioned_too() {
     let ctx = egui::Context::default();
-    // ★★ The invariant is *"a group drawn inside a popup still gets its
+    // The invariant is *"a group drawn inside a popup still gets its
     // caption"* — the defect the salvage source carries, twice. A COLLAPSED
     // GROUP's popup is the only popup that renders groups, so it is the one
     // place the invariant is reachable, and it is what this drives.
@@ -967,7 +967,7 @@ fn a_group_in_a_popup_is_captioned_too() {
     let at = overflow_rect
         .expect("the collapsed group publishes its rect")
         .center();
-    // ★ Zero is a legal value here, and an assertion that it is not would be
+    // Zero is a legal value here, and an assertion that it is not would be
     // wrong.
     // A COLLAPSED group deliberately contributes to neither counter while its
     // popup is shut — see `collapsed`'s note on why there is no `count`
@@ -1145,7 +1145,7 @@ fn two_ribbons_can_coexist_with_distinct_id_salts() {
     );
 }
 
-/// ★★★ **Pressing the right arrow scrolls the band, and the LEFT arrow then
+/// **Pressing the right arrow scrolls the band, and the LEFT arrow then
 /// appears** — the round trip, driven.
 ///
 /// The left arrow is the one control on the scroll surface a static
@@ -1167,7 +1167,7 @@ fn two_ribbons_can_coexist_with_distinct_id_salts() {
 #[test]
 fn scrolling_right_moves_the_band_and_offers_the_way_back() {
     let ctx = egui::Context::default();
-    // ★★ A REAL FONT, pinned. Without it this test passes under
+    // A REAL FONT, pinned. Without it this test passes under
     // `cargo test -p egui-shell` and fails under `cargo test --workspace`,
     // because feature unification with `pdfcer-gui` changes the ambient font and
     // therefore every measured width — at which point the fixture's 180 pt is
@@ -1238,7 +1238,7 @@ fn scrolling_right_moves_the_band_and_offers_the_way_back() {
         });
     }
 
-    // ★ The band having MOVED is not asserted separately, and does not need to
+    // The band having MOVED is not asserted separately, and does not need to
     // be: `ribbon.scroll.left` is drawn under exactly one condition, `scrolled
     // > 0`. Its presence IS the proof that the click advanced the band.
     // Comparing the leading group's name before and after would need a group

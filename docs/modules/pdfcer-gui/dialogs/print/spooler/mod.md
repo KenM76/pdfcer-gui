@@ -1,6 +1,6 @@
 # `dialogs::print::spooler` — the one module that knows `pdfcer-print` exists
 
-## ★ Read this first: this module is the ADAPTER, and it is now live
+## Read this first: this module is the ADAPTER, and it is now live
 
 Everything else in [`crate::dialogs::print`] — the three tabs, the range
 parser, the zoom anchor, the preview raster cache, the clip disclosure,
@@ -20,7 +20,7 @@ the whole "make printing work" change to this one module.
 `spooler::Printer` and `spooler::device_features`. See the re-export's own
 note for why the seam is not pushed out to the call sites.
 
-## ★ The defect this file carried for the whole of v0.1.0, recorded
+## The defect this file carried for the whole of v0.1.0, recorded
 
 This header used to open with the sentence *"`pdfcer-print` is NOT a
 dependency of this crate"* and then set out, in full, the two edits that

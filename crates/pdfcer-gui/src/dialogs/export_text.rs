@@ -13,9 +13,9 @@ use crate::text::export_text as t;
 
 /// The region this dialog publishes for its body.
 pub const REGION_BODY: &str = "dialog:export-text"; // ui-text-exempt: trace region name, never displayed
-/// ★★ The region ONE page-scope radio publishes.
+/// The region ONE page-scope radio publishes.
 ///
-/// ★ These exist for `OPERATOR_REQUESTS.md` **O196**. Until the export windows
+/// These exist for `OPERATOR_REQUESTS.md` **O196**. Until the export windows
 /// remembered anything, a driven check had nothing to assert about a radio
 /// beyond *"it is drawn"*; now the question is which one is **selected on
 /// open**, and that cannot be asked of a group rectangle.
@@ -36,7 +36,7 @@ pub const fn region_for_scope(scope: PageScope) -> &'static str {
 /// The region the page-scope radio GROUP publishes — all three together, plus
 /// the range box.
 pub const REGION_PAGES: &str = "export-text.pages"; // ui-text-exempt: trace region name, never displayed
-/// ★★ The region ONE separator radio publishes. Same argument as
+/// The region ONE separator radio publishes. Same argument as
 /// [`region_for_scope`], and the same reason: **which one is ticked on open**
 /// is now a question worth asking.
 #[must_use]
@@ -69,7 +69,7 @@ pub struct ExportTextDialog {
     page_count: usize,
     /// Which pages.
     ///
-    /// # ★ Why this window opens on **every page** where the image window
+    /// # Why this window opens on **every page** where the image window
     /// opens on *this page only*
     ///
     /// The shipped value lives in [`crate::app::prefs::ExportTextPrefs`] as of
@@ -94,7 +94,7 @@ pub struct ExportTextDialog {
     range_text: String,
     /// What goes between one page and the next.
     ///
-    /// ★ The shipped default is the engine's own separator — see
+    /// The shipped default is the engine's own separator — see
     /// `PageSeparator::FormFeed`. Defaulting to the marker would make the
     /// departure from the clipboard's bytes the thing an operator has to notice
     /// and undo, and the argument for that is now on
@@ -146,7 +146,7 @@ impl ExportTextDialog {
             close_requested: false,
         };
 
-        // ★★★ **Traced from the BUILT dialog, and the position of these lines
+        // **Traced from the BUILT dialog, and the position of these lines
         // is the whole point of them.**
         //
         crate::diag::trace(|| {
@@ -155,7 +155,7 @@ impl ExportTextDialog {
                 "export-text-open page={} pages={} scope={} separator={} endings={} bom={}",
                 dialog.page_index,
                 dialog.page_count,
-                // ★ Stable lowercase tokens, never `{:?}`. This project's
+                // Stable lowercase tokens, never `{:?}`. This project's
                 // standing lesson, and the preferences file's own `*_key`
                 // functions are what produce them, so the token a check reads
                 // here and the token on disk cannot drift.
@@ -216,7 +216,7 @@ impl ExportTextDialog {
         if std::mem::take(&mut self.export_requested)
             && let Some(plan) = self.plan()
         {
-            // ★★★ O196, and the POSITION is the decision: the habits are
+            // O196, and the POSITION is the decision: the habits are
             // written when the operator presses Export, never when the window
             // closes. Closing without exporting is how a person says *"not
             // this"*. The argument is in
@@ -309,7 +309,7 @@ impl ExportTextDialog {
         // No `.strong()` anywhere in this window — R84 / DEFECTS.md D11.
         ui.label(t::pages_heading());
         let start = ui.cursor();
-        // ★ Each radio's OWN rectangle, for O196 — see [`region_for_scope`].
+        // Each radio's OWN rectangle, for O196 — see [`region_for_scope`].
         let response = ui.radio_value(
             &mut self.scope,
             PageScope::AllPages,
@@ -357,7 +357,7 @@ impl ExportTextDialog {
     /// distinction rule 4 exists to keep visible.
     fn separator_group(&mut self, ui: &mut Ui) {
         ui.label(t::separator_heading());
-        // ★ Each radio's OWN rectangle, for O196 — see
+        // Each radio's OWN rectangle, for O196 — see
         // [`region_for_separator`].
         let response = ui.radio_value(
             &mut self.separator,
@@ -372,7 +372,7 @@ impl ExportTextDialog {
             t::separator_marker(),
         );
         crate::diag::ui_rect(region_for_separator(PageSeparator::Marker), response.rect);
-        // ★ Not `weak`. This is the one hint in the window that says pdfcer will
+        // Not `weak`. This is the one hint in the window that says pdfcer will
         // put words of its own into the operator's file, and a quiet grey line
         // is the thing an operator skips.
         ui.label(t::separator_marker_hint());
@@ -381,7 +381,7 @@ impl ExportTextDialog {
     /// How the bytes are written.
     fn file_group(&mut self, ui: &mut Ui) {
         ui.label(t::file_heading());
-        // ★ The encoding is a STATEMENT, not a control. There is no code-page
+        // The encoding is a STATEMENT, not a control. There is no code-page
         // option and there will not be one: a CAD drawing carries degree signs
         // and diameter marks, and offering an encoding that cannot represent
         // them is offering a way to lose them silently.
@@ -409,7 +409,7 @@ impl ExportTextDialog {
     /// The standing losses — true of every text export of every document, and
     /// therefore sayable before the press.
     ///
-    /// ★ Drawn as ordinary labels rather than `weak`, and above the buttons
+    /// Drawn as ordinary labels rather than `weak`, and above the buttons
     /// rather than below them. This is the paragraph that decides whether the
     /// operator should be doing this at all — a drafter who needs the title
     /// block's *layout* wants the DXF export or the image export, and this is

@@ -7,7 +7,7 @@
 //! what the operator is shown mid-drag is produced by the code that performs
 //! the drop, rather than by a second description of it that can disagree.
 //!
-//! ## ★ The take leaves a hole, and that is what keeps the target valid
+//! ## The take leaves a hole, and that is what keeps the target valid
 //!
 //! A drop target is named against the layout the operator can see. Removing the
 //! dragged panel first can empty its stack, and pruning that stack shifts every

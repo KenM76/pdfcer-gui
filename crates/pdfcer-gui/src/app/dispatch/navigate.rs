@@ -11,7 +11,7 @@
 //! and the obvious one in placement — the operator asked for it *"in
 //! navigate"* by name.
 //!
-//! ## ★★ The two shapes in here, and why the difference is not an
+//! ## The two shapes in here, and why the difference is not an
 //! ## inconsistency
 //!
 //! | control | capability check | why |
@@ -21,7 +21,7 @@
 //! | **Points** | `edit_content`, **and it says so** | an anchor is selected in order to be DRAGGED |
 //! | **Smart select** | `edit_content`, and it says so | it governs a substitution that only happens where content is selectable |
 //!
-//! ★ Both declining arms exist because these controls have a **second door**.
+//! Both declining arms exist because these controls have a **second door**.
 //! The ribbon item is withheld outside Edit, so the route that still reaches
 //! them there is a bare chord — and a chord that silently does nothing offers
 //! no control to hover and no explanation anywhere. That is the P3 decline this
@@ -31,7 +31,7 @@
 
 /// The ids this module answers for.
 ///
-/// ★ A `matches!` over literals rather than a prefix test, for the reason every
+/// A `matches!` over literals rather than a prefix test, for the reason every
 /// `handles` in this directory gives: a prefix would silently claim the next
 /// `view.*` command somebody adds, and the failure would be a command that
 /// reaches this file's `match` and falls out of it doing nothing.
@@ -50,7 +50,7 @@ pub(crate) fn handles(id: &str) -> bool {
 
 /// Arm a tool, or flip the switch.
 ///
-/// ★ Note the signature: **no `actions`**. Every control here changes how the
+/// Note the signature: **no `actions`**. Every control here changes how the
 /// next gesture is READ and none of them changes the document, so there is
 /// nothing to push. An arm that needed one would be a control that does not
 /// belong in this row.
@@ -66,9 +66,9 @@ pub(crate) fn dispatch(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id:
         "view.tool_hand" => {
             let _ = crate::canvas::tool::toggle_hand(ctx);
         }
-        // ★ **The text tool**, the hand's twin down to the discarded return.
+        // **The text tool**, the hand's twin down to the discarded return.
         //
-        // ★★ **No capability check, and the absence is the decision** rather
+        // **No capability check, and the absence is the decision** rather
         // than an oversight — worth saying because both arms below have one.
         // `markup_for_command` declines on `author_markup`, `measure_for_command`
         // on `author_measure`, and the obvious symmetry would be a third. There
@@ -91,7 +91,7 @@ pub(crate) fn dispatch(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id:
             // that refuses the drag must refuse the tool rather than arm it and
             // then say no to every gesture.
             //
-            // ★★★ **Two capabilities, and this predicate must stay identical
+            // **Two capabilities, and this predicate must stay identical
             // to `tool::retire_forbidden`'s Node arm** — which carries the
             // table and the argument. In one line: the tool
             // edits the anchors of a path on the page (`edit_content`) AND the
@@ -106,7 +106,7 @@ pub(crate) fn dispatch(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id:
                 decline(id);
             }
         }
-        // ★★★ **Smart select** — `OPERATOR_REQUESTS.md` O70.
+        // **Smart select** — `OPERATOR_REQUESTS.md` O70.
         //
         // A toggle that reads its own state rather than being handed one: the
         // ribbon's pressed look comes from a condition published out of
@@ -114,7 +114,7 @@ pub(crate) fn dispatch(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id:
         // One truth, so the control cannot disagree with the canvas about which
         // way the switch is set.
         //
-        // ★ It writes BOTH homes and that is the whole of the persistence
+        // It writes BOTH homes and that is the whole of the persistence
         // design: `egui::Memory` is where the click path can read it, `Prefs` is
         // where it survives a restart, and `app::frame` mirrors the second into
         // the first every frame. This is the only writer of the persisted
@@ -134,7 +134,7 @@ pub(crate) fn dispatch(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id:
                 decline(id);
             }
         }
-        // ★★★ **The chunk boxes** — `OPERATOR_REQUESTS.md` O215 ask 3.
+        // **The chunk boxes** — `OPERATOR_REQUESTS.md` O215 ask 3.
         //
         // `view.smart_select`'s arm above, in every respect: both homes written
         // here and nowhere else, `app::frame` mirroring the persisted answer
@@ -165,7 +165,7 @@ pub(crate) fn dispatch(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id:
 
 /// Say no, twice: once to the trace and once to the operator.
 ///
-/// ★ Both, always, because they answer different people. The trace is read by
+/// Both, always, because they answer different people. The trace is read by
 /// somebody debugging a machine they are not sitting at; the status sentence is
 /// read by the operator who just pressed a key and saw nothing happen. Either
 /// one alone has been a defect in this project — a silent decline, and a
@@ -206,7 +206,7 @@ mod tests {
         }
     }
 
-    /// ★ The type is `fn(&str) -> bool` and nothing here allocates, which is
+    /// The type is `fn(&str) -> bool` and nothing here allocates, which is
     /// what lets `app::dispatch` ask it in a guard arm on every command.
     #[test]
     fn the_claim_is_a_cheap_question() {

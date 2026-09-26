@@ -17,7 +17,7 @@ const MODE: &str = "edit";
 
 /// `save-as from=… to=…` — the shell's record that the document MOVED.
 ///
-/// ★ The old path is on the line as well as the new one, and that is the point
+/// The old path is on the line as well as the new one, and that is the point
 /// of tracing it at all: *"the document moved"* and *"a copy was written"*
 /// produce the same `save-copy` line, and only the pair says which file the next
 /// `Ctrl+S` will reach.
@@ -81,7 +81,7 @@ impl Check for SaveAsRebindsTheDocument {
 
 /// One edit — a page rotation.
 ///
-/// ★ The cheapest edit that needs no canvas aim, no armed tool and no typing:
+/// The cheapest edit that needs no canvas aim, no armed tool and no typing:
 /// two ribbon clicks. This check's subject is *where a save goes*, so the edit
 /// should be the least interesting thing in it.
 fn make_an_edit(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
@@ -111,7 +111,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- scratch ------------------------------------------------------------
     //
-    // ★ Both files live under `--out`. The fixture is copied rather than driven
+    // Both files live under `--out`. The fixture is copied rather than driven
     // in place, because this check deliberately WRITES to it — twice — and the
     // repository's own fixtures must come out of a run byte-identical.
     let source = workspace_root().join(FIXTURE);
@@ -143,7 +143,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
-    // ★ The picker's answer, so no system dialog opens. `app::files`' header and
+    // The picker's answer, so no system dialog opens. `app::files`' header and
     // the RAG note it quotes: *"Don't try to script the dialog."*
     spec.env.push((
         "PDFCER_DIAG_SAVE_PATH".to_owned(),
@@ -212,7 +212,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- phase C: a SECOND edit, then Ctrl+S --------------------------------
     //
-    // ★★ The second edit is not decoration. Without it the second save has
+    // The second edit is not decoration. Without it the second save has
     // nothing to write, and a correct build doing nothing is indistinguishable
     // from a broken one doing nothing because it is aimed at the wrong file.
     make_an_edit(&session, &driver, ui_rect)?;
@@ -220,7 +220,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.press_chord(&[crate::sys::vk::CONTROL], crate::sys::vk::S)?;
     session.settle(40);
 
-    // --- ★★★ phase D: the falsifying one ------------------------------------
+    // --- phase D: the falsifying one ------------------------------------
     let original_now = digest_of(&original)?;
     if original_now != before_save_as {
         return Ok(Some(format!(
@@ -274,7 +274,7 @@ mod tests {
 
     /// The digest notices a changed byte and a truncation.
     ///
-    /// ★ Phase D's whole verdict rests on this, so a digest that answered
+    /// Phase D's whole verdict rests on this, so a digest that answered
     /// "unchanged" for a modified file would turn the check's most important
     /// assertion into a formality that always passes.
     #[test]
@@ -290,7 +290,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The two files are different paths.**
+    /// **The two files are different paths.**
     ///
     /// Trivial and load-bearing: if the destination resolved to the original,
     /// phase D would compare a file with itself and pass against every possible
@@ -302,7 +302,7 @@ mod tests {
 
     /// The check writes only inside the run's output directory.
     ///
-    /// ★ Both names are relative and are joined to `--out` by `CheckContext`.
+    /// Both names are relative and are joined to `--out` by `CheckContext`.
     /// This pins the intent: a future edit that reached for the repository's own
     /// fixture directly would be writing to a tracked file, twice, on every run.
     #[test]

@@ -22,7 +22,7 @@
 /// thousand at most, where `f32` is exact to a small fraction of a pixel and
 /// always will be.
 ///
-/// ★ Mixing them is deliberate rather than sloppy: making the screen point
+/// Mixing them is deliberate rather than sloppy: making the screen point
 /// `f64` too would imply the window can be large enough to need it, which is
 /// the kind of false suggestion a type makes silently.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -80,7 +80,7 @@ impl DeepAnchor {
 
     /// Pan by a window-space delta: the content follows the hand.
     ///
-    /// ★ The sign is the same convention [`crate::canvas::geometry::pan_offset`]
+    /// The sign is the same convention [`crate::canvas::geometry::pan_offset`]
     /// uses and for the same reason — dragging right moves the page right,
     /// which means the page point under the cursor moves *left* in page space.
     /// Getting this backwards produces a canvas that works and feels wrong,
@@ -101,7 +101,7 @@ impl DeepAnchor {
 
     /// Zoom about a window point, holding whatever page point is under it.
     ///
-    /// ★★ **This is the operation the whole module exists for.** In the scroll
+    /// **This is the operation the whole module exists for.** In the scroll
     /// -offset model, zooming about the cursor means solving for a new offset —
     /// which is where the large magnitudes and their lost precision came from.
     /// Here it is a re-statement: read which page point is under the cursor,
@@ -115,7 +115,7 @@ impl DeepAnchor {
         }
     }
 
-    /// ★★★ **The `f32` page-local scroll offset that reproduces this anchor's
+    /// **The `f32` page-local scroll offset that reproduces this anchor's
     /// placement** — the hand-over back out of the deep tier.
     ///
     /// # Why this is the last function this module needed
@@ -144,7 +144,7 @@ impl DeepAnchor {
     ///     offset = margin(display, viewport) + page × zoom − screen
     /// ```
     ///
-    /// ★★ `page × zoom` is formed **in `f64`** and narrowed once, at the end.
+    /// `page × zoom` is formed **in `f64`** and narrowed once, at the end.
     /// That is the entire reason this lives here rather than being spelled out
     /// at the call site in `f32`: near the threshold the product is about
     /// 1.4 × 10⁷, where an `f32`'s representable step is a whole screen pixel,
@@ -153,7 +153,7 @@ impl DeepAnchor {
     /// left the view fifty pixels out, this one is inside the one pixel the
     /// destination offset can represent at all.
     ///
-    /// ★ The result is genuinely `f32` and that is not a compromise — it is
+    /// The result is genuinely `f32` and that is not a compromise — it is
     /// being handed to an `egui` `ScrollArea`, which stores an `f32`. Below
     /// the threshold that is enough by definition; the threshold is the point
     /// at which it stops being enough, which is why the tier exists.
@@ -210,7 +210,7 @@ mod tests {
     /// The zooms this module exists for, as multipliers.
     const DEEP: [f64; 4] = [1_000.0, 100_000.0, 1_000_000.0, 10_000_000.0];
 
-    /// ★★★ **A page point round-trips through the screen at every depth.**
+    /// **A page point round-trips through the screen at every depth.**
     ///
     /// The property the canvas depends on, and the one the `f32` scroll offset
     /// loses: at 10,000,000 % the offset's representable step is sixteen screen
@@ -238,7 +238,7 @@ mod tests {
         }
     }
 
-    /// ★★ **Zooming about a point holds that point still** — the operation the
+    /// **Zooming about a point holds that point still** — the operation the
     /// module exists for, asserted as the invariant rather than as an offset.
     #[test]
     fn zooming_about_a_point_leaves_it_under_the_cursor() {
@@ -264,7 +264,7 @@ mod tests {
         }
     }
 
-    /// ★ **A pan of one screen pixel moves the view by one screen pixel**, at
+    /// **A pan of one screen pixel moves the view by one screen pixel**, at
     /// depths where the `f32` offset moves by sixteen or by nothing.
     ///
     /// This is the defect step 2 removes, stated positively.

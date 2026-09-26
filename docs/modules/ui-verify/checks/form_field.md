@@ -10,7 +10,7 @@ The driven assertion for the operator's request, in both its halves:
 > the feature"* … *"when I click on an existing form field on the page it's
 > properties should come up in our side pane for editing it's properties."*
 
-# ★★★ Why this check is the only oracle for most of the feature
+# Why this check is the only oracle for most of the feature
 
 Everything between a click and an authored field crosses boundaries a unit
 test cannot: an armed tool in `egui::Memory`, a gesture resolved from a real
@@ -23,7 +23,7 @@ The precedent is the shell's own founding defect: the Delete key's guard was
 context with no widgets, and the condition that broke the real application
 could not occur in the harness.
 
-# ★★ The dialog is answered by a seam, and that is not a shortcut
+# The dialog is answered by a seam, and that is not a shortcut
 
 `PDFCER_DIAG_FORM_ACCEPT=1` makes the placement dialog press its own Add on
 the first frame it is authorable. This harness drives **one** window — the
@@ -39,14 +39,14 @@ it sets the same flag the Add button sets, so the readiness guard, the
 action, the remembering and the engine call are all the path an operator
 takes.
 
-# ★ The two clicks aim at deliberately different places
+# The two clicks aim at deliberately different places
 
 The first must land on **empty page** — a click on an existing widget would
 place a field on top of one, which is legal and would make the second phase
 ambiguous. The second must land on a widget whose canvas rect the
 application itself published in a `form-box` line, so the check aims at
 where the program says the box is rather than at where the fixture author
-thought it would be. ★★ **A click that hits the field next to the one it
+thought it would be. **A click that hits the field next to the one it
 aimed at produces the same screenshot as a click that worked**, so the only
 safe target is a rect the application itself published this frame.
 

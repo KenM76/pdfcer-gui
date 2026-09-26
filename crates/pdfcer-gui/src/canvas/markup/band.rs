@@ -80,7 +80,7 @@ pub fn endpoints(from: Pos2, to: Pos2, page: &Page) -> Option<((f64, f64), (f64,
 /// under it draws nothing rather than a band that promises an annotation the
 /// frame cannot author.
 ///
-/// ★ **The first line is a guard on the family**, and it is not defensive
+/// **The first line is a guard on the family**, and it is not defensive
 /// clutter: `canvas::interact` routes a freehand drag to [`super::ink`] before
 /// reaching here, so a non-band kind arriving means the routing changed and this
 /// function's two-point assumption stopped holding. Drawing nothing is the only
@@ -130,7 +130,7 @@ pub fn drag(
 
     match super::action(kind, page_index, Geometry::Band { start, end }, pen) {
         Ok(raised) => {
-            // ★ Traced with its COORDINATES, not a success flag — see
+            // Traced with its COORDINATES, not a success flag — see
             // `super::trace_commit`. The RAW endpoints, in drag order, so a
             // harness can prove the arrow's head is at the end the operator
             // dragged to, which a normalised rect could not express.
@@ -170,7 +170,7 @@ const HEAD_ANGLE: f32 = 0.42;
 
 /// Paint the markup band, given the [`Preview`] [`drag`] returned.
 ///
-/// # ★ Why this is not `draw_marquee` with a different colour
+/// # Why this is not `draw_marquee` with a different colour
 ///
 /// Because a marquee and a markup band answer different questions. A marquee
 /// asks *"what does this rectangle enclose?"* and is therefore always a
@@ -247,7 +247,7 @@ pub fn draw_preview(
                 highlight_wash(kind, pen),
             );
         }
-        // ★ Not reachable, and spelled rather than wildcarded so a NINTH kind
+        // Not reachable, and spelled rather than wildcarded so a NINTH kind
         // has to be classified here rather than silently drawing nothing. This
         // arm is one of exactly two places in the crate where the compiler
         // stops a newly added `MarkupKind`, which is what the spelling is for.
@@ -297,12 +297,12 @@ fn highlight_wash(kind: MarkupKind, pen: super::pen::Pen) -> egui::Color32 {
 /// `OPERATOR_REQUESTS.md` **O54**. The sibling of [`draw_preview`] for the
 /// gesture that found text under it.
 ///
-/// ★★ It uses `highlight_wash` — the identical colour the area band draws —
+/// It uses `highlight_wash` — the identical colour the area band draws —
 /// because they are one feature reached by one tool. A preview that changed
 /// colour depending on whether the pointer had found text would tell the
 /// operator they had switched tools when they had not.
 ///
-/// ★ Rectangles rather than quads: the quads a text sweep produces are already
+/// Rectangles rather than quads: the quads a text sweep produces are already
 /// axis-aligned per line in canvas space, which is what `TextSelection::
 /// highlights` hands back. A rotated run is drawn by the committed appearance
 /// stream, not by this — the same division `draw_preview` makes.
@@ -343,10 +343,10 @@ mod tests {
     }
 
     // -----------------------------------------------------------------
-    // ★ The defect this whole module exists to prevent
+    // The defect this whole module exists to prevent
     // -----------------------------------------------------------------
 
-    /// ★ **The markup lands where the operator dragged, not at the page
+    /// **The markup lands where the operator dragged, not at the page
     /// centre.**
     ///
     /// The operator: *"they just drop things into the center of the pdf
@@ -446,7 +446,7 @@ mod tests {
     // The gesture
     // -----------------------------------------------------------------
 
-    /// ★ **A click with no drag never reaches this module at all**, and the
+    /// **A click with no drag never reaches this module at all**, and the
     /// degenerate drag it would look like is refused.
     ///
     /// The module docs' decision, pinned from both ends: the gesture machine
@@ -544,7 +544,7 @@ mod tests {
         ));
     }
 
-    /// ★ **A non-band kind draws no band and authors nothing here.**
+    /// **A non-band kind draws no band and authors nothing here.**
     ///
     /// The guard on the first line of [`drag`], asserted because its absence is
     /// silent: an ink drag routed here by mistake would draw a rectangle between
@@ -600,7 +600,7 @@ mod tests {
         assert!(actions.is_empty());
     }
 
-    /// ★ **The preview's arrowhead is at the head end**, whichever way the
+    /// **The preview's arrowhead is at the head end**, whichever way the
     /// operator drags — the on-screen half of the raw-endpoint rule.
     ///
     /// Asserted as a distance, not as a side: both barbs must be within a barb's

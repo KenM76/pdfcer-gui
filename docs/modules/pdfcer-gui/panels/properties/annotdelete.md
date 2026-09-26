@@ -7,7 +7,7 @@ be deleted, and what would go with it
 | `EditSession::annotation_deletion_refusal` | *would `delete_annotation` refuse right now?* | withholds every Delete control and puts a sentence in their place |
 | `EditSession::annotation_deletion_preview` | *what else would go with it?* | states the collateral **before** the press |
 
-## ★★★ The defect the first query closes, and it is the day-before defect
+## The defect the first query closes, and it is the day-before defect
 wearing a different `/Subtype`
 
 
@@ -22,14 +22,14 @@ So on a certified or encrypted drawing:
 * the **Delete key** raised the action,
 
 
-⇒ ★★ The generalisation, and it is the audit's rather than this file's: **a
+⇒ The generalisation, and it is the audit's rather than this file's: **a
 query the engine wrote for a shell is not consumed by being read.** Both of
 these carry doctests spelling out the call site, and both sat unused for the
 whole life of the crate. The instrument that found them was
 `tools/verb-coverage.py` — asking what the engine offers — not a re-reading
 of this shell.
 
-## ★★★ Where a gate refuses, the control is NOT DRAWN and a sentence takes
+## Where a gate refuses, the control is NOT DRAWN and a sentence takes
 its place (R9)
 
 The established shape, set by the forms fix and followed here rather than
@@ -54,7 +54,7 @@ carries as its `visible_when` on the Format tab and on both canvas menus.
 from the same three facts in the same order, and [`gate`] is the one function
 that derives them.
 
-## ★★ Why the SENTENCE lives in a panel and not in the status bar's decline
+## Why the SENTENCE lives in a panel and not in the status bar's decline
 
 `crate::app::status::decline` is this shell's worded-decline surface and it
 would have been the reflexive choice. It is the wrong one here, and the

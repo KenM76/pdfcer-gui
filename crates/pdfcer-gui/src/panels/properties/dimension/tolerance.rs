@@ -18,7 +18,7 @@ const SPEED: f64 = 0.005;
 
 /// Every form, in the order the combo offers them.
 ///
-/// ★ Constructed with placeholder magnitudes because the combo selects a
+/// Constructed with placeholder magnitudes because the combo selects a
 /// **shape**, and the value the operator was last editing is preserved by
 /// [`reshape`] rather than by the list. Listing `Symmetric { magnitude: 0.0 }`
 /// here and selecting it directly would zero a number the operator had
@@ -100,7 +100,7 @@ pub fn show(ui: &mut Ui, value: &mut Tolerance, unit: Unit) -> bool {
                 ui.add(egui::DragValue::new(lower).speed(SPEED));
             });
             ui.weak(t::tolerance_unit_note(unit));
-            // ★ The disclosure that matters most in this panel, and it is shown
+            // The disclosure that matters most in this panel, and it is shown
             // whenever the form is chosen rather than on hover: an operator who
             // sets a limit expecting it beside the measurement will find a
             // drawing that says something else, and will find it after
@@ -109,7 +109,7 @@ pub fn show(ui: &mut Ui, value: &mut Tolerance, unit: Unit) -> bool {
         }
     }
 
-    // ★ The refusal is the ENGINE's, rendered verbatim. Nothing here decides
+    // The refusal is the ENGINE's, rendered verbatim. Nothing here decides
     // what is invalid, and nothing here corrects it.
     match value.validate() {
         Ok(_) => true,
@@ -199,7 +199,7 @@ mod tests {
 
     /// Every form in the combo is a distinct shape, and all seven are offered.
     ///
-    /// ★ The count is asserted against the list rather than against a literal
+    /// The count is asserted against the list rather than against a literal
     /// seven **and** the discriminants are asserted distinct, so a form added
     /// to the engine and forgotten here fails on the first assertion while a
     /// form listed twice fails on the second.
@@ -249,7 +249,7 @@ mod tests {
         );
     }
 
-    /// ★ Collapsing a deviation to a symmetric takes the LARGER magnitude.
+    /// Collapsing a deviation to a symmetric takes the LARGER magnitude.
     ///
     /// The safe direction, and the reason is a manufactured part rather than a
     /// preference: a tolerance that tightens without being asked produces

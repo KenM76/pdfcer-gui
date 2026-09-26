@@ -16,7 +16,7 @@
 //! one synthetic face, installed one way, asserted to actually measure
 //! something before any test relies on it.
 //!
-//! ★ It is a **separate file** from `width_tests` for R2's reason and no
+//! It is a **separate file** from `width_tests` for R2's reason and no
 //! other: that one is already close to the 1,500-line limit, and a rule that
 //! is obeyed by writing the new tests somewhere else is a rule that is
 //! working.
@@ -31,7 +31,7 @@ use super::width_tests::context;
 /// Two commands, both fully equipped, so `Small` is **earned** and the tests
 /// below measure the size rule rather than the fallback.
 ///
-/// ★ Each carries an icon **and** a tooltip. A fixture missing either would
+/// Each carries an icon **and** a tooltip. A fixture missing either would
 /// make every `Small` in this file silently render as `Medium`, and the tests
 /// asserting a narrower control would fail for a reason that has nothing to do
 /// with what they are about — see [`super::sizing::resolved`].
@@ -71,7 +71,7 @@ fn group_rect(rendered: &[(String, Rect)]) -> Option<Rect> {
 /// **The area the group's ITEMS occupy** — the union of every `ribbon.item.*`
 /// rect the frame published, in square points.
 ///
-/// ★★★ **THE ORACLE FOR "SPACE IS RECLAIMED", AND THE GROUP'S WIDTH IS NOT.**
+/// **THE ORACLE FOR "SPACE IS RECLAIMED", AND THE GROUP'S WIDTH IS NOT.**
 ///
 /// A group's **width** is only a valid oracle for reclaimed space while the
 /// group lays its items out on ONE ROW. `band::measure_group_rows` asks every
@@ -111,7 +111,7 @@ fn item_rect(rendered: &[(String, Rect)], id: &str) -> Option<Rect> {
 /// Render a manifest at a comfortable width, **with an icon painter
 /// installed**, and report every rect.
 ///
-/// ★★★ The painter is the whole reason this file has its own render function
+/// The painter is the whole reason this file has its own render function
 /// instead of calling [`render_shell_with`] like its neighbours. `Small` is
 /// **earned** — it needs an icon, a tooltip *and* an installed painter — and
 /// the shared harness installs no painter, so every `Small` in every test here
@@ -165,7 +165,7 @@ fn render(items: impl IntoIterator<Item = Item>, conditions: &ConditionSet) -> V
     render_with_icons(items, &registry(), conditions)
 }
 
-/// ★★★ **An icon-only control is narrower than the same control labelled.**
+/// **An icon-only control is narrower than the same control labelled.**
 ///
 /// The whole point of `Small`, and the measurement that moved the 884-point
 /// number in `RIBBON_SCALING.md` §3. Asserted as a *comparison* between two
@@ -186,7 +186,7 @@ fn an_icon_only_control_is_narrower_than_a_labelled_one() {
         narrow.width(),
         wide.width()
     );
-    // ★ And the GROUP narrowed with it. A control that shrank inside a group
+    // And the GROUP narrowed with it. A control that shrank inside a group
     // whose width did not would have saved nothing — the band's plan is made
     // of group widths, and that is the number the operator feels.
     let wide_group = group_rect(&labelled).expect("group drew");
@@ -221,7 +221,7 @@ fn a_large_control_spans_the_rows_a_medium_one_sits_in() {
     );
 }
 
-/// ★★★ **A hidden item is not drawn, and its space is reclaimed.**
+/// **A hidden item is not drawn, and its space is reclaimed.**
 ///
 /// Both halves, because only the first is obvious and only the second is the
 /// operator's ask. A `visible_when` applied at draw time would satisfy the
@@ -274,7 +274,7 @@ fn a_hidden_item_is_not_drawn_and_its_space_is_reclaimed() {
 /// **A group whose every item is hidden is not drawn at all** — R9, and the
 /// end of the same rule.
 ///
-/// ★ Not "drawn empty", and not "drawn with just its caption". A caption over
+/// Not "drawn empty", and not "drawn with just its caption". A caption over
 /// nothing is a promise of a control that is not there, and the separator
 /// beside it is a rule between two things with nothing between them.
 #[test]
@@ -297,7 +297,7 @@ fn a_group_with_nothing_left_is_not_drawn() {
 /// A `Small` that has not earned icon-only rendering draws at `Medium` width
 /// — the fallback, measured rather than asserted about the resolver.
 ///
-/// ★ This is the guard that lets a manifest ask for `Small` freely. Without
+/// This is the guard that lets a manifest ask for `Small` freely. Without
 /// it, marking a tooltip-less command `Small` would ship an unlabelled
 /// rectangle, and the author would have no way to know except by looking.
 #[test]
@@ -320,7 +320,7 @@ fn a_small_that_has_not_earned_it_renders_at_medium_width() {
     );
 }
 
-/// ★★★ **A Large control in the OVERFLOW MENU is still tall enough to click.**
+/// **A Large control in the OVERFLOW MENU is still tall enough to click.**
 ///
 /// The sharpest failure this file holds shut.
 ///
@@ -331,7 +331,7 @@ fn a_small_that_has_not_earned_it_renders_at_medium_width() {
 /// icon and label are placed from the rect's centre, which still exists), it
 /// reports its rect as required, and it **cannot be clicked**.
 ///
-/// ★ No band-path unit test can see that, because the band hands a real row
+/// No band-path unit test can see that, because the band hands a real row
 /// height and only the menu path passes a zero; the observable is the
 /// published rect's height, which is what a driven check reads back.
 ///
@@ -341,7 +341,7 @@ fn a_small_that_has_not_earned_it_renders_at_medium_width() {
 fn a_large_control_in_a_popup_is_tall_enough_to_click() {
     let ctx = context();
     let registry = registry();
-    // ★★ A COLLAPSED GROUP's popup, which is the only popup that renders
+    // A COLLAPSED GROUP's popup, which is the only popup that renders
     // groups and therefore the only path that hands `render_large` a
     // `GroupBox::NATURAL` whose `rows` is 0.0. A control allocated at that
     // height paints, publishes its rect, and cannot be hit, because a
@@ -423,7 +423,7 @@ fn a_large_control_in_a_popup_is_tall_enough_to_click() {
     );
 }
 
-/// ★★★ **A custom item obeys `visible_when` exactly as a command does.**
+/// **A custom item obeys `visible_when` exactly as a command does.**
 ///
 /// # Why this is asserted through the RENDERER rather than through a rect
 ///
@@ -451,7 +451,7 @@ fn a_hidden_custom_item_is_never_offered_to_the_renderer_and_gives_its_width_bac
 
     let render_counting = |conditions: &ConditionSet| -> (usize, Rect) {
         let ctx = context();
-        // ★★★ `with_prefer_rows(1)` is the FIXTURE pinning the layout so that
+        // `with_prefer_rows(1)` is the FIXTURE pinning the layout so that
         // WIDTH is a valid oracle — not part of what is being tested.
         //
         // A custom item publishes no `ribbon.item.*` rect (that is this test's
@@ -485,7 +485,7 @@ fn a_hidden_custom_item_is_never_offered_to_the_renderer_and_gives_its_width_bac
             calls = 0;
             rects.clear();
             let mut sink = |name: &str, rect: Rect| rects.push((name.to_owned(), rect));
-            // ★ The renderer ALLOCATES. A renderer that drew nothing would
+            // The renderer ALLOCATES. A renderer that drew nothing would
             // leave both groups the same width, and the width half of this
             // test would then pass against an implementation that never
             // filtered anything at all.
@@ -532,7 +532,7 @@ fn a_hidden_custom_item_is_never_offered_to_the_renderer_and_gives_its_width_bac
 }
 
 // ===========================================================================
-// ★★★ THE MOCKUP'S `Large` CONTROL
+// THE MOCKUP'S `Large` CONTROL
 //
 // `mockups/pdfcer-shell.html` specifies a Large control as
 //
@@ -589,7 +589,7 @@ fn render_wrapping(items: impl IntoIterator<Item = Item>) -> Vec<(String, Rect)>
     render_with_icons(items, &wrapping_registry(), &ConditionSet::new())
 }
 
-/// ★★★ **A Large control wraps its label instead of running on.**
+/// **A Large control wraps its label instead of running on.**
 ///
 /// The defect this pins is not subtle once it is drawn: `Save a compacted
 /// copy of this document` laid out on one line is a control roughly 200 pt
@@ -599,7 +599,7 @@ fn render_wrapping(items: impl IntoIterator<Item = Item>) -> Vec<(String, Rect)>
 /// band, so the first visible symptom is *"why is Print in the overflow
 /// menu"*.
 ///
-/// ★ The vacuity guard is the second assertion and it is doing real work.
+/// The vacuity guard is the second assertion and it is doing real work.
 /// Without it the test passes trivially against any implementation whose
 /// labels happen to be short — including one that never wraps — because the
 /// bound would never be approached. So the unwrapped width is measured too,
@@ -640,7 +640,7 @@ fn a_large_control_wraps_a_long_label_instead_of_running_on() {
     );
 }
 
-/// ★ **…and a short-labelled one does not collapse below the floor.**
+/// **…and a short-labelled one does not collapse below the floor.**
 ///
 /// `.rb.big { min-width: 52px }`. Without it a run of Large controls is a
 /// ragged fence — `New` measures `max(24 pt glyph, 21 pt label) + 16 = 40`,
@@ -664,7 +664,7 @@ fn a_large_control_never_narrows_below_the_mockups_floor() {
     );
 }
 
-/// ★★ **A Large control is SHORTER than the band's row area, not equal to it.**
+/// **A Large control is SHORTER than the band's row area, not equal to it.**
 ///
 /// The mockup draws `.rb.big` at 56 px inside a 68 px row area, top-aligned
 /// by `.grp .items { align-items: flex-start }`. A Large control that simply
@@ -672,7 +672,7 @@ fn a_large_control_never_narrows_below_the_mockups_floor() {
 /// full-height plates side by side read as one block of chrome rather than as
 /// separate buttons.
 ///
-/// ★ Asserted as a **relationship between the two metrics and the drawn
+/// Asserted as a **relationship between the two metrics and the drawn
 /// rect**, not against 56. A literal would pass under `Quiet` and say nothing
 /// about `Airy`, whose own pair is 64 in 84.
 #[test]

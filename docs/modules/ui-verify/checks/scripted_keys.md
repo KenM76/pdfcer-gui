@@ -19,7 +19,7 @@ This check is the seam's only assertion. Until it existed the seam was
 evidenced by a driven run recorded in a commit message, which is a
 measurement that stops being re-taken the moment it is written down.
 
-# ★★★ Why it reads the application's zoom and never counts rungs
+# Why it reads the application's zoom and never counts rungs
 
 The seam traces one line per chord:
 
@@ -45,7 +45,7 @@ What this check reads instead is the application's own `status … zoom=`,
 rung that produced nothing is a failure rather than a silence, and a rung
 whose effect was undone shows up as a zoom that did not move.
 
-# ★★ The unspellable rung, and what it is for
+# The unspellable rung, and what it is for
 
 One entry in the list is a chord that cannot be spelled. It is there so
 that `spelled=` is **shown to vary**: a seam that wrote `spelled=yes`

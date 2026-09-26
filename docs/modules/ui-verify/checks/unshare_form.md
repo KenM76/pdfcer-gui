@@ -9,7 +9,7 @@ truth about the document in front of it.
 | `the_context_menu_gives_this_page_its_own_copy_of_a_shared_form` | `shared-across-two-pages.pdf` | the row is in the menu, the press copies, and the measurement found the other page |
 | `the_unshare_declines_when_nothing_else_draws_the_form` | `page-sized-form.pdf` | the press **changes nothing** and says so |
 
-# ★★★ Why there are two, and why the first one was not enough
+# Why there are two, and why the first one was not enough
 
 Until 2026-08-29 there was one check, it was named
 `…_of_a_shared_form`, its pass note read *"Every other invocation site keeps
@@ -39,7 +39,7 @@ that the shared check happened to be running.
 > that has since been withdrawn is exactly the kind of thing that stays
 > withheld for months."*
 
-## ★★★ Why the audit's own instrument cannot answer this, which is the
+## Why the audit's own instrument cannot answer this, which is the
 ## whole reason this file exists
 
 `tools/verb-coverage.py` greps this crate for each engine verb's name.
@@ -55,7 +55,7 @@ identifier appeared in a source file**, whether or not a single click could
 reach it. This check is the other half: the verb is called because a person
 pressed something.
 
-## ★★★ The route under test is the CONTEXT MENU, deliberately
+## The route under test is the CONTEXT MENU, deliberately
 
 `OPERATOR_REQUESTS.md` **O53** rules that a command must not exist only on
 the ribbon. That rule is doing more work for this command than for most, and
@@ -69,13 +69,13 @@ afterwards the edit is already in the one shared stream and every sheet has
 it. The Format contextual tab is the correct second home. The pointer is the
 first.
 
-★★ And the ribbon route is the one a check could pass on while the useful
+And the ribbon route is the one a check could pass on while the useful
 one was broken: a Format-tab click proves a band item dispatches, which
 `font_group` and its neighbours already prove for that tab. Nothing before
 this file had ever **pressed a context-menu row** — see the harness gap
 below, which is the finding this check turned up.
 
-## ★★★ The harness gap this check found, and had to close
+## The harness gap this check found, and had to close
 
 
 It stopped there because it had to. `shell::menus::MenuHost::attach_with`
@@ -95,7 +95,7 @@ pdfcer context menu publishes `menu.item.<context>.<command id>` through the
 same `crate::diag::ui_rect` channel the ribbon and the status bar use. This
 check is the first consumer; every future menu check inherits it.
 
-★ Publishing is the only possible answer for a popup, and
+Publishing is the only possible answer for a popup, and
 `egui_shell::menu::report`'s header says why: a context menu is drawn **at
 the pointer**, and `egui` may flip it to any of several alignments to keep
 it on screen. There is no fraction of the window it can be hard-coded to and
@@ -113,7 +113,7 @@ Three of those four fields are load-bearing here:
 | `copy=` | the same number as `original`, i.e. nothing was allocated |
 | `moved=` | `0`, i.e. the page's `/XObject` names were not re-pointed and the copy is an orphan |
 
-★★ **The absence of the line is the interesting failure**, not its content.
+**The absence of the line is the interesting failure**, not its content.
 A build where the menu row is greyed, where the dispatcher has no arm, where
 `containing_form_object` returns the innermost form, or where the engine
 refuses, all produce **no line at all** — and each of those is a state in
@@ -129,7 +129,7 @@ document. On a drawing with no forms — the operator's own SolidWorks export
 has **zero** — the honest answer is *"there was nothing to unshare"*, which
 is neither a pass nor a defect.
 
-★★★ And here the fixture is not merely *a* document with a form: **it is the
+And here the fixture is not merely *a* document with a form: **it is the
 condition under test.** Sharedness is a property of the file and of nothing
 else, so each of these two checks is defined by which file it opens, and
 swapping them would swap what each one proves without changing a line of
@@ -154,7 +154,7 @@ with several sheets and wrong on every file with one.
 One 200 × 200 pt page whose only page object is a page-sized form holding
 three 40 × 40 squares. It is invoked **once**.
 
-★★★ This file used to be the shared check's fixture, and the comment that
+This file used to be the shared check's fixture, and the comment that
 justified it read: *"It is invoked once, not thirty-six times, and that is
 fine — `unshare_form` does not require a form to be shared, and refusing to
 privatise a singly-invoked form would be a rule nobody wrote."* Both
@@ -184,7 +184,7 @@ the other: a row that is drawn and does nothing passes 4, and a command
 reachable only from the ribbon would pass 5 if this check pressed a band
 item instead.
 
-## ★★★ Why the decline needs a POSITIVE oracle, and gets one
+## Why the decline needs a POSITIVE oracle, and gets one
 
 The obvious way to check a decline is to assert that
 `unshare-form-applied` did not appear. It is worthless, and it is worthless

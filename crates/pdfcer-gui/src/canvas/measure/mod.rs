@@ -29,7 +29,7 @@ pub(in crate::canvas) use resolve::{Resolved, resolve_hover, snap_point};
 /// (click the first vertex to close the ring). Its header says why.
 pub mod perimeter;
 
-/// ★ `pub` rather than `pub(super)` because `crate::text` names
+/// `pub` rather than `pub(super)` because `crate::text` names
 /// [`circpick::PickOrigin`], which this module re-exports through [`pick`].
 ///
 /// The visibility is wide for one reason and it is the right one: a picked
@@ -60,7 +60,7 @@ pub mod state;
 /// ([`crate::canvas::tool::CanvasTool::cursor`], the press decision in
 /// [`crate::canvas::gesture::press_kind`]) written once for measure as a whole.
 ///
-/// ★ **The old shell had four separate `CanvasTool` variants for these**
+/// **The old shell had four separate `CanvasTool` variants for these**
 /// (`MeasureLinear`, `MeasureCircular`, `MeasureScale`) plus an `is_measure()`
 /// predicate and three `tool_builds_measure_*` functions to ask which. That is
 /// the shape this enum exists to avoid, and it is the one place this salvage
@@ -77,7 +77,7 @@ pub enum MeasureKind {
     /// than two tools (decision 011's value model: `diameter = 2 × radius`, the
     /// same stored geometry).
     ///
-    /// # ★ This variant was deleted once, and what brought it back
+    /// # This variant was deleted once, and what brought it back
     ///
     /// Phase 7 shipped Linear and Two-line and deliberately left this one
     /// unarmed. The reason was recorded in three documents and it was a real
@@ -100,7 +100,7 @@ pub enum MeasureKind {
     /// Neither is a floating box, and both reach `circular::commit` — one
     /// commit path, so the two endings cannot author different dimensions.
     ///
-    /// # ★ Its pick set is the tool's own and is never the selection
+    /// # Its pick set is the tool's own and is never the selection
     ///
     /// [`pick::CircularPick`]'s docs are explicit (ui-spec §3.1) and this
     /// hosting keeps the line: the objects toggled into a fit live on the pick,
@@ -126,7 +126,7 @@ pub enum MeasureKind {
     /// **Click along something; one number for how far it runs.** The perimeter
     /// tool's gesture without the requirement to close the profile.
     ///
-    /// # ★ Why this is a second KIND and not a checkbox on Perimeter
+    /// # Why this is a second KIND and not a checkbox on Perimeter
     ///
     /// The machinery is identical — the same [`perimeter::PerimeterPick`], the
     /// same snapped point picks, the same preview — and `closed` was already a
@@ -161,7 +161,7 @@ pub enum MeasureKind {
     /// The calibration gesture: pick two lines or points and say what that
     /// distance represents on the real thing.
     ///
-    /// # ★ It authors no dimension, which is why it is a kind and not a verb
+    /// # It authors no dimension, which is why it is a kind and not a verb
     ///
     /// Every other variant ends in `Action::CommitDimension`. This one ends in
     /// a **dialog**: two picks measure a reference length in PDF points, and
@@ -176,7 +176,7 @@ pub enum MeasureKind {
     /// reuses `LinearPick` **verbatim** for exactly that reason — the reference
     /// line is a linear pick that happens not to be authored.
     ///
-    /// # ★ Deliberately absent from [`Self::ALL`]
+    /// # Deliberately absent from [`Self::ALL`]
     ///
     /// `ALL` is the list of kinds the **Measure tab arms with a command**, and
     /// this one is armed from inside the Set-scale dialog instead. See `ALL`'s
@@ -194,7 +194,7 @@ impl MeasureKind {
     /// shipping as a tool nothing can arm — the same contract
     /// [`crate::canvas::markup::MarkupKind::ALL`] carries.
     ///
-    /// # ★ It is no longer exhaustive over the enum, and that is deliberate
+    /// # It is no longer exhaustive over the enum, and that is deliberate
     ///
     /// [`Self::Scale`] is absent. It is armed from a button inside the
     /// Set-scale dialog rather than from the ribbon, because the dialog is
@@ -269,7 +269,7 @@ fn load(ctx: &egui::Context, page_index: usize, kind: MeasureKind) -> MeasureSta
     let mut st = ctx
         .data_mut(|d| d.get_temp::<MeasureState>(id))
         .unwrap_or_else(|| MeasureState::for_kind(page_index, kind));
-    // ★ Two synchronisations, and the order matters.
+    // Two synchronisations, and the order matters.
     //
     // The kind first, because `set_kind` is what knows which picks a kind
     // change invalidates. Then the page: a gesture begun on one sheet means
@@ -478,7 +478,7 @@ pub fn finish(ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
 /// completes, and `None` on every other frame — the length is cleared from the
 /// state as it is read.
 ///
-/// # ★ Read-and-clear, because the alternative re-opens the dialog forever
+/// # Read-and-clear, because the alternative re-opens the dialog forever
 ///
 /// `ScalePick::drawn_pdf_length` stays `Some` for as long as the pick holds a
 /// completed line; that is what keeps the reference line drawn on the page
@@ -514,7 +514,7 @@ pub fn take_completed_scale_line(ctx: &egui::Context) -> Option<f64> {
 /// retiring the tool — see [`crate::canvas::tool::disarm_measure`], which
 /// carries the argument for why those are two separate presses.
 ///
-/// ★ This block must stay attached to THIS function. A doc comment that drifts
+/// This block must stay attached to THIS function. A doc comment that drifts
 /// up against a neighbouring item documents that item and leaves this one bare,
 /// which is what `tools/gates/check-orphan-docs.py` exists to catch.
 pub fn abandon(ctx: &egui::Context) -> bool {
@@ -601,7 +601,7 @@ pub(super) struct Pick<'a> {
 /// it is salvaged state with its own tests, and because a future property
 /// surface that is *not* a floating box would use it.
 ///
-/// # ★ The circular tool is the exception, and it has two endings
+/// # The circular tool is the exception, and it has two endings
 ///
 /// Every sentence above is about a gesture whose *arity* ends it. The
 /// radius/diameter tool has none — see [`MeasureKind::Circular`] — so the
@@ -650,7 +650,7 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
 
     let mut st = load(ctx, page_index, kind);
 
-    // ★★★ The circular tool's DOUBLE-click is handled here, and its single
+    // The circular tool's DOUBLE-click is handled here, and its single
     // click is not.
     //
     // Taking the whole circular click ahead of the snap resolution would only
@@ -674,7 +674,7 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
         return;
     }
 
-    // ★ The pick is the SNAPPED point, not the pointer — and it is the point
+    // The pick is the SNAPPED point, not the pointer — and it is the point
     // the indicator was drawn over, because both read one `Resolved`.
     //
     // Falls back to the raw pick when the frame resolved nothing, which is the
@@ -720,7 +720,7 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
                 }));
             }
         }
-        // ★ The perimeter tool takes its point HERE, after the snap
+        // The perimeter tool takes its point HERE, after the snap
         // machinery above has run - unlike `Circular`, which is taken before
         // it. That is the whole reason this tool is a hybrid: its picks are
         // POINTS, so an operator tracing a building footprint gets the same
@@ -745,7 +745,7 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
                 actions,
             );
         }
-        // ★ The circular tool: one click is one point.
+        // The circular tool: one click is one point.
         //
         // It sits here, after the resolution, for the same reason the perimeter
         // tool does — its picks are POINTS, so it gets the drawing's own
@@ -760,7 +760,7 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
         MeasureKind::Circular => {
             circular::take_point(&mut st, p, candidate, map.snap_tolerance());
         }
-        // ★ The calibration pick. Two points measure a reference length; the
+        // The calibration pick. Two points measure a reference length; the
         // dialog then asks what that length IS on the real thing.
         //
         // It raises NO action on the picks themselves, which is the difference
@@ -792,7 +792,7 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
                 return;
             };
             if let Some(line) = pick_line_in_page(model, p, map.tolerance()) {
-                // ★ **The OPERATOR's threshold, not the default.**
+                // **The OPERATOR's threshold, not the default.**
                 //
                 // Reading `ParallelPolicy::default().epsilon_degrees` here
                 // would make `Settings::parallel_epsilon_degrees` — persisted,
@@ -813,7 +813,7 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
                 st.two_lines.offer_line(line, epsilon);
                 match st.two_lines.authoring(epsilon, TwoLinePlacement::default()) {
                     Some(Ok(authoring)) => {
-                        // ★ The disclosure travels WITH the action.
+                        // The disclosure travels WITH the action.
                         //
                         // Not recorded here through `record_note`: the apply
                         // phase runs after this frame and writes its own
@@ -836,7 +836,7 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
                         }));
                         st.two_lines.clear();
                     }
-                    // ★ **The refusal, surfaced by name.** It was swallowed —
+                    // **The refusal, surfaced by name.** It was swallowed —
                     // `if let Some(Ok(..))` — so a collinear pair produced a
                     // second click that did nothing, silently, and an operator
                     // with no reason to suspect the geometry clicked again.
@@ -915,7 +915,7 @@ mod tests {
         ]
     }
 
-    /// ★ **Changing tool discards the circular pick set.**
+    /// **Changing tool discards the circular pick set.**
     ///
     /// `MeasureState::set_kind` owns the rule and has its own tests; this
     /// asserts the *hosting* applies it, because `load` is what calls it and a
@@ -938,7 +938,7 @@ mod tests {
         );
     }
 
-    /// ★ **Leaving the page discards it too**, which is `load`'s other
+    /// **Leaving the page discards it too**, which is `load`'s other
     /// synchronisation and the one an operator reaches by paging through a
     /// drawing set with a tool still armed.
     #[test]
@@ -963,7 +963,7 @@ mod tests {
 mod kind_tests {
     use super::MeasureKind;
 
-    /// ★ **Every variant is either on the ribbon or deliberately excluded.**
+    /// **Every variant is either on the ribbon or deliberately excluded.**
     ///
     /// `MeasureKind::ALL` stopped being exhaustive over the enum when
     /// [`MeasureKind::Scale`] arrived — it is armed from the Set-scale dialog,

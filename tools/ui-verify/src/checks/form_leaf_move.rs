@@ -16,7 +16,7 @@ use crate::report::CheckReport;
 const MODE: &str = "edit";
 /// The selection line the LADDER writes — `canvas-selection … first=leaf:N`.
 ///
-/// ★★ **The third time in one session that a check aimed at the wrong one of
+/// **The third time in one session that a check aimed at the wrong one of
 /// two selection lines**, and it is worth pinning here rather than fixing
 /// silently. This shell writes two, from two functions, for two different acts:
 ///
@@ -32,7 +32,7 @@ const MODE: &str = "edit";
 const SELECTION: &str = "canvas-selection"; // ui-text-exempt: a trace event name, never displayed
 /// The line `canvas::smart::enter` writes.
 const ENTER: &str = "smart-enter"; // ui-text-exempt: a trace event name, never displayed
-/// ★ The line this check exists to read, written by the edit funnel after the
+/// The line this check exists to read, written by the edit funnel after the
 /// engine returned `Ok`.
 const MOVED: &str = "move-leaves-in-form"; // ui-text-exempt: a trace event name, never displayed
 /// The refusal the shell wrote for the whole of this feature's absence.
@@ -182,7 +182,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let trace = session.trace()?;
     let Some(moved) = trace.last(MOVED) else {
-        // ★ Name the refusal if there was one. *"The drag was refused"* and
+        // Name the refusal if there was one. *"The drag was refused"* and
         // *"the drag was dropped"* send a reader to two different files, and
         // this feature's whole history is the first one.
         let refused = trace
@@ -221,7 +221,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // one case, correct while the drag could not commit at all, and a visible
     // gap the moment it could.
     //
-    // ★ `shapes=` rather than the line's presence. A preview that asked for one
+    // `shapes=` rather than the line's presence. A preview that asked for one
     // object and built none is what a build reading the wrong list produces —
     // and it traces, because the line is written whether or not anything came
     // back.
@@ -247,7 +247,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- D: …and Delete reaches it too --------------------------------------
     //
-    // ★ The second of the two acts O53's sentence names — *"all of the ordinary
+    // The second of the two acts O53's sentence names — *"all of the ordinary
     // editing one would expect"* — and the one with teeth, because a delete
     // that addressed the wrong index space would remove something the operator
     // did not point at. Driven here rather than in a check of its own because

@@ -52,7 +52,7 @@ pub(crate) struct DeviceFeatures {
     pub(crate) max_copies: u16,
     /// Whether the driver advertises tray-selection-by-sheet-size.
     ///
-    /// ★ Read the three states before writing a gate against this. Unlike
+    /// Read the three states before writing a gate against this. Unlike
     /// [`Self::supports_duplex`] it is **not** a capability answer, and the
     /// control it governs is drawn in all three states. See
     /// [`FormSourceSupport`] and this module's header.
@@ -183,7 +183,7 @@ pub(crate) enum FormSourceSupport {
 
 /// A driver's own settings, carried opaquely.
 ///
-/// # ★ What this actually is, and why the shell must not look inside
+/// # What this actually is, and why the shell must not look inside
 ///
 /// A Windows `DEVMODE`: a public header pdfcer understands, followed by a
 /// **driver-private tail** in a format only that one driver knows. The
@@ -309,7 +309,7 @@ pub(crate) fn printer_forms(printer: &str) -> Result<Vec<PaperForm>, Unavailable
 /// first press produced, so an operator reopening the dialog to change one
 /// thing does not silently lose the rest.
 ///
-/// # ★ `Ok(None)` is Cancel, and it is not a failure
+/// # `Ok(None)` is Cancel, and it is not a failure
 ///
 /// The engine is explicit: *"that is the operator declining, and a shell that
 /// showed an error for it would be scolding them for using the dialog
@@ -324,7 +324,7 @@ pub(crate) fn printer_forms(printer: &str) -> Result<Vec<PaperForm>, Unavailable
 /// cannot see and cannot dismiss, with the application apparently frozen
 /// behind it. So the shell passes its handle.
 ///
-/// # ★ This call BLOCKS the frame, for as long as the operator takes
+/// # This call BLOCKS the frame, for as long as the operator takes
 ///
 /// It is a nested modal message loop belonging to the driver, run from inside
 /// our own event loop. egui stops painting until it returns. That is

@@ -59,7 +59,7 @@ pub struct FindOptions {
     pub case_sensitive: bool,
     /// Whether a hit must be a complete word. The *Whole word* control.
     pub whole_word: bool,
-    /// Whether `#` and `?` are wildcards. See this module's ★ trap section.
+    /// Whether `#` and `?` are wildcards. See this module's trap section.
     pub wildcards: bool,
     /// Which characters make a word, when [`Self::whole_word`] is on.
     ///
@@ -71,7 +71,7 @@ pub struct FindOptions {
 }
 
 impl Default for FindOptions {
-    /// ★ **Case-insensitive, substring, literal,
+    /// **Case-insensitive, substring, literal,
     /// [`WordBoundary::Alphanumeric`].**
     ///
     /// Three of the four are [`TextSearchOptions`]'s own defaults. The fourth
@@ -86,7 +86,7 @@ impl Default for FindOptions {
     /// case-insensitive and the control turns it off.
     ///
     /// **Wildcards.** Off, which is core's default and the whole subject of
-    /// this module's ★ trap section.
+    /// this module's trap section.
     ///
     /// **Word boundary — `Alphanumeric`, and here is the justification the
     /// brief asks for.** ISO 32000-1 §14.8.2.5 NOTE 1 says outright that
@@ -129,7 +129,7 @@ impl FindOptions {
     /// Turn the operator's choices into the engine's request.
     ///
     /// **The one place the case polarity is inverted**, and the one place
-    /// `wildcards` is stated at all — which is what makes the ★ trap
+    /// `wildcards` is stated at all — which is what makes the trap
     /// checkable rather than a promise: there is exactly one construction of
     /// a [`TextSearchOptions`] in this crate, it is this function, and
     /// `tests::the_default_search_is_literal` reads it.
@@ -185,7 +185,7 @@ pub struct Hit {
     /// top-left, `/Rotate` applied — or `None` if the page's device
     /// transform is not invertible.
     ///
-    /// ★ **Projected once, at search time.** The core match carries a
+    /// **Projected once, at search time.** The core match carries a
     /// [`pdfcer_core::annot_author::Quad`] in *unrotated PDF user space*
     /// (Y-**up**, origin at the un-rotated CropBox's lower-left), which is a
     /// different frame from the one the canvas paints in. The conversion is
@@ -235,7 +235,7 @@ pub struct Results {
     /// Type 3 fonts and `Identity-H` fonts with no `/ToUnicode` CMap, summed,
     /// from `pdfcer-core`'s `TextDiagnostics` via `search_text`.
     ///
-    /// ★★★ Why a Find bar needs this at all. A zero-result search has **two**
+    /// Why a Find bar needs this at all. A zero-result search has **two**
     /// causes that produce an identical empty result: the word is not in the
     /// document, or *the document's text was never recoverable as Unicode, so
     /// no word could ever have matched it*. The second is not exotic and it
@@ -243,7 +243,7 @@ pub struct Results {
     /// what makes it invisible. Answering that with a bare "0 results" is, in
     /// the engine's own phrase, lying by omission.
     ///
-    /// ★ Acrobat has the identical limit — its extract/search/copy pipeline for
+    /// Acrobat has the identical limit — its extract/search/copy pipeline for
     /// Type 3 is gated on the same `/ToUnicode` entry — and answers it by
     /// giving up silently. Rule 4 forbids that here: an inference the operator
     /// **cannot see** still owes them an off-canvas report. This is the "still
@@ -285,7 +285,7 @@ pub enum Readout {
     },
     /// A search ran, and the document has been edited since. The hits are no
     /// longer trustworthy geometry, so nothing is highlighted and nothing is
-    /// navigable until the operator searches again. See this module's ★
+    /// navigable until the operator searches again. See this module's
     /// staleness section.
     Stale,
 }
@@ -319,11 +319,11 @@ pub struct FindState {
     /// every frame would make it impossible to click anything else while the
     /// bar is open, which is the classic way a find bar becomes a trap.
     focus_wanted: bool,
-    /// ★ **Whether going to a hit is allowed to move the view** — the
+    /// **Whether going to a hit is allowed to move the view** — the
     /// operator's *Zoom* control, `OPERATOR_REQUESTS.md` **O163**, 2026-09-09,
     /// widened by **O179**, 2026-09-12.
     ///
-    /// ★★ “Move the view”, not “change the zoom”, and the correction is the
+    /// “Move the view”, not “change the zoom”, and the correction is the
     /// substance of O179. As shipped this governed only the fit drop in
     /// [`reveal::hold_the_zoom_if_asked`], so with the control off the hit was
     /// still scrolled to the centre of the canvas on every step. It now also
@@ -339,7 +339,7 @@ pub struct FindState {
     /// [`Results`]' currency test does not read it: results computed before
     /// the operator toggled this are still exactly correct.
     ///
-    /// ★ **`true` is the shipped default**, and that is the *old* behaviour
+    /// **`true` is the shipped default**, and that is the *old* behaviour
     /// rather than a new preference: nothing in this module has ever set a
     /// zoom, so `true` means *"do not intervene"* and `false` means
     /// *"intervene, to hold the zoom still"*. See [`reveal::reveal_current`]
@@ -352,7 +352,7 @@ pub struct FindState {
     /// `egui::Memory` hop, because this value is only ever read from a place
     /// that already holds the [`FindState`].
     zoom_on_jump: bool,
-    /// ★ **Whether whitespace at either end of the query is ignored** —
+    /// **Whether whitespace at either end of the query is ignored** —
     /// `OPERATOR_REQUESTS.md` **O180**, 2026-09-12.
     ///
     /// His report: *“trailing spaces/tabs/etc stops a search from finding
@@ -361,7 +361,7 @@ pub struct FindState {
     /// search.”* See [`query`] for what is trimmed, what is deliberately
     /// not, and why the bar discloses it either way.
     ///
-    /// ★★ **Unlike [`Self::zoom_on_jump`], this one DOES change what
+    /// **Unlike [`Self::zoom_on_jump`], this one DOES change what
     /// matches**, and the difference decides where it is read. It is still
     /// not a [`FindOptions`] field — those are the bar's own menu and this
     /// is a Settings-window preference, which is where he asked for it
@@ -375,7 +375,7 @@ pub struct FindState {
     trim_query: bool,
 }
 
-/// ★ Hand-written rather than derived, for exactly one field.
+/// Hand-written rather than derived, for exactly one field.
 ///
 /// `#[derive(Default)]` would give [`FindState::zoom_on_jump`] `false`, which
 /// is the **opposite** of what ships — and it would do it silently, in a way
@@ -489,7 +489,7 @@ impl FindState {
 
     /// Set the *Zoom* control.
     ///
-    /// ★ **Does not touch the results, and must not.** The three
+    /// **Does not touch the results, and must not.** The three
     /// [`FindOptions`] controls make the standing hit list wrong, which is why
     /// changing one re-runs the search; this one does not change which glyphs
     /// matched. Clearing the results here would throw away a correct answer
@@ -513,7 +513,7 @@ impl FindState {
 
     /// Set the trim preference.
     ///
-    /// ★ **Clears the results, unlike [`Self::set_zoom_on_jump`]**, and the
+    /// **Clears the results, unlike [`Self::set_zoom_on_jump`]**, and the
     /// asymmetry is the point: this preference changes which text matches,
     /// so a stored hit list computed under the old value is wrong rather
     /// than merely stale. Leaving it standing would let the operator step
@@ -562,7 +562,7 @@ impl FindState {
             .is_some_and(|r| r.query == self.query && r.options == self.options)
     }
 
-    /// ★ **What the readout says** — the pure rule, testable without a
+    /// **What the readout says** — the pure rule, testable without a
     /// document, a frame or a search.
     ///
     /// `epoch` is [`OpenDoc::edit_epoch`], or any value at all when nothing
@@ -704,7 +704,7 @@ pub fn apply(state: &mut FindState, doc: &mut OpenDoc, request: FindRequest) {
     }
 }
 
-/// ★ **Run the search.**
+/// **Run the search.**
 ///
 /// # The borrow protocol, and how it differs from an edit's
 ///
@@ -749,7 +749,7 @@ fn search(state: &mut FindState, doc: &mut OpenDoc) {
     // `to_owned` below, which is needed anyway because `state` is borrowed
     // mutably through the rest of this function.
     //
-    // ★★ The emptiness test below now sees the TRIMMED query, and that is
+    // The emptiness test below now sees the TRIMMED query, and that is
     // deliberate rather than incidental: a box holding one space reads as
     // `Readout::Idle` (*“you have not typed anything”*) instead of running a
     // search that confidently reports nothing found in a document full of
@@ -779,7 +779,7 @@ fn search(state: &mut FindState, doc: &mut OpenDoc) {
 
     let options = state.options;
     let started = Instant::now();
-    // ★ `search_text`, NEVER `find_text`. See this module's trap section:
+    // `search_text`, NEVER `find_text`. See this module's trap section:
     // `find_text` passes `with_wildcards(true)`, and a Find bar built on it
     // matches every character on the page when the operator types `?`.
     //
@@ -812,7 +812,7 @@ fn search(state: &mut FindState, doc: &mut OpenDoc) {
         current: 0,
     });
 
-    // ★ The line the cost claim in this module's header is made from, and the
+    // The line the cost claim in this module's header is made from, and the
     // line a harness reads to know a search ran at all.
     //
     // `current=` is ONE-BASED, matching the bar's readout, so a trace and a
@@ -872,7 +872,7 @@ fn step_to(state: &mut FindState, doc: &mut OpenDoc, step: Step) {
     reveal::reveal_current(state, doc);
 }
 
-/// ★ **The wrap rule**, as a pure function of three numbers.
+/// **The wrap rule**, as a pure function of three numbers.
 ///
 /// Wrapping rather than stopping, which is the opposite of what
 /// `crate::viewer::ViewState::next_page` does — and the difference is not an

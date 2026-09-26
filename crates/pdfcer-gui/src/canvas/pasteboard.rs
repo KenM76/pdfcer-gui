@@ -35,7 +35,7 @@ pub enum Surface {
 ///   dragged or clicked right now, including after the pointer has left it
 ///   (`dragged() || drag_stopped() || clicked()`).
 /// * `pasteboard_has_gesture` — the same, for the content rectangle.
-/// * `page_owns_open_popup` — ★★★ a popup anchored to the page's own response
+/// * `page_owns_open_popup` — a popup anchored to the page's own response
 ///   is open right now (`Popup::is_id_open(ctx, Popup::default_response_id(
 ///   &image_response))`). This is the canvas context menu, and without this
 ///   clause the menu destroys itself the moment the pointer touches it. The
@@ -56,13 +56,13 @@ pub const fn surface(
     page_owns_open_popup: bool,
 ) -> Surface {
     let _ = pointer_in_content;
-    // ★ The in-flight gesture wins over where the pointer happens to be NOW.
+    // The in-flight gesture wins over where the pointer happens to be NOW.
     // Row 3 of the table: a band started on the sheet and dragged off it is one
     // gesture and stays with the page. This clause is first for that reason.
     if page_has_gesture {
         return Surface::Page;
     }
-    // ★★★ …and so does a popup the page opened. Second, not first, only
+    // …and so does a popup the page opened. Second, not first, only
     // because an in-flight drag is the more specific claim; the two cannot
     // both be true in practice, since the secondary click that opens a menu
     // ends any drag. See the module header for the defect this closes.
@@ -75,7 +75,7 @@ pub const fn surface(
     if page_owns_open_popup {
         return Surface::Page;
     }
-    // ★ …and symmetrically, a band started in the pasteboard and dragged ONTO
+    // …and symmetrically, a band started in the pasteboard and dragged ONTO
     // the sheet stays with the pasteboard. Without this the drag would change
     // owner mid-gesture, which the gesture machine reads as the first one being
     // abandoned — the rubber-band would vanish the instant it touched paper.
@@ -109,7 +109,7 @@ mod tests {
         );
     }
 
-    /// ★★★ Row 3, and the one a naive "is the pointer over the page" test gets
+    /// Row 3, and the one a naive "is the pointer over the page" test gets
     /// wrong: a rubber-band that STARTED on the paper and has been dragged off
     /// it. The pointer is no longer on the sheet and the gesture still belongs
     /// to the page — handing this frame the pasteboard's response would end the
@@ -153,7 +153,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The row that was lost, and the whole point of the fifth clause.**
+    /// **The row that was lost, and the whole point of the fifth clause.**
     ///
     /// The operator right-clicks an object, the menu opens over the sheet, and
     /// the operator moves the cursor down onto it. `contains_pointer` is

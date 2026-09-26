@@ -19,7 +19,7 @@ three of them are *not* about rendering at all:
    because the zoom was clamped rather than the canvas disabled.
 4. **Say why, on the bottom bar.** `crate::app::status::rasterstop`.
 
-## ★★★ Why the ceiling has to be LEARNED rather than derived
+## Why the ceiling has to be LEARNED rather than derived
 
 This project already has two *derived* ceilings and they are both in
 [`crate::viewer::ceiling`]: the whole-page pixmap limit
@@ -51,7 +51,7 @@ recorded on [`crate::render::worker::RefusalKind::BeyondRaster`] as the
 variant's defining property, because it is the reason that variant exists
 apart from `Other`.
 
-## ★★ Why the ceiling is BELOW the scale that failed, and by how much
+## Why the ceiling is BELOW the scale that failed, and by how much
 
 A ceiling *at* the failing scale would be a ceiling the page cannot draw
 at: the refusal happened there. So the learned value is backed off by
@@ -68,14 +68,14 @@ the last *success* lies. A quarter of an order of magnitude is about two
 wheel notches at these magnitudes, invisible against a zoom of 28 million
 percent, and it buys a margin no arithmetic here can justify precisely.
 
-★ And it does not have to be right, only safe-in-the-limit: the ceiling
+And it does not have to be right, only safe-in-the-limit: the ceiling
 **ratchets**. [`RasterCeiling::learn`] keeps the minimum, so if 0.75 of the
 first failure still refuses, the second refusal lowers it again. The
 sequence converges downward and costs one dead render per step — which is
 why a conservative factor is preferred to an optimistic one, but why
 neither can be wrong for long.
 
-## ★ Why it is per page and keyed on the page's epoch
+## Why it is per page and keyed on the page's epoch
 
 Per page, because the limit is 28× different between two pages of the same
 document (above). Per **epoch** — `crate::app::state::pageepoch::PageEpochs`

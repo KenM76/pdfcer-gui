@@ -1,6 +1,6 @@
 # `canvas::annotnodes` tests — the shell's half, and the engine's ruling
 
-## ★★★ What these can and cannot prove, stated first
+## What these can and cannot prove, stated first
 
 **They cannot prove the operator can edit a node.** Every test here calls a
 function directly, and the whole point of R1 is that a passing unit test is
@@ -27,7 +27,7 @@ What these DO prove, and what makes them worth the second they cost:
    decline was raised, because a build that merely dropped the gesture would
    pass the other half and would be the operator's original complaint.
 
-## ★★ The shapes are chosen so the boundary is exercised
+## The shapes are chosen so the boundary is exercised
 
 A test on a five-sided polygon proves nothing about the floor. The shapes
 here are:
@@ -47,7 +47,7 @@ own floor rather than blanket-refusing three-node shapes. The two-stroke ink
 **stroke's**, not the mark's, and a flat anchor index that was converted to
 the wrong stroke would get the opposite answer from the engine.
 
-## ★★ The ink tests sit at the stroke boundary, on purpose
+## The ink tests sit at the stroke boundary, on purpose
 
 Every ink assertion below is made at **index 2 or 3** of a five-anchor mark
 whose first stroke holds three points — the last point of stroke 0 and the

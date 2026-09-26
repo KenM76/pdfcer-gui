@@ -42,7 +42,7 @@
 //! [`crate::dock::model`]'s header for why the schema is owned rather
 //! than borrowed from a layout engine.
 //!
-//! ## ★ Fail-soft, per item — the contract, and its exact limits
+//! ## Fail-soft, per item — the contract, and its exact limits
 //!
 //! > Missing file, parse failure, unknown panel id, or a panel the
 //! > application no longer registers → **that item is dropped with a
@@ -155,7 +155,7 @@ pub struct LayoutDocument {
     pub active: DockLayout,
     /// Named arrangements the operator can return to.
     pub workspaces: Vec<Workspace>,
-    /// ★★ **The mode in force when this was last written**, if the host has
+    /// **The mode in force when this was last written**, if the host has
     /// modes at all.
     ///
     /// # Why it lives here and not in the host's settings
@@ -175,7 +175,7 @@ pub struct LayoutDocument {
     /// recognise the same way — a manifest can be edited between runs, and a
     /// mode that has been renamed away must not leave the shell with no mode.
     ///
-    /// ★ The shell learns nothing about what a mode *means* by holding this.
+    /// The shell learns nothing about what a mode *means* by holding this.
     /// It is an opaque id the host wrote and the host reads back, which is what
     /// keeps R7 true: `egui-shell` has modes, and knows nothing about reading,
     /// reviewing or editing anything.
@@ -523,7 +523,7 @@ mod tests {
         )
     }
 
-    /// ★ **A layout round-trips through text unchanged.**
+    /// **A layout round-trips through text unchanged.**
     ///
     /// The property everything else in this module depends on. Asserted
     /// against a *rich* arrangement — two columns, a tabbed stack, a
@@ -539,7 +539,7 @@ mod tests {
         assert_eq!(loaded.document, document);
     }
 
-    /// ★ **A missing file is a first run, not a failure.**
+    /// **A missing file is a first run, not a failure.**
     #[test]
     fn a_missing_file_yields_the_default_and_says_so_quietly() {
         // temp-path-exempt: nothing is ever created here. The test wants a
@@ -557,7 +557,7 @@ mod tests {
         ));
     }
 
-    /// ★ **Broken syntax falls back and discloses — never a dialog,
+    /// **Broken syntax falls back and discloses — never a dialog,
     /// never silence.**
     #[test]
     fn broken_syntax_falls_back_with_a_reason_that_names_the_position() {
@@ -584,7 +584,7 @@ mod tests {
         ));
     }
 
-    /// ★ **A missing field is a default, and an unknown field is
+    /// **A missing field is a default, and an unknown field is
     /// ignored** — the two halves of surviving a version change in either
     /// direction.
     ///
@@ -612,7 +612,7 @@ mod tests {
         assert!(loaded.report.is_empty(), "{:?}", loaded.report.skips());
     }
 
-    /// ★ **A panel this build does not offer loses its tab and nothing
+    /// **A panel this build does not offer loses its tab and nothing
     /// else.**
     ///
     /// The `SHELL_FRAMEWORK.md` §7 case: a capability compiled out
@@ -749,7 +749,7 @@ mod tests {
         );
     }
 
-    /// ★ **An arrangement sanitized to nothing falls back rather than
+    /// **An arrangement sanitized to nothing falls back rather than
     /// leaving an empty dock.**
     ///
     /// A build with none of the saved panels — every capability compiled
@@ -766,7 +766,7 @@ mod tests {
         assert!(loaded.report.is_noteworthy());
     }
 
-    /// ★ **Sanitizing and normalizing agree.**
+    /// **Sanitizing and normalizing agree.**
     ///
     /// They are two implementations of one set of invariants — one with a
     /// voice, one without — and an arrangement that changed shape between

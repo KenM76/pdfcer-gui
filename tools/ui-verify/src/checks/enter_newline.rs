@@ -16,7 +16,7 @@ use crate::sys::vk;
 
 /// Edit mode, then arm **add** text — both through the harness seam.
 ///
-/// ★ `edit.add_text` rather than `edit.text`, because the subject is a caret on
+/// `edit.add_text` rather than `edit.text`, because the subject is a caret on
 /// **bare page** (`Anchor::Origin`) — the draft that could not take a line break
 /// until O127. A box draft always could, so a check that dragged one would pass
 /// on the build the operator reported.
@@ -29,7 +29,7 @@ const CARET_EVENT: &str = "text-edit-caret";
 const DECLINED_EVENT: &str = "text-edit-declined";
 /// `text-edit-enter means=…` — the keystroke arrived, and which branch it took.
 ///
-/// ★★ The one instrument that separates *"the key never got here"* from *"the
+/// The one instrument that separates *"the key never got here"* from *"the
 /// key got here and the rule chose wrong"*. Those are two different repairs and
 /// they leave identical evidence everywhere else: the draft's length does not
 /// move either way.
@@ -40,7 +40,7 @@ const ADD_EVENT: &str = "add-text";
 const PAGE_REGION: &str = "page";
 /// Where to click, in PDF user space — bare paper, well clear of the border.
 ///
-/// ★ On `a1-titleblock.pdf`, which is 2384 × 1684 pt. The point is chosen in
+/// On `a1-titleblock.pdf`, which is 2384 × 1684 pt. The point is chosen in
 /// the middle of the sheet where the fixture draws nothing, so the click cannot
 /// land on a run and turn the `Add` draft into an `Edit` one — which
 /// `textedit::click` does deliberately, and which would make this check
@@ -86,7 +86,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ This check owns its fixture for `reflow`'s reason: the click point is
+    // This check owns its fixture for `reflow`'s reason: the click point is
     // quoted in one sheet's geometry, and aiming it at another sheet lands on
     // whatever happens to be there — which on a CAD drawing is a run, which
     // turns the draft into an `Edit` and makes the check test the anchor it is
@@ -193,7 +193,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }));
     };
     report.note(format!("★ a draft is open: `{}`", caret.raw));
-    // ★★ The ANCHOR is asserted, not assumed. A click that landed on a run
+    // The ANCHOR is asserted, not assumed. A click that landed on a run
     // would produce an `Edit` draft, where Enter is *supposed* to decline — so
     // without this line a check that missed the blank spot would report the
     // decline as the defect and send somebody to fix the thing that is right.
@@ -244,7 +244,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: Ctrl+Enter finishes it -----------------------------------------
     //
-    // ★ The keyboard route, which is half of what O127 asked for: *"commit must
+    // The keyboard route, which is half of what O127 asked for: *"commit must
     // not be reachable only by mouse."* Clicking away would also commit and
     // would not test the chord.
     driver.press_chord(&[vk::CONTROL], vk::ENTER)?;

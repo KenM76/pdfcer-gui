@@ -11,7 +11,7 @@ use super::trace;
 /// Decide this frame's raster tier for the page being acted on, and record it
 /// on `doc`.
 ///
-/// ★ Set for the **current page only**. A region is expressed in one page's own
+/// Set for the **current page only**. A region is expressed in one page's own
 /// coordinate space, and `OpenDoc::region_for` refuses it for any other page
 /// rather than rasterizing the wrong part of a neighbour.
 ///
@@ -36,7 +36,7 @@ pub(super) fn decide(
     visible_rect: egui::Rect,
     avail: egui::Vec2,
 ) {
-    // ★★★ O24's REGION TIER, decided here because only the canvas knows
+    // O24's REGION TIER, decided here because only the canvas knows
     // where the operator is looking.
     //
     //
@@ -48,14 +48,14 @@ pub(super) fn decide(
     // visible rectangle instead — whose device size is a multiple of the
     // WINDOW and therefore constant at every zoom.
     //
-    // ★ Set for the page being acted on only. A region is in one page's
+    // Set for the page being acted on only. A region is in one page's
     // own coordinate space, and `OpenDoc::region_for` refuses it for any
     // other page rather than rasterizing the wrong part of a neighbour.
     doc.raster_region = None;
     if let Some(place) = layout.rect_of(current) {
         let extent = viewer::page_extent_pts(&doc.pages[current]);
         let frame = crate::render::region::PageFrame::of(&doc.pages[current]);
-        // ★★★ O23's "see" half. Where the ink on this page actually
+        // O23's "see" half. Where the ink on this page actually
         // reaches — which on a page with an object dragged off the sheet
         // is bigger than the sheet.
         //
@@ -66,7 +66,7 @@ pub(super) fn decide(
         // stalling for half a second. See
         // `OpenDoc::content_bounds_if_known` for the whole argument.
         //
-        // ★★★ **THE GATE.** `None` here is *"this page reaches nowhere past
+        // **THE GATE.** `None` here is *"this page reaches nowhere past
         // its sheet"*, and handing it that answer deliberately is how the
         // operator's switch turns O23's "see" half off: the halo tier below
         // asks for no halo, and `halo::reach` in the region tier returns
@@ -89,7 +89,7 @@ pub(super) fn decide(
             // page's own points. The two scales are derived from the
             // placement rather than from the zoom, so a page whose
             // placement has been rounded still maps exactly onto itself.
-            // ★★ At tier 3 the visible rect comes from the ANCHOR, for the
+            // At tier 3 the visible rect comes from the ANCHOR, for the
             // same reason the placement does: `place` has a magnitude of
             // ~10^12 at deep zoom, and `seen.min.x - place.min.x` subtracts
             // two huge `f32`s to get a small one — losing exactly the
@@ -102,7 +102,7 @@ pub(super) fn decide(
                     .unwrap_or_else(viewer::deep::DeepAnchor::origin);
                 Some(anchor.visible_rect((avail.x, avail.y), f64::from(doc.view.zoom)))
             } else {
-                // ★★★ `halo::reach(place, ..)` and NOT `place`. Above the
+                // `halo::reach(place, ..)` and NOT `place`. Above the
                 // pixmap ceiling the request is the visible rectangle, and
                 // intersecting it with the SHEET is what kept an off-page
                 // object out of the raster at every deep zoom even after
@@ -114,7 +114,7 @@ pub(super) fn decide(
                 if seen.width() > 0.0 && seen.height() > 0.0 {
                     let sx = extent.0 / place.width();
                     let sy = extent.1 / place.height();
-                    // ★ Widened to `f64`, losslessly. Below the deep
+                    // Widened to `f64`, losslessly. Below the deep
                     // threshold the `f32` arithmetic was never the
                     // problem — the rect is a fair fraction of the page
                     // there — but `page_region` takes one type, and a
@@ -143,7 +143,7 @@ pub(super) fn decide(
                 doc.region_for(current),
             );
         } else {
-            // ★★★ THE HALO TIER — O23's "see" half, and the reason an
+            // THE HALO TIER — O23's "see" half, and the reason an
             // object placed off the sheet is drawn at all.
             //
             // `render_page` sizes its pixmap to the `/CropBox`. Nothing
@@ -152,7 +152,7 @@ pub(super) fn decide(
             // put it in. So when this page's ink reaches past the sheet,
             // ask for the bigger box instead.
             //
-            // ★ SECOND, after the region tier, and the order is the
+            // SECOND, after the region tier, and the order is the
             // safety argument: a halo is never smaller than the crop box,
             // so if the whole page does not fit, the halo certainly does
             // not. Reaching this branch at all means the whole-page
@@ -198,19 +198,19 @@ pub(super) fn decide(
 /// of the pasteboard is precisely the defect O23 spent three attempts on** —
 /// see that field's own documentation.
 ///
-/// ★ `content_bounds_if_known` PEEKS and never builds: a decomposition costs
+/// `content_bounds_if_known` PEEKS and never builds: a decomposition costs
 /// 469 ms on the operator's benchmark sheet, and this runs every frame. The
 /// honest consequence is that on the first frame after opening a large drawing
 /// the pasteboard is the plain one, and one frame later it is the wider one —
 /// the same one-frame lag the halo raster has, for the same reason.
 ///
-/// ★ Multiplied by the zoom HERE, because the overhang is a fact about the
+/// Multiplied by the zoom HERE, because the overhang is a fact about the
 /// drawing (canvas points) while every `geometry` term is in screen points.
 /// `halo::overhang` resolves `/Rotate` through `PageFrame::canvas_box_of`,
 /// which is O174's single place for it. A non-finite or non-positive zoom
 /// yields zero rather than a NaN that would propagate into every scroll bound.
 pub(super) fn overhang(doc: &OpenDoc, current: usize) -> egui::Vec2 {
-    // ★★★ THE GATE'S SECOND HALF. Returning early rather than zeroing the
+    // THE GATE'S SECOND HALF. Returning early rather than zeroing the
     // product keeps the peek itself out of the off path — but that is a
     // bonus, not the reason. The reason is the operator's sentence: with the
     // switch off there must be *no gap between pages where the stuff is*, and

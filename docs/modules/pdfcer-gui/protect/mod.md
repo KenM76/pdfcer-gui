@@ -9,7 +9,7 @@ hand, and then drifts.
 
 ---
 
-# 1. ★★★ The three engine verbs, verified against the source
+# 1. The three engine verbs, verified against the source
 
 `D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs`, at the revision this crate
 pins (`Cargo.lock`: `pdfcer-core 0.32.0`, `aa27596`). Checked at that commit
@@ -25,7 +25,7 @@ remove_encryption(&mut self,                      &SaveOptions) -> Result<(Vec<u
 `docs/core-api/02-editing-and-saving.md` §1.5 states the same three, and the
 two agree.
 
-## ★★ The one place the engine's docs and the engine's source disagree
+## The one place the engine's docs and the engine's source disagree
 
 `set_encryption`'s own rustdoc instructs a caller to *"surface
 [`EncryptionSettings::permissions_disclosure`]"* and names
@@ -38,7 +38,7 @@ because the build brief asked for every difference between the docs and the
 source: a caller who trusted the rustdoc would look for a method, not find
 one, and conclude the disclosure was not supplied.
 
-# 2. ★★★ Why NONE of the three verbs is called on the open session
+# 2. Why NONE of the three verbs is called on the open session
 
 This is the decision the whole module is shaped around, and it was taken on
 evidence rather than caution.
@@ -74,12 +74,12 @@ these verbs.
 | **not** encrypted | `set_encryption` (`&self`) | **the open one** | **yes** |
 | encrypted | `set_permissions` / `remove_encryption` (`&mut self`) | a **throwaway**, loaded from the file with the owner password | there are none — see below |
 
-★ The first row needs no ceremony at all: `set_encryption` takes `&self`,
+The first row needs no ceremony at all: `set_encryption` takes `&self`,
 mutates nothing, and applies `dirty_set()` — so an operator who has moved a
 dimension and not saved gets that dimension in the protected file. This is
 strictly better than re-reading the disk and it costs nothing.
 
-★★ The second row loses no work, and that is a fact about the engine rather
+The second row loses no work, and that is a fact about the engine rather
 than a claim about this code. `pdfcer-core` **refuses every content edit on
 an encrypted document by name** — the engine's own regression test says so:
 `an_encrypted_session_still_refuses_a_content_edit`, whose comment reads
@@ -88,7 +88,7 @@ session (which it now can)"*. And an encrypted document cannot be saved
 either, by `EncryptedSaveUnsupported` above. So an open encrypted document
 has no unsaved edits to carry: there is no verb that could have made one.
 
-★★★ **The throwaway load is also the authentication.** Both mutating verbs
+**The throwaway load is also the authentication.** Both mutating verbs
 are owner-only and refuse `NotOwner { opened_as }`; the way this module finds
 out whether the operator has the owner password is by **using it** —
 `Document::load_with_password(path, Some(owner))`, then reading
@@ -116,7 +116,7 @@ So the same three things hold here:
    overwrite there has ever been.
 3. **The write is atomic** — temp file, then rename ([`Prepared::write_to`]).
 
-★ The half of his request the engine cannot express is the same half here as
+The half of his request the engine cannot express is the same half here as
 there: *defer the write to a later Save*. There is no verb for it. All three
 encryption verbs **return bytes**; none of them stages anything in a session,
 and `EditSession` has no `replace_document`. Approximating it would mean

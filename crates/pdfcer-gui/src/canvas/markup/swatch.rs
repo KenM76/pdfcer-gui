@@ -25,7 +25,7 @@ pub const REGION_WIDTH: &str = "markup.style.width"; // ui-text-exempt: trace re
 pub const REGION_OPACITY: &str = "markup.style.opacity"; // ui-text-exempt: trace region name, never displayed
 /// As [`REGION_INK`], for the line-style chooser.
 ///
-/// ★ It doubles as the combo's `id_salt`, which is deliberate and is the one
+/// It doubles as the combo's `id_salt`, which is deliberate and is the one
 /// place in this module where a region name is load-bearing twice: a driven
 /// check finds the control by this name, and `egui` remembers the popup's open
 /// state under it. Two spellings of one control would give the harness a rect
@@ -33,7 +33,7 @@ pub const REGION_OPACITY: &str = "markup.style.opacity"; // ui-text-exempt: trac
 pub const REGION_DASH: &str = "markup.style.dash"; // ui-text-exempt: trace region name, never displayed
 /// The palette grid inside an open swatch popup.
 ///
-/// ★ Published only while a popup is open, which is the point: a driven check
+/// Published only while a popup is open, which is the point: a driven check
 /// asking *"did pressing the swatch show Acrobat's colours"* gets no rect at all
 /// on the frame before the press, and a rect afterwards. A region that were
 /// always present would answer the question the same way whether the popup had
@@ -65,7 +65,7 @@ const REGION_MORE_COLOURS: &str = "markup.style.more_colours"; // ui-text-exempt
 /// caption underneath says which group they are in.
 pub fn show(ui: &mut Ui, pen: &mut Pen) {
     ui.horizontal(|ui| {
-        // ★ The two swatches are ADJACENT and labelled, rather than one swatch
+        // The two swatches are ADJACENT and labelled, rather than one swatch
         // that changes meaning with the armed tool.
         //
         // A single swatch would have to answer "which pen am I setting?" from
@@ -82,7 +82,7 @@ pub fn show(ui: &mut Ui, pen: &mut Pen) {
             t::highlighter_colour_tooltip(),
         );
 
-        // ★ A `DragValue`, not a slider.
+        // A `DragValue`, not a slider.
         //
         // The useful range is 0.25–12 pt and an operator authoring a comment on
         // a drawing usually has a specific width in mind — 0.5 to match the
@@ -107,7 +107,7 @@ pub fn show(ui: &mut Ui, pen: &mut Pen) {
             trace(*pen);
         }
 
-        // ★★★ OPACITY, and it shipped four months after the row above it said
+        // OPACITY, and it shipped four months after the row above it said
         // it could not.
         //
         // This module's header carried a table row reading *"blocked on the
@@ -134,7 +134,7 @@ pub fn show(ui: &mut Ui, pen: &mut Pen) {
         // backlog row is a record, not evidence*, and the corollary this adds is
         // that **a note claiming a record was updated is also only a record.**
         //
-        // ★★ A percentage at the control, a fraction in the file. `/CA` is
+        // A percentage at the control, a fraction in the file. `/CA` is
         // `0.0`–`1.0` (§12.5.2 Table 164) and every program that offers this
         // says 40%, so the conversion happens here and nowhere else — one
         // place, so a second call site cannot write 40.0 into a key whose legal
@@ -157,7 +157,7 @@ pub fn show(ui: &mut Ui, pen: &mut Pen) {
             trace(*pen);
         }
 
-        // ★★★ LINE STYLE — `RIBBON_IA.md` §5.8's eighth control, and the last
+        // LINE STYLE — `RIBBON_IA.md` §5.8's eighth control, and the last
         // of the eight to get an engine verb.
         //
         // It is on the **Style** group rather than only on the contextual
@@ -170,7 +170,7 @@ pub fn show(ui: &mut Ui, pen: &mut Pen) {
         // argument `add_markup_with` makes about opacity three controls to the
         // left.
         //
-        // ★ A ComboBox and not a set of toggle buttons: four entries whose
+        // A ComboBox and not a set of toggle buttons: four entries whose
         // difference is a line pattern cannot be told apart by a 16-point icon,
         // and there is no room on a ribbon band for four labelled buttons. The
         // arrowhead chooser on the Format tab is the same shape for the same
@@ -202,7 +202,7 @@ pub fn show(ui: &mut Ui, pen: &mut Pen) {
 
 /// The width of the line-style chooser, in points.
 ///
-/// ★ Wide enough for its longest entry — *"Dashed (the file's own pattern)"* is
+/// Wide enough for its longest entry — *"Dashed (the file's own pattern)"* is
 /// longer still but is a **reading** and never appears on this surface, because
 /// the pen always holds one of the four. Sized against the two `DragValue`s
 /// beside it rather than to look comfortable on its own: the Style group already
@@ -221,7 +221,7 @@ const CELL_PTS: f32 = 16.0;
 
 /// **One colour chip: the pen's current colour, and the grid behind it.**
 ///
-/// # ★ It is drawn rather than assembled from a `Button`
+/// # It is drawn rather than assembled from a `Button`
 ///
 /// A `Button` fills with the *theme's* widget colour and paints its content on
 /// top; what is wanted here is a rectangle of the **document's** colour, at a
@@ -235,7 +235,7 @@ const CELL_PTS: f32 = 16.0;
 /// visual and carries hover and focus. Two colours with two owners, which is the
 /// distinction this project has already shipped wrong once.
 ///
-/// # ★★ `CloseOnClickOutside`, not `CloseOnClick`
+/// # `CloseOnClickOutside`, not `CloseOnClick`
 ///
 /// The default menu behaviour closes on any click inside, which would shut the
 /// popup the instant the operator touched the *More colours…* disclosure or
@@ -297,7 +297,7 @@ fn chip(ui: &mut Ui, pen: &mut Pen, slot: PenSlot, region: &str, tooltip: &str) 
 /// would look like ten colours somebody liked. It is the only place in the
 /// running program where the provenance of these values is visible.
 ///
-/// # ★ Deliberately NOT `.strong()`
+/// # Deliberately NOT `.strong()`
 ///
 /// `tools/gates/check-strong-text.sh` rejects it and defect D11 is why: egui has
 /// no role for emphasised text, so `.strong()` resolves to the accent-filled
@@ -309,7 +309,7 @@ fn popup(ui: &mut Ui, pen: &mut Pen, slot: PenSlot) {
     crate::diag::ui_rect(REGION_PALETTE, grid(ui, pen, slot));
     ui.separator();
 
-    // ★ The full picker, expanded IN PLACE rather than in a second popup.
+    // The full picker, expanded IN PLACE rather than in a second popup.
     //
     // `color_edit_button_srgba` would have been one line, and it opens a popup
     // of its own — a popup inside a popup, with two dismissal rules the operator
@@ -324,7 +324,7 @@ fn popup(ui: &mut Ui, pen: &mut Pen, slot: PenSlot) {
         .default_open(false)
         .show(ui, |ui| {
             let mut chosen = pen.color32_of(slot);
-            // ★ `Alpha::Opaque`. `/C` is three components — see
+            // `Alpha::Opaque`. `/C` is three components — see
             // `Pen::set_ink` — so a picker offering a fourth would be offering
             // a value with nowhere to go.
             if egui::widgets::color_picker::color_picker_color32(
@@ -342,7 +342,7 @@ fn popup(ui: &mut Ui, pen: &mut Pen, slot: PenSlot) {
 
 /// **The grid of Acrobat's colours.** Returns the rect it occupied.
 ///
-/// # ★★ The chosen cell is marked, and marking it is not decoration
+/// # The chosen cell is marked, and marking it is not decoration
 ///
 /// A grid of ten colours with no indication of which one is current answers
 /// *"what can I pick"* and not *"what did I pick"*, and the second is the
@@ -447,14 +447,14 @@ fn trace(pen: Pen) {
             pen.highlighter,
             pen.width_pts,
             pen.opacity,
-            // ★ BOTH, because they answer different questions and only the
+            // BOTH, because they answer different questions and only the
             // second is a fact about the file: `opacity` is what the control
             // holds, and `ca` is whether a `/CA` key will be written at all.
             // A trace carrying only the first cannot distinguish "opaque, so no
             // key" from "the option was dropped on the way to the engine",
             // which is exactly the failure a driven check exists to catch.
             pen.opacity_option(),
-            // ★ BOTH again, for the identical reason one step along: `dash` is
+            // BOTH again, for the identical reason one step along: `dash` is
             // the chooser's entry and `d` is the run lengths `/BS` `/D` will
             // carry — `None` meaning no dash key at all. A trace with only the
             // first could not tell "Solid, so no key" from "the pattern was
@@ -476,7 +476,7 @@ mod tests {
     /// shared a name would send it to whichever the application declared last —
     /// a click on the wrong control, reported as the right one failing.
     ///
-    /// ★ The list grew from three to five and the test name grew with it, on
+    /// The list grew from three to five and the test name grew with it, on
     /// purpose: `the_three_controls_publish_distinct_regions` would have gone on
     /// passing while checking three of five, which is the shape of gate that
     /// reports clean having looked at almost nothing.
@@ -546,7 +546,7 @@ mod tests {
         (id, rect)
     }
 
-    /// ★★★ **PRESSING THE SWATCH SHOWS ACROBAT'S COLOURS.**
+    /// **PRESSING THE SWATCH SHOWS ACROBAT'S COLOURS.**
     ///
     /// The whole of the *"style look"* half of the operator's ask, reduced to the
     /// one thing that can be false about it. Everything else in this module —
@@ -557,7 +557,7 @@ mod tests {
     /// off-screen launch all confirmed a Select button's rect while the button
     /// itself was inert for a week.
     ///
-    /// ★ It asserts on `Popup::is_id_open` — the flag a duplicated
+    /// It asserts on `Popup::is_id_open` — the flag a duplicated
     /// `Popup::toggle_id` would fight over — rather than on anything downstream.
     ///
     /// Falsified by deleting the `Popup::menu(…)` block from [`chip`]: the
@@ -626,7 +626,7 @@ mod tests {
         bounds
     }
 
-    /// ★★★ **CLICKING A CELL AUTHORS THAT CELL'S COLOUR, INTO THAT SLOT.**
+    /// **CLICKING A CELL AUTHORS THAT CELL'S COLOUR, INTO THAT SLOT.**
     ///
     /// The claim the whole module rests on, and the one a screenshot cannot
     /// make: a grid that renders ten beautiful squares and writes nothing is
@@ -691,7 +691,7 @@ mod tests {
         }
     }
 
-    /// ★★ **The opacity control exists and is wired to the pen.**
+    /// **The opacity control exists and is wired to the pen.**
     ///
     /// Written because this module's header claimed for four months that it
     /// could not exist — *"blocked on the engine … `/CA`, which `pdfcer-core`

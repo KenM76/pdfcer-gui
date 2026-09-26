@@ -49,7 +49,7 @@ pub(crate) enum Declined {
     /// the bar two ways to learn the same *kind* of thing, and the second would
     /// be the one that forgot to retire itself.
     ///
-    /// # ★ It is retired by the operator's next act, and by nothing else
+    /// # It is retired by the operator's next act, and by nothing else
     ///
     /// [`Self::still_true`] answers `true` for it unconditionally, and that is a
     /// decision rather than a gap. Its two neighbours have a live predicate to
@@ -70,7 +70,7 @@ pub(crate) enum Declined {
     SaveFailed,
     /// **A verb was asked to act on something drawn inside a form XObject.**
     ///
-    /// # ★ The two states this keeps apart, and why merging them is expensive
+    /// # The two states this keeps apart, and why merging them is expensive
     ///
     /// *"Nothing is selected"* and *"the thing you selected cannot be reached
     /// by this verb"* are the operator's mistake and the program's limit. An
@@ -102,7 +102,7 @@ pub(crate) enum Declined {
     /// so the greyed control and the sentence in the bar cannot come from
     /// different questions.
     ///
-    /// ★ That reasoning is still right, and it is right about
+    /// That reasoning is still right, and it is right about
     /// [`crate::text::status::InsideFormRefusal::NotAPath`] only. See
     /// [`Self::still_true`].
     InsideForm(crate::text::status::InsideFormRefusal),
@@ -127,11 +127,11 @@ pub(crate) enum Declined {
     /// engine's `Refusal::remedy_faces` — the faces that *would* show the run
     /// — which is a `Vec<String>`.
     ///
-    /// ★ The rule the old sentence was really protecting survives untouched:
+    /// The rule the old sentence was really protecting survives untouched:
     /// **no engine prose on this bar.** What travels is a list of `/BaseFont`
     /// names pdfcer computed. The words around them are this shell's.
     ///
-    /// # ★ It is retired by the operator's next act, and by nothing else
+    /// # It is retired by the operator's next act, and by nothing else
     ///
     /// [`Self::still_true`] answers `true` for it unconditionally, in the same
     /// ruling as `SaveFailed` and the two adopt refusals: a page is not going
@@ -140,7 +140,7 @@ pub(crate) enum Declined {
     /// *does* — pick a different face, select different text, press the button
     /// again — and every one of those is a command, which [`retire`] catches.
     ///
-    /// ★★ It is deliberately NOT keyed on the selection the way `InsideForm`
+    /// It is deliberately NOT keyed on the selection the way `InsideForm`
     /// is. `InsideForm`'s sentence sends the operator to select something else,
     /// so selecting something else is the remedy completing and the sentence
     /// must go. These sentences send the operator to press a *different
@@ -151,7 +151,7 @@ pub(crate) enum Declined {
     /// **A rotation did not happen** — the ninth handle, 2026-08-28.
     ///
     ///
-    /// # ★★★ Why this variant exists for a gesture that should never refuse
+    /// # Why this variant exists for a gesture that should never refuse
     ///
     /// Because **this project's founding defect shape is a grip that is
     /// dragged, released, and does nothing with no explanation** — and a rotate
@@ -162,11 +162,11 @@ pub(crate) enum Declined {
     /// not against: a routing bug with a sentence is a bug report, and one
     /// without is a handle that does nothing.
     ///
-    /// ★ The genuinely reachable case is a **certified** document, and it is
+    /// The genuinely reachable case is a **certified** document, and it is
     /// the one an operator cannot possibly guess at — a signed drawing looks
     /// exactly like an unsigned one on the canvas.
     ///
-    /// # ★★ Recorded from three places, which is unusual and is correct
+    /// # Recorded from three places, which is unusual and is correct
     ///
     /// `canvas::rotating` records [`RotateRefusal::NoDimensionRecord`] before
     /// any verb is called, because that condition is a **query** the shell can
@@ -189,7 +189,7 @@ pub(crate) enum Declined {
     /// verb, 2026-08-28.
     ///
     ///
-    /// # ★★★ Why this refusal matters more than any other in this enum
+    /// # Why this refusal matters more than any other in this enum
     ///
     /// Because **a successful unshare and a refused one look identical on the
     /// canvas**, and no other decline here has that property: the copy is
@@ -201,7 +201,7 @@ pub(crate) enum Declined {
     /// `crate::text::unshare`'s header carries the full account and is why every
     /// one of the verb's refusals is worded where `resize` words one of six.
     ///
-    /// ★★ Recorded from three positions, unlike [`Self::Rotate`]'s two — see
+    /// Recorded from three positions, unlike [`Self::Rotate`]'s two — see
     /// [`record_unshare`] for the split — and retired by the operator's next
     /// act: [`Self::still_true`] answers `true` unconditionally, deliberately
     /// **not** on `selection_in_form` the way [`Self::InsideForm`] does.
@@ -212,7 +212,7 @@ pub(crate) enum Declined {
     RunMerge(crate::text::runmerge::RunMergeRefusal),
     /// **The Settings window's Save wrote nothing.**
     ///
-    /// # ★ Why this is not [`Self::SaveFailed`], although both are failed writes
+    /// # Why this is not [`Self::SaveFailed`], although both are failed writes
     ///
     /// Because the two sentences have to say opposite things about what
     /// happened to the operator's work.
@@ -244,7 +244,7 @@ pub(crate) enum Declined {
     SettingsNotSaved,
     /// **`edit.undo` was invoked with an empty command log.**
     ///
-    /// # ★ Why this is worded when the control that raises it is greyed
+    /// # Why this is worded when the control that raises it is greyed
     ///
     /// Because the control is not the only route, and the other route is the
     /// one where greying explains nothing. `edit.undo` is gated on
@@ -273,7 +273,7 @@ pub(crate) enum Declined {
     ///
     /// `EditError::FieldNameTaken`, raised by `EditSession::adopt_widget`.
     ///
-    /// # ★ Why this is refused rather than auto-renamed, which is the engine's
+    /// # Why this is refused rather than auto-renamed, which is the engine's
     /// ruling and this shell agrees with it
     ///
     /// ISO 32000-2 SS12.7.3.1 makes the **fully qualified name the field's
@@ -312,7 +312,7 @@ pub(crate) enum Declined {
     /// spellings of one fact, which is how a surface comes to tell the same
     /// truth two ways depending on which control produced it.
     ///
-    /// ★★★ And the rename one is **the only correctable refusal the rename
+    /// And the rename one is **the only correctable refusal the rename
     /// surface can actually reach.** Everything else `rename_field` refuses is
     /// pre-empted by the Rename button's own gate —
     /// `!typed.is_empty() && !typed.contains('.')` covers a dotted name, an
@@ -325,7 +325,7 @@ pub(crate) enum Declined {
     /// was refused"* from the day the rename surface shipped until
     /// 2026-09-12, because `actions::forms::rename` mapped only `Ok`.
     FieldNameTaken,
-    /// ★★★ **A field name was refused because a dot in it points through a
+    /// **A field name was refused because a dot in it points through a
     /// field that already exists** — `FormAuthorError::FieldPathCrossesTerminal`,
     /// raised by every `EditSession::add_*` verb and by `paste_field`.
     ///
@@ -335,7 +335,7 @@ pub(crate) enum Declined {
     /// group. If `Order` is already an ordinary field, the request cannot be
     /// granted without destroying it, so the engine refuses.
     ///
-    /// # ★★ Why this one CARRIES its name when its neighbour deliberately does
+    /// # Why this one CARRIES its name when its neighbour deliberately does
     /// not
     ///
     /// `FieldNameTaken` above argues that the clashing name is not worth
@@ -351,7 +351,7 @@ pub(crate) enum Declined {
     /// build it — so the only thing standing between that answer and the
     /// operator is whether this shell bothers to carry it.
     ///
-    /// # ★★★ This replaced a shell-side pre-check, and the difference matters
+    /// # This replaced a shell-side pre-check, and the difference matters
     ///
     ///
     /// The pre-check was then not merely redundant — it was **wrong**, and in
@@ -367,7 +367,7 @@ pub(crate) enum Declined {
     /// *is* the engine's answer. That is the property the pre-check could never
     /// have.
     FieldPathCrossesTerminal(String),
-    /// ★★★ **A field name was refused because it is a PATH rather than a
+    /// **A field name was refused because it is a PATH rather than a
     /// name** — `FormAuthorError::DottedPartialName`.
     ///
     /// Raised by three engine verbs (`rename_field`, `adopt_widget`, `sign`)
@@ -395,7 +395,7 @@ pub(crate) enum Declined {
     /// verb can express, because a `/T` is the one segment its node
     /// contributes to the fully-qualified name.
     ///
-    /// # ★★ What the refusal prevents — and it is NOT data loss
+    /// # What the refusal prevents — and it is NOT data loss
     ///
     /// Worth stating because the obvious guess is wrong and the sentence this
     /// variant words has to be true. Neither verb touches an existing field's
@@ -411,7 +411,7 @@ pub(crate) enum Declined {
     /// ⇒ Which is why the sentence says *can be clicked but never filled*
     /// rather than warning about a loss. See `crate::text::fieldclip`.
     ///
-    /// # ★ Why it carries its name, and the first answer was wrong
+    /// # Why it carries its name, and the first answer was wrong
     ///
     /// Not because the box has closed — it has not. The adopt panel's drafts
     /// survive a refused adopt, so the typed name is still on screen.
@@ -428,7 +428,7 @@ pub(crate) enum Declined {
     ///
     /// `EditError::WidgetHasNoFieldIdentity`.
     ///
-    /// # ★ What this actually means, and why the sentence must not say
+    /// # What this actually means, and why the sentence must not say
     /// "recovered"
     ///
     /// It is a **bare kid**: a widget whose `/Parent` pointed at its field, in a
@@ -443,7 +443,7 @@ pub(crate) enum Declined {
     /// the old one. The sentence says so, because an operator told they had
     /// "restored" a radio button would go looking for its group.
     WidgetHasNoName,
-    /// ★★★ **A resize was refused because the appearance cannot be rebuilt**
+    /// **A resize was refused because the appearance cannot be rebuilt**
     /// (`OPERATOR_REQUESTS.md` O51, engine `Pass 151.0`).
     ///
     /// The one decline in this enum that names a **remedy the operator can
@@ -466,7 +466,7 @@ pub(crate) enum Declined {
     /// makes the resize **exact**; under a non-uniform one it does not help and
     /// only *Allow the artwork to distort* will proceed.
     ///
-    /// ★★ Inkscape hit the identical limit in SVG (Launchpad #1335376) and
+    /// Inkscape hit the identical limit in SVG (Launchpad #1335376) and
     /// closed it **Invalid** — correct spec behaviour — and its response is to
     /// silently produce a distorted stroke. This is the sentence that makes
     /// pdfcer better than the parity reference rather than equal to it, which is
@@ -479,11 +479,11 @@ pub(crate) enum Declined {
     /// **A resize was refused because the annotation is a fixed-size marker.**
     ///
     ///
-    /// ★ Reachable from this shell, which is why it is worded: the sticky's
+    /// Reachable from this shell, which is why it is worded: the sticky's
     /// canvas grips are move-only, but the Properties panel's geometry
     /// fields raise the same `AnnotAction::Resize` the grips do.
     ///
-    /// ★★ Two sentences, not one, and the split is the engine's: for a
+    /// Two sentences, not one, and the split is the engine's: for a
     /// `/Text` the rule is the subtype's own and nothing the operator does
     /// changes it; for anything else it is the `NoZoom` flag. This shell has
     /// no flag editor yet, so neither sentence names a switch — but the
@@ -505,7 +505,7 @@ pub(crate) enum Declined {
     /// control that is almost never pressed, so the ribbon asks at the moment
     /// of the press and answers in a sentence.
     ///
-    /// ★ It asks `flatten_refusal` and **not** `fill_refusal`, which is the
+    /// It asks `flatten_refusal` and **not** `fill_refusal`, which is the
     /// distinction the panel's own comment spent twenty lines earning: flatten
     /// removes the form, so it takes the strict structural gate, and on a
     /// certified fillable form at `/P 2` filling is permitted while flattening
@@ -527,7 +527,7 @@ pub(crate) enum Declined {
     /// functions and why this is a second variant rather than a second caller
     /// of the first.
     ///
-    /// # ★★★ Why it exists when all four doors are already gated
+    /// # Why it exists when all four doors are already gated
     ///
     /// It should be unreachable, and that is exactly why it is worded. Every
     /// route an operator has to `delete_field` / `delete_widget` now consults
@@ -548,7 +548,7 @@ pub(crate) enum Declined {
     ///   drawing a sentence at all.
     ///
     ///
-    /// ★★ It is deliberately **not** the wording the Properties panel draws.
+    /// It is deliberately **not** the wording the Properties panel draws.
     /// That one is a standing *description* of the document, drawn from the
     /// moment a field is selected; this is a *decline*, reporting that a
     /// gesture just happened and took no effect. This module's header insists
@@ -556,7 +556,7 @@ pub(crate) enum Declined {
     /// [`crate::text::status::field_delete_declined_structural`] carries the
     /// full argument for every word the two do not share.
     FieldDeleteRefused,
-    /// ★★★ **The Points tool was pressed in a mode that cannot author.**
+    /// **The Points tool was pressed in a mode that cannot author.**
     ///
     /// `OPERATOR_REQUESTS.md` row **O69**. The arm has always declined — an
     /// anchor is selected in order to be *dragged*, and a mode that refuses
@@ -572,14 +572,14 @@ pub(crate) enum Declined {
     /// the arm. A key that does nothing has no control to hover, which makes
     /// it the case that most needs a sentence rather than the least.
     NodeToolNeedsEditMode,
-    /// ★★★ **A corner of a ce dimension could not be added or taken away** —
+    /// **A corner of a ce dimension could not be added or taken away** —
     /// the operator's report of 2026-09-05, in his own words:
     ///
     /// > *"I also can't edit or delete nodes of a markup shape once it is
     /// > drawn."*
     ///
     ///
-    /// # ★ Why a gesture with a preflight still needs a decline
+    /// # Why a gesture with a preflight still needs a decline
     ///
     /// `canvas::dimdrag::count_edit` asks `EditSession::vertex_edit_preview`
     /// before it draws anything, so a refused edit is never previewed and never
@@ -610,7 +610,7 @@ pub(crate) enum Declined {
     /// still true would pay for it sixty times a second to learn an answer that
     /// cannot change without a command.
     VertexEditRefused(crate::text::measure::VertexEditRefusal),
-    /// ★★★ **A node of a MARKUP shape could not be moved, added or taken
+    /// **A node of a MARKUP shape could not be moved, added or taken
     /// away** — the other half of the operator's report of 2026-09-05:
     ///
     /// > *"I also can't edit or delete nodes of a markup shape once it is
@@ -623,7 +623,7 @@ pub(crate) enum Declined {
     /// serving both would have to say something vague enough to be true of
     /// either. See [`crate::text::markup::NodeEditRefusal`].
     ///
-    /// # ★★ Why a gesture with a preflight still needs a decline
+    /// # Why a gesture with a preflight still needs a decline
     ///
     /// `canvas::annotnodes` asks `EditSession::reshape_annotation_preview`
     /// before it draws anything, so a refused edit is never previewed and never
@@ -633,7 +633,7 @@ pub(crate) enum Declined {
     /// operator drags a corner of a triangle out of the shape, releases, and
     /// the triangle is still a triangle with nothing anywhere saying why.
     ///
-    /// # ★ It is also raised where there was never a gesture
+    /// # It is also raised where there was never a gesture
     ///
     ///
     /// # Retired by the operator's next act
@@ -659,7 +659,7 @@ pub(crate) enum Declined {
     /// collection file is gone, or no longer holds that page
     /// (`OPERATOR_REQUESTS.md` O172).
     ///
-    /// ★★★ A decline rather than a note, and the correction is worth keeping:
+    /// A decline rather than a note, and the correction is worth keeping:
     /// this route recorded both cases through `record_note` for the length of
     /// one afternoon, which draws them under **`⚑ About your last edit:`** —
     /// after a gesture that edited nothing. The reason type carries the whole
@@ -669,7 +669,7 @@ pub(crate) enum Declined {
     /// shell's own forecast of `EditError::OutlineMoveIntoOwnSubtree`,
     /// 2026-08-29.
     ///
-    /// # ★★★ Why a drag needs this more than a button does
+    /// # Why a drag needs this more than a button does
     ///
     /// A drag that is released and does nothing is **this project's founding
     /// defect shape** — the sentence [`Self::Rotate`] carries about the ninth
@@ -685,12 +685,12 @@ pub(crate) enum Declined {
     /// a state the panel can genuinely produce. R83's rule is not *gate the
     /// control*; it is **a refusal must be a sentence, never a silence.**
     ///
-    /// ★ The caret is already dimmed over such a landing before the press,
+    /// The caret is already dimmed over such a landing before the press,
     /// which is this panel's preferred channel. This is what is owed to the
     /// operator who released anyway — and they will, because the mark is faint
     /// by design and a hand that has committed to a drag finishes it.
     ///
-    /// # ★★ Recorded from the VERB, although the shell saw it coming
+    /// # Recorded from the VERB, although the shell saw it coming
     ///
     /// The panel forecasts this landing — it is a question about the tree it
     /// has already drawn — and uses the forecast to draw the faintest of its
@@ -711,7 +711,7 @@ pub(crate) enum Declined {
     /// `vector_edit` closure. The guard runs before the verb plans anything, so
     /// nothing is written, no epoch moves and no undo entry appears.
     ///
-    /// ★ It also puts the authority in one place. The forecast decides what the
+    /// It also puts the authority in one place. The forecast decides what the
     /// **caret** looks like; the engine decides what **happens**. They cannot
     /// drift into disagreeing about the outcome, because only one of them
     /// produces it.
@@ -733,7 +733,7 @@ pub(crate) enum Declined {
     /// [`crate::text::status::field_delete_declined_structural`]'s argument for
     /// its own verb.
     ///
-    /// ★ Recorded from **inside** the `vector_edit` closure —
+    /// Recorded from **inside** the `vector_edit` closure —
     /// [`record_resize_not_rebuildable`]'s placement, and its stated reason:
     /// whether the engine will refuse is not knowable before the call.
     BookmarkMoveRefused,
@@ -753,7 +753,7 @@ pub(crate) enum Declined {
     /// Its live predicate is `EditSession::can_redo`, for
     /// [`Self::NothingToUndo`]'s reason and asked the same way.
     NothingToRedo,
-    /// ★★★ **The engine refused an edit and this shell cannot say why** —
+    /// **The engine refused an edit and this shell cannot say why** —
     /// `OPERATOR_REQUESTS.md` **O116**, 2026-09-04.
     ///
     /// The **last** variant in this enum in every sense: it is what the
@@ -761,7 +761,7 @@ pub(crate) enum Declined {
     /// funnel every document change passes through
     /// ([`super::super::actions::funnel`]) rather than from any verb.
     ///
-    /// # ★★★ It is the deferral this file's neighbours kept naming, taken
+    /// # It is the deferral this file's neighbours kept naming, taken
     ///
     /// Six variants above cite `vector_edit`'s error arm by name and say some
     /// version of *"before this, that residue was a **silence**"* —
@@ -780,7 +780,7 @@ pub(crate) enum Declined {
     /// defect class — *"I did the thing and nothing happened and nothing said
     /// why"* — reproduced by the driven check `text_edit_on_a_real_drawing`.
     ///
-    /// # ★★ It carries NO payload, unlike every other refusal variant here
+    /// # It carries NO payload, unlike every other refusal variant here
     ///
     /// [`Self::TextStyle`], [`Self::Rotate`] and [`Self::Unshare`] each carry a
     /// small enum of this shell's own saying *which* refusal, because in those
@@ -795,7 +795,7 @@ pub(crate) enum Declined {
     /// ⇒ A payload arrives the day `EditError` exposes a coarse `kind()`. Until
     /// then the honest arity is zero.
     ///
-    /// # ★★★ Retirement: the `retire`-only class, and NOT for its usual reason
+    /// # Retirement: the `retire`-only class, and NOT for its usual reason
     ///
     /// [`Self::still_true`] answers `true` unconditionally, joining
     /// [`Self::SaveFailed`], [`Self::FlattenCertified`] and the rest — but the
@@ -833,7 +833,7 @@ pub(crate) enum Declined {
     /// of it. A sentence in the past tense can go stale, and [`retire`] — the
     /// operator's next command — is what handles stale.
     EditRefused,
-    /// ★★★ **A reflow that did not happen, and which of its eight causes it
+    /// **A reflow that did not happen, and which of its eight causes it
     /// was** — `OPERATOR_REQUESTS.md` **O127**, defect 3.
     ///
     /// All eight were **already being reported** before O127, and none of them
@@ -844,11 +844,11 @@ pub(crate) enum Declined {
     /// haven't seen the reflow option actually work with anything when I press
     /// it."* `decline/textedit.rs` carries the whole argument.
     ///
-    /// ★ It carries the cause rather than being eight variants, on
+    /// It carries the cause rather than being eight variants, on
     /// [`Self::Rotate`]'s and [`Self::TextStyle`]'s precedent: the catalog owns
     /// the wording and this enum owns only which sentence.
     Reflow(crate::text::textedit::ReflowRefusal),
-    /// ★★★ **Enter was pressed in text that is already on the page, where a
+    /// **Enter was pressed in text that is already on the page, where a
     /// line break cannot go** — `OPERATOR_REQUESTS.md` **O127**, defect 2.
     ///
     /// Enter means *a new line* in every draft this shell has; in an existing
@@ -857,7 +857,7 @@ pub(crate) enum Declined {
     /// create new lines?"* and was answered by an edit finishing under him.
     /// See `decline/textedit.rs`.
     EnterCannotSplit,
-    /// ★★★ **A cut or a paste the active MODE does not do** — 2026-09-05, and
+    /// **A cut or a paste the active MODE does not do** — 2026-09-05, and
     /// it is the second half of the defect the driven sweep found as A1.
     ///
     /// The first half was that `edit.paste` could not be *reached* in Review at
@@ -874,7 +874,7 @@ pub(crate) enum Declined {
     /// the trace says why"* for *"the key does nothing and nothing says why"* —
     /// which is worse, because the second has no trace line either.
     ///
-    /// ★ It carries [`crate::text::clipboard::ModeRefusal`] rather than being
+    /// It carries [`crate::text::clipboard::ModeRefusal`] rather than being
     /// six variants, on [`Self::Rotate`]'s and [`Self::Reflow`]'s precedent: the
     /// catalog owns the wording and this enum owns only which sentence.
     ///
@@ -894,7 +894,7 @@ pub(crate) enum Declined {
     /// operator who reads it, moves the selector and presses again retires it
     /// with that press, through [`retire`], which is the honest lifetime.
     ClipboardMode(crate::text::clipboard::ModeRefusal),
-    /// ★★★ **A text edit the engine refused, and WHICH KIND of refusal it was**
+    /// **A text edit the engine refused, and WHICH KIND of refusal it was**
     /// — `OPERATOR_REQUESTS.md` **O140**, 2026-09-05.
     ///
     /// The operator: *"on page 2 there is a spelling mistake — clien instead of
@@ -913,7 +913,7 @@ pub(crate) enum Declined {
     /// *next* rung of it: a sentence that says nothing actionable is not the
     /// same as no sentence, and it is not good enough either.
     ///
-    /// # ★★★ It exists because [`Self::EditRefused`]'s stated blocker LIFTED
+    /// # It exists because [`Self::EditRefused`]'s stated blocker LIFTED
     ///
     /// That variant's documentation is explicit — *"It carries NO payload,
     /// unlike every other refusal variant here… adding one would be the exact
@@ -928,7 +928,7 @@ pub(crate) enum Declined {
     /// a payload for [`Self::Reflow`]'s and [`Self::Rotate`]'s reason: the
     /// catalog owns the wording and this enum owns only which sentence.
     ///
-    /// ★ [`Self::EditRefused`] is **not** deleted, and that is deliberate
+    /// [`Self::EditRefused`] is **not** deleted, and that is deliberate
     /// rather than an oversight. It is the funnel's floor for **every other
     /// verb** — ~78 call sites — and only `edit_text` has been given a
     /// classifier. Deleting it would silence the other seventy-seven.
@@ -944,7 +944,7 @@ pub(crate) enum Declined {
     /// because the fact recorded is *what the engine answered about a request
     /// that no longer exists*. The operator's next command retires it.
     EditText(crate::text::textedit::EditRefusal),
-    /// ★★★ **A drag on one line inside a block of text, refused because this
+    /// **A drag on one line inside a block of text, refused because this
     /// document does not write that line's position down** —
     /// `OPERATOR_REQUESTS.md` **O188**.
     ///
@@ -952,7 +952,7 @@ pub(crate) enum Declined {
     /// it, drags it across the sheet. The engine will not move that line, and
     /// this is the sentence that says so before the outline is ever drawn.
     ///
-    /// # ★★★ Why this one, when most of `Refusal`'s variants stay silent
+    /// # Why this one, when most of `Refusal`'s variants stay silent
     ///
     /// `canvas::moving::decline`'s standing argument is good and is not being
     /// overturned: *nothing selected*, *the drag never travelled* and *no part
@@ -999,14 +999,14 @@ pub(crate) enum Declined {
     /// nothing but an edit can change. The operator's next command retires it
     /// through [`retire`].
     TextRunHasNoPositionOfItsOwn,
-    /// ★★★ **A drag on a line that the NEXT line's position is measured from**
+    /// **A drag on a line that the NEXT line's position is measured from**
     /// — O188's second refusal, 2026-09-15.
     ///
     /// The twin of [`Self::TextRunHasNoPositionOfItsOwn`] and everything above
     /// applies to it unchanged: same founding-defect shape, same `retire`-only
     /// class, same reason it earns a sentence where most canvas refusals do not.
     ///
-    /// # ★★ Why the pair is two variants and not one with a payload
+    /// # Why the pair is two variants and not one with a payload
     ///
     /// Because the payload would be read exactly once, to choose between two
     /// fixed strings, and a decline's whole contract here is *one variant, one
@@ -1015,7 +1015,7 @@ pub(crate) enum Declined {
     /// one of the two sentences from that loop, and the loop is the only thing
     /// in the program that can catch a paraphrase.
     ///
-    /// ★ **The distinction is real to the operator**, which is the test that
+    /// **The distinction is real to the operator**, which is the test that
     /// decides this. One says *there is nothing here to change*; the other says
     /// *changing it would move something you did not select*. Same remedy,
     /// different fact, and a single variant would have to pick one of them to
@@ -1096,7 +1096,7 @@ pub(super) fn live(ctx: &egui::Context, doc: &OpenDoc) -> Option<Declined> {
     let has_bounds = zoom::can_zoom_to_selection(doc);
     let canvas_has_drawn = zoom::last_frame(ctx).is_some();
     let history = History::of(doc);
-    // ★ The same accessor `crate::app::conditions` publishes `selection.in_form`
+    // The same accessor `crate::app::conditions` publishes `selection.in_form`
     // from, asked here in the same words, so that the greyed control and the
     // sentence explaining why it is greyed cannot come from two questions that
     // drift apart.
@@ -1113,7 +1113,7 @@ pub(super) fn live(ctx: &egui::Context, doc: &OpenDoc) -> Option<Declined> {
 /// Record that a verb refused because what is selected lives inside a form
 /// XObject.
 ///
-/// # ★ Recorded by the DISPATCHER, not by an apply arm
+/// # Recorded by the DISPATCHER, not by an apply arm
 ///
 /// [`record_history_empty`]'s docs argue the opposite placement for undo, and
 /// the argument holds there: *"is there anything to undo?"* is a question about
@@ -1138,7 +1138,7 @@ pub(crate) fn record_inside_form(reason: crate::text::status::InsideFormRefusal)
 /// and routing it through the filter would make the assertion depend on zoom
 /// bounds and canvas state that have nothing to do with what it is testing.
 ///
-/// ★ `cfg(test)` rather than `pub(crate)` unconditionally, so nothing in the
+/// `cfg(test)` rather than `pub(crate)` unconditionally, so nothing in the
 /// shipped build can read the store without the retirement rule.
 #[cfg(test)]
 #[must_use]
@@ -1148,7 +1148,7 @@ pub(crate) fn recorded_for_test() -> Option<Declined> {
 
 /// What the BAR would draw — [`live`] under a test-visible name.
 ///
-/// # ★★★ Why this exists when [`recorded_for_test`] is right there
+/// # Why this exists when [`recorded_for_test`] is right there
 ///
 /// Because they answer different questions and one of them was standing in
 /// for the other. `recorded_for_test` reads the store; `live` re-asks the
@@ -1157,7 +1157,7 @@ pub(crate) fn recorded_for_test() -> Option<Declined> {
 /// readable**, and a test that stops at the store cannot tell the two apart.
 ///
 ///
-/// ★ `live` is `pub(super)` and stays that way: the bar is the one reader.
+/// `live` is `pub(super)` and stays that way: the bar is the one reader.
 /// This is a `#[cfg(test)]` widening, so it cannot become a second reader in
 /// a shipped binary.
 #[cfg(test)]
@@ -1197,7 +1197,7 @@ pub(super) fn show(ui: &mut egui::Ui, doc: &OpenDoc) {
 ///
 mod line;
 
-/// ★ **The funnel's floor**, split out under R2 when this file reached 1,530
+/// **The funnel's floor**, split out under R2 when this file reached 1,530
 /// lines. See `decline/floor.rs`'s header for why that particular seam: it is
 /// the one part of this module that answers a question about somebody else's
 /// protocol rather than about what a decline is.
@@ -1208,7 +1208,7 @@ mod floor;
 /// call site should not have to learn that a submodule exists.
 pub(crate) use floor::before_the_verb;
 
-/// ★★★ **The two declines the text caret raises**, split out under R2 on
+/// **The two declines the text caret raises**, split out under R2 on
 /// 2026-09-04 when `OPERATOR_REQUESTS.md` O127 took this file past 1,500 lines
 /// for the second time. See `decline/textedit.rs`'s header for the seam and for
 /// the argument both of them share — that a sentence in the wrong slot is
@@ -1222,7 +1222,7 @@ pub(crate) use textedit::{
     record_edit_text_refusal, record_enter_cannot_split, record_key_refused, record_reflow,
 };
 
-/// ★★★ **Every writer of the decline slot**, split out under R2 on 2026-09-05
+/// **Every writer of the decline slot**, split out under R2 on 2026-09-05
 /// when this file reached 1,497 lines against the ceiling for the third time —
 /// see `decline/record.rs`'s header for the seam. It is the same seam `floor`
 /// and `textedit` already stand on: this file answers *what a decline is and
@@ -1239,7 +1239,7 @@ mod record;
 /// leak anything a reader would not expect to find under `decline::`.
 pub(crate) use record::*;
 
-/// ★★★ **The mode's refusal of a cut or a paste**, 2026-09-05. Its own file
+/// **The mode's refusal of a cut or a paste**, 2026-09-05. Its own file
 /// rather than a function in `record` for `textedit`'s reason: it carries an
 /// argument of its own — why a chord pushed blind at the gate obliges the
 /// dispatcher to word every refusal it can now meet — and that argument would
@@ -1249,7 +1249,7 @@ mod clipboard;
 /// `decline::record_mode_refusal(..)`. `floor`'s rule.
 pub(crate) use clipboard::record_mode_refusal;
 
-/// ★★★ **The retirement predicate** — [`Declined::still_true`] and the
+/// **The retirement predicate** — [`Declined::still_true`] and the
 /// [`History`] pair it reads — split out under R2 on 2026-09-12, the fourth
 /// time this file has met the 1,500-line ceiling.
 ///
@@ -1264,21 +1264,21 @@ mod fresh;
 /// learn that a submodule exists.
 pub(crate) use fresh::History;
 
-/// ★★★ **What a refused CANVAS GESTURE may say, and the one writer that
+/// **What a refused CANVAS GESTURE may say, and the one writer that
 /// says it** — O188, 2026-09-15.
 ///
 /// Its own file rather than a function in `record`, for `clipboard`'s and
 /// `textedit`'s stated reason: it carries an argument of its own — why an
 /// action raised by a read-only surface must carry a two-armed vocabulary and
 /// not a [`Declined`] — and that argument would be buried among twenty
-/// siblings. ★ The size gate decided it as well: this file stood at 1,367
+/// siblings. The size gate decided it as well: this file stood at 1,367
 /// lines and the variant above is fifty-seven of them.
 mod canvas;
 /// Re-exported so `app::actions` says `decline::CanvasDecline` and
 /// `decline::record_canvas(..)`. `floor`'s rule: the split is about where the
 /// code lives, and a call site should not have to learn that a submodule exists.
 ///
-/// ★★★ **The two halves are re-exported at different visibilities, and
+/// **The two halves are re-exported at different visibilities, and
 /// that asymmetry is the design rather than an oversight.** The TYPE is `pub`
 /// because it is half of a `pub` variant's signature (`private_interfaces`;
 /// `canvas::CanvasDecline`'s own docs carry the argument, and the reason

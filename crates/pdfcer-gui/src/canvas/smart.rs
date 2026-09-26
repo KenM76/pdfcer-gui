@@ -19,7 +19,7 @@ use crate::panels::objects::provider::TargetId;
 
 /// Whether Smart-Selector is on. Memory key.
 ///
-/// ★ Application-scoped rather than per document, like the armed tool and the
+/// Application-scoped rather than per document, like the armed tool and the
 /// pick filter: it is a statement about how this operator works, not about a
 /// file, and re-answering it per document would be a question asked again for
 /// no new reason.
@@ -41,7 +41,7 @@ pub struct Entered {
     pub form: u64,
     /// Which open document this was recorded for.
     ///
-    /// ★ The tab slot, published every frame by `crate::pagedrag::active`.
+    /// The tab slot, published every frame by `crate::pagedrag::active`.
     /// Without it, entering a title block in one drawing and switching tabs
     /// would scope clicks in the other drawing to whatever object happened to
     /// share that index — which is *"in range and wrong"*, the failure
@@ -56,7 +56,7 @@ fn id(key: &str) -> egui::Id {
 
 /// **Is Smart-Selector on?** Defaults to `true`.
 ///
-/// # ★★ Why the default is ON, when the operator asked for a checkbox
+/// # Why the default is ON, when the operator asked for a checkbox
 ///
 /// Because the checkbox exists so the behaviour can be turned **off**, and the
 /// behaviour is what every program in the class does. A default of `false`
@@ -74,7 +74,7 @@ pub fn enabled(ctx: &egui::Context) -> bool {
 pub fn set_enabled(ctx: &egui::Context, on: bool) {
     ctx.data_mut(|d| d.insert_temp(id(ENABLED_KEY), on));
     if !on {
-        // ★ Switching it off must also leave whatever container the operator
+        // Switching it off must also leave whatever container the operator
         // was inside. A scope that outlived the mechanism that created it
         // would make the next click resolve by a rule no longer switched on,
         // which is unexplainable from the surface.
@@ -88,7 +88,7 @@ pub fn set_enabled(ctx: &egui::Context, on: bool) {
 
 /// **Mirror the persisted answer into the live one**, once per frame.
 ///
-/// # ★★ Why this is not [`set_enabled`], which looks like the same function
+/// # Why this is not [`set_enabled`], which looks like the same function
 ///
 /// `set_enabled` is what a **press** calls, and it also leaves whatever
 /// container the operator is inside — because switching the mechanism off while
@@ -159,7 +159,7 @@ pub fn leave(ctx: &egui::Context) -> bool {
 
 /// **The scope one frame's clicks resolve in** — read once, passed down.
 ///
-/// # ★★★ Why a value rather than reading the context at each call site
+/// # Why a value rather than reading the context at each call site
 ///
 /// The pick helpers in [`crate::canvas::input`] are pure functions over a
 /// `&dyn CanvasTargetProvider`, deliberately: they are the most heavily
@@ -205,7 +205,7 @@ impl Scope {
     /// | yes | a **leaf** | no | its **outermost container** |
     /// | yes | a **leaf** | yes | itself |
     ///
-    /// ★ The third row is the whole feature and the fourth is what stops it
+    /// The third row is the whole feature and the fourth is what stops it
     /// from being a cage: once you have entered a title block, clicking its
     /// lines selects its lines.
     #[must_use]
@@ -245,7 +245,7 @@ impl Scope {
         //    click on one of the objects all I get is the page selected."
         //
         //
-        // ★ Entering such a form is untouched. A double-click descends, the
+        // Entering such a form is untouched. A double-click descends, the
         // Objects panel lists it, the canvas menu reaches it. Reachable on
         // purpose was always the design; winning by DEFAULT is what was wrong,
         // both times.
@@ -258,7 +258,7 @@ impl Scope {
 
 /// Read this frame's scope for `page`.
 ///
-/// ★ The document slot comes from `crate::pagedrag::active`, which the frame
+/// The document slot comes from `crate::pagedrag::active`, which the frame
 /// publishes before any surface draws — the same source the Pages panel uses
 /// to know which document it is showing, so *"which document is this?"* has
 /// one answer in this crate rather than two.
@@ -292,7 +292,7 @@ mod tests {
         .with_containers([(0, 0)])
     }
 
-    /// ★★★ **A click on something inside a container selects the container.**
+    /// **A click on something inside a container selects the container.**
     ///
     /// The feature, stated as the one substitution it performs.
     #[test]
@@ -306,7 +306,7 @@ mod tests {
         );
     }
 
-    /// ★★★ …**and once inside it, the same click selects the line.**
+    /// …**and once inside it, the same click selects the line.**
     ///
     /// Without this the feature would be a cage: the operator could select a
     /// container and never anything in it, which is strictly worse than the
@@ -329,7 +329,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The record is scoped to its page and its document**, and does not
+    /// **The record is scoped to its page and its document**, and does not
     /// have to be cleared by whoever changes either.
     #[test]
     fn the_scope_does_not_follow_you_to_another_page_or_document() {
@@ -347,7 +347,7 @@ mod tests {
         assert!(entered(&ctx, 1, 0).is_none(), "another page");
         assert!(entered(&ctx, 0, 1).is_none(), "another document");
 
-        // ★ And the consequence, which is the part worth asserting: in the
+        // And the consequence, which is the part worth asserting: in the
         // OTHER document the same click resolves to the container again. The
         // record being filtered out is the mechanism; this is the behaviour.
         //
@@ -378,7 +378,7 @@ mod tests {
         );
     }
 
-    /// ★★ **Switching it off leaves the container too.**
+    /// **Switching it off leaves the container too.**
     ///
     /// A scope that outlived the mechanism that created it would make the next
     /// click resolve by a rule that is no longer switched on.

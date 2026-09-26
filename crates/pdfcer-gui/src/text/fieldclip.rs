@@ -24,7 +24,7 @@ pub fn refusal(reason: &Refusal) -> String {
         Refusal::NothingSelected => {
             "No form field is selected. Click a field on the page first.".to_owned()
         }
-        // ★ Not "an error occurred". The document changed underneath the
+        // Not "an error occurred". The document changed underneath the
         // selection — an undo, a deletion from the Forms panel — and the
         // operator's next act is to click the field again, so the sentence
         // says that rather than describing the internal state.
@@ -32,7 +32,7 @@ pub fn refusal(reason: &Refusal) -> String {
             "That field is no longer in the document. Click a field on the page again.".to_owned()
         }
         Refusal::NoGeometry => "That field has no box on the page, so there is nothing to copy. Fields like this are reached from the Forms panel.".to_owned(),
-        // ★★★ THE ENGINE'S OWN WORDS, and this variant replaced two of this
+        // THE ENGINE'S OWN WORDS, and this variant replaced two of this
         // shell's.
         //
         // It used to say *"signature fields cannot be copied"* and *"a radio
@@ -58,7 +58,7 @@ pub fn refusal(reason: &Refusal) -> String {
 
 /// **The paste is bringing a script with it** — said BEFORE the press.
 ///
-/// ★★★ The one pre-press disclosure this shell owes, and it exists because the
+/// The one pre-press disclosure this shell owes, and it exists because the
 /// fact is **invisible**: a form field carrying a calculation, a format script
 /// or a validation looks exactly like one that does not, on the page and in
 /// every screenshot of it. Everything else about a paste is reported afterwards
@@ -110,7 +110,7 @@ pub const fn brings_a_script() -> &'static str {
 /// it would reasonably believe he had just been stopped at the edge of
 /// something dangerous rather than told about a name he cannot have.
 ///
-/// # ★★ Why the sentence survives the fix at all
+/// # Why the sentence survives the fix at all
 ///
 /// Because the engine's own — which names the victim and cites §12.7.3.1 —
 /// cannot reach him. `check-ui-strings.sh`'s exclusion 3 says in as many words
@@ -121,7 +121,7 @@ pub const fn brings_a_script() -> &'static str {
 /// `Declined::FieldPathCrossesTerminal`, which carries the name **the engine
 /// resolved** rather than one this shell re-derived.
 ///
-/// ★ Also corrected: the old text said the hole was reachable "in two gestures:
+/// Also corrected: the old text said the hole was reachable "in two gestures:
 /// the placement dialog's name box, and the Properties panel's rename". **The
 /// rename was never one of them.** `rename_field` takes a *partial* name and
 /// refuses a dotted one outright (`DottedPartialName`), for a different reason
@@ -151,7 +151,7 @@ pub fn name_crosses_a_field(terminal: &str) -> String {
 /// **one** surface in this shell — the Tab-order register panel's adopt boxes,
 /// which take free text and gate only on non-empty.
 ///
-/// # ★★★ Why the sentence does NOT warn about losing anything
+/// # Why the sentence does NOT warn about losing anything
 ///
 /// Because nothing would be lost, and a refusal that overstates its stakes is
 /// the defect this surface already had once. `adopt_widget` does not touch an
@@ -192,7 +192,7 @@ pub fn name_is_a_path(supplied: &str) -> String {
 
 /// **What a field copy leaves on the OPERATING SYSTEM's clipboard.**
 ///
-/// ★★★ This exists because of a toolkit constraint, not a design wish, and
+/// This exists because of a toolkit constraint, not a design wish, and
 /// without it `Ctrl+V` does not work at all. `egui-winit-0.35.0` synthesises
 /// `Event::Paste` **only when the OS clipboard holds non-empty text**, and
 /// swallows the keystroke entirely otherwise — no key event, no paste event,
@@ -217,7 +217,7 @@ pub fn os_marker(field: &str) -> String {
 
 /// **A candidate name for a pasted field** — `Text` + `2` -> `Text2`.
 ///
-/// # ★★★ NO SEPARATOR, and above all NO DOT
+/// # NO SEPARATOR, and above all NO DOT
 ///
 ///
 /// **1. The convention is a plain numeric suffix.** Acrobat's bulk duplication
@@ -257,7 +257,7 @@ pub fn os_marker(field: &str) -> String {
 /// changing it. The plain suffix has neither problem: both fields exist, both
 /// are independent, and neither is renamed.
 ///
-/// ★ The engine's silent conversion is a defect in its own right and is filed
+/// The engine's silent conversion is a defect in its own right and is filed
 /// as `request_a_dotted_name_silently_swallows_an_existing_terminal_field.md`.
 /// This rule does not depend on that being fixed: even with a clean refusal,
 /// the dotted convention would make a paste fail rather than work.
@@ -281,7 +281,7 @@ pub fn candidate_name(stem: &str, n: u32) -> String {
 mod tests {
     use super::*;
 
-    /// ★ Every shell-owned refusal says what to do next.
+    /// Every shell-owned refusal says what to do next.
     #[test]
     fn every_shell_refusal_names_the_operators_next_move() {
         for r in [
@@ -298,7 +298,7 @@ mod tests {
         }
     }
 
-    /// ★★ The engine's wording passes through UNCHANGED.
+    /// The engine's wording passes through UNCHANGED.
     ///
     /// No prefix, no suffix, no rewording. A shell that decorated the engine's
     /// refusal would be maintaining a second copy of a taxonomy that moves - and

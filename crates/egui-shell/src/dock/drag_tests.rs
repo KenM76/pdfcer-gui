@@ -188,7 +188,7 @@ fn a_drag_released_where_it_started_is_not_a_reorder() {
     assert_eq!(order(&h), ["pages", "bookmarks", "layers"]);
 }
 
-/// ★★ **A drag pulled off the strip ends, and reorders nothing.**
+/// **A drag pulled off the strip ends, and reorders nothing.**
 ///
 /// Two failures in one test, because they are the same mistake seen from
 /// either side.
@@ -261,7 +261,7 @@ fn a_drag_that_wanders_a_little_below_the_strip_is_still_a_reorder() {
     assert_eq!(order(&h), ["bookmarks", "layers", "pages"]);
 }
 
-/// ★ **The caret is published as a region, and it is where the tab will land.**
+/// **The caret is published as a region, and it is where the tab will land.**
 ///
 /// The operator's wording for this feature is *"clear markers of where it is
 /// going to move to"*, and a marker drawn at the wrong boundary is worse than

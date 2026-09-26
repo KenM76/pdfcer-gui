@@ -18,7 +18,7 @@
 //! written. Without it, every `assert!` message below is reported as
 //! un-catalogued operator copy.
 //!
-//! ★ **The line gate still counts these lines.** `check-file-size.sh` counts
+//! **The line gate still counts these lines.** `check-file-size.sh` counts
 //! total lines, tests included, on purpose — so this is not a way of hiding
 //! from R2. It is the split R2 asked for.
 
@@ -122,10 +122,10 @@ fn paths() -> MoveContext {
 }
 
 // -----------------------------------------------------------------
-// ★ The invariant the whole feature was blocked on
+// The invariant the whole feature was blocked on
 // -----------------------------------------------------------------
 
-/// ★ **A move never alters the selection.**
+/// **A move never alters the selection.**
 ///
 /// The counterpart of
 /// [`navigating_the_view_never_alters_the_selection`](crate::canvas::selection),
@@ -217,7 +217,7 @@ fn a_move_never_alters_a_node_selection() {
 // The delta is page space
 // -----------------------------------------------------------------
 
-/// ★ **The object lands where the pointer put it, at every zoom.**
+/// **The object lands where the pointer put it, at every zoom.**
 ///
 /// The hit-tolerance trap, in the move gesture's clothing — and stating it
 /// correctly is half the value of the test, because the *tempting* wording
@@ -355,7 +355,7 @@ fn a_non_finite_delta_is_refused() {
 // One gesture, one command
 // -----------------------------------------------------------------
 
-/// ★ **A multi-select moves as ONE command**, carrying the whole operand
+/// **A multi-select moves as ONE command**, carrying the whole operand
 /// list — never one action per object, which would be N undo entries and N
 /// re-splices planned against stale byte offsets.
 #[test]
@@ -397,7 +397,7 @@ fn a_selection_on_another_page_is_not_moved() {
     assert_eq!(eligible(&sel, 0, paths()), Err(Refusal::NothingSelected));
 }
 
-/// ★★★ **A non-path member ROUTES THE MOVE THROUGH A TRANSFORM** — and
+/// **A non-path member ROUTES THE MOVE THROUGH A TRANSFORM** — and
 /// this test used to assert that it refused the whole drag.
 ///
 /// It read *"a non-path member refuses the WHOLE move, and names the
@@ -414,7 +414,7 @@ fn a_selection_on_another_page_is_not_moved() {
 /// times: *"can I please please please have the capability to move the text
 /// after?"*
 ///
-/// ★ What is asserted is the **rung**, not the absence of a refusal: a
+/// What is asserted is the **rung**, not the absence of a refusal: a
 /// build that routed every move through the transform would also stop
 /// refusing here, and it would be wrong for the reason `eligible`'s own
 /// comment gives about the file rather than the API.
@@ -519,11 +519,11 @@ fn run_entered() -> SelectionState {
     sel
 }
 
-/// ★★★ **A text run at the Part rung MOVES** — `OPERATOR_REQUESTS.md` O188,
+/// **A text run at the Part rung MOVES** — `OPERATOR_REQUESTS.md` O188,
 /// and the day this test was inverted is the day the feature shipped.
 ///
 ///
-/// ★★ **The half of the old test that was load-bearing is kept**, and it is
+/// **The half of the old test that was load-bearing is kept**, and it is
 /// the assertion in its failure message rather than in its `assert_eq!`:
 /// *moving the enclosing object because a run was selected is the wrong
 /// action, not a lenient one*. A shell that answered
@@ -573,7 +573,7 @@ fn a_line_of_text_at_the_part_rung_moves_that_line() {
     );
 }
 
-/// ★★★ **Several Shift-clicked chunks move as SEVERAL chunks, in one undo
+/// **Several Shift-clicked chunks move as SEVERAL chunks, in one undo
 /// entry** — O215 ask 4.
 ///
 /// The Node rung's defect, one rung up and found by looking rather than by a
@@ -582,7 +582,7 @@ fn a_line_of_text_at_the_part_rung_moves_that_line() {
 /// `eligible` asked `entered_object()` — the FIRST entry. Four chunks
 /// highlighted, one moved.
 ///
-/// ★★ The plural arm is reached on COUNT, never on a flag, so a set that
+/// The plural arm is reached on COUNT, never on a flag, so a set that
 /// shrinks back to one chunk takes the singular verb again with no second
 /// decision anywhere. The next test asserts that half.
 #[test]
@@ -645,7 +645,7 @@ fn several_selected_chunks_move_as_one_command() {
     );
 }
 
-/// ★ A set that is back down to ONE chunk takes the singular verb again.
+/// A set that is back down to ONE chunk takes the singular verb again.
 ///
 /// The count is the only condition, so this needs no separate mechanism — but
 /// it needs a test, because the plural arm shadowing the singular one is a
@@ -680,7 +680,7 @@ fn one_selected_chunk_still_takes_the_singular_verb() {
     );
 }
 
-/// ★★★ **A run the ENGINE would refuse never gets a ghost** — the pre-check
+/// **A run the ENGINE would refuse never gets a ghost** — the pre-check
 /// that makes O188's move half honest rather than merely present.
 ///
 /// Both blocks are asserted, and separately, because they are two different
@@ -688,7 +688,7 @@ fn one_selected_chunk_still_takes_the_singular_verb() {
 /// [`crate::text::arrange::run_has_no_position_of_its_own`] for why that
 /// distinction survives all the way out to the sentence.
 ///
-/// ★★ **What this is really guarding is the ORDER of two questions.** The
+/// **What this is really guarding is the ORDER of two questions.** The
 /// engine would refuse these moves too — `plan_move_text_run` runs the same
 /// guard — but it would refuse them *after* the gesture, so the operator would
 /// watch an outline slide across the sheet and snap back. Obligation 3 in this
@@ -715,7 +715,7 @@ fn a_run_the_engine_would_refuse_declines_before_the_ghost_is_drawn() {
     }
 }
 
-/// ★★★ **A refused drag on one line of text says WHICH refusal it was** —
+/// **A refused drag on one line of text says WHICH refusal it was** —
 /// `OPERATOR_REQUESTS.md` O188.
 ///
 /// The test above asserts that the drag is *refused*, which was never the
@@ -724,7 +724,7 @@ fn a_run_the_engine_would_refuse_declines_before_the_ghost_is_drawn() {
 /// across the sheet, and got nothing happening with no sentence anywhere —
 /// which from where he sits is dragging being broken.
 ///
-/// ★★★ **Why the loop, when one arm would compile.** Because the two blocks
+/// **Why the loop, when one arm would compile.** Because the two blocks
 /// share a remedy and differ only in their first clause, and the cheap version
 /// of this test — assert that *a* sentence was asked for — is satisfied by a
 /// build that raises the same sentence for both. An assertion both outcomes
@@ -732,7 +732,7 @@ fn a_run_the_engine_would_refuse_declines_before_the_ghost_is_drawn() {
 /// for by name, and `decline::tests::no_two_declines_share_a_sentence` is what
 /// then proves the two names are not two spellings of one string.
 ///
-/// ★ Asserts the ACTION, not the status bar. The store is written by the
+/// Asserts the ACTION, not the status bar. The store is written by the
 /// apply phase (`app::actions::apply`) and the wordings live in
 /// `text::arrange`; what this module is responsible for is asking. The driven
 /// `ui-verify` check is what asserts the sentence actually lands on the bar,
@@ -763,7 +763,7 @@ fn a_refused_drag_on_one_line_of_text_asks_for_a_sentence() {
     }
 }
 
-/// ★★ **The third block stays silent, and that is the correct answer** —
+/// **The third block stays silent, and that is the correct answer** —
 /// [`RunMoveBlock::NotThere`] means the selection named a line this object does
 /// not have.
 ///
@@ -806,14 +806,14 @@ fn a_refused_drag_inside_a_form_still_asks_for_its_own_sentence() {
     );
 }
 
-/// ★★ **Every refusal describing a state the operator can SEE raises
+/// **Every refusal describing a state the operator can SEE raises
 /// nothing at all.**
 ///
 /// One rule, asserted once, rather than one assert per case. A status bar that
 /// narrates the obvious — *nothing is selected*, *the drag did not travel* —
 /// stops being read, and that would cost the two sentences that matter.
 ///
-/// ★ `NoVerbForPart(Subpath)` is in this list. It is unreachable today
+/// `NoVerbForPart(Subpath)` is in this list. It is unreachable today
 /// (`eligible` routes a subpath at the Part rung to `move_subpath`), and it is
 /// asserted anyway, because an unreachable case that is written down is a claim
 /// the next reader can check.
@@ -830,7 +830,7 @@ fn the_refusals_the_operator_can_see_raise_nothing() {
     }
 }
 
-/// ★★ **Every refusal traces a distinct, stable, lower-kebab token.**
+/// **Every refusal traces a distinct, stable, lower-kebab token.**
 ///
 #[test]
 fn every_refusal_traces_a_distinct_stable_token() {
@@ -854,7 +854,7 @@ fn every_refusal_traces_a_distinct_stable_token() {
 
 /// Every [`Refusal`], for the two completeness tests above.
 ///
-/// # ★★★ A hand-written list inside a completeness test is the classic hole,
+/// # A hand-written list inside a completeness test is the classic hole,
 /// # so this one is behind a compile-time guard
 ///
 /// A test that types out its own input set is blind to the twelfth thing, and
@@ -876,7 +876,7 @@ fn all_refusals() -> Vec<Refusal> {
         Refusal::NoPartEntered,
         Refusal::NoVerbForPart(PartKind::Subpath),
         Refusal::NoVerbForPart(PartKind::TextLine),
-        // ★★★ Every block, not one representative. The vector below is
+        // Every block, not one representative. The vector below is
         // what `refusals_that_owe_nothing` and its twin iterate, so a block
         // missing here is a block whose sentence — or whose deliberate
         // silence — is never checked by anything. `NotThere` is the one that
@@ -899,7 +899,7 @@ fn all_refusals() -> Vec<Refusal> {
             | Refusal::NotAPath(_)
             | Refusal::NoPartEntered
             | Refusal::NoVerbForPart(_)
-            // ★★★ Destructured, where every neighbour is a wildcard. A
+            // Destructured, where every neighbour is a wildcard. A
             // `TextRunCannotMove(_)` arm accepts a fourth [`RunMoveBlock`]
             // silently, and the vector above would then be missing the one
             // entry this whole function exists to force — the completeness
@@ -922,7 +922,7 @@ fn all_refusals() -> Vec<Refusal> {
 /// The refusals that owe the operator nothing — every [`Refusal`] for which
 /// [`super::Refusal::worded`] answers `None`, derived rather than re-typed.
 ///
-/// ★ Derived from [`all_refusals`] through `worded` itself, which is why the
+/// Derived from [`all_refusals`] through `worded` itself, which is why the
 /// silence test cannot drift out of step with the decision it is asserting: if
 /// a tenth refusal is given a sentence, it leaves this set automatically, and
 /// if a twelfth is added silently it joins this set and is asserted.
@@ -1026,7 +1026,7 @@ fn a_page_with_no_object_model_declines() {
         ghost.ghost, None,
         "a ghost must not describe an unverifiable move"
     );
-    // ★ And no SHAPE either, since O63. The two are separate values and a
+    // And no SHAPE either, since O63. The two are separate values and a
     // future edit could plausibly leave one of them populated on a rung that
     // declines — which would draw the operator a preview of a move that is
     // about to refuse, the exact "placeholder" failure R9 forbids.
@@ -1037,7 +1037,7 @@ fn a_page_with_no_object_model_declines() {
     assert!(actions.is_empty());
 }
 
-/// ★★ **Four Shift-clicked anchors move as FOUR anchors, in one command.**
+/// **Four Shift-clicked anchors move as FOUR anchors, in one command.**
 ///
 /// This is the regression test for a defect that lived in the gap between
 /// two correct halves. `SelectionState::pick_within` has added a
@@ -1104,7 +1104,7 @@ fn several_selected_anchors_move_as_one_command() {
     }
 }
 
-/// ★ **One stale anchor refuses the whole drag**, rather than moving the
+/// **One stale anchor refuses the whole drag**, rather than moving the
 /// three the decomposition still recognises.
 ///
 /// The same call `move_objects` makes over a non-path member, and for the

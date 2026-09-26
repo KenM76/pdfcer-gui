@@ -7,7 +7,7 @@
 //! about to lose comes from four sentences and three button labels**, and there
 //! is no second chance to read them.
 //!
-//! ## ★ The one rule the whole file follows
+//! ## The one rule the whole file follows
 //!
 //! **Nothing here says "changes".** It says *edits*, and where it can, it says
 //! how many. "You have unsaved changes" is the sentence every application shows
@@ -15,7 +15,7 @@
 //! moved one dimension or spent an hour marking up a drawing, and the decision
 //! they are being asked to make depends entirely on which.
 //!
-//! ## ★★ And nothing here says "Save"
+//! ## And nothing here says "Save"
 //!
 //! This build has no Save. `file.save` is in `crate::shell::manifest::PLANNED`,
 //! blocked on autosave and crash recovery; the only writer is `file.save_copy`,
@@ -44,7 +44,7 @@ pub const fn question_close() -> &'static str {
 
 /// The question, when the operator is opening another document.
 ///
-/// ★ Names **the document they are leaving**, not the one they are opening.
+/// Names **the document they are leaving**, not the one they are opening.
 /// The operator's attention is already on the file they picked; the whole
 /// purpose of this interruption is to move it back for one sentence.
 #[must_use]
@@ -63,7 +63,7 @@ pub const fn question_new() -> &'static str {
 /// The question, when the operator is re-reading this same file under the
 /// other reading of a key it names twice.
 ///
-/// # ★★ It says the edits cannot survive it, because they cannot
+/// # It says the edits cannot survive it, because they cannot
 ///
 /// Every other sentence here is about *leaving* a document. This one is about
 /// **the same document coming back**, which is a distinction an operator will
@@ -84,7 +84,7 @@ pub const fn question_reread() -> &'static str {
 
 /// How much is at stake, in the operator's units rather than the engine's.
 ///
-/// # ★ Why this counts EDITS and says so, rather than saying "changes"
+/// # Why this counts EDITS and says so, rather than saying "changes"
 ///
 /// `OpenDoc::edit_epoch` counts applied edits — one per action that reached the
 /// document — so the number is real and is the only quantity this shell has.
@@ -106,7 +106,7 @@ pub fn edits_at_stake(edits: u64) -> String {
     }
 }
 
-/// ★★★ **The button that writes the file the operator opened** —
+/// **The button that writes the file the operator opened** —
 /// `OPERATOR_REQUESTS.md` O65.
 ///
 /// Drawn only when the document HAS a file to be written over
@@ -139,12 +139,12 @@ pub const fn save_button() -> &'static str {
 
 /// **Save all** — `OPERATOR_REQUESTS.md` O102.
 ///
-/// ★★ The count is **in the label**, not implied. *"Save all"* over a modal
+/// The count is **in the label**, not implied. *"Save all"* over a modal
 /// asking about one document is ambiguous — all of what? — and the operator is
 /// being asked this while trying to leave. *"Save all 4"* answers the question
 /// the button raises, in the button.
 ///
-/// ★ Drawn only when the count is above one, so the singular case never occurs
+/// Drawn only when the count is above one, so the singular case never occurs
 /// and is not worded for. `UnsavedDialog::body` carries that decision.
 #[must_use]
 pub fn save_all_button(count: usize) -> String {
@@ -161,7 +161,7 @@ pub const fn save_copy_button() -> &'static str {
     "Save a copy…"
 }
 
-/// ★★ What "a copy" actually means for the file they came from.
+/// What "a copy" actually means for the file they came from.
 ///
 /// The most important sentence on the surface, and the one an operator would
 /// otherwise have to discover by looking at their file system afterwards.
@@ -173,7 +173,7 @@ pub const fn save_copy_note() -> &'static str {
      on is not changed on disk."
 }
 
-/// ★★ The note under the pair, when both buttons are offered.
+/// The note under the pair, when both buttons are offered.
 ///
 /// Says which of the two touches the file they opened, because that is the
 /// whole difference between them and it is not deducible from four words of
@@ -204,7 +204,7 @@ pub const fn discard_new() -> &'static str {
 
 /// The destructive button, when the operator is re-reading the same file.
 ///
-/// ★ *Read* rather than *Reread*, and *lose the edits* in the same words the
+/// *Read* rather than *Reread*, and *lose the edits* in the same words the
 /// two buttons above use. The verb changes; the consequence clause does not,
 /// because an operator reading only the buttons — which is most operators,
 /// most of the time — is scanning for the consequence.
@@ -242,14 +242,14 @@ mod tests {
         assert!(edits_at_stake(48).starts_with("48 edits have"));
     }
 
-    /// ★ No button says "Save", and no sentence says "changes".
+    /// No button says "Save", and no sentence says "changes".
     ///
     /// Both halves of this module's header, mechanised. The first is the more
     /// important: a *Save* label here would be a claim that the open file is
     /// written, and this build cannot write it.
     #[test]
     fn nothing_promises_a_save_this_build_cannot_do() {
-        // ★ The predicate is **"if it says Save, it must say what it saves"**,
+        // The predicate is **"if it says Save, it must say what it saves"**,
         // not "it must not say Save". A blanket ban would forbid the one
         // correct label as well as every wrong one, which is how a rule gets
         // relaxed and then quietly deleted — the next hand hits it, sees it
@@ -308,7 +308,7 @@ mod tests {
             "the note must say the open file is left alone, which is the part \
              nobody expects"
         );
-        // ★ And the pair's note has to say which one touches the original,
+        // And the pair's note has to say which one touches the original,
         // because four words of button text cannot.
         assert!(
             save_choice_note().contains("over the file you opened"),

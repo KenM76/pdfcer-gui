@@ -4,7 +4,7 @@ One enum, [`PageDisplay`], and the three rules that hang off it: which
 modes scroll, which modes pair pages into spreads, and what a fresh
 profile gets in each ribbon mode.
 
-## ★ Continuous is an option, not a replacement — and that is the whole point
+## Continuous is an option, not a replacement — and that is the whole point
 
 
 > *"continuous scroll should be an option under the view tab as the way I
@@ -27,7 +27,7 @@ page's drawn size and whose scroll range **is** the page's own, so the
 single-page experience is bit-for-bit what it was before Phase 4. The tests
 in that module assert exactly that, and they are the ones to keep honest.
 
-## ★ Read defaults to continuous; every other mode keeps single page
+## Read defaults to continuous; every other mode keeps single page
 
 
 > *"Read defaults to continuous scroll; Review and Edit default to single

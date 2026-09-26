@@ -16,7 +16,7 @@ use crate::canvas::deleting::Refusal;
 #[must_use]
 pub const fn refusal(reason: Refusal) -> Option<&'static str> {
     match reason {
-        // ★★★ §9.4.2, and the one refusal in this file that names a remedy —
+        // §9.4.2, and the one refusal in this file that names a remedy —
         // which is the entire reason it is asked before the press rather than
         // left to the engine. See `canvas::deleting`'s header on R83.
         //
@@ -30,7 +30,7 @@ pub const fn refusal(reason: Refusal) -> Option<&'static str> {
              ends — so removing this one would move it somewhere you did not put it. Delete the \
              later label first, then this one.",
         ),
-        // ★★ The operator has an outline round the thing they want gone and the
+        // The operator has an outline round the thing they want gone and the
         // key does nothing. This is a real limit of the engine rather than of
         // this shell — `pdfcer-core` has one delete verb for the inside of a
         // container and it removes a whole object — and saying so is the
@@ -43,14 +43,14 @@ pub const fn refusal(reason: Refusal) -> Option<&'static str> {
             "This line is inside a group that pdfcer can only remove whole. Press Escape to \
              step back out to the whole shape, then Delete.",
         ),
-        // ★ Four points highlighted, one press, and pdfcer would remove one of
+        // Four points highlighted, one press, and pdfcer would remove one of
         // them. Refusing and saying how many is the honest answer; acting on
         // the first is the defect that let a four-anchor drag move one anchor
         // for months.
         Refusal::ManyNodes(_) => {
             Some("pdfcer removes one corner point at a time. Click a single point, then Delete.")
         }
-        // ★ The twin one rung up, and the asymmetry it has to survive: the
+        // The twin one rung up, and the asymmetry it has to survive: the
         // same set of lines CAN be dragged together, so an operator who has just
         // moved four of them at once has every reason to expect Delete to
         // remove four. The sentence says the limit is Delete's rather than the
@@ -59,7 +59,7 @@ pub const fn refusal(reason: Refusal) -> Option<&'static str> {
             "pdfcer removes one line at a time, although it can move several together. Click a \
              single line, then Delete.",
         ),
-        // ★★★ The page will not decompose, so nothing INSIDE an object can be
+        // The page will not decompose, so nothing INSIDE an object can be
         // named — see this module's header for why this one is new. The
         // sentence names what the operator can still do, because they can: the
         // Object rung never needed the decomposition, so Escape and Delete
@@ -86,7 +86,7 @@ mod tests {
     use super::refusal;
     use crate::canvas::deleting::Refusal;
 
-    /// ★ Every sentence this catalogue offers is finished English prose.
+    /// Every sentence this catalogue offers is finished English prose.
     ///
     /// Not a formatting nicety: `check-string-gaps.sh` exists because a lost
     /// line-continuation backslash bakes six spaces into the middle of a
@@ -113,7 +113,7 @@ mod tests {
         }
     }
 
-    /// ★★ **No sentence may say "dimension"** — R8b Rule 15, mechanically.
+    /// **No sentence may say "dimension"** — R8b Rule 15, mechanically.
     ///
     /// The project has been corrected on this once already. A *pdf dimension*
     /// is page content pdfcer reads; a *ce dimension* is what pdfcer authors;

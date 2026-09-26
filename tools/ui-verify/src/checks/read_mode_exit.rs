@@ -81,7 +81,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
-    // ★ The whole of the input for this check. One command id, rung through the
+    // The whole of the input for this check. One command id, rung through the
     // same choke point a chord reaches — see `app::frame::scripted_invoke`.
     spec.env
         .push((INVOKE_ENV.to_owned(), SUBJECT_ID.to_owned()));
@@ -171,7 +171,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note(format!("the keymap resolved the chord {chord:?}"));
 
-    // --- ★★★ the identity this check exists for ----------------------------
+    // --- the identity this check exists for ----------------------------
     if !line.contains(&chord) {
         return Ok(Some(format!(
             "the keymap holds {chord:?} for `{SUBJECT_ID}` and the sentence the operator is \
@@ -209,7 +209,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- ★★ the absence half, on a run that reached the state --------------
+    // --- the absence half, on a run that reached the state --------------
     if first.contains(prefix) {
         return Ok(Some(format!(
             "the exit statement is in the ORDINARY title too: {first:?}. A permanent hint is \
@@ -225,7 +225,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- ★ full screen is named only in the combined state -----------------
+    // --- full screen is named only in the combined state -----------------
     if !fullscreen.is_empty() {
         return Ok(Some(format!(
             "the status line names a full-screen chord ({fullscreen:?}) on a window that is not \
@@ -237,7 +237,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- the line occupies pixels, not merely a trace ----------------------
     //
-    // ★ A sentence that was constructed and never laid out is indistinguishable
+    // A sentence that was constructed and never laid out is indistinguishable
     // in a trace from one the operator can read. This is the cheap half of the
     // "on screen and legible" claim the other named regions on this bar make.
     let rect = trace

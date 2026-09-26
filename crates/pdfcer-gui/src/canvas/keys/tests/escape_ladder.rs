@@ -11,7 +11,7 @@
 
 use super::*;
 
-/// ★ **An Escape already spent cancelling a drag does not also ascend a
+/// **An Escape already spent cancelling a drag does not also ascend a
 /// rung.** One press, one effect: an operator who abandons a move drag
 /// must still be standing where they were, or cancelling costs them the
 /// part they were working in as well as the drag.
@@ -46,7 +46,7 @@ fn an_escape_spent_on_a_drag_leaves_the_rung_alone() {
     assert!(actions.is_empty());
 }
 
-/// ★ **Escape retires an armed region zoom instead of ascending a rung —
+/// **Escape retires an armed region zoom instead of ascending a rung —
 /// and only one of the two happens.**
 ///
 /// The rule this must not break is already in the file above: *"there is
@@ -134,7 +134,7 @@ fn escape_reaches_the_ladder_again_once_nothing_is_armed() {
     assert_eq!(selection.len(), 1, "leaving a rung does not clear");
 }
 
-/// ★ **An Escape already spent cancelling a drag leaves the armed zoom
+/// **An Escape already spent cancelling a drag leaves the armed zoom
 /// alone too.**
 ///
 /// The one-press-one-effect rule runs in both directions: a cancelled
@@ -190,7 +190,7 @@ fn escape_ascends_a_rung_and_raises_no_action() {
     assert!(selection.is_empty(), "the next press clears");
 }
 
-/// ★ **Escape retires an armed markup tool before it touches the region
+/// **Escape retires an armed markup tool before it touches the region
 /// zoom or the ladder — and retires exactly one thing.**
 ///
 /// Both are armed at once deliberately, for the reason the guide-versus-zoom
@@ -248,7 +248,7 @@ fn escape_retires_the_markup_tool_before_the_region_zoom() {
     assert!(actions.is_empty());
 }
 
-/// ★ **An Escape already spent abandoning a markup band does NOT also put
+/// **An Escape already spent abandoning a markup band does NOT also put
 /// the pen down.**
 ///
 /// The sharpest form of one-press-one-effect for this feature: an operator
@@ -345,7 +345,7 @@ fn escape_still_reaches_the_zoom_and_the_ladder_with_no_markup_armed() {
     );
 }
 
-/// ★ **A guide drag outranks an armed region zoom, and only one of the
+/// **A guide drag outranks an armed region zoom, and only one of the
 /// two is retired.**
 ///
 /// The tie-break the precedence table states: retire the most transient
@@ -403,7 +403,7 @@ fn escape_abandons_a_guide_drag_before_it_touches_the_region_zoom() {
     );
 }
 
-/// ★ **A circular pick set is abandoned by the FIRST Escape and the tool
+/// **A circular pick set is abandoned by the FIRST Escape and the tool
 /// by the second** — the two rungs, over the one tool that most needs
 /// them.
 ///
@@ -509,7 +509,7 @@ fn escape_abandons_a_circle_fit_before_it_puts_the_measure_tool_down() {
     );
 }
 
-/// ★ **A markup vertex run is abandoned by the FIRST Escape and the pen by
+/// **A markup vertex run is abandoned by the FIRST Escape and the pen by
 /// the second** — rung 3a's second occupant, asserted the same way its first
 /// is.
 ///

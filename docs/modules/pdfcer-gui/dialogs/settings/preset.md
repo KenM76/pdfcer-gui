@@ -19,7 +19,7 @@ there is no new state to persist, no new thing that can disagree with
 `settings.txt`, and no way for a preset to express something the individual
 controls cannot. A preset that could would be a second source of truth.
 
-## ★★★ Where the values came from, and why every one of them is graded
+## Where the values came from, and why every one of them is graded
 
 Not from here. A control labelled *ISO 15930-7* carries that standard's
 authority whether or not it was meant to, so the vector was **asked for**
@@ -36,7 +36,7 @@ and it is graded `implied` rather than `sourced`. So the row shows the
 grading beside the choice; a row that showed the name and hid the grade
 would be the over-claim this whole request was careful to avoid.
 
-★★ Three consequences the engine had to spell out, all of which shape this
+Three consequences the engine had to spell out, all of which shape this
 file:
 
 1. **Not every standard binds a renderer.** PDF/A and PDF/UA both put

@@ -10,7 +10,7 @@ handler in the function. On a frame taking either of them:
 * Ctrl+wheel does not zoom back out,
 * and there is nothing to click, because there is no page widget to click on.
 
-★★★ **Both are terminal without this module.** The only ways out are a
+**Both are terminal without this module.** The only ways out are a
 keyboard route that does not go through the canvas, or closing and reopening
 the file. A canvas that has stopped responding to the mouse is not a
 rendering defect the operator can describe — it is *"the program froze"*.
@@ -64,7 +64,7 @@ context menu would open on a page that is not on screen. The two handlers
 here are exactly the two that are about **the view** rather than about
 **content**, which is also why neither needs a `Response` of its own.
 
-★ And the gate is one response alone, not `… || image_response.hovered()`
+And the gate is one response alone, not `… || image_response.hovered()`
 as the ordinary call sites spell it. There is no acting page on this frame, so
 there is no second response to consult. Which response it is differs by call
 site — the scroll area's content response at `nothing-visible`, the message

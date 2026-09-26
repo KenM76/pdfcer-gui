@@ -43,14 +43,14 @@ const PAGE: PageGeometry = PageGeometry {
 
 /// Reset the dock, take Edit, mount Properties, arm the caret — one per frame.
 ///
-/// ★ `view.reset_layout` first, and it is not decoration: the application
+/// `view.reset_layout` first, and it is not decoration: the application
 /// persists its dock layout across runs and the harness does not clear it, so a
 /// launch inherits whatever the previous launch left — including a previous
 /// *driven* one. `typo_refusal`'s own header records the run this project spent
 /// reading last run's furniture. Its arrival is asserted below rather than
 /// assumed.
 ///
-/// ★★ `file.properties` before `edit.text`, and `mode.edit` before both: the
+/// `file.properties` before `edit.text`, and `mode.edit` before both: the
 /// dock follows the ribbon mode on the same frame, so a panel mounted before the
 /// mode moved would be mounted into the workspace this check is about to leave.
 /// `std14_face` learned that the expensive way.
@@ -63,13 +63,13 @@ const INVOKE: &str = "view.reset_layout,mode.edit,file.properties,edit.text";
 /// virtual keys and this machine cannot inject an arbitrary character — and the
 /// keystroke is not the subject here, the refusal after the commit is.
 ///
-/// ★★ It replaces the draft's whole text rather than appending to it
+/// It replaces the draft's whole text rather than appending to it
 /// (`keys::typing` does `draft.text.clear()` before inserting the seed), so the
 /// commit is `find="ABC" replace="q"` — which is exactly the command line
 /// measured in the fixture's provenance note, on both sides of the face swap.
 const SEED: &str = "q";
 
-/// `layout-reset scope=… changed=…`. ★ `changed=false` is a good answer: it
+/// `layout-reset scope=… changed=…`. `changed=false` is a good answer: it
 /// means the layout was already default. What matters is that the reset ran.
 const RESET_EVENT: &str = "layout-reset";
 /// `text-edit-caret kind=… page=… run=… len=…` — a click opened a draft.
@@ -81,7 +81,7 @@ const REFUSED_EVENT: &str = "edit-text-refused";
 /// `edit-text page=… n=… epoch=… disclosures=…` — the funnel's SUCCESS arm, and
 /// the negative control's oracle.
 ///
-/// ★ Deliberately not `text-edit-*`: `vector_edit`'s label is the bare verb name
+/// Deliberately not `text-edit-*`: `vector_edit`'s label is the bare verb name
 /// and a module's own summary line takes a suffix, which is what
 /// `tools/gates/check-trace-names.py` exists to keep true. Matching is on the
 /// exact first token, so the two never collide.
@@ -100,7 +100,7 @@ const FORMAT_APPLIED: &str = "format-text";
 const OFFER_REGION: &str = "properties.refusedchar";
 /// Its face chooser — the control that opens the list.
 const OFFER_FACE_REGION: &str = "properties.refusedchar.face";
-/// ★★★ Rule 4's off-canvas report, drawn above the chooser.
+/// Rule 4's off-canvas report, drawn above the chooser.
 const OFFER_DISCLOSURE_REGION: &str = "properties.refusedchar.disclosure";
 /// The heading over the rows pdfcer would ADD, inside the popup.
 const POPUP_ADDABLE_REGION: &str = "properties.refusedchar.face.addable";
@@ -113,7 +113,7 @@ const POPUP_NEW_REGION: &str = "properties.refusedchar.face.new";
 const PAGE_REGION: &str = "page";
 /// The Properties panel's dock tab, so the body can be brought to the front.
 ///
-/// ★ A docked pane that is not in front publishes **nothing**, which is
+/// A docked pane that is not in front publishes **nothing**, which is
 /// indistinguishable from a panel with nothing to say. This project filed one
 /// such report; `dock.tab.<id>` is published for exactly this.
 const PROPERTIES_PANEL: &str = "file.properties";
@@ -189,7 +189,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
 
-    // ★ The fixture is PINNED. See the module header: on a document whose font
+    // The fixture is PINNED. See the module header: on a document whose font
     // is not an embedded subset the refusal under test cannot occur, so a
     // sweep's fixture would make this check unable to fail.
     let pdf = ctx.source_root.clone().unwrap_or_default().join(FIXTURE);
@@ -279,7 +279,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driving::raise_dock_tab(&session, &driver, ui_rect, PROPERTIES_PANEL)?;
     session.settle(14);
 
-    // --- 0b: ★★★ THE CONTROL POINT -----------------------------------------
+    // --- 0b: THE CONTROL POINT -----------------------------------------
     //
     // Nothing has been refused yet, so the offer must not be on screen. Without
     // this every region read below could be one declared from the first frame,
@@ -346,7 +346,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let refusal_raw = refused.raw.clone();
     report.note(format!("★★ the engine refused the commit: `{refusal_raw}`"));
 
-    // ★★ The classification, which is a SEPARATE line and PRECEDES the refusal:
+    // The classification, which is a SEPARATE line and PRECEDES the refusal:
     // it is written from inside `vector_edit`'s closure through
     // `Result::inspect_err`, and the funnel's error arm runs after the closure
     // returns. So it is looked for by event and must not be anchored
@@ -372,7 +372,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "★★ and it was classified: character={character}, sentence={said}"
     ));
 
-    // ★★★ The mapping a wrong build gets backwards. `EditError::Refused(_)` maps
+    // The mapping a wrong build gets backwards. `EditError::Refused(_)` maps
     // to `RefusalKind::UnsupportedFont` WHOLESALE, so the repertoire refusal
     // (a face swap fixes it) and the unreadable-encoding refusal (nothing does)
     // arrive as one category. `Refusal::character` is `Some` for exactly the
@@ -393,7 +393,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 2: ★★★ THE OFFER — it drew, and it names the character -------------
+    // --- 2: THE OFFER — it drew, and it names the character -------------
     let trace = session.trace()?;
     let Some(offer) = trace
         .events(OFFER_EVENT)
@@ -456,7 +456,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- 3: ★★★ RULE 4 — the disclosure, ON SCREEN and OFF THE CANVAS -------
+    // --- 3: RULE 4 — the disclosure, ON SCREEN and OFF THE CANVAS -------
     //
     // Swapping the face is the operator's own instruction, so the changed
     // letterforms are not pdfcer marking its own uncertainty and must NOT be
@@ -534,7 +534,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    // ★ The popup's rows must be absent before the combo is clicked, or every
+    // The popup's rows must be absent before the combo is clicked, or every
     // region below could be one that was on screen with the popup shut —
     // `std14_face`'s control point, and the same defect wearing a green tick.
     if declared(&session.trace()?, ui_rect, POPUP_NEW_REGION).is_some() {
@@ -568,7 +568,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    // ★ The disclosure a second time, inside the popup. Its absence here is a
+    // The disclosure a second time, inside the popup. Its absence here is a
     // different defect from its absence above: this one is `face::popup_body`'s
     // copy, shared verbatim with the *This text* section and the ribbon's Font
     // group, so losing it loses it in three surfaces at once.
@@ -591,7 +591,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
     driver.click_at(session.frame()?.declared_center(row))?;
-    // ★ Waited for by its OUTCOME rather than by a frame count. A restyle costs
+    // Waited for by its OUTCOME rather than by a frame count. A restyle costs
     // one provenance extraction per run — 392 ms on the operator's benchmark
     // sheet — and a fixed settle that was generous on this 1.7 KB fixture would
     // be a flake on a loaded machine, reported as *"the font list does nothing"*.
@@ -622,7 +622,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    // ★ Copied out immediately, on `typo_refusal`'s pattern: the trace this
+    // Copied out immediately, on `typo_refusal`'s pattern: the trace this
     // line borrows is about to be shadowed by a fresh capture, and a scalar
     // carried forward is easier to read than a borrow whose lifetime the reader
     // has to reason about.
@@ -781,7 +781,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          the face was chosen. This is the whole of O141 and it is the REQUIRED outcome as \
          of engine v0.41.0"
     ));
-    // ★★★ **A REPAINT HAS TO BE PROVOKED HERE, AND THE REASON IS THE ENGINE
+    // **A REPAINT HAS TO BE PROVOKED HERE, AND THE REASON IS THE ENGINE
     // FIX** — found by the first driven run after the pin moved to v0.41.0.
     //
     // [`offer_must_retire`] refuses to judge an absence over zero painted
@@ -800,13 +800,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // claim about the check too, and the first run of a branch is where it is
     // tested.
     //
-    // ★ The pointer is MOVED rather than a key pressed, and that is deliberate:
+    // The pointer is MOVED rather than a key pressed, and that is deliberate:
     // a move over the window makes egui repaint on hover and **writes nothing to
     // the document**. A keystroke would be an input the check's own note ("the
     // harness pressed nothing after the face was chosen") says was not made, and
     // would make that note false.
     //
-    // ★ It moves back to the aim point — the text itself — which is a genuine
+    // It moves back to the aim point — the text itself — which is a genuine
     // move, because the last thing the pointer did was click the chooser's row
     // some way away from it. Moving to where the pointer already is would be no
     // move at all and would provoke nothing.
@@ -925,7 +925,7 @@ fn offer_must_retire(
     // what *"is this application alive?"* actually means. Five other checks in
     // this crate already use it as their frame clock.
     //
-    // ★ This is the project's standing finding for the fourth time this month:
+    // This is the project's standing finding for the fourth time this month:
     // **ask what the check SAMPLED before asking what is broken**, and the first
     // run of a branch is where a proxy that has always agreed with the thing it
     // stands for gets to disagree with it.
@@ -963,7 +963,7 @@ fn offer_must_retire(
 /// **Wait until one of `events` appears past trace line `after`**, and answer
 /// how long that took in milliseconds.
 ///
-/// ★ Bounded, and the ceiling is generous rather than tight: a wait that gives
+/// Bounded, and the ceiling is generous rather than tight: a wait that gives
 /// up early reports a working feature as inert, which is the most expensive kind
 /// of wrong this harness can be. On timeout it returns rather than erroring —
 /// the caller's own assertion is what says which event was missing and what that

@@ -50,7 +50,7 @@ mod tests {
     use super::*;
     use crate::shell::manifest;
 
-    /// **★ The `.ron` file and `manifest::built_in()` are the same shell.**
+    /// **The `.ron` file and `manifest::built_in()` are the same shell.**
     ///
     /// The proof that the format is genuinely the manifest rather than a
     /// Rust-only fiction with a file beside it. Equality of parsed values,
@@ -84,7 +84,7 @@ mod tests {
             .expect("the built-in layer must validate on its own");
     }
 
-    /// **★ A hand-written snippet parses — the `IMPLICIT_SOME` check.**
+    /// **A hand-written snippet parses — the `IMPLICIT_SOME` check.**
     ///
     /// Deliberately **not** produced by the serializer. Every string here
     /// was typed: no `Some(…)` wrappers, a comment, a trailing comma, and
@@ -136,7 +136,7 @@ mod tests {
         );
     }
 
-    /// **★ No `Some(` appears anywhere in the file.**
+    /// **No `Some(` appears anywhere in the file.**
     ///
     /// This is the observable consequence of `IMPLICIT_SOME` on the
     /// *writer*, and it is the property that makes the generated file a
@@ -179,7 +179,7 @@ mod tests {
     fn the_ron_file_reads_as_a_ribbon() {
         let text = built_in_ron();
         for needle in [
-            // ★ Was `Command(id: "file.open")` until 2026-09-04. `file.open`
+            // Was `Command(id: "file.open")` until 2026-09-04. `file.open`
             // is now a **Large** item — the mockup draws it as one of the File
             // group's two big controls — so it serializes with its size and no
             // longer matches a needle that was really asserting *"a
@@ -197,7 +197,7 @@ mod tests {
             "caption: \"Page display\"",
             "id: \"review\"",
             "\"Ctrl+1\": \"mode.read\"",
-            // ★ The contextual Format tab's condition, and it is
+            // The contextual Format tab's condition, and it is
             // `selection.formattable` rather than `selection.any` since
             // 2026-08-27 — the tab now carries controls for two kinds of
             // selection, so its condition is the union rather than either

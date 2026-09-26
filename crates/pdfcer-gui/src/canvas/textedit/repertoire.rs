@@ -27,7 +27,7 @@ const MEMORY_KEY: &str = "pdfcer.textedit.repertoire";
 /// counter and is what every other derived-from-the-page cache here is keyed
 /// on.
 ///
-/// ★ `Clone` and `Send + Sync` are not stylistic: `egui::Context::data`'s
+/// `Clone` and `Send + Sync` are not stylistic: `egui::Context::data`'s
 /// `get_temp`/`insert_temp` require `T: Clone + Send + Sync + 'static`, which
 /// is why the payload is an [`Arc`] and not an `Rc`. The handle is cloned once
 /// per read; the repertoire behind it never is.
@@ -73,7 +73,7 @@ pub(crate) fn of_run(
         return held.rep;
     }
     let rep = measure(doc, page, run);
-    // ★★★ WRITTEN ON BOTH ARMS, never behind a `?`. See the module header: this
+    // WRITTEN ON BOTH ARMS, never behind a `?`. See the module header: this
     // line, not the key's position, is what stops a failed measurement being
     // re-attempted on every frame the caret sits in the run.
     write(
@@ -128,10 +128,10 @@ pub(crate) struct Sieved {
 /// The whole pre-commit gate, in one function, so the keystroke handler holds no
 /// policy and the policy is testable without an event loop.
 ///
-/// ★ An unmeasured run keeps everything. See the module header:
+/// An unmeasured run keeps everything. See the module header:
 /// `None` is *not measured*, never *nothing is allowed*.
 ///
-/// ★★ Characters are sieved **individually** rather than the event being
+/// Characters are sieved **individually** rather than the event being
 /// refused whole. An `egui::Event::Text` usually carries one character, but an
 /// IME commit or a compose sequence can carry several, and refusing the batch
 /// would make the outcome depend on how the platform happened to group the
@@ -185,7 +185,7 @@ fn write(ctx: &egui::Context, held: Held) {
 
 /// Ask the engine, once.
 ///
-/// # ★★ An EMPTY `find`, with the pin — the shape `pin::font_preflight` already
+/// # An EMPTY `find`, with the pin — the shape `pin::font_preflight` already
 /// # uses, and for the same reason
 ///
 /// `Pass 147.0` taught the engine to resolve a pinned operator's own characters
@@ -208,7 +208,7 @@ fn measure(doc: &OpenDoc, page: usize, run: usize) -> Option<Arc<RunRepertoire>>
         // ui-text-exempt: diagnostic trace, never displayed in the UI.
         //
         //
-        // ★★★ `reason` is the engine's own sentence and this is the ONE place
+        // `reason` is the engine's own sentence and this is the ONE place
         // it is allowed to appear. `super::Refusal::NoUsableEncoding`'s docs
         // carry the rule — say where in HIS vocabulary, never in the engine's —
         // so the clause number goes here, where a reader wants it, and the
@@ -234,7 +234,7 @@ fn measure(doc: &OpenDoc, page: usize, run: usize) -> Option<Arc<RunRepertoire>>
 // ---------------------------------------------------------------------------
 // Tests
 //
-// ★★★ Two of these drive the ENGINE, not this module, and they are the reason
+// Two of these drive the ENGINE, not this module, and they are the reason
 // the module is allowed to exist in the shape it has. `of_run` is a cache; a
 // cache is easy to test and proves nothing about whether the answer it keeps is
 // the right one to gate a keystroke on. The engine wrote down one direction —
@@ -422,7 +422,7 @@ mod tests {
         }
     }
 
-    /// **★★★ The converse, which the engine did NOT write down and this module
+    /// **The converse, which the engine did NOT write down and this module
     /// depends on: a character absent from the repertoire is one `edit_text`
     /// refuses.**
     ///
@@ -453,7 +453,7 @@ mod tests {
         );
     }
 
-    /// **★★★ A run that cannot be measured records the ATTEMPT.**
+    /// **A run that cannot be measured records the ATTEMPT.**
     ///
     /// The check that pins the module header's load-bearing line. Move the
     /// `write` behind the `?` in [`of_run`] — the shape a reader will reach for,

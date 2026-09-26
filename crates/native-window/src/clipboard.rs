@@ -12,7 +12,7 @@
 //! of it means anything to Word, Outlook or Paint, and those are where the
 //! operator is going.
 //!
-//! ## ★★★ THE TRAP: putting an image on the clipboard KILLS `Ctrl+V`
+//! ## THE TRAP: putting an image on the clipboard KILLS `Ctrl+V`
 //!
 //! Not "degrades". Stops it arriving at all.
 //!
@@ -44,7 +44,7 @@
 //! have and which is not worth a dependency for a case nobody has reported. It
 //! is written down here so the next person meets a decision rather than a hole.
 //!
-//! ## ★★ Why the pixels arrive as BGRA and leave as BGRX
+//! ## Why the pixels arrive as BGRA and leave as BGRX
 //!
 //! `CF_DIB` is a `BITMAPINFOHEADER` followed by pixel data, and the header this
 //! writes declares **32 bits per pixel, `BI_RGB`, negative height**:
@@ -78,7 +78,7 @@ type Handle = *mut c_void;
 
 /// `BITMAPINFOHEADER`, laid out exactly as `wingdi.h` declares it.
 ///
-/// ★ `#[repr(C)]` is load-bearing, not decoration: this struct is read by the
+/// `#[repr(C)]` is load-bearing, not decoration: this struct is read by the
 /// operating system and by every program that pastes. Rust's default layout is
 /// unspecified, and a reordered field here would be a picture that pastes as
 /// noise on some future compiler with nothing in this repository to catch it.
@@ -98,7 +98,7 @@ struct BitmapInfoHeader {
     clr_important: u32,
 }
 
-// ★★ **Two libraries, named explicitly**, where `win32.rs` names none.
+// **Two libraries, named explicitly**, where `win32.rs` names none.
 //
 // That module's symbols are all in `user32`, which the Rust toolchain links by
 // default on this target. This file's are split across two libraries — the
@@ -139,7 +139,7 @@ unsafe extern "system" {
 /// match its declared size. A caller that gets `false` has put nothing on the
 /// clipboard and should say so rather than assume.
 ///
-/// # ★ Why the size mismatch is a refusal rather than a truncation
+/// # Why the size mismatch is a refusal rather than a truncation
 ///
 /// Because a truncated DIB is a picture: the wrong one, at the wrong size, made
 /// of whatever bytes followed. Refusing keeps the previous clipboard content,
@@ -198,7 +198,7 @@ pub fn set_image_and_text(rgba: &[u8], width: u32, height: u32, text: &str) -> b
 
     // ---- one transaction --------------------------------------------------
     //
-    // ★ Both handles are allocated BEFORE the clipboard is opened. The
+    // Both handles are allocated BEFORE the clipboard is opened. The
     // clipboard is a system-wide lock; holding it across two allocations is
     // holding it longer than necessary, and an allocation failure inside the
     // open would mean deciding whether to publish half a transaction.
@@ -281,7 +281,7 @@ fn bytes_of_u16(v: &[u16]) -> &[u8] {
 mod tests {
     use super::*;
 
-    /// ★★ **A buffer whose length does not match its declared size is refused**,
+    /// **A buffer whose length does not match its declared size is refused**,
     /// and refusing is what keeps whatever the operator had on the clipboard.
     ///
     /// Asserted without touching the clipboard, because the check happens

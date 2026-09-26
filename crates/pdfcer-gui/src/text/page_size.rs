@@ -11,7 +11,7 @@ pub const fn window_title() -> &'static str {
     "Sheet size"
 }
 
-/// ★★★ The standing rule, first line of the window, before any choice.
+/// The standing rule, first line of the window, before any choice.
 ///
 /// # Why this is the first thing on screen and not a footnote
 ///
@@ -47,7 +47,7 @@ pub fn now_uniform_named(count: usize, name: &str, w_pt: f64, h_pt: f64) -> Stri
 
 /// Every picked sheet is the same size and it is not one pdfcer has a name for.
 ///
-/// ★ Said out loud rather than shown as bare numbers with no comment. A CAD
+/// Said out loud rather than shown as bare numbers with no comment. A CAD
 /// exporter that writes 2,381.10 × 1,683.78 has produced an A1 sheet rounded to
 /// two decimals by a units conversion, and an operator who sees "not a standard
 /// size" learns something true about his own export pipeline.
@@ -61,7 +61,7 @@ pub fn now_uniform_unnamed(count: usize, w_pt: f64, h_pt: f64) -> String {
 
 /// The picked sheets are **not** all the same size.
 ///
-/// ★ This is the state that makes a single "current size" readout a lie, and
+/// This is the state that makes a single "current size" readout a lie, and
 /// the reason the dialog reads the operands rather than the current page. A
 /// drawing set with one A3 detail sheet among nine A1s is the ordinary case,
 /// not the exotic one.
@@ -101,7 +101,7 @@ pub const fn size_custom() -> &'static str {
 
 /// The name of a standard sheet size.
 ///
-/// ★ The wildcard arm is load-bearing. `PaperSize` is `#[non_exhaustive]` and
+/// The wildcard arm is load-bearing. `PaperSize` is `#[non_exhaustive]` and
 /// its own docs say the table will grow (ARCH, JIS B, ISO B/C); a size the
 /// engine adds must appear in the list with its machine id rather than making
 /// this module fail to compile or, worse, silently vanish from the picker.
@@ -191,7 +191,7 @@ pub fn custom_refused(min_mm: i64, max_mm: i64) -> String {
 }
 
 // ---------------------------------------------------------------------------
-// ★★★ The measured consequence — the two sentences that do the real work
+// The measured consequence — the two sentences that do the real work
 // ---------------------------------------------------------------------------
 
 /// Heading above the outcome line and the diagram.
@@ -202,7 +202,7 @@ pub const fn outcome_heading() -> &'static str {
 
 /// Nothing drawn on the picked sheets falls outside the new paper.
 ///
-/// ★ This is the *only* wording in the window that promises anything, so it is
+/// This is the *only* wording in the window that promises anything, so it is
 /// bounded exactly to what was measured — the union of the picked pages' drawn
 /// vector extents, which is what `PageObjects::page_bbox` computes. See
 /// [`overhang_unmeasurable`] for the case where even that could not be read,
@@ -214,7 +214,7 @@ pub const fn fits() -> &'static str {
 
 /// The drawing runs past the new paper, by how much and on which edges.
 ///
-/// # ★★★ Why this names the EDGES and the AMOUNT
+/// # Why this names the EDGES and the AMOUNT
 ///
 /// Because "content will be cropped" is a warning and this is a
 /// **measurement**, and the operator's decision turns on the difference. On his
@@ -260,7 +260,7 @@ fn join_and(parts: &[String]) -> String {
 
 /// The drawn extent of at least one picked sheet could not be read.
 ///
-/// ★ A stated boundary rather than a cheerful silence. A page whose content
+/// A stated boundary rather than a cheerful silence. A page whose content
 /// stream will not decompose is exactly the page most likely to be a strange
 /// export, and reporting "nothing falls off" for it would be a false negative
 /// dressed as a measurement — which is the failure the engine's own
@@ -291,7 +291,7 @@ pub const fn no_change() -> &'static str {
 /// The picked sheets' lower-left corners disagree, so the new sheet is placed
 /// at the origin.
 ///
-/// # ★ Why this exists at all
+/// # Why this exists at all
 ///
 /// §7.7.3.3 does not require a media box to start at `(0, 0)`, and imposition
 /// output and cropped scans really do carry offset ones. `set_media_boxes`
@@ -352,7 +352,7 @@ pub const fn apply_tooltip() -> &'static str {
 
 /// The sheet lost area on `n` pages.
 ///
-/// ★★ The asymmetry is the part worth reporting and is quoted from the engine's
+/// The asymmetry is the part worth reporting and is quoted from the engine's
 /// own reasoning: §14.11.2.1 says content outside the media box *"may safely be
 /// discarded without affecting the meaning of the PDF file"* — an unusually
 /// strong permission, because it asserts the discard is meaning-preserving. So
@@ -370,7 +370,7 @@ pub fn disclosure_lost_area(n: usize) -> String {
 
 /// A `/CropBox` on `n` pages is no longer inside the new media box.
 ///
-/// ★ Disclosed, not repaired, and the engine's argument for that is quoted
+/// Disclosed, not repaired, and the engine's argument for that is quoted
 /// because the operator would otherwise reasonably expect a fix: a conforming
 /// reader *"shall treat the box as its intersection with the media box"*, so
 /// clamping the entry would change no reader's output while rewriting an entry
@@ -387,7 +387,7 @@ pub fn disclosure_crop_outside(n: usize) -> String {
 /// `n` pages' own `/MediaBox` entry was removed because an ancestor already
 /// says the same thing.
 ///
-/// ★ Worth a sentence rather than silence: the page is now sized by
+/// Worth a sentence rather than silence: the page is now sized by
 /// inheritance, so a later change to the document's default size will move it
 /// and a sibling's will not. That is a real, invisible difference in what the
 /// next edit does.
@@ -417,7 +417,7 @@ pub fn disclosure_size_advisory(n: usize, below: bool) -> String {
 
 /// The engine refused the change because the document is certified.
 ///
-/// ★★ Worded rather than traced, because `RESUME.md`'s standing cross-cutting
+/// Worded rather than traced, because `RESUME.md`'s standing cross-cutting
 /// defect is that *"every engine refusal reaches the operator as SILENCE"*.
 /// Measured 2026-09-06 on `fixtures/certified-comments.pdf`: the engine refuses
 /// with `CertificationForbidsChange` and this is what that has to read as.
@@ -437,7 +437,7 @@ pub const fn refused_degenerate() -> &'static str {
 mod tests {
     use super::*;
 
-    /// ★★★ **The crop-not-scale rule is stated, in the operator's words, in
+    /// **The crop-not-scale rule is stated, in the operator's words, in
     /// the first line of the window.**
     ///
     /// The single most important property of this whole catalogue, and the one
@@ -459,7 +459,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The overhang line names every edge it was given, and only those.**
+    /// **The overhang line names every edge it was given, and only those.**
     ///
     /// Both directions. A line that named all four edges regardless would read
     /// as alarming nonsense on a sheet that overhangs only to the right; one
@@ -492,7 +492,7 @@ mod tests {
         );
     }
 
-    /// ★ **The overhang line refuses the reading that pdfcer will shrink to
+    /// **The overhang line refuses the reading that pdfcer will shrink to
     /// fit**, because that is the operator's default expectation and the one
     /// this window exists to correct.
     #[test]
@@ -504,7 +504,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The "it fits" line and the "not counted" line are separate, and
+    /// **The "it fits" line and the "not counted" line are separate, and
     /// both are needed.**
     ///
     #[test]
@@ -515,7 +515,7 @@ mod tests {
         assert!(bound.contains("ce dimensions"), "{bound}");
     }
 
-    /// ★★★ **R8b rule 15: this catalogue never writes a bare "dimension".**
+    /// **R8b rule 15: this catalogue never writes a bare "dimension".**
     ///
     /// A CAD sheet has two kinds and a paper change affects them differently:
     /// a **pdf dimension** is the printed measurement the exporter drew — page
@@ -565,7 +565,7 @@ mod tests {
         }
     }
 
-    /// ★ **A standard size reads back as its own millimetres**, through the
+    /// **A standard size reads back as its own millimetres**, through the
     /// engine's table rather than a hand-rounded copy of it.
     #[test]
     fn a_named_size_reads_back_as_its_own_millimetres() {
@@ -575,7 +575,7 @@ mod tests {
         assert!(entry.contains("841"), "A1 is 841 mm tall: {entry}");
     }
 
-    /// ★ **The lost-area disclosure states the asymmetry**, which is the whole
+    /// **The lost-area disclosure states the asymmetry**, which is the whole
     /// reason it is a disclosure rather than a status count.
     #[test]
     fn the_lost_area_disclosure_says_undo_works_here_and_not_afterwards() {
@@ -588,7 +588,7 @@ mod tests {
         );
     }
 
-    /// ★ **Singular and plural, because "1 sheets lost area" is the kind of
+    /// **Singular and plural, because "1 sheets lost area" is the kind of
     /// thing that survives review forever.**
     #[test]
     fn one_sheet_is_singular() {
@@ -604,7 +604,7 @@ mod tests {
         );
     }
 
-    /// ★ **No entry in the size list reads like an identifier.**
+    /// **No entry in the size list reads like an identifier.**
     ///
     /// The wildcard arm of [`size_name`] falls back to `PaperSize::id`, which is
     /// machine-facing (`ansi-d`). Every size the engine ships today must have a
@@ -622,7 +622,7 @@ mod tests {
         }
     }
 
-    /// ★★ **The certified refusal names the cause**, because a refusal an
+    /// **The certified refusal names the cause**, because a refusal an
     /// operator cannot act on is indistinguishable from a bug.
     #[test]
     fn the_certified_refusal_says_why() {

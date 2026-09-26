@@ -128,7 +128,7 @@ pub fn pixels_per_metre(dpi: f64) -> f64 {
 mod tests {
     use super::*;
 
-    /// ★★★ There are **three** spellings of this conversion, not two, and
+    /// There are **three** spellings of this conversion, not two, and
     /// which pair disagrees depends on the input.
     ///
     /// `UNIT_SURFACES.md` §3 enumerated two: the multiply form
@@ -227,7 +227,7 @@ mod tests {
         );
     }
 
-    /// ★★★ The regression test for the defect that reached the operator.
+    /// The regression test for the defect that reached the operator.
     ///
     /// A sheet authored at exactly 210.5 mm produced `210` on one surface and
     /// `211` on another. Both surfaces call [`whole_mm_from_points`] now.

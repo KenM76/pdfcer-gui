@@ -13,7 +13,7 @@
 //!
 //! - **D1 live-preview** — the shape follows the pointer from the first frame,
 //!   drawn from [`preview_of`], which is the same point list the release
-//!   commits. ★ `from` and `at` arrive **already in canvas space** and are not
+//!   commits. `from` and `at` arrive **already in canvas space** and are not
 //!   converted again; that double hop is the defect the operator reported on
 //!   2026-08-20 (*"moves at a different speed than my mouse movements"*) and
 //!   `dimdrag::inner` carries the post-mortem.
@@ -72,7 +72,7 @@ use crate::canvas::selection::{AnnotKind, SelectionState};
 /// near the corner I clicked"* would land on the page instead, start a marquee,
 /// and then pass while exercising a completely different gesture.
 ///
-/// ★ Deliberately **not** `canvas.dimension-vertex`. Two subjects that reach
+/// Deliberately **not** `canvas.dimension-vertex`. Two subjects that reach
 /// two different engine verb families must be distinguishable in the trace, or
 /// a check that aimed at a ce dimension and hit a markup shape would report a
 /// working build as broken and vice versa.
@@ -84,7 +84,7 @@ pub const NODE_REGION: &str = "canvas.markup-node"; // ui-text-exempt: trace reg
 /// `address=` is `stroke/point` for an `/Ink` and `none` otherwise;
 /// `family=` is `vertex` or `ink`, naming which engine planner was asked.
 ///
-/// ★★★ **`markup-node-`, NOT `markup-vertex-`, and the rename is a caught
+/// **`markup-node-`, NOT `markup-vertex-`, and the rename is a caught
 /// defect rather than a preference.** `canvas::markup::vertex` has written
 /// `markup-vertex kind=… page=… n=… x=… y=…` since polygons became
 /// authorable — one line per CLICK while the operator is drawing a shape.
@@ -135,7 +135,7 @@ const NODE_GRAB_SLACK_PT: f32 = 3.0;
 /// the press finds and the address the engine is asked about are derived from
 /// the same list in the same frame.
 ///
-/// # ★ `strokes` is the one field that knows which verb family this is
+/// # `strokes` is the one field that knows which verb family this is
 ///
 /// `None` is a `/Polygon`, `/PolyLine` or `/Line`: the engine addresses a node
 /// by one index into `/Vertices` (or `/L`), through `VertexEdit`. `Some` is an
@@ -181,12 +181,12 @@ pub struct Geometry {
 ///   `None` for a malformed or absent array, and an anchor list with nothing
 ///   in it is the honest answer — the engine would refuse every address.
 ///
-/// ★ `/Ink` was on the refused list until `pdfcer-core` `Pass 278.0`
+/// `/Ink` was on the refused list until `pdfcer-core` `Pass 278.0`
 /// (`c8a6697`), and the argument for refusing it then is the argument for
 /// drawing it now: an anchor is drawn only where a verb can act on it. The
 /// verbs exist, so the anchors do. [`ink`]'s header carries what changed.
 ///
-/// # ★★ A cloudy `/Polygon`'s anchors are on its VERTICES, not on its outline
+/// # A cloudy `/Polygon`'s anchors are on its VERTICES, not on its outline
 ///
 /// A revision cloud is a `/Polygon` carrying `/BE << /S /C >>`; its scallops
 /// are baked into `/AP` from the pre-bulge vertex list, and `/Rect` bounds the
@@ -195,7 +195,7 @@ pub struct Geometry {
 /// outline."* So the anchors sit slightly inside the ink, which is correct and
 /// is what every editor in the class does with a stylised stroke.
 ///
-/// # ★ Three "no"s, and they are different kinds of no
+/// # Three "no"s, and they are different kinds of no
 ///
 /// | condition | what it means |
 /// |---|---|
@@ -205,7 +205,7 @@ pub struct Geometry {
 ///
 /// The locked case is honoured **here**, before an anchor is drawn, rather than
 /// being left to the engine's refusal. A handle drawn on a shape the document
-/// forbids changing is a promise the release cannot keep. ★ Note this is bit 8
+/// forbids changing is a promise the release cannot keep. Note this is bit 8
 /// (`Locked`, 128) and **not** bit 10 (`LockedContents`, 512) — the engine
 /// consults exactly the same one, and its own note records that treating either
 /// as the other is a spec-contradicting bug in one direction or the other.
@@ -229,7 +229,7 @@ pub fn geometry(doc: &OpenDoc, selection: &SelectionState) -> Option<Geometry> {
         closed,
         strokes: None,
     };
-    // ★ Matched on the `/Subtype` bytes the read model carries rather than on
+    // Matched on the `/Subtype` bytes the read model carries rather than on
     // "does it have a `/Vertices` key". The keys are read subtype-agnostically
     // by `page_annotations` — a malformed `/Square` carrying a stray
     // `/Vertices` array would answer the key test and be refused by every verb.
@@ -249,7 +249,7 @@ pub fn geometry(doc: &OpenDoc, selection: &SelectionState) -> Option<Geometry> {
                 false,
             ))
         }
-        // ★★ `/Ink` — `Pass 278.0`. Every point of every stroke, flattened in
+        // `/Ink` — `Pass 278.0`. Every point of every stroke, flattened in
         // file order, with the table that remembers where each stroke begins.
         // `ink_list` is `None` for an `/InkList` the engine could not read as
         // an array, and that is the R9 answer: no anchors, and the sentence
@@ -296,7 +296,7 @@ pub fn nodes(doc: &OpenDoc, selection: &SelectionState) -> Vec<egui::Pos2> {
 
 /// **Which node a press at `screen` landed on**, if any.
 ///
-/// # ★ The comparison is in SCREEN space, and that is why this converts rather
+/// # The comparison is in SCREEN space, and that is why this converts rather
 /// than the caller
 ///
 /// An anchor is a screen-space affordance of a fixed size. Comparing in canvas
@@ -388,7 +388,7 @@ impl Geometry {
 
     /// The shape this edit would produce.
     ///
-    /// ★ Returned rather than drawn, so the preview and the action are built
+    /// Returned rather than drawn, so the preview and the action are built
     /// from **one** value. A second derivation of *"what would this look like"*
     /// is the defect `measure::Resolved` exists to prevent, and it has shipped
     /// on this canvas twice.
@@ -397,7 +397,7 @@ impl Geometry {
     /// also refuse — asked here as well because this function is where the
     /// slice is indexed and a panic mid-drag would take the window with it.
     ///
-    /// ★★ For an `/Ink` the stroke table moves with the points:
+    /// For an `/Ink` the stroke table moves with the points:
     /// [`ink::StrokeTable::after_edit`] grows or shrinks the **grabbed**
     /// stroke, so an insert after a stroke's last point extends that stroke —
     /// the engine's rule — and the preview's boundaries stay true to the list
@@ -407,7 +407,7 @@ impl Geometry {
         let mut out = self.points.clone();
         match intent {
             VertexIntent::Move => *out.get_mut(index)? = target,
-            // ★ `index + 1`, matching the engine: `insert_annotation_vertex(after,
+            // `index + 1`, matching the engine: `insert_annotation_vertex(after,
             // at)` puts the new node at `after + 1`, and there is deliberately no
             // "insert before the first" spelling — the engine refuses `after >=
             // count` and says to rotate the polygon's start instead, which is what
@@ -442,12 +442,12 @@ impl Geometry {
 /// **The edit one frame asks the engine for**, in whichever of the two verb
 /// families the shape belongs to.
 ///
-/// ★ Built once by [`planned`] and handed to **both** the preflight and the
+/// Built once by [`planned`] and handed to **both** the preflight and the
 /// action, so the question asked and the question answered are literally the
 /// same value. A shell that preflighted `Remove { index }` and then committed
 /// `Remove { index: index + 1 }` would pass every unit test either half has.
 ///
-/// ★★ Two variants and not a trait object, for `AnnotAction`'s own reason: the
+/// Two variants and not a trait object, for `AnnotAction`'s own reason: the
 /// two families reach **two different engine planners** with two different
 /// refusal vocabularies, and the one thing that must never happen on this
 /// canvas is a gesture aimed at the wrong verb. An `/Ink` handed to
@@ -514,7 +514,7 @@ impl Plan {
             Self::Ink(InkEdit::RemovePoint { stroke, point }) => {
                 AnnotAction::RemoveInkPoint { id, stroke, point }
             }
-            // ★ `InkEdit` is `#[non_exhaustive]` and carries three whole-stroke
+            // `InkEdit` is `#[non_exhaustive]` and carries three whole-stroke
             // variants this shell does not build — `ReplaceStroke`,
             // `MoveStroke`, `RemoveStroke`. [`planned`] is the only
             // constructor of a `Plan::Ink` and it builds only the three point
@@ -572,14 +572,14 @@ fn planned(
 
 /// Which of the shell's sentences an engine refusal is.
 ///
-/// ★ The mapping lives **here** rather than in `crate::text::markup`, for
+/// The mapping lives **here** rather than in `crate::text::markup`, for
 /// `dimdrag::refusal_for`'s reason and this project's standing division: the
 /// engine's error enum is a *shell* concern, and the string catalog holds
 /// operator prose only. A `crate::text::` module that matched on `EditError`
 /// would put the engine's vocabulary into the catalog and give the catalog a
 /// reason to change every time the engine adds a variant.
 ///
-/// ★★ The engine offers a `reason: &'static str` on
+/// The engine offers a `reason: &'static str` on
 /// [`EditError::GeometryNotReshapable`] and says a shell may show it verbatim.
 /// It is **not** shown verbatim, and the choice is deliberate rather than
 /// squeamish: those sentences are written for a developer reading a CLI —
@@ -589,7 +589,7 @@ fn planned(
 /// is the fact the operator can check against the shape in front of them. The
 /// engine's sentence goes to the **trace**, where the developer is.
 ///
-/// # ★★ The five ink refusals of `Pass 278.0`, each answered
+/// # The five ink refusals of `Pass 278.0`, each answered
 ///
 /// | engine says | sentence | why that one |
 /// |---|---|---|
@@ -616,7 +616,7 @@ fn refusal_for(error: &EditError) -> crate::text::markup::NodeEditRefusal {
         },
         EditError::AnnotationVertexNotPlaceable { .. } => R::Unplaceable,
         EditError::AnnotationLocked { .. } => R::Locked,
-        // ★ The two ink index spaces, one sentence: whichever list the engine
+        // The two ink index spaces, one sentence: whichever list the engine
         // could not find the address in, the shell's anchors were drawn from a
         // `/InkList` the engine no longer holds in that shape, and the remedy
         // — reselect, so both are rebuilt from one walk — is the same.
@@ -624,12 +624,12 @@ fn refusal_for(error: &EditError) -> crate::text::markup::NodeEditRefusal {
             R::PointNotFound
         }
         EditError::InkWouldBeEmpty { .. } => R::WouldLeaveNothing,
-        // ★ A non-ink shape reached the ink planner. Unreachable while
+        // A non-ink shape reached the ink planner. Unreachable while
         // [`planned`] chooses the family from [`Geometry::strokes`]; named so
         // the day it is reached the trace line carries the engine's own
         // sentence — which names the subtype — beside the shell's general one.
         EditError::InkVerbOnNonInk { .. } => R::Refused,
-        // ★ Named rather than left to the `_` arm below, and it earns the line:
+        // Named rather than left to the `_` arm below, and it earns the line:
         // this is the refusal that fires when the anchors and the geometry have
         // gone out of step — the painter drew a handle at index `n` and the
         // engine can no longer find one there. It cannot happen while both read
@@ -646,7 +646,7 @@ fn refusal_for(error: &EditError) -> crate::text::markup::NodeEditRefusal {
 
 /// The operator's word for a `/Subtype`.
 ///
-/// ★ A mapping and not a passthrough. `"PolyLine"` is a PDF name; *"a
+/// A mapping and not a passthrough. `"PolyLine"` is a PDF name; *"a
 /// polyline"* is a shape. `"Square"` is the PDF name for what pdfcer's own
 /// ribbon calls a **rectangle**, and showing the operator "Square" for the
 /// thing they drew with the Rectangle tool is the surface disagreeing with
@@ -755,7 +755,7 @@ fn inner(frame: NodeFrame<'_>, actions: &mut Vec<Action>) -> Option<NodeDrag> {
     let old = *shape.points.get(index)?;
 
     //
-    // ★★ And the GRAB POINT is preserved (D8): the node moves by the pointer's
+    // And the GRAB POINT is preserved (D8): the node moves by the pointer's
     // DELTA, not to the pointer's position. Assigning the pointer straight to
     // the node teleports it under the cursor on the first frame, so an operator
     // who grabbed an anchor three pixels off centre sees the shape jump before
@@ -770,13 +770,13 @@ fn inner(frame: NodeFrame<'_>, actions: &mut Vec<Action>) -> Option<NodeDrag> {
     #[allow(clippy::cast_lossless)]
     let free = Point::new(f64::from(free_pos.x), f64::from(free_pos.y));
 
-    // ★★ THE SNAP, and it deliberately OVERRIDES the grab point. D8 and D6 pull
+    // THE SNAP, and it deliberately OVERRIDES the grab point. D8 and D6 pull
     // in opposite directions here and every program in the class resolves it
     // the same way: snapping wins. The whole content of the gesture is landing
     // the node exactly on something, and preserving a three-pixel grab offset
     // would put it exactly three pixels off the thing it snapped to.
     //
-    // ★ The same query, the same tolerance and the same operator settings the
+    // The same query, the same tolerance and the same operator settings the
     // measure tools use — `measure::snap_point` exists precisely so there is
     // one answer to *"where would this land"* rather than two.
     let (target, snap) =
@@ -799,7 +799,7 @@ fn inner(frame: NodeFrame<'_>, actions: &mut Vec<Action>) -> Option<NodeDrag> {
 /// Everything the second half of a node drag needs, once the geometry and the
 /// snap have been resolved.
 ///
-/// ★ A struct for [`NodeFrame`]'s reason and one more: it is the seam that lets
+/// A struct for [`NodeFrame`]'s reason and one more: it is the seam that lets
 /// every rule below be tested **against the real engine** without a window, a
 /// pointer or an `egui::Context`. `dimdrag::CountEdit` draws the identical seam
 /// for the identical reason, and its own tests are the precedent — a test that
@@ -846,7 +846,7 @@ fn resolved(edit: Resolve<'_>) -> NodeDrag {
         actions,
     } = edit;
     let id = shape.id;
-    // ★ `address=` in the trace lines below: the engine's own `(stroke, point)`
+    // `address=` in the trace lines below: the engine's own `(stroke, point)`
     // for an `/Ink`, so a driven check can tell *the right verb on the wrong
     // stroke* from a working gesture; `none` for a single-list shape, whose
     // address IS the index.
@@ -895,7 +895,7 @@ fn resolved(edit: Resolve<'_>) -> NodeDrag {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI.
                 //
-                // ★ The engine's own sentence goes HERE, verbatim, and not to
+                // The engine's own sentence goes HERE, verbatim, and not to
                 // the operator. This is where a developer reads it, and it is
                 // the one place a refusal this shell mapped to its general
                 // sentence can still be diagnosed precisely.
@@ -906,7 +906,7 @@ fn resolved(edit: Resolve<'_>) -> NodeDrag {
                     plan.word(),
                 )
             });
-            // ★ Handed INWARD as an action rather than recorded here: the
+            // Handed INWARD as an action rather than recorded here: the
             // decline store is `pub(super)` inside `crate::app` and the canvas
             // is outside that boundary. See `AnnotAction::DeclineNodeEdit`.
             actions.push(Action::Annot(AnnotAction::DeclineNodeEdit {
@@ -934,7 +934,7 @@ fn resolved(edit: Resolve<'_>) -> NodeDrag {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI.
             //
-            // ★ `nodes=` carries the count AFTER the edit and `snap=` carries
+            // `nodes=` carries the count AFTER the edit and `snap=` carries
             // the candidate KIND rather than a boolean, both for the reason
             // `dimension-vertex` states: a trace line must carry the number a
             // wrong build would get wrong. An insert on the wrong segment, a
@@ -956,7 +956,7 @@ fn resolved(edit: Resolve<'_>) -> NodeDrag {
                 snap.map_or_else(|| "none".to_owned(), |c| format!("{:?}", c.kind))
             )
         });
-        // ★ The action is built from the SAME plan the preflight was asked
+        // The action is built from the SAME plan the preflight was asked
         // about — `Plan::action` is a pure relabelling — so the question asked
         // and the edit committed cannot differ by an index, a stroke or a sign.
         actions.push(Action::Annot(plan.action(id)));
@@ -978,7 +978,7 @@ fn resolved(edit: Resolve<'_>) -> NodeDrag {
 /// **The sentence a shape with no nodes owes the operator**, raised once when
 /// they arm the tool that looks for nodes.
 ///
-/// # ★★★ Why this exists at all, and why it is not a greyed anchor
+/// # Why this exists at all, and why it is not a greyed anchor
 ///
 /// R9: *an unavailable capability renders **nothing**; greying is only for
 /// temporarily unavailable, always explained on hover.* A `/Square` will never
@@ -999,7 +999,7 @@ fn resolved(edit: Resolve<'_>) -> NodeDrag {
 /// step earlier: *a key that does nothing has no control to hover, which makes
 /// it the case that most needs a sentence rather than the least.*
 ///
-/// ★★ **Once per subject, not once per frame.** The pair
+/// **Once per subject, not once per frame.** The pair
 /// `(annotation, is-the-tool-armed)` is remembered in `egui::Memory` and the
 /// sentence is raised only when it changes. Writing the decline slot sixty
 /// times a second would work — the write is idempotent — and would silently
@@ -1035,7 +1035,7 @@ pub fn explain_unreshapable(
     let Some((id, subtype)) = subject else {
         return false;
     };
-    // ★ Asked of [`geometry`] rather than of the subtype directly, so the
+    // Asked of [`geometry`] rather than of the subtype directly, so the
     // sentence and the anchors can never disagree: if this answers `Some` the
     // painter drew handles, and there is nothing to explain.
     if geometry(doc, selection).is_some() {
@@ -1055,12 +1055,12 @@ pub fn explain_unreshapable(
     true
 }
 
-/// ★★★ **The right-click route to these same three verbs.** See its header for
+/// **The right-click route to these same three verbs.** See its header for
 /// why a menu row needs no armed tool where the chord does, and for where the
 /// *which node did they mean* operand is parked for the life of the popup.
 pub mod menu;
 
-/// ★★ **The stroke table of an `/Ink`** — flat anchor index ↔ `(stroke, point)`,
+/// **The stroke table of an `/Ink`** — flat anchor index ↔ `(stroke, point)`,
 /// the within-stroke segment list, and why every point is an anchor for now.
 pub mod ink;
 

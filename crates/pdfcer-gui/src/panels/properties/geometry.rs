@@ -23,7 +23,7 @@ pub const REGION: &str = "properties.geometry"; // ui-text-exempt: diagnostic re
 
 /// The **Width** field's own region.
 ///
-/// ★ Published per field rather than leaving a driven check to divide [`REGION`]
+/// Published per field rather than leaving a driven check to divide [`REGION`]
 /// into quarters, because the row heights are the theme's and would change under
 /// a UI-scale setting the operator can move. `D:/dev/rag/egui/` records the
 /// general form: *a harness that computes a control's position from a container's
@@ -35,7 +35,7 @@ pub const APPLY_REGION: &str = "properties.geometry.apply"; // ui-text-exempt: d
 
 /// The `ui-rect` region the **annotation** arm publishes.
 ///
-/// ★★ A DIFFERENT name from [`REGION`], deliberately, and it is not tidiness.
+/// A DIFFERENT name from [`REGION`], deliberately, and it is not tidiness.
 /// A driven check that found `properties.geometry` could not tell which subject
 /// it had got, so *"the width field did nothing"* would be indistinguishable
 /// between a broken annotation resize and a check that had selected a path by
@@ -50,7 +50,7 @@ pub const ANNOT_WIDTH_REGION: &str = "properties.annotgeometry.width"; // ui-tex
 
 /// The region the **angle** field publishes, so a driven check can scrub it.
 ///
-/// ★ Its **presence** is also the honest answer to *"does this mark have an
+/// Its **presence** is also the honest answer to *"does this mark have an
 /// angle at all?"* — the field is not drawn for an annotation with no
 /// appearance stream or with a sheared one, so a check that finds no region has
 /// found the application saying so rather than a layout it could not reach.
@@ -110,7 +110,7 @@ pub struct GeometryDraft {
     /// | an annotation with no appearance stream | there is nowhere for a rotation to live, so the mark is unturned by construction |
     /// | an appearance whose `/Matrix` is a shear or a mirror | a real transform that **no angle describes** — see `canvas::annotquad` |
     ///
-    /// ★ The third is the one that must not be flattened into `Some(0.0)`. A
+    /// The third is the one that must not be flattened into `Some(0.0)`. A
     /// field reading `0` over a sheared stamp would invite the operator to type
     /// `0` back in, which would compose a rotation of `−0°`… onto a matrix that
     /// was never a rotation, and quietly make it worse.
@@ -123,7 +123,7 @@ pub struct GeometryDraft {
 
 /// **What a draft is a draft OF.**
 ///
-/// # ★★★ Why this is an enum and was a bare `usize`
+/// # Why this is an enum and was a bare `usize`
 ///
 /// Because the two subjects number themselves in different, overlapping
 /// address spaces and neither number knows it. A page-content object is a
@@ -234,7 +234,7 @@ impl GeometryDraft {
         self.y = bounds.y0;
         self.w = bounds.w();
         self.h = bounds.h();
-        // ★★ Seeded on the SAME condition as the four extents, in the same
+        // Seeded on the SAME condition as the four extents, in the same
         // call, deliberately. A second `sync_angle` with its own stamp check
         // would be a second answer to *"is this draft still about the thing it
         // was about?"*, and the day the two disagreed the panel would show one
@@ -261,7 +261,7 @@ impl GeometryDraft {
     /// **How far the operator turned the mark**, in degrees, or `None` when
     /// they did not.
     ///
-    /// # ★★★ Why this returns a DELTA when the field is absolute
+    /// # Why this returns a DELTA when the field is absolute
     ///
     /// Because the only verb that exists is a delta. `rotate_annotation(id,
     /// pivot, degrees)` composes a turn onto whatever is already there; there
@@ -274,7 +274,7 @@ impl GeometryDraft {
     /// `request_an_annotations_rotation_angle_cannot_be_read.md`, and when it
     /// lands this function is what gets deleted.
     ///
-    /// ★ **Normalised into `(-180, 180]`**, which is not cosmetic. Typing `350`
+    /// **Normalised into `(-180, 180]`**, which is not cosmetic. Typing `350`
     /// over a mark at `10` means *turn it 20° clockwise*, not *turn it 340°
     /// anticlockwise*. Both land in the same place for the artwork, but the
     /// second grows `/Rect` by an enormous factor on the way there under the
@@ -311,14 +311,14 @@ impl GeometryDraft {
 /// entry, a real appearance rewrite, and a real `/Rect` recomputation, for an
 /// edit with no effect at any zoom.
 ///
-/// ★ It is also far below anything an operator can mean. At a twentieth of a
+/// It is also far below anything an operator can mean. At a twentieth of a
 /// degree, the far corner of a full-width A1 title block moves by less than a
 /// point.
 pub const MIN_ANGLE_DEG: f64 = 0.05;
 
 /// Two values that are the same number to within a tenth of a point.
 ///
-/// ★ A tolerance rather than `==`, because these values make a round trip
+/// A tolerance rather than `==`, because these values make a round trip
 /// through an `f64` spinner and back, and `40.0` typed into a field that was
 /// seeded with `39.999999999999996` is the operator changing nothing. Without
 /// it, merely selecting an object and pressing Apply would raise a move of
@@ -342,7 +342,7 @@ fn near(a: f64, b: f64) -> bool {
 // The delta and the factors are therefore computed once each, here, and the
 // two `*_plan` functions do nothing but package them for the verb they feed.
 //
-// ★★ That is not a line-count economy. Two copies of `draft.w / bounds.w()`
+// That is not a line-count economy. Two copies of `draft.w / bounds.w()`
 // would be two places for the zero-extent guard to be remembered, two answers
 // to *what is "unchanged"*, and — the one that would actually have bitten —
 // two roundings, so a mark placed by typing and the same mark placed by
@@ -362,7 +362,7 @@ fn delta(draft: &GeometryDraft, bounds: Bounds) -> (f64, f64) {
 
 /// **The scale factors the draft asks for.**
 ///
-/// ★ A zero-extent axis cannot be scaled and is not an error: a horizontal line
+/// A zero-extent axis cannot be scaled and is not an error: a horizontal line
 /// has no height, and asking for `h_new / 0` is how a NaN reaches `move_nodes`
 /// — or, on the annotation side, how a NaN reaches `resize_annotation`, which
 /// refuses a non-finite factor by name (`EditError::ResizeFactorInvalid`) but
@@ -444,7 +444,7 @@ impl Plan {
 
 /// What one press of Apply amounts to **over a markup annotation**.
 ///
-/// # ★★★ Why this is a second type and not [`Plan`] reused
+/// # Why this is a second type and not [`Plan`] reused
 ///
 /// Because the two engine verbs do not take the same numbers, and a shared
 /// type would have had to lie about one of them.
@@ -497,7 +497,7 @@ impl AnnotPlan {
 /// pre-move rectangle and applying it after the move would pin a corner the
 /// annotation no longer has.
 ///
-/// # ★★ Two undo entries for one press, disclosed rather than hidden
+/// # Two undo entries for one press, disclosed rather than hidden
 ///
 /// `move_annotation` and `resize_annotation` are separate `EditSession`
 /// commands and there is no combined one, so an operator who changes Left *and*
@@ -548,7 +548,7 @@ pub fn section(
     draft: &mut GeometryDraft,
     actions: &mut Vec<Action>,
 ) -> bool {
-    // ★ The annotation arm runs FIRST and returns unconditionally, because the
+    // The annotation arm runs FIRST and returns unconditionally, because the
     // selection model makes the two mutually exclusive by construction
     // (`canvas::selection::SelectionState` — *"one canvas, one selection"*), so
     // falling through to the content arm after an annotation arm that declined
@@ -574,7 +574,7 @@ pub fn section(
     // matters more here because `apply` will want `&mut OpenDoc` this frame.
     drop(provider);
 
-    // ★ `None`: a page-content object has no angle. It is turned by moving its
+    // `None`: a page-content object has no angle. It is turned by moving its
     // anchors, not by an appearance matrix, so there is no single number that
     // describes its orientation and this panel does not invent one.
     draft.sync(page, Subject::Object(object), doc.edit_epoch, bounds, None);
@@ -597,12 +597,12 @@ pub fn section(
     // Apply was **14 points below the panel's viewport**, the click went to
     // empty canvas, and nothing was pressed. The button was never broken.
     //
-    // ★ Publishing only what is visible turns that false failure into an honest
+    // Publishing only what is visible turns that false failure into an honest
     // SKIP naming the real condition — the panel is shorter than its content.
     // An absent region is a much better lie-free answer than a present one that
     // cannot be clicked.
     //
-    // ★ And it is the section's REAL extent, not `ui.max_rect()`. That was the
+    // And it is the section's REAL extent, not `ui.max_rect()`. That was the
     // available space when the section started drawing — which in a scroll area
     // is the remaining viewport — so it published a rect ending at 762 while
     // its own Apply button laid out at 776. A region that does not contain its
@@ -611,7 +611,7 @@ pub fn section(
     ui.label(t::geometry_heading());
     ui.label(egui::RichText::new(t::geometry_units_note()).small().weak());
 
-    // ★ `None` for the disabled reason: a page-content object carries no
+    // `None` for the disabled reason: a page-content object carries no
     // per-object lock. `/F` bit 8 is an ANNOTATION flag (§12.5.3 Table 165) and
     // has no counterpart in a content stream, so there is no state in which
     // these four are drawn and dead.
@@ -622,7 +622,7 @@ pub fn section(
 
     let changed = draft.differs_from(bounds);
     let usable = draft.is_usable();
-    // ★ The draft AND what was inferred from it, on the trace channel, because
+    // The draft AND what was inferred from it, on the trace channel, because
     // the three ways this section fails are indistinguishable from outside:
     // Apply greyed because the draft was wiped, Apply greyed because the scrub
     // never landed, and Apply live but `plan` returning nothing. A line saying
@@ -642,7 +642,7 @@ pub fn section(
         )
     });
 
-    // ★ Greying, not hiding, and this is the case R9 reserves it for: Apply is
+    // Greying, not hiding, and this is the case R9 reserves it for: Apply is
     // *temporarily* unavailable — type a different number and it works — which
     // is exactly the distinction the rule draws against a capability that is
     // absent. Both reasons are on the hover, because a dead button with no
@@ -671,7 +671,7 @@ pub fn section(
             );
         }
         if let Some((pivot, factors)) = plan.scale {
-            // ★ Routed through `resizing::action` rather than assembled here,
+            // Routed through `resizing::action` rather than assembled here,
             // so the six refusals — not a path, no nodes, no object model — are
             // asked once and answered the same way for a typed edit as for a
             // dragged one. A second construction of `MoveNodes` in this file
@@ -696,7 +696,7 @@ pub fn section(
     }
 
     ui.separator();
-    // ★ Published HERE, at the end, and that placement is the fix.
+    // Published HERE, at the end, and that placement is the fix.
     //
     crate::diag::ui_rect_visible(REGION, ui.min_rect(), ui.clip_rect());
     true
@@ -710,7 +710,7 @@ pub fn section(
 /// surface a scrubbable field would be the eighty-undo-entries problem the
 /// module header describes; on a drafted one it is a free second input method.
 ///
-/// ★ `disabled` is `Some(reason)` when the control must be drawn and dead —
+/// `disabled` is `Some(reason)` when the control must be drawn and dead —
 /// today, a locked annotation. R9 requires the reason on the hover, and it is
 /// attached to **each field** rather than to a wrapper because
 /// `add_enabled_ui` produces no response to hang a hover on: an operator
@@ -775,7 +775,7 @@ mod tests {
         assert!(Bounds::of(&[]).is_none());
     }
 
-    /// ★★ **Selecting an object and pressing Apply raises nothing.**
+    /// **Selecting an object and pressing Apply raises nothing.**
     ///
     /// The float round trip through the spinner is why this needs a test rather
     /// than being obvious: a seed of `39.999999999999996` and a typed `40.0`
@@ -820,7 +820,7 @@ mod tests {
         assert!(p.scale.is_none());
     }
 
-    /// ★ Size only → one scale, pivoted on the corner the operator did NOT
+    /// Size only → one scale, pivoted on the corner the operator did NOT
     /// touch, so the object grows to the right and upward rather than about its
     /// middle. That is what a properties panel means by "X, Y, W, H": X and Y
     /// name a corner, and changing W moves the *other* edge.
@@ -844,7 +844,7 @@ mod tests {
         assert!((sy - 1.0).abs() < 1e-6, "the untouched axis is not scaled");
     }
 
-    /// ★★ **A flat object does not produce a NaN.**
+    /// **A flat object does not produce a NaN.**
     ///
     /// A horizontal line has zero height, and the obvious implementation
     /// computes `h_new / 0`. `move_nodes` would accept the resulting NaN
@@ -866,7 +866,7 @@ mod tests {
         assert!(sy.is_finite() && (sy - 1.0).abs() < 1e-6);
     }
 
-    /// ★ **The draft is discarded when the document changes underneath it**,
+    /// **The draft is discarded when the document changes underneath it**,
     /// which is the sequence in the module header: type a width, undo something
     /// unrelated, press Apply. Without the epoch in the stamp the factor would
     /// be computed against bounds that no longer exist.
@@ -921,7 +921,7 @@ mod tests {
         ObjId::new(num, 0)
     }
 
-    /// ★★★ **A CONTENT OBJECT AND AN ANNOTATION WITH THE SAME NUMBER ARE
+    /// **A CONTENT OBJECT AND AN ANNOTATION WITH THE SAME NUMBER ARE
     /// DIFFERENT SUBJECTS.**
     ///
     /// This is the assertion the [`Subject`] enum exists for, and the defect it
@@ -970,7 +970,7 @@ mod tests {
         assert!((d.w - 40.0).abs() < 1e-9);
     }
 
-    /// ★★ **A typed Left becomes a DELTA**, because `move_annotation` takes one.
+    /// **A typed Left becomes a DELTA**, because `move_annotation` takes one.
     ///
     /// The field holds an absolute coordinate and the verb takes a
     /// displacement, so the conversion is the whole content of this arm. A plan
@@ -988,7 +988,7 @@ mod tests {
         assert!(p.resize.is_none());
     }
 
-    /// ★★ **A typed Width becomes an ANCHOR plus a FACTOR**, because
+    /// **A typed Width becomes an ANCHOR plus a FACTOR**, because
     /// `resize_annotation` takes those and not a target rectangle.
     ///
     /// The anchor is the corner the operator pinned with Left and Bottom, so
@@ -1016,7 +1016,7 @@ mod tests {
         assert!((sy - 1.0).abs() < 1e-12, "the untouched axis is not scaled");
     }
 
-    /// ★★★ **Move first, and the anchor is the corner the operator TYPED, not
+    /// **Move first, and the anchor is the corner the operator TYPED, not
     /// the one the annotation has now.**
     ///
     /// `resize_annotation`'s anchor is an absolute point, so this is sharper
@@ -1056,7 +1056,7 @@ mod tests {
         assert!(annot_plan(&d, b).is_empty());
     }
 
-    /// ★★ **A zero-height annotation does not produce a NaN factor.**
+    /// **A zero-height annotation does not produce a NaN factor.**
     ///
     /// A `/Line` drawn perfectly horizontally has a degenerate `/Rect`, and the
     /// obvious implementation computes `h_new / 0`. `resize_annotation` refuses
@@ -1074,7 +1074,7 @@ mod tests {
         assert!(sy.is_finite() && (sy - 1.0).abs() < 1e-12);
     }
 
-    /// ★★★ **THE TWO SUBJECTS COMPUTE THE SAME NUMBERS**, because they share
+    /// **THE TWO SUBJECTS COMPUTE THE SAME NUMBERS**, because they share
     /// [`delta`] and [`factors`].
     ///
     /// The failure this pins is not a crash: it is a mark placed by typing
@@ -1083,7 +1083,7 @@ mod tests {
     /// and the other did not. Nothing on screen would show it and nothing else
     /// in this suite would catch it.
     ///
-    /// ★ The content plan's factors are `f32` — `move_nodes` takes those — so
+    /// The content plan's factors are `f32` — `move_nodes` takes those — so
     /// the comparison is at `f32` precision, which is the honest bound: what is
     /// asserted is that the two arms agree to the precision the narrower one
     /// can express, not that a widened `f32` equals an `f64`.

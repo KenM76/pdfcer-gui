@@ -23,13 +23,13 @@ const SECTION_REGION: &str = "properties.text";
 const FACE_REGION: &str = "properties.text.face";
 /// The heading over the rows pdfcer would ADD to the document.
 const ADDABLE_REGION: &str = "properties.text.face.addable";
-/// ★★★ The standard-14 disclosure, drawn once, where the choice is made.
+/// The standard-14 disclosure, drawn once, where the choice is made.
 const DISCLOSURE_REGION: &str = "properties.text.face.disclosure";
 /// The first row offering a face the document does not contain.
 const NEW_FACE_REGION: &str = "properties.text.face.new";
 /// The `text-style-applied page=… change=… applied=… of=…` line.
 ///
-/// ★ Named `-applied` rather than plain `text-style` because `vector_edit`'s
+/// Named `-applied` rather than plain `text-style` because `vector_edit`'s
 /// label for the same edit is a sibling event and trace matching is on the exact
 /// event name — the mistake `tools/gates/check-trace-names.py` was written after
 /// this project made three times in three days.
@@ -46,7 +46,7 @@ const SWEEP_PT: f64 = 60.0;
 const SCROLL_ATTEMPTS: usize = 6;
 /// `T`, as a Windows virtual key — the text-sweep tool.
 ///
-/// ★★ Not optional. In Edit mode `textsel::gate::takes_the_press` reads
+/// Not optional. In Edit mode `textsel::gate::takes_the_press` reads
 /// `tool.is_text() || (Select && !caps.edit_content)`, and the second disjunct
 /// is false there — so a drag with the Select tool is an object marquee and the
 /// check would report a working panel as broken.
@@ -82,7 +82,7 @@ impl Check for TheFaceChooserOffersAFaceTheDocumentDoesNotContain {
 /// Poll until the restyle reports one way or the other, and answer how long it
 /// took.
 ///
-/// ★ A bounded poll rather than a fixed sleep, for `restyle_text`'s reason: a
+/// A bounded poll rather than a fixed sleep, for `restyle_text`'s reason: a
 /// restyle re-resolves the pin per run from a fresh provenance extraction, a
 /// sweep across a title-block label is a dozen runs, and a fixed sleep long
 /// enough for that makes every run slow while a pleasant one fails on the
@@ -114,7 +114,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
+    // PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
     //
     // `fixture::text_point_target` holds the document, the point, and the
@@ -260,7 +260,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.settle(12);
     }
     let Some(combo) = combo else {
-        // ★ The skip reason names what WAS on screen, per this crate's rule 5: a
+        // The skip reason names what WAS on screen, per this crate's rule 5: a
         // reason that says "I did not find X" and does not say what it *did*
         // find sends its reader to guess.
         let seen = driving::live_names(&session.trace()?, ui_rect, SECTION_REGION);
@@ -275,7 +275,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 4: the control point ----------------------------------------------
     //
-    // ★ See the module header. Without this, every region below could be one
+    // See the module header. Without this, every region below could be one
     // that was declared from the first frame, and the check would be green on a
     // popup no gesture ever opened.
     let trace = session.trace()?;
@@ -320,7 +320,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note("★ the chooser offers a second group — faces pdfcer would add to the document");
 
-    // --- 6: ★★★ the disclosure is ON SCREEN, where the choice is made -------
+    // --- 6: the disclosure is ON SCREEN, where the choice is made -------
     if driving::declared(&trace, ui_rect, DISCLOSURE_REGION).is_none() {
         let shot = ctx.out("std14_face.no-disclosure.png");
         if crate::capture::window_to_png(&session, &shot).is_ok() {

@@ -1,7 +1,7 @@
 //! # `canvas::offset` — who decides where the view is, this frame
 //!
 //!
-//! ## ★★★ The ranking, and why it is the whole of the subject
+//! ## The ranking, and why it is the whole of the subject
 //!
 //! Every source below can be right on the same frame, and the order is the
 //! only thing standing between them. Highest first:
@@ -37,7 +37,7 @@ use crate::viewer;
 /// This frame's geometry and its already-solved one-shots, gathered so the
 /// decision below reads as a ranked list rather than as an argument list.
 ///
-/// ★ A struct rather than nine parameters because the ranking is what a reader
+/// A struct rather than nine parameters because the ranking is what a reader
 /// comes here for, and nine positional arguments at the call site would be the
 /// thing they had to read first. Every field is `Copy` and small.
 pub(super) struct Frame {
@@ -85,7 +85,7 @@ pub(super) const SEED_FRAME: u8 = 1;
 /// # Why the winner is returned and not merely the number
 ///
 ///
-/// ★★★ That cost a full session of diagnosis. A regression placed a freshly
+/// That cost a full session of diagnosis. A regression placed a freshly
 /// opened multi-page document off the bottom-right corner, the published
 /// offset was `[0.0 0.0]`, and **three different arms of this chain can
 /// produce exactly `(0.0, 0.0)`** — the deep-tier arm returns it as a literal,
@@ -180,7 +180,7 @@ pub(super) fn decide(
     // the overhang, before `doc` is borrowed mutably below, and used by the
     // dest-scroll arm as the offset an axis that must not move is held at.
     let doc_offset = doc.frame.last_scroll_offset;
-    // ★ Takes the RECT rather than a page index, as of O177. Every offset
+    // Takes the RECT rather than a page index, as of O177. Every offset
     // solved above arrives measured against *something* — a page for the zoom
     // anchor and the reveal, a whole facing row for a fit and for the
     // page-display recentre — and the conversion is the same arithmetic either
@@ -208,7 +208,7 @@ pub(super) fn decide(
     let to_strip = |local: (f32, f32)| strip_offset_for(current, local);
 
     if deep {
-        // ★★★ FORCE THE SCROLL OFFSET TO ZERO — `OPERATOR_REQUESTS.md` O24f.
+        // FORCE THE SCROLL OFFSET TO ZERO — `OPERATOR_REQUESTS.md` O24f.
         //
         // At this tier the content IS the viewport, so zero is the only valid
         // offset and egui will clamp to it. **One frame later**, which is the
@@ -226,20 +226,20 @@ pub(super) fn decide(
         // difference is 6,264,274 — the stale scroll offset, to four
         // significant figures.
         //
-        // ★ Assigned rather than left to the clamp because a one-frame
+        // Assigned rather than left to the clamp because a one-frame
         // discrepancy is not cosmetic here: the raster region is computed
         // from the same placement, so the frame is not merely misplaced, it
         // renders a different part of the page.
         // ui-text-exempt: diagnostic token, never displayed in the UI
         return Decision::won("deep", vec2(0.0, 0.0));
     } else if let Some(offset) = deep_handover {
-        // ★ FIRST, above the ordinary anchor: this frame is the one that left
+        // FIRST, above the ordinary anchor: this frame is the one that left
         // the `f64` tier, and the offset solved above is the position the
         // anchor was actually holding. See the branch that produced it.
         // ui-text-exempt: diagnostic token, never displayed in the UI
         return Decision::won("handover", to_strip((offset.x, offset.y)));
     } else if let Some(placed) = fit_placement {
-        // ★★ ABOVE THE ZOOM ANCHOR, and it spends one if it finds it — O28.
+        // ABOVE THE ZOOM ANCHOR, and it spends one if it finds it — O28.
         //
         // A fit is the operator's most recent explicit instruction about the
         // view. A wheel anchor armed a frame earlier says "hold this page
@@ -252,7 +252,7 @@ pub(super) fn decide(
         // the `waited` bookkeeping inside it stays consistent. Its answer is
         // discarded.
         let _ = zoom::consume_anchor(ui.ctx(), doc, anchor_display);
-        // ★ Converted through whichever rect the offset was solved against —
+        // Converted through whichever rect the offset was solved against —
         // O177. A `Row` offset put through the page's rect is exactly the
         // defect this arm used to have: the spread was scaled to fit two pages
         // and then placed as though it were one, so half of it sat off the
@@ -288,7 +288,7 @@ pub(super) fn decide(
         // solves against is always the current one — which is exactly the page
         // `to_strip` converts for. A reveal therefore lands on the right page
         // of a continuous strip without `find::reveal` knowing a strip exists.
-        // ★ The side effect runs BEFORE the return, which it did not need to
+        // The side effect runs BEFORE the return, which it did not need to
         // when this chain assigned to a `ScrollArea` builder in place. The
         // reveal has navigated, so the page it landed on is the one being
         // tracked.
@@ -394,14 +394,14 @@ pub(super) fn decide(
         // operator the thing he asked for twice: a page that stops re-fitting
         // the moment he drags it an inch.
         //
-        // ★★ The two of his sentences are then both true at once, which is the
+        // The two of his sentences are then both true at once, which is the
         // test a reading of a changed request has to pass. Preserving the
         // centre also SUBSUMES the fit's old re-placement — on a pinned axis
         // the two solve to the same number, which `canvas::geometry`'s
         // `centring_agrees_with_the_pinned_fit_answer` pins — so nothing that
         // worked before this stopped working.
         //
-        // ## ★ What still leaves a fit, and it is the only thing
+        // ## What still leaves a fit, and it is the only thing
         //
         // `ViewState::set_zoom`. Changing the zoom by hand is the operator
         // saying the view should stop tracking the viewport, and it is exactly
@@ -412,16 +412,16 @@ pub(super) fn decide(
         // how every reader in the class is read.
         // The gesture has to look like what it is. Without a cursor change a
         // pan that hits the end of the scroll range is indistinguishable from
-        // a pan that is not working. ★ Before the return, for the reason the
+        // a pan that is not working. Before the return, for the reason the
         // reveal arm above states.
         ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
         // ui-text-exempt: diagnostic token, never displayed in the UI
         return Decision::won("pan", vec2(x, y));
     } else if doc.canvas_frames == SEED_FRAME {
-        // ★★★ SEED ON THE SECOND FRAME, NOT THE FIRST.
+        // SEED ON THE SECOND FRAME, NOT THE FIRST.
         //
         //
-        // ★ Doing that on the FIRST frame is what broke the two previous
+        // Doing that on the FIRST frame is what broke the two previous
         // attempts, and it took four bisecting runs to see. Forcing an offset
         // before egui has laid the content out once costs the canvas its
         // pointer input entirely: the page is drawn, centred and correctly
@@ -430,14 +430,14 @@ pub(super) fn decide(
         // side — it is silently clamped against a content size that is not
         // known yet.
         //
-        // ★★ It is NOT the magnitude. `scrolling_far_keeps_the_canvas_its_
+        // It is NOT the magnitude. `scrolling_far_keeps_the_canvas_its_
         // pointer_input` drives the wheel to 1,600 pt and the canvas keeps
         // its input, so a large offset is fine once the content is real.
         //
         // So: frame 0 lays out with egui's own zero, frame 1 places the view.
         // One frame of pasteboard is visible at open, which is the cost of
         // this shape and is named rather than hidden.
-        // ★★★ **…and it is placed at the page's CENTRE, not its corner** —
+        // **…and it is placed at the page's CENTRE, not its corner** —
         // `OPERATOR_REQUESTS.md` O78: *"when starting the view should be
         // centered on the canvas when a pdf is first opened."*
         //
@@ -450,12 +450,12 @@ pub(super) fn decide(
         // than the window, where the old seed showed him the top-left corner of
         // an A1 drawing.
         //
-        // ★ Written as the general solve rather than as a special case, so the
+        // Written as the general solve rather than as a special case, so the
         // seed and the resize path answer the same question with the same
         // function. A second spelling of "centre the page" is how the two would
         // come to disagree — which is the defect `canvas::fit`'s header
         // describes for the fit's own placement, arrived at from the other end.
-        // ★ Against the ROW, as of O177. A document whose remembered
+        // Against the ROW, as of O177. A document whose remembered
         // arrangement is a facing spread opens straight into one, so the seed
         // is the first thing the operator sees and it must obey the same rule
         // the fit does: the thing being centred is the spread.

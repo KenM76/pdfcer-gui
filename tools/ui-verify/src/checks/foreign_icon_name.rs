@@ -64,7 +64,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
 
-    // ★★★ **This check PINS its own fixture and ignores `--pdf`.**
+    // **This check PINS its own fixture and ignores `--pdf`.**
     //
     // The defect is a property of a document carrying a `/Name` outside
     // §12.5.6.4's seven, and no drawing the operator would pass on the command
@@ -147,7 +147,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 2: click the sticky note ------------------------------------------
     //
-    // ★ Aimed at the note's own `/Rect`, which the fixture fixes at
+    // Aimed at the note's own `/Rect`, which the fixture fixes at
     // `[104 604 124 624]` in PDF user space. Expressed through the harness's
     // document-point mapping rather than as a screen coordinate, so the aim
     // survives the window size, the zoom and the dock widths.
@@ -180,7 +180,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("★ the note was selected: `{}`", selected.raw));
 
-    // --- 3: ★★★ WHAT DOES THE PANEL SAY THE ICON IS? -----------------------
+    // --- 3: WHAT DOES THE PANEL SAY THE ICON IS? -----------------------
     let trace = session.trace()?;
     let Some(rows) = trace.events(ROWS_EVENT).last() else {
         return Ok(Some(format!(
@@ -232,7 +232,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 4: and it is disclosed ---------------------------------------------
     //
-    // ★★ Asserted separately from step 3, and that is the point. A build that
+    // Asserted separately from step 3, and that is the point. A build that
     // carried the name and forgot the sentence passes everything above it,
     // looks completely correct, and leaves an operator comparing this window
     // with the program that made the note with no explanation for why the two

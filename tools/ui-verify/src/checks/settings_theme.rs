@@ -44,7 +44,7 @@ const CENTRAL_PANEL: &str = "central-panel";
 
 /// The Appearance group's collapsible heading.
 ///
-/// ★ **It has to be clicked, because that group is CLOSED when the window
+/// **It has to be clicked, because that group is CLOSED when the window
 /// opens** — and that is a deliberate design decision rather than an oversight,
 /// so the check accommodates it rather than the application being changed to
 /// suit the check.
@@ -77,7 +77,7 @@ const MIN_DARKENING: i32 = 60;
 
 /// Above this mean channel value, the window that opened is a **light** one.
 ///
-/// ★ A guard against a vacuous run, and against the worse thing a vacuous run
+/// A guard against a vacuous run, and against the worse thing a vacuous run
 /// does here: a **false defect report**.
 ///
 /// This check launches the operator's own binary against the operator's own
@@ -150,7 +150,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     }
 
     let mut spec = LaunchSpec::new(&exe, ctx.out("settings_theme.trace.txt"));
-    // ★ NO `--pdf`, and that is the property under test as much as a
+    // NO `--pdf`, and that is the property under test as much as a
     // convenience. `file.settings` is application-scoped: these are choices
     // about pdfcer, meaningful with nothing loaded, and an operator who has just
     // launched the program and wants a dark window must not have to open a
@@ -174,7 +174,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     ));
     report.artifact(session.trace_path().to_path_buf());
 
-    // ★ Maximise BEFORE looking for anything, and this is not cosmetic.
+    // Maximise BEFORE looking for anything, and this is not cosmetic.
     //
     // `file.settings` is in the File tab's LAST group, and at the window size
     // the application opens at, that group is in the ribbon's **overflow menu**
@@ -219,7 +219,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 
     // --- D. the picture, before ---------------------------------------------
     //
-    // ★★ THE DIALOG'S OWN WINDOW, not the application's. Settings is a real OS
+    // THE DIALOG'S OWN WINDOW, not the application's. Settings is a real OS
     // window, so a capture of the application shows the PAGE in the region the
     // dialog occupies — and the sampler goes on sampling, reporting a confident
     // colour about a piece of the drawing. A measurement of the wrong surface
@@ -236,7 +236,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         ));
     };
 
-    // ★★ THE STARTING STATE, CHECKED BEFORE ANYTHING IS CONCLUDED FROM IT.
+    // THE STARTING STATE, CHECKED BEFORE ANYTHING IS CONCLUDED FROM IT.
     //
     // See [`LIGHT_START_FLOOR`]. Everything below reads a *drop* in luminance as
     // proof that a theme installed, and a window that opened dark has no room
@@ -257,7 +257,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 
     // --- D2. the APPLICATION's own window, before ---------------------------
     //
-    // ★★★ The second surface, and it is the one the Cancel half needs.
+    // The second surface, and it is the one the Cancel half needs.
     //
     // Step D measured the DIALOG, which proves the window that chose the preset
     // took it. That is not the same claim as *the application* took it — and it
@@ -299,7 +299,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         )));
     };
     driver.click_at(before_frame.declared_center(radio))?;
-    // ★ Generous, and for a stated reason: the theme is installed at the TOP of
+    // Generous, and for a stated reason: the theme is installed at the TOP of
     // the next frame, and `Theme::apply` rewrites both of egui's styles and
     // re-stashes the theme. A settle tuned to a single repaint would sample a
     // frame in which the click had registered and the style had not.
@@ -311,7 +311,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     let after_path = ctx.out("settings_theme.after.png");
     let after_image = crate::capture::frame_to_png(&session, &after_frame, &after_path)?;
     report.artifact(after_path);
-    // ★ Re-read the rect rather than reusing `body`. A theme change alters
+    // Re-read the rect rather than reusing `body`. A theme change alters
     // metrics as well as colours — the `airy` preset is explicitly roomier —
     // so the window may have been laid out differently, and sampling the old
     // rectangle could land outside it. `D:\dev\rag\egui` records the general
@@ -353,7 +353,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     // the module header carries the argument for why that half is the one whose
     // failure is silent. Three pictures, not two: light, dark, light again.
     //
-    // ★ The application's own window, measured a second time first. A live
+    // The application's own window, measured a second time first. A live
     // preview that reached the dialog and not the application would be a real
     // and separate defect — and it would make the revert measurement below
     // meaningless, because a surface that never darkened cannot be seen to
@@ -384,7 +384,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         )));
     }
 
-    // ★ ONE HARMLESS CLICK, and it is not a spare step.
+    // ONE HARMLESS CLICK, and it is not a spare step.
     //
     // The capture above raised the APPLICATION's window, so the application now
     // holds the foreground — and `Driver::press` deliberately declines to raise
@@ -405,12 +405,12 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     driver.click_at(dialog_frame.declared_center(radio_now))?;
     session.settle(8);
 
-    // ★★ Escape, read from the CHILD window's own input. See the module header
+    // Escape, read from the CHILD window's own input. See the module header
     // for why this route rather than the Cancel button, and for what that costs.
     driver.press(crate::sys::vk::ESCAPE)?;
     session.settle(24);
 
-    // ★★★ DID IT ACTUALLY CLOSE? A SKIP, NOT A VERDICT.
+    // DID IT ACTUALLY CLOSE? A SKIP, NOT A VERDICT.
     //
     // If the window is still standing, the draft still exists, the application
     // is still dark, and a check that went straight to the colour would report
@@ -508,7 +508,7 @@ pub(super) fn open_the_theme_picker(
     ui_rect: &str,
     trace: &crate::trace::Trace,
 ) -> Result<Option<String>> {
-    // ★ Nothing may have opened this window unasked. `view.app_initiative`'s
+    // Nothing may have opened this window unasked. `view.app_initiative`'s
     // specified default is Never, and a settings window that floats over the
     // canvas on its own breaks it in the most annoying way available.
     if declared(trace, ui_rect, DIALOG).is_some() {

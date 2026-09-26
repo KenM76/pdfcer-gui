@@ -24,7 +24,7 @@ the chunk boxes at their *undisplaced* positions. The operator's experience
 of dragging a line of a note was therefore that **nothing whatsoever moved**
 until he let go.
 
-★★★ The gate was not arbitrary. `OPERATOR_REQUESTS.md` **O63** is *"it just
+The gate was not arbitrary. `OPERATOR_REQUESTS.md` **O63** is *"it just
 had a perimeter box around it"* — dragging a path **node** must not draw a
 perimeter box, because `ShapePreview` already shows the real anchors
 travelling and a box on top of that is noise. The correct condition is
@@ -53,7 +53,7 @@ than describing it.
 | `drawn=` | how many pieces of the page texture were actually blitted — the copy's own claim about itself, counted in the loop that blits |
 | `reason=` | why a zero. `geometry` is the one correct one; `no-raster` is a page with no picture yet |
 
-★★ `boxes=` is asserted against `held=` on `status-rung`, because a preview
+`boxes=` is asserted against `held=` on `status-rung`, because a preview
 of *one* box while *three* lines are held is the ask failing in the way the
 operator would actually meet it — he sweeps three labels, drags, and watches
 one of them move.
@@ -101,7 +101,7 @@ discards another track's uncommitted work.
    alone. Steps C and F both go red quoting
    `boxes=0 … suppressed=o63`.
 
-   ★★★ `a_rubber_band_inside_a_note_takes_its_lines` **passed under that
+   `a_rubber_band_inside_a_note_takes_its_lines` **passed under that
    build**, and so did every other row in the roster. It asserts what the
    band selected and what the release committed, and the defect lies
    entirely between the two. That is why this row is owed and why its

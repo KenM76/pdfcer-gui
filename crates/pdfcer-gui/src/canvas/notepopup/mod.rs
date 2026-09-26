@@ -12,7 +12,7 @@ pub mod model;
 /// Which pop-ups are showing, and who decided.
 pub mod open;
 
-/// ★★★ **Everything in the window that CHANGES something** — the note
+/// **Everything in the window that CHANGES something** — the note
 /// editor's controls, *Delete comment*, and the `/Open` write-back.
 ///
 /// Its header carries the seam: the rest of this module **reads** — a heading,
@@ -38,7 +38,7 @@ use self::model::NoteView;
 /// **The region an open pop-up publishes**, for the first open pop-up and only
 /// that one.
 ///
-/// # ★★ Why the first, when several can be open at once
+/// # Why the first, when several can be open at once
 ///
 /// A region name is a key, and publishing one name from four windows would
 /// leave a driven check clicking whichever happened to be drawn last — a
@@ -46,7 +46,7 @@ use self::model::NoteView;
 /// first is the only deterministic choice available without inventing a
 /// per-annotation naming scheme that nothing would consume.
 ///
-/// ★ It is published with `ui_rect_visible` against the **canvas viewport**,
+/// It is published with `ui_rect_visible` against the **canvas viewport**,
 /// not with `ui_rect`, because a rect on its own proves *layout* and not
 /// *visibility*. A pop-up constrained off the edge of the canvas lays out
 /// perfectly and is invisible, so a check asserting only the rect would pass
@@ -65,7 +65,7 @@ pub const REGION_DELETE: &str = "notepopup.delete"; // ui-text-exempt: trace reg
 /// The region the *Open by default* control publishes — the one control in
 /// this window whose effect is **in the file** and invisible on screen.
 ///
-/// ★★ Which is exactly why it needs a region of its own rather than being
+/// Which is exactly why it needs a region of its own rather than being
 /// counted among the others: nothing about the pop-up changes when it is
 /// pressed, so a driven check has no visual oracle for it at all and the rect
 /// plus the `set-annotation-open-applied` trace line are the whole of what a
@@ -74,7 +74,7 @@ pub const REGION_OPEN_DEFAULT: &str = "notepopup.open_default"; // ui-text-exemp
 
 /// The pop-up's width, in **screen points**.
 ///
-/// # ★★ Screen points, not page points, and that is the rule-4 half
+/// # Screen points, not page points, and that is the rule-4 half
 ///
 /// A pop-up sized in page space would grow to fill the sheet at 800 % and
 /// vanish at 20 %, which is what *content* does. Chrome does not. 260 pt is
@@ -82,7 +82,7 @@ pub const REGION_OPEN_DEFAULT: &str = "notepopup.open_default"; // ui-text-exemp
 /// sentence of review prose without wrapping every third word, narrow enough
 /// that four open pop-ups on a D-size sheet do not tile over the drawing.
 ///
-/// ★ The `/Popup`'s own `/Rect` is still honoured **for position** (see
+/// The `/Popup`'s own `/Rect` is still honoured **for position** (see
 /// [`popup_origin`]). Its width is not, deliberately: `pdfcer-core`'s
 /// `annot_author::sticky_note` authors 150 pt, which at 100 % zoom is under
 /// twenty-five characters, and a producer's chosen width is a statement about
@@ -152,7 +152,7 @@ pub fn show(ctx: &egui::Context, doc: &OpenDoc, caps: Capabilities, actions: &mu
     let ce_dimensions = crate::panels::comments::model::ce_dimension_annots(&doc.session);
     let mut drawn = 0_usize;
     let mut from_file = 0_usize;
-    // ★ The draft is loaded ONCE and stored back once, rather than read and
+    // The draft is loaded ONCE and stored back once, rather than read and
     // written per pop-up. Two pop-ups cannot be edited at the same time — the
     // draft names one annotation — and a load-per-window would let the second
     // one see the state the first had already written this frame.
@@ -222,13 +222,13 @@ fn popup(
 ) {
     let origin = popup_origin(note, f.map, f.clip);
     let area = egui::Area::new(egui::Id::new(("pdfcer-note-popup", note.id))) // ui-text-exempt: internal widget id, never displayed
-        // ★ `Middle` is egui's own layer for windows, which puts this above
+        // `Middle` is egui's own layer for windows, which puts this above
         // the page raster and below tooltips and menus. Not `Foreground`: a
         // context menu opened over a pop-up must still be on top of it, and
         // `Foreground` would invert that.
         .order(egui::Order::Middle)
         .fixed_pos(origin)
-        // ★★ Constrained to the CANVAS viewport, not to the window. A pop-up
+        // Constrained to the CANVAS viewport, not to the window. A pop-up
         // for a note near the right edge of a sheet would otherwise slide out
         // over the docked panels, where it would look like a panel with no
         // title. See `REGION_POPUP` on why this is also what makes the driven
@@ -273,7 +273,7 @@ const POPUP_BOX_WIDTH: f32 = POPUP_WIDTH + 16.0;
 ///
 /// …and then one **invariant that outranks both**:
 ///
-/// > ### ★★★ A pop-up must never be laid over the annotation it belongs to
+/// > ### A pop-up must never be laid over the annotation it belongs to
 ///
 /// # Why the clamp cannot be left to place a window
 ///
@@ -302,7 +302,7 @@ const POPUP_BOX_WIDTH: f32 = POPUP_WIDTH + 16.0;
 /// 3. **Below** or **above**, whichever side of the anchor has more room, x
 ///    pinned into the viewport. Vertical.
 ///
-/// ★ Candidates 1 and 2 separate on **x alone**, which makes them independent
+/// Candidates 1 and 2 separate on **x alone**, which makes them independent
 /// of the window's height — and the height is the one dimension this function
 /// cannot know, because it is decided by the note's own words during layout.
 /// A placement that needed the height would have to read the *previous*
@@ -324,20 +324,20 @@ const POPUP_BOX_WIDTH: f32 = POPUP_WIDTH + 16.0;
 /// the alternative — refusing to draw the pop-up at all — would make a note
 /// unreadable at exactly the zoom an operator uses to read one.
 ///
-/// ★ Only the **origin** comes from the file; the size does not. See
+/// Only the **origin** comes from the file; the size does not. See
 /// [`POPUP_WIDTH`] for why, and note the consequence: a pop-up whose `/Rect`
 /// is 150 pt wide is drawn 260 pt wide from the same top-left corner, so it
 /// extends further right than the file's rectangle. That is correct — the
 /// rectangle is where the window *is*, and how big a window needs to be is a
 /// property of the reader's typeface.
 ///
-/// ★★ The file's own rectangle is a *preference*, not a licence to overlap.
+/// The file's own rectangle is a *preference*, not a licence to overlap.
 /// A producer that placed a `/Popup` over its own note is asking for a window
 /// the annotation cannot be grabbed through, and honouring that would be
 /// honouring a defect. Candidate 1 keeps the file's origin whenever it clears
 /// the anchor, which is what every `/Popup` a real producer writes does.
 ///
-/// # ★★ The clamp is still here, and still a fallback
+/// # The clamp is still here, and still a fallback
 ///
 /// Whatever candidate wins is clamped into a viewport grown by the window's
 /// own size, so that an `Area` is never handed a position off in the millions:
@@ -374,7 +374,7 @@ fn popup_origin(note: &NoteView, map: &PageMapping, clip: Rect) -> Pos2 {
 /// height is deliberately not a parameter, because this function must not
 /// depend on a quantity that is decided by the window's own contents.
 fn clear_of_anchor(preferred: Pos2, anchor: Rect, clip: Rect) -> Pos2 {
-    // ★★★ **An anchor that is not on screen cannot be covered**, and the
+    // **An anchor that is not on screen cannot be covered**, and the
     // invariant is about a visible one. A note scrolled out of the viewport, or
     // one at 300,000 % zoom whose rect maps into the millions, gets its
     // preferred origin unchanged — because the placement that matters for it is
@@ -383,7 +383,7 @@ fn clear_of_anchor(preferred: Pos2, anchor: Rect, clip: Rect) -> Pos2 {
     // would destroy. Two rules, and this one comes first because the other has
     // nothing to protect here.
     //
-    // ★ The intersection, not the anchor, is what the rest of this function
+    // The intersection, not the anchor, is what the rest of this function
     // separates from: for a mark half off the left edge, the half an operator
     // can actually press on is the half inside the clip, and reserving room
     // beside the part they cannot see would push the window off the other side
@@ -395,7 +395,7 @@ fn clear_of_anchor(preferred: Pos2, anchor: Rect, clip: Rect) -> Pos2 {
     // A window's x-range, given its left edge. Two windows that do not
     // overlap horizontally cannot overlap at all, whatever their heights.
     let covers_x = |x: f32| x < anchor.max.x && x + POPUP_BOX_WIDTH > anchor.min.x;
-    // ★★★ …and it is not enough to clear the anchor: the window must also FIT,
+    // …and it is not enough to clear the anchor: the window must also FIT,
     // because a window that does not is one `Area::constrain_to` will SLIDE —
     // and sliding is the whole defect. `beside` puts the origin to the right of
     // the note, which clears it by construction and then, on any note within a
@@ -490,7 +490,7 @@ fn body(
 
     // ---- who and when -------------------------------------------------
     //
-    // ★ `comment_row_byline` is CALLED rather than copied, and that is the
+    // `comment_row_byline` is CALLED rather than copied, and that is the
     // point: it carries a settled ruling about `/M` being shown verbatim
     // (§12.5.2 makes it *"date or text string"* and requires a reader to
     // accept any format). Two surfaces showing one comment must not show two
@@ -563,7 +563,7 @@ fn body(
 
 /// The replies hanging off this comment, read from `/IRT`.
 ///
-/// # ★★★ Read-only HERE, which is a scope decision and not a limit
+/// # Read-only HERE, which is a scope decision and not a limit
 ///
 /// `EditSession::add_reply` writes `/IRT` and `/RT /R`, and this shell authors
 /// replies from the **Comments panel** (`crate::panels::comments::editor`'s
@@ -574,7 +574,7 @@ fn body(
 /// thread is already gathered, already drawn, and the action bus already
 /// carries `AnnotAction::Reply`.
 ///
-/// ★★ **Every reply in this list is transitive**, which is why it can afford
+/// **Every reply in this list is transitive**, which is why it can afford
 /// to be flat. [`model::replies_to`] gathers anything whose `/IRT` chain
 /// reaches the root, so an answer to an answer appears here beside the answer
 /// rather than being lost — and the panel makes the same choice for the same
@@ -637,14 +637,14 @@ fn thread(ui: &mut egui::Ui, f: &Ctx<'_>, note: &NoteView) {
 ///
 /// Returns whether one was shown, for the trace.
 ///
-/// # ★ Why it is suppressed over an open pop-up
+/// # Why it is suppressed over an open pop-up
 ///
 /// Because the answer is already on screen, three inches away and in full. A
 /// tooltip repeating a truncated copy of it would be noise, and it would
 /// appear *under the operator's pointer* at the moment they are reaching for
 /// the window's own controls.
 ///
-/// # ★★ Why it is drawn as an `Area` rather than through `Response::on_hover_text`
+/// # Why it is drawn as an `Area` rather than through `Response::on_hover_text`
 ///
 /// Because there is no `Response` to hang it off. The thing being hovered is a
 /// rectangle inside a page raster, not an egui widget — the canvas is one
@@ -665,7 +665,7 @@ fn tooltip(
     if !clip.contains(screen) {
         return false;
     }
-    // ★ Never over a pop-up. `layer_id_at` is egui's own answer to *"what is
+    // Never over a pop-up. `layer_id_at` is egui's own answer to *"what is
     // under the pointer"*, so this cannot disagree with what will actually
     // receive the click — a hand-rolled rectangle test over the open windows
     // could, and would be a second claimant on the same question.
@@ -718,7 +718,7 @@ const TOOLTIP_OFFSET: f32 = 16.0;
 ///
 /// Returns the note it toggled, for the trace at the call site.
 ///
-/// # ★★★ Why the hit test is repeated here rather than reusing `annot_hit`
+/// # Why the hit test is repeated here rather than reusing `annot_hit`
 ///
 /// Because `crate::canvas::clicking`'s `annot_hit` is gated on
 /// `caps.author_markup` — Review and Edit only — and **that gate is the
@@ -750,7 +750,7 @@ pub fn clicked_on(
     #[allow(clippy::cast_possible_truncation)]
     let tolerance = map.tolerance() as f32;
     let note = model::under(&notes, point, tolerance)?;
-    // ★★★ **A mark with nothing to say does not open a window.** The press
+    // **A mark with nothing to say does not open a window.** The press
     // falls through to selection, which is what the operator meant by clicking
     // a cloud that carries no comment. `model::under` answers for every
     // annotation that *can* carry a note; `has_something_to_read` is the one
@@ -766,7 +766,7 @@ pub fn clicked_on(
     if !model::has_something_to_read(note) {
         return None;
     }
-    // ★ TOGGLE, not open. Clicking the icon again closes the window, which is
+    // TOGGLE, not open. Clicking the icon again closes the window, which is
     // what every reader in the class does and what an operator who has just
     // opened one by accident will try.
     let overrides = open::load(ctx, &doc.path);
@@ -823,7 +823,7 @@ fn draft_key(path: &std::path::Path) -> egui::Id {
 
 /// Read the canvas pop-up's note draft.
 ///
-/// ★★ **A second draft from the Comments panel's, deliberately.** They are two
+/// **A second draft from the Comments panel's, deliberately.** They are two
 /// editors on two surfaces and an operator may legitimately have one open in
 /// each; sharing one draft would mean typing in the panel silently rewriting
 /// what is in the window. `NoteDraft`'s own `(annotation, edit epoch)` stamp
@@ -859,7 +859,7 @@ mod placement_tests {
         Rect::from_min_size(origin, egui::vec2(POPUP_BOX_WIDTH, height))
     }
 
-    /// ★★★ **The overlap that swallows a drag, as an assertion.**
+    /// **The overlap that swallows a drag, as an assertion.**
     ///
     /// Measured geometry: a markup selected at
     /// `[[464.0 464.5] - [551.7 550.2]]` whose pop-up, left to the clamp, is
@@ -901,7 +901,7 @@ mod placement_tests {
         );
     }
 
-    /// ★ **Candidate 1: a preference that already clears the anchor is kept.**
+    /// **Candidate 1: a preference that already clears the anchor is kept.**
     ///
     /// This is the ordinary case and the one that must not move: a note near
     /// the left of the sheet has room on its right, and the window goes there,
@@ -917,7 +917,7 @@ mod placement_tests {
         );
     }
 
-    /// ★★ **Candidate 2: no room on the right, and the flip is to the LEFT —
+    /// **Candidate 2: no room on the right, and the flip is to the LEFT —
     /// not a slide.**
     ///
     #[test]
@@ -942,7 +942,7 @@ mod placement_tests {
         );
     }
 
-    /// ★★ **Candidate 3 the other way up: more room above than below.**
+    /// **Candidate 3 the other way up: more room above than below.**
     ///
     /// A note low on the sheet, too wide for either side. The window goes to
     /// the top of the viewport, which is where every point of the available
@@ -965,7 +965,7 @@ mod placement_tests {
         );
     }
 
-    /// ★★ **The file's `/Popup` rectangle is honoured — until it overlaps.**
+    /// **The file's `/Popup` rectangle is honoured — until it overlaps.**
     ///
     /// Two documents, one function. The first names a rectangle beside its
     /// note and gets exactly that; the second names one on top of its note and
@@ -991,14 +991,14 @@ mod placement_tests {
         );
     }
 
-    /// ★ **The outer box is wider than the contents, and the gap depends on it.**
+    /// **The outer box is wider than the contents, and the gap depends on it.**
     ///
     /// [`POPUP_BOX_WIDTH`] exists because `egui::Frame::popup`'s margin sits
     /// outside `ui.set_max_width(POPUP_WIDTH)`. If the two were ever collapsed
     /// into one constant the separation would be short by the frame and the
     /// overlap would come back at the margin — silently, on exactly the notes
     /// nearest the edge.
-    /// ★ A `const` assertion rather than a runtime one: clippy refuses
+    /// A `const` assertion rather than a runtime one: clippy refuses
     /// `assertions_on_constants`, because an `assert!` over two constants is
     /// decided when the crate is compiled and a test that cannot fail is not
     /// evidence. `const _: () = assert!(..)` states the same fact where it is
@@ -1029,7 +1029,7 @@ mod tests {
         REGION_DELETE,
     ];
 
-    /// ★ **Every region name is unique and namespaced to this module.**
+    /// **Every region name is unique and namespaced to this module.**
     ///
     /// A region name is a key a driven check aims a real pointer at. Two
     /// controls publishing one name leaves the harness clicking whichever was
@@ -1080,7 +1080,7 @@ mod tests {
         Rect::from_min_size(Pos2::ZERO, egui::vec2(800.0, 600.0))
     }
 
-    /// ★★★ **With no `/Popup` rect, the window goes BESIDE the note — never
+    /// **With no `/Popup` rect, the window goes BESIDE the note — never
     /// over it.**
     ///
     /// The one placement failure an operator would report as the feature being
@@ -1107,7 +1107,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The file's own `/Popup` rectangle wins.**
+    /// **The file's own `/Popup` rectangle wins.**
     ///
     /// §12.5.6.14 makes the pop-up a separate annotation *with its own
     /// placement*, and a producer who moved a note's window across the sheet
@@ -1126,7 +1126,7 @@ mod tests {
         );
     }
 
-    /// ★★ **A note far off the viewport does not put its window in the
+    /// **A note far off the viewport does not put its window in the
     /// opposite corner.**
     ///
     /// The deep-zoom failure, and it is not hypothetical: at 300,000 % a page

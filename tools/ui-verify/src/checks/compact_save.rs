@@ -14,7 +14,7 @@ use crate::report::CheckReport;
 
 /// The command under test.
 ///
-/// ★ `mode.edit` first, for the usual reason: driving from a named mode makes
+/// `mode.edit` first, for the usual reason: driving from a named mode makes
 /// the run reproducible rather than dependent on whatever mode the last session
 /// left behind. Compaction is permitted in every mode — it is a save — so this
 /// is reproducibility rather than a gate.
@@ -80,7 +80,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
 
-    // ★ Deleted first, and that is not tidiness: a file left by a previous run
+    // Deleted first, and that is not tidiness: a file left by a previous run
     // would satisfy every assertion below on a build that wrote nothing at all
     // — the single most likely way for a file-oracle check to go quietly green.
     let target = ctx.out("compacted-copy.pdf");

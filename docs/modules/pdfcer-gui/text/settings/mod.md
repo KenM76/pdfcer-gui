@@ -4,7 +4,7 @@ The catalog area for [`crate::dialogs::settings`]. Ported from the old
 shell's `ui_text.rs`, where these strings occupied roughly 700 lines in the
 middle of a 7,912-line file.
 
-## ★ The one rule this module has that the rest of the catalog does not
+## The one rule this module has that the rest of the catalog does not
 
 Carried across verbatim from the source, because it is the reason the copy
 is written the way it is:

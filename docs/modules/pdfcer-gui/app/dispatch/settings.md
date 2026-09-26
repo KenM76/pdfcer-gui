@@ -1,6 +1,6 @@
 # `app::dispatch::settings` — the commands that open the Settings window
 
-## ★★ The seam, and why two ids share one arm
+## The seam, and why two ids share one arm
 
 `file.settings` and `tools.font_folders` open **one window, one draft, one
 Save**. They differ in one thing: *where the window lands*.
@@ -10,7 +10,7 @@ Save**. They differ in one thing: *where the window lands*.
 | `file.settings` | *"show me the settings"* | the top, correctly |
 | `tools.font_folders` | *"where do font folders live"* | the Fonts group, opened and scrolled to |
 
-★★★ These are **not** two routes in [`super::routes`], and the reason is the
+These are **not** two routes in [`super::routes`], and the reason is the
 rule that file states: *a second route to an existing command must not become
 a second implementation of it*. That rule is intact here — there is still one
 implementation — but the two ids are not the same **request**.
@@ -20,7 +20,7 @@ it was reached.** `routes::target` returns a bare id and has nowhere to put an
 operand, so the arm lives here rather than the routing mechanism growing a
 parameter for one caller.
 
-## ★★★ What a pure route costs here, which is the whole reason
+## What a pure route costs here, which is the whole reason
 
 `OPERATOR_REQUESTS.md` **O50** opens with the operator asking for a
 font-folder setting that had already shipped. A route lands at the top of the

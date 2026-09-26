@@ -5,7 +5,7 @@ Copy for `crate::panels::properties::markup::textannot`: the sticky note's
 and the stamp's style rows, which reach `EditSession::set_text_annot_style`
 rather than `set_markup_style`.
 
-## ★★ Why a file of its own beside `text::panels::properties`
+## Why a file of its own beside `text::panels::properties`
 
 **R2**, and a subject seam that survives it. `properties.rs` was at 1,487
 lines — thirteen short of the ceiling — when `Pass 253.2` landed, so the
@@ -37,7 +37,7 @@ editable while you are at it."* That is the `set_button_action` shape
 operator that pdfcer never authors an action, it is now saying something
 untrue in the direction that matters."*
 
-★ **The fix was not a reworded sentence. It was fewer marks reaching one.**
+**The fix was not a reworded sentence. It was fewer marks reaching one.**
 
 | subtype | before | now |
 |---|---|---|
@@ -46,7 +46,7 @@ untrue in the direction that matters."*
 | `/FreeText` | the refusal sentence | [`markup_text_box_not_restylable`] — a narrower claim, and still true |
 | anything else | the refusal sentence | the refusal sentence, reworded to stop implying a family |
 
-★★ Note which row is the interesting one. The `/FreeText` sentence is not
+Note which row is the interesting one. The `/FreeText` sentence is not
 the old refusal kept for one subtype: the old one claimed the capability
 was **missing**, and the new one says this shell **declines** to use a
 capability that exists, for a measured reason. Reusing the string would

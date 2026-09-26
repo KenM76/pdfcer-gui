@@ -17,7 +17,7 @@ Both are here: [`use_store`] draws the engine's own `Off`/`AtOwnRisk`
 setting, and [`store_path`] draws the location, the resolved state and the
 **date**.
 
-## ★★★ Why this is not filed under the *Where Acrobat is* group
+## Why this is not filed under the *Where Acrobat is* group
 
 It is the obvious place — both settings are about Acrobat — and it is wrong,
 for the reason this window's own header gives: **a setting filed under the
@@ -39,7 +39,7 @@ Reading a document's signatures is squarely the third, so this sits after
 *Pages and printing* and before *Drawing the page*, which is where the
 shell's own preferences begin.
 
-## ★★ Two headers, not one, and the reason is the two stores
+## Two headers, not one, and the reason is the two stores
 
 [`super::widgets::toggle`]'s own note says the sub-parts of ONE setting
 share a header. These are two settings: a **permission**, persisted in
@@ -53,7 +53,7 @@ adjacent, one Cancel discards both, one Save writes both. But they are two
 questions with two different blast radii, and a single `radius` line
 covering both would have to be vague about the one that matters.
 
-## ★★★ R9, and which control is absent
+## R9, and which control is absent
 
 [`inspect`] — the button that reads the store and reports what is in it — is
 drawn **only when a store was actually found**. An unavailable capability
@@ -77,6 +77,6 @@ frame. Locating a trust store does not: it is `Path::is_file` plus one
 keystroke by keystroke and a typo is visible at the place it was made,
 rather than after a Save.
 
-★ The *anchors* are a different matter — parsing 3 MB of COS and decoding
+The *anchors* are a different matter — parsing 3 MB of COS and decoding
 ~1,800 certificates is not a per-frame act — which is exactly why reading
 them is behind a button and the button caches its answer.

@@ -26,7 +26,7 @@ end up in the **same tab bar**, found by containment — which is false for a
 drop that went home, false for a drop that was ignored, and false for a
 drop that resolved against the wrong compartment's rectangle.
 
-★ Containment rather than a compartment address, for `panel_tab_reorder`'s
+Containment rather than a compartment address, for `panel_tab_reorder`'s
 reason: a tab region is named for its panel and carries no compartment, so
 the only thing that says which bar a tab is in is where it was drawn.
 

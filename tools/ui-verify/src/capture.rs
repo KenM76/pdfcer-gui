@@ -56,7 +56,7 @@ pub fn frame_capture(
     frame: &crate::coords::WindowFrame,
     raise: bool,
 ) -> Result<Image> {
-    // ★★ RAISE THE WINDOW THIS FRAME DESCRIBES, which is not always the
+    // RAISE THE WINDOW THIS FRAME DESCRIBES, which is not always the
     // application's own. A screen grab reads the COMPOSITED DESKTOP, so a
     // dialog sitting behind the main window is captured as the main window —
     // plausible pixels, wrong surface. `session.raise()` would make that

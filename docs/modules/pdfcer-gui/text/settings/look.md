@@ -1,6 +1,6 @@
 # `text::settings::look` — what changing it makes you see in the DOCUMENT
 
-## ★ The split is by BLAST RADIUS, which is the window's own taxonomy
+## The split is by BLAST RADIUS, which is the window's own taxonomy
 
 Not by dialog group, and not alphabetically. Every setting in this window
 carries a `*_radius` line stating *which way costs what*, and that line is

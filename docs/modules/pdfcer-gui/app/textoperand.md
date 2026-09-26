@@ -7,7 +7,7 @@ gesture
 > properties area is uneditable too. This is true even when I add a new line
 > of text."*
 
-## ★★★ The deadlock this module exists to break
+## The deadlock this module exists to break
 
 Every one of the five Format ▸ Font controls — the face chooser, the size
 field, the colour swatch, Bold and Italic — was gated on **one** field:
@@ -44,7 +44,7 @@ Rung 1 first, always, because a sweep is the narrower and more deliberate
 statement: an operator who swept three words and then happened to have an
 object selected meant the three words.
 
-## ★★ No new selection unit was invented, and that is the safety argument
+## No new selection unit was invented, and that is the safety argument
 
 Rung 2's operand is `first_run..=last_run` derived from the object's
 `BT`…`ET` **byte span**, joined to each glyph's provenance operator span in
@@ -62,7 +62,7 @@ one place — which is the rule [`crate::app::dispatch::format`]'s own note
 states: *"which runs does a restyle act on?"* is a **rule**, and a rule
 stated twice diverges.
 
-## ★★★ Why the cheap half is a separate function
+## Why the cheap half is a separate function
 
 [`selected_text_object`] answers *"is there an object-shaped operand?"*
 without reading a single glyph, and it exists because **a condition is
@@ -71,7 +71,7 @@ evaluated every frame and an operand is resolved on a press**. Publishing
 per-frame path on the drawings this program is for, which is
 `OPERATOR_REQUESTS.md` O74 at its most expensive point.
 
-★ It reads the decomposition through `OpenDoc::page_objects`, which
+It reads the decomposition through `OpenDoc::page_objects`, which
 **builds on first use** — 469 ms on the operator's benchmark sheet. That is
 not a new cost here and cannot be: the function returns early unless exactly
 one content object is selected on the current page, and an object selection

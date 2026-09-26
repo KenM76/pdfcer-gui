@@ -1,7 +1,7 @@
 #![cfg(test)]
 //! Tests for [`super`] — the headless half of signing.
 //!
-//! ## ★★★ What is asserted here, and what deliberately is NOT
+//! ## What is asserted here, and what deliberately is NOT
 //!
 //! Everything in this file is a **pure function over a value**: the refusal
 //! ladder, the visible box's arithmetic, the suggested filename, and the fields
@@ -30,7 +30,7 @@ use pdfcer_core::page_tree::Rect;
 
 /// A `Standing` with nothing wrong with it.
 ///
-/// ★ Built field by field rather than read off a document, because every test
+/// Built field by field rather than read off a document, because every test
 /// below is about **the ladder**, not about the reading. `Standing::read` is
 /// exercised by the driven check, where a real document is open.
 fn clean() -> Standing {
@@ -49,7 +49,7 @@ fn clean() -> Standing {
 
 /// A `Standing` carrying one plain, signable, pre-placed signature field.
 ///
-/// ★ Built field by field rather than read off a document, for [`clean`]'s
+/// Built field by field rather than read off a document, for [`clean`]'s
 /// reason: the tests below are about what this shell DOES with a field, and the
 /// reading of one out of an `/AcroForm` is exercised by the driven check on the
 /// engine's own `sig-field-empty.pdf`.
@@ -76,7 +76,7 @@ fn plain_field() -> SigField {
 // `Pass 10.13` — signing into a box somebody else placed
 // ---------------------------------------------------------------------------
 
-/// ★★★ **A pre-placed field reaches the request as a NAME and no rectangle.**
+/// **A pre-placed field reaches the request as a NAME and no rectangle.**
 ///
 /// The whole of `Pass 10.13`'s contract from this side, and the one property a
 /// build could get wrong in a way nothing else would notice: sending `visible`
@@ -127,7 +127,7 @@ fn a_kids_field_is_listed_and_refused_by_name() {
 
 /// **A lock and a seed-value dictionary are carried, not swallowed.**
 ///
-/// ★★★ Both are disclosed BEFORE the press — the lock because signing freezes
+/// Both are disclosed BEFORE the press — the lock because signing freezes
 /// fields the author nominated, the constraints because a refusal is possible
 /// and it will be the author's rule rather than pdfcer's. A build that read the
 /// field and dropped these two would produce an identical list, an identical
@@ -177,7 +177,7 @@ fn a_signed_document_cannot_be_certified() {
     );
 }
 
-/// ★★ **An already-certified document is refused for THAT reason, and the
+/// **An already-certified document is refused for THAT reason, and the
 /// order matters.**
 ///
 /// A document that is both certified and signed satisfies both guards. The
@@ -233,7 +233,7 @@ fn a_pending_redaction_is_refused() {
     assert_eq!(standing.refusal(), Some(Refusal::RedactionPending));
 }
 
-/// ★★★ **A pending redaction OUTRANKS encryption, and the order is the
+/// **A pending redaction OUTRANKS encryption, and the order is the
 /// operator's next move rather than the severity.**
 ///
 /// Both are true of a document that was redacted and then encrypted — which
@@ -257,7 +257,7 @@ fn a_pending_redaction_is_named_before_encryption() {
 
 /// **Only `/DocMDP` 1 refuses; 2 and 3 do not.**
 ///
-/// ★★ The arm most likely to be written wrong, and the engine's own comment
+/// The arm most likely to be written wrong, and the engine's own comment
 /// says why: *"Table 254: P = 1 permits NO changes; 2 permits form fill-in AND
 /// signing; 3 adds annotations. Adding a signature is the act P = 2 exists to
 /// allow."* A shell that refused every certified document would refuse the
@@ -315,7 +315,7 @@ fn a_recovered_base_and_an_unsaved_document_are_both_refused() {
 
 /// **An already-signed document is NOT refused.**
 ///
-/// ★ The one place this surface differs from [`crate::protect`], which refuses
+/// The one place this surface differs from [`crate::protect`], which refuses
 /// a signed document outright because encrypting rewrites every byte a
 /// signature covers. Signing appends, so a second signature is legitimate and
 /// PDF is built for it. The window says so rather than staying silent, but it
@@ -335,7 +335,7 @@ fn a_document_that_is_already_signed_can_be_signed_again() {
 
 /// **On a US Letter page the box is exactly where the documentation says.**
 ///
-/// ★★ Asserted as four numbers rather than as "near the corner", because the
+/// Asserted as four numbers rather than as "near the corner", because the
 /// box is **content written into the operator's file** — R8b Rule 4 — and
 /// `crate::text::sign::placement_where` states the measurements on screen. A
 /// sentence on a window and a constant in a file that could disagree is the
@@ -350,7 +350,7 @@ fn the_visible_box_sits_where_the_window_says_it_does() {
     assert!((r.ury - r.lly - 60.0).abs() < 1e-9, "60 pt tall");
 }
 
-/// ★★★ **On a page smaller than the box, the box stays ON the page.**
+/// **On a page smaller than the box, the box stays ON the page.**
 ///
 /// The clamp, and it is not defensive tidiness. The engine accepts whatever
 /// rectangle it is handed; a widget laid partly outside the media box is
@@ -388,7 +388,7 @@ fn the_visible_box_follows_an_offset_page_origin() {
 // What is written, and what is left out
 // ---------------------------------------------------------------------------
 
-/// ★★ **An untouched field is OMITTED, and one holding only spaces counts as
+/// **An untouched field is OMITTED, and one holding only spaces counts as
 /// untouched.**
 ///
 /// `/Reason ()` in a signature dictionary is a claim that the operator gave a

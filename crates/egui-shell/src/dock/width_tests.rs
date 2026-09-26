@@ -1,6 +1,6 @@
 //! Layout tests that run the dock against **real text metrics**.
 //!
-//! # ★ Why this file exists, and why the tests next door are not enough
+//! # Why this file exists, and why the tests next door are not enough
 //!
 //! `egui-shell` depends on `egui` with `default-features = false`, so a
 //! test process building this crate alone has **no font data** and every
@@ -143,7 +143,7 @@ impl Rendered {
 /// given dock width and window size.
 fn render(n: usize, dock_width: f32, window: Vec2) -> Rendered {
     let ctx = egui::Context::default();
-    // ★ Asserts internally that the face took effect. Without it every
+    // Asserts internally that the face took effect. Without it every
     // width comparison below is satisfied by text that occupies no space.
     testfont::install(&ctx);
 
@@ -213,7 +213,7 @@ fn text_width(ctx: &egui::Context, text: &str) -> f32 {
 // The font itself
 // ---------------------------------------------------------------------
 
-/// **★ The harness is not vacuous.**
+/// **The harness is not vacuous.**
 ///
 /// Everything below is worthless if this is not true, and "worthless"
 /// here means "passing" — which is why it is asserted rather than
@@ -235,7 +235,7 @@ fn the_dock_measures_real_proportional_text() {
     );
 }
 
-/// ★ **The reservation is sized for the widest label the control can ever
+/// **The reservation is sized for the widest label the control can ever
 /// show, and with real metrics that is not the longest one.**
 ///
 /// `"⏷ 8 more"` is wider than `"⏷ 9 more"` in any face whose digits are
@@ -262,7 +262,7 @@ fn the_reservation_covers_the_widest_label_with_real_metrics() {
 // Failure mode #8, against a rendered frame, at the exact flip point
 // ---------------------------------------------------------------------
 
-/// ★ **Binary-searched to the exact width at which a tab first has to
+/// **Binary-searched to the exact width at which a tab first has to
 /// hide — and the affordance is inside the bar there.**
 ///
 /// A sweep is too coarse: the RAG entry this test is written from records
@@ -328,7 +328,7 @@ fn the_affordance_is_inside_the_bar_at_the_exact_width_where_tabs_start_hiding()
     assert_eq!(rendered.tabs().len(), n, "every tab should be drawn");
 }
 
-/// ★ **The affordance is on screen at every dock width, including ones
+/// **The affordance is on screen at every dock width, including ones
 /// narrower than the affordance itself.**
 ///
 /// This is the `max_rect`-inflation trap stated as an assertion. A
@@ -361,7 +361,7 @@ fn the_affordance_is_always_within_the_window() {
     }
 }
 
-/// ★ **Every panel stays reachable at every width**: a tab that is not
+/// **Every panel stays reachable at every width**: a tab that is not
 /// drawn is in the menu, and the menu's affordance is drawn.
 ///
 /// A cap on tabs per stack is a proxy for this property. Here the
@@ -429,7 +429,7 @@ fn the_active_tab_is_drawn_whenever_any_tab_is() {
 // Failure mode #3, with real metrics
 // ---------------------------------------------------------------------
 
-/// ★ **A very wide hidden tab does not hold the dock open.**
+/// **A very wide hidden tab does not hold the dock open.**
 ///
 /// Failure mode #3 is *"an inactive tab you cannot see holds the whole
 /// dock open"*. Here one panel is given a preposterous label and left
@@ -483,7 +483,7 @@ fn an_inactive_tab_with_a_huge_label_does_not_widen_the_dock() {
 // Failure mode #4, with real metrics
 // ---------------------------------------------------------------------
 
-/// ★ **Two full docks in a 1280-point window leave the application the
+/// **Two full docks in a 1280-point window leave the application the
 /// majority of it** — the width the design rule names, with real text.
 #[test]
 fn two_docks_in_a_1280_point_window_leave_the_application_most_of_it() {

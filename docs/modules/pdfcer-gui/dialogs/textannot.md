@@ -4,7 +4,7 @@ The second half of the place-then-type gesture. The canvas has taken a
 rectangle (or a point); this asks what goes in it, and **nothing reaches
 the document until Accept.**
 
-## ★ Why a dialog, when markup authors on release
+## Why a dialog, when markup authors on release
 
 `crate::dialogs`' header draws the line: *"a dialog is a single transaction
 with a start and an end… a panel is somewhere an operator dips in and out
@@ -19,7 +19,7 @@ operator granted for one surface. It would also have needed a caret, a
 selection and a hit test over text this shell does not own, which is a text
 editor rather than a dialog.
 
-## ★ It is deliberately NOT modal to the document
+## It is deliberately NOT modal to the document
 
 The reference line stays drawn, the page stays where it was, and the dialog
 is `default_pos` rather than anchored so it can be dragged aside. An

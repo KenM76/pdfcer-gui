@@ -13,7 +13,7 @@ Until 2026-08-20 `Ctrl+C` on a shape put a **sentence** on the status row —
 back onto a page"* — which was honest and was still a refusal. `Pass 120.0`
 shipped `ObjectClip` and this check is the wiring of it.
 
-# ★★ Why this cannot be a unit test
+# Why this cannot be a unit test
 
 Because the interesting failure is **silent and correct-looking**, and it is
 the one the engine warned about in the reply that shipped the verb:

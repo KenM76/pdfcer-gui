@@ -100,7 +100,7 @@ pub struct Vocabulary {
     /// Fields on it holding the acting page's **frame** — its crop box in PDF
     /// user space (`llx,lly,urx,ury`) and its effective `/Rotate` in degrees.
     ///
-    /// # ★★★ Why these are optional, and why they matter more than they look
+    /// # Why these are optional, and why they matter more than they look
     ///
     /// `None` means "this build does not trace its page frame", and the mapping
     /// then falls back to the historical arithmetic: treat a document point as
@@ -473,7 +473,7 @@ pub const PDFCER_GUI: Profile = Profile {
 /// been seen to fail on a known-defective build, and this profile is how that
 /// is demonstrated.
 ///
-/// # ★★★ EVERY NAME IN THIS PROFILE IS AN OLD NAME, DELIBERATELY
+/// # EVERY NAME IN THIS PROFILE IS AN OLD NAME, DELIBERATELY
 ///
 ///
 /// | field | swept to | actually |

@@ -824,7 +824,7 @@ pub(super) fn edit_widget(
             let mut lines = Vec::new();
             // **First**, because it is the only one about something on screen.
             //
-            // ★★ Read off `AppearanceOutcome` rather than off `appearance_stale`
+            // Read off `AppearanceOutcome` rather than off `appearance_stale`
             // being `Some`, which is what the engine's own field doc asks for:
             // `appearance_regenerated: false` + `appearance_stale: None` meant
             // two different things — *nothing needed redrawing* and *something
@@ -839,7 +839,7 @@ pub(super) fn edit_widget(
                     why,
                 ));
             }
-            // ★★★ **`rect_after`, not "always"**. This line was pushed
+            // **`rect_after`, not "always"**. This line was pushed
             // unconditionally, so every border, caption, visibility and — since
             // O202 — colour edit ended with *"The box was moved."* on the
             // status line, naming an act the operator had not performed. The

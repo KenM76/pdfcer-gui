@@ -16,7 +16,7 @@
 //! it, [`in_flight`] is how the other two ask what is being carried, and
 //! [`settle`] ends it and raises whatever the three of them decided.
 //!
-//! ## ★ The drag lives in `egui::Memory`, keyed on the dock, not on the strip
+//! ## The drag lives in `egui::Memory`, keyed on the dock, not on the strip
 //!
 //! It has to outlive a frame, and nothing else in the dock does — the layout
 //! is a snapshot, the geometry is rebuilt, [`super::ctx::Ctx`] is dropped. The
@@ -25,7 +25,7 @@
 //! compartment is being drawn. Two docks in one window have two salts and
 //! therefore two independent drags.
 //!
-//! ## ★★ The preview is proposed in the strip and settled centrally
+//! ## The preview is proposed in the strip and settled centrally
 //!
 //! [`preview`] runs inside the origin strip's draw, because a boundary has no
 //! position until the tabs are laid out. [`settle`] runs once, at the end of
@@ -115,7 +115,7 @@ pub(super) fn begin(ui: &egui::Ui, ctx: &Ctx<'_>, panel: &PanelId, from: PanelAd
 /// one stands down there, so that one gesture never has two carets proposing
 /// two outcomes.
 ///
-/// ## ★ The band, and why it is not the strip's own rectangle
+/// ## The band, and why it is not the strip's own rectangle
 ///
 /// A reorder is resolved by the pointer's **x alone**, so the pointer's y
 /// decides only whether it is a reorder at all. Bounding it by the strip
@@ -126,7 +126,7 @@ pub(super) fn begin(ui: &egui::Ui, ctx: &Ctx<'_>, panel: &PanelId, from: PanelAd
 /// [`REORDER_SLACK_PTS`] is the tolerance between those, and the branch this
 /// function declines is where tearing a panel out will attach.
 ///
-/// ## ★★ And bounded in x by the strip exactly, with no slack at all
+/// ## And bounded in x by the strip exactly, with no slack at all
 ///
 /// [`super::geometry::DockGeometry::gap_in`] is defined for **every** x on the
 /// screen: past the last tab it answers the boundary past the last tab, from
@@ -141,7 +141,7 @@ pub(super) fn begin(ui: &egui::Ui, ctx: &Ctx<'_>, panel: &PanelId, from: PanelAd
 /// strip spans its compartment's whole width, so a drag past the last tab is
 /// inside it already.
 ///
-/// ★ Neither bound can be stated as *"over a different compartment"*, which is
+/// Neither bound can be stated as *"over a different compartment"*, which is
 /// what it means — [`Ctx::geometry`] is filled in draw order, and this runs
 /// mid-draw, so the compartments after this one are not in it yet.
 pub(super) fn preview(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, addr: StackAddr, strip: Rect) {
@@ -269,7 +269,7 @@ pub(super) fn settle(ui: &egui::Ui, ctx: &mut Ctx<'_>) {
     // `TabDrag` would be a drag of the empty panel from column zero — a value
     // that means something and is never true.
     ui.ctx().data_mut(|d| d.remove::<TabDrag>(id));
-    // ★ The invariant the stated order below exists to make unnecessary, and
+    // The invariant the stated order below exists to make unnecessary, and
     // the only place it is measured. Each of the three affordances stands down
     // on a frame where an earlier one published, and for two of them that is
     // implied by geometry rather than by their guard — see `super::tear::draw`,

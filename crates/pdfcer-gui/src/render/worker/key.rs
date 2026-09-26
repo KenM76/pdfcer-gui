@@ -1,7 +1,7 @@
 //! # `render::worker::key` — **what a render is OF**, as one comparable value
 //!
 //!
-//! ## ★ Why this is the seam, and not "move the tests out"
+//! ## Why this is the seam, and not "move the tests out"
 //!
 //! The obvious way to get a file under the ceiling is to move its `#[cfg(test)]`
 //! modules to a sibling, and it would have worked here — there are 375 lines of
@@ -24,7 +24,7 @@ use super::RenderRequest;
 /// comparison is right here and a tolerance would be wrong, since any
 /// difference at all means the shell wants a different picture.
 ///
-/// # ★ It is also the SHELL's staleness key, and that is the point
+/// # It is also the SHELL's staleness key, and that is the point
 ///
 /// This type is public and is recorded on
 /// [`crate::render::raster::PageTexture`] because the same comparison has to
@@ -90,7 +90,7 @@ pub struct RenderKey {
     /// genuinely distinct state from "an override that hides nothing" (core
     /// API trap T-12.9).
     layers_generation: u64,
-    /// ★★★ **Whether strokes were drawn at their declared widths or capped at
+    /// **Whether strokes were drawn at their declared widths or capped at
     /// one device pixel** — `view.line_weights`, `OPERATOR_REQUESTS.md` O137.
     ///
     /// # Why this HAD to join the key, and what breaks without it
@@ -109,7 +109,7 @@ pub struct RenderKey {
     /// inert. `the_render_key_moves_when_line_weights_are_turned_off` is what
     /// makes that a build failure instead.
     ///
-    /// # ★ Why the engine's enum and not a `bool`
+    /// # Why the engine's enum and not a `bool`
     ///
     /// `StrokeDisplay` derives `Eq` and `Hash` — checked on the enum's own
     /// `#[derive]` in `pdfcer-render` — so it is a key component as it stands. It is `#[non_exhaustive]` with room for a third variant — the
@@ -125,14 +125,14 @@ pub struct RenderKey {
     /// The page-space rectangle this raster covers, by bit pattern, or
     /// `None` for a whole-page raster.
     ///
-    /// ★★ **Part of the key, and it has to be.** O24's region tier
+    /// **Part of the key, and it has to be.** O24's region tier
     /// rasterizes the viewport rather than the page, so two rasters of the
     /// same page at the same scale can now show *different parts of it*.
     /// Without this field the cache would serve the first one for every
     /// position — the operator pans, the picture does not move, and nothing
     /// reports an error because from the cache's side the request was a hit.
     ///
-    /// ★ Bit patterns rather than the floats, for the same reason
+    /// Bit patterns rather than the floats, for the same reason
     /// `raster_scale_bits` is: `f64` is not `Eq` or `Hash`, and a key that
     /// compared approximately would make "the same view" a matter of
     /// tolerance. Two requests for one view produce identical bits because
@@ -151,7 +151,7 @@ impl RenderKey {
     /// staleness comparison drift.
     #[must_use]
     ///
-    /// ★★ `stroke_display` is a **positional parameter and not a builder**,
+    /// `stroke_display` is a **positional parameter and not a builder**,
     /// unlike [`Self::with_region`], and the difference is deliberate. A
     /// builder may be omitted, and an omission here would silently mean
     /// `Actual` — which is the stale-raster bug this field exists to prevent,
@@ -197,7 +197,7 @@ impl RenderKey {
 
     /// Whether two keys describe the **same part of the page**.
     ///
-    /// # ★★★ Why this had to become its own question
+    /// # Why this had to become its own question
     ///
     ///
     /// > *"if I pan to far to one side when I am beyond 800% zoom it doesn't
@@ -213,7 +213,7 @@ impl RenderKey {
     /// its own region and simply slid off, leaving the newly exposed area
     /// blank for as long as they cared to look at it.
     ///
-    /// ★ The zoom-out half is the same fault arriving by a different route. A
+    /// The zoom-out half is the same fault arriving by a different route. A
     /// zoom does change the scale, so a render *is* requested — but the
     /// request is built from whatever region was current when it spawned, and
     /// by the time it lands the gesture has moved on. Once the scale settles,
@@ -231,7 +231,7 @@ impl RenderKey {
     /// The page-space rectangle this raster actually covers, or `None` if it
     /// is a whole-page raster.
     ///
-    /// # ★★★ Why a texture must be placed by ITS OWN region
+    /// # Why a texture must be placed by ITS OWN region
     ///
     ///
     /// > *"As I drag using the middle mouse button the pan will follow and
@@ -259,7 +259,7 @@ impl RenderKey {
     /// screen entirely (two grid steps at once, at a zoom where the grid is
     /// most of the window).
     ///
-    /// ★ The fix is **not** to reject the stale texture. That would blank the
+    /// The fix is **not** to reject the stale texture. That would blank the
     /// page on every grid crossing — the exact behaviour he ruled out. It is
     /// to draw the stale pixels *where they belong*, so they slide off
     /// naturally as the pan continues and the new raster replaces them in
@@ -311,7 +311,7 @@ impl RenderKey {
             self.page_index,
             self.annotations,
             self.layers_generation,
-            // ★ Discrete, not debounced: `view.line_weights` is a button press,
+            // Discrete, not debounced: `view.line_weights` is a button press,
             // so there is no intermediate value on the way to the one the
             // operator wanted and nothing to wait out. Waiting would make the
             // toggle feel broken for `ZOOM_SETTLE` milliseconds, which for a

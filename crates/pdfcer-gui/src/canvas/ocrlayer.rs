@@ -37,7 +37,7 @@ pub const MAX_FONT_PX: f32 = 160.0;
 
 /// Font sizes are rounded to this, in points.
 ///
-/// ★ Not cosmetic. Every distinct size is a separate set of rasterized glyphs
+/// Not cosmetic. Every distinct size is a separate set of rasterized glyphs
 /// in egui's atlas, and a page of OCR runs has as many distinct box heights as
 /// it has runs. Rounding collapses a sheet's worth of near-identical sizes
 /// onto a few dozen shared ones, so the atlas holds a face-sized set rather
@@ -55,7 +55,7 @@ const COLOUR_KEY: &str = "pdfcer.ocr-layer.colour"; // ui-text-exempt: a memory 
 
 /// The colour the overlay is drawn in until the operator chooses another.
 ///
-/// ★ Chosen to be a colour a **scan is unlikely to contain**. The overlay's
+/// Chosen to be a colour a **scan is unlikely to contain**. The overlay's
 /// whole job is to be told apart from the marks under it, and a scanned
 /// drawing is black, grey and — on a CAD sheet — often blue or red. Magenta is
 /// in none of those families, so the default works before anybody has thought
@@ -96,7 +96,7 @@ fn colour32(ctx: &egui::Context) -> Color32 {
 /// text rendering modes 3 and 7, which is what an OCR producer writes and what
 /// a page's own lettering never is.
 ///
-/// ★ `any`, not `all`, and the difference is a silent omission. A producer
+/// `any`, not `all`, and the difference is a silent omission. A producer
 /// that flips the rendering mode mid-run leaves a run with both kinds of
 /// glyph. Taking it draws some already-visible letters a second time, which
 /// the operator can see and dismiss. Refusing it hides recognised text with
@@ -110,14 +110,14 @@ pub fn is_ocr_run(run: &pdfcer_core::text_extract::TextRun) -> bool {
 /// **How much paint, from a slider position** — the one answer, and the one
 /// the status bar must quote.
 ///
-/// ★★ A **non-finite input paints nothing**, where
+/// A **non-finite input paints nothing**, where
 /// [`crate::viewer::normalise_ocr_overlay`] answers the same corruption with
 /// the default position. The two are not inconsistent: that one answers *where
 /// did the operator leave the slider*, and a lost preference should land
 /// somewhere useful; this one answers *how opaque is this stroke*, and a
 /// number nobody can account for must not end up drawn over the document.
 ///
-/// ★★★ Which is exactly why this is public and `app::status::ocrlayer` reads
+/// Which is exactly why this is public and `app::status::ocrlayer` reads
 /// it rather than the raw field. A disclosure that quoted the other normaliser
 /// would report 65 % on the one input where the painter draws nothing — a
 /// sentence describing a blend that is not on screen, produced by two
@@ -221,7 +221,7 @@ pub(super) fn draw_text(
     let Some(text) = doc.page_text() else {
         return;
     };
-    // ★ The page the CACHE describes, found among the pages drawn — never
+    // The page the CACHE describes, found among the pages drawn — never
     // `pages[0]` and never the acting page's map. See the header.
     let Some(view) = pages.iter().find(|view| view.page == text.page_index) else {
         return;
@@ -349,7 +349,7 @@ mod tests {
         assert_eq!(quantise_font_size(f32::NAN), MIN_FONT_PX);
     }
 
-    /// ★ Every size this yields is a multiple of the quantum.
+    /// Every size this yields is a multiple of the quantum.
     ///
     /// The property the atlas argument rests on, asserted over a walk rather
     /// than at two chosen points: a rounding that worked at 12.3 and failed

@@ -9,7 +9,7 @@ Text had a control and he could not find it. Vectors had none, because
 annotation or on text. `Pass 218.0`/`219.0` shipped
 `EditSession::set_object_paint`, and this is the control.
 
-## ★★★ The swatch shows the object's OWN colour, or refuses to show one
+## The swatch shows the object's OWN colour, or refuses to show one
 
 `PathPaint` has three states and the difference between them is the whole
 design of this section:
@@ -27,12 +27,12 @@ black over a `/Separation` stroke is exactly that — one click and a named
 spot ink is screen colour, permanently, and it looked right while it
 happened.
 
-★★ `Default` and `Device`-holding-black are drawn the same and are **not**
+`Default` and `Device`-holding-black are drawn the same and are **not**
 the same fact. Only the first may be replaced without comment; the
 distinction is kept because it costs nothing to keep and cannot be
 recovered once collapsed.
 
-## ★★ Why a spot ink is NAMED rather than converted
+## Why a spot ink is NAMED rather than converted
 
 Evaluating a tint transform lives in `pdfcer-render`, which `pdfcer-core`
 cannot depend on. The engine declined to duplicate it — a second colour-space
@@ -67,16 +67,16 @@ works, so the mixed state is not one option among several; it is the answer.
 reads as *no single value* using the marker this shell already writes for
 one, and picking a colour applies it to the whole selection.
 
-★ **One undo step for the whole gesture** — and that took the swatch being
+**One undo step for the whole gesture** — and that took the swatch being
 hand-built rather than `ui.color_edit_button_srgb`. `egui`'s own colour
 button marks itself changed on *every frame of a drag inside the picker*, so
 acting on `.changed()` authors an edit per frame; [`super::swatch`]'s header
-carries the measurement and the fix (commit when the picker closes). ★★ That
+carries the measurement and the fix (commit when the picker closes). That
 defect was present in the single-object control this section shipped with —
 it is fixed by the same change, for the same reason, and nothing about it is
 new to the multi-object path.
 
-## ★★★ A MIXED SELECTION CONTAINING ONE SPOT INK — the decision, and why
+## A MIXED SELECTION CONTAINING ONE SPOT INK — the decision, and why
 
 The choice was between refusing the whole apply by name and applying to the
 process-colour members while reporting the spot ones off-canvas. **This

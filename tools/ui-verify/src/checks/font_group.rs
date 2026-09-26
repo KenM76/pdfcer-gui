@@ -25,7 +25,7 @@ pub(super) const FONT_GROUP: &str = "ribbon.group.format.font";
 const BOLD_ITEM: &str = "ribbon.item.format.bold";
 /// Every control the Font group must draw, in manifest order.
 ///
-/// ★ Asserted as a **list**, not as "Bold is there". Three of the five are
+/// Asserted as a **list**, not as "Bold is there". Three of the five are
 /// `Item::Custom`s drawn by `app::fontband`, and a custom item that the
 /// manifest names and no renderer matches draws **nothing** while the shell
 /// reserves its space — which is the defect `COLOUR_SWATCH` shipped with for
@@ -48,19 +48,19 @@ pub(super) const FONT_ITEMS: [&str; 5] = [
 /// and drives whatever drawing the operator names -- and it shares these two
 /// lists, the aim guard and the enablement renderer rather than copying them.
 ///
-/// ★ Copying would have been the ordinary move and it is the one this
+/// Copying would have been the ordinary move and it is the one this
 /// repository has already paid for nine times over in private `click_tab`
 /// helpers: a shared list diverges silently, and a group measured against a
 /// stale copy of its own membership reports a measured group.
 ///
-/// # ★★★ A second list, because a region and an enablement are different facts
+/// # A second list, because a region and an enablement are different facts
 ///
 /// [`FONT_ITEMS`] holds published REGION names (`ribbon.item.format.bold`) and
 /// answers *where is this control*. These are the ids the same five controls
 /// are registered under, and they are what the enablement event is keyed by,
 /// because that event is about a COMMAND rather than about a rectangle.
 ///
-/// ★★ The two lists are asserted to line up by
+/// The two lists are asserted to line up by
 /// [`the_two_font_lists_describe_the_same_five_controls`], which exists because
 /// a check that read four regions and five enablements, or five regions and
 /// four enablements, would report a measured group either way. The pairing is
@@ -78,12 +78,12 @@ pub(super) const FONT_COMMANDS: [&str; 5] = [
 /// The Properties panel's **font editor**, drawn for a clicked text object
 /// since O198 (2026-09-14).
 ///
-/// ★★★ THIS CONSTANT REPLACED `ROUTE_REGION`, AND THE SWAP IS THE WHOLE POINT.
+/// THIS CONSTANT REPLACED `ROUTE_REGION`, AND THE SWAP IS THE WHOLE POINT.
 ///
 pub(super) const TEXT_STYLE_REGION: &str = "properties.text";
 /// The face control inside the font editor.
 ///
-/// ★★ Asserted ALONGSIDE the section, not instead of it, for the reason
+/// Asserted ALONGSIDE the section, not instead of it, for the reason
 /// `FONT_ITEMS` gives about the ribbon band: a section that draws its heading
 /// and then returns before any control is the exact shape of the regression
 /// this check exists to catch, and a section-level region cannot see it.
@@ -111,7 +111,7 @@ const TEXT_KIND: &str = "Text";
 const SWEEP_PT: f64 = 60.0;
 /// `T` as a Windows virtual key — the text-sweep tool.
 ///
-/// ★ Pressed only in **phase 2**, and the fact that phase 1 works without it is
+/// Pressed only in **phase 2**, and the fact that phase 1 works without it is
 /// the point of the check: the whole complaint is that an operator does not
 /// know to press it, so the surfaces that tell them must be observed in the
 /// state where they have not.
@@ -154,14 +154,14 @@ impl Check for TheFormatTabOffersFontControlsForSweptText {
 /// **Did the phase-1 click land on one text object?** `Ok(())` if it did; an
 /// [`Error`] — which this check's `run` turns into a SKIP — if it did not.
 ///
-/// # ★★★ Why this exists, written on the day it was needed
+/// # Why this exists, written on the day it was needed
 ///
 ///
-/// ★ The trace had the answer on the same frame the check was already reading:
+/// The trace had the answer on the same frame the check was already reading:
 /// `pdfcer-diag properties-panel object=832 kind=Path notes=0`. Nothing new had
 /// to be published for this guard; the check simply had to look.
 ///
-/// # ★★ The two facts, and why both are needed
+/// # The two facts, and why both are needed
 ///
 /// `route` draws when **exactly one** object is selected **and** it is text.
 /// Those are separate refusals with separate causes, so they are read
@@ -172,7 +172,7 @@ impl Check for TheFormatTabOffersFontControlsForSweptText {
 /// | how many are selected | `canvas-selection … sel=N` | the panel describes only the FIRST, so it cannot count |
 /// | what the first one is | `properties-panel … kind=K` | the canvas line names a `TargetId`, not a kind |
 ///
-/// # ★ An absent `properties-panel` line is "selected nothing", not "unknown"
+/// # An absent `properties-panel` line is "selected nothing", not "unknown"
 ///
 /// `object_section` writes that line unconditionally once it has an object to
 /// describe, every frame, through `diag::trace` rather than `trace_changed`. So
@@ -240,7 +240,7 @@ enum Aim<'a> {
 
 /// Read [`Aim`] out of a settled trace.
 ///
-/// ★ **Order matters, and it is "what" before "how many".** A click that lands
+/// **Order matters, and it is "what" before "how many".** A click that lands
 /// on a path inside a marquee of eleven is an aim problem twice over, and the
 /// kind is the more useful half to be told about: it names the fixture
 /// coordinate that has to change. Reporting "11 objects selected" first would
@@ -252,7 +252,7 @@ fn aim_verdict(trace: &Trace) -> Aim<'_> {
     if kind != TEXT_KIND {
         return Aim::NotText(kind);
     }
-    // ★ Absent reads as zero rather than as one. `canvas-selection` is written
+    // Absent reads as zero rather than as one. `canvas-selection` is written
     // through `diag::trace_changed`, so a trace with no line at all is a run
     // where the selection never changed — which after a click is a click that
     // selected nothing, and is exactly the state that must not be waved
@@ -292,7 +292,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
+    // PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
     //
     // `fixture::text_point_target` holds the document, the point, and the
@@ -361,7 +361,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     click_mode_segment(&session, &driver, ui_rect, MODE)?;
     session.settle(20);
 
-    // ★★★ BRING THE PROPERTIES PANE TO THE FRONT OF ITS TAB GROUP.
+    // BRING THE PROPERTIES PANE TO THE FRONT OF ITS TAB GROUP.
     //
     // The dock mounts several panes per slot and draws only the ACTIVE tab's
     // body, so a pane that exists and is not in front publishes nothing —
@@ -386,7 +386,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, target.page)?;
     let frame = session.frame()?;
-    // ★ A little way ALONG the baseline and a little above it, not at the
+    // A little way ALONG the baseline and a little above it, not at the
     // baseline's left end. `--doc-point` names the first glyph's origin, which
     // is the bottom-left corner of the first character — a point on the very
     // edge of the ink and, on a six-point label, a click that can land in the
@@ -401,7 +401,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(24);
 
     let trace = session.trace()?;
-    // ★★★ THE PRECONDITION, BEFORE ANY ORACLE — what did the click actually
+    // THE PRECONDITION, BEFORE ANY ORACLE — what did the click actually
     // select?
     //
     // Every assertion below this line is a sentence about **a text object**,
@@ -415,13 +415,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // `panels::properties::text::route` was right to stay silent and was
     // blamed for a day.
     //
-    // ★ Note where the guard has to sit: **before** the Format tab is asserted,
+    // Note where the guard has to sit: **before** the Format tab is asserted,
     // not after. The tab's `visible_when` is `selection.formattable`, which is
     // true of *any* selection, so a click on a path raises the tab and every
     // later step then runs on a wrong premise. Putting the precondition first
     // also buys the tab's own failure message a sharper claim — see below.
     //
-    // ★★ SKIPPED, never failed. This is `restyle_text`'s rule and phase 2's,
+    // SKIPPED, never failed. This is `restyle_text`'s rule and phase 2's,
     // one paragraph down: a `--doc-point` that is not on text is the harness's
     // aim, and a harness that reports its own aim as the program's behaviour is
     // worse than one that reports nothing.
@@ -447,11 +447,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note("★ clicking a piece of text raised the contextual Format tab");
 
-    // ★★ The Properties panel's font editor, read BEFORE the ribbon tab is
+    // The Properties panel's font editor, read BEFORE the ribbon tab is
     // clicked, because clicking a tab does not disturb the panel and reading it
     // first keeps the two surfaces independent.
     //
-    // ★★★ THIS IS THE PANEL HALF OF O198, AND IT IS AN ASSERTION ABOUT A CLICK.
+    // THIS IS THE PANEL HALF OF O198, AND IT IS AN ASSERTION ABOUT A CLICK.
     //
     let missing = [TEXT_STYLE_REGION, FACE_ROW_REGION]
         .into_iter()
@@ -542,7 +542,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    // ★★★ **The enablement half, added 2026-09-14, and this note used to be a
+    // **The enablement half, added 2026-09-14, and this note used to be a
     // guess.** It read *"all five controls with nothing swept — greyed, and
     // there"*, and `greyed` was never measured: a region says a control DREW.
     // This module's own header states that limit and the note asserted past it
@@ -638,7 +638,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note(format!("the sweep selected {swept} character(s)"));
 
-    // ★ Re-find Bold rather than reusing the phase-1 rect. The sweep can change
+    // Re-find Bold rather than reusing the phase-1 rect. The sweep can change
     // the band: `selection.any` may have gone (a text press clears the object
     // selection on some routes), which changes nothing about the Font group but
     // could reflow the Selection group beside it — and a stale rect is how a
@@ -739,7 +739,7 @@ fn list_of(names: &[&str]) -> String {
 
 /// Render the five controls' enablement for a failure message.
 ///
-/// ★ One line, both numbers, every id — including the ones that PASSED. A
+/// One line, both numbers, every id — including the ones that PASSED. A
 /// message that lists only the offenders leaves a reader unable to tell
 /// *"three of five are dead"* from *"three of five never reported"*, and those
 /// two want different investigations. `live=?` marks a control whose renderer
@@ -767,7 +767,7 @@ pub(super) fn describe(states: &std::collections::BTreeMap<String, driving::Enab
 mod tests {
     use super::*;
 
-    /// ★★ The region list and the command list describe the same five controls.
+    /// The region list and the command list describe the same five controls.
     ///
     /// Two hand-written lists over one set is the shape a completeness check
     /// goes blind in: a sixth control added to the band and to one list reads as
@@ -789,7 +789,7 @@ mod tests {
                            first=object:412\n\
                            pdfcer-diag properties-panel object=412 kind=Text notes=0";
 
-    /// ★★★ The regression this guard was written for, in three lines.
+    /// The regression this guard was written for, in three lines.
     ///
     /// These are the actual values from a run at `--doc-point 0,300,500` — a
     /// drawing view on `SW41177.pdf` — where the check reported the program's
@@ -823,7 +823,7 @@ mod tests {
             "pdfcer-diag",
         );
         assert_eq!(aim_verdict(&trace), Aim::NothingSelected);
-        // ★ And an EMPTY trace too — a run where the click never reached the
+        // And an EMPTY trace too — a run where the click never reached the
         // canvas is the same absence and must skip rather than proceed.
         assert_eq!(
             aim_verdict(&Trace::parse("", "pdfcer-diag")),
@@ -834,7 +834,7 @@ mod tests {
     /// `route` is single-selection by design, so a marquee that caught a label
     /// and ten paths is an aim problem even though the FIRST object is text.
     ///
-    /// ★ This is the case `properties-panel` alone cannot see: it describes the
+    /// This is the case `properties-panel` alone cannot see: it describes the
     /// first selected object and says nothing about how many there are, which
     /// is why the count is read from `canvas-selection` instead of inferred.
     #[test]

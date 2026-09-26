@@ -12,10 +12,10 @@
 //!
 //! The trailing region — [`super::trailing`] — is the only one on this row
 //! that may be granted **nothing** when the row is narrow. See
-//! [`super::plan::plan_strip_row`]'s ★★ for why an optional extra is a
+//! [`super::plan::plan_strip_row`]'s for why an optional extra is a
 //! different kind of claimant from a promise the interface has already made.
 //!
-//! # ★ The failure mode this module holds shut
+//! # The failure mode this module holds shut
 //!
 //! `MODES_AND_PANELS.md` Part 2, failure mode #8:
 //!
@@ -54,7 +54,7 @@
 //! ```
 //!
 //! At 180 pt the first QAT control starts at **x = −6** and neither tab is
-//! on screen. ★ None of that is visible to a test that measures no text:
+//! on screen. None of that is visible to a test that measures no text:
 //! with `egui = { default-features = false }` there is no font data, every
 //! galley measures ≈ 0, the row always fits, and the failure cannot be
 //! reproduced at all — which is what [`super::testfont`] exists to fix. See
@@ -79,7 +79,7 @@
 //! a region it was not given, because the drawing code is not laying out
 //! in that space.
 //!
-//! # ★ The rules, and the disclosure each one carries
+//! # The rules, and the disclosure each one carries
 //!
 //! Every degradation below is announced through [`crate::verify`], for the
 //! reason that channel exists: *a control that silently rendered at less
@@ -216,7 +216,7 @@ pub(crate) fn render(
         measure::text_width(ui, s, &egui::TextStyle::Button)
     });
 
-    // ★ The measured floor everything on this row turns on: below it,
+    // The measured floor everything on this row turns on: below it,
     // `Button::truncate()` stops shrinking and the control is drawn
     // outside whatever rectangle it was given. See
     // `measure::min_button_width`.
@@ -244,7 +244,7 @@ pub(crate) fn render(
     );
     if row_plan.trailing_dropped {
         // A control the operator asked to have on the ribbon and cannot
-        // reach. See `plan_strip_row`'s ★★ on why this region is the one
+        // reach. See `plan_strip_row`'s on why this region is the one
         // allowed to vanish — and why vanishing still gets said out loud.
         crate::verify::event("ribbon-trailing-dropped")
             .kv("wanted", format!("{trailing_wanted:.1}"))
@@ -328,7 +328,7 @@ pub(crate) fn render(
         outcome.tab_overflow_id = Some(id);
     }
 
-    // ★ A zero-width region is not drawn at all. `mode_selector::render`
+    // A zero-width region is not drawn at all. `mode_selector::render`
     // reads `ui.available_width()` as the room to compress its track into,
     // and `fit_track` reads a non-positive room as "no constraint known"
     // — correctly, because an unbounded container reports one — so
@@ -347,7 +347,7 @@ pub(crate) fn render(
         });
     }
 
-    // ★ The same zero-width guard the selector carries, and for a related
+    // The same zero-width guard the selector carries, and for a related
     // reason: a `Ui` with no width still lays its children out, and `egui`
     // does not clip them to it. A zero-width island here would draw the
     // control from the row's right edge leftwards, straight over the mode

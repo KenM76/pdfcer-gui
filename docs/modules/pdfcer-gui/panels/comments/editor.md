@@ -1,7 +1,7 @@
 # `panels::comments::editor` — everything on a row that WRITES
 
 
-## ★★ Why this is the seam, and not "split the rows from the strip"
+## Why this is the seam, and not "split the rows from the strip"
 
 R2's rule is *find the seam*, and the file genuinely comes apart here.
 [`super::body`], [`super::row`], [`super::delete_control`] and
@@ -16,11 +16,11 @@ redone: a control that writes will land here, a caption that describes will
 land next door, and the question *"which one is this?"* has an answer that
 does not depend on how many lines are left in either file.
 
-★ The same seam `super::tests` took the day before, one step further along:
+The same seam `super::tests` took the day before, one step further along:
 that file is *what is asserted about the panel*, this one is *what the panel
 can change*, and [`super`] is left as the list itself.
 
-## ★★★ TWO destinations, ONE box — the thing this file exists to keep true
+## TWO destinations, ONE box — the thing this file exists to keep true
 
 A note edit and a reply are the same text box pointed at different engine
 verbs: `set_markup_note` edits a dictionary that already exists, `add_reply`

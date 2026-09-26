@@ -57,7 +57,7 @@ pub fn insert(text: &mut String, caret: usize, s: &str) -> usize {
 /// **Insert a line break**, and the only way to get a control character into a
 /// draft.
 ///
-/// # ★★★ Why this is its own function rather than `insert(text, caret, "\n")`
+/// # Why this is its own function rather than `insert(text, caret, "\n")`
 ///
 /// Because [`insert`] **drops control characters**, and it is right to. Its own
 /// doc says why: *"`egui` delivers Enter and Escape as `Key` events, so a
@@ -72,7 +72,7 @@ pub fn insert(text: &mut String, caret: usize, s: &str) -> usize {
 /// line"*; the trace showed the key arriving and the length not moving; and the
 /// answer was a filter written for a different question.
 ///
-/// ★ So the filter stays and the newline gets a door of its own. Relaxing
+/// So the filter stays and the newline gets a door of its own. Relaxing
 /// `insert` to permit `\n` would have permitted every other control character
 /// with it — a stray `\t` or `\r` from a paste would land in a show string —
 /// and it would have made *"can a control character be in a draft?"* a question
@@ -141,7 +141,7 @@ pub fn delete_forward(text: &mut String, caret: usize) -> usize {
 // Selection
 // ---------------------------------------------------------------------------
 //
-// ★★ Added 2026-08-21 for `OPERATOR_REQUESTS.md` O14 item 11: *"no selection
+// Added 2026-08-21 for `OPERATOR_REQUESTS.md` O14 item 11: *"no selection
 // inside a draft — no Shift+arrow, no Ctrl+A, no drag-select."*
 //
 // The whole of a selection is TWO INDICES AND FOUR RULES, and every one of the
@@ -214,7 +214,7 @@ pub fn delete_range(text: &mut String, from: usize, to: usize) -> usize {
 /// holding `shift: true`. Every arrow arrived; not one of them carried the
 /// modifier that gives it its meaning.
 ///
-/// # ★★ Why the answer is OR and not "pick the better one"
+/// # Why the answer is OR and not "pick the better one"
 ///
 /// `app::keyboard` argues at length for the opposite preference — *"read the
 /// modifiers CARRIED BY THE KEY EVENT, not the frame's"* — and it is right for
@@ -306,7 +306,7 @@ mod tests {
     // Selection
     // ---------------------------------------------------------------------
 
-    /// ★★ **A mark sitting on the caret is not a selection.**
+    /// **A mark sitting on the caret is not a selection.**
     ///
     /// The state after Shift+Right then Shift+Left, and it is reached by every
     /// operator who changes their mind. If it answered `Some((n, n))` then
@@ -326,7 +326,7 @@ mod tests {
         assert_eq!(super::range(Some(7), 2), Some((2, 7)));
     }
 
-    /// ★ **Removing a selection is by CHARACTER**, like everything else here.
+    /// **Removing a selection is by CHARACTER**, like everything else here.
     ///
     /// Asserted on a string with an accent in it, because a byte-indexed
     /// `drain` compiles, passes on ASCII, and panics on the first document with
@@ -342,7 +342,7 @@ mod tests {
 
     /// A reversed or out-of-range pair removes nothing rather than panicking.
     ///
-    /// ★ Not defensive programming for its own sake: this runs inside the
+    /// Not defensive programming for its own sake: this runs inside the
     /// keystroke path, and a panic there is a crash in the middle of typing —
     /// the one place a program must not crash, because the operator's work is
     /// in the thing that died.
@@ -356,7 +356,7 @@ mod tests {
         assert_eq!(text, "abc");
     }
 
-    /// ★★★ **The first Shift+Right selects one character**, which is the whole
+    /// **The first Shift+Right selects one character**, which is the whole
     /// reason [`super::moved`] takes the caret's position BEFORE the movement.
     ///
     /// Planting the mark where the caret *ends up* would select nothing on the
@@ -374,7 +374,7 @@ mod tests {
         assert_eq!(super::moved(Some(2), 6, true), Some(2));
     }
 
-    /// ★★ **Any movement without Shift drops it.** Rule 4, and the one whose
+    /// **Any movement without Shift drops it.** Rule 4, and the one whose
     /// absence leaves a highlight on screen after the caret has walked out of
     /// it — so the next keystroke deletes text the operator is no longer
     /// looking at.
@@ -410,7 +410,7 @@ mod tests {
         assert_eq!(s, "abc");
     }
 
-    /// ★★ **The whole of the operator's 2026-08-20 report, as one test.**
+    /// **The whole of the operator's 2026-08-20 report, as one test.**
     ///
     /// > *"the cursor just sits at the end of a text line. It can't be moved to
     /// > the center of an existing text block."*

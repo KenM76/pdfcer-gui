@@ -3,7 +3,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/docprops/mod.md`.
 
-//! ## ★ Why `Action::SetInfoField` takes `Option<String>` and not `String`
+//! ## Why `Action::SetInfoField` takes `Option<String>` and not `String`
 //!
 //!
 //! `None` is a different edit, not an empty one.
@@ -24,7 +24,7 @@
 //! like any other, and the funnel is what makes it appear once in the command
 //! log, bump the epoch once, and be undone by one `Ctrl+Z`.
 //!
-//! ★ And the epoch bump is load-bearing here in a way it is not elsewhere: this
+//! And the epoch bump is load-bearing here in a way it is not elsewhere: this
 //! panel re-seeds its text drafts whenever the epoch moves, which is what makes
 //! `Ctrl+Z` visibly restore the old value in the box. Applying the edit outside
 //! the funnel would leave the box holding a string the document no longer has,
@@ -49,7 +49,7 @@ mod stamps;
 
 /// The region this panel publishes.
 ///
-/// ★★ **Unchanged by the move to a panel of its own, deliberately.** The name
+/// **Unchanged by the move to a panel of its own, deliberately.** The name
 /// is a harness interface: `ui-verify`'s `properties_metadata_round_trips`
 /// finds the section by this string and finds each editor by
 /// [`REGION_FIELD_PREFIX`], and that check **cannot be run by the session that
@@ -78,7 +78,7 @@ pub const REGION_FIELD_PREFIX: &str = "properties.info."; // ui-text-exempt: tra
 /// file too would be a heading that is always there, which is a different
 /// defect wearing the same green tick.
 ///
-/// ★ Named `properties.` like its neighbours so that
+/// Named `properties.` like its neighbours so that
 /// `declared_names(&trace, ui_rect, "properties")` — which several checks
 /// already print when they cannot find a region — lists it. A region under a
 /// prefix nobody enumerates is discoverable only by whoever wrote it.
@@ -99,7 +99,7 @@ pub const REGION_ANOMALY_ROW_PREFIX: &str = "properties.load-anomalies."; // ui-
 /// **The region the re-read button publishes**, so a driven check can assert
 /// that the operator's intervention is reachable rather than merely built.
 ///
-/// ★ Published with `ui_rect_visible` like everything else in this block: it
+/// Published with `ui_rect_visible` like everything else in this block: it
 /// draws inside `body`'s `ScrollArea`, and a rect published for a scrolled-out
 /// control gets clicked by the harness at a coordinate the operator can never
 /// reach. This project has shipped panels that were unreachable in a real build
@@ -144,7 +144,7 @@ pub const REGION_RECOVERY_DROPPED: &str = "properties.recovery-dropped"; // ui-t
 
 /// How many fields `InfoField::all()` returns.
 ///
-/// ★ Derived from the engine's list rather than written as `4`, because
+/// Derived from the engine's list rather than written as `4`, because
 /// [`InfoDrafts`] holds a fixed-size array of drafts and the two must be the
 /// same length. A fifth field added upstream lengthens the slice, which
 /// changes this, which changes `[String; FIELDS]` — so the drafts follow
@@ -170,7 +170,7 @@ pub const REGION_RECOVERY_DROPPED: &str = "properties.recovery-dropped"; // ui-t
 /// degradation and not a defect — the panel keeps working and the field is
 /// editable the day it appears.
 ///
-/// ★★ **It is silent, though, and that is the part to know before trusting
+/// **It is silent, though, and that is the part to know before trusting
 /// this constant to raise an alarm: it will not raise one.** Two instruments
 /// do. `tools/gates/check-engine-api-drift.sh` enumerates every public item in
 /// the pinned engine and fails on one this repository names nowhere, which is
@@ -191,7 +191,7 @@ const FIELDS: usize = InfoField::all().len();
 /// undo entries. The draft is what the operator has typed; the document is
 /// what it will be compared against when focus leaves.
 ///
-/// ## ★ Why it reloads on the edit epoch
+/// ## Why it reloads on the edit epoch
 ///
 /// The drafts are re-seeded whenever `doc.edit_epoch` moves, and that is what
 /// makes **undo work in this panel**. `Ctrl+Z` after setting a title runs the
@@ -239,7 +239,7 @@ impl InfoDrafts {
     /// wrote — two different questions, and only the first is what
     /// [`crate::panels::forms::rows::commit`] wants.
     fn sync(&mut self, doc: &OpenDoc) -> [Option<InfoText>; FIELDS] {
-        // ★ `from_fn` over `get`, rather than `all().map(...)`, because
+        // `from_fn` over `get`, rather than `all().map(...)`, because
         // `all()` returns a **slice** as of engine `4851316` and a slice has no
         // array-producing `map`. The return type must stay `[_; FIELDS]`: the
         // caller zips it against `[String; FIELDS]`.
@@ -282,7 +282,7 @@ impl InfoDrafts {
 /// The *no document at all* case never reaches here; see the module header's R9
 /// section.
 ///
-/// # ★ One scroll area, round everything, and it is here rather than in the
+/// # One scroll area, round everything, and it is here rather than in the
 /// dock
 ///
 /// The four editors, the seven facts and the recovery note together are taller
@@ -292,11 +292,11 @@ impl InfoDrafts {
 /// control that commits an edit was laid out below the window with no scrollbar
 /// and no gesture that would reach it, and it was reported as a dead button.
 ///
-/// ★ No nested scroll area anywhere inside: a scroll area inside a scroll area
+/// No nested scroll area anywhere inside: a scroll area inside a scroll area
 /// steals the wheel from its parent depending on where the pointer happens to
 /// sit, which is a worse surface than the one being fixed.
 ///
-/// # ★ No collapsing header any more
+/// # No collapsing header any more
 ///
 pub fn body(ui: &mut Ui, doc: &OpenDoc, drafts: &mut InfoDrafts, actions: &mut Vec<Action>) {
     egui::ScrollArea::vertical()
@@ -321,7 +321,7 @@ fn info_body(ui: &mut Ui, doc: &OpenDoc, drafts: &mut InfoDrafts, actions: &mut 
     ui.add_space(4.0);
 
     facts(ui, doc);
-    // ★ After the read-only facts and BEFORE the editable rows, because it is
+    // After the read-only facts and BEFORE the editable rows, because it is
     // one of the facts: what kind of file this is. Placing it below the `/Info`
     // fields would put the sentence about the category under the very field
     // that sets it, which reads as a note about the edit the operator just made
@@ -342,7 +342,7 @@ fn info_body(ui: &mut Ui, doc: &OpenDoc, drafts: &mut InfoDrafts, actions: &mut 
         row(ui, index, field, draft, current.as_ref(), actions);
     }
 
-    // ★ `ui_rect_visible` rather than `ui_rect`, and published LAST — the
+    // `ui_rect_visible` rather than `ui_rect`, and published LAST — the
     // reason survives the move even though the collapse that prompted it did
     // not. This body is inside a `ScrollArea`, and a rect published for a
     // scrolled-out control gets CLICKED by the harness at a coordinate the
@@ -367,7 +367,7 @@ fn info_body(ui: &mut Ui, doc: &OpenDoc, drafts: &mut InfoDrafts, actions: &mut 
 /// [`t::encryption_note`]; and page-level facts beyond the sheet
 /// size belong to the object half of this panel.
 ///
-/// # ★ Every value is read through `session.document()`, and one of them lies
+/// # Every value is read through `session.document()`, and one of them lies
 /// if you do not qualify it
 ///
 /// `EditSession::document()` is documented as *"the base revision, not the
@@ -424,7 +424,7 @@ fn fact(ui: &mut Ui, label: &str, value: &str) {
 
 /// The document's file name, or the sentence for one that has none.
 ///
-/// ★ `Origin` rather than a path check. A document `file.new` created has a
+/// `Origin` rather than a path check. A document `file.new` created has a
 /// `path` that is a **name** — `text::files::untitled` — and nothing is at it,
 /// which `Origin::Created`'s own doc comment states. Showing it as a file would
 /// tell the operator their work is somewhere it is not, and the one panel
@@ -442,7 +442,7 @@ fn file_name(doc: &OpenDoc) -> String {
 
 /// The sheet size in millimetres, saying so when the sheets differ.
 ///
-/// ★ **Mixed is the common case for this operator, not an edge case.** A
+/// **Mixed is the common case for this operator, not an edge case.** A
 /// drawing set is an A1 general arrangement with A3 details behind it, and
 /// reporting page one's size alone would be a true number that reads as a
 /// claim about the whole document.
@@ -494,7 +494,7 @@ fn row(
             response.rect,
         );
 
-        // ★ The commit rule is the FORMS panel's, called rather than restated.
+        // The commit rule is the FORMS panel's, called rather than restated.
         //
         // Its two conditions bind here for the same two reasons they bind
         // there — `lost_focus`, because `TextEdit::changed()` fires per
@@ -511,7 +511,7 @@ fn row(
         let ended = response.lost_focus();
         if crate::panels::forms::rows::commit(ended, draft.as_str(), stored_text).is_some() {
             let value = if draft.trim().is_empty() {
-                // ★ Empty CLEARS the key rather than writing an empty string.
+                // Empty CLEARS the key rather than writing an empty string.
                 // See the module header: a document with no title and a
                 // document whose title is nothing are different documents, and
                 // the first is what deleting the contents of a box means.
@@ -537,7 +537,7 @@ fn row(
         }
     });
 
-    // ★ The disclosure, and it is under the row rather than beside it because
+    // The disclosure, and it is under the row rather than beside it because
     // it is a sentence. Drawn only when the decode was lossy, which on an
     // ordinary document is never — a note on every row would be noise that
     // trains the operator to skip the one that matters.
@@ -548,7 +548,7 @@ fn row(
 
 /// **Say when pdfcer had to rebuild this file's index to open it at all.**
 ///
-/// # ★★★ The last silence of the family, and the quietest one
+/// # The last silence of the family, and the quietest one
 ///
 /// A PDF carries a cross-reference table: an index saying where every object
 /// lives. When it is wrong — truncated download, a writer that crashed, a disc
@@ -563,14 +563,14 @@ fn row(
 /// operator has no way to know. Rule 4's less-remembered half: **an inference
 /// the operator cannot see still owes them a report.**
 ///
-/// ★ Why it matters more for a CAD drawing than for a letter. A rebuilt index
+/// Why it matters more for a CAD drawing than for a letter. A rebuilt index
 /// is a *best reading of damaged bytes*. `last_wins_collisions` counts objects
 /// that were defined more than once, where pdfcer had to pick one — and on a
 /// drawing, a wrong pick is a line in the wrong place, on a page that renders
 /// perfectly. Nobody proofreads a titleblock against a file they believe is
 /// intact.
 ///
-/// ★★ Off-canvas, in Properties, and **not** a banner over the page. The
+/// Off-canvas, in Properties, and **not** a banner over the page. The
 /// document is not in doubt as *drawn*; what is in doubt is how it was
 /// *assembled*. A badge on the page would be a second rendering path for
 /// content that is fine — the bug class decision 059 narrows rule 4 to prevent
@@ -606,7 +606,7 @@ fn row(
 /// *"fuzzy, never sneaky"* is trying to avoid in the other direction. A
 /// disclosure that cries wolf on every recovered file is one nobody reads.
 ///
-/// ## ★ Why the object NUMBERS are printed, and why the list is elided out loud
+/// ## Why the object NUMBERS are printed, and why the list is elided out loud
 ///
 /// A count answers neither of the two questions a person holding a damaged file
 /// actually has — *which one went* and *why* — and those are the questions the
@@ -626,7 +626,7 @@ fn recovery_note(ui: &mut Ui, doc: &OpenDoc) {
     let Some(report) = doc.session.document().recovery() else {
         return;
     };
-    // ★ The heading and detail are scoped and published as [`REGION_RECOVERY`];
+    // The heading and detail are scoped and published as [`REGION_RECOVERY`];
     // the dropped-object block publishes its own region and is deliberately
     // OUTSIDE this scope's rect, so that a check can require one and forbid the
     // other on the same launch without the two rectangles overlapping into an
@@ -654,7 +654,7 @@ fn recovery_note(ui: &mut Ui, doc: &OpenDoc) {
 
 /// How many dropped object numbers are printed before the list elides.
 ///
-/// ★ Twelve rather than a round ten, for a reason that is about reading and not
+/// Twelve rather than a round ten, for a reason that is about reading and not
 /// about arithmetic: object numbers in a recovered file cluster, and a run of
 /// consecutive numbers is the single most useful thing this line can show —
 /// it says *one region of the file went*, rather than *scattered noise*. Twelve
@@ -694,7 +694,7 @@ fn dropped_objects_note(ui: &mut Ui, report: &pdfcer_core::recover::RecoveryRepo
     numbers.extend_from_slice(&mismatched);
     numbers.sort_unstable();
 
-    // ★ Scoped so the published rect is the union egui computed, not a pair of
+    // Scoped so the published rect is the union egui computed, not a pair of
     // `ui.cursor()` readings subtracted — the latter is right today and wrong
     // the first time a caller wraps this in a horizontal layout. Same argument
     // as `load_anomalies_note`'s block, and the same discipline: `visible`,
@@ -720,7 +720,7 @@ fn dropped_objects_note(ui: &mut Ui, report: &pdfcer_core::recover::RecoveryRepo
     crate::diag::ui_rect_visible(REGION_RECOVERY_DROPPED, block, ui.clip_rect());
 }
 
-/// ★★★ **Which places this file contradicted itself, and what pdfcer chose in
+/// **Which places this file contradicted itself, and what pdfcer chose in
 /// each** — the long form of the status bar's census line. Engine
 /// `Pass 283.0`, decision 145, wired 2026-09-09.
 ///
@@ -734,7 +734,7 @@ fn dropped_objects_note(ui: &mut Ui, report: &pdfcer_core::recover::RecoveryRepo
 /// used and the value it left — which is four facts, and no width of status bar
 /// holds four facts for an unbounded number of objects.
 ///
-/// ★★ And *this* panel rather than a dialog. `crate::dialogs::diagnostics` is
+/// And *this* panel rather than a dialog. `crate::dialogs::diagnostics` is
 /// the other long-form report in the shell and it is scoped by its own header to
 /// *"this page of this file"* — it describes a **render**, reads
 /// `doc.page_texture`, and draws nothing before the first raster. A load anomaly
@@ -760,7 +760,7 @@ fn dropped_objects_note(ui: &mut Ui, report: &pdfcer_core::recover::RecoveryRepo
 /// [`Action::RereadWithDuplicateKeys`], which asks about unsaved edits and then
 /// hands the same bytes back to the engine under the other policy.
 ///
-/// # ★★ Three properties of that control that are not obvious
+/// # Three properties of that control that are not obvious
 ///
 /// 1. **It is drawn only when a duplicate key was actually found.** A file whose
 ///    only anomaly was a recovered stream length gets the rows and no button,
@@ -780,7 +780,7 @@ fn dropped_objects_note(ui: &mut Ui, report: &pdfcer_core::recover::RecoveryRepo
 /// button has nothing to mean, so the disclosure is what makes the control
 /// legible rather than the other way round.
 ///
-/// ★ Drawn inside [`body`]'s existing scroll area by construction — see
+/// Drawn inside [`body`]'s existing scroll area by construction — see
 /// [`info_body`]'s doc — which is what makes an unbounded row count safe here
 /// and unsafe in the bar.
 ///
@@ -794,13 +794,13 @@ fn load_anomalies_note(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) {
     if rows.is_empty() {
         return;
     }
-    // ★ Counted here rather than inside the scope, because the button's
+    // Counted here rather than inside the scope, because the button's
     // existence is a property of the FILE and the scope's job is drawing. The
     // census is the same one both status lines use — one definition of "how
     // many duplicate keys", not a second `iter().filter()` that could disagree
     // with the sentence the operator read in the bar two seconds ago.
     let census = crate::app::status::anomalies::census(anomalies);
-    // ★★ The whole block is scoped so that its union rect is a value rather
+    // The whole block is scoped so that its union rect is a value rather
     // than something reconstructed from two cursor readings. `ui.cursor()`
     // before and after would give a rect that is right today and wrong the
     // first time a caller wraps this in a horizontal layout — the scope's own
@@ -811,13 +811,13 @@ fn load_anomalies_note(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) {
             ui.label(egui::RichText::new(t_anomalies::note()).small().weak())
                 .on_hover_text(t_anomalies::tooltip());
             for (index, row) in rows.iter().enumerate() {
-                // ★ One label per anomaly rather than one joined paragraph. A
+                // One label per anomaly rather than one joined paragraph. A
                 // paragraph reads as prose about the file in general; separate
                 // lines read as a list of specific places, which is what an
                 // operator checking a titleblock against a drawing needs to
                 // work down.
                 let response = ui.label(egui::RichText::new(row).small().weak());
-                // ★ Per-row region, published under `REGION_ANOMALY_ROW_PREFIX`.
+                // Per-row region, published under `REGION_ANOMALY_ROW_PREFIX`.
                 // The block region below says "the file contradicted itself";
                 // only counting these says "in how many places", and a
                 // regression that drew the heading with no rows under it would
@@ -833,7 +833,7 @@ fn load_anomalies_note(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) {
         })
         .response
         .rect;
-    // ★ `ui_rect_visible` rather than `ui_rect`, for the reason `info_body`
+    // `ui_rect_visible` rather than `ui_rect`, for the reason `info_body`
     // states at its own publication: this draws inside `body`'s `ScrollArea`,
     // and a rect published for a scrolled-out control gets clicked by the
     // harness at a coordinate the operator can never reach.
@@ -846,7 +846,7 @@ use pdfcer_core::parser::DuplicateKeyPolicy;
 /// **Which reading to offer, given the one in effect** — the whole of
 /// [`reread_control`]'s judgement, separated from its drawing.
 ///
-/// # ★★ Why this is a function rather than four lines inside the button
+/// # Why this is a function rather than four lines inside the button
 ///
 /// Because a unit test can drive it and cannot drive a `Ui`. Two of the three
 /// properties that matter here are decidable without a window — *the offer is
@@ -890,7 +890,7 @@ fn offered_reading(current: DuplicateKeyPolicy) -> (DuplicateKeyPolicy, &'static
 /// name both values, and this offers the other one. Read in the other order it
 /// would be a button with nothing to mean.
 ///
-/// # ★★★ `duplicates == 0` renders NOTHING — R9, and it is not a formality
+/// # `duplicates == 0` renders NOTHING — R9, and it is not a formality
 ///
 /// A file whose only anomaly was a recovered stream length or a missing
 /// `endobj` gets the rows and no button, because there was no second reading to
@@ -900,7 +900,7 @@ fn offered_reading(current: DuplicateKeyPolicy) -> (DuplicateKeyPolicy, &'static
 /// *temporarily* unavailable, and "this file has no duplicate keys" is not a
 /// condition the operator can clear.
 ///
-/// # ★★ One button, whose LABEL names the other reading
+/// # One button, whose LABEL names the other reading
 ///
 /// Not a pair of radio buttons and not a checkbox. After a re-read the opposite
 /// choice is exactly as available as this one was, so the honest control is a
@@ -967,7 +967,7 @@ mod tests {
     /// dropped block would correctly draw and the check would report the
     /// opposite defect, equally wrongly.
     ///
-    /// ★ This lives in the cheap suite on purpose. A fixture that has stopped
+    /// This lives in the cheap suite on purpose. A fixture that has stopped
     /// being a control is a fact about the corpus, and finding it out costs a
     /// second here and a ninety-minute driven sweep there.
     #[test]
@@ -994,7 +994,7 @@ mod tests {
     /// green forever, measuring nothing. Asserting the INPUT here is what makes
     /// the output assertion downstream mean anything.
     ///
-    /// ★ Both numbers are checked, not the count. A count of two is satisfied
+    /// Both numbers are checked, not the count. A count of two is satisfied
     /// by finding object 8 twice, and *which object went* is the question the
     /// engine cited when it chose to carry a list rather than a tally.
     #[test]
@@ -1003,7 +1003,7 @@ mod tests {
         let report = doc.session.document().recovery().expect(
             "no xref, no trailer, no startxref: this fixture can only have been opened by rebuild-by-scan, and if it was not then the file on disk is no longer the file the generator writes",
         );
-        // ★ Annotated with the engine's own type on purpose. Every other line
+        // Annotated with the engine's own type on purpose. Every other line
         // in this module reaches a `DroppedObject` through field access on an
         // inferred binding, so the TYPE NAME appeared nowhere in this
         // repository and `check-engine-api-drift` reported the struct and both
@@ -1028,7 +1028,7 @@ mod tests {
     /// asserted is the pair of strings it hands to `ui.label` — built here from
     /// the same report, by the same two functions, in the same order.
     ///
-    /// ★ The summary is asserted to be non-empty and the numbers line to carry
+    /// The summary is asserted to be non-empty and the numbers line to carry
     /// both numbers. It deliberately does not pin the wording: prose gets
     /// reworded, and a test that fails on a comma teaches people to edit tests.
     /// What it pins is that neither object vanished on the way, which is the
@@ -1068,7 +1068,7 @@ mod tests {
     /// first values and finds it worse has to close the tab and reopen the file
     /// to get back, and will reasonably conclude pdfcer changed something.
     ///
-    /// ★ Asserted on the **policy**, not on the label — the label is prose and
+    /// Asserted on the **policy**, not on the label — the label is prose and
     /// prose gets reworded. The pairing between them is what the shared return
     /// type makes unbreakable; see [`offered_reading`]'s doc.
     #[test]
@@ -1209,7 +1209,7 @@ mod tests {
         assert!(labels.iter().all(|l| !l.is_empty()));
     }
 
-    /// ★ Clearing is expressed as `None`, and only a genuinely empty draft
+    /// Clearing is expressed as `None`, and only a genuinely empty draft
     /// clears.
     ///
     /// The rule is stated here as data rather than exercised through a frame,

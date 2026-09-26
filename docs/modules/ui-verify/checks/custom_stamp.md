@@ -31,7 +31,7 @@ Every one of those passes on a build whose gallery is drawn below the
 window's bottom edge, or whose radio never fires, or whose fork reads
 `stamp` first and puts `Approved` on the sheet instead of his signature.
 
-# ★★★ The collection is PLANTED, and that is the whole reason this check
+# The collection is PLANTED, and that is the whole reason this check
 can fail
 
 The obvious version of this check reads the operator's own Acrobat stamps
@@ -116,7 +116,7 @@ that is correct: it would be a defect for a different check to catch.
 | H | arm **Stamp** again, drag a second box elsewhere | `stamp-gallery-opens restored=custom remembered="custom:Site Review/Issued"` |
 | I | press **Add** without touching the gallery | a SECOND `custom-stamp-requested name=Issued` -- the memory reached the page |
 
-★ **Phases H and I have been seen to fail.** On their first driven run
+**Phases H and I have been seen to fail.** On their first driven run
 `REMEMBERED_TOKEN` carried the quotes the shell writes, `trace::parse_fields`
 had already stripped them, and the check refused -- printing the line it
 refused on, which is why the mistake cost thirty seconds. A phase that has

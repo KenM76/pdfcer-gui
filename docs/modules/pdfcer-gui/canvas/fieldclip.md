@@ -41,7 +41,7 @@ difference between an independent field and a linked one is invisible on the
 page* — it shows up only when somebody types in one and the other does not
 follow.
 
-## ★★★ This module was rewritten the day it was written, and the rewrite is
+## This module was rewritten the day it was written, and the rewrite is
 the interesting part
 
 The first version **re-authored**: it read the source field into a
@@ -78,7 +78,7 @@ mode is a shell that files a request, ships a workaround, and never comes
 back. This module came back the same afternoon and recovered eight
 properties' worth of fidelity by doing so.
 
-## ★★ Rule 4 — disclosure is the ENGINE's now, and that is a simplification
+## Rule 4 — disclosure is the ENGINE's now, and that is a simplification
 
 A pasted field renders exactly as a saved-and-reopened one would. No badge,
 no tint, no "this copy is incomplete" marker anywhere on the page, because
@@ -94,7 +94,7 @@ reused accessibility name. This shell surfaces it verbatim rather than
 re-deriving any of it, which is the same *one fact, one wording* rule that
 removed this module's own merge sentence a few hours earlier.
 
-## ★ Radio groups travel whole, and that changes what the rectangle means
+## Radio groups travel whole, and that changes what the rectangle means
 
 `copy_field` on a radio field carries **every** widget in `/Kids` order with
 its own rectangle and export value. On a `NewField` paste the group is

@@ -196,7 +196,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let commits_before = session.trace()?.events(COMMIT_EVENT).count();
     let undos_before = session.trace()?.events(UNDO_APPLIED_EVENT).count();
 
-    // --- D: ★★★ ESCAPE, WHICH MUST WRITE -----------------------------------
+    // --- D: ESCAPE, WHICH MUST WRITE -----------------------------------
     driver.press(vk::ESCAPE)?;
     session.settle(24);
     let trace = session.trace()?;
@@ -244,7 +244,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- E: the recovery the ruling rests on --------------------------------
     //
-    // ★★ Not a bonus arm. The operator's argument is that a commit is
+    // Not a bonus arm. The operator's argument is that a commit is
     // recoverable and a discard is not; a build that committed on Escape and
     // could not undo it would have swapped an unrecoverable loss for an
     // unrecoverable gain and satisfied phase D completely.

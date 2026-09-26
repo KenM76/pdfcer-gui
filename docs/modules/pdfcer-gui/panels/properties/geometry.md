@@ -21,7 +21,7 @@ implementation with a second set of rounding, a second pivot convention and
 a second answer to *what happens to line weights* — and the two would drift,
 silently, because nothing compares them.
 
-## ★ Why an operator needs this even though the grips work
+## Why an operator needs this even though the grips work
 
 Because a grip cannot express *exactly 40.0 points*. The resize gesture is
 excellent for "about this big" and incapable of "the same as the one above
@@ -35,7 +35,7 @@ requires a sub-pixel drag is a gesture some operators cannot perform, and
 `MODES_AND_PANELS.md` §7's accessibility line asks for a typed equivalent to
 every direct-manipulation edit for exactly that reason.
 
-## ★★ Why there is an Apply button and the fields do not commit as you type
+## Why there is an Apply button and the fields do not commit as you type
 
 Because **every commit is an undo entry**, and a `DragValue` the operator
 scrubs from 40 to 120 would raise eighty of them. That is not a theoretical
@@ -51,7 +51,7 @@ one; the operator who changes only X gets exactly one entry, and the
 operator who changes X and W gets two, in that order, which is the order
 that makes the second one's pivot mean what the preview said.
 
-## ★ Why the draft is discarded when the object changes underneath it
+## Why the draft is discarded when the object changes underneath it
 
 The draft is stamped with `(page, object, edit epoch)`. If any of the three
 moves — the operator selects something else, or *anything at all* edits the
@@ -93,7 +93,7 @@ unchanged and harder: a revision cloud that must sit exactly 25 mm inside
 the title block cannot be placed by hand at fit-page zoom, where 25 mm is
 about seven pixels.
 
-★★ **The correction is recorded rather than the comment quietly deleted**,
+**The correction is recorded rather than the comment quietly deleted**,
 which is this project's standing practice: a claim that was right and
 expired teaches something a clean file does not — that a refusal written
 against a missing capability must name the capability, so that whoever adds
@@ -111,14 +111,14 @@ nine days between `move_annotation` landing and this change.
 | a resize | `resizing::action`, pivot + factors | `AnnotAction::Resize`, anchor + factors |
 | refusals | off-canvas, not a path, no node model | **locked** (`/F` bit 8), and the engine's foreign-appearance refusal |
 
-★★★ **`move_annotation` takes a DELTA and `resize_annotation` takes an
+**`move_annotation` takes a DELTA and `resize_annotation` takes an
 ANCHOR plus FACTORS.** Neither takes the absolute rectangle the operator
 typed, so both fields are converted here, by [`annot_plan`], using the same
 two helpers ([`delta`] and [`factors`]) the content half uses — one
 arithmetic, two callers, so a typed move and a typed scale cannot acquire
 different rounding from a dragged one.
 
-★★ **A ce dimension is not this section's**, and the guard is a `match` on
+**A ce dimension is not this section's**, and the guard is a `match` on
 [`AnnotKind`](crate::canvas::selection::AnnotKind) rather than a comparison
 of `/Subtype` strings. `pdfcer-core` refuses both verbs by name for one —
 *"a ce dimension must RE-MEASURE when it moves"* — and points at

@@ -23,7 +23,7 @@ way to change either. §5.5 predicted the operator's report in advance:
 > The `Style` group sets defaults for the next markup. … Both must exist;
 > today only the first does, **which is why a placed markup feels final**.
 
-# ★ Why no test could see it, and this one can
+# Why no test could see it, and this one can
 
 This is a **third** shape of the invisible-wiring failure this harness
 exists for, and it is worth naming beside the other two:

@@ -224,7 +224,7 @@ pub fn outlines(
         }
         text_objects += 1;
         chunks += count;
-        // ★ A single-chunk object contributes nothing. Its one box would sit on
+        // A single-chunk object contributes nothing. Its one box would sit on
         // top of the selection outline already drawn there, and two rectangles
         // at the same place saying two different things is worse than one.
         if count < 2 {

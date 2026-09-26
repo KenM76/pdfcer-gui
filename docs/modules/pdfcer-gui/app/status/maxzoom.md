@@ -3,7 +3,7 @@
 
 > *"put the max zoom setting on the bar at the bottom."*
 
-## ★ Why the readout rather than a new control
+## Why the readout rather than a new control
 
 The status bar already has a zoom readout — a fixed 46 pt label showing the
 current percentage, with a tooltip explaining the ladder. It is the one
@@ -16,7 +16,7 @@ Adding a separate control would have cost horizontal space on a bar whose
 own module documents a fixed 30 pt height and a right-hand cluster that must
 not move, to say something the readout is already the natural home for.
 
-## ★★ It writes the preference itself, and the caller persists it
+## It writes the preference itself, and the caller persists it
 
 Same seam as [`super::filter`]: this mutates a `Copy` value, and
 [`crate::app::frame`] compares before and after and writes the file when it

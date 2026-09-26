@@ -22,7 +22,7 @@ had ever come back **down** through it.
 
 [`DeepAnchor`]: pdfcer-gui `viewer::deep::DeepAnchor`
 
-# ★★★ Why the sibling check could not see this
+# Why the sibling check could not see this
 
 [`super::zoom_keeps_place`] climbs. It climbs all the way to the ceiling,
 one notch at a time, with a tolerance tight enough to catch a fraction of a

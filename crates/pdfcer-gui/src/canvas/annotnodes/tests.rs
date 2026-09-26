@@ -1,6 +1,6 @@
 //! # `canvas::annotnodes` tests — the shell's half, and the engine's ruling
 //!
-//! ## ★★★ What these can and cannot prove, stated first
+//! ## What these can and cannot prove, stated first
 //!
 //! **They cannot prove the operator can edit a node.** Every test here calls a
 //! function directly, and the whole point of R1 is that a passing unit test is
@@ -15,7 +15,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/annotnodes/tests.md`.
 
-// ★★ The INNER attribute, not just the `mod tests;` declaration in the parent.
+// The INNER attribute, not just the `mod tests;` declaration in the parent.
 // `check-ui-strings.sh`'s exclusion 2b recognises a whole test file **from the
 // file** rather than from its name, and without it every assertion message here
 // is reported as operator-facing copy.
@@ -29,7 +29,7 @@ use pdfcer_core::annot_author::{Color, LineEnding, MarkupSpec};
 /// A real document with one markup annotation authored into it, and a selection
 /// naming it.
 ///
-/// ★★ **Through `add_markup`, not through a hand-built dictionary.** The
+/// **Through `add_markup`, not through a hand-built dictionary.** The
 /// preflight reads the annotation out of the session's own graph, so a fixture
 /// that faked one would be asking the engine about a shape that does not exist.
 fn authored(spec: &MarkupSpec) -> (crate::app::state::OpenDoc, ObjId) {
@@ -172,7 +172,7 @@ fn points_of(pairs: &[(f64, f64)]) -> Vec<Point> {
 // 1. Which shapes show anchors — the one table this shell owns
 // ===========================================================================
 
-/// ★★★ **A `/Polygon` closes, a `/PolyLine` does not, and a `/Line` has two
+/// **A `/Polygon` closes, a `/PolyLine` does not, and a `/Line` has two
 /// ends.**
 ///
 /// The `closed` flag is what decides whether the preview draws the segment back
@@ -221,17 +221,17 @@ fn the_three_shapes_with_nodes_report_their_geometry() {
         2,
         "a /Line's ends come from /L, not /Vertices"
     );
-    // ★ Index 0 is the START and index 1 is the END, which is exactly how the
+    // Index 0 is the START and index 1 is the END, which is exactly how the
     // engine addresses them. A shell that read them the other way round would
     // move the wrong end and look, on screen, like a working gesture.
     assert!((points[0].x - 10.0).abs() < 1e-6, "{:?}", points[0]);
     assert!((points[1].x - 110.0).abs() < 1e-6, "{:?}", points[1]);
 }
 
-/// ★★★ **R9: a shape with no editable nodes draws NOTHING** — not a greyed
+/// **R9: a shape with no editable nodes draws NOTHING** — not a greyed
 /// anchor, not a ghost anchor.
 ///
-/// ★ `/Ink` was the third row of this list until `pdfcer-core` `Pass 278.0`
+/// `/Ink` was the third row of this list until `pdfcer-core` `Pass 278.0`
 /// (2026-09-09), and the paragraph that kept it there is still true of the
 /// rule if not of the shape: `Annotation::ink_list` was **readable** while
 /// every edit on it was refused, so a shell that derived *"draggable"* from
@@ -273,7 +273,7 @@ fn a_shape_with_no_editable_nodes_shows_no_anchors() {
     }
 }
 
-/// ★★ **A locked annotation offers no anchors either**, and the refusal is
+/// **A locked annotation offers no anchors either**, and the refusal is
 /// honoured here rather than left to the engine.
 ///
 /// §12.5.3 Table 165 bit 8 is the *file* saying the user interface may not
@@ -286,7 +286,7 @@ fn a_locked_shape_offers_no_anchors() {
     assert!(geometry(&doc, &select(&doc, id, true)).is_none());
 }
 
-/// ★ **A ce dimension is not this module's business.**
+/// **A ce dimension is not this module's business.**
 ///
 /// The load-bearing half. A ce dimension is a `/Line` with
 /// `/IT /LineDimension`, so it passes every *"is this markup?"* test; reshaping
@@ -321,7 +321,7 @@ fn a_closed_shape_previews_its_closing_segment() {
     assert_eq!(preview_of(&pts, false).len(), 3);
 }
 
-/// ★★ **A single-list shape's `Geometry::segments` is `preview_of`, exactly.**
+/// **A single-list shape's `Geometry::segments` is `preview_of`, exactly.**
 ///
 /// `Geometry::segments` replaced the direct `preview_of` call when `/Ink`
 /// needed a segment list that respects stroke boundaries, and this is the
@@ -330,7 +330,7 @@ fn a_closed_shape_previews_its_closing_segment() {
 /// square and an open one, because the closing segment is the only place the
 /// two derivations could have disagreed.
 ///
-/// ★ Falsified: dropping the `closed && n >= 3` push in `segment_pairs` makes
+/// Falsified: dropping the `closed && n >= 3` push in `segment_pairs` makes
 /// the closed comparison fail on length.
 #[test]
 fn a_single_list_shapes_segments_are_preview_of_unchanged() {
@@ -366,7 +366,7 @@ fn a_single_list_shapes_segments_are_preview_of_unchanged() {
     assert_eq!(closed.segment_pairs(), vec![(0, 1), (1, 2), (2, 3), (3, 0)]);
 }
 
-/// ★★ **A node moves to where the pointer resolved, and its neighbours do
+/// **A node moves to where the pointer resolved, and its neighbours do
 /// not.**
 ///
 /// Asserted on the resulting geometry rather than on the action's `dx`/`dy`
@@ -420,7 +420,7 @@ fn only_the_release_raises_an_action_and_it_raises_one() {
     );
 }
 
-/// ★ **A move sends a DELTA measured from the node, not from the pointer.**
+/// **A move sends a DELTA measured from the node, not from the pointer.**
 ///
 /// The node at `(300, 100)` dragged to `(150, 150)` is `dx = -150, dy = +50`.
 /// A build that sent the absolute target would move the shape by the target's
@@ -442,7 +442,7 @@ fn a_move_sends_the_displacement_of_the_node() {
 // 3. The engine's ruling, asked rather than restated
 // ===========================================================================
 
-/// ★★★ **A three-node polygon refuses to lose one, and SAYS SO.**
+/// **A three-node polygon refuses to lose one, and SAYS SO.**
 ///
 /// The floor is the engine's (`/Polygon` keeps three) and this test drives the
 /// real `reshape_annotation_preview` against a real annotation, so it fails the
@@ -510,7 +510,7 @@ fn a_refused_removal_previews_the_shape_that_is_already_there() {
     assert!(actions.is_empty(), "{actions:?}");
 }
 
-/// ★★★ **The same three points, OPEN, and the answer is the opposite one.**
+/// **The same three points, OPEN, and the answer is the opposite one.**
 ///
 /// A `/PolyLine` keeps two, so this removal is legal and what it leaves is a
 /// straight line: one segment, from the first node to the last. This is what
@@ -554,7 +554,7 @@ fn an_open_three_point_path_may_lose_a_node_and_becomes_a_line() {
     );
 }
 
-/// ★★ **A node is added AFTER the one grabbed**, which is what makes the
+/// **A node is added AFTER the one grabbed**, which is what makes the
 /// gesture mean *"put a point on this segment"* rather than *"put a point
 /// somewhere on this shape"*.
 ///
@@ -605,7 +605,7 @@ fn a_node_is_added_after_the_one_that_was_grabbed() {
     );
 }
 
-/// ★★★ **A `/Line` moves either end and cannot gain or lose one — and the
+/// **A `/Line` moves either end and cannot gain or lose one — and the
 /// refusal NAMES the shape.**
 ///
 /// This is the brief's own case: *a refusal that names a shape type is a real
@@ -668,7 +668,7 @@ fn a_line_moves_its_ends_and_refuses_to_gain_one_by_name() {
 // 4. The wording, and the one coupling this feature depends on
 // ===========================================================================
 
-/// ★★ **Every refusal sentence is about a shape, never about a measurement.**
+/// **Every refusal sentence is about a shape, never about a measurement.**
 ///
 /// R8b rule 15. `crate::text::measure::VertexEditRefusal` says *"measurement"*
 /// because its subject is a **ce dimension**; this enum's subject is a comment
@@ -705,11 +705,11 @@ fn no_node_refusal_calls_a_markup_shape_a_measurement() {
         let lower = line.to_lowercase();
         assert!(!lower.contains("measurement"), "{why:?}: {line}");
         assert!(!lower.contains("dimension"), "{why:?}: {line}");
-        // ★ And no engine vocabulary: a sentence naming a PDF key or an engine
+        // And no engine vocabulary: a sentence naming a PDF key or an engine
         // verb is diagnostic prose that has escaped into the UI, which is
         // exactly what `check-ui-strings`' exclusion 3 exists to keep out.
         //
-        // ★★ **"polyline" is deliberately NOT on this list**, and it was on it
+        // **"polyline" is deliberately NOT on this list**, and it was on it
         // for one run. It looks like a PDF name — `/PolyLine` is one — and it
         // is also the operator's own word: `markup.polyline`'s ribbon label is
         // literally "Polyline", so the Line sentence's *"draw a polyline for
@@ -727,7 +727,7 @@ fn no_node_refusal_calls_a_markup_shape_a_measurement() {
     }
 }
 
-/// ★ **The subtype word is the operator's, not the file's.**
+/// **The subtype word is the operator's, not the file's.**
 ///
 /// `/Square` is what pdfcer's own Rectangle tool authors, and telling an
 /// operator "Square" for the thing they drew with the Rectangle button is the
@@ -754,7 +754,7 @@ fn a_square_is_called_a_rectangle_and_a_circle_an_ellipse() {
     );
 }
 
-/// ★★★ **THE COUPLING THIS FEATURE HANGS ON, asserted rather than trusted.**
+/// **THE COUPLING THIS FEATURE HANGS ON, asserted rather than trusted.**
 ///
 /// The count gestures require the **Points tool** to be armed — `Ctrl` alone
 /// with the Select tool still moves the node, which is the safety that stops a
@@ -770,7 +770,7 @@ fn a_square_is_called_a_rectangle_and_a_circle_an_ellipse() {
 /// that, and it is here rather than in a paragraph because a paragraph cannot
 /// go red.
 ///
-/// ★ Why the predicate was not simply widened: the two copies of it must stay
+/// Why the predicate was not simply widened: the two copies of it must stay
 /// identical, and a disagreement shows as a tool that arms and is retired on
 /// the next frame — a flicker with no sentence attached. One of the two copies
 /// lives in `app::dispatch`, which this session did not own. Reported rather
@@ -807,7 +807,7 @@ fn the_points_tool_arms_wherever_a_markup_shape_can_be_authored() {
 // would get `AnnotationNotFound` for every case while looking exactly like a
 // test that passed for the right reason.
 
-/// ★★★ **A two-stroke freehand mark yields one anchor per point of every
+/// **A two-stroke freehand mark yields one anchor per point of every
 /// stroke, and its preview draws NO segment between the strokes.**
 ///
 /// Five points, three segments: `(0,1)`, `(1,2)` in the first stroke and
@@ -816,7 +816,7 @@ fn the_points_tool_arms_wherever_a_markup_shape_can_be_authored() {
 /// and the release would not commit, which is exactly what the honesty
 /// contract in the module header forbids.
 ///
-/// ★ Falsified: replacing `segment_pairs` with the single-list rule makes the
+/// Falsified: replacing `segment_pairs` with the single-list rule makes the
 /// count assertion read 4 and the bridge assertion find the segment.
 #[test]
 fn an_ink_with_two_strokes_yields_every_point_and_draws_no_bridge() {
@@ -842,7 +842,7 @@ fn an_ink_with_two_strokes_yields_every_point_and_draws_no_bridge() {
     assert_eq!(shape.segment_pairs(), vec![(0, 1), (1, 2), (3, 4)]);
 }
 
-/// ★★★ **Flat anchor index ↔ `(stroke, point)` round-trips, INCLUDING the
+/// **Flat anchor index ↔ `(stroke, point)` round-trips, INCLUDING the
 /// first point of the second stroke.**
 ///
 /// Index 3 is the one that matters: it is `(1, 0)`, and an off-by-one in
@@ -851,7 +851,7 @@ fn an_ink_with_two_strokes_yields_every_point_and_draws_no_bridge() {
 /// would accept and move. The second is the dangerous one: it looks like a
 /// working gesture on the wrong node.
 ///
-/// ★ Falsified: changing `flat < start + len` to `<=` in `address` reports
+/// Falsified: changing `flat < start + len` to `<=` in `address` reports
 /// index 3 as `(0, 3)`.
 #[test]
 fn an_ink_anchor_index_round_trips_through_stroke_and_point() {
@@ -870,7 +870,7 @@ fn an_ink_anchor_index_round_trips_through_stroke_and_point() {
     assert_eq!(table.flat(2, 0), None, "there is no third stroke");
 }
 
-/// ★★★ **Insert after a stroke's LAST point extends that stroke and never
+/// **Insert after a stroke's LAST point extends that stroke and never
 /// crosses into the next** — the engine's rule on `InkEdit::InsertPoint`.
 ///
 /// Index 2 is stroke 0's last point. After the insert the mark has six
@@ -880,7 +880,7 @@ fn an_ink_anchor_index_round_trips_through_stroke_and_point() {
 /// first point, now at flat index 4. The release raises
 /// `InsertInkPoint { stroke: 0, after: 2 }`.
 ///
-/// ★ Falsified: a stroke table that did not grow stroke 0 (`after_edit`
+/// Falsified: a stroke table that did not grow stroke 0 (`after_edit`
 /// returning `self.clone()`) shifts the boundary and the preview draws a
 /// segment from the new point into stroke 1.
 #[test]
@@ -934,7 +934,7 @@ fn inserting_after_a_strokes_last_point_extends_that_stroke() {
     );
 }
 
-/// ★★ **A move on the first point of the second stroke raises the ENGINE'S
+/// **A move on the first point of the second stroke raises the ENGINE'S
 /// address, not the flat index**, with the delta measured from that point.
 ///
 /// Flat index 3 is `(300, 300)`; dragged to `(150, 150)` it is
@@ -981,7 +981,7 @@ fn moving_an_ink_point_raises_the_engines_address_not_the_flat_index() {
     );
 }
 
-/// ★★★ **The floor is the STROKE'S: the same mark accepts a removal from its
+/// **The floor is the STROKE'S: the same mark accepts a removal from its
 /// three-point stroke and refuses one from its two-point stroke — and SAYS
 /// SO, per stroke.**
 ///
@@ -1042,7 +1042,7 @@ fn a_two_point_stroke_refuses_to_lose_a_point_and_names_the_stroke() {
     );
 }
 
-/// ★★ **Every one of the engine's five ink refusals maps to a sentence**, and
+/// **Every one of the engine's five ink refusals maps to a sentence**, and
 /// the two that have a specific next act get it.
 ///
 /// Built from the variants directly rather than provoked through the engine,
@@ -1094,7 +1094,7 @@ fn every_ink_refusal_is_a_sentence() {
         let why = refusal_for(&error);
         assert_eq!(why, expected, "{error}");
         assert!(!why.line().is_empty(), "{why:?} has no sentence");
-        // ★ The voice: name the next act, never say "cannot". `Refused` is
+        // The voice: name the next act, never say "cannot". `Refused` is
         // the one general sentence and is exempt — it predates this rule and
         // its wording is owned by the polygon path.
         if why != R::Refused {
@@ -1107,7 +1107,7 @@ fn every_ink_refusal_is_a_sentence() {
     }
 }
 
-/// ★ **The right-click rows on a freehand mark**: *Remove this point* is live
+/// **The right-click rows on a freehand mark**: *Remove this point* is live
 /// on a three-point stroke, **greyed** on a two-point one — the R9 temporary
 /// case, per stroke — and *Add a point here* is live on a within-stroke
 /// segment.
@@ -1135,7 +1135,7 @@ fn the_menu_rows_follow_the_strokes_floor() {
     assert_eq!(segment.remove, menu::RowState::Absent);
 }
 
-/// ★ **A malformed ink — no readable `/InkList` — draws no anchors and is the
+/// **A malformed ink — no readable `/InkList` — draws no anchors and is the
 /// one case the freehand "no nodes" sentence still describes.**
 ///
 /// Exercised on the table rather than on a file, because pdfcer's own verbs

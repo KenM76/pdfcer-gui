@@ -13,7 +13,7 @@ Two things live here:
 2. [`draw_page_state`] — what a page looks like when there is no texture
    for it yet, which is the honesty question this feature turns on.
 
-## ★ What is rasterized, and when
+## What is rasterized, and when
 
 **Only pages the operator can see, one at a time, nearest first.**
 
@@ -38,7 +38,7 @@ pages it has not reached yet as undrawn rather than blocking on them — then
 keeps going outwards, on the frames it has nothing visible left to draw,
 until the memory the operator allowed is spent.
 
-## ★ What an undrawn page shows — and why it is not a white rectangle
+## What an undrawn page shows — and why it is not a white rectangle
 
 `PROJECT_PLAN.md` §3 forbids placeholders. A white rectangle where a page
 will be is exactly that: it is indistinguishable from a blank page, so the
@@ -63,7 +63,7 @@ is not drawn". Both of those refinements came from screenshotting a driven
 scroll rather than from a test; see [`draw_page_state`] and
 [`undrawn_fill`], each of which records what the picture showed.
 
-## ★ The budget: several pages multiply the pixel cost, and this is the cap
+## The budget: several pages multiply the pixel cost, and this is the cap
 
 `crate::viewer::max_zoom_for_page` caps **one** pixmap at
 `pdfcer_render::MAX_PIXMAP_EDGE`, accounting for `pixels_per_point`. That
@@ -87,7 +87,7 @@ page's own texture is never in this cache to begin with (see
 looking at can never be evicted to make room for one they are scrolling
 past.
 
-## ★ Why the current page keeps its own slot outside this cache
+## Why the current page keeps its own slot outside this cache
 
 `crate::app::state::OpenDoc::page_texture` stays exactly what it was: the
 current page's raster, `Option<PageTexture>`, invalidated by assigning

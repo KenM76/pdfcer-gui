@@ -12,7 +12,7 @@ one got a resize cursor, a drag that felt like it was working, and no
 change: `DEFECTS.md` D4a's shape exactly.
 
 
-# ★ Why this cannot be a unit test
+# Why this cannot be a unit test
 
 Six links, and four of them are only observable in a running window:
 
@@ -30,7 +30,7 @@ against the wrong anchor still resizes, just about a different corner, so
 the object moves *and* changes size. That looks like a slightly clumsy
 gesture rather than a defect.
 
-# ★★ The oracle is `resize-commit`, and it carries the numbers
+# The oracle is `resize-commit`, and it carries the numbers
 
 `resize-commit grip=… sx=… sy=… ax=… ay=…`. A line saying only *"a resize
 committed"* would be identical for a build that scaled about the centre,

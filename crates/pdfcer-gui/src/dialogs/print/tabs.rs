@@ -16,7 +16,7 @@
 //! > Three tabs replace it, each named for the QUESTION it answers, so a
 //! > control's location is itself a hint.
 //!
-//! ## ★ Where each control lives, and why it lives there
+//! ## Where each control lives, and why it lives there
 //!
 //! The placements are not arbitrary and three of them are counter-intuitive
 //! enough to be worth stating, because a later hand "tidying" them would undo
@@ -50,7 +50,7 @@ pub(super) enum PrintTab {
     /// Where each page sits on the sheet, and therefore what gets cropped off
     /// a drawing too big for the paper.
     ///
-    /// ★ A tab of its own rather than a group at the foot of
+    /// A tab of its own rather than a group at the foot of
     /// [`Self::PagesLayout`], where it started and where it belongs
     /// conceptually — scale and position are one decision. It was measured
     /// there and it did not fit: the group is about 180 pt tall, the options
@@ -350,7 +350,7 @@ pub(super) fn pages_layout(
     } else {
         let selected_text = match dialog.device.paper {
             PaperChoice::DeviceDefault => t::paper_device_default().to_owned(),
-            // ★ The label stays on the POLICY, never on the sheet the policy
+            // The label stays on the POLICY, never on the sheet the policy
             // picked. See `PrintDialog::effective_device` for the argument:
             // a combo that jumped to "A4" the moment auto was chosen would
             // leave the operator unable to tell a match from a control that
@@ -370,7 +370,7 @@ pub(super) fn pages_layout(
         let combo = egui::ComboBox::from_id_salt("print-paper")
             .selected_text(selected_text)
             .show_ui(ui, |ui| {
-                // ★ Every entry publishes its rect while the list is open.
+                // Every entry publishes its rect while the list is open.
                 //
                 // Not instrumentation for its own sake. An egui combo popup is
                 // an `Area` laid out at paint time, so an out-of-process check
@@ -446,7 +446,7 @@ pub(super) fn pages_layout(
     let line = match dialog.device.paper {
         PaperChoice::DeviceDefault => t::sheet_from_driver(sheet),
         PaperChoice::Form(_) => t::paper_is_a_request(sheet),
-        // ★ Auto reports the WORKING, not just the answer — the largest page
+        // Auto reports the WORKING, not just the answer — the largest page
         // it measured as well as the sheet it chose. An operator whose
         // drawing is not the size named here learns immediately that pdfcer
         // measured something they did not expect (a rotated page, a stray
@@ -455,7 +455,7 @@ pub(super) fn pages_layout(
     };
     ui.label(egui::RichText::new(line).small().weak());
 
-    // ★★ The mixed-set sentence, on its own line and only when it applies.
+    // The mixed-set sentence, on its own line and only when it applies.
     //
     // Separate from the line above because it is a different kind of claim:
     // the first says what pdfcer did, this one says what the operator can do
@@ -485,7 +485,7 @@ pub(super) fn copies_finishing(ui: &mut Ui, dialog: &mut PrintDialog) {
         .on_hover_text(t::reverse_tooltip());
     ui.add_space(8.0);
 
-    // ★ R83: no duplex control for a device that cannot duplex. pdfcer does
+    // R83: no duplex control for a device that cannot duplex. pdfcer does
     // NOT simulate it by reordering pages and asking the operator to reinsert
     // the stack — that workflow has a documented mis-assembly failure mode,
     // and offering it as though it were duplex would claim a capability the
@@ -525,7 +525,7 @@ pub(super) fn copies_finishing(ui: &mut Ui, dialog: &mut PrintDialog) {
     // box is ticked, so an unticked box cancels nothing the driver was doing
     // by itself). The reason for the removal no longer holds.
     //
-    // ★ AND IT IS DRAWN IN ALL THREE CAPABILITY STATES, which inverts the
+    // AND IT IS DRAWN IN ALL THREE CAPABILITY STATES, which inverts the
     // rule the duplex block above follows. `pdfcer-print` declined this
     // project's proposal to gate it like duplex, with a measurement: DC_BINS
     // on Microsoft Print to PDF returns nothing at all, while that same
@@ -653,7 +653,7 @@ fn scale_radios(ui: &mut Ui, dialog: &mut PrintDialog) {
         // absent** — which is the correct side of the no-placeholders rule
         // here, because this really is *temporarily* unavailable: one click
         // on the radio beside it makes it live.
-        // ★★★ …and it now SAYS so — O77's sweep. The comment above has
+        // …and it now SAYS so — O77's sweep. The comment above has
         // always argued that greying is correct here *because* one click on
         // the radio beside it makes the field live. R9 requires that argument
         // to reach the operator, and it never did: the control was greyed with
@@ -682,7 +682,7 @@ mod tests {
         assert_eq!(parse_page_range("5,1-2", 10), Some(vec![4, 0, 1]));
     }
 
-    /// ★ The order typed is the order printed, and duplicates survive.
+    /// The order typed is the order printed, and duplicates survive.
     ///
     /// Both are *behaviours*, not accidents, and both are shared with the
     /// CLI — which is the whole reason there is one parser. A future "tidy"
@@ -695,7 +695,7 @@ mod tests {
         assert_eq!(parse_page_range("1,1", 10), Some(vec![0, 0]));
     }
 
-    /// ★ Malformed input yields NOTHING, never a salvaged prefix.
+    /// Malformed input yields NOTHING, never a salvaged prefix.
     ///
     /// The property the whole "one parser" argument rests on: a range that
     /// cannot be read must not become a job. Each of these would be a
@@ -740,7 +740,7 @@ mod tests {
         assert_eq!(PrintRange::Custom.indices("2-3", 3, 0), vec![1, 2]);
     }
 
-    /// ★ A current page past the end of the document selects nothing.
+    /// A current page past the end of the document selects nothing.
     ///
     /// Reachable rather than theoretical: the dialog holds the page index it
     /// opened on, and a document can be closed and a shorter one opened while

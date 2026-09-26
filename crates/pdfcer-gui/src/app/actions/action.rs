@@ -19,7 +19,7 @@
 //! disclosure recorder"* are two subjects, and putting them in two files is
 //! the ordinary Rust seam between a module and its principal type.
 //!
-//! ## ★ What this does NOT buy, stated so nobody has to find out
+//! ## What this does NOT buy, stated so nobody has to find out
 //!
 //! Headroom. This file is close to the ceiling on the day it was made, and the
 //! next family of variants to grow will have to become a sub-enum beside
@@ -37,7 +37,7 @@ use crate::viewer::FitMode;
 /// as to labels.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
-    /// ★★★ **What is selected** — the two verbs that set it, carved into a
+    /// **What is selected** — the two verbs that set it, carved into a
     /// family on 2026-09-07 under R2. [`super::selecting::SelectionAction`]
     /// carries both, and its header records the seam: these are the only two
     /// actions in this enum that change nothing in the document, so grouping
@@ -74,13 +74,13 @@ pub enum Action {
     /// Raised only by [`crate::dialogs::password::PasswordDialog`], which is the
     /// only surface that can obtain a password. `OPERATOR_REQUESTS.md` O108.
     ///
-    /// ★ **A separate variant rather than an `Option` on [`Self::Open`]**,
+    /// **A separate variant rather than an `Option` on [`Self::Open`]**,
     /// because `load(path)` and `load_with_password(path, Some(pw))` are
     /// different requests and `Some("")` is a third — see
     /// [`crate::app::lifecycle::PdfcerApp::open_path_with_password`], which
     /// carries the argument.
     ///
-    /// ★★★ **The password travels in a [`crate::secret::Secret`]**, whose whole
+    /// **The password travels in a [`crate::secret::Secret`]**, whose whole
     /// purpose is a `Debug` that cannot print the value. That module's header
     /// carries the hazard in full; the one-line version is that this enum
     /// derives `Debug`, this crate traces to stderr, and `tools/ui-verify` keeps
@@ -93,7 +93,7 @@ pub enum Action {
         password: crate::secret::Secret,
     },
 
-    /// ★★★ **Sign the open document with the operator's own certificate, and
+    /// **Sign the open document with the operator's own certificate, and
     /// write the signed bytes where they chose.**
     ///
     /// Raised by [`crate::dialogs::sign`]; handled in
@@ -108,7 +108,7 @@ pub enum Action {
     /// the render worker holds its clone. Every other `&mut` verb in this shell
     /// reaches the session the same way.
     ///
-    /// # ★★★ Why the PATH and the passphrase travel, and not the loaded key
+    /// # Why the PATH and the passphrase travel, and not the loaded key
     ///
     /// This enum derives `Debug`, `Clone` and `PartialEq`, and every one of
     /// those is wrong for a private key: `Debug` puts it in a trace file
@@ -123,14 +123,14 @@ pub enum Action {
     /// signs, so a file that changed between them is caught rather than assumed
     /// away.
     ///
-    /// ★★ **The passphrase travels in a [`crate::secret::Secret`]**, exactly as
+    /// **The passphrase travels in a [`crate::secret::Secret`]**, exactly as
     /// [`Self::OpenWithPassword`]'s password does and for the reason that
     /// variant records. The stakes are higher here — this one opens a private
     /// key rather than a document — and `crate::sign`'s §5 adds a rule stricter
     /// than the one `crate::protect` works to: **no trace line carries even its
     /// length.**
     ///
-    /// ★ `#[cfg]`, and it is the module boundary rather than the ribbon:
+    /// `#[cfg]`, and it is the module boundary rather than the ribbon:
     /// `crate::sign::Authored` does not exist in a build without the
     /// capability, because `pdfcer_core::sign` does not. `SHELL_FRAMEWORK.md`
     /// §5b's rule governs the RIBBON — no `#[cfg]` there, no panel asking
@@ -154,7 +154,7 @@ pub enum Action {
         replace: bool,
     },
 
-    /// ★★★ **Put a completed recognition into the open document, as one
+    /// **Put a completed recognition into the open document, as one
     /// undoable edit.**
     ///
     /// # Why an action rather than the dialog doing it
@@ -165,7 +165,7 @@ pub enum Action {
     /// the frame that drew it is still reading one. Every other edit in this
     /// shell reaches the session the same way.
     ///
-    /// # ★★ One entry for the whole run, however many pages
+    /// # One entry for the whole run, however many pages
     ///
     /// The words for every page travel together and are applied in one call.
     /// Recognising forty pages and then pressing undo forty times is not a
@@ -189,18 +189,18 @@ pub enum Action {
     /// undo entry. See `super::ocrlayers`.
     RemoveOcrLayers,
 
-    /// ★★★ **The verbs whose subject is a whole annotation** — move it, resize
+    /// **The verbs whose subject is a whole annotation** — move it, resize
     /// it, remove it.
     ///
     Annot(super::annot::AnnotAction),
-    /// ★★★ **The File tab's edit verbs** — `file.import_text` today, and the
+    /// **The File tab's edit verbs** — `file.import_text` today, and the
     /// fifth family in this enum after `Annot`, `Vector`, `Field` and the write
     /// group. [`crate::app::actions::importtext::FileAction`]'s own header
     /// records why it was carved out on the day it was added rather than later:
     /// its first draft put one feature's argument in this file, in `apply` and
     /// in `dispatch`, and pushed all three past R2's ceiling in one commit.
     File(super::importtext::FileAction),
-    /// ★★★ **Record a review status on a comment** — `/State` and
+    /// **Record a review status on a comment** — `/State` and
     /// `/StateModel`, §12.5.6.3. The payload, and the whole argument for why it
     /// is not a [`Self::Annot`], are in [`super::reviewstate::RecordStatus`].
     RecordReviewState(super::reviewstate::RecordStatus),
@@ -245,7 +245,7 @@ pub enum Action {
     /// [`crate::app::state::OpenDoc`] moves, and which `SaveOptions` fields
     /// were chosen and why.
     ///
-    /// # ★ Why it carries no path, when [`Self::Open`] carries one
+    /// # Why it carries no path, when [`Self::Open`] carries one
     ///
     /// Because there is no operand to carry. `Open`'s path is the **answer to a
     /// dialog that is gone by the time the action is applied** — it cannot be
@@ -275,7 +275,7 @@ pub enum Action {
     /// configured one: [`crate::app::save::save_as`] carries the argument.
     SaveAs,
 
-    /// ★★★ **Save. In place. Over the file that was opened.**
+    /// **Save. In place. Over the file that was opened.**
     ///
     /// The operator, 2026-08-20: *"can I please have a save button like every
     /// other program in existence has? We're on week two of this and just have
@@ -308,7 +308,7 @@ pub enum Action {
     /// is *not* on screen is [`Self::CloseDocument`], raised only by the ✕ on
     /// a tab and by a middle click on one.
     Close,
-    /// ★★★ **Hand the open document to Acrobat and stop being the program that
+    /// **Hand the open document to Acrobat and stop being the program that
     /// has it** — O122, raised by `file.open_in_acrobat` beside the mode
     /// selector. Carries nothing: always the document on screen. It raises a
     /// question and does nothing else, as [`Self::Close`] does and for its
@@ -326,7 +326,7 @@ pub enum Action {
     /// on the other. It also keeps the trace able to say which control closed
     /// a document.
     ///
-    /// # ★ It may activate the tab before it asks
+    /// # It may activate the tab before it asks
     ///
     /// Closing a **modified** background tab shows that document first and
     /// then asks, because a question about unsaved edits over a document the
@@ -348,7 +348,7 @@ pub enum Action {
     /// Raised by `window.close_other_documents` on the tab strip's context
     /// menu, and by nothing else.
     ///
-    /// # ★ It is one action and N closes, and the N is the point
+    /// # It is one action and N closes, and the N is the point
     ///
     /// Each document is closed through the **same** guarded path a single close
     /// takes, one at a time, so a modified one still brings itself to the front
@@ -369,7 +369,7 @@ pub enum Action {
     /// and by nothing else. A drag released in the document it started in is a
     /// reorder and raises [`PageAction::ReorderPages`] instead.
     ///
-    /// # ★ The target is not carried, and that is deliberate
+    /// # The target is not carried, and that is deliberate
     ///
     /// It is always the **active** document. A drop lands on a surface, the
     /// surface is showing whatever is active, and a target slot captured when
@@ -406,13 +406,13 @@ pub enum Action {
         /// case, so the unmodified drag copies and this is what asks for
         /// something else.
         ///
-        /// ★ Sampled at the **release**, not at the press. That is what
+        /// Sampled at the **release**, not at the press. That is what
         /// Explorer does — the cursor badge changes under your hand as you
         /// press and release the key mid-drag — and it is what lets an operator
         /// start a drag, see the caption say *copy*, and change their mind
         /// without letting go.
         ///
-        /// ★★ It is TWO edits in two documents and the operator is told so.
+        /// It is TWO edits in two documents and the operator is told so.
         /// One `Ctrl+Z` reverses one half. `crate::text::doctabs::moved_out_of`
         /// is the sentence that says it, and it is the reason this is the
         /// modified gesture rather than the default.
@@ -421,7 +421,7 @@ pub enum Action {
     /// **A canvas gesture refused, with something to say about it** — put the
     /// sentence on the status bar.
     ///
-    /// # ★ The one action that changes nothing and is still an action
+    /// # The one action that changes nothing and is still an action
     ///
     /// The worded-decline store is `pub(super)` inside `crate::app` on purpose
     /// — *"a decline is written by the one dispatcher and read by the one
@@ -448,7 +448,7 @@ pub enum Action {
     /// file. It names which of its OWN refusals happened, and that type's docs
     /// carry the cost a third arm would have — and why it is `pub`.
     ///
-    /// ★ **A selection is still not an edit** — no `vector_edit`, no epoch
+    /// **A selection is still not an edit** — no `vector_edit`, no epoch
     /// bump, no cache invalidation, for the reason `Action::SelectObject`
     /// gives.
     DeclineOnCanvas(super::CanvasDecline),
@@ -508,12 +508,12 @@ pub enum Action {
         /// Who asked. Never displayed.
         why: &'static str,
     },
-    /// ★★ **Everything that changes page GEOMETRY** — delete, the four move
+    /// **Everything that changes page GEOMETRY** — delete, the four move
     /// verbs, the Bézier handle, and the transform.
     ///
     Vector(super::vector::VectorAction),
     // =======================================================================
-    // ★ THE PAGE VERBS — structural edits, and the family that renumbers
+    // THE PAGE VERBS — structural edits, and the family that renumbers
     //
     // Four variants for five commands (`pages.rotate_left` and
     // `pages.rotate_right` share one), plus `pages.extract`, which is not here
@@ -530,7 +530,7 @@ pub enum Action {
     // applies it — and for `DeletePages` the consequence of reading it twice
     // is destroying sheets nobody chose.
     //
-    // # ★ What separates these from every action above them
+    // # What separates these from every action above them
     //
     // Everything else in this enum either leaves the page *count* and the page
     // *order* alone, or is not a document edit at all. These three do neither,
@@ -543,12 +543,12 @@ pub enum Action {
     /// **Author one markup annotation on the page** — the release of a band
     /// drag, the release of a freehand stroke, or the ending of a vertex run.
     ///
-    /// ★ Raised by [`crate::canvas::markup`]'s gesture paths and by nothing on
+    /// Raised by [`crate::canvas::markup`]'s gesture paths and by nothing on
     /// the ribbon. A `markup.*` command *arms a tool*; the tool draws; the
     /// gesture raises this. There is no path from a button to an annotation,
     /// which is the whole point of the substrate.
     ///
-    /// # ★★★ Why an action carries the geometry rather than deriving it
+    /// # Why an action carries the geometry rather than deriving it
     ///
     /// The old shell had the other arrangement and it produced the defect the
     /// markup work exists to fix: its `Action::AddMarkupShape` derived a
@@ -579,7 +579,7 @@ pub enum Action {
     /// second source of truth that is right until a page step raised in the
     /// same frame is applied first.
     ///
-    /// # ★ Why THREE gestures share one variant, where text markup got its own
+    /// # Why THREE gestures share one variant, where text markup got its own
     ///
     /// Because [`crate::canvas::markup::spec`] is *"the single place a gesture
     /// becomes a `MarkupSpec`"*, and that claim is what the equivalence with
@@ -609,7 +609,7 @@ pub enum Action {
         /// is checked by [`crate::canvas::markup::action`] before this is ever
         /// built.
         geometry: crate::canvas::markup::Geometry,
-        /// ★ **The pen the operator had when the gesture completed**, carried
+        /// **The pen the operator had when the gesture completed**, carried
         /// in the action rather than read at apply time.
         ///
         /// The funnel's whole premise is that an `Action` is *plain data
@@ -628,7 +628,7 @@ pub enum Action {
         pen: crate::canvas::markup::pen::Pen,
     },
 
-    /// ★ **Everything the ce-dimension feature asks for**, as one variant
+    /// **Everything the ce-dimension feature asks for**, as one variant
     /// carrying which.
     ///
     /// Eight verbs — author a ce dimension, create a group, calibrate one, set
@@ -647,7 +647,7 @@ pub enum Action {
     /// it in eight arms, and the day one of them got it wrong the symptom
     /// would be a stale number on a page the operator was not looking at.
     Dimension(dimensions::DimensionAction),
-    /// ★ **Everything the operator asks of the SET OF PAGES**, as one variant
+    /// **Everything the operator asks of the SET OF PAGES**, as one variant
     /// carrying which.
     ///
     /// Five verbs — insert another document's pages, rotate, delete, reorder,
@@ -665,7 +665,7 @@ pub enum Action {
     /// individual edit would still be correct in the document and wrong only
     /// on screen.
     Page(pages::PageAction),
-    /// ★★ **Everything whose subject is one entry in the document's outline**
+    /// **Everything whose subject is one entry in the document's outline**
     /// — add, rename, and delete-with-its-subtree.
     ///
     /// Moved into [`super::bookmarks::BookmarkAction`] under **R2** on
@@ -684,7 +684,7 @@ pub enum Action {
     ///   open-or-closed** (§12.3.3), which is why no verb in the family
     ///   describes itself by diffing a count.
     Bookmark(super::bookmarks::BookmarkAction),
-    /// ★★ **Everything whose subject is a whole FILE living inside the
+    /// **Everything whose subject is a whole FILE living inside the
     /// document** — attach, remove, and save one out (§7.11.4.1).
     ///
     /// A sub-enum from the day it was written, under **R2** and this file's own
@@ -702,7 +702,7 @@ pub enum Action {
     ///   [`Self::Bookmark`]'s rename, which owes none because the row the
     ///   operator is looking at already says what happened.
     Attachment(super::attachments::AttachmentAction),
-    /// ★★★ **Everything whose subject is a form XObject** — one verb today:
+    /// **Everything whose subject is a form XObject** — one verb today:
     /// give this page its own private copy of a shared drawing.
     ///
     /// A sub-enum from the day it was written, under **R2** and this file's own
@@ -725,11 +725,11 @@ pub enum Action {
     ///   `TargetId` is not resolvable after the frame that raised it and an
     ///   `ObjId` is, which is what the funnel requires of an operand.
     XObject(super::xobject::XObjectAction),
-    /// ★★★ **Re-shape the page's own text** — a reflow today, and the caret
+    /// **Re-shape the page's own text** — a reflow today, and the caret
     /// and restyle commits when they follow.
     ///
     Text(super::text::TextAction),
-    /// ★★★ **Write something out to a file the operator picks.**
+    /// **Write something out to a file the operator picks.**
     ///
     Write(super::write::WriteAction),
     /// **Put the font programs a document references but does not carry into
@@ -737,7 +737,7 @@ pub enum Action {
     ///
     /// Raised by `crate::dialogs::embed` and by nothing else.
     ///
-    /// # ★★ Why the whole request travels, donor bytes and all
+    /// # Why the whole request travels, donor bytes and all
     ///
     /// Because it IS the operand, and it cannot be rebuilt at apply time
     /// without changing it. Reconstructing it there would re-scan the
@@ -747,7 +747,7 @@ pub enum Action {
     /// this, so nothing else is still holding the bytes by the time the queue
     /// drains.
     ///
-    /// # ★ Why it is boxed
+    /// # Why it is boxed
     ///
     /// `Action` is moved through a queue by value on every gesture, and its
     /// size is the largest variant's. The request carries a map of donor
@@ -762,7 +762,7 @@ pub enum Action {
     ///
     /// Raised by `crate::dialogs::unembed` and by nothing else.
     ///
-    /// # ★ Why it carries a request at all, when the selection is always the
+    /// # Why it carries a request at all, when the selection is always the
     /// # same today
     ///
     /// The dialog sends `UnembedSelection::AllRemovable` every time, so this
@@ -780,7 +780,7 @@ pub enum Action {
         /// Which fonts, and what happens to their subset tags.
         request: Box<pdfcer_core::font_unembed::UnembedRequest>,
     },
-    /// ★ **Place a raster image on the page.**
+    /// **Place a raster image on the page.**
     ///
     /// Raised by `crate::dialogs::insert_image` and by nothing else.
     ///
@@ -823,7 +823,7 @@ pub enum Action {
         /// The imported picture. See above for why it is an `Arc`.
         image: std::sync::Arc<pdfcer_core::image_import::ImportedImage>,
     },
-    /// ★★★ **Read this document's bytes again under the OTHER reading of a
+    /// **Read this document's bytes again under the OTHER reading of a
     /// key the file names twice** — the operator's intervention in a parse
     /// decision.
     ///
@@ -833,7 +833,7 @@ pub enum Action {
     /// intervene in a decision that should always be an option"* — which had
     /// no route in this shell until 2026-09-10.
     ///
-    /// # ★★ It carries a POLICY, not a key and not a value
+    /// # It carries a POLICY, not a key and not a value
     ///
     /// `pdfcer_core::document::LoadOptions::with_duplicate_keys` sets **one**
     /// policy for the whole load. There is no per-key form and inventing a
@@ -857,12 +857,12 @@ pub enum Action {
         /// could grow its own opinion.
         policy: pdfcer_core::parser::DuplicateKeyPolicy,
     },
-    /// ★ **Set or clear one of the document's own information fields** —
+    /// **Set or clear one of the document's own information fields** —
     /// `/Title`, `/Author`, `/Subject`, `/Keywords`.
     ///
     /// Raised by `crate::panels::docprops` and by nothing else.
     ///
-    /// ★ **`Option<String>` is not a defaulted `String`** — `None` REMOVES the
+    /// **`Option<String>` is not a defaulted `String`** — `None` REMOVES the
     /// key from `/Info` and `Some("")` writes an empty string object, which are
     /// different files. And it goes through the funnel for the undo log rather
     /// than for size: the panel re-seeds its text drafts on an epoch bump, which
@@ -876,7 +876,7 @@ pub enum Action {
         /// The new value, or `None` to remove the key entirely.
         value: Option<String>,
     },
-    /// ★ **Mark the text the operator has selected** — underline, strikeout or
+    /// **Mark the text the operator has selected** — underline, strikeout or
     /// squiggly.
     ///
     /// Raised by `crate::app::dispatch` when one of the three Text markup
@@ -926,7 +926,7 @@ pub enum Action {
         /// biro rather than the marker. Highlight is not in this variant at all.
         pen: crate::canvas::markup::pen::Pen,
     },
-    /// ★ **Replace the words in ONE show operator** — `DEFECTS.md` D4's verb.
+    /// **Replace the words in ONE show operator** — `DEFECTS.md` D4's verb.
     ///
     /// One operator, one `EditSession::edit_text`, one undo entry. The scope
     /// limit is `pdfcer-core`'s and is stated on `EditRequest`: a request pins to
@@ -981,7 +981,7 @@ pub enum Action {
         origin: (f64, f64),
         /// What the operator typed.
         text: String,
-        /// ★★ **The face, size and colour it is written in**, sampled from
+        /// **The face, size and colour it is written in**, sampled from
         /// `canvas::textedit::pen` at the moment the draft committed.
         ///
         /// Carried on the action rather than re-read in `apply`, and the rule
@@ -996,7 +996,7 @@ pub enum Action {
         /// and `TextPen` resolves them at the boundary. See its docs for why
         /// black is written `Black` and not `Rgb(0, 0, 0)`.
         pen: crate::canvas::textedit::pen::TextPen,
-        /// ★★★ **The wrap rectangle**, in PDF user space, or `None` for a
+        /// **The wrap rectangle**, in PDF user space, or `None` for a
         /// single-line run at [`Self::CommitAddText::origin`].
         ///
         /// The operator, 2026-08-21: *"I should be able to make it multi line."*
@@ -1008,7 +1008,7 @@ pub enum Action {
         /// second line starts. A width to wrap against and a leading to step by
         /// is that something.
         ///
-        /// ★ It gives the operator **both** behaviours from one field: hard
+        /// It gives the operator **both** behaviours from one field: hard
         /// newlines split paragraphs and each paragraph is wrapped
         /// independently to the box's width. So Enter makes a new paragraph and
         /// running past the right edge makes a new line, which is what anyone
@@ -1021,12 +1021,12 @@ pub enum Action {
         /// same thing. `apply` builds the `Rect`, once, at the boundary.
         wrap: Option<(f64, f64, f64, f64)>,
     },
-    /// ★★ **Restyle a markup that is already on the page** — the action behind
+    /// **Restyle a markup that is already on the page** — the action behind
     /// `EditSession::set_markup_style`, and the first caller that verb has ever
     /// had in this shell.
     ///
     ///
-    /// # ★ The style carries ONE field, not a whole struct
+    /// # The style carries ONE field, not a whole struct
     ///
     /// `MarkupStyle`'s every field is `Option`, and its own doc says why: *"a
     /// Format tab whose colour picker also had to restate the current width
@@ -1094,7 +1094,7 @@ pub enum Action {
     /// leave the frame's layout, its scroll offset and its texture lookups
     /// describing two different modes at once.
     ///
-    /// # ★ Applying it does three things, and the third is why this is not a
+    /// # Applying it does three things, and the third is why this is not a
     /// one-line arm
     ///
     /// 1. **sets `view.display`** — the arrangement itself;
@@ -1189,7 +1189,7 @@ pub enum Action {
     /// *which* way to step cannot be re-derived after the frame that asked.
     /// See `crate::find` for what happens on the other end.
     Find(crate::find::FindRequest),
-    /// ★★ **Everything the operator sets that is NOT part of a
+    /// **Everything the operator sets that is NOT part of a
     /// document** — [`super::prefs`].
     ///
     /// Two members today: the Find bar's *Zoom* tick (**O163**) and the
@@ -1204,7 +1204,7 @@ pub enum Action {
     /// `apply` lives under. Nothing else in this enum can say that.
     ///
     Pref(super::prefs::PrefAction),
-    /// ★ **Everything done to a form FIELD**, as its own family — [`super::forms`].
+    /// **Everything done to a form FIELD**, as its own family — [`super::forms`].
     ///
     /// Eight verbs: fill a control, select one on the page, place one, author
     /// the one a dialog accepted, rename, delete a field, delete one of its
@@ -1219,7 +1219,7 @@ pub enum Action {
     /// it. That is the same test [`super::vector`] passes for paint-order
     /// indices and [`super::pages`] passes for page positions.
     ///
-    /// ★★ The move also repaired a documentation defect that no gate could see.
+    /// The move also repaired a documentation defect that no gate could see.
     /// Three `///` blocks had stacked contiguously onto `SelectFormField`, so
     /// rustdoc showed one variant carrying three unrelated explanations while
     /// `BeginFormField` and [`Self::BeginTextAnnot`] carried none. Doc comments
@@ -1227,7 +1227,7 @@ pub enum Action {
     /// `check-ui-strings`, to clippy and to every test in this crate — the only
     /// instrument that finds it is a reader. Each block is back on its subject.
     Field(super::forms::FieldAction),
-    /// ★★ **Change how existing text LOOKS** — size, colour, face, weight and
+    /// **Change how existing text LOOKS** — size, colour, face, weight and
     /// slant — on every run the operator's text selection covers.
     ///
     /// Raised by the Properties panel's Text section and by nothing else yet;
@@ -1243,11 +1243,11 @@ pub enum Action {
     /// list of run ordinals measured at the press is a complete statement of
     /// what they asked for.
     ///
-    /// ★ The **page** travels for the same reason it does on every vector verb:
+    /// The **page** travels for the same reason it does on every vector verb:
     /// a run ordinal means nothing without one, and re-deriving it at apply
     /// time would read whichever page the view had reached by then.
     ///
-    /// # ★★ There is deliberately no pin on it
+    /// # There is deliberately no pin on it
     ///
     /// A `pinned_span` is a byte offset into a content stream, and applying
     /// this action *rewrites that stream*. A pin measured here would be
@@ -1270,7 +1270,7 @@ pub enum Action {
     /// placing gesture, and by nothing else. It **changes no document** — it
     /// opens `crate::dialogs::textannot`, which is where the operator types.
     ///
-    /// # ★ Why the geometry travels and the words do not
+    /// # Why the geometry travels and the words do not
     ///
     /// The rectangle is the operator's choice and it is made *now*, on the
     /// page they were looking at, at the zoom they were at. The words are made
@@ -1291,7 +1291,7 @@ pub enum Action {
     /// Raised by `crate::dialogs::textannot` and by nothing else. This is the
     /// one that reaches the document.
     ///
-    /// # ★ Everything it needs travels with it, including the stamp
+    /// # Everything it needs travels with it, including the stamp
     ///
     /// The same argument `CommitMarkup` makes about the pen, applied to three
     /// values instead of one: by the time the queue drains, the dialog is
@@ -1316,19 +1316,19 @@ pub enum Action {
         ///
         /// ⚠ **Read only when [`Self::CommitTextAnnot::custom`] is `None`.**
         stamp: pdfcer_core::annot_author::StampName,
-        /// ★★★ **One of the operator's OWN stamps**, or `None` for a standard
+        /// **One of the operator's OWN stamps**, or `None` for a standard
         /// one (`OPERATOR_REQUESTS.md` O172, engine `Pass 293.0`).
         ///
         /// `Some` overrides `stamp`, and the whole selection model is that
         /// sentence: the gallery's two radio groups keep exactly one of the
         /// two live, and `crate::app::actions::apply`'s arm reads this first.
         ///
-        /// ★ An `Option<CustomStamp>` beside `stamp` rather than a `Custom`
+        /// An `Option<CustomStamp>` beside `stamp` rather than a `Custom`
         /// arm added to `StampName`, because `StampName` is the engine's
         /// spelling of §12.5.6.12's **closed vocabulary** — widening it here
         /// would be this shell asserting something untrue about the standard.
         ///
-        /// ★ It carries the collection's **path and page index**, not a
+        /// It carries the collection's **path and page index**, not a
         /// reference into the library that produced it. The library is
         /// rescanned every time the dialog opens, so a borrow would either
         /// pin a scan for the life of the queue or go stale between the click
@@ -1340,19 +1340,19 @@ pub enum Action {
         /// in the same dialog. Ignored by the other two kinds and carried
         /// unconditionally, for `stamp`'s reason exactly.
         ///
-        /// ★ The default is the DERIVED size — the box the operator dragged
+        /// The default is the DERIVED size — the box the operator dragged
         /// chooses the size, as every build before `Pass 287.0` did — and not
         /// the engine's flat 12 pt. `crate::canvas::textannot::StampSize`
         /// holds the argument; the short version is that adopting the engine
         /// default silently would have shrunk every stamp on his drawings as a
         /// side effect of a fix he asked for.
         stamp_size: crate::canvas::textannot::StampSize,
-        /// ★★★ **The sticky note's icon (`/Name`, §12.5.6.4 Table 172)**,
+        /// **The sticky note's icon (`/Name`, §12.5.6.4 Table 172)**,
         /// picked in the dialog. Ignored by the other two kinds, and carried
         /// unconditionally for `stamp`'s reason exactly — a chooser always has
         /// a selection.
         ///
-        /// ★ It is here rather than on the pen or on the tool identity because
+        /// It is here rather than on the pen or on the tool identity because
         /// **`stamp` already travels this exact path**: an icon is the same
         /// shape of operand as a stamp name, and both answer *"what did the
         /// operator pick in the dialog?"*. `crate::canvas::textannot::spec`
@@ -1363,7 +1363,7 @@ pub enum Action {
         /// Acrobat's own, with the provenance and its caveat on that constant.
         icon: pdfcer_core::annot_author::StickyIcon,
     },
-    /// ★★★ **Everything whose subject is a REDACTION** — mark by search, mark
+    /// **Everything whose subject is a REDACTION** — mark by search, mark
     /// a whole page, mark what is selected, take one mark off, and arm or
     /// disarm the removal that happens at the next save.
     ///
@@ -1398,14 +1398,14 @@ pub enum Action {
     /// **Select everything on the current page**, including anything that
     /// has been moved OFF it.
     ///
-    /// ★★★ The recovery route for a one-way door. 2026-09-01: *"I sometimes
+    /// The recovery route for a one-way door. 2026-09-01: *"I sometimes
     /// drop objects there, and when I do I can't get them back."* The canvas
     /// senses input over the page rect only — correctly, or a hit area would
     /// overlap its neighbours in a continuous strip — so an object dragged
     /// past the edge is unclickable, unbandable and unpainted, while still
     /// being in the file.
     ///
-    /// ★ **The whole argument, including why an infinite rect is the right
+    /// **The whole argument, including why an infinite rect is the right
     /// way to ask and what this deliberately does NOT fix, is on the apply
     /// arm** in `app::actions::apply` — this file is 1,500 lines of one
     /// enum and R2 puts the reasoning next to the mechanism when it cannot
@@ -1416,7 +1416,7 @@ pub enum Action {
     /// alone; the two are independent, and recolouring the fill of an object
     /// whose stroke is a spot ink is not blocked by the channel nobody touched.
     ///
-    /// ★ The full argument — including why an undecodable ink gets no swatch
+    /// The full argument — including why an undecodable ink gets no swatch
     /// rather than a black one — is on `panels::properties::paint`, where the
     /// control is.
     SetObjectPaint {
@@ -1434,7 +1434,7 @@ pub enum Action {
     /// **Go to a bookmark's destination** — the position half of `/XYZ`,
     /// `/FitH` and `/FitV`, and the whole of `/FitR`.
     ///
-    /// ★ ONE variant for both shapes, carrying the type `canvas::destination`
+    /// ONE variant for both shapes, carrying the type `canvas::destination`
     /// already defines. Two actions would have been two spellings of one
     /// concept, and the module that owns the subject owns the vocabulary.
     GoToDestination(crate::canvas::destination::PendingDestination),
@@ -1458,7 +1458,7 @@ pub enum Action {
     /// **Invoke a registered command by id**, from a surface that is not the
     /// ribbon.
     ///
-    /// ★ The one variant that is not a statement about the document. It exists
+    /// The one variant that is not a statement about the document. It exists
     /// so a *second route to an existing command* cannot become a second
     /// implementation of it: the Find bar's OCR offer means exactly what
     /// `file.ocr` on the ribbon means, and wiring it straight to

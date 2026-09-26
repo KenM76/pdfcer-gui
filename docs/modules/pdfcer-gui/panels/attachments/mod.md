@@ -5,7 +5,7 @@ streams*, reached either from the catalogue's `/Names /EmbeddedFiles` name
 tree (document-level) or from a `/FileAttachment` annotation on one page
 (§12.5.6.15). This panel is where an operator sees them and acts on them.
 
-## ★★★ Why this panel exists at all, and what its absence cost
+## Why this panel exists at all, and what its absence cost
 
 `pdfcer-core` has carried `attach_file`, `detach_file`, `list_attachments`,
 `list_attachments_with_notes`, `extract_attachment`, `attachment_bytes` and
@@ -38,7 +38,7 @@ competes with it does the same thing. So:
 | *Save attachment* | the per-row Save a copy |
 | *Edit description* | **absent** — see below |
 
-## ★★ What is absent, and why each absence is R9 rather than an omission
+## What is absent, and why each absence is R9 rather than an omission
 
 - **Edit description.** `attach_file` takes the description at attach time
   and `pdfcer-core` has no verb that changes one afterwards. R9: an absent
@@ -61,7 +61,7 @@ competes with it does the same thing. So:
   caller without its own gate."* Saving a copy is the whole of what this
   shell offers, and the operator's own file manager is the gate.
 
-## ★★★ Three disclosures this panel is REQUIRED to make
+## Three disclosures this panel is REQUIRED to make
 
 Each is an obligation `pdfcer-core` writes into its own doc comments, and
 each is invisible to an operator who is not told:

@@ -2,7 +2,7 @@
 the controls that change them
 
 
-## ★★★ The sentence this module deletes
+## The sentence this module deletes
 
 
 > ~~Required, read-only, the tooltip and the border can only be set when a
@@ -18,13 +18,13 @@ genuinely destructive: it loses the field's name, its filled value and its
 place in the tab order, every one of which an FDF import or a filling script
 keys on.
 
-★ The lesson is not *grep harder*. The claim was **true when it was
+The lesson is not *grep harder*. The claim was **true when it was
 written** and false within hours, because it was an absence claim about a
 crate this project does not build. Such a claim has a shelf life. What
 catches it is reading the reply, and the reply was sitting unread in
 `open/`.
 
-## ★★★ SCOPE — field or widget — and getting it backwards is invisible
+## SCOPE — field or widget — and getting it backwards is invisible
 
 The engine took this verbatim from Acrobat's own scripting model, and it is
 the decision that shapes the whole pane: some properties *"apply to all
@@ -43,20 +43,20 @@ individual widgets"*.
 This module holds the **field** half. The widget half is the next piece of
 work and is named in `FEATURES.md` rather than left as a silence.
 
-## ★★ One press is one undo entry, and one exception the standard forces
+## One press is one undo entry, and one exception the standard forces
 
 Every control here sends a `FieldEdit` naming **one** property, though the
 struct can carry fourteen. That is `StyleChange`'s rule for its reason: a
 pane that batched a flag and a max-length into one request would make
 `Ctrl+Z` after two presses take back a state the operator never saw.
 
-★ The exception is not a batch. Table 228 permits `Comb` only when
+The exception is not a batch. Table 228 permits `Comb` only when
 `/MaxLen` is present, and the engine checks its gates **against the
 resulting field** — so turning comb on for a field with no max-length must
 send both in one edit or be refused. That is one act the standard makes
 indivisible, not two the pane chose to combine.
 
-## ★★ The refusals arrive from a direction the request does not name
+## The refusals arrive from a direction the request does not name
 
 The engine's §6, and it is the part most likely to produce a confusing
 message:

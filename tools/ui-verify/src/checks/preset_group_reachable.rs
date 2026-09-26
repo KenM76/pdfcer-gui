@@ -86,7 +86,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let trace = session.trace()?;
 
-    // ★ The two-way diagnosis. If no heading published either, the window never
+    // The two-way diagnosis. If no heading published either, the window never
     // opened and the presets row is not the subject of the failure — reporting
     // "the presets row is missing" when the whole window is absent is a
     // confident, specific, wrong defect report, which this suite has produced
@@ -123,7 +123,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("the presets group heading is on screen");
 
-    // ★ The row's state line is NOT asserted, and the absence is deliberate.
+    // The row's state line is NOT asserted, and the absence is deliberate.
     //
     if let Some(state) = trace.last(STATE) {
         report.note(format!(

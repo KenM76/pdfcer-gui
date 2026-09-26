@@ -102,7 +102,7 @@ const UNIMPLEMENTED_EVENT: &str = "command-unimplemented";
 /// How far apart two dominant fills must be to count as "one of these is
 /// pressed", as a maximum absolute per-channel difference in 0–255.
 ///
-/// # ★ Three candidate palettes, and the threshold is below the smallest
+/// # Three candidate palettes, and the threshold is below the smallest
 ///
 /// The number is derived from every pair the running build could plausibly
 /// produce, not from one measured pair. Three are reachable, and the check has
@@ -419,7 +419,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     let items = declared_names(&trace, ui_rect, ITEM_PREFIX);
     if items.is_empty() {
-        // ★ The build-without-Part-1 SKIP. It names the exact call site,
+        // The build-without-Part-1 SKIP. It names the exact call site,
         // because a reader seeing this has a ribbon full of working controls
         // and no idea why the harness cannot find one.
         return Err(Error::new(format!(

@@ -231,7 +231,7 @@ mod tests {
         );
     }
 
-    /// ★ **The idle splitter is visible against the panel it divides.**
+    /// **The idle splitter is visible against the panel it divides.**
     ///
     /// A boundary drawn in the panel's own colour is invisible, and an
     /// invisible boundary is never discovered to be draggable — the

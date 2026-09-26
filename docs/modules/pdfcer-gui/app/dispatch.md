@@ -30,7 +30,7 @@ lines in one `main.rs`, and two of the defects in `DEFECTS.md` are pairs
 of lines thousands of lines apart that no reviewer could have been
 expected to see together.
 
-## ★ The arms route; they do not compute
+## The arms route; they do not compute
 
 Almost every arm is one line: push an [`Action`], or call the one
 function in the module that owns the rule. Zoom anchoring lives in

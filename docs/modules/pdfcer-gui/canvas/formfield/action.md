@@ -3,7 +3,7 @@
 The shell's model of `pdfcer_core::edit::ButtonAction`, and the one place it
 is translated into the engine's type.
 
-## ★★★ Why a second enum instead of using the engine's directly
+## Why a second enum instead of using the engine's directly
 
 Three reasons, and only the third is about types.
 
@@ -29,7 +29,7 @@ Three reasons, and only the third is about types.
    its Add button on, and it exists so the operator is not told *"that URL
    is relative"* by a dialog that has already closed.
 
-## ★★ What is deliberately NOT here
+## What is deliberately NOT here
 
 **Reading an existing button's action** — because that is not a draft.
 `pdfcer-core` `28b982c` could write one and not read one back, which is why
@@ -39,7 +39,7 @@ this module served only the placement path; the reader landed the same day
 type rather than the other way round.
 
 
-★ The engine shipped **four** states where three were asked for, and the
+The engine shipped **four** states where three were asked for, and the
 fourth is the one that makes the row honest. `panels::forms::button`'s
 header carries that argument; this module is unchanged by it, because a
 DRAFT has no fourth state — an operator is always editing something this

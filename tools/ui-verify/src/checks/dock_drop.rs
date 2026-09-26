@@ -60,7 +60,7 @@ const DWELL: std::time::Duration = std::time::Duration::from_millis(600);
 /// `ppp` above 1 that rounding is a fraction of a point, so one point is the
 /// ceiling on a correct build at any scale this application runs at.
 ///
-/// ★ Sized deliberately far below the failure it is guarding against. A
+/// Sized deliberately far below the failure it is guarding against. A
 /// conversion that adds the wrong window origin, or none, is wrong by the
 /// application window's own position — hundreds of points. Anything between one
 /// point and that is a defect nobody has met yet and should be read, not
@@ -297,7 +297,7 @@ fn reset_landed(trace: &Trace) -> std::result::Result<(), String> {
 /// **What a slot was offering when the button came up, and whether the release
 /// cleared it.**
 ///
-/// # ★ Why this is the last *two* lines and not the last one
+/// # Why this is the last *two* lines and not the last one
 ///
 /// The affordance is gone the instant the button is — that is what makes it a
 /// pre-commit affordance rather than a mark on the document — so the release
@@ -337,7 +337,7 @@ fn standing_at_release<'a>(
 
 /// The trace line the drag begins after, for [`declared_since`].
 ///
-/// # ★ Why a pre-commit affordance cannot be read with `declared`
+/// # Why a pre-commit affordance cannot be read with `declared`
 ///
 /// [`declared`] answers *is this region on screen now*, and honours the
 /// `ui-rect-gone` line that retires one. Every affordance this module measures
@@ -544,7 +544,7 @@ fn drive_drop(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
         }
     }
 
-    // --- 4: ★★★ and the release did what the offer promised ----------------
+    // --- 4: and the release did what the offer promised ----------------
     if !lands {
         report.note(
             "the offer was knocked back (`lands=false`), so the release was legal and changes \
@@ -553,7 +553,7 @@ fn drive_drop(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
         return Ok(verdict(&failures));
     }
     //
-    // ★ The subject is the panel's BODY, not its tab. Whether a landed panel
+    // The subject is the panel's BODY, not its tab. Whether a landed panel
     // has a tab is a property of the compartment it landed in — this
     // application's left dock draws no tab strip at all while the rail is
     // visible — so a tab-shaped assertion reports a correct landing there as
@@ -740,7 +740,7 @@ fn drive_tear(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
         )),
     }
 
-    // --- 3: ★★ and the compass stood down ----------------------------------
+    // --- 3: and the compass stood down ----------------------------------
     //
     // The two affordances are mutually exclusive by construction — the compass
     // needs a compartment under the pointer and the tear needs there to be
@@ -770,7 +770,7 @@ fn drive_tear(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
         }
     }
 
-    // --- 4: ★★★ and the release opened the window --------------------------
+    // --- 4: and the release opened the window --------------------------
     //
     // The body, not the tab, for the reason `drive_drop`'s landing assertion
     // records: a tab is a property of the compartment a panel is in, a body is
@@ -798,13 +798,13 @@ fn drive_tear(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
     };
     report.note(format!("★★★ and a window opened for it (viewport {id})"));
 
-    // --- 5: ★★★ and the window is the one the outline drew --------------
+    // --- 5: and the window is the one the outline drew --------------
     //
     // Everything above is satisfied by a window of any size opening anywhere on
     // the desktop. The outline is a promise with two halves, and both are
     // checkable against what the window reports about itself.
     //
-    // ★ SIZE against the INNER rectangle and ORIGIN against the OUTER one, and
+    // SIZE against the INNER rectangle and ORIGIN against the OUTER one, and
     // the pairing is the whole point: `floatwin` builds the window with
     // `with_inner_size` and `with_position`, and those two egui setters speak
     // different rectangles. Checking the origin against `viewport-inner`
@@ -845,7 +845,7 @@ fn drive_tear(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
         )),
     }
 
-    // ★★ THE EXPECTED DESKTOP ORIGIN IS MEASURED HERE, NOT TAKEN FROM THE
+    // THE EXPECTED DESKTOP ORIGIN IS MEASURED HERE, NOT TAKEN FROM THE
     // TRACE.
     //
     // Comparing the published `at` against the window that `at` positioned is

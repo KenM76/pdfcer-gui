@@ -97,7 +97,7 @@ impl DialogsState {
     /// applies the same two guards [`Self::open_print`] documents — the ribbon
     /// control is gated on `doc.pages` and a chord bound to the same id is not.
     ///
-    /// ★ Both guards are load-bearing here in a way they are not elsewhere,
+    /// Both guards are load-bearing here in a way they are not elsewhere,
     /// because [`redact::RedactDialog::open`] **runs the whole removal**.
     ///
     /// - **No document, no dialog.** Without this, an invocation over an empty
@@ -128,12 +128,12 @@ impl DialogsState {
     /// boundary in this document"* is the answer the operator pressed the
     /// control to get — see `crate::dialogs::offpage`'s header.
     ///
-    /// ★ The no-document guard is still real: there is nothing to scan, and a
+    /// The no-document guard is still real: there is nothing to scan, and a
     /// window over no document would be closed again by [`Self::show`]'s own
     /// guard on its very next frame, which is a control that flickers rather
     /// than one that declines.
     ///
-    /// ★★ The already-open guard is the strong one here, for a reason none of
+    /// The already-open guard is the strong one here, for a reason none of
     /// its neighbours have: this window is **mid-walk**. A second press would
     /// throw away a scan that may be twenty sheets in — each of which cost up
     /// to half a second — and restart it from page one, while looking to the
@@ -163,7 +163,7 @@ impl DialogsState {
 
     /// **Open the Sign window** — `file.sign`.
     ///
-    /// ★★★ The already-open guard is the strongest one on this file, and it is
+    /// The already-open guard is the strongest one on this file, and it is
     /// not about losing typed text. The window holds a **loaded private key**
     /// once the operator has opened their certificate; rebuilding it on a
     /// second press would discard that and make them type the passphrase again
@@ -204,7 +204,7 @@ impl DialogsState {
     /// group — so a group change made while the dialog was up would silently
     /// redirect the calibration.
     ///
-    /// ★ **It destructures the document rather than testing for one** — O192.
+    /// **It destructures the document rather than testing for one** — O192.
     /// This read `if !matches!(status, Status::Open(_))`, throwing away the
     /// `OpenDoc` it had just proved it had, which is the mechanical reason the
     /// Set-scale window was the only surface in the application that could not
@@ -225,7 +225,7 @@ impl DialogsState {
     /// The calibration path's fallback entry point: a two-point pick completed
     /// with no Set-scale window open to hand the answer to.
     ///
-    /// # ★ It REPLACES an open dialog, where [`Self::open_scale`] refuses to
+    /// # It REPLACES an open dialog, where [`Self::open_scale`] refuses to
     ///
     /// That guard exists so a second press of the ribbon control does not
     /// discard what the operator has half typed. The situations are opposite
@@ -237,7 +237,7 @@ impl DialogsState {
     /// # ⚠ This is the FALLBACK, and [`Self::deliver_scale_length`] is the road
     ///
     ///
-    /// ★★ It is kept rather than removed even though this application can no
+    /// It is kept rather than removed even though this application can no
     /// longer reach it, because removing it would make the two-point gesture's
     /// result depend on a window's continued existence: a pick that completed
     /// with nowhere to land would measure the page and throw the number away.
@@ -260,7 +260,7 @@ impl DialogsState {
     /// Answers `true` when a window was there to take it, which is the caller's
     /// signal that the fallback above is not needed.
     ///
-    /// ★ The window is not reopened, **because it was never closed** — the same
+    /// The window is not reopened, **because it was never closed** — the same
     /// sentence [`DialogsState::deliver_placement`] carries, and now the second
     /// round trip in this directory that earns it. It starts drawing again on
     /// the frame the pick tool is disarmed, with everything the operator had
@@ -286,7 +286,7 @@ impl DialogsState {
     /// Raised by `Action::BeginTextAnnot`, which the canvas pushes on the
     /// gesture that finishes placing.
     ///
-    /// ★ It REPLACES an open dialog rather than refusing, unlike
+    /// It REPLACES an open dialog rather than refusing, unlike
     /// [`Self::open_scale`]. The situations are opposite: that guard protects a
     /// half-typed value from a second ribbon press, and here a second placing
     /// gesture is the operator plainly saying they want to annotate somewhere
@@ -318,7 +318,7 @@ impl DialogsState {
     /// Raised by `Action::BeginFormField`, which the canvas pushes on the click
     /// or drag-release that finishes placing, and by nothing else.
     ///
-    /// ★ It REPLACES an open dialog rather than refusing, for the reason
+    /// It REPLACES an open dialog rather than refusing, for the reason
     /// [`Self::open_text_annot`] gives: a second placing gesture is the operator
     /// plainly saying they want a control somewhere else, and refusing would
     /// leave them looking at a window describing a rectangle they have moved on
@@ -354,7 +354,7 @@ impl DialogsState {
     /// for an operator half-way down a census reads as the program losing their
     /// place.
     ///
-    /// ★ Note what it does **not** guard on: whether anything has been
+    /// Note what it does **not** guard on: whether anything has been
     /// rasterized. `doc.open` is the registered predicate, and a document with
     /// no texture yet is precisely when an operator asks what the renderer did
     /// — so the dialog opens and *says* that nothing has been drawn, rather
@@ -414,7 +414,7 @@ impl DialogsState {
     ///
     /// **The dispatch target for `pages.insert_from_file`, after the picker.**
     ///
-    /// # ★ Why the page count is read here and not in the dialog
+    /// # Why the page count is read here and not in the dialog
     ///
     /// Because a file that will not open must be reported **instead of** the
     /// dialog, not after the operator has filled one in. Opening a window that
@@ -460,7 +460,7 @@ impl DialogsState {
 
     /// **The dispatch target for `file.import_text`.**
     ///
-    /// ★★ Unlike [`Self::open_insert_pages`], this does **not** read the file
+    /// Unlike [`Self::open_insert_pages`], this does **not** read the file
     /// to say something about it before the window opens, and the difference is
     /// worth stating because the two windows look alike.
     ///
@@ -495,7 +495,7 @@ impl DialogsState {
     ///
     /// The dispatch target for `pages.resize`.
     ///
-    /// # ★ Why the operands are passed in rather than resolved here
+    /// # Why the operands are passed in rather than resolved here
     ///
     /// `crate::panels::pages::ops::operands` — picked sheets, else the current
     /// one — is stated in exactly one place, and `crate::app::dispatch::pages`
@@ -504,7 +504,7 @@ impl DialogsState {
     /// an operation is aimed at* to drift, and the direction it drifts in is a
     /// window that measures one set of sheets and changes another.
     ///
-    /// # ★★ It can DECLINE, and declining is not the same as doing nothing
+    /// # It can DECLINE, and declining is not the same as doing nothing
     ///
     /// `PageSizeDialog::open` returns `None` when the survey found no sheets.
     /// The idempotence guard above it is the ordinary one — one window at a
@@ -609,7 +609,7 @@ impl DialogsState {
     /// **The dispatch target for `tools.embed_fonts`.** The two guards
     /// [`Self::open_print`] documents apply.
     ///
-    /// ## ★★ It returns a sentence, unlike every other `open_*` here
+    /// ## It returns a sentence, unlike every other `open_*` here
     ///
     /// Because this is the one command whose honest answer is often *"there is
     /// nothing to do"* - a document whose fonts are all embedded is the normal
@@ -618,7 +618,7 @@ impl DialogsState {
     /// construction is allowed to decline, and the decline becomes a line the
     /// caller records where every other outcome of a command is recorded.
     ///
-    /// ★ `Some(String)` rather than a `bool`, for the reason
+    /// `Some(String)` rather than a `bool`, for the reason
     /// `prefs::fonts::add` returns one: the caller has two different things to
     /// say - *"nothing is missing"* and *"you have no font folders"* - and it
     /// cannot tell them apart from a flag.
@@ -661,7 +661,7 @@ impl DialogsState {
     /// other outcome of a command is recorded, and a refusal nobody surfaces is
     /// a button that does nothing.
     ///
-    /// ★ Unlike the two font commands, this **cannot** decline for want of
+    /// Unlike the two font commands, this **cannot** decline for want of
     /// anything to do. A file with nothing to reclaim still gets the window,
     /// which says so — an operator who asked for a copy is owed one even when it
     /// comes out the same size.
@@ -686,7 +686,7 @@ impl DialogsState {
     /// saying so is a modal an operator dismisses to learn they did not need
     /// it.
     ///
-    /// ★ It takes no folder list. Removal needs no donor - it deletes what the
+    /// It takes no folder list. Removal needs no donor - it deletes what the
     /// document already carries - which is the whole asymmetry between the two
     /// commands and the reason only one of them was blocked on a preference.
     pub fn open_unembed_fonts(&mut self, status: &Status) -> Option<String> {

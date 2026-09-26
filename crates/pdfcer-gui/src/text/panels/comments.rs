@@ -94,7 +94,7 @@ pub fn comments_excluded(widgets: usize, popups: usize, trap_nets: usize) -> Opt
 /// of identical "no note" captions. Said once at the top rather than left to
 /// be inferred from the repetition.
 ///
-/// ★ **Note-text authoring for geometric markup is a filed request against
+/// **Note-text authoring for geometric markup is a filed request against
 /// the engine** (`ENGINE_BACKLOG.md`). ⚠ The sentence is therefore worded as a
 /// fact about THE SHAPES — which stays true for everything already drawn —
 /// rather than as a claim about what pdfcer can never do, which would go false
@@ -346,7 +346,7 @@ pub fn comment_row_goto_tooltip(page_number: usize) -> String {
 /// to write some. A single "Note…" would make the operator read the row above
 /// the button to find out what pressing it does.
 ///
-/// # ★ Why two labels can exist at all
+/// # Why two labels can exist at all
 ///
 /// Setting `/Contents` on an annotation that **already exists** is an engine
 /// verb, and while it was missing every shape this shell drew was permanently
@@ -420,7 +420,7 @@ pub fn comment_row_note_hint() -> &'static str {
 /// has no way to discover what name their comments carry, or that they carry
 /// none.
 ///
-/// # ★ Why it names the setting rather than the value
+/// # Why it names the setting rather than the value
 ///
 /// A panel body is handed `&OpenDoc` and `&mut PanelsState` and **nothing
 /// else** — no preferences — so this string cannot quote the configured name
@@ -475,7 +475,7 @@ pub fn comment_row_note_no_handle() -> &'static str {
 
 /// **The heading of the row whose annotation is selected on the canvas.**
 ///
-/// # ★★★ A word, not a colour
+/// # A word, not a colour
 ///
 /// `DEFECTS.md` **D2** is this project's record of a theme making text
 /// invisible against its own background — near-white on light grey, shipped,
@@ -502,7 +502,7 @@ pub fn comment_row_selected_heading(heading: &str) -> String {
 // The filter strip, and Delete
 // ---------------------------------------------------------------------------
 
-/// ★★★ **The disclosure a filtered list owes**, above the rows.
+/// **The disclosure a filtered list owes**, above the rows.
 ///
 /// This panel's founding discipline is that *"nothing is silently omitted"* —
 /// [`comments_excluded`] already states the arithmetic for widgets, pop-ups
@@ -555,7 +555,7 @@ pub fn comment_filter_all() -> &'static str {
 
 /// The switch that hides rows carrying no note text.
 ///
-/// ★ It exists because of a property of pdfcer rather than of PDF:
+/// It exists because of a property of pdfcer rather than of PDF:
 /// `MarkupSpec` has no contents field on any variant, so **every shape this
 /// program draws arrives with no `/Contents`**. On a drawing marked up here
 /// the list is mostly rows with nothing to read, and this is the switch that
@@ -592,12 +592,12 @@ pub fn comment_sort_subtype() -> &'static str {
     "By type"
 }
 
-/// ★★★ **Delete this comment** — the control this panel spent its whole life
+/// **Delete this comment** — the control this panel spent its whole life
 /// without.
 ///
 /// # Why it is worth a doc comment of its own
 ///
-/// ★★ This control was once forbidden by a written, correct reason — that no
+/// This control was once forbidden by a written, correct reason — that no
 /// `Action` variant could carry the intent — and the reason expired silently.
 /// `AnnotAction::Delete` reaches `EditSession::delete_annotation`, the canvas
 /// Delete key and the Format tab both use it, and this panel — **the
@@ -628,7 +628,7 @@ pub fn comment_row_delete_tooltip() -> &'static str {
 // ANSWERING A COMMENT — `EditSession::add_reply`
 // ===========================================================================
 //
-// ★★★ These strings exist because the engine gained the verb, and the shape
+// These strings exist because the engine gained the verb, and the shape
 // worth remembering is the one they were blocked on: `pdfcer-core` MODELLED
 // `/IRT` and `/RT` long before it could WRITE either, so this panel could
 // display a conversation and not continue one. R9 forbids a greyed Reply
@@ -654,7 +654,7 @@ pub fn comment_row_reply() -> &'static str {
 /// What Reply does, on hover — and the one fact about it an operator cannot
 /// see.
 ///
-/// ★ It names **a new comment**, deliberately. The visible result of pressing
+/// It names **a new comment**, deliberately. The visible result of pressing
 /// Post reply is a new row in this list and a few words inside the parent's
 /// pop-up, which looks exactly like a note having been edited. It is not: it
 /// is a `/Text` annotation of its own, with its own object number, its own
@@ -690,7 +690,7 @@ pub fn comment_row_reply_hint() -> &'static str {
 
 /// **What the reply will be signed with**, disclosed before it is written.
 ///
-/// # ★★ Why this is a different sentence from [`comment_row_note_signature`]
+/// # Why this is a different sentence from [`comment_row_note_signature`]
 ///
 /// Because the *rule* is different, not because the wording drifted. Saving a
 /// note over an existing comment may leave somebody else's `/T` untouched —
@@ -699,7 +699,7 @@ pub fn comment_row_reply_hint() -> &'static str {
 /// and there is no prior byline anywhere in the question: it carries the
 /// operator's name or it carries none, always, and one sentence covers it.
 ///
-/// ★ It names the *setting* rather than quoting the configured value, for
+/// It names the *setting* rather than quoting the configured value, for
 /// [`comment_row_note_signature`]'s stated reason: a panel body is handed
 /// `&OpenDoc` and `&mut PanelsState` and no preferences at all, so quoting the
 /// name would mean threading prefs through every panel signature in the crate
@@ -710,7 +710,7 @@ pub fn comment_row_reply_signature() -> &'static str {
     "Your reply is signed with the name in Settings > Comments and dated now. Leave that name blank to reply anonymously."
 }
 
-/// ★★★ **Shown when the row being answered is itself a reply** — the
+/// **Shown when the row being answered is itself a reply** — the
 /// threading-depth decision, said out loud where it is made.
 ///
 /// §12.5.6.2 permits a reply to a reply and `add_reply` allows it (it refuses
@@ -730,7 +730,7 @@ pub fn comment_row_reply_to_a_reply() -> &'static str {
     "You are answering a reply. Your answer joins the same conversation and is listed with it, rather than nested under it."
 }
 
-/// ★★★ **What the engine did that no surface in this program shows** — the
+/// **What the engine did that no surface in this program shows** — the
 /// disclosure after a reply lands.
 ///
 /// # The fact being disclosed
@@ -746,7 +746,7 @@ pub fn comment_row_reply_to_a_reply() -> &'static str {
 /// bubble on top of it. Another reader may draw it, and an operator who has
 /// only ever seen this program has no way to know the window is in their file.
 ///
-/// # ★ `None` when there is no window
+/// # `None` when there is no window
 ///
 /// The engine reports the fact rather than guaranteeing it, so the sentence is
 /// conditional on the engine's own answer rather than on this shell's
@@ -794,7 +794,7 @@ mod tests {
         ]
     }
 
-    /// **★ Rule 15 — no string here writes a bare "dimension".**
+    /// **Rule 15 — no string here writes a bare "dimension".**
     ///
     /// *"**ce dimensions** are the ones pdfcer authors; **pdf dimensions** are
     /// CAD-exported page content pdfcer reads and must not silently alter. They
@@ -1021,7 +1021,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **A reply's own pop-up is disclosed, and only when it has one.**
+    /// **A reply's own pop-up is disclosed, and only when it has one.**
     ///
     /// # The fact, and why nothing on screen can carry it
     ///
@@ -1034,7 +1034,7 @@ mod tests {
     /// seen this program has no way to learn the window is in their file.
     /// Another reader will draw it.
     ///
-    /// ★ The `false` case is asserted beside it because the sentence is a
+    /// The `false` case is asserted beside it because the sentence is a
     /// **claim about the file**: firing it unconditionally would tell the
     /// operator about a window pdfcer had not established was there, which is
     /// rule 4 broken in the direction that is hardest to notice — a disclosure

@@ -20,7 +20,7 @@ easily confused, because a blank page and a page that failed to rasterize
 produce the same screenshot — which is why this check reads the canvas's own
 `drawn=` count rather than looking at pixels.
 
-★★ **A screenshot cannot distinguish "drew nothing" from "drew something
+**A screenshot cannot distinguish "drew nothing" from "drew something
 featureless".** 2,450 hairlines and a flat wash are the same picture at a
 glance, and so are a blank sheet and a sheet that did not render. Wherever
 that ambiguity exists, the oracle has to be a count the application
@@ -38,7 +38,7 @@ publishes, not a pixel.
 | 5 | the canvas drew it: a `canvas` line with `pages=1 drawn=1` | the document is open and the page will not rasterize. **This is the "confirm it renders" step** |
 | 6 | a second New makes `Untitled 2.pdf` | New is idempotent — it produced a document once and the control now does nothing, which steps 3–5 would all still pass |
 
-# ★ The falsifying phase: what wrong implementation would pass this?
+# The falsifying phase: what wrong implementation would pass this?
 
 Asked before the check was written, per `checks/mod.rs`'s rule that a check
 must fail against a build where the wiring is absent. Four answers, and the
@@ -65,14 +65,14 @@ first three are why the steps are shaped the way they are:
    everything else is per-document — a distinction whose whole failure mode
    is invisible until the second press.
 
-## ★ The falsification this check is held to
+## The falsification this check is held to
 
 `PROJECT_PLAN.md` §4 stage S1 requires every check here to have been run
 against a deliberately broken build and seen to fail — not reasoned about.
 For this one the break is deleting `"file.new" => actions.push(Action::New)`
 from `app::dispatch`.
 
-★★ The **shape of the failure it must produce** is the contract, and it is
+The **shape of the failure it must produce** is the contract, and it is
 what the step separation above buys:
 
 > press 1: `file.new` was invoked and traced no new `new-document

@@ -70,7 +70,7 @@ pub struct PointerFrame {
     /// **Where the button actually went down**, in canvas space — the corner
     /// the operator chose.
     ///
-    /// # ★ Why this exists, and the defect it closes
+    /// # Why this exists, and the defect it closes
     ///
     /// `Response::drag_started()` does **not** fire on the frame of the press.
     /// It fires once the pointer has travelled far enough for egui to call the
@@ -106,7 +106,7 @@ pub struct PointerFrame {
     /// **Escape was pressed this frame**, and the canvas is entitled to it —
     /// i.e. no text field has focus.
     ///
-    /// # ★ Why the abort arrives as an input rather than as a method call
+    /// # Why the abort arrives as an input rather than as a method call
     ///
     /// Because a drag in flight and the selection ladder both want Escape, and
     /// exactly one of them may have it per press. Routing the key through the
@@ -163,7 +163,7 @@ impl GestureState {
     /// and the abandoned one must not be able to resurrect itself by having
     /// its origin overwritten.
     ///
-    /// # ★ `press_kind: None` — the press means nothing in this mode
+    /// # `press_kind: None` — the press means nothing in this mode
     ///
     /// [`press_kind`] returns `None` when the active mode forbids the meaning
     /// this press would have had (see its own header). `None` suppresses
@@ -184,7 +184,7 @@ impl GestureState {
     /// state machine that silently dropped a gesture it had already started
     /// would be wrong regardless of whether anything could reach it.
     pub fn update(&mut self, frame: PointerFrame, press: PressMeaning) -> GestureOutcome {
-        // ★★★ **WHAT THE MACHINE SAW, AND WHAT IT HOLDS.**
+        // **WHAT THE MACHINE SAW, AND WHAT IT HOLDS.**
         //
         // The link between `canvas-press` (in `canvas::pressing`), which says
         // how a press was understood, and `canvas-resize-arm` (in
@@ -225,7 +225,7 @@ impl GestureState {
         }
 
         if frame.drag_started {
-            // ★ The press, not the position the drag was RECOGNISED at — see
+            // The press, not the position the drag was RECOGNISED at — see
             // `PointerFrame::press_origin` for the measurement. `latest` is
             // still the live position, so the very first in-flight frame
             // already describes a band from the true corner to the pointer.
@@ -305,7 +305,7 @@ const GESTURE_SLOT: &str = "canvas-gesture"; // ui-text-exempt: trace slot name,
 
 #[cfg(test)]
 mod tests {
-    // ★ Imported in the TEST module only: every production reference to
+    // Imported in the TEST module only: every production reference to
     // `MarkupKind` is in `outcome`, so a module-level import would be unused in
     // the shipping build and clippy refuses it. The tests still name the kind
     // because they assert on the outcome the machine reports, which is the
@@ -319,7 +319,7 @@ mod tests {
         Some(Pos2::new(x, y))
     }
 
-    /// ★ **A press produces nothing at all** — invariant 2, at its source.
+    /// **A press produces nothing at all** — invariant 2, at its source.
     ///
     /// Whatever the press landed on, and whatever else the frame carries, the
     /// press frame is `Idle`. Nothing downstream of this can clear a
@@ -340,7 +340,7 @@ mod tests {
         }
     }
 
-    /// ★ **A press on blank paper that becomes a drag never yields a click.**
+    /// **A press on blank paper that becomes a drag never yields a click.**
     ///
     /// The whole sequence, frame by frame, as the roadmap describes it: press
     /// on empty canvas, move, release. If any frame produced a `Click`, the
@@ -479,7 +479,7 @@ mod tests {
             GestureOutcome::Marquee {
                 // Dragged up and left: normalised, or it would contain nothing.
                 rect: Rect::from_two_pos(Pos2::new(100.0, 100.0), Pos2::new(40.0, 30.0)),
-                // ★ …and leftwards, so this is a CROSSING window. The same drag
+                // …and leftwards, so this is a CROSSING window. The same drag
                 // that motivated the normalisation note above is the one O88 is
                 // about, which is a coincidence worth not tidying away: the
                 // fixture for "a band may be dragged backwards" was already here.
@@ -514,7 +514,7 @@ mod tests {
         );
     }
 
-    /// ★ **A zoom marquee is the same band with the other intent** — same
+    /// **A zoom marquee is the same band with the other intent** — same
     /// rect, same normalisation, same phases, same shift handling.
     ///
     /// Asserted by driving both intents through the identical frame sequence
@@ -601,7 +601,7 @@ mod tests {
         ));
     }
 
-    /// ★ **The intent is sampled at the press.** Disarming the zoom mid-drag —
+    /// **The intent is sampled at the press.** Disarming the zoom mid-drag —
     /// which is what the release itself does, and what a competing surface
     /// could do — must not turn a zoom marquee into a selection marquee
     /// halfway across the page.
@@ -640,7 +640,7 @@ mod tests {
         );
     }
 
-    /// ★ **A hand-tool frame produces no gesture at all** — the shape
+    /// **A hand-tool frame produces no gesture at all** — the shape
     /// `canvas::interact` relies on so that a pan cannot also marquee.
     ///
     /// The canvas hands this machine a blank `PointerFrame` while the hand
@@ -700,7 +700,7 @@ mod tests {
     // The markup band
     // -----------------------------------------------------------------
 
-    /// ★ **A markup band reports its endpoints RAW, in drag order** — the
+    /// **A markup band reports its endpoints RAW, in drag order** — the
     /// property an arrow's head depends on.
     ///
     /// Asserted against a drag that goes **up and to the left**, because that
@@ -755,7 +755,7 @@ mod tests {
         );
     }
 
-    /// ★ **A markup drag keeps the kind it was armed with**, even if the
+    /// **A markup drag keeps the kind it was armed with**, even if the
     /// caller reports a different one on every later frame — which is what
     /// would happen if the operator's next click landed on another Markup
     /// button while the button was still down.
@@ -790,7 +790,7 @@ mod tests {
         );
     }
 
-    /// ★ **Escape abandons a markup drag without authoring anything.**
+    /// **Escape abandons a markup drag without authoring anything.**
     ///
     /// The existing cancellation test covers the three older kinds; this adds
     /// the one where an un-cancelled release would write to the document. A
@@ -845,7 +845,7 @@ mod tests {
     // The mode gate
     // -----------------------------------------------------------------
 
-    /// ★ **A press whose meaning is forbidden starts no drag, and a click in
+    /// **A press whose meaning is forbidden starts no drag, and a click in
     /// that mode reports nothing.**
     ///
     /// The state-machine half of the gate. The click assertion is the
@@ -922,7 +922,7 @@ mod tests {
         assert_eq!(g.active(), None);
     }
 
-    /// ★ **A drag is anchored at the press, not at the frame the drag was
+    /// **A drag is anchored at the press, not at the frame the drag was
     /// recognised on.**
     ///
     /// The regression test for the 94-point offset measured on a real drag —
@@ -1100,7 +1100,7 @@ mod tests {
         );
     }
 
-    /// ★ **An interrupted drag is abandoned, never committed.**
+    /// **An interrupted drag is abandoned, never committed.**
     ///
     /// Focus loss, a dialog, the pointer leaving the window: egui stops
     /// reporting the drag without ever reporting a stop. Committing on the
@@ -1129,7 +1129,7 @@ mod tests {
         );
     }
 
-    /// ★ **Escape abandons a drag in flight, and it commits nothing.**
+    /// **Escape abandons a drag in flight, and it commits nothing.**
     ///
     /// The gesture ladder's escape hatch: a move drag that is halfway across
     /// the page and clearly wrong must be abandonable without an undo. The
@@ -1213,7 +1213,7 @@ mod tests {
         );
     }
 
-    /// ★ **Escape with no drag under it is NOT consumed**, so it reaches the
+    /// **Escape with no drag under it is NOT consumed**, so it reaches the
     /// selection ladder and one press still ascends exactly one rung.
     #[test]
     fn escape_with_no_drag_leaves_the_key_for_the_ladder() {

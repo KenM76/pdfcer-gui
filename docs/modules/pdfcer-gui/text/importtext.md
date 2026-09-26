@@ -4,7 +4,7 @@ The receipt for `file.import_text`, and its refusals.
 `dialogs::import_text` holds the words the *window* says before the press;
 this module holds the words that arrive after it.
 
-## ★★★ THE ENGINE COMPOSES ITS OWN DISCLOSURES AND THIS SHELL DOES NOT PRINT
+## THE ENGINE COMPOSES ITS OWN DISCLOSURES AND THIS SHELL DOES NOT PRINT
 THEM
 
 `PlaceTextReport::disclosures` is a `Vec<String>` documented as *"every
@@ -32,7 +32,7 @@ owns the measurement, the shell owns the sentence. The one place the
 engine's own words are printed is the catch-all refusal, where a message we
 have not anticipated is better than a shrug.
 
-## ★★ Every sentence here is CONDITIONAL except the first
+## Every sentence here is CONDITIONAL except the first
 
 The page count always shows, because it is the answer to *"did that work?"*.
 Everything else appears only when its count is non-zero. A receipt that

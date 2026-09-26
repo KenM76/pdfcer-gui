@@ -10,7 +10,7 @@ Until then a text draft was one line and Enter **committed** it, so there
 was no keystroke that could produce a second line and no gesture that could
 ask for one.
 
-# ★★ Why multi-line needs a box, which is what this check is really about
+# Why multi-line needs a box, which is what this check is really about
 
 **A PDF has no paragraph.** Each visual line is its own show operator at its
 own absolute position, so something has to decide where the second line
@@ -27,7 +27,7 @@ reach:
 | 3 | **plain Enter INSERTS instead of committing** | nothing — and this is the link that would ship |
 | 4 | Ctrl+Enter commits, and the wrap rectangle reaches the engine | `canvas::textedit` asserts the ACTION; nothing asserts the engine saw it |
 
-★ **Link 3 is the one that would fail silently and plausibly.** If Enter
+**Link 3 is the one that would fail silently and plausibly.** If Enter
 still commits inside a box, the first Enter ends the draft and everything
 typed after it goes nowhere — which from a chair is *"multi-line does not
 work"*, with a perfectly ordinary single-line run left on the page as

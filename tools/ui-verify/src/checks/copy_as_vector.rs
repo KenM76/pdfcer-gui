@@ -32,7 +32,7 @@ const REFUSED: &str = "clipboard-copy-out-refused";
 /// The four format names in placement order, as `crate::clipboard::ClipFormat`
 /// spells them.
 ///
-/// ★ Written out here rather than imported, deliberately. `ui-verify` drives
+/// Written out here rather than imported, deliberately. `ui-verify` drives
 /// the built binary through the operating system and must not link the crate
 /// under test — an expected value taken from the code being checked is a
 /// tautology, and this list is the *engine's measurement*, which is the
@@ -127,7 +127,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
 
-    // ★★★ CLEARED FIRST, and this is the precondition without which the whole
+    // CLEARED FIRST, and this is the precondition without which the whole
     // check is theatre.
     //
     // `sys::clear_clipboard`'s own documentation carries the argument, learned
@@ -177,7 +177,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.click_at(session.frame()?.declared_center(tab))?;
     session.settle(14);
 
-    // --- 2: ★★ the CONTROL EXISTS ------------------------------------------
+    // --- 2: the CONTROL EXISTS ------------------------------------------
     //
     // Link 1 of the module header, and the one that catches the commonest way
     // this feature could be absent without any test noticing: the command is
@@ -203,7 +203,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // message below distinguishes from a refusal.
     session.settle(60);
 
-    // --- 3: ★ the handler RAN, and said which operand it took --------------
+    // --- 3: the handler RAN, and said which operand it took --------------
     let trace = session.trace()?;
     if let Some(refused) = trace.last(REFUSED) {
         return Ok(Some(format!(
@@ -233,7 +233,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("placed: `{}`", placed.raw));
 
-    // --- 4: ★★★ the CLIPBOARD holds the measured PREFIX ---------------------
+    // --- 4: the CLIPBOARD holds the measured PREFIX ---------------------
     //
     // Links 4 and 5, and the only observation of `native-clipboard`'s `unsafe`
     // anywhere in this project.
@@ -291,7 +291,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
     }
 
-    // ★ The tail is NOT asserted. Windows synthesises `CF_DIB` and `CF_BITMAP`
+    // The tail is NOT asserted. Windows synthesises `CF_DIB` and `CF_BITMAP`
     // from the `CF_DIBV5` this placed, plus `CF_LOCALE` and others depending on
     // the machine — so a correct build shows more than four entries and
     // demanding exactly four would fail it on a behaviour nobody controls.
@@ -306,7 +306,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
     ));
 
-    // --- 5: ★ the trace and the clipboard AGREE on the count ---------------
+    // --- 5: the trace and the clipboard AGREE on the count ---------------
     //
     // The cross-check that makes this more than a smoke test, and the same
     // shape `export_image_emf` uses on its byte count: two values that are

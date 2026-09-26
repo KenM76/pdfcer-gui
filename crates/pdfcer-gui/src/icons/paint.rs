@@ -103,7 +103,7 @@ pub fn paint_ribbon_icon(painter: &egui::Painter, request: &IconRequest<'_>) {
 /// the status bar and any hand-drawn control need the same thing and must
 /// not re-derive the DPI arithmetic.
 ///
-/// # ★ Rasterized at the physical pixel size, drawn at the logical one
+/// # Rasterized at the physical pixel size, drawn at the logical one
 ///
 /// This is the load-bearing decision of the whole pipeline, and the reason
 /// the set is SVG path data rather than pre-baked PNGs.
@@ -332,7 +332,7 @@ mod tests {
         }
     }
 
-    /// ★ An unknown key must NOT be a blank slot.
+    /// An unknown key must NOT be a blank slot.
     ///
     /// The failure this guards against is precise: by the time the painter
     /// is called, `shows_label` has already dropped the control's text label
@@ -457,7 +457,7 @@ mod tests {
         assert_eq!(square.center(), wide.center());
     }
 
-    /// ★ The function really does satisfy the shell's painter bound.
+    /// The function really does satisfy the shell's painter bound.
     ///
     /// The wiring is one line in another module, and if the bound did not
     /// hold it would fail there rather than here — in a file this module's

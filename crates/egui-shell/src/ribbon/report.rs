@@ -68,7 +68,7 @@ pub const PREFIX: &str = "ribbon";
 /// The trace event name under which a control publishes **whether it was drawn
 /// pressable**.
 ///
-/// ★★★ **A rect cannot answer "is it greyed", and this repository needed it to.**
+/// **A rect cannot answer "is it greyed", and this repository needed it to.**
 /// Every control publishes a rectangle whether enabled or not, deliberately:
 /// the question a consumer asks is *where is this control*, and a control that
 /// is greyed is still a control that was drawn somewhere. That rule is right,
@@ -80,19 +80,19 @@ pub const PREFIX: &str = "ribbon";
 /// that re-evaluates the predicate against the conditions, which is the two
 /// halves agreeing with each other rather than the shipped frame answering.
 ///
-/// ★★ It is a separate LINE rather than a field on the rect report because
+/// It is a separate LINE rather than a field on the rect report because
 /// [`RectSink`] is `FnMut(&str, Rect)` and is consumed by three other surfaces
 /// in two crates. Widening that signature to carry one boolean that only
 /// command controls have would put an `Option<bool>` on every group caption and
 /// every mode segment for ever.
 ///
-/// ★★ It lives HERE, beside the rect names, rather than beside the renderer
+/// It lives HERE, beside the rect names, rather than beside the renderer
 /// that emits it, because it is the same kind of thing those names are: a
 /// spelling a harness in another repository greps for, and therefore a
 /// stability contract rather than an implementation detail. That is also what
 /// makes it reachable from an application drawing a custom control of its own.
 ///
-/// ★ The line is emitted **on change**, not per frame, and carries `id=` and
+/// The line is emitted **on change**, not per frame, and carries `id=` and
 /// `enabled=0|1`. An application that renders a custom item itself is expected
 /// to emit the same event for it, and may ADD fields; `pdfcer-gui`'s font band
 /// appends `live=` because it greys on a second predicate of its own, and the
@@ -114,7 +114,7 @@ pub fn group(tab_id: &str, group_id: &str) -> String {
 
 /// The name under which a **collapsed** group's single button is published.
 ///
-/// ★ A distinct name from [`group`], deliberately. A collapsed group is on the
+/// A distinct name from [`group`], deliberately. A collapsed group is on the
 /// band and its items are not, which is a third state — the other two being
 /// *expanded on the band* and *in the overflow menu* — and a driven check that
 /// could not tell them apart would report a collapse as a disappearance. The
@@ -139,7 +139,7 @@ pub fn group_caption(tab_id: &str, group_id: &str) -> String {
 /// **The auto-hide trigger** — the tab strip, taken as the rectangle whose
 /// hover reveals a hidden band.
 ///
-/// ★★ Published even when auto-hide is OFF, and that is deliberate. The
+/// Published even when auto-hide is OFF, and that is deliberate. The
 /// question a driven check asks of this region is *"is the way back to the
 /// ribbon on screen and big enough to hit"*, and the honest answer has to be
 /// available in both settings — otherwise the check can only run in the state
@@ -355,7 +355,7 @@ impl std::fmt::Debug for Reporter<'_> {
 mod tests {
     use super::*;
 
-    /// **★ The published names are a stability contract, and this test is
+    /// **The published names are a stability contract, and this test is
     /// the tripwire on it.**
     ///
     /// These strings are consumed by a harness in another tool, possibly
