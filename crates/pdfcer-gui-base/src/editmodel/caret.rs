@@ -1,7 +1,7 @@
-//! # `canvas::textedit::caret` — **where the caret is, and what a key does to
+//! # `editmodel::caret` — **where the caret is, and what a key does to
 //! the text around it**
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/caret.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/editmodel/caret.md`.
 //!
 //! ## conventions: text-caret
 //!

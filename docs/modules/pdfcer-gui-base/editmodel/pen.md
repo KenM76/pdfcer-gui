@@ -1,4 +1,4 @@
-# `canvas::textedit::pen` — the face, size and colour **new** page text is
+# `editmodel::pen` — the face, size and colour **new** page text is
 written in
 
 ## What this closes

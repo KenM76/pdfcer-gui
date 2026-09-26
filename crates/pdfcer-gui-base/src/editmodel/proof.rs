@@ -1,10 +1,10 @@
-//! # `canvas::textedit::proof` — **the tail did not move, proved in the bytes**
+//! # `editmodel::proof` — **the tail did not move, proved in the bytes**
 //!
 //! `crate::redact::proof`'s shape applied to `DEFECTS.md` **D4b**: a claim about
 //! what an edit does to a *file*, asserted against the file, with the falsifying
 //! run beside it.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/proof.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/editmodel/proof.md`.
 
 #![cfg(test)]
 

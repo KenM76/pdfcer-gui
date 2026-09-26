@@ -1,9 +1,9 @@
-//! # `canvas::textedit::lines` — the caret's arithmetic inside a MULTI-LINE draft
+//! # `editmodel::lines` — the caret's arithmetic inside a MULTI-LINE draft
 //!
 //!
 //! The operator, `OPERATOR_REQUESTS.md` **O127**:
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/lines.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/editmodel/lines.md`.
 
 /// **Where each line of `text` starts and ends**, as character offsets.
 #[must_use]

@@ -1,4 +1,4 @@
-//! # `canvas::textedit::cost` — **what a per-keystroke re-measure actually costs**
+//! # `editmodel::cost` — **what a per-keystroke re-measure actually costs**
 //!
 //! `DEFECTS.md` **D4b**'s first sentence is *"there is no re-layout per
 //! keystroke"*, and the old shell's own comment agrees in terms: *"Typing →
@@ -6,7 +6,7 @@
 //! "as you type", nothing moves at all, and D4b says that alone accounts for
 //! much of the complaint.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/cost.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/editmodel/cost.md`.
 
 #![cfg(test)]
 

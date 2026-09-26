@@ -29,6 +29,9 @@ pub mod diag;
 /// Which file a document came from, and which form field is selected.
 pub mod docidentity;
 
+/// The text editor's window-free arithmetic: caret, lines, disposition, pen.
+pub mod editmodel;
+
 /// OCR: what image the recogniser is shown, the thread it runs on, and the
 /// named refusals it can come back with. It authors no PDF — `pdfcer-core`'s
 /// `ocr::layer` writes the invisible mode-3 sandwich. See its header for why

@@ -54,19 +54,13 @@
 /// modelled on and why the reassembly is `pdfcer-core`'s rather than this
 /// shell's.
 pub mod blocks;
-/// The caret's own arithmetic — insert, delete, and the four movements. Pure
-/// functions of a `&str` and an index, with no window in them; its header says
-/// why that is a seam and not a cut.
-pub mod caret;
+pub use pdfcer_gui_base::editmodel::{caret, disposition, lines, pen};
 /// Where the pointer is in relation to the editor box, published by `paint`
 /// and read by everything that has to decide whether a press belongs to the
 /// draft or to the page.
 pub mod hit;
 /// What every key means inside a draft — the keystroke contract.
 pub mod keys;
-/// **The caret's arithmetic inside a draft that holds more than one line**
-/// — `OPERATOR_REQUESTS.md` **O127**, defect 2.
-pub mod lines;
 /// What a draft looks like on the page — the in-place editor and its caret. Its
 /// header carries the standing rule that the text and the caret are measured
 /// from ONE layout.
@@ -97,11 +91,6 @@ pub mod pin;
 pub mod repertoire;
 
 pub use place::{Click, begin_box, click};
-pub mod disposition;
-// The byte-level proof that the untouched tail did not move, with an
-// `EditOptions::default()` run beside it as the falsifier. `#[cfg(test)]`
-// inside; it compiles to nothing in a release build.
-mod proof;
 // The experiment that decides whose defect O141's last step is: ONE
 // `EditSession`, `format_text` then `edit_text`, located by find text alone so
 // no operand this shell computes is in the request. It refuses; the same pair
@@ -118,14 +107,6 @@ pub use plan::{Plan, plan};
 // run is unique, one where the same text appears twice and the edit must land
 // on the clicked one. `#[cfg(test)]` inside.
 mod glyphwall;
-// The per-keystroke re-measure measurement `DEFECTS.md` D4b's fix would need,
-// and the reason it is not wired. `#[ignore]`d; run it and read the numbers.
-mod cost;
-/// The face, size and colour NEW page text is written in — the Phase 5 row
-/// that read *"choosing what those three controls are is a decision, not an
-/// omission"*. The decision is in that module's header, along with why it lives
-/// in `egui::Memory` where the markup pen does not.
-pub mod pen;
 
 use crate::app::state::OpenDoc;
 use crate::canvas::mapping::PageMapping;

@@ -1,4 +1,4 @@
-//! # `canvas::textedit::disposition` — **which way the rest of the line moves**
+//! # `editmodel::disposition` — **which way the rest of the line moves**
 //!
 //! One public function, [`choose`], and the whole argument for its answer. It
 //! decides the single field of
@@ -6,7 +6,7 @@
 //! the [`FollowerDisposition`] — which a caller that constructs
 //! `EditOptions::default()` never decides at all.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/disposition.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/editmodel/disposition.md`.
 
 use pdfcer_core::text_edit::{AlignmentSource, BlockAlignment, DetectedAlignment};
 use pdfcer_core::text_edit::{EditOptions, FollowerDisposition};
@@ -62,7 +62,7 @@ pub enum Reason {
     /// a CAD sheet is made of multi-piece lines. The measurement is in that
     /// function's own comment. The useful half of a refusal is its
     /// **disclosure**, and that is what this reason carries — see
-    /// `crate::text::textedit`.
+    /// `pdfcer_gui::text::textedit`.
     SharesTheLine,
     /// The engine detected a non-left alignment whose tail is flush against
     /// something. `Pin`.

@@ -1,4 +1,4 @@
-# `canvas::textedit::cost` — **what a per-keystroke re-measure actually costs**
+# `editmodel::cost` — **what a per-keystroke re-measure actually costs**
 
 `DEFECTS.md` **D4b**'s first sentence is *"there is no re-layout per
 keystroke"*, and the old shell's own comment agrees in terms: *"Typing →

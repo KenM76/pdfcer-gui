@@ -1,4 +1,4 @@
-# `canvas::textedit::disposition` — **which way the rest of the line moves**
+# `editmodel::disposition` — **which way the rest of the line moves**
 
 One public function, [`choose`], and the whole argument for its answer. It
 decides the single field of

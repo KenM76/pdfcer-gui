@@ -1,7 +1,7 @@
-//! # `canvas::textedit::pen` — the face, size and colour **new** page text is
+//! # `editmodel::pen` — the face, size and colour **new** page text is
 //! written in
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/pen.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/editmodel/pen.md`.
 
 use pdfcer_core::fontdata::Std14;
 use pdfcer_core::text_edit::NewTextColor;

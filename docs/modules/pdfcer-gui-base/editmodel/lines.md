@@ -1,4 +1,4 @@
-# `canvas::textedit::lines` — the caret's arithmetic inside a MULTI-LINE draft
+# `editmodel::lines` — the caret's arithmetic inside a MULTI-LINE draft
 
 
 The operator, `OPERATOR_REQUESTS.md` **O127**:

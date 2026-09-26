@@ -1,4 +1,4 @@
-# `canvas::textedit::caret` — **where the caret is, and what a key does to
+# `editmodel::caret` — **where the caret is, and what a key does to
 the text around it**
 
 ## Why this is its own file
