@@ -1,11 +1,11 @@
-//! # `panels::properties::mkcolour` — one `/MK` colour, wherever it is asked for
+//! # `mkcolour` — one `/MK` colour, wherever it is asked for
 //!
 //! A labelled swatch over one of a widget's two `/MK` colour keys, `/BG` and
 //! `/BC`. `OPERATOR_REQUESTS.md` **O202**, whose ask covers both halves of the
 //! life of a form box: *"the forms objects have no way to edit their colour
 //! before or after placement."*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/panels/properties/mkcolour.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/mkcolour.md`.
 
 use egui::Ui;
 use pdfcer_core::forms::MkColor;
@@ -92,8 +92,8 @@ pub fn row(ui: &mut Ui, spec: &Row<'_>) -> Option<Pick> {
 
     let mut entries = Vec::with_capacity(2);
     if let Some(label) = spec.no_colour_entry {
-        entries.push(super::swatch::MkEntry {
-            pick: super::swatch::MkPick::NoColour,
+        entries.push(crate::swatch::MkEntry {
+            pick: crate::swatch::MkPick::NoColour,
             label,
             available: no_colour_would_change_something(spec.colour),
             unavailable_hover: spec.no_colour_unavailable,
@@ -101,8 +101,8 @@ pub fn row(ui: &mut Ui, spec: &Row<'_>) -> Option<Pick> {
         });
     }
     if let Some(label) = spec.remove_entry {
-        entries.push(super::swatch::MkEntry {
-            pick: super::swatch::MkPick::Remove,
+        entries.push(crate::swatch::MkEntry {
+            pick: crate::swatch::MkPick::Remove,
             label,
             available: removal_would_change_something(spec.colour),
             unavailable_hover: spec.remove_unavailable,
@@ -113,10 +113,10 @@ pub fn row(ui: &mut Ui, spec: &Row<'_>) -> Option<Pick> {
     let picked = ui
         .horizontal(|ui| {
             ui.label(spec.label).on_hover_text(spec.hover);
-            super::swatch::show_mk(
+            crate::swatch::show_mk(
                 ui,
                 spec.id_salt,
-                &super::swatch::MkControl {
+                &crate::swatch::MkControl {
                     value,
                     entries: &entries,
                     disc: spec.disc,
@@ -127,11 +127,11 @@ pub fn row(ui: &mut Ui, spec: &Row<'_>) -> Option<Pick> {
         .inner?;
 
     Some(match picked {
-        super::swatch::MkPick::Colour([r, g, b]) => {
+        crate::swatch::MkPick::Colour([r, g, b]) => {
             Pick::Set(MkColor::Rgb(fraction(r), fraction(g), fraction(b)))
         }
-        super::swatch::MkPick::NoColour => Pick::Set(MkColor::None),
-        super::swatch::MkPick::Remove => Pick::Remove,
+        crate::swatch::MkPick::NoColour => Pick::Set(MkColor::None),
+        crate::swatch::MkPick::Remove => Pick::Remove,
     })
 }
 
@@ -151,24 +151,24 @@ fn mk_value<'a>(
     cmyk: Option<&'a str>,
     unstated_note: &'a str,
     no_colour_note: &'a str,
-) -> super::swatch::MkValue<'a> {
+) -> crate::swatch::MkValue<'a> {
     match colour {
         // DeviceGray widens exactly — one component repeated three times is the
         // same colour, not an approximation — so it is SHOWN. DeviceCMYK does
         // not, and is not. O202 decision 4.
-        Some(MkColor::Gray(g)) => super::swatch::MkValue::Shown([component(g); 3]),
+        Some(MkColor::Gray(g)) => crate::swatch::MkValue::Shown([component(g); 3]),
         Some(MkColor::Rgb(r, g, b)) => {
-            super::swatch::MkValue::Shown([component(r), component(g), component(b)])
+            crate::swatch::MkValue::Shown([component(r), component(g), component(b)])
         }
-        Some(MkColor::Cmyk(..)) => super::swatch::MkValue::Unshowable {
+        Some(MkColor::Cmyk(..)) => crate::swatch::MkValue::Unshowable {
             mark: cmyk.unwrap_or_default(),
             note: t::colour_cmyk_note(),
         },
-        Some(MkColor::None) => super::swatch::MkValue::Unshowable {
+        Some(MkColor::None) => crate::swatch::MkValue::Unshowable {
             mark: t::colour_mark_no_colour(),
             note: no_colour_note,
         },
-        None => super::swatch::MkValue::Unshowable {
+        None => crate::swatch::MkValue::Unshowable {
             mark: t::colour_mark_unstated(),
             note: unstated_note,
         },
@@ -192,7 +192,7 @@ fn fraction(v: u8) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::panels::properties::swatch::MkValue;
+    use crate::swatch::MkValue;
 
     /// **The four states of a `/MK` colour key stay four.**
     #[test]

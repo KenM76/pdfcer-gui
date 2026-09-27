@@ -40,7 +40,7 @@ instead is what the file says, plus the operationally useful half.
 
 ### `fn tab_order_tabs_on_ancestor`
 
-The correction argued in `crate::panels::forms::tab_order::model`'s §4:
+The correction argued in `pdfcer_gui_base::tabordermodel`'s §4:
 ISO 32000-2 Table 31 marks `Rotate` "(Optional; inheritable)" and `Tabs`
 merely "(Optional; PDF 1.5)", and the table's preamble makes every unmarked
 attribute non-inheritable.

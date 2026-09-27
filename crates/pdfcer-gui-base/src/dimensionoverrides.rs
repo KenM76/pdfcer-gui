@@ -1,7 +1,7 @@
-//! # `panels::properties::dimension::overrides` — eleven properties, eleven
+//! # `dimensionoverrides` — eleven properties, eleven
 //! checkboxes, and the tier each value came from
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/panels/properties/dimension/overrides.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/dimensionoverrides.md`.
 
 use egui::Ui;
 use pdfcer_core::dimension::{
@@ -200,7 +200,7 @@ pub fn show(ui: &mut Ui, group: &Group, overrides: &mut StyleOverrides) -> bool 
         || resolved.tolerance,
     )
     .edit(ui, |ui, value| {
-        valid &= super::tolerance::show(ui, value, unit);
+        valid &= crate::tolerance::show(ui, value, unit);
     });
 
     // --- tolerance precision --------------------------------------------

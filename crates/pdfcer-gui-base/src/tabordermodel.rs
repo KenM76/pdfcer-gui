@@ -1,11 +1,11 @@
-//! # `panels::forms::tab_order::model` — turning a document into a per-page
+//! # `tabordermodel` — turning a document into a per-page
 //! widget sequence, and reading what the file says about tab order
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/panels/forms/tab_order/model.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/tabordermodel.md`.
 
 use std::collections::HashMap;
 
-use super::tabs::{Sequence, TabsEntry, page_tabs};
+use crate::taborderstated::{Sequence, TabsEntry, page_tabs};
 use pdfcer_core::annot::page_annotations;
 use pdfcer_core::forms::AcroForm;
 use pdfcer_core::graph::ObjectGraph;
@@ -56,7 +56,7 @@ impl Listing {
 /// One page: what the file says about its tab order, and what is on it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PageTabs {
-    /// **0-based** page index — what [`crate::app::actions::Action::GoToPage`]
+    /// **0-based** page index — what `pdfcer_gui::app::actions::Action::GoToPage`
     /// takes. The `+ 1` happens only where a human reads it.
     pub page_index: usize,
     /// What the file's `/Tabs` entry says, and where it was found.
@@ -183,7 +183,7 @@ pub struct TabRow {
     /// `/TU`, the field's alternate (accessible) name, when it has a non-blank
     /// one.
     ///
-    /// The same preference `crate::panels::forms::rows::row_label` applies, and
+    /// The same preference `pdfcer_gui::panels::forms::rows::row_label` applies, and
     /// for the same reason: `/TU` is what a screen reader announces, so it is
     /// the string the operator should be reading. The raw
     /// [`Self::field`] name is still one hover away, through
@@ -355,9 +355,9 @@ mod tests {
     use pdfcer_core::object::Object;
     // Tests that exercise the `/Tabs` reading through `collect` still name its
     // types; the reading itself now lives in `super::tabs`.
-    use super::super::tabs::TabsMode;
     use super::*;
-    use crate::panels::objects::test_support::engine_fixture;
+    use crate::taborderstated::TabsMode;
+    use crate::testsupport::engine_fixture;
     use pdfcer_core::document::Document;
     use pdfcer_core::edit::EditSession;
     use pdfcer_core::object::Dict;

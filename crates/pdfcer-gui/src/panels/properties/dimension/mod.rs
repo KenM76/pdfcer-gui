@@ -3,8 +3,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/properties/dimension/mod.md`.
 
-mod overrides;
-use pdfcer_gui_base::tolerance;
+use pdfcer_gui_base::dimensionoverrides as overrides;
 
 use egui::Ui;
 use pdfcer_core::dimension::{DimensionKind, DimensionRecord};

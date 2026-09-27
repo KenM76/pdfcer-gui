@@ -53,7 +53,7 @@ mod markup;
 /// indeterminate swatch, and nothing at all over an ink pdfcer will not
 /// overwrite. Shared by [`paint`] and [`textobject`], because O89's two pieces
 /// have to answer the same three questions the same way.
-pub mod mkcolour;
+pub use pdfcer_gui_base::mkcolour;
 /// The colour of a selected path. `OPERATOR_REQUESTS.md` O89's vector half, and
 /// the colour of a whole **selection** of paths, with the indeterminate state
 /// the product class already agrees on.

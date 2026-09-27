@@ -1,4 +1,4 @@
-# `panels::properties::dimension::overrides` — eleven properties, eleven
+# `dimensionoverrides` — eleven properties, eleven
 checkboxes, and the tier each value came from
 
 ## What this is

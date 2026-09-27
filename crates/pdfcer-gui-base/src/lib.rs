@@ -429,3 +429,16 @@ pub mod commentreviewstate;
 
 /// The note being typed, and the stamp that keeps it honest.
 pub mod commentnote;
+
+/// Fixtures for this crate's tests.
+#[cfg(test)]
+pub mod testsupport;
+
+/// The form tab-order working list and its reorder arithmetic.
+pub mod tabordermodel;
+
+/// A form field's appearance colours, as a picker.
+pub mod mkcolour;
+
+/// A ce dimension's text and tolerance overrides.
+pub mod dimensionoverrides;

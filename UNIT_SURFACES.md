@@ -57,7 +57,7 @@ five without an edit. Names come from `text/scale.rs::unit_name`, which
 | 53b | Set Scale — *Show dimensions in* | `dialogs/scale.rs` — `unit_combo`, id `scale.unit` | `Unit::all()` |
 | 55a | Dimension Groups — selected group's unit | `panels/dimension_groups/mod.rs`, combo `dimension-group-unit` | `Unit::all()` |
 | 55b | Dimension Groups — new group's starting unit | `panels/dimension_groups/mod.rs`, combo `dimension-groups-new-unit` | `Unit::all()`, default `Millimeter` |
-| 37 | Per-dimension unit override | `panels/properties/dimension/overrides.rs` — the `unit` row | `Unit::all()` |
+| 37 | Per-dimension unit override | `crates/pdfcer-gui-base/src/dimensionoverrides.rs` — the `unit` row | `Unit::all()` |
 
 ### 1c. Hard points, no control — 19
 

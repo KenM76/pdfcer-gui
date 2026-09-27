@@ -18,7 +18,7 @@
 // Tab order — the read-only per-page widget sequence
 //
 // Every sentence here is a statement about the FILE. The argument behind each
-// lives in `pdfcer_gui::panels::forms::tab_order::model`'s header rather than being
+// lives in `tabordermodel`'s header rather than being
 // repeated per function: §1 (why `/Annots` order, and why paint order is worth
 // saying), §4 (the primary-source reading of `/Tabs` — ISO 32000-2 Table 31 and
 // §12.5.1, the two PDF 2.0 values, and the finding that `/Tabs` is NOT

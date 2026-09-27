@@ -1038,7 +1038,7 @@ and unexposed in the shell for the fraction half.
    coherent with the new unit; otherwise fall to `default_format()` **and say so
    in the panel**. Rule 4: the substitution must be visible.
 3. Per-ce-dimension precision already exists and overrides this
-   (`panels/properties/dimension/overrides.rs`), so the group row is the default,
+   (`crates/pdfcer-gui-base/src/dimensionoverrides.rs`), so the group row is the default,
    not the only control.
 
 **Driven checks owed:** `an_existing_group_offers_a_fraction_control`,
@@ -1048,7 +1048,7 @@ and unexposed in the shell for the fraction half.
 
 All eleven cascade properties are drawn on the per-ce-dimension surface, by
 `pub fn show(ui, group, overrides) -> bool` in
-`panels/properties/dimension/overrides.rs`: unit, fraction/precision, decimal
+`crates/pdfcer-gui-base/src/dimensionoverrides.rs`: unit, fraction/precision, decimal
 marker, drafting standard, text height, line width, arrow length, arrow form,
 colour, tolerance, tolerance precision. A test asserts the set is complete —
 `const DRAWN: [&str; 11]` and `fn no_property_of_the_cascade_is_left_without_a_row`,
@@ -1124,7 +1124,7 @@ members that will change, including when it is zero, and say why it is zero.
 
 ### 4. "Tolerance does not work on the override either" — false; same mask as item 2
 
-`panels/properties/dimension/overrides.rs` draws the tolerance row
+`crates/pdfcer-gui-base/src/dimensionoverrides.rs` draws the tolerance row
 (`valid &= super::tolerance::show(ui, value, unit)`) and the tolerance-precision
 row. `panels/properties/dimension/tolerance.rs` provides
 `pub fn show(ui, value, unit) -> bool`, `const FORMS: [Tolerance; 7]`, a drag
@@ -1385,7 +1385,7 @@ In `pdfcer-core/src/dimension/`:
   property: `GroupStyle::arrow_length`, `StyleOverrides::arrow_form` and
   `::arrow_length`.
 - **Per ce dimension:** the arrow-form combo and arrow-length row in
-  `panels/properties/dimension/overrides.rs`, named through
+  `crates/pdfcer-gui-base/src/dimensionoverrides.rs`, named through
   `crate::text::dimension_groups::arrow_form_name`.
 - **Per group:** the arrow-form row in `panels/dimension_groups/style.rs`, one of
   the seven `GroupStyle` properties the panel draws, with the members-will-move

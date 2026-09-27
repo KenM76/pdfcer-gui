@@ -1,4 +1,4 @@
-# `panels::properties::mkcolour` — one `/MK` colour, wherever it is asked for
+# `mkcolour` — one `/MK` colour, wherever it is asked for
 
 A labelled swatch over one of a widget's two `/MK` colour keys, `/BG` and
 `/BC`. `OPERATOR_REQUESTS.md` **O202**, whose ask covers both halves of the

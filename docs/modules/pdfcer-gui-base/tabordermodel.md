@@ -1,4 +1,4 @@
-# `panels::forms::tab_order::model` — turning a document into a per-page
+# `tabordermodel` — turning a document into a per-page
 widget sequence, and reading what the file says about tab order
 
 The whole of the Tab order view that is not drawing. [`collect`] walks every

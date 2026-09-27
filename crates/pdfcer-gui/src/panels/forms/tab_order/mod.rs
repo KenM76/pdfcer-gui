@@ -6,7 +6,7 @@
 /// Turning a document into a per-page widget sequence — the classification,
 /// testable without a `Ui`.
 mod drag;
-pub mod model;
+pub use pdfcer_gui_base::tabordermodel as model;
 /// The rows that register an unclaimed widget back into the form.
 mod register;
 pub use pdfcer_gui_base::taborderstated as tabs;
