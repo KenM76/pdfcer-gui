@@ -57,12 +57,12 @@ impl Check for ALayerCanBeMadeRenamedAndDeleted {
     }
 }
 
-fn row(name: &str) -> String {
+pub(crate) fn row(name: &str) -> String {
     format!("panel.layers.row.{name}")
 }
 
 /// Click a declared region, or say which one was missing.
-fn click(
+pub(crate) fn click(
     session: &Session,
     driver: &Driver,
     ui_rect: &str,
@@ -82,7 +82,7 @@ fn click(
 }
 
 /// Open a row's right-click menu.
-fn right_click_row(
+pub(crate) fn right_click_row(
     session: &Session,
     driver: &Driver,
     ui_rect: &str,
@@ -100,7 +100,7 @@ fn right_click_row(
     Ok(Ok(()))
 }
 
-fn has_row(trace: &Trace, ui_rect: &str, name: &str) -> bool {
+pub(crate) fn has_row(trace: &Trace, ui_rect: &str, name: &str) -> bool {
     declared(trace, ui_rect, &row(name)).is_some()
 }
 

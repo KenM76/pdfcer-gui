@@ -1,7 +1,9 @@
 //! # `text::panels::layeredit` — what the Layers panel says when it creates,
 //! renames, changes or deletes a layer
 
-use pdfcer_core::edit::{LayerDeleteOutcome, LayerIntent, LayerOutputState};
+use pdfcer_core::edit::{
+    LayerDeleteOutcome, LayerFlattenOutcome, LayerIntent, LayerMergeOutcome, LayerOutputState,
+};
 
 /// The name field beside the New layer button, when empty.
 #[must_use]
@@ -182,6 +184,143 @@ pub fn deleted(name: &str, removed: bool, o: &LayerDeleteOutcome) -> String {
     }
 }
 
+/// Row menu: open the merge window.
+#[must_use]
+pub const fn menu_merge() -> &'static str {
+    "Merge into another layer\u{2026}"
+}
+
+/// The merge window's title.
+#[must_use]
+pub fn merge_title(name: &str) -> String {
+    format!("Merge \u{201c}{name}\u{201d}")
+}
+
+/// The label beside the target chooser.
+#[must_use]
+pub const fn merge_into() -> &'static str {
+    "Into"
+}
+
+/// The chooser before a target is picked.
+#[must_use]
+pub const fn merge_pick() -> &'static str {
+    "Choose a layer"
+}
+
+/// The merge button.
+#[must_use]
+pub const fn merge() -> &'static str {
+    "Merge"
+}
+
+/// What merging does, shown under the chooser.
+#[must_use]
+pub const fn merge_explained() -> &'static str {
+    "Everything this layer draws moves onto the chosen layer and takes its settings: shown or hidden, locked, printing, exporting and purpose. This layer leaves the list. Ctrl+Z undoes it."
+}
+
+/// The disclosure after a merge.
+#[must_use]
+pub fn merged(names: &[String], target: &str, o: &LayerMergeOutcome) -> String {
+    let name = names.join("\u{201d}, \u{201c}");
+    let mut line = format!(
+        "Merged \u{201c}{name}\u{201d} into \u{201c}{target}\u{201d}: {} drawing binding(s), {} markup(s) and {} placed object(s) now follow \u{201c}{target}\u{201d}\u{2019}s settings.",
+        o.bindings, o.annotations, o.xobjects
+    );
+    if o.memberships > 0 {
+        line.push_str(&format!(
+            " {} visibility rule(s) that named \u{201c}{name}\u{201d} now name \u{201c}{target}\u{201d}.",
+            o.memberships
+        ));
+    }
+    line
+}
+
+/// The button that opens the flatten dialog.
+#[must_use]
+pub const fn flatten_button() -> &'static str {
+    "Flatten layers\u{2026}"
+}
+
+/// Its tooltip.
+#[must_use]
+pub const fn flatten_tooltip() -> &'static str {
+    "Remove every layer, leaving each page showing what it shows when the document opens."
+}
+
+/// The flatten dialog's title.
+#[must_use]
+pub const fn flatten_title() -> &'static str {
+    "Flatten layers"
+}
+
+/// The flatten dialog's question; `hidden` is how many layers start hidden.
+#[must_use]
+pub fn flatten_question(layers: usize, hidden: usize) -> String {
+    if hidden == 0 {
+        format!(
+            "Remove all {layers} layer(s)? Everything they draw stays on the page and can no longer be hidden."
+        )
+    } else {
+        format!(
+            "Remove all {layers} layer(s)? {hidden} of them start hidden. What should happen to what the hidden ones draw?"
+        )
+    }
+}
+
+/// Flatten when nothing is hidden.
+#[must_use]
+pub const fn flatten_go() -> &'static str {
+    "Flatten"
+}
+
+/// Flatten, removing what hidden layers draw.
+#[must_use]
+pub const fn flatten_remove_hidden() -> &'static str {
+    "Remove the hidden drawing"
+}
+
+/// Its tooltip.
+#[must_use]
+pub const fn flatten_remove_hidden_tooltip() -> &'static str {
+    "What the hidden layers draw is removed from every page, so the result looks like the document as it opens. Ctrl+Z puts it back."
+}
+
+/// Flatten, showing what hidden layers draw.
+#[must_use]
+pub const fn flatten_show_hidden() -> &'static str {
+    "Show the hidden drawing"
+}
+
+/// Its tooltip.
+#[must_use]
+pub const fn flatten_show_hidden_tooltip() -> &'static str {
+    "What the hidden layers draw stays and is always shown, so the pages will show more than they do now."
+}
+
+/// The disclosure after a flatten, from the engine's counts.
+#[must_use]
+pub fn flattened(o: &LayerFlattenOutcome) -> String {
+    let mut line = format!(
+        "Flattened {} layer(s): {} drawing section(s), {} markup(s) and {} placed object(s) are now on no layer.",
+        o.layers, o.sections, o.annotations, o.xobjects
+    );
+    if o.paints > 0 {
+        line.push_str(&format!(
+            " Removed {} drawing operation(s) from hidden layers.",
+            o.paints
+        ));
+    }
+    if o.unregistered > 0 {
+        line.push_str(&format!(
+            " {} layer group(s) missing from the document\u{2019}s layer list were left in place.",
+            o.unregistered
+        ));
+    }
+    line
+}
+
 /// Why a layer edit wrote nothing — the status-bar decline.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LayerRefusal {
@@ -195,6 +334,9 @@ pub enum LayerRefusal {
     HasWidget,
     /// `EditError::LayerContentNotRewritable`.
     ContentNotRewritable,
+    /// `EditError::HiddenLayersNeedPolicy`: a flatten with hidden layers and
+    /// no choice made about them.
+    HiddenNeedChoice,
 }
 
 impl LayerRefusal {
@@ -214,6 +356,9 @@ impl LayerRefusal {
             }
             Self::ContentNotRewritable => {
                 "pdfcer could not rewrite a page that draws on this layer, so nothing was deleted."
+            }
+            Self::HiddenNeedChoice => {
+                "Some layers start hidden. Choose whether to remove or show what they draw. Nothing was flattened."
             }
         }
     }

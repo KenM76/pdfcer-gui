@@ -4,7 +4,7 @@
 //! `pdfcer_gui::app::actions::layers`, which calls the matching
 //! `EditSession` verb through the edit funnel. Each is one undo entry.
 
-use pdfcer_core::edit::{LayerContentPolicy, LayerEdit};
+use pdfcer_core::edit::{HiddenLayerPolicy, LayerContentPolicy, LayerEdit};
 use pdfcer_core::object::ObjId;
 
 /// One authoring act on the document's optional-content groups.
@@ -29,6 +29,19 @@ pub enum LayerAction {
         /// What becomes of the layer's drawing.
         policy: LayerContentPolicy,
     },
+    /// `EditSession::merge_layers`: what `merged` draws is drawn on `target`,
+    /// and `merged` leaves the list.
+    Merge {
+        /// The layer that stays.
+        target: ObjId,
+        /// The layers folded into it.
+        merged: Vec<ObjId>,
+    },
+    /// `EditSession::flatten_layers`: the document ends with no layers.
+    Flatten {
+        /// What becomes of layers hidden when the document opens.
+        hidden: HiddenLayerPolicy,
+    },
 }
 
 impl LayerAction {
@@ -39,6 +52,8 @@ impl LayerAction {
             Self::Add { .. } => "layer-add",
             Self::Edit { .. } => "layer-edit",
             Self::Delete { .. } => "layer-delete",
+            Self::Merge { .. } => "layer-merge",
+            Self::Flatten { .. } => "layer-flatten",
         }
     }
 }

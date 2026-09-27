@@ -1,4 +1,4 @@
-//! # `app::actions::layers` — `Action::Layer`: create, change and delete a layer
+//! # `app::actions::layers` — `Action::Layer`: create, change, delete, merge and flatten layers
 //!
 //! Contract: each [`LayerAction`] is one `EditSession` verb through the edit
 //! funnel, so it is one undo entry and its sentence reaches the status bar.
@@ -6,7 +6,10 @@
 //! refusals the operator can act on are worded by
 //! [`crate::text::panels::layeredit::LayerRefusal`].
 
-use pdfcer_core::edit::{EditError, EditSession, LayerContentPolicy, LayerEdit, LayerEditOutcome};
+use pdfcer_core::edit::{
+    EditError, EditSession, HiddenLayerPolicy, LayerContentPolicy, LayerEdit, LayerEditOutcome,
+    LayerFlattenOutcome, LayerMergeOutcome,
+};
 use pdfcer_core::object::ObjId;
 use pdfcer_gui_base::layeraction::LayerAction;
 
@@ -56,6 +59,38 @@ fn run(session: &mut EditSession, action: LayerAction) -> Result<Vec<String>, Ed
             });
             Ok(vec![t::deleted(&name, removed, &out)])
         }
+        LayerAction::Merge { target, merged } => {
+            let names: Vec<String> = merged.iter().map(|&l| name_of(session, l)).collect();
+            let into = name_of(session, target);
+            let out: LayerMergeOutcome = session.merge_layers(target, &merged)?;
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!(
+                    "layer-merged into={}_{} changed={} layers={} bindings={} annotations={} xobjects={} memberships={}",
+                    target.num,
+                    target.generation,
+                    out.changed,
+                    out.layers,
+                    out.bindings,
+                    out.annotations,
+                    out.xobjects,
+                    out.memberships
+                )
+            });
+            Ok(vec![t::merged(&names, &into, &out)])
+        }
+        LayerAction::Flatten { hidden } => {
+            let out: LayerFlattenOutcome = session.flatten_layers(hidden)?;
+            let removed = hidden == HiddenLayerPolicy::Remove;
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!(
+                    "layer-flattened changed={} removed={removed} layers={} hidden={} sections={} paints={}",
+                    out.changed, out.layers, out.hidden_layers, out.sections, out.paints
+                )
+            });
+            Ok(vec![t::flattened(&out)])
+        }
     }
 }
 
@@ -78,6 +113,7 @@ fn word_refusal(error: &EditError) {
         EditError::LayerInMembership { .. } => LayerRefusal::InMembership,
         EditError::LayerHasWidget { .. } => LayerRefusal::HasWidget,
         EditError::LayerContentNotRewritable { .. } => LayerRefusal::ContentNotRewritable,
+        EditError::HiddenLayersNeedPolicy { .. } => LayerRefusal::HiddenNeedChoice,
         _ => return,
     };
     decline::record_layer(why);

@@ -274,6 +274,7 @@ fn no_two_declines_share_a_sentence() {
         Declined::Layer(crate::text::panels::layeredit::LayerRefusal::InMembership),
         Declined::Layer(crate::text::panels::layeredit::LayerRefusal::HasWidget),
         Declined::Layer(crate::text::panels::layeredit::LayerRefusal::ContentNotRewritable),
+        Declined::Layer(crate::text::panels::layeredit::LayerRefusal::HiddenNeedChoice),
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::StylesDiffer),
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::WouldMoveNextRun),
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::Other),

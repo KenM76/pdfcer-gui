@@ -87,16 +87,22 @@ fn unused_default(read: &Layers) -> String {
 /// Publish a row's name label as `panel.layers.row.<name>`, every character
 /// outside `[A-Za-z0-9]` written `_`, so a driven check can right-click it.
 pub(super) fn publish_row(name: &str, rect: egui::Rect) {
+    // ui-text-exempt: trace region name prefix, never displayed.
+    publish_keyed("panel.layers.row", name, rect);
+}
+
+/// Publish `rect` as `<prefix>.<name>`, every character of `name` outside
+/// `[A-Za-z0-9]` written `_`.
+pub(super) fn publish_keyed(prefix: &str, name: &str, rect: egui::Rect) {
     let key: String = name
         .chars()
         .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
         .collect();
-    // ui-text-exempt: trace region name, never displayed.
-    crate::diag::ui_rect(&format!("panel.layers.row.{key}"), rect);
+    crate::diag::ui_rect(&format!("{prefix}.{key}"), rect);
 }
 
 /// Attach the row's right-click menu to `response`, the row's name label.
-pub(super) fn row_menu(response: &egui::Response, l: &Layer, name: &str) {
+pub(super) fn row_menu(response: &egui::Response, read: &Layers, l: &Layer, name: &str) {
     response.context_menu(|ui| {
         let props = ui.button(t::menu_properties());
         crate::diag::ui_rect(REGION_MENU_PROPS, props.rect);
@@ -113,6 +119,7 @@ pub(super) fn row_menu(response: &egui::Response, l: &Layer, name: &str) {
             });
             ui.close();
         }
+        super::combine::menu_item(ui, read, l, name);
     });
 }
 

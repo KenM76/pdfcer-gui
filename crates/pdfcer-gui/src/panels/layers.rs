@@ -38,6 +38,9 @@ pub(crate) mod highlight;
 /// New layer, and each row's Properties and Delete.
 mod authoring;
 
+/// Merge a layer into another; Flatten all.
+mod combine;
+
 /// The trace name of the search field's rectangle.
 // ui-text-exempt: trace region name, never displayed.
 const REGION_SEARCH: &str = "panel.layers.search";
@@ -57,6 +60,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     let authoring = authoring::enabled(ui.ctx());
     if authoring {
         authoring::windows(ui.ctx(), actions);
+        combine::windows(ui.ctx(), &read, actions);
     }
     if read.diagnostics.no_optional_content {
         ui.label(t::layers_none());
@@ -68,6 +72,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     ui.label(t::layers_count(read.layers.len()));
     if authoring {
         authoring::new_layer_row(ui, &read, actions);
+        combine::flatten_button(ui, &read);
     }
     ui.label(
         egui::RichText::new(t::layers_session_only_note())
@@ -390,7 +395,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                     // value this module can test.
                     let label = ui.label(name.clone()).interact(egui::Sense::click());
                     if authoring {
-                        authoring::row_menu(&label, l, &name);
+                        authoring::row_menu(&label, &read, l, &name);
                         authoring::publish_row(&name, label.rect);
                     }
                     let _row = notes

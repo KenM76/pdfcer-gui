@@ -188,6 +188,7 @@ pub(super) fn commit(
         // others would be right to call that broken. One control, one meaning,
         // every kind.
         opacity,
+        ..Default::default()
     };
     if let Some(spec) =
         crate::canvas::textannot::spec(kind, rect, text, stamp, icon, stamp_size, ink)

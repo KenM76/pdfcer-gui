@@ -4,7 +4,7 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.58.0, a git dependency on the local engine repository, pinned at **`b16a8154`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.58.0, a git dependency on the local engine repository, pinned at **`5ea510b6`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
 **What is new in this build.** OCR has a second recogniser, a single page stays
 put, and the Print dialog maximises.
@@ -152,6 +152,7 @@ than the number it produced last.
 - ✅ **Attachments** — a PDF can carry whole files inside itself; `attach_file`, `detach_file`, `list_attachments_with_notes`, `extract_attachment` and `sanitize_attachment_name` are all reachable
 - ✅ **Layers** — full `/RBGroups` radio semantics, locked-member handling, Reset to the document's own default
 - ✅ **Layer authoring** (Edit mode) — New layer, and a row's right-click Layer properties… (name, shown on open, lock, printing, exporting, purpose) and Delete layer… (keep the drawing or remove it); each one undo entry. Driven by `a_layer_can_be_made_renamed_and_deleted`
+- ✅ **Merge and flatten layers** (Edit mode) — right-click a row ▸ Merge into another layer…, and Flatten layers… (asking what becomes of layers hidden on open); each one undo entry. Driven by `layers_can_be_merged_and_flattened`
 - ✅ **Fonts** — inventory, embed status, byte cost, font-folder resolution, and the two verbs it reports on: Tools ▸ Embed fonts and Tools ▸ Remove embedded fonts
 - ✅ **Objects** — every object on the page, front-most first, on a benchmark CAD sheet of 129,758 of them
 - ✅ **Properties** — read-only facts for a selection, plus the editable sections listed under Canvas
