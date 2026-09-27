@@ -370,7 +370,7 @@ pub(super) fn pages_layout(
         // drawing is not the size named here learns immediately that pdfcer
         // measured something they did not expect (a rotated page, a stray
         // cover sheet), which a bare "A3" would have hidden.
-        PaperChoice::AutoFromPages => dialog.auto_paper_line(),
+        PaperChoice::AutoFromPages => dialog.auto_paper.line(),
     };
     ui.label(egui::RichText::new(line).small().weak());
 
@@ -382,7 +382,7 @@ pub(super) fn pages_layout(
     // job has more than one page size. Naming the remedy is the point; a
     // disclosure that reports a limitation without naming the control that
     // addresses it raises anxiety and resolves nothing.
-    if dialog.auto_paper_is_mixed() {
+    if dialog.auto_paper.is_mixed() {
         ui.add_space(2.0);
         ui.label(egui::RichText::new(t::paper_auto_mixed()).small().weak());
     }

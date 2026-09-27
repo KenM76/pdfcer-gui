@@ -1,4 +1,4 @@
-# `dialogs::print::autopaper` — pick the sheet from the pages
+# `printautopaper` — pick the sheet from the pages
 
 Operator request **O167**, 2026-09-10: *"we also need the option to auto
 select paper size based on the page sizes in the pdf."*
@@ -277,7 +277,7 @@ Returns [`AutoPaper::NoBasis`] rather than an `Option`, so that every caller
 has to name what it does about the no-basis case rather than reaching for
 `unwrap_or_default`.
 
-### `fn auto_paper_line`
+### `AutoPaper::line`
 
 Keeping the four outcomes in one `match` is what stops a state from
 silently having no sentence. A control with no line under it, where
@@ -287,7 +287,7 @@ every other state has one, reads as a control that failed.
 when the operator picked auto — but it answers the no-basis sentence
 rather than an empty string, for the same reason.
 
-### `fn auto_paper_is_mixed`
+### `AutoPaper::is_mixed`
 
 `false` unless auto selection actually ran and found one, so the extra
 sentence cannot appear beside a hand-picked sheet — where it would be

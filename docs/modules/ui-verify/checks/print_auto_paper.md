@@ -155,7 +155,7 @@ the job is mixed. Those are `ui.label`s with no published rect; the harness
 reads rectangles and trace lines, not text. What stands in for them:
 `paper_auto_matched`, `paper_auto_too_big`, `paper_auto_no_basis` and
 `paper_auto_mixed` are `ui_text` entries under the string gate, and
-`auto_paper_line` is unit-tested against each outcome. That is a weaker
+`AutoPaper::line` is unit-tested against each outcome. That is a weaker
 claim than driving it and is written down as one.
 
 **Its `toobig` arm is weaker than its `matched` arm, and knowingly so.**
@@ -229,7 +229,7 @@ run rather than by a confusing red on the operator's machine.
 
 ### `const APP_FIT_TOLERANCE_PT`
 
-⚠ Mirrored by hand from `crates/pdfcer-gui/src/dialogs/print/autopaper.rs`.
+⚠ Mirrored by hand from `crates/pdfcer-gui-base/src/printautopaper.rs`.
 It is not imported because `ui-verify` does not depend on the application's
 crate — it drives the built binary, which is the entire point of it. A
 mirrored constant is a claim about someone else's source, and this project's

@@ -1,4 +1,4 @@
-# `dialogs::print::position` — where the page sits on the paper
+# `printposition` — where the page sits on the paper
 
 Operator request O208: *"can we add a control to our print preview screen
 so that when we are printing at a scale that will lose content we have the

@@ -1,11 +1,11 @@
-//! # `dialogs::print::autopaper` — pick the sheet from the pages
+//! # `printautopaper` — pick the sheet from the pages
 //!
 //! Operator request **O167**, 2026-09-10: *"we also need the option to auto
 //! select paper size based on the page sizes in the pdf."*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/print/autopaper.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/printautopaper.md`.
 
-use super::spooler::{PaperChoice, PaperForm};
+use crate::printspooler::{PaperChoice, PaperForm};
 use crate::text::print as t;
 
 /// How close two lengths must be, in points, to count as the same size.
@@ -16,7 +16,7 @@ const FIT_TOLERANCE_PT: f64 = 2.0;
 /// **What auto selection decided**, in a form both the plan and the disclosure
 /// can read.
 #[derive(Debug, Clone, PartialEq)]
-pub(super) enum AutoPaper {
+pub enum AutoPaper {
     /// Auto selection is not the operator's choice, so nothing was computed.
     NotChosen,
     /// Auto is chosen but there is nothing to choose from or nothing to
@@ -37,26 +37,26 @@ pub(super) enum AutoPaper {
 
 /// The chosen sheet, and the measurements that chose it.
 #[derive(Debug, Clone, PartialEq)]
-pub(super) struct Match {
+pub struct Match {
     /// The `dmPaperSize` value to request.
-    pub(super) id: u16,
+    pub id: u16,
     /// The driver's own name for it. Never an identity — two forms may share
     /// a name — but it is what the operator sees in the list.
-    pub(super) name: String,
+    pub name: String,
     /// The physical sheet, in points.
-    pub(super) sheet_pt: (f64, f64),
+    pub sheet_pt: (f64, f64),
     /// The largest page in the job, in points, at its rotated extent. This is
     /// the page the choice was made for.
-    pub(super) largest_page_pt: (f64, f64),
+    pub largest_page_pt: (f64, f64),
     /// `true` when the job does not have a single page size throughout.
     ///
     /// Drives the extra sentence about the tray flag; see the module header.
-    pub(super) mixed: bool,
+    pub mixed: bool,
 }
 
 impl AutoPaper {
     /// The concrete paper choice this outcome resolves to.
-    pub(super) fn resolved(&self) -> PaperChoice {
+    pub fn resolved(&self) -> PaperChoice {
         match self {
             Self::Matched(m) | Self::TooBig(m) => PaperChoice::Form(m.id),
             Self::NotChosen | Self::NoBasis => PaperChoice::DeviceDefault,
@@ -65,7 +65,7 @@ impl AutoPaper {
 }
 
 /// **A stable one-word token for what the operator chose**, for the trace.
-pub(super) fn pick_token(choice: PaperChoice) -> &'static str {
+pub fn pick_token(choice: PaperChoice) -> &'static str {
     match choice {
         // ui-text-exempt: a diagnostic token, never displayed in the UI.
         PaperChoice::DeviceDefault => "device",
@@ -77,7 +77,7 @@ pub(super) fn pick_token(choice: PaperChoice) -> &'static str {
 }
 
 /// **A stable one-word token for how the choice came out**, for the trace.
-pub(super) fn outcome_token(outcome: &AutoPaper) -> &'static str {
+pub fn outcome_token(outcome: &AutoPaper) -> &'static str {
     match outcome {
         // ui-text-exempt: a diagnostic token, never displayed in the UI.
         AutoPaper::NotChosen => "off",
@@ -91,7 +91,7 @@ pub(super) fn outcome_token(outcome: &AutoPaper) -> &'static str {
 }
 
 /// **A point-pair as one whitespace-free token**, for the trace: `"595.28x841.89"`.
-pub(super) fn size_token(size: Option<(f64, f64)>) -> String {
+pub fn size_token(size: Option<(f64, f64)>) -> String {
     match size {
         // ui-text-exempt: a diagnostic token, never displayed in the UI.
         None => "none".to_owned(),
@@ -100,7 +100,7 @@ pub(super) fn size_token(size: Option<(f64, f64)>) -> String {
 }
 
 /// **The largest page the auto decision measured**, as a [`size_token`].
-pub(super) fn largest_token(outcome: &AutoPaper) -> String {
+pub fn largest_token(outcome: &AutoPaper) -> String {
     match outcome {
         AutoPaper::Matched(m) | AutoPaper::TooBig(m) => size_token(Some(m.largest_page_pt)),
         AutoPaper::NotChosen | AutoPaper::NoBasis => size_token(None),
@@ -108,7 +108,7 @@ pub(super) fn largest_token(outcome: &AutoPaper) -> String {
 }
 
 /// **Whether the job has more than one page size**, as a stable token.
-pub(super) fn mixed_token(outcome: &AutoPaper) -> &'static str {
+pub fn mixed_token(outcome: &AutoPaper) -> &'static str {
     match outcome {
         // ui-text-exempt: a diagnostic token, never displayed in the UI.
         AutoPaper::Matched(m) | AutoPaper::TooBig(m) if m.mixed => "yes",
@@ -136,7 +136,7 @@ fn area(sheet: (f64, f64)) -> f64 {
 }
 
 /// **The whole decision**: which sheet this job should be asked for.
-pub(super) fn choose(forms: &[PaperForm], page_sizes: &[(f64, f64)]) -> AutoPaper {
+pub fn choose(forms: &[PaperForm], page_sizes: &[(f64, f64)]) -> AutoPaper {
     let Some(&first) = page_sizes.first() else {
         return AutoPaper::NoBasis;
     };
@@ -202,19 +202,10 @@ pub(super) fn choose(forms: &[PaperForm], page_sizes: &[(f64, f64)]) -> AutoPape
     })
 }
 
-// ---------------------------------------------------------------------------
-// What the dialog asks this module, once the arithmetic is done
-// ---------------------------------------------------------------------------
-//
-//
-// They moved when R2 bit. That is the rule working rather than a coincidence: a
-// file over the limit usually has something in it that belongs elsewhere, and
-// looking for the seam is how you find out which thing.
-
-impl super::PrintDialog {
+impl AutoPaper {
     /// **The disclosure sentence for auto paper selection**, for the paper tab.
-    pub(super) fn auto_paper_line(&self) -> String {
-        match &self.auto_paper {
+    pub fn line(&self) -> String {
+        match self {
             AutoPaper::Matched(m) => t::paper_auto_matched(&m.name, m.sheet_pt, m.largest_page_pt),
             AutoPaper::TooBig(m) => t::paper_auto_too_big(&m.name, m.sheet_pt, m.largest_page_pt),
             AutoPaper::NoBasis | AutoPaper::NotChosen => t::paper_auto_no_basis().to_owned(),
@@ -222,8 +213,8 @@ impl super::PrintDialog {
     }
 
     /// Does this job have more than one page size?
-    pub(super) fn auto_paper_is_mixed(&self) -> bool {
-        match &self.auto_paper {
+    pub fn is_mixed(&self) -> bool {
+        match self {
             AutoPaper::Matched(m) | AutoPaper::TooBig(m) => m.mixed,
             AutoPaper::NoBasis | AutoPaper::NotChosen => false,
         }

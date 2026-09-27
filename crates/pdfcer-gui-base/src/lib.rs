@@ -414,3 +414,9 @@ pub mod printverdicts;
 
 /// The print preview's arithmetic, with no dialog in it.
 pub mod printgeometry;
+
+/// Pick the print sheet from the pages.
+pub mod printautopaper;
+
+/// Where the page sits on the print paper.
+pub mod printposition;
