@@ -493,6 +493,7 @@ impl eframe::App for PdfcerApp {
             self.active_path(),
             self.document_count(),
             read_mode_exit.as_deref(),
+            crate::text::doctabs::stamp_for_title(env!("PDFCER_BUILD_TIME")),
         );
         if title != self.last_window_title {
             ctx.send_viewport_cmd(egui::ViewportCommand::Title(title.clone()));

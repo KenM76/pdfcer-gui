@@ -30,7 +30,3 @@ pub mod tool;
 
 #[cfg(test)]
 mod about_tests;
-/// The three sentences a dragged-and-dropped file can answer with.
-/// **The document tab strip, and the page drag between documents.** What a tab
-/// says, and what a drag says it is about to do.
-pub mod doctabs;

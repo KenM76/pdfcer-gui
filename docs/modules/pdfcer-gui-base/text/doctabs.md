@@ -1,4 +1,4 @@
-# `pdfcer-gui/text/doctabs`
+# `pdfcer-gui-base/text/doctabs`
 
 ## Item notes
 
@@ -11,7 +11,7 @@ whose whole job was to give directions), and it is the oldest and most
 widely understood "there are unsaved changes here" marker in desktop
 software.
 
-### `fn build_day`
+### The build stamp in `fn window_title`
 
 The operator spent part of a morning reporting a defect that had been fixed,
 against a build he did not know was old:

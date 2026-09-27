@@ -24,7 +24,7 @@
 //! The label is the file name because that is what fits; the tooltip is the
 //! location because that is what disambiguates. Neither on its own is enough.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/doctabs.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/doctabs.md`.
 
 use std::path::Path;
 
@@ -82,11 +82,16 @@ pub const fn tab_reason_needs_password() -> &'static str {
     "This document is encrypted and pdfcer has not been given the password."
 }
 
-/// **The window title**, from what is open.
+/// **The window title**, from what is open. `stamp` is the build's day as
+/// [`stamp_for_title`] shapes it; the binary owns the build time.
 #[must_use]
-pub fn window_title(active: Option<&Path>, count: usize, read_mode: Option<&str>) -> String {
+pub fn window_title(
+    active: Option<&Path>,
+    count: usize,
+    read_mode: Option<&str>,
+    stamp: &str,
+) -> String {
     let base = crate::text::window_title();
-    let stamp = build_day();
     // One join, in one place. The alternative — four `format!`s each with the
     // prefix threaded in — is four chances for one of them to drop it, and the
     // one that dropped it would be the no-document form, which is exactly the
@@ -108,13 +113,10 @@ pub fn window_title(active: Option<&Path>, count: usize, read_mode: Option<&str>
     }
 }
 
-/// **The day this build was made**, for the window title.
-fn build_day() -> &'static str {
-    stamp_for_title(env!("PDFCER_BUILD_TIME"))
-}
-
-/// [`build_day`]'s rule, over a stamp passed in so it can be tested.
-fn stamp_for_title(stamp: &'static str) -> &'static str {
+/// The build stamp as the window title shows it: `YYYY-MM-DD HH:MM`, with a
+/// non-local zone kept.
+#[must_use]
+pub fn stamp_for_title(stamp: &str) -> &str {
     // `YYYY-MM-DD HH:MM` is sixteen characters. Anything shorter is not a shape
     // this function knows, so it is shown whole.
     let Some((minute_end, _)) = stamp.char_indices().nth(16) else {
@@ -334,8 +336,13 @@ mod title_stamp_tests {
 /// The read-mode prefix on the window title — `OPERATOR_REQUESTS.md` O115.
 #[cfg(test)]
 mod title_read_mode_tests {
-    use super::window_title;
     use std::path::Path;
+
+    const STAMP: &str = "2026-09-02 06:25";
+
+    fn window_title(active: Option<&Path>, count: usize, read_mode: Option<&str>) -> String {
+        super::window_title(active, count, read_mode, STAMP)
+    }
 
     /// **The ordinary title says nothing about read mode**, and this is the
     /// assertion the obvious wrong implementation fails.
@@ -370,7 +377,7 @@ mod title_read_mode_tests {
         ] {
             let tail = title.rsplit('—').next().unwrap_or_default().trim();
             assert!(
-                tail.starts_with(|c: char| c.is_ascii_digit()) || tail == super::build_day(),
+                tail == STAMP,
                 "the trailing field must still be the build stamp: {title}"
             );
             assert!(title.starts_with(&exit), "{title}");

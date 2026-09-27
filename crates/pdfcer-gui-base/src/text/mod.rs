@@ -68,6 +68,9 @@ pub mod compact;
 pub mod diagnostics;
 /// Every word the Manage-dimension-groups window shows.
 pub mod dimension_groups;
+/// **The document tab strip, and the page drag between documents.** What a tab
+/// says, and what a drag says it is about to do.
+pub mod doctabs;
 pub mod dropped;
 /// What a value box says when it cannot read what was typed.
 pub mod entry;
