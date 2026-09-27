@@ -106,12 +106,6 @@ of nine pieces would otherwise report the same fact nine times — which
 reads as nine separate things having happened. First-seen order is kept, so
 the sentences still arrive in the order the engine produced them.
 
-### `enum VectorAction`
-
-Carried by [`super::action::Action::Vector`]. Every variant names a page and
-paint-order indices into it; see the module header for why both travel
-rather than being re-derived.
-
 ### `fn apply`
 
 Routed here from `super::apply` rather than living there, which is the shape

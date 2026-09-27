@@ -5,36 +5,13 @@
 
 use pdfcer_core::attachments::{self, Attachment, AttachmentKind};
 use pdfcer_core::edit::EditError;
+#[cfg(test)]
 use pdfcer_core::object::ObjId;
 
 use crate::app::state::OpenDoc;
 use crate::text::panels::attachments as t;
 
-/// **Which attachment**, addressed the only two ways a PDF makes possible.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum AttachmentRef {
-    /// An entry in the catalogue's `/Names /EmbeddedFiles` name tree, by its
-    /// raw key bytes.
-    DocumentLevel {
-        /// The key, verbatim. §7.9.6 requires keys to be *"compared for
-        /// equality on a simple byte-by-byte basis"*, which is what makes
-        /// carrying the bytes both necessary and sufficient.
-        key: Vec<u8>,
-    },
-    /// A `/FileAttachment` annotation (§12.5.6.15), by the annotation's own
-    /// object id.
-    ///
-    /// Only constructible when the listing reported one — `Attachment`'s
-    /// `annot_id` is an `Option`, `None` when the `/Annots` entry was a direct
-    /// dictionary rather than a reference. The panel offers no control for a
-    /// row it cannot address, which is R9 rather than caution: a Save button
-    /// that could not name its operand would be an affordance for something
-    /// that cannot work.
-    PageAnnotation {
-        /// The annotation object.
-        annot: ObjId,
-    },
-}
+pub use pdfcer_gui_base::subactions::AttachmentRef;
 
 /// The three verbs whose subject is a whole file inside the document.
 ///

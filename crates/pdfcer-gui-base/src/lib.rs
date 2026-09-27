@@ -463,3 +463,6 @@ pub mod formeditortext;
 
 /// The in-place editor drawn over a text form field.
 pub mod formtextbox;
+
+/// The per-domain verbs an Action carries, as data.
+pub mod subactions;

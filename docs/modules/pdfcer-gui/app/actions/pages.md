@@ -182,8 +182,6 @@ The empty case matters as much as the full one: `vector_edit` records
 sentence would put a line under every page delete and train the operator
 to ignore the ones that mean something.
 
-### `enum PageAction`
-
 ## Why this is a sub-enum rather than five more variants on `Action`
 
 The same three reasons [`super::dimensions::DimensionAction`] gives, and the

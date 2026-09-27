@@ -242,37 +242,6 @@ is hunting for a folder: a suggestion in the wrong directory makes them
 navigate back to their own project, and one named after the *document*
 would offer to save a spreadsheet as `drawing.pdf`.
 
-### `enum AttachmentRef`
-
-# Why this is not an index, and not an `ObjId` either
-
-`super::bookmarks`' header argues at length that an outline row must be
-addressed by `ObjId` rather than by a position, because every edit to a tree
-renumbers it. Both halves of that argument apply here and neither one
-finishes the job:
-
-- **A position is wrong for the same reason.** The `/EmbeddedFiles` name
-  tree is sorted (§7.9.6: keys *"shall be sorted lexically in ascending
-  order"*), and `attach_file` re-sorts the whole array on every insert. So
-  *"the third row"* names a different file after any attach — and the queue
-  drains **after** the frame, so a second action raised in the same frame is
-  resolved against an already-moved list.
-- **An `ObjId` is not available for the verb that needs one.**
-  `EditSession::detach_file` takes *"its `/EmbeddedFiles` name-tree key"* —
-  the raw bytes — and nothing else. The filespec's object id, which the
-  listing does report, is not what that function accepts, and §7.9.6 makes
-  the key a **byte string** with no declared encoding, so it cannot even be
-  carried as a `String` without deciding an encoding the standard declines
-  to.
-
-⇒ Hence `Vec<u8>` for the document-level case: it is what the engine takes,
-and `AttachmentKind::DocumentLevel::tree_key` exists to hand it over
-*"exactly as the tree spells them"*.
-
-The page-level case gets the annotation's `ObjId` instead, because that kind
-has no key at all — it lives in one page's `/Annots` — and because the id is
-what stays stable across a page reorder, which `page_index` does not.
-
 ### `fn apply`
 
 The dispatch half of this module, reached from `PdfcerApp::apply`'s single

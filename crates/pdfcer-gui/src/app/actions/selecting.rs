@@ -20,52 +20,7 @@
 use crate::app::state::OpenDoc;
 use pdfcer_core::vector::{FormMarquee, MarqueeMode};
 
-/// **What is selected**, as an action a panel can raise.
-#[derive(Debug, Clone, PartialEq)]
-pub enum SelectionAction {
-    /// **Everything on the page, wherever it now sits** — `edit.select_all`.
-    ///
-    /// The operator, 2026-09-01: *"we should be able to select things off the
-    /// side of the page, especially since I sometimes drop objects there, and
-    /// when I do I can't get them back."* The whole argument is on the arm in
-    /// [`apply_action`], where the marquee's `Enclosed` mode and the
-    /// deliberately unbounded rectangle are.
-    SelectAllOnPage,
-    /// **Select exactly this object** — raised by the Objects panel when a
-    /// row is clicked.
-    ///
-    /// # Why a panel raises an action instead of writing the selection
-    ///
-    /// Because a panel body is handed `&OpenDoc`, not `&mut`, and that is
-    /// deliberate: a surface that could mutate the document while it is being
-    /// drawn is a surface that can change what a later widget in the same frame
-    /// is describing. Every other panel that changes something raises an action
-    /// for the same reason, and this is not the place to make an exception.
-    ///
-    /// # One selection, written from both ends
-    ///
-    /// `doc.selection` is the only notion of *"the thing I am working on"*, and
-    /// a panel must not grow a private second one. A panel-local focus field
-    /// that the canvas neither writes nor reads is how the operator gets
-    /// *"when I have an object selected like text the Tool tab doesn't switch
-    /// to giving me the editable stuff for that object"* — the panel and the
-    /// canvas each believing something different is selected, with no bridge
-    /// between them. Raising this action is the bridge.
-    SelectObject {
-        /// The page the object is on, in the session's page space.
-        page: usize,
-        /// Which object, as a paint-order target — or `None` to select
-        /// nothing.
-        ///
-        /// `None` rather than a second variant, because a row click is one
-        /// act with one outcome: *this row is now the selection*. Clicking the
-        /// already-selected row makes that selection empty, which is what
-        /// clicking a selected item does in every list in every application,
-        /// and splitting it into Select and Clear would make the caller decide
-        /// which act it was performing when it only ever performs one.
-        object: Option<crate::canvas::target::TargetId>,
-    },
-}
+pub use pdfcer_gui_base::subactions::SelectionAction;
 
 /// **Route one selection action.**
 pub(super) fn apply_action(doc: &mut OpenDoc, action: SelectionAction) {

@@ -8,34 +8,7 @@ use pdfcer_core::text_edit::{PlaceTextError, PlaceTextReport};
 use crate::app::state::OpenDoc;
 use crate::text::importtext as t;
 
-/// **What a File-tab command asks the document to do**, when the answer is an
-/// edit rather than a write.
-#[derive(Debug, Clone, PartialEq)]
-pub enum FileAction {
-    /// **Turn a plain text file into new pages** — `file.import_text`.
-    ///
-    /// Raised by [`crate::dialogs::import_text`]'s Import button and by nothing
-    /// else. This module's header carries why the file is read here rather than
-    /// in the window.
-    ImportText {
-        /// The text file to read. UTF-8 is assumed and a failure to decode is
-        /// reported by [`import`], not guessed at in the dialog.
-        path: std::path::PathBuf,
-        /// The sheet, margins, face and size the operator chose.
-        ///
-        /// **Boxed**, and clippy is not the reason: `PageTemplate` carries a
-        /// rect, four margins, a face, a size, an optional leading, an
-        /// alignment, a colour and a policy — the largest thing any `Action`
-        /// variant holds — and every action in the queue is as large as the
-        /// largest. Boxing keeps a queue of a hundred selection changes from
-        /// carrying a page template each.
-        template: Box<pdfcer_core::text_edit::PageTemplate>,
-        /// Where the new pages land, in the engine's own vocabulary — the same
-        /// field [`crate::app::actions::pages::PageAction::InsertPagesFromFile`]
-        /// carries, verbatim and for the same reason.
-        position: pdfcer_core::pageops::InsertPosition,
-    },
-}
+pub use pdfcer_gui_base::subactions::FileAction;
 
 /// **Route one File-tab action to its body.**
 ///

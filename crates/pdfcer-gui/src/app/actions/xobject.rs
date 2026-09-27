@@ -10,61 +10,7 @@ use pdfcer_core::object::ObjId;
 use crate::app::state::OpenDoc;
 use crate::text::unshare::UnshareRefusal;
 
-/// The verbs whose subject is a form XObject — a drawing invoked by a page,
-/// possibly by many pages, possibly several times by one.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum XObjectAction {
-    /// **Give this page its own private copy of a shared drawing.**
-    ///
-    /// `EditSession::unshare_form`. Raised by `crate::app::dispatch::format`'s
-    /// `format.unshare_form` arm — from the Format contextual tab and from the
-    /// canvas context menu — and by nothing else.
-    ///
-    /// # Why the operator needs this, concretely
-    ///
-    /// ISO 32000-1 §8.10.1 names a CAD system's standard component as the
-    /// *purpose* of form XObjects, and this operator's drawing sets are exactly
-    /// that: one title block, one stream object, invoked from thirty-six
-    /// sheets. Since `pdfcer-core` `Pass 119.0` this shell can **edit text
-    /// inside a form**, which means an operator fixing a typo on sheet 12
-    /// changes all thirty-six — and pdfcer cannot prevent that structurally,
-    /// because there is exactly one stream object to write.
-    ///
-    /// `pdfcer-core`'s decision 076 ruled that edit-in-place-and-disclose is the
-    /// **default**, and `R206` requires that two defensible behaviours ship as
-    /// two options. This variant is the second option. Until it existed the
-    /// operator had the default and no choice at all, which is the state `R206`
-    /// exists to prevent.
-    ///
-    /// # Both fields are load-bearing and neither is redundant
-    ///
-    /// `page` is **not** merely for the trace, unlike
-    /// `super::annot::AnnotAction::Delete`'s. The verb's signature is
-    /// `(page_index, form)` and the page is half the operand: unsharing is
-    /// defined as *"re-point **this page's** references"*, and the same form on
-    /// a different page is a different, equally valid call that this one must
-    /// not perform.
-    ///
-    /// `form` is the **outermost** enclosing form's `ObjId`, resolved before the
-    /// action was raised. See the module header for why that resolution is not
-    /// done here and why the innermost form would be refused.
-    ///
-    /// # `Copy`, which its neighbours are not
-    ///
-    /// Both fields are `Copy` — a `usize` and an `ObjId` — so the whole enum is,
-    /// and `Action` is not made heavier by carrying it. `super::annot` and
-    /// `super::bookmarks` are not `Copy` because they carry `String`s and
-    /// `Vec`s; nothing here needs one, and nothing here should grow one: a
-    /// second copy of a name the document already holds is how a stale operand
-    /// gets written back.
-    Unshare {
-        /// The 0-based page whose references move. Half the operand, not a
-        /// trace field.
-        page: usize,
-        /// The **outermost** enclosing form's stream object.
-        form: ObjId,
-    },
-}
+pub use pdfcer_gui_base::subactions::XObjectAction;
 
 /// Apply one form-XObject verb.
 pub(super) fn apply(doc: &mut OpenDoc, action: XObjectAction) {

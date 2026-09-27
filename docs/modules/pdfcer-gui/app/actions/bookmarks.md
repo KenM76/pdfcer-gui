@@ -304,18 +304,6 @@ and it pins the thing that would make the whole "address by id, never
 by position" argument in the module header hollow: an id that only
 half-identifies is a position with extra steps.
 
-### `enum BookmarkAction`
-
-See the module header for what makes them a family: every one of them names
-its operand by `ObjId`, because an outline is a tree that every edit to it
-renumbers.
-**`PartialEq` and not `Eq`**, and the bound cannot be restored.
-`pdfcer_core::outline::OutlineClip`, which [`BookmarkAction::Paste`]
-carries, is `PartialEq` only — a bookmark's colour is three `f64`s and
-floats have no total equality — and an enum holding one cannot be `Eq`.
-Nothing needs it: `Eq` over `PartialEq` buys a `HashMap` key, and no action
-is ever one.
-
 ### `fn apply`
 
 The dispatch half of this module, reached from `PdfcerApp::apply`'s single
