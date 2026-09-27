@@ -332,7 +332,7 @@ cargo run --release -q -p ui-verify -- --list
    paging through a sheet set feel instant.
 4. **Find off the dispatch path** — shell side. Find cancels the render worker
    and then runs the whole-document scan synchronously in dispatch
-   (`crates/pdfcer-gui/src/find/mod.rs`). On a large document that is a visible
+   (`crates/pdfcer-gui-base/src/find/mod.rs`). On a large document that is a visible
    stall, and it has nothing to do with rasterisation.
 5. **A maximum zoom derived from measured performance** — not from `f32`
    numerics, which hold sub-pixel accuracy three orders of magnitude past any

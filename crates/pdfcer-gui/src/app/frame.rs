@@ -859,7 +859,12 @@ impl eframe::App for PdfcerApp {
         // is open, so on the overwhelming majority of frames this line costs
         // one boolean. Two disjoint field borrows through `self`, as at the
         // canvas call site: `&mut self.find` and `&self.status`.
-        crate::find::bar::show(ui, &mut self.find, &self.status, &mut actions);
+        // The canvas viewport, or `content_rect` before the canvas has drawn:
+        // `content_rect` subtracts an OS status bar or a notch, and a Find box
+        // tucked under a notch is one the operator cannot close.
+        let find_host = crate::canvas::zoom::last_frame(ui.ctx())
+            .map_or_else(|| ui.ctx().content_rect(), |f| f.viewport_rect);
+        crate::find::bar::show(ui, &mut self.find, &self.status, find_host, &mut actions);
 
         // Step 2a³ — drain any `Action::Command` raised by a surface that is
         // not the ribbon, and route it through the one dispatch choke point.

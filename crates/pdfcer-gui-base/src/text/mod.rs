@@ -87,7 +87,7 @@ pub mod export_text;
 /// `pdfcer_gui::app::files` and `pdfcer_gui::app::recent`.
 pub mod files;
 /// Every string the Find bar shows, plus the status bar's Find toggle.
-/// Consumed by `pdfcer_gui::find::bar` and `pdfcer_gui::app::status`.
+/// Consumed by `find::bar` and `pdfcer_gui::app::status`.
 pub mod find;
 /// What making a markup part of the page says.
 pub mod flattenannot;
@@ -105,7 +105,7 @@ pub mod import_text;
 pub mod importtext;
 /// Every word the Recognise-text surface says — the dialog that runs OCR and
 /// discloses what it inferred, and the offer the Find bar makes on a page with
-/// no text on it. Consumed by `pdfcer_gui::dialogs::ocr` and `pdfcer_gui::find::bar`.
+/// no text on it. Consumed by `pdfcer_gui::dialogs::ocr` and `find::bar`.
 /// What the program says about a **link it cannot follow** — four
 /// sentences for four different causes, plus one for a `/Link` with no
 /// destination at all. A link that WORKS says nothing: it navigates, and

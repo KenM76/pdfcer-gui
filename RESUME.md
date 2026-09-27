@@ -84,9 +84,10 @@ listed below has been driven. In order:
 5. **Print, still to build:** N-up and booklet, plus an Acrobat print-dialog
    parity table (poster is done).
 6. **Crate split Stage 3.** Standing work between tasks, approved. `OpenDoc`,
-   prefs, `clipboard` and `protect` are in `pdfcer-gui-base`; next are the
-   `render`, `find` and `text` leftovers that reach only `OpenDoc`
-   (`python tools/module-graph.py` lists them).
+   prefs, `clipboard`, `protect` and the whole Find bar are in
+   `pdfcer-gui-base`. What stays in `render` needs eframe's glow (`pressure`)
+   or the app (`settle`); the next candidates are `text` files reaching only
+   base (`python tools/module-graph.py` lists them).
 
 **★ Newest, and ahead of everything numbered below: O226 – O229, the OCR
 text-layer editor.** Two views side by side, a slider that fades between the

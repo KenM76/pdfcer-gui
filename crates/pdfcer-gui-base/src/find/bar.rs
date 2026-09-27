@@ -3,13 +3,13 @@
 //! One compact box **floating over the top-right of the page**, which is
 //! where Acrobat Reader, Chrome's PDF viewer and Edge's all put theirs:
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/find/bar.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/find/bar.md`.
 
 use egui::{Align, Align2, Layout, Pos2, Rect, Vec2};
 
-use crate::app::actions::Action;
-use crate::app::state::Status;
+use crate::appaction::Action;
 use crate::find::{FindOptions, FindRequest, FindState, Readout, Step};
+use crate::opendoc::Status;
 use crate::text::find as t;
 use pdfcer_core::edit::WordBoundary;
 
@@ -71,7 +71,15 @@ const FIELD_ID: &str = "pdfcer-find-field"; // ui-text-exempt: widget id, never 
 // ---------------------------------------------------------------------------
 
 /// Draw the Find overlay, if it is open and there is a document to search.
-pub fn show(ui: &mut egui::Ui, state: &mut FindState, status: &Status, actions: &mut Vec<Action>) {
+///
+/// `host` is the canvas viewport the overlay pins itself inside.
+pub fn show(
+    ui: &mut egui::Ui,
+    state: &mut FindState,
+    status: &Status,
+    host: Rect,
+    actions: &mut Vec<Action>,
+) {
     if !state.is_open() {
         return;
     }
@@ -80,7 +88,6 @@ pub fn show(ui: &mut egui::Ui, state: &mut FindState, status: &Status, actions: 
     };
     let epoch = doc.edit_epoch;
     let ctx = ui.ctx().clone();
-    let host = host_rect(&ctx);
 
     let area = egui::Area::new(egui::Id::new(AREA_ID))
         // `Middle` rather than `Foreground`: the box floats over the page and
@@ -193,16 +200,6 @@ pub fn show(ui: &mut egui::Ui, state: &mut FindState, status: &Status, actions: 
         .response;
 
     crate::diag::ui_rect(REGION_BAR, response.rect);
-}
-
-/// The rect the overlay is positioned inside — the **canvas viewport**, not
-/// the window.
-fn host_rect(ctx: &egui::Context) -> Rect {
-    // `content_rect`, not `viewport_rect`: the former is what egui considers
-    // safe to draw content into (it subtracts an OS status bar or a display
-    // notch), and a Find box tucked under a notch is a Find box the operator
-    // cannot close.
-    crate::canvas::zoom::last_frame(ctx).map_or_else(|| ctx.content_rect(), |f| f.viewport_rect)
 }
 
 /// **The point the overlay's right-top corner is pinned to** — [`MARGIN_PTS`]
@@ -420,7 +417,7 @@ fn ocr_offer(ui: &mut egui::Ui, actions: &mut Vec<Action>) {
 }
 
 /// The command the offer raises.
-const OCR_COMMAND: &str = "file.ocr"; // ui-text-exempt: a command id, never displayed
+pub const OCR_COMMAND: &str = "file.ocr"; // ui-text-exempt: a command id, never displayed
 
 // ---------------------------------------------------------------------------
 // Stepping and the readout
@@ -514,9 +511,9 @@ fn options(ui: &mut egui::Ui, state: &mut FindState, actions: &mut Vec<Action>) 
     // raising only the action makes the control lag by one frame.
     if zoom_on_jump != zoom_before {
         state.set_zoom_on_jump(zoom_on_jump);
-        actions.push(Action::Pref(
-            crate::app::actions::prefs::PrefAction::FindZoom(zoom_on_jump),
-        ));
+        actions.push(Action::Pref(crate::subactions::PrefAction::FindZoom(
+            zoom_on_jump,
+        )));
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI

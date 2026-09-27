@@ -1,4 +1,4 @@
-# `pdfcer-gui/find/bar/unsearchable_tests`
+# `pdfcer-gui-base/find/bar/unsearchable_tests`
 
 ## Item notes
 

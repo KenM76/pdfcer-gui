@@ -1,4 +1,4 @@
-# `pdfcer-gui/find/bar/tests`
+# `pdfcer-gui-base/find/bar/tests`
 
 ## Item notes
 

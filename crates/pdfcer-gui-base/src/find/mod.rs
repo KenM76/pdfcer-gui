@@ -4,6 +4,9 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/find/mod.md`.
 
+/// The Find overlay's widgets and the keys they own.
+pub mod bar;
+
 /// Bringing a hit onto the screen: the two-frame handshake, the gate that
 /// spends it, the scroll solve it shares with `canvas::zoom`, and the
 /// projection from a core `Quad` into the space the canvas paints in. Split

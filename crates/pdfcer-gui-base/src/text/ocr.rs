@@ -1,7 +1,7 @@
 //! # `text::ocr` — every word the Recognise-text surface says
 //!
 //! Consumed by `pdfcer_gui::dialogs::ocr` (the dialog that runs recognition and
-//! reports what it inferred) and by `pdfcer_gui::find::bar` (the offer that
+//! reports what it inferred) and by `find::bar` (the offer that
 //! appears when a search found nothing on a page that has no text to find).
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/ocr.md`.

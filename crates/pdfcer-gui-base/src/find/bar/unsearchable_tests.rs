@@ -15,7 +15,7 @@
 //! split test file in this crate carries, and it was reported by that gate
 //! within minutes of this split, exactly as designed.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/find/bar/unsearchable_tests.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/find/bar/unsearchable_tests.md`.
 #![cfg(test)]
 
 use super::*;

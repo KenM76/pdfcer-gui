@@ -168,15 +168,16 @@ not drawn.
 typing a search term. It also has to be stable for
 [`super::FindState::take_focus_request`] to be able to focus it.
 
-### `fn host_rect`
+### The `host` parameter of `fn show`
 
-Read from `crate::canvas::zoom::last_frame`, which is the canvas's own
-record of where it drew. That matters as soon as a dock is open: anchoring
+The caller reads it from `canvas::zoom::last_frame`, the canvas's own
+record of where it drew; the bar takes it as a parameter because the canvas
+lives in the application crate. That matters as soon as a dock is open: anchoring
 to the window's top-right would put the box over the right-hand panel
 rather than over the page, and would move it every time a splitter was
 dragged even though the page had not moved.
 
-The fallback is the whole screen rect, and it is reachable rather than
+The fallback is `content_rect`, and it is reachable rather than
 defensive: a document with no pages, or one whose current page will not
 rasterize, makes `canvas::show` return before it records a frame — and
 both of those documents still have text worth searching. The box then sits
