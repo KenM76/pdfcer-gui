@@ -554,7 +554,9 @@ impl PdfcerApp {
                 super::annots::apply_action(doc, action, self.prefs.author_name.trim());
             }
             Action::File(action) => super::importtext::apply_action(doc, action),
-            Action::RecordReviewState(r) => r.record(doc, self.prefs.author_name.trim()),
+            Action::RecordReviewState(r) => {
+                super::reviewstate::record(r, doc, self.prefs.author_name.trim());
+            }
             Action::CommitMarkup {
                 page,
                 kind,

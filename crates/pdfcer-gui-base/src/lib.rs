@@ -475,3 +475,6 @@ pub mod navdest;
 
 /// The verbs whose subject is an annotation.
 pub mod annotaction;
+
+/// The verbs whose subject is text style, a ce dimension, a redaction or an attachment.
+pub mod editactions;

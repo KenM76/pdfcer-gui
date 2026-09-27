@@ -7,8 +7,7 @@
 
 use pdfcer_core::settings::StylePolicy;
 use pdfcer_core::text_edit::{
-    FormatError, FormatOptions, FormatReport, FormatRequest, NewFill, StyleLadder, StyleRung,
-    StyleSynthesis, TextRenderMode,
+    FormatError, FormatOptions, FormatReport, FormatRequest, StyleLadder, StyleRung, TextRenderMode,
 };
 use pdfcer_core::vector::VectorEditError;
 
@@ -17,88 +16,7 @@ use crate::app::status::decline;
 use crate::text::status as t;
 use crate::text::textedit::ReflowRefusal;
 
-/// One property of a text run, and the value the operator chose for it.
-#[derive(Debug, Clone, PartialEq)]
-pub enum StyleChange {
-    /// A new size in points, changing the `Tf` operand.
-    Size(f64),
-    /// A new fill colour, stored in the space the operator chose.
-    Fill(NewFill),
-    /// A new face, named by `/Resources /Font` key or by `/BaseFont`.
-    ///
-    /// A `String` rather than a `FontSelector` because [`super::action::Action`]
-    /// derives `PartialEq` and `FontSelector` is `#[non_exhaustive]`. The
-    /// conversion is one line at the point of use.
-    Face(String),
-    /// Weight and slant, as two independent flags.
-    ///
-    /// Deliberately **not** named `Synthetic`, because whether it ends up
-    /// synthetic is the engine's decision and not the operator's: the variant
-    /// maps to `set_style` and the engine walks its four-rung ladder. The
-    /// operator asked for bold; how bold is achieved on this page is a fact
-    /// they are told afterwards.
-    Weight {
-        /// Bold wanted.
-        bold: bool,
-        /// Italic wanted.
-        italic: bool,
-    },
-    /// A text render mode (`Tr`, 0..=7), as the engine's `TextRenderMode`
-    /// byte. `3` is invisible (the OCR layer's mode).
-    RenderMode(u8),
-    /// Fit one run to a page-point width (`EditSession::set_text_run_width`).
-    ///
-    /// Addressed by paint-order object and run, not by the extraction runs the
-    /// other variants use, so [`apply`] routes it before `restyle` and ignores
-    /// `runs`.
-    RunWidth {
-        /// Paint-order index of the text object on the page.
-        object: usize,
-        /// Index into that object's `runs`.
-        run: usize,
-        /// The width wanted, in PDF points.
-        width: f64,
-    },
-}
-
-impl StyleChange {
-    /// Stamp this change onto a request that is already pinned.
-    fn stamp(&self, req: FormatRequest) -> FormatRequest {
-        match self {
-            Self::Size(points) => req.size(*points),
-            Self::Fill(fill) => req.fill(fill.clone()),
-            Self::Face(selector) => req.font(pdfcer_core::text_edit::FontSelector::new(selector)),
-            // `style`, **not** `synthetic`, and the one word is the whole
-            // feature. `set_synthetic` means *"thicken the strokes"* and is
-            // gated; `set_style` means *"make this bold"* and walks the
-            // ladder. What the operator sees is a real `Helvetica-Bold`
-            // instead of a stroked `Helvetica` on every page that carries no
-            // bold resource, which is most CAD title blocks. Module header.
-            //
-            // ⚠ The two are **mutually exclusive per axis**: combining
-            // `set_style` with `set_font`, or with an overlapping
-            // `set_synthetic`, is `FormatError::Unsupported`. Nothing else in
-            // this table sets either, and `Face` is its own variant, so one
-            // press is one verb.
-            Self::Weight { bold, italic } => req.style(StyleSynthesis::new(*bold, *italic)),
-            Self::RenderMode(mode) => req.render_mode(*mode),
-            // Never stamped: `apply` routes it to `runwidth` first.
-            Self::RunWidth { .. } => req,
-        }
-    }
-
-    /// The trace word for this change, for `PDFCER_DIAG`.
-    const fn label(&self) -> &'static str {
-        match self {
-            Self::Size(_) => "size",
-            Self::Fill(_) => "fill",
-            Self::Face(_) => "face",
-            Self::Weight { .. } => "weight",
-            Self::RenderMode(_) => "render-mode",
-            Self::RunWidth { .. } => "run-width",
-        }
-    }
-}
+pub use pdfcer_gui_base::editactions::StyleChange;
 
 /// The request for one show operator, addressed **by pin alone**.
 fn request(page: usize, pinned: crate::canvas::textedit::pin::Pinned) -> FormatRequest {

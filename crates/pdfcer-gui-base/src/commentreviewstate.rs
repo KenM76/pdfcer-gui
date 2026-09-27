@@ -940,3 +940,17 @@ mod tests {
         assert!(statuses(&[]).values().is_empty());
     }
 }
+
+/// **What `pdfcer_gui::app::actions::Action::RecordReviewState` carries** —
+/// the comment to review, and the status to append.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RecordStatus {
+    /// The comment being reviewed — the `/IRT` target, and the **root** of the
+    /// chain rather than whatever the engine ends up attaching to. See
+    /// [`pdfcer_core::edit::ReviewStateAdded::attached_to`]: a second status by
+    /// the same author chains onto their first, and the engine does that walk.
+    pub id: ObjId,
+    /// The status to append — [`ReviewState`], the **closed** set pdfcer
+    /// authors, as against the open set it reads.
+    pub state: ReviewState,
+}
