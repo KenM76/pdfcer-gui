@@ -7,7 +7,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/notepopup/mod.md`.
 
 /// Turning a document into notes and their windows — testable without a `Ui`.
-pub mod model;
+pub use pdfcer_gui_base::notepopupmodel as model;
 
 /// Which pop-ups are showing, and who decided.
 pub use pdfcer_gui_base::notepopupopen as open;

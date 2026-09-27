@@ -375,3 +375,9 @@ pub mod snapmark;
 
 /// The overlay colour roles the canvas registers with the theme.
 pub mod overlayroles;
+
+/// Where a note popup sits and what it holds, as values.
+pub mod notepopupmodel;
+
+/// The node marks drawn over a selected path.
+pub mod anchormarks;

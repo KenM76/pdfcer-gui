@@ -1268,7 +1268,7 @@ drawn**, never greyed.
    `/Contents`, and it is never empty. The dict shape is documented in the same
    module: `/Type /Annot /Subtype /Line /IT /LineDimension /Rect /L /C /Contents`.
 2. **The popup's has-anything-to-say gate therefore always passes.**
-   `canvas/notepopup/model.rs`:
+   `notepopupmodel.rs` in `pdfcer-gui-base`:
    ```rust
    pub fn has_something_to_read(note: &NoteView) -> bool {
        if matches!(note.subtype.as_str(), "Text" | "FreeText") { return true; }

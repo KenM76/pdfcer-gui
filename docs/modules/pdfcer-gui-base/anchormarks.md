@@ -1,4 +1,4 @@
-# `pdfcer-gui/canvas/overlay/anchors`
+# `pdfcer-gui-base/anchormarks`
 
 ## Item notes
 

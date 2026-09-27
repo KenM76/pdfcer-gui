@@ -765,7 +765,7 @@ name and each argument is individually sound, which is why nothing has caught it
 a harness reading the trace gets whichever was published last.
 
 The shared-name decision needs **re-deciding**, not just renaming — the consumers
-are `canvas/handles.rs:84`, `canvas/overlay/anchors.rs:275` and
+are `canvas/handles.rs:84`, `anchormarks.rs` (base) and
 `canvas/painting.rs:474`.
 
 ### D27 — OPEN: the maximum-zoom ceiling is the first rung measured not to draw

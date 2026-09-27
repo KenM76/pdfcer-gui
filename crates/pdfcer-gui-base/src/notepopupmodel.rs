@@ -1,10 +1,10 @@
-//! # `canvas::notepopup::model` — what a note says, and where its window goes
+//! # `notepopupmodel` — what a note says, and where its window goes
 //!
 //! The **pure** half of the note pop-up: it reads the document and answers
 //! three questions, and it draws nothing, stores nothing and decides nothing
 //! about the interface.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/notepopup/model.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/notepopupmodel.md`.
 
 use std::collections::BTreeSet;
 
@@ -14,7 +14,7 @@ use pdfcer_core::graph::ObjectGraph;
 use pdfcer_core::object::ObjId;
 use pdfcer_core::page_tree::Page;
 
-use crate::canvas::mapping::annot_canvas_rect;
+use crate::canvasmapping::annot_canvas_rect;
 
 /// One annotation that can carry a note, with everything a pop-up needs.
 #[derive(Debug, Clone, PartialEq)]
@@ -25,7 +25,7 @@ pub struct NoteView {
     /// because [`notes_on`] **drops** an annotation with no id: a dictionary
     /// written directly into `/Annots` is a malformed file (§12.5.2 Table 164
     /// requires an indirect object) and there would be nothing for a pop-up's
-    /// Edit or Delete to name. `crate::panels::comments` lists one and says
+    /// Edit or Delete to name. `pdfcer_gui::panels::comments` lists one and says
     /// why it cannot be acted on; the canvas cannot say that about a window it
     /// would have to draw first.
     pub id: ObjId,
@@ -40,7 +40,7 @@ pub struct NoteView {
     /// `/M`, **raw and unparsed**.
     pub modified: Option<String>,
     /// The annotation's own `/Rect`, in **canvas space** — the same
-    /// zoom-independent space `crate::canvas::selection::annot` caches
+    /// zoom-independent space `pdfcer_gui::canvas::selection::annot` caches
     /// outlines in, so a zoom or a pan moves where the pop-up is drawn without
     /// changing which note it belongs to.
     pub anchor: Rect,
@@ -68,7 +68,7 @@ pub struct NoteView {
     ///
     /// ⚠ This used to say *"read only — `pdfcer-core` v0.38.0 has no verb that
     /// authors an `/IRT`"*. `Pass 253.0` closed that; the Comments panel
-    /// authors replies through `crate::app::actions::annot::AnnotAction::Reply`.
+    /// authors replies through `pdfcer_gui::app::actions::annot::AnnotAction::Reply`.
     pub in_reply_to: Option<ObjId>,
 }
 

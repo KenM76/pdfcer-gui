@@ -1,4 +1,4 @@
-# `canvas::notepopup::model` — what a note says, and where its window goes
+# `notepopupmodel` — what a note says, and where its window goes
 
 The **pure** half of the note pop-up: it reads the document and answers
 three questions, and it draws nothing, stores nothing and decides nothing

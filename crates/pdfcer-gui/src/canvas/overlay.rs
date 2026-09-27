@@ -14,7 +14,7 @@ use crate::canvas::mapping::PageMapping;
 use crate::canvas::selection::{SelectionLevel, SelectionState};
 
 /// The anchor marks and the Bézier handles.
-pub mod anchors;
+pub use pdfcer_gui_base::anchormarks as anchors;
 
 pub use anchors::{
     ANCHOR_PX, HANDLE_PX, MAX_UNSELECTED_ANCHORS, PUBLISHED_ANCHORS, anchor_region, draw_anchors,

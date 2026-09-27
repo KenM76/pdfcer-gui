@@ -1,4 +1,4 @@
-//! # `canvas::overlay::anchors` — the marks that say **where the points are**
+//! # `anchormarks` — the marks that say **where the points are**
 //!
 //! ## The seam against the parent
 //!
@@ -17,11 +17,11 @@
 //! that the box and its handles are one decision drawn in one place, which is
 //! what stops a handle being painted and not hit-tested.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/overlay/anchors.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/anchormarks.md`.
 
 use egui::{CornerRadius, Painter, Rect, StrokeKind, Visuals, epaint::Stroke};
 
-use crate::canvas::mapping::PageMapping;
+use crate::canvasmapping::PageMapping;
 
 /// The size of an anchor mark, in screen pixels, edge to edge.
 pub const ANCHOR_PX: f32 = 7.0;
