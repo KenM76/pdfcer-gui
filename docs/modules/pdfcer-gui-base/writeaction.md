@@ -1,4 +1,4 @@
-# `app::actions::write` — the three verbs that exist only to move a file
+# `writeaction` — the three verbs that exist only to move a file
 picker out of the layout pass
 
 

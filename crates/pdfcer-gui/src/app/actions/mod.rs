@@ -179,7 +179,7 @@ pub use pdfcer_gui_base::textverbs as text;
 /// The three verbs that exist only to move a native file picker out of the
 /// layout pass — DXF, form data and a compacted copy. Its header carries the
 /// property they share and the reason a SAVE is filed with two exports.
-pub mod write;
+pub use pdfcer_gui_base::writeaction as write;
 /// The verbs whose subject is a **form XObject** — the shared drawing a CAD
 /// producer invokes from every sheet (§8.10.1).
 pub mod xobject;

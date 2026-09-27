@@ -363,3 +363,6 @@ pub mod acrobatprompt;
 
 /// The Settings row for the default PDF application.
 pub mod defaultappsetting;
+
+/// The verbs that exist only to move a native file picker out of the layout pass.
+pub mod writeaction;

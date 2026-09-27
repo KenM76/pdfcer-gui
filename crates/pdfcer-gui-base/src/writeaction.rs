@@ -1,7 +1,7 @@
-//! # `app::actions::write` — the three verbs that exist only to move a file
+//! # `writeaction` — the three verbs that exist only to move a file
 //! picker out of the layout pass
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/actions/write.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/writeaction.md`.
 
 /// The three verbs that exist only to move a native file picker out of the
 /// layout pass. See the module header.
@@ -9,11 +9,11 @@
 pub enum WriteAction {
     /// **Write one page's vector geometry out as a DXF.**
     ///
-    /// Raised by `crate::dialogs::export_dxf` and by nothing else.
+    /// Raised by `pdfcer_gui::dialogs::export_dxf` and by nothing else.
     ///
     /// # Why an export is an `Action` when it changes no document
     ///
-    /// The same reason [`super::action::Action::SaveCopy`] and `PageAction::ExtractPages` are:
+    /// The same reason `pdfcer_gui::app::actions::Action::SaveCopy` and `PageAction::ExtractPages` are:
     /// **a native file dialog must not open inside a layout pass.** It is a
     /// modal OS window that blocks the thread, so opening one from a widget's
     /// `clicked()` branch leaves egui part-way through a frame that will not
@@ -35,7 +35,7 @@ pub enum WriteAction {
         /// The engine's own options struct, edited in place by the dialog.
         ///
         /// Carried whole rather than decomposed into scale, units and two
-        /// flags, for [`super::action::Action::Dimension`]'s reason one feature along: it **is**
+        /// flags, for `pdfcer_gui::app::actions::Action::Dimension`'s reason one feature along: it **is**
         /// the value the writer takes, and rebuilding it in the apply arm would
         /// put a second constructor in the path.
         options: pdfcer_core::export::dxf::DxfOptions,
@@ -43,7 +43,7 @@ pub enum WriteAction {
     /// **Write one or more pages out as a picture** — PNG, JPEG or SVG.
     /// `OPERATOR_REQUESTS.md` **O120**.
     ///
-    /// Raised by `crate::dialogs::export_image` and by nothing else.
+    /// Raised by `pdfcer_gui::dialogs::export_image` and by nothing else.
     ///
     /// # Why it carries a whole plan, like [`Self::Dxf`] and unlike
     /// [`Self::FormData`]
@@ -62,7 +62,7 @@ pub enum WriteAction {
     /// writers (`export::encode_png`, `export::encode_jpeg`,
     /// `svg::export_svg_view`) with three options types and three error types,
     /// and *"which of the three, over which pages"* is a question none of them
-    /// asks. See `super::imageexport` for the whole argument.
+    /// asks. See `crate::imageexport` for the whole argument.
     ///
     /// # The pages are RESOLVED, not a scope and a string
     ///
@@ -72,11 +72,11 @@ pub enum WriteAction {
     /// have changed pages in between.
     Image {
         /// Everything the writer needs, frozen when Export was pressed.
-        plan: super::imageexport::ImagePlan,
+        plan: crate::imageexport::ImagePlan,
     },
     /// **Write the words on one or more pages out as a plain text file.**
     ///
-    /// Raised by `crate::dialogs::export_text` and by nothing else. The
+    /// Raised by `pdfcer_gui::dialogs::export_text` and by nothing else. The
     /// operator, 2026-09-04: *"also the engine can export PDFs as text. we
     /// should have export/import for that."*
     ///
@@ -101,12 +101,12 @@ pub enum WriteAction {
     /// the writer takes. There is no writer here at all: the engine offers
     /// `text_extract::extract_pages_view` and `ExtractedText::plain_text()`,
     /// and *"how do several pages become one file"* is a question neither of
-    /// them asks. See `super::exporttext` for the whole argument, and for the
+    /// them asks. See `crate::exporttext` for the whole argument, and for the
     /// recorded finding that the **import** half of the operator's sentence has
     /// no engine route at all.
     Text {
         /// Everything the write needs, frozen when Export was pressed.
-        plan: super::exporttext::TextExportPlan,
+        plan: crate::exporttext::TextExportPlan,
     },
     /// **Write the form's values out as FDF, XFDF or CSV.**
     ///
@@ -127,7 +127,7 @@ pub enum WriteAction {
     /// **Write the already-serialised compacted copy to a file the operator
     /// picks.**
     ///
-    /// Raised by `crate::dialogs::compact` and by nothing else.
+    /// Raised by `pdfcer_gui::dialogs::compact` and by nothing else.
     /// `OPERATOR_REQUESTS.md` **O48**. **`app::save::compacted` carries the
     /// argument** for why the bytes travel rather than being re-serialised here:
     /// the window quoted a measurement of them, and when a confirmation quotes a
@@ -139,7 +139,7 @@ pub enum WriteAction {
     /// **Write this document's pages out as an Acrobat stamp
     /// collection.** `OPERATOR_REQUESTS.md` **O169**.
     ///
-    /// Raised by `crate::dialogs::stamp_collection` and by nothing else.
+    /// Raised by `pdfcer_gui::dialogs::stamp_collection` and by nothing else.
     ///
     /// # Why it carries a whole plan, like [`Self::Image`] and [`Self::Text`]
     ///
