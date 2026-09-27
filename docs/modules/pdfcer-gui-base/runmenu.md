@@ -1,4 +1,4 @@
-# `canvas::runmenu` — **the right-click route to ONE LINE of a text block**
+# `runmenu` — **the right-click route to ONE LINE of a text block**
 
 ## The operator's report, and the half of it this file is
 

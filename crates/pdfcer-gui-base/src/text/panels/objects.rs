@@ -1,11 +1,9 @@
 //! # `text::panels::objects` — the Objects panel, and how a page object is
 //! described
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/panels/objects.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/panels/objects.md`.
 
-use crate::panels::objects::summary::{
-    Degeneracy, ObjectKind, ObjectNote, ObjectSummary, SelectionCensus,
-};
+use crate::objectsummary::{Degeneracy, ObjectKind, ObjectNote, ObjectSummary, SelectionCensus};
 use pdfcer_core::vector::{FillRule, PaintStyle, Rgb, TextBoundsBasis};
 
 // ---------------------------------------------------------------------------
@@ -731,7 +729,7 @@ mod tests {
     /// the number is the handle for every command-line verb.
     #[test]
     fn a_row_leads_with_its_paint_order_index() {
-        use crate::panels::objects::summary::describe_object;
+        use crate::objectsummary::describe_object;
         use pdfcer_core::content::ContentStream;
         use pdfcer_core::vector::{Matrix, NoXObjects, decompose};
 
@@ -753,7 +751,7 @@ mod tests {
 
     /// Decompose one content stream and describe its first object.
     fn described(content: &[u8]) -> ObjectSummary {
-        use crate::panels::objects::summary::describe_object;
+        use crate::objectsummary::describe_object;
         use pdfcer_core::content::ContentStream;
         use pdfcer_core::vector::{Matrix, NoXObjects, decompose};
 

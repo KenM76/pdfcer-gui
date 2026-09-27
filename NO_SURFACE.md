@@ -232,7 +232,7 @@ roll-fed plotter operator is the likely reporter.
 | Form editor text ratio and range | 0.62, clamped 9 to 22 pt | `canvas/forms/boxes/mod.rs:71,78` | none |
 | Maximum traced form boxes | 64 | `canvas/forms.rs:690` | none |
 | Glyph ascent and descent | 0.85 and 0.22 | `canvas/textsel.rs:415,419` | none |
-| Font subset tag in a displayed name | always stripped | `text/panels/objects.rs:430`, `panels/properties/text.rs:978`, `panels/fonts.rs:185` | none — and the three must agree |
+| Font subset tag in a displayed name | always stripped | `without_subset_tag` (base `text/panels/objects.rs`), `panels::properties::text::shorten`, the Fonts panel `body` | none — and the three must agree |
 
 ### The subset tag is one decision taken in three places
 

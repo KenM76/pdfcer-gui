@@ -1,4 +1,4 @@
-# `canvas::measure::hover` — showing what a measuring click will pick,
+# `measurehover` — showing what a measuring click will pick,
 before it picks it
 
 ## The report this exists for

@@ -396,3 +396,9 @@ pub mod selectionidentity;
 
 /// Click selects the whole thing; double-click goes inside it.
 pub mod smartselect;
+
+/// The right-click route to one line of a text block.
+pub mod runmenu;
+
+/// Showing what a measuring click will pick, before it picks it.
+pub mod measurehover;

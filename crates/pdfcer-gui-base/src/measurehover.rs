@@ -1,7 +1,7 @@
-//! # `canvas::measure::hover` — showing what a measuring click will pick,
+//! # `measurehover` — showing what a measuring click will pick,
 //! before it picks it
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/measure/hover.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/measurehover.md`.
 
 use egui::{Pos2, Shape, Stroke};
 use pdfcer_core::vector::PageObjects;
@@ -11,7 +11,7 @@ use pdfcer_core::vector::linepick::pick_line_of;
 
 /// What the pointer is over, resolved while the decomposition is borrowed.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(in crate::canvas) struct Entity {
+pub struct Entity {
     /// **Which list, and which entry in it**, the highlight is about — carried
     /// for the trace so a reader can tie a highlight to the object the pick
     /// will name.
@@ -28,11 +28,7 @@ pub(in crate::canvas) struct Entity {
 }
 
 /// Find the entity under `query`.
-pub(in crate::canvas) fn resolve(
-    model: &PageObjects,
-    query: Point,
-    tolerance: f64,
-) -> Option<Entity> {
+pub fn resolve(model: &PageObjects, query: Point, tolerance: f64) -> Option<Entity> {
     //
     // The consequence for THIS module is worse than for selection, and it is
     // the reason the change had to come here too rather than only to the pick:
@@ -79,7 +75,7 @@ const HIGHLIGHT_WIDTH_PT: f32 = 3.0;
 const HIGHLIGHT_ALPHA: u8 = 150;
 
 /// The shapes for a hovered entity, in screen space.
-pub(in crate::canvas) fn shapes(
+pub fn shapes(
     entity: Entity,
     color: egui::Color32,
     to_screen: impl Fn(Point) -> Option<Pos2>,

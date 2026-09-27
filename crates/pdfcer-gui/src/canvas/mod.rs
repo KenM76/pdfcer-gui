@@ -247,7 +247,7 @@ pub mod rotating;
 /// pick is parked to solve it, plus why this does not breach
 /// `DESIGNS.md`'s *do not add a context-menu item*: that rules out a row
 /// that EDITS, not one that re-aims the selection.
-pub mod runmenu;
+pub use pdfcer_gui_base::runmenu;
 /// The operand and preflight of `format.merge_text_runs`.
 pub mod runmerge;
 /// The eight resize grips, finally committing — built out of `move_nodes`

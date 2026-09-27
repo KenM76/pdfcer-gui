@@ -17,7 +17,7 @@ pub mod circular;
 mod draw;
 pub(in crate::canvas) use draw::{Preview, SNAP_MARKER_PT, page_to_screen, preview};
 /// The hover affordance: which line or entity a measuring click will take.
-pub(super) mod hover;
+pub use pdfcer_gui_base::measurehover as hover;
 /// One derivation of where a click would land and on what.
 pub(in crate::canvas) mod resolve;
 

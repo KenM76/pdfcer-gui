@@ -33,6 +33,9 @@ pub mod face;
 /// rules for that job are written down with them.
 pub mod layersearch;
 
+/// The Objects panel, and the wording of every object fact.
+pub mod objects;
+
 /// **Every sentence pdfcer says about which layer a selection is on** — the
 /// panel's long form and the status bar's short clause, generated from one
 /// `crate::layermembership::Membership` so the two surfaces cannot

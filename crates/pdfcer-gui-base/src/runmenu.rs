@@ -1,14 +1,14 @@
-//! # `canvas::runmenu` — **the right-click route to ONE LINE of a text block**
+//! # `runmenu` — **the right-click route to ONE LINE of a text block**
 //!
 //! ## The operator's report, and the half of it this file is
 //!
 //! `OPERATOR_REQUESTS.md` O188, verbatim:
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/runmenu.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/runmenu.md`.
 
-use crate::canvas::mapping::PageMapping;
-use crate::canvas::target::{CanvasTargetProvider, TargetId};
-use crate::panels::objects::provider::{ObjectModelProvider, PartKind};
+use crate::canvasmapping::PageMapping;
+use crate::canvastarget::{CanvasTargetProvider, TargetId};
+use crate::objectprovider::{ObjectModelProvider, PartKind};
 
 /// `egui::Memory` key for the text run the last right-click landed on.
 const PICK_MEMORY_KEY: &str = "pdfcer-text-run-pick"; // ui-text-exempt: internal memory id, never displayed
@@ -134,7 +134,7 @@ pub fn parked(ctx: &egui::Context) -> RunPick {
 
 /// Record what the menu resolved to, once per click.
 ///
-/// Called by [`crate::canvas::menus`] on the frame of the secondary click. See
+/// Called by `pdfcer_gui::canvas::menus` on the frame of the secondary click. See
 /// [`TRACE_MENU`] for why the *pick* is in it and not only the verdict.
 pub fn trace(pick: RunPick) {
     crate::diag::trace(move || {
