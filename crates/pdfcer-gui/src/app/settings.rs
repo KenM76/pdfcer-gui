@@ -627,7 +627,7 @@ mod tests {
                 }
                 let name = path.to_string_lossy().replace('\\', "/");
                 if name.ends_with("pdfcer-gui-base/src/renderworker.rs")
-                    || name.ends_with("dialogs/print/lines.rs")
+                    || name.ends_with("pdfcer-gui-base/src/printpreviewkey.rs")
                 {
                     continue;
                 }
@@ -668,7 +668,7 @@ mod tests {
         // O233: the print dialog's own *Fixed line width*, which the operator
         // asked for by name. Off by default and blind to `view.line_weights`.
         assert_eq!(
-            scan(&root.join("dialogs/print/lines.rs")),
+            scan(&base.join("printpreviewkey.rs")),
             1,
             "the print dialog's fixed line width must assign `stroke_display` exactly once"
         );

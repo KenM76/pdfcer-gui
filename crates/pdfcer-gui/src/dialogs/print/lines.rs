@@ -48,24 +48,8 @@ pub(super) fn paper_pt(prefs: LineWidthPrefs, dpi: u32) -> Option<f64> {
     (pt.is_finite() && pt > 0.0).then_some(pt)
 }
 
-/// Draw every stroke of a render at `paper_pt`. `scale` is the render's pixels
-/// per page point, `placement` the page's paper points per page point. Leaves
-/// `options` alone when `paper_pt` is `None`.
-pub(super) fn apply(
-    options: &mut pdfcer_render::RenderOptions,
-    paper_pt: Option<f64>,
-    scale: f64,
-    placement: f64,
-) {
-    let Some(pt) = paper_pt else {
-        return;
-    };
-    if !(placement > 0.0 && scale > 0.0) {
-        return;
-    }
-    let device_px = (pt / placement * scale) as f32;
-    options.stroke_display = pdfcer_render::font::StrokeDisplay::Fixed { device_px };
-}
+/// Draw every stroke of a render at a fixed width on paper.
+pub(super) use pdfcer_gui_base::printpreviewkey::apply_fixed_lines as apply;
 
 /// The Pages tab's line-width controls: *Fixed line width*, then *Auto*, then
 /// the width itself once Auto is cleared.

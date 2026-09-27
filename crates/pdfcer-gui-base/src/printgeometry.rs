@@ -1,4 +1,4 @@
-//! # `dialogs::print::preview::geometry` — the preview's arithmetic, with
+//! # `printgeometry` — the preview's arithmetic, with
 //! no dialog in it
 //!
 //! Three rectangles and one verdict: where the sheet and the printable area
@@ -7,35 +7,28 @@
 //!
 //! ## Why it is a module of its own
 //!
-//! Everything here is a pure function of a job, a rectangle and a scale. That
-//! is what makes [`super::tests`] able to assert the hatch geometry
-//! with no `egui` context, no printer and no rendered page — and the
-//! properties it asserts (bands pairwise disjoint, union exactly the overhang)
-//! are the kind that a body sharing a file with a painter invites nobody to
-//! check.
-//!
-//! The split was forced by R2 when operator request O208 widened the hatch from
-//! two bands to four, and the seam was already there: the tests next door drive
-//! exactly this and nothing else in `preview`.
+//! Everything here is a pure function of a job, a rectangle and a scale, so
+//! the preview tests in `pdfcer_gui::dialogs::print::preview` assert the hatch
+//! geometry with no `egui` context, no printer and no rendered page.
 //!
 //! ## What it must not learn
 //!
 //! No `PrintDialog`. The zoom and the pan reach these functions as a `scale`
-//! and a `Vec2`, which is what lets the drag classifier in [`super::column`]
-//! and the painter in [`super::paint`] hit-test and draw the same rectangle
+//! and a `Vec2`, which is what lets the preview's drag classifier
+//! and its painter hit-test and draw the same rectangle
 //! without either one owning the arithmetic.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/print/preview/geometry.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/printgeometry.md`.
 
 use egui::{Color32, Rect, Stroke, Vec2};
 
-use crate::dialogs::print::ink;
-use crate::dialogs::print::spooler::Job;
+use crate::printink as ink;
+use crate::printspooler::Job;
 
-use super::Overhang;
+use crate::printpreviewkey::Overhang;
 
 /// **The sheet and the printable area, in screen points.**
-pub(crate) fn frames(job: &Job, rect: Rect, pan: Vec2, scale: f32) -> (Rect, Rect) {
+pub fn frames(job: &Job, rect: Rect, pan: Vec2, scale: f32) -> (Rect, Rect) {
     let sheet = job.device.physical_pt;
     let sheet_px = egui::vec2(sheet.0 as f32 * scale, sheet.1 as f32 * scale);
     let origin = rect.center() - sheet_px / 2.0 + pan;
@@ -57,9 +50,9 @@ pub(crate) fn frames(job: &Job, rect: Rect, pan: Vec2, scale: f32) -> (Rect, Rec
 
 /// **Where one page lands on screen**, given the printable rectangle
 /// [`frames`] returned.
-pub(crate) fn placed_rect(
+pub fn placed_rect(
     printable: Rect,
-    placement: crate::dialogs::print::spooler::Placement,
+    placement: crate::printspooler::Placement,
     size: (f64, f64),
     scale: f32,
 ) -> Rect {
@@ -78,7 +71,7 @@ pub(crate) fn placed_rect(
 
 /// Hatch **only the parts of `placed` that fall outside `printable` AND carry
 /// ink**.
-pub(crate) fn hatch_lost_content(
+pub fn hatch_lost_content(
     painter: &egui::Painter,
     placed: Rect,
     printable: Rect,
@@ -94,7 +87,7 @@ pub(crate) fn hatch_lost_content(
 
 /// **The four disjoint overhangs of a placed page**, in SCREEN points, in the
 /// order left, right, top, bottom.
-pub(crate) fn edge_bands(placed: Rect, printable: Rect) -> [Rect; 4] {
+pub fn edge_bands(placed: Rect, printable: Rect) -> [Rect; 4] {
     [
         placed.intersect(Rect::everything_left_of(printable.min.x)),
         placed.intersect(Rect::everything_right_of(printable.max.x)),
@@ -111,17 +104,17 @@ pub(crate) fn edge_bands(placed: Rect, printable: Rect) -> [Rect; 4] {
 
 /// The letter each of [`edge_bands`]' four bands is named by in the trace, in
 /// its order.
-pub(crate) const EDGE_LETTERS: [char; 4] = ['l', 'r', 't', 'b'];
+pub const EDGE_LETTERS: [char; 4] = ['l', 'r', 't', 'b'];
 
 /// **Which** of the page's four edges hang past the printable area, in
 /// [`edge_bands`]' order.
-pub(crate) fn overhang_edges(placed: Rect, printable: Rect) -> [bool; 4] {
+pub fn overhang_edges(placed: Rect, printable: Rect) -> [bool; 4] {
     edge_bands(placed, printable).map(|band| band.is_positive())
 }
 
 /// **What is actually lost, and what to call it** — the whole of operator
 /// request O113's decision, with no painter in it.
-pub(crate) fn lost_regions(
+pub fn lost_regions(
     placed: Rect,
     printable: Rect,
     mask: Option<&ink::InkMask>,
@@ -175,7 +168,7 @@ pub(crate) fn lost_regions(
 
 /// Express `part` as a fraction of `whole`: 0..1 page space, the coordinate
 /// system [`ink::InkMask`] speaks.
-pub(crate) fn normalised_in(part: Rect, whole: Rect) -> Rect {
+pub fn normalised_in(part: Rect, whole: Rect) -> Rect {
     if whole.width() <= 0.0 || whole.height() <= 0.0 {
         return Rect::NOTHING;
     }
@@ -192,7 +185,7 @@ pub(crate) fn normalised_in(part: Rect, whole: Rect) -> Rect {
 }
 
 /// The inverse of [`normalised_in`]: 0..1 page space back to screen points.
-pub(crate) fn denormalised_in(fraction: Rect, whole: Rect) -> Rect {
+pub fn denormalised_in(fraction: Rect, whole: Rect) -> Rect {
     Rect::from_min_max(
         egui::pos2(
             whole.min.x + fraction.min.x * whole.width(),
@@ -206,7 +199,7 @@ pub(crate) fn denormalised_in(fraction: Rect, whole: Rect) -> Rect {
 }
 
 /// Draw diagonal hatching across `area`.
-pub(crate) fn hatch(painter: &egui::Painter, area: Rect, colour: Color32) {
+pub fn hatch(painter: &egui::Painter, area: Rect, colour: Color32) {
     let step = 6.0;
     let mut x = area.min.x;
     while x < area.max.x + area.height() {

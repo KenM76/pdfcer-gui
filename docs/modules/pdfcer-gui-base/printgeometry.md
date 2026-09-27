@@ -1,4 +1,4 @@
-# `pdfcer-gui/dialogs/print/preview/geometry`
+# `printgeometry`
 
 ## Item notes
 

@@ -77,7 +77,7 @@ pub(crate) mod tabs;
 /// **What the operator has actually looked at, and what may be said about the
 /// rest** — operator request O113, 2026-09-04. Its own header carries the
 /// whole argument: the count, the cache key, and the four sentences.
-mod verdicts;
+use pdfcer_gui_base::printverdicts as verdicts;
 
 /// **Everything that happens the moment the operator presses Print** —
 /// the spool itself, the plan trace that precedes it, the receipt that

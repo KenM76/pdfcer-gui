@@ -1,6 +1,6 @@
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/print/verdicts_tests.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/printverdicts_tests.md`.
 #![cfg(test)]
-//! # `dialogs::print::verdicts_tests` — the corrected clip count, proved headlessly
+//! # `printverdicts_tests` — the corrected clip count, proved headlessly
 //!
 //! ## What is proved here, and why none of it needs a window
 //!
@@ -19,7 +19,7 @@
 //! `#![cfg(test)]` is the FIRST line, so nothing here reaches a release build.
 
 use super::*;
-use crate::dialogs::print::spooler::{DeviceGeometry, JobResolution};
+use crate::printspooler::{DeviceGeometry, JobResolution};
 
 /// A placement that either overhangs the printable rectangle or does not.
 fn placed(clipped: bool) -> Placement {

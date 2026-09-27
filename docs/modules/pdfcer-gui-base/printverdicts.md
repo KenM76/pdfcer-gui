@@ -1,4 +1,4 @@
-# `dialogs::print::verdicts` — what the operator has actually LOOKED at
+# `printverdicts` — what the operator has actually LOOKED at
 
 ## The contradiction this module exists to remove
 

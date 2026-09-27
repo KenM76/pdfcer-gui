@@ -577,7 +577,7 @@ has been previewed) has been measured to carry ink out in the band. This
 one states a number that was **bounded**. With some sheets examined and
 some not, the count is `known_inked + unexamined`, and the true figure can
 be anywhere from `known_inked` up to that — see
-`dialogs::print::verdicts`' header for the inequality.
+`printverdicts`' header for the inequality.
 
 **The hedge is a correction, not a weakening.** Saying "will" of a
 number nobody measured would be the invented claim; the two words that

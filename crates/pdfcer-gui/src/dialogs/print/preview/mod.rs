@@ -21,26 +21,7 @@ use crate::dialogs::print::position;
 use crate::dialogs::print::spooler::Job;
 use crate::text::print as t;
 
-/// What the shown sheet's overhang turned out to contain — the fact the hatch
-/// is drawn from, lifted out so the CAPTION can be drawn from the same one.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum Overhang {
-    /// The placement reported no clip. The page fits the printable area.
-    Fits,
-    /// The placement reported a clip **and the overhanging band carries ink**,
-    /// so something really will be cropped. Hatched.
-    Losing,
-    /// The placement reported a clip and the band is **blank paper** — the
-    /// 1:1 CAD drawing O113 is about. Nothing hatched, and the caption says so
-    /// rather than leaving the operator to wonder why the warning has no
-    /// picture.
-    BlankBand,
-    /// The placement reported a clip and there is **no raster to ask** — the
-    /// degraded state [`texture_for`] documents, where the page did not render
-    /// and the preview shows a flat fill. The whole band is hatched, because a
-    /// failed render must not be able to switch a warning off.
-    Unknown,
-}
+pub(super) use pdfcer_gui_base::printpreviewkey::{Overhang, PreviewKey};
 
 // THE PREVIEW COLUMN'S WIDTH IS A PARAMETER, NEVER A CONSTANT IN THIS FILE.
 //
@@ -107,46 +88,6 @@ const ZOOM_STEP: f32 = 1.25;
 
 /// The egui texture name the preview bitmap is uploaded under.
 const PREVIEW_TEXTURE_ID: &str = "pdfcer-print-preview"; // ui-text-exempt: internal texture id, never displayed
-
-/// What a cached preview bitmap is a picture OF.
-#[derive(Debug, Clone, PartialEq)]
-pub(super) struct PreviewKey {
-    /// Which document page (0-based).
-    page: usize,
-    /// Which annotation classes are painted.
-    scope: pdfcer_render::AnnotationScope,
-    /// The operator's configuration, whole — see the type's own docs on why it
-    /// is not the rendering fields spelled out.
-    settings: pdfcer_core::settings::Settings,
-    /// The fixed line width on paper and the page's placement scale (O233);
-    /// `None` when the document's own weights print.
-    lines: Option<(f64, f64)>,
-}
-
-impl PreviewKey {
-    /// Build the key for one page.
-    pub(super) fn new(
-        page: usize,
-        scope: pdfcer_render::AnnotationScope,
-        settings: &pdfcer_core::settings::Settings,
-        lines: Option<(f64, f64)>,
-    ) -> Self {
-        Self {
-            page,
-            scope,
-            settings: settings.clone(),
-            lines,
-        }
-    }
-
-    /// Set the fixed line width, if any, on a render at `scale` pixels per
-    /// page point.
-    pub(super) fn apply_lines(&self, options: &mut pdfcer_render::RenderOptions, scale: f64) {
-        if let Some((pt, placement)) = self.lines {
-            super::lines::apply(options, Some(pt), scale, placement);
-        }
-    }
-}
 
 /// Everything the preview needs that is NOT the dialog's own state.
 pub(super) struct Inputs<'a> {
@@ -994,10 +935,8 @@ fn premultiplied_image(width: u32, height: u32, data: &[u8]) -> egui::ColorImage
     egui::ColorImage::from_rgba_premultiplied([width as usize, height as usize], data)
 }
 
-/// **The preview's arithmetic** — the three rectangles and the hatch
-/// verdict, split out at R2's ceiling when O208 widened the hatch to four
-/// edges. Its header carries the seam and what it must not learn.
-mod geometry;
+/// The preview's arithmetic; its header carries the seam.
+use pdfcer_gui_base::printgeometry as geometry;
 
 /// The zoomed-in preview, rendered sharp up to the print resolution.
 pub(super) mod detail;

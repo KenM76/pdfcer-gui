@@ -405,3 +405,12 @@ pub mod measurehover;
 
 /// The one module that knows `pdfcer-print` exists.
 pub mod printspooler;
+
+/// What a print-preview bitmap is a picture of.
+pub mod printpreviewkey;
+
+/// What the operator has actually LOOKED at in the print preview.
+pub mod printverdicts;
+
+/// The print preview's arithmetic, with no dialog in it.
+pub mod printgeometry;

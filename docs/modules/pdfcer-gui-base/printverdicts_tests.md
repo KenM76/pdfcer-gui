@@ -1,4 +1,4 @@
-# `pdfcer-gui/dialogs/print/verdicts_tests`
+# `printverdicts_tests`
 
 ## Item notes
 

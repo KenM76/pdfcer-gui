@@ -12,7 +12,7 @@ crates/pdfcer-gui/src/canvas/markup/pen.rs::every_slot_ships_at_the_acrobat_valu
 crates/pdfcer-gui/src/canvas/markup/text.rs::each_kind_authors_its_own_subtype	TextMarkKind	LOCAL	3
 crates/pdfcer-gui/src/canvas/markup/text.rs::each_text_kind_takes_its_own_pen	PenSlot	LOCAL	4
 crates/pdfcer-gui/src/dialogs/ocr.rs::each_named_refusal_says_something_different	Refusal	LOCAL	4
-crates/pdfcer-gui/src/dialogs/print/verdicts_tests.rs::each_claim_state_is_distinguishable_in_the_trace	ClipClaim	LOCAL	4
+crates/pdfcer-gui-base/src/printverdicts_tests.rs::each_claim_state_is_distinguishable_in_the_trace	ClipClaim	LOCAL	4
 crates/pdfcer-gui/src/dialogs/protect/tests.rs::each_failure_says_something_different	PrepareFailure	LOCAL	5
 crates/pdfcer-gui/src/dialogs/settings/signatures.rs::every_located_state_says_something_different	Located	LOCAL	3
 crates/pdfcer-gui-base/src/icons/svg/mod.rs::every_error_renders_a_non_empty_message	IconError	LOCAL	10

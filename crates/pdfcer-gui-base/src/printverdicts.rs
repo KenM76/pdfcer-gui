@@ -1,4 +1,4 @@
-//! # `dialogs::print::verdicts` — what the operator has actually LOOKED at
+//! # `printverdicts` — what the operator has actually LOOKED at
 //!
 //! ## The contradiction this module exists to remove
 //!
@@ -7,18 +7,18 @@
 //! says *"This sheet hangs over the printable area, but nothing is printed
 //! there — the overhang is blank."*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/print/verdicts.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/printverdicts.md`.
 
 use std::collections::BTreeMap;
 
-use super::preview::{Overhang, PreviewKey};
-use super::spooler::{Job, PagePlan, Placement};
+use crate::printpreviewkey::{Overhang, PreviewKey};
+use crate::printspooler::{Job, PagePlan, Placement};
 use crate::text::print as t;
 
 /// The job-wide half of a verdict's key, and the one place a
 /// [`PreviewKey`] is built.
 #[derive(Debug, Clone, PartialEq)]
-pub(super) struct Context {
+pub struct Context {
     /// Which annotation classes are painted — `PreviewKey`'s field.
     scope: pdfcer_render::AnnotationScope,
     /// The operator's configuration, whole — `PreviewKey`'s field.
@@ -31,7 +31,7 @@ pub(super) struct Context {
 
 impl Context {
     /// Snapshot the frame's rendering inputs and printable rectangle.
-    pub(super) fn new(
+    pub fn new(
         scope: pdfcer_render::AnnotationScope,
         settings: &pdfcer_core::settings::Settings,
         printable_pt: (f64, f64),
@@ -46,7 +46,7 @@ impl Context {
     }
 
     /// The preview texture's cache key for `page`.
-    pub(super) fn preview_key(&self, page: usize, placement: f64) -> PreviewKey {
+    pub fn preview_key(&self, page: usize, placement: f64) -> PreviewKey {
         PreviewKey::new(
             page,
             self.scope,
@@ -83,7 +83,7 @@ impl Sheet {
 
 /// What the preview has found, for the sheets it has been shown.
 #[derive(Debug, Default)]
-pub(super) struct Verdicts {
+pub struct Verdicts {
     /// The context every entry below was recorded under.
     ///
     /// One field for the whole map rather than a copy in every entry: the
@@ -102,7 +102,7 @@ pub(super) struct Verdicts {
 
 impl Verdicts {
     /// Record what the preview just found in the overhang of one sheet.
-    pub(super) fn remember(
+    pub fn remember(
         &mut self,
         context: &Context,
         plan: &PagePlan,
@@ -139,12 +139,7 @@ impl Verdicts {
     }
 
     /// **The number on the button, and what may honestly be said about it.**
-    pub(super) fn claim(
-        &self,
-        context: &Context,
-        job: &Job,
-        page_sizes: &[(f64, f64)],
-    ) -> ClipClaim {
+    pub fn claim(&self, context: &Context, job: &Job, page_sizes: &[(f64, f64)]) -> ClipClaim {
         let mut geometric = 0usize;
         let mut known_blank = 0usize;
         let mut unresolved = 0usize;
@@ -167,7 +162,7 @@ impl Verdicts {
 
 /// **How many sheets will lose content, and how well that is known.**
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum ClipClaim {
+pub enum ClipClaim {
     /// Nothing to disclose. Either no sheet's page box exceeds the printable
     /// area, or every one that does has been examined and found blank — the
     /// operator's 1:1 CAD drawing, after one look at the preview.
@@ -252,7 +247,7 @@ impl ClipClaim {
     }
 
     /// The commit button's label, or `None` for the plain **Print**.
-    pub(super) fn commit_label(self) -> Option<String> {
+    pub fn commit_label(self) -> Option<String> {
         match self {
             Self::None => Option::None,
             Self::Geometric(n) => Some(t::commit_with_clipping(n)),
@@ -263,7 +258,7 @@ impl ClipClaim {
 
     /// The job-wide sentence under the preview, or `None` when there is
     /// nothing to say.
-    pub(super) fn summary(self, total: usize) -> Option<String> {
+    pub fn summary(self, total: usize) -> Option<String> {
         match self {
             Self::None => Option::None,
             Self::Geometric(n) | Self::Measured(n) => Some(t::clip_summary(n, total)),
@@ -272,7 +267,7 @@ impl ClipClaim {
     }
 
     /// One word for the diagnostic trace.
-    pub(super) const fn trace_word(self) -> &'static str {
+    pub const fn trace_word(self) -> &'static str {
         match self {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             Self::None => "none",
@@ -286,7 +281,7 @@ impl ClipClaim {
     }
 
     /// The number the claim carries, for the trace.
-    pub(super) const fn count(self) -> usize {
+    pub const fn count(self) -> usize {
         match self {
             Self::None => 0,
             Self::Geometric(n) | Self::Measured(n) | Self::AtMost(n) => n,
@@ -295,5 +290,5 @@ impl ClipClaim {
 }
 
 #[cfg(test)]
-#[path = "verdicts_tests.rs"]
+#[path = "printverdicts_tests.rs"]
 mod tests;

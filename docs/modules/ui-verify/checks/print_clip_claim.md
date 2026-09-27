@@ -14,7 +14,7 @@ there — the overhang is blank."*
 *"Print — 1 sheet will be clipped"* over a picture showing nothing lost.
 Both sentences were true and they read as contradicting each other.
 
-The fix — `crates/pdfcer-gui/src/dialogs/print/verdicts.rs` — remembers the
+The fix — `crates/pdfcer-gui-base/src/printverdicts.rs` — remembers the
 blank/not-blank verdict per sheet as the preview renders it, and labels the
 button with `geometric − known_blank`, with unexamined sheets still counted.
 
@@ -25,7 +25,7 @@ Two links, and neither is reachable from a test:
 1. **The verdict is produced inside `paint`**, which needs an `egui::Ui`, a
    real device geometry from a driver, and a rasterised page. The
    arithmetic that consumes the verdict is pure and is proved in
-   `dialogs::print::verdicts_tests`; the *recording* is not.
+   `printverdicts_tests`; the *recording* is not.
 2. **The cache key is only interesting when it is live.** A key that
    silently never matches produces the old geometric count — which is a
    correct answer to a different question, and on a job where nothing is
