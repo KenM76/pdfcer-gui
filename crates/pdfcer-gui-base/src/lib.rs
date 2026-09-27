@@ -457,3 +457,9 @@ pub mod keychord;
 
 /// Scripted keystrokes for a window OS input cannot reach.
 pub mod keyscripted;
+
+/// How a form field's in-place editor sets its text.
+pub mod formeditortext;
+
+/// The in-place editor drawn over a text form field.
+pub mod formtextbox;

@@ -1,4 +1,4 @@
-# `pdfcer-gui/canvas/forms/textbox`
+# `pdfcer-gui-base/formtextbox`
 
 ## Item notes
 
@@ -17,7 +17,7 @@ states which **end** of the box the run is anchored to and says the same
 thing in any font. An editor that read `/Q` nowhere would type every field
 left-aligned, and a centred or right-aligned form would re-lay itself out
 the moment the value committed. The whole of the rule is
-[`super::boxes::editor_align`].
+[`crate::formeditortext::editor_align`].
 
 # `/MK` `/BG`, the second property, admitted by the same test
 

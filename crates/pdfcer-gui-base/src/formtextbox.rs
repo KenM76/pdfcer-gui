@@ -1,4 +1,4 @@
-//! # `canvas::forms::textbox` — the live text box laid over a widget rectangle
+//! # `formtextbox` — the live text box laid over a widget rectangle
 //!
 //! One mechanism, two callers: [`super::editor`]'s `/Tx` path and
 //! [`super::choosing`]'s editable combo box. Both lay an `egui::TextEdit` over
@@ -23,35 +23,35 @@
 //! *properties of the interaction*, and the two interactions genuinely differ.
 //! Sharing the first and not the second is the seam, not a compromise.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/forms/textbox.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/formtextbox.md`.
 
 use egui::{Id, Rect, Ui};
 use pdfcer_core::vartext::Quadding;
 
-use super::boxes::{editor_align, editor_font_size};
+use crate::formeditortext::{editor_align, editor_font_size};
 
 /// Everything [`lay`] needs that is not the draft itself.
-pub(super) struct Spec<'a> {
+pub struct Spec<'a> {
     /// The editor's `egui` id — [`super::Focus::editor_id`] for both callers,
     /// so the caret state survives between frames.
-    pub(super) id: Id,
+    pub id: Id,
     /// Where to put it, in screen space.
-    pub(super) rect: Rect,
+    pub rect: Rect,
     /// `/Q`, resolved through the field tree by `pdfcer-core`.
-    pub(super) align: Quadding,
+    pub align: Quadding,
     /// `/MK` `/BG` as sRGB, when the widget has one.
-    pub(super) fill: Option<[f32; 3]>,
+    pub fill: Option<[f32; 3]>,
     /// `/Ff` `Multiline`. Always `false` for a combo box.
-    pub(super) multiline: bool,
+    pub multiline: bool,
     /// `/Ff` `Password`. Always `false` for a combo box.
-    pub(super) password: bool,
+    pub password: bool,
     /// The field's name, when this frame is the one that should report what
     /// the tint resolved to. `None` on every other frame — see [`lay`]'s .
-    pub(super) trace: Option<&'a str>,
+    pub trace: Option<&'a str>,
 }
 
 /// Build the editor, dress it from the document, and place it.
-pub(super) fn lay(ui: &mut Ui, draft: &mut String, spec: &Spec<'_>) -> egui::Response {
+pub fn lay(ui: &mut Ui, draft: &mut String, spec: &Spec<'_>) -> egui::Response {
     let ctx = ui.ctx().clone();
     let font = egui::FontId::proportional(editor_font_size(spec.rect.height()));
     let halign = editor_align(spec.align);
@@ -102,7 +102,7 @@ pub(super) fn lay(ui: &mut Ui, draft: &mut String, spec: &Spec<'_>) -> egui::Res
 }
 
 /// Put the caret at the end of the draft, or select the whole of it.
-pub(super) fn seat(ctx: &egui::Context, id: Id, draft: &str, select_all: bool) {
+pub fn seat(ctx: &egui::Context, id: Id, draft: &str, select_all: bool) {
     let end = egui::text::CCursor::new(draft.chars().count());
     let range = if select_all {
         egui::text::CCursorRange::two(egui::text::CCursor::new(0), end)

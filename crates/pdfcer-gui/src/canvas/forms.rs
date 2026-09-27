@@ -34,7 +34,7 @@ mod choosing;
 /// document properties that dress it. Shared by the `/Tx` editor below and by
 /// [`choosing`]'s editable combo box, so a form cannot be typed into with the
 /// wrong quadding on one surface and the right one on the other.
-mod textbox;
+use pdfcer_gui_base::formtextbox as textbox;
 
 /// Re-exported so the path `canvas::forms::right_click_hits_a_field` — which
 /// `canvas::rightclick` and `panels::properties::formfield` both cite by name

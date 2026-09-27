@@ -3,7 +3,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/forms/boxes/mod.md`.
 
-use egui::{Align, Pos2, Rect, Vec2};
+use egui::{Pos2, Rect, Vec2};
 use pdfcer_core::forms::{
     AcroForm, ButtonKind, Field, FieldFlags, FieldType, FieldValue, MkColor, Widget,
 };
@@ -14,14 +14,13 @@ use pdfcer_core::vartext::Quadding;
 use crate::canvas::mapping::PageMapping;
 use crate::canvas::tool::CanvasTool;
 
+pub use pdfcer_gui_base::formeditortext::{editor_align, editor_font_size};
+#[cfg(test)]
+use {egui::Align, pdfcer_gui_base::formeditortext::EDITOR_TEXT_RANGE};
+
 /// The smallest an editor may be drawn, in **screen** points.
 const MIN_EDITOR: Vec2 = Vec2::new(60.0, 18.0);
 
-/// The proportion of an editor's height the text is set at.
-const EDITOR_TEXT_RATIO: f32 = 0.62;
-
-/// The smallest and largest point size the editor will set text at.
-const EDITOR_TEXT_RANGE: (f32, f32) = (9.0, 22.0);
 // ===========================================================================
 // What a widget is, on screen
 // ===========================================================================
@@ -549,24 +548,6 @@ pub fn editor_rect(map: &PageMapping, canvas: Rect) -> Rect {
         (MIN_EDITOR.y - screen.height()).max(0.0) / 2.0,
     );
     screen.expand2(grow)
-}
-
-/// The point size the editor sets text at, for a box `height` points tall on
-/// screen.
-#[must_use]
-pub fn editor_font_size(height: f32) -> f32 {
-    (height * EDITOR_TEXT_RATIO).clamp(EDITOR_TEXT_RANGE.0, EDITOR_TEXT_RANGE.1)
-}
-
-/// Which end of the editor the operator's text is set against, for a field's
-/// `/Q`.
-#[must_use]
-pub fn editor_align(quadding: Quadding) -> Align {
-    match quadding {
-        Quadding::Left => Align::LEFT,
-        Quadding::Center => Align::Center,
-        Quadding::Right => Align::RIGHT,
-    }
 }
 
 /// Truncate a draft to `/MaxLen`, in **characters**.

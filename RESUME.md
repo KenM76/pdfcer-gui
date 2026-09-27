@@ -614,7 +614,7 @@ versioned home). `reports_confidence()` is an R8 capability (`ocrs` answers
    called before **every** click or the page half-paints. The general finding
    is in `C:\personal_rag\pdf\`.
    **What a cold session should not re-derive.** The `/Tx` editor moved out of
-   `forms.rs` into `canvas/forms/textbox.rs` so the editable combo and the text
+   `forms.rs` into `pdfcer-gui-base/src/formtextbox.rs` so the editable combo and the text
    field state `/Q` quadding and `/MK /BG` tinting once rather than twice — a
    second caller for it now exists, so do not fold it back. And
    `check-ui-strings.sh` is line-based: a whitespace-bearing literal is flagged
