@@ -1015,7 +1015,7 @@ impl OpenDoc {
         // per-document state belongs to a document that can be identified, and
         // a name is not an identity.
         let (guides, view) = match origin {
-            Origin::Opened => crate::canvas::guides::opening(&path),
+            Origin::Opened => pdfcer_gui_base::guidestore::opening(&path),
             Origin::Created => (
                 crate::canvas::guides::Guides::default(),
                 ViewState::default(),

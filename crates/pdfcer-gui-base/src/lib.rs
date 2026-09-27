@@ -520,3 +520,6 @@ pub mod prefs;
 
 /// The page-thumbnail render budget.
 pub mod pagebudget;
+
+/// Where a document's guides live between sessions.
+pub mod guidestore;
