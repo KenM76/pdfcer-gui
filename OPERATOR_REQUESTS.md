@@ -156,8 +156,10 @@ into the width and requires 144 pt. A form field's box (X, Y, W, H), border
 width and text size show `pt` and take any unit; its maximum length takes
 arithmetic. Print (copies, resolution, custom scale, line width, position on
 the paper, poster scale and overlap) and Export image (resolution, JPEG
-quality) take arithmetic, and their millimetre boxes take any unit. **Not yet
-converted:** markup border widths, the ribbon's size spinners and tolerances. Those still take a plain number and several show no unit.
+quality) take arithmetic, and their millimetre boxes take any unit. The
+markup width and opacity (ribbon, Properties and the pen swatch), the ribbon's
+font size, a text's size and fitted run width, and a stamp's text size do the
+same. **Not yet converted:** tolerances and the Pages panel's preview boxes. Those still take a plain number and several show no unit.
 
 ## O245 — **BUILT AND DRIVEN — awaiting your verdict** — a ce dimension opens a note pop-up, which gets in the way of moving it
 

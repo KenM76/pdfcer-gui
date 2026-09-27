@@ -6,6 +6,7 @@
 use egui::Ui;
 use pdfcer_core::annot_author::{Color, LineEnding};
 use pdfcer_core::edit::{MarkupStyle, StyleEdit};
+use pdfcer_gui_base::entry;
 
 use crate::app::actions::Action;
 use crate::text::panels::properties as t;
@@ -160,11 +161,18 @@ pub(super) fn width_row(
     };
     ui.horizontal(|ui| {
         ui.label(t::markup_width_label());
-        let response = ui.add(
-            egui::DragValue::new(&mut width)
-                .range(MIN_WIDTH_PT..=MAX_WIDTH_PT)
-                .speed(0.1)
-                .suffix(t::markup_width_suffix()),
+        let (widget, refusal) = entry::drag_value(
+            ui,
+            &mut width,
+            entry::Kind::Length(entry::LengthUnit::Point),
+        );
+        let response = refusal.show(
+            ui.add(
+                widget
+                    .range(MIN_WIDTH_PT..=MAX_WIDTH_PT)
+                    .speed(0.1)
+                    .suffix(t::markup_width_suffix()),
+            ),
         );
         // `drag_stopped` and `lost_focus`, not `changed`. A `DragValue` reports
         // a change on every pixel of a drag, and each one here is a
@@ -304,11 +312,14 @@ pub(super) fn opacity_row(
     let mut percent = (existing.unwrap_or(1.0) * 100.0).round().clamp(0.0, 100.0) as u8;
     ui.horizontal(|ui| {
         ui.label(t::markup_opacity_label());
-        let response = ui.add(
-            egui::DragValue::new(&mut percent)
-                .range(0..=100)
-                .speed(1.0)
-                .suffix(t::markup_opacity_suffix()),
+        let (widget, refusal) = entry::drag_value(ui, &mut percent, entry::Kind::Number(&["%"]));
+        let response = refusal.show(
+            ui.add(
+                widget
+                    .range(0..=100)
+                    .speed(1.0)
+                    .suffix(t::markup_opacity_suffix()),
+            ),
         );
         if response.drag_stopped() || response.lost_focus() {
             actions.push(Action::SetMarkupStyle {

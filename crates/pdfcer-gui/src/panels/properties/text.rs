@@ -6,6 +6,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/properties/text.md`.
 
 use egui::Ui;
+use pdfcer_gui_base::entry;
 
 use crate::app::actions::Action;
 use crate::app::actions::textstyle::StyleChange;
@@ -483,11 +484,18 @@ fn size_row(
 ) {
     ui.horizontal(|ui| {
         ui.label(t::text_size_label());
-        let response = ui.add(
-            egui::DragValue::new(&mut draft.typed_size)
-                .speed(0.25)
-                .range(1.0..=1440.0)
-                .suffix(t::text_size_suffix()),
+        let (widget, refusal) = entry::drag_value(
+            ui,
+            &mut draft.typed_size,
+            entry::Kind::Length(entry::LengthUnit::Point),
+        );
+        let response = refusal.show(
+            ui.add(
+                widget
+                    .speed(0.25)
+                    .range(1.0..=1440.0)
+                    .suffix(t::text_size_suffix()),
+            ),
         );
         crate::diag::ui_rect_visible(SIZE_REGION, response.rect, ui.clip_rect());
         if (response.drag_stopped() || response.lost_focus())

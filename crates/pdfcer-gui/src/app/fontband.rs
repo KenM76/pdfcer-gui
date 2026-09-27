@@ -5,6 +5,7 @@
 
 use egui::Ui;
 use egui_shell::commands::{CommandRegistry, ConditionSet, HandlerToken};
+use pdfcer_gui_base::entry;
 
 use crate::app::actions::textstyle::StyleChange;
 use crate::app::state::OpenDoc;
@@ -210,12 +211,19 @@ fn size(
         ));
         return false;
     }
-    let response = ui.add(
-        egui::DragValue::new(draft.typed_size_mut())
-            .speed(0.25)
-            .range(1.0..=1440.0)
-            .suffix(t::text_size_suffix())
-            .max_decimals(1),
+    let (widget, refusal) = entry::drag_value(
+        ui,
+        draft.typed_size_mut(),
+        entry::Kind::Length(entry::LengthUnit::Point),
+    );
+    let response = refusal.show(
+        ui.add(
+            widget
+                .speed(0.25)
+                .range(1.0..=1440.0)
+                .suffix(t::text_size_suffix())
+                .max_decimals(1),
+        ),
     );
     let _ = ui.allocate_space(egui::Vec2::new(
         (SIZE_WIDTH - response.rect.width()).max(0.0),

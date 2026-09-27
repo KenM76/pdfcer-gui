@@ -7,6 +7,7 @@ use egui::Ui;
 use egui_shell::commands::{CommandRegistry, ConditionSet, HandlerToken};
 use pdfcer_core::annot_author::{Color, LineEnding};
 use pdfcer_core::edit::{MarkupStyle, MarkupStyleSupport, StyleEdit};
+use pdfcer_gui_base::entry;
 
 use crate::app::state::OpenDoc;
 use crate::canvas::selection::annot::{AnnotKind, AnnotTarget};
@@ -627,12 +628,19 @@ fn width(
     // every frame is what made this control undraggable for its whole life.
     let draft_id = ui.id().with("markup.width.draft");
     let mut value = drafted::<f64>(ui, draft_id, was);
-    let response = ui.add(
-        egui::DragValue::new(&mut value)
-            .range(MIN_WIDTH_PT..=MAX_WIDTH_PT)
-            .speed(0.1)
-            .suffix(t::markup_width_suffix())
-            .max_decimals(2),
+    let (widget, refusal) = entry::drag_value(
+        ui,
+        &mut value,
+        entry::Kind::Length(entry::LengthUnit::Point),
+    );
+    let response = refusal.show(
+        ui.add(
+            widget
+                .range(MIN_WIDTH_PT..=MAX_WIDTH_PT)
+                .speed(0.1)
+                .suffix(t::markup_width_suffix())
+                .max_decimals(2),
+        ),
     );
     let _ = ui.allocate_space(egui::Vec2::new(
         (FIELD_WIDTH - response.rect.width()).max(0.0),
@@ -662,11 +670,14 @@ fn opacity(
     // checking". It was. Both are fixed by the same two calls.
     let draft_id = ui.id().with("markup.opacity.draft");
     let mut percent = drafted::<u8>(ui, draft_id, was);
-    let response = ui.add(
-        egui::DragValue::new(&mut percent)
-            .range(0..=100)
-            .speed(1.0)
-            .suffix(t::markup_opacity_suffix()),
+    let (widget, refusal) = entry::drag_value(ui, &mut percent, entry::Kind::Number(&["%"]));
+    let response = refusal.show(
+        ui.add(
+            widget
+                .range(0..=100)
+                .speed(1.0)
+                .suffix(t::markup_opacity_suffix()),
+        ),
     );
     let _ = ui.allocate_space(egui::Vec2::new(
         (FIELD_WIDTH - response.rect.width()).max(0.0),

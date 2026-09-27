@@ -7,6 +7,7 @@ use egui::Ui;
 use pdfcer_core::annot::{StampLabelParameters, StampSizeSource};
 use pdfcer_core::annot_author::{Color, StickyIcon, TextAnnotSpec};
 use pdfcer_core::edit::TextAnnotStyle;
+use pdfcer_gui_base::entry;
 
 use crate::app::actions::Action;
 use crate::app::actions::annot::AnnotAction;
@@ -323,14 +324,18 @@ fn size_row(
 
     ui.horizontal(|ui| {
         ui.label(ts::stamp_text_size_label());
-        let response = ui.add(
-            egui::DragValue::new(&mut size)
-                // The range ADMITS whatever the file said. See
-                // [`MIN_LABEL_PT`] — a spinner that clamps a value it did not
-                // author is a spinner that edits documents nobody asked it to.
-                .range(MIN_LABEL_PT.min(read_size)..=MAX_LABEL_PT.max(read_size))
-                .speed(0.5)
-                .suffix(ts::stamp_text_size_suffix()),
+        let (widget, refusal) =
+            entry::drag_value(ui, &mut size, entry::Kind::Length(entry::LengthUnit::Point));
+        let response = refusal.show(
+            ui.add(
+                widget
+                    // The range ADMITS whatever the file said. See
+                    // [`MIN_LABEL_PT`] — a spinner that clamps a value it did not
+                    // author is a spinner that edits documents nobody asked it to.
+                    .range(MIN_LABEL_PT.min(read_size)..=MAX_LABEL_PT.max(read_size))
+                    .speed(0.5)
+                    .suffix(ts::stamp_text_size_suffix()),
+            ),
         );
         // `drag_stopped` and `lost_focus`, never `changed` — the parent's
         // `width_row` carries the full argument. A `DragValue` reports a change

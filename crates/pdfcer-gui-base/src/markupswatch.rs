@@ -7,6 +7,7 @@
 
 use egui::Ui;
 
+use crate::entry;
 use crate::markuppalette as palette;
 use crate::markuppen::{MAX_WIDTH_PTS, MIN_OPACITY, MIN_WIDTH_PTS, Pen, PenSlot};
 use crate::text::markup as t;
@@ -60,12 +61,19 @@ pub fn show(ui: &mut Ui, pen: &mut Pen) {
         // settings window's sliders take the store's: a control narrower than
         // what the value may legally hold silently rewrites it.
         let before = pen.width_pts;
-        let width_response = ui
-            .add(
-                egui::DragValue::new(&mut pen.width_pts)
-                    .speed(0.1)
-                    .range(MIN_WIDTH_PTS..=MAX_WIDTH_PTS)
-                    .suffix(t::width_suffix()),
+        let (widget, refusal) = entry::drag_value(
+            ui,
+            &mut pen.width_pts,
+            entry::Kind::Length(entry::LengthUnit::Point),
+        );
+        let width_response = refusal
+            .show(
+                ui.add(
+                    widget
+                        .speed(0.1)
+                        .range(MIN_WIDTH_PTS..=MAX_WIDTH_PTS)
+                        .suffix(t::width_suffix()),
+                ),
             )
             .on_hover_text(t::pen_width_tooltip());
         crate::diag::ui_rect(REGION_WIDTH, width_response.rect);
@@ -109,12 +117,15 @@ pub fn show(ui: &mut Ui, pen: &mut Pen) {
         // see the result of.
         let before = pen.opacity;
         let mut percent = pen.opacity * 100.0;
-        let opacity_response = ui
-            .add(
-                egui::DragValue::new(&mut percent)
-                    .speed(1.0)
-                    .range((MIN_OPACITY * 100.0)..=100.0)
-                    .suffix(t::opacity_suffix()),
+        let (widget, refusal) = entry::drag_value(ui, &mut percent, entry::Kind::Number(&["%"]));
+        let opacity_response = refusal
+            .show(
+                ui.add(
+                    widget
+                        .speed(1.0)
+                        .range((MIN_OPACITY * 100.0)..=100.0)
+                        .suffix(t::opacity_suffix()),
+                ),
             )
             .on_hover_text(t::pen_opacity_tooltip());
         crate::diag::ui_rect(REGION_OPACITY, opacity_response.rect);

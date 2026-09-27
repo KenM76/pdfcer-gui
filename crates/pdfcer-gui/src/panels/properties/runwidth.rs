@@ -8,6 +8,7 @@
 
 use egui::Ui;
 use pdfcer_core::vector::{VectorEditError, VectorObject, text_run_width_refusal};
+use pdfcer_gui_base::entry;
 
 use crate::app::actions::Action;
 use crate::app::actions::textstyle::StyleChange;
@@ -53,13 +54,20 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
                     .id()
                     .with(("run-width", page, object, run, doc.edit_epoch));
                 let mut typed = ui.data(|d| d.get_temp::<f64>(id)).unwrap_or(width);
-                let response = ui
-                    .add(
-                        egui::DragValue::new(&mut typed)
-                            .speed(0.5)
-                            .range(0.01..=14_400.0)
-                            .fixed_decimals(2)
-                            .suffix(t::text_size_suffix()),
+                let (widget, refusal) = entry::drag_value(
+                    ui,
+                    &mut typed,
+                    entry::Kind::Length(entry::LengthUnit::Point),
+                );
+                let response = refusal
+                    .show(
+                        ui.add(
+                            widget
+                                .speed(0.5)
+                                .range(0.01..=14_400.0)
+                                .fixed_decimals(2)
+                                .suffix(t::text_size_suffix()),
+                        ),
                     )
                     .on_hover_text(t::run_width_hint());
                 ui.data_mut(|d| d.insert_temp(id, typed));
