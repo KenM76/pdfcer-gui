@@ -54,6 +54,7 @@
 /// modelled on and why the reassembly is `pdfcer-core`'s rather than this
 /// shell's.
 pub mod blocks;
+pub use pdfcer_gui_base::editmodel::kind::TextEditKind;
 pub use pdfcer_gui_base::editmodel::{caret, disposition, lines, pen};
 /// Where the pointer is in relation to the editor box, published by `paint`
 /// and read by everything that has to decide whether a press belongs to the
@@ -116,27 +117,6 @@ const DRAFT_MEMORY_KEY: &str = "pdfcer-textedit-draft"; // ui-text-exempt: inter
 
 /// The environment variable that supplies a draft when no keyboard can.
 pub const DIAG_TYPE: &str = "PDFCER_DIAG_TYPE"; // ui-text-exempt: an environment variable name, never displayed
-
-/// **Which of the two text verbs is armed.**
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum TextEditKind {
-    /// `edit.text` — replace the words in a run that is already on the page.
-    Edit,
-    /// `edit.add_text` — place new page content where the operator clicks.
-    Add,
-}
-
-impl TextEditKind {
-    /// The command id that arms this kind.
-    #[must_use]
-    pub const fn command_id(self) -> &'static str {
-        match self {
-            // ui-text-exempt: command ids, never displayed.
-            Self::Edit => "edit.text",
-            Self::Add => "edit.add_text",
-        }
-    }
-}
 
 /// **What the caret is attached to** — the half of the draft that the click
 /// resolves and typing never changes.
@@ -714,14 +694,5 @@ mod tests {
                 "an Add draft with nothing typed is a caret, not a write: {anchor:?}"
             );
         }
-    }
-
-    /// **The two kinds name the two registered commands, and they are
-    /// different.** A copy-paste that gave both the same id would arm one tool
-    /// from two buttons and nothing would notice.
-    #[test]
-    fn each_kind_names_its_own_registered_command() {
-        assert_eq!(TextEditKind::Edit.command_id(), "edit.text");
-        assert_eq!(TextEditKind::Add.command_id(), "edit.add_text");
     }
 }

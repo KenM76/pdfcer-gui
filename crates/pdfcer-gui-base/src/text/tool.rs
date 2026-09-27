@@ -5,16 +5,16 @@
 //!
 //! | what | who says it now |
 //! |---|---|
-//! | the per-tool instructions and live stages | [`crate::app::toolstatus`] — the right dock's permanent one-line strip |
+//! | the per-tool instructions and live stages | `pdfcer_gui::app::toolstatus` — the right dock's permanent one-line strip |
 //! | the second sentence of the stages that had one | the same strip, in its hover |
-//! | the text pen's labels, the measure pick list, the resize switches | [`crate::panels::properties::tool`] |
-//! | the disclosure heading | [`crate::panels::properties::disclose`] |
+//! | the text pen's labels, the measure pick list, the resize switches | `pdfcer_gui::panels::properties::tool` |
+//! | the disclosure heading | `pdfcer_gui::panels::properties::disclose` |
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/tool.md`.
-use crate::canvas::markup::MarkupKind;
-use crate::canvas::measure::MeasureKind;
-use crate::canvas::textannot::TextAnnotKind;
-use crate::canvas::textedit::TextEditKind;
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/tool.md`.
+use crate::editmodel::kind::TextEditKind;
+use crate::markupkind::MarkupKind;
+use crate::measure::kind::MeasureKind;
+use crate::wordmarkup::TextAnnotKind;
 
 // ===========================================================================
 // What the pointer does right now — the resting tool's sentence
@@ -210,12 +210,10 @@ pub const fn measure_points_empty() -> &'static str {
 
 /// The operator-facing name for where a picked point came from.
 #[must_use]
-pub const fn measure_point_origin(
-    origin: crate::canvas::measure::pick::PickOrigin,
-) -> &'static str {
+pub const fn measure_point_origin(origin: crate::measure::pick::PickOrigin) -> &'static str {
     use pdfcer_core::vector::snap::SnapKind;
 
-    use crate::canvas::measure::pick::PickOrigin;
+    use crate::measure::pick::PickOrigin;
     match origin {
         PickOrigin::Free => "Free position",
         PickOrigin::Snapped(kind) => match kind {
@@ -404,8 +402,8 @@ pub const fn form_instruction() -> &'static str {
 
 /// The second line: what happens next, and what this kind needs.
 #[must_use]
-pub const fn form_kind_hint(kind: crate::canvas::formfield::FormFieldKind) -> &'static str {
-    use crate::canvas::formfield::FormFieldKind as K;
+pub const fn form_kind_hint(kind: crate::formfieldkind::FormFieldKind) -> &'static str {
+    use crate::formfieldkind::FormFieldKind as K;
     match kind {
         K::Radio => {
             "Nothing is added until you fill in the box that appears. Give buttons the same group name to make them alternatives."

@@ -180,6 +180,9 @@ pub mod runmerge;
 /// explaining what a ratio is measured *against*, when the honest answer for a
 /// PDF is 1/72 inch and nobody's intuition is in those.
 pub mod scale;
+/// Every word the tools say: the one-line status strip, the Properties
+/// panel's armed-tool section, and the canvas refusals.
+pub mod tool;
 /// What the Remove-fonts window says before it takes something out - the
 /// destructive twin of `embed`, and the four consequences an operator cannot
 /// see on the canvas.

@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **44 of 211** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `wanted` — a real gap — **46 of 213** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -74,6 +74,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Choose a layer when adding new content** — `paste_objects_on_layer`, `NewImage::on_layer`, `AddTextRequest::on_layer`, and a `layer` field on the markup options | **wanted; in the pin, not yet wired.** The add-text, add-image and markup-as-content verbs this shell already calls each gain `layer: Option<ObjId>`; `None` is the unlayered verb, and the add and its placement are one undo entry. The surface is a *Draw onto layer* chooser beside the Edit-mode add tools and Paste, defaulting to none, listing `read_layers`' layers plus New layer…. A layer the add cannot use is refused as `AddTextError::Layer`, and as `AddTextError::LayerNeedsSession` outside an edit session. |
 | **Put an annotation (including a widget) onto a layer** — `EditSession::set_annotation_layer` | **wanted; in the pin, not yet wired.** One `CommandKind::SetAnnotationLayer` undo entry returning an `AnnotationLayerChange` — `before`, `after`, `changed`, the annotation's `subtype`, and `popup_written` when its pop-up moved with it. The surface is the selection: a *Layer* chooser in Properties for a selected annotation or form field, listing the document's layers plus *none*, and the same item on the right-click menu. |
 | **Put existing page content onto a layer** — `EditSession::set_objects_layer` | **wanted; in the pin, not yet wired.** Planned by `plan_set_layer`; one `CommandKind::SetObjectsLayer` entry returning an `ObjectsLayerChange` — `moved`, `unchanged`, `binding_added` with the `property_name` bound, and `disclosures`. The surface is the same *Layer* chooser, offered for a selection of page objects; the engine refuses tagged content (`VectorEditError::LayerSectionHoldsTaggedContent`), spans crossing nesting (`VectorEditError::LayerSectionCrossesNesting`) or left unbalanced (`VectorEditError::LayerSpanUnbalanced`), and objects carrying their own `/OC`, and each refusal is an off-canvas sentence. |
+| Scale page contents to a target size ("resize page contents") … | **wanted; landed after the pin.** The Page size window changes the sheet and leaves the drawing where it was; `EditSession::scale_pages` scales the drawing onto the new sheet, uniformly, `fit` (pad, centred) or `fill` (cover, crop), rewriting every present page box and carrying annotations, widgets and link destinations with it. What it takes: a "Scale the drawing to the new size" choice in that window beside the existing box-only resize, with Fit/Fill; one undo step; the page refusal for a page carrying ce dimensions worded by name, not greyed. Needs `cargo update` past `e234bef7`. |
 
 ### Text
 
@@ -125,6 +126,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **What a redraw did to a field's text** — `LayoutDisclosure` (with `::applied_autosize`, `::applied_autosize_bound`, `::da_colour_unmodelled`, `::unencodable_chars`) carried on `FieldEditOutcome::layout`, `ResetOutcome::layout`, `WidgetEditOutcome::layout` and `WidgetRotation::layout` | **wanted.** The four facts are the ones a fill already reports, now reported by every verb that redraws a widget: the size an auto-sized field landed on and which bound chose it, a `/DA` colour drawn black, characters drawn as `?`. Today only the fill route's copy is worded; a restyle, a reset or a rotation redraws silently. Wire one formatter over `LayoutDisclosure` and call it from all four. |
 | **Default selections for a list or combo** — `FieldEdit::with_default_selections` / `FieldEdit::default_selections` | **wanted, beside the Default-value box.** `/DV` for a `/Ch` field is what Reset restores; the text-field half is built and this is its choice-field twin, a multi-select of the field's own options in `panels::properties::choiceopts`. |
 | **A dashed widget border** — `WidgetChrome::with_border_dash` / `WidgetChrome::border_dash` | **wanted, small.** The border width and style controls exist; a dashed style without a dash array draws the engine default. One pattern field beside the style combo, shown only when the style is dashed (R9). |
+| **PAdES B-T — verify-then-embed an RFC 3161 timestamp** … | **wanted.** The Sign window signs B-B only. What it takes: `EditSession::sign_with_timestamp` in place of `sign` when the operator names a timestamp server; a `TimestampAuthority` impl whose `time_stamp` calls `pdfcer_fetch::post_time_stamp_query` (the engine does no I/O; `ureq`/`rustls` are already in pdfcer's lockfile, so this adds no dependency the workspace rule calls an operator decision); the call off the UI thread, since it is a network round trip; a remembered server URL; and `SignReport::timestamp` (`TimestampInfo`: genTime, TSA subject, serial) disclosed in the result. A requested B-T that fails is `SignApplyError::Timestamp` and must be shown as that, never retried as B-B. The feature is strippable: a build without `pdfcer-fetch`'s `download` offers no server field (R8), not a field that fails. |
 
 ### Fonts & rendering
 
@@ -139,7 +141,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 211** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `blocked` — waiting on something named — **2 of 213** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -157,7 +159,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 211** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 213** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -168,7 +170,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **14 of 211** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `declined` — deliberately no surface — **14 of 213** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -208,7 +210,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **151 of 211** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **151 of 213** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

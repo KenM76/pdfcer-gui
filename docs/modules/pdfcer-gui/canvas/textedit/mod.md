@@ -210,19 +210,6 @@ goes through. A build with the variable unset cannot tell it exists; a build
 with it set still has to route the click, resolve the anchor, plan the
 disposition and reach the engine, which is every link the check is about.
 
-### `enum TextEditKind`
-
-One value carried on the tool, for [`MarkupKind`](crate::canvas::markup::MarkupKind)'s
-argument: the operator is doing exactly one of these, so a type that could
-express both would have illegal states to prevent by discipline.
-
-### `fn command_id`
-
-The single binding between an id and a kind, in the shape
-`shell::commands::markup_for_command` has — read from both directions by
-`crate::shell::commands::text_edit_for_command` and by the label the
-status bar shows, so the two cannot drift.
-
 ### `enum Refusal`
 
 Every variant is a *sentence to show*, not a state to be silent in. That is

@@ -10,23 +10,14 @@ pub mod menus;
 pub mod panels;
 pub mod settings;
 
-/// The label and tooltip of every ribbon command. Consumed by
-/// `crate::shell::commands`.
 /// The four sentences the object clipboard can say when it cannot act.
 pub mod clipboard;
 /// Font-glyph coverage: *can the stack actually draw this character?*
 #[cfg(test)]
 pub mod glyphs;
+/// Every sentence the text-editing tool shows: the refusals a caret can meet,
+/// and the disclosure the engine does not write for a pinned tail.
 pub mod textedit;
-/// Every sentence the text-EDITING tool shows: the three refusals a caret can
-/// meet, and the rule-4 disclosure the engine does not write for a pinned tail.
-/// Consumed by `crate::canvas::textedit` and by the `CommitTextEdit` apply arm.
-/// Copy for the three markup kinds that carry words. Its header carries the
-/// one distinction every string in it has to preserve: a text box prints and a
-/// sticky note does not.
-/// Every word the TOOLS say, wherever they are said — the one-line status
-/// strip, the Properties panel's armed-tool section, and the canvas refusals.
-pub mod tool;
 
 #[cfg(test)]
 mod about_tests;

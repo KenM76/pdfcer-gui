@@ -5,6 +5,9 @@
 //! mapping or open document in them. `pdfcer_gui::canvas::textedit`
 //! re-exports them and holds everything that needs the window.
 
+/// Which of the two text verbs is armed.
+pub mod kind;
+
 /// The caret's own arithmetic — insert, delete, and the four movements. Pure
 /// functions of a `&str` and an index, with no window in them; its header says
 /// why that is a seam and not a cut.
