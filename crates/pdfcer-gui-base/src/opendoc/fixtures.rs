@@ -1,4 +1,4 @@
-//! # `app::state::fixtures` — how a test opens a document, and the fixture names
+//! # `opendoc::fixtures` — how a test opens a document, and the fixture names
 //!
 //! `#[cfg(test)]` only: the two openers, and the constants naming the files they
 //! resolve. A constant naming a fixture is meaningless without the function that

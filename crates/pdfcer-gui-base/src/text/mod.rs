@@ -486,3 +486,10 @@ mod tests {
         assert!(message.contains("D:\\"));
     }
 }
+
+/// Every word the two Security controls that **write** protection into a file
+/// say — O119. The WRITE side; [`security`] is the READ side, and the two are
+/// separate modules because they make opposite kinds of claim. Nothing is
+/// duplicated across the seam: this module calls `security`'s wording verbatim
+/// wherever one fact serves both.
+pub mod protect;

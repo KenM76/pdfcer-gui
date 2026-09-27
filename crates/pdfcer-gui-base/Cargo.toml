@@ -45,6 +45,9 @@ egui-shell.workspace = true
 # native-gl: the GL error record the upload ledger attributes.
 native-gl = { path = "../native-gl" }
 
+# native-clipboard: `clipboard::place` puts the ordered formats on the clipboard.
+native-clipboard = { path = "../native-clipboard" }
+
 # native-window: `dialoghost` makes each dialog an OWNED OS window.
 native-window = { path = "../native-window" }
 

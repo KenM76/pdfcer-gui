@@ -1,4 +1,4 @@
-//! # `app::state::ink` — what the render tier needs to know about a page's colour
+//! # `opendoc::ink` — what the render tier needs to know about a page's colour
 //!
 //! The seam: everything else on `OpenDoc` is about the **document** — its
 //! session, pages, selection, caches, and the epoch that invalidates them.

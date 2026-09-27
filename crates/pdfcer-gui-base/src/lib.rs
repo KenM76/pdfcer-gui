@@ -526,3 +526,10 @@ pub mod guidestore;
 
 /// One open document and everything the shell derives from it.
 pub mod opendoc;
+
+/// The bytes a copy-out places, and the order they go in.
+pub mod clipboard;
+
+/// Putting a password on a document, changing what it allows, and taking the
+/// protection off.
+pub mod protect;

@@ -1,4 +1,4 @@
-//! # `app::state::objectcount` — what a document tells the diagnostic channel
+//! # `opendoc::objectcount` — what a document tells the diagnostic channel
 //! # about the page in front of it
 //!
 //! One function, [`OpenDoc::trace_object_count`], and the argument for why the

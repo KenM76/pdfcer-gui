@@ -5,7 +5,7 @@
 //! > like copy and paste vector graphics into word or inkscape for example if
 //! > possible."*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/clipboard.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/clipboard.md`.
 
 pub mod place;
 

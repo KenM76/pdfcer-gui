@@ -1,4 +1,4 @@
-//! # `app::state::renderreq` — what this view is asking the renderer FOR
+//! # `opendoc::renderreq` — what this view is asking the renderer FOR
 //!
 //! `state.rs` answers *what is open and how it is being looked at*. This file
 //! answers the narrower question hanging off the end of it: **given all of

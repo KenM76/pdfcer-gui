@@ -21,7 +21,7 @@ pub mod canvas;
 // the ORDER those programs read. Nothing here places anything yet, and the
 // module header says at length what is missing and why shipping half of it
 // would be worse than shipping none.
-pub mod clipboard;
+pub use pdfcer_gui_base::clipboard;
 // The shell's stationary, screen-anchored surfaces — Print today, Properties
 // and the settings host to come. A dialog is one transaction with a start and
 // an end; a panel is somewhere you dip in and out of. See DIALOGS' own header
@@ -41,7 +41,7 @@ pub mod find;
 pub mod panels;
 /// Putting a password on a document, changing what it allows, and taking the
 /// protection off — `OPERATOR_REQUESTS.md` **O119**, approved 2026-09-04.
-pub mod protect;
+pub use pdfcer_gui_base::protect;
 // Redaction: the apply pipeline and its absence proof, salvaged whole from the
 // old shell — the ONE place that proof exists anywhere, `pdfcer-core` included.
 // See REDACT's own header for the two full rewrites, for why the proof is made

@@ -1,6 +1,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui-base/opendoc/tests.md`.
 #![cfg(test)]
-//! # `app::state::tests` — the document record's own assertions
+//! # `opendoc::tests` — the document record's own assertions
 //!
 //! The inner `#![cfg(test)]` at the top is **load-bearing beyond the
 //! compiler**. `check-ui-strings.sh` recognises that exact attribute as "this

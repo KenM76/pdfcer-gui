@@ -1,4 +1,4 @@
-//! # `app::prefs::file` — the on-disk format
+//! # `prefs::file` — the on-disk format
 //!
 //!
 //! ## Why these two and not some other seam

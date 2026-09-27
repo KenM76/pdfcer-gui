@@ -29,7 +29,7 @@
 //! heard of a page. The rule that a raster placed with no vector in front of it
 //! degrades a Microsoft Word paste to a flat picture is a fact about *Word* and
 //! about the *caller's* intent — it lives with the caller, in
-//! `crates/pdfcer-gui/src/clipboard.rs`, as a predicate on the payload.
+//! `crates/pdfcer-gui-base/src/clipboard.rs`, as a predicate on the payload.
 //!
 //! ⇒ The property that matters: nothing under `src/` names a PDF concept, so a
 //! crate that must never learn what a document is — `egui-shell` — could take

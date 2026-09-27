@@ -1,4 +1,4 @@
-//! # `app::prefs::printing` — what the print dialog remembers between jobs
+//! # `prefs::printing` — what the print dialog remembers between jobs
 //!
 //! Operator request **O166**, 2026-09-10: *"the printer dialogue box needs to
 //! remember our last settings."*

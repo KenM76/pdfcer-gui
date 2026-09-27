@@ -1,4 +1,4 @@
-//! # `app::prefs::tests` — split out under R2 on 2026-08-28
+//! # `prefs::tests` — the preferences record's own assertions
 //!
 //! **The inner `#![cfg(test)]` is load-bearing and is not a duplicate of
 //! the outer `#[cfg(test)] mod tests;`.** Without it, `tools/gates/check-ui-strings.sh`

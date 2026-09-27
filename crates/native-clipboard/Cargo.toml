@@ -56,7 +56,7 @@
 # Also never: a *policy* about which formats matter. The rule that a raster
 # placed without a vector degrades a Word paste to a flat picture is a fact
 # about Word and about the caller's intent, and it lives with the caller —
-# `crates/pdfcer-gui/src/clipboard.rs`'s `degrades_word_to_a_picture`. This
+# `crates/pdfcer-gui-base/src/clipboard.rs`'s `degrades_word_to_a_picture`. This
 # crate refuses an empty transaction and nothing else.
 #
 # DELETED, NOT PORTED. Same disposal as `native-window`: there is no trait and

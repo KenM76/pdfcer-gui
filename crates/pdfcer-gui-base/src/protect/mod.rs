@@ -1,7 +1,7 @@
 //! # `protect` — putting a password on a document, changing what it allows,
 //! and taking the protection off
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/protect/mod.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/protect/mod.md`.
 
 use std::path::{Path, PathBuf};
 
@@ -9,9 +9,9 @@ use pdfcer_core::crypto::{AuthKind, Cipher, PermissionBit};
 use pdfcer_core::document::Document;
 use pdfcer_core::edit::{EditSession, EncryptError, EncryptionSettings};
 
-use crate::app::settings::SettingsExt;
-use crate::app::state::OpenDoc;
+use crate::opendoc::OpenDoc;
 use crate::secret::Secret;
+use crate::settings::SettingsExt;
 
 // ---------------------------------------------------------------------------
 // What the operator asked for

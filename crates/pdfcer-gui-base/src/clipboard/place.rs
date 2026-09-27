@@ -1,11 +1,10 @@
-//! # `clipboard::place` — **the half that was missing, and the transaction it
-//! # makes**
+//! # `clipboard::place` — producing the payload from a document, and placing it
 //!
 //! [`super`] builds the bytes and states the order. This module produces the
 //! payload from a real document and hands the ordered set to
 //! `native_clipboard::place`, which is the crate that owns the `unsafe`.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/clipboard/place.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/clipboard/place.md`.
 
 use super::{ClipFormat, CopyPayload, ORDER, dib_v5, pixels_per_metre, svg_payload};
 
@@ -47,7 +46,7 @@ pub enum Refusal {
 }
 
 /// **Copy the current page — or the selection on it — as vectors.**
-pub fn copy_out(doc: &crate::app::state::OpenDoc) -> Result<Placed, Refusal> {
+pub fn copy_out(doc: &crate::opendoc::OpenDoc) -> Result<Placed, Refusal> {
     let options = render_options(doc);
     let selection = selection_payload(doc, &options);
     // Recorded before the `?`, because the disclosure has to say WHICH
@@ -67,8 +66,8 @@ pub fn copy_out(doc: &crate::app::state::OpenDoc) -> Result<Placed, Refusal> {
 }
 
 /// **The render options both routes use.**
-fn render_options(doc: &crate::app::state::OpenDoc) -> pdfcer_render::RenderOptions {
-    use crate::app::settings::SettingsExt;
+fn render_options(doc: &crate::opendoc::OpenDoc) -> pdfcer_render::RenderOptions {
+    use crate::settings::SettingsExt;
     let mut options = doc
         .settings
         .render_options()
@@ -80,7 +79,7 @@ fn render_options(doc: &crate::app::state::OpenDoc) -> pdfcer_render::RenderOpti
 
 /// The whole current page, in every format [`ORDER`] names.
 fn page_payload(
-    doc: &crate::app::state::OpenDoc,
+    doc: &crate::opendoc::OpenDoc,
     options: &pdfcer_render::RenderOptions,
 ) -> Result<CopyPayload, Refusal> {
     let Some(page) = doc.current_page() else {
@@ -118,7 +117,7 @@ fn page_payload(
     let rendered = pdfcer_render::render_page_with_view(
         &view,
         page,
-        crate::app::actions::imageexport::scale_for(COPY_DPI),
+        crate::imageexport::scale_for(COPY_DPI),
         options,
     )
     .map_err(|error| Refusal::Render(error.to_string()))?;
@@ -128,7 +127,7 @@ fn page_payload(
 
 /// The **selected page objects**, if any are selected.
 fn selection_payload(
-    doc: &crate::app::state::OpenDoc,
+    doc: &crate::opendoc::OpenDoc,
     options: &pdfcer_render::RenderOptions,
 ) -> Option<Result<CopyPayload, Refusal>> {
     let page = doc.view.page_index;
@@ -142,7 +141,7 @@ fn selection_payload(
 /// The selection route's body, split out so [`selection_payload`] is the
 /// three-line question *"is there a selection?"* and this is the answer.
 fn selection_bytes(
-    doc: &crate::app::state::OpenDoc,
+    doc: &crate::opendoc::OpenDoc,
     page: usize,
     objects: &[usize],
     options: &pdfcer_render::RenderOptions,
@@ -203,7 +202,7 @@ fn selection_bytes(
     let rendered = pdfcer_render::render_page_with(
         &clipped,
         page,
-        crate::app::actions::imageexport::scale_for(COPY_DPI),
+        crate::imageexport::scale_for(COPY_DPI),
         options,
     )
     .map_err(|error| Refusal::Render(error.to_string()))?;

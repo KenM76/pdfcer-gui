@@ -2691,6 +2691,7 @@ dependencies = [
  "egui",
  "egui-shell",
  "flate2",
+ "native-clipboard",
  "native-gl",
  "native-window",
  "pdfcer-core",

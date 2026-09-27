@@ -1,4 +1,4 @@
-//! # `app::state::heldpreview` — the preview that outlives the gesture
+//! # `opendoc::heldpreview` — the preview that outlives the gesture
 //!
 //! `OPERATOR_REQUESTS.md` **O63**, third piece. The module owns one question:
 //! **for how long is a picture of the document still true?** A released gesture

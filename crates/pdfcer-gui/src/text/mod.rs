@@ -19,12 +19,6 @@ pub mod formfield;
 /// Font-glyph coverage: *can the stack actually draw this character?*
 #[cfg(test)]
 pub mod glyphs;
-/// Every word the two Security controls that **write** protection into a file
-/// say — O119. The WRITE side; [`security`] is the READ side, and the two are
-/// separate modules because they make opposite kinds of claim. Nothing is
-/// duplicated across the seam: this module calls `security`'s wording verbatim
-/// wherever one fact serves both.
-pub mod protect;
 pub mod redact;
 pub mod textedit;
 /// Every sentence the text-EDITING tool shows: the three refusals a caret can

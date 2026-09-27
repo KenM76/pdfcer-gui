@@ -1,4 +1,4 @@
-# `pdfcer-gui/protect/tests`
+# `pdfcer-gui-base/protect/tests`
 
 ## Item notes
 

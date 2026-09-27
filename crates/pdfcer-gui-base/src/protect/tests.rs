@@ -1,4 +1,4 @@
-//! Design and rationale: `docs/modules/pdfcer-gui/protect/tests.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/protect/tests.md`.
 #![cfg(test)]
 //! # `protect::tests` — the properties this surface must hold, asserted
 //! headlessly
@@ -28,7 +28,7 @@ use super::*;
 use pdfcer_core::page_tree;
 use pdfcer_core::writer::SaveOptions;
 
-use crate::app::state::OpenDoc;
+use crate::opendoc::OpenDoc;
 
 /// The passwords the tests use. Test data, and the fixture's own
 /// `PROVENANCE.md` already publishes the same pair.
@@ -37,7 +37,7 @@ const USER: &[u8] = b"userpw"; // ui-text-exempt: test data, never displayed
 
 /// A plain, unencrypted document to work from.
 fn plain() -> OpenDoc {
-    crate::app::state::open_local_fixture("four-pages.pdf")
+    crate::opendoc::fixtures::open_local_fixture("four-pages.pdf")
 }
 
 /// Build [`Passwords`] from three byte strings.
@@ -190,7 +190,7 @@ fn a_document_that_forbids_printing_does_not_open_with_everything_ticked() {
 /// refused before anything is offered.**
 #[test]
 fn a_signed_document_is_refused_before_the_form_is_drawn() {
-    let doc = crate::app::state::open_local_fixture("signed-two-pages.pdf");
+    let doc = crate::opendoc::fixtures::open_local_fixture("signed-two-pages.pdf");
     let standing = Standing::read(&doc.session, &doc.path);
     assert!(
         standing.signatures > 0,

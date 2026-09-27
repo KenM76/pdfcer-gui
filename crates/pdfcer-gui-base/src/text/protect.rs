@@ -1,7 +1,7 @@
 //! # `text::protect` — every operator-facing string on the two Security
 //! controls that **write** protection into a file
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/protect.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/protect.md`.
 
 use pdfcer_core::crypto::AuthKind;
 
