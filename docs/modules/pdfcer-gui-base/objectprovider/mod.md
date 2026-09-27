@@ -1,4 +1,4 @@
-# `panels::objects::provider` — front-to-back page object decomposition
+# `objectprovider` — front-to-back page object decomposition
 
 The thin `pdfcer-gui` adapter that plugs `pdfcer-core`'s read-only vector
 object model (`pdfcer_core::vector`) into the shell. The shape is fixed:

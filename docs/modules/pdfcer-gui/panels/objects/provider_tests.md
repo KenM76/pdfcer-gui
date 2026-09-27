@@ -1,4 +1,4 @@
-# `provider::tests` — the object model, proved against real content streams
+# `panels::objects::provider_tests` — the object model, proved against real content streams
 
 Every test that was in `provider.rs`'s inline `mod tests`, moved out
 unchanged, plus the eight that arrived with form-XObject descent.

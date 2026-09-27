@@ -1,13 +1,17 @@
-//! # `provider::tests` — the object model, proved against real content streams
+//! # `panels::objects::provider_tests` — the object model, proved against real content streams
 //!
 //! Every test that was in `provider.rs`'s inline `mod tests`, moved out
 //! unchanged, plus the eight that arrived with form-XObject descent.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/panels/objects/provider/tests.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui/panels/objects/provider_tests.md`.
 
 #![cfg(test)]
 
-use super::*;
+use crate::panels::objects::provider::*;
+use egui::{Pos2, Rect};
+use pdfcer_core::vector::{FormMarquee, MarqueeMode, Matrix};
+use pdfcer_render::tiny_skia::Transform;
+
 use pdfcer_core::content::ContentStream;
 use pdfcer_core::vector::{NoXObjects, decompose};
 

@@ -1,4 +1,4 @@
-# `provider::node_rung` — the Point rung's pick sets: anchors and handles
+# `objectprovider::node_rung` — the Point rung's pick sets: anchors and handles
 
 Everything this shell knows about **the points a path is made of**: which
 anchors belong to which subpath, what number each one answers to, which

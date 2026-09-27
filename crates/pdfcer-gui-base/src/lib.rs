@@ -381,3 +381,6 @@ pub mod notepopupmodel;
 
 /// The node marks drawn over a selected path.
 pub mod anchormarks;
+
+/// One page decomposed into selectable objects, parts and nodes.
+pub mod objectprovider;

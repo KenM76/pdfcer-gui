@@ -1,7 +1,7 @@
 //! **The Part rung's unit for a text object: one visual LINE, not one show
 //! operator.**
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/panels/objects/provider/line.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/objectprovider/line.md`.
 
 use std::ops::Range;
 
@@ -164,7 +164,7 @@ impl ObjectModelProvider {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::panels::objects::provider::PartKind;
+    use crate::objectprovider::PartKind;
     use pdfcer_core::span::ByteSpan;
     use pdfcer_core::vector::{
         DecomposeDiagnostics, Matrix, PageObjects, Point, TextBoundsBasis, TextPreview, TextRun,
@@ -175,7 +175,7 @@ mod tests {
     /// The fixture is built by hand, because `decompose` over a content
     /// stream produces NO runs: [`TextObject::runs`] is empty when no run
     /// could be laid out, and the resolver-only entry points have no `/Font`
-    /// resources to lay one out with. That is why `provider::tests`'s two
+    /// resources to lay one out with. That is why `pdfcer_gui::panels::objects::provider_tests`'s two
     /// text fixtures assert `part_count(0) == text_run_count(0)` without ever
     /// naming a number.
     fn text_object(runs: Vec<TextRun>) -> ObjectModelProvider {
@@ -390,11 +390,20 @@ mod tests {
         assert!(!p.text_line_delete_would_move_next(0, 1));
     }
 
+    /// Decompose page 0 of a fixture from this repository's `fixtures/`.
+    fn local_fixture(rel: &str) -> ObjectModelProvider {
+        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures")
+            .join(rel);
+        let doc = pdfcer_core::document::Document::load(&path).expect("the fixture loads");
+        let pages = pdfcer_core::page_tree::pages(&doc).expect("a page tree");
+        ObjectModelProvider::build(&doc.view(), &pages[0], 0).expect("the fixture page decomposes")
+    }
+
     /// **The four answers, on a real document, in one page.**
     #[test]
     fn the_local_fixture_gives_all_four_line_move_answers() {
-        let doc = crate::app::state::open_local_fixture("inherited-runs.pdf");
-        let p = doc.page_objects().expect("the fixture page decomposes");
+        let p = local_fixture("inherited-runs.pdf");
         let object = (0..p.page_objects().objects.len())
             .find(|&i| p.text_line_count(i) > 0)
             .expect("the fixture holds a text object");
@@ -440,8 +449,7 @@ mod tests {
             (297.0, 448.0),
         ];
 
-        let doc = crate::app::state::open_local_fixture("inherited-runs.pdf");
-        let p = doc.page_objects().expect("the fixture page decomposes");
+        let p = local_fixture("inherited-runs.pdf");
         let object = (0..p.page_objects().objects.len())
             .find(|&i| p.text_line_count(i) > 0)
             .expect("the fixture holds a text object");

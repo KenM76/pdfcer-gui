@@ -5,7 +5,11 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/objects/mod.md`.
 
-pub mod provider;
+pub use pdfcer_gui_base::objectprovider as provider;
+#[cfg(test)]
+mod provider_node_rung_tests;
+#[cfg(test)]
+mod provider_tests;
 pub use pdfcer_gui_base::objectsummary as summary;
 #[cfg(test)]
 mod summary_tests;

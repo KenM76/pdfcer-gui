@@ -1,11 +1,11 @@
-//! # `panels::objects::provider` — front-to-back page object decomposition
+//! # `objectprovider` — front-to-back page object decomposition
 //!
 //! The thin `pdfcer-gui` adapter that plugs `pdfcer-core`'s read-only vector
 //! object model (`pdfcer_core::vector`) into the shell. The shape is fixed:
 //! this adapter CALLS INTO the object model, which stays GUI-free; the adapter
 //! owns the trait impl and the object model owns none of it.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/panels/objects/provider/mod.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/objectprovider/mod.md`.
 
 /// **The same questions, asked of either index space** — the `_of` family that
 /// lets the Part and Node rungs be offered for something painted inside a form
@@ -120,7 +120,7 @@ pub struct ObjectModelProvider {
     /// provider was built from parts and nobody supplied one.
     ///
     /// Held for exactly one question:
-    /// [`crate::canvas::target::CanvasTargetProvider::container_is_worth_selecting`],
+    /// `pdfcer_gui::canvas::target::CanvasTargetProvider::container_is_worth_selecting`,
     /// which needs to know whether a form covers the whole sheet. It is
     /// `page_device_geometry(page, 1.0)`'s first two returns, kept alongside
     /// the transform this provider is really built from.
@@ -213,12 +213,8 @@ impl ObjectModelProvider {
     /// Construct directly from parts — the seam the headless unit tests use
     /// (a [`PageObjects`] plus an explicit canvas↔PDF transform), so the
     /// adapter logic is proven without a live `Document` or an egui frame.
-    #[cfg(test)]
-    pub(crate) fn from_parts(
-        page_index: usize,
-        objects: PageObjects,
-        to_canvas: Transform,
-    ) -> Self {
+    #[doc(hidden)]
+    pub fn from_parts(page_index: usize, objects: PageObjects, to_canvas: Transform) -> Self {
         Self {
             page_index,
             objects,
@@ -583,11 +579,3 @@ fn resolve(tolerance: f64) -> f64 {
         FALLBACK_SELECT_TOLERANCE
     }
 }
-
-#[cfg(test)]
-mod tests;
-
-/// The Point rung's pick sets: which points belong to which part, and which
-/// handle belongs to which node.
-#[cfg(test)]
-mod node_rung_tests;

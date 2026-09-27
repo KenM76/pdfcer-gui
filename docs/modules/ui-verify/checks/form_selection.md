@@ -19,7 +19,7 @@ wrapper.
 
 # Why a unit test is not enough here, and this is R1's own argument
 
-`panels::objects::provider::tests` proves the hit test against a real
+`panels::objects::provider_tests` proves the hit test against a real
 decomposition, and those tests are good: they were falsified by putting the
 shallow query back, which turns three of them red. They still cannot see
 four things that stand between the engine's answer and the operator's

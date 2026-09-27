@@ -135,7 +135,7 @@ is published, delete the copy and call it.
 |---|---|---|---|
 | Snap tolerance | 10.0 px, screen space | `snapmark::SNAP_SCREEN_TOLERANCE_PX` (base) | none |
 | Selection tolerance | 6.0 px, screen space | `canvasmapping::SELECT_SCREEN_TOLERANCE_PX` (base) | none |
-| Object fallback tolerance | 3.0 | `panels/objects/provider/mod.rs:272` | none |
+| Object fallback tolerance | 3.0 | `objectprovider::FALLBACK_SELECT_TOLERANCE` (base) | none |
 | Grid pitch | no spacing variable — ladder-derived, floor 8.0 pt | `canvas/grid.rs:73` | none |
 | Grid minor and major alpha | 26 and 56 of 255 | `canvas/grid.rs:82,92` | none |
 | Guide catch radius | 4.0 pt, screen space | `canvas/guides.rs:240` | none |

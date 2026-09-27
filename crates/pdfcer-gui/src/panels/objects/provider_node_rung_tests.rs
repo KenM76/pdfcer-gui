@@ -1,17 +1,21 @@
-//! # `provider::node_rung_tests` — the Part and Node rungs, on real geometry
+//! # `panels::objects::provider_node_rung_tests` — the Part and Node rungs, on real geometry
 //!
 //! The second of `provider.rs`'s two inline test modules, moved out for R2
 //! with its contents unchanged. Kept **separate** from
-//! [`super::tests`](crate::panels::objects::provider::tests) rather than
+//! `panels::objects::provider_tests` rather than
 //! merged, because it was separate before the move and merging two test
 //! modules while relocating them would make a review of the move
 //! indistinguishable from a review of a rewrite.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/panels/objects/provider/node_rung_tests.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui/panels/objects/provider_node_rung_tests.md`.
 
 #![cfg(test)]
 
-use super::*;
+use crate::panels::objects::provider::*;
+use egui::Pos2;
+use pdfcer_core::vector::{Matrix, Point};
+use pdfcer_render::tiny_skia::Transform;
+
 use pdfcer_core::content::ContentStream;
 use pdfcer_core::vector::{Handle, NoXObjects, decompose};
 

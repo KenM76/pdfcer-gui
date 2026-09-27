@@ -1,4 +1,4 @@
-//! # `provider::node_rung` — the Point rung's pick sets: anchors and handles
+//! # `objectprovider::node_rung` — the Point rung's pick sets: anchors and handles
 //!
 //! Everything this shell knows about **the points a path is made of**: which
 //! anchors belong to which subpath, what number each one answers to, which
@@ -6,7 +6,7 @@
 //! those a press lands on. It is the third rung of the selection ladder —
 //! *object → part → point* — answered for the page's own paint order.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/panels/objects/provider/node_rung.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/objectprovider/node_rung.md`.
 
 use egui::Pos2;
 use pdfcer_core::vector::{Handle, Point, Segment, VectorObject};

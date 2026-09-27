@@ -162,7 +162,7 @@ program, so an embedded font would add failure modes (a broken `/Widths`, a bad
 * `tools/ui-verify/src/checks/move_line_of_text.rs` -- `FIXTURE`, `AIMS`. Its
   failure messages cite this file by name, so deleting it breaks a citation a
   reader will follow while a check is red.
-* `crates/pdfcer-gui/src/panels/objects/provider/line.rs` --
+* `crates/pdfcer-gui-base/src/objectprovider/line.rs` --
   `the_local_fixture_gives_all_four_line_move_answers` owns the line table and
   the four refusals; `the_aims_driven_at_this_fixture_land_one_per_line` owns
   every coordinate on this page and the aim points in the harness.

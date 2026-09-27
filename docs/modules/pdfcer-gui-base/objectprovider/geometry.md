@@ -1,4 +1,4 @@
-# `provider::geometry` — **the same questions, asked of either index space**
+# `objectprovider::geometry` — **the same questions, asked of either index space**
 
 `OPERATOR_REQUESTS.md` **O70**, 2026-09-01. Everything here answers *"what
 is inside this thing?"* for a [`TargetId`] rather than for a page

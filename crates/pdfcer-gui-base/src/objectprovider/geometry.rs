@@ -1,11 +1,11 @@
-//! # `provider::geometry` — **the same questions, asked of either index space**
+//! # `objectprovider::geometry` — **the same questions, asked of either index space**
 //!
 //! `OPERATOR_REQUESTS.md` **O70**, 2026-09-01. Everything here answers *"what
 //! is inside this thing?"* for a [`TargetId`] rather than for a page
 //! paint-order index, which is what lets the Part and Node rungs be offered for
 //! something painted inside a form XObject.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/panels/objects/provider/geometry.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/objectprovider/geometry.md`.
 
 use egui::{Pos2, Rect};
 use pdfcer_core::vector::{Point, VectorObject};

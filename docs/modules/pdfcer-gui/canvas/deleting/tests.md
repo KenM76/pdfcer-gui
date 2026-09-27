@@ -14,7 +14,7 @@ That is not a curiosity, it is a trap with teeth: `text_run_count` then
 answers `0`, `text_run_delete_would_move_next` answers `false` because it
 requires `runs.len() > 1`, and a test written that way **passes for the
 wrong reason** — it asserts a routing decision made over an object that has
-no parts. `provider::tests::part_kind_and_part_count_answer_for_every_object_kind`
+no parts. `provider_tests::part_kind_and_part_count_answer_for_every_object_kind`
 hits the same wall: its part count is `0` there, so it asserts the KIND and
 records in a comment that the number is not a measurement.
 

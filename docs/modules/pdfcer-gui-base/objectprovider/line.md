@@ -1,4 +1,4 @@
-# `pdfcer-gui/panels/objects/provider/line`
+# `objectprovider::line`
 
 **The Part rung's unit for a text object: one visual LINE, not one show
 operator.**
