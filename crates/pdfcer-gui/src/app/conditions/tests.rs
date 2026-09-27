@@ -201,7 +201,6 @@ fn every_armable_tool_kind_reports_a_pressed_state() {
 fn the_text_markup_controls_need_a_live_text_selection() {
     use crate::app::tests::opened;
     use crate::canvas::markup::text::TextMarkKind;
-    use crate::canvas::textsel::TextSelection;
     use pdfcer_core::annot_author::Quad;
     use pdfcer_core::page_tree::Rect as PageRect;
 
@@ -231,7 +230,7 @@ fn the_text_markup_controls_need_a_live_text_selection() {
         unreachable!("`opened` opens a document")
     };
     let epoch = doc.edit_epoch;
-    doc.text_selection = Some(TextSelection::for_test(
+    doc.text_selection = Some(crate::canvas::textsel::selection_for_test(
         0,
         epoch,
         vec![Quad::from_rect(PageRect::from_corners(
@@ -263,7 +262,6 @@ fn the_text_markup_controls_need_a_live_text_selection() {
 #[test]
 fn the_formattable_condition_is_the_union_of_the_two_selections() {
     use crate::app::tests::{opened, select_object};
-    use crate::canvas::textsel::TextSelection;
     use pdfcer_core::annot_author::Quad;
     use pdfcer_core::page_tree::Rect as PageRect;
 
@@ -289,7 +287,7 @@ fn the_formattable_condition_is_the_union_of_the_two_selections() {
             unreachable!("`opened` opens a document")
         };
         let epoch = doc.edit_epoch;
-        doc.text_selection = Some(TextSelection::for_test(
+        doc.text_selection = Some(crate::canvas::textsel::selection_for_test(
             0,
             epoch,
             vec![Quad::from_rect(PageRect::from_corners(
@@ -372,7 +370,6 @@ fn delete_is_not_offered_in_a_mode_that_cannot_perform_it() {
 #[test]
 fn the_font_groups_visibility_follows_the_mode_and_its_enablement_the_sweep() {
     use crate::app::tests::opened;
-    use crate::canvas::textsel::TextSelection;
     use pdfcer_core::annot_author::Quad;
     use pdfcer_core::page_tree::Rect as PageRect;
 
@@ -420,7 +417,7 @@ fn the_font_groups_visibility_follows_the_mode_and_its_enablement_the_sweep() {
         unreachable!("`opened` opens a document")
     };
     let epoch = doc.edit_epoch;
-    doc.text_selection = Some(TextSelection::for_test(
+    doc.text_selection = Some(crate::canvas::textsel::selection_for_test(
         0,
         epoch,
         vec![Quad::from_rect(PageRect::from_corners(
@@ -444,7 +441,7 @@ fn the_font_groups_visibility_follows_the_mode_and_its_enablement_the_sweep() {
 fn in_edit_the_text_tool_makes_the_text_markup_controls_reachable() {
     use crate::app::tests::opened;
     use crate::canvas::markup::text::TextMarkKind;
-    use crate::canvas::textsel::{self, TextSelection};
+    use crate::canvas::textsel;
     use crate::canvas::tool::{self, CanvasTool};
     use pdfcer_core::annot_author::Quad;
     use pdfcer_core::page_tree::Rect as PageRect;
@@ -482,7 +479,7 @@ fn in_edit_the_text_tool_makes_the_text_markup_controls_reachable() {
         unreachable!("`opened` opens a document")
     };
     let epoch = doc.edit_epoch;
-    doc.text_selection = Some(TextSelection::for_test(
+    doc.text_selection = Some(crate::canvas::textsel::selection_for_test(
         0,
         epoch,
         vec![Quad::from_rect(PageRect::from_corners(

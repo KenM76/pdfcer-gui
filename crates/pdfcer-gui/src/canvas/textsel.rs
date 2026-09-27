@@ -30,6 +30,7 @@ pub mod gate;
 /// **How a selection's glyph cells become the boxes it paints and marks** — the
 /// accumulation half of §5, in the two frames §8 made necessary.
 use pdfcer_gui_base::textselbands as bands;
+use pdfcer_gui_base::textselection::ordered;
 
 /// **The rotated-text page §8's rules are tested on** — test-only.
 #[cfg(test)]
@@ -50,143 +51,7 @@ const GLYPH_ASCENT: f32 = 0.85;
 /// effective font size. The descender half of [`GLYPH_ASCENT`]'s pairing.
 const GLYPH_DESCENT: f32 = 0.22;
 
-/// **A range of characters on one page, and everything derived from it.**
-#[derive(Debug, Clone, PartialEq)]
-pub struct TextSelection {
-    /// Which page the range is on. A selection is single-page — module header
-    /// §4 — so this is a fact about the whole value rather than about one end.
-    pub page: usize,
-    /// Where the gesture started. Held so a drag or a Shift+click can extend
-    /// **from** it: the anchor is the end the operator is not moving, and
-    /// re-deriving it from the quads would be impossible once the focus has
-    /// crossed it.
-    anchor: TextPosition,
-    /// Where the pointer is now. The end a drag moves.
-    focus: TextPosition,
-    /// The [`crate::app::state::OpenDoc::edit_epoch`] the positions above were
-    /// resolved against. See the module header §7 — this is the whole of the
-    /// staleness mechanism.
-    epoch: u64,
-    /// The selected glyphs' boxes, **in canvas space**, one per line of the
-    /// selection.
-    ///
-    /// Canvas space (Y-down, page top-left, `/Rotate` applied) rather than PDF
-    /// user space, and projected once here rather than per frame, for the
-    /// reason `crate::find::Hit::canvas` gives for doing the same: page
-    /// geometry cannot change while a document is open, so the answer is
-    /// constant for the life of the selection, and the paint path becomes a
-    /// projection with no PDF concepts in it at all.
-    ///
-    /// One box per line rather than one per glyph — a hundred adjacent
-    /// rectangles paint as one band anyway, and merging them is what lets a
-    /// selection over a paragraph cost four boxes instead of four hundred.
-    pub quads: Vec<Rect>,
-    /// **The same boxes, in PDF user space** — ready to become a text
-    /// markup's `/QuadPoints`.
-    ///
-    /// One entry per entry of [`Self::quads`], in the same order, from the same
-    /// accumulation in [`resolve`]. Not a conversion *of* that field and not a
-    /// second walk: the walk produces one `Vec` of PDF-space rectangles and both
-    /// of these are built from it, which is what makes *"what is highlighted is
-    /// what is marked"* true by construction rather than by two functions
-    /// agreeing. Module header §5.1 carries the argument, including why
-    /// inverting the canvas projection at the authoring site is the wrong answer
-    /// on a rotated page.
-    ///
-    /// `Quad` rather than `Rect` because that is the type
-    /// [`pdfcer_core::annot_author::MarkupSpec::TextMarkup`] takes, and building
-    /// it here — once, from the rectangle the glyphs actually produced — leaves
-    /// the authoring site with nothing geometric to decide.
-    pub page_quads: Vec<Quad>,
-    /// **Exactly the characters those boxes cover**, ready for the clipboard.
-    ///
-    /// Includes the engine's derived word spaces and line breaks, because they
-    /// are runs in their own right and the walk passes straight through them —
-    /// which is what makes a copied paragraph read as a paragraph rather than
-    /// as one unbroken word.
-    pub text: String,
-}
-
-impl TextSelection {
-    /// Whether this selection still describes the revision it was made
-    /// against.
-    #[must_use]
-    pub fn live(&self, epoch: u64) -> bool {
-        self.epoch == epoch
-    }
-
-    /// **Which runs of the page's extraction this selection covers**, low
-    /// to high, or nothing when the revision has moved.
-    #[must_use]
-    pub fn runs(&self, epoch: u64) -> Vec<usize> {
-        if !self.live(epoch) {
-            return Vec::new();
-        }
-        let (start, end) = ordered(self.anchor, self.focus);
-        (start.run..=end.run).collect()
-    }
-
-    /// The quads to paint on `page`, or nothing at all.
-    #[must_use]
-    pub fn highlights(&self, page: usize, epoch: u64) -> &[Rect] {
-        if self.page == page && self.live(epoch) {
-            &self.quads
-        } else {
-            &[]
-        }
-    }
-
-    /// A selection built from nothing but a page, a revision and a list of
-    /// page-space boxes — for the tests of the modules that **consume** one.
-    #[cfg(test)]
-    #[must_use]
-    pub fn for_test(page: usize, epoch: u64, page_quads: Vec<Quad>) -> Self {
-        let quads = page_quads
-            .iter()
-            .map(|q| {
-                Rect::from_min_max(
-                    Pos2::new(q.ll.0 as f32, q.ll.1 as f32),
-                    Pos2::new(q.ur.0 as f32, q.ur.1 as f32),
-                )
-            })
-            .collect();
-        Self {
-            page,
-            anchor: TextPosition::new(0, 0),
-            focus: TextPosition::new(0, 0),
-            epoch,
-            quads,
-            page_quads,
-            // Not read by anything this constructor exists for; a copy is what
-            // `resolve` produces from real runs, and inventing plausible prose
-            // here would make a test look like it was about the text when it is
-            // about the geometry.
-            text: String::new(),
-        }
-    }
-
-    /// **The quads a text markup would be authored from**, or nothing at all.
-    #[must_use]
-    pub fn marks(&self, epoch: u64) -> &[Quad] {
-        if self.live(epoch) {
-            &self.page_quads
-        } else {
-            &[]
-        }
-    }
-
-    /// How many characters are selected. For the trace line and for tests.
-    #[must_use]
-    pub fn len(&self) -> usize {
-        self.text.len()
-    }
-
-    /// Whether the selection covers nothing.
-    #[must_use]
-    pub fn is_empty(&self) -> bool {
-        self.text.is_empty()
-    }
-}
+pub use pdfcer_gui_base::textselection::TextSelection;
 
 /// The facts about one page that every entry point below needs.
 #[derive(Clone, Copy)]
@@ -292,7 +157,7 @@ pub fn reresolve(ctx: &PageContext<'_>, previous: &TextSelection) -> Option<Text
         return None;
     }
     let model = model(ctx);
-    let renewed = resolve(&model, ctx, previous.anchor, previous.focus)?;
+    let renewed = resolve(&model, ctx, previous.anchor(), previous.focus())?;
     (renewed.text == previous.text).then_some(renewed)
 }
 
@@ -380,7 +245,7 @@ pub fn click(
         return resolve(&model, ctx, start, end);
     }
     if shift && let Some(current) = current.filter(|c| c.page == ctx.index && c.live(ctx.epoch)) {
-        return resolve(&model, ctx, current.anchor, at);
+        return resolve(&model, ctx, current.anchor(), at);
     }
     // A plain click collapses the range onto one caret slot, which covers no
     // glyphs, so `resolve` answers `None` and the caller clears. Expressed as a
@@ -628,24 +493,9 @@ fn resolve(
         return None;
     }
 
-    Some(TextSelection {
-        page: ctx.index,
-        anchor,
-        focus,
-        epoch: ctx.epoch,
-        quads,
-        page_quads,
-        text,
-    })
-}
-
-/// The two positions in content order.
-fn ordered(a: TextPosition, b: TextPosition) -> (TextPosition, TextPosition) {
-    if (a.run, a.byte_offset) <= (b.run, b.byte_offset) {
-        (a, b)
-    } else {
-        (b, a)
-    }
+    Some(TextSelection::new(
+        ctx.index, anchor, focus, ctx.epoch, quads, page_quads, text,
+    ))
 }
 
 /// **Answer the text selection's own two chords, Ctrl+A and Ctrl+C.**
@@ -673,3 +523,30 @@ pub fn keys(
 
 #[cfg(test)]
 mod tests;
+
+/// A selection built from nothing but a page, a revision and a list of
+/// page-space boxes — for the tests of the modules that **consume** one.
+#[cfg(test)]
+#[must_use]
+pub fn selection_for_test(page: usize, epoch: u64, page_quads: Vec<Quad>) -> TextSelection {
+    let quads = page_quads
+        .iter()
+        .map(|q| {
+            Rect::from_min_max(
+                Pos2::new(q.ll.0 as f32, q.ll.1 as f32),
+                Pos2::new(q.ur.0 as f32, q.ur.1 as f32),
+            )
+        })
+        .collect();
+    // The text is empty: a copy is what `resolve` produces from real runs,
+    // and these tests are about the geometry.
+    TextSelection::new(
+        page,
+        TextPosition::new(0, 0),
+        TextPosition::new(0, 0),
+        epoch,
+        quads,
+        page_quads,
+        String::new(),
+    )
+}

@@ -508,3 +508,6 @@ pub mod annotselection;
 
 /// The canvas selection: the chosen objects, the rung they were chosen at, their cached outlines, and the selected annotation..
 pub mod selectionstate;
+
+/// A run of selected page text: its two ends in the text model, the edit epoch it was resolved at, and its highlight geometry..
+pub mod textselection;

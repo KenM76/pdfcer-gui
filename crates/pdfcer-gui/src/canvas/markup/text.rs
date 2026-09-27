@@ -184,7 +184,7 @@ mod tests {
 
     /// A selection over `lines` lines of the given page, stamped with `epoch`.
     fn selection(page: usize, epoch: u64, lines: usize) -> TextSelection {
-        TextSelection::for_test(
+        crate::canvas::textsel::selection_for_test(
             page,
             epoch,
             (0..lines).map(|i| quad(700.0 - 12.0 * i as f64)).collect(),
@@ -368,7 +368,7 @@ mod tests {
     /// engine geometry that draws nothing.
     #[test]
     fn a_selection_with_no_boxes_authors_nothing() {
-        let empty = TextSelection::for_test(0, 1, Vec::new());
+        let empty = crate::canvas::textsel::selection_for_test(0, 1, Vec::new());
         assert_eq!(
             mark(TextMarkKind::Underline, Some(&empty), 1, pen()),
             Err(Refusal::NoQuads)
