@@ -29,7 +29,7 @@
 //! in the same crate as the type — the methods are the same public API at the
 //! same paths they were at before the split, and no caller changed.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/file.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/prefs/file.md`.
 
 use super::*;
 

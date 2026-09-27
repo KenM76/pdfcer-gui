@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/prefs/exporting/tests`
+# `pdfcer-gui-base/prefs/exporting/tests`
 
 ## Item notes
 

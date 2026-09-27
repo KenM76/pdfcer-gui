@@ -5,13 +5,10 @@
 //! remember the user's setting."* This file holds the notation the preferences
 //! file uses for it, in the shape [`super::fonts`] holds its own.
 //!
-//! ## Why the default is not written here
+//! ## Why the default is magenta
 //!
-//! `pdfcer_gui::canvas::ocrlayer::DEFAULT_COLOUR` is the one home, and the
-//! painter's module is the right one because the *reason* for the value is a
-//! rendering argument — magenta is a colour a scanned drawing is unlikely to
-//! contain. A second literal here would be a number that drifts from the
-//! sentence justifying it.
+//! [`DEFAULT_COLOUR`] is a colour a scanned drawing is unlikely to
+//! contain, so recognised text drawn in it cannot be mistaken for ink.
 //!
 //! ## Why hex, and why a bad value is reported rather than replaced
 //!
@@ -62,3 +59,6 @@ pub fn format(rgb: [u8; 3]) -> String {
     let [r, g, b] = rgb;
     format!("#{r:02X}{g:02X}{b:02X}")
 }
+
+/// The colour the overlay is drawn in until the operator chooses another.
+pub const DEFAULT_COLOUR: [u8; 3] = [204, 0, 153];

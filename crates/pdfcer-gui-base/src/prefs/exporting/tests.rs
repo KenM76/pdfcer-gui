@@ -10,7 +10,7 @@
 //!    `BadValue` note on the next launch — which reads as pdfcer forgetting
 //!    them, the exact complaint this module answers.
 //! 3. **Every field is written AND parsed.** Source-text completeness, the same
-//!    instrument [`crate::app::prefs::printing`] uses, for the same reason: a
+//!    instrument [`crate::prefs::printing`] uses, for the same reason: a
 //!    field added to a struct and to nothing else is a preference that is
 //!    silently inert, and no compiler diagnoses it.
 //! 4. **Out-of-range clamps; unreadable is reported.** The ruling inherited
@@ -23,7 +23,7 @@
 //! in `ui_text` — exclusion 2b in that gate. It is the same line every
 //! other split test file in this crate carries.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/exporting/tests.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/prefs/exporting/tests.md`.
 #![cfg(test)]
 
 use super::*;
@@ -239,7 +239,7 @@ fn fields_of(source: &str, decl: &str) -> Vec<String> {
 #[test]
 fn every_field_of_every_group_is_both_written_and_parsed() {
     let own = std::fs::read_to_string(
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/app/prefs/exporting.rs"),
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/prefs/exporting.rs"),
     )
     .expect("this module's own source");
 
@@ -305,8 +305,8 @@ fn every_field_of_every_group_is_both_written_and_parsed() {
 #[test]
 fn every_remembered_field_is_read_back_by_its_dialog() {
     let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
-    let own = std::fs::read_to_string(src.join("app/prefs/exporting.rs"))
-        .expect("this module's own source");
+    let own =
+        std::fs::read_to_string(src.join("prefs/exporting.rs")).expect("this module's own source");
 
     // (struct declaration, dialog source, the reader's signature, the item
     //  that follows the reader, how many fields the struct declares)
@@ -349,7 +349,7 @@ fn every_remembered_field_is_read_back_by_its_dialog() {
             fields.len()
         );
 
-        let dialog = std::fs::read_to_string(src.join(dialog_path))
+        let dialog = std::fs::read_to_string(src.join("../../pdfcer-gui/src").join(dialog_path))
             .unwrap_or_else(|_| panic!("the source of {dialog_path}")); // ui-text-exempt: test panic, never displayed
         let (_, after) = dialog
             .split_once(reader)
@@ -374,7 +374,8 @@ fn every_remembered_field_is_read_back_by_its_dialog() {
 #[test]
 fn the_dragvalue_ranges_are_the_constants_the_file_clamps_to() {
     let dialog = std::fs::read_to_string(
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/dialogs/export_image.rs"),
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../pdfcer-gui/src/dialogs/export_image.rs"),
     )
     .expect("the Export-image window's source");
 

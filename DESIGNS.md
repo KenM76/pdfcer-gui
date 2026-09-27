@@ -377,7 +377,7 @@ keyed by a `/BaseFont` the document already names, never an offer list.
   kind is known at scan time: decide there, and when a face is filtered out, the
   count of what was filtered belongs in the popup's disclosure. A silently short
   list is the defect wearing the other coat.
-- **`use_os_fonts` defaults to `false`** (`app/prefs/mod.rs`), so the second
+- **`use_os_fonts` defaults to `false`** (`pdfcer-gui-base/src/prefs/mod.rs`), so the second
   group is empty until the operator finds a Settings checkbox. Default it to
   `true`. This is the same ruling as O180's trimming tick: defaulting it off
   fixes the report only for people who go looking in Settings.

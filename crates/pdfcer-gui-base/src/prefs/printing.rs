@@ -3,11 +3,11 @@
 //! Operator request **O166**, 2026-09-10: *"the printer dialogue box needs to
 //! remember our last settings."*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/printing.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/prefs/printing.md`.
 
 use pdfcer_render::AnnotationScope;
 
-use crate::dialogs::print::spooler::{Duplex, Orientation, PageSubset, PaperChoice, ScaleMode};
+use crate::printspooler::{Duplex, Orientation, PageSubset, PaperChoice, ScaleMode};
 
 /// The lowest resolution ceiling the file will accept, in DPI.
 pub const MIN_PRINT_DPI: u32 = 36;
@@ -28,7 +28,7 @@ pub const MAX_PRINT_COPIES: u16 = 999;
 // rather than a mirrored set is the point of this module, and inheriting their
 // trait bounds is part of the deal.
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct PrintPrefs {
+pub struct PrintPrefs {
     /// The printer's Windows name, or `None` if none has been used yet.
     ///
     /// # By NAME, never by index
@@ -43,9 +43,9 @@ pub(crate) struct PrintPrefs {
     /// is what this build did before this preference existed. Deliberately
     /// silent: a printer being gone is not a fault in the file, and a note
     /// about it on every launch would outlive its usefulness by years.
-    pub(crate) printer: Option<String>,
+    pub printer: Option<String>,
     /// Sheet orientation.
-    pub(crate) orientation: Orientation,
+    pub orientation: Orientation,
     /// Two-sided printing.
     ///
     /// Restored even onto a device that cannot do it. The dialog reads
@@ -53,53 +53,53 @@ pub(crate) struct PrintPrefs {
     /// device says no — so the value sits unused and comes back the moment the
     /// operator returns to a duplex printer, which is the behaviour they would
     /// expect from having set it once.
-    pub(crate) duplex: Duplex,
+    pub duplex: Duplex,
     /// Ask the driver to pick the input tray from each page's size.
-    pub(crate) pick_tray_by_page_size: bool,
+    pub pick_tray_by_page_size: bool,
     /// The paper **policy** — never a specific form id. See the module header.
-    pub(crate) paper: PaperChoice,
+    pub paper: PaperChoice,
     /// How each page is sized onto the sheet.
-    pub(crate) scale: ScaleMode,
+    pub scale: ScaleMode,
     /// The custom percentage, kept whether or not custom is the live mode — for
     /// the same reason the dialog keeps it across mode switches, so that
     /// switching away and back does not lose a typed number.
-    pub(crate) custom_percent: u32,
+    pub custom_percent: u32,
     /// Which classes of annotation print.
-    pub(crate) scope: AnnotationScope,
+    pub scope: AnnotationScope,
     /// Rendering resolution ceiling, in DPI.
-    pub(crate) max_dpi: u32,
+    pub max_dpi: u32,
     /// How many copies.
-    pub(crate) copies: u16,
+    pub copies: u16,
     /// `true` when copies come out uncollated.
-    pub(crate) uncollated: bool,
+    pub uncollated: bool,
     /// Odd/even filtering.
     ///
     /// ⚠ Arguably a property of a *job* rather than of an operator — but
     /// manual two-sided printing on a simplex device is exactly the workflow
     /// that makes it a habit, and that workflow is the reason the control
     /// exists. It is remembered, and the control shows its state plainly.
-    pub(crate) subset: PageSubset,
+    pub subset: PageSubset,
     /// Print back to front.
-    pub(crate) reverse: bool,
+    pub reverse: bool,
     /// Poster mode and its settings.
-    pub(crate) poster: PosterPrefs,
+    pub poster: PosterPrefs,
     /// One fixed line width instead of the document's weights (O233).
-    pub(crate) lines: LineWidthPrefs,
+    pub lines: LineWidthPrefs,
 }
 
 /// Print every line at one width.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) struct LineWidthPrefs {
+pub struct LineWidthPrefs {
     /// Replace the document's line weights with one width.
-    pub(crate) fixed: bool,
+    pub fixed: bool,
     /// Let pdfcer choose the width; see `dialogs::print::lines::AUTO_MM`.
-    pub(crate) auto: bool,
+    pub auto: bool,
     /// The typed width on paper, millimetres, used when `auto` is off.
-    pub(crate) width_mm: f64,
+    pub width_mm: f64,
 }
 
 /// The typed width's range, millimetres — the dialog's and the file's.
-pub(crate) const LINE_WIDTH_MM_RANGE: std::ops::RangeInclusive<f64> = 0.01..=5.0;
+pub const LINE_WIDTH_MM_RANGE: std::ops::RangeInclusive<f64> = 0.01..=5.0;
 
 impl Default for LineWidthPrefs {
     /// Off, so a print carries the document's real weights (O137); Auto
@@ -115,25 +115,25 @@ impl Default for LineWidthPrefs {
 
 /// Poster printing: one page across many sheets.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) struct PosterPrefs {
+pub struct PosterPrefs {
     /// Poster mode instead of the Size mode's scale radios.
-    pub(crate) on: bool,
+    pub on: bool,
     /// Magnification before tiling, percent.
-    pub(crate) tile_percent: u32,
+    pub tile_percent: u32,
     /// Shared border duplicated onto neighbouring sheets, millimetres.
-    pub(crate) overlap_mm: f64,
+    pub overlap_mm: f64,
     /// Cut marks in the sheet's band.
-    pub(crate) cut_marks: bool,
+    pub cut_marks: bool,
     /// The assembly label in the sheet's band.
-    pub(crate) labels: bool,
+    pub labels: bool,
     /// Tile only pages too large for one sheet.
-    pub(crate) large_only: bool,
+    pub large_only: bool,
 }
 
 /// The tile scale's range, percent — the dialog's and the file's.
-pub(crate) const POSTER_PERCENT_RANGE: std::ops::RangeInclusive<u32> = 10..=5_000;
+pub const POSTER_PERCENT_RANGE: std::ops::RangeInclusive<u32> = 10..=5_000;
 /// The overlap's range, millimetres — the dialog's and the file's.
-pub(crate) const POSTER_OVERLAP_MM_RANGE: std::ops::RangeInclusive<f64> = 0.0..=100.0;
+pub const POSTER_OVERLAP_MM_RANGE: std::ops::RangeInclusive<f64> = 0.0..=100.0;
 
 impl Default for PosterPrefs {
     /// Off; 100 %, no overlap, no marks, no labels, every page tiled — the
@@ -181,7 +181,7 @@ impl Default for PrintPrefs {
 
 /// The file token for a sheet orientation.
 #[must_use]
-pub(crate) const fn orientation_key(value: Orientation) -> &'static str {
+pub const fn orientation_key(value: Orientation) -> &'static str {
     match value {
         // ui-text-exempt: file VALUES, written not displayed.
         Orientation::Auto => "auto",
@@ -194,7 +194,7 @@ pub(crate) const fn orientation_key(value: Orientation) -> &'static str {
 
 /// A sheet orientation from its file token, or `None` if unrecognised.
 #[must_use]
-pub(crate) fn orientation_from_key(token: &str) -> Option<Orientation> {
+pub fn orientation_from_key(token: &str) -> Option<Orientation> {
     match token.trim() {
         // ui-text-exempt: file VALUES, parsed not displayed.
         "auto" => Some(Orientation::Auto),
@@ -208,7 +208,7 @@ pub(crate) fn orientation_from_key(token: &str) -> Option<Orientation> {
 
 /// The file token for two-sided printing.
 #[must_use]
-pub(crate) const fn duplex_key(value: Duplex) -> &'static str {
+pub const fn duplex_key(value: Duplex) -> &'static str {
     match value {
         // ui-text-exempt: file VALUES, written not displayed.
         Duplex::Simplex => "off",
@@ -221,7 +221,7 @@ pub(crate) const fn duplex_key(value: Duplex) -> &'static str {
 
 /// Two-sided printing from its file token, or `None` if unrecognised.
 #[must_use]
-pub(crate) fn duplex_from_key(token: &str) -> Option<Duplex> {
+pub fn duplex_from_key(token: &str) -> Option<Duplex> {
     match token.trim() {
         // ui-text-exempt: file VALUES, parsed not displayed.
         "off" => Some(Duplex::Simplex),
@@ -235,7 +235,7 @@ pub(crate) fn duplex_from_key(token: &str) -> Option<Duplex> {
 
 /// The file token for a paper **policy**.
 #[must_use]
-pub(crate) const fn paper_key(value: PaperChoice) -> &'static str {
+pub const fn paper_key(value: PaperChoice) -> &'static str {
     match value {
         // ui-text-exempt: file VALUES, written not displayed.
         PaperChoice::DeviceDefault | PaperChoice::Form(_) => "device",
@@ -246,7 +246,7 @@ pub(crate) const fn paper_key(value: PaperChoice) -> &'static str {
 
 /// A paper policy from its file token, or `None` if unrecognised.
 #[must_use]
-pub(crate) fn paper_from_key(token: &str) -> Option<PaperChoice> {
+pub fn paper_from_key(token: &str) -> Option<PaperChoice> {
     match token.trim() {
         // ui-text-exempt: file VALUES, parsed not displayed.
         "device" => Some(PaperChoice::DeviceDefault),
@@ -261,7 +261,7 @@ pub(crate) fn paper_from_key(token: &str) -> Option<PaperChoice> {
 /// The custom percentage is **not** in this token; it has its own key. See the
 /// module header.
 #[must_use]
-pub(crate) const fn scale_key(value: ScaleMode) -> &'static str {
+pub const fn scale_key(value: ScaleMode) -> &'static str {
     match value {
         // ui-text-exempt: file VALUES, written not displayed.
         ScaleMode::Fit => "fit",
@@ -276,7 +276,7 @@ pub(crate) const fn scale_key(value: ScaleMode) -> &'static str {
 
 /// A scale mode from its file token, or `None` if unrecognised.
 #[must_use]
-pub(crate) fn scale_from_key(token: &str) -> Option<ScaleMode> {
+pub fn scale_from_key(token: &str) -> Option<ScaleMode> {
     match token.trim() {
         // ui-text-exempt: file VALUES, parsed not displayed.
         "fit" => Some(ScaleMode::Fit),
@@ -292,7 +292,7 @@ pub(crate) fn scale_from_key(token: &str) -> Option<ScaleMode> {
 
 /// The file token for odd/even filtering.
 #[must_use]
-pub(crate) const fn subset_key(value: PageSubset) -> &'static str {
+pub const fn subset_key(value: PageSubset) -> &'static str {
     match value {
         // ui-text-exempt: file VALUES, written not displayed.
         PageSubset::All => "all",
@@ -305,7 +305,7 @@ pub(crate) const fn subset_key(value: PageSubset) -> &'static str {
 
 /// Odd/even filtering from its file token, or `None` if unrecognised.
 #[must_use]
-pub(crate) fn subset_from_key(token: &str) -> Option<PageSubset> {
+pub fn subset_from_key(token: &str) -> Option<PageSubset> {
     match token.trim() {
         // ui-text-exempt: file VALUES, parsed not displayed.
         "all" => Some(PageSubset::All),
@@ -319,7 +319,7 @@ pub(crate) fn subset_from_key(token: &str) -> Option<PageSubset> {
 
 /// The file token for which classes of annotation print.
 #[must_use]
-pub(crate) const fn scope_key(value: AnnotationScope) -> &'static str {
+pub const fn scope_key(value: AnnotationScope) -> &'static str {
     match value {
         // ui-text-exempt: file VALUES, written not displayed.
         AnnotationScope::ContentOnly => "content-only",
@@ -340,7 +340,7 @@ pub(crate) const fn scope_key(value: AnnotationScope) -> &'static str {
 
 /// Which classes of annotation print, from a file token, or `None`.
 #[must_use]
-pub(crate) fn scope_from_key(token: &str) -> Option<AnnotationScope> {
+pub fn scope_from_key(token: &str) -> Option<AnnotationScope> {
     match token.trim() {
         // ui-text-exempt: file VALUES, parsed not displayed.
         "content-only" => Some(AnnotationScope::ContentOnly),
@@ -852,19 +852,19 @@ mod tests {
         let here = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
 
         // --- the field list, straight out of the struct above -------------
-        let own = std::fs::read_to_string(here.join("app/prefs/printing.rs"))
+        let own = std::fs::read_to_string(here.join("prefs/printing.rs"))
             .expect("this module's own source");
         let (_, after) = own
-            .split_once("pub(crate) struct PrintPrefs {")
+            .split_once("pub struct PrintPrefs {")
             .expect("the struct declaration, verbatim");
         let (body, _) = after.split_once("\n}").expect("the end of the struct");
         let fields: Vec<&str> = body
             .lines()
             .filter_map(|line| {
                 let line = line.trim();
-                // `pub(crate) name: Type,` — and nothing else. Doc comments,
+                // `pub name: Type,` — and nothing else. Doc comments,
                 // ordinary comments and blank lines all fall out here.
-                let rest = line.strip_prefix("pub(crate) ")?;
+                let rest = line.strip_prefix("pub ")?;
                 let (name, _) = rest.split_once(':')?;
                 Some(name)
             })
@@ -877,8 +877,9 @@ mod tests {
         );
 
         // --- the body of `PrintDialog::open` -------------------------------
-        let dialog = std::fs::read_to_string(here.join("dialogs/print/mod.rs"))
-            .expect("the print dialog's source");
+        let dialog =
+            std::fs::read_to_string(here.join("../../pdfcer-gui/src/dialogs/print/mod.rs"))
+                .expect("the print dialog's source");
         let (_, after) = dialog
             .split_once("pub(super) fn open(doc: &OpenDoc, remembered:")
             .expect("the constructor's signature, verbatim");

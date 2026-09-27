@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/prefs/file`
+# `pdfcer-gui-base/prefs/file`
 
 ## Item notes
 

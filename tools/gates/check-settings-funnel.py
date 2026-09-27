@@ -168,6 +168,7 @@ HANDLERS_NOT_CONSUMERS = (
     "dialogs/settings/",
     "app/settings_window.rs",
     "app/prefs/",
+    "prefs/",
 )
 
 #: The exemption marker, and the minimum length of the reason after it.

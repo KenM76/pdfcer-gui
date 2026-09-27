@@ -6,21 +6,21 @@
 //! user-visible string that should live in `ui_text` — exclusion 2b in that
 //! gate. It is the same line every other split test file in this crate carries.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/tests.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/prefs/tests.md`.
 #![cfg(test)]
 
 use super::*;
 // O166's group stores the print dialog's OWN types rather than a mirrored set
 // -- see `prefs::printing`'s header on why -- so the tests that build a
 // non-default `PrintPrefs` name them at their real home.
-use crate::dialogs::print::spooler::{Duplex, Orientation, PageSubset, PaperChoice, ScaleMode};
+use crate::printspooler::{Duplex, Orientation, PageSubset, PaperChoice, ScaleMode};
 // O196's three groups store the export windows' OWN types, identically, so the
 // tests that build a non-default `ExportPrefs` name them at their real homes --
 // two of which are the engine's, because a DXF's units and its text policy are
 // the engine's vocabulary and mirroring them here is what `exporting`'s header
 // forbids.
-use crate::app::actions::exporttext::{LineEndings, PageSeparator};
-use crate::app::actions::imageexport::{ImageFormat, PageScope};
+use crate::exporttext::{LineEndings, PageSeparator};
+use crate::imageexport::{ImageFormat, PageScope};
 use crate::viewer::{FitMode, ViewState};
 use pdfcer_core::export::dxf::{DxfText, DxfUnits};
 
@@ -167,7 +167,7 @@ fn every_preference_round_trips_through_the_file() {
                         subset: PageSubset::Even,
                         reverse: true,
                         // Every poster field off its default.
-                        poster: crate::app::prefs::printing::PosterPrefs {
+                        poster: crate::prefs::printing::PosterPrefs {
                             on: true,
                             tile_percent: 275,
                             overlap_mm: 12.5,
@@ -176,7 +176,7 @@ fn every_preference_round_trips_through_the_file() {
                             large_only: true,
                         },
                         // Every line-width field off its default.
-                        lines: crate::app::prefs::printing::LineWidthPrefs {
+                        lines: crate::prefs::printing::LineWidthPrefs {
                             fixed: true,
                             auto: false,
                             width_mm: 0.35,
@@ -657,7 +657,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
             subset: PageSubset::Odd,
             reverse: true,
             // The ends of the ranges, where a writer's formatting breaks.
-            poster: crate::app::prefs::printing::PosterPrefs {
+            poster: crate::prefs::printing::PosterPrefs {
                 on: true,
                 tile_percent: 5_000,
                 overlap_mm: 0.1,
@@ -665,7 +665,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
                 labels: true,
                 large_only: false,
             },
-            lines: crate::app::prefs::printing::LineWidthPrefs {
+            lines: crate::prefs::printing::LineWidthPrefs {
                 fixed: true,
                 auto: true,
                 width_mm: 5.0,

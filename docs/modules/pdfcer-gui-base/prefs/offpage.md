@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/prefs/offpage`
+# `pdfcer-gui-base/prefs/offpage`
 
 **Whether the canvas grows to show what sits off the sheet — remembered
 separately for each ribbon mode.**

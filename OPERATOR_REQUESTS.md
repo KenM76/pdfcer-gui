@@ -2655,7 +2655,7 @@ design problem.
 
 | what | where |
 |---|---|
-| twelve export preferences, read and written | `app/prefs/exporting.rs`, `ExportImagePrefs` / `ExportTextPrefs` / `ExportDxfPrefs` |
+| twelve export preferences, read and written | `pdfcer-gui-base/src/prefs/exporting.rs`, `ExportImagePrefs` / `ExportTextPrefs` / `ExportDxfPrefs` |
 | each window seeded from them | `dialogs/export_image.rs`, `dialogs/export_text.rs`, `dialogs/export_dxf.rs`, each `open(doc, remembered)` |
 | each window traces the values it **built with** | `export-image-open`, `export-text-open`, `export-dxf-open` |
 | the driven check | `tools/ui-verify/src/checks/export_remembered.rs` |

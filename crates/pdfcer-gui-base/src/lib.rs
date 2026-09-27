@@ -514,3 +514,9 @@ pub mod textselection;
 
 /// The per-document caches an open document carries: each a cell keyed by page and edit epoch, filled on first read..
 pub mod doccache;
+
+/// The shell's own preferences and their on-disk format.
+pub mod prefs;
+
+/// The page-thumbnail render budget.
+pub mod pagebudget;

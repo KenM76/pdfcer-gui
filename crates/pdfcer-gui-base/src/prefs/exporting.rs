@@ -6,12 +6,12 @@
 //! deliberately a port of [`super::printing`] rather than a fresh design, down
 //! to the shape of its token functions and the position of its `remember` call.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/exporting.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/prefs/exporting.md`.
 
 use pdfcer_core::export::dxf::{DxfText, DxfUnits};
 
-use crate::app::actions::exporttext::{LineEndings, PageSeparator};
-use crate::app::actions::imageexport::{ImageFormat, PageScope};
+use crate::exporttext::{LineEndings, PageSeparator};
+use crate::imageexport::{ImageFormat, PageScope};
 
 use super::printing::KeyOutcome;
 

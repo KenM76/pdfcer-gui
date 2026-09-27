@@ -1,4 +1,4 @@
-# `app::prefs` — the shell's own preferences, as distinct from the engine's settings
+# `prefs` — the shell's own preferences, as distinct from the engine's settings
 
 ## Why this is not `pdfcer_core::settings`
 

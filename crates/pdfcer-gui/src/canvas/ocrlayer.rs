@@ -21,11 +21,10 @@ pub const MAX_FONT_PX: f32 = 160.0;
 /// Font sizes are rounded to this, in points.
 pub const FONT_SIZE_QUANTUM_PX: f32 = 0.5;
 
+pub use pdfcer_gui_base::ocrlayerpref::DEFAULT_COLOUR;
+
 /// Where the overlay's colour lives while the program runs. Memory key.
 const COLOUR_KEY: &str = "pdfcer.ocr-layer.colour"; // ui-text-exempt: a memory key, never displayed
-
-/// The colour the overlay is drawn in until the operator chooses another.
-pub const DEFAULT_COLOUR: [u8; 3] = [204, 0, 153];
 
 /// The colour the overlay is drawn in, as the operator left it.
 #[must_use]

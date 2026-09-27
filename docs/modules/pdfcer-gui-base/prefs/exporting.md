@@ -1,4 +1,4 @@
-# `app::prefs::exporting` — what the three export windows remember
+# `prefs::exporting` — what the three export windows remember
 
 Operator request **O196**, 2026-09-13: *"the export windows forget every
 setting."* Three windows, one complaint, and it is the same complaint
