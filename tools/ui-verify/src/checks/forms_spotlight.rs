@@ -260,7 +260,7 @@ fn form_fixture() -> Option<std::path::PathBuf> {
 
 /// Click a ribbon tab, then the item on it, following it into the overflow if
 /// the group has collapsed.
-fn open_from_tab(
+pub(crate) fn open_from_tab(
     session: &Session,
     driver: &Driver,
     ui_rect: &str,

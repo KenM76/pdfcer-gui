@@ -157,13 +157,13 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions:
     // clicked for. Both are answers to "why did that not happen where I
     // expected?", and both belong before the thing they are about rather than
     // after it — the same placement rule the document-wide disclosures follow.
-    fill_disclosure(ui, doc);
-    canvas_routing(ui, doc, fill_refusal);
-
     // Collected while `form` is borrowed, converted to actions at the end —
     // the actions-not-mutations discipline, and the same shape
     // `crate::panels::layers` uses for its checkbox.
     let mut edits: Vec<FormEdit> = Vec::new();
+
+    fill_disclosure(ui, doc, &mut edits);
+    canvas_routing(ui, doc, fill_refusal);
 
     calculated_fields(ui, &view, fill_refusal, &mut edits);
     reset_section(ui, doc, fill_refusal, &mut edits);
@@ -266,7 +266,7 @@ fn header(ui: &mut egui::Ui, form: &AcroForm, fill_refusal: Option<&'static str>
 
 /// **The off-canvas home for the two things a fill decides and the document
 /// cannot afterwards be asked.**
-fn fill_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
+fn fill_disclosure(ui: &mut egui::Ui, doc: &OpenDoc, edits: &mut Vec<FormEdit>) {
     let Some(disclosure) = edit::last_fill_disclosure(doc.edit_epoch) else {
         return;
     };
@@ -286,7 +286,23 @@ fn fill_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
             t::forms_fill_autosize_note(&disclosure.field, size),
         );
     }
+    if let Some(value) = disclosure.password_withheld {
+        ui.label(t::forms_fill_password_withheld_note(&disclosure.field));
+        let store = ui
+            .button(t::forms_store_password_button())
+            .on_hover_text(t::forms_store_password_tooltip());
+        crate::diag::ui_rect_visible(REGION_STORE_PASSWORD, store.rect, ui.clip_rect());
+        if store.clicked() {
+            edits.push(FormEdit::FillTextStoringPassword {
+                field: disclosure.field,
+                value,
+            });
+        }
+    }
 }
+
+/// The *save it anyway* button under a withheld-password note.
+pub const REGION_STORE_PASSWORD: &str = "forms.fill.store_password";
 
 /// **Where the fields that cannot be clicked on the page went.**
 fn canvas_routing(ui: &mut egui::Ui, doc: &OpenDoc, fill_refusal: Option<&'static str>) {

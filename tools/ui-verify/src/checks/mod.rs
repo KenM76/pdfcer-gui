@@ -531,6 +531,7 @@ pub mod canvas_choice_fill;
 pub mod option_arrows;
 
 pub mod forms_spotlight;
+pub mod password_fill;
 
 /// **Selecting a page object names the layer it is on** — O126's third
 /// feature, driven at last. Its header carries the vacuous-pass argument for

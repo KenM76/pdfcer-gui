@@ -673,6 +673,35 @@ pub fn forms_fill_unencodable_note(field: &str, count: usize) -> String {
     )
 }
 
+/// Rule-4 disclosure: a password field was filled and **nothing was stored**.
+#[must_use]
+pub fn forms_fill_password_withheld_note(field: &str) -> String {
+    format!(
+        "“{field}” is a password field, so what you typed was not saved in the file. The page \
+         shows one * per character, and the box here reads empty."
+    )
+}
+
+/// Disclosure: turning Password on removed the value the field held.
+#[must_use]
+pub fn field_password_value_removed(field: &str) -> String {
+    format!(
+        "“{field}” is now a password field, so the value it held has been removed from the file."
+    )
+}
+
+/// The button that stores a withheld password after all.
+#[must_use]
+pub fn forms_store_password_button() -> &'static str {
+    "Save it in the file anyway"
+}
+
+/// Hover text on [`forms_store_password_button`].
+#[must_use]
+pub fn forms_store_password_tooltip() -> &'static str {
+    "Stores what you typed as plain text in the file. Anyone who opens the file can read it."
+}
+
 /// Tooltip on a form-wide control disabled by a certification signature.
 #[must_use]
 pub fn forms_structural_certification_disabled_tooltip() -> &'static str {

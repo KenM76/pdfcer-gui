@@ -174,6 +174,9 @@ pub(super) fn edit_properties(
             if let Some(why) = outcome.value_no_longer_fits {
                 lines.push(why);
             }
+            if outcome.password_value_removed {
+                lines.push(crate::text::forms::field_password_value_removed(&field));
+            }
             if outcome.sort_claim_unmet {
                 lines.push(crate::text::forms::field_sort_claim_unmet().to_owned());
             }
@@ -353,10 +356,16 @@ pub(super) fn import_data(doc: &mut OpenDoc, path: &std::path::Path) {
                     outcome.applied, outcome.skipped
                 )
             });
-            vec![crate::text::export_form::imported(
+            let mut lines = vec![crate::text::export_form::imported(
                 outcome.applied,
                 outcome.skipped,
-            )]
+            )];
+            if outcome.password_values_withheld > 0 {
+                lines.push(crate::text::export_form::import_passwords_withheld(
+                    outcome.password_values_withheld,
+                ));
+            }
+            lines
         })
     });
 }

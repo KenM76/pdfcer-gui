@@ -64,13 +64,20 @@ pub struct FillDisclosure {
     pub applied_autosize_bound: Option<pdfcer_core::vartext::AutoFitBound>,
     /// How many characters had no `WinAnsi` code and were replaced with `?`.
     pub unencodable_chars: usize,
+    /// The typed value of a password field, which the fill did not store.
+    ///
+    /// `Some` only when the engine withheld it. Held so the panel can offer to
+    /// store it after all; it lives only as long as this disclosure does.
+    pub password_withheld: Option<String>,
 }
 
 impl FillDisclosure {
     /// Whether there is anything here worth a sentence.
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.applied_autosize.is_none() && self.unencodable_chars == 0
+        self.applied_autosize.is_none()
+            && self.unencodable_chars == 0
+            && self.password_withheld.is_none()
     }
 }
 
@@ -167,6 +174,9 @@ pub fn apply(doc: &mut OpenDoc, edit: &FormEdit) {
             //
             let disclosed_size = disclosed.as_ref().and_then(|d| d.applied_autosize);
             let disclosed_bound = disclosed.as_ref().and_then(|d| d.applied_autosize_bound);
+            let withheld = disclosed
+                .as_ref()
+                .is_some_and(|d| d.password_withheld.is_some());
             record_fill_disclosure(disclosed.map(|d| FillDisclosure {
                 epoch: doc.edit_epoch,
                 ..d
@@ -184,7 +194,8 @@ pub fn apply(doc: &mut OpenDoc, edit: &FormEdit) {
                 let bound = disclosed_bound.map_or("none", bound_token);
                 let size = disclosed_size.map_or_else(|| "none".to_owned(), |s| format!("{s:.1}"));
                 format!(
-                    "{label} commands={commands} epoch={} autosize={size} bound={bound}",
+                    "{label} commands={commands} epoch={} autosize={size} bound={bound} \
+                     password_withheld={withheld}",
                     doc.edit_epoch
                 )
             });
@@ -206,6 +217,7 @@ fn scope_of(doc: &OpenDoc, edit: &FormEdit) -> Option<usize> {
     let field_name = match edit {
         FormEdit::FillText { field, .. }
         | FormEdit::ConvertRichTextToPlain { field, .. }
+        | FormEdit::FillTextStoringPassword { field, .. }
         | FormEdit::SetButtonState { field, .. }
         | FormEdit::SetChoice { field, .. } => field.as_str(),
         // The four whole-form verbs. Listed rather than wildcarded so a fifth
@@ -284,8 +296,9 @@ const fn bound_token(bound: pdfcer_core::vartext::AutoFitBound) -> &'static str 
 ///
 /// `epoch` is filled in by [`apply`], which is the only place that knows the
 /// revision the disclosure will be read against — see the comment there.
-fn disclosure_of(field: &str, out: &FillOutcome) -> FillDisclosure {
+fn disclosure_of(field: &str, value: &str, out: &FillOutcome) -> FillDisclosure {
     FillDisclosure {
+        password_withheld: out.password_value_withheld.then(|| value.to_owned()),
         field: field.to_owned(),
         epoch: 0,
         applied_autosize: out.applied_autosize,
@@ -302,14 +315,21 @@ fn run(session: &mut EditSession, edit: &FormEdit) -> Result<Applied, EditError>
             let out = session.fill_text_field(field, value)?;
             Ok(Applied {
                 commands: 1,
-                disclosed: Some(disclosure_of(field, &out)),
+                disclosed: Some(disclosure_of(field, value, &out)),
             })
         }
         FormEdit::ConvertRichTextToPlain { field, value } => {
             let out = session.fill_text_field_downgrading_rich_text(field, value)?;
             Ok(Applied {
                 commands: 1,
-                disclosed: Some(disclosure_of(field, &out)),
+                disclosed: Some(disclosure_of(field, value, &out)),
+            })
+        }
+        FormEdit::FillTextStoringPassword { field, value } => {
+            let out = session.fill_text_field_storing_password(field, value)?;
+            Ok(Applied {
+                commands: 1,
+                disclosed: Some(disclosure_of(field, value, &out)),
             })
         }
         FormEdit::SetButtonState { field, state } => {
@@ -355,7 +375,7 @@ fn run(session: &mut EditSession, edit: &FormEdit) -> Result<Applied, EditError>
             let mut last = None;
             for (field, value) in changes {
                 let out = session.fill_text_field(field, value)?;
-                last = Some(disclosure_of(field, &out));
+                last = Some(disclosure_of(field, value, &out));
                 written += 1;
             }
             Ok(Applied {
@@ -604,6 +624,7 @@ mod tests {
             applied_autosize: Some(12.0),
             applied_autosize_bound: Some(pdfcer_core::vartext::AutoFitBound::Height),
             unencodable_chars: 0,
+            password_withheld: None,
         }));
         assert!(last_fill_disclosure(7).is_some());
         assert!(
@@ -619,6 +640,7 @@ mod tests {
             applied_autosize: None,
             applied_autosize_bound: None,
             unencodable_chars: 0,
+            password_withheld: None,
         }));
         assert!(
             last_fill_disclosure(7).is_none(),

@@ -83,6 +83,12 @@ fn fill_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
             d.unencodable_chars,
         ));
     }
+    if d.password_withheld.is_some() {
+        if !line.is_empty() {
+            line.push(' ');
+        }
+        line.push_str(&t_forms::forms_fill_password_withheld_note(&d.field));
+    }
     if line.is_empty() {
         return;
     }

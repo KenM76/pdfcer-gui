@@ -291,6 +291,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(pages_drag::PagesDragShowsWhereItLands),
         Box::new(tab_order_drag::TabOrderDragMovesAFieldAndShowsWhere),
         Box::new(forms_spotlight::ClickingAFormRowLightsTheFieldOnThePage),
+        Box::new(password_fill::ATypedPasswordIsNotSavedUnlessAsked),
         Box::new(display_two_rows::TheDisplayButtonsStackInTwoRows),
         Box::new(title_build_stamp::TheTitleBarCarriesTheBuildTime),
         Box::new(field_shading::FillableFieldsAreShadedOnThePage),

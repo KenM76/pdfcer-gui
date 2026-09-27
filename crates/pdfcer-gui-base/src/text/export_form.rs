@@ -55,6 +55,15 @@ pub fn imported(applied: usize, skipped: usize) -> String {
     }
 }
 
+/// Disclosure: password fields in an import were filled but not saved.
+#[must_use]
+pub fn import_passwords_withheld(count: usize) -> String {
+    format!(
+        "{count} of those are password field(s): they show the typed characters as *, but the \
+         values were not saved in the file."
+    )
+}
+
 /// The file could not be read from disk.
 #[must_use]
 pub fn import_unreadable(detail: &str) -> String {

@@ -33,6 +33,19 @@ pub enum FormEdit {
         /// The plain text to keep — the field's existing `/V`.
         value: String,
     },
+    /// Write `value` into the password field named `field` **and store it in
+    /// the file as plain text**.
+    ///
+    /// A separate variant because it is a separate act: an ordinary fill of a
+    /// password field stores nothing (§12.7.4.3), and this one is offered only
+    /// behind its own button after that has been disclosed. Calls
+    /// `fill_text_field_storing_password`.
+    FillTextStoringPassword {
+        /// The field's fully-qualified name.
+        field: String,
+        /// The plain text to store.
+        value: String,
+    },
     /// Select `state` on the check box or radio group named `field`.
     ///
     /// One variant for both, because it is one verb: a check box is a
@@ -116,6 +129,7 @@ impl FormEdit {
         match self {
             Self::FillText { .. } => "form-fill-text",
             Self::ConvertRichTextToPlain { .. } => "form-convert-rich-text",
+            Self::FillTextStoringPassword { .. } => "form-fill-storing-password",
             Self::SetButtonState { .. } => "form-set-button-state",
             Self::SetChoice { .. } => "form-set-choice",
             Self::Recompute { .. } => "form-recompute",

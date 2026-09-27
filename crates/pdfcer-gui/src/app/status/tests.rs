@@ -228,6 +228,7 @@ fn the_bar_is_exactly_as_tall_open_as_closed() {
             // taller" assertion easier to pass for the wrong reason.
             applied_autosize_bound: Some(pdfcer_core::vartext::AutoFitBound::Height),
             unencodable_chars: 3,
+            password_withheld: None,
         },
     );
     // The precondition, asserted rather than assumed. Without this the
