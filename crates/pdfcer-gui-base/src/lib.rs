@@ -496,3 +496,6 @@ pub mod guidemodel;
 
 /// The action vocabulary: one variant per operator intent.
 pub mod appaction;
+
+/// The live geometry preview a gesture draws, in page space, and the hold that keeps it on screen until the raster catches up..
+pub mod shapepreview;

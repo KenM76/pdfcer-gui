@@ -23,21 +23,7 @@
 
 use super::OpenDoc;
 
-/// A live shape preview kept on screen while the page raster catches up.
-///
-/// See [`OpenDoc::held_preview`] for why this exists at all.
-pub(crate) struct HeldPreview {
-    /// The geometry, exactly as the gesture last drew it.
-    pub shape: crate::canvas::shapes::ShapePreview,
-    /// `edit_epoch` at the moment the gesture released — **before** the commit.
-    ///
-    /// The liveness test compares against this rather than against the epoch
-    /// the commit produced, because the commit has not happened yet when this is
-    /// stored: actions are drained *after* the frame that raised them.
-    pub captured_at_epoch: u64,
-    /// When it was captured, for the backstop.
-    pub since: std::time::Instant,
-}
+pub(crate) use pdfcer_gui_base::shapepreview::HeldPreview;
 
 /// How long a held preview may survive before it is dropped regardless.
 const HELD_PREVIEW_MAX: std::time::Duration = std::time::Duration::from_secs(4);
