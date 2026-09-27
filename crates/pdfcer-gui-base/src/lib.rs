@@ -536,3 +536,6 @@ pub mod protect;
 
 /// **Tests only** — the engine properties a render past the page edge stands on.
 pub mod rasteroffpage;
+
+/// Searching the page text, and bringing a hit onto the screen.
+pub mod find;

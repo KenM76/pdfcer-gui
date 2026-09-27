@@ -1,4 +1,4 @@
-//! Design and rationale: `docs/modules/pdfcer-gui/find/mod_tests.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/find/mod_tests.md`.
 #![cfg(test)]
 //! # `find::mod_tests` - what the find state machine promises, proved headlessly
 //!
@@ -22,7 +22,7 @@
 //! `#![cfg(test)]` is the FIRST line of the file, so nothing here reaches a
 //! release build and the module costs the shipped binary nothing.
 use super::*;
-use crate::app::state::{FOUR_PAGES, open_fixture};
+use crate::opendoc::fixtures::{FOUR_PAGES, open_fixture};
 
 /// A state with `hits` hits on page `page`, already searched for `query`.
 fn searched(query: &str, page: usize, hits: usize) -> FindState {
@@ -113,16 +113,6 @@ fn the_word_rule_and_the_whole_word_flag_are_independent() {
     };
     assert!(both.to_core().whole_word);
     assert_eq!(both.to_core().word_boundary, WordBoundary::NonSpace);
-}
-
-/// Every rule the chooser offers is a real variant, and the list is the
-/// whole of what a `#[non_exhaustive]` enum lets this crate name.
-#[test]
-fn every_word_rule_the_chooser_offers_has_a_label() {
-    assert_eq!(FindOptions::WORD_RULES.len(), 3);
-    for rule in FindOptions::WORD_RULES {
-        assert!(!bar::word_rule_label(*rule).is_empty());
-    }
 }
 
 // =======================================================================

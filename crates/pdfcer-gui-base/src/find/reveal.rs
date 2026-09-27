@@ -7,23 +7,23 @@
 //! scroll solve, and the projection from PDF geometry into the space the
 //! canvas paints in.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/find/reveal.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/find/reveal.md`.
 
 use egui::{Rect, Vec2};
 
-use crate::app::state::OpenDoc;
-use crate::canvas::geometry;
 use crate::find::FindState;
+use crate::opendoc::OpenDoc;
 use crate::viewer::FitMode;
+use crate::viewgeometry as geometry;
 
 /// How many frames a pending [`Reveal`] waits for its page to arrive before
 /// it is abandoned.
 const REVEAL_GRACE_FRAMES: u8 = 4;
 
-pub use pdfcer_gui_base::scrolltarget::Reveal;
+pub use crate::scrolltarget::Reveal;
 
 /// Navigate to the current hit: the page, then the scroll position.
-pub(super) fn reveal_current(state: &FindState, doc: &mut OpenDoc) {
+pub fn reveal_current(state: &FindState, doc: &mut OpenDoc) {
     let Some(hit) = state.current_hit(doc.edit_epoch) else {
         return;
     };
@@ -96,7 +96,7 @@ pub(super) fn reveal_current(state: &FindState, doc: &mut OpenDoc) {
     // divides by the page EXTENT rather than by its drawn size, which is
     // exactly what makes the value independent of the zoom and therefore
     // recordable now and spendable on a later frame.
-    let frac = crate::canvas::zoom::frac_of(centre, extent);
+    let frac = crate::viewgeometry::frac_of(centre, extent);
     doc.find_reveal = Some(Reveal {
         page,
         frac,
@@ -187,7 +187,7 @@ pub fn take_reveal_offset(
 
 /// Project a core [`pdfcer_core::annot_author::Quad`] — **unrotated PDF user
 /// space, Y-up** — into a canvas-space rectangle.
-pub(crate) fn quad_to_canvas(
+pub fn quad_to_canvas(
     quad: &pdfcer_core::annot_author::Quad,
     page: &pdfcer_core::page_tree::Page,
 ) -> Option<Rect> {
@@ -211,7 +211,7 @@ pub(crate) fn quad_to_canvas(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::state::{FOUR_PAGES, open_fixture};
+    use crate::opendoc::fixtures::{FOUR_PAGES, open_fixture};
 
     // =======================================================================
     // Projecting a quad
@@ -320,7 +320,7 @@ mod tests {
     /// The local four-page fixture, already settled on page 1 under `fit`,
     /// with a find state whose *Zoom* control is at `zoom_on_jump`.
     fn settled(fit: FitMode, zoom_on_jump: bool) -> (FindState, OpenDoc) {
-        let mut doc = crate::app::state::open_local_fixture("four-pages.pdf");
+        let mut doc = crate::opendoc::fixtures::open_local_fixture("four-pages.pdf");
         doc.view.set_fit(fit);
         land_on(&mut doc, 0);
         let mut state = FindState::default();

@@ -355,24 +355,7 @@ fn every_glyph_the_find_bar_draws_has_a_glyph() {
 /// A bar showing the answer to a search for `query` that found `hits`
 /// hits, all on page 0.
 pub(super) fn searched(query: &str, hits: usize) -> FindState {
-    let mut state = FindState::default();
-    state.open();
-    state.query_mut().push_str(query);
-    state.results = Some(crate::find::Results {
-        query: query.to_owned(),
-        options: FindOptions::default(),
-        epoch: 0,
-        hits: (0..hits)
-            .map(|_| crate::find::Hit {
-                page: 0,
-                canvas: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(10.0, 10.0))),
-                text: query.to_owned(),
-            })
-            .collect(),
-        current: 0,
-        unsearchable_fonts: 0,
-    });
-    state
+    FindState::searched(query, hits, 0)
 }
 
 /// Run one frame of the row and return the actions it raised.
@@ -473,4 +456,14 @@ fn closing_the_bar_is_not_a_document_action() {
     state.open();
     state.close();
     assert!(!state.is_open());
+}
+
+/// Every rule the chooser offers is a real variant, and the list is the
+/// whole of what a `#[non_exhaustive]` enum lets this crate name.
+#[test]
+fn every_word_rule_the_chooser_offers_has_a_label() {
+    assert_eq!(crate::find::FindOptions::WORD_RULES.len(), 3);
+    for rule in crate::find::FindOptions::WORD_RULES {
+        assert!(!crate::find::bar::word_rule_label(*rule).is_empty());
+    }
 }

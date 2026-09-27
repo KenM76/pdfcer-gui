@@ -136,19 +136,7 @@ pub fn anchor_point(pointer: Option<Pos2>, frame: &CanvasFrame) -> Pos2 {
     frame.map.to_page(screen)
 }
 
-/// A canvas-space point as a fraction of the page's drawn size — the form
-/// [`ZoomAnchor`] carries.
-#[must_use]
-pub fn frac_of(point: Pos2, extent: (f32, f32)) -> (f32, f32) {
-    fn axis(v: f32, extent: f32) -> f32 {
-        if extent.is_finite() && extent > 0.0 && v.is_finite() {
-            v / extent
-        } else {
-            0.5
-        }
-    }
-    (axis(point.x, extent.0), axis(point.y, extent.1))
-}
+pub use pdfcer_gui_base::viewgeometry::frac_of;
 
 /// An anchor that **holds** the point at `frac` exactly where it is now — the
 /// wheel's and the discrete commands' shape.

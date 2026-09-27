@@ -568,16 +568,7 @@ pub fn draw_resize_ghost(
 // Find highlights
 // ---------------------------------------------------------------------------
 
-/// One search hit, ready to paint.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct FindHighlight {
-    /// The hit's box in canvas space — Y-down, page top-left, `/Rotate`
-    /// applied. The same space the selection outlines are cached in, so it
-    /// projects through the same [`PageMapping`].
-    pub rect: Rect,
-    /// Whether this is the hit the position readout is counting.
-    pub current: bool,
-}
+pub use pdfcer_gui_base::find::FindHighlight;
 
 /// How opaque a non-current hit's wash is, out of 255.
 const HIT_ALPHA: u8 = 40;

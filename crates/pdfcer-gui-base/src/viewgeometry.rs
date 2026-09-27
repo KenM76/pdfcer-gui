@@ -859,3 +859,17 @@ pub fn pdf_rect_to_canvas(
     // is not minimal is empty rather than wrong-looking.
     Some(egui::Rect::from_two_pos(a, b))
 }
+
+/// A canvas-space point as a fraction of the page's drawn size — the form
+/// a zoom anchor carries.
+#[must_use]
+pub fn frac_of(point: egui::Pos2, extent: (f32, f32)) -> (f32, f32) {
+    fn axis(v: f32, extent: f32) -> f32 {
+        if extent.is_finite() && extent > 0.0 && v.is_finite() {
+            v / extent
+        } else {
+            0.5
+        }
+    }
+    (axis(point.x, extent.0), axis(point.y, extent.1))
+}

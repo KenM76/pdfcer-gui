@@ -18,7 +18,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/find/bar/unsearchable_tests.md`.
 #![cfg(test)]
 
-use super::tests::searched;
 use super::*;
 
 /// **Nothing is said when nothing is wrong.** The guard that keeps this
@@ -54,10 +53,7 @@ fn the_ocr_offer_and_the_note_are_not_alternatives() {
 /// **A sentence about one search cannot outlive that search.**
 #[test]
 fn a_result_that_no_longer_describes_the_bar_discloses_nothing() {
-    let mut state = searched("alpha", 0);
-    if let Some(r) = state.results.as_mut() {
-        r.unsearchable_fonts = 2;
-    }
+    let mut state = FindState::searched("alpha", 0, 2);
     assert_eq!(
         state.unsearchable_fonts(0),
         2,
