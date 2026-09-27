@@ -502,3 +502,9 @@ pub mod shapepreview;
 
 /// A scroll the view still owes: a destination point, a minimum region to reveal, or a find hit, each waiting for a frame that shows its page..
 pub mod scrolltarget;
+
+/// An annotation the operator has selected on the canvas: which one, and where its outline sits..
+pub mod annotselection;
+
+/// The canvas selection: the chosen objects, the rung they were chosen at, their cached outlines, and the selected annotation..
+pub mod selectionstate;
