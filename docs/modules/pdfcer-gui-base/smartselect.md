@@ -1,4 +1,4 @@
-# `canvas::smart` — **click selects the whole thing; double-click goes
+# `smartselect` — **click selects the whole thing; double-click goes
 # inside it**
 
 ## The request

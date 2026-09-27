@@ -2640,7 +2640,7 @@ Cited: `text/panels/properties.rs:415-417`, `panels/pages/mod.rs:203`, `panels/d
 **The driven check to extend, not duplicate:** `tools/ui-verify/src/checks/smart_select.rs`
 hard-codes `const MODE: &str = "edit"` at `:100`. Parameterise it.
 
-Cited: `canvas/input.rs:195`, `canvas/clicking.rs:592`, `canvas/textsel/gate.rs:272-273`, `canvas/clicking.rs:444-449`, `gate.rs:338-341`, `app/frame.rs:430`, `canvas/smart.rs:146-149`, `app/conditions/armed.rs:146-147`, `app/modes/capability.rs:20-23`, `capability.rs:116-130`, `clicking.rs:572-584`, `input.rs:196`, `app/conditions/mod.rs:759-761`, `app/dispatch.rs:1397`, `capability.rs:32-45`, `shell/commands/tests.rs:274`, `shell/commands/catalog/view.rs:338`, `shell/manifest/view.rs:271`, `shell/manifest/rail.rs:261`, `app/dispatch/navigate.rs:121`, `rail.rs:431-466`, `MODES_AND_PANELS.md:554-564`, `left_rail.rs:277`.
+Cited: `canvas/input.rs:195`, `canvas/clicking.rs:592`, `canvas/textsel/gate.rs:272-273`, `canvas/clicking.rs:444-449`, `gate.rs:338-341`, `app/frame.rs:430`, `smartselect.rs:146-149` (base), `app/conditions/armed.rs:146-147`, `app/modes/capability.rs:20-23`, `capability.rs:116-130`, `clicking.rs:572-584`, `input.rs:196`, `app/conditions/mod.rs:759-761`, `app/dispatch.rs:1397`, `capability.rs:32-45`, `shell/commands/tests.rs:274`, `shell/commands/catalog/view.rs:338`, `shell/manifest/view.rs:271`, `shell/manifest/rail.rs:261`, `app/dispatch/navigate.rs:121`, `rail.rs:431-466`, `MODES_AND_PANELS.md:554-564`, `left_rail.rs:277`.
 
 ## O196 — ◑ **FOUND, not yet reported by the operator** — three export windows forget every setting, and nothing in the program remembers them
 

@@ -393,3 +393,6 @@ pub mod pickdepth;
 
 /// A selection as four integers, never a position.
 pub mod selectionidentity;
+
+/// Click selects the whole thing; double-click goes inside it.
+pub mod smartselect;

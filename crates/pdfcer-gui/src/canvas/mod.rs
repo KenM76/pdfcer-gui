@@ -276,7 +276,9 @@ pub mod selection;
 /// **Smart-Selector** — a click selects a container, a double-click goes
 /// inside it. `OPERATOR_REQUESTS.md` O70, following Inkscape's group context,
 /// which is the convention the operator named.
-pub mod smart;
+pub use pdfcer_gui_base::smartselect as smart;
+#[cfg(test)]
+mod smart_tests;
 // The GUI half of snapping: the zoom-invariant catch radius, the master/Alt
 // gates, the Tab cycle, the two-click confirm, and the indicator glyph.
 /// **The shape itself, following your hand** — the live geometry preview
