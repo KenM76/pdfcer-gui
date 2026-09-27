@@ -135,13 +135,13 @@ pub const fn orientation_landscape() -> &'static str {
 /// Label for the custom width field.
 #[must_use]
 pub const fn custom_width() -> &'static str {
-    "Width (mm)"
+    "Width"
 }
 
 /// Label for the custom height field.
 #[must_use]
 pub const fn custom_height() -> &'static str {
-    "Height (mm)"
+    "Height"
 }
 
 /// The sheet that will land, in both units.

@@ -10,6 +10,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/dialogs/new_document.md`.
 
 use egui::Ui;
+use pdfcer_gui_base::entry;
 
 use crate::app::actions::Action;
 use crate::text::new_document as t;
@@ -237,11 +238,13 @@ impl NewDocumentDialog {
             ui.add_space(8.0);
             ui.horizontal(|ui| {
                 ui.label(t::custom_width());
-                ui.add(egui::DragValue::new(&mut self.custom_w_mm).range(0..=MAX_CUSTOM_MM));
+                let (widget, refusal) = mm_box(ui, &mut self.custom_w_mm);
+                refusal.show(ui.add(widget.range(0..=MAX_CUSTOM_MM)));
             });
             ui.horizontal(|ui| {
                 ui.label(t::custom_height());
-                ui.add(egui::DragValue::new(&mut self.custom_h_mm).range(0..=MAX_CUSTOM_MM));
+                let (widget, refusal) = mm_box(ui, &mut self.custom_h_mm);
+                refusal.show(ui.add(widget.range(0..=MAX_CUSTOM_MM)));
             });
         }
 
@@ -290,6 +293,17 @@ impl NewDocumentDialog {
             }
         });
     }
+}
+
+/// A millimetre box: shows `mm`, reads a typed unit or arithmetic.
+fn mm_box<'a>(ui: &mut Ui, value: &'a mut i64) -> (egui::DragValue<'a>, entry::Refusal) {
+    entry::drag_value(
+        ui,
+        value,
+        entry::Kind::Length(entry::LengthUnit::Of(
+            pdfcer_core::dimension::Unit::Millimeter,
+        )),
+    )
 }
 
 #[cfg(test)]
