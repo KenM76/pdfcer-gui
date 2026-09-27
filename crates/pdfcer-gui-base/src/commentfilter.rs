@@ -1,11 +1,11 @@
-//! # `panels::comments::filter` — narrowing the reviewer's work list
+//! # `commentfilter` — narrowing the reviewer's work list
 //!
 //! One subject: **which rows the Comments panel shows, and in what order.**
 //! The state, the pure predicate, and the control strip that sets them.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/panels/comments/filter.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/commentfilter.md`.
 
-use crate::panels::comments::model::{CommentRow, Note};
+use crate::commentmodel::{CommentRow, Note};
 
 /// How the list is ordered.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -63,8 +63,8 @@ pub struct Filter {
     /// by guessing.
     ///
     /// So the predicate lives where the reading does:
-    /// [`super::reviewstate::Statuses::keeps`], applied by
-    /// [`super::reviewstate::narrow`] after [`apply`] has run. Two functions,
+    /// [`crate::commentreviewstate::Statuses::keeps`], applied by
+    /// [`crate::commentreviewstate::narrow`] after [`apply`] has run. Two functions,
     /// because there are genuinely two questions — one about a row, one about a
     /// document.
     ///
@@ -84,7 +84,7 @@ pub struct Filter {
     /// ⇒ One place for *what the operator asked for*; two places for *how it is
     /// answered*. The alternative — a second filter state beside this one —
     /// would have made both of those an ongoing act of memory.
-    pub status: Option<super::reviewstate::StatusChoice>,
+    pub status: Option<crate::commentreviewstate::StatusChoice>,
     /// How the surviving rows are ordered.
     pub sort: Sort,
 }

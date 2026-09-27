@@ -1,7 +1,7 @@
-//! # `panels::comments::note` — the note being typed, and the stamp that keeps
+//! # `commentnote` — the note being typed, and the stamp that keeps
 //! it honest
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/panels/comments/note.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/commentnote.md`.
 
 use pdfcer_core::object::ObjId;
 
@@ -134,7 +134,7 @@ pub struct CommentsUi {
     /// that the filtered list **says so** on every frame — see
     /// [`crate::text::panels::comments::comments_filtered`] — so a filter
     /// nobody remembers setting can never be a filter nobody can see.
-    pub filter: super::filter::Filter,
+    pub filter: crate::commentfilter::Filter,
     /// **The annotation this panel last scrolled to**, so it scrolls once
     /// per selection *change* rather than once per frame.
     ///

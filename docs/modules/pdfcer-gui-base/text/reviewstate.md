@@ -56,7 +56,7 @@ string for one value — [`state_name`] for the seven pdfcer authors,
 [`state_foreign`] for a value in a model it will not author. The
 distinction, and the reason collapsing the last two would be wrong, is
 [`crate::text::buttonaction`]'s, reused rather than re-derived; see
-[`crate::panels::comments::reviewstate::StateReading`].
+[`crate::commentreviewstate::StateReading`].
 
 ## Where these strings are NOT
 
@@ -182,7 +182,7 @@ flattened.
 ### `fn row_status_none`
 
 Drawn only under the status chooser's *No status recorded* filter and
-nowhere else — see [`crate::panels::comments::reviewstate`]. On an ordinary
+nowhere else — see [`crate::commentreviewstate`]. On an ordinary
 unfiltered list a caption on every unreviewed row would be forty repetitions
 of "nothing has happened here", which is the noise
 `crate::panels::comments`' disclosure discipline exists to keep out.

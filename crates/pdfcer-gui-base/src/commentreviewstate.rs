@@ -1,11 +1,11 @@
-//! # `panels::comments::reviewstate` — a comment's **review status**
+//! # `commentreviewstate` — a comment's **review status**
 //!
 //! `/State` and `/StateModel` (§12.5.6.3, Table 171; 2.0's Table 174), read
 //! into a per-reviewer history, shown on the row, filtered beside the existing
 //! sort, and recorded through
 //! [`pdfcer_core::edit::EditSession::add_review_state`].
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/panels/comments/reviewstate.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/commentreviewstate.md`.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -17,7 +17,7 @@ use pdfcer_core::page_tree::Page;
 
 use crate::text::reviewstate as t;
 
-use super::model::CommentRow;
+use crate::commentmodel::CommentRow;
 
 /// The region the per-row **Record status** control publishes.
 pub const REGION_RECORD: &str = "comments.record_status"; // ui-text-exempt: trace region name, never displayed
@@ -342,7 +342,7 @@ fn assemble(states: &[StateAnnot]) -> Statuses {
     // which is stable in itself — but two reviewers' tips arrive in whatever
     // order each happened to be placed, and a list of statuses that reshuffled
     // between frames reads as the panel flickering. The rule is
-    // `super::filter::apply`'s, restated: an unsigned entry sorts LAST, because
+    // `crate::commentfilter::apply`'s, restated: an unsigned entry sorts LAST, because
     // a reader scanning for a name should not have to read past the rows that
     // carry none.
     for recorded in out.by_target.values_mut() {
@@ -389,7 +389,7 @@ fn walk_up(states: &[StateAnnot], tip: &StateAnnot) -> (Option<ObjId>, usize) {
     }
 }
 
-/// **Narrow a list of rows by status**, after [`super::filter::apply`] has
+/// **Narrow a list of rows by status**, after [`crate::commentfilter::apply`] has
 /// narrowed and ordered it.
 #[must_use]
 pub fn narrow(
@@ -507,7 +507,7 @@ pub fn row_status(
 /// What [`row_status`] needs from the frame around it.
 pub struct RowStatusCtx<'a> {
     /// Whether the current mode authors markup —
-    /// `crate::canvas::tool::capabilities(..).author_markup`, asked once per
+    /// `pdfcer_gui::canvas::tool::capabilities(..).author_markup`, asked once per
     /// frame by [`super::body`] and passed down.
     pub authoring: bool,
     /// Whether the operator has filtered to **No status recorded**, which is
@@ -612,7 +612,7 @@ mod tests {
             id: Some(ObjId::new(num, 0)),
             subtype: "Square".to_owned(),
             is_ce_dimension: false,
-            note: super::super::model::Note::Absent,
+            note: crate::commentmodel::Note::Absent,
             author: None,
             modified: None,
             suppressed: false,

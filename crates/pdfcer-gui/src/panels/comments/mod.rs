@@ -10,7 +10,7 @@
 /// disclosure a filtered list owes. Its header carries the four things
 /// Acrobat's Comment pane offers that this cannot, and which engine gap each is
 /// filed under.
-pub mod filter;
+pub use pdfcer_gui_base::commentfilter as filter;
 
 /// Turning a document into a comment list — the classification, testable
 /// without a `Ui`.
@@ -22,11 +22,11 @@ mod model_tests;
 /// read into a per-reviewer history, shown on the row, filtered beside the
 /// sort, and recorded through
 /// `pdfcer_core::edit::EditSession::add_review_state`.
-pub mod reviewstate;
+pub use pdfcer_gui_base::commentreviewstate as reviewstate;
 
 /// The note being typed, and the `(annotation, edit epoch, destination)` stamp
 /// that keeps it honest.
-pub mod note;
+pub use pdfcer_gui_base::commentnote as note;
 
 /// **Everything on a row that WRITES** — *Add note*, *Reply*, and the one text
 /// box both of them open. Separate from this file under **R2**, and its header

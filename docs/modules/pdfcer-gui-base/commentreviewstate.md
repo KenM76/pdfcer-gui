@@ -1,4 +1,4 @@
-# `panels::comments::reviewstate` — a comment's **review status**
+# `commentreviewstate` — a comment's **review status**
 
 `/State` and `/StateModel` (§12.5.6.3, Table 171; 2.0's Table 174), read
 into a per-reviewer history, shown on the row, filtered beside the existing

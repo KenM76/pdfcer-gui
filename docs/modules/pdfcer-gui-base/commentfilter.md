@@ -1,4 +1,4 @@
-# `panels::comments::filter` — narrowing the reviewer's work list
+# `commentfilter` — narrowing the reviewer's work list
 
 One subject: **which rows the Comments panel shows, and in what order.**
 The state, the pure predicate, and the control strip that sets them.

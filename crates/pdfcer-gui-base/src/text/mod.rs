@@ -158,7 +158,7 @@ pub mod print;
 pub mod rail;
 /// Every word the **review-status** control says — `/State` and
 /// `/StateModel` (§12.5.6.3, Table 171), consumed by
-/// `pdfcer_gui::panels::comments::reviewstate` and by
+/// `crate::commentreviewstate` and by
 /// `pdfcer_gui::app::actions::reviewstate`.
 pub mod reviewstate;
 /// The ribbon's structural strings: tab labels and questions, group

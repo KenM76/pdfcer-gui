@@ -420,3 +420,12 @@ pub mod printautopaper;
 
 /// Where the page sits on the print paper.
 pub mod printposition;
+
+/// Narrowing and ordering the Comments panel's work list.
+pub mod commentfilter;
+
+/// A comment's review status.
+pub mod commentreviewstate;
+
+/// The note being typed, and the stamp that keeps it honest.
+pub mod commentnote;

@@ -1,4 +1,4 @@
-# `panels::comments::note` — the note being typed, and the stamp that keeps
+# `commentnote` — the note being typed, and the stamp that keeps
 it honest
 
 One annotation's `/Contents` while the operator is editing it, and nothing
