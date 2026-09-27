@@ -118,7 +118,7 @@ fn a_selected_annotation_is_not_an_empty_selection() {
     );
 }
 use super::*;
-use crate::canvas::target::StubTargets;
+use crate::canvas::targetstub::StubTargets;
 use egui::{Pos2, Rect};
 
 fn rect(x: f32, y: f32, w: f32, h: f32) -> Rect {

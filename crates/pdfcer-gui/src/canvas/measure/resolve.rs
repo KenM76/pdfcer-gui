@@ -238,7 +238,7 @@ mod tests {
 
     use super::*;
     use crate::canvas::measure::{MeasureKind, MeasureState};
-    use crate::canvas::target::StubTargets;
+    use crate::canvas::targetstub::StubTargets;
 
     /// **Snapping off means the raw pointer, unchanged.**
     #[test]

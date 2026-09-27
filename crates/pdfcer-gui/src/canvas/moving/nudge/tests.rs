@@ -38,7 +38,7 @@
 
 use super::*;
 use crate::canvas::selection::{AnnotSelection, AnnotTarget, ClickHit};
-use crate::canvas::target::{StubTargets, TargetId};
+use crate::canvas::{target::TargetId, targetstub::StubTargets};
 use egui::{Event, Key, Modifiers, RawInput};
 use pdfcer_core::object::{Dict, ObjId};
 use pdfcer_core::page_tree::Rect as PageRect;

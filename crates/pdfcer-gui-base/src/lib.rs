@@ -384,3 +384,12 @@ pub mod anchormarks;
 
 /// One page decomposed into selectable objects, parts and nodes.
 pub mod objectprovider;
+
+/// The seam a hit-testable content model plugs into.
+pub mod canvastarget;
+
+/// How deep the last click reached, and how deep it could have.
+pub mod pickdepth;
+
+/// A selection as four integers, never a position.
+pub mod selectionidentity;

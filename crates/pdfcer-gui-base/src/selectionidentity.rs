@@ -1,4 +1,4 @@
-//! # `canvas::selection::identity` — a selection is four integers, never a position
+//! # `selectionidentity` — a selection is four integers, never a position
 //!
 //! ## Which half of `canvas::selection` this file is
 //!
@@ -8,9 +8,9 @@
 //! means. This file holds the **vocabulary that state is made of**:
 //! [`Selection`], [`SelectionLevel`], [`ClickHit`] and [`EscapeOutcome`].
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/selection/identity.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/selectionidentity.md`.
 
-use crate::canvas::target::TargetId;
+use crate::canvastarget::TargetId;
 
 /// One selected thing, addressed by **identity** and never by position.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -132,12 +132,12 @@ pub struct ClickHit {
     /// line of a multi-line text object, with `View ▸ Text chunks` switched on
     /// and a box drawn around it.
     ///
-    /// Not filled by [`crate::canvas::input::probe`], and that is the one
+    /// Not filled by `pdfcer_gui::canvas::input::probe`, and that is the one
     /// field of this struct that is not. `probe` holds a
-    /// [`CanvasTargetProvider`](crate::canvas::target::CanvasTargetProvider),
+    /// [`CanvasTargetProvider`](crate::canvastarget::CanvasTargetProvider),
     /// which can say what class an object is but cannot count a text object's
     /// lines, and it holds no [`egui::Context`], so it can reach neither half
-    /// of the question. [`crate::canvas::chunks::boxed`] answers both, and
+    /// of the question. `pdfcer_gui::canvas::chunks::boxed` answers both, and
     /// `canvas::clicking` — the one caller holding the document, the preference
     /// and the point at once — sets this immediately after probing. Everywhere
     /// else it is `false`, which is the ladder's behaviour with the boxes off.

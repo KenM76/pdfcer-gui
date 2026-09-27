@@ -194,7 +194,7 @@ pub fn scope(ctx: &egui::Context, page: usize) -> Scope {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::canvas::target::StubTargets;
+    use crate::canvas::targetstub::StubTargets;
 
     /// A stub whose leaves all belong to page object 0.
     fn stub() -> StubTargets {

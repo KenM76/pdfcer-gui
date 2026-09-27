@@ -29,7 +29,7 @@
 use super::*;
 use crate::app::actions::CanvasDecline;
 use crate::canvas::selection::ClickHit;
-use crate::canvas::target::{StubTargets, TargetId};
+use crate::canvas::{target::TargetId, targetstub::StubTargets};
 use egui::{Rect, vec2};
 use pdfcer_core::object::{Dict, ObjId};
 use pdfcer_core::page_tree::Rect as PageRect;

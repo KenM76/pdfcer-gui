@@ -1,4 +1,4 @@
-# `canvas::depth` — how deep the last click reached, and how deep it could have
+# `pickdepth` — how deep the last click reached, and how deep it could have
 
 Two numbers, remembered from the last selecting click: **which** candidate
 was taken, and **how many** there were under the pointer.

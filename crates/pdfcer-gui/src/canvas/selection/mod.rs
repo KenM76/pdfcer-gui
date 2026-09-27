@@ -20,7 +20,7 @@ pub mod annot;
 /// What a selection **is** — the four `Copy` types the state below accumulates,
 /// none of which can hold a coordinate. The pure half; see its header for why
 /// "identity, not position" is a claim about a type rather than about a method.
-pub mod identity;
+pub use pdfcer_gui_base::selectionidentity as identity;
 
 pub use annot::{AnnotKind, AnnotSelection, AnnotTarget};
 pub use identity::{ClickHit, EscapeOutcome, Selection, SelectionLevel};

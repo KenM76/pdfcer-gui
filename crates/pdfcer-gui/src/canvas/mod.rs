@@ -27,7 +27,7 @@ pub use pdfcer_gui_base::cursor;
 
 /// **How deep the last click reached, and how deep it could have** — the
 /// readout that turns "all I get is the page" into a diagnosis. See its header.
-pub mod depth;
+pub use pdfcer_gui_base::pickdepth as depth;
 // The `f64` position tier and, above all, the two hand-overs between it and
 // the `egui` scroll offset. Its own file because the seam is where the defects
 // are, and O24f and O26e were hundreds of lines apart inside `show`.
@@ -293,12 +293,15 @@ mod backdrop;
 /// intent and a per-stamp control would be showing a value it invented.
 pub use pdfcer_gui_base::stampfit;
 pub mod strip;
+pub use pdfcer_gui_base::canvastarget as target;
 /// **Tab moves through what the operator clicked on, not through the
 /// ribbon** — `OPERATOR_REQUESTS.md` O204. The seam that takes the press
 /// off `egui` before its focus walk latches, and the pure ring step both
 /// canvas rings share. Its header carries why no other seam can work.
 pub use pdfcer_gui_base::tabnav;
-pub mod target;
+/// A target provider assembled from plain rectangles, for the tests.
+#[cfg(test)]
+pub mod targetstub;
 pub mod tier;
 // Selecting TEXT on the page, and copying it: the mode gate that needs no
 // capability, the interaction decisions and which of Acrobat / Inkscape /

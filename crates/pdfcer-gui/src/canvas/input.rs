@@ -342,7 +342,7 @@ mod tests {
     // test asks the stub the raw question first, so a failure below cannot be
     // read as the fixture failing to reproduce the ambiguity it was built to
     // reproduce.
-    use crate::canvas::target::{CanvasTargetProvider, StubTargets};
+    use crate::canvas::{target::CanvasTargetProvider, targetstub::StubTargets};
     use crate::panels::objects::provider::TargetId;
 
     /// A rect from its top-left corner and size, in canvas units.

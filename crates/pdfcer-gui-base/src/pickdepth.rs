@@ -1,9 +1,9 @@
-//! # `canvas::depth` — how deep the last click reached, and how deep it could have
+//! # `pickdepth` — how deep the last click reached, and how deep it could have
 //!
 //! Two numbers, remembered from the last selecting click: **which** candidate
 //! was taken, and **how many** there were under the pointer.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/depth.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/pickdepth.md`.
 
 /// The `egui::Memory` slot the pair lives in.
 const KEY: &str = "pdfcer-canvas-depth"; // ui-text-exempt: internal memory id, never displayed
@@ -20,14 +20,14 @@ pub struct Depth {
     page: usize,
     /// The target the click selected.
     ///
-    /// A [`TargetId`](crate::canvas::target::TargetId) rather than a bare
+    /// A [`TargetId`](crate::canvastarget::TargetId) rather than a bare
     /// index, and that is load-bearing rather than tidy: a page has **two**
     /// index spaces now — the page's own objects and the leaves inside its
     /// form XObjects — and `7` occurs in both. A bare number would let a depth
     /// measured for the seventh leaf be claimed by a selection of the seventh
     /// page object, which is exactly the mis-attribution this field exists to
     /// prevent.
-    object: crate::canvas::target::TargetId,
+    object: crate::canvastarget::TargetId,
 }
 
 /// Record what the last selecting click chose, and about what.
@@ -39,7 +39,7 @@ pub fn remember(
     taken: usize,
     of: usize,
     page: usize,
-    object: crate::canvas::target::TargetId,
+    object: crate::canvastarget::TargetId,
 ) {
     ctx.data_mut(|d| {
         d.insert_temp(
@@ -59,7 +59,7 @@ pub fn remember(
 pub fn taken(
     ctx: &egui::Context,
     page: usize,
-    object: crate::canvas::target::TargetId,
+    object: crate::canvastarget::TargetId,
 ) -> Option<Depth> {
     ctx.data_mut(|d| d.get_temp::<Depth>(egui::Id::new(KEY)))
         .filter(|d| d.of > 1 && d.page == page && d.object == object)
@@ -68,7 +68,7 @@ pub fn taken(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::canvas::target::TargetId;
+    use crate::canvastarget::TargetId;
 
     /// A lone candidate is not a stack, and saying *"1 of 1"* would be noise.
     #[test]

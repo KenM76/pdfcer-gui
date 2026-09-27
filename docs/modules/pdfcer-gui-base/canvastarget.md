@@ -1,4 +1,4 @@
-# `canvas::target` — the seam a hit-testable content model plugs into
+# `canvastarget` — the seam a hit-testable content model plugs into
 
 The canvas selects *things*. It does not know what a thing is, how it was
 decomposed, or what coordinate frame its geometry was authored in. All it

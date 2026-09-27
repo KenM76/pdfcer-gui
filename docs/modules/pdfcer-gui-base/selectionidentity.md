@@ -1,4 +1,4 @@
-# `canvas::selection::identity` — a selection is four integers, never a position
+# `selectionidentity` — a selection is four integers, never a position
 
 ## Which half of `canvas::selection` this file is
 
