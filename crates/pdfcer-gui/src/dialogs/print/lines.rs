@@ -19,6 +19,7 @@
 //!   [`AUTO_MM`], but never under one printer pixel at the job's resolution.
 
 use egui::Ui;
+use pdfcer_gui_base::entry;
 
 use super::PrintDialog;
 use crate::app::prefs::printing::{LINE_WIDTH_MM_RANGE, LineWidthPrefs};
@@ -66,14 +67,23 @@ pub(super) fn row(ui: &mut Ui, dialog: &mut PrintDialog) {
         ui.checkbox(&mut prefs.auto, t::lines_auto())
             .on_hover_text(t::lines_auto_tooltip());
         if !prefs.auto {
-            ui.add(
-                egui::DragValue::new(&mut prefs.width_mm)
-                    .range(LINE_WIDTH_MM_RANGE)
-                    .speed(0.01)
-                    .max_decimals(2)
-                    .suffix(t::mm_suffix()),
-            )
-            .on_hover_text(t::lines_width_tooltip());
+            let (widget, refusal) = entry::drag_value(
+                ui,
+                &mut prefs.width_mm,
+                entry::Kind::Length(entry::LengthUnit::Of(
+                    pdfcer_core::dimension::Unit::Millimeter,
+                )),
+            );
+            refusal
+                .show(
+                    ui.add(
+                        widget
+                            .range(LINE_WIDTH_MM_RANGE)
+                            .speed(0.01)
+                            .max_decimals(2),
+                    ),
+                )
+                .on_hover_text(t::lines_width_tooltip());
         }
     });
     if prefs.fixed {

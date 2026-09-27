@@ -21,12 +21,16 @@
 //!   so nothing can print, and the refusal is the Pages tab's caption.
 
 use egui::{Align2, Color32, FontId, Painter, Pos2, Rect, Stroke, Ui};
+use pdfcer_gui_base::entry;
 use pdfcer_gui_base::poster::{self as base, Imposed, Options, Tile};
 
 use super::PrintDialog;
 use super::spooler::{Job, PagePlan, Placement};
 use crate::app::prefs::printing::{POSTER_OVERLAP_MM_RANGE, POSTER_PERCENT_RANGE, PosterPrefs};
 use crate::text::print as t;
+
+/// A percentage: arithmetic, and a typed `%` is the box's own unit.
+const PERCENT: entry::Kind = entry::Kind::Number(&["%"]);
 
 /// The published region of the Size/Poster choice's Poster half.
 pub(super) const REGION_POSTER_MODE: &str = "print.poster.mode";
@@ -156,23 +160,35 @@ pub(super) fn mode_row(ui: &mut Ui, dialog: &mut PrintDialog) -> bool {
     let prefs = &mut dialog.poster;
     ui.horizontal_wrapped(|ui| {
         ui.label(t::poster_tile_scale());
-        let scale = ui
-            .add(
-                egui::DragValue::new(&mut prefs.tile_percent)
-                    .range(POSTER_PERCENT_RANGE)
-                    .suffix(t::percent_suffix()),
+        let (widget, refusal) = entry::drag_value(ui, &mut prefs.tile_percent, PERCENT);
+        let scale = refusal
+            .show(
+                ui.add(
+                    widget
+                        .range(POSTER_PERCENT_RANGE)
+                        .suffix(t::percent_suffix()),
+                ),
             )
             .on_hover_text(t::poster_tile_scale_tooltip());
         crate::diag::ui_rect(REGION_POSTER_SCALE, scale.rect);
         ui.label(t::poster_overlap());
-        ui.add(
-            egui::DragValue::new(&mut prefs.overlap_mm)
-                .range(POSTER_OVERLAP_MM_RANGE)
-                .speed(0.5)
-                .max_decimals(1)
-                .suffix(t::mm_suffix()),
-        )
-        .on_hover_text(t::poster_overlap_tooltip());
+        let (widget, refusal) = entry::drag_value(
+            ui,
+            &mut prefs.overlap_mm,
+            entry::Kind::Length(entry::LengthUnit::Of(
+                pdfcer_core::dimension::Unit::Millimeter,
+            )),
+        );
+        refusal
+            .show(
+                ui.add(
+                    widget
+                        .range(POSTER_OVERLAP_MM_RANGE)
+                        .speed(0.5)
+                        .max_decimals(1),
+                ),
+            )
+            .on_hover_text(t::poster_overlap_tooltip());
     });
     ui.horizontal_wrapped(|ui| {
         ui.checkbox(&mut prefs.cut_marks, t::poster_cut_marks())

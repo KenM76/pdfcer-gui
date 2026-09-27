@@ -30,6 +30,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/dialogs/print/tabs.md`.
 
 use egui::Ui;
+use pdfcer_gui_base::entry;
 
 use crate::dialogs::print::PrintDialog;
 use crate::dialogs::print::spooler::{
@@ -397,7 +398,8 @@ pub(super) fn pages_layout(
 pub(super) fn copies_finishing(ui: &mut Ui, dialog: &mut PrintDialog) {
     ui.horizontal_wrapped(|ui| {
         ui.label(t::copies_label());
-        ui.add(egui::DragValue::new(&mut dialog.copies).range(1..=999));
+        let (widget, refusal) = entry::drag_value(ui, &mut dialog.copies, entry::Kind::Count);
+        refusal.show(ui.add(widget.range(1..=999)));
     });
     ui.checkbox(&mut dialog.uncollated, t::uncollated());
     ui.checkbox(&mut dialog.reverse, t::reverse())
@@ -502,12 +504,10 @@ fn resolution(ui: &mut Ui, dialog: &mut PrintDialog, resolution: Option<JobResol
     ui.add_space(8.0);
     ui.horizontal_wrapped(|ui| {
         ui.label(t::dpi_limit_label());
-        let field = ui
-            .add(
-                egui::DragValue::new(&mut dialog.max_dpi)
-                    .range(36..=2400)
-                    .suffix(t::dpi_suffix()),
-            )
+        let (widget, refusal) =
+            entry::drag_value(ui, &mut dialog.max_dpi, entry::Kind::Number(&["dpi"]));
+        let field = refusal
+            .show(ui.add(widget.range(36..=2400).suffix(t::dpi_suffix())))
             .on_hover_text(t::raster_note());
         crate::diag::ui_rect_visible(super::REGION_RESOLUTION, field.rect, ui.clip_rect());
         if let Some(res) = resolution
@@ -568,12 +568,12 @@ fn scale_radios(ui: &mut Ui, dialog: &mut PrintDialog) {
         // the radio beside it makes the field live. R9 requires that argument
         // to reach the operator, and it never did: the control was greyed with
         // no hover explanation of any kind.
-        let custom = ui.add_enabled(
+        let (widget, refusal) =
+            entry::drag_value(ui, &mut dialog.custom_percent, entry::Kind::Number(&["%"]));
+        let custom = refusal.show(ui.add_enabled(
             custom_selected,
-            egui::DragValue::new(&mut dialog.custom_percent)
-                .range(1..=1000)
-                .suffix(t::percent_suffix()),
-        );
+            widget.range(1..=1000).suffix(t::percent_suffix()),
+        ));
         if !custom_selected {
             custom.on_disabled_hover_text(t::scale_custom_disabled());
         }

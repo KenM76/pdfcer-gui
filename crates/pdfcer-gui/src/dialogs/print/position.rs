@@ -6,6 +6,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui-base/printposition.md`.
 
 use egui::Ui;
+use pdfcer_gui_base::entry;
 
 pub(crate) use pdfcer_gui_base::printposition::*;
 
@@ -58,13 +59,15 @@ pub(super) fn group(
     ui.horizontal_wrapped(|ui| {
         ui.label(t::position_across());
         let mut across_mm = units::mm_from_points(offset.dx_pt);
-        if ui
-            .add(
-                egui::DragValue::new(&mut across_mm)
-                    .speed(NUDGE_MM)
-                    .fixed_decimals(1)
-                    .suffix(t::position_mm_suffix()),
-            )
+        let (widget, refusal) = entry::drag_value(
+            ui,
+            &mut across_mm,
+            entry::Kind::Length(entry::LengthUnit::Of(
+                pdfcer_core::dimension::Unit::Millimeter,
+            )),
+        );
+        if refusal
+            .show(ui.add(widget.speed(NUDGE_MM).fixed_decimals(1)))
             .changed()
         {
             dialog.page_positions.set_axis(
@@ -75,13 +78,15 @@ pub(super) fn group(
         }
         ui.label(t::position_down());
         let mut down_mm = units::mm_from_points(offset.dy_pt);
-        if ui
-            .add(
-                egui::DragValue::new(&mut down_mm)
-                    .speed(NUDGE_MM)
-                    .fixed_decimals(1)
-                    .suffix(t::position_mm_suffix()),
-            )
+        let (widget, refusal) = entry::drag_value(
+            ui,
+            &mut down_mm,
+            entry::Kind::Length(entry::LengthUnit::Of(
+                pdfcer_core::dimension::Unit::Millimeter,
+            )),
+        );
+        if refusal
+            .show(ui.add(widget.speed(NUDGE_MM).fixed_decimals(1)))
             .changed()
         {
             dialog

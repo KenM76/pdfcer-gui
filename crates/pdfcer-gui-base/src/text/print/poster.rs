@@ -48,12 +48,6 @@ pub const fn poster_overlap_tooltip() -> &'static str {
      be lined up. It is cut off one of the two when assembling."
 }
 
-/// Suffix on millimetre fields.
-#[must_use]
-pub const fn mm_suffix() -> &'static str {
-    " mm"
-}
-
 /// Cut marks checkbox.
 #[must_use]
 pub const fn poster_cut_marks() -> &'static str {

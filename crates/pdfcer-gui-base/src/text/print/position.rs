@@ -34,12 +34,6 @@ pub const fn position_down() -> &'static str {
     "Down"
 }
 
-/// The suffix both displacement entries carry.
-#[must_use]
-pub const fn position_mm_suffix() -> &'static str {
-    " mm"
-}
-
 /// **The frame the two numbers are measured in**, which is the half a
 /// bare offset cannot state.
 #[must_use]

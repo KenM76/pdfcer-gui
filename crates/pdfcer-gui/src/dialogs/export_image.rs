@@ -50,12 +50,16 @@
 //!   right answer and it is a change to `app::actions`, not to this file.
 
 use egui::Ui;
+use pdfcer_gui_base::entry;
 
 use crate::app::actions::Action;
 use crate::app::actions::imageexport::{ImageFormat, ImagePlan, PageScope, resolve_pages};
 use crate::app::prefs::{MAX_EXPORT_DPI, MAX_JPEG_QUALITY, MIN_EXPORT_DPI, MIN_JPEG_QUALITY};
 use crate::app::state::{OpenDoc, Status};
 use crate::text::export_image as t;
+
+/// A resolution: arithmetic, and `dpi` typed after it is the box's own unit.
+const DPI: entry::Kind = entry::Kind::Number(&["dpi"]);
 
 /// The region this dialog publishes for its body.
 pub const REGION_BODY: &str = "dialog:export-image"; // ui-text-exempt: trace region name, never displayed
@@ -450,25 +454,28 @@ impl ExportImageDialog {
         ui.label(t::dpi_heading());
         ui.horizontal(|ui| {
             ui.label(t::dpi_label());
-            let response = ui.add(
-                egui::DragValue::new(&mut self.dpi)
-                    .speed(1.0)
-                    // Bounded by the control rather than by a sentence: unlike a
-                    // scale, there is no reading of a zero or negative
-                    // resolution an operator could have meant. The ceiling is
-                    // generous — the real limit is the pixel count, which is
-                    // page-size dependent and is disclosed below.
-                    //
-                    // Read from the constants rather than repeated as
-                    // literals. Those constants are what the preferences file
-                    // clamps a read value into, and while the two were written
-                    // out separately the file could refuse a resolution this
-                    // box will happily produce — which reaches the operator as
-                    // pdfcer forgetting a setting they had just made, the exact
-                    // complaint O196 answers.
-                    // `the_dragvalue_ranges_are_the_constants_the_file_clamps_to`
-                    // is the guard.
-                    .range(MIN_EXPORT_DPI..=MAX_EXPORT_DPI),
+            let (widget, refusal) = entry::drag_value(ui, &mut self.dpi, DPI);
+            let response = refusal.show(
+                ui.add(
+                    widget
+                        .speed(1.0)
+                        // Bounded by the control rather than by a sentence: unlike a
+                        // scale, there is no reading of a zero or negative
+                        // resolution an operator could have meant. The ceiling is
+                        // generous — the real limit is the pixel count, which is
+                        // page-size dependent and is disclosed below.
+                        //
+                        // Read from the constants rather than repeated as
+                        // literals. Those constants are what the preferences file
+                        // clamps a read value into, and while the two were written
+                        // out separately the file could refuse a resolution this
+                        // box will happily produce — which reaches the operator as
+                        // pdfcer forgetting a setting they had just made, the exact
+                        // complaint O196 answers.
+                        // `the_dragvalue_ranges_are_the_constants_the_file_clamps_to`
+                        // is the guard.
+                        .range(MIN_EXPORT_DPI..=MAX_EXPORT_DPI),
+                ),
             );
             crate::diag::ui_rect(REGION_DPI, response.rect);
         });
@@ -554,9 +561,8 @@ impl ExportImageDialog {
             // holds the same range so the clamp is never reached from here.
             // The range is the preferences file's own, for the reason
             // [`Self::resolution_group`] states in full.
-            let response = ui.add(
-                egui::DragValue::new(&mut self.quality).range(MIN_JPEG_QUALITY..=MAX_JPEG_QUALITY),
-            );
+            let (widget, refusal) = entry::drag_value(ui, &mut self.quality, entry::Kind::Count);
+            let response = refusal.show(ui.add(widget.range(MIN_JPEG_QUALITY..=MAX_JPEG_QUALITY)));
             crate::diag::ui_rect(REGION_QUALITY, response.rect);
         });
         ui.weak(t::quality_hint());
