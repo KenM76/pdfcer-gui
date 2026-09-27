@@ -1,4 +1,4 @@
-//! Design and rationale: `docs/modules/pdfcer-gui/app/state/tests.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/opendoc/tests.md`.
 #![cfg(test)]
 //! # `app::state::tests` — the document record's own assertions
 //!
@@ -158,8 +158,8 @@ fn hiding_annotations_or_a_layer_is_not_an_edit() {
 /// **A selection cannot outlive the document it was made on.**
 #[test]
 fn a_selection_cannot_outlive_the_document_it_was_made_on() {
-    use crate::canvas::selection::{ClickHit, SelectionLevel};
-    use crate::canvas::target::TargetId;
+    use crate::canvastarget::TargetId;
+    use crate::selectionidentity::{ClickHit, SelectionLevel};
 
     let mut doc = open_fixture(FOUR_PAGES);
     assert!(
@@ -225,7 +225,7 @@ fn with_hold(
         doc.page_epochs.get(doc.view.page_index).wrapping_sub(1)
     };
     doc.held_preview = Some(super::HeldPreview {
-        shape: crate::canvas::shapes::ShapePreview::default(),
+        shape: crate::shapepreview::ShapePreview::default(),
         captured_at_epoch,
         since: std::time::Instant::now() - age,
     });

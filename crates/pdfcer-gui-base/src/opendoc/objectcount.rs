@@ -86,7 +86,7 @@ impl OpenDoc {
     /// `decompose_page` here would be a second decomposition of the same page —
     /// two counts free to diverge — inside the code whose entire job is to
     /// report a trustworthy number about that page.
-    pub(crate) fn trace_object_count(&mut self) {
+    pub fn trace_object_count(&mut self) {
         if !crate::diag::enabled() {
             return;
         }

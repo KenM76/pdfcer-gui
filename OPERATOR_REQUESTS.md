@@ -4777,7 +4777,7 @@ Where the preview lives, so the next reader does not have to find it:
 - `canvas/painting.rs:497` — the shape itself following the pointer, drawn
   above the bounding ghost and below the snap marker, with the rule-4 argument
   for why a cursor may be drawn and applied content may not.
-- `app/state/heldpreview.rs:112` and `:176` — the hold that outlives the
+- `pdfcer-gui-base/src/opendoc/heldpreview.rs` — the hold that outlives the
   gesture. `shape_preview` is `None` at release; the raster still shows the
   object where it started for a second or two, so dropping the preview there
   makes the object snap back and jump forward.

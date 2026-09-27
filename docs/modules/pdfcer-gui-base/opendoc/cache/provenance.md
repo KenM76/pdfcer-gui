@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/cache/provenance`
+# `pdfcer-gui-base/opendoc/cache/provenance`
 
 **One provenance-bearing text extraction per page, shared by everything
 that edits text.**

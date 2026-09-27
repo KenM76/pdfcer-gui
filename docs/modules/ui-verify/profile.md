@@ -52,7 +52,7 @@ Every name here was read out of `crates/pdfcer-gui/src`, not guessed:
   binary, only against the old one).
 * `ui-rect name= rect=` — `diag.rs::ui_rect` (§4.3 requirement 2).
 * `objects n= page= paths= text= images= forms=` —
-  `app/state.rs::trace_object_count` (§4.3 requirement 3).
+  `pdfcer-gui-base/src/opendoc/objectcount.rs::trace_object_count` (§4.3 requirement 3).
 * `start` — emitted unconditionally, so an empty trace can be told
   from a trace the diagnostic switch never reached.
 

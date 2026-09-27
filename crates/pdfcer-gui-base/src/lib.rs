@@ -523,3 +523,6 @@ pub mod pagebudget;
 
 /// Where a document's guides live between sessions.
 pub mod guidestore;
+
+/// One open document and everything the shell derives from it.
+pub mod opendoc;

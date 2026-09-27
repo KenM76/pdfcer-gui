@@ -1,4 +1,4 @@
-# `app::state` — what is open
+# `opendoc` — what is open
 
 One thing lives here: [`Status`] and [`OpenDoc`] — the shape of "what, if
 anything, is open", and everything one open document owns.

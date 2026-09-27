@@ -63,7 +63,6 @@ pub mod keyboard;
 /// under R2, when that file reached the 1,500-line ceiling. Its header carries
 /// the three-state rule that `Option<BTreeSet<ObjId>>` encodes, and why
 /// `reset_layers` and `set_hidden_layers(∅)` are different acts.
-pub mod layers;
 // Opening a document, closing it, and the three ways an open can fail. Split
 // from `state.rs` under R2 along the seam those two subjects already drew:
 // that file is *what an open document is*, this one is *the document's lifetime

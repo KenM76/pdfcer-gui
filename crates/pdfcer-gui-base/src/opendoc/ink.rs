@@ -3,10 +3,10 @@
 //! The seam: everything else on `OpenDoc` is about the **document** — its
 //! session, pages, selection, caches, and the epoch that invalidates them.
 //! These methods are about the **renderer**, answering a question
-//! `crate::render::strategy` asks in that module's own vocabulary. Two subjects
+//! `crate::rasterstrategy` asks in that module's own vocabulary. Two subjects
 //! with two rates of change, which is this project's test for a seam.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/state/ink.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/opendoc/ink.md`.
 
 use super::OpenDoc;
 
@@ -14,11 +14,11 @@ impl OpenDoc {
     /// **What the render tier needs to know about `page`'s colour** — the one
     /// reader of [`Self::ink_pages`].
     #[must_use]
-    pub fn ink_at(&self, page: usize) -> crate::render::strategy::Ink {
+    pub fn ink_at(&self, page: usize) -> crate::rasterstrategy::Ink {
         if self.ink_pages.contains(&page) {
-            crate::render::strategy::Ink::Subtractive(self.settings.max_cmyk_buffer_bytes)
+            crate::rasterstrategy::Ink::Subtractive(self.settings.max_cmyk_buffer_bytes)
         } else {
-            crate::render::strategy::Ink::Additive
+            crate::rasterstrategy::Ink::Additive
         }
     }
 
@@ -32,7 +32,7 @@ impl OpenDoc {
         let Some(subject) = self.pages.get(page) else {
             return;
         };
-        let options = crate::app::settings::SettingsExt::render_options(&self.settings);
+        let options = crate::settings::SettingsExt::render_options(&self.settings);
         // DESTRUCTURED rather than bound whole, and it is not a style choice.
         // `PageInk` is two facts with two owners - the flag belongs to the
         // render tier, the source belongs to the operator's report - and a

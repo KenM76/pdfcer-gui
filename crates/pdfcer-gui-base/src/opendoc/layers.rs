@@ -1,14 +1,14 @@
-//! # `app::layers` — **which optional-content groups are hidden, and whose
+//! # `opendoc::layers` — **which optional-content groups are hidden, and whose
 //! answer that is**
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/layers.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/opendoc/layers.md`.
 
 use std::collections::BTreeSet;
 
 use pdfcer_core::object::ObjId;
 use pdfcer_render::LayerVisibility;
 
-use super::state::OpenDoc;
+use crate::opendoc::OpenDoc;
 
 impl OpenDoc {
     /// The complete set of optional-content groups currently hidden.
@@ -43,7 +43,7 @@ impl OpenDoc {
     }
 
     /// The override to hand a render, or `None` to obey the document.
-    pub(crate) fn layer_visibility(&self) -> Option<LayerVisibility> {
+    pub fn layer_visibility(&self) -> Option<LayerVisibility> {
         self.layers
             .hidden
             .as_ref()

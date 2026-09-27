@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/state/ink`
+# `pdfcer-gui-base/opendoc/ink`
 
 ## Item notes
 

@@ -1,4 +1,4 @@
-# `app::layers` — **which optional-content groups are hidden, and whose
+# `opendoc::layers` — **which optional-content groups are hidden, and whose
 answer that is**
 
 Everything here is about the **override relationship** between the operator

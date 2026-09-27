@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/state/fixtures`
+# `pdfcer-gui-base/opendoc/fixtures`
 
 ## Item notes
 

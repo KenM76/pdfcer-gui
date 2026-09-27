@@ -249,6 +249,9 @@ TEST_ONLY_PATHS=""
 # above the `mod`. The braced form `#[cfg(test)] mod tests { ... }` is NOT
 # matched — that module has no file of its own and is handled by the in-file
 # skip instead.
+# `any(test, feature = "test-fixtures")` counts as test-only too: that feature
+# exists for one reason, `pdfcer-gui`'s dev-dependency on base's fixtures, and
+# the shipped program never enables it. No other `any(test, …)` does.
 collect_test_only() {
     local src_dir="$1" decl name dir base cand p
     TEST_ONLY_PATHS=""
@@ -274,9 +277,9 @@ collect_test_only() {
         done
     done < <(find "$src_dir" -type f -name '*.rs' -print0 | xargs -0 awk '
         FNR == 1 { armed = 0 }
-        /^[[:space:]]*#\[cfg\(test\)\]/ {
+        /^[[:space:]]*#\[cfg\((test|any\(test, feature = "test-fixtures"\))\)\]/ {
             rest = $0
-            sub(/^[[:space:]]*#\[cfg\(test\)\][[:space:]]*/, "", rest)
+            sub(/^[[:space:]]*#\[cfg\((test|any\(test, feature = "test-fixtures"\))\)\][[:space:]]*/, "", rest)
             if (rest ~ /^(pub[[:space:]]+)?mod[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*;[[:space:]]*$/) {
                 sub(/^(pub[[:space:]]+)?mod[[:space:]]+/, "", rest)
                 sub(/[[:space:]]*;.*$/, "", rest)

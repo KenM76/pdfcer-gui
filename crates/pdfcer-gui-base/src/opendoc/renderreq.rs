@@ -18,22 +18,22 @@
 //! pages *are*, a layout fact the whole frame agrees on and used by hit-testing
 //! and scrolling as much as by drawing, and it names no render type.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/state/renderreq.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/opendoc/renderreq.md`.
 
 use std::sync::Arc;
 
 use super::OpenDoc;
-use crate::render::worker::{RenderKey, RenderRequest};
+use crate::renderworker::{RenderKey, RenderRequest};
 
 impl OpenDoc {
     /// What a render of the current view would be *of*.
-    pub(crate) fn render_key(&self, raster_scale: f32) -> RenderKey {
+    pub fn render_key(&self, raster_scale: f32) -> RenderKey {
         self.render_key_for(self.view.page_index, raster_scale)
     }
 
     /// What a render of **any** page in this view's current settings would be
     /// *of*.
-    pub(crate) fn render_key_for(&self, page_index: usize, raster_scale: f32) -> RenderKey {
+    pub fn render_key_for(&self, page_index: usize, raster_scale: f32) -> RenderKey {
         RenderKey::new(
             page_index,
             raster_scale,
@@ -53,7 +53,7 @@ impl OpenDoc {
     /// The region to rasterize for `page_index`, if the canvas set one **for
     /// that page**.
     #[must_use]
-    pub(crate) fn region_for(&self, page_index: usize) -> Option<pdfcer_core::page_tree::Rect> {
+    pub fn region_for(&self, page_index: usize) -> Option<pdfcer_core::page_tree::Rect> {
         self.raster_region
             .filter(|(page, _)| *page == page_index)
             .map(|(_, rect)| rect)
@@ -61,7 +61,7 @@ impl OpenDoc {
 
     /// Everything a worker needs to rasterize `page_index`, or `None` if there
     /// is no such page.
-    pub(crate) fn render_request_for(
+    pub fn render_request_for(
         &self,
         page_index: usize,
         raster_scale: f32,

@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/state/tests`
+# `pdfcer-gui-base/opendoc/tests`
 
 ## Item notes
 

@@ -19,11 +19,11 @@
 //! cannot get that evidence immediately is bounded by a quarter of a second
 //! rather than trusted.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/state/heldpreview.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/opendoc/heldpreview.md`.
 
 use super::OpenDoc;
 
-pub(crate) use pdfcer_gui_base::shapepreview::HeldPreview;
+pub use crate::shapepreview::HeldPreview;
 
 /// How long a held preview may survive before it is dropped regardless.
 const HELD_PREVIEW_MAX: std::time::Duration = std::time::Duration::from_secs(4);
@@ -33,7 +33,7 @@ const HELD_PREVIEW_GRACE: std::time::Duration = std::time::Duration::from_millis
 
 impl OpenDoc {
     /// **The held preview, if it should still be on screen.**
-    pub(crate) fn held_preview_to_draw(&self) -> Option<&crate::canvas::shapes::ShapePreview> {
+    pub fn held_preview_to_draw(&self) -> Option<&crate::shapepreview::ShapePreview> {
         let held = self.held_preview.as_ref()?;
         if held.since.elapsed() > HELD_PREVIEW_MAX {
             return None;
@@ -62,7 +62,7 @@ impl OpenDoc {
     }
 
     /// Drop a held preview that has stopped being live.
-    pub(crate) fn retire_held_preview(&mut self) {
+    pub fn retire_held_preview(&mut self) {
         if self.held_preview.is_some() && self.held_preview_to_draw().is_none() {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -73,7 +73,7 @@ impl OpenDoc {
     }
 
     /// **Hold this preview until the page catches up.**
-    pub(crate) fn hold_preview(&mut self, shape: crate::canvas::shapes::ShapePreview) {
+    pub fn hold_preview(&mut self, shape: crate::shapepreview::ShapePreview) {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             format!(
@@ -95,7 +95,7 @@ const CATCHING_UP_AFTER: std::time::Duration = std::time::Duration::from_millis(
 
 impl OpenDoc {
     /// **Is the picture on screen behind the document, noticeably?**
-    pub(crate) fn page_is_catching_up(&self) -> bool {
+    pub fn page_is_catching_up(&self) -> bool {
         self.page_texture_epoch != self.page_epochs.get(self.view.page_index)
             && self
                 .last_edit_at

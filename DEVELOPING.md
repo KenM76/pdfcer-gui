@@ -451,7 +451,7 @@ resolves through `open_fixture`, which joins it to the **engine's** read-only
 corpus under `D:\Dev\pdfcer\fixtures`. This repository has a same-named file
 whose four sheets differ in size where the engine's are all US Letter, so a test
 that reuses the constant is measuring a document this repo does not own and
-cannot change. `crates/pdfcer-gui/src/app/state/fixtures.rs` owns the rule and
+cannot change. `crates/pdfcer-gui-base/src/opendoc/fixtures.rs` owns the rule and
 states it once: two named openers, `open_fixture` for the engine's corpus and
 `open_local_fixture` for `fixtures/` here, deliberately not one function taking
 a root — a boolean got backwards picks the wrong tree silently, two names

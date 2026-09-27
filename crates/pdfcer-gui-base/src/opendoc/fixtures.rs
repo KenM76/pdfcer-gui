@@ -12,18 +12,32 @@
 //! would read *"the fixture is missing"* on a machine where both trees exist —
 //! a message pointing at the wrong problem.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/state/fixtures.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/opendoc/fixtures.md`.
+
+use std::path::PathBuf;
 
 use super::OpenDoc;
 use pdfcer_core::document::Document;
 use pdfcer_core::edit::EditSession;
 
+/// The path of `rel` under the engine's `fixtures/synthetic`, asserted to exist.
+pub fn engine_fixture(rel: &str) -> PathBuf {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../pdfcer/fixtures/synthetic")
+        .join(rel);
+    assert!(
+        path.exists(),
+        "the engine fixture {rel} is missing at {}",
+        path.display()
+    );
+    path
+}
+
 /// Open a fixture the way [`PdfcerApp::open_path`] does, without a frame —
 /// the same three calls in the same order, so what is under test is the state
 /// machine rather than an approximation of it.
-#[cfg(test)]
-pub(crate) fn open_fixture(rel: &str) -> OpenDoc {
-    let path = crate::panels::objects::test_support::engine_fixture(rel);
+pub fn open_fixture(rel: &str) -> OpenDoc {
+    let path = engine_fixture(rel);
     let doc = Document::load(&path).expect("the fixture loads");
     let pages = pdfcer_core::page_tree::pages(&doc).expect("a page tree");
     OpenDoc::new(path, EditSession::new(doc), pages)
@@ -31,9 +45,8 @@ pub(crate) fn open_fixture(rel: &str) -> OpenDoc {
 
 /// Open a fixture from **this** repository's `fixtures/`, the same way
 /// [`open_fixture`] opens one of the engine's.
-#[cfg(test)]
-pub(crate) fn open_local_fixture(rel: &str) -> OpenDoc {
-    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+pub fn open_local_fixture(rel: &str) -> OpenDoc {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../fixtures")
         .join(rel);
     assert!(
@@ -50,46 +63,37 @@ pub(crate) fn open_local_fixture(rel: &str) -> OpenDoc {
 // The fixture names
 // ---------------------------------------------------------------------------
 
-#[cfg(test)]
-pub(crate) const FOUR_PAGES: &str = "pageops/four-pages.pdf";
+pub const FOUR_PAGES: &str = "pageops/four-pages.pdf";
 
 /// **One page, one `/Widget` annotation that no `/AcroForm` field owns** —
 /// the input `EditSession::adopt_widget` exists for, and the only fixture in
 /// either corpus that has the shape.
-#[cfg(test)]
-pub(crate) const ORPHAN_WIDGET: &str = "orphan-widget.pdf";
+pub const ORPHAN_WIDGET: &str = "orphan-widget.pdf";
 
 /// **One page, THREE text widgets, every one of them with a drawn `/AP`.**
-#[cfg(test)]
-pub(crate) const THREE_TEXT_FIELDS: &str = "three-text-fields.pdf";
+pub const THREE_TEXT_FIELDS: &str = "three-text-fields.pdf";
 
 /// One page carrying the same words at 0°, 90°, 180°, 270° and 30° — the page
 /// `canvas::textsel`'s §8 rules are asserted on. See
 /// [`crate::canvas::textsel::fixture`] for what each string is for and why it
 /// is set in capitals.
-#[cfg(test)]
-pub(crate) const ROTATED_TEXT: &str = "rotated-text.pdf";
+pub const ROTATED_TEXT: &str = "rotated-text.pdf";
 /// Four optional-content groups: 4 and 7 on by default, 5 and 6 off.
-#[cfg(test)]
-pub(crate) const PAINTED_LAYERS: &str = "layers/painted-layers.pdf";
+pub const PAINTED_LAYERS: &str = "layers/painted-layers.pdf";
 /// **Two pages, one approval signature.** Built by
 /// `tools/gen-signed-fixture.py`, whose header carries why the engine's own
 /// signature fixtures (all one page, none to spare) could not be used; its
 /// load-bearing properties are asserted in `crate::dialogs::signature`.
-#[cfg(test)]
-pub(crate) const SIGNED_TWO_PAGES: &str = "signed-two-pages.pdf";
+pub const SIGNED_TWO_PAGES: &str = "signed-two-pages.pdf";
 /// **A document whose catalog names `/PageMode` twice, with two different
 /// values** — hand-authored because nothing else in either corpus reaches
 /// `Document::load_anomalies()`.
-#[cfg(test)]
-pub(crate) const CONTRADICTS_ITSELF: &str = "contradicts-itself.pdf";
+pub const CONTRADICTS_ITSELF: &str = "contradicts-itself.pdf";
 
 /// **A document with no cross-reference table at all**, so pdfcer rebuilds one
 /// by scanning — and whose scan finds two objects it cannot keep.
-#[cfg(test)]
-pub(crate) const RECOVERED_WITH_LOSSES: &str = "recovered-with-losses.pdf";
+pub const RECOVERED_WITH_LOSSES: &str = "recovered-with-losses.pdf";
 
 /// **The control for [`RECOVERED_WITH_LOSSES`]**: the same damage, the same
 /// recovery path, and nothing the scan could not keep.
-#[cfg(test)]
-pub(crate) const RECOVERED_NO_LOSSES: &str = "recovered-no-losses.pdf";
+pub const RECOVERED_NO_LOSSES: &str = "recovered-no-losses.pdf";

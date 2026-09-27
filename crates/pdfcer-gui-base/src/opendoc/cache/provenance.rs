@@ -1,7 +1,7 @@
 //! **One provenance-bearing text extraction per page, shared by everything
 //! that edits text.**
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/cache/provenance.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/opendoc/cache/provenance.md`.
 
 use std::marker::PhantomData;
 use std::rc::Rc;
@@ -9,10 +9,10 @@ use std::time::Instant;
 
 use pdfcer_core::text_extract::PageText;
 
-use crate::app::state::OpenDoc;
+use crate::opendoc::OpenDoc;
 
 /// **A page's provenance-bearing extracted text, borrowed from the document.**
-pub(crate) struct CachedText<'a> {
+pub struct CachedText<'a> {
     /// The shared extraction. The `RefCell` borrow that produced this is
     /// already released by the time a caller can observe the handle.
     text: Rc<PageText>,
@@ -31,7 +31,7 @@ impl std::ops::Deref for CachedText<'_> {
     }
 }
 
-pub(crate) use pdfcer_gui_base::doccache::ProvenanceTextCache;
+pub use crate::doccache::ProvenanceTextCache;
 
 impl OpenDoc {
     /// **This page's text, with provenance, built at most once per edit.**
@@ -55,7 +55,7 @@ impl OpenDoc {
     ///
     /// `settings.extract_options().with_provenance(true)` — the funnel's
     /// output with one field turned on, **never** `ExtractOptions::default()`.
-    /// `crate::app::settings`' header §2 states the rule and this is the site
+    /// `crate::settings`' header §2 states the rule and this is the site
     /// it was written for.
     ///
     /// The reason is that run indices are a shared vocabulary. The canvas
@@ -67,13 +67,13 @@ impl OpenDoc {
     /// `capture_provenance` populates a field and changes no segmentation, so
     /// `runs[i]` names the same run with it on or off.
     ///
-    /// ⇒ That is also why this cache and `crate::app::cache`'s `page_text` are
+    /// ⇒ That is also why this cache and `crate::opendoc::cache`'s `page_text` are
     /// two caches and not one. They hold the *same segmentation* of the same
     /// page under different provenance settings, and merging them would mean
     /// either paying for provenance on every find (the cost this module
     /// exists to stop paying six times) or editing without it (impossible).
     #[must_use]
-    pub(crate) fn provenance_page_text(&self, page: usize) -> Option<CachedText<'_>> {
+    pub fn provenance_page_text(&self, page: usize) -> Option<CachedText<'_>> {
         self.ensure_provenance_text(page);
         let held = self.provenance_text.text.borrow();
         // The borrow is released by the `?`-free clone and the function
@@ -101,7 +101,7 @@ impl OpenDoc {
         self.provenance_text.built_for.set(Some(key));
         let started = Instant::now();
         let built = self.pages.get(page).and_then(|page_ref| {
-            use crate::app::settings::SettingsExt;
+            use crate::settings::SettingsExt;
             let opts = self.settings.extract_options().with_provenance(true);
             pdfcer_core::text_extract::extract_page_view(
                 &self.session.view(),
@@ -128,7 +128,7 @@ impl OpenDoc {
 
 #[cfg(test)]
 mod tests {
-    use crate::app::state::{FOUR_PAGES, open_fixture};
+    use crate::opendoc::{FOUR_PAGES, open_fixture};
 
     /// **Two readers of one page get the SAME extraction, not two.**
     #[test]

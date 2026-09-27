@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/state/renderreq`
+# `pdfcer-gui-base/opendoc/renderreq`
 
 ## Item notes
 

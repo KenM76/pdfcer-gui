@@ -266,7 +266,7 @@ identity. None of that applies here, for a reason rather than by luck:
   value that cannot survive a click elsewhere cannot survive a document
   open either, so there is nothing to key on and no staleness to detect.
 - Neither this module nor the parent may add a field: `app/mod.rs`,
-  `app/state.rs` and `app/actions.rs` are owned elsewhere, and inventing
+  `opendoc.rs` and `app/actions.rs` are owned elsewhere, and inventing
   a parallel owner for four bytes of widget state would be a worse
   structural change than using the store egui provides for exactly this.
 

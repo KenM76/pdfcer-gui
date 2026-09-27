@@ -1,4 +1,4 @@
-# `app::cache` — the three derived values a document is worth keeping, and why they live on it
+# `opendoc::cache` — the three derived values a document is worth keeping, and why they live on it
 
 ## What is in here
 

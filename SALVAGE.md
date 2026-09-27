@@ -181,7 +181,7 @@ What does not survive is the *file*. Where its contents are:
 | Object tree panel | ~800 | `panels/objects/` |
 | Frame composition, panel order, dock hosting | ~900 | `app/frame.rs` |
 | Keyboard map, action dispatch, status narration | ~1,800 | `app/keyboard.rs`, `app/actions/`, `app/status/` |
-| App state, open/save/close, password prompt, parked docs | ~2,200 | `app/state.rs` + `app/state/` |
+| App state, open/save/close, password prompt, parked docs | ~2,200 | `pdfcer-gui-base/src/opendoc.rs` + `opendoc/` |
 | Canvas hosting, hit-test dispatch, pan/zoom input | ~2,000 | `canvas/` |
 | Dialogs — properties, print, export, reset, settings host | ~1,500 | `dialogs/` |
 | Find | ~600 | `find/` — a top-level module, not `app/find.rs` |

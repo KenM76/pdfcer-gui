@@ -6,10 +6,8 @@ told apart from a file pdfcer has not finished supporting.
 
 ## Why this is its own file
 
-`app/state.rs` crossed the 1,500-line gate (rule R2) when canvas text
-selection added the page-text cache and the text selection to [`OpenDoc`].
-The rule's own justification is why the split is here rather than at
-whichever line the count happened to reach: *"the value of the limit is that
+Opening, saving and closing live apart from [`OpenDoc`], which is only the
+record, because of rule R2's own justification: *"the value of the limit is that
 the file has to have a single subject"*.
 
 `state.rs`'s subject is **what an open document is** — the fields, the

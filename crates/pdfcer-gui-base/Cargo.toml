@@ -83,3 +83,6 @@ ocrcer = ["pdfcer-core/ocrcer"]
 # The private-key side; `pdfcer-gui` forwards its own `signing` here. Not a
 # default: base carries no capability the top crate did not ask for.
 signing = ["pdfcer-core/signing"]
+# `test-fixtures` — `opendoc::fixtures`, for `pdfcer-gui`'s tests. Its
+# dev-dependency turns it on; the shipped program never does.
+test-fixtures = []

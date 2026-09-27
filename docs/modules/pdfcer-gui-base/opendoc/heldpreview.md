@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/state/heldpreview`
+# `pdfcer-gui-base/opendoc/heldpreview`
 
 ## Item notes
 

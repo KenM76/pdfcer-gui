@@ -101,7 +101,7 @@ documents this application exists for.
 **What would close this properly** is one of:
 
 1. moving a second `RenderWorker` onto `OpenDoc` beside `render_worker`,
-   so the existing `cancel_and_wait` calls can reach it (`app/state.rs`,
+   so the existing `cancel_and_wait` calls can reach it (`pdfcer-gui-base/src/opendoc.rs`,
    `app/actions.rs`, `panels/forms/edit.rs`); or
 2. `BENCHMARK.md`'s own recommendation 2 — a **thread pool** for
    thumbnails and adjacent-page prerender — which needs the same
