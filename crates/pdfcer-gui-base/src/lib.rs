@@ -451,3 +451,9 @@ pub mod markuppen;
 
 /// The Markup ▸ Style group's pen control.
 pub mod markupswatch;
+
+/// Spelling a manifest chord into modifiers and a key.
+pub mod keychord;
+
+/// Scripted keystrokes for a window OS input cannot reach.
+pub mod keyscripted;

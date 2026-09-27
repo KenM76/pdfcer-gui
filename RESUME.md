@@ -238,7 +238,7 @@ versioned home). `reports_confidence()` is an R8 capability (`ocrs` answers
    silence there is a fact about free graphics memory on whatever machine ran
    the sweep, and a debug build produces it unconditionally.
    ★ **The seam that blocked rungs 3 and 6 is built and driven.**
-   `app::keyboard::scripted` reads `PDFCER_DIAG_KEYS`, a comma-separated list
+   `pdfcer_gui_base::keyscripted` reads `PDFCER_DIAG_KEYS`, a comma-separated list
    of chords in `parse_chord`'s grammar, and pushes a real `egui::Event::Key`
    into the frame ahead of `collect` — so an off-screen window that takes no
    OS input at all can still climb the *viewer* verbs, which have no

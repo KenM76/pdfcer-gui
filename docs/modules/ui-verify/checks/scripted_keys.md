@@ -6,7 +6,7 @@ all.
 
 # What this file is for
 
-`app::keyboard::scripted` reads `PDFCER_DIAG_KEYS`, a comma-separated list
+`pdfcer_gui_base::keyscripted` reads `PDFCER_DIAG_KEYS`, a comma-separated list
 of chords, and pushes a real `egui::Event::Key` into the frame ahead of the
 keyboard collector. It exists because the four viewer verbs — zoom in, zoom
 out, next page, previous page — have **no registered command id**, so

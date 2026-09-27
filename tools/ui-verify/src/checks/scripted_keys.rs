@@ -281,7 +281,7 @@ fn walk_the_ladder(
             "the application had published no `{STATUS}` line at all when the seam delivered \
              rung 0, so the first chord arrived before the canvas had been laid out. Whatever it \
              set was overwritten by that same frame's fit solve, and the seam reported it as \
-             spelled. ★ The pacing in `app::keyboard::scripted` is what prevents this, and the \
+             spelled. ★ The pacing in `pdfcer_gui_base::keyscripted` is what prevents this, and the \
              load-bearing part of it is that the gap sits in FRONT of the first chord and not \
              only between chords"
         )));

@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/keyboard/scripted`
+# `pdfcer-gui-base/keyscripted`
 
 ## Item notes
 

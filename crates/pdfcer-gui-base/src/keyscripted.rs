@@ -1,6 +1,6 @@
-//! # `app::keyboard::scripted` — a keystroke for a window OS input cannot reach
+//! # `keyscripted` — a keystroke for a window OS input cannot reach
 //!
-//! `PDFCER_DIAG_KEYS` names chords in [`super::parse_chord`]'s grammar and this
+//! `PDFCER_DIAG_KEYS` names chords in [`crate::keychord::parse_chord`]'s grammar and this
 //! module delivers them into the frame's event stream, so that a window placed
 //! off the desktop — which takes no OS input at all — can still be driven
 //! through the *viewer* verbs.
@@ -18,12 +18,12 @@
 //! ```
 //!
 //! ⚠ `spelled=yes` means the key was **pushed**, and nothing more. This module
-//! runs before [`super::collect`] and cannot know what became of the press, so
+//! runs before `pdfcer_gui::app::keyboard::collect` and cannot know what became of the press, so
 //! a check must read the effect it wanted from the application's own trace —
 //! `status … zoom=`, `render-spawn … scale=` — keyed on the `index=` above.
 //! Counting rungs and inferring a result is the one reading this line forbids.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/keyboard/scripted.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/keyscripted.md`.
 
 use egui::Context;
 
@@ -71,7 +71,7 @@ pub fn scripted_press(ctx: &Context) {
     // rather than wedging the list on it forever.
     SENT.store(n.saturating_add(1), Ordering::Relaxed);
 
-    let Some((modifiers, key)) = super::parse_chord(spelling) else {
+    let Some((modifiers, key)) = crate::keychord::parse_chord(spelling) else {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             format!("diag-keys index={n} chord={spelling} spelled=no")

@@ -2311,7 +2311,7 @@ nothing to run because it never touches his cursor.
 
 Rungs 3 and 6 need something rung 1 does not: a way to **climb zoom** in a
 process that cannot be driven by OS input, because its window is off the
-desktop. `app::keyboard::scripted` is that seam and it carries its own
+desktop. `pdfcer_gui_base::keyscripted` is that seam and it carries its own
 argument; what belongs here is why the ladder may use it and what it leaves
 undone.
 

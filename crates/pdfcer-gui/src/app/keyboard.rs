@@ -6,7 +6,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/keyboard.md`.
 
-mod scripted;
+use pdfcer_gui_base::keyscripted as scripted;
 
 pub use scripted::scripted_press;
 
@@ -15,24 +15,7 @@ use egui_shell::manifest::Keymap;
 
 use crate::app::actions::Action;
 
-/// **Spell a manifest chord into the modifiers and key that fire it.**
-fn parse_chord(chord: &str) -> Option<(egui::Modifiers, Key)> {
-    let mut modifiers = egui::Modifiers::NONE;
-    let mut key = None;
-    for part in chord.split('+') {
-        match part {
-            "Ctrl" | "Cmd" | "Command" => modifiers.command = true,
-            "Shift" => modifiers.shift = true,
-            "Alt" => modifiers.alt = true,
-            // A trailing empty segment is the literal `+` of a chord spelled
-            // `Ctrl++`. Splitting on the separator cannot tell the two apart,
-            // so the empty string is read as the key it can only have been.
-            "" => key = Some(Key::Plus),
-            other => key = Some(Key::from_name(other)?),
-        }
-    }
-    Some((modifiers, key?))
-}
+use pdfcer_gui_base::keychord::parse_chord;
 
 /// **The chords this module binds outright — viewer navigation — and every
 /// spelling a manifest might use for each.**
