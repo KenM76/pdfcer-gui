@@ -190,7 +190,7 @@ are all 1:50 in millimetres re-picks the unit on every document.
 | Print preview zoom minimum, maximum, step | 0.25, 40, 1.25 | `dialogs/print/preview.rs:256,258,261` | none |
 | Print preview strip height, canvas height bounds, fit margin | 96 pt, 160 to 1400 pt, 0.92 | `dialogs/print/preview.rs:191,196,204,220` | none |
 | Default paper for a job that plans **no** pages | US Letter portrait, 612 × 792 pt | `dialogs/print/mod.rs:1464` | none — **and deliberately none** |
-| Custom paper size, given by dimensions rather than by the driver's form list | not constructible — `PaperChoice` has no `Custom` variant | `dialogs/print/spooler/mod.rs:319` | partly reachable, deliberately |
+| Custom paper size, given by dimensions rather than by the driver's form list | not constructible — `PaperChoice` has no `Custom` variant | `PaperChoice` (base `printspooler`) | partly reachable, deliberately |
 
 **The find-highlight colour cannot be a control until the theme has a role for
 it.** Every colour on this canvas comes from the theme

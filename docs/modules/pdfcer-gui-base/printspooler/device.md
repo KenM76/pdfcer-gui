@@ -1,4 +1,4 @@
-# `dialogs::print::spooler::device` — what a printer IS, and how it is configured
+# `printspooler::device` — what a printer IS, and how it is configured
 
 ## The seam this file is on the other side of
 

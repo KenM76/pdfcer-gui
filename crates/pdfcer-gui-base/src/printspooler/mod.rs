@@ -1,14 +1,14 @@
-//! # `dialogs::print::spooler` — the one module that knows `pdfcer-print` exists
+//! # `printspooler` — the one module that knows `pdfcer-print` exists
 //!
 //! ## Read this first: this module is the ADAPTER, and it is now live
 //!
-//! Everything else in [`crate::dialogs::print`] — the three tabs, the range
+//! Everything else in `pdfcer_gui::dialogs::print` — the three tabs, the range
 //! parser, the zoom anchor, the preview raster cache, the clip disclosure,
 //! the commit button's label — is written against the types *in here*.
 //! Nothing else in the dialog names a printing type, which is what confined
 //! the whole "make printing work" change to this one module.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/print/spooler/mod.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/printspooler/mod.md`.
 
 use std::fmt;
 
@@ -22,7 +22,7 @@ mod device;
 // implementation detail — where a type happens to live — into every file
 // that names one. The seam is real and worth having; it is not worth
 // spending the caller's attention on.
-pub(crate) use device::{
+pub use device::{
     DeviceFeatures, DriverConfig, FormSourceSupport, PaperForm, Printer, device_features,
     edit_printer_configuration, list_printers, printer_forms,
 };
@@ -33,7 +33,7 @@ pub(crate) use device::{
 
 /// Why the print system could not be reached.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) enum Unavailable {
+pub enum Unavailable {
     /// The spooler itself could not be queried — `list_printers` or
     /// `device_features` returned `Err`. Carries `PrintError`'s own sentence.
     Spooler(String),
@@ -60,7 +60,7 @@ impl fmt::Display for Unavailable {
 
 /// How a page is sized onto the sheet.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) enum ScaleMode {
+pub enum ScaleMode {
     /// Scale to fill the printable area, up or down, preserving aspect.
     Fit,
     /// One PDF point to 1/72 inch of paper, whatever that costs.
@@ -76,7 +76,7 @@ pub(crate) enum ScaleMode {
 ///
 /// Maps to `pdfcer_print::PageSubset`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub(crate) enum PageSubset {
+pub enum PageSubset {
     /// No filtering.
     #[default]
     All,
@@ -88,7 +88,7 @@ pub(crate) enum PageSubset {
 
 /// Copy ordering. Maps to `pdfcer_print::Collate`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub(crate) enum Collate {
+pub enum Collate {
     /// The whole set, then the whole set again.
     #[default]
     Collated,
@@ -98,7 +98,7 @@ pub(crate) enum Collate {
 
 /// Which way up the sheet is fed. Maps to `pdfcer_print::Orientation`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub(crate) enum Orientation {
+pub enum Orientation {
     /// Choose from each page's own shape.
     #[default]
     Auto,
@@ -110,7 +110,7 @@ pub(crate) enum Orientation {
 
 /// Two-sided printing. Maps to `pdfcer_print::Duplex`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub(crate) enum Duplex {
+pub enum Duplex {
     /// One side only — also what a device that cannot duplex does.
     #[default]
     Simplex,
@@ -122,29 +122,29 @@ pub(crate) enum Duplex {
 
 /// The arithmetic half of a job: which pages, at what size, in what order.
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct JobSpec {
+pub struct JobSpec {
     /// Zero-based page indices, in document order.
-    pub(crate) pages: Vec<usize>,
+    pub pages: Vec<usize>,
     /// How each page is sized onto the sheet.
-    pub(crate) mode: ScaleMode,
+    pub mode: ScaleMode,
     /// Upper bound on rendering resolution, in DPI. **A memory bound, not a
     /// quality preference** — and one pdfcer chose rather than the operator,
     /// which is why [`JobResolution::capped`] must be disclosed.
-    pub(crate) max_dpi: u32,
+    pub max_dpi: u32,
     /// Odd/even filtering, applied over [`Self::pages`].
-    pub(crate) subset: PageSubset,
+    pub subset: PageSubset,
     /// Send the sequence back to front.
-    pub(crate) reverse: bool,
+    pub reverse: bool,
     /// How many copies.
-    pub(crate) copies: u16,
+    pub copies: u16,
     /// Copy ordering.
-    pub(crate) collate: Collate,
+    pub collate: Collate,
 }
 
 /// Which sheet the driver is asked to feed. Maps to
 /// `pdfcer_print::PaperSelection`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub(crate) enum PaperChoice {
+pub enum PaperChoice {
     /// Say nothing about paper.
     ///
     ///
@@ -181,16 +181,16 @@ pub(crate) enum PaperChoice {
 ///
 /// Maps to `pdfcer_print::DeviceSettings`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub(crate) struct DeviceSettings {
+pub struct DeviceSettings {
     /// Sheet orientation.
-    pub(crate) orientation: Orientation,
+    pub orientation: Orientation,
     /// Two-sided printing, if the device supports it.
-    pub(crate) duplex: Duplex,
+    pub duplex: Duplex,
     /// Ask the driver to pick the input tray from each page's size.
-    pub(crate) pick_tray_by_page_size: bool,
+    pub pick_tray_by_page_size: bool,
     /// Which sheet to feed. **A request the driver may decline** — see
     /// [`PaperChoice`].
-    pub(crate) paper: PaperChoice,
+    pub paper: PaperChoice,
 }
 
 // ---------------------------------------------------------------------------
@@ -200,48 +200,48 @@ pub(crate) struct DeviceSettings {
 /// The sheet, the printable area within it, and the resolution — **already
 /// turned for this job's orientation**.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) struct DeviceGeometry {
+pub struct DeviceGeometry {
     /// Resolution in dots per inch, horizontal and vertical.
     ///
     /// A pair rather than one number because asymmetric devices are real
     /// (600×300 on some plotters), and the engine renders at the **smaller**
     /// axis so the driver is not left to resample.
-    pub(crate) dpi: (u32, u32),
+    pub dpi: (u32, u32),
     /// The printable area in points — smaller than the sheet by the
     /// unprintable margins the driver reports.
-    pub(crate) printable_pt: (f64, f64),
+    pub printable_pt: (f64, f64),
     /// The full sheet in points.
-    pub(crate) physical_pt: (f64, f64),
+    pub physical_pt: (f64, f64),
     /// Where the printable area starts relative to the sheet corner, in
     /// points: the top-left unprintable margin.
-    pub(crate) offset_pt: (f64, f64),
+    pub offset_pt: (f64, f64),
 }
 
 /// Where and how big one page lands on the sheet.
 ///
 /// Maps to `pdfcer_print::Placement`.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) struct Placement {
+pub struct Placement {
     /// Multiplier from PDF points to paper points.
-    pub(crate) scale: f64,
+    pub scale: f64,
     /// Offset within the *printable area*, in paper points.
-    pub(crate) offset_x_pt: f64,
+    pub offset_x_pt: f64,
     /// Vertical offset, same units.
-    pub(crate) offset_y_pt: f64,
+    pub offset_y_pt: f64,
     /// **The scaled page does not fit and will lose content off the edges.**
     ///
     /// Acrobat clips silently here. pdfcer reports it — the operator's
     /// standing ruling that parity is a floor — and this flag is the whole
     /// reason the preview hatches, the caption counts, and the commit
     /// button's own label carries the number.
-    pub(crate) clipped: bool,
+    pub clipped: bool,
 }
 
 /// Where one page lands, and how big to render it.
 ///
 /// Maps to `pdfcer_print::PagePlan`.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) struct PagePlan {
+pub struct PagePlan {
     /// The **document** page this describes, zero-based.
     ///
     /// Not a position in the plan list. The plan list is the job's
@@ -250,9 +250,9 @@ pub(crate) struct PagePlan {
     /// Indexing page sizes by a plan's position rather than by this field is
     /// a live defect the salvaged preview carries a comment about; see
     /// [`super::preview`].
-    pub(crate) index: usize,
+    pub index: usize,
     /// Placement on the sheet.
-    pub(crate) placement: Placement,
+    pub placement: Placement,
     /// The scale to rasterise at, in device pixels per PDF point.
     ///
     /// **Already carries the print scale** (`dpi / 72 × placement.scale`), so
@@ -261,62 +261,62 @@ pub(crate) struct PagePlan {
     /// letting the driver stretch resamples twice, and on a CAD drawing —
     /// whose value is thin lines — that is the difference an operator notices
     /// first.
-    pub(crate) render_scale: f64,
+    pub render_scale: f64,
     /// The poster sheet this is, when poster mode tiled the page; see
     /// `dialogs::print::poster`. `None` for an ordinary page.
-    pub(crate) tile: Option<pdfcer_gui_base::poster::Tile>,
+    pub tile: Option<crate::poster::Tile>,
 }
 
 /// The resolution a job will render at, and whether pdfcer's cap bound.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct JobResolution {
+pub struct JobResolution {
     /// The DPI actually used.
-    pub(crate) dpi: u32,
+    pub dpi: u32,
     /// The device's own resolution, before the cap.
-    pub(crate) device_dpi: u32,
+    pub device_dpi: u32,
     /// Whether [`JobSpec::max_dpi`] reduced it.
     ///
     /// **The case that must be disclosed**: pdfcer chose a number the operator
     /// did not, by pdfcer's own memory judgement.
-    pub(crate) capped: bool,
+    pub capped: bool,
     /// Roughly what one page at the *device's* resolution would cost, in
     /// megabytes — the number that justifies the cap, from
     /// `JobResolution::uncapped_page_mb`.
-    pub(crate) uncapped_page_mb: u64,
+    pub uncapped_page_mb: u64,
 }
 
 /// A job, planned: the turned geometry, the resolution verdict, and one entry
 /// per sheet in the order it will be sent.
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct Job {
+pub struct Job {
     /// The sheet this job was planned against, already turned.
-    pub(crate) device: DeviceGeometry,
+    pub device: DeviceGeometry,
     /// What resolution it will render at, and whether pdfcer capped it.
-    pub(crate) resolution: JobResolution,
+    pub resolution: JobResolution,
     /// One entry per sheet, in send order.
-    pub(crate) plans: Vec<PagePlan>,
+    pub plans: Vec<PagePlan>,
 }
 
 impl Job {
     /// How many sheets of this job will lose content off an edge.
-    pub(crate) fn clipped(&self) -> usize {
+    pub fn clipped(&self) -> usize {
         self.plans.iter().filter(|p| p.placement.clipped).count()
     }
 }
 
 /// One rendered page, ready to blit.
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct PageBitmap {
+pub struct PageBitmap {
     /// Width in device pixels.
-    pub(crate) width: u32,
+    pub width: u32,
     /// Height in device pixels.
-    pub(crate) height: u32,
+    pub height: u32,
     /// The pixels, premultiplied RGBA8.
-    pub(crate) rgba: Vec<u8>,
+    pub rgba: Vec<u8>,
     /// Where this page lands on the sheet.
-    pub(crate) placement: Placement,
+    pub placement: Placement,
     /// The page's own size in PDF points — what the driver picks paper from.
-    pub(crate) page_pt: (f64, f64),
+    pub page_pt: (f64, f64),
 }
 
 /// What a spool attempt did. Maps to `pdfcer_print::SpoolReport`.
@@ -325,28 +325,28 @@ pub(crate) struct PageBitmap {
     reason = "constructed by the adapter once pdfcer-print is linked; see the module header" // ui-text-exempt: lint justification, never displayed
 )]
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct SpoolReport {
+pub struct SpoolReport {
     /// Pages sent.
-    pub(crate) pages: usize,
+    pub pages: usize,
     /// Whether a job was actually started.
-    pub(crate) printed: bool,
+    pub printed: bool,
     /// The device's reported resolution.
-    pub(crate) dpi: (i32, i32),
+    pub dpi: (i32, i32),
     /// Pages whose placement reported [`Placement::clipped`].
-    pub(crate) clipped_pages: usize,
+    pub clipped_pages: usize,
     /// The spooler's job ID, when one was started.
-    pub(crate) job_id: Option<u32>,
+    pub job_id: Option<u32>,
     /// Where the `DEVMODE` this job was sent with came from.
     ///
     /// One of its four values is a disclosure the operator would otherwise
     /// never learn — see [`SettingsSource`].
-    pub(crate) settings_source: SettingsSource,
+    pub settings_source: SettingsSource,
 }
 
 /// Where the `DEVMODE` a job was sent with came from. Maps to
 /// `pdfcer_print::SettingsSource`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub(crate) enum SettingsSource {
+pub enum SettingsSource {
     /// No `DEVMODE` was sent at all — nothing pdfcer controls differs from
     /// what the device is already set to. The cheapest, most conservative
     /// case, and the common one. Nothing to disclose.
@@ -528,7 +528,7 @@ fn to_engine_bitmap(bitmap: &PageBitmap) -> pdfcer_print::PageBitmap {
 /// itself, which is a different sentence from having no printers at all —
 /// [`crate::text::print::device_unavailable`] rather than
 /// [`crate::text::print::spooler_unavailable`].
-pub(crate) fn plan(
+pub fn plan(
     printer: &str,
     settings: DeviceSettings,
     config: Option<&DriverConfig>,
@@ -635,7 +635,7 @@ pub(crate) fn plan(
 }
 
 /// Hand the rendered sheets to the spooler.
-pub(crate) fn spool(
+pub fn spool(
     printer: &str,
     bitmaps: &[PageBitmap],
     settings: DeviceSettings,

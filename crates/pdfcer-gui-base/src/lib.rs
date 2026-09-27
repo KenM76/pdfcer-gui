@@ -402,3 +402,6 @@ pub mod runmenu;
 
 /// Showing what a measuring click will pick, before it picks it.
 pub mod measurehover;
+
+/// The one module that knows `pdfcer-print` exists.
+pub mod printspooler;

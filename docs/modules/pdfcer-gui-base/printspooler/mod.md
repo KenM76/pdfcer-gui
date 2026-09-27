@@ -1,4 +1,4 @@
-# `dialogs::print::spooler` — the one module that knows `pdfcer-print` exists
+# `printspooler` — the one module that knows `pdfcer-print` exists
 
 ## Read this first: this module is the ADAPTER, and it is now live
 

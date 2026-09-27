@@ -5,7 +5,7 @@ the operator reported as *"the print dialogue didn't work"*.
 
 # The defect
 
-`crates/pdfcer-gui/src/dialogs/print/spooler.rs` is the adapter between the
+`crates/pdfcer-gui-base/src/printspooler/` is the adapter between the
 print dialog and `pdfcer-print`. It was written as four **holes** — named
 functions whose bodies returned `Err(Unavailable::NotLinked)` — because at
 the time it was written `pdfcer-print` genuinely was not a dependency of the

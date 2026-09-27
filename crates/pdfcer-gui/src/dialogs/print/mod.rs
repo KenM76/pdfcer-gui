@@ -71,7 +71,7 @@ pub(crate) mod preview;
 /// stores **these** types — [`spooler::Orientation`], [`spooler::Duplex`],
 /// [`spooler::ScaleMode`], [`spooler::PageSubset`], [`spooler::PaperChoice`] —
 /// rather than a mirrored set of its own.
-pub(crate) mod spooler;
+pub(crate) use pdfcer_gui_base::printspooler as spooler;
 pub(crate) mod tabs;
 
 /// **What the operator has actually looked at, and what may be said about the
