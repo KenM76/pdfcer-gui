@@ -1,15 +1,15 @@
-//! # `canvas::formfield::draft` — what the dialog collects, and what it remembers
+//! # `formdraft` — what the dialog collects, and what it remembers
 //!
 //! A [`Draft`] is the whole of a form field's settings **before** anything
 //! reaches the document. It is what the placement dialog edits, what
 //! `Action::CommitFormField` carries, and what [`Remembered`] keeps for the
 //! next placement.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/formfield/draft.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/formdraft.md`.
 
 use pdfcer_core::forms::MkColor;
 
-use super::FormFieldKind;
+use crate::formfieldkind::FormFieldKind;
 
 /// How many characters a field name may run to before the dialog stops
 /// accepting more.
@@ -104,7 +104,7 @@ pub struct Draft {
     /// What is still true, and is the reason this field exists at all: a
     /// button *being placed* has no action yet, so this is the one place the
     /// question is asked before there is anything to read.
-    pub action: super::action::ButtonDoes,
+    pub action: crate::pushbutton::ButtonDoes,
 }
 
 impl Draft {
@@ -168,7 +168,7 @@ impl Draft {
             // Nothing, which is exactly what `add_push_button` authors on its
             // own. A dialog opening with an action pre-chosen would be pdfcer
             // deciding what somebody's button does.
-            action: super::action::ButtonDoes::default(),
+            action: crate::pushbutton::ButtonDoes::default(),
         }
     }
 }

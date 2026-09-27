@@ -572,7 +572,7 @@ pub struct PdfcerApp {
     /// when you turn the page.
     ///
     /// …and, like the pen, deliberately **not** written to `userdata`. See
-    /// `canvas::formfield::draft::Remembered`: a remembered setting that
+    /// `pdfcer_gui_base::formdraft::Remembered`: a remembered setting that
     /// survived a restart would silently govern a different document days
     /// later, which is the shape of a setting nobody can find the source of.
     pub form_defaults: crate::canvas::formfield::Remembered,

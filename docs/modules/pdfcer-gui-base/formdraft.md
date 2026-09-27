@@ -1,4 +1,4 @@
-# `canvas::formfield::draft` — what the dialog collects, and what it remembers
+# `formdraft` — what the dialog collects, and what it remembers
 
 A [`Draft`] is the whole of a form field's settings **before** anything
 reaches the document. It is what the placement dialog edits, what
@@ -21,7 +21,7 @@ kinds is the useful behaviour: someone who turns the border off for a text
 field wants it off for the check box they place next.
 
 The conversion to the five engine specs happens in exactly one place
-([`crate::app::actions::forms`]), where the unused fields are simply not
+(`pdfcer_gui::app::actions::forms`), where the unused fields are simply not
 read. That is the correct location for the narrowing: at the boundary, once.
 
 ## What is remembered and what is not, and the hazard in between

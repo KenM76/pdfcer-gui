@@ -27,7 +27,7 @@ somebody has.
 
 ## Why one dialog for five kinds, and how it stays legible
 
-[`crate::canvas::formfield::draft::Draft`]'s header argues the model side:
+`pdfcer_gui_base::formdraft::Draft`'s header argues the model side:
 the five engine specs share nine fields and differ in one to five, so five
 GUI structs would mean writing the shared half five times. The same argument
 holds for the surface, with one addition — **the shared half is the half an

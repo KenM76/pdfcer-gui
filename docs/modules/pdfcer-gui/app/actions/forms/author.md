@@ -5,7 +5,7 @@
 ### `fn author`
 
 The single narrowing point between this shell's one `Draft` and
-`pdfcer-core`'s five spec types — see [`crate::canvas::formfield::draft`]'s
+`pdfcer-core`'s five spec types — see `pdfcer_gui_base::formdraft`'s
 header for why the shell holds one struct and the engine five. Every field
 a kind does not have is simply not read here, which is what makes that
 asymmetry cost one `match` instead of five dialogs.

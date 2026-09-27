@@ -478,3 +478,15 @@ pub mod annotaction;
 
 /// The verbs whose subject is text style, a ce dimension, a redaction or an attachment.
 pub mod editactions;
+
+/// The kind of form field a placement authors.
+pub mod formfieldkind;
+
+/// A form-filling edit the Forms panel raises.
+pub mod formedit;
+
+/// The verbs whose subject is a form field.
+pub mod fieldaction;
+
+/// What the form-field placement dialog collects and remembers.
+pub mod formdraft;
