@@ -28,5 +28,5 @@ crates/pdfcer-gui-base/src/text/arrange.rs::every_nudge_refusal_has_its_own_sent
 crates/pdfcer-gui-base/src/text/diagnostics.rs::every_blend_space_origin_says_something_different	BlendSpaceFrom	FOREIGN	3
 crates/pdfcer-gui-base/src/text/images.rs::every_known_recompression_reason_has_its_own_words	RecompressReason	FOREIGN	5
 crates/pdfcer-gui-base/src/text/panels/layers.rs::each_reason_says_something_the_others_do_not	Unresolved	LOCAL	5
-crates/pdfcer-gui/src/text/redact/tests.rs::each_named_refusal_says_something_different	RedactApplyRefusal	LOCAL	7
+crates/pdfcer-gui-base/src/text/redact/tests.rs::each_named_refusal_says_something_different	RedactApplyRefusal	LOCAL	7
 crates/pdfcer-gui/src/text/textedit.rs::every_reflow_cause_says_something_of_its_own	ReflowRefusal	LOCAL	8

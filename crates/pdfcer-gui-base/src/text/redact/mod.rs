@@ -3,7 +3,7 @@
 //! Consumed by [`crate::panels::redact`] (mark and review) and
 //! [`crate::dialogs::redact`] (the apply transaction and its report).
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/redact/mod.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/redact/mod.md`.
 
 // ---------------------------------------------------------------------------
 // The panel — marking and review
@@ -334,11 +334,11 @@ pub fn residual_heading() -> &'static str {
 // `pub use` rather than a `carriers::` path at every call site, so the split is
 // invisible to consumers and the catalog keeps one flat namespace.
 // ---------------------------------------------------------------------------
+use crate::text::redactcarriers as carriers;
 pub use carriers::{
     carrier_name, checked_clean_line, engine_notes_heading, engine_notes_lead, left_by_choice_line,
     residual_carrier_line, residual_sweep_line, sweep_scrubbed_line,
 };
-use pdfcer_gui_base::text::redactcarriers as carriers;
 
 /// **One residual line for a removed string that still occurs somewhere in
 /// the saved file while occurring in nothing the document draws.**
@@ -494,12 +494,13 @@ pub fn confirm_checkbox() -> &'static str {
 // `pub use` rather than a `removed::` path at every call site, matching the
 // two splits above, so the catalog keeps one flat namespace.
 // ---------------------------------------------------------------------------
-use pdfcer_gui_base::text::redactremoved as removed;
+use crate::text::redactremoved as removed;
 pub use removed::{
     MAX_CHARS, MAX_ENTRIES, removed_text_entry, removed_text_heading, removed_text_lead,
     removed_text_more, removed_text_none, removed_text_undecodable,
 };
 
+use crate::text::redactdestcopy as destination;
 pub use destination::{
     cancel_button_staged, cancel_button_staged_tooltip, confirm_button_into_document,
     confirm_button_into_document_now, confirm_button_replace, destination_heading,
@@ -510,7 +511,6 @@ pub use destination::{
     removal_happens_at_save, saved_applying_redaction, staged_body, staged_heading,
     staged_into_document, staging_cancelled,
 };
-use pdfcer_gui_base::text::redactdestcopy as destination;
 
 /// **The confirm control. The label IS the consequence** — never "OK", never
 /// "Yes", never "Apply" alone.
@@ -793,8 +793,8 @@ pub const fn fill_label() -> &'static str {
 
 /// One fill's name.
 #[must_use]
-pub const fn fill_option_label(fill: crate::panels::redact::appearance::Fill) -> &'static str {
-    use crate::panels::redact::appearance::Fill as F;
+pub const fn fill_option_label(fill: crate::redactlook::Fill) -> &'static str {
+    use crate::redactlook::Fill as F;
     match fill {
         F::Black => "Black",
         F::White => "White",

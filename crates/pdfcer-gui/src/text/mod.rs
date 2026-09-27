@@ -14,12 +14,9 @@ pub mod settings;
 /// `crate::shell::commands`.
 /// The four sentences the object clipboard can say when it cannot act.
 pub mod clipboard;
-/// Every string the Forms panel shows. Consumed by `crate::panels::forms`.
-pub mod formfield;
 /// Font-glyph coverage: *can the stack actually draw this character?*
 #[cfg(test)]
 pub mod glyphs;
-pub mod redact;
 pub mod textedit;
 /// Every sentence the text-EDITING tool shows: the three refusals a caret can
 /// meet, and the rule-4 disclosure the engine does not write for a pinned tail.

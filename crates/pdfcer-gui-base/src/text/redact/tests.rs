@@ -15,7 +15,7 @@
 //! rules do not reach. That is why every test below enumerates rather than
 //! sampling, and why adding copy to `mod.rs` means adding a row here.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/redact/tests.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/redact/tests.md`.
 
 // The INNER `#![cfg(test)]` is redundant — the module is declared
 // `#[cfg(test)] mod tests;` — and it is here anyway, because

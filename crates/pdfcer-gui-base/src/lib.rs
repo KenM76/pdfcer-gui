@@ -539,3 +539,6 @@ pub mod rasteroffpage;
 
 /// Searching the page text, and bringing a hit onto the screen.
 pub mod find;
+
+/// What a redaction looks like once applied: its fill and caption.
+pub mod redactlook;

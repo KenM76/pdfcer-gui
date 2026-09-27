@@ -112,6 +112,44 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 # OPEN
 
+## O242–O246 — five asks in one message, FILED BEFORE ANY WORK
+
+> **Ken:** *"When I got to set the scale for dimension groups I find the layout confusing. I think the ratio numbers units are controlled by the dimension units on paper and the other dimension unit box...but I am not sure. It isn't very intuitive. There are a lot of places in the program where we type numbers without having a clear indicator of what the units are. Also units should be able to be entered in any format a user would expect to be able to. Also we should be able to do basic math in any entry box where it makes sense to have, like positioning I should be able to add 10 px to the current position by typing  + 10px in the co- ordinate box. All of this seems like it should be easy to quickly implement using a single pre-processor function for any data entry, with a capabilities filter for each type. Example math won't math for a text box as it will just output the exact text, or a scale value can't have text in it. Also dimensions pop up a message note box and they shouldn't as it makes it hard to manipulate and move the position of the dimension. Also can we add the drawing tools that draw on the review layer so that these can also just draw on the ordinary pdf layer that contains our drawing and table and etc lines?"*
+
+## O242 — **FILED** — the dimension-group scale layout does not say which unit each ratio number is in
+
+He could not tell whether the two ratio numbers take the "on paper" unit, the
+other unit box, or something else. Each number must carry its unit beside it,
+and the layout must read as one sentence: *this much on paper is that much in
+the world*.
+
+## O243 — **FILED** — every typed number shows its unit, and takes a unit in any form a person would type
+
+Absorbs O207. Every numeric entry names its unit on the box. Typed units are read
+in the forms people write: `12mm`, `12 mm`, `1.5in`, `1 1/2"`, `3'`, `3'-4"`,
+`3 ft 4 in`, `10px`, `12pt`, `2cm`, `0.5m`. A unit the field cannot take (text
+in a scale) is refused with a sentence, never silently dropped.
+
+## O244 — **FILED** — arithmetic in number boxes, relative to the current value
+
+`+10px` in a coordinate box moves 10 px from where it is; `*2`, `/3`, `-5mm`
+and a full expression like `12mm + 1/4"` work too. His design: **one
+pre-processor for all data entry, with a capability filter per field type** —
+a text box passes text through untouched; a scale refuses text; a length takes
+units and maths.
+
+## O245 — **FILED** — a ce dimension opens a note pop-up, which gets in the way of moving it
+
+Placing or clicking a ce dimension pops up the comment note box. It should not:
+the box covers the dimension and makes it hard to grab and move.
+
+## O246 — **FILED** — the Review drawing tools can also draw into the page content
+
+Lines, shapes and the other drawing tools that today author comments
+(annotations) should be able to draw into the ordinary page content, the same
+layer as the drawing's own lines and tables. A choice of destination, not a
+replacement: comments stay comments when that is what he wants.
+
 ## O239 — **BUILT, NOT DRIVEN** — with Fit page and Flip pages on, a one-page document does not scroll
 
 > **Ken:** *"also with fit page and flip pages active when a pdf is a single page it shouldn't scroll on the screen."*

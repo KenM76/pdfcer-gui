@@ -1,12 +1,12 @@
 //! # `text::formfield` — every string the form-field placement dialog shows
 //!
 //! One area of the catalog described in [`crate::text`]'s header, covering
-//! [`crate::dialogs::formfield`] — the pop-up that collects a control's details
+//! `pdfcer-gui`'s `dialogs::formfield` — the pop-up that collects a control's details
 //! after it has been placed on the page.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/formfield.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/formfield.md`.
 
-use crate::canvas::formfield::FormFieldKind;
+use crate::formfieldkind::FormFieldKind;
 
 /// The window title, which names the kind being placed.
 #[must_use]
@@ -424,8 +424,8 @@ mod tests {
     fn no_string_here_claims_a_button_cannot_be_given_an_action() {
         for s in [
             caption_label(),
-            title(crate::canvas::formfield::FormFieldKind::PushButton),
-            intro(crate::canvas::formfield::FormFieldKind::PushButton),
+            title(crate::formfieldkind::FormFieldKind::PushButton),
+            intro(crate::formfieldkind::FormFieldKind::PushButton),
         ] {
             let lower = s.to_lowercase();
             assert!(

@@ -281,6 +281,7 @@ pub mod reachout;
 /// Every word the redaction surface says — the marking panel, the apply
 /// report, the two acknowledgements, and the residual lines. Consumed by
 /// `pdfcer_gui::panels::redact` and `pdfcer_gui::dialogs::redact`.
+pub mod redact;
 pub mod resizing;
 pub mod textannot;
 
@@ -493,3 +494,6 @@ mod tests {
 /// duplicated across the seam: this module calls `security`'s wording verbatim
 /// wherever one fact serves both.
 pub mod protect;
+
+/// Every string the form-field pop-up shows.
+pub mod formfield;
