@@ -1,7 +1,7 @@
-//! # `canvas::mapping` — the ONE screen↔page conversion, the PDF↔canvas
+//! # `canvasmapping` — the ONE screen↔page conversion, the PDF↔canvas
 //! projection, and the tolerance
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/mapping.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/canvasmapping.md`.
 
 use egui::{Pos2, Rect};
 
@@ -129,7 +129,7 @@ impl PageMapping {
     /// The **snap** catch radius for this frame, in canvas/page units.
     #[must_use]
     pub fn snap_tolerance(&self) -> f64 {
-        screen_tolerance_to_page(crate::canvas::snap::SNAP_SCREEN_TOLERANCE_PX, self.zoom)
+        screen_tolerance_to_page(crate::snapmark::SNAP_SCREEN_TOLERANCE_PX, self.zoom)
     }
 }
 
@@ -494,29 +494,6 @@ mod vector_tests {
 #[cfg(test)]
 mod o69_tolerance_tests {
     use super::*;
-
-    /// **An anchor is easier to hit than an object, and exactly as easy
-    /// as its own control point** — `OPERATOR_REQUESTS.md` O69.
-    #[test]
-    fn an_anchor_is_caught_more_easily_than_an_object_and_as_easily_as_a_handle() {
-        // Bound through locals rather than compared as literals, so clippy
-        // reads them as values rather than as a constant assertion. The
-        // property is about the RELATIONSHIP between two constants, which is
-        // exactly what a `const` block would hide from a reader looking for
-        // why one of them was changed.
-        let node = NODE_SCREEN_TOLERANCE_PX;
-        let object = SELECT_SCREEN_TOLERANCE_PX;
-        let handle = crate::canvas::handledrag::GRAB_PX;
-        assert!(
-            node > object,
-            "an anchor is a small target and must be more forgiving than a whole object"
-        );
-        assert!(
-            (node - handle).abs() < f32::EPSILON,
-            "an anchor must be no harder to hit than the control point hanging off it — \
-             they were 6 and 8"
-        );
-    }
 
     /// **Widening the anchor radius did NOT widen object picking.**
     #[test]

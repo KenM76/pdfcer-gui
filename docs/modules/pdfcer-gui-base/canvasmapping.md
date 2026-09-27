@@ -1,4 +1,4 @@
-# `canvas::mapping` — the ONE screen↔page conversion, the PDF↔canvas
+# `canvasmapping` — the ONE screen↔page conversion, the PDF↔canvas
 projection, and the tolerance
 
 ## Why this file exists at all

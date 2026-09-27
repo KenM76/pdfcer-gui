@@ -1,4 +1,4 @@
-//! # `canvas::snap` — the GUI half of snapping: the gates, the cycle, the glyph
+//! # `snapmark` — the GUI half of snapping: the gates, the cycle, the glyph
 //!
 //! ## What this group of primitives is
 //!
@@ -7,12 +7,12 @@
 //! returns a priority-sorted list of [`SnapCandidate`]s. The engine deliberately
 //! does **not** own two things, and those two things are this module:
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/snap.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/snapmark.md`.
 
 use egui::{Color32, Pos2, Shape, Stroke};
 use pdfcer_core::vector::{SnapCandidate, SnapKind};
 
-use super::mapping::screen_tolerance_to_page;
+use crate::canvasmapping::screen_tolerance_to_page;
 
 /// The default screen-space snap catch radius, in egui logical points
 /// (decision 011 §2.2: "≈8–12 px"). Converted to a page-space tolerance each
@@ -232,7 +232,7 @@ pub fn snap_indicator_tint(ctx: &egui::Context) -> Option<Color32> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::canvas::mapping::SELECT_SCREEN_TOLERANCE_PX;
+    use crate::canvasmapping::SELECT_SCREEN_TOLERANCE_PX;
 
     /// **The snap catch radius is zoom-invariant on screen.**
     #[test]

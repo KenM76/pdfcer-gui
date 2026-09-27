@@ -155,7 +155,7 @@ pub mod keys;
 /// collapsing the five destination variants into two behaviours is the
 /// defect, and why the affordance is a cursor and never a mark on the page.
 pub mod links;
-pub mod mapping;
+pub use pdfcer_gui_base::canvasmapping as mapping;
 /// **What a rubber-band takes, and why the DIRECTION decides it** —
 /// `OPERATOR_REQUESTS.md` O88. Left to right encloses, right to left
 /// touches; AutoCAD's window / crossing-window rule. Split out of
@@ -201,7 +201,7 @@ pub mod ocrlayer;
 pub mod overlay;
 /// The application's own colour ROLES — `preview` and `dimension_selected` —
 /// built from the resolved theme's palette and published per frame.
-pub mod overlays;
+pub use pdfcer_gui_base::overlayroles as overlays;
 
 /// **Dropping pages onto the page view** — the caret between two sheets, and
 /// the release that inserts or reorders there.
@@ -283,7 +283,7 @@ pub mod smart;
 /// (`OPERATOR_REQUESTS.md` O63).
 pub mod previews;
 pub mod shapes;
-pub mod snap;
+pub use pdfcer_gui_base::snapmark as snap;
 // Which page the frame is about, in what order the rest should be drawn, and
 // where a navigated-to page lands. The canvas's half of Phase 4's strip.
 mod backdrop;

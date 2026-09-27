@@ -303,3 +303,31 @@ mod tests {
         assert!((v.x - 30.0).abs() < 1e-6 && (v.y - 20.0).abs() < 1e-6);
     }
 }
+
+#[cfg(test)]
+mod o69_tolerance_tests {
+    use super::*;
+
+    /// **An anchor is easier to hit than an object, and exactly as easy
+    /// as its own control point** — `OPERATOR_REQUESTS.md` O69.
+    #[test]
+    fn an_anchor_is_caught_more_easily_than_an_object_and_as_easily_as_a_handle() {
+        // Bound through locals rather than compared as literals, so clippy
+        // reads them as values rather than as a constant assertion. The
+        // property is about the RELATIONSHIP between two constants, which is
+        // exactly what a `const` block would hide from a reader looking for
+        // why one of them was changed.
+        let node = crate::canvas::mapping::NODE_SCREEN_TOLERANCE_PX;
+        let object = crate::canvas::mapping::SELECT_SCREEN_TOLERANCE_PX;
+        let handle = GRAB_PX;
+        assert!(
+            node > object,
+            "an anchor is a small target and must be more forgiving than a whole object"
+        );
+        assert!(
+            (node - handle).abs() < f32::EPSILON,
+            "an anchor must be no harder to hit than the control point hanging off it — \
+             they were 6 and 8"
+        );
+    }
+}

@@ -366,3 +366,12 @@ pub mod defaultappsetting;
 
 /// The verbs that exist only to move a native file picker out of the layout pass.
 pub mod writeaction;
+
+/// Page space to screen space and back, for one page at one zoom.
+pub mod canvasmapping;
+
+/// The snap indicator and its screen tolerance.
+pub mod snapmark;
+
+/// The overlay colour roles the canvas registers with the theme.
+pub mod overlayroles;

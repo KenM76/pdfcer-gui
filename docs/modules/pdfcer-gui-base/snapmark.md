@@ -1,4 +1,4 @@
-# `canvas::snap` — the GUI half of snapping: the gates, the cycle, the glyph
+# `snapmark` — the GUI half of snapping: the gates, the cycle, the glyph
 
 ## What this group of primitives is
 

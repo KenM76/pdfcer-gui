@@ -1,7 +1,7 @@
-//! # `canvas::overlays` — the application's own colour roles, published per
+//! # `overlayroles` — the application's own colour roles, published per
 //! frame
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/overlays.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/overlayroles.md`.
 
 use egui_shell::theme::{Overlays, Theme};
 
@@ -9,14 +9,8 @@ use egui_shell::theme::{Overlays, Theme};
 #[must_use]
 pub fn overlays_for(theme: &Theme) -> Overlays {
     Overlays::new()
-        .with(
-            crate::canvas::snap::SNAP_INDICATOR_ROLE,
-            theme.palette.notice,
-        )
-        .with(
-            crate::canvas::snap::SNAP_COMMITTED_ROLE,
-            theme.palette.accent,
-        )
+        .with(crate::snapmark::SNAP_INDICATOR_ROLE, theme.palette.notice)
+        .with(crate::snapmark::SNAP_COMMITTED_ROLE, theme.palette.accent)
 }
 
 /// Publish the roles for this frame.
@@ -38,8 +32,8 @@ mod tests {
             assert!(
                 overlays
                     .assert_distinct(&[
-                        crate::canvas::snap::SNAP_INDICATOR_ROLE,
-                        crate::canvas::snap::SNAP_COMMITTED_ROLE,
+                        crate::snapmark::SNAP_INDICATOR_ROLE,
+                        crate::snapmark::SNAP_COMMITTED_ROLE,
                     ])
                     .is_ok(),
                 "{preset:?} draws a snap PROPOSAL and a COMMITTED selection in the same \
@@ -54,8 +48,8 @@ mod tests {
         for preset in Preset::ALL {
             let overlays = overlays_for(&Theme::new(*preset));
             for role in [
-                crate::canvas::snap::SNAP_INDICATOR_ROLE,
-                crate::canvas::snap::SNAP_COMMITTED_ROLE,
+                crate::snapmark::SNAP_INDICATOR_ROLE,
+                crate::snapmark::SNAP_COMMITTED_ROLE,
             ] {
                 assert!(
                     overlays.get(role).is_some(),

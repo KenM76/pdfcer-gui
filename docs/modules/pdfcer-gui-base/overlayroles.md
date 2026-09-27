@@ -1,4 +1,4 @@
-# `canvas::overlays` — the application's own colour roles, published per
+# `overlayroles` — the application's own colour roles, published per
 frame
 
 ## The gap this closes
