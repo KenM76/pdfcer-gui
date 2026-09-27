@@ -488,24 +488,9 @@ impl FindState {
 // The request, and applying it
 // ===========================================================================
 
-/// Which way [`FindRequest::Step`] moves.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Step {
-    /// Toward the end of the document, wrapping to the first hit.
-    Next,
-    /// Toward the start, wrapping to the last hit.
-    Previous,
-}
+pub use pdfcer_gui_base::findrequest::Step;
 
-/// One thing the operator asked Find to do, carried by
-/// [`crate::app::actions::Action::Find`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum FindRequest {
-    /// Run the search now, for whatever is in the bar.
-    Search,
-    /// Move to the adjacent hit.
-    Step(Step),
-}
+pub use pdfcer_gui_base::findrequest::FindRequest;
 
 /// Apply one [`FindRequest`].
 pub fn apply(state: &mut FindState, doc: &mut OpenDoc, request: FindRequest) {

@@ -3,145 +3,12 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/markup/text.md`.
 
-use pdfcer_core::annot_author::{Color, MarkupSpec, Quad, TextMarkupKind};
+use pdfcer_core::annot_author::{Color, MarkupSpec, Quad};
 
 use crate::app::actions::Action;
 use crate::canvas::textsel::TextSelection;
 
-/// Which of the three selection-marking subtypes a command authors.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TextMarkKind {
-    /// `/Highlight` — a translucent wash over each quad.
-    ///
-    /// The one kind in this enum that is *also* a [`super::MarkupKind`] — the
-    /// armed tool that draws an area highlight by dragging a box.
-    ///
-    /// That is not a duplication, and the reason is what these two enums
-    /// actually encode: **not identity, but GEOMETRY.** `MarkupKind` is *"kinds
-    /// whose operand is a shape the pointer draws"*; this one is *"kinds whose
-    /// operand is a run of text"*. Highlight is the only kind that is honestly
-    /// both, because a highlight over text follows the lines and a highlight
-    /// over a scan is an area — and Acrobat's own tool does exactly that.
-    ///
-    /// ⇒ A kind reachable by two gestures needs an entry in both tables. The
-    /// alternative — one enum with a geometry field — would put a branch in
-    /// every arm that today cannot be wrong, to express a thing that is true of
-    /// one variant.
-    ///
-    /// It takes the **highlighter**, not the ink, unlike the other three —
-    /// see [`Self::rgb`]. Same instrument, same swatch, whichever gesture
-    /// reached it.
-    Highlight,
-    /// `/Underline` — a line near each quad's baseline.
-    Underline,
-    /// `/StrikeOut` — a line through each quad's vertical middle.
-    StrikeOut,
-    /// `/Squiggly` — a wavy line at each quad's baseline.
-    ///
-    /// pdfcer authors this natively **even though Acrobat's own UI does not** —
-    /// a deliberate exceed-Acrobat choice recorded in `pdfcer-core`'s
-    /// `TextMarkupKind::Squiggly`: the subtype is fully spec-legal (§12.5.6.10)
-    /// and Acrobat displays it. It is offered here for that reason and not by
-    /// oversight; the standing instruction is to *match* the reference
-    /// applications, and matching does not mean declining something the engine
-    /// already writes correctly.
-    Squiggly,
-}
-
-impl TextMarkKind {
-    /// Every variant, in the order the Markup ribbon lists them.
-    pub const ALL: &'static [TextMarkKind] = &[
-        TextMarkKind::Underline,
-        TextMarkKind::StrikeOut,
-        TextMarkKind::Squiggly,
-    ];
-
-    /// The `pdfcer-core` subtype this kind authors.
-    #[must_use]
-    fn subtype(self) -> TextMarkupKind {
-        match self {
-            Self::Highlight => TextMarkupKind::Highlight,
-            Self::Underline => TextMarkupKind::Underline,
-            Self::StrikeOut => TextMarkupKind::StrikeOut,
-            Self::Squiggly => TextMarkupKind::Squiggly,
-        }
-    }
-
-    /// **EACH OF THE FOUR TAKES ITS OWN PEN.**
-    ///
-    /// A two-instrument partition — lines take the biro, the wash takes the
-    /// marker — answers *"which of these two?"* correctly and is still the
-    /// intuition a reader arrives with. It cannot answer the question the
-    /// operator actually asked, which is *"which colour does Adobe use?"*:
-    ///
-    /// | kind | Acrobat key | measured |
-    /// |---|---|---|
-    /// | Highlight | `cHighlight` | `#FF6200`, an **orange** |
-    /// | Underline | `cUnderline` | `#1373E8`, a **blue** |
-    /// | StrikeOut | `cStrikeOut` | `#F86464`, a light red |
-    /// | Squiggly | `cSquiggly` | `#DB3425`, the shape red |
-    ///
-    /// ⇒ Four kinds, four keys, three distinct colours. A partition into "biro"
-    /// and "marker" cannot express that, so the pen carries a slot per key and
-    /// this function is a routing table rather than a two-arm decision. See
-    /// [`super::palette`] for where those four readings come from and
-    /// [`super::pen::PenSlot`] for the slots.
-    ///
-    /// The property a partition gave for free — **no kind reaching two
-    /// colours and no kind reaching none** — is asserted instead, from both
-    /// sides: `pen::tests::every_kind_takes_the_slot_it_is_documented_to_take`
-    /// and [`tests::each_text_kind_takes_its_own_pen`], each sweeping its enum's
-    /// full list rather than a hand-written subset.
-    ///
-    /// # Why this is a routing table and NOT a hard-coded triple
-    ///
-    /// A constant here — `fn rgb(self) -> (f64, f64, f64)` returning one red for
-    /// every line kind — compiles, and a test that asserts the constant against
-    /// the constant passes, and the pen control in Markup ▸ Style goes on
-    /// working perfectly for every kind that reaches [`super::spec`]. Nothing is
-    /// red anywhere. What the operator sees is the inconsistency: set the pen to
-    /// blue, draw a rectangle, get blue; underline a word, get red.
-    ///
-    /// The generalisable part is not "remember to update duplicates". It is that
-    /// **a doc comment naming its own seam is an asset only if something checks
-    /// the seam when it is filled.** A prose seam marker is a note to a human,
-    /// and a sweep reading it will record *"no surface"* long after the surface
-    /// exists. What catches it is a test asserting the two paths agree, which is
-    /// `tests::the_ink_reaches_every_text_kind`.
-    ///
-    /// # The constraint the measurement has to pass
-    ///
-    /// *"A line must be seen against the text it marks; a yellow underline under
-    /// black glyphs on white paper is very nearly invisible."* That is a **check
-    /// on the measurement rather than a reason for a value**: Acrobat's
-    /// underline blue and strikeout red both pass it comfortably, which is
-    /// evidence that the registry readings are a designed set rather than an
-    /// accident of this machine.
-    ///
-    /// # Why an operator's Highlight comes out of one swatch
-    ///
-    /// It is the reason [`Self::Highlight`] and
-    /// [`super::MarkupKind::Highlight`] both route to
-    /// [`super::pen::PenSlot::Highlighter`]: a highlight is a wash whichever
-    /// gesture drew it, so a text-following one and an area one must come out of
-    /// the same swatch. The alternative is one feature that changes colour
-    /// depending on how it was reached.
-    #[must_use]
-    fn rgb(self, pen: super::pen::Pen) -> (f64, f64, f64) {
-        pen.colour_of(self.slot())
-    }
-
-    /// **Which pen draws this kind** — see [`Self::rgb`] for the table.
-    #[must_use]
-    const fn slot(self) -> super::pen::PenSlot {
-        match self {
-            Self::Highlight => super::pen::PenSlot::Highlighter,
-            Self::Underline => super::pen::PenSlot::Underline,
-            Self::StrikeOut => super::pen::PenSlot::StrikeOut,
-            Self::Squiggly => super::pen::PenSlot::Squiggly,
-        }
-    }
-}
+pub use pdfcer_gui_base::markupkind::TextMarkKind;
 
 /// Why a text-markup command authored nothing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -307,6 +174,7 @@ pub fn swept(frame: Swept<'_>, actions: &mut Vec<Action>) -> Option<Vec<egui::Re
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pdfcer_core::annot_author::TextMarkupKind;
     use pdfcer_core::page_tree::Rect as PageRect;
 
     /// One line's worth of quad, at a plausible page position.

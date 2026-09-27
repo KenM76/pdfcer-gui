@@ -466,3 +466,12 @@ pub mod formtextbox;
 
 /// The per-domain verbs an Action carries, as data.
 pub mod subactions;
+
+/// What a Find asks for and which way it steps.
+pub mod findrequest;
+
+/// A place on a page a bookmark asked the view to arrive at.
+pub mod navdest;
+
+/// The verbs whose subject is an annotation.
+pub mod annotaction;

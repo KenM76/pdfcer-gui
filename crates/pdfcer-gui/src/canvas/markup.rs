@@ -56,56 +56,7 @@ pub use pdfcer_gui_base::markupkind::MarkupKind;
 /// authored with.
 pub const PEN_WIDTH_PTS: f64 = 2.0;
 
-/// **The geometry one completed markup gesture produced**, in PDF user space.
-#[derive(Debug, Clone, PartialEq)]
-pub enum Geometry {
-    /// The two **raw** endpoints of a rubber-band drag, in drag order.
-    ///
-    /// Un-normalised on purpose: [`spec`] normalises per kind, at the last point
-    /// at which the raw pair is still available, because an arrow's head is at
-    /// `end` and a normalised rect cannot say which corner the operator started
-    /// at. See [`spec`]'s own section.
-    Band {
-        /// Where the press landed. For [`MarkupKind::Arrow`] this is the **tail**.
-        start: (f64, f64),
-        /// Where the release landed. For [`MarkupKind::Arrow`] this is the **head**.
-        end: (f64, f64),
-    },
-    /// A run of clicked vertices, in click order — PolyLine and Polygon.
-    ///
-    /// **Never carries the closing vertex for a polygon.** `/Polygon` closes
-    /// back to the first entry of `/Vertices` by §12.5.6.13, so appending the
-    /// first point again would author a duplicate vertex and a zero-length
-    /// closing segment — visible on a rounded join as a blob, and invisible
-    /// everywhere else, which is the worst of both.
-    Vertices(Vec<(f64, f64)>),
-    /// One or more freehand strokes — Ink, and only Ink.
-    ///
-    /// A list of lists because `/InkList` is one, even though the shipped
-    /// gesture always produces exactly one stroke: [`ink`]'s header records that
-    /// **one drag is one annotation**, and the outer list is the engine's shape
-    /// rather than a promise about a gesture that does not exist yet.
-    Strokes(Vec<Vec<(f64, f64)>>),
-}
-
-impl Geometry {
-    /// Every coordinate this geometry carries, in no particular order.
-    fn coordinates(&self) -> impl Iterator<Item = f64> + '_ {
-        // A boxed iterator rather than three branches at the call site: the arms
-        // have three different concrete types and the alternative is repeating
-        // the predicate per arm, which is the thing this exists to avoid.
-        let it: Box<dyn Iterator<Item = f64> + '_> = match self {
-            Self::Band { start, end } => Box::new([start.0, start.1, end.0, end.1].into_iter()),
-            Self::Vertices(points) => Box::new(points.iter().flat_map(|&(x, y)| [x, y])),
-            Self::Strokes(strokes) => Box::new(
-                strokes
-                    .iter()
-                    .flat_map(|s| s.iter().flat_map(|&(x, y)| [x, y])),
-            ),
-        };
-        it
-    }
-}
+pub use pdfcer_gui_base::markupkind::Geometry;
 
 /// Why a markup gesture committed nothing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
