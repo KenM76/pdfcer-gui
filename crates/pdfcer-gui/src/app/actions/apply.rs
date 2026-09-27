@@ -215,7 +215,7 @@ impl PdfcerApp {
             // this signature, and would be telling you it does not belong in
             // the family.
             Action::Pref(pref) => {
-                pref.apply(&mut self.prefs);
+                super::prefs::apply(pref, &mut self.prefs);
                 return;
             }
             _ => {}

@@ -53,35 +53,7 @@ pub(super) fn reorder_annotations(
 // Z-ORDER — the operator's half of the same array
 // ===========================================================================
 
-/// **Where an Arrange command puts the selected mark.**
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ArrangeTo {
-    /// Last in `/Annots`, so it is painted over everything else.
-    ///
-    /// **Last, not first.** §12.5.6 paints annotations in array order, so the
-    /// *end* of the array is the top of the stack — the opposite of what "front"
-    /// suggests to anyone thinking of a list. Getting this backwards is a defect
-    /// that looks correct in every review and is obvious the first time a mark
-    /// is arranged, which is why
-    /// [`tests::front_is_the_end_of_the_array`] exists.
-    Front,
-    /// One place later — over the next thing it currently sits under.
-    Forward,
-    /// One place earlier — under the next thing it currently sits over.
-    Backward,
-    /// First in `/Annots`, so everything else is painted over it.
-    Back,
-}
-
-impl ArrangeTo {
-    /// Whether this end of the pair is the **front** — which is what
-    /// [`crate::text::arrange::already_there`] needs in order to say which
-    /// command the operator pressed.
-    #[must_use]
-    const fn toward_front(self) -> bool {
-        matches!(self, Self::Front | Self::Forward)
-    }
-}
+pub use pdfcer_gui_base::subactions::ArrangeTo;
 
 /// **Put one markup annotation at a new depth in its page's paint order.**
 pub(super) fn arrange(doc: &mut OpenDoc, page: usize, id: ObjId, to: ArrangeTo) {

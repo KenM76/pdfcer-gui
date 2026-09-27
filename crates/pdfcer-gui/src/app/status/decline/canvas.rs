@@ -31,49 +31,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/status/decline/canvas.md`.
 
-/// **Everything a refused canvas gesture is allowed to put on the status bar.**
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CanvasDecline {
-    /// A part or a node was entered inside a form XObject whose kind is not a
-    /// path, so no geometry verb applies.
-    ///
-    /// [`record_canvas`] maps this to
-    /// [`crate::text::status::InsideFormRefusal::NotAPath`] as a **constant**,
-    /// because the canvas only ever meets that one of the two arms. The other,
-    /// `NoContainingForm`, is written directly by `app::dispatch::format` from a
-    /// place that has established a fact the canvas cannot.
-    InsideFormNotAPath,
-    /// **A drag on one line whose position this file does not state** —
-    /// O188.
-    ///
-    /// [`super::Declined::TextRunHasNoPositionOfItsOwn`] carries the argument
-    /// for why this refusal earns a sentence when most of its siblings in
-    /// `canvas::moving::Refusal` do not.
-    ///
-    TextRunHasNoPositionOfItsOwn,
-    /// **A drag on a line that the NEXT line's position is measured from**
-    /// — O188.
-    ///
-    /// Twin of [`Self::TextRunHasNoPositionOfItsOwn`], and the one that reports
-    /// a consequence rather than an absence: the move is possible and pdfcer is
-    /// declining it, because it would carry a line the operator never selected.
-    TextRunWouldDragTheNextLine,
-}
-
-impl CanvasDecline {
-    /// The stable identifier this decline is **traced** under.
-    #[must_use]
-    pub(crate) const fn token(self) -> &'static str {
-        match self {
-            // ui-text-exempt: stable diagnostic token, never displayed.
-            Self::InsideFormNotAPath => "inside-form-not-a-path",
-            // ui-text-exempt: stable diagnostic token, never displayed.
-            Self::TextRunHasNoPositionOfItsOwn => "text-run-no-position-of-its-own",
-            // ui-text-exempt: stable diagnostic token, never displayed.
-            Self::TextRunWouldDragTheNextLine => "text-run-would-drag-next-line",
-        }
-    }
-}
+pub use pdfcer_gui_base::subactions::CanvasDecline;
 
 /// Record what a refused **canvas gesture** had to say — O188, 2026-09-15.
 ///

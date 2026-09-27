@@ -1347,3 +1347,127 @@ pub enum AttachmentRef {
         annot: ObjId,
     },
 }
+
+/// One operator preference, carried from the surface that changed it to the
+/// file that remembers it.
+///
+/// See the module header for the four properties every member shares and for
+/// why the *live* half is already applied by the time one of these is raised.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PrefAction {
+    /// **Persist the Find bar's *Zoom* control** — `OPERATOR_REQUESTS.md`
+    /// **O163**.
+    ///
+    /// # Why this is not a `pdfcer_gui::find::FindRequest`
+    ///
+    /// `FindRequest`'s own doc states the rule its two variants share: *what
+    /// has to go through the funnel is what needs the **document***, and both
+    /// of them do. This needs the opposite — property 1 in the module header.
+    /// `Action::Find`'s arm is inside a `Status::Open(doc)` match that would
+    /// silently drop it, which is precisely the failure that property
+    /// describes.
+    FindZoom(bool),
+    /// **Persist the Pages panel's previews tick and its time limit** —
+    /// `OPERATOR_REQUESTS.md` **O187**: *"the draw page previews
+    /// timeout needs to be remembered, and setting it to 0 should set it to
+    /// infinity (never time out)"*.
+    ///
+    /// # Why one variant carries both, when they are two controls
+    ///
+    /// Because they are one **decision surface** — a checkbox and the box
+    /// beside it — and `Prefs::save` is a whole-file write. Two variants would
+    /// mean two file writes for the gesture *"turn previews off and set a
+    /// limit for when I turn them back on"*, which is the sequence
+    /// `crate::panels::pages::previews` explicitly designs for. Each raiser
+    /// reads the value it did not change straight out of the cache in the same
+    /// frame, so the module header's carry-never-re-read rule still holds for
+    /// both halves.
+    ///
+    /// # It would survive inside the document guard today, and is above it
+    /// anyway
+    ///
+    /// The Pages panel is only drawn with a document open, so unlike
+    /// [`Self::FindZoom`] this one has no live counter-example. It is a
+    /// preference regardless, because *which surface happens to raise a
+    /// preference* is not a property of the preference — and a rule that held
+    /// only while the panel needed a document is a rule waiting to be broken
+    /// by a Settings entry for the same two values.
+    PagePreviews {
+        /// The tick, as it now stands.
+        on: bool,
+        /// The limit in milliseconds, as it now stands — **`0` meaning no
+        /// limit**, the operator's own notation. Converted at exactly one
+        /// place, `pdfcer_gui::panels::pages::thumbnails::budget_from_millis`.
+        budget_ms: u64,
+    },
+}
+/// **Where an Arrange command puts the selected mark.**
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ArrangeTo {
+    /// Last in `/Annots`, so it is painted over everything else.
+    ///
+    /// **Last, not first.** §12.5.6 paints annotations in array order, so the
+    /// *end* of the array is the top of the stack — the opposite of what "front"
+    /// suggests to anyone thinking of a list. Getting this backwards is a defect
+    /// that looks correct in every review and is obvious the first time a mark
+    /// is arranged, which is why
+    /// `pdfcer_gui::app::actions::reorder::tests::front_is_the_end_of_the_array` exists.
+    Front,
+    /// One place later — over the next thing it currently sits under.
+    Forward,
+    /// One place earlier — under the next thing it currently sits over.
+    Backward,
+    /// First in `/Annots`, so everything else is painted over it.
+    Back,
+}
+impl ArrangeTo {
+    /// Whether this end of the pair is the **front** — which is what
+    /// [`crate::text::arrange::already_there`] needs in order to say which
+    /// command the operator pressed.
+    #[must_use]
+    pub const fn toward_front(self) -> bool {
+        matches!(self, Self::Front | Self::Forward)
+    }
+}
+/// **Everything a refused canvas gesture is allowed to put on the status bar.**
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CanvasDecline {
+    /// A part or a node was entered inside a form XObject whose kind is not a
+    /// path, so no geometry verb applies.
+    ///
+    /// `pdfcer_gui::app::status::decline::canvas::record_canvas` maps this to
+    /// [`crate::text::status::InsideFormRefusal::NotAPath`] as a **constant**,
+    /// because the canvas only ever meets that one of the two arms. The other,
+    /// `NoContainingForm`, is written directly by `app::dispatch::format` from a
+    /// place that has established a fact the canvas cannot.
+    InsideFormNotAPath,
+    /// **A drag on one line whose position this file does not state** —
+    /// O188.
+    ///
+    /// `pdfcer_gui::app::status::decline::Declined::TextRunHasNoPositionOfItsOwn` carries the argument
+    /// for why this refusal earns a sentence when most of its siblings in
+    /// `canvas::moving::Refusal` do not.
+    ///
+    TextRunHasNoPositionOfItsOwn,
+    /// **A drag on a line that the NEXT line's position is measured from**
+    /// — O188.
+    ///
+    /// Twin of [`Self::TextRunHasNoPositionOfItsOwn`], and the one that reports
+    /// a consequence rather than an absence: the move is possible and pdfcer is
+    /// declining it, because it would carry a line the operator never selected.
+    TextRunWouldDragTheNextLine,
+}
+impl CanvasDecline {
+    /// The stable identifier this decline is **traced** under.
+    #[must_use]
+    pub const fn token(self) -> &'static str {
+        match self {
+            // ui-text-exempt: stable diagnostic token, never displayed.
+            Self::InsideFormNotAPath => "inside-form-not-a-path",
+            // ui-text-exempt: stable diagnostic token, never displayed.
+            Self::TextRunHasNoPositionOfItsOwn => "text-run-no-position-of-its-own",
+            // ui-text-exempt: stable diagnostic token, never displayed.
+            Self::TextRunWouldDragTheNextLine => "text-run-would-drag-next-line",
+        }
+    }
+}
