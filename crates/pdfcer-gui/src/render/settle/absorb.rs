@@ -14,10 +14,18 @@ use crate::render::raster;
 use crate::render::strip::PageRaster;
 use crate::render::worker::{RefusalKind, RenderKey, RenderOutcome};
 
-impl OpenDoc {
+/// Ordering a page raster from the worker and taking its result in.
+pub(crate) trait Absorb {
+    fn rasterize(&mut self, ctx: &egui::Context, page_index: usize, raster_scale: f32);
+    fn absorb_render(&mut self, ctx: &egui::Context, result: RenderOutcome);
+    fn learn_raster_ceiling(&mut self, ctx: &egui::Context, key: RenderKey) -> bool;
+    fn poll_render(&mut self, ctx: &egui::Context) -> bool;
+}
+
+impl Absorb for OpenDoc {
     /// Hand a page to the worker and, if it beats the in-frame budget, absorb
     /// the result immediately.
-    pub(super) fn rasterize(&mut self, ctx: &egui::Context, page_index: usize, raster_scale: f32) {
+    fn rasterize(&mut self, ctx: &egui::Context, page_index: usize, raster_scale: f32) {
         let Some(request) = self.render_request_for(page_index, raster_scale) else {
             // No such page. For the current page that means the index is past
             // the end, which `clamp_page_index` normally prevents; clearing
@@ -389,7 +397,7 @@ impl OpenDoc {
     ///
     /// Called once per frame. Returns whether anything was absorbed, so the
     /// caller can request the repaint that draws it.
-    pub(super) fn poll_render(&mut self, ctx: &egui::Context) -> bool {
+    fn poll_render(&mut self, ctx: &egui::Context) -> bool {
         // Read what the worker is on BEFORE polling: `poll` takes the
         // in-flight slot, and a failure arrives with no key of its own. See
         // `absorb_render`.

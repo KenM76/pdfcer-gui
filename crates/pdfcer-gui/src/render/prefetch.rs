@@ -5,6 +5,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/render/prefetch.md`.
 
 use crate::app::state::OpenDoc;
+use crate::render::settle::StripOrders;
 
 /// **How far past the visible band the strip may fill in, in pages** — O201.
 const PREFETCH_BAND: usize = 8;
@@ -31,11 +32,18 @@ fn prefetch_ranking(current: usize, last: usize, band: usize) -> Vec<usize> {
     out
 }
 
-impl OpenDoc {
+/// Render-ahead: whether and which page to rasterise beyond the viewport.
+pub(crate) trait Prefetch {
+    #[must_use]
+    fn prefetch_headroom(&self) -> bool;
+    #[must_use]
+    fn prefetch_candidate(&self, visible: &[usize], raster_scale: f32) -> Option<usize>;
+}
+
+impl Prefetch for OpenDoc {
     /// **Is there room for one more page picture?** — O201's whole memory
     /// bound, and the reason render-ahead cannot become a busy loop.
-    #[must_use]
-    pub(super) fn prefetch_headroom(&self) -> bool {
+    fn prefetch_headroom(&self) -> bool {
         let budget = self.prefs.page_cache.texels();
         let resident = self.strip_rasters.texels();
         let pages = self.strip_rasters.len() as u64;
@@ -45,8 +53,7 @@ impl OpenDoc {
 
     /// **The nearest page outside the viewport that has no picture yet** —
     /// O201's candidate, or `None` when there is nothing worth asking for.
-    #[must_use]
-    pub(super) fn prefetch_candidate(&self, visible: &[usize], raster_scale: f32) -> Option<usize> {
+    fn prefetch_candidate(&self, visible: &[usize], raster_scale: f32) -> Option<usize> {
         if !self.prefetch_headroom() {
             return None;
         }

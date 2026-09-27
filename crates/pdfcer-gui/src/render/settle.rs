@@ -8,9 +8,10 @@
 
 use std::time::{Duration, Instant};
 
+use self::absorb::Absorb;
 use crate::app::PdfcerApp;
 use crate::app::state::{OpenDoc, Status};
-use crate::render::prefetch;
+use crate::render::prefetch::{self, Prefetch};
 use crate::render::raster::PageTexture;
 use crate::render::strip::{PageRaster, PageState};
 use crate::render::worker::RenderKey;
@@ -36,14 +37,32 @@ const CURRENT_UNFILLABLE_SLOT: &str = "current-order-unfillable";
 /// sheets could not be ordered at this zoom"* — O186.
 const BEYOND_RASTER_SLOT: &str = "strip-beyond-raster";
 
-impl OpenDoc {
+/// The committed-zoom delay this document's preferences set.
+pub(crate) trait ZoomSettle {
+    fn zoom_settle(&self) -> Duration;
+}
+
+impl ZoomSettle for OpenDoc {
     /// How long this document's zoom must stop changing before it is committed.
     fn zoom_settle(&self) -> Duration {
         Duration::from_millis(self.prefs.zoom_settle_ms)
     }
 }
 
-impl OpenDoc {
+/// Which strip pages can be ordered at a raster scale, and what the strip holds for each.
+pub(crate) trait StripOrders {
+    fn rehome_current_page(&mut self, wanted: RenderKey);
+    #[must_use]
+    fn strip_page_orderable(&self, page: usize, raster_scale: f32) -> bool;
+    #[must_use]
+    fn raster_order_fillable(&self, page: usize, raster_scale: f32) -> bool;
+    #[must_use]
+    fn strip_page_state(&self, page: usize, key: RenderKey) -> Option<PageState>;
+    #[must_use]
+    fn strip_page_texture(&self, page: usize, key: RenderKey) -> Option<&PageTexture>;
+}
+
+impl StripOrders for OpenDoc {
     /// **Move the current page's texture into the strip, and the incoming
     /// page's out of it.**
     fn rehome_current_page(&mut self, wanted: RenderKey) {
@@ -104,8 +123,7 @@ impl OpenDoc {
 
     /// **Can this strip page be ordered at all at this raster scale?** —
     /// O186, 2026-09-12.
-    #[must_use]
-    pub fn strip_page_orderable(&self, page: usize, raster_scale: f32) -> bool {
+    fn strip_page_orderable(&self, page: usize, raster_scale: f32) -> bool {
         self.pages.get(page).is_some_and(|p| {
             crate::render::strategy::whole_page_raster_fits(
                 viewer::page_extent_pts(p),
@@ -203,8 +221,7 @@ impl OpenDoc {
     /// that prove the predicate is live in a real build. That is weaker than this
     /// project's bar and is not being described as meeting it.
     ///
-    #[must_use]
-    pub fn raster_order_fillable(&self, page: usize, raster_scale: f32) -> bool {
+    fn raster_order_fillable(&self, page: usize, raster_scale: f32) -> bool {
         // `region_for` and not `raster_region`: it is the one that checks the
         // region belongs to THIS page. A region computed for page 4 does not
         // make page 5's order fillable, and both rectangles are valid, so the
@@ -242,8 +259,7 @@ impl OpenDoc {
 
     /// What state a **strip** page is in, for
     /// [`crate::render::strip::draw_page_state`].
-    #[must_use]
-    pub fn strip_page_state(&self, page: usize, key: RenderKey) -> Option<PageState> {
+    fn strip_page_state(&self, page: usize, key: RenderKey) -> Option<PageState> {
         // Per-page (O74): a page whose own revision has not moved keeps its
         // raster through an edit made on another sheet.
         match self
@@ -273,8 +289,7 @@ impl OpenDoc {
     }
 
     /// The texture for a **strip** page, if there is a current one.
-    #[must_use]
-    pub fn strip_page_texture(&self, page: usize, key: RenderKey) -> Option<&PageTexture> {
+    fn strip_page_texture(&self, page: usize, key: RenderKey) -> Option<&PageTexture> {
         // Per-page (O74).
         match self
             .strip_rasters

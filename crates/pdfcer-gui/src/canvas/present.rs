@@ -22,6 +22,7 @@ use egui_shell::HandlerToken;
 use crate::app::actions::Action;
 use crate::app::modes::Capabilities;
 use crate::app::state::OpenDoc;
+use crate::render::settle::StripOrders;
 // The interaction half, next door. `Frame` is this frame's settled facts on the
 // way in; `interact` is everything that follows from them. Imported by name
 // rather than called as `interact::interact(…)` so the one call site below
