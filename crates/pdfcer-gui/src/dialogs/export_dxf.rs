@@ -7,6 +7,7 @@ use egui::Ui;
 use pdfcer_core::export::dxf::{
     DxfOptions, DxfScaleSuggestion, DxfText, DxfUnits, suggest_scale_for_groups,
 };
+use pdfcer_gui_base::entry;
 
 use crate::app::actions::Action;
 use crate::app::state::{OpenDoc, Status};
@@ -197,15 +198,19 @@ impl ExportDxfDialog {
         self.scale_disclosure(ui);
         ui.horizontal(|ui| {
             ui.label(t::scale_label());
-            let response = ui.add(
-                egui::DragValue::new(&mut self.options.scale)
-                    .speed(0.01)
-                    // Positive and finite. A zero or negative scale produces a
-                    // DXF whose geometry is collapsed or mirrored — refused by
-                    // the control's range rather than by a sentence, because
-                    // unlike a placement rectangle there is no reading of a
-                    // negative scale that an operator could have meant.
-                    .range(0.000_001..=1_000_000.0),
+            let (widget, refusal) =
+                entry::drag_value(ui, &mut self.options.scale, entry::Kind::Number(&[]));
+            let response = refusal.show(
+                ui.add(
+                    widget
+                        .speed(0.01)
+                        // Positive and finite. A zero or negative scale produces a
+                        // DXF whose geometry is collapsed or mirrored — refused by
+                        // the control's range rather than by a sentence, because
+                        // unlike a placement rectangle there is no reading of a
+                        // negative scale that an operator could have meant.
+                        .range(0.000_001..=1_000_000.0),
+                ),
             );
             crate::diag::ui_rect(REGION_SCALE, response.rect);
         });

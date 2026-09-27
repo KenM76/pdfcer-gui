@@ -159,7 +159,7 @@ the paper, poster scale and overlap) and Export image (resolution, JPEG
 quality) take arithmetic, and their millimetre boxes take any unit. The
 markup width and opacity (ribbon, Properties and the pen swatch), the ribbon's
 font size, a text's size and fitted run width, and a stamp's text size do the
-same. **Not yet converted:** tolerances and the Pages panel's preview boxes. Those still take a plain number and several show no unit.
+same. Tolerances read lengths in the ce dimension's own unit; the DXF scale, the form-field dialog's length and border, the signature page, the text pen's size and the preview time budget read arithmetic. Every editable number box now goes through the one reader; the only plain box left is the greyed size shown for a mixed selection, which takes no input.
 
 ## O245 — **BUILT AND DRIVEN — awaiting your verdict** — a ce dimension opens a note pop-up, which gets in the way of moving it
 

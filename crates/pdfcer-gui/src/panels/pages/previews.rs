@@ -5,6 +5,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/pages/previews.md`.
 
 use crate::text::pages as t;
+use pdfcer_gui_base::entry;
 
 use super::{PagesUi, thumbnails};
 use crate::app::actions::Action;
@@ -89,24 +90,27 @@ pub fn row(ui: &mut egui::Ui, pages: &mut PagesUi, actions: &mut Vec<Action>) {
         let id = ui.id().with("pages-previews-budget.draft");
         let was = thumbnails::millis_from_budget(pages.cache.budget()) as f32 / 1000.0;
         let mut seconds = crate::app::spinnerdraft::drafted(ui, id, was);
-        let budget = ui
-            .add(
-                egui::DragValue::new(&mut seconds)
-                    .speed(0.1)
-                    .range(0.0..=thumbnails::MAX_PAGE_BUDGET.as_secs_f32())
-                    .max_decimals(1)
-                    .custom_formatter(|n, _| {
-                        if n <= 0.0 {
-                            t::previews_budget_never().to_owned()
-                        } else {
-                            format!(
-                                "{}{n:.1}{}",
-                                t::previews_budget_prefix(),
-                                t::previews_budget_suffix()
-                            )
-                        }
-                    })
-                    .custom_parser(parse_budget),
+        let (widget, refusal) = entry::drag_value(ui, &mut seconds, entry::Kind::Number(&["s"]));
+        let budget = refusal
+            .show(
+                ui.add(
+                    widget
+                        .speed(0.1)
+                        .range(0.0..=thumbnails::MAX_PAGE_BUDGET.as_secs_f32())
+                        .max_decimals(1)
+                        .custom_formatter(|n, _| {
+                            if n <= 0.0 {
+                                t::previews_budget_never().to_owned()
+                            } else {
+                                format!(
+                                    "{}{n:.1}{}",
+                                    t::previews_budget_prefix(),
+                                    t::previews_budget_suffix()
+                                )
+                            }
+                        })
+                        .custom_parser(parse_budget),
+                ),
             )
             .on_hover_text(t::previews_budget_tooltip());
         let ended = crate::app::spinnerdraft::keep_draft(ui, id, &budget, seconds);

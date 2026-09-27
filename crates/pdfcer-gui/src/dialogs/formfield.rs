@@ -8,6 +8,7 @@
 
 use crate::app::actions::forms::FieldAction;
 use egui::Ui;
+use pdfcer_gui_base::entry;
 
 use crate::app::actions::Action;
 use crate::canvas::formfield::draft::NAME_MAX;
@@ -484,7 +485,8 @@ impl FormFieldDialog {
                 self.draft.max_len = limited.then_some(20);
             }
             if let Some(n) = self.draft.max_len.as_mut() {
-                ui.add(egui::DragValue::new(n).range(1..=1_000));
+                let (widget, refusal) = entry::drag_value(ui, n, entry::Kind::Count);
+                refusal.show(ui.add(widget.range(1..=1_000)));
             }
         });
         // Comb is offered only when it can be honoured. Its cells are
@@ -602,12 +604,14 @@ impl FormFieldDialog {
         ui.add_space(6.0);
         ui.horizontal(|ui| {
             ui.label(t::border_label());
-            ui.add(
-                egui::DragValue::new(&mut self.draft.border_width)
-                    .range(0.0..=12.0)
-                    .speed(0.1),
-            )
-            .on_hover_text(t::border_hover());
+            let (widget, refusal) = entry::drag_value(
+                ui,
+                &mut self.draft.border_width,
+                entry::Kind::Length(entry::LengthUnit::Point),
+            );
+            refusal
+                .show(ui.add(widget.range(0.0..=12.0).speed(0.1)))
+                .on_hover_text(t::border_hover());
         });
         self.chrome_rows(ui);
     }

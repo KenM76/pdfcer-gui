@@ -32,6 +32,7 @@
 
 use egui_shell::theme::Theme;
 use pdfcer_core::sign::apply::MdpPermission;
+use pdfcer_gui_base::entry;
 
 use super::{
     FIELD_WIDTH, Place, REGION_BOX_WHERE, REGION_CERTIFY, REGION_CHOOSE_CERTIFICATE,
@@ -282,9 +283,9 @@ impl SignDialog {
                             // 1-based on screen, 0-based in the request. The
                             // engine takes an index; an operator counts pages.
                             let mut shown = self.page + 1;
-                            let drag = ui.add(
-                                egui::DragValue::new(&mut shown).range(1..=self.standing.pages),
-                            );
+                            let (widget, refusal) =
+                                entry::drag_value(ui, &mut shown, entry::Kind::Count);
+                            let drag = refusal.show(ui.add(widget.range(1..=self.standing.pages)));
                             crate::diag::ui_rect(REGION_PAGE, drag.rect);
                             self.page = shown.saturating_sub(1);
                         });

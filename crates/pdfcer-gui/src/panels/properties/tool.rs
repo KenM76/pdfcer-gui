@@ -4,6 +4,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/properties/tool.md`.
 
 use egui::Ui;
+use pdfcer_gui_base::entry;
 
 use crate::canvas::measure::MeasureKind;
 use crate::canvas::tool::CanvasTool;
@@ -149,11 +150,18 @@ fn text_pen(ui: &mut Ui, ctx: &egui::Context) {
     });
     ui.horizontal_wrapped(|ui| {
         ui.label(t::text_pen_size_label());
-        ui.add(
-            egui::DragValue::new(&mut current.size_pt)
-                .range(pen::MIN_SIZE_PT..=pen::MAX_SIZE_PT)
-                .speed(0.5)
-                .suffix(t::text_pen_size_suffix()),
+        let (widget, refusal) = entry::drag_value(
+            ui,
+            &mut current.size_pt,
+            entry::Kind::Length(entry::LengthUnit::Point),
+        );
+        refusal.show(
+            ui.add(
+                widget
+                    .range(pen::MIN_SIZE_PT..=pen::MAX_SIZE_PT)
+                    .speed(0.5)
+                    .suffix(t::text_pen_size_suffix()),
+            ),
         );
     });
     ui.horizontal_wrapped(|ui| {

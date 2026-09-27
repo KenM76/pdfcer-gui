@@ -3,6 +3,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/tolerance.md`.
 
+use crate::entry;
 use egui::Ui;
 use pdfcer_core::dimension::{Tolerance, Unit};
 
@@ -58,25 +59,38 @@ pub fn show(ui: &mut Ui, value: &mut Tolerance, unit: Unit) -> bool {
         Tolerance::Symmetric { magnitude } => {
             ui.horizontal(|ui| {
                 ui.label(t::tolerance_magnitude());
-                ui.add(egui::DragValue::new(magnitude).speed(SPEED));
+                let (widget, refusal) = entry::drag_value(
+                    ui,
+                    magnitude,
+                    entry::Kind::Length(entry::LengthUnit::Of(unit)),
+                );
+                refusal.show(ui.add(widget.speed(SPEED)));
             });
             ui.weak(t::tolerance_unit_note(unit));
         }
         Tolerance::Deviation { plus, minus } => {
             ui.horizontal(|ui| {
                 ui.label(t::tolerance_plus());
-                ui.add(egui::DragValue::new(plus).speed(SPEED));
+                let (widget, refusal) =
+                    entry::drag_value(ui, plus, entry::Kind::Length(entry::LengthUnit::Of(unit)));
+                refusal.show(ui.add(widget.speed(SPEED)));
                 ui.label(t::tolerance_minus());
-                ui.add(egui::DragValue::new(minus).speed(SPEED));
+                let (widget, refusal) =
+                    entry::drag_value(ui, minus, entry::Kind::Length(entry::LengthUnit::Of(unit)));
+                refusal.show(ui.add(widget.speed(SPEED)));
             });
             ui.weak(t::tolerance_unit_note(unit));
         }
         Tolerance::Limit { upper, lower } => {
             ui.horizontal(|ui| {
                 ui.label(t::tolerance_upper());
-                ui.add(egui::DragValue::new(upper).speed(SPEED));
+                let (widget, refusal) =
+                    entry::drag_value(ui, upper, entry::Kind::Length(entry::LengthUnit::Of(unit)));
+                refusal.show(ui.add(widget.speed(SPEED)));
                 ui.label(t::tolerance_lower());
-                ui.add(egui::DragValue::new(lower).speed(SPEED));
+                let (widget, refusal) =
+                    entry::drag_value(ui, lower, entry::Kind::Length(entry::LengthUnit::Of(unit)));
+                refusal.show(ui.add(widget.speed(SPEED)));
             });
             ui.weak(t::tolerance_unit_note(unit));
             // The disclosure that matters most in this panel, and it is shown
