@@ -282,6 +282,18 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("the fixture imported and the placement window opened");
 
+    // --- 2b: a width typed in inches (O243) ------------------------------
+    // The box holds millimetres; `2 in` must reach the engine as 144 pt. A
+    // build that ignores the unit places a box 2 mm wide.
+    let width = declared(&trace, ui_rect, WIDTH).expect("checked above");
+    driver.click_at(frame_of(&session, &trace, ui_rect, WIDTH)?.declared_center(width))?;
+    session.settle(10);
+    driver.type_ascii("2 in")?;
+    driver.press(crate::sys::vk::ENTER)?;
+    session.settle(16);
+    report.note("typed `2 in` into the width box");
+    let trace = session.trace()?;
+
     // --- 3: insert ---------------------------------------------------------
     let Some(button) = declared(&trace, ui_rect, INSERT) else {
         return Ok(Some(format!(
@@ -318,6 +330,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
     report.note(format!("placed: `{}`", applied.raw));
+    let side = |k: &str| requested.get(k).and_then(|v| v.parse::<f64>().ok());
+    let typed = side("urx").zip(side("llx")).map(|(r, l)| r - l);
+    if typed.is_none_or(|w| (w - 144.0).abs() > 0.5) {
+        return Ok(Some(format!(
+            "`2 in` was typed into the width box (millimetres) and the request carried a box \
+             {} pt wide, not 144: the typed unit was ignored or mis-converted. Line: `{}`.",
+            typed.map_or_else(|| "?".to_owned(), |w| format!("{w:.2}")),
+            requested.raw
+        )));
+    }
 
     // --- 4: the disclosures reached the operator -------------------------
     //

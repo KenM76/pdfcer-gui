@@ -113,12 +113,6 @@ pub const fn placement_height() -> &'static str {
     "Height"
 }
 
-/// The millimetre suffix the placement spinners carry.
-#[must_use]
-pub const fn millimetres() -> &'static str {
-    " mm"
-}
-
 /// The heading over the fit choice.
 #[must_use]
 pub const fn fit_heading() -> &'static str {

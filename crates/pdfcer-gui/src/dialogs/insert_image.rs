@@ -48,6 +48,7 @@ use egui::Ui;
 use pdfcer_core::edit::{ImageFit, NewImage};
 use pdfcer_core::image_import::ImportedImage;
 use pdfcer_core::page_tree::Rect;
+use pdfcer_gui_base::entry;
 
 use crate::app::actions::Action;
 use crate::app::state::{OpenDoc, Status};
@@ -305,16 +306,16 @@ impl InsertImageDialog {
         };
         ui.horizontal(|ui| {
             ui.label(t::placement_x());
-            ui.add(spinner(&mut self.x_mm, -max_mm..=max_mm));
+            spinner(ui, &mut self.x_mm, -max_mm..=max_mm);
             ui.label(t::placement_y());
-            ui.add(spinner(&mut self.y_mm, -max_mm..=max_mm));
+            spinner(ui, &mut self.y_mm, -max_mm..=max_mm);
         });
         ui.horizontal(|ui| {
             ui.label(t::placement_width());
-            let response = ui.add(spinner(&mut self.width_mm, MIN_MM..=max_mm));
+            let response = spinner(ui, &mut self.width_mm, MIN_MM..=max_mm);
             crate::diag::ui_rect(REGION_WIDTH, response.rect);
             ui.label(t::placement_height());
-            ui.add(spinner(&mut self.height_mm, MIN_MM..=max_mm));
+            spinner(ui, &mut self.height_mm, MIN_MM..=max_mm);
         });
         ui.add_space(6.0);
         // **The second route to the same four numbers** —
@@ -433,12 +434,16 @@ fn refusal(
     None
 }
 
-/// A millimetre spinner.
-fn spinner(value: &mut f64, range: std::ops::RangeInclusive<f64>) -> egui::DragValue<'_> {
-    egui::DragValue::new(value)
-        .speed(0.1)
-        .range(range)
-        .suffix(t::millimetres())
+/// A millimetre spinner: shows `mm`, reads a typed unit or arithmetic.
+fn spinner(ui: &mut Ui, value: &mut f64, range: std::ops::RangeInclusive<f64>) -> egui::Response {
+    let (widget, refusal) = entry::drag_value(
+        ui,
+        value,
+        entry::Kind::Length(entry::LengthUnit::Of(
+            pdfcer_core::dimension::Unit::Millimeter,
+        )),
+    );
+    refusal.show(ui.add(widget.speed(0.1).range(range)))
 }
 
 /// Open the window for `status`, or decline.

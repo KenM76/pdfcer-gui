@@ -150,9 +150,10 @@ dimension's own overrides and its group's style rows (text height, line width,
 arrow length in `pt`; decimal places as a whole number), and the text-import
 margin and size. `a_text_file_becomes_pages` types `2 in` into the margin and
 requires 144 pt. The custom sheet width and height in New document and Page
-size show `mm` and take any unit; no check yet types into them. **Not yet
-converted:** widget geometry, field text size, border widths, insert image,
-print, export image, poster and tolerances. Those still take a plain number and several show no unit.
+size show `mm` and take any unit; no check yet types into them. Insert image's
+four placement boxes do the same; `insert_image_places_a_picture` types `2 in`
+into the width and requires 144 pt. **Not yet converted:** widget geometry,
+field text size, border widths, print, export image, poster and tolerances. Those still take a plain number and several show no unit.
 
 ## O245 — **BUILT AND DRIVEN — awaiting your verdict** — a ce dimension opens a note pop-up, which gets in the way of moving it
 

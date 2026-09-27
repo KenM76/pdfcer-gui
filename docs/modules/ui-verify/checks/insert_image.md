@@ -34,6 +34,12 @@ letterbox bug pass: `Contain` on a square picture in a square box is the
 identity, and the whole point of the last assertion is the case where the
 placed rectangle differs from the requested one.
 
+# The typed unit
+
+Before pressing Insert the check types `2 in` into the width box, which
+holds millimetres, and requires the request to carry a box 144 pt wide. A
+build that ignores the unit sends 2 mm, 5.67 pt.
+
 ## Item notes
 
 ### `const FIXTURE_W`
