@@ -21,15 +21,6 @@ pub(super) fn target_of(
         pdfcer_core::text_extract::ContentStreamRef::Form { object } => {
             pdfcer_core::text_edit::EditTarget::Form { object }
         }
-        // `ContentStreamRef` is `#[non_exhaustive]`, so a buffer
-        // kind added later lands here. `Auto` is the right fallback
-        // and not merely the compiling one: it is the engine's own
-        // default, it searches everywhere including whatever the new
-        // kind is, and it degrades to the pre-`119.0` behaviour
-        // rather than to a refusal. A `PageContents` fallback would
-        // silently narrow the search for a stream nobody here has
-        // heard of, which is the worse direction.
-        _ => pdfcer_core::text_edit::EditTarget::Auto,
     }
 }
 

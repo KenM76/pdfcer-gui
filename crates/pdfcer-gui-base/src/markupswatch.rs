@@ -21,6 +21,8 @@ pub const REGION_WIDTH: &str = "markup.style.width"; // ui-text-exempt: trace re
 pub const REGION_OPACITY: &str = "markup.style.opacity"; // ui-text-exempt: trace region name, never displayed
 /// As [`REGION_INK`], for the line-style chooser.
 pub const REGION_DASH: &str = "markup.style.dash"; // ui-text-exempt: trace region name, never displayed
+/// As [`REGION_INK`], for the draw-on-the-page switch.
+pub const REGION_TARGET: &str = "markup.style.target"; // ui-text-exempt: trace region name, never displayed
 /// The palette grid inside an open swatch popup.
 pub const REGION_PALETTE: &str = "markup.style.palette"; // ui-text-exempt: trace region name, never displayed
 /// The id salt for the *More colours…* disclosure inside the popup.
@@ -161,6 +163,14 @@ pub fn show(ui: &mut Ui, pen: &mut Pen) {
         if pen.dash != before {
             trace(*pen);
         }
+
+        let target = ui
+            .toggle_value(&mut pen.on_page, t::pen_on_page_label())
+            .on_hover_text(t::pen_on_page_tooltip());
+        crate::diag::ui_rect(REGION_TARGET, target.rect);
+        if target.changed() {
+            trace(*pen);
+        }
     });
 }
 
@@ -299,7 +309,7 @@ fn trace(pen: Pen) {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             "markup-pen ink={:?} highlighter={:?} width_pts={} opacity={} ca={:?} \
-             dash={:?} d={:?}",
+             dash={:?} d={:?} on_page={}",
             pen.ink,
             pen.highlighter,
             pen.width_pts,
@@ -319,6 +329,7 @@ fn trace(pen: Pen) {
             // the defect this control was built to fix on the restyle side.
             pen.dash,
             pen.dash_option().map(|d| d.pattern().to_vec()),
+            pen.on_page,
         )
     });
 }

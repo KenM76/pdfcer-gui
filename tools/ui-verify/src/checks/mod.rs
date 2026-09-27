@@ -312,6 +312,8 @@ pub mod point_destination;
 /// **pixels**, which is where the failure the engine warned about hides.
 pub mod markup_node_edit;
 
+/// A Review shape drawn with the pen set to draw on the page.
+pub mod markup_on_page;
 /// Markup ▸ Style — a ribbon group whose one item the manifest declared at S2
 /// and no renderer ever drew, so it shipped as a caption over an empty band.
 pub mod markup_style;

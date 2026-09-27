@@ -55,6 +55,22 @@ pub const fn pen_dash_tooltip() -> &'static str {
      to dash, so it does not change those."
 }
 
+/// The draw-on-the-page switch's label.
+#[must_use]
+pub const fn pen_on_page_label() -> &'static str {
+    "On page"
+}
+
+/// Hover text for the draw-on-the-page switch.
+#[must_use]
+pub const fn pen_on_page_tooltip() -> &'static str {
+    "On: the next shape, line, freehand mark or highlight is drawn into the \
+     page itself, like the drawing's own lines. It is not a comment, is not \
+     listed in the Comments panel, and is moved or deleted with the object \
+     tool. Off: it is a comment. Text boxes, sticky notes and stamps are always \
+     comments."
+}
+
 // ---------------------------------------------------------------------------
 // The line styles — the five things a border can be called
 // ---------------------------------------------------------------------------

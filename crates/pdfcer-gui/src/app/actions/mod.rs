@@ -47,6 +47,8 @@ pub mod attachments;
 /// The three verbs whose subject is one entry in the document's outline —
 /// add, rename, and delete-with-its-subtree.
 pub mod bookmarks;
+/// Where a Review mark lands: an annotation, or the page's own content.
+mod markupdest;
 /// `ViewChrome` — which piece of View ▸ Display an action is about.
 use pdfcer_gui_base::displaypiece as chrome;
 /// **Placing one of the operator's OWN stamps** — O172's second half.

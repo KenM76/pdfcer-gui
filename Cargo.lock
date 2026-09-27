@@ -2521,7 +2521,7 @@ dependencies = [
 [[package]]
 name = "ocrcer-core"
 version = "0.1.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#bcd9b36fcdc12f56bbe36d4ed42360f51b4ec0aa"
+source = "git+file:///D:/Dev/pdfcer?branch=main#4fcd831146da62becaac92af3d200093ae472fc2"
 
 [[package]]
 name = "ocrs"
@@ -2631,19 +2631,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "pdfcer-color"
+version = "0.58.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#4fcd831146da62becaac92af3d200093ae472fc2"
+
+[[package]]
 name = "pdfcer-core"
-version = "0.55.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#bcd9b36fcdc12f56bbe36d4ed42360f51b4ec0aa"
+version = "0.58.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#4fcd831146da62becaac92af3d200093ae472fc2"
 dependencies = [
  "aes",
- "brotli",
  "cbc",
  "des",
  "flate2",
- "getrandom 0.2.17",
- "hayro-ccitt",
- "hayro-jbig2",
- "hayro-jpeg2000",
  "hmac",
  "jpeg-encoder",
  "ocrcer-core",
@@ -2651,6 +2651,13 @@ dependencies = [
  "p256",
  "p384",
  "pbkdf2",
+ "pdfcer-color",
+ "pdfcer-fonts",
+ "pdfcer-function",
+ "pdfcer-image-codec",
+ "pdfcer-model",
+ "pdfcer-pkix",
+ "pdfcer-text",
  "rand_core",
  "rc2",
  "rsa",
@@ -2660,7 +2667,24 @@ dependencies = [
  "signature",
  "thiserror 2.0.20",
  "weezl 0.2.1",
- "zune-jpeg",
+]
+
+[[package]]
+name = "pdfcer-fonts"
+version = "0.58.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#4fcd831146da62becaac92af3d200093ae472fc2"
+dependencies = [
+ "pdfcer-model",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "pdfcer-function"
+version = "0.58.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#4fcd831146da62becaac92af3d200093ae472fc2"
+dependencies = [
+ "pdfcer-model",
+ "thiserror 2.0.20",
 ]
 
 [[package]]
@@ -2701,9 +2725,46 @@ dependencies = [
 ]
 
 [[package]]
+name = "pdfcer-image-codec"
+version = "0.58.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#4fcd831146da62becaac92af3d200093ae472fc2"
+dependencies = [
+ "hayro-ccitt",
+ "hayro-jbig2",
+ "hayro-jpeg2000",
+ "pdfcer-model",
+ "thiserror 2.0.20",
+ "zune-jpeg",
+]
+
+[[package]]
+name = "pdfcer-model"
+version = "0.58.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#4fcd831146da62becaac92af3d200093ae472fc2"
+dependencies = [
+ "aes",
+ "brotli",
+ "cbc",
+ "flate2",
+ "getrandom 0.2.17",
+ "sha2",
+ "thiserror 2.0.20",
+ "weezl 0.2.1",
+]
+
+[[package]]
+name = "pdfcer-pkix"
+version = "0.58.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#4fcd831146da62becaac92af3d200093ae472fc2"
+dependencies = [
+ "pdfcer-model",
+ "thiserror 2.0.20",
+]
+
+[[package]]
 name = "pdfcer-print"
-version = "0.55.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#bcd9b36fcdc12f56bbe36d4ed42360f51b4ec0aa"
+version = "0.58.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#4fcd831146da62becaac92af3d200093ae472fc2"
 dependencies = [
  "thiserror 2.0.20",
  "windows",
@@ -2711,8 +2772,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-render"
-version = "0.55.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#bcd9b36fcdc12f56bbe36d4ed42360f51b4ec0aa"
+version = "0.58.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#4fcd831146da62becaac92af3d200093ae472fc2"
 dependencies = [
  "iccce-cmm",
  "iccce-color",
@@ -2724,6 +2785,16 @@ dependencies = [
  "subsetter",
  "thiserror 2.0.20",
  "tiny-skia",
+]
+
+[[package]]
+name = "pdfcer-text"
+version = "0.58.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#4fcd831146da62becaac92af3d200093ae472fc2"
+dependencies = [
+ "pdfcer-fonts",
+ "pdfcer-model",
+ "thiserror 2.0.20",
 ]
 
 [[package]]

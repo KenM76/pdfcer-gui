@@ -185,6 +185,14 @@ pub struct Pen {
     /// chooser's tooltip says so — [`crate::text::markup::pen_dash_tooltip`] —
     /// rather than leaving an operator to conclude the setting did not take.
     pub dash: crate::linestyle::LineStyle,
+    /// **Draw into the page's own content instead of as a comment.**
+    ///
+    /// Off by default, so an operator who never touches the switch authors
+    /// annotations exactly as before. On, a shape or text markup is committed
+    /// through `EditSession::add_markup_as_content`: the same appearance, as
+    /// ordinary page objects the object tool moves and deletes. Text boxes,
+    /// sticky notes and stamps have no such form and stay comments.
+    pub on_page: bool,
 }
 
 /// The thinnest pen offered.
@@ -227,6 +235,7 @@ impl Default for Pen {
             // chooser authors the same bytes it authored before the chooser
             // existed.
             dash: crate::linestyle::LineStyle::Solid,
+            on_page: false,
         }
     }
 }

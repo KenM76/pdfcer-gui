@@ -158,12 +158,14 @@ still readable from the Comments panel, whose Go to opens it on request.
 Driven by `a_corner_can_be_added_and_taken_away`, which places a ce dimension,
 clicks it and requires no pop-up. The same check fails on the previous build.
 
-## O246 — **FILED** — the Review drawing tools can also draw into the page content
+## O246 — **BUILT AND DRIVEN — awaiting your verdict** — the Review drawing tools can also draw into the page content
 
 Lines, shapes and the other drawing tools that today author comments
 (annotations) should be able to draw into the ordinary page content, the same
 layer as the drawing's own lines and tables. A choice of destination, not a
 replacement: comments stay comments when that is what he wants.
+
+**State.** Markup ▸ Style has an **On page** switch beside the line style. With it on, a rectangle, ellipse, arrow, line, polygon, cloud, freehand mark or highlight is drawn into the page itself: ordinary lines the object tool moves and deletes, not listed as a comment, one Undo. Off, it is a comment as before. Text boxes, sticky notes and stamps are always comments; the engine has no page-content form for them. On a certified file that allows comments but not content changes, the engine refuses and says so on the status line. Driven: a rectangle drawn with the switch on adds page objects and no comment. The published build fails the same check.
 
 ## O239 — **BUILT, NOT DRIVEN** — with Fit page and Flip pages on, a one-page document does not scroll
 

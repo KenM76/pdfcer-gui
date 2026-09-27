@@ -589,11 +589,14 @@ impl PdfcerApp {
                         dash: pen.dash_option(),
                         ..Default::default()
                     };
-                    vector_edit(doc, "add-markup", page, 1, |session| {
-                        session
-                            .add_markup_with(page, &spec, &options)
-                            .map(|_| Vec::new())
-                    });
+                    super::markupdest::author(
+                        doc,
+                        "add-markup",
+                        page,
+                        &spec,
+                        &options,
+                        pen.on_page,
+                    );
                 } else {
                     crate::canvas::markup::decline(
                         kind,
@@ -740,11 +743,14 @@ impl PdfcerApp {
                     opacity: pen.opacity_option(),
                     ..Default::default()
                 };
-                vector_edit(doc, "add-text-markup", page, 1, |session| {
-                    session
-                        .add_markup_with(page, &spec, &options)
-                        .map(|_| Vec::new())
-                });
+                super::markupdest::author(
+                    doc,
+                    "add-text-markup",
+                    page,
+                    &spec,
+                    &options,
+                    pen.on_page,
+                );
             }
             // **The commit `DEFECTS.md` D4b is about**, and the two lines
             // that make it different from the old shell's are `plan`'s.

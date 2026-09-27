@@ -202,6 +202,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // run in which the ribbon-click channel is broken should report that as
         // `markup_rectangle`'s failure first.
         Box::new(markup_style::MarkupStyleGroupIsDrawn),
+        Box::new(markup_on_page::MarkupDrawsIntoPageContent),
         Box::new(measure_perimeter::MeasurePerimeterTracesAndCloses),
         // Immediately after it, and the ordering is a dependency rather
         // than a preference: this check DRAWS a perimeter before it reshapes
