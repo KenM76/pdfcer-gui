@@ -327,7 +327,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              not the harness.\n\n\
              ★★ The shell asked for the widened box (`{}`), so the decision is right and the \
              failure is downstream of it. Three candidates, in order:\n\
-             • the engine clipped the region to the crop box after all — `render::offpage` \
+             • the engine clipped the region to the crop box after all — `rasteroffpage` \
              asserts it does not, and if that module now fails too the finding belongs in the \
              request channel, not here;\n\
              • the texture is placed at the wrong rectangle — `render::region::region_on_screen` \

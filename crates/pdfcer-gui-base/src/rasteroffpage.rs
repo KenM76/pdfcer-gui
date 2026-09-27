@@ -1,23 +1,23 @@
-//! # `render::offpage` — proving the engine can rasterize past the page edge
+//! # `rasteroffpage` — proving the engine can rasterize past the page edge
 //!
 //! ## Why this module is nothing but tests
 //!
 //! `OPERATOR_REQUESTS.md` **O23**, second half:
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/render/offpage.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/rasteroffpage.md`.
 
 #[cfg(test)]
 mod tests {
     use pdfcer_core::page_tree::Rect;
 
-    use crate::app::state::{FOUR_PAGES, open_fixture};
+    use crate::opendoc::fixtures::{FOUR_PAGES, open_fixture};
 
     /// The scale every case renders at. Small on purpose: these assert
     /// *geometry*, not fidelity, and a big pixmap only makes them slow.
     const SCALE: f32 = 0.5;
 
     /// Render `region` of page 0 of the four-page fixture, or say why not.
-    fn region_of(doc: &crate::app::state::OpenDoc, region: Rect) -> (u32, u32) {
+    fn region_of(doc: &crate::opendoc::OpenDoc, region: Rect) -> (u32, u32) {
         let page = doc.pages.first().expect("the fixture has a page");
         let options = pdfcer_render::RenderOptions::default();
         let view = doc.session.view();

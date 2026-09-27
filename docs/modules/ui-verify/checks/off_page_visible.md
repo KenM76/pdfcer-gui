@@ -34,7 +34,7 @@ its pixmap to the `/CropBox`, so nothing culls the off-page square; there
 are simply no pixels out there to put it in. Every layer above that is
 innocent and reports success:
 
-* the decomposer lists the square (`render::offpage` asserts the content
+* the decomposer lists the square (`rasteroffpage` asserts the content
   union includes it);
 * the hit test finds it (`off_page_press` asserts a band takes it);
 * the render worker returns a pixmap with no error;

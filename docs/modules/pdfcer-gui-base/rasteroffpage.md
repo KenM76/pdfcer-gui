@@ -1,4 +1,4 @@
-# `render::offpage` — proving the engine can rasterize past the page edge
+# `rasteroffpage` — proving the engine can rasterize past the page edge
 
 ## Why this module is nothing but tests
 

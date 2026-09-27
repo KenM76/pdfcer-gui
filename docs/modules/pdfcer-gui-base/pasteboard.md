@@ -111,7 +111,7 @@ the crop box, so an off-page object is reachable, selectable, movable by its
 properties and draggable by its outline — and still not painted. That is the
 other half of part B, it lives in the render path, and conflating the two
 would have made a change that could not be driven one assertion at a time.
-[`crate::render::offpage`] holds the engine properties it will stand on.
+[`crate::rasteroffpage`] holds the engine properties it will stand on.
 
 ## Rule 15
 

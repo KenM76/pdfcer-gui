@@ -1712,7 +1712,7 @@ must stay in the gui is a `pub(crate)` trait implemented for `OpenDoc`
 `impl` can only live in the defining crate. Test fixtures cross the seam
 through the base's `test-fixtures` feature, enabled only from the gui's
 `[dev-dependencies]`. Next: the modules `python tools/module-graph.py` shows
-reaching only `OpenDoc` — `render::offpage`, `find`, and the `text`
+reaching only `OpenDoc` — `rasteroffpage`, `find`, and the `text`
 leftovers. A home that still reaches `app` has an edge to cut first.
 
 ### A scheduling constraint that applies to every stage

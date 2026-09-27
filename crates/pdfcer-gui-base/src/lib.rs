@@ -533,3 +533,6 @@ pub mod clipboard;
 /// Putting a password on a document, changing what it allows, and taking the
 /// protection off.
 pub mod protect;
+
+/// **Tests only** — the engine properties a render past the page edge stands on.
+pub mod rasteroffpage;

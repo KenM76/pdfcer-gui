@@ -130,7 +130,7 @@ pub(super) fn decide(
             // object placed off the sheet is drawn at all.
             //
             // `render_page` sizes its pixmap to the `/CropBox`. Nothing
-            // culls the content — `render::offpage` proves that against
+            // culls the content — `rasteroffpage` proves that against
             // the pinned engine — there are simply no pixels out there to
             // put it in. So when this page's ink reaches past the sheet,
             // ask for the bigger box instead.

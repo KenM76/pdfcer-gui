@@ -26,12 +26,12 @@ that nobody reading it mistakes reach for sight.
 ## Why the object was invisible, in one sentence
 
 `pdfcer_render::render_page` sizes its pixmap to the page's `/CropBox`.
-Nothing culls the *content* — [`crate::render::offpage`] proves that against
+Nothing culls the *content* — [`crate::rasteroffpage`] proves that against
 the pinned engine — the raster simply has no pixels out there to put it in.
 
 So the whole of B2 is: **ask for a bigger box**. `render_page_region` takes
 an arbitrary page-space rectangle and never intersects it with the crop box,
-which `render::offpage`'s three tests assert directly because the engine's
+which `rasteroffpage`'s three tests assert directly because the engine's
 own suite has never exercised a region outside the page.
 
 ## The box, and the two things it is NOT

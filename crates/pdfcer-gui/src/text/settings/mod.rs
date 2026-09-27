@@ -5,10 +5,5 @@
 
 pub use pdfcer_gui_base::text::settings::*;
 
-use egui_shell::theme::Preset;
-
-pub mod shell;
-pub use shell::*;
-
 #[cfg(test)]
 mod app_tests;

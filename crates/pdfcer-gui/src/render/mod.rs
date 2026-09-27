@@ -41,10 +41,6 @@ pub use pdfcer_gui_base::rasterceiling as ceiling;
 /// and how far the visible-region tier may look past the sheet.
 pub use pdfcer_gui_base::rasterhalo as halo;
 
-/// **Tests only** — the engine properties O23's second half will stand on,
-/// asserted here because the engine's own suite has never exercised them.
-pub mod offpage;
-
 /// **The blank page nothing reports** — O219's *"the view goes blank"*, given
 /// a diagnostic for the first time.
 pub mod pressure;

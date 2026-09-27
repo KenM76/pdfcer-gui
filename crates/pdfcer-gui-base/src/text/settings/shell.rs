@@ -7,9 +7,9 @@
 //! buttons are drawn has every reason to wonder whether they are also changing
 //! the document.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/settings/shell.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/settings/mod.md`.
 
-use super::*;
+use egui_shell::theme::Preset;
 
 // ===========================================================================
 // Appearance — theme
@@ -159,8 +159,8 @@ pub const fn quality_radius() -> &'static str {
 
 /// One quality's name.
 #[must_use]
-pub const fn quality_label(quality: crate::app::prefs::RenderQuality) -> &'static str {
-    use crate::app::prefs::RenderQuality as Q;
+pub const fn quality_label(quality: crate::prefs::RenderQuality) -> &'static str {
+    use crate::prefs::RenderQuality as Q;
     match quality {
         Q::Faster => "Faster",
         Q::Normal => "Normal (pdfcer's default)",
@@ -170,8 +170,8 @@ pub const fn quality_label(quality: crate::app::prefs::RenderQuality) -> &'stati
 
 /// One quality's description.
 #[must_use]
-pub const fn quality_note(quality: crate::app::prefs::RenderQuality) -> &'static str {
-    use crate::app::prefs::RenderQuality as Q;
+pub const fn quality_note(quality: crate::prefs::RenderQuality) -> &'static str {
+    use crate::prefs::RenderQuality as Q;
     match quality {
         Q::Faster => {
             "Three quarters of the detail, and quicker on a large sheet. Thin \
@@ -268,8 +268,8 @@ pub const fn opening_fit_radius() -> &'static str {
 
 /// One opening fit's name.
 #[must_use]
-pub const fn opening_fit_label(fit: crate::app::prefs::OpeningFit) -> &'static str {
-    use crate::app::prefs::OpeningFit as F;
+pub const fn opening_fit_label(fit: crate::prefs::OpeningFit) -> &'static str {
+    use crate::prefs::OpeningFit as F;
     match fit {
         F::Page => "The whole page (pdfcer's default)",
         F::Width => "The full width",
@@ -280,8 +280,8 @@ pub const fn opening_fit_label(fit: crate::app::prefs::OpeningFit) -> &'static s
 
 /// One opening fit's description.
 #[must_use]
-pub const fn opening_fit_note(fit: crate::app::prefs::OpeningFit) -> &'static str {
-    use crate::app::prefs::OpeningFit as F;
+pub const fn opening_fit_note(fit: crate::prefs::OpeningFit) -> &'static str {
+    use crate::prefs::OpeningFit as F;
     match fit {
         F::Page => {
             "Always shows you the thing you just opened, whatever size it is. \
@@ -323,8 +323,8 @@ pub const fn wheel_paging_radius() -> &'static str {
 
 /// One wheel-paging option's name.
 #[must_use]
-pub const fn wheel_paging_label(paging: crate::app::prefs::WheelPaging) -> &'static str {
-    use crate::app::prefs::WheelPaging as W;
+pub const fn wheel_paging_label(paging: crate::prefs::WheelPaging) -> &'static str {
+    use crate::prefs::WheelPaging as W;
     match paging {
         W::Scroll => "Scroll within the page (pdfcer's default)",
         W::FlipPages => "Turn to the next or previous page",
@@ -333,8 +333,8 @@ pub const fn wheel_paging_label(paging: crate::app::prefs::WheelPaging) -> &'sta
 
 /// One wheel-paging option's description.
 #[must_use]
-pub const fn wheel_paging_note(paging: crate::app::prefs::WheelPaging) -> &'static str {
-    use crate::app::prefs::WheelPaging as W;
+pub const fn wheel_paging_note(paging: crate::prefs::WheelPaging) -> &'static str {
+    use crate::prefs::WheelPaging as W;
     match paging {
         W::Scroll => {
             "Moves around inside the sheet. On a page that already fits the window there is nothing to move, so the wheel does nothing."
@@ -365,8 +365,8 @@ pub const fn paste_chords_radius() -> &'static str {
 
 /// One paste-order option's name.
 #[must_use]
-pub const fn paste_chords_label(order: crate::app::prefs::PasteChords) -> &'static str {
-    use crate::app::prefs::PasteChords as P;
+pub const fn paste_chords_label(order: crate::prefs::PasteChords) -> &'static str {
+    use crate::prefs::PasteChords as P;
     match order {
         P::PdfcerOrder => "Ctrl+V makes a separate field (pdfcer's default)",
         P::AcrobatOrder => "Ctrl+V makes another box for the same field (matches Acrobat)",
@@ -375,8 +375,8 @@ pub const fn paste_chords_label(order: crate::app::prefs::PasteChords) -> &'stat
 
 /// One paste-order option's description.
 #[must_use]
-pub const fn paste_chords_note(order: crate::app::prefs::PasteChords) -> &'static str {
-    use crate::app::prefs::PasteChords as P;
+pub const fn paste_chords_note(order: crate::prefs::PasteChords) -> &'static str {
+    use crate::prefs::PasteChords as P;
     match order {
         P::PdfcerOrder => {
             "The copy is its own field: filling one leaves the other alone. Usually what you want going down a column of a title block. Hold Shift to link them instead."
@@ -485,8 +485,8 @@ pub const fn page_cache_radius() -> &'static str {
 
 /// One cache size's name — the step, and what it actually costs.
 #[must_use]
-pub fn page_cache_label(cache: crate::app::prefs::PageCache) -> String {
-    use crate::app::prefs::PageCache as C;
+pub fn page_cache_label(cache: crate::prefs::PageCache) -> String {
+    use crate::prefs::PageCache as C;
     let mb = cache.megabytes();
     match cache {
         C::Small => format!("Small — about {mb} MB"),
@@ -498,8 +498,8 @@ pub fn page_cache_label(cache: crate::app::prefs::PageCache) -> String {
 
 /// One cache size's description.
 #[must_use]
-pub const fn page_cache_note(cache: crate::app::prefs::PageCache) -> &'static str {
-    use crate::app::prefs::PageCache as C;
+pub const fn page_cache_note(cache: crate::prefs::PageCache) -> &'static str {
+    use crate::prefs::PageCache as C;
     match cache {
         C::Small => {
             "What pdfcer used before this release. Enough for a few large sheets; \

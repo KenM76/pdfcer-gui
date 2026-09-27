@@ -46,7 +46,7 @@ impl OpenDoc {
     /// or [`None`] if nobody has decomposed the page yet.
     ///
     /// `PageObjects::page_bbox()` unioned over the whole page, which
-    /// `crate::render::offpage`'s `the_content_union_is_available_and_non_empty`
+    /// `crate::rasteroffpage`'s `the_content_union_is_available_and_non_empty`
     /// asserts includes geometry **outside** the crop box. That is the input
     /// [`crate::render::halo::region`] turns into "how big a raster do I need
     /// so the operator can see what he placed off the sheet" — O23's "see"
