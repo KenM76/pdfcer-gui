@@ -389,6 +389,7 @@ fn each_menu_holds_exactly_the_documented_items() {
                 "edit.cut",
                 "edit.copy",
                 "edit.paste",
+                "markup.flatten",
                 "format.delete",
             ][..],
         ),

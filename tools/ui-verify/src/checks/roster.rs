@@ -294,6 +294,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(password_fill::ATypedPasswordIsNotSavedUnlessAsked),
         Box::new(layer_authoring::ALayerCanBeMadeRenamedAndDeleted),
         Box::new(layer_combine::LayersCanBeMergedAndFlattened),
+        Box::new(markup_flatten::AMarkupCanBeMadePartOfThePage),
         Box::new(display_two_rows::TheDisplayButtonsStackInTwoRows),
         Box::new(title_build_stamp::TheTitleBarCarriesTheBuildTime),
         Box::new(field_shading::FillableFieldsAreShadedOnThePage),

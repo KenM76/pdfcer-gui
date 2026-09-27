@@ -535,6 +535,8 @@ pub mod forms_spotlight;
 pub mod layer_authoring;
 /// Merge a layer into another and flatten all, from the Layers panel.
 pub mod layer_combine;
+/// Make a markup part of the page from its right-click menu.
+pub mod markup_flatten;
 pub mod password_fill;
 
 /// **Selecting a page object names the layer it is on** — O126's third

@@ -235,6 +235,11 @@ pub(super) fn band() -> Vec<Command> {
         command("markup.remove_node", t::markup_remove_node(), 531)
             .with_icon("show-points")
             .enabled_when("markup.node_removable"),
+        // Offered only on the canvas.markup menu, where the engine's
+        // per-annotation answer decides whether the row is drawn.
+        command("markup.flatten", t::markup_flatten(), 532)
+            .with_icon("form-flatten")
+            .enabled_when("doc.pages"),
         command("markup.highlight", t::markup_highlight(), 510)
             .with_icon("shape-highlight")
             .enabled_when("doc.pages"),

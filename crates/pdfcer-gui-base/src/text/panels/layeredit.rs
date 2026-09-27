@@ -87,16 +87,17 @@ pub const fn field_intent() -> &'static str {
     "Purpose"
 }
 
-/// The choice that leaves a setting the panel cannot read as it is.
+/// The choice that leaves a setting pdfcer cannot name as it is.
 #[must_use]
 pub const fn unchanged() -> &'static str {
     "Leave as it is"
 }
 
-/// Why print, export and purpose start at "Leave as it is".
+/// Why a setting starts at "Leave as it is": the file holds a value pdfcer
+/// cannot name.
 #[must_use]
 pub const fn unread_settings_tooltip() -> &'static str {
-    "pdfcer cannot yet read this setting back from the file, so it starts at \u{201c}Leave as it is\u{201d}. Choosing anything else overwrites whatever the file holds."
+    "The file holds a value for this setting that pdfcer cannot name, so it starts at \u{201c}Leave as it is\u{201d}. Choosing anything else replaces it."
 }
 
 /// The print and export choices the window offers, in menu order.

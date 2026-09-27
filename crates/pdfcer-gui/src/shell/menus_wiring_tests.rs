@@ -70,9 +70,10 @@ fn the_icon_column_lights_up_the_rows_whose_commands_already_name_a_glyph() {
     // glyph would have moved `blank` to 2 — which is legal, argued at the
     // registration, and would have to be argued here too.
     // 35 → 36: `format.merge_text_runs` on the canvas object menu.
+    // 36 → 37: `markup.flatten` on the canvas markup menu.
     assert_eq!(
         (glyph, blank, absent),
-        (36, 1, 0),
+        (37, 1, 0),
         "menu rows by icon slot state; per-menu breakdown:\n{report}"
     );
     assert_eq!(

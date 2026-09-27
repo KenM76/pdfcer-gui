@@ -162,6 +162,15 @@ pub const fn markup_remove_node() -> CommandText {
     )
 }
 
+/// `markup.flatten`
+#[must_use]
+pub const fn markup_flatten() -> CommandText {
+    CommandText::new(
+        "Make part of the page",
+        "Burn this markup into the page's own drawing. It looks the same, but it is no longer a markup: it cannot be moved, edited or deleted as one. Ctrl+Z undoes it.",
+    )
+}
+
 // ---------------------------------------------------------------------------
 // The three kinds that mark a SELECTION rather than a drag.
 //

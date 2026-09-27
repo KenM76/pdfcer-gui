@@ -112,6 +112,17 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 # OPEN
 
+## O247 — **OPEN — waiting on the engine (G046)** — edit text in place, in the page's own font, instead of in a pop-up box
+
+> **Ken:** *"When we edit text can we make it edit wysiwyg fashion instead of the pop up text box with unmatched font?"*
+
+Editing existing page text opens a box in the shell's font over the page. He
+wants to type directly into the text as it is drawn: the characters appear in
+the document's own font, size and position as he types, with the caret in the
+line itself.
+
+**Where it stands.** The route is designed (GUI_ROADMAP, *Typing in the page's own font*): draw the typed characters from the run's own font and keep Enter committing as now. What it needs from the engine is a fast read-only preview of an edit's glyphs, filed as G046. Drawing the glyphs without it would mean the shell guessing the page's font encoding, and a preview that guesses can show text that differs from what gets saved.
+
 ## O242–O246 — five asks in one message, FILED BEFORE ANY WORK
 
 > **Ken:** *"When I got to set the scale for dimension groups I find the layout confusing. I think the ratio numbers units are controlled by the dimension units on paper and the other dimension unit box...but I am not sure. It isn't very intuitive. There are a lot of places in the program where we type numbers without having a clear indicator of what the units are. Also units should be able to be entered in any format a user would expect to be able to. Also we should be able to do basic math in any entry box where it makes sense to have, like positioning I should be able to add 10 px to the current position by typing  + 10px in the co- ordinate box. All of this seems like it should be easy to quickly implement using a single pre-processor function for any data entry, with a capabilities filter for each type. Example math won't math for a text box as it will just output the exact text, or a scale value can't have text in it. Also dimensions pop up a message note box and they shouldn't as it makes it hard to manipulate and move the position of the dimension. Also can we add the drawing tools that draw on the review layer so that these can also just draw on the ordinary pdf layer that contains our drawing and table and etc lines?"*

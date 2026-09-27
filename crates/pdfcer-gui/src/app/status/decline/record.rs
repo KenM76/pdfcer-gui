@@ -150,3 +150,8 @@ pub(crate) fn record_ocr_layer(why: crate::text::ocr::OcrLayerRefusal) {
 pub(crate) fn record_layer(why: crate::text::panels::layeredit::LayerRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::Layer(why)));
 }
+
+/// Record that making a markup part of the page was refused, and why.
+pub(crate) fn record_markup_flatten(why: pdfcer_core::edit::AnnotFlattenRefusalReason) {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::MarkupFlatten(why)));
+}

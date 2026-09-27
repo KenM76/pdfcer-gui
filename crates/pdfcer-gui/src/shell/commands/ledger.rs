@@ -371,9 +371,10 @@ fn registration_succeeds_and_registers_every_command() {
     // they were handed — in a build that can already search and copy it.
     // 163 → 164: `file.remove_ocr`, beside `file.ocr` on File ▸ Recognise.
     // 164 → 165: `format.merge_text_runs` (G035), canvas object menu and Format ▸ Selection.
+    // 165 → 166: `markup.flatten`, canvas markup menu.
     assert_eq!(
         registry().len(),
-        165 + usize::from(cfg!(feature = "signing"))
+        166 + usize::from(cfg!(feature = "signing"))
     );
 }
 
@@ -750,9 +751,12 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // `icons/assets/PROVENANCE.md` is untouched.
     // 146 → 147: `format.merge_text_runs` names `combine`, shared with
     // `tools.merge_files`; the two are never drawn side by side.
+    // 147 → 148: `markup.flatten` names `form-flatten`, shared with
+    // `edit.form_flatten`: the same act on a markup instead of a field, and
+    // one is a canvas menu row, the other a Forms panel button.
     assert_eq!(
         named,
-        147 + usize::from(cfg!(feature = "signing")),
+        148 + usize::from(cfg!(feature = "signing")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

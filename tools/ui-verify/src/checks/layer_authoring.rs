@@ -187,8 +187,28 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if let Err(why) = right_click_row(&session, &driver, ui_rect, FIRST)? {
         return Ok(Some(why));
     }
+    let mark = session.trace()?.mark();
     if let Err(why) = click(&session, &driver, ui_rect, MENU_PROPS, "the row menu")? {
         return Ok(Some(why));
+    }
+    // A new layer prints and exports when shown and is for viewing; the
+    // window must open on those values, read from the file.
+    let props_trace = session.trace()?;
+    let Some(opened) = props_trace.last_after("layer-props-opened", mark) else {
+        return Ok(Some(
+            "Layer properties was clicked and no `layer-props-opened` line followed.".to_owned(),
+        ));
+    };
+    report.note(format!("opened: `{}`", opened.raw));
+    if opened.get("print") != Some("when_visible")
+        || opened.get("export") != Some("when_visible")
+        || opened.get("intent") != Some("view")
+    {
+        return Ok(Some(format!(
+            "the Properties window did not open on the new layer's own settings \
+             (printing and exporting when shown, for viewing): `{}`.",
+            opened.raw
+        )));
     }
     if let Err(why) = click(
         &session,

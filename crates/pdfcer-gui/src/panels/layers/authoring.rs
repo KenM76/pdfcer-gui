@@ -5,9 +5,9 @@
 //! and the Delete dialog hold their drafts in egui temp memory, so closing the
 //! panel drops them.
 //!
-//! Print, export and purpose start at "Leave as it is" because
-//! `pdfcer_core::layers::Layer` does not report them; the window says so
-//! rather than showing a guess.
+//! Print, export and purpose start at the value the file holds. A value
+//! pdfcer cannot name (`None` from `read_layers`) shows as "Leave as it is"
+//! and is written back only if the operator picks something else.
 
 use pdfcer_core::edit::{LayerContentPolicy, LayerEdit, LayerIntent, LayerOutputState};
 use pdfcer_core::layers::{Layer, Layers};
@@ -107,8 +107,18 @@ pub(super) fn row_menu(response: &egui::Response, read: &Layers, l: &Layer, name
         let props = ui.button(t::menu_properties());
         crate::diag::ui_rect(REGION_MENU_PROPS, props.rect);
         if props.clicked() {
+            let draft = PropsDraft::of(l, name);
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!(
+                    "layer-props-opened print={} export={} intent={}",
+                    output_word(draft.print),
+                    output_word(draft.export),
+                    intent_word(draft.intent)
+                )
+            });
             ui.ctx()
-                .data_mut(|d| d.insert_temp(egui::Id::new(PROPS_KEY), PropsDraft::of(l, name)));
+                .data_mut(|d| d.insert_temp(egui::Id::new(PROPS_KEY), draft));
             ui.close();
         }
         let delete = ui.button(t::menu_delete());
@@ -123,6 +133,28 @@ pub(super) fn row_menu(response: &egui::Response, read: &Layers, l: &Layer, name
     });
 }
 
+/// A trace word for a read print or export state.
+fn output_word(s: Option<LayerOutputState>) -> &'static str {
+    // ui-text-exempt: diagnostic trace words, never displayed.
+    match s {
+        Some(LayerOutputState::WhenVisible) => "when_visible",
+        Some(LayerOutputState::Always) => "always",
+        Some(LayerOutputState::Never) => "never",
+        _ => "unnamed",
+    }
+}
+
+/// A trace word for a read intent.
+fn intent_word(i: Option<LayerIntent>) -> &'static str {
+    // ui-text-exempt: diagnostic trace words, never displayed.
+    match i {
+        Some(LayerIntent::View) => "view",
+        Some(LayerIntent::Design) => "design",
+        Some(LayerIntent::Both) => "both",
+        _ => "unnamed",
+    }
+}
+
 /// The Properties window's draft.
 #[derive(Clone)]
 struct PropsDraft {
@@ -133,8 +165,11 @@ struct PropsDraft {
     visible: bool,
     was_locked: bool,
     locked: bool,
+    was_print: Option<LayerOutputState>,
     print: Option<LayerOutputState>,
+    was_export: Option<LayerOutputState>,
     export: Option<LayerOutputState>,
+    was_intent: Option<LayerIntent>,
     intent: Option<LayerIntent>,
 }
 
@@ -148,9 +183,12 @@ impl PropsDraft {
             visible: l.visible_by_default,
             was_locked: l.locked,
             locked: l.locked,
-            print: None,
-            export: None,
-            intent: None,
+            was_print: l.print,
+            print: l.print,
+            was_export: l.export,
+            export: l.export,
+            was_intent: l.intent_kind,
+            intent: l.intent_kind,
         }
     }
 
@@ -166,13 +204,13 @@ impl PropsDraft {
         if self.locked != self.was_locked {
             e = e.locked(self.locked);
         }
-        if let Some(p) = self.print {
+        if let Some(p) = self.print.filter(|_| self.print != self.was_print) {
             e = e.print(p);
         }
-        if let Some(x) = self.export {
+        if let Some(x) = self.export.filter(|_| self.export != self.was_export) {
             e = e.export(x);
         }
-        if let Some(i) = self.intent {
+        if let Some(i) = self.intent.filter(|_| self.intent != self.was_intent) {
             e = e.intent(i);
         }
         e
@@ -217,6 +255,7 @@ fn properties_window(ctx: &egui::Context, actions: &mut Vec<Action>) {
                         "layer-print",
                         t::field_print(),
                         &mut draft.print,
+                        draft.was_print,
                         &t::OUTPUT_CHOICES,
                     );
                     choice(
@@ -224,6 +263,7 @@ fn properties_window(ctx: &egui::Context, actions: &mut Vec<Action>) {
                         "layer-export",
                         t::field_export(),
                         &mut draft.export,
+                        draft.was_export,
                         &t::OUTPUT_CHOICES,
                     );
                     choice(
@@ -231,6 +271,7 @@ fn properties_window(ctx: &egui::Context, actions: &mut Vec<Action>) {
                         "layer-intent",
                         t::field_intent(),
                         &mut draft.intent,
+                        draft.was_intent,
                         &t::INTENT_CHOICES,
                     );
                 });
@@ -258,28 +299,34 @@ fn properties_window(ctx: &egui::Context, actions: &mut Vec<Action>) {
     });
 }
 
-/// One labelled drop-down whose first entry leaves the setting unchanged.
+/// One labelled drop-down. "Leave as it is" is offered only when the file's
+/// value is one pdfcer cannot name.
 fn choice<T: Copy + PartialEq>(
     ui: &mut egui::Ui,
     salt: &str,
     label: &str,
     value: &mut Option<T>,
+    was: Option<T>,
     choices: &[(T, &str)],
 ) {
     ui.label(label);
     let shown = value
         .and_then(|v| choices.iter().find(|(c, _)| *c == v).map(|(_, w)| *w))
         .unwrap_or(t::unchanged());
-    egui::ComboBox::from_id_salt(salt)
+    let combo = egui::ComboBox::from_id_salt(salt)
         .selected_text(shown)
         .show_ui(ui, |ui| {
-            ui.selectable_value(value, None, t::unchanged());
+            if was.is_none() {
+                ui.selectable_value(value, None, t::unchanged());
+            }
             for (c, words) in choices {
                 ui.selectable_value(value, Some(*c), *words);
             }
         })
-        .response
-        .on_hover_text(t::unread_settings_tooltip());
+        .response;
+    if was.is_none() {
+        combo.on_hover_text(t::unread_settings_tooltip());
+    }
     ui.end_row();
 }
 

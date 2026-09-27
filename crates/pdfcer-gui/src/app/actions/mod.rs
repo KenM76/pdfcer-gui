@@ -38,7 +38,7 @@ mod addtext;
 /// The verbs that change an annotation — delete today, the Format tab's
 /// restyles next. Its header carries the seam and the ce-dimension routing
 /// obligation every future verb here inherits.
-mod annots;
+pub(crate) mod annots;
 /// What applying an [`Action`] does — the interpreter half of this module.
 mod apply;
 /// The three verbs whose subject is a whole **file living inside the

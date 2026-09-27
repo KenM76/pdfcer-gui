@@ -35,6 +35,9 @@ use pdfcer_core::object::ObjId;
 
 use crate::app::state::OpenDoc;
 
+/// Make one markup part of the page.
+mod flatten;
+pub(crate) use flatten::refusal as flatten_refusal;
 mod inknodes;
 /// **The text-annotation restyle verb** — `set_text_annot_style` and the
 /// stamp-label disclosure it owes. Its header says why this one verb is a
@@ -727,6 +730,7 @@ pub(super) fn apply_action(
             degrees,
         } => rotate_dimension(doc, dimension, annot, pivot, degrees),
         A::Delete { page, id } => delete(doc, page, id),
+        A::Flatten { page, id } => flatten::flatten(doc, page, id),
         A::SetNote {
             id,
             text,

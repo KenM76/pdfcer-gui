@@ -1018,6 +1018,9 @@ pub(crate) enum Declined {
     /// A layer create, change or delete wrote nothing. Worded in
     /// [`crate::text::panels::layeredit::LayerRefusal`].
     Layer(crate::text::panels::layeredit::LayerRefusal),
+    /// Making a markup part of the page was refused; worded in
+    /// [`crate::text::flattenannot::refused`].
+    MarkupFlatten(pdfcer_core::edit::AnnotFlattenRefusalReason),
 }
 
 impl Declined {

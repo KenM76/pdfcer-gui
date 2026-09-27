@@ -207,33 +207,31 @@ condition that fails in the field is absent. Add a multi-run paragraph, mixed
 sizes within one block, rotated text, and words separated by positioning rather
 than by space glyphs — first, so the work below has something to fail against.
 
-### Live layout while typing — blocked on the engine
+### Typing in the page's own font (O247) — waiting on G046
 
-The draft is drawn as ghost text in a proportional font over a translucent mask,
-and real layout runs once on commit. You type at the wrong widths and it snaps
-to reality on Accept. Re-measuring per keystroke is the fix, and the measurement
-of whether it can be afforded already exists:
+While a run is edited, the shell paints an opaque box and the draft in egui's
+proportional font; the document changes once, on Enter, through `edit_text`. The
+operator sees the wrong face at the wrong widths until he commits.
 
-```sh
-cargo test -p pdfcer-gui --lib canvas::textedit::cost -- --ignored --nocapture
-```
+**The route:** paint the run's pixels away and draw the draft's glyphs in the
+run's own font, size, colour and position, with the caret in the line. Enter
+still commits through `edit_text`, so the preview is never what is saved.
 
-That test is `#[ignore]`d by design and reports a per-keystroke cost for a small
-synthetic block, a real drawing sheet and the dense benchmark drawing. Roughly
-16 ms is one frame and roughly 50 ms is felt as lag; read the figures from the
-run, never from prose.
+**What it waits on:** request G046 asks the engine for a read-only
+`edit_text` preview that returns the draft's glyph outlines in page space, its
+box and its disclosures, fast enough to call on every keystroke. Two routes are
+refused, and G046 records why:
 
-**What blocks it:** the engine computes the advance delta inside its edit
-planner before any write, and neither the planner nor its plan type is public. A
-public *measure this edit* entry point — or making the planner and its plan
-public — is the whole of what this waits on.
+- **`edit_text` into a scratch session per keystroke.** It is correct, but it
+  plans a whole content-stream rewrite and costs hundreds of milliseconds on a
+  dense sheet.
+- **Drawing outlines through the public `FontProgram`.** The shell would have to
+  re-derive the run's encoding, its advances and the edit gate's refusals, which
+  is a second copy of rules the engine owns. Summing `ExtractedGlyph::advance`
+  fails for exactly the characters the page does not already show.
 
-**A cheap approximation is refused.** Summing `ExtractedGlyph::advance` over the
-draft works only for characters the page already shows; a character it does not
-show has no width there, so the approximation is silently wrong for exactly the
-input that motivates the feature. **Debouncing is refused too**: a re-layout
-appearing a moment after you stop typing is a second, later surprise rather than
-a fix for the first one.
+Debouncing is refused too: a re-layout that appears a moment after typing stops
+is a second, later surprise, not a fix.
 
 ### Reflow reachability
 

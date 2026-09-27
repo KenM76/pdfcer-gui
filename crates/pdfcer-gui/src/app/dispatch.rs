@@ -52,6 +52,8 @@ pub(crate) mod batch;
 /// them. Its header carries the seam, and the warning that is easy to read and
 /// not act on.
 pub(crate) mod exchange;
+/// `markup.flatten` — make the selected markup part of the page.
+mod flatten;
 pub(crate) mod fonts;
 mod forms;
 /// **The three commands whose subject is a POINT on a markup shape** — end the
@@ -852,6 +854,7 @@ impl PdfcerApp {
             // built at apply time — see the module's own header for why a list
             // computed at the press would be a stale one.
             id if arrange::claims(id) => arrange::dispatch(self, id, actions),
+            "markup.flatten" => flatten::dispatch(self, actions),
             // The three text-bearing kinds, ABOVE the geometric markup arm.
             //
             // Ordering is a statement rather than a tie-break — the two

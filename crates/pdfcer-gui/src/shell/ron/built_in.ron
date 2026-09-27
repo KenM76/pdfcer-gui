@@ -656,6 +656,7 @@
                 Command(id: "edit.copy"),
                 Command(id: "edit.paste"),
                 Separator,
+                Command(id: "markup.flatten", visible_when: "markup.flatten_offered"),
                 Command(id: "format.delete", visible_when: "selection.delete_permitted"),
             ],
         ),

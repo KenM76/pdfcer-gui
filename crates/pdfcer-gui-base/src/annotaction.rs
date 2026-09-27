@@ -272,6 +272,15 @@ pub enum AnnotAction {
         /// The annotation, by stable object id.
         id: pdfcer_core::object::ObjId,
     },
+    /// **Burn a markup into its page's content and remove it**, as one
+    /// undoable command. `EditSession::flatten_annotations`, asked for this one
+    /// annotation; it looks the same afterwards and is no longer a markup.
+    Flatten {
+        /// The page it is on; the verb is page-scoped.
+        page: usize,
+        /// The annotation, by stable object id.
+        id: pdfcer_core::object::ObjId,
+    },
     /// **Write the note on an annotation that already exists** —
     /// `/Contents`, and conditionally `/T` and `/M` — as one undoable command.
     ///

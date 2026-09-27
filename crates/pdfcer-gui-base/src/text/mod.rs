@@ -86,6 +86,8 @@ pub mod files;
 /// Every string the Find bar shows, plus the status bar's Find toggle.
 /// Consumed by `pdfcer_gui::find::bar` and `pdfcer_gui::app::status`.
 pub mod find;
+/// What making a markup part of the page says.
+pub mod flattenannot;
 pub mod forms;
 pub mod images;
 /// **The words of the Import-text window** — the return journey's chooser.

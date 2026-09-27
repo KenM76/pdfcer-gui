@@ -69,6 +69,11 @@ pub const NODE_REMOVE_OFFERED: &str = "markup.node_remove_offered";
 /// `enabled_when` of `markup.remove_node`.
 pub const NODE_REMOVABLE: &str = "markup.node_removable";
 
+/// **The engine would burn the right-clicked markup into its page** — the
+/// `visible_when` of `markup.flatten`, asked from
+/// `EditSession::annotation_flatten_refusals` when the menu opens.
+pub const FLATTEN_OFFERED: &str = "markup.flatten_offered";
+
 /// **The right-click landed on one line of a MULTI-LINE text object** — the
 /// `visible_when` of `format.select_text_line`, and its `enabled_when` too.
 pub const RUN_SELECT_OFFERED: &str = "canvas.run_select_offered";
@@ -547,6 +552,7 @@ pub fn built_in() -> Menus {
             // from a ladder whose annotation rung is guarded by `author_markup`,
             // which is what keeps this row alive in Review — deleting a comment
             // is exactly what Review is for.
+            Item::command("markup.flatten").shown_when(FLATTEN_OFFERED),
             Item::command("format.delete").shown_when(super::manifest::DELETE_PERMITTED),
         ]))
         // -------------------------------------------------------------------

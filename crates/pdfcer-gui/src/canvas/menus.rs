@@ -478,6 +478,10 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             (menus::NODE_REMOVE_OFFERED, rows.remove.shown()),
             (menus::NODE_REMOVABLE, rows.remove.enabled()),
         ]);
+        let flatten = selection.annot().is_some_and(|a| {
+            crate::app::actions::annots::flatten_refusal(doc, a.target.page, a.target.id).is_none()
+        });
+        overrides.push((menus::FLATTEN_OFFERED, flatten));
     }
     // **`format.select_text_line`'s one condition** — O188(A), and the
     // narrowness is the same argument the Delete above makes: it is a fact
