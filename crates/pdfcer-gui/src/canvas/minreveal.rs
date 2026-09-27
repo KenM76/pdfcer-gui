@@ -19,25 +19,7 @@ pub const REVEAL_GRACE_FRAMES: u8 = crate::canvas::destscroll::DEST_GRACE_FRAMES
 /// Paper left between the revealed rectangle and the edge of the view.
 pub const REVEAL_MARGIN: f32 = crate::canvas::CANVAS_MARGIN;
 
-/// A rectangle waiting for a frame that can scroll to it.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct MinReveal {
-    /// The page the rectangle is on. Solved only on a frame showing it.
-    pub page: usize,
-    /// The rectangle's top-left, as a fraction of the page's **canvas** extent.
-    ///
-    /// Canvas space, not PDF space: the page's `/Rotate` is already folded in
-    /// by `viewer::pdf_space_to_canvas`, so a widget on a rotated sheet arrives
-    /// here at the position the operator sees it. See
-    /// [`fracs_for_canvas_rect`].
-    pub min: (f32, f32),
-    /// The rectangle's bottom-right, in the same units as [`Self::min`].
-    pub max: (f32, f32),
-    /// How many frames this has waited for its page.
-    pub waited: u8,
-    /// Who asked, for the trace. Never displayed.
-    pub why: &'static str,
-}
+pub use pdfcer_gui_base::scrolltarget::MinReveal;
 
 /// Express a **canvas-space** rectangle on `page` as the fraction pair
 /// [`MinReveal`] carries.

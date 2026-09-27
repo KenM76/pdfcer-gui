@@ -20,23 +20,7 @@ use crate::viewer::FitMode;
 /// it is abandoned.
 const REVEAL_GRACE_FRAMES: u8 = 4;
 
-/// A hit that has been navigated to and is waiting to be scrolled into view.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Reveal {
-    /// The page the hit is on. The offset is solved only on a frame that is
-    /// actually showing this page.
-    pub page: usize,
-    /// The hit's centre as a fraction of the page's extent.
-    ///
-    /// A **fraction**, not a canvas point, for exactly the reason
-    /// [`crate::app::state::ZoomAnchor`] carries one: it is independent of
-    /// the zoom, so it can be recorded before the frame that will spend it
-    /// and stays correct if the operator zooms in between.
-    pub frac: (f32, f32),
-    /// How many frames this has waited for its page. See
-    /// [`REVEAL_GRACE_FRAMES`].
-    pub waited: u8,
-}
+pub use pdfcer_gui_base::scrolltarget::Reveal;
 
 /// Navigate to the current hit: the page, then the scroll position.
 pub(super) fn reveal_current(state: &FindState, doc: &mut OpenDoc) {

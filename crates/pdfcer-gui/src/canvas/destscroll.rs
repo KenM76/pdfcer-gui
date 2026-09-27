@@ -21,32 +21,7 @@ pub const DEST_EDGE_MARGIN: f32 = crate::canvas::CANVAS_MARGIN;
 /// How clear of the viewport edge a point must be to count as already visible.
 const VISIBLE_CLEARANCE: f32 = DEST_EDGE_MARGIN;
 
-/// A destination that named a point, waiting for a frame that can solve it.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct DestScroll {
-    /// The page the destination is on. Solved only on a frame showing it.
-    pub page: usize,
-    /// Where the point sits across the page's **canvas-space** width, as a
-    /// fraction of the page extent — `None` for §12.3.2.2's null, *"leave this
-    /// axis as it is"*.
-    ///
-    /// A canvas axis, not a PDF one, and the difference is `/Rotate`: on a
-    /// 90°-rotated sheet a PDF *x* drives the canvas *y*, so a `/FitV` — which
-    /// specifies a PDF left edge and nothing else — constrains the view
-    /// vertically. [`fracs_for`] resolves that once, when the point is parked.
-    pub frac_x: Option<f32>,
-    /// See [`Self::frac_x`].
-    pub frac_y: Option<f32>,
-    /// The horizontal content offset the view had **before anything
-    /// navigated** — see [`crate::app::state::OpenDoc::dest_origin_x`]. Both
-    /// the visibility test and the hold-still answer are made against this
-    /// rather than against the live offset, because on a cross-page
-    /// destination the live offset is already the strip's horizontal centring
-    /// of the new page.
-    pub origin_x: f32,
-    /// Frames spent waiting for [`Self::page`]. See [`DEST_GRACE_FRAMES`].
-    pub waited: u8,
-}
+pub use pdfcer_gui_base::scrolltarget::DestScroll;
 
 /// A `/XYZ`-family destination's PDF point as a per-canvas-axis page fraction,
 /// or `None` for a page whose device transform will not invert.

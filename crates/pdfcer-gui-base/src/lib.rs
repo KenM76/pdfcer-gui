@@ -499,3 +499,6 @@ pub mod appaction;
 
 /// The live geometry preview a gesture draws, in page space, and the hold that keeps it on screen until the raster catches up..
 pub mod shapepreview;
+
+/// A scroll the view still owes: a destination point, a minimum region to reveal, or a find hit, each waiting for a frame that shows its page..
+pub mod scrolltarget;
