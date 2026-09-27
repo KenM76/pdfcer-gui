@@ -7,12 +7,16 @@ use egui::Ui;
 use pdfcer_core::edit::WidgetEdit;
 use pdfcer_core::forms::{Field, Widget};
 use pdfcer_core::page_tree::Rect;
+use pdfcer_gui_base::entry;
 
 use super::mkcolour;
 use crate::app::actions::Action;
 use crate::app::actions::forms::FieldAction;
 use crate::panels::PanelsState;
 use crate::text::panels::formfield as t;
+
+/// Every number in this section is a length in points: shows `pt`, reads any unit.
+const POINTS: entry::Kind = entry::Kind::Length(entry::LengthUnit::Point);
 
 /// The section's rect, for `ui-verify`.
 ///
@@ -197,7 +201,8 @@ fn geometry_rows(
     let spinner = |ui: &mut Ui, label: &str, key: &str, value: &mut f64| {
         ui.horizontal(|ui| {
             ui.label(label);
-            let response = ui.add(egui::DragValue::new(value).speed(SPEED).fixed_decimals(2));
+            let (widget, refusal) = entry::drag_value(ui, value, POINTS);
+            let response = refusal.show(ui.add(widget.speed(SPEED).fixed_decimals(2)));
             crate::diag::ui_rect_visible(
                 &format!("{GEOMETRY_REGION}.{key}"),
                 response.rect,
@@ -316,12 +321,8 @@ fn border_rows(
     ui.horizontal(|ui| {
         ui.label(t::label_border_width());
         let mut width = border.width;
-        let response = ui.add(
-            egui::DragValue::new(&mut width)
-                .speed(0.25)
-                .range(0.0..=72.0)
-                .fixed_decimals(2),
-        );
+        let (widget, refusal) = entry::drag_value(ui, &mut width, POINTS);
+        let response = refusal.show(ui.add(widget.speed(0.25).range(0.0..=72.0).fixed_decimals(2)));
         crate::diag::ui_rect_visible(BORDER_WIDTH_REGION, response.rect, ui.clip_rect());
         let response = response.on_hover_text(t::label_border_width_hover());
         if (response.drag_stopped() || response.lost_focus()) && !near(width, border.width) {

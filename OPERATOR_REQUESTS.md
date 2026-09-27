@@ -152,8 +152,10 @@ margin and size. `a_text_file_becomes_pages` types `2 in` into the margin and
 requires 144 pt. The custom sheet width and height in New document and Page
 size show `mm` and take any unit; no check yet types into them. Insert image's
 four placement boxes do the same; `insert_image_places_a_picture` types `2 in`
-into the width and requires 144 pt. **Not yet converted:** widget geometry,
-field text size, border widths, print, export image, poster and tolerances. Those still take a plain number and several show no unit.
+into the width and requires 144 pt. A form field's box (X, Y, W, H), border
+width and text size show `pt` and take any unit; its maximum length takes
+arithmetic. **Not yet converted:** markup border widths, print, export image,
+poster and tolerances. Those still take a plain number and several show no unit.
 
 ## O245 — **BUILT AND DRIVEN — awaiting your verdict** — a ce dimension opens a note pop-up, which gets in the way of moving it
 

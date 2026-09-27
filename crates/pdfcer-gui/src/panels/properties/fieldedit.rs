@@ -8,6 +8,7 @@ use pdfcer_core::edit::{FieldAppearance, FieldEdit};
 use pdfcer_core::fontdata::Std14;
 use pdfcer_core::forms::{Field, FieldFlags, FieldType};
 use pdfcer_core::vartext::{Quadding, TextColor};
+use pdfcer_gui_base::entry;
 
 use crate::app::actions::Action;
 use crate::app::actions::forms::FieldAction;
@@ -275,11 +276,8 @@ fn max_len_row(
     let draft = state.field_props_mut();
     ui.horizontal(|ui| {
         ui.label(t::label_max_len());
-        let response = ui.add(
-            egui::DragValue::new(&mut draft.max_len)
-                .speed(1.0)
-                .range(0..=32_767),
-        );
+        let (widget, refusal) = entry::drag_value(ui, &mut draft.max_len, entry::Kind::Count);
+        let response = refusal.show(ui.add(widget.speed(1.0).range(0..=32_767)));
         crate::diag::ui_rect_visible(MAX_LEN_REGION, response.rect, ui.clip_rect());
         let response = response.on_hover_text(t::label_max_len_hover());
         // Committed on release or on losing focus, never on `.changed()`.
@@ -542,17 +540,27 @@ fn text_size_row(
     let draft = state.field_props_mut();
     ui.horizontal(|ui| {
         ui.label(t::label_text_size());
-        let response = ui.add(
-            egui::DragValue::new(&mut draft.font_size)
-                .speed(0.5)
-                .range(0.0..=1440.0)
-                .custom_formatter(|n, _| {
-                    if n <= 0.0 {
-                        t::text_size_auto().to_owned()
-                    } else {
-                        format!("{n:.0}")
-                    }
-                }),
+        // Auto (zero) reads as a word, so it carries no unit.
+        let auto = draft.font_size <= 0.0;
+        let (widget, refusal) = entry::drag_value(
+            ui,
+            &mut draft.font_size,
+            entry::Kind::Length(entry::LengthUnit::Point),
+        );
+        let widget = if auto { widget.suffix("") } else { widget };
+        let response = refusal.show(
+            ui.add(
+                widget
+                    .speed(0.5)
+                    .range(0.0..=1440.0)
+                    .custom_formatter(|n, _| {
+                        if n <= 0.0 {
+                            t::text_size_auto().to_owned()
+                        } else {
+                            format!("{n:.0}")
+                        }
+                    }),
+            ),
         );
         crate::diag::ui_rect_visible(TEXT_SIZE_REGION, response.rect, ui.clip_rect());
         let response = response.on_hover_text(t::label_text_size_hover());
