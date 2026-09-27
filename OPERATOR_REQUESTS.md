@@ -116,12 +116,14 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 > **Ken:** *"When I got to set the scale for dimension groups I find the layout confusing. I think the ratio numbers units are controlled by the dimension units on paper and the other dimension unit box...but I am not sure. It isn't very intuitive. There are a lot of places in the program where we type numbers without having a clear indicator of what the units are. Also units should be able to be entered in any format a user would expect to be able to. Also we should be able to do basic math in any entry box where it makes sense to have, like positioning I should be able to add 10 px to the current position by typing  + 10px in the co- ordinate box. All of this seems like it should be easy to quickly implement using a single pre-processor function for any data entry, with a capabilities filter for each type. Example math won't math for a text box as it will just output the exact text, or a scale value can't have text in it. Also dimensions pop up a message note box and they shouldn't as it makes it hard to manipulate and move the position of the dimension. Also can we add the drawing tools that draw on the review layer so that these can also just draw on the ordinary pdf layer that contains our drawing and table and etc lines?"*
 
-## O242 — **FILED** — the dimension-group scale layout does not say which unit each ratio number is in
+## O242 — **BUILT AND DRIVEN — awaiting your verdict** — the dimension-group scale layout does not say which unit each ratio number is in
 
 He could not tell whether the two ratio numbers take the "on paper" unit, the
 other unit box, or something else. Each number must carry its unit beside it,
 and the layout must read as one sentence: *this much on paper is that much in
 the world*.
+
+**State.** The ratio is one line: `1` [in] `on paper =` `20` [ft] `in reality`, a unit box beside each number. Type it as the title block states it; the same unit on both sides is a plain ratio, 1 : 100. A unit typed into a box (`6 m` into a box in feet) is converted to that box's unit. The world unit is also what the ce dimensions show, and "Show dimensions in" still overrides it. Driven: typing `20 ft` into a world box in millimetres commits 6096 mm. The published build fails the same check.
 
 ## O243 — **PARTLY BUILT, DRIVEN** — every typed number shows its unit, and takes a unit in any form a person would type
 

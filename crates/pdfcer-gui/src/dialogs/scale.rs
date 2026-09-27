@@ -42,6 +42,7 @@
 
 use egui::Ui;
 use pdfcer_core::dimension::{DEFAULT_GROUP_ID, DimensionModel, FractionMode, GroupId, Unit};
+use pdfcer_gui_base::entry;
 
 use crate::app::actions::Action;
 use crate::app::actions::dimensions::DimensionAction;
@@ -141,6 +142,14 @@ pub const REGION_CALIBRATE: &str = "scale.calibrate"; // ui-text-exempt: trace r
 pub const REGION_GROUP: &str = "scale.group"; // ui-text-exempt: trace region name, never displayed
 /// The region the current-scale line publishes -- O192.
 pub const REGION_CURRENT: &str = "scale.current"; // ui-text-exempt: trace region name, never displayed
+/// The ratio row's paper-side number, its unit, the world-side number and its
+/// unit, left to right.
+pub const REGION_RATIO: [&str; 4] = [
+    "scale.ratio_paper", // ui-text-exempt: trace region name, never displayed
+    "scale.basis",       // ui-text-exempt: trace region name, never displayed
+    "scale.ratio_real",  // ui-text-exempt: trace region name, never displayed
+    "scale.real_unit",   // ui-text-exempt: trace region name, never displayed
+];
 
 impl ScaleDialog {
     /// **Open on `group`, showing the scale that group is already at.**
@@ -235,12 +244,13 @@ impl ScaleDialog {
                 // spaces, which would end the key/value pair early. It is for a
                 // human reading the trace; nothing parses it.
                 "scale-seeded group={:?} name={:?} ratio_paper={} ratio_real={} \
-                 basis={:?} unit={:?}",
+                 basis={:?} real_unit={:?} unit={:?}",
                 group.id,
                 group.name,
                 self.fields.ratio_paper,
                 self.fields.ratio_real,
                 self.fields.basis,
+                self.fields.real_unit,
                 self.fields.unit,
             )
         });
@@ -414,34 +424,45 @@ impl ScaleDialog {
         }
         ui.add_space(6.0);
 
+        // One row reads as a title block states it: `1 [in] on paper =
+        // 20 [ft] in reality`. Each number sits beside its own unit, and a
+        // unit typed into either box converts into that box's unit.
         ui.horizontal(|ui| {
             ui.label(t::ratio_label());
-            ui.add(
-                egui::DragValue::new(&mut self.fields.ratio_paper)
-                    .speed(0.01)
-                    .range(0.0001..=10_000.0),
+            let (paper, refusal) = entry::drag_value(
+                ui,
+                &mut self.fields.ratio_paper,
+                entry::Kind::Length(entry::LengthUnit::Of(self.fields.basis)),
             );
+            let paper = refusal.show(ui.add(paper.suffix("").speed(0.01).range(0.0001..=10_000.0)));
+            crate::diag::ui_rect(REGION_RATIO[0], paper.rect);
+            let basis = unit_combo(ui, "scale.basis", &mut self.fields.basis);
+            crate::diag::ui_rect(REGION_RATIO[1], basis);
             ui.label(t::ratio_separator());
-            ui.add(
-                egui::DragValue::new(&mut self.fields.ratio_real)
-                    .speed(1.0)
-                    .range(0.0001..=1_000_000.0),
+            let (real, refusal) = entry::drag_value(
+                ui,
+                &mut self.fields.ratio_real,
+                entry::Kind::Length(entry::LengthUnit::Of(self.fields.real_unit)),
             );
+            let real = refusal.show(ui.add(real.suffix("").speed(1.0).range(0.0001..=1_000_000.0)));
+            crate::diag::ui_rect(REGION_RATIO[2], real.rect);
+            let before = self.fields.real_unit;
+            let real_unit = unit_combo(ui, "scale.real_unit", &mut self.fields.real_unit);
+            crate::diag::ui_rect(REGION_RATIO[3], real_unit);
+            ui.label(t::ratio_real_suffix());
+            // The world side's unit is the one an operator wants the
+            // dimensions read in, so the display unit follows it; choosing a
+            // different display unit afterwards still sticks.
+            if self.fields.real_unit != before {
+                self.fields.unit = self.fields.real_unit;
+            }
         });
         ui.label(egui::RichText::new(t::ratio_hint()).small().weak());
         ui.add_space(6.0);
 
-        // The paper-unit basis. Disclosed rather than assumed, because a ratio
-        // is meaningless without one: `1:100` on an inch basis and `1:100` on a
-        // millimetre basis are different scales, and PDF's own paper unit is
-        // 1/72", which is nobody's intuition.
-        ui.horizontal(|ui| {
-            ui.label(t::basis_label());
-            unit_combo(ui, "scale.basis", &mut self.fields.basis);
-        });
         ui.horizontal(|ui| {
             ui.label(t::unit_label());
-            unit_combo(ui, "scale.unit", &mut self.fields.unit);
+            let _ = unit_combo(ui, "scale.unit", &mut self.fields.unit);
         });
         ui.horizontal(|ui| {
             ui.label(t::fraction_label());
@@ -561,8 +582,12 @@ impl ScaleDialog {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 "scale-commit group={:?} scale={scale:?} format={format:?} \
-                 ratio={}:{} basis={:?}",
-                self.group, self.fields.ratio_paper, self.fields.ratio_real, self.fields.basis,
+                 ratio={}:{} basis={:?} real_unit={:?}",
+                self.group,
+                self.fields.ratio_paper,
+                self.fields.ratio_real,
+                self.fields.basis,
+                self.fields.real_unit,
             )
         });
         actions.push(Action::Dimension(DimensionAction::SetGroupScale {
@@ -574,14 +599,16 @@ impl ScaleDialog {
 }
 
 /// A unit picker.
-fn unit_combo(ui: &mut Ui, id: &str, unit: &mut Unit) {
+fn unit_combo(ui: &mut Ui, id: &str, unit: &mut Unit) -> egui::Rect {
     egui::ComboBox::from_id_salt(id)
         .selected_text(t::unit_name(*unit))
         .show_ui(ui, |ui| {
             for option in Unit::all().iter().copied() {
                 ui.selectable_value(unit, option, t::unit_name(option));
             }
-        });
+        })
+        .response
+        .rect
 }
 
 /// The number styles offered.

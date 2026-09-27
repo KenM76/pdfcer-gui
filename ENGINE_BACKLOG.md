@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **41 of 202** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `wanted` — a real gap — **42 of 203** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -70,6 +70,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Name a destination while inserting pages** — `add_named_destination` (`pdfcer-core`'s `edit` module) … | **wanted, and nothing is owed yet.** *Reading, navigation & printing* carries `add_named_destination` as blocked on the argument that governs both rows: a destination resolved and baked at author time is indistinguishable from a correct one until a reorder moves the page it points at, and this shell has drag-to-reorder. The verb has no call site in `crates/` and should keep none until the `insert_pages` bookmark-carry surface named in this row exists. Both rows close together then. |
 | **`/BleedBox`, `/TrimBox` and `/ArtBox` overhang is not disclosed on a sheet resize** — `MediaBoxChange` has a field for `/CropBox` and none for the other three | **wanted, and it is a disclosure gap behind an engine ask.** <!--namesake:MediaBoxChange--> the type itself is consumed — `app::actions::pagesize` imports it and walks it — and what is missing is three *fields* on it. `MediaBoxChange` carries `crop_box_outside` and nothing for the other three boxes, so a resize reports one overhang and hides three, and `app::actions::pagesize::disclosures` has no branch to write because there is no field to read. Measured: a `/BleedBox [10 10 1000 1000]` survives a resize to 595×842 with no disclosure at all, so a press or CAD export gets one overhang reported and three not. The engine's `FEATURES.md` records that the three boxes are left byte-identical without drawing that consequence. Re-measured against the pinned revision: `/BleedBox` appears once in `pdfcer-core`, in `page_tree`'s note that the three do not inherit, and `MediaBoxChange` declares no field for any of them. Three more fields on the engine's report have to exist before anything can be worded here. |
 | **View the `/OCProperties` layer tree with FOLDERS** — `list-layers --tree`; in the API `Layers::order`, the `OrderNode` tree | **wanted.** `panels::layers` lists `Layers::layers`, the flattened list, so a CAD export that nests forty layers under six folders arrives as forty rows with the folders gone and a radio group indistinguishable from independent checkboxes. The engine already hands over the declared tree unsorted; the work is a collapsing tree in the panel, a folder toggle that sets its children, and `Layers::radio_groups` honoured so turning one member on turns its siblings off. |
+| **Edit a layer's own properties** — name, default on/off, lock, Print/Export usage, Intent; `EditSession::set_layer_properties` | **wanted; not in the pin.** The verb landed in the engine after the commit `Cargo.lock` pins, so nothing here can call it yet. The surface is the Layers panel: a rename in place and a properties row per layer, each one undo entry, since today the panel only toggles what is shown for this session and saves nothing about the layer itself. Picked up with the next pin. |
 
 ### Text
 
@@ -136,7 +137,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 202** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `blocked` — waiting on something named — **2 of 203** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -154,7 +155,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 202** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 203** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -165,7 +166,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **14 of 202** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `declined` — deliberately no surface — **14 of 203** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -205,7 +206,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **145 of 202** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **145 of 203** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

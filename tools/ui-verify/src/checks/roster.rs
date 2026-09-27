@@ -240,6 +240,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // the diagnosis belongs to the line above and this should read as its
         // consequence.
         Box::new(scale_reads_the_group::SetScaleReadsTheGroupItIsAboutToOverwrite),
+        Box::new(scale_ratio_units::ScaleRatioReadsAsTheDrawingStatesIt),
         Box::new(measure_hover::MeasureHoverShowsWhatItWillTake),
         // The Manage-groups window. Beside the two
         // measure checks because it is the third link in the same chain: a

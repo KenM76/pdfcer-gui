@@ -51,17 +51,24 @@ pub const fn ratio_label() -> &'static str {
     "Scale"
 }
 
-/// What sits between the two ratio numbers.
+/// What sits between the paper side and the world side.
 #[must_use]
 pub const fn ratio_separator() -> &'static str {
-    " : "
+    "on paper ="
+}
+
+/// What follows the world side's unit.
+#[must_use]
+pub const fn ratio_real_suffix() -> &'static str {
+    "in reality"
 }
 
 /// What the ratio means, in a drafter's terms.
 #[must_use]
 pub const fn ratio_hint() -> &'static str {
-    "Paper on the left, the real world on the right. 1 : 100 means one unit on \
-     the page is a hundred of the same unit in the world."
+    "Type the scale as the title block states it, a unit on each side: 1 in on \
+     paper = 20 ft in reality. The same unit on both sides is a plain ratio, \
+     1 : 100. A unit typed into a box (6 m) is converted to that box's unit."
 }
 
 /// **The group picker's label** -- `OPERATOR_REQUESTS.md` O193.
@@ -74,12 +81,6 @@ pub const fn group_label() -> &'static str {
 #[must_use]
 pub fn current_scale(phrase: &str) -> String {
     format!("Currently: {phrase}")
-}
-
-/// The basis row's label.
-#[must_use]
-pub const fn basis_label() -> &'static str {
-    "Paper measured in"
 }
 
 /// The display-unit row's label.

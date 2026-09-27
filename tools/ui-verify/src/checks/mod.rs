@@ -502,6 +502,7 @@ pub mod quit_unsaved;
 /// against the defect it exists to catch.
 pub mod save_as;
 
+pub mod scale_ratio_units;
 pub mod scale_reads_the_group;
 
 /// Tab inside a form field goes to the next FIELD — `OPERATOR_REQUESTS.md`

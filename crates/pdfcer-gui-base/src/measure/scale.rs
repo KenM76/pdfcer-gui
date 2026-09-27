@@ -50,11 +50,16 @@ pub struct ScaleEntryFields {
     pub unit: Unit,
     /// The paper side of the direct ratio (`1` in `1:100`).
     pub ratio_paper: f64,
-    /// The real side of the direct ratio (`100` in `1:100`).
+    /// The real side of the direct ratio (`100` in `1:100`), in
+    /// [`Self::real_unit`].
     pub ratio_real: f64,
-    /// The paper-unit basis for the ratio path (default [`Unit::Inch`]; PDF
-    /// paper units are 1/72", disclosed — ui-spec §4.2).
+    /// The unit [`Self::ratio_paper`] is measured in on the sheet (default
+    /// [`Unit::Inch`]; PDF paper units are 1/72", disclosed — ui-spec §4.2).
     pub basis: Unit,
+    /// The unit [`Self::ratio_real`] is measured in, so a drawing's stated
+    /// `1" = 20'-0"` is typed as it is written. Equal to [`Self::basis`] makes
+    /// the ratio unitless, `1 : 100`.
+    pub real_unit: Unit,
     /// How the fractional part of every label in this group is displayed
     /// (Pass 25.5).
     ///
@@ -84,6 +89,7 @@ impl Default for ScaleEntryFields {
             ratio_paper: 1.0,
             ratio_real: 100.0,
             basis: Unit::Inch,
+            real_unit: Unit::Inch,
             fraction: None,
         }
     }
@@ -197,6 +203,7 @@ impl ScaleEntryFields {
         let base = Self {
             unit,
             basis: unit,
+            real_unit: unit,
             // An explicit display choice already made for the group is a
             // choice, and re-offering the unit default over it would quietly
             // revert an operator who asked for eighths. `commit` reads this
@@ -241,9 +248,12 @@ impl ScaleEntryFields {
                 real_length: self.real_length,
                 unit: self.unit,
             },
+            // The engine's ratio is in one unit, so the real side is carried
+            // into the paper side's: `1 in = 20 ft` becomes `1 : 240` inches.
             _ => ScaleEntry::Ratio {
                 paper: self.ratio_paper,
-                real: self.ratio_real,
+                real: self.ratio_real * self.basis.baseline_per_point()
+                    / self.real_unit.baseline_per_point(),
                 basis: self.basis,
             },
         }
@@ -777,6 +787,30 @@ mod tests {
                 "stored scale {bad} must still preview"
             );
         }
+    }
+
+    /// O242: each side of the ratio carries its own unit. Hand oracle: one
+    /// inch is 72 pt, so `1 in = 20 ft` is 20/72 ft per point.
+    #[test]
+    fn a_ratio_with_a_unit_on_each_side_reads_as_the_drawing_states_it() {
+        let fields = ScaleEntryFields {
+            use_real_length: false,
+            ratio_paper: 1.0,
+            ratio_real: 20.0,
+            basis: Unit::Inch,
+            real_unit: Unit::DecimalFeet,
+            unit: Unit::DecimalFeet,
+            ..ScaleEntryFields::default()
+        };
+        let preview = fields.preview(None).expect("a ratio preview");
+        assert_eq!(preview.unit, Unit::DecimalFeet);
+        let expected = 20.0 / 72.0;
+        assert!(
+            (preview.scale - expected).abs() < 1e-12,
+            "1 in = 20 ft is {expected} ft/pt, got {}",
+            preview.scale
+        );
+        assert_eq!(preview.ratio_label, "1:240");
     }
 
     #[test]
