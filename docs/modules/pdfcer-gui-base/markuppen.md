@@ -1,4 +1,4 @@
-# `canvas::markup::pen` — the colour and width the next markup is authored with
+# `markuppen` — the colour and width the next markup is authored with
 
 ## What this closes
 

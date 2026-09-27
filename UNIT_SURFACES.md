@@ -73,7 +73,7 @@ the surface. Five of them are deliberate exclusions — see §4.
 | 8 | Properties — line width | `text/panels/properties.rs` — `value_line_width` | `"{width:.2} pt"` |
 | 9 | Markup line-weight spinner (ribbon) | `app/markupband.rs` — `width`; `text/panels/properties/markup.rs` — `markup_width_suffix` | fixed `" pt"` |
 | 10 | Markup line-weight spinner (properties) | `panels/properties/markup/rows.rs` — `width_row` | fixed `" pt"` |
-| 11 | Pen width on the markup swatch | `canvas/markup/swatch.rs` — `show`; `text/markup.rs` — `width_suffix` | fixed `" pt"` |
+| 11 | Pen width on the markup swatch | `markupswatch.rs` (base) — `show`; `text/markup.rs` — `width_suffix` | fixed `" pt"` |
 | 12 | Dimension group text height / arrow size / gap | `panels/dimension_groups/style.rs` — `show`; `text/dimension_groups.rs` — `points_suffix` | fixed `" pt"`, inside the dimensioning feature itself. See §4 — provisionally excluded, and the one exclusion worth raising with the operator |
 | 13 | Import-text margin and size | `dialogs/import_text.rs` — `body`; `text/import_text.rs` — `points_suffix` | fixed `" pt"` |
 | 20 | Page-size off-sheet warning | `text/page_size.rs` — `overhang` | `"{right:.0} pt past the right edge"` and three siblings |
@@ -139,7 +139,7 @@ Not unit defects. Recorded so a future reader does not "discover" them.
 | 49 | DXF scale field | `text/export_dxf.rs` | a unitless ratio |
 | 50 | Find panel position | `text/find.rs` — `position` | `n of N`, not a coordinate |
 | 51 | Parallel-tolerance slider | `dialogs/settings/measuring.rs` — `degree_suffix` | an angle |
-| 52 | Markup opacity | `app/markupband.rs` — `opacity`; `canvas/markup/swatch.rs` | a percentage |
+| 52 | Markup opacity | `app/markupband.rs` — `opacity`; `markupswatch.rs` (base) | a percentage |
 
 ---
 

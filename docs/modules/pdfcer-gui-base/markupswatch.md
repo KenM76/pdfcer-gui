@@ -1,4 +1,4 @@
-# `canvas::markup::swatch` — the Markup ▸ Style group's one control
+# `markupswatch` — the Markup ▸ Style group's one control
 
 The `colour_swatch` custom item the manifest has declared since S2 and
 nothing ever drew, so the Style group rendered a caption over an empty band.

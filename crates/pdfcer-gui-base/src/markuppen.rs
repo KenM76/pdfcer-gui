@@ -1,4 +1,4 @@
-//! # `canvas::markup::pen` — the colour and width the next markup is authored with
+//! # `markuppen` — the colour and width the next markup is authored with
 //!
 //! ## What this closes
 //!
@@ -9,12 +9,12 @@
 //! hard-coded `2.0`, and the manifest's `colour_swatch` item was declared and
 //! never built, so the Style group rendered an empty caption.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/markup/pen.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/markuppen.md`.
 
 use egui::Color32;
 
-use super::MarkupKind;
-use super::palette;
+use crate::markupkind::MarkupKind;
+use crate::markuppalette as palette;
 
 /// **Which pen** — one variant per default Acrobat keeps a separate key for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -86,11 +86,11 @@ impl PenSlot {
     /// **Which pen writes this text annotation.**
     ///
     #[must_use]
-    pub const fn of_text_annot(kind: crate::canvas::textannot::TextAnnotKind) -> Self {
+    pub const fn of_text_annot(kind: crate::wordmarkup::TextAnnotKind) -> Self {
         match kind {
-            crate::canvas::textannot::TextAnnotKind::TextBox => Self::TextBox,
-            crate::canvas::textannot::TextAnnotKind::Sticky => Self::Note,
-            crate::canvas::textannot::TextAnnotKind::Stamp => Self::Stamp,
+            crate::wordmarkup::TextAnnotKind::TextBox => Self::TextBox,
+            crate::wordmarkup::TextAnnotKind::Sticky => Self::Note,
+            crate::wordmarkup::TextAnnotKind::Stamp => Self::Stamp,
         }
     }
 }
@@ -159,7 +159,7 @@ pub struct Pen {
     /// **The border line style the next mark is drawn in** — `/BS` `/S` and
     /// `/D` (§12.5.4, Table 166).
     ///
-    /// # It is a [`super::linestyle::LineStyle`] and not a `BorderDash`
+    /// # It is a [`crate::linestyle::LineStyle`] and not a `BorderDash`
     ///
     /// Because that type is `Copy` and the engine's is not — see its header,
     /// which carries the whole argument and the reason this struct's `Copy` is
@@ -172,7 +172,7 @@ pub struct Pen {
     /// capability becomes choosable: *"a build which omits nothing must behave
     /// as it did before the choice existed, byte for byte."* Unlike the colour
     /// change of 2026-09-06, this one **does** keep it: the default is
-    /// [`super::linestyle::LineStyle::Solid`], `dash_option` answers `None`,
+    /// [`crate::linestyle::LineStyle::Solid`], `dash_option` answers `None`,
     /// and `MarkupOptions::dash: None` authors *"the solid border pdfcer
     /// authored exclusively before `Pass 258.0`"*. An operator who never opens
     /// the chooser gets the file they got yesterday.
@@ -184,7 +184,7 @@ pub struct Pen {
     /// The pen carries one value and the highlighter shares it, so the
     /// chooser's tooltip says so — [`crate::text::markup::pen_dash_tooltip`] —
     /// rather than leaving an operator to conclude the setting did not take.
-    pub dash: super::linestyle::LineStyle,
+    pub dash: crate::linestyle::LineStyle,
 }
 
 /// The thinnest pen offered.
@@ -226,7 +226,7 @@ impl Default for Pen {
             // the "omits nothing" rule: a build whose operator never opens the
             // chooser authors the same bytes it authored before the chooser
             // existed.
-            dash: super::linestyle::LineStyle::Solid,
+            dash: crate::linestyle::LineStyle::Solid,
         }
     }
 }
@@ -283,10 +283,7 @@ impl Pen {
 
     /// **The colour a sticky note, text box or stamp is authored in.**
     #[must_use]
-    pub fn text_annot_colour(
-        self,
-        kind: crate::canvas::textannot::TextAnnotKind,
-    ) -> (f64, f64, f64) {
+    pub fn text_annot_colour(self, kind: crate::wordmarkup::TextAnnotKind) -> (f64, f64, f64) {
         self.colour_of(PenSlot::of_text_annot(kind))
     }
 
@@ -452,7 +449,7 @@ mod tests {
     /// The three text-annotation kinds land on three different slots.
     #[test]
     fn the_three_text_annotation_kinds_do_not_share_a_pen() {
-        use crate::canvas::textannot::TextAnnotKind;
+        use crate::wordmarkup::TextAnnotKind;
         let slots: Vec<PenSlot> = TextAnnotKind::ALL
             .iter()
             .map(|k| PenSlot::of_text_annot(*k))

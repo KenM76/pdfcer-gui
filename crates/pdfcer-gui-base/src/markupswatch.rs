@@ -1,14 +1,14 @@
-//! # `canvas::markup::swatch` — the Markup ▸ Style group's one control
+//! # `markupswatch` — the Markup ▸ Style group's one control
 //!
 //! The `colour_swatch` custom item the manifest has declared since S2 and
 //! nothing ever drew, so the Style group rendered a caption over an empty band.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/markup/swatch.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/markupswatch.md`.
 
 use egui::Ui;
 
-use super::palette;
-use super::pen::{MAX_WIDTH_PTS, MIN_OPACITY, MIN_WIDTH_PTS, Pen, PenSlot};
+use crate::markuppalette as palette;
+use crate::markuppen::{MAX_WIDTH_PTS, MIN_OPACITY, MIN_WIDTH_PTS, Pen, PenSlot};
 use crate::text::markup as t;
 
 /// The region this control publishes, so a check can find and drive it.
@@ -146,10 +146,10 @@ pub fn show(ui: &mut Ui, pen: &mut Pen) {
         // decision.
         let before = pen.dash;
         let combo = ui.push_id(REGION_DASH, |ui| {
-            crate::canvas::markup::linestyle::chooser(
+            crate::linestyle::chooser(
                 ui,
                 REGION_DASH,
-                crate::canvas::markup::linestyle::DashReading::Offered(pen.dash),
+                crate::linestyle::DashReading::Offered(pen.dash),
                 DASH_WIDTH,
             )
         });

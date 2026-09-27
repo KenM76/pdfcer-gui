@@ -442,3 +442,12 @@ pub mod mkcolour;
 
 /// A ce dimension's text and tolerance overrides.
 pub mod dimensionoverrides;
+
+/// Which markup annotation the markup tool draws.
+pub mod markupkind;
+
+/// The markup pen: colour, width, opacity and dash, per kind.
+pub mod markuppen;
+
+/// The Markup ▸ Style group's pen control.
+pub mod markupswatch;

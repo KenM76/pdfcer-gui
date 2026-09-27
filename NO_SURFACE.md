@@ -61,8 +61,8 @@ job.
 | Preview arrow head angle | 0.42 rad | `canvas/markup/band.rs:200` | same |
 | Highlight preview wash alpha | 90 of 255 | `canvas/markup/band.rs:325` | same |
 | Ellipse preview tessellation | 48 segments | `canvas/markup/band.rs:188` | same |
-| Pen width range | 0.25 to 12.0 pt | `canvas/markup/pen.rs:355,376` | none — the bounds of a live control |
-| Pen opacity floor | 0.1 | `canvas/markup/pen.rs:367` | none, deliberate |
+| Pen width range | 0.25 to 12.0 pt | `markuppen::MIN_WIDTH_PTS`, `MAX_WIDTH_PTS` (base) | none — the bounds of a live control |
+| Pen opacity floor | 0.1 | `markuppen::MIN_OPACITY` (base) | none, deliberate |
 | Author `/T` and modification date `/M` on markups authored from geometry | never written | `app/actions/apply.rs:672,843` | none — nothing is blocked |
 
 ### The four preview constants are the cursor, not the mark

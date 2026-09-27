@@ -483,7 +483,7 @@ CUSTOM_GLYPHS = {
     # since 2026-09-05. Before that it was `menu_button(label, …)` and drew no
     # glyph at all, which is the divergence this table's arrival exposed.
     'recent_files': ['recent'],
-    # `canvas::markup::swatch::show` — stroke swatch, fill swatch, width value.
+    # `markupswatch::show` — stroke swatch, fill swatch, width value.
     # NOT opacity: `/CA` is unwritten at the engine, and R9 forbids drawing an
     # affordance for something that cannot happen. The mockup drew a fourth
     # control ('100 %') and the mock moved.

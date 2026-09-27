@@ -109,8 +109,8 @@ then re-enters Read and asserts the selection is dropped.
 ### D9 — RULE: do not compensate in the file for a renderer's defect
 
 Markup opacity is written as the annotation's `/CA` alone (§12.5.2), with the
-appearance stream's `ExtGState` left at `1.0` (`canvas/markup/pen.rs:283`,
-`:476`). Writing `/ca` into the appearance to make it look right in one viewer
+appearance stream's `ExtGState` left at `1.0` (`markuppen::Pen::opacity_option`
+in base). Writing `/ca` into the appearance to make it look right in one viewer
 makes it half as opaque as intended in every other viewer, permanently, in
 documents that outlive the bug.
 
