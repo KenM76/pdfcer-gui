@@ -542,3 +542,6 @@ pub mod find;
 
 /// What a redaction looks like once applied: its fill and caption.
 pub mod redactlook;
+
+/// One reader for everything typed into a value box: units, arithmetic, relative entry.
+pub mod entry;

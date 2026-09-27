@@ -99,3 +99,15 @@ typed something, and far enough that `sx` is unambiguously greater than 1 on
 any object bigger than a few points. A ten-pixel scrub would be five points,
 which on a large shape rounds to `sx = 1.004` and could also be produced by a
 build that ignored the draft and re-seeded from slightly stale bounds.
+
+## `geometry_fields_take_typed_arithmetic`
+
+The same route, changing Width by typing `*2 + 96px - 1in` instead of scrubbing
+(O243, O244). The expression has exactly one right reading, double: the leading
+`*` is relative entry, and the two unit terms cancel only if `px` is the CSS
+pixel and `in` is 72 pt. The check requires `sx` within 0.005 of 2. A relative
+entry re-applied on each keystroke lands near 4; a misread unit lands at 2 plus
+a remainder; a box that refuses the text commits nothing.
+
+The arithmetic signs are typed on the numeric keypad, whose keys produce the
+same character on every keyboard layout.

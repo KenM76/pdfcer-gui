@@ -45,6 +45,8 @@ const ENGINE_INSERT: &str = "insert-dimension-vertex";
 /// `remove-dimension-vertex …` — its twin.
 const ENGINE_REMOVE: &str = "remove-dimension-vertex";
 
+/// The note pop-up's window, which a click on a ce dimension must not open.
+const POPUP_REGION: &str = "notepopup.window";
 /// The four corners of the traced square, as fractions of the page box.
 const CORNERS: [(f64, f64); 4] = [(0.30, 0.30), (0.60, 0.30), (0.60, 0.60), (0.30, 0.60)];
 
@@ -284,6 +286,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ))?))?;
     session.settle(18);
     let trace = session.trace()?;
+    // O245: a ce dimension is a drawing object; clicking it selects it and opens
+    // no note window, which would sit over it and take the next drag.
+    if declared(&trace, ui_rect, POPUP_REGION).is_some() {
+        return Ok(Some(format!(
+            "clicking the ce dimension opened the note pop-up (`{POPUP_REGION}`). It should only \
+             select: the window covers the shape and takes the drag meant to move it. \
+             `notepopup::clicked_on` is where a ce dimension is excluded. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
+    report.note("clicking the ce dimension opened no note pop-up");
     let Some(handle_one) = declared(&trace, ui_rect, &format!("{VERTEX_REGION}.1")) else {
         return Ok(Some(format!(
             "the selected shape published no `{VERTEX_REGION}.1`, so there is no corner to aim \

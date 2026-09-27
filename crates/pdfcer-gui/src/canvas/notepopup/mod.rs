@@ -504,6 +504,12 @@ pub fn clicked_on(
     if !model::has_something_to_read(note) {
         return None;
     }
+    // A ce dimension is a drawing object, not a comment: a click selects it for
+    // moving, and a window over it would take the drag. Its note stays readable
+    // from the Comments panel.
+    if crate::panels::comments::model::ce_dimension_annots(&doc.session).contains(&note.id) {
+        return None;
+    }
     // TOGGLE, not open. Clicking the icon again closes the window, which is
     // what every reader in the class does and what an operator who has just
     // opened one by accident will try.

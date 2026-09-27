@@ -69,6 +69,8 @@ pub mod diagnostics;
 /// Every word the Manage-dimension-groups window shows.
 pub mod dimension_groups;
 pub mod dropped;
+/// What a value box says when it cannot read what was typed.
+pub mod entry;
 /// What the measure tools say about what they INFERRED — the two-line
 /// gesture's refusals, the angle an override overrode, and an apex that is
 /// only real if the lines are extended.

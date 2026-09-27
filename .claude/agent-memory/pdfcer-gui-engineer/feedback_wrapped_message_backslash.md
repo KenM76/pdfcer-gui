@@ -33,3 +33,12 @@ has to change at the keystroke, and the gate has to run before the batch is
 quoted clean; expecting the next session to have read the history is what
 failed. [[a-register-row-outranks-memory-so-correcting-the-row-is-the-work]] is the same shape: the record is
 where a claim is settled, never where a behaviour is enforced.
+
+**A third route, 2026-09-27: the wrap was typed and the tool ate it.** Two
+Rust literals written as `\`-at-line-end inside a `python - <<'EOF'` script
+reached the file joined, with no backslash and a run of spaces. Python read a
+single `\` before the newline, which inside a non-raw string is a line
+continuation, so it deleted both. **Never write a Rust wrap through a Python
+string.** Put the Rust text in with the Edit tool, or write the script with the
+Write tool and use a raw string (`r'''…'''`), then run the gap gate before
+quoting the batch clean.

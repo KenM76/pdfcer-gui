@@ -473,6 +473,13 @@ impl Driver {
                 ' ' => {
                     self.press(0x20)?;
                 }
+                // The four arithmetic signs go through the NUMERIC KEYPAD, whose
+                // virtual keys type the same character on every layout — unlike
+                // the main-row `VK_OEM_*` keys the paragraph above refuses.
+                '+' => self.press(0x6B)?,
+                '-' => self.press(0x6D)?,
+                '*' => self.press(0x6A)?,
+                '/' => self.press(0x6F)?,
                 other => {
                     return Err(crate::error::Error::new(format!(
                         "`type_ascii` has no key for {other:?}. It refuses rather than skipping, \

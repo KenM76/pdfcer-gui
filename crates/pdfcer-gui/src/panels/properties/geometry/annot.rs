@@ -14,8 +14,8 @@ use crate::text::panels::annotgeometry as at;
 use crate::text::panels::properties as t;
 
 use super::{
-    ANGLE_REGION, ANNOT_APPLY_REGION, ANNOT_REGION, ANNOT_WIDTH_REGION, Bounds, GeometryDraft,
-    Subject, annot_plan, field,
+    ANGLE_REGION, ANNOT_APPLY_REGION, ANNOT_REGION, ANNOT_WIDTH_REGION, Bounds, DEGREES,
+    GeometryDraft, POINTS, Subject, annot_plan, field,
 };
 
 /// **A selected annotation's `/Rect`, normalised, in PDF user space.**
@@ -94,16 +94,17 @@ pub(super) fn section(
     // which is the "accepts a value and discards it" control this whole section
     // was once withheld to avoid.
     let locked = target.locked.then(at::locked);
-    field(ui, t::geometry_x(), &mut draft.x, None, locked);
-    field(ui, t::geometry_y(), &mut draft.y, None, locked);
+    field(ui, t::geometry_x(), &mut draft.x, None, locked, POINTS);
+    field(ui, t::geometry_y(), &mut draft.y, None, locked, POINTS);
     field(
         ui,
         t::geometry_w(),
         &mut draft.w,
         Some(ANNOT_WIDTH_REGION),
         locked,
+        POINTS,
     );
-    field(ui, t::geometry_h(), &mut draft.h, None, locked);
+    field(ui, t::geometry_h(), &mut draft.h, None, locked, POINTS);
 
     // **THE ANGLE** — `OPERATOR_REQUESTS.md` O146, 2026-09-07: *"the angle
     // should be editable from the properties."*
@@ -121,7 +122,14 @@ pub(super) fn section(
     // into it would make one sentence carry two coordinate systems, which is
     // the thing its own doc comment warns against.
     if let Some(angle) = draft.angle.as_mut() {
-        field(ui, t::geometry_angle(), angle, Some(ANGLE_REGION), locked);
+        field(
+            ui,
+            t::geometry_angle(),
+            angle,
+            Some(ANGLE_REGION),
+            locked,
+            DEGREES,
+        );
         ui.label(egui::RichText::new(t::geometry_angle_note()).small().weak());
     }
 

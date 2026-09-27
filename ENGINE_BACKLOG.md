@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **34 of 194** <!-- counted by tools/walk-engine-backlog.py, 2026-09-24; do not retype -->
+## `wanted` — a real gap — **35 of 195** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -95,6 +95,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | **Change a placed sticky note's icon and colour, and read `/C` / `/Name` on any subtype** — `Annotation::icon` / `Annotation::color` … | **Reached both ways; what stays wanted is narrower than the clause — the READ.** `dialogs::textannot` offers the seven icons of §12.5.6.4 Table 172 as radios at placement (region `text-annot.icon`), and authors `DEFAULT_STICKY_ICON = Comment` — Acrobat's, per `ACROBAT_DEFAULTS.md` — rather than `StickyIcon::default()`'s `Note`. A **placed** note restyles in `panels::properties::markup::textannot`: a swatch for `/C`, a combo for `/Name`, raised as `AnnotAction::SetTextAnnotStyle` and applied by `app::actions::annots::textannotstyle` through `set_text_annot_style` as one undo entry, every untouched field spelt `None` so a colour change cannot rewrite the icon. An unmodelled `/Name` survives as `StickyIcon::Other` verbatim, driven by `a_foreign_icon_name_reaches_the_panel`. **Owed:** *any subtype* is not true — the read goes through `text_spec_from_dict` and the markup family's `spec_from_dict`, never `Annotation::icon` / `Annotation::color`, so `/FreeText` is declined by name and `/C` elsewhere is unread. Neither write is driven. |
+| **Draw a Review shape as page content, not an annotation** — `EditSession::add_markup_as_content(page_index, &MarkupSpec, &MarkupOptions)` | **wanted — the engine half of O246, answering `G043`.** The shell half is a destination choice on the geometric Review tools at the markup-commit arm: same `MarkupSpec`, this verb instead of `add_markup_with`, then select `MarkupContentOutcome::objects`. Owed off-canvas: `paste.disclosures` (the note is not written) and the strict certification refusal, which offers the annotation route. FreeText, Text and Stamp have no `MarkupSpec` form, so the choice is not offered on them. |
 | **Review status — `/State` + `/StateModel`** (`Pass 253.1`): read `Annotation::state` … | **wanted — the row that turns Review mode into a review WORKFLOW.** `shell::manifest::markup` says the tab is not called Review because Review promises compare, resolve and track; this is the first of the three. The engine does not interpret the strings, so the vocabulary is this shell's to present and an unknown value must be shown, not normalised. Both halves are built: `panels::comments::reviewstate` shows one line per reviewer — §12.5.6.3 makes status a per-author `/IRT` chain, not a field — and builds the filter chooser from the document, so an unknown value is filterable in the file's own spelling. Owed: a driven check, and the other two thirds of the promise. |
 | Two more `/Ff` field flags and the mapping name — `FieldEdit::with_no_scroll`, `with_file_select`, `with_mapping_name` / `clearing_mapping_name` | **wanted for three of the five verbs this row first listed; `no_spell_check` and `commit_on_sel_change` are DONE** — `panels::properties::choiceopts` draws both, and bit 19, in the `/Ch` branch, spell-check only on an **editable drop-down**, which is R9 read correctly for `/Ch` and leaves one gap: a `/Tx` carries `DoNotSpellCheck` too and `panels::properties::fieldedit` offers no row for it. Neither reached flag is driven — no check names `properties.choice_opts.spell_check` or `.commit_now`, so both could vanish silently. The three left are not equal: `no_scroll` is a text-field option set on purpose and is one row on the builder `panels::properties::fieldedit` already carries; `file_select` turns a text field into a file picker and changes what the widget IS, which needs a sentence rather than a checkbox; `mapping_name` (`/TM`) is an export name for a form-data round trip, invisible on the page, wanting a text box beside the field name saying what it is for. Waiting on nothing. |
 | **Compute a page's tab-VISIT order for every `/Tabs` state — `EditSession::page_tab_sequence(page_index) -> TabSequence`, CLI `tab-order`** … | **wanted — the engine half of O204, and it landed the same day the request was written.** O204 is *“when I press tab while in a form I end up tabbing through the menus instead of the form items”*. This verb answers the half the shell cannot compute on its own: which widget is next, for every `/Tabs` state, with `/Rotate` and reading direction applied, `Hidden`/`NoView` bearers excluded, and `/S` either derived from the structure tree or refused by name rather than silently falling back. The shell half stays as O204 scopes it — a `raw_input_hook` filter in `app::frame` so egui never sees Tab, a `canvas::tabnav` claimant, Tab branches in `forms::editor` and `canvas::keys`, `vk::TAB` in the harness — but `tabnav` asks this verb rather than sorting `/Rect`s itself, and the off-canvas disclosure it owes under rule 4 comes out of the same call. Do not bind bare Tab in the manifest. |
@@ -129,7 +130,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 194** <!-- counted by tools/walk-engine-backlog.py, 2026-09-24; do not retype -->
+## `blocked` — waiting on something named — **2 of 195** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -147,7 +148,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 194** <!-- counted by tools/walk-engine-backlog.py, 2026-09-24; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 195** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -158,7 +159,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **14 of 194** <!-- counted by tools/walk-engine-backlog.py, 2026-09-24; do not retype -->
+## `declined` — deliberately no surface — **14 of 195** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -198,7 +199,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **144 of 194** <!-- counted by tools/walk-engine-backlog.py, 2026-09-24; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **144 of 195** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

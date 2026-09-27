@@ -11,6 +11,7 @@ use crate::app::actions::{Action, VectorAction};
 use crate::app::state::OpenDoc;
 use crate::canvas::resizing;
 use crate::text::panels::properties as t;
+use pdfcer_gui_base::entry;
 
 /// The `ui-rect` region this section publishes, so a driven check can find the
 /// fields without knowing the panel's arrangement.
@@ -436,10 +437,17 @@ pub fn section(
     // per-object lock. `/F` bit 8 is an ANNOTATION flag (§12.5.3 Table 165) and
     // has no counterpart in a content stream, so there is no state in which
     // these four are drawn and dead.
-    field(ui, t::geometry_x(), &mut draft.x, None, None);
-    field(ui, t::geometry_y(), &mut draft.y, None, None);
-    field(ui, t::geometry_w(), &mut draft.w, Some(WIDTH_REGION), None);
-    field(ui, t::geometry_h(), &mut draft.h, None, None);
+    field(ui, t::geometry_x(), &mut draft.x, None, None, POINTS);
+    field(ui, t::geometry_y(), &mut draft.y, None, None, POINTS);
+    field(
+        ui,
+        t::geometry_w(),
+        &mut draft.w,
+        Some(WIDTH_REGION),
+        None,
+        POINTS,
+    );
+    field(ui, t::geometry_h(), &mut draft.h, None, None, POINTS);
 
     let changed = draft.differs_from(bounds);
     let usable = draft.is_usable();
@@ -530,13 +538,15 @@ fn field(
     value: &mut f64,
     region: Option<&'static str>,
     disabled: Option<&str>,
+    kind: entry::Kind,
 ) {
     ui.horizontal(|ui| {
         ui.label(label);
-        let widget = egui::DragValue::new(value).speed(SPEED).fixed_decimals(2);
+        let (widget, refusal) = entry::drag_value(ui, value, kind);
+        let widget = widget.speed(SPEED).fixed_decimals(2);
         let response = match disabled {
             Some(reason) => ui.add_enabled(false, widget).on_disabled_hover_text(reason),
-            None => ui.add(widget),
+            None => refusal.show(ui.add(widget)),
         };
         if let Some(region) = region {
             // Visible-clipped, for the reason the section's own publication
@@ -547,6 +557,12 @@ fn field(
         }
     });
 }
+
+/// A coordinate box: PDF points, typed in any unit.
+pub(super) const POINTS: entry::Kind = entry::Kind::Length(entry::LengthUnit::Point);
+
+/// An angle box: degrees, arithmetic allowed.
+pub(super) const DEGREES: entry::Kind = entry::Kind::Number(&["°", "deg", "degrees"]);
 
 /// PDF points per screen pixel of horizontal scrub.
 const SPEED: f64 = 0.5;

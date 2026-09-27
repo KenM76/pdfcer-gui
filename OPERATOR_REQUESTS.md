@@ -123,14 +123,14 @@ other unit box, or something else. Each number must carry its unit beside it,
 and the layout must read as one sentence: *this much on paper is that much in
 the world*.
 
-## O243 — **FILED** — every typed number shows its unit, and takes a unit in any form a person would type
+## O243 — **PARTLY BUILT, DRIVEN** — every typed number shows its unit, and takes a unit in any form a person would type
 
 Absorbs O207. Every numeric entry names its unit on the box. Typed units are read
 in the forms people write: `12mm`, `12 mm`, `1.5in`, `1 1/2"`, `3'`, `3'-4"`,
 `3 ft 4 in`, `10px`, `12pt`, `2cm`, `0.5m`. A unit the field cannot take (text
 in a scale) is refused with a sentence, never silently dropped.
 
-## O244 — **FILED** — arithmetic in number boxes, relative to the current value
+## O244 — **PARTLY BUILT, DRIVEN** — arithmetic in number boxes, relative to the current value
 
 `+10px` in a coordinate box moves 10 px from where it is; `*2`, `/3`, `-5mm`
 and a full expression like `12mm + 1/4"` work too. His design: **one
@@ -138,10 +138,25 @@ pre-processor for all data entry, with a capability filter per field type** —
 a text box passes text through untouched; a scale refuses text; a length takes
 units and maths.
 
-## O245 — **FILED** — a ce dimension opens a note pop-up, which gets in the way of moving it
+**State (O243 and O244 together).** The one reader exists (`entry::preprocess`
+in the base crate, with a `Kind` per box) and reads the forms above plus
+arithmetic and relative entry. It is wired into the Properties panel's geometry
+boxes: X, Y, W and H show `pt` and take any unit, and the annotation angle takes
+arithmetic. Driven by `geometry_fields_take_typed_arithmetic`, which types
+`*2 + 96px - 1in` and requires exactly double. **Not yet converted:** the other
+number boxes (widget geometry, ce dimension overrides and style rows, field text
+size, border widths, insert image, new document and page size, print). Those
+still take a plain number and several still show no unit.
+
+## O245 — **BUILT AND DRIVEN — awaiting your verdict** — a ce dimension opens a note pop-up, which gets in the way of moving it
 
 Placing or clicking a ce dimension pops up the comment note box. It should not:
 the box covers the dimension and makes it hard to grab and move.
+
+**State.** Clicking a ce dimension selects it and opens no window; its note is
+still readable from the Comments panel, whose Go to opens it on request.
+Driven by `a_corner_can_be_added_and_taken_away`, which places a ce dimension,
+clicks it and requires no pop-up. The same check fails on the previous build.
 
 ## O246 — **FILED** — the Review drawing tools can also draw into the page content
 

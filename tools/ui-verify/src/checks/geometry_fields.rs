@@ -33,6 +33,22 @@ const APPLIED: &str = "transform-objects-applied";
 /// How far to scrub the Width field, in screen pixels.
 const SCRUB_PX: f32 = 80.0;
 
+/// What [`GeometryFieldsTakeTypedArithmetic`] types into Width. Relative entry
+/// (the leading `*`), precedence, and two units whose terms cancel only if `px`
+/// is the CSS pixel and `in` is 72 pt, so the one right answer is exactly
+/// double. A box that ignored units, read `px` as a point, or re-applied the
+/// `*2` on each keystroke lands somewhere else.
+const TYPED: &str = "*2 + 96px - 1in";
+/// The factor [`TYPED`] must produce.
+const TYPED_SX: f64 = 2.0;
+
+/// How the Width field is changed.
+#[derive(Clone, Copy)]
+enum How {
+    Scrub,
+    Type,
+}
+
 /// See the module documentation.
 pub struct GeometryFieldsResizeAShape;
 
@@ -49,7 +65,31 @@ impl Check for GeometryFieldsResizeAShape {
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         let mut report = CheckReport::new(self.name(), self.defect());
-        match drive(ctx, &mut report) {
+        match drive(ctx, &mut report, How::Scrub) {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+/// Typing arithmetic with units into Width: the operator's own example, "add 10
+/// px to the current position by typing + 10px".
+pub struct GeometryFieldsTakeTypedArithmetic;
+
+impl Check for GeometryFieldsTakeTypedArithmetic {
+    fn name(&self) -> &'static str {
+        "geometry_fields_take_typed_arithmetic"
+    }
+
+    fn defect(&self) -> &'static str {
+        "a value box refuses or misreads a typed expression with units, or applies a relative \
+         entry once per keystroke, so `+10px` moves the object by a different amount than typed"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        match drive(ctx, &mut report, How::Type) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
             Err(why) => report.from_error(&why),
@@ -58,7 +98,7 @@ impl Check for GeometryFieldsResizeAShape {
 }
 
 #[allow(clippy::too_many_lines)]
-fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
+fn drive(ctx: &CheckContext, report: &mut CheckReport, how: How) -> Result<Option<String>> {
     let vocab = &ctx.profile.vocab;
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
@@ -102,7 +142,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         })?,
     };
 
-    let mut spec = LaunchSpec::new(&exe, ctx.out("geometry_fields.trace.txt"));
+    let mut spec = LaunchSpec::new(
+        &exe,
+        ctx.out(match how {
+            How::Scrub => "geometry_fields.trace.txt",
+            How::Type => "geometry_fields_typed.trace.txt",
+        }),
+    );
     spec.pdf = Some(pdf.clone());
     spec.env.push((
         ctx.profile.diag_env.0.to_owned(),
@@ -158,7 +204,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note("the geometry section drew, so a single path object is selected");
 
-    // --- 4: scrub Width to the right ---------------------------------------
+    // --- 4: change Width: scrub it, or type an expression -----------------
     let width = driving::declared(&trace, ui_rect, WIDTH_REGION).ok_or_else(|| {
         Error::new(format!(
             "the section drew and published no `{WIDTH_REGION}`. That is a shell defect rather \
@@ -167,15 +213,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
     let frame = session.frame()?;
-    let from = frame.declared_at(width, 0.7, 0.5);
-    // Fractions rather than added pixels — `coords`' rule is that a coordinate
-    // is produced by a conversion and never assembled. The fraction is computed
-    // from the spinner's own width so the travel is the same number of screen
-    // pixels whatever the panel's width happens to be.
-    let w = (width.max.x - width.min.x).max(1.0);
-    let to = frame.declared_at(width, 0.7 + SCRUB_PX / w, 0.5);
-    driver.drag(from, to)?;
-    session.settle(20);
+    if let How::Type = how {
+        driver.click_at(frame.declared_center(width))?;
+        session.settle(10);
+        driver.type_ascii(TYPED)?;
+        driver.press(crate::sys::vk::ENTER)?;
+        session.settle(20);
+        report.note(format!("typed `{TYPED}` into Width and pressed Enter"));
+    } else {
+        scrub(&driver, &frame, width)?;
+        session.settle(20);
+    }
 
     // --- 5: press Apply ----------------------------------------------------
     //
@@ -276,6 +324,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  defect. Trace: {}.",
                 session.trace_path().display()
             ),
+            None if matches!(how, How::Type) => format!(
+                "typed `{TYPED}` into Width, pressed Enter and Apply, and nothing committed or \
+                 declined. Either the box refused the expression (its tooltip names why) and \
+                 kept the old width, so Apply stayed greyed; or the click did not enter the \
+                 box's text mode and the keys went elsewhere. Trace: {}.",
+                session.trace_path().display()
+            ),
             None => format!(
                 "★ THE WIDTH FIELD WAS SCRUBBED BY {SCRUB_PX:.0} PIXELS AND APPLY COMMITTED \
                  NOTHING AND DECLINED NOTHING.\n\
@@ -295,7 +350,18 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let sx: f64 = commit.get("sx").and_then(|v| v.parse().ok()).unwrap_or(0.0);
     report.note(format!("★ Apply committed a scale: `{}`", commit.raw));
-    if sx <= 1.0 {
+    if let How::Type = how {
+        if (sx - TYPED_SX).abs() > 0.005 {
+            return Ok(Some(format!(
+                "typed `{TYPED}` into Width, whose one right reading is exactly double, and \
+                 Apply committed sx={sx:.4}. Near 4 means the relative `*2` applied more than \
+                 once; 2 plus a little means `px` or `in` was misread. Trace: {}.",
+                session.trace_path().display()
+            )));
+        }
+        report.note("★★ the typed expression read as exactly double");
+    }
+    if sx <= 1.0 && matches!(how, How::Scrub) {
         return Ok(Some(format!(
             "★ THE WIDTH WAS SCRUBBED UPWARD AND THE SHAPE DID NOT GET WIDER: sx={sx:.4}.\n\
              A factor at or below 1 from a rightward scrub means either the scrub ran the wrong \
@@ -318,4 +384,20 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("★★ the typed width reached the engine through `transform_objects`");
     Ok(None)
+}
+
+/// Scrub Width rightward by [`SCRUB_PX`].
+fn scrub(
+    driver: &Driver,
+    frame: &crate::coords::WindowFrame,
+    width: crate::geom::LRect,
+) -> Result<()> {
+    let from = frame.declared_at(width, 0.7, 0.5);
+    // Fractions rather than added pixels — `coords`' rule is that a coordinate
+    // is produced by a conversion and never assembled. The fraction is computed
+    // from the spinner's own width so the travel is the same number of screen
+    // pixels whatever the panel's width happens to be.
+    let w = (width.max.x - width.min.x).max(1.0);
+    let to = frame.declared_at(width, 0.7 + SCRUB_PX / w, 0.5);
+    driver.drag(from, to)
 }

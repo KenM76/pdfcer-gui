@@ -805,6 +805,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(rotate::RotateHandleTurnsASelection),
         Box::new(shift_constrains::ShiftConstrainsAResize),
         Box::new(geometry_fields::GeometryFieldsResizeAShape),
+        Box::new(geometry_fields::GeometryFieldsTakeTypedArithmetic),
         Box::new(restyle_text::RestylingSelectedTextReachesTheDocument),
         // Directly after `restyle_text`, because it is that check plus a
         // popup: every link it covers — the sweep, the section, the read-back
