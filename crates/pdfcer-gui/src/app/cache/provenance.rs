@@ -3,7 +3,6 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/cache/provenance.md`.
 
-use std::cell::{Cell, RefCell};
 use std::marker::PhantomData;
 use std::rc::Rc;
 use std::time::Instant;
@@ -32,40 +31,7 @@ impl std::ops::Deref for CachedText<'_> {
     }
 }
 
-/// **The provenance-bearing text of one page**, keyed by `(page, edit epoch)`.
-#[derive(Default)]
-pub(crate) struct ProvenanceTextCache {
-    /// The `(page index, edit epoch)` the text below describes, or `None`
-    /// before the first build.
-    ///
-    /// **What actually makes a failed extraction cheap, and it is NOT the
-    /// order this line is written in.**
-    ///
-    ///
-    /// It could not. The value store at the end of
-    /// [`OpenDoc::ensure_provenance_text`] is *unconditional* — a failed
-    /// extraction stores `None`, and the key is recorded either way — so both
-    /// orders record the attempt and both make the next frame a `Cell` read.
-    /// What stops the retry is that **the key is recorded at all, on the
-    /// failure arm as well as the success arm**. That is the property to
-    /// preserve: an early `return` on failure, before the key is set, would
-    /// reintroduce the third-of-a-second-per-frame cost the sibling comment
-    /// warns about — and would do it while leaving that comment looking
-    /// satisfied.
-    ///
-    /// The order is kept anyway, for a smaller reason that is real: it makes a
-    /// re-entrant ask for the same page terminate (answering `None`) rather
-    /// than recurse.
-    built_for: Cell<Option<(usize, u64)>>,
-    /// The extraction, or `None` when it failed or the page does not exist.
-    ///
-    /// `None` here means **"could not be measured"**, never "this page has no
-    /// text" — a page with no text extracts successfully to an empty
-    /// `PageText`. Every caller reads it as *"there is nothing to edit"*,
-    /// which is the correct reading of both, but a caller that ever needs to
-    /// tell them apart must not infer one from this field.
-    text: RefCell<Option<Rc<PageText>>>,
-}
+pub(crate) use pdfcer_gui_base::doccache::ProvenanceTextCache;
 
 impl OpenDoc {
     /// **This page's text, with provenance, built at most once per edit.**
