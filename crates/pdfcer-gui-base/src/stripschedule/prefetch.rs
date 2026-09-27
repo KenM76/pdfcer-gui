@@ -1,11 +1,11 @@
-//! # `render::prefetch` — filling in the pages he has not scrolled to yet
+//! # `stripschedule::prefetch` — filling in the pages he has not scrolled to yet
 //!
 //! `OPERATOR_REQUESTS.md` O201:
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/render/prefetch.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/stripschedule/prefetch.md`.
 
-use crate::app::state::OpenDoc;
-use crate::render::settle::StripOrders;
+use crate::opendoc::OpenDoc;
+use crate::stripschedule::StripOrders;
 
 /// **How far past the visible band the strip may fill in, in pages** — O201.
 const PREFETCH_BAND: usize = 8;
@@ -33,7 +33,7 @@ fn prefetch_ranking(current: usize, last: usize, band: usize) -> Vec<usize> {
 }
 
 /// Render-ahead: whether and which page to rasterise beyond the viewport.
-pub(crate) trait Prefetch {
+pub trait Prefetch {
     #[must_use]
     fn prefetch_headroom(&self) -> bool;
     #[must_use]
@@ -73,7 +73,7 @@ impl Prefetch for OpenDoc {
 }
 
 /// **Say what render-ahead is holding, and what is left to spend.**
-pub(super) fn disclose(doc: &OpenDoc) {
+pub fn disclose(doc: &OpenDoc) {
     let band = doc.strip_rasters.len();
     let texels = doc.strip_rasters.texels();
     let budget = doc.prefs.page_cache.texels();

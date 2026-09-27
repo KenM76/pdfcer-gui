@@ -1,4 +1,4 @@
-# `render::prefetch` — filling in the pages he has not scrolled to yet
+# `stripschedule::prefetch` — filling in the pages he has not scrolled to yet
 
 `OPERATOR_REQUESTS.md` O201:
 

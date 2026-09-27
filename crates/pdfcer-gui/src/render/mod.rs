@@ -55,9 +55,6 @@ pub use pdfcer_gui_base::rasterregion as region;
 /// **Whole page, or just the window?** — O24's one decision, made from
 /// numbers in one place.
 pub use pdfcer_gui_base::rasterstrategy as strategy;
-// Render-ahead: which page outside the viewport to fill next, and what
-// bounds it. Consulted by `settle` only once everything visible is drawn.
-mod prefetch;
 // The per-frame raster decision, and the strip's scheduling.
 pub mod settle;
 // Several pages at once: the bounded texture cache, and what an undrawn page

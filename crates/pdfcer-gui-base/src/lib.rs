@@ -286,6 +286,9 @@ pub mod layersearch;
 /// Several pages at once, and what an undrawn one says.
 pub mod renderstrip;
 
+/// Which strip pages may be ordered, what each holds, and render-ahead.
+pub mod stripschedule;
+
 /// The colour recognised text is drawn in.
 pub mod ocrlayerpref;
 
