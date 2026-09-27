@@ -269,6 +269,11 @@ fn no_two_declines_share_a_sentence() {
         Declined::OcrLayer(crate::text::ocr::OcrLayerRefusal::AlreadyPresent),
         Declined::OcrLayer(crate::text::ocr::OcrLayerRefusal::LayerGone),
         Declined::OcrLayer(crate::text::ocr::OcrLayerRefusal::NoneFound),
+        Declined::Layer(crate::text::panels::layeredit::LayerRefusal::EmptyName),
+        Declined::Layer(crate::text::panels::layeredit::LayerRefusal::NotFound),
+        Declined::Layer(crate::text::panels::layeredit::LayerRefusal::InMembership),
+        Declined::Layer(crate::text::panels::layeredit::LayerRefusal::HasWidget),
+        Declined::Layer(crate::text::panels::layeredit::LayerRefusal::ContentNotRewritable),
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::StylesDiffer),
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::WouldMoveNextRun),
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::Other),
@@ -612,7 +617,8 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         // how a completeness test quietly stops being complete.
         | Declined::TextRunHasNoPositionOfItsOwn
         | Declined::TextRunWouldDragTheNextLine
-        | Declined::OcrLayer(_) => {}
+        | Declined::OcrLayer(_)
+        | Declined::Layer(_) => {}
     }
 }
 

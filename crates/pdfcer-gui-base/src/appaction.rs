@@ -1224,6 +1224,8 @@ pub enum Action {
     /// `check-ui-strings`, to clippy and to every test in this crate — the only
     /// instrument that finds it is a reader. Each block is back on its subject.
     Field(crate::fieldaction::FieldAction),
+    /// Create, edit or delete a layer: [`crate::layeraction`].
+    Layer(crate::layeraction::LayerAction),
     /// **Change how existing text LOOKS** — size, colour, face, weight and
     /// slant — on every run the operator's text selection covers.
     ///

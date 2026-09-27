@@ -42,6 +42,9 @@ pub mod objects;
 /// drift. Its own module under R2 and under `DEFECTS.md` D5; the module header
 /// argues the seam.
 pub mod layers;
+
+/// What the Layers panel says when it creates, edits or deletes a layer.
+pub mod layeredit;
 pub use layers::layer_selection_unlayered;
 
 /// **A choice field's `/Opt` list**, and the three `/Ff` flags Acrobat groups

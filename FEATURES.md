@@ -151,6 +151,7 @@ than the number it produced last.
 - ✅ **Dimension groups** — create, rename, delete, recalibrate, restyle, and the **Draw into** picker, which is the control the feature had been missing. A group's unit is settable through `set_group_scale`, which takes a whole `NumberFormat`
 - ✅ **Attachments** — a PDF can carry whole files inside itself; `attach_file`, `detach_file`, `list_attachments_with_notes`, `extract_attachment` and `sanitize_attachment_name` are all reachable
 - ✅ **Layers** — full `/RBGroups` radio semantics, locked-member handling, Reset to the document's own default
+- ✅ **Layer authoring** (Edit mode) — New layer, and a row's right-click Layer properties… (name, shown on open, lock, printing, exporting, purpose) and Delete layer… (keep the drawing or remove it); each one undo entry. Driven by `a_layer_can_be_made_renamed_and_deleted`
 - ✅ **Fonts** — inventory, embed status, byte cost, font-folder resolution, and the two verbs it reports on: Tools ▸ Embed fonts and Tools ▸ Remove embedded fonts
 - ✅ **Objects** — every object on the page, front-most first, on a benchmark CAD sheet of 129,758 of them
 - ✅ **Properties** — read-only facts for a selection, plus the editable sections listed under Canvas

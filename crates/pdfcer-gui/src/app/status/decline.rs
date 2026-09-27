@@ -1015,6 +1015,9 @@ pub(crate) enum Declined {
     /// already present under a Refuse policy, one went missing mid-removal, or
     /// the document has none. Worded in [`crate::text::ocr::OcrLayerRefusal`].
     OcrLayer(crate::text::ocr::OcrLayerRefusal),
+    /// A layer create, change or delete wrote nothing. Worded in
+    /// [`crate::text::panels::layeredit::LayerRefusal`].
+    Layer(crate::text::panels::layeredit::LayerRefusal),
 }
 
 impl Declined {

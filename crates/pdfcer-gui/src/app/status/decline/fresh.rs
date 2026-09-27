@@ -262,7 +262,7 @@ impl Declined {
             Self::TextRunHasNoPositionOfItsOwn
             | Self::TextRunWouldDragTheNextLine => true,
             // Past tense: reports the press; `retire` owns stale.
-            Self::OcrLayer(_) => true,
+            Self::OcrLayer(_) | Self::Layer(_) => true,
         }
     }
 }

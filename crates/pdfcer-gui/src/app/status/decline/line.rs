@@ -193,6 +193,7 @@ impl Declined {
                 crate::text::arrange::run_would_drag_the_next_line()
             }
             Self::OcrLayer(why) => (*why).line(),
+            Self::Layer(why) => (*why).line(),
         };
         std::borrow::Cow::Borrowed(fixed)
     }

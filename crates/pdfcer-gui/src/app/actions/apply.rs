@@ -522,6 +522,7 @@ impl PdfcerApp {
                 });
             }
             Action::RemoveOcrLayers => super::ocrlayers::remove_all(doc),
+            Action::Layer(action) => super::layers::apply(doc, action),
             // Nothing is invalidated beyond the epoch, deliberately. Document
             // metadata is not drawn on any page, so clearing rasters would
             // throw away every cached page to no purpose — the one arm in this

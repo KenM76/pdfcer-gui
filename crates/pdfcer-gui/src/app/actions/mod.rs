@@ -156,6 +156,8 @@ pub mod textstyle;
 /// things".
 pub mod vector;
 
+/// Create, change and delete a layer: `Action::Layer`.
+mod layers;
 /// OCR text layers pdfcer wrote: the re-run policy and Remove OCR text.
 mod ocrlayers;
 // O122 — the two halves of handing the document to Acrobat: the arm that

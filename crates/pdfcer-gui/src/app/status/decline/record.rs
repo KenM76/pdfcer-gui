@@ -145,3 +145,8 @@ pub(crate) fn record_markup_node_refused(why: crate::text::markup::NodeEditRefus
 pub(crate) fn record_ocr_layer(why: crate::text::ocr::OcrLayerRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::OcrLayer(why)));
 }
+
+/// Record that a layer create, change or delete wrote nothing, and why.
+pub(crate) fn record_layer(why: crate::text::panels::layeredit::LayerRefusal) {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::Layer(why)));
+}

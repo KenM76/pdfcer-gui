@@ -35,6 +35,9 @@ use pdfcer_gui_base::layersearch as search;
 ///
 pub(crate) mod highlight;
 
+/// New layer, and each row's Properties and Delete.
+mod authoring;
+
 /// The trace name of the search field's rectangle.
 // ui-text-exempt: trace region name, never displayed.
 const REGION_SEARCH: &str = "panel.layers.search";
@@ -51,11 +54,21 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     let view = doc.session.view();
     let read = pdfcer_core::layers::read_layers(&view);
 
+    let authoring = authoring::enabled(ui.ctx());
+    if authoring {
+        authoring::windows(ui.ctx(), actions);
+    }
     if read.diagnostics.no_optional_content {
         ui.label(t::layers_none());
+        if authoring {
+            authoring::new_layer_row(ui, &read, actions);
+        }
         return;
     }
     ui.label(t::layers_count(read.layers.len()));
+    if authoring {
+        authoring::new_layer_row(ui, &read, actions);
+    }
     ui.label(
         egui::RichText::new(t::layers_session_only_note())
             .small()
@@ -375,9 +388,14 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                     // one cannot leave the previous last line assigning to a
                     // variable nothing reads — and so that the LIST is a pure
                     // value this module can test.
+                    let label = ui.label(name.clone()).interact(egui::Sense::click());
+                    if authoring {
+                        authoring::row_menu(&label, l, &name);
+                        authoring::publish_row(&name, label.rect);
+                    }
                     let _row = notes
                         .into_iter()
-                        .fold(ui.label(name), |r, note| r.on_hover_text(note));
+                        .fold(label, |r, note| r.on_hover_text(note));
                 });
                 });
                 // **Scrolled into view**, and only on the frame the

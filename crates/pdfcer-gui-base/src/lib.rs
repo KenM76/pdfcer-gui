@@ -488,6 +488,9 @@ pub mod formedit;
 /// The verbs whose subject is a form field.
 pub mod fieldaction;
 
+/// The verbs that author a layer.
+pub mod layeraction;
+
 /// What the form-field placement dialog collects and remembers.
 pub mod formdraft;
 

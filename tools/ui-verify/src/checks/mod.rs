@@ -531,6 +531,8 @@ pub mod canvas_choice_fill;
 pub mod option_arrows;
 
 pub mod forms_spotlight;
+/// Create, rename and delete a layer from the Layers panel.
+pub mod layer_authoring;
 pub mod password_fill;
 
 /// **Selecting a page object names the layer it is on** — O126's third
