@@ -490,3 +490,9 @@ pub mod fieldaction;
 
 /// What the form-field placement dialog collects and remembers.
 pub mod formdraft;
+
+/// The ruler guides a document carries, and their on-disk spelling.
+pub mod guidemodel;
+
+/// The action vocabulary: one variant per operator intent.
+pub mod appaction;

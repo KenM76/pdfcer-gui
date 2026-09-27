@@ -535,7 +535,7 @@ the one operation in this program that cannot be undone once it reaches a
 file.
 
 It lives in this module rather than beside the `Action` enum because the
-vocabulary is this module's. `crate::app::actions::action` carries the
+vocabulary is this module's. `pdfcer_gui_base::appaction` carries the
 variant and points here, which is that file's own R2 rule — it is 1,500
 lines of one enum and the reasoning goes next to the mechanism.
 

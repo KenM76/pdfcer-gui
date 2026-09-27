@@ -307,7 +307,7 @@ half-identifies is a position with extra steps.
 ### `fn apply`
 
 The dispatch half of this module, reached from `PdfcerApp::apply`'s single
-[`super::action::Action::Bookmark`] arm. It is a free function taking
+[`super::Action::Bookmark`] arm. It is a free function taking
 `&mut OpenDoc` rather than a method, exactly like [`super::dimensions::apply`]
 and [`super::pages::apply`], because the caller is the one place that owns
 the borrow and the arm should be one line.

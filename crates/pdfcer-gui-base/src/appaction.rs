@@ -1,4 +1,4 @@
-//! # `app::actions::action` — the action vocabulary
+//! # `appaction` — the action vocabulary
 //!
 //! One item: the [`Action`] enum. See [`super`]'s header and `OVERVIEW.md` for
 //! what an action *is*, when it is raised, when it is applied, and why the
@@ -26,9 +26,9 @@
 //! `PageAction` and `DimensionAction`. [`super`]'s declaration of this module
 //! carries the measurement of which family that should be and why.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/actions/action.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/appaction.md`.
 
-use super::{ViewChrome, dimensions, pages};
+use crate::displaypiece::ViewChrome;
 use crate::viewer::FitMode;
 
 /// One operator intent, applied after the frame that raised it.
@@ -39,7 +39,7 @@ pub enum Action {
     /// carries both, and its header records the seam: these are the only two
     /// actions in this enum that change nothing in the document, so grouping
     /// them is a statement rather than a size cut.
-    Selection(super::selecting::SelectionAction),
+    Selection(crate::subactions::SelectionAction),
     /// **Open this document, replacing whatever is open.**
     ///
     /// Raised by `file.open` once the picker has answered, by `file.recent`
@@ -180,7 +180,7 @@ pub enum Action {
         /// short of reading the output.
         pages: Vec<(usize, pdfcer_core::ocr::OcrPage)>,
         /// The recogniser that read them, recorded in the layer's marker.
-        engine: pdfcer_gui_base::ocr::EngineId,
+        engine: crate::ocr::EngineId,
     },
     /// File ▸ Remove OCR text: every OCR layer pdfcer wrote comes off, as one
     /// undo entry. See `super::ocrlayers`.
@@ -189,18 +189,18 @@ pub enum Action {
     /// **The verbs whose subject is a whole annotation** — move it, resize
     /// it, remove it.
     ///
-    Annot(super::annot::AnnotAction),
+    Annot(crate::annotaction::AnnotAction),
     /// **The File tab's edit verbs** — `file.import_text` today, and the
     /// fifth family in this enum after `Annot`, `Vector`, `Field` and the write
     /// group. [`crate::app::actions::importtext::FileAction`]'s own header
     /// records why it was carved out on the day it was added rather than later:
     /// its first draft put one feature's argument in this file, in `apply` and
     /// in `dispatch`, and pushed all three past R2's ceiling in one commit.
-    File(super::importtext::FileAction),
+    File(crate::subactions::FileAction),
     /// **Record a review status on a comment** — `/State` and
     /// `/StateModel`, §12.5.6.3. The payload, and the whole argument for why it
     /// is not a [`Self::Annot`], are in [`super::reviewstate::RecordStatus`].
-    RecordReviewState(super::reviewstate::RecordStatus),
+    RecordReviewState(crate::commentreviewstate::RecordStatus),
     New,
     /// **Make a new document at a chosen sheet size.**
     ///
@@ -448,7 +448,7 @@ pub enum Action {
     /// **A selection is still not an edit** — no `vector_edit`, no epoch
     /// bump, no cache invalidation, for the reason `Action::SelectObject`
     /// gives.
-    DeclineOnCanvas(super::CanvasDecline),
+    DeclineOnCanvas(crate::subactions::CanvasDecline),
     /// Multiply the current zoom by a factor — the Ctrl+wheel path.
     ///
     /// Carries the factor rather than a target zoom because that is what
@@ -508,7 +508,7 @@ pub enum Action {
     /// **Everything that changes page GEOMETRY** — delete, the four move
     /// verbs, the Bézier handle, and the transform.
     ///
-    Vector(super::vector::VectorAction),
+    Vector(crate::subactions::VectorAction),
     // =======================================================================
     // THE PAGE VERBS — structural edits, and the family that renumbers
     //
@@ -599,13 +599,13 @@ pub enum Action {
         page: usize,
         /// Which shape — and therefore which `/Subtype`, pen and normalisation
         /// rule. See [`crate::canvas::markup::spec`].
-        kind: crate::canvas::markup::MarkupKind,
+        kind: crate::markupkind::MarkupKind,
         /// The geometry the gesture produced, **in PDF user space**: two raw
         /// drag endpoints, a run of clicked vertices, or one or more freehand
         /// strokes. Which of the three is a property of the kind, and the pairing
         /// is checked by [`crate::canvas::markup::action`] before this is ever
         /// built.
-        geometry: crate::canvas::markup::Geometry,
+        geometry: crate::markupkind::Geometry,
         /// **The pen the operator had when the gesture completed**, carried
         /// in the action rather than read at apply time.
         ///
@@ -622,7 +622,7 @@ pub enum Action {
         /// builds, or a future undo/redo surface re-runs, authors the same
         /// annotation it did the first time rather than the same shape in a
         /// different colour.
-        pen: crate::canvas::markup::pen::Pen,
+        pen: crate::markuppen::Pen,
     },
 
     /// **Everything the ce-dimension feature asks for**, as one variant
@@ -643,7 +643,7 @@ pub enum Action {
     /// to pick a side in order to compile. Flat variants would have re-derived
     /// it in eight arms, and the day one of them got it wrong the symptom
     /// would be a stale number on a page the operator was not looking at.
-    Dimension(dimensions::DimensionAction),
+    Dimension(crate::editactions::DimensionAction),
     /// **Everything the operator asks of the SET OF PAGES**, as one variant
     /// carrying which.
     ///
@@ -661,7 +661,7 @@ pub enum Action {
     /// invalidation and nothing noticing — because nothing would: every
     /// individual edit would still be correct in the document and wrong only
     /// on screen.
-    Page(pages::PageAction),
+    Page(crate::subactions::PageAction),
     /// **Everything whose subject is one entry in the document's outline**
     /// — add, rename, and delete-with-its-subtree.
     ///
@@ -680,7 +680,7 @@ pub enum Action {
     /// * **`/Count` is two different quantities and its SIGN carries
     ///   open-or-closed** (§12.3.3), which is why no verb in the family
     ///   describes itself by diffing a count.
-    Bookmark(super::bookmarks::BookmarkAction),
+    Bookmark(crate::subactions::BookmarkAction),
     /// **Everything whose subject is a whole FILE living inside the
     /// document** — attach, remove, and save one out (§7.11.4.1).
     ///
@@ -698,7 +698,7 @@ pub enum Action {
     ///   owes a sentence to `crate::app::status` — the exact inverse of
     ///   [`Self::Bookmark`]'s rename, which owes none because the row the
     ///   operator is looking at already says what happened.
-    Attachment(super::attachments::AttachmentAction),
+    Attachment(crate::editactions::AttachmentAction),
     /// **Everything whose subject is a form XObject** — one verb today:
     /// give this page its own private copy of a shared drawing.
     ///
@@ -721,14 +721,14 @@ pub enum Action {
     ///   is exactly what `EditError::FormNestedInAnotherForm` refuses. A
     ///   `TargetId` is not resolvable after the frame that raised it and an
     ///   `ObjId` is, which is what the funnel requires of an operand.
-    XObject(super::xobject::XObjectAction),
+    XObject(crate::subactions::XObjectAction),
     /// **Re-shape the page's own text** — a reflow today, and the caret
     /// and restyle commits when they follow.
     ///
-    Text(super::text::TextAction),
+    Text(crate::textverbs::TextAction),
     /// **Write something out to a file the operator picks.**
     ///
-    Write(super::write::WriteAction),
+    Write(crate::writeaction::WriteAction),
     /// **Put the font programs a document references but does not carry into
     /// it**, as one undoable command.
     ///
@@ -905,7 +905,7 @@ pub enum Action {
         /// selection was made on.
         page: usize,
         /// Which subtype, and therefore which appearance the engine draws.
-        kind: crate::canvas::markup::text::TextMarkKind,
+        kind: crate::markupkind::TextMarkKind,
         /// The selected lines' boxes, PDF user space, in content order —
         /// `crate::canvas::textsel::TextSelection::page_quads`, which is the
         /// same list the wash was painted from.
@@ -921,7 +921,7 @@ pub enum Action {
         /// Only [`crate::canvas::markup::text::TextMarkKind::rgb`] reads it, and
         /// it takes the **ink**: these three kinds are lines, so they are the
         /// biro rather than the marker. Highlight is not in this variant at all.
-        pen: crate::canvas::markup::pen::Pen,
+        pen: crate::markuppen::Pen,
     },
     /// **Replace the words in ONE show operator** — `DEFECTS.md` D4's verb.
     ///
@@ -992,7 +992,7 @@ pub enum Action {
         /// `NewTextColor` pair, because those are two values with one meaning
         /// and `TextPen` resolves them at the boundary. See its docs for why
         /// black is written `Black` and not `Rgb(0, 0, 0)`.
-        pen: crate::canvas::textedit::pen::TextPen,
+        pen: crate::editmodel::pen::TextPen,
         /// **The wrap rectangle**, in PDF user space, or `None` for a
         /// single-line run at [`Self::CommitAddText::origin`].
         ///
@@ -1152,7 +1152,7 @@ pub enum Action {
     /// 3. **The operand is small.** Bounded by
     ///    `canvas::guides::MAX_PER_DOCUMENT`, twelve bytes each, and raised
     ///    once per *release* rather than once per frame of a drag.
-    SetGuides(crate::canvas::guides::Guides),
+    SetGuides(crate::guidemodel::Guides),
     /// **One thing the operator asked Find to do** — run the search, or step
     /// to the adjacent hit.
     ///
@@ -1185,7 +1185,7 @@ pub enum Action {
     /// its index list, because an action is a complete statement of intent:
     /// *which* way to step cannot be re-derived after the frame that asked.
     /// See `crate::find` for what happens on the other end.
-    Find(crate::find::FindRequest),
+    Find(crate::findrequest::FindRequest),
     /// **Everything the operator sets that is NOT part of a
     /// document** — [`super::prefs`].
     ///
@@ -1200,7 +1200,7 @@ pub enum Action {
     /// document**, so it is matched above the guard every other arm in
     /// `apply` lives under. Nothing else in this enum can say that.
     ///
-    Pref(super::prefs::PrefAction),
+    Pref(crate::subactions::PrefAction),
     /// **Everything done to a form FIELD**, as its own family — [`super::forms`].
     ///
     /// Eight verbs: fill a control, select one on the page, place one, author
@@ -1223,7 +1223,7 @@ pub enum Action {
     /// concatenate silently, and a variant that loses its own is invisible to
     /// `check-ui-strings`, to clippy and to every test in this crate — the only
     /// instrument that finds it is a reader. Each block is back on its subject.
-    Field(super::forms::FieldAction),
+    Field(crate::fieldaction::FieldAction),
     /// **Change how existing text LOOKS** — size, colour, face, weight and
     /// slant — on every run the operator's text selection covers.
     ///
@@ -1259,7 +1259,7 @@ pub enum Action {
         runs: Vec<usize>,
         /// The one property being changed. One press, one property, one undo
         /// entry — see the type's own docs.
-        change: super::textstyle::StyleChange,
+        change: crate::editactions::StyleChange,
     },
     /// **A text-bearing annotation has been placed and now needs its words.**
     ///
@@ -1279,7 +1279,7 @@ pub enum Action {
         /// The 0-based page the annotation will be authored onto.
         page: usize,
         /// Which text-bearing kind is being placed.
-        kind: crate::canvas::textannot::TextAnnotKind,
+        kind: crate::wordmarkup::TextAnnotKind,
         /// The rectangle, in PDF user space, already normalised.
         rect: pdfcer_core::page_tree::Rect,
     },
@@ -1300,7 +1300,7 @@ pub enum Action {
         /// The 0-based page.
         page: usize,
         /// Which kind to author.
-        kind: crate::canvas::textannot::TextAnnotKind,
+        kind: crate::wordmarkup::TextAnnotKind,
         /// The rectangle, in PDF user space.
         rect: pdfcer_core::page_tree::Rect,
         /// What the operator typed. Empty for a stamp, whose words are its
@@ -1343,7 +1343,7 @@ pub enum Action {
         /// holds the argument; the short version is that adopting the engine
         /// default silently would have shrunk every stamp on his drawings as a
         /// side effect of a fix he asked for.
-        stamp_size: crate::canvas::textannot::StampSize,
+        stamp_size: crate::wordmarkup::StampSize,
         /// **The sticky note's icon (`/Name`, §12.5.6.4 Table 172)**,
         /// picked in the dialog. Ignored by the other two kinds, and carried
         /// unconditionally for `stamp`'s reason exactly — a chooser always has
@@ -1391,7 +1391,7 @@ pub enum Action {
     ///   exist produces *"three highlights and eleven redaction marks"* — and
     ///   on the one operation whose purpose is removing content irreversibly,
     ///   that is not a cosmetic difference.
-    Redact(super::redact::RedactAction),
+    Redact(crate::editactions::RedactAction),
     /// **Select everything on the current page**, including anything that
     /// has been moved OFF it.
     ///
@@ -1434,7 +1434,7 @@ pub enum Action {
     /// ONE variant for both shapes, carrying the type `canvas::destination`
     /// already defines. Two actions would have been two spellings of one
     /// concept, and the module that owns the subject owns the vocabulary.
-    GoToDestination(crate::canvas::destination::PendingDestination),
+    GoToDestination(crate::navdest::PendingDestination),
     Undo,
     /// **Re-apply the most recently undone change.**
     ///
@@ -1469,4 +1469,18 @@ pub enum Action {
     /// same frame. The drain and its full argument are at the call site in
     /// `crate::app`; the arm below exists only to notice if it is ever removed.
     Command(String),
+}
+
+impl From<crate::fieldaction::FieldAction> for Action {
+    /// So a call site says what it MEANS and the wrapping is not its problem.
+    fn from(f: crate::fieldaction::FieldAction) -> Self {
+        Self::Field(f)
+    }
+}
+
+impl From<crate::subactions::VectorAction> for Action {
+    /// So a call site says what it MEANS and the wrapping is not its problem.
+    fn from(v: crate::subactions::VectorAction) -> Self {
+        Self::Vector(v)
+    }
 }

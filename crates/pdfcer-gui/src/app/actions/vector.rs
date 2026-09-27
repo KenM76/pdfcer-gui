@@ -2,7 +2,7 @@
 //!
 //! ## Why this is its own file
 //!
-//! **R2**, and the seam [`super::action::Action`] already draws twice:
+//! **R2**, and the seam [`super::Action`] already draws twice:
 //! [`super::dimensions`] is *what happens to the dimensioning model*,
 //! [`super::pages`] is *what happens to a page*, [`super::annots`] is *what
 //! happens to an annotation that already exists*. This is **what happens to the
@@ -11,13 +11,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/app/actions/vector.md`.
 
 use pdfcer_core::edit::{CommandKind, EditSession};
-
-impl From<VectorAction> for super::action::Action {
-    /// So a call site says what it MEANS and the wrapping is not its problem.
-    fn from(v: VectorAction) -> Self {
-        Self::Vector(v)
-    }
-}
 
 pub use pdfcer_gui_base::subactions::VectorAction;
 

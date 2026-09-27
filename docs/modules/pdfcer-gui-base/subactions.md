@@ -34,7 +34,7 @@ This is the seam.
 
 ### `enum VectorAction`
 
-Carried by [`super::action::Action::Vector`]. Every variant names a page and
+Carried by [`crate::appaction::Action::Vector`]. Every variant names a page and
 paint-order indices into it; see the module header for why both travel
 rather than being re-derived.
 

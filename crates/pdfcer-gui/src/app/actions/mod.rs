@@ -143,7 +143,7 @@ pub mod sign;
 
 /// **Changing how EXISTING text looks** — size, colour, face, weight, slant.
 ///
-/// `pub` because [`action::Action::TextStyle`] names its `StyleChange` and the
+/// `pub` because [`Action::TextStyle`] names its `StyleChange` and the
 /// Properties panel constructs one.
 pub mod textstyle;
 
@@ -161,12 +161,6 @@ mod ocrlayers;
 // header carries the save→launch→close ordering and why the other order loses
 // the operator's document off their screen when a `spawn` fails.
 mod acrobat;
-/// **The action vocabulary**, one variant per operator intent — the type this
-/// module's `OVERVIEW.md` describes. It cannot be split internally: it is one
-/// enum, and a nested variant would rewrite every match arm in the crate. What
-/// grows out of it instead is a sub-enum per family, the shape `PageAction`,
-/// `DimensionAction` and `RedactAction` already have.
-mod action;
 /// The verbs whose subject is a whole annotation — move, resize, remove. Its
 /// header carries what makes them a family: all three find their operand by
 /// stable object id, so none needs a page to locate one.
@@ -184,7 +178,7 @@ pub use pdfcer_gui_base::writeaction as write;
 /// producer invokes from every sheet (§8.10.1).
 pub mod xobject;
 
-pub use action::Action;
+pub use pdfcer_gui_base::appaction::Action;
 // The redaction family's sub-enum, re-exported beside `Action` exactly as
 // `VectorAction` is, so a call site writes `actions::RedactAction` rather than
 // reaching through the module that happens to hold the bodies. See its own

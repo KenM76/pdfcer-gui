@@ -408,7 +408,7 @@ versioned home). `reports_confidence()` is an R8 capability (`ocrs` answers
    anything within fifty lines of 1,500 as due. The seam for each is argued in
    `DESIGNS.md` under *Where the seam is in each file now crowding the size
    limit* — including the ones that have none — so that pass is a patch, not a
-   re-derivation. `app/dispatch.rs` and `app/actions/action.rs` are tied at the head of the
+   re-derivation. `app/dispatch.rs` and `pdfcer-gui-base/src/appaction.rs` are tied at the head of the
    list and are next.
    **O215's ask 2 is the engine's and is filed as `G032`**: `runs_share_a_line` never
    reads the horizontal translation, so a table row welds into one line — 565
@@ -1197,7 +1197,7 @@ versioned home). `reports_confidence()` is an R8 capability (`ocrs` answers
 
 - **Three source files sit within fifty lines of the hard limit**, led by
   `crates/pdfcer-gui/src/app/dispatch.rs` and
-  `crates/pdfcer-gui/src/app/actions/action.rs`, tied at 1,470 against
+  `crates/pdfcer-gui-base/src/appaction.rs`, tied at 1,470 against
   `check-file-size.sh`'s 1,500, the third at 1,452. Adding
   one ordinary function to any of them turns a green gate red mid-task, and the remedy R2 requires is
   *find the seam*, never *raise the limit* — which is a refactor, not an edit,

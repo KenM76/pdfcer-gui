@@ -1,7 +1,7 @@
 # `app::actions::attachments` — the three verbs whose subject is a whole
 FILE living inside the document
 
-A sub-enum rather than three variants of [`super::action::Action`].
+A sub-enum rather than three variants of [`super::Action`].
 `super`'s declaration of `action` states the rule that puts them here —
 *"the next family of variants to **grow** is the one that will have to
 become a sub-enum"* — and a family of three verbs has grown before it is
@@ -245,7 +245,7 @@ would offer to save a spreadsheet as `drawing.pdf`.
 ### `fn apply`
 
 The dispatch half of this module, reached from `PdfcerApp::apply`'s single
-[`super::action::Action::Attachment`] arm. A free function taking
+[`super::Action::Attachment`] arm. A free function taking
 `&mut OpenDoc` rather than a method, exactly like [`super::bookmarks::apply`]
 and [`super::pages::apply`], because the caller is the one place that owns
 the borrow and the arm should be one line.

@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/actions/action`
+# `pdfcer-gui-base/appaction`
 
 ## Item notes
 

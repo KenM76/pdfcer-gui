@@ -29,13 +29,6 @@ use crate::app::state::OpenDoc;
 use crate::app::status::decline::{self, Declined};
 use crate::text::status as t;
 
-impl From<FieldAction> for super::action::Action {
-    /// So a call site says what it MEANS and the wrapping is not its problem.
-    fn from(f: FieldAction) -> Self {
-        Self::Field(f)
-    }
-}
-
 pub use pdfcer_gui_base::fieldaction::FieldAction;
 
 /// Apply every form-field verb that needs the open document and nothing else.

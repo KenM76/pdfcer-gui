@@ -2,7 +2,7 @@
 
 ## Why this is its own file
 
-**R2**, and the seam [`super::action::Action`] already draws twice:
+**R2**, and the seam [`super::Action`] already draws twice:
 [`super::dimensions`] is *what happens to the dimensioning model*,
 [`super::pages`] is *what happens to a page*, [`super::annots`] is *what
 happens to an annotation that already exists*. This is **what happens to the

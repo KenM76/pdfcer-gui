@@ -539,7 +539,7 @@ pub enum DimensionAction {
     /// precedent for exactly this — an action whose entire body is one
     /// `decline::record_*` call. This one rides on `DimensionAction` rather
     /// than joining it at the top level for a reason that is unglamorous and
-    /// real: `app/actions/action.rs` sits against R2's file-size ceiling and
+    /// real: `appaction.rs` sits against R2's file-size ceiling and
     /// this file does not. The subject is a ce dimension either way.
     ///
     /// It is deliberately NOT `record_note`. That channel draws

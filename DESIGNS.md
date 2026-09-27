@@ -2062,7 +2062,7 @@ about eighty lines above the arm it explains; reunite them rather than lifting a
 span. A second seam is `dispatch/document.rs` — bring a document in, put one
 away.
 
-**`app/actions/action.rs` — there is no seam, only a sub-enum.** The file is
+**`crates/pdfcer-gui-base/src/appaction.rs` — there is no seam, only a sub-enum.** The file is
 three `use` lines and one enum of about sixty-five variants, and its own header
 already states the growth path. The move that is available is a **correction**:
 `actions/text.rs`'s header claims *"the caret commit, the free-text commit, the
