@@ -183,12 +183,14 @@ pub(super) fn tab() -> Tab {
             // one tab — and §7's migration map settles it explicitly:
             // `Review ▸ Comments ▸ Comments` → `Markup ▸ Comments`. Here.
             //
-            // `Clear page` and `Clear all` are **N**.
+            // `Make all part of the page` burns every markup on the page in
+            // view: "what everyone has added", acted on at once. `Clear page`
+            // and `Clear all` are **N**.
             // ---------------------------------------------------------------
             group(
                 "comments",
                 ribbon::group_markup_comments(),
-                [large("markup.comments")],
+                [large("markup.comments"), command("markup.flatten_page")],
             ),
         ])
 }

@@ -44,6 +44,38 @@ pub(in crate::app::actions) fn flatten(doc: &mut OpenDoc, page: usize, id: ObjId
     doc.selection.clear_annot();
 }
 
+/// Burn every markup on `page` the engine will burn; what it leaves is named.
+pub(in crate::app::actions) fn flatten_page(doc: &mut OpenDoc, page: usize) {
+    super::super::apply::vector_edit(doc, "flatten-page-annotations", page, 1, |session| {
+        let out = session.flatten_annotations(page, None)?;
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!(
+                "annotation-flattened page={page} changed={} flattened={} grouped={} layered={} popups={} replies={} skipped={}",
+                out.changed,
+                out.flattened,
+                out.grouped,
+                out.layered,
+                out.popups_removed,
+                out.replies_unlinked,
+                out.skipped.len()
+            )
+        });
+        let mut lines = if out.changed {
+            crate::text::flattenannot::flattened(&out)
+        } else {
+            vec![crate::text::flattenannot::nothing_flattened().to_owned()]
+        };
+        lines.extend(crate::text::flattenannot::kept(
+            out.skipped
+                .iter()
+                .map(|AnnotFlattenRefusal { reason, .. }| *reason),
+        ));
+        Ok::<_, EditError>(lines)
+    });
+    doc.selection.clear_annot();
+}
+
 /// Why the engine would refuse to flatten `id` on `page`, or `None` when it
 /// would accept. A document-level refusal (encrypted, certified) counts as a
 /// refusal with no per-annotation reason.

@@ -76,6 +76,47 @@ pub fn flattened(o: &AnnotFlattenOutcome) -> Vec<String> {
     lines
 }
 
+/// What one annotation left in place by a page-wide burn is, in the words the
+/// "kept" sentence counts it under.
+#[must_use]
+pub const fn kept_kind(reason: AnnotFlattenRefusalReason) -> &'static str {
+    match reason {
+        AnnotFlattenRefusalReason::Widget => "form field",
+        AnnotFlattenRefusalReason::Link => "link",
+        AnnotFlattenRefusalReason::Redact => "redaction mark",
+        AnnotFlattenRefusalReason::FileAttachment => "attached file",
+        AnnotFlattenRefusalReason::Media => "sound or video",
+        AnnotFlattenRefusalReason::Locked => "locked markup",
+        AnnotFlattenRefusalReason::HasAction => "markup that runs an action",
+        AnnotFlattenRefusalReason::Hidden | AnnotFlattenRefusalReason::NoView => "hidden markup",
+        AnnotFlattenRefusalReason::NoRotateOnRotatedPage => "upright markup on a rotated page",
+        _ => "markup pdfcer cannot burn",
+    }
+}
+
+/// The sentence naming what a page-wide burn left in place, given each kept
+/// annotation's reason, or `None` when it left nothing worth naming. Pop-ups are not counted: each goes with the
+/// markup that owns it.
+#[must_use]
+pub fn kept(reasons: impl IntoIterator<Item = AnnotFlattenRefusalReason>) -> Option<String> {
+    let mut counts: Vec<(&'static str, usize)> = Vec::new();
+    for reason in reasons {
+        if matches!(reason, AnnotFlattenRefusalReason::Popup) {
+            continue;
+        }
+        let kind = kept_kind(reason);
+        match counts.iter_mut().find(|(k, _)| *k == kind) {
+            Some((_, n)) => *n += 1,
+            None => counts.push((kind, 1)),
+        }
+    }
+    if counts.is_empty() {
+        return None;
+    }
+    let parts: Vec<String> = counts.iter().map(|(k, n)| format!("{k} ({n})")).collect();
+    Some(format!("Left as they were: {}.", parts.join(", ")))
+}
+
 /// The sentence when there was nothing to burn.
 #[must_use]
 pub const fn nothing_flattened() -> &'static str {
@@ -85,6 +126,22 @@ pub const fn nothing_flattened() -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn kept_counts_by_kind_and_ignores_popups() {
+        let skipped = [
+            AnnotFlattenRefusalReason::Link,
+            AnnotFlattenRefusalReason::Popup,
+            AnnotFlattenRefusalReason::Link,
+            AnnotFlattenRefusalReason::Widget,
+        ];
+        assert_eq!(
+            kept(skipped).as_deref(),
+            Some("Left as they were: link (2), form field (1).")
+        );
+        assert_eq!(kept([AnnotFlattenRefusalReason::Popup]), None);
+        assert_eq!(kept([]), None);
+    }
 
     #[test]
     fn the_known_reasons_read_as_distinct_sentences() {

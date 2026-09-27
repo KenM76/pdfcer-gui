@@ -171,6 +171,15 @@ pub const fn markup_flatten() -> CommandText {
     )
 }
 
+/// `markup.flatten_page`
+#[must_use]
+pub const fn markup_flatten_page() -> CommandText {
+    CommandText::new(
+        "Make all part of the page",
+        "Burn every markup on this page into the page's own drawing. They look the same, but they are no longer markups. Links, form fields and anything pdfcer cannot burn stay as they are, and the status bar says which. Ctrl+Z undoes it.",
+    )
+}
+
 // ---------------------------------------------------------------------------
 // The three kinds that mark a SELECTION rather than a drag.
 //

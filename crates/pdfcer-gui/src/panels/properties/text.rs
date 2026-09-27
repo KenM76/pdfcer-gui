@@ -489,14 +489,7 @@ fn size_row(
             &mut draft.typed_size,
             entry::Kind::Length(entry::LengthUnit::Point),
         );
-        let response = refusal.show(
-            ui.add(
-                widget
-                    .speed(0.25)
-                    .range(1.0..=1440.0)
-                    .suffix(t::text_size_suffix()),
-            ),
-        );
+        let response = refusal.show(ui.add(widget.speed(0.25).range(1.0..=1440.0)));
         crate::diag::ui_rect_visible(SIZE_REGION, response.rect, ui.clip_rect());
         if (response.drag_stopped() || response.lost_focus())
             && (draft.typed_size - draft.size).abs() > f64::EPSILON

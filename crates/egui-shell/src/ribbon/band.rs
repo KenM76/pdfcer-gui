@@ -132,7 +132,7 @@ use super::control::render_item_at;
 use super::ctx::Ctx;
 use super::measure::{SEPARATOR_LINE, separator_width};
 use super::overflow;
-use super::plan::{self, CUSTOM_ITEM_WIDTH, GroupRows};
+use super::plan::{self, GroupRows};
 use super::report;
 use super::rhythm::{
     BAND_ROW_SPACING, band_height, band_row_height, caption_font, compressed_control_height,
@@ -908,7 +908,7 @@ fn effective_size(ctx: &Ctx<'_>, item: &Item) -> ItemSize {
 fn measure_item(ui: &egui::Ui, ctx: &Ctx<'_>, item: &Item) -> f32 {
     match item {
         Item::Separator => SEPARATOR_LINE,
-        Item::Custom { .. } => CUSTOM_ITEM_WIDTH,
+        Item::Custom { kind, .. } => super::control::custom_width(ui.ctx(), kind),
         Item::Command { id, size, .. } => match ctx.registry.get(id) {
             // An unknown id draws nothing (see `Ctx::command`), so it must
             // also measure nothing — otherwise the band reserves space for

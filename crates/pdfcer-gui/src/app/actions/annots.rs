@@ -731,6 +731,7 @@ pub(super) fn apply_action(
         } => rotate_dimension(doc, dimension, annot, pivot, degrees),
         A::Delete { page, id } => delete(doc, page, id),
         A::Flatten { page, id } => flatten::flatten(doc, page, id),
+        A::FlattenPage { page } => flatten::flatten_page(doc, page),
         A::SetNote {
             id,
             text,

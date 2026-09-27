@@ -429,22 +429,22 @@ impl ScaleDialog {
         // unit typed into either box converts into that box's unit.
         ui.horizontal(|ui| {
             ui.label(t::ratio_label());
-            let (paper, refusal) = entry::drag_value(
+            let (paper, refusal) = entry::drag_value_unlabelled(
                 ui,
                 &mut self.fields.ratio_paper,
                 entry::Kind::Length(entry::LengthUnit::Of(self.fields.basis)),
             );
-            let paper = refusal.show(ui.add(paper.suffix("").speed(0.01).range(0.0001..=10_000.0)));
+            let paper = refusal.show(ui.add(paper.speed(0.01).range(0.0001..=10_000.0)));
             crate::diag::ui_rect(REGION_RATIO[0], paper.rect);
             let basis = unit_combo(ui, "scale.basis", &mut self.fields.basis);
             crate::diag::ui_rect(REGION_RATIO[1], basis);
             ui.label(t::ratio_separator());
-            let (real, refusal) = entry::drag_value(
+            let (real, refusal) = entry::drag_value_unlabelled(
                 ui,
                 &mut self.fields.ratio_real,
                 entry::Kind::Length(entry::LengthUnit::Of(self.fields.real_unit)),
             );
-            let real = refusal.show(ui.add(real.suffix("").speed(1.0).range(0.0001..=1_000_000.0)));
+            let real = refusal.show(ui.add(real.speed(1.0).range(0.0001..=1_000_000.0)));
             crate::diag::ui_rect(REGION_RATIO[2], real.rect);
             let before = self.fields.real_unit;
             let real_unit = unit_combo(ui, "scale.real_unit", &mut self.fields.real_unit);

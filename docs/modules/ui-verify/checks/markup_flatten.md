@@ -1,7 +1,8 @@
 # `ui-verify/checks/markup_flatten`
 
 `a_markup_can_be_made_part_of_the_page` — a markup's right-click "Make part of
-the page" burns it into the page's drawing, and Ctrl+Z undoes it.
+the page" burns it into the page's drawing, Ctrl+Z undoes it, and the ribbon's
+"Make all part of the page" burns every markup on the page the same way.
 
 # What it drives
 
@@ -18,6 +19,10 @@ Pinned to `fixtures/four-pages.pdf`, whose page is blank where the shape goes.
 5. Click the edge again: no `canvas.markup-node.1` — it is page drawing now, and
    Review cannot select page drawing.
 6. Ctrl+Z, click the edge: `canvas.markup-node.1` again.
+7. Click Markup ▸ Comments ▸ `ribbon.item.markup.flatten_page`:
+   `annotation-flattened page=0 changed=true` with `flattened` at least 1 (the
+   fixture's page carries markups of its own); the ink is still there and
+   clicking the edge selects nothing.
 
 # Why selection is witnessed by the node anchor
 

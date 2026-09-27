@@ -638,7 +638,6 @@ fn width(
             widget
                 .range(MIN_WIDTH_PT..=MAX_WIDTH_PT)
                 .speed(0.1)
-                .suffix(t::markup_width_suffix())
                 .max_decimals(2),
         ),
     );

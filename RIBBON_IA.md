@@ -369,7 +369,7 @@ signature-locked — with a visible badge, not a hidden global toggle.
 | **Notes** | Text box · Sticky note · Callout · Stamp ⌄ |
 | **Style** | Colour · Line width · Fill · Opacity · Line style |
 | **Arrange** | Bring to front · Bring forward · Send backward · Send to back |
-| **Comments** | Comments panel · Clear page · Clear all |
+| **Comments** | Comments panel · Make all part of the page · Clear page · Clear all |
 
 Cloud — revision clouds — is AEC table stakes and is the one this audience names
 first.
@@ -731,7 +731,7 @@ block:
 | `canvas.read-object` | Copy · Zoom to selection |
 | `canvas.empty` | Fit page · Fit width · Fit height · Actual size |
 | `canvas.field` | Properties · Delete *(when permitted)* |
-| `canvas.markup` | Properties · Add a point here · Remove this point *(each when the mark offers it)* · Cut · Copy · Paste · Delete *(when permitted)* |
+| `canvas.markup` | Properties · Add a point here · Remove this point *(each when the mark offers it)* · Make part of the page *(when the engine would accept it)* · Cut · Copy · Paste · Delete *(when permitted)* |
 | `canvas.text` | Reflow paragraph |
 | `dock.tab` | Float panel *(when docked)* · Dock panel *(when floating)* · Close panel · Reset layout |
 | `document.tab` | Close · Close others |

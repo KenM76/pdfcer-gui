@@ -542,12 +542,12 @@ fn text_size_row(
         ui.label(t::label_text_size());
         // Auto (zero) reads as a word, so it carries no unit.
         let auto = draft.font_size <= 0.0;
-        let (widget, refusal) = entry::drag_value(
-            ui,
-            &mut draft.font_size,
-            entry::Kind::Length(entry::LengthUnit::Point),
-        );
-        let widget = if auto { widget.suffix("") } else { widget };
+        let kind = entry::Kind::Length(entry::LengthUnit::Point);
+        let (widget, refusal) = if auto {
+            entry::drag_value_unlabelled(ui, &mut draft.font_size, kind)
+        } else {
+            entry::drag_value(ui, &mut draft.font_size, kind)
+        };
         let response = refusal.show(
             ui.add(
                 widget

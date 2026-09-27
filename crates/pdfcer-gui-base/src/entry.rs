@@ -175,6 +175,22 @@ pub fn drag_value<'a, N: egui::emath::Numeric>(
     value: &'a mut N,
     kind: Kind,
 ) -> (egui::DragValue<'a>, Refusal) {
+    let (dv, refusal) = drag_value_unlabelled(ui, value, kind);
+    let dv = match kind {
+        Kind::Length(u) => dv.suffix(t::unit_suffix(u.label())),
+        _ => dv,
+    };
+    (dv, refusal)
+}
+
+/// [`drag_value`] without the unit drawn beside the value, for a box whose
+/// unit is shown by a control next to it, or whose value reads as a word.
+/// egui's `DragValue::suffix` appends, so a unit once added cannot be removed.
+pub fn drag_value_unlabelled<'a, N: egui::emath::Numeric>(
+    ui: &egui::Ui,
+    value: &'a mut N,
+    kind: Kind,
+) -> (egui::DragValue<'a>, Refusal) {
     let id = ui.next_auto_id();
     let key = id.with("entry-anchor");
     // The frame after focus leaves still counts: `DragValue` re-parses its text
@@ -213,10 +229,6 @@ pub fn drag_value<'a, N: egui::emath::Numeric>(
                 None
             }
         });
-    let dv = match kind {
-        Kind::Length(u) => dv.suffix(t::unit_suffix(u.label())),
-        _ => dv,
-    };
     (dv, refusal)
 }
 

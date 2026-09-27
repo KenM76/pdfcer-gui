@@ -333,8 +333,7 @@ fn size_row(
                     // [`MIN_LABEL_PT`] — a spinner that clamps a value it did not
                     // author is a spinner that edits documents nobody asked it to.
                     .range(MIN_LABEL_PT.min(read_size)..=MAX_LABEL_PT.max(read_size))
-                    .speed(0.5)
-                    .suffix(ts::stamp_text_size_suffix()),
+                    .speed(0.5),
             ),
         );
         // `drag_stopped` and `lost_focus`, never `changed` — the parent's

@@ -175,12 +175,6 @@ here (a stamp's label is Helvetica Bold, always). A control called *Font
 size* sitting where no font can be picked invites the next question, which
 is where the font control is, and the answer is that there is not one.
 
-### `fn stamp_text_size_suffix`
-
-A suffix rather than a second word, because a point size is a number an
-operator already reads with its unit attached, and the row lives in a
-narrow column shared with every other properties section.
-
 ### `fn stamp_fit_label`
 
 *"If it does not fit"* rather than *"Fit policy"*. The operator meets

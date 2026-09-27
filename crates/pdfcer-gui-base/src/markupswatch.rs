@@ -67,14 +67,7 @@ pub fn show(ui: &mut Ui, pen: &mut Pen) {
             entry::Kind::Length(entry::LengthUnit::Point),
         );
         let width_response = refusal
-            .show(
-                ui.add(
-                    widget
-                        .speed(0.1)
-                        .range(MIN_WIDTH_PTS..=MAX_WIDTH_PTS)
-                        .suffix(t::width_suffix()),
-                ),
-            )
+            .show(ui.add(widget.speed(0.1).range(MIN_WIDTH_PTS..=MAX_WIDTH_PTS)))
             .on_hover_text(t::pen_width_tooltip());
         crate::diag::ui_rect(REGION_WIDTH, width_response.rect);
         if (pen.width_pts - before).abs() > f64::EPSILON {

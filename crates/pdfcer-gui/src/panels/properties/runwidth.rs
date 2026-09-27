@@ -60,15 +60,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
                     entry::Kind::Length(entry::LengthUnit::Point),
                 );
                 let response = refusal
-                    .show(
-                        ui.add(
-                            widget
-                                .speed(0.5)
-                                .range(0.01..=14_400.0)
-                                .fixed_decimals(2)
-                                .suffix(t::text_size_suffix()),
-                        ),
-                    )
+                    .show(ui.add(widget.speed(0.5).range(0.01..=14_400.0).fixed_decimals(2)))
                     .on_hover_text(t::run_width_hint());
                 ui.data_mut(|d| d.insert_temp(id, typed));
                 crate::diag::ui_rect_visible(REGION, response.rect, ui.clip_rect());

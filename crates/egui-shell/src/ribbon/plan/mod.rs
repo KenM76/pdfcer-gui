@@ -85,7 +85,8 @@
 //!
 //! The estimate can be wrong. A [`crate::manifest::Item::Custom`] is
 //! drawn by the application and the shell cannot know how wide it will
-//! be, so it is budgeted at `CUSTOM_ITEM_WIDTH`. **An estimate that is
+//! be until it has drawn it once, so it is budgeted at the width it was
+//! last drawn, and at `CUSTOM_ITEM_WIDTH` before that. **An estimate that is
 //! too small costs a clipped group; it cannot cost the overflow
 //! control**, because the overflow control's width was subtracted from
 //! the total before the estimate was consulted. That asymmetry is the

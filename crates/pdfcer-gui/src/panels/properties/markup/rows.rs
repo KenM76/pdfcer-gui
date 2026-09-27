@@ -166,14 +166,7 @@ pub(super) fn width_row(
             &mut width,
             entry::Kind::Length(entry::LengthUnit::Point),
         );
-        let response = refusal.show(
-            ui.add(
-                widget
-                    .range(MIN_WIDTH_PT..=MAX_WIDTH_PT)
-                    .speed(0.1)
-                    .suffix(t::markup_width_suffix()),
-            ),
-        );
+        let response = refusal.show(ui.add(widget.range(MIN_WIDTH_PT..=MAX_WIDTH_PT).speed(0.1)));
         // `drag_stopped` and `lost_focus`, not `changed`. A `DragValue` reports
         // a change on every pixel of a drag, and each one here is a
         // content-stream rewrite plus an undo entry — so a single drag across

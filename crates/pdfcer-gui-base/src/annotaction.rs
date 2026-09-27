@@ -281,6 +281,12 @@ pub enum AnnotAction {
         /// The annotation, by stable object id.
         id: pdfcer_core::object::ObjId,
     },
+    /// **Burn every markup on a page that can be burned**, as one undoable
+    /// command: `flatten_annotations(page, None)`. What it leaves is reported.
+    FlattenPage {
+        /// The page.
+        page: usize,
+    },
     /// **Write the note on an annotation that already exists** —
     /// `/Contents`, and conditionally `/T` and `/M` — as one undoable command.
     ///

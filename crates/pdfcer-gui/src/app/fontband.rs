@@ -216,15 +216,7 @@ fn size(
         draft.typed_size_mut(),
         entry::Kind::Length(entry::LengthUnit::Point),
     );
-    let response = refusal.show(
-        ui.add(
-            widget
-                .speed(0.25)
-                .range(1.0..=1440.0)
-                .suffix(t::text_size_suffix())
-                .max_decimals(1),
-        ),
-    );
+    let response = refusal.show(ui.add(widget.speed(0.25).range(1.0..=1440.0).max_decimals(1)));
     let _ = ui.allocate_space(egui::Vec2::new(
         (SIZE_WIDTH - response.rect.width()).max(0.0),
         0.0,

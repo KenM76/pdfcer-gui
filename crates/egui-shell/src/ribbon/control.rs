@@ -60,7 +60,9 @@ pub(crate) fn render_item_at(
             // vanished after the first custom item would be a very
             // confusing bug.
             if let Some(renderer) = ctx.custom.take() {
-                let token = renderer(ui, &request);
+                let drawn = ui.scope(|ui| renderer(ui, &request));
+                let token = drawn.inner;
+                remember_custom_width(ui.ctx(), kind, drawn.response.rect.width());
                 ctx.custom = Some(renderer);
                 if let Some(token) = token {
                     ctx.invoke(token);
@@ -79,6 +81,26 @@ pub(crate) fn render_item_at(
             }
         }
     }
+}
+
+fn custom_width_key(kind: &str) -> egui::Id {
+    egui::Id::new(("egui-shell/ribbon/custom-width", kind))
+}
+
+/// Record how wide a custom item of `kind` was drawn, for the next frame's
+/// band plan. Its width is intrinsic to the application's controls, not to
+/// the space offered, so feeding it back cannot oscillate.
+fn remember_custom_width(ctx: &egui::Context, kind: &str, width: f32) {
+    if width.is_finite() && width > 0.0 {
+        ctx.data_mut(|d| d.insert_temp(custom_width_key(kind), width));
+    }
+}
+
+/// What the band plan should budget for a custom item of `kind`: its width
+/// when last drawn, or [`CUSTOM_ITEM_WIDTH`] before it has been drawn once.
+pub(crate) fn custom_width(ctx: &egui::Context, kind: &str) -> f32 {
+    ctx.data(|d| d.get_temp(custom_width_key(kind)))
+        .unwrap_or(CUSTOM_ITEM_WIDTH)
 }
 
 /// Report that `id` is enabled or not, but only when the answer has changed.

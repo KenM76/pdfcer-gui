@@ -372,9 +372,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 163 → 164: `file.remove_ocr`, beside `file.ocr` on File ▸ Recognise.
     // 164 → 165: `format.merge_text_runs` (G035), canvas object menu and Format ▸ Selection.
     // 165 → 166: `markup.flatten`, canvas markup menu.
+    // 166 → 167: `markup.flatten_page`, Markup ▸ Comments.
     assert_eq!(
         registry().len(),
-        166 + usize::from(cfg!(feature = "signing"))
+        167 + usize::from(cfg!(feature = "signing"))
     );
 }
 
@@ -754,9 +755,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 147 → 148: `markup.flatten` names `form-flatten`, shared with
     // `edit.form_flatten`: the same act on a markup instead of a field, and
     // one is a canvas menu row, the other a Forms panel button.
+    // 148 → 149: `markup.flatten_page` names `form-flatten` too: the same act
+    // on every markup of a page.
     assert_eq!(
         named,
-        148 + usize::from(cfg!(feature = "signing")),
+        149 + usize::from(cfg!(feature = "signing")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

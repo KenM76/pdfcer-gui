@@ -70,12 +70,6 @@ pub const fn markup_width_label() -> &'static str {
     "Line width"
 }
 
-/// The suffix on the width control.
-#[must_use]
-pub const fn markup_width_suffix() -> &'static str {
-    " pt"
-}
-
 /// The Line style row's label.
 #[must_use]
 pub const fn markup_line_style_label() -> &'static str {

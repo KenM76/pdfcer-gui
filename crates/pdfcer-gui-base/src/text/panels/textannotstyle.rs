@@ -47,12 +47,6 @@ pub const fn stamp_text_size_label() -> &'static str {
     "Text size"
 }
 
-/// The unit suffix inside the stamp label-size spinner.
-#[must_use]
-pub const fn stamp_text_size_suffix() -> &'static str {
-    " pt"
-}
-
 /// The label on the chooser for what happens when the resized label no longer
 /// fits the stamp's box.
 #[must_use]

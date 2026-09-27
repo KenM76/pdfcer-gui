@@ -1,6 +1,7 @@
 //! `a_markup_can_be_made_part_of_the_page` — a drawn markup's right-click
 //! "Make part of the page" burns it into the page: it still shows, it is no
-//! longer a markup, and Ctrl+Z makes it one again.
+//! longer a markup, and Ctrl+Z makes it one again. Then Markup ▸ Comments ▸
+//! "Make all part of the page" burns it the same way.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/markup_flatten.md`.
 
@@ -27,6 +28,7 @@ const COMMIT_EVENT: &str = "add-markup";
 const NODE_ONE: &str = "canvas.markup-node.1";
 const ROW: &str = "menu.item.canvas.markup.markup.flatten";
 const FLATTENED: &str = "annotation-flattened";
+const PAGE_ITEM: &str = "ribbon.item.markup.flatten_page";
 
 const CORNERS: [(f64, f64); 4] = [(0.25, 0.25), (0.55, 0.25), (0.55, 0.55), (0.25, 0.55)];
 /// The top edge's midpoint: on the shape's ink, clear of every node anchor.
@@ -55,8 +57,9 @@ impl Check for AMarkupCanBeMadePartOfThePage {
     }
 
     fn defect(&self) -> &'static str {
-        "a markup cannot be burned into the page from its right-click menu, or the burn changes \
-         how it looks, or leaves it selectable as a markup, or cannot be undone"
+        "a markup cannot be burned into the page from its right-click menu or the ribbon's \
+         page-wide button, or the burn changes how it looks, or leaves it selectable as a \
+         markup, or cannot be undone"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -278,5 +281,55 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note("Ctrl+Z made it a selectable markup again");
+
+    // --- The page-wide button burns it too ----------------------------------
+    let Some(button) = declared_or_in_overflow(&session, &driver, ui_rect, PAGE_ITEM)? else {
+        return Ok(Some(format!(
+            "the Markup tab declares no Make all part of the page (`{PAGE_ITEM}`)."
+        )));
+    };
+    let mark = session.trace()?.mark();
+    driver.click_at(session.frame()?.declared_center(button))?;
+    session.settle(40);
+    let trace = session.trace()?;
+    let Some(done) = trace.last_after(FLATTENED, mark) else {
+        return Ok(Some(format!(
+            "Make all part of the page was clicked and no `{FLATTENED}` line followed. Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    report.note(format!("page-wide: `{}`", done.raw));
+    // The fixture's page 1 carries markups of its own besides the drawn one,
+    // so the count is at least one, not exactly one.
+    let burned: usize = done
+        .get("flattened")
+        .and_then(|n| n.parse().ok())
+        .unwrap_or(0);
+    if done.get("page") != Some("0") || done.get("changed") != Some("true") || burned == 0 {
+        return Ok(Some(format!(
+            "the page-wide burn burned nothing on page 1: `{}`.",
+            done.raw
+        )));
+    }
+    let after_page = ink(
+        &session,
+        &mapping,
+        page,
+        &ctx.out("markup_flatten_page_after.png"),
+    )?;
+    report.note(format!("after page-wide: {}", after_page.summary()));
+    if after_page.ink < INK_FLOOR {
+        return Ok(Some(format!(
+            "the markup vanished when the page's markups were made part of it: {}.",
+            after_page.summary()
+        )));
+    }
+    driver.click_at(edge)?;
+    session.settle(18);
+    if declared(&session.trace()?, ui_rect, NODE_ONE).is_some() {
+        return Ok(Some(format!(
+            "after the page-wide burn, clicking the edge still selects a markup (`{NODE_ONE}`)."
+        )));
+    }
     Ok(None)
 }

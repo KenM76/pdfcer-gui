@@ -296,6 +296,9 @@ pub(super) fn band() -> Vec<Command> {
         command("markup.stamp", t::markup_stamp(), 522)
             .with_icon("stamp")
             .enabled_when("doc.pages"),
+        command("markup.flatten_page", t::markup_flatten_page(), 541)
+            .with_icon("form-flatten")
+            .enabled_when("doc.pages"),
         command("markup.comments", t::markup_comments(), 540)
             .with_icon("comment")
             .enabled_when("doc.open"),

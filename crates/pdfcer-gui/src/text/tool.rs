@@ -369,12 +369,6 @@ pub const fn text_pen_size_label() -> &'static str {
     "Size"
 }
 
-/// The suffix on the size control.
-#[must_use]
-pub const fn text_pen_size_suffix() -> &'static str {
-    " pt"
-}
-
 /// The colour swatch's label.
 #[must_use]
 pub const fn text_pen_colour_label() -> &'static str {

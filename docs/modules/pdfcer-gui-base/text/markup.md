@@ -1,6 +1,6 @@
 # `text::markup` — the words the Markup ▸ Style group shows
 
-Five tooltips, two suffixes, **ten colour names** and the **five names a
+Five tooltips, one suffix, **ten colour names** and the **five names a
 line style goes by**, which is the whole operator-visible surface of
 `canvas::markup::swatch` and of `canvas::markup::linestyle`. Most of the
 controls are colour chips and numbers: none of those can carry a label
@@ -240,10 +240,3 @@ values is visible from inside the program.
 The trailing ellipsis is the platform convention for *"this opens
 something"* and is load-bearing here: every other cell in the popup applies
 immediately, and this one does not.
-
-### `fn width_suffix`
-
-A separate entry rather than a literal in the widget call, for the reason
-the settings window's degree sign is: `check-ui-strings.sh` looks for
-exactly this, and a translator localising the ribbon must be able to see
-that a unit abbreviation exists.

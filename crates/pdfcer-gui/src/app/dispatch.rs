@@ -855,6 +855,7 @@ impl PdfcerApp {
             // computed at the press would be a stale one.
             id if arrange::claims(id) => arrange::dispatch(self, id, actions),
             "markup.flatten" => flatten::dispatch(self, actions),
+            "markup.flatten_page" => flatten::dispatch_page(self, actions),
             // The three text-bearing kinds, ABOVE the geometric markup arm.
             //
             // Ordering is a statement rather than a tie-break — the two

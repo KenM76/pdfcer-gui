@@ -1,6 +1,6 @@
 //! # `text::markup` — the words the Markup ▸ Style group shows
 //!
-//! Five tooltips, two suffixes, **ten colour names** and the **five names a
+//! Five tooltips, one suffix, **ten colour names** and the **five names a
 //! line style goes by**, which is the whole operator-visible surface of
 //! `canvas::markup::swatch` and of `canvas::markup::linestyle`. Most of the
 //! controls are colour chips and numbers: none of those can carry a label
@@ -224,12 +224,6 @@ pub const fn more_colours_tooltip() -> &'static str {
      Anything you pick there is used exactly as chosen."
 }
 
-/// The width control's suffix.
-#[must_use]
-pub const fn width_suffix() -> &'static str {
-    " pt"
-}
-
 mod edits;
 
 pub use edits::{
@@ -325,9 +319,9 @@ mod tests {
             "this module holds {} tooltips and its header says: {first_line:?}",
             tooltips.len()
         );
-        let suffixes = [opacity_suffix(), width_suffix()];
-        assert_eq!(suffixes.len(), 2);
-        assert!(first_line.contains("two suffixes"), "{first_line:?}");
+        let suffixes = [opacity_suffix()];
+        assert_eq!(suffixes.len(), 1);
+        assert!(first_line.contains("one suffix"), "{first_line:?}");
     }
 
     /// **The five line-style names are distinct, and none of them is a
@@ -367,10 +361,9 @@ mod tests {
         assert!(highlighter_colour_tooltip().contains("highlight"));
     }
 
-    /// The width suffix names a unit and is not empty.
+    /// The width tooltip names the unit the box shows beside its value.
     #[test]
     fn the_width_carries_its_unit() {
-        assert!(width_suffix().contains("pt"));
         assert!(pen_width_tooltip().contains("points"));
     }
 }

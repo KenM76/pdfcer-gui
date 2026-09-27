@@ -401,6 +401,7 @@
                     caption: "Comments",
                     items: [
                         Command(id: "markup.comments", size: Large),
+                        Command(id: "markup.flatten_page"),
                     ],
                     collapse: 1,
                 ),

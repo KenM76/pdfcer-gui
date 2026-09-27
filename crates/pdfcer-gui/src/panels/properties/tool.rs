@@ -155,14 +155,7 @@ fn text_pen(ui: &mut Ui, ctx: &egui::Context) {
             &mut current.size_pt,
             entry::Kind::Length(entry::LengthUnit::Point),
         );
-        refusal.show(
-            ui.add(
-                widget
-                    .range(pen::MIN_SIZE_PT..=pen::MAX_SIZE_PT)
-                    .speed(0.5)
-                    .suffix(t::text_pen_size_suffix()),
-            ),
-        );
+        refusal.show(ui.add(widget.range(pen::MIN_SIZE_PT..=pen::MAX_SIZE_PT).speed(0.5)));
     });
     ui.horizontal_wrapped(|ui| {
         ui.label(t::text_pen_colour_label());
