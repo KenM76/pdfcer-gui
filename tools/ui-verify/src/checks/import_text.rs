@@ -22,6 +22,8 @@ const APPLIED_EVENT: &str = "import-text-applied";
 const BODY_REGION: &str = "import-text.body";
 /// The Import button.
 const IMPORT_REGION: &str = "import-text.import";
+/// The margin box, in points; it opens at 72.
+const MARGIN_REGION: &str = "import-text.margin";
 /// The env seam that answers the picker.
 const PATH_ENV: &str = "PDFCER_DIAG_TEXT_IMPORT_PATH";
 
@@ -149,6 +151,24 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let _ = body;
     report.note("★ the window opened");
 
+    // --- 2b: a margin typed in inches (O243) ------------------------------
+    // `2 in` into a box held in points must reach the template as 144. A
+    // build that ignores the unit reads 2.
+    let Some(margin) = declared(&trace, ui_rect, MARGIN_REGION) else {
+        return Ok(Some(format!(
+            "the window declared no `{MARGIN_REGION}` region, so the margin box is not on screen."
+        )));
+    };
+    let driver = Driver::new(session.window());
+    driver.click_at(
+        frame_of(&session, &trace, ui_rect, MARGIN_REGION)?.declared_at(margin, 0.5, 0.5),
+    )?;
+    session.settle(10);
+    driver.type_ascii("2 in")?;
+    driver.press(crate::sys::vk::ENTER)?;
+    session.settle(16);
+    report.note("typed `2 in` into the margin box");
+
     // --- 3: PRESS IMPORT ------------------------------------------------
     let trace = session.trace()?;
     let Some(button) = declared(&trace, ui_rect, IMPORT_REGION) else {
@@ -195,6 +215,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              the_window_opens_on_a4_whatever_order_the_engine_lists_its_sheets_in` covers the \
              first half in process. Line: `{}`.",
             requested.get("sheet").unwrap_or("?"),
+            requested.raw
+        )));
+    }
+
+    if requested.get("margin") != Some("144") {
+        return Ok(Some(format!(
+            "`2 in` was typed into the margin box (points) and the import carried \
+             `margin={}`, not 144: the typed unit was ignored or mis-converted. Line: `{}`.",
+            requested.get("margin").unwrap_or("?"),
             requested.raw
         )));
     }

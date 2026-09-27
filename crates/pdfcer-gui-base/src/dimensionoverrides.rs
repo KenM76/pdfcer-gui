@@ -113,11 +113,7 @@ pub fn show(ui: &mut Ui, group: &Group, overrides: &mut StyleOverrides) -> bool 
         || resolved.text_height,
     )
     .edit(ui, |ui, value| {
-        let r = ui.add(
-            egui::DragValue::new(value)
-                .speed(POINT_SPEED)
-                .range(TEXT_HEIGHT_RANGE),
-        );
+        let r = point_box(ui, value, TEXT_HEIGHT_RANGE);
         crate::diag::ui_rect(REGION_TEXT_HEIGHT, r.rect);
     });
 
@@ -130,11 +126,7 @@ pub fn show(ui: &mut Ui, group: &Group, overrides: &mut StyleOverrides) -> bool 
         || resolved.line_width,
     )
     .edit(ui, |ui, value| {
-        ui.add(
-            egui::DragValue::new(value)
-                .speed(POINT_SPEED)
-                .range(LINE_WIDTH_RANGE),
-        );
+        point_box(ui, value, LINE_WIDTH_RANGE);
     });
 
     // --- arrow length ---------------------------------------------------
@@ -146,11 +138,7 @@ pub fn show(ui: &mut Ui, group: &Group, overrides: &mut StyleOverrides) -> bool 
         || resolved.arrow_length,
     )
     .edit(ui, |ui, value| {
-        ui.add(
-            egui::DragValue::new(value)
-                .speed(POINT_SPEED)
-                .range(ARROW_LENGTH_RANGE),
-        );
+        point_box(ui, value, ARROW_LENGTH_RANGE);
     });
 
     // --- arrow form -----------------------------------------------------
@@ -222,7 +210,7 @@ pub fn show(ui: &mut Ui, group: &Group, overrides: &mut StyleOverrides) -> bool 
         || resolved.tolerance_places.unwrap_or(0),
     )
     .edit(ui, |ui, value| {
-        ui.add(egui::DragValue::new(value).range(PLACES_RANGE));
+        places_box(ui, value);
     });
     if overrides.tolerance_places.is_none() && resolved.tolerance_places.is_none() {
         ui.weak(t::tolerance_places_follows());
@@ -301,7 +289,7 @@ fn fraction_editor(ui: &mut Ui, value: &mut FractionMode) {
         FractionMode::Decimal { places } => {
             ui.horizontal(|ui| {
                 ui.label(t::precision_places());
-                ui.add(egui::DragValue::new(places).range(PLACES_RANGE));
+                places_box(ui, places);
             });
         }
         FractionMode::Fraction {
@@ -322,6 +310,22 @@ fn fraction_editor(ui: &mut Ui, value: &mut FractionMode) {
             ui.weak(t::precision_reduce_hint());
         }
     }
+}
+
+/// A point-valued box: shows `pt`, reads a typed unit or arithmetic.
+fn point_box(ui: &mut Ui, value: &mut f64, range: std::ops::RangeInclusive<f64>) -> egui::Response {
+    let (widget, refusal) = crate::entry::drag_value(
+        ui,
+        value,
+        crate::entry::Kind::Length(crate::entry::LengthUnit::Point),
+    );
+    refusal.show(ui.add(widget.speed(POINT_SPEED).range(range)))
+}
+
+/// A decimal-places box: a whole number, arithmetic allowed.
+fn places_box(ui: &mut Ui, value: &mut u32) {
+    let (widget, refusal) = crate::entry::drag_value(ui, value, crate::entry::Kind::Count);
+    refusal.show(ui.add(widget.range(PLACES_RANGE)));
 }
 
 /// A screen colour from PDF components. See

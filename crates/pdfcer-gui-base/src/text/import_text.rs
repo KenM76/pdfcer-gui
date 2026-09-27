@@ -51,12 +51,6 @@ pub const fn margin_label() -> &'static str {
     "Margin"
 }
 
-/// Points, as a suffix.
-#[must_use]
-pub const fn points_suffix() -> &'static str {
-    " pt"
-}
-
 /// The typeface chooser's label.
 #[must_use]
 pub const fn face_label() -> &'static str {

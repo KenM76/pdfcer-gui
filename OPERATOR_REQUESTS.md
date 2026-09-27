@@ -145,10 +145,13 @@ in the base crate, with a `Kind` per box) and reads the forms above plus
 arithmetic and relative entry. It is wired into the Properties panel's geometry
 boxes: X, Y, W and H show `pt` and take any unit, and the annotation angle takes
 arithmetic. Driven by `geometry_fields_take_typed_arithmetic`, which types
-`*2 + 96px - 1in` and requires exactly double. **Not yet converted:** the other
-number boxes (widget geometry, ce dimension overrides and style rows, field text
-size, border widths, insert image, new document and page size, print). Those
-still take a plain number and several still show no unit.
+`*2 + 96px - 1in` and requires exactly double. Also converted: the Set-scale ratio (both sides, each in its own unit), a ce
+dimension's own overrides and its group's style rows (text height, line width,
+arrow length in `pt`; decimal places as a whole number), and the text-import
+margin and size. `a_text_file_becomes_pages` types `2 in` into the margin and
+requires 144 pt. **Not yet converted:** widget geometry, field text size, border
+widths, insert image, new document and page size, print, export image, poster
+and tolerances. Those still take a plain number and several show no unit.
 
 ## O245 — **BUILT AND DRIVEN — awaiting your verdict** — a ce dimension opens a note pop-up, which gets in the way of moving it
 

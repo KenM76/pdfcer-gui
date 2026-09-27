@@ -5,6 +5,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/dialogs/import_text.md`.
 
 use egui::Ui;
+use pdfcer_gui_base::entry;
 
 use crate::app::actions::Action;
 use crate::text::import_text as t;
@@ -18,6 +19,8 @@ const REGION_IMPORT: &str = "import-text.import"; // ui-text-exempt: diagnostic 
 const REGION_SHEET: &str = "import-text.sheet"; // ui-text-exempt: diagnostic region name
 /// The font chooser's region.
 const REGION_FACE: &str = "import-text.face"; // ui-text-exempt: diagnostic region name
+/// The margin box, in points.
+const REGION_MARGIN: &str = "import-text.margin"; // ui-text-exempt: diagnostic region name
 
 /// The faces this window offers.
 const FACES: &[pdfcer_core::fontdata::Std14] = &[
@@ -196,12 +199,13 @@ impl ImportTextDialog {
         });
         ui.horizontal(|ui| {
             ui.label(t::margin_label());
-            ui.add(
-                egui::DragValue::new(&mut self.margin)
-                    .speed(1.0)
-                    .range(MARGIN_RANGE)
-                    .suffix(t::points_suffix()),
+            let (widget, refusal) = entry::drag_value(
+                ui,
+                &mut self.margin,
+                entry::Kind::Length(entry::LengthUnit::Point),
             );
+            let response = refusal.show(ui.add(widget.speed(1.0).range(MARGIN_RANGE)));
+            crate::diag::ui_rect_visible(REGION_MARGIN, response.rect, ui.clip_rect());
         });
 
         ui.separator();
@@ -220,12 +224,12 @@ impl ImportTextDialog {
         });
         ui.horizontal(|ui| {
             ui.label(t::size_pt_label());
-            ui.add(
-                egui::DragValue::new(&mut self.size)
-                    .speed(0.25)
-                    .range(SIZE_RANGE)
-                    .suffix(t::points_suffix()),
+            let (widget, refusal) = entry::drag_value(
+                ui,
+                &mut self.size,
+                entry::Kind::Length(entry::LengthUnit::Point),
             );
+            refusal.show(ui.add(widget.speed(0.25).range(SIZE_RANGE)));
         });
         // Beside the chooser it qualifies, not at the foot of the window —
         // `panels::properties`' standing rule, for its reason: a caveat below

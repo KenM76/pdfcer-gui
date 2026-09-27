@@ -195,3 +195,9 @@ creates it and the next command that patches it.
   `cat -A` shows `$` for both endings unless the `^M` is read for.
 - Related: [[a-detectors-scope-is-a-claim]] — 16 % of
   this tree's files are CRLF, which is the same measurement from the other side.
+
+**A fourth layer, 2026-09-27: line endings.** `open(p,'w')` on Windows writes
+every `\n` as CRLF, so a patch script flips a whole LF file to CRLF (git warns
+"CRLF will be replaced by LF"). Read and write with `newline=''`. And the
+escape rule held again the same day, twice: a `\` + newline continuation in a
+heredoc payload arrived as a gap. For a Rust `\`-continued literal, use Edit.

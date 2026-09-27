@@ -47,12 +47,7 @@ pub fn show(ui: &mut Ui, model: &DimensionModel, group: &Group, actions: &mut Ve
         StyleDefaults::FACTORY.text_height,
         (moving, total),
         |ui, value| {
-            let r = ui.add(
-                egui::DragValue::new(value)
-                    .speed(POINT_SPEED)
-                    .range(TEXT_HEIGHT_RANGE)
-                    .suffix(t::points_suffix()),
-            );
+            let r = point_box(ui, value, TEXT_HEIGHT_RANGE);
             crate::diag::ui_rect(REGION_TEXT_HEIGHT, r.rect);
         },
         t::points_value,
@@ -67,12 +62,7 @@ pub fn show(ui: &mut Ui, model: &DimensionModel, group: &Group, actions: &mut Ve
         StyleDefaults::FACTORY.line_width,
         (moving, total),
         |ui, value| {
-            ui.add(
-                egui::DragValue::new(value)
-                    .speed(POINT_SPEED)
-                    .range(LINE_WIDTH_RANGE)
-                    .suffix(t::points_suffix()),
-            );
+            point_box(ui, value, LINE_WIDTH_RANGE);
         },
         t::points_value,
     );
@@ -86,12 +76,7 @@ pub fn show(ui: &mut Ui, model: &DimensionModel, group: &Group, actions: &mut Ve
         StyleDefaults::FACTORY.arrow_length,
         (moving, total),
         |ui, value| {
-            ui.add(
-                egui::DragValue::new(value)
-                    .speed(POINT_SPEED)
-                    .range(ARROW_LENGTH_RANGE)
-                    .suffix(t::points_suffix()),
-            );
+            point_box(ui, value, ARROW_LENGTH_RANGE);
         },
         t::points_value,
     );
@@ -206,6 +191,16 @@ fn rgb_of(c: egui::Color32) -> Rgb {
         g: f32::from(c.g()) / 255.0,
         b: f32::from(c.b()) / 255.0,
     }
+}
+
+/// A point-valued box: shows `pt`, reads a typed unit or arithmetic.
+fn point_box(ui: &mut Ui, value: &mut f64, range: std::ops::RangeInclusive<f64>) -> egui::Response {
+    let (widget, refusal) = pdfcer_gui_base::entry::drag_value(
+        ui,
+        value,
+        pdfcer_gui_base::entry::Kind::Length(pdfcer_gui_base::entry::LengthUnit::Point),
+    );
+    refusal.show(ui.add(widget.speed(POINT_SPEED).range(range)))
 }
 
 #[cfg(test)]
