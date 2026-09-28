@@ -53,7 +53,8 @@ pub(super) fn dxf(doc: &mut OpenDoc, page: usize, options: &pdfcer_core::export:
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
                     "export-dxf page={page} bytes={} polylines={} circles={} arcs={} \
-                     splines={} skipped_text={} skipped_images={} unreadable_text={}",
+                     splines={} skipped_text={} skipped_images={} unreadable_text={} \
+                     version={} splines_flattened={} units_undeclared={}",
                     text.len(),
                     outcome.polylines,
                     outcome.circles,
@@ -61,7 +62,10 @@ pub(super) fn dxf(doc: &mut OpenDoc, page: usize, options: &pdfcer_core::export:
                     outcome.splines,
                     outcome.skipped_text,
                     outcome.skipped_images,
-                    outcome.unreadable_text
+                    outcome.unreadable_text,
+                    options.version.acadver(),
+                    outcome.splines_flattened,
+                    u8::from(outcome.units_undeclared)
                 )
             });
             // Recorded through `record_note` rather than returned from a
@@ -72,7 +76,11 @@ pub(super) fn dxf(doc: &mut OpenDoc, page: usize, options: &pdfcer_core::export:
             //
             // The list is joined rather than recorded one at a time: the slot
             // holds one disclosure, and the last writer would win.
-            let notes = crate::text::export_dxf::exported(&target.display().to_string(), &outcome);
+            let notes = crate::text::export_dxf::exported(
+                &target.display().to_string(),
+                &outcome,
+                options.units,
+            );
             super::record_edit_disclosure(Some(super::EditDisclosure {
                 epoch: doc.edit_epoch,
                 notes,

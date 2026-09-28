@@ -68,6 +68,21 @@ change also sets `options.units` to `DxfUnits::for_unit` of it. Anything else
 that writes `options.scale` — a conflicting-candidate radio, the group picker —
 reseeds the row, so the row and the field never disagree.
 
+## The version drop-down
+
+**DXF version** offers `VERSIONS` — R12, R2000, R2004 — and writes
+`DxfOptions::version`; it is a remembered habit (`ExportDxfPrefs::version`),
+because it follows the program the operator imports into, not the drawing. The
+hint under it says what R12 costs. What a version could not carry is reported
+after the write, off-canvas, by `text::export_dxf::exported`: the count of
+curves flattened to polylines and, when the file cannot record units, the
+units the coordinates are in. `DxfVersion` is `#[non_exhaustive]`, so a
+version added upstream is not offered until it is added to `VERSIONS`.
+
+Region `export-dxf.version`; both the open and the requested trace lines carry
+`version=<$ACADVER>`, and the written line adds `splines_flattened=` and
+`units_undeclared=`.
+
 ## Item notes
 
 ### `fn habits`

@@ -239,6 +239,7 @@ fn every_preference_round_trips_through_the_file() {
                             units: DxfUnits::Millimetres,
                             fit_arcs: false,
                             text: DxfText::Omit,
+                            version: pdfcer_core::export::dxf::DxfVersion::R2004,
                         },
                     },
                 };
@@ -720,6 +721,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
                 units: DxfUnits::Inches,
                 fit_arcs: true,
                 text: DxfText::Entities,
+                version: pdfcer_core::export::dxf::DxfVersion::R2000,
             },
         },
     };

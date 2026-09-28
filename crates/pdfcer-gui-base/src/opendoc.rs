@@ -1002,8 +1002,6 @@ impl OpenDoc {
 
     /// The one place an `OpenDoc` is assembled, for both origins.
     fn assemble(path: PathBuf, origin: Origin, session: EditSession, pages: Vec<Page>) -> Self {
-        let mut pages = pages;
-        crate::pagebox::clip_crop_to_media(&mut pages);
         // The one field read from disk here rather than started empty, and
         // the one `ViewState` default it overrides. `canvas::guides::opening`
         // owns both halves and the rule joining them.

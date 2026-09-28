@@ -27,8 +27,8 @@ one does not.
 
 ### Measured, not assumed
 
-Through the engine's own `set-page-size` (which calls the same
-`EditSession::set_media_boxes` this module calls), on
+Through the engine's own `set-page-size` (the `/MediaBox` write
+`EditSession::resize_pages` makes), on
 `fixtures/a1-titleblock.pdf`, A1 → A4:
 
 | what was measured | result |
@@ -93,7 +93,11 @@ own test holds that it keeps saying so.
 
 ## 4. Why the PLURAL verb, even for one sheet
 
-`EditSession::set_media_boxes` — *"a sheet set is resized as a set"*, one
+`EditSession::resize_pages` with `CropFollow::WhenItMatched`: a crop box
+equal to the old sheet becomes the new sheet, so growing the paper grows
+what is seen, and one cropped to a region is kept and reported by
+`disclosure_crop_inside`. Like `set_media_boxes` it is *"a sheet set is
+resized as a set"*, one
 undo entry however many pages, refusals raised **before anything is
 committed** so an out-of-range index leaves the document untouched rather
 than half-resized. Calling the singular verb in a loop would be functionally

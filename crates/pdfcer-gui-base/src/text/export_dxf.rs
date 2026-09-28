@@ -12,7 +12,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/export_dxf.md`.
 
-use pdfcer_core::export::dxf::{DxfOutcome, DxfUnits};
+use pdfcer_core::export::dxf::{DxfOutcome, DxfUnits, DxfVersion};
 
 /// The window's title.
 #[must_use]
@@ -138,6 +138,36 @@ pub const fn units_name(units: DxfUnits) -> &'static str {
     }
 }
 
+/// The label beside the DXF version choice.
+#[must_use]
+pub const fn version_label() -> &'static str {
+    "DXF version"
+}
+
+/// A DXF version's name in the drop-down.
+#[must_use]
+pub const fn version_name(version: DxfVersion) -> &'static str {
+    // `DxfVersion` is `#[non_exhaustive]`; a version added upstream shows its
+    // `$ACADVER` string until it is given a name here.
+    match version {
+        DxfVersion::R12 => "R12 — any CAD program or plotter",
+        DxfVersion::R2000 => "R2000",
+        DxfVersion::R2004 => "R2004 — AutoCAD LT 2004 and later",
+        other => other.acadver(),
+    }
+}
+
+/// What the chosen version costs, under the drop-down.
+#[must_use]
+pub const fn version_hint(version: DxfVersion) -> &'static str {
+    match version {
+        DxfVersion::R12 => {
+            "R12 has no splines, so curves that are not circles become polylines, and it cannot record units: the program opening it must be told."
+        }
+        _ => "Curves stay curves and the file records its units.",
+    }
+}
+
 /// The heading over the geometry options.
 #[must_use]
 pub const fn geometry_heading() -> &'static str {
@@ -202,7 +232,7 @@ pub const fn no_geometry() -> &'static str {
 
 /// **What the export produced, and what it left behind.**
 #[must_use]
-pub fn exported(path: &str, outcome: &DxfOutcome) -> Vec<String> {
+pub fn exported(path: &str, outcome: &DxfOutcome, units: DxfUnits) -> Vec<String> {
     let DxfOutcome {
         polylines,
         circles,
@@ -211,6 +241,8 @@ pub fn exported(path: &str, outcome: &DxfOutcome) -> Vec<String> {
         skipped_text,
         skipped_images,
         unreadable_text,
+        splines_flattened,
+        units_undeclared,
         ..
     } = *outcome;
     let mut out = vec![format!(
@@ -233,6 +265,18 @@ pub fn exported(path: &str, outcome: &DxfOutcome) -> Vec<String> {
             1 => "1 piece of text was left out, as you asked.".to_owned(),
             n => format!("{n} pieces of text were left out, as you asked."),
         });
+    }
+    if splines_flattened > 0 {
+        out.push(match splines_flattened {
+            1 => "1 curve became a polyline, because R12 has no splines.".to_owned(),
+            n => format!("{n} curves became polylines, because R12 has no splines."),
+        });
+    }
+    if units_undeclared {
+        out.push(format!(
+            "R12 cannot record units. The drawing is in {}; set that when you open it.",
+            units_name(units).to_lowercase()
+        ));
     }
     if unreadable_text > 0 {
         out.push(match unreadable_text {
@@ -296,6 +340,7 @@ mod tests {
                 unreadable_text: 2,
                 ..DxfOutcome::default()
             },
+            DxfUnits::Inches,
         );
         let joined = both.join(" | ");
         assert!(joined.contains("as you asked"), "{joined}");
@@ -316,10 +361,38 @@ mod tests {
                 skipped_images: 2,
                 ..DxfOutcome::default()
             },
+            DxfUnits::Inches,
         );
         let joined = note.join(" | ");
         assert!(joined.contains("2 pictures"), "{joined}");
         assert!(joined.contains("no way to carry a raster"), "{joined}");
+    }
+
+    /// An R12 export says what the version could not carry, and in which units
+    /// the drawing is.
+    #[test]
+    fn an_r12_export_discloses_flattened_curves_and_its_units() {
+        let joined = exported(
+            "a.dxf",
+            &DxfOutcome {
+                polylines: 1,
+                splines_flattened: 3,
+                units_undeclared: true,
+                ..DxfOutcome::default()
+            },
+            DxfUnits::Millimetres,
+        )
+        .join(" | ");
+        assert!(joined.contains("3 curves became polylines"), "{joined}");
+        assert!(joined.contains("in millimetres"), "{joined}");
+    }
+
+    /// Every version the drop-down offers has a name of its own.
+    #[test]
+    fn every_offered_version_is_named() {
+        for v in [DxfVersion::R12, DxfVersion::R2000, DxfVersion::R2004] {
+            assert!(version_name(v).starts_with('R'), "{v:?}");
+        }
     }
 
     /// A clean export says one thing.
@@ -333,7 +406,8 @@ mod tests {
                     circles: 2,
                     arcs: 3,
                     ..DxfOutcome::default()
-                }
+                },
+                DxfUnits::Inches,
             )
             .len(),
             1

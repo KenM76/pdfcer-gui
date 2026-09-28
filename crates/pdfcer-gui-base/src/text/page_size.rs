@@ -319,8 +319,8 @@ pub fn disclosure_crop_outside(n: usize) -> String {
 pub fn disclosure_crop_inside(n: usize) -> String {
     format!(
         "{n} {} carry a crop box smaller than the new paper, and every reader shows only the \
-         crop box, so the page looks the size it was. The paper did change; pdfcer cannot \
-         move a crop box yet.",
+         crop box, so the page looks the size it was. The paper did change; the crop box was \
+         kept because it framed part of the old sheet, not all of it.",
         sheets(n)
     )
 }

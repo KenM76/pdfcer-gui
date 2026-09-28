@@ -106,6 +106,13 @@ wording therefore names what the file will **say it is**, not what the
 operator measured in, because those legitimately differ and only the first
 is what this control sets.
 
+### `fn version_name` and `fn version_hint`
+
+`DxfVersion` is `#[non_exhaustive]`, so `version_name` falls back to the
+version's `$ACADVER` string for one added upstream. The hint names R12's two
+costs, flattened curves and no units, because both surprise someone opening
+the file, and says the other versions have neither.
+
 ### `fn fit_arcs_hint`
 
 The engine measured it: *"not recognising them is what produced a measured
@@ -137,6 +144,11 @@ keeps them apart, because they ask different things:
   an `Identity-H` encoding with no `/ToUnicode` whose codes map to nothing.
   That is a fact about the source PDF and the reason a DXF is missing labels
   the operator can plainly see on screen.
+
+Two more come from the version: `splines_flattened` (R12 has no splines) and
+`units_undeclared` (R12 has no `$INSUNITS`). The second names the units the
+coordinates are in, which is why `exported` takes `units`: without it the
+sentence would say the file is ambiguous without saying how to resolve it.
 
 Rolling them together would let the second hide inside the first, which is
 the failure mode the engine wrote a paragraph to prevent.

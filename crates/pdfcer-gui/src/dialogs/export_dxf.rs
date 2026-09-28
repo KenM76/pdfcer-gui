@@ -6,7 +6,7 @@
 use egui::Ui;
 use pdfcer_core::dimension::Unit;
 use pdfcer_core::export::dxf::{
-    DxfOptions, DxfScaleSuggestion, DxfText, DxfUnits, suggest_scale_for_groups,
+    DxfOptions, DxfScaleSuggestion, DxfText, DxfUnits, DxfVersion, suggest_scale_for_groups,
 };
 use pdfcer_gui_base::entry;
 
@@ -32,6 +32,10 @@ pub const fn region_for_units(units: DxfUnits) -> &'static str {
 }
 /// The region the units radio GROUP publishes — both together.
 pub const REGION_UNITS: &str = "export-dxf.units"; // ui-text-exempt: trace region name, never displayed
+/// The region the DXF version drop-down publishes.
+pub const REGION_VERSION: &str = "export-dxf.version"; // ui-text-exempt: trace region name, never displayed
+/// The versions the drop-down offers, oldest first.
+const VERSIONS: [DxfVersion; 3] = [DxfVersion::R12, DxfVersion::R2000, DxfVersion::R2004];
 /// The region the fit-arcs checkbox publishes.
 pub const REGION_ARCS: &str = "export-dxf.arcs"; // ui-text-exempt: trace region name, never displayed
 /// The region the write-text checkbox publishes.
@@ -119,7 +123,7 @@ impl ExportDxfDialog {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "export-dxf-open page={} groups={} suggestion={} scale={} units={} arcs={} text={}",
+                "export-dxf-open page={} groups={} suggestion={} scale={} units={} arcs={} text={} version={}",
                 dialog.page_index,
                 groups.len(),
                 // Stable lowercase tokens, never `{:?}` — see
@@ -130,6 +134,7 @@ impl ExportDxfDialog {
                 crate::app::prefs::exporting::dxf_units_key(dialog.options.units),
                 u8::from(dialog.options.fit_arcs),
                 crate::app::prefs::exporting::dxf_text_key(dialog.options.text),
+                dialog.options.version.acadver(),
             )
         });
         dialog
@@ -142,6 +147,7 @@ impl ExportDxfDialog {
             units: self.options.units,
             fit_arcs: self.options.fit_arcs,
             text: self.options.text,
+            version: self.options.version,
         }
     }
 
@@ -175,7 +181,7 @@ impl ExportDxfDialog {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
-                    "export-dxf-requested page={} scale={} units={} arcs={} text={}",
+                    "export-dxf-requested page={} scale={} units={} arcs={} text={} version={}",
                     self.page_index,
                     self.options.scale,
                     // Tokens, never `{:?}`: the same reduction the preferences
@@ -184,6 +190,7 @@ impl ExportDxfDialog {
                     crate::app::prefs::exporting::dxf_units_key(self.options.units),
                     u8::from(self.options.fit_arcs),
                     crate::app::prefs::exporting::dxf_text_key(self.options.text),
+                    self.options.version.acadver(),
                 )
             });
             actions.push(Action::Write(
@@ -229,6 +236,25 @@ impl ExportDxfDialog {
             }
         });
         crate::diag::ui_rect(REGION_UNITS, start.union(ui.cursor()));
+        ui.add_space(8.0);
+
+        // --- version ------------------------------------------------------
+        ui.horizontal(|ui| {
+            ui.label(t::version_label());
+            let combo = egui::ComboBox::from_id_salt(REGION_VERSION)
+                .selected_text(t::version_name(self.options.version))
+                .show_ui(ui, |ui| {
+                    for version in VERSIONS {
+                        ui.selectable_value(
+                            &mut self.options.version,
+                            version,
+                            t::version_name(version),
+                        );
+                    }
+                });
+            crate::diag::ui_rect(REGION_VERSION, combo.response.rect);
+        });
+        ui.weak(t::version_hint(self.options.version));
         ui.add_space(8.0);
 
         // --- geometry -----------------------------------------------------
@@ -520,6 +546,7 @@ pub fn seeded_options(
         units: remembered.units,
         fit_arcs: remembered.fit_arcs,
         text: remembered.text,
+        version: remembered.version,
         ..DxfOptions::default()
     };
     // ② The page's own calibration, which overrules the habit. A candidate is a
@@ -598,6 +625,7 @@ mod tests {
             units: DxfUnits::Millimetres,
             fit_arcs: false,
             text: DxfText::Omit,
+            version: DxfVersion::R12,
         };
         assert_ne!(
             habits.units, engine.units,
@@ -610,6 +638,10 @@ mod tests {
         assert_ne!(
             habits.text, engine.text,
             "the fixture's text equals the engine's default, so the text assertions below are vacuous"
+        );
+        assert_ne!(
+            habits.version, engine.version,
+            "the fixture's version equals the engine's default, so the version assertion below is vacuous"
         );
         habits
     }
@@ -624,6 +656,7 @@ mod tests {
         assert_eq!(options.units, DxfUnits::Millimetres);
         assert!(!options.fit_arcs);
         assert_eq!(options.text, DxfText::Omit);
+        assert_eq!(options.version, DxfVersion::R12);
         // `scale` is deliberately NOT a remembered field, and there is no
         // measurement here to supply one, so it must stay where the engine put
         // it. A remembered scale would be a number from another drawing

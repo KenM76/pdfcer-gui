@@ -6,7 +6,9 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/actions/pagesize.md`.
 
-use pdfcer_core::edit::{EditError, EditSession, MediaBoxChange, MediaBoxEntry};
+use pdfcer_core::edit::{
+    CropFollow, EditError, EditSession, MediaBoxChange, MediaBoxEntry, PageResize,
+};
 use pdfcer_core::page_tree::Rect;
 
 use crate::app::state::OpenDoc;
@@ -175,10 +177,10 @@ pub fn survey(doc: &OpenDoc, pages: &[usize]) -> SheetSurvey {
 ///   media box *"without affecting the meaning of the PDF file"*. Reversible
 ///   here by Undo; not reversible after a round trip through anything else.
 ///   **That asymmetry is the disclosure.**
-/// * `crop_box_outside` — a `/CropBox` the new sheet no longer contains. Left
-///   alone deliberately (a conforming reader intersects the two), so the
-///   visible region is now the smaller of them and the operator cannot see
-///   which reading he is getting.
+/// * `crop_box_outside` — a `/CropBox` the new sheet no longer contains. The
+///   engine reports it after the follow below, so it names only a crop box
+///   that was cropped to a region and kept; the visible region is now the
+///   smaller of the two.
 /// * `size_advisory` — outside Annex C.2's recommended range. Advice, worded as
 ///   advice; ISO 32000-2 dropped the range entirely.
 /// * `entry == InheritedSoOwnEntryRemoved` — the page's own `/MediaBox` was
@@ -210,7 +212,18 @@ pub(super) fn set(
     pages: &[usize],
     rect: Rect,
 ) -> Result<Vec<String>, EditError> {
-    let changes = session.set_media_boxes(pages, rect)?;
+    // `WhenItMatched`: a crop box that showed the whole old sheet becomes the
+    // new sheet, so a resize grows what is seen — the Word, Acrobat and CAD
+    // shape. One cropped to a smaller region keeps its crop, and says so below.
+    let resized = session.resize_pages(pages, rect, CropFollow::WhenItMatched)?;
+    let followed = resized
+        .iter()
+        .filter(|&&PageResize { crop, .. }| crop.is_some())
+        .count();
+    let changes: Vec<MediaBoxChange> = resized
+        .iter()
+        .map(|&PageResize { media, .. }| media)
+        .collect();
 
     // Traced from the SESSION's own page tree, re-walked after the commit —
     // not from `rect`, and not from `change.after`.
@@ -240,7 +253,7 @@ pub(super) fn set(
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             "page-size-applied n={} asked_w={:.2} asked_h={:.2} lost_area={} crop_outside={} \
-             advisories={} explicit={} inherited_removed={} base_kept={}",
+             advisories={} explicit={} inherited_removed={} base_kept={} crop_followed={followed}",
             changes.len(),
             rect.width(),
             rect.height(),

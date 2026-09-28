@@ -8,7 +8,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/prefs/exporting.md`.
 
-use pdfcer_core::export::dxf::{DxfText, DxfUnits};
+use pdfcer_core::export::dxf::{DxfText, DxfUnits, DxfVersion};
 
 use crate::exporttext::{LineEndings, PageSeparator};
 use crate::imageexport::{ImageFormat, PageScope};
@@ -141,6 +141,8 @@ pub struct ExportDxfPrefs {
     pub fit_arcs: bool,
     /// Whether text is written as entities or omitted.
     pub text: DxfText,
+    /// The DXF version written — what the operator's CAD program reads.
+    pub version: DxfVersion,
 }
 
 impl Default for ExportDxfPrefs {
@@ -152,6 +154,7 @@ impl Default for ExportDxfPrefs {
             units: DxfUnits::Inches,
             fit_arcs: true,
             text: DxfText::Entities,
+            version: DxfVersion::R2000,
         }
     }
 }
@@ -293,6 +296,31 @@ pub const fn dxf_text_key(value: DxfText) -> &'static str {
     }
 }
 
+/// The file token for a DXF version, or `None` for a version added upstream
+/// that this shell does not offer: the window cannot select one, so the writer
+/// never meets it.
+#[must_use]
+pub const fn dxf_version_key(value: DxfVersion) -> Option<&'static str> {
+    match value {
+        // ui-text-exempt: file VALUES, as above.
+        DxfVersion::R12 => Some("r12"),
+        DxfVersion::R2000 => Some("r2000"),
+        DxfVersion::R2004 => Some("r2004"),
+        _ => None,
+    }
+}
+
+/// A DXF version from a file token, or `None`.
+#[must_use]
+pub fn dxf_version_from_key(token: &str) -> Option<DxfVersion> {
+    match token.trim() {
+        "r12" => Some(DxfVersion::R12),
+        "r2000" => Some(DxfVersion::R2000),
+        "r2004" => Some(DxfVersion::R2004),
+        _ => None,
+    }
+}
+
 /// Whether DXF text is written, from a file token, or `None`.
 #[must_use]
 pub fn dxf_text_from_key(token: &str) -> Option<DxfText> {
@@ -383,6 +411,7 @@ pub(super) fn parse_key(prefs: &mut ExportPrefs, key: &str, value: &str) -> KeyO
         "export_dxf_units" => store!(dxf_units_from_key(value), prefs.dxf.units),
         "export_dxf_fit_arcs" => store!(super::opening::bool_from_key(value), prefs.dxf.fit_arcs),
         "export_dxf_text" => store!(dxf_text_from_key(value), prefs.dxf.text),
+        "export_dxf_version" => store!(dxf_version_from_key(value), prefs.dxf.version),
 
         _ => KeyOutcome::NotMine,
     }
@@ -579,6 +608,19 @@ pub(super) fn write_block(prefs: &ExportPrefs, out: &mut String) {
     out.push_str("export_dxf_text = ");
     out.push_str(dxf_text_key(prefs.dxf.text));
     out.push('\n');
+
+    if let Some(token) = dxf_version_key(prefs.dxf.version) {
+        out.push_str(
+            "\n\
+             # export_dxf_version: r12 | r2000 | r2004\n\
+             # The DXF version written. r12 opens in anything but flattens\n\
+             # curves and cannot record units; r2004 suits AutoCAD LT 2004.\n",
+        );
+        // ui-text-exempt: a file KEY, as above.
+        out.push_str("export_dxf_version = ");
+        out.push_str(token);
+        out.push('\n');
+    }
 }
 
 #[cfg(test)]

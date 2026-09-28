@@ -32,7 +32,7 @@ wrong produces a silently wrong file rather than a mildly annoying window.
 |---|---|
 | Export image | `Png`, `CurrentPage`, 300 dpi, transparent, quality 90 |
 | Export text | `AllPages`, `FormFeed`, `AsExtracted`, no BOM |
-| Export to DXF | `DxfOptions::default()` — `Inches`, `fit_arcs`, `Entities` |
+| Export to DXF | `DxfOptions::default()` — `Inches`, `fit_arcs`, `Entities`, `R2000` |
 
 So an operator who exports every drawing as an EMF at 600 dpi re-answered
 both questions on every single export, and an operator who works in
@@ -48,7 +48,7 @@ millimetres re-picked millimetres every time the DXF window opened.
 | The image format, the resolution, transparency, JPEG quality | The page index the window froze — it names a page of *this* document |
 | Which pages, as a **policy** (see below) | The typed page range, same reason |
 | The text separator, the line endings, the byte-order mark | The largest-page measurement — a measurement of *this* document |
-| The DXF units, arc fitting, whether text is written | **The DXF scale** — see below; this is the important one |
+| The DXF units, arc fitting, whether text is written, the DXF version | **The DXF scale** — see below; this is the important one |
 | | `DxfScaleSuggestion` — an inference about *this page's* ce dimension groups |
 | | `arc_tolerance` — no control exists for it; see below |
 

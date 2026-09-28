@@ -17,7 +17,7 @@ pub use pdfcer_gui_base::subactions::PageAction;
 /// session.**
 pub(super) fn resync(doc: &mut OpenDoc) {
     let before: Vec<(ObjId, u16)> = doc.pages.iter().map(|p| (p.id, p.rotate)).collect();
-    let mut after = match doc.session.pages() {
+    let after = match doc.session.pages() {
         Ok(pages) => pages,
         Err(error) => {
             crate::diag::trace(|| {
@@ -70,8 +70,6 @@ pub(super) fn resync(doc: &mut OpenDoc) {
     //
     // `after` has already been walked, three lines above. The early return
     // saved one `Vec` assignment and bought a class of stale-view defect.
-    // The visible area, as every reader computes it; see `pagebox`.
-    pdfcer_gui_base::pagebox::clip_crop_to_media(&mut after);
     doc.pages = after;
 
     // Keep the per-page revision vector the same length as the document

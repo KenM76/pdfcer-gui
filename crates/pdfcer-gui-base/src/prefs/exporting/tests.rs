@@ -89,6 +89,18 @@ fn the_dxf_default_is_what_the_dialog_used_to_hard_code() {
     assert_eq!(prefs.units, DxfUnits::Inches);
     assert!(prefs.fit_arcs);
     assert_eq!(prefs.text, DxfText::Entities);
+    assert_eq!(prefs.version, DxfVersion::R2000);
+}
+
+/// Every offered DXF version survives the file, and an unknown token is not
+/// read as one.
+#[test]
+fn every_dxf_version_round_trips_through_its_token() {
+    for v in [DxfVersion::R12, DxfVersion::R2000, DxfVersion::R2004] {
+        let token = dxf_version_key(v).expect("an offered version has a token");
+        assert_eq!(dxf_version_from_key(token), Some(v), "{token}");
+    }
+    assert_eq!(dxf_version_from_key("r14"), None);
 }
 
 /// Our DXF defaults are still the engine's.
@@ -259,7 +271,7 @@ fn every_field_of_every_group_is_both_written_and_parsed() {
     let groups: [(&str, &str, usize); 3] = [
         ("pub struct ExportImagePrefs {", "image", 5),
         ("pub struct ExportTextPrefs {", "text", 4),
-        ("pub struct ExportDxfPrefs {", "dxf", 3),
+        ("pub struct ExportDxfPrefs {", "dxf", 4),
     ];
 
     for (decl, group, expected) in groups {
@@ -416,6 +428,7 @@ fn everything_changed() -> ExportPrefs {
             units: DxfUnits::Millimetres,
             fit_arcs: false,
             text: DxfText::Omit,
+            version: DxfVersion::R12,
         },
     }
 }
@@ -462,7 +475,7 @@ fn every_export_preference_round_trips_through_the_file() {
     let mut read = ExportPrefs::default();
     let accepted = parse_block(&out, &mut read);
 
-    assert_eq!(accepted, 13, "thirteen keys are declared in this module");
+    assert_eq!(accepted, 14, "fourteen keys are declared in this module");
     assert_eq!(read, written, "a value changed on its way through the file");
     assert_ne!(
         read,
@@ -479,7 +492,7 @@ fn the_defaults_are_written_too_so_the_file_teaches_its_own_vocabulary() {
     write_block(&ExportPrefs::default(), &mut out);
 
     let mut read = ExportPrefs::default();
-    assert_eq!(parse_block(&out, &mut read), 13);
+    assert_eq!(parse_block(&out, &mut read), 14);
     assert_eq!(read, ExportPrefs::default());
 
     // Each key's own comment block names it, so an operator reading the file
@@ -497,6 +510,7 @@ fn the_defaults_are_written_too_so_the_file_teaches_its_own_vocabulary() {
         "export_dxf_units",
         "export_dxf_fit_arcs",
         "export_dxf_text",
+        "export_dxf_version",
     ] {
         assert!(
             out.contains(&format!("# {key}:")),
