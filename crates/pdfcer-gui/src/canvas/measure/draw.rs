@@ -239,8 +239,20 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
             return;
         };
         let kind = placing.at(at);
-        draw_dimension(painter, stroke, &kind, page, map);
-        draw_label(painter, doc, st.group, &kind, page, map, color);
+        // The engine's own bake, the pixels `add_dimension` will write; the
+        // outline and label below stand in only when it refuses or is off
+        // screen.
+        let baked = crate::canvas::dimpreview::bake_new(doc, st.group, &kind).is_some_and(|b| {
+            crate::canvas::dimpreview::paint(painter, doc, page, map, painter.clip_rect(), &b)
+        });
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!("measure-place-preview baked={}", u8::from(baked))
+        });
+        if !baked {
+            draw_dimension(painter, stroke, &kind, page, map);
+            draw_label(painter, doc, st.group, &kind, page, map, color);
+        }
         return;
     }
 

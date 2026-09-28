@@ -1,23 +1,18 @@
 //! # `app::actions::export_tables` — File ▸ Export ▸ Tables…
 //!
-//! Runs `pdfcer_core::table_detect::detect_tables`, keeps the tables on the
-//! plan's pages, and writes one CSV per table or one workbook with a sheet
-//! per table. Every inference — an aligned table, a guessed header, a merged
+//! Runs `pdfcer_core::table_detect::detect_tables_in_pages` on the plan's
+//! pages and writes one CSV per table or one workbook with a sheet per table,
+//! through the engine's Excel and OpenDocument writers. Every inference — an aligned table, a guessed header, a merged
 //! cell, a cell written as a number — is counted in the receipt, off-canvas
 //! (R8b).
-//!
-//! Detection covers the whole document and the tables are filtered to the
-//! plan afterwards: the engine has no page-subset form (request `G061`). The
-//! page-level counters (`pages_over_limit`, `pages_unreadable`) are therefore
-//! reported only when the plan is every page, since they cannot be attributed
-//! to a subset.
 
 use std::path::{Path, PathBuf};
 
-use pdfcer_core::export::xlsx::{self, XlsxOptions, XlsxReport};
+use pdfcer_core::export::ods::{self, OdsOptions};
+use pdfcer_core::export::xlsx::{self, XlsxOptions};
 use pdfcer_core::table_detect::{self, BoundarySource, Table, TableCell, TableOptions};
 
-use super::tableexport::{self, CellSpec, Grid, Sheet, TableExportPlan, TableFormat};
+use super::tableexport::{self, CellSpec, Grid, TableExportPlan, TableFormat};
 use crate::app::state::OpenDoc;
 use crate::text::export_tables as t;
 
@@ -49,8 +44,9 @@ pub(super) fn export(doc: &mut OpenDoc, plan: &TableExportPlan) {
         return;
     }
     let options = doc.settings.extract_options();
-    let found = match table_detect::detect_tables(
+    let found = match table_detect::detect_tables_in_pages(
         &doc.session.view(),
+        &plan.pages,
         &options,
         &TableOptions::default(),
     ) {
@@ -66,26 +62,16 @@ pub(super) fn export(doc: &mut OpenDoc, plan: &TableExportPlan) {
     };
 
     let mut counts = Counts::default();
-    let tables = named_tables(&found.tables, &plan.pages, &mut counts);
-    let every_page = plan.pages.len() == doc.pages.len();
-    let dense = if every_page {
-        found.diagnostics.pages_over_limit
-    } else {
-        0
-    };
-    let unreadable = if every_page {
-        found.diagnostics.pages_unreadable()
-    } else {
-        0
-    };
+    let tables = named_tables(&found.tables, &mut counts);
+    let dense = found.diagnostics.pages_over_limit;
+    let unreadable = found.diagnostics.pages_unreadable();
 
     if tables.is_empty() {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "export-tables-refused reason=no-tables pages={} found_elsewhere={}",
-                plan.pages.len(),
-                found.tables.len()
+                "export-tables-refused reason=no-tables pages={}",
+                plan.pages.len()
             )
         });
         let mut notes = vec![t::no_tables(plan.pages.len())];
@@ -110,23 +96,31 @@ pub(super) fn export(doc: &mut OpenDoc, plan: &TableExportPlan) {
     let mut format_notes = Vec::new();
     let written = match plan.format {
         TableFormat::Csv => write_csv(&target, &tables),
-        TableFormat::Xlsx => write_xlsx(&target, &found.tables, &plan.pages).map(|report| {
+        TableFormat::Xlsx => write_workbook(&target, || {
+            xlsx::write_xlsx(&found.tables, &XlsxOptions::default())
+        })
+        .map(|report| {
             numbers = report.numbers;
-            format_notes = xlsx_notes(&report);
+            format_notes = workbook_notes(
+                report.ambiguous_numbers,
+                report.characters_dropped,
+                report.cells_truncated,
+                report.cells_beyond_limits,
+            );
             target.clone()
         }),
-        TableFormat::Ods => write_ods(&target, &tables).inspect(|_| {
-            numbers = tables
-                .iter()
-                .map(|n| tableexport::numeric_cells(&n.grid))
-                .sum();
-            let dropped: usize = tables
-                .iter()
-                .map(|n| tableexport::control_characters(&n.grid))
-                .sum();
-            if dropped > 0 {
-                format_notes.push(t::characters_dropped(dropped));
-            }
+        TableFormat::Ods => write_workbook(&target, || {
+            ods::write_ods(&found.tables, &OdsOptions::default())
+        })
+        .map(|report| {
+            numbers = report.numbers;
+            format_notes = workbook_notes(
+                report.ambiguous_numbers,
+                report.characters_dropped,
+                0,
+                report.cells_beyond_limits,
+            );
+            target.clone()
         }),
     };
     match written {
@@ -188,9 +182,9 @@ fn page_notes(dense: usize, unreadable: usize) -> Vec<String> {
     notes
 }
 
-/// The tables on `pages`, in the engine's order (page, then top to bottom),
+/// The detected tables, in the engine's order (page, then top to bottom),
 /// each numbered within its page, with the inference counts gathered.
-fn named_tables(all: &[Table], pages: &[usize], counts: &mut Counts) -> Vec<Named> {
+fn named_tables(all: &[Table], counts: &mut Counts) -> Vec<Named> {
     let mut out: Vec<Named> = Vec::new();
     for table in all {
         let Table {
@@ -203,9 +197,6 @@ fn named_tables(all: &[Table], pages: &[usize], counts: &mut Counts) -> Vec<Name
             header_evidence,
             ..
         } = table;
-        if pages.binary_search(page_index).is_err() {
-            continue;
-        }
         let page = page_index.saturating_add(1);
         let nth = out.iter().filter(|n| n.page == page).count() + 1;
         if *source == BoundarySource::Aligned {
@@ -256,47 +247,58 @@ fn write_csv(target: &Path, tables: &[Named]) -> Result<PathBuf, String> {
     first.ok_or_else(String::new)
 }
 
-/// The plan's tables as the engine's Excel workbook at `target`.
-fn write_xlsx(target: &Path, all: &[Table], pages: &[usize]) -> Result<XlsxReport, String> {
-    let tables: Vec<Table> = all
-        .iter()
-        .filter(|t| pages.binary_search(&t.page_index).is_ok())
-        .cloned()
-        .collect();
-    let output = xlsx::write_xlsx(&tables, &XlsxOptions::default()).map_err(|e| e.to_string())?;
-    std::fs::write(target, &output.bytes).map_err(|e| e.to_string())?;
-    Ok(output.report)
+/// Writes the package `write` produces to `target`, returning what the
+/// writer reported.
+fn write_workbook<O: Workbook>(
+    target: &Path,
+    write: impl FnOnce() -> Result<O, pdfcer_core::export::PackageError>,
+) -> Result<O::Report, String> {
+    let (bytes, report) = write().map_err(|e| e.to_string())?.into_parts();
+    std::fs::write(target, bytes).map_err(|e| e.to_string())?;
+    Ok(report)
 }
 
-/// What the Excel writer changed or left out, as receipt lines.
-fn xlsx_notes(report: &XlsxReport) -> Vec<String> {
+/// A written workbook, as its bytes and its writer's report.
+trait Workbook {
+    type Report;
+    fn into_parts(self) -> (Vec<u8>, Self::Report);
+}
+
+impl Workbook for xlsx::XlsxOutput {
+    type Report = xlsx::XlsxReport;
+    fn into_parts(self) -> (Vec<u8>, Self::Report) {
+        (self.bytes, self.report)
+    }
+}
+
+impl Workbook for ods::OdsOutput {
+    type Report = ods::OdsReport;
+    fn into_parts(self) -> (Vec<u8>, Self::Report) {
+        (self.bytes, self.report)
+    }
+}
+
+/// What a workbook writer changed or left out, as receipt lines. The
+/// OpenDocument writer truncates nothing (ODF has no cell length limit), so
+/// it passes zero for `truncated`.
+fn workbook_notes(
+    ambiguous: usize,
+    dropped: usize,
+    truncated: usize,
+    beyond_limits: usize,
+) -> Vec<String> {
     let mut notes = Vec::new();
-    if report.ambiguous_numbers > 0 {
-        notes.push(t::ambiguous_numbers(report.ambiguous_numbers));
+    if ambiguous > 0 {
+        notes.push(t::ambiguous_numbers(ambiguous));
     }
-    if report.characters_dropped > 0 {
-        notes.push(t::characters_dropped(report.characters_dropped));
+    if dropped > 0 {
+        notes.push(t::characters_dropped(dropped));
     }
-    if report.cells_truncated > 0 {
-        notes.push(t::cells_truncated(report.cells_truncated));
+    if truncated > 0 {
+        notes.push(t::cells_truncated(truncated));
     }
-    if report.cells_beyond_limits > 0 {
-        notes.push(t::cells_beyond_limits(report.cells_beyond_limits));
+    if beyond_limits > 0 {
+        notes.push(t::cells_beyond_limits(beyond_limits));
     }
     notes
-}
-
-/// Every table as a sheet of one OpenDocument spreadsheet at `target`,
-/// which is returned.
-fn write_ods(target: &Path, tables: &[Named]) -> Result<PathBuf, String> {
-    let sheets: Vec<Sheet<'_>> = tables
-        .iter()
-        .enumerate()
-        .map(|(i, n)| Sheet {
-            name: t::sheet_name(i + 1),
-            grid: &n.grid,
-        })
-        .collect();
-    std::fs::write(target, tableexport::ods::bytes(&sheets)?).map_err(|e| e.to_string())?;
-    Ok(target.to_path_buf())
 }

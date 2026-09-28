@@ -1,13 +1,19 @@
 # `canvas::dimpreview`
 
-A ce dimension being dragged is drawn as the engine will write it.
+A ce dimension being dragged or placed is drawn as the engine will write it.
 
 ## Contract
 
-- `bake(doc, id, &moved)` returns a `Baked { id, preview }` from `EditSession::dimension_preview` for the
+- `bake(doc, id, &moved)` returns a `Baked { id: Some(id), preview }` from `EditSession::dimension_preview` for the
   geometry the drag would commit. On refusal it traces
   `dim-preview id=… baked=0 refused=…` and returns `None`.
+- `bake_new(doc, group, &kind)` bakes a dimension that does not exist yet —
+  the one a placing click would add to `group` — through
+  `EditSession::new_dimension_preview`, returning `Baked { id: None, .. }`.
+  On refusal it traces `dim-preview new=1 baked=0 refused=…`.
 - `paint(painter, doc, page, map, clip, &baked)` first draws the underlay
+  (only when `baked.id` is set: a dimension being placed has nothing on the
+  page to cover)
   (below), then rasterises the preview's
   `/Rect` — expanded 2 pt on screen and clipped to the visible canvas — with
   `pdfcer_render::edit_preview::paint_dimension_preview`, uploads it as one

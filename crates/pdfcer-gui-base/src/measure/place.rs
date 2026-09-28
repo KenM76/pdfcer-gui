@@ -32,14 +32,15 @@ impl Placing {
 /// The measured geometry is never touched — only where the dimension is
 /// drawn — so the value cannot change with where it is dropped.
 ///
-/// - **Linear**: perpendicular standoff and the text's slide along the line,
-///   from `placement_from_point`.
+/// Every kind resolves `p` through `DimensionKind::placement_from_point`:
+///
+/// - **Linear**: perpendicular standoff and the text's slide along the line.
 /// - **Perimeter**: the text's displacement from the vertex centroid.
 /// - **Circular**: the leader turns to face `p` and the text sits at `p`'s
 ///   distance from the centre, clamped as the engine clamps it.
-/// - **Angular**: the arc's radius is `p`'s distance from the apex. The
-///   engine draws the text at the arc's chord midpoint whatever `text_along`
-///   holds, so only the radius follows the click (request G064).
+/// - **Angular**: the arc passes through `p` and the text sits on it at `p`'s
+///   bearing. A click on the apex has no radius to give, so the arc keeps
+///   the one it had.
 #[must_use]
 pub fn placed_at(kind: &DimensionKind, p: Point) -> DimensionKind {
     let mut out = kind.clone();
@@ -69,10 +70,15 @@ pub fn placed_at(kind: &DimensionKind, p: Point) -> DimensionKind {
                 *text_distance = clamped.or(*text_distance);
             }
         }
-        DimensionKind::Angular { apex, radius, .. } => {
-            let r = (p.x - apex.x).hypot(p.y - apex.y);
-            if r.is_finite() && r > MIN_ARC_RADIUS_PT {
+        DimensionKind::Angular {
+            radius, text_along, ..
+        } => {
+            if let Some((r, t)) = kind.placement_from_point(p)
+                && r.is_finite()
+                && r > MIN_ARC_RADIUS_PT
+            {
                 *radius = r;
+                *text_along = t;
             }
         }
     }
@@ -158,6 +164,20 @@ mod tests {
             panic!("still circular");
         };
         assert_eq!(text_distance, Some(-10.0));
+    }
+
+    #[test]
+    fn an_angular_dimension_puts_its_text_where_the_click_was() {
+        let kind = DimensionKind::Angular {
+            apex: p(0.0, 0.0),
+            dir_a: p(1.0, 0.0),
+            dir_b: p(0.0, 1.0),
+            radius: 5.0,
+            text_along: 0.0,
+        };
+        let placed = placed_at(&kind, p(40.0, 30.0));
+        let anchor = placed.label_anchor().unwrap();
+        assert!(close(anchor, p(40.0, 30.0)), "text at {anchor:?}");
     }
 
     #[test]

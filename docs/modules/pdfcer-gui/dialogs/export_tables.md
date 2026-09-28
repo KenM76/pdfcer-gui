@@ -6,12 +6,10 @@ format: one CSV per detected table, or one Excel (`.xlsx`) or LibreOffice
 
 ## What it runs
 
-`pdfcer_core::table_detect::detect_tables` finds both ruled tables (from drawn
-lines) and aligned tables (from how the words line up). The engine only
-detects over the **whole document** (request `G061`), so the tables are
-filtered to the plan's pages afterwards. The page-level counts
-(`pages_over_limit`, `pages_unreadable`) cannot be attributed to a subset of
-pages. They are reported only when the plan covers every page.
+`pdfcer_core::table_detect::detect_tables_in_pages` finds both ruled tables
+(from drawn lines) and aligned tables (from how the words line up) on the
+plan's pages only, so the page-level counts (`pages_over_limit`,
+`pages_unreadable`) are about the pages chosen.
 
 ## CSV
 
@@ -32,22 +30,16 @@ The engine's writer, `pdfcer_core::export::xlsx::write_xlsx`, with
 `XlsxOptions::default()`: a sheet per table named `Table n`, merges kept,
 header rows bold, and numbers under `NumberLocale::Auto` — a cell whose value
 depends on the reader's convention (`1.234`) stays text and is counted. The
-action filters the engine's `Table`s to the plan's pages and hands them over
-unchanged; every `XlsxReport` count that means something changed or was left
+action hands the engine's `Table`s over unchanged; every `XlsxReport` count that means something changed or was left
 out becomes a receipt line.
 
 ## OpenDocument
 
-`pdfcer_gui_base::tableexport::ods`, written here because the engine has no
-ODS writer (request `G062`). Sheets are named as Excel's are.
-Merges are spanned cells over covered cells, header rows bold, columns sized
-from their longest line (ODF has no autofit). A cell becomes a `float` only
-under `tableexport::number`'s narrow rule — optional minus, digits without a
-leading zero, optional decimals, at most 15 significant digits — a strict
-subset of what the Excel writer accepts, so the two formats never disagree
-on a value, only on whether `1,200` is a number. Control characters XML
-cannot carry are dropped and counted. The zip is the minimum ODF needs:
-`mimetype` first and stored, the other parts deflated over `flate2`.
+The engine's writer, `pdfcer_core::export::ods::write_ods`, with
+`OdsOptions::default()`. It shares the Excel writer's sheet grouping and number
+rule, so a cell is a number in the `.ods` exactly when it is one in the
+`.xlsx`. `OdsReport` is disclosed as `XlsxReport` is, less `cells_truncated`:
+an ODF cell has no length limit.
 
 ## Disclosure (R8b)
 

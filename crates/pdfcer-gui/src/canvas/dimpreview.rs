@@ -1,7 +1,9 @@
-//! # `canvas::dimpreview` — a ce dimension drag drawn as the commit will bake it
+//! # `canvas::dimpreview` — a ce dimension drawn as the commit will bake it
 //!
 //! [`bake`] asks `EditSession::dimension_preview` for the appearance the
-//! commit would write for the moved geometry; [`paint`] rasterises it with
+//! commit would write for a dragged ce dimension's moved geometry, and
+//! [`bake_new`] asks `EditSession::new_dimension_preview` for the one
+//! `add_dimension` would write for a ce dimension still being placed; [`paint`] rasterises it with
 //! `pdfcer_render::edit_preview::paint_dimension_preview` over the part of its
 //! `/Rect` that is on screen, and draws that texture. The pixels are the
 //! commit's own, label and extension lines included, so the preview cannot show
@@ -13,7 +15,8 @@
 //! committed dimension's `/Rect` with an **underlay**: that region rendered
 //! with the dimension's annotation omitted (`RenderOptions::omit_annotations`),
 //! once per drag and cached as a texture. Unrotated pages only; on a rotated
-//! page the bake is drawn without it.
+//! page the bake is drawn without it. A ce dimension being placed has nothing
+//! committed underneath, so it gets no underlay.
 //!
 //! [`paint`] returning `false` means nothing was drawn and the caller draws
 //! the segment outline instead: the bake was refused, the box is off screen,
@@ -22,7 +25,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/dimpreview.md`.
 
 use egui::{Color32, Pos2, Rect};
-use pdfcer_core::dimension::{DimensionId, DimensionKind, DimensionPreview};
+use pdfcer_core::dimension::{DimensionId, DimensionKind, DimensionPreview, GroupId};
 use pdfcer_render::tiny_skia;
 
 use crate::app::settings::SettingsExt;
@@ -41,9 +44,9 @@ const MAX_SIDE_PX: f32 = 8192.0;
 /// A bake and the ce dimension it is of.
 #[derive(Debug, Clone)]
 pub struct Baked {
-    /// The dragged ce dimension; its committed annotation is omitted from the
-    /// underlay.
-    pub id: DimensionId,
+    /// The dragged ce dimension, whose committed annotation the underlay
+    /// covers; `None` for one being placed, which has none.
+    pub id: Option<DimensionId>,
     /// The engine's bake of the moved geometry.
     pub preview: DimensionPreview,
 }
@@ -52,11 +55,30 @@ pub struct Baked {
 #[must_use]
 pub fn bake(doc: &OpenDoc, id: DimensionId, moved: &DimensionKind) -> Option<Baked> {
     match doc.session.dimension_preview(id, moved) {
-        Ok(preview) => Some(Baked { id, preview }),
+        Ok(preview) => Some(Baked {
+            id: Some(id),
+            preview,
+        }),
         Err(why) => {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!("{TRACE} id={} baked=0 refused={why}", id.0)
+            });
+            None
+        }
+    }
+}
+
+/// The engine's bake of a ce dimension `kind` not yet added to `group`, or
+/// `None` when it refuses.
+#[must_use]
+pub fn bake_new(doc: &OpenDoc, group: GroupId, kind: &DimensionKind) -> Option<Baked> {
+    match doc.session.new_dimension_preview(group, kind) {
+        Ok(preview) => Some(Baked { id: None, preview }),
+        Err(why) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!("{TRACE} new=1 baked=0 refused={why}")
             });
             None
         }
@@ -91,7 +113,9 @@ pub fn paint(
     let Some(m) = page_to_screen(page, map) else {
         return false;
     };
-    underlay(painter, doc, page, clip, m, baked.id);
+    if let Some(id) = baked.id {
+        underlay(painter, doc, page, clip, m, id);
+    }
     let r = preview.appearance.rect;
     let corners = [
         (r.llx, r.lly),

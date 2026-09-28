@@ -28,20 +28,20 @@ answer in the right direction.
 Rule 4's pre-commit affordance: *"a snap indicator, a hover highlight, a
 rubber-band … these are the cursor; they describe what is about to
 happen."* It is only honest if it is derived from the values the commit will
-use, which is why the placing preview goes through
-[`pick::dimension_preview_segments`] — the *same* function a committed
-dimension is drawn from — rather than drawing a line of its own.
+use. The placing preview is the engine's bake of `Placing::at(pointer)`
+(`dimpreview::bake_new`), traced `measure-place-preview baked=1`; when the
+engine refuses the bake it falls back to
+[`pick::dimension_preview_segments`] and `draw_label`, traced `baked=0`.
+The picking previews before the gesture completes use the segments.
 
 ### `fn draw_label`
 
 The held dimension's value text, drawn at the hover point while it waits
 for its placing click. Text and box come from `author_dimension` under the
-group's resolved style, so the preview shows the value and size the commit
-bakes. `label_quad` corners run baseline-left (at the descender),
+group's resolved style. Drawn only when the engine refused the bake. `label_quad` corners run baseline-left (at the descender),
 baseline-right, cap-right, cap-left; the font size is the quad height over
 1.3, the descender-to-cap span the baker sizes from, and the text is rotated
-to the baseline. Arrowheads and the ANSI break are not drawn here: request
-G063 asks the engine for an id-less preview to replace this path.
+to the baseline. Arrowheads and the ANSI break are not drawn here.
 # The circular tool's preview is the whole of its feedback
 
 The other two tools draw something that follows the pointer, so an operator

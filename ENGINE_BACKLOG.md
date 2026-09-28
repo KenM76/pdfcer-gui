@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **54 of 236** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `wanted` — a real gap — **54 of 240** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -154,7 +154,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 236** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `blocked` — waiting on something named — **2 of 240** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -172,7 +172,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 236** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 240** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -183,7 +183,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **15 of 236** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `declined` — deliberately no surface — **15 of 240** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -224,7 +224,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **165 of 236** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **169 of 240** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -291,6 +291,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Preview a ce dimension before it EXISTS** — `EditSession::new_dimension_preview` | **Reachable — the placing preview is the engine's bake (O261).** `canvas::measure::draw` bakes each frame's `Placing::at(pointer)` through `canvas::dimpreview::bake_new` on the target group and paints the returned `DimensionPreview`, so the preview and the committed dimension are one rendering; a refused bake is traced and falls back to the shell's own segments. `measure_place_without_the_mouse` requires `measure-place-preview baked=1` and photographs the preview beside the committed dimension. |
+| **An angular ce dimension's text follows `text_along`** — `DimensionKind::placement_from_point` for `Angular` | **Reachable — `measure::place::placed_at` takes `(radius, text_along)` from `placement_from_point`**, so the arc passes through the placing click and the value text sits at it; a click on the apex keeps the arc. Unit-tested (`an_angular_dimension_puts_its_text_where_the_click_was`); the placing check drives a circle, not an angle. |
 | Author a perimeter/path-length ce dimension — one number … | **Reachable — the Perimeter measure tool**; `canvas::dimdrag` handles `DimensionKind::Perimeter` and `app::actions::dimensions` calls `place_dimension`. Phase 7 shipped Linear, Two-line and Radius/diameter with snapping and dimension groups. |
 | Rotate a placed ce dimension about any pivot — `rotate_dimension(id, pivot, degrees)` … | **Reachable — the ninth grip on the selection box, routed by kind** to `rotate_dimension` (`EDITABLE_SURFACES.md`). |
 | Override a ce dimension's printed text, or clear the override … | **Reachable — `app::actions::dimensions` calls `set_dimension_label`.** This is `2X <DIM> TYP` on a drawing: the caption is overridden and still tracks the geometry through a later re-scale, and clearing it restores the measurement with no re-measurement. |
@@ -422,9 +424,9 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
-| **Export detected tables to Excel (XLSX)** — `pdfcer_core::export::xlsx`, `write_xlsx` with `XlsxOptions` and `XlsxReport` | **shipped — File ▸ Export ▸ Tables… ▸ *Save as: Excel workbook*.** `app::actions::export_tables` filters the detected `Table`s to the chosen pages and calls `write_xlsx` with `XlsxOptions::default()` (its error, `pdfcer_core::export::ooxml_zip::PackageError`, is shown by its own wording in the failure line); the receipt carries the report's numbers written, locale-ambiguous cells kept as text, dropped characters and cells cut or left out at Excel's limits, off-canvas (R8b). Driven by `export_tables_without_the_mouse`, which reads `format=xlsx numbers=4` and the package on disk. The *.ods* choice beside it is written in this shell because the engine has no ODS writer (our G062). |
-| **Export detected tables to an OpenDocument spreadsheet (.ods)** — `pdfcer_core::export::ods::write_ods` with `OdsOptions` and `OdsReport` | **wanted — replaces this shell's own ODS writer.** File ▸ Export ▸ Tables… ▸ *Save as: LibreOffice spreadsheet* is built on a writer in this shell, written because the engine had none (our G062, now answered). Wiring it means calling `write_ods` beside `write_xlsx`, carrying `OdsReport` into the receipt the way `XlsxReport` is, and deleting the shell writer; `export_tables_without_the_mouse` already checks the package on disk. |
-| **Limit table detection to chosen pages** — `table_detect::detect_tables_in_pages` in `pdfcer_core` | **wanted — replaces this shell's page filter.** `app::actions::export_tables` detects on every page and then filters the `Table`s to the chosen range (our G061, now answered), so *Current page* on a large set still pays for the whole document and the receipt's diagnostics count pages the operator did not choose. Wiring it means passing the chosen pages to `detect_tables_in_pages` and dropping the filter. |
+| **Export detected tables to Excel (XLSX)** — `pdfcer_core::export::xlsx`, `write_xlsx` with `XlsxOptions` and `XlsxReport` | **shipped — File ▸ Export ▸ Tables… ▸ *Save as: Excel workbook*.** `app::actions::export_tables` detects on the chosen pages and calls `write_xlsx` with `XlsxOptions::default()` (its error, `pdfcer_core::export::PackageError`, re-exported from the private `pdfcer_core::export::ooxml_zip`, is shown by its own wording in the failure line); the receipt carries the report's numbers written, locale-ambiguous cells kept as text, dropped characters and cells cut or left out at Excel's limits, off-canvas (R8b). Driven by `export_tables_without_the_mouse`, which reads `format=xlsx numbers=4` and the package on disk. |
+| **Export detected tables to an OpenDocument spreadsheet (.ods)** — `pdfcer_core::export::ods::write_ods` with `OdsOptions` and `OdsReport` | **shipped — File ▸ Export ▸ Tables… ▸ *Save as: LibreOffice spreadsheet*.** `app::actions::export_tables` calls `write_ods` with `OdsOptions::default()` beside `write_xlsx`; the receipt carries `OdsReport`'s numbers written, locale-ambiguous cells kept as text, dropped characters and cells past Calc's limits, off-canvas (R8b). Driven by `export_tables_without_the_mouse`, which reads `format=ods numbers=4` and the package's mimetype on disk. |
+| **Limit table detection to chosen pages** — `table_detect::detect_tables_in_pages` in `pdfcer_core` | **shipped — File ▸ Export ▸ Tables… ▸ *Current page* / *All pages*.** `app::actions::export_tables` passes the plan's pages to `detect_tables_in_pages`, so *Current page* reads one page and the receipt's too-dense and unreadable counts are about the pages chosen. Driven by `export_tables_without_the_mouse` (current page of a one-page fixture). |
 | **SVG export can keep text as real `<text>`, font embedded** … — `SvgText::KeepText` / `SvgText::Outlines`, `SvgTextOutcome` | **shipped — Export image › *Text: keep as text*, shown for SVG and EMF only, off by default and remembered as `export_image_keep_text`.** Our G033. The outcome is disclosed on the status line: runs kept, fonts embedded, and each nonzero fallback reason (`SvgTextOutcome::fallback_not_sfnt`, `fallback_paint`, `fallback_unmapped`, `fallback_geometry`, `fallback_font_build`, `fallback_restricted`, `fallback_conflict`; `EmfTextOutcome::fallback_symbol_face` and its three shared reasons), with `runs_as_outlines()` as the total. The EMF sentence says a metafile carries no font. The clipboard keeps outlines. **Not driven.** |
 | **EMF export can keep text as real text records** … — `EmfText::KeepText` / `EmfText::Outlines`, `EmfTextOutcome` | **shipped — the same checkbox as SVG's row above, the same disclosure path.** Our G033's second half. The status sentence says a metafile carries no font program, so a kept run draws in whatever installed face has that name. **Not driven.** |
 | Move, resize and rotate a content-stream object (path, text … | **Reachable — move, resize and rotate ANY object**, closing a request the operator made three times; `app::actions::vector` calls `transform_objects`, which wraps each object's operator run in `q <cm> … Q` and so is kind-agnostic by mechanism rather than by match arm. Driven by `resize_scales_a_shape` and `geometry_fields_resize_a_shape`. Page content only: there is no in-form equivalent, which has its own `wanted` row. |

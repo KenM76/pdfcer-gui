@@ -48,13 +48,6 @@ pub const fn format_hint(format: crate::tableexport::TableFormat) -> &'static st
     }
 }
 
-/// A workbook tab's name, `n` 1-based across the export: the names the
-/// engine's Excel writer gives, so both workbook formats read alike.
-#[must_use]
-pub fn sheet_name(n: usize) -> String {
-    format!("Table {n}")
-}
-
 /// The Export button.
 #[must_use]
 pub const fn export_button() -> &'static str {

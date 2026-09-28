@@ -15,7 +15,9 @@ through `ScriptedPointer`, so the check runs under `--no-input`.
    then a double-click at 150°. The picks are quick, so egui may count the
    double as a triple; both must end the fit.
 3. A `measure-finish` line must follow, with no new `add-dimension`.
-4. Hover at (1.6 r, 0.9 r) from the centre, take the in-app screenshot
+4. Hover at (1.6 r, 0.9 r) from the centre. The last `measure-place-preview`
+   line must carry `baked=1`: the preview is the engine's bake of the
+   dimension the click would add, not the shell's own drawing. Take the in-app screenshot
    `measure-place-scripted-preview.png`, then click there.
 5. `measure-place` must carry `text_x`/`text_y` — the committed kind's
    `label_anchor()` — within 1.5 pt of the aimed point, and `add-dimension`
@@ -26,12 +28,15 @@ through `ScriptedPointer`, so the check runs under `--no-input`.
 ## Falsification
 
 Making `placed_at` return its input unchanged fails step 5 with the text
-reported at its unplaced anchor.
+reported at its unplaced anchor. Making `bake_new` return `None` fails
+step 4 with `baked=0`.
 
 ## What it does not cover
 
-Linear, perimeter and two-line placing: the OS-driven checks
+Angular placing is unit-tested in `measure::place`, not driven. Linear,
+perimeter and two-line placing: the OS-driven checks
 `dimension_label_drag`, `dimension_corner_count`, `measure_perimeter`,
 `dimension_display_menu` and `dimension_circular_label_drag` click to place
 and read the commit. Whether the preview's pixels equal the commit's is not
-asserted; the two screenshots are the evidence.
+asserted; `baked=1` makes them one rendering path and the two screenshots
+are the evidence.

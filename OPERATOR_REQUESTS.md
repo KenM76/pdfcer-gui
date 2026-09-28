@@ -256,10 +256,9 @@ and path length.
 **State:** every ce dimension gesture now ends with the dimension, value text
 included, following the pointer; the next click commits it with its text at
 that spot, snapped as the preview drew it. Escape or a tool change drops it.
-An angle's text cannot be placed yet (the engine centres it on the arc,
-request G064), so for an angle the click sets how far out the arc sits. The
-preview is drawn by the shell, close to but not the engine's own bake
-(request G063). Driven off-screen for a radius, with screenshots of the
+An angle's arc passes through the click and its text sits there too. The
+preview is the engine's own drawing of the dimension about to be added, so
+what follows the mouse is exactly what the click leaves. Driven off-screen for a radius, with screenshots of the
 preview and the placed result; the five OS-driven dimension checks were
 updated to click-to-place but not run while you are using the PC. Also
 fixed: a quick run of picks ending in a double-click no longer removes the

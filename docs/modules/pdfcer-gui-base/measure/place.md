@@ -15,9 +15,9 @@ under the pointer is where the click puts it.
   distance past the rim, then clamped by `circular_text_distance` exactly as
   the engine clamps it (a click inside a radius stops the text at the
   centre, `-radius`).
-- **Angular:** `radius` becomes `p`'s distance from the apex; below 1 pt the
-  old radius stays. The engine centres the text on the arc whatever
-  `text_along` holds (request G064), so only the arc follows the click.
+- **Angular:** `radius` and `text_along` from `placement_from_point`, so the
+  arc passes through `p` and `label_anchor()` is `p`. Below a 1 pt radius (a
+  click on the apex) nothing changes.
 
 `Placing { kind, disclosures }` is what `MeasureState::placing` holds between
 the gesture completing and the placing click; `disclosures` travel to the

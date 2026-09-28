@@ -28,5 +28,4 @@ format quoted.
 
 ## What it does not cover
 
-Whether Excel or LibreOffice open the file. The unit tests in
-`pdfcer_gui_base::tableexport::ods` check the package structure.
+Whether Excel or LibreOffice open the file. Both workbook packages are the engine's, and its tests check their structure.

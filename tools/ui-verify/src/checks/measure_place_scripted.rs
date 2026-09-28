@@ -21,6 +21,7 @@ const GROUPS: &str = "ribbon.group.measure."; // ui-text-exempt: a trace region 
 const FINISH_EVENT: &str = "measure-finish"; // ui-text-exempt: a trace event name, never displayed
 const PLACE_EVENT: &str = "measure-place"; // ui-text-exempt: a trace event name, never displayed
 const COMMIT_EVENT: &str = "add-dimension"; // ui-text-exempt: a trace event name, never displayed
+const PREVIEW_EVENT: &str = "measure-place-preview"; // ui-text-exempt: a trace event name, never displayed
 /// Off the desktop, so no OS input can reach it and none of his is taken.
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 /// The circle, as fractions of the page box (y up) and of its width: the
@@ -168,6 +169,23 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let aim = window(target)?;
     pointer.hover(&session, aim)?;
     session.settle(12);
+    let trace = session.trace()?;
+    match trace.last(PREVIEW_EVENT) {
+        Some(line) if line.get("baked") == Some("1") => {
+            report.note(format!(
+                "★★ the preview is the engine's bake: `{}`",
+                line.raw
+            ));
+        }
+        other => {
+            return Ok(Some(format!(
+                "★★ the placing preview was not drawn from the engine's bake of the new \
+                 dimension (`{}`), so it can differ from what the click commits. Trace: {}.",
+                other.map_or("no preview line", |l| l.raw.as_str()),
+                session.trace_path().display()
+            )));
+        }
+    }
     let shot = ctx.out("measure-place-scripted-preview.png");
     pointer.screenshot(&session, &shot)?;
     report.artifact(shot);
