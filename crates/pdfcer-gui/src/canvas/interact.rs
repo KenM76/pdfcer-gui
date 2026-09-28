@@ -477,6 +477,7 @@ pub(super) fn interact(
             hold_after_drop = previews.hold;
             pv.annot_ghost = previews.annot.or(previews.widget);
             pv.dimension = previews.dimension;
+            pv.dimension_baked = previews.dimension_baked;
         }
         // The markup band. `markup::drag` owns every rule — the canvas→page
         // conversion, the degenerate-drag refusal, which endpoints stay raw —
@@ -1037,6 +1038,7 @@ pub(super) fn interact(
             resize_ghost: pv.resize_ghost,
             handle_drag: pv.handle,
             dimension_preview: pv.dimension.as_deref(),
+            dimension_baked: pv.dimension_baked.as_ref(),
             markup_node_preview: pv.markup_nodes.as_deref(),
             vertex_snap: pv.vertex_snap,
             rotate_ghost: pv.rotate_ghost,

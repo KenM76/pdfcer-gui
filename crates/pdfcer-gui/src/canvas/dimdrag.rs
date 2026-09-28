@@ -233,13 +233,22 @@ pub struct Frame<'a> {
     pub page: Option<&'a Page>,
 }
 
+/// One frame's preview of a placement drag.
+pub struct Placed {
+    /// The moved dimension as page-space segments: the fallback outline.
+    pub segments: Vec<(Point, Point)>,
+    /// The engine's bake of the moved dimension, drawn instead of
+    /// [`Self::segments`] whenever it can be. `None` when the engine refused.
+    pub baked: Option<pdfcer_core::dimension::DimensionPreview>,
+}
+
 /// Advance one frame of a placement drag.
 pub fn drag(
     frame: Frame<'_>,
     doc: &OpenDoc,
     selection: &SelectionState,
     actions: &mut Vec<Action>,
-) -> Option<Vec<(Point, Point)>> {
+) -> Option<Placed> {
     let Frame { delta, phase, page } = frame;
     let (id, kind) = selected(doc, selection)?;
     let page = page?;
@@ -265,7 +274,10 @@ pub fn drag(
         // stale.
         return None;
     }
-    Some(super::measure::pick::dimension_preview_segments(&moved))
+    Some(Placed {
+        segments: super::measure::pick::dimension_preview_segments(&moved),
+        baked: super::dimpreview::bake(doc, id, &moved),
+    })
 }
 
 // ===========================================================================

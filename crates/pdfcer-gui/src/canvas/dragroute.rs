@@ -46,6 +46,9 @@ pub struct Previews {
     pub hold: Option<crate::canvas::shapes::ShapePreview>,
     /// A ce dimension redrawn at its new placement, in page space.
     pub dimension: Option<Vec<(pdfcer_core::vector::Point, pdfcer_core::vector::Point)>>,
+    /// The engine's bake of that dimension, drawn in place of
+    /// [`Self::dimension`] whenever it can be.
+    pub dimension_baked: Option<pdfcer_core::dimension::DimensionPreview>,
 }
 
 /// Everything one move frame needs that is not the delta.
@@ -120,7 +123,7 @@ pub fn moved(frame: &Frame<'_>, delta: Vec2, phase: Phase, actions: &mut Vec<Act
     // annotations asked whether one could be selected, restyled or
     // deleted, and all three were true.
     if selection.annot().is_some() {
-        out.dimension = dimdrag::drag(
+        if let Some(placed) = dimdrag::drag(
             dimdrag::Frame {
                 delta,
                 phase,
@@ -129,7 +132,10 @@ pub fn moved(frame: &Frame<'_>, delta: Vec2, phase: Phase, actions: &mut Vec<Act
             doc,
             selection,
             actions,
-        );
+        ) {
+            out.dimension = Some(placed.segments);
+            out.dimension_baked = placed.baked;
+        }
         // Ordered, not exclusive-by-guard, and the order is the
         // safe one: `dimdrag` is the NARROWER claim -- it answers only
         // for `AnnotKind::CeDimension` -- so asking it first and

@@ -72,6 +72,9 @@ pub(super) struct Frame<'a> {
     /// defined in the page. Projecting happens once, at the painter, through
     /// the same two-hop bridge `canvas::measure` uses.
     pub dimension_preview: Option<&'a [(pdfcer_core::vector::Point, pdfcer_core::vector::Point)]>,
+    /// The engine's bake of the same dragged dimension, drawn in place of
+    /// [`Self::dimension_preview`] whenever `canvas::dimpreview` can paint it.
+    pub dimension_baked: Option<&'a pdfcer_core::dimension::DimensionPreview>,
     /// **A markup shape being reshaped, as the page-space segments it
     /// would be drawn as on release** — `Pass 255.0`.
     ///
@@ -556,7 +559,13 @@ pub(super) fn draw(
     // second thing for the operator to learn for no information gained. What is
     // kept apart is which one is `Some`, which is what decides the verb, and
     // that decision was made two modules ago.
-    for segments in [f.dimension_preview, f.markup_node_preview]
+    let baked = f.dimension_baked.is_some_and(|preview| {
+        doc.pages.get(page_index).is_some_and(|page| {
+            crate::canvas::dimpreview::paint(&painter, doc, page, map, clip, preview)
+        })
+    });
+    let dimension_segments = if baked { None } else { f.dimension_preview };
+    for segments in [dimension_segments, f.markup_node_preview]
         .into_iter()
         .flatten()
     {

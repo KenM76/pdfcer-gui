@@ -55,6 +55,9 @@ pub struct Slots {
     /// its extension lines* rather than translating a box. A ghost offset by a
     /// delta would draw the wrong picture entirely.
     pub dimension: Option<Vec<(Point, Point)>>,
+    /// The engine's bake of the dragged ce dimension; when it paints,
+    /// [`Self::dimension`] is not drawn.
+    pub dimension_baked: Option<pdfcer_core::dimension::DimensionPreview>,
     /// **A markup shape redrawn from its nodes' new positions**, as
     /// page-space segments — `Pass 255.0`, and the operator's *"I also can't
     /// edit or delete nodes of a markup shape once it is drawn."*

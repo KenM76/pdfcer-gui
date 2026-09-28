@@ -213,6 +213,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         //
         // REGISTERED AND NEVER RUN against the binary. See its module header.
         Box::new(dimension_corner_count::ACornerCanBeAddedAndTakenAway),
+        Box::new(dimension_label_drag::ADimensionDragPreviewsWhatItPlaces),
         // Beside it, and after it, because they are the two halves of one
         // report and this is the half that needed an engine Pass. It is placed
         // second on purpose: if both fail, the ce-dimension one failing too

@@ -24,6 +24,8 @@ pub enum Surface {
     Icon,
     /// A text draft's ink, drawn in the run's own font while it is typed.
     TextDraft,
+    /// A ce dimension's baked appearance, drawn where a drag would put it.
+    DimensionDrag,
 }
 
 /// The page-shaped part of an upload, present only when there is one.
