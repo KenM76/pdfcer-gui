@@ -110,6 +110,7 @@ pub(super) fn tab() -> Tab {
                 [
                     icon_only("pages.rotate_left"),
                     icon_only("pages.rotate_right"),
+                    command("pages.crop"),
                     command("pages.resize"),
                 ],
             ),

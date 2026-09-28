@@ -450,6 +450,13 @@ pub enum PageAction {
         /// by the engine before anything is touched.
         rect: pdfcer_core::page_tree::Rect,
     },
+    /// Set or remove the picked sheets' visible area, as one undo step.
+    SetCropBox {
+        /// 0-based page indices, ascending and unique.
+        pages: Vec<usize>,
+        /// The rectangle in page space, or the whole sheet.
+        edit: pdfcer_core::edit::CropBoxEdit,
+    },
     /// **Remove the operand pages from the document**, as one undoable
     /// command.
     ///

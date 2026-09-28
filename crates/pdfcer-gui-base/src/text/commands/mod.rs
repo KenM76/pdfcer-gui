@@ -392,7 +392,17 @@ pub const fn pages_rotate_right() -> CommandText {
     )
 }
 
-/// `pages.resize`
+/// `pages.crop`
+#[must_use]
+pub const fn pages_crop() -> CommandText {
+    CommandText::new(
+        "Crop…",
+        "Hide the edges of the selected pages by a margin from each side. Nothing is \
+         deleted and the paper stays the same size; Show whole sheet brings every edge back.",
+    )
+}
+
+/// `pages.resize`.
 #[must_use]
 pub const fn pages_resize() -> CommandText {
     CommandText::new(

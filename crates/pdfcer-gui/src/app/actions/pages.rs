@@ -524,6 +524,18 @@ pub(super) fn apply(
                 );
             }
         }
+        PageAction::SetCropBox { pages, edit } => {
+            if !pages.is_empty() {
+                let first = pages.first().copied().unwrap_or(0);
+                super::apply::vector_edit(
+                    doc,
+                    "page-crop-changed",
+                    first,
+                    pages.len(),
+                    |session| super::pagesize::crop(session, &pages, edit),
+                );
+            }
+        }
         // **The destructive one**, and the one that renumbers.
         //
         // Two things happen here that no other arm needs, and both are

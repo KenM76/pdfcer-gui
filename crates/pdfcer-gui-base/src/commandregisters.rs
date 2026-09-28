@@ -192,11 +192,6 @@ pub const PLANNED: &[(&str, &str)] = &[
         // ui-text-exempt: developer note about an ABSENT command; never rendered.
         "N — replace the selected pages with pages from another file.",
     ),
-    (
-        "pages.crop",
-        // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — needs an interactive crop-box gesture and a /CropBox writer.",
-    ),
     // ⚠ **Rescale and re-media-box are two commands, not one command with two
     // spellings.** Re-media-boxing changes the paper and leaves the drawing
     // exactly where it is; rescaling moves every mark on the page, and would
@@ -205,11 +200,8 @@ pub const PLANNED: &[(&str, &str)] = &[
     // `pdfcer_gui::app::actions::pagesize`'s header carries the measurement and the
     // argument for not building the first quietly alongside it.
     //
-    // `pages.crop` above stays **N** and is a genuinely different command
-    // again: `/CropBox` is the visible region *within* the paper, it needs an
-    // interactive gesture, and `set_media_boxes` does not write it. The
-    // sheet-size window discloses a crop box the new paper no longer contains
-    // and deliberately does not repair one.
+    // `pages.crop` is a third command again: `/CropBox` is the visible region
+    // *within* the paper, and it hides edges without changing the paper.
     (
         "pages.watermark",
         "N — the whole Pages ▸ Stamp group is unbuilt, so the GROUP is absent too rather \

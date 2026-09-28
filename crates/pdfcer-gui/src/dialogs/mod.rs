@@ -89,6 +89,7 @@ pub use pdfcer_gui_base::acrobatprompt as open_in_acrobat;
 /// is a *measurement* of how far the drawing would run past the paper being
 /// chosen — computed before the operator commits, from a facility the engine
 /// itself names as a residual it does not have.
+pub mod page_crop;
 pub mod page_size;
 /// The Save-as-stamp-collection window — this document's pages, named, in
 /// the file Acrobat reads its custom stamps out of. `OPERATOR_REQUESTS.md`
@@ -206,6 +207,9 @@ pub struct DialogsState {
     /// paper. Neither moves the drawing, and only one of them changes a
     /// printed number.
     page_size: Option<page_size::PageSizeDialog>,
+    /// The open crop window, if any; it holds the operand sheets' size, so it
+    /// closes with their document.
+    page_crop: Option<page_crop::PageCropDialog>,
     /// The open text-annotation dialog, if a text box, sticky or stamp has
     /// just been placed.
     text_annot: Option<textannot::TextAnnotDialog>,
@@ -801,6 +805,9 @@ impl DialogsState {
         if self.page_size.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.page_size = None;
         }
+        if self.page_crop.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.page_crop = None;
+        }
         if self.form_field.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.form_field = None;
         }
@@ -1045,6 +1052,7 @@ impl DialogsState {
         // its document would keep describing sheets nobody has open, and every
         // number in it would still look authoritative.
         self.page_size = None;
+        self.page_crop = None;
         self.insert_image = None;
         self.export_dxf = None;
         // On this list because it holds a SNAPSHOT: the page count it built

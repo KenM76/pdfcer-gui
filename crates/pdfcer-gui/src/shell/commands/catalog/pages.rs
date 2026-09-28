@@ -113,6 +113,9 @@ pub(super) fn band() -> Vec<Command> {
         // one is a file split rather than an icon. What distinguishes the two
         // controls is the label, which is why this one carries a label and its
         // two rotate neighbours do not.
+        command("pages.crop", t::pages_crop(), 324)
+            .with_icon("page-single")
+            .enabled_when("doc.pages"),
         command("pages.resize", t::pages_resize(), 325)
             .with_icon("page-single")
             .enabled_when("doc.pages"),

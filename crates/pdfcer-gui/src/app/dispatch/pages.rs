@@ -40,6 +40,7 @@ pub(crate) fn handles(id: &str) -> bool {
             | "pages.move_up"
             | "pages.move_down"
             | "pages.resize"
+            | "pages.crop"
     )
 }
 
@@ -73,6 +74,17 @@ pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
                 return;
             };
             app.dialogs.open_page_size(doc, &pages);
+        }
+        // **Hide the picked sheets' edges.** A window for the same reason as
+        // `pages.resize`: four margins are a question, not a toggle.
+        "pages.crop" => {
+            let Some(pages) = app.page_operands() else {
+                return;
+            };
+            let Status::Open(doc) = &app.status else {
+                return;
+            };
+            app.dialogs.open_page_crop(doc, &pages);
         }
         // ===============================================================
         // THE PAGE VERBS — one operand rule, shared by every arm below

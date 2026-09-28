@@ -129,6 +129,10 @@ pub mod ocr;
 /// count. Consumed by `pdfcer_gui::dialogs::offpage` and
 /// `pdfcer_gui::app::actions::offpage`.
 pub mod offpage;
+/// The words for **the visible area of a sheet** — the Crop… window and the
+/// disclosures its commit raises. Consumed by `pdfcer_gui::dialogs::page_crop`
+/// and `pdfcer_gui::app::actions::pagesize::crop`.
+pub mod page_crop;
 /// The words for **changing the paper an open drawing sits on** — the
 /// sheet-size window and the disclosures its commit raises. Consumed by
 /// `pdfcer_gui::dialogs::page_size` and `pdfcer_gui::app::actions::pagesize`. Its header

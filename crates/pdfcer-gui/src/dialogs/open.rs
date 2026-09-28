@@ -5,8 +5,8 @@
 
 use super::{
     DialogsState, about, compact, diagnostics, embed, export_dxf, export_image, export_text,
-    formfield, import_text, insert_image, insert_pages, new_document, ocr, offpage, page_size,
-    print, protect, redact, scale, shortcuts, stamp_collection, textannot, unembed,
+    formfield, import_text, insert_image, insert_pages, new_document, ocr, offpage, page_crop,
+    page_size, print, protect, redact, scale, shortcuts, stamp_collection, textannot, unembed,
 };
 use crate::app::prefs::RedactionReach;
 use crate::app::state::Status;
@@ -218,6 +218,14 @@ impl DialogsState {
             return;
         }
         self.new_document = Some(new_document::NewDocumentDialog::open());
+    }
+
+    /// **Open the crop window** over `pages`, the operand sheets.
+    pub fn open_page_crop(&mut self, doc: &crate::app::state::OpenDoc, pages: &[usize]) {
+        if self.page_crop.is_some() {
+            return;
+        }
+        self.page_crop = page_crop::PageCropDialog::open(doc, pages);
     }
 
     /// **Open the sheet-size window** over `pages`, the operand sheets.

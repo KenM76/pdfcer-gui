@@ -7,7 +7,8 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/app/actions/pagesize.md`.
 
 use pdfcer_core::edit::{
-    CropFollow, EditError, EditSession, MediaBoxChange, MediaBoxEntry, PageResize,
+    CropBoxChange, CropBoxEdit, CropBoxEntry, CropFollow, EditError, EditSession, MediaBoxChange,
+    MediaBoxEntry, PageResize,
 };
 use pdfcer_core::page_tree::Rect;
 
@@ -284,6 +285,57 @@ pub(super) fn set(
     });
     if hidden > 0 {
         notes.push(t::disclosure_crop_inside(hidden));
+    }
+    Ok(notes)
+}
+
+/// The body of `PageAction::SetCropBox`: set or remove the visible area of
+/// `pages` as one `CommandKind::SetCropBoxes` undo step, returning the
+/// off-canvas sentences its outcome owes (R8b).
+///
+/// # Errors
+///
+/// `EditError::CropBoxEmpty` for a rectangle that leaves a sheet nothing, raised
+/// before any sheet is touched.
+pub fn crop(
+    session: &mut EditSession,
+    pages: &[usize],
+    edit: CropBoxEdit,
+) -> Result<Vec<String>, EditError> {
+    let changes = session.set_crop_boxes(pages, edit)?;
+    let overhang = changes
+        .iter()
+        .filter(
+            |CropBoxChange {
+                 overhangs_media_box,
+                 ..
+             }| *overhangs_media_box,
+        )
+        .count();
+    let entries = |want: CropBoxEntry| {
+        changes
+            .iter()
+            .filter(|CropBoxChange { entry, .. }| *entry == want)
+            .count()
+    };
+    let inherited = entries(CropBoxEntry::InheritedSoOwnEntryRemoved);
+    crate::diag::trace(|| {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "page-crop-applied n={} overhang={overhang} explicit={} inherited_removed={inherited} \
+             base_kept={} absent={}",
+            changes.len(),
+            entries(CropBoxEntry::ExplicitWritten),
+            entries(CropBoxEntry::BaseSpellingKept),
+            entries(CropBoxEntry::Absent),
+        )
+    });
+    let mut notes = Vec::new();
+    if overhang > 0 {
+        notes.push(crate::text::page_crop::disclosure_overhang(overhang));
+    }
+    if inherited > 0 {
+        notes.push(crate::text::page_crop::disclosure_inherited(inherited));
     }
     Ok(notes)
 }
