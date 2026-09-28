@@ -377,7 +377,8 @@ mod tests {
         // listing it in `GROUP_SOURCES` would make the sibling check
         // `the_window_draws_exactly_the_settings_this_catalog_describes` look
         // for catalog entries that must not exist.
-        const NOT_A_GROUP: &[&str] = &["widgets", "preset", "defaultapp"];
+        // `nav` draws the page list and search, and no setting.
+        const NOT_A_GROUP: &[&str] = &["widgets", "preset", "defaultapp", "nav"];
         let src = include_str!("../../dialogs/settings/mod.rs");
         let file = syn::parse_file(src).expect("dialogs/settings/mod.rs did not parse");
         let declared: Vec<String> = file

@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **51 of 229** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `wanted` — a real gap — **54 of 232** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -68,11 +68,14 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 |---|---|
 | Set a page's size (`/MediaBox`) — writing a value equal … | **wanted.** No operator-facing page-size control exists. `set_media_box` is called in exactly one place — `app::blank`, sizing a **new** blank document — so the verb is linked and the surface is not: a drawing that arrives on the wrong sheet size cannot be put right here. The Pages panel's context menu is where it belongs, beside rotate and extract. |
 | **Name a destination while inserting pages** — `add_named_destination` (`pdfcer-core`'s `edit` module) … | **wanted, and nothing is owed yet.** *Reading, navigation & printing* carries `add_named_destination` as blocked on the argument that governs both rows: a destination resolved and baked at author time is indistinguishable from a correct one until a reorder moves the page it points at, and this shell has drag-to-reorder. The verb has no call site in `crates/` and should keep none until the `insert_pages` bookmark-carry surface named in this row exists. Both rows close together then. |
+| **`/CropBox`/`/BleedBox`/`/TrimBox`/`/ArtBox` now resolve as their INTERSECTION with `/MediaBox`** — `Page::crop_box` is the effective box; `BoxResolution` per box | **wanted, half consumed by the path dependency.** <!--namesake:crop_box--> the field is read everywhere; what is missing is `BoxResolution` and the duplicate intersection. Every shell read of `Page::crop_box` already gets the effective box. Owed: delete `pagebox::clip_crop_to_media`, which now repeats the engine's intersection, and disclose a `Clipped` or `Unusable` crop box off-canvas in the page properties (R8b). Our request `G059`. |
+| **Set or remove a page's `/CropBox`** — `EditSession::set_crop_boxes`, `CropBoxEdit::{Set, Reset}`, disclosing `overhangs_media_box` | **wanted.** `app::actions::pagesize` reports a crop box a resize leaves outside the sheet, but the shell offers no way to set or reset a crop box directly. Owed: a *Reset visible area* choice beside that report calling `CropBoxEdit::Reset`, and a crop-box row in the page properties calling `Set`. Our request `G056`. |
 | **`/BleedBox`, `/TrimBox` and `/ArtBox` overhang is not disclosed on a sheet resize** — `MediaBoxChange` has a field for `/CropBox` and none for the other three | **wanted, and it is a disclosure gap behind an engine ask.** <!--namesake:MediaBoxChange--> the type itself is consumed — `app::actions::pagesize` imports it and walks it — and what is missing is three *fields* on it. `MediaBoxChange` carries `crop_box_outside` and nothing for the other three boxes, so a resize reports one overhang and hides three, and `app::actions::pagesize::disclosures` has no branch to write because there is no field to read. Measured: a `/BleedBox [10 10 1000 1000]` survives a resize to 595×842 with no disclosure at all, so a press or CAD export gets one overhang reported and three not. The engine's `FEATURES.md` records that the three boxes are left byte-identical without drawing that consequence. Re-measured against the pinned revision: `/BleedBox` appears once in `pdfcer-core`, in `page_tree`'s note that the three do not inherit, and `MediaBoxChange` declares no field for any of them. Three more fields on the engine's report have to exist before anything can be worded here. |
 | **View the `/OCProperties` layer tree with FOLDERS** — `list-layers --tree`; in the API `Layers::order`, the `OrderNode` tree | **wanted.** `panels::layers` lists `Layers::layers`, the flattened list, so a CAD export that nests forty layers under six folders arrives as forty rows with the folders gone and a radio group indistinguishable from independent checkboxes. The engine already hands over the declared tree unsorted; the work is a collapsing tree in the panel, a folder toggle that sets its children, and `Layers::radio_groups` honoured so turning one member on turns its siblings off. |
 | **Organise `/Order` folders** — add/rename/delete a folder, move a layer in or out, reorder; `EditSession::add_layer_folder`, `EditSession::rename_layer_folder`, `EditSession::delete_layer_folder`, `EditSession::move_layer_node` | **wanted; in the pin, not yet wired.** Each returns a `LayerOrderOutcome` — `changed`, the node's new `path`, and `follows_layer` — as one `CommandKind::EditLayerOrder` undo entry. It needs the folder tree above first, since a folder cannot be edited in a panel that does not show one: then a New folder button, rename in place, Delete on a folder row, and dragging a row into, out of or along a folder. Refusals: `EditError::NotALayerFolder`, `EditError::LayerOrderNotEditable`, `EditError::LayerOrderInexpressible`, `EditError::LayerOrderPathNotFound`. |
 | **Choose a layer when adding new content** — `paste_objects_on_layer`, `NewImage::on_layer`, `AddTextRequest::on_layer`, and a `layer` field on the markup options | **wanted; in the pin, not yet wired.** The add-text, add-image and markup-as-content verbs this shell already calls each gain `layer: Option<ObjId>`; `None` is the unlayered verb, and the add and its placement are one undo entry. The surface is a *Draw onto layer* chooser beside the Edit-mode add tools and Paste, defaulting to none, listing `read_layers`' layers plus New layer…. A layer the add cannot use is refused as `AddTextError::Layer`, and as `AddTextError::LayerNeedsSession` outside an edit session. |
 | **Put an annotation (including a widget) onto a layer** — `EditSession::set_annotation_layer` | **wanted; in the pin, not yet wired.** One `CommandKind::SetAnnotationLayer` undo entry returning an `AnnotationLayerChange` — `before`, `after`, `changed`, the annotation's `subtype`, and `popup_written` when its pop-up moved with it. The surface is the selection: a *Layer* chooser in Properties for a selected annotation or form field, listing the document's layers plus *none*, and the same item on the right-click menu. |
+| **Read a tagged PDF's structure tree back** — `pdfcer_core::structure_tree::read_structure_tree`, CLI `extract-tags` | **wanted — the engine half of O257.** Word and spreadsheet export (O257) is to take headings, paragraphs, lists and tables from the tree a tagged PDF states, rather than guess them from loose lines. Owed: the O257 export dialog, which reads this tree when the document is tagged and discloses off-canvas when it falls back to layout. Our request `G053`. |
 | **Put existing page content onto a layer** — `EditSession::set_objects_layer` | **wanted; in the pin, not yet wired.** Planned by `plan_set_layer`; one `CommandKind::SetObjectsLayer` entry returning an `ObjectsLayerChange` — `moved`, `unchanged`, `binding_added` with the `property_name` bound, and `disclosures`. The surface is the same *Layer* chooser, offered for a selection of page objects; the engine refuses tagged content (`VectorEditError::LayerSectionHoldsTaggedContent`), spans crossing nesting (`VectorEditError::LayerSectionCrossesNesting`) or left unbalanced (`VectorEditError::LayerSpanUnbalanced`), and objects carrying their own `/OC`, and each refusal is an off-canvas sentence. |
 | Scale page contents to a target size ("resize page contents") … | **wanted; in the pin, not yet wired.** The Page size window changes the sheet and leaves the drawing where it was; `EditSession::scale_pages` scales the drawing onto the new sheet, uniformly, `fit` (pad, centred) or `fill` (cover, crop), rewriting every present page box and carrying annotations, widgets and link destinations with it. What it takes: a "Scale the drawing to the new size" choice in that window beside the existing box-only resize, with Fit/Fill; one undo step; the page refusal for a page carrying ce dimensions worded by name, not greyed. |
 
@@ -151,7 +154,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 229** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `blocked` — waiting on something named — **2 of 232** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -169,7 +172,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 229** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 232** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -180,7 +183,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **15 of 229** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `declined` — deliberately no surface — **15 of 232** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -221,7 +224,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **161 of 229** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **161 of 232** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

@@ -142,12 +142,14 @@ Removing the version claim, or adding model space, makes it convert. The
 writer is the engine's; the shell passes its bytes through unchanged. Non-ASCII
 characters such as µ and ° are also written in a form AutoCAD shows garbled.
 
-## O252 — **FILED** — export options for each format: DXF version, and the drawing scale
+## O252 — **PART BUILT, NOT YET DRIVEN** — export options for each format: DXF version, and the drawing scale
 
 Each export format gets the options that format has. For DXF: a version
 drop-down (at least R12, 2000 and 2004), and the scale. The scale is chosen from
 one of the document's scale groups in a drop-down, or typed in the same
 paper-to-world form, with unit drop-downs, that Set Scale uses (O242).
+
+**Built:** the DXF dialog takes its scale from a chosen scale group or a typed title-block ratio. **Not built:** the version drop-down, which waits on the engine writing more than one DXF version (request G058). Not driven yet.
 
 ## O253 — **FILED** — an Edit-tab copy of the Markup tools that can become page content, drawing into the page by default
 
@@ -194,6 +196,16 @@ connect, pdfcer asks him whether to allow it, rather than silently refusing
 or silently accepting. Design: `DESIGNS.md` § O258.
 
 **His decisions:** the prompt offers *Allow once*, *Allow for this session* and *Always allow*. Undo stays one command per step. How many to roll back is the assistant's call, because only it knows what the prompt meant, so the remote offers "undo n".
+
+## O259 — **BUILT, NOT YET DRIVEN** — the Settings window navigates like SolidWorks' options instead of one long column
+
+His words: *"our settings window is getting very long and out of control. It
+should look more like Solidworks's settings navigation."* The window now shows
+one page at a time: a page list on the left grouped under Program, Document,
+Authoring and Output, the selected page on the right, and a search box over
+both that filters to pages holding a matching option and underlines the match.
+Tools ▸ Font folders still opens on the Fonts page. Not driven yet (the PC is
+in use).
 
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 

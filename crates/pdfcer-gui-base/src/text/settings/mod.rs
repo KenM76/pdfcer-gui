@@ -9,6 +9,8 @@
 pub mod bytes;
 pub mod extract;
 pub mod look;
+/// The page list and search box.
+pub mod nav;
 /// The colour the recognised text is drawn in over a scan — O229. Its own
 /// file because it is the copy for a *feature*, where this module's neighbours
 /// are copy for answers to a silent standard.
@@ -25,6 +27,7 @@ pub mod shell;
 pub use bytes::*;
 pub use extract::*;
 pub use look::*;
+pub use nav::*;
 pub use ocrlayer::*;
 pub use overprint::*;
 pub use print_colour::*;

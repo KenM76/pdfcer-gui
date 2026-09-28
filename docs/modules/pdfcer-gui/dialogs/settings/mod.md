@@ -35,8 +35,10 @@ Options*.
 
 **An operator opens this window with a *symptom*** — "my black lines look
 grey", "copied text has no spaces", "my dimension came out as an angle" —
-and the group headings are how a symptom finds its setting. A flat list
-makes the reader scan every row.
+and the page list is how a symptom finds its setting. A flat list makes the
+reader scan every row. The window shows one page at a time, with the list on
+the left and a search box over both that finds a setting by its name; see
+`nav`.
 
 Which means a setting filed under the wrong heading is not untidy, it is
 **unreachable**. `parallel_epsilon_degrees` governs whether two lines are
@@ -44,16 +46,10 @@ dimensioned as a distance or an angle, so it belongs in [`measuring`] and
 not under *Copying and extracting text* — which is where being a slider
 like the word-gap one would put it.
 
-**The group list and its order live in [`show`]'s body, which says so and
-is the contract.** They are deliberately not restated here: a second copy
+**The page list and its order live in `nav::PAGES`, which is the
+contract.** They are deliberately not restated here: a second copy
 of an order that changes whenever a setting is added is a copy that goes
 quietly wrong, and a wrong map is worse than no map.
-
-### Colour is the one group that starts expanded
-
-It holds the setting most likely to have brought someone here — and the
-only one whose default knowingly differs from other PDF viewers, which is
-the "my black lines look grey" symptom. Every other group starts collapsed.
 
 ## The three obligations, enforced by a function signature
 
@@ -212,12 +208,12 @@ coupling it guards fails **silently**.
 
 ### `const REGION_HEADING_PREFIX`
 
-One per collapsible header, so the contrast check can measure **each**
-heading against its own background rather than sampling the window and
-hoping. D2's defect was a foreground/background *pairing*, and a pairing
-only exists once something is drawn — so the check needs the rectangle the
-application actually laid the text into, not a rectangle derived from a
-palette.
+One per entry in the page list, suffixed with the page's key rather than its
+caption, so a reworded caption does not un-aim a check. A driven check clicks
+one to reach a page; a click selects, never toggles, so a second click is
+harmless. The contrast check measures each entry against its own background,
+because D2 was a foreground/background pairing and a pairing exists only once
+something is drawn.
 
 ### `const REGION_THEME_PREFIX`
 
@@ -284,20 +280,14 @@ dispatcher where they can be seen together.
 | aspect | value | why |
 |---|---|---|
 | screen source | `content_rect` | not `viewport_rect`: it subtracts safe-area insets, so centring uses *usable* space |
-| width | `620` clamped to `[420, screen − 40]` | wide enough for a full sentence at the body's text size |
+| width | `860` clamped to `[560, screen − 40]` | the page list plus a page wide enough for a full sentence at the body's text size |
 | height | `82 %` of screen, clamped `[420, 900]` | a fixed height leaves half the screen unused *while still scrolling* — the worst combination |
-| position | `default_pos`, centred, `−20` vertically | see below |
+| position | the host's default | see below |
 
-**`default_pos` rather than `anchor`**, so the operator can drag it aside.
-A window pinned in the middle of the screen is a window in the way of the
-document it is about. And egui's own default position put it top-left, over
-the quick-access toolbar and the ribbon tabs — so *opening Settings hid the
-control that opened it*. The `−20` keeps the button row on a short screen.
+It is its own OS window, so the operator can drag it aside; a window pinned
+over the document is in the way of the document it is about.
 
-# The scroll area's height is computed, not fixed
+# The page area's height is computed, not fixed
 
-`available − 96`, floored at 180. A fixed height clips the last group's
-heading in half on a short screen, and a half-drawn heading reads as a
-rendering fault rather than as a group. The reserved 96 is the intro, the
-store line, two separators and the button row — everything that is not the
-list.
+`available − 40`, floored at 180: everything above the Save/Cancel row. The
+store line sits above it; the intro paragraph is on the General page.

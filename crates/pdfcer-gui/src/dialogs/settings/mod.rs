@@ -36,6 +36,8 @@ mod fonts;
 mod forms;
 pub mod images;
 pub mod measuring;
+/// The page list, the search box and the page pane.
+pub(crate) mod nav;
 pub mod pages;
 pub mod redaction;
 pub mod saving;
@@ -56,7 +58,7 @@ pub const REGION_BODY: &str = "dialog:settings"; // ui-text-exempt: trace region
 /// rather than pressing Escape and assuming the two agree.
 pub const REGION_CANCEL: &str = "dialog:settings.cancel"; // ui-text-exempt: trace region name, never displayed
 
-/// The region each group heading publishes, suffixed with the group's key.
+/// The region each page's entry in the page list publishes, suffixed with its key.
 pub const REGION_HEADING_PREFIX: &str = "settings.heading."; // ui-text-exempt: trace region name, never displayed
 
 /// The region each theme radio publishes, suffixed with the preset's key.
@@ -65,21 +67,12 @@ pub const REGION_THEME_PREFIX: &str = "settings.theme."; // ui-text-exempt: trac
 /// How far the working copy has drifted from what the window opened on.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Draft {
-    /// **Which group to open and scroll to, once, on the first frame.**
+    /// **Which page to select when the window opens.**
     ///
-    /// `None` for File ▸ pdfcer ▸ Settings, which is the operator saying *"show
-    /// me the settings"* and has no one group in mind. `Some` for a command
-    /// that routes here **because of** one group — today that is Tools ▸ Font
-    /// folders, and the reason it needed this is `OPERATOR_REQUESTS.md` **O50**.
-    ///
-    /// A command called *Font folders* that opens this window at the top of a
-    /// column of **collapsed** headings has left the finding to the operator,
-    /// who asked for the setting by name. ⇒ **A route that exists because of
-    /// one setting must land on that setting.** Opening the right window is not
-    /// the same as answering the question the command's own name asks.
-    ///
-    /// Taken by [`Self::take_focus`] rather than read, so it fires once. A
-    /// group forced open on every frame is a group the operator cannot collapse.
+    /// `None` opens the first page. `Some` is for a command that routes here
+    /// because of one page, such as Tools ▸ Font folders: a route that exists
+    /// because of one setting must land on that setting. Taken rather than
+    /// read, so it applies once.
     pub focus: Option<&'static str>,
     /// **What the machine says about the default PDF program**, read once
     /// per opening of this window - O173.
@@ -152,7 +145,7 @@ impl Draft {
         Self::focused_on(current, prefs, None)
     }
 
-    /// [`Self::new`], opened at one group. See [`Self::focus`].
+    /// [`Self::new`], opened at one page. See [`Self::focus`].
     #[must_use]
     pub fn focused_on(
         current: &Settings,
@@ -226,38 +219,23 @@ pub fn show(
     open: &mut bool,
     acrobat_viewer: Option<&crate::acrobat::Viewer>,
 ) -> Outcome {
-    // TAKEN, not read. See `Draft::focus`: the group is forced open and
-    // scrolled to on the first frame and left alone afterwards, so the operator
-    // can collapse it again. A focus that survived the frame would be a heading
-    // that reopened itself every time they closed it.
+    // Taken, not read: it selects the page once, and the operator can move on.
     let focus = draft.focus.take();
     let screen = ctx.input(egui::InputState::content_rect);
-    let width = 620.0_f32.min(screen.width() - 40.0).max(420.0);
+    let width = 860.0_f32.min(screen.width() - 40.0).max(560.0);
     let height = (screen.height() * 0.82).clamp(420.0, 900.0);
-    let pos = egui::pos2(
-        ((screen.width() - width).max(0.0) / 2.0).max(0.0),
-        (((screen.height() - height).max(0.0) / 2.0) - 20.0).max(0.0),
-    );
 
-    // ITS OWN OS WINDOW. Settings is the tallest dialog in the program — the
-    // height above is 82 % of the screen — so it is the one most obviously
-    // squeezed by living inside the application frame.
-    //
-    // `open` stays an `&mut bool` here, unlike the other dialogs, because this
-    // is a free function whose caller owns the flag. `frame.closed` is written
-    // into it rather than returned.
-    let _ = pos;
+    // Its own OS window. `open` is the caller's flag; `frame.closed` is
+    // written into it.
     let mut outcome = Outcome::Idle;
     let (frame, ()) = crate::dialogs::host::Host::new(
         "settings", // ui-text-exempt: a viewport key, never displayed.
         t::window_title(),
         egui::vec2(width, height),
-        egui::vec2(420.0, 420.0),
+        egui::vec2(560.0, 420.0),
     )
     .show(ctx, |ui| {
         crate::diag::ui_rect(REGION_BODY, ui.max_rect());
-        ui.label(t::intro());
-        ui.add_space(4.0);
         // Always shown, never a control. An operator who does not know
         // which of the two homes is live cannot follow the update
         // instructions, and those instructions are the one place a wrong
@@ -265,294 +243,9 @@ pub fn show(
         ui.label(RichText::new(t::store_location(store)).small().weak());
         ui.separator();
 
-        let reserved = 96.0;
-        let available = (ui.available_height() - reserved).max(180.0);
-        egui::ScrollArea::vertical()
-            .max_height(available)
-            .show(ui, |ui| {
-                // THE ORDER BELOW IS THE OPERATOR-FACING ORDER AND IS THE
-                // CONTRACT — the module header points here rather than
-                // restating it. It is deliberately NOT the order the fields
-                // appear in `Settings`, nor the order they are written to the
-                // file: three orders that drift apart the moment any of them
-                // is maintained as a copy of another, which is how a theme
-                // setting ends up emitted between two image settings and
-                // splitting them.
-                // The presets row, above every group because it sets all of
-                // them. Operator request O38: *"a preset setting for rendering
-                // things to what the [conformance] page needs"* — and, in the
-                // same message, the plainer need underneath it: he had changed
-                // several settings while investigating and wanted a way back.
-                // See `preset`'s header for why PDF/X-4 is not among the
-                // entries yet and why its absence is the design rather than a
-                // gap.
-                //
-                // **IN A COLLAPSIBLE GROUP, AND CLOSED.** The row is ten
-                // radios plus a detail block — about **730 points** — and the
-                // scroll area is smaller than that: 82 % of screen height
-                // clamped to 900, less ~104 for the intro and the store line
-                // and less the 96 reserved for the buttons, which on a
-                // 1440-point screen is ~700. Drawn bare, it fills the window
-                // and every actual setting and every group heading is below the
-                // fold, on an ordinary display and not only in a harness's
-                // small offscreen viewport.
-                //
-                // That failure is invisible to a unit test and it is also
-                // invisible in the trace, in a way worth knowing: `widgets::
-                // group` publishes through `ui_rect_visible`, which correctly
-                // declines to publish a heading nobody can see, so the symptom
-                // is a driven check reporting *no headings declared* — which
-                // reads like a tracing bug and is the region mechanism working
-                // exactly as designed.
-                //
-                // Closed by default, like every group except Colour. It is
-                // still FIRST, which is the part of the decision that is about
-                // meaning rather than about space: a preset sets all the
-                // groups, so it belongs above them.
-                //
-                // It is a `widgets::group` rather than a `ComboBox`, and
-                // that is deliberate restraint rather than the better answer. A
-                // dropdown is what most applications use for a preset and it
-                // would cost one row instead of one click — but the radio list
-                // is what the operator has been given, reported on and
-                // accepted. Changing the interaction is a proposal of its own,
-                // not something to bundle into a layout fix.
-                // O173, and FIRST - above even the presets row. It is the
-                // only entry in this window that is an ACT rather than a
-                // setting, and the only one somebody arrives at Settings
-                // specifically to press. `defaultapp`'s header carries the
-                // argument, including why it is not a collapsible group.
-                defaultapp::group(ui, &mut draft.default_app);
-                ui.add_space(10.0);
-                ui.separator();
-                widgets::group(ui, "presets", t::preset_title(), false, |ui| {
-                    preset::row(ui, draft);
-                });
-                ui.add_space(10.0);
-                ui.separator();
-                widgets::group(ui, "appearance", t::group_appearance(), false, |ui| {
-                    appearance::theme(ui, draft);
-                    // The group's second member, and the two belong
-                    // together: they are the only settings in this window
-                    // that change the PROGRAM's appearance rather than the
-                    // document's, and the only two that take effect before
-                    // Save. Grouping them makes that exception legible in
-                    // one place instead of scattered across the window.
-                    ui.add_space(10.0);
-                    appearance::ui_scale(ui, &mut draft.working_prefs);
-                    ui.add_space(10.0);
-                    appearance::colour_icons(ui, &mut draft.working_prefs);
-                });
-                // Colour is the expanded one. See the module header for
-                // the contradiction in the source this resolves.
-                widgets::group(ui, "colour", t::group_colour(), true, |ui| {
-                    colour::intent(ui, draft);
-                    ui.add_space(10.0);
-                    colour::polarity(ui, draft);
-                    ui.add_space(10.0);
-                    colour::page_blend_space(ui, draft);
-                    ui.add_space(10.0);
-                    // Immediately under `page_blend_space`, because it is
-                    // meaningless above it: that setting decides whether a page
-                    // is composited in ink, and this one decides which source
-                    // colours the ink rules then reach. Reversed, the window
-                    // would ask about grey-over-spot before saying whether
-                    // overprint is simulated at all.
-                    colour::zero_tint(ui, draft);
-                    // Immediately after its sibling: that control is what
-                    // OVERPRINTS a spot colour, this one is what a spot colour
-                    // IS. Both are reached by the same symptom.
-                    colour::spot_model(ui, draft);
-                    ui.add_space(10.0);
-                    // Directly after `page_blend_space`, and the order is an
-                    // argument rather than a preference: that setting decides
-                    // WHETHER a page is blended in ink, and this one decides how
-                    // far up the zoom range it stays that way. An operator who
-                    // has just read the first has the context for the second,
-                    // and the reverse order would present a ceiling before the
-                    // thing it is a ceiling on.
-                    colour::cmyk_ceiling(ui, draft);
-                    ui.add_space(10.0);
-                    colour::mesh_patch_padding(ui, draft);
-                });
-                // Between Appearance/Colour and Images, and the placement is
-                // the window's own ordering rule rather than a gap-filling:
-                // the groups run from what the PROGRAM looks like, through what
-                // the DOCUMENT is made of, to what pdfcer does with it. Fonts is
-                // a thing documents are made of, and it sits with Images and
-                // Text rather than with the rendering knobs.
-                // The one group a command routes here FOR. See
-                // `Draft::focus`: Tools ▸ Font folders opens this window
-                // because the folders live in it, so it opens ON them rather
-                // than leaving the operator to find a collapsed heading.
-                widgets::group_focused(
-                    ui,
-                    "fonts", // ui-text-exempt: a group key, never displayed.
-                    t::group_fonts(),
-                    false,
-                    focus == Some("fonts"), // ui-text-exempt: a group key.
-                    |ui| {
-                        fonts::folders(ui, &mut draft.working_prefs);
-                        ui.add_space(10.0);
-                        ui.separator();
-                        // Under the folder list, and after a separator,
-                        // because the two are about different halves of the
-                        // same subject: the list is where pdfcer LOOKS for a
-                        // face, and this is what it does when looking has
-                        // failed. Drawn in the order an operator meets them.
-                        fonts::style_policy(ui, draft);
-                    },
-                );
-                widgets::group(ui, "images", t::group_images(), false, |ui| {
-                    images::mask_resample(ui, draft);
-                    ui.add_space(10.0);
-                    images::minify(ui, draft);
-                });
-                widgets::group(ui, "text", t::group_text(), false, |ui| {
-                    text::word_gap(ui, draft);
-                    // The source omitted this one space, so the word-gap
-                    // slider and the setting under it ran together. Every
-                    // other adjacent pair in every group has it.
-                    ui.add_space(10.0);
-                    text::unmappable(ui, draft);
-                    ui.add_space(10.0);
-                    text::actual_text(ui, draft);
-                    ui.add_space(10.0);
-                    // LAST in the group, and a shell preference rather
-                    // than an engine setting. The three above are about what
-                    // the PAGE yields; this is about what the operator
-                    // ASKED for, so it reads as the closing question rather
-                    // than as an interruption between two halves of one
-                    // subject. `OPERATOR_REQUESTS.md` O180.
-                    text::find_trim(ui, &mut draft.working_prefs);
-                });
-                widgets::group(ui, "measuring", t::group_measuring(), false, |ui| {
-                    measuring::parallel(ui, draft);
-                });
-                // Beside Measuring, the other group about AUTHORING rather
-                // than about reading, and before Pages. `comments`' own header
-                // carries why a preference is filed among the document groups
-                // instead of with the other preferences at the end.
-                widgets::group(ui, "comments", t::group_comments(), false, |ui| {
-                    comments::author_name(ui, &mut draft.working_prefs);
-                });
-                // After Comments and before Pages, because the ordering rule
-                // runs from what the program looks like toward what the
-                // document contains, and a form field is content a page
-                // carries rather than a property of the page itself.
-                widgets::group(ui, "forms", t::group_forms(), false, |ui| {
-                    forms::tab_tail(ui, draft);
-                    ui.add_space(10.0);
-                    forms::row_tolerance(ui, draft);
-                });
-                widgets::group(ui, "pages", t::group_pages(), false, |ui| {
-                    pages::separations(ui, draft);
-                    ui.add_space(10.0);
-                    pages::missing_as(ui, draft);
-                });
-                // LAST of the groups about the DOCUMENT, and first of the
-                // two settings that are about another program's file.
-                //
-                // The window's ordering rule runs from what the program looks
-                // like, through what the document is made of, to what pdfcer
-                // does with it. Reading a document's signatures is squarely the
-                // third, so this sits after Pages and before Drawing the page,
-                // where the shell's own preferences begin.
-                //
-                // The permission and the location are drawn in that order
-                // and never the other way round. A person who has just typed a
-                // path and finds nothing happens has been shown the two halves
-                // in the order that makes the second look broken; the group's
-                // own module header carries the argument, and the location's
-                // note says out loud that it is only a location.
-                widgets::group(
-                    ui,
-                    "signatures", // ui-text-exempt: a group key, never displayed.
-                    crate::text::trust::group_signatures(),
-                    false,
-                    |ui| {
-                        signatures::use_store(ui, draft);
-                        ui.add_space(10.0);
-                        signatures::store_path(ui, draft);
-                    },
-                );
-                // The shell's own preferences, LAST — after every group
-                // that is about the document. They are
-                // the only group here whose values live in a different
-                // file, and putting them at the end keeps the window
-                // reading as "everything about your documents, then
-                // everything about the program".
-                widgets::group(ui, "display", t::group_display(), false, |ui| {
-                    display::render_quality(ui, &mut draft.working_prefs);
-                    ui.add_space(10.0);
-                    display::zoom_settle(ui, &mut draft.working_prefs);
-                    // Third, after the two an operator adjusts while
-                    // looking at a page and before the two that apply to
-                    // the NEXT document. See `display::page_cache`.
-                    ui.add_space(10.0);
-                    display::page_cache(ui, &mut draft.working_prefs);
-                    // The two "when a document opens" settings come after
-                    // the two "how a frame is drawn" ones, and the order is
-                    // the group's argument rather than the order they were
-                    // built in. A reader scanning the group meets the
-                    // settings that affect what they are looking at now,
-                    // then the ones that affect the next thing they open —
-                    // and the second pair's radius lines both say so, so a
-                    // reader who stops after the first two has not been
-                    // misled about what the ones below do.
-                    ui.add_space(10.0);
-                    display::opening_fit(ui, &mut draft.working_prefs);
-                    display::wheel_paging(ui, &mut draft.working_prefs);
-                    display::paste_chords(ui, &mut draft.working_prefs);
-                    ui.add_space(10.0);
-                    display::field_shade(ui, &mut draft.working_prefs);
-                    ui.add_space(10.0);
-                    display::ocr_colour(ui, &mut draft.working_prefs);
-                    display::auto_hide(ui, &mut draft.working_prefs);
-                    display::page_chrome(ui, &mut draft.working_prefs);
-                });
-                // WHERE ACROBAT IS — O122, and LAST of all.
-                //
-                // Every group above changes something about a PDF; this one
-                // changes nothing at all except which program a single button
-                // starts, so it is the setting furthest from the document.
-                //
-                // It is drawn whether or not an Acrobat was found, which is
-                // the load-bearing half of O122's escape hatch: the ribbon
-                // control is ABSENT on a machine where discovery failed, so
-                // this group is the only place a person in that position can
-                // be told the feature exists. `acrobat`'s own header carries
-                // the argument.
-                widgets::group(
-                    ui,
-                    "acrobat",
-                    &crate::text::acrobat::group_acrobat(),
-                    false,
-                    |ui| {
-                        acrobat::path(ui, &mut draft.working_prefs, acrobat_viewer);
-                    },
-                );
-                widgets::group(ui, "saving", t::group_saving(), false, |ui| {
-                    saving::xref_entry_eol(ui, draft);
-                    ui.add_space(10.0);
-                    saving::trailing_eol(ui, draft);
-                    // Third, and last, because it is the one an operator
-                    // is least likely to have come for. The two above are
-                    // about every file pdfcer writes; this one is about
-                    // files that carry text markup, which not every
-                    // document does.
-                    ui.add_space(10.0);
-                    saving::quad_point_order(ui, draft);
-                });
-                // Last, and the only group in this window whose setting
-                // destroys rather than describes. It opens closed and sits
-                // below everything an operator scrolls past, because a control
-                // that widens what a redaction deletes should be arrived at,
-                // not encountered.
-                widgets::group(ui, "redaction", t::group_redaction(), false, |ui| {
-                    redaction::residual_reach(ui, &mut draft.working_prefs);
-                });
-            });
+        // The bottom bar is a separator and one row of buttons.
+        let height = (ui.available_height() - 40.0).max(180.0);
+        nav::show(ui, height, draft, focus, acrobat_viewer);
 
         ui.separator();
         ui.horizontal(|ui| {
@@ -635,6 +328,124 @@ pub fn show(
     outcome
 }
 
+/// Draw one page's settings. `nav::PAGES` names the pages; a key it does not
+/// name draws nothing.
+fn page_body(
+    ui: &mut egui::Ui,
+    key: &str,
+    draft: &mut Draft,
+    acrobat_viewer: Option<&crate::acrobat::Viewer>,
+) {
+    // Within a page the order is an argument: what the operator adjusts while
+    // looking comes before what applies to the next document, and a setting
+    // comes after the one it qualifies.
+    match key {
+        "general" => {
+            ui.label(t::intro());
+            ui.add_space(10.0);
+            defaultapp::group(ui, &mut draft.default_app);
+        }
+        "presets" => preset::row(ui, draft),
+        "appearance" => {
+            // The only settings that change the program's appearance rather
+            // than the document's, and the only ones applied before Save.
+            appearance::theme(ui, draft);
+            ui.add_space(10.0);
+            appearance::ui_scale(ui, &mut draft.working_prefs);
+            ui.add_space(10.0);
+            appearance::colour_icons(ui, &mut draft.working_prefs);
+        }
+        "colour" => {
+            colour::intent(ui, draft);
+            ui.add_space(10.0);
+            colour::polarity(ui, draft);
+            ui.add_space(10.0);
+            colour::page_blend_space(ui, draft);
+            ui.add_space(10.0);
+            // After `page_blend_space`: that decides whether a page is
+            // composited in ink, these decide what the ink rules then reach.
+            colour::zero_tint(ui, draft);
+            colour::spot_model(ui, draft);
+            ui.add_space(10.0);
+            colour::cmyk_ceiling(ui, draft);
+            ui.add_space(10.0);
+            colour::mesh_patch_padding(ui, draft);
+        }
+        "fonts" => {
+            // Where pdfcer looks for a face, then what it does when looking
+            // has failed.
+            fonts::folders(ui, &mut draft.working_prefs);
+            ui.add_space(10.0);
+            ui.separator();
+            fonts::style_policy(ui, draft);
+        }
+        "images" => {
+            images::mask_resample(ui, draft);
+            ui.add_space(10.0);
+            images::minify(ui, draft);
+        }
+        "text" => {
+            text::word_gap(ui, draft);
+            ui.add_space(10.0);
+            text::unmappable(ui, draft);
+            ui.add_space(10.0);
+            text::actual_text(ui, draft);
+            ui.add_space(10.0);
+            text::find_trim(ui, &mut draft.working_prefs);
+        }
+        "measuring" => measuring::parallel(ui, draft),
+        "comments" => comments::author_name(ui, &mut draft.working_prefs),
+        "forms" => {
+            forms::tab_tail(ui, draft);
+            ui.add_space(10.0);
+            forms::row_tolerance(ui, draft);
+        }
+        "pages" => {
+            pages::separations(ui, draft);
+            ui.add_space(10.0);
+            pages::missing_as(ui, draft);
+        }
+        "signatures" => {
+            // The permission before the location: a path typed with the
+            // permission off would look broken.
+            signatures::use_store(ui, draft);
+            ui.add_space(10.0);
+            signatures::store_path(ui, draft);
+        }
+        "display" => {
+            let prefs = &mut draft.working_prefs;
+            display::render_quality(ui, prefs);
+            ui.add_space(10.0);
+            display::zoom_settle(ui, prefs);
+            ui.add_space(10.0);
+            display::page_cache(ui, prefs);
+            ui.add_space(10.0);
+            display::opening_fit(ui, prefs);
+            display::wheel_paging(ui, prefs);
+            display::paste_chords(ui, prefs);
+            ui.add_space(10.0);
+            display::field_shade(ui, prefs);
+            ui.add_space(10.0);
+            display::ocr_colour(ui, prefs);
+            display::auto_hide(ui, prefs);
+            display::page_chrome(ui, prefs);
+        }
+        // Drawn whether or not an Acrobat was found: the ribbon control is
+        // absent when discovery failed, so this page is where the operator
+        // learns the feature exists.
+        "acrobat" => acrobat::path(ui, &mut draft.working_prefs, acrobat_viewer),
+        "saving" => {
+            saving::xref_entry_eol(ui, draft);
+            ui.add_space(10.0);
+            saving::trailing_eol(ui, draft);
+            ui.add_space(10.0);
+            saving::quad_point_order(ui, draft);
+        }
+        "redaction" => redaction::residual_reach(ui, &mut draft.working_prefs),
+        _ => {}
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -663,6 +474,7 @@ mod tests {
         ("forms", include_str!("forms.rs")),
         ("images", include_str!("images.rs")),
         ("measuring", include_str!("measuring.rs")),
+        ("nav", include_str!("nav.rs")),
         ("pages", include_str!("pages.rs")),
         ("preset", include_str!("preset.rs")),
         // Binds no `Settings` field either — its one stored value is a `Prefs`

@@ -24,11 +24,19 @@ thread_local! {
     static MUTED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
-/// Run `f` with [`trace`] silenced on this thread.
+/// Whether a writer should emit now: tracing is on and not [`muted`].
+fn on() -> bool {
+    enabled() && !MUTED.get()
+}
+
+/// Run `f` with every writer in this module silenced on this thread.
 ///
 /// For a caller that reuses a planning path which traces what it decides,
 /// such as a preview built from the commit's own plan. Without it the trace
 /// would record a decision that was never acted on.
+///
+/// Also for a pass drawn only to be read, such as the settings window's
+/// search index: its regions and lines describe nothing on screen.
 pub fn muted<R>(f: impl FnOnce() -> R) -> R {
     let was = MUTED.replace(true);
     let out = f();
@@ -38,7 +46,7 @@ pub fn muted<R>(f: impl FnOnce() -> R) -> R {
 
 /// Emit one trace line, building the message only if tracing is on.
 pub fn trace(f: impl FnOnce() -> String) {
-    if enabled() && !MUTED.get() {
+    if on() {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         eprintln!("pdfcer-diag {}", f());
     }
@@ -72,7 +80,7 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
 /// Emit one trace line **only when it differs from the last line emitted
 /// under the same slot**.
 pub fn trace_changed(slot: &'static str, f: impl FnOnce() -> String) {
-    if !enabled() {
+    if !on() {
         return;
     }
     let line = f();
@@ -276,7 +284,7 @@ pub fn ui_rect_visible(name: &str, rect: egui::Rect, clip: egui::Rect) -> bool {
 /// again. The retraction is the `ui-rect` line that then appears for the same
 /// name, and a reader comparing the two must compare their ORDER.
 fn report_clipped(name: &str, rect: egui::Rect, clip: egui::Rect) {
-    if !enabled() {
+    if !on() {
         return;
     }
     let shown = clip.intersect(rect);
@@ -372,7 +380,7 @@ pub fn ui_control(name: &str, response: &egui::Response, clip: egui::Rect) -> bo
 /// Emitted on change only, like every other line in this file, so a dialog
 /// sitting still costs nothing per frame and a dragged one reports its travel.
 pub fn viewport_inner(id: egui::ViewportId, rect: egui::Rect) {
-    if !enabled() {
+    if !on() {
         return;
     }
     // Keyed by id, so two dialogs open at once are two independent change
@@ -420,7 +428,7 @@ pub fn viewport_inner(id: egui::ViewportId, rect: egui::Rect) {
 /// [`viewport_inner`], so the two lines for one window move together and a
 /// window sitting still costs nothing per frame.
 pub fn viewport_outer(id: egui::ViewportId, rect: egui::Rect) {
-    if !enabled() {
+    if !on() {
         return;
     }
     let key = format!("viewport-outer:{:?}", id);
@@ -472,7 +480,7 @@ fn viewport_suffix() -> String {
 }
 
 pub fn ui_rect(name: &str, rect: egui::Rect) {
-    if !enabled() {
+    if !on() {
         return;
     }
     // Recorded before the change test, so a region that is drawn at an
@@ -534,7 +542,7 @@ fn frame_tick() {
 /// **Close a frame's region census and report anything that stopped being
 /// drawn.**
 pub fn end_ui_frame() {
-    if !enabled() {
+    if !on() {
         return;
     }
     frame_tick();
@@ -575,7 +583,7 @@ fn record_rect_if_changed(
 /// Forget every de-duplication slot, so the next frame re-declares
 /// everything.
 pub fn reset_change_gates() {
-    if !enabled() {
+    if !on() {
         return;
     }
     lock(&LAST_LINE).clear();
@@ -595,7 +603,7 @@ static LAST_BY_KEY: LazyLock<Mutex<std::collections::HashMap<String, String>>> =
 
 /// Emit `key value` **only when `value` differs from the last one under `key`**.
 pub fn trace_on_change(key: &str, value: impl FnOnce() -> String) {
-    if !enabled() {
+    if !on() {
         return;
     }
     let value = value();

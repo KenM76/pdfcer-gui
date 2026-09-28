@@ -39,7 +39,7 @@ pub(crate) fn dispatch(id: &str, draft: &mut Option<Draft>, settings: &Settings,
 mod tests {
     use super::*;
 
-    /// **Only the font route asks for a group, and it asks for one that
+    /// **Only the font route asks for a page, and it asks for one that
     /// exists.**
     #[test]
     fn the_font_route_lands_on_a_group_the_dialog_draws() {
@@ -49,15 +49,9 @@ mod tests {
         assert!(handles("tools.font_folders"));
         assert!(!handles("file.print"));
 
-        // The key, checked against the dialog's own source rather than
-        // against a second copy of the string. A test asserting
-        // `focus(..) == Some("fonts")` against a constant this module also owns
-        // would pass on a rename that broke the landing.
-        let dialog = include_str!("../../dialogs/settings/mod.rs");
         assert!(
-            dialog.contains(r#""fonts", // ui-text-exempt: a group key, never displayed."#),
-            "the Settings window no longer draws a group keyed `fonts`, so the Tools route \
-             lands nowhere and does so silently"
+            crate::dialogs::settings::nav::has_page("fonts"),
+            "the Settings window no longer has a page keyed `fonts`, so the Tools route lands nowhere and does so silently"
         );
     }
 }

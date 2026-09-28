@@ -1,10 +1,9 @@
-# `dialogs::settings::widgets` — the three shapes every setting is made of
+# `dialogs::settings::widgets` — the shapes every setting is made of
 
-Seven group modules draw thirteen settings, and every one of them is built
-from the three functions here. That is deliberate: a settings window whose
-entries are hand-laid-out drifts into thirteen slightly different layouts
-within a year, and the reader notices the inconsistency before they notice
-the content.
+Every setting on every page is built from these functions. A settings window
+whose entries are hand-laid-out drifts into slightly different layouts, and
+the reader notices the inconsistency before the content. Because every
+option name passes through them, they are also what the search reads.
 
 ## [`header`]'s signature is where obligation 2 and 3 are enforced
 
@@ -32,65 +31,24 @@ instead.
 
 ## Item notes
 
-### `fn group`
+### `fn set_query`, `fn collect`, and the private `fn name`
 
-## Plain text, not `.strong()` — `DEFECTS.md` D11
+Every title and option label goes through `name`, which does two things.
+While [`collect`] runs it records the name, lower-cased; `nav` builds the
+search index this way, by drawing each page once invisibly. And when the
+name contains the frame's search (set by [`set_query`]) it is marked:
+underlined and in the palette's `notice` colour.
 
-Both this and [`header`] used `RichText::strong()` in their first draft, and
-both were **near-invisible on screen**: pale grey on pale grey, while the
-radio labels under them read normally. Found by capturing the running
-window, which is the only oracle for this class of defect and is why the
-check that opens this dialog exists.
+**Not `.strong()`** — `DEFECTS.md` D11. egui has no separate role for
+emphasised text: `strong_text_color()` returns `widgets.active.fg_stroke`,
+the foreground of the accent-filled state, so on an ordinary panel in any of
+this project's themes `.strong()` renders pale on pale. The titles are plain
+text for the same reason; `tools/gates/check-strong-text.sh` refuses a bare
+`.strong()`.
 
-The mechanism is `egui`'s, and D11 sets it out: there is **no separate role
-for emphasised text** — `strong_text_color()` returns
-`widgets.active.fg_stroke`, the foreground of the *accent-filled* state. In
-any theme whose active state is accent-filled, which is all three of this
-project's, `.strong()` on an ordinary panel resolves to a colour chosen to
-sit on the accent. It also survives `override_text_color`.
-
-D11 states the rule — *"do not use `RichText::strong()` in this
-application"* — and prescribes the fix five other panels already took:
-render as plain text, because *"the emphasis they were asking for was
-invisible"*. The hierarchy that emphasis was reaching for is still there and
-is carried by layout rather than by weight: a heading has a disclosure
-triangle beside it, and a setting's title is the only line of the three that
-is **not** `.small().weak()`.
-
-The two legitimate uses in the workspace both take the colour back
-explicitly on the next line — `egui-shell`'s ribbon and dock tab labels,
-which are drawn on an accent fill and pair `.strong()` with
-`.color(palette.on_accent)`. That pairing is what
-`tools/gates/check-strong-text.sh` allows and a bare `.strong()` is what it
-refuses, so this cannot be got wrong a third time by remembering.
-
-## The rest of this control
-
-A `CollapsingHeader` rather than a `heading` size: this window is a list of
-thirteen things and a true heading at each of seven would make it read as
-seven documents. `default_open` is passed rather than remembered, because
-which group is expanded is a statement about which symptom is most likely —
-see the module header — and not a preference of the operator's to be
-persisted.
-`key` is the stable identifier the heading's rect is published under —
-`settings.heading.<key>` — and it is deliberately **not** derived from the
-caption. The caption is operator copy and may be reworded or translated; a
-check aimed at a region named after it would then silently stop finding its
-subject and report a heading that is not there rather than a heading that is
-illegible. Those are different verdicts and only one of them is true.
-
-### `fn group_focused`
-
-`focused` forces it open and scrolls the window to it, once, on the
-frame the dialog is built. See [`super::Draft::focus`] for the argument: a
-route that exists because of one setting must land on that setting, and
-Tools ▸ Font folders was dropping the operator at the top of ten collapsed
-headings.
-
-`open(Some(true))` **only when focused**, never `Some(false)` otherwise.
-`CollapsingHeader::open` overrides the operator's own click for as long as it
-is passed, so a group forced open every frame is one they cannot collapse —
-and the fix for a discoverability problem must not take away a control.
+The collector and the query are thread-locals rather than arguments because
+the pages call these functions a hundred times and none of those calls
+should have to carry the search.
 
 ### `fn header`
 
@@ -104,9 +62,8 @@ need before touching a radio rather than after.
 rather than the choice, and at the same weight as the title they would make
 every setting look like three settings.
 
-The title is **plain text**, not `.strong()` — see [`group`] for the
-screenshot that found the difference and `DEFECTS.md` D11 for why no theme
-this project ships can render `.strong()` legibly on a panel. Being the only
+The title is **plain text**, not `.strong()` — see [`collect`] above and
+`DEFECTS.md` D11. Being the only
 one of the three lines that is not small and weak is the whole of its
 emphasis, and it is enough.
 
