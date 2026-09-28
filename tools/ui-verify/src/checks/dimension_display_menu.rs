@@ -228,6 +228,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
     driver.click_at(session.frame()?.declared_center(finish))?;
+    session.settle(18);
+    // The placing click: the text half way along a 0° leader.
+    driver.click_at(at(about_centre(page, (0.5, 0.0)))?)?;
     session.settle(30);
     if session.trace()?.events(COMMIT_EVENT).count() == 0 {
         return Ok(Some(format!(

@@ -221,6 +221,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     driver.click_at(aimed[0])?;
+    session.settle(18);
+    // The placing click, at the vertex centroid: the text where it always sat.
+    driver.click_at(frame.to_screen(mapping.doc_to_window(DocPoint::new(
+        0,
+        f64::midpoint(CORNERS[0].0, CORNERS[2].0) * page.width_pt,
+        f64::midpoint(CORNERS[0].1, CORNERS[2].1) * page.height_pt,
+    ))?))?;
     session.settle(30);
     let trace = session.trace()?;
     if trace.events(COMMIT_EVENT).count() == 0 {

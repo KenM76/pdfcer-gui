@@ -66,6 +66,11 @@ impl ScriptedPointer {
         &self.path
     }
 
+    /// Move the pointer to `at` in the root viewport, pressing nothing.
+    pub fn hover(&self, session: &Session, at: WindowPoint) -> Result<TraceLine> {
+        self.send(session, &format!("move {}", xy(at)))
+    }
+
     /// A primary click at `at` in the root viewport.
     pub fn click(&self, session: &Session, at: WindowPoint) -> Result<TraceLine> {
         self.send(session, &format!("click {}", xy(at)))
@@ -128,6 +133,29 @@ impl ScriptedPointer {
         self.send(session, "gone")
     }
 
+    /// Write the window's own rendered frame to `png`: egui's screenshot,
+    /// which sees a window placed off the desktop where an OS capture sees
+    /// whatever is on screen there.
+    pub fn screenshot(&self, session: &Session, png: &Path) -> Result<()> {
+        let ack = self.send(session, "shot")?;
+        let Some(ppm) = ack.get("path") else {
+            return Err(Error::new(format!(
+                "the screenshot was not written: `{}`",
+                ack.raw
+            )));
+        };
+        let bytes = std::fs::read(ppm)
+            .map_err(|e| Error::new(format!("could not read the screenshot {ppm}: {e}")))?;
+        let (w, h, rgb) = parse_ppm(&bytes)
+            .ok_or_else(|| Error::new(format!("{ppm} is not a binary PPM the seam writes")))?;
+        let encoded = crate::png::encode_rgb(w, h, rgb)
+            .ok_or_else(|| Error::new(format!("could not encode {ppm} as PNG")))?;
+        std::fs::write(png, encoded)
+            .map_err(|e| Error::new(format!("could not write {}: {e}", png.display())))?;
+        let _ = std::fs::remove_file(ppm);
+        Ok(())
+    }
+
     /// Append one step in the seam's grammar (without the sequence number)
     /// and wait for its acknowledgement.
     pub fn send(&self, session: &Session, body: &str) -> Result<TraceLine> {
@@ -172,6 +200,43 @@ impl ScriptedPointer {
     }
 }
 
+/// Width, height and pixels of a `P6` file with a maxval of 255 and no
+/// comments — the only form the seam writes.
+fn parse_ppm(bytes: &[u8]) -> Option<(u32, u32, &[u8])> {
+    let mut fields = Vec::new();
+    let mut at = 0;
+    while fields.len() < 4 {
+        while bytes.get(at)?.is_ascii_whitespace() {
+            at += 1;
+        }
+        let start = at;
+        while !bytes.get(at)?.is_ascii_whitespace() {
+            at += 1;
+        }
+        fields.push(std::str::from_utf8(&bytes[start..at]).ok()?);
+    }
+    let pixels = bytes.get(at + 1..)?;
+    let (w, h): (u32, u32) = (fields[1].parse().ok()?, fields[2].parse().ok()?);
+    let ok =
+        fields[0] == "P6" && fields[3] == "255" && pixels.len() == (w as usize) * (h as usize) * 3;
+    ok.then_some((w, h, pixels))
+}
+
 fn xy(p: WindowPoint) -> String {
     format!("{:.1} {:.1}", p.x(), p.y())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_ppm;
+
+    #[test]
+    fn a_ppm_the_seam_writes_reads_back_and_a_short_one_is_refused() {
+        let mut bytes = b"P6\n2 1\n255\n".to_vec();
+        bytes.extend_from_slice(&[1, 2, 3, 4, 5, 6]);
+        assert_eq!(parse_ppm(&bytes), Some((2, 1, &[1u8, 2, 3, 4, 5, 6][..])));
+        bytes.pop();
+        assert_eq!(parse_ppm(&bytes), None);
+        assert_eq!(parse_ppm(b"P5\n1 1\n255\n\0"), None);
+    }
 }

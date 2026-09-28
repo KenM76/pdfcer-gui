@@ -237,7 +237,7 @@ activation, OS drag-and-drop, and the focus-chain checks — those are about
 how the program answers the operating system. The existing drag and click
 checks still use his cursor until each is moved across.
 
-## O261 — **FILED** — a new ce dimension follows the mouse after its last pick, and a click places it where its text goes
+## O261 — **BUILT AND DRIVEN — awaiting your verdict** — a new ce dimension follows the mouse after its last pick, and a click places it where its text goes
 
 His words: *"please also make it so when adding dimensions that instead of
 placing the dimension after the slection is complete, I see a live preview
@@ -252,6 +252,18 @@ this third click, but its preview is bare lines with no text, so it does not
 read as the dimension being placed. Every other kind commits on its last pick
 at a fixed spot: two-line (linear or angular), radius and diameter, perimeter
 and path length.
+
+**State:** every ce dimension gesture now ends with the dimension, value text
+included, following the pointer; the next click commits it with its text at
+that spot, snapped as the preview drew it. Escape or a tool change drops it.
+An angle's text cannot be placed yet (the engine centres it on the arc,
+request G064), so for an angle the click sets how far out the arc sits. The
+preview is drawn by the shell, close to but not the engine's own bake
+(request G063). Driven off-screen for a radius, with screenshots of the
+preview and the placed result; the five OS-driven dimension checks were
+updated to click-to-place but not run while you are using the PC. Also
+fixed: a quick run of picks ending in a double-click no longer removes the
+last point instead of finishing the circle.
 
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 

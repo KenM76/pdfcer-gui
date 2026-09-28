@@ -240,6 +240,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.settle(12);
     }
     driver.click_at(aimed[0])?;
+    session.settle(18);
+    // The placing click, at the vertex centroid: the text where it always sat.
+    driver.click_at(at(
+        f64::midpoint(CORNERS[0].0, CORNERS[2].0),
+        f64::midpoint(CORNERS[0].1, CORNERS[2].1),
+    )?)?;
     session.settle(30);
     if session.trace()?.events(COMMIT_EVENT).count() == 0 {
         return Ok(Some(format!(

@@ -14,6 +14,7 @@
 //! <seq> drag X0 Y0 X1 Y1 [steps=N] [btn=…] [mods=…] [vp=V]
 //! <seq> wheel X Y DY [mods=…] [vp=V]
 //! <seq> gone [vp=V]
+//! <seq> shot [vp=V]
 //! ```
 //!
 //! Points are egui logical points of the target viewport — the space
@@ -26,7 +27,13 @@
 //! diag-pointer seq=3 verb=click vp=root frames=3
 //! ```
 //!
-//! and an unreadable line answers `diag-pointer-refused seq=… line=…`. The
+//! `shot` asks egui for the viewport's own rendered frame — the one oracle
+//! for a window placed off the desktop, where an OS capture sees whatever is
+//! on screen there — and writes it beside the step file as a binary PPM,
+//! `<step file>.shot-<seq>.ppm`. Its acknowledgement waits for the file and
+//! adds `path= w= h=`.
+//!
+//! An unreadable line answers `diag-pointer-refused seq=… line=…`. The
 //! acknowledgement says the events were **delivered**, never what they did:
 //! a check reads the effect from the application's own trace.
 //!
@@ -41,6 +48,12 @@ use egui::{Context, Event, Modifiers, PointerButton, Pos2, RawInput, ViewportId,
 
 /// How often an idle app re-reads the file for new steps.
 const POLL: Duration = Duration::from_millis(50);
+
+/// The most egui's clock advances between two frames of one step, in
+/// seconds. A slow frame must not stretch a scripted double-click past
+/// egui's double-click delay or a click past its longest press; a real
+/// hand's timing is the operator's, a script's is not a thing under test.
+const STEP_FRAME_S: f64 = 1.0 / 60.0;
 
 /// Frames a drag spends moving when the step does not say.
 const DEFAULT_DRAG_STEPS: usize = 6;
@@ -81,6 +94,9 @@ struct Step {
     frames: VecDeque<Vec<Event>>,
     /// Frames delivered so far.
     sent: usize,
+    /// The input time given to this step's last frame, from which the next
+    /// frame's is capped by [`STEP_FRAME_S`].
+    clock: Option<f64>,
 }
 
 /// Parse one line; `Err` carries nothing, the caller quotes the line.
@@ -123,6 +139,7 @@ fn parse(line: &str) -> Result<Step, ()> {
         modifiers,
         frames,
         sent: 0,
+        clock: None,
     })
 }
 
@@ -223,6 +240,10 @@ fn expand(
             want(0)?;
             vec![vec![Event::PointerGone]]
         }
+        "shot" => {
+            want(0)?;
+            vec![Vec::new()]
+        }
         _ => return Err(()),
     };
     Ok(frames.into())
@@ -239,6 +260,17 @@ pub struct PointerScript {
     last: Option<(ViewportId, u64)>,
     /// Every viewport that has begun a pass.
     seen: Vec<ViewportId>,
+    /// A `shot` delivered and not yet written.
+    shot: Option<Shot>,
+}
+
+/// A screenshot owed to the harness.
+struct Shot {
+    seq: u64,
+    viewport: ViewportId,
+    /// Whether the viewport command has been sent; it is sent from inside a
+    /// pass, because commands issued before `begin_pass` are discarded by it.
+    requested: bool,
 }
 
 impl PointerScript {
@@ -257,7 +289,50 @@ impl PointerScript {
             queue: VecDeque::new(),
             last: None,
             seen: Vec::new(),
+            shot: None,
         })
+    }
+
+    /// Write the owed screenshot if this viewport's input carries it, and
+    /// acknowledge its step.
+    fn write_shot(&mut self, viewport: ViewportId, input: &RawInput) {
+        let Some(seq) = self
+            .shot
+            .as_ref()
+            .filter(|s| s.viewport == viewport)
+            .map(|s| s.seq)
+        else {
+            return;
+        };
+        let Some(image) = input.events.iter().find_map(|e| match e {
+            Event::Screenshot {
+                viewport_id, image, ..
+            } if *viewport_id == viewport => Some(image.clone()),
+            _ => None,
+        }) else {
+            return;
+        };
+        self.shot = None;
+        let path = format!("{}.shot-{seq}.ppm", self.path.display());
+        let [w, h] = image.size;
+        let mut bytes = format!("P6\n{w} {h}\n255\n").into_bytes(); // ui-text-exempt: a PPM file header, never displayed
+        bytes.reserve(w * h * 3);
+        for px in &image.pixels {
+            bytes.extend_from_slice(&[px.r(), px.g(), px.b()]);
+        }
+        let outcome = match std::fs::write(&path, bytes) {
+            Ok(()) => format!("path={path} w={w} h={h}"), // ui-text-exempt: a trace field list, never displayed
+            Err(e) => format!("error={}", e.to_string().replace(' ', "_")),
+        };
+        let vp = if viewport == ViewportId::ROOT {
+            "root".to_owned()
+        } else {
+            format!("{viewport:?}")
+        };
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("diag-pointer seq={seq} verb=shot vp={vp} frames=1 {outcome}")
+        });
     }
 
     /// Read what the harness appended since last time; queue whole lines.
@@ -312,6 +387,16 @@ impl egui::Plugin for PointerScript {
     /// pass and is cleared by its own begin.
     fn on_end_pass(&mut self, ui: &mut egui::Ui) {
         let viewport = ui.ctx().viewport_id();
+        if let Some(shot) = self
+            .shot
+            .as_mut()
+            .filter(|s| s.viewport == viewport && !s.requested)
+        {
+            shot.requested = true;
+            ui.ctx()
+                .send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::default()));
+            ui.ctx().request_repaint();
+        }
         let Some(step) = self.queue.front() else {
             if viewport == ViewportId::ROOT {
                 ui.ctx().request_repaint_after(POLL);
@@ -332,6 +417,7 @@ impl egui::Plugin for PointerScript {
         if viewport == ViewportId::ROOT {
             self.poll();
         }
+        self.write_shot(viewport, input);
         let Some(step) = self.queue.front_mut() else {
             return;
         };
@@ -347,6 +433,13 @@ impl egui::Plugin for PointerScript {
         };
         self.last = Some((viewport, frame));
         step.sent += 1;
+        // Capping keeps time monotonic: each capped time exceeds the last,
+        // and the step's end hands back the real clock, which is later still.
+        if let Some(now) = input.time {
+            let t = step.clock.map_or(now, |last| now.min(last + STEP_FRAME_S));
+            input.time = Some(t);
+            step.clock = Some(t);
+        }
         input.events.extend(events);
         if step.modifiers != Modifiers::NONE {
             input.modifiers = step.modifiers;
@@ -356,6 +449,15 @@ impl egui::Plugin for PointerScript {
             let verb = step.verb.clone();
             let vp = step.target.token().to_owned();
             self.queue.pop_front();
+            if verb == "shot" {
+                // Acknowledged by `write_shot`, once the file exists.
+                self.shot = Some(Shot {
+                    seq,
+                    viewport,
+                    requested: false,
+                });
+                return;
+            }
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!("diag-pointer seq={seq} verb={verb} vp={vp} frames={sent}")
@@ -394,6 +496,14 @@ mod tests {
             panic!("not a move")
         };
         assert!((p.x - 40.0).abs() < 1e-3);
+    }
+
+    #[test]
+    fn a_shot_is_one_frame_with_no_events() {
+        let step = parse("9 shot").unwrap();
+        assert_eq!(step.frames.len(), 1);
+        assert!(step.frames[0].is_empty());
+        assert!(parse("9 shot 1 2").is_err());
     }
 
     #[test]

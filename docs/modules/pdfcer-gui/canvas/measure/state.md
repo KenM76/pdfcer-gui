@@ -51,6 +51,13 @@ core's constant rather than a literal `0` written here.
 3. **Nothing computational changed.** No transition, no field, no default
    was altered.
 
+## `placing`
+
+A measured dimension waiting for its placing click, with the gesture's
+disclosures. While it is set the pick is still in progress (the ribbon's
+Escape and tool guards see it), and `set_linear_pick_mode`, `clear_gesture`
+and a kind change drop it uncommitted.
+
 ## Item notes
 
 ### `fn changing_kind_discards_a_pick_in_progress`

@@ -691,7 +691,12 @@ pub fn click(
                 // operator supplies it — and it is carried on the same
                 // value as the click it belongs to for the reason every
                 // other field is: one click, one complete statement.
-                double,
+                //
+                // A triple counts: egui calls a release a triple when it
+                // falls within twice the double-click delay of the click
+                // before last, so an operator who picks quickly and then
+                // double-clicks gets a triple, and it must still end the fit.
+                double: double || triple,
                 targets: targets.map(|t| t as &dyn super::target::CanvasTargetProvider),
                 map,
             },

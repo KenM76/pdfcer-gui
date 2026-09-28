@@ -54,8 +54,10 @@ const DRAG: (f64, f64) = (1.5, 2.0);
 /// The leader angle the drop implies, and how far the stored one may be off.
 const EXPECTED_ANGLE: f64 = 45.0;
 const ANGLE_TOLERANCE: f64 = 5.0;
-/// Where the label sat before the drag, as a box about the centre in radii.
-/// A new circular ce dimension puts its text half way along a 0° leader.
+/// Where the placing click drops the text, in radii about the centre.
+const PLACE_AT: (f64, f64) = (0.5, 0.0);
+/// Where the label sat before the drag, as a box about the centre in radii:
+/// centred on [`PLACE_AT`].
 const OLD_LABEL: [(f64, f64); 4] = [(0.3, -0.07), (0.7, -0.07), (0.7, 0.07), (0.3, 0.07)];
 /// The fraction of a box that must be ink for text to count as drawn there.
 const INKED: f64 = 0.01;
@@ -211,6 +213,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
     driver.click_at(session.frame()?.declared_center(finish))?;
+    session.settle(18);
+    // The placing click: the text goes half way along a 0° leader.
+    driver.click_at(at(about_centre(page, PLACE_AT))?)?;
     session.settle(30);
     if session.trace()?.events(COMMIT_EVENT).count() == 0 {
         return Ok(Some(format!(

@@ -117,7 +117,7 @@ mean the state machine has slipped.
 
 The single place a `DimensionKind` is built for this tool, so the
 preview and the commit cannot describe different shapes — the standing
-rule in [`super`], and the reason [`super::circular::commit`] exists as
+rule in [`super`], and the reason [`super::circular::complete`] exists as
 one function reached by two endings.
 
 `offset` and `text_along` are zero: the label starts at the vertex
@@ -143,19 +143,18 @@ group's scale and number format. Two places that both applied the scale
 would double it, and one that applied it here would put a unit-aware
 number in a geometry function.
 
-### `fn commit`
+### `fn complete`
 
-The one commit path, reached by all three endings — closing the ring,
-double-clicking, and the `measure.finish` command. That is the same argument
-[`super::circular::commit`] makes and it matters more here, because there
-are three doors rather than two: three places each building a
-`DimensionKind` is three chances for one of them to forget the `closed`
-flag.
+The one completion path, reached by all three endings — closing the ring,
+double-clicking, and the `measure.finish` command. It moves the authored
+perimeter into `st.placing`, where the placing click commits it. Three
+places each building a `DimensionKind` would be three chances for one of
+them to forget the `closed` flag.
 
-Pure over the state and the action list — no `egui`, no context, no memory —
-which is what makes every ending assertable without a window.
+Pure over the state — no `egui`, no context — which is what makes every
+ending assertable without a window.
 
-Returns `false` and raises nothing when there is not enough shape to author.
+Returns `false` and places nothing when there is not enough shape to author.
 
 ### `struct Click`
 

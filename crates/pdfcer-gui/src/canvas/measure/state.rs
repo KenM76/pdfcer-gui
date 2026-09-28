@@ -7,12 +7,13 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/measure/state.md`.
 
-use pdfcer_core::dimension::{DimensionKind, GroupId};
+use pdfcer_core::dimension::GroupId;
 use pdfcer_core::vector::Point;
 
 use super::MeasureKind;
 use super::pick::{CircularPick, LinearPick, LinearPickMode, TwoLinePick};
 use super::scale::ScalePick;
+use pdfcer_gui_base::measure::place::Placing;
 
 /// The outcome of resolving a click on the active snap candidate
 /// ([`MeasureState::resolve_click`], ui-spec §2.3).
@@ -84,19 +85,14 @@ pub struct MeasureState {
     pub kind: MeasureKind,
     /// The two-line pick (the linear tool in [`LinearPickMode::TwoLines`]).
     ///
-    /// A sibling field rather than a use of [`Self::pending`], deliberately —
-    /// see [`TwoLinePick`]'s own docs for the `committable_gesture` hazard
-    /// that choice avoids.
+    /// See [`TwoLinePick`]'s own docs for the `committable_gesture` hazard
+    /// a shared slot would bring.
     pub two_lines: TwoLinePick,
-    /// The linear tool's completed-but-not-yet-authored dimension (ui-spec
-    /// §2.1: the second click "commits point B and opens the value/group
-    /// property bar" — authoring happens only on the explicit Accept, never on
-    /// the click itself, fuzzy-never-sneaky). `Some` between the second click
-    /// and Accept/Reject; while it is `Some`, further picks are ignored (the
-    /// operator is reviewing). The circular/scale tools review live and do not
-    /// use this (circular authors [`CircularPick::author`] at Accept, scale
-    /// commits its dialog), so it is the linear tool's alone.
-    pub pending: Option<DimensionKind>,
+    /// A measured ce dimension following the pointer, waiting for the click
+    /// that places it and its text. Set when the circular, perimeter or
+    /// two-line gesture completes; the linear tool places through
+    /// [`LinearPick`]'s own third click.
+    pub placing: Option<Placing>,
     /// The most recent ACCEPT's disclosures, rendered verbatim until the next
     /// Accept or tool exit (ui-spec §6, the standing verbatim-disclosure rule).
     pub last_disclosures: Vec<String>,
@@ -162,7 +158,7 @@ impl MeasureState {
             perimeter: super::perimeter::PerimeterPick::default(),
             scale: ScalePick::new(),
             two_lines: TwoLinePick::new(),
-            pending: None,
+            placing: None,
             last_disclosures: Vec::new(),
             queued_close_tool: false,
             queued_open_groups: false,
@@ -182,7 +178,7 @@ impl MeasureState {
         self.linear_pick_mode = mode;
         self.linear.clear();
         self.two_lines.clear();
-        self.pending = None;
+        self.placing = None;
     }
 
     /// **Bring this state into line with the armed [`MeasureKind`], discarding
@@ -219,7 +215,7 @@ impl MeasureState {
         self.circular.clear();
         self.scale.clear();
         self.two_lines.clear();
-        self.pending = None;
+        self.placing = None;
         self.snap_cycle = 0;
         self.derived_promoted = None;
     }
@@ -280,7 +276,7 @@ impl MeasureState {
             || self.perimeter.in_progress()
             || self.scale.in_progress()
             || self.two_lines.in_progress()
-            || self.pending.is_some()
+            || self.placing.is_some()
     }
 }
 
@@ -466,17 +462,20 @@ mod tests {
         assert!(st.gesture_in_progress(), "scale: one point is a gesture");
 
         let mut st = MeasureState::new(0);
-        st.pending = Some(DimensionKind::Linear {
-            a: p(0.0, 0.0),
-            b: p(1.0, 0.0),
-            constraint: pdfcer_core::vector::AxisConstraint::Aligned,
-            offset: 0.0,
-            text_along: 0.0,
-            extension_gap: [None; 2],
+        st.placing = Some(Placing {
+            kind: pdfcer_core::dimension::DimensionKind::Linear {
+                a: p(0.0, 0.0),
+                b: p(1.0, 0.0),
+                constraint: pdfcer_core::vector::AxisConstraint::Aligned,
+                offset: 0.0,
+                text_along: 0.0,
+                extension_gap: [None; 2],
+            },
+            disclosures: Vec::new(),
         });
         assert!(
             st.gesture_in_progress(),
-            "a completed-but-unaccepted dimension is a gesture — Escape must reach it"
+            "a dimension waiting to be placed is a gesture — Escape must reach it"
         );
     }
 }

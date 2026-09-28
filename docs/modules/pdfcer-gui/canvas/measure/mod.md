@@ -169,7 +169,7 @@ why asking the question once per tool does not work.
 
 ### `fn finish`
 
-Routes to the armed tool's own commit path - never to a second one. Each
+Routes to the armed tool's own completion path - never to a second one. Each
 tool has exactly one function that builds its `DimensionKind`, and this is
 the door the ribbon knocks on rather than a third place that could author a
 slightly different shape.
@@ -230,22 +230,24 @@ by construction rather than by a guard either could forget.
 
 # The commit happens on the placing click, and there is no accept box
 
-The old shell held a completed pick in `MeasureState::pending` and waited
-for an explicit Accept drawn in a property bar. That is deliberately not
-carried across, and the reason is the operator's own: decision 024 and
-`shell-redesign.md` §2.4 exist because they disliked *"a separate accept /
-reject box somewhere on the screen"*, and `MODES_AND_PANELS.md` now makes
-application-initiated floating surfaces default to **Never**.
+Every gesture ends in a **placing step**. Once the picks say what is
+measured — a linear's two points, a closed perimeter, a finished circle
+fit, a two-line pair — the authored dimension is held in
+[`MeasureState::placing`] and follows the pointer: `draw` paints it with its
+value text at the snapped hover point, through the same
+`pdfcer_gui_base::measure::place::placed_at` the commit uses. The next
+canvas click, whatever the tool, **is** the commit, and the value text lands
+where it was clicked (O261). For an angular dimension only the arc radius
+follows the click; the engine centres its text on the arc (request G064).
 
-So the third click — the one that says where the dimension sits — **is** the
-commit. That is also what SolidWorks does, which is what the standing
-*"make it work the way other programs do"* tie-breaker asks for, and the
-corrective for a mis-placed dimension is undo, exactly as it is for a
-mis-drawn markup.
+There is no accept box: the operator disliked *"a separate accept / reject
+box somewhere on the screen"* (decision 024), and `MODES_AND_PANELS.md`
+defaults application-initiated floating surfaces to **Never**. A misplaced
+dimension is corrected by undo, as a misdrawn markup is. Escape, a tool
+change or a page change drops a held dimension uncommitted.
 
-`pending` is therefore never set here. It stays on [`MeasureState`] because
-it is salvaged state with its own tests, and because a future property
-surface that is *not* a floating box would use it.
+`pending` is never set here. It stays on [`MeasureState`] because it is
+salvaged state with its own tests.
 
 # The circular tool is the exception, and it has two endings
 
@@ -258,8 +260,8 @@ operator ends it, in one of two ways:
 | **double-click** on the canvas | this function, the `double` flag on [`Pick`] | what every drawing package's multi-pick tool uses; the standing *"make it work the way other programs do"* tie-breaker |
 | **`measure.finish`** on the ribbon | [`finish`], through the dispatcher | discoverable without knowing the double-click, and reachable when the last pick sits somewhere awkward to double-click |
 
-Both call [`circular::commit`] and nothing else raises a circular
-`Action::CommitDimension`. Neither is a floating accept box, so decision 024
+Both call [`circular::complete`], which moves the fit into the placing
+step; neither commits. Neither is a floating accept box, so decision 024
 stands.
 
 **The first click of a double-click is still a pick**, and that is
@@ -270,3 +272,9 @@ double-click somewhere harmless. It is also the convention this canvas
 already follows: [`crate::canvas::selection::SelectionState::click`] takes
 the same flag and gives the *second* click its own meaning (descend a rung)
 rather than repeating the first's.
+
+A **triple** click ends the fit too. egui reports a release as a triple when
+it falls within twice the double-click delay of the click before last, so an
+operator who picks quickly and then double-clicks produces a triple;
+`canvas::clicking` passes `double || triple` so it still ends the fit
+instead of toggling the last point off.

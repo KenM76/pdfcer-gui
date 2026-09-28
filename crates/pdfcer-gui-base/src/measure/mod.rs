@@ -10,5 +10,7 @@ pub mod circpick;
 pub mod kind;
 /// The linear and two-line pick machines; re-exports [`circpick`]'s types.
 pub mod pick;
+/// Where a ce dimension lands when the operator clicks to place it.
+pub mod place;
 /// Scale entry, and the dimension-group actions.
 pub mod scale;

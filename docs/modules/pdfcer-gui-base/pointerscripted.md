@@ -30,6 +30,14 @@ verb spreads its events across frames:
 - **Drag:** a move, the press, `steps` moves, the release.
 - **Wheel:** a move, then the wheel.
 
+- **Shot:** one empty frame, then egui's own screenshot (below).
+
+Within one step the input clock advances at most 1/60 s a frame. egui counts
+a double-click by the time between releases and a click by how long the
+button was held, so a slow frame would otherwise turn a scripted double into
+two singles. Each capped time still exceeds the last, and the next step's
+frames take the real clock again, so time stays monotonic.
+
 A discarded pass calls `begin_pass` again within the same frame. Steps are
 therefore keyed on `(viewport, cumulative_frame_nr_for)`, so a step is never
 handed out twice.
@@ -52,6 +60,17 @@ before the pass, and the pass's own begin clears it. The application then
 stops drawing, and every step times out unacknowledged.
 
 `diag-pointer-armed path=` is written once, when the plugin is added.
+
+## Screenshots
+
+`shot` is the only oracle for pixels of a window placed off the desktop: an
+OS capture there sees whatever is on screen at those coordinates. The seam
+sends `ViewportCommand::Screenshot` from `on_end_pass` (a command issued
+before `begin_pass` is discarded by it), finds the `Event::Screenshot` in a
+later frame's input, and writes it as a binary PPM (`P6`, maxval 255, no
+comments) at `<step file>.shot-<seq>.ppm`. The step is acknowledged only
+then, with `path= w= h=` added, or `error=` if the write failed.
+`ScriptedPointer::screenshot` reads it back and writes a PNG.
 
 ## Coordinates
 

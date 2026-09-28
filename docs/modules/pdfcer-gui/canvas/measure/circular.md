@@ -40,8 +40,9 @@ that click land?"*.
 | **double-click** on the canvas | [`click`], via [`super::click`]'s `double` flag | what every drawing package's multi-pick tool uses; the standing *"make it work the way other programs do"* tie-breaker |
 | **`measure.finish`** on the ribbon | [`finish`], via `app::dispatch` | discoverable without knowing the double-click, and reachable when the last picked arc sits somewhere awkward to double-click |
 
-Both call [`commit`] and nothing else raises a circular
-`Action::CommitDimension`. Two arms that each assembled a `DimensionKind`
+Both call [`complete`], which moves the fitted dimension into the placing
+step (`MeasureState::placing`); the placing click in [`super::click`] is the
+commit. Two arms that each assembled a `DimensionKind`
 would be two derivations of one answer: they would agree on the day they
 were written, diverge at the first change to either, and **the operator
 would have no way to see it** — a circle fitted from the same points looks
@@ -174,24 +175,20 @@ Published by `crate::app::PdfcerApp::conditions` and read by
 `measure.finish`'s `enabled_when`. See [`pending`] for what the three
 conditions are and why each one is needed.
 
-### `fn commit`
+### `fn complete`
 
-**The one commit path**, reached by both endings — see the module header
-for the argument, which is the reason this function exists rather than two
-arms that each build a `DimensionKind`.
-
-Pure over the state and the action list — no `egui`, no context, no memory —
+**The one completion path**, reached by both endings. Moves the fitted
+dimension into `st.placing` and empties the pick set, so a second Finish
+finds nothing to complete. Pure over the state — no `egui`, no context —
 which is what makes both endings assertable without a window.
 
-Returns `false` and raises nothing when the fit is degenerate. That is the
-same refusal [`super::pick::CircularPick::author`] states: an inference
+Returns `false` and places nothing when the fit is degenerate: an inference
 pdfcer cannot make is not made silently on the operator's behalf.
 
 ### `fn finish`
 
-The second entrance to [`commit`], and the only thing it adds is the trip
-through `egui::Memory`: read the state, run the one commit path, write it
-back. The page comes from the **state**, not from the current view, because
+The second entrance to [`complete`], and the only thing it adds is the trip
+through `egui::Memory`: read the state, complete the fit, write it back. The page comes from the **state**, not from the current view, because
 the pick was made on that page and a state whose page has been left behind
 is cleared by `super::load` on the next frame anyway — reading
 `doc.view.page_index` here would be a second source of truth for a fact the
@@ -204,7 +201,7 @@ have.
 ### `fn double_click`
 
 The canvas half of the two endings — the other is `measure.finish` on the
-ribbon, and both reach [`commit`] and nothing else. Traces which ending
+ribbon, and both reach [`complete`] and nothing else. Traces which ending
 asked, because a screenshot cannot distinguish them and neither can the
 engine.
 

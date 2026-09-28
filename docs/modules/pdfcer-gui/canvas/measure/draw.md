@@ -31,6 +31,17 @@ happen."* It is only honest if it is derived from the values the commit will
 use, which is why the placing preview goes through
 [`pick::dimension_preview_segments`] — the *same* function a committed
 dimension is drawn from — rather than drawing a line of its own.
+
+### `fn draw_label`
+
+The held dimension's value text, drawn at the hover point while it waits
+for its placing click. Text and box come from `author_dimension` under the
+group's resolved style, so the preview shows the value and size the commit
+bakes. `label_quad` corners run baseline-left (at the descender),
+baseline-right, cap-right, cap-left; the font size is the quad height over
+1.3, the descender-to-cap span the baker sizes from, and the text is rotated
+to the baseline. Arrowheads and the ANSI break are not drawn here: request
+G063 asks the engine for an id-less preview to replace this path.
 # The circular tool's preview is the whole of its feedback
 
 The other two tools draw something that follows the pointer, so an operator

@@ -41,6 +41,7 @@ use egui::Pos2;
 use pdfcer_core::dimension::TwoLinePlacement;
 use pdfcer_core::vector::Point;
 use pdfcer_core::vector::linepick::pick_line_in_page;
+use pdfcer_gui_base::measure::place::Placing;
 
 use crate::app::actions::Action;
 use crate::app::actions::dimensions::DimensionAction;
@@ -154,15 +155,15 @@ pub fn finishable(ctx: &egui::Context) -> bool {
 
 /// **The `measure.finish` command's whole effect**, reporting whether it did
 /// anything.
-pub fn finish(ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
+pub fn finish(ctx: &egui::Context) -> bool {
     match crate::canvas::tool::selected(ctx).measure_kind() {
-        Some(MeasureKind::Circular) => finish_circular(ctx, actions),
+        Some(MeasureKind::Circular) => finish_circular(ctx),
         Some(MeasureKind::Perimeter | MeasureKind::PathLength) => {
             let Some(mut st) = read(ctx) else {
                 return false;
             };
             let page_index = st.page_index;
-            if !perimeter::commit(&mut st, page_index, actions) {
+            if !perimeter::complete(&mut st) {
                 return false;
             }
             store(ctx, st);
@@ -272,6 +273,36 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
 
     let mut st = load(ctx, page_index, kind);
 
+    // A measured dimension waiting to be placed takes this click whatever
+    // the tool, double-clicks included: its value text goes where the
+    // pointer is, snapped as the preview drew it. The derived-candidate
+    // confirm does not apply, because placing moves no measured point.
+    if let Some(placing) = st.placing.take() {
+        let alt_held = ctx.input(|i| i.modifiers.alt);
+        let at = match resolve_hover(ctx, doc, page_index, Some(canvas_point), targets, map, kind) {
+            Some(r) => r.at,
+            None => snapped(&st, picked, alt_held, targets, page_index, map).0,
+        };
+        let placed = placing.at(at);
+        let text = placed.label_anchor().unwrap_or(at);
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!(
+                "measure-place kind={kind:?} x={:.2} y={:.2} text_x={:.2} text_y={:.2}",
+                at.x, at.y, text.x, text.y
+            )
+        });
+        actions.push(Action::Dimension(DimensionAction::Commit {
+            page: page_index,
+            group: st.group,
+            kind: placed,
+            disclosures: placing.disclosures,
+        }));
+        trace_pick(kind, &st, true);
+        store(ctx, st);
+        return;
+    }
+
     // The circular tool's DOUBLE-click is handled here, and its single
     // click is not.
     //
@@ -290,7 +321,7 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
     // asking where a click landed in order to throw the answer away.
     if kind == MeasureKind::Circular && double {
         let before = actions.len();
-        circular::double_click(&mut st, page_index, actions);
+        circular::double_click(&mut st, page_index);
         trace_pick(kind, &st, actions.len() > before);
         store(ctx, st);
         return;
@@ -364,7 +395,6 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
                     page,
                     map,
                 },
-                actions,
             );
         }
         // The circular tool: one click is one point.
@@ -450,12 +480,10 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
                         )
                         .into_iter()
                         .collect();
-                        actions.push(Action::Dimension(DimensionAction::Commit {
-                            page: page_index,
-                            group: st.group,
+                        st.placing = Some(Placing {
                             kind: authoring.kind,
                             disclosures,
-                        }));
+                        });
                         st.two_lines.clear();
                     }
                     // **The refusal, surfaced by name.** It was swallowed —

@@ -34,6 +34,8 @@ const VERTEX_EVENT: &str = "measure-perimeter-vertex";
 const FINISH_EVENT: &str = "measure-finish";
 /// `add-dimension …` — the engine accepted it and the document changed.
 const COMMIT_EVENT: &str = "add-dimension";
+/// `measure-place kind=… x= y=` — the placing click was taken.
+const PLACE_EVENT: &str = "measure-place";
 /// The prefix each vertex handle is published under, suffixed with its index.
 const VERTEX_REGION: &str = "canvas.dimension-vertex";
 /// `move-dimension-vertex …` — the engine accepted a reshaped corner.
@@ -297,6 +299,29 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              close the ring — `via=double-click` here would mean the click was read as the second \
              of a pair, and `via=command` cannot happen without a ribbon press.",
             finish.raw
+        )));
+    }
+
+    // Closed is not committed: the shape waits for the click that places it.
+    if trace.events(COMMIT_EVENT).count() > before_commits {
+        return Ok(Some(format!(
+            "the ring closed and the dimension was committed at once. It must follow the pointer \
+             until a placing click drops its text. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
+    let centroid = DocPoint::new(
+        0,
+        f64::midpoint(CORNERS[0].0, CORNERS[2].0) * page.width_pt,
+        f64::midpoint(CORNERS[0].1, CORNERS[2].1) * page.height_pt,
+    );
+    driver.click_at(frame.to_screen(mapping.doc_to_window(centroid)?))?;
+    session.settle(30);
+    let trace = session.trace()?;
+    if trace.last(PLACE_EVENT).is_none() {
+        return Ok(Some(format!(
+            "the placing click after the ring closed traced no `{PLACE_EVENT}`. Trace: {}.",
+            session.trace_path().display()
         )));
     }
 

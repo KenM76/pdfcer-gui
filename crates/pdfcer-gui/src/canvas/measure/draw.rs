@@ -30,6 +30,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/measure/draw.md`.
 
 use egui::{Pos2, Ui};
+use pdfcer_core::dimension::{DimensionKind, StyleOverrides, author_dimension, resolve_style};
 use pdfcer_core::vector::Point;
 
 use crate::app::state::OpenDoc;
@@ -231,6 +232,18 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
         return;
     }
 
+    // A measured dimension waiting for its placing click follows the pointer,
+    // value text included, whatever tool measured it.
+    if let Some(placing) = &st.placing {
+        let Some(at) = hover.map(|h| h.at) else {
+            return;
+        };
+        let kind = placing.at(at);
+        draw_dimension(painter, stroke, &kind, page, map);
+        draw_label(painter, doc, st.group, &kind, page, map, color);
+        return;
+    }
+
     let segments: Vec<(Point, Point)> = match kind {
         // The reference line, drawn exactly as the linear tool draws its
         // measuring segment — because it IS one. `ScalePick::line` is a
@@ -268,6 +281,7 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
             };
             if let Some(authored) = st.linear.placing_preview(at) {
                 // Placing: draw the dimension itself, exactly as it will land.
+                draw_label(painter, doc, st.group, &authored, page, map, color);
                 pick::dimension_preview_segments(&authored)
             } else {
                 // Measuring: the constrained A→pointer segment.
@@ -323,6 +337,60 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
         };
         painter.line_segment([sa, sb], stroke);
     }
+}
+
+/// A dimension's lines, as the preview draws them.
+fn draw_dimension(
+    painter: &egui::Painter,
+    stroke: egui::Stroke,
+    kind: &DimensionKind,
+    page: &pdfcer_core::page_tree::Page,
+    map: &PageMapping,
+) {
+    for (a, b) in pick::dimension_preview_segments(kind) {
+        if let (Some(sa), Some(sb)) = (page_to_screen(a, page, map), page_to_screen(b, page, map)) {
+            painter.line_segment([sa, sb], stroke);
+        }
+    }
+}
+
+/// A dimension's value text, where and how large the baker would put it.
+///
+/// The text and its box come from `author_dimension` under the group's style,
+/// so the preview says the value the commit writes. The box's corners run
+/// baseline-left (at the descender), baseline-right, cap-right, cap-left; the
+/// font size is the box height over 1.3, the descender-to-cap span the baker
+/// sizes it from.
+fn draw_label(
+    painter: &egui::Painter,
+    doc: &OpenDoc,
+    group: pdfcer_core::dimension::GroupId,
+    kind: &DimensionKind,
+    page: &pdfcer_core::page_tree::Page,
+    map: &PageMapping,
+    color: egui::Color32,
+) {
+    let model = doc.session.dimension_model();
+    let Some(group) = model.group(group) else {
+        return;
+    };
+    let style = resolve_style(group, &StyleOverrides::default());
+    let authored = author_dimension(kind, style);
+    let [q0, q1, _, q3] = authored.label_quad;
+    let (Some(s0), Some(s1), Some(s3)) = (
+        page_to_screen(q0, page, map),
+        page_to_screen(q1, page, map),
+        page_to_screen(q3, page, map),
+    ) else {
+        return;
+    };
+    let size = s0.distance(s3) / 1.3;
+    if !size.is_finite() || size < 1.0 {
+        return;
+    }
+    let galley = painter.layout_no_wrap(authored.label, egui::FontId::proportional(size), color);
+    let angle = (s1.y - s0.y).atan2(s1.x - s0.x);
+    painter.add(egui::epaint::TextShape::new(s3, galley, color).with_angle(angle));
 }
 
 /// How large the snap marker is drawn, in **points**.

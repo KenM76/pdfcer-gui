@@ -8,9 +8,8 @@ use egui::Pos2;
 use pdfcer_core::dimension::DimensionKind;
 use pdfcer_core::vector::Point;
 
-use crate::app::actions::Action;
-use crate::app::actions::dimensions::DimensionAction;
 use crate::canvas::mapping::PageMapping;
+use pdfcer_gui_base::measure::place::Placing;
 
 use super::state::MeasureState;
 
@@ -133,21 +132,16 @@ impl PerimeterPick {
     }
 }
 
-/// **End the gesture: author the dimension and empty the pick.**
-pub(super) fn commit(st: &mut MeasureState, page_index: usize, actions: &mut Vec<Action>) -> bool {
+/// **End the gesture: hand the traced shape to the placing click and empty
+/// the pick.** Nothing to disclose: every vertex is one the operator clicked.
+pub(super) fn complete(st: &mut MeasureState) -> bool {
     let Some(kind) = st.perimeter.author() else {
         return false;
     };
-    actions.push(Action::Dimension(DimensionAction::Commit {
-        page: page_index,
-        group: st.group,
+    st.placing = Some(Placing {
         kind,
-        // Nothing to disclose. Every vertex is one the operator clicked and the
-        // shape on screen is the shape being authored — there is no inference
-        // here to own up to, which is the difference from the circular tool's
-        // best-fit residual.
         disclosures: Vec::new(),
-    }));
+    });
     st.perimeter.clear();
     true
 }
@@ -172,7 +166,7 @@ pub(super) struct Click<'a> {
     pub map: &'a PageMapping,
 }
 
-pub(super) fn click(st: &mut MeasureState, c: Click<'_>, actions: &mut Vec<Action>) {
+pub(super) fn click(st: &mut MeasureState, c: Click<'_>) {
     let Click {
         page_index,
         picked,
@@ -182,7 +176,7 @@ pub(super) fn click(st: &mut MeasureState, c: Click<'_>, actions: &mut Vec<Actio
         map,
     } = c;
     if double {
-        if !commit(st, page_index, actions) {
+        if !complete(st) {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 format!(
@@ -223,7 +217,7 @@ pub(super) fn click(st: &mut MeasureState, c: Click<'_>, actions: &mut Vec<Actio
             });
             return;
         }
-        if commit(st, page_index, actions) {
+        if complete(st) {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 format!("measure-finish via=close-ring kind=perimeter page={page_index}")

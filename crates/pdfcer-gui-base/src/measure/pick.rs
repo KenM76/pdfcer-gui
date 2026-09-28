@@ -132,15 +132,7 @@ impl LinearPick {
             text_along: 0.0,
             extension_gap: [None; 2],
         };
-        let (offset, text_along) = probe.placement_from_point(p).unwrap_or((0.0, 0.0));
-        DimensionKind::Linear {
-            a,
-            b,
-            constraint: self.constraint,
-            offset,
-            text_along,
-            extension_gap: [None; 2],
-        }
+        super::place::placed_at(&probe, p)
     }
 
     /// While placing, the dimension exactly as it would commit if the operator
@@ -446,14 +438,23 @@ pub fn dimension_preview_segments(kind: &DimensionKind) -> Vec<(Point, Point)> {
                     at(std::f64::consts::TAU * t1),
                 ));
             }
-            out.push((
-                if show_diameter {
-                    at(lead + std::f64::consts::PI)
-                } else {
-                    fit.center
-                },
-                at(lead),
-            ));
+            // Text past the rim moves the leader out to it, rim → text, as
+            // the engine's baker draws it (request G063 would make this its
+            // own drawing rather than a copy of the rule).
+            let beyond = kind.circular_text_distance().unwrap_or(0.0);
+            out.push(if beyond > 0.0 {
+                (
+                    at(lead),
+                    Point::new(
+                        (fit.radius + beyond).mul_add(lead.cos(), fit.center.x),
+                        (fit.radius + beyond).mul_add(lead.sin(), fit.center.y),
+                    ),
+                )
+            } else if show_diameter {
+                (at(lead + std::f64::consts::PI), at(lead))
+            } else {
+                (fit.center, at(lead))
+            });
             out
         }
     }

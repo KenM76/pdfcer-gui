@@ -7,8 +7,7 @@ use pdfcer_core::vector::snap::SnapKind;
 
 use super::pick::PickOrigin;
 use super::{MeasureKind, MeasureState, read, store};
-use crate::app::actions::Action;
-use crate::app::actions::dimensions::DimensionAction;
+use pdfcer_gui_base::measure::place::Placing;
 
 /// **The circular pick set that is ready to become a dimension**, or `None`.
 fn pending(ctx: &egui::Context) -> Option<MeasureState> {
@@ -26,36 +25,29 @@ pub fn finishable(ctx: &egui::Context) -> bool {
     pending(ctx).is_some()
 }
 
-/// **End the gesture: author the dimension and empty the pick set.**
-pub(super) fn commit(st: &mut MeasureState, page_index: usize, actions: &mut Vec<Action>) -> bool {
+/// **End the gesture: hand the fitted circle to the placing click and empty
+/// the pick set.** Emptied so a second Finish cannot fit the same set again.
+/// Nothing to disclose: the residual is already on screen in the live preview.
+pub(super) fn complete(st: &mut MeasureState) -> bool {
     let Some(kind) = st.circular.author() else {
         return false;
     };
-    actions.push(Action::Dimension(DimensionAction::Commit {
-        page: page_index,
-        group: st.group,
+    st.placing = Some(Placing {
         kind,
-        // Nothing to disclose: a best-fit circle's output is the circle the
-        // operator assembled, and its residual is already on screen through the
-        // live preview. See `DimensionAction::Commit`'s field.
         disclosures: Vec::new(),
-    }));
-    // Emptied, not left standing. The next dimension starts from nothing, the
-    // same way `LinearPick` resets on its placing click — otherwise a second
-    // Finish would author the same circle again from a set the operator
-    // believes they have already spent.
+    });
     st.circular.clear();
     true
 }
 
 /// **The `measure.finish` command's whole effect**, reporting whether it did
 /// anything.
-pub fn finish(ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
+pub fn finish(ctx: &egui::Context) -> bool {
     let Some(mut st) = pending(ctx) else {
         return false;
     };
     let page_index = st.page_index;
-    if !commit(&mut st, page_index, actions) {
+    if !complete(&mut st) {
         return false;
     }
     store(ctx, st);
@@ -71,8 +63,8 @@ pub fn finish(ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
 }
 
 /// **End the gesture on a double-click.**
-pub(super) fn double_click(st: &mut MeasureState, page_index: usize, actions: &mut Vec<Action>) {
-    if !commit(st, page_index, actions) {
+pub(super) fn double_click(st: &mut MeasureState, page_index: usize) {
+    if !complete(st) {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             "measure-finish via=double-click outcome=declined reason=degenerate-fit".to_owned()
@@ -316,8 +308,7 @@ mod tests {
         for at in samples_on_a_circle() {
             by_click.circular.toggle_point(at, NODE, 0.0);
         }
-        let mut click_actions = Vec::new();
-        double_click(&mut by_click, 2, &mut click_actions);
+        double_click(&mut by_click, 2);
 
         // Ending 2: the ribbon command, through `egui::Memory`.
         let ctx = egui::Context::default();
@@ -327,21 +318,16 @@ mod tests {
             by_command.circular.toggle_point(at, NODE, 0.0);
         }
         store(&ctx, by_command);
-        let mut command_actions = Vec::new();
-        assert!(finish(&ctx, &mut command_actions), "the command finishes");
+        assert!(finish(&ctx), "the command finishes");
+        let by_command = read(&ctx).unwrap_or_else(|| panic!("the state is kept"));
 
         assert_eq!(
-            click_actions, command_actions,
-            "the two endings must place the same dimension, on the same page, \
-             in the same group"
+            by_click.placing, by_command.placing,
+            "the two endings must hand the same dimension to the placing click"
         );
-        assert_eq!(click_actions.len(), 1, "exactly one dimension per ending");
-        let Some(Action::Dimension(DimensionAction::Commit { page, kind, .. })) =
-            click_actions.first()
-        else {
-            panic!("a dimension is committed")
+        let Some(Placing { kind, .. }) = &by_click.placing else {
+            panic!("a dimension waits to be placed")
         };
-        assert_eq!(*page, 2, "on the page the pick was made on, not the view's");
         let pdfcer_core::dimension::DimensionKind::Circular { fit, .. } = kind else {
             panic!("a circular dimension")
         };
@@ -359,16 +345,10 @@ mod tests {
         for at in samples_on_a_circle() {
             st.circular.toggle_point(at, NODE, 0.0);
         }
-        let mut actions = Vec::new();
-
-        assert!(commit(&mut st, 0, &mut actions));
-        assert_eq!(actions.len(), 1);
+        assert!(complete(&mut st));
+        assert!(st.placing.is_some());
         assert!(!st.circular.in_progress(), "the set is emptied");
-        assert!(
-            !commit(&mut st, 0, &mut actions),
-            "a second finish has nothing to commit"
-        );
-        assert_eq!(actions.len(), 1, "and raises nothing");
+        assert!(!complete(&mut st), "a second finish has nothing to fit");
     }
 
     /// **A degenerate set commits nothing, from either ending.**
@@ -384,17 +364,16 @@ mod tests {
         }
         assert!(st.circular.author().is_none(), "the fixture is degenerate");
 
-        let mut actions = Vec::new();
-        assert!(!commit(&mut st, 0, &mut actions));
-        assert!(actions.is_empty(), "nothing is authored");
+        assert!(!complete(&mut st));
+        assert!(st.placing.is_none(), "nothing is authored");
         assert!(
             st.circular.in_progress(),
             "and the picks survive, so the operator can add another point"
         );
 
         // …and the double-click reaches the same refusal rather than its own.
-        double_click(&mut st, 0, &mut actions);
-        assert!(actions.is_empty());
+        double_click(&mut st, 0);
+        assert!(st.placing.is_none());
         assert!(st.circular.in_progress());
     }
 
@@ -422,12 +401,10 @@ mod tests {
             !finishable(&ctx),
             "a set nothing is marking must not keep offering Finish"
         );
-        let mut actions = Vec::new();
         assert!(
-            !finish(&ctx, &mut actions),
+            !finish(&ctx),
             "…and the command refuses it too, by the same predicate"
         );
-        assert!(actions.is_empty());
 
         // 5. A *different* measure tool armed is not this tool's ending.
         tool::select(&ctx, CanvasTool::Measure(MeasureKind::Linear));
