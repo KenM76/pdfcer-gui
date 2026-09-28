@@ -101,6 +101,15 @@ different subtrees would collide in egui's id space — which shows up as
 the wrong row responding to a hover. The item's `ObjId` (`num`,
 `generation`) is unique across the document, so it cannot.
 
+# Every authoring control is in the footer
+
+Add, rename, remove, copy, cut and paste live in `panels::footer`'s collapsed
+**Add and edit bookmarks** section under the list, so selecting a row —
+which unlocks rename, remove, copy and cut — grows nothing above the rows and
+the clicked row stays under the pointer. Read draws no footer at all: every
+control in it changes the document. The drag hint stays visible in the
+footer's unconditional part, because the gesture has no widget to discover.
+
 ## Item notes
 
 ### `struct Harvest`

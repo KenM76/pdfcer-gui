@@ -193,6 +193,15 @@ ordinary hover text of a disabled widget**. So the one row whose whole
 problem is that it looks broken was silent about why. Both are attached
 now, the same fix [`crate::panels::bookmarks`] made for its disabled rows.
 
+# The footer
+
+New layer and Flatten are in `panels::footer`'s collapsed **Add and edit
+layers** section. The reset row (drawn once the view differs from the
+document) and the canvas-selection report (drawn after a canvas click) are in
+the footer's unconditional part: both appear in answer to a click, and above
+the list they would move every row. The search field and the static notes stay
+above the list; they do not change in answer to a click on it.
+
 ## Item notes
 
 ### `fn row_name`

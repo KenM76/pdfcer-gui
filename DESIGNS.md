@@ -14,6 +14,70 @@ load-bearing: do not build past it. Rulings are recorded in
 
 ---
 
+## O258 — the assistant remote: an LLM drives the open window, with the operator's say-so
+
+**What it is.** A local channel through which an assistant sends the same
+commands a ribbon button sends, to the window the operator has open. Nothing
+new can be done through it that the operator could not do by hand; everything
+it does lands on the undo stack.
+
+**Transport.** A Windows named pipe, `\\.\pipe\pdfcer-remote-<session id>`,
+created with a DACL granting only the current user's SID and
+`PIPE_REJECT_REMOTE_CLIENTS`. No TCP port, so no firewall prompt and nothing
+reachable from another machine or another account. A client finds running
+windows through a per-user discovery file listing pipe name, PID and open
+document; the file is deleted on exit.
+
+**Off by default, and the knock.** With the remote disabled the pipe still
+exists but accepts exactly one message, `hello {client, purpose}`, and answers
+every other one `not-enabled`. A hello raises a **non-modal** prompt (a banner
+under the ribbon, never a dialog that steals focus mid-drag) naming the client
+and what it says it wants:
+
+- **Allow once.** This connection only.
+- **Allow for this session.** Until pdfcer closes.
+- **Always allow.** Persisted; revoked in Settings.
+
+Closing the banner, or leaving it unanswered until it times out, is a refusal.
+Settings also carries **Don't ask**, which stops the knock prompting at all.
+Knocks are rate-limited (one prompt on screen at a time, a refused client gets
+a cool-off), so a misbehaving client cannot bury him in prompts.
+
+**While connected** a status-line item says an assistant is connected and
+offers Disconnect. Every command it runs is written to a log panel as it
+happens. That is the off-canvas disclosure R8b requires: the canvas renders
+exactly what it would render had the operator done the same thing.
+
+**What it can call (R8).** Only commands in the `CommandRegistry`, by the id
+the ribbon uses, with arguments the command declares. `list-commands` returns
+what this build registered, so a build without OCR offers no OCR to the
+assistant either, with no special case. Reads (`state`: open documents, page,
+selection, zoom; `describe-selection`; `find-text`; `render-page` to a PNG so
+the assistant can see) are always allowed once connected. Writes run through
+the same action funnel as a click. File-system verbs (Save As a new path,
+Export, Open) ask a second time, in the same banner, naming the path.
+
+**Where it lives (R7).** The pipe, the knock, the prompt and the log are
+generic, so they belong in `egui-shell` as a "command remote" knowing command
+ids and nothing about PDFs. pdfcer-gui supplies its read verbs as registered
+commands. The extraction test's second application gets the remote for free.
+
+**The assistant's side.** A small `pdfcer-remote` CLI (and later an MCP
+server wrapping it), so a Claude Code session drives it with
+`pdfcer-remote run view.zoom_fit` or reads with `pdfcer-remote state`. It is
+the same pipe that `ui-verify` could use, instead of taking the real mouse,
+for everything that is not a layout question.
+
+**Not in scope.** Remote access from another machine; scripting languages
+inside pdfcer; anything an assistant could do that the operator could not.
+
+**Undo is one command per step, and the assistant decides how many.** What
+"undo that" means depends on the prompt that asked for it — the last of five
+changes, or all five — and only the assistant has read the prompt. So pdfcer
+does not group: every remote command is its own undo step, Ctrl+Z rolls back
+one, and the remote offers `undo n` / `redo n` plus `history`, which lists the
+recent steps with the command that made each, so the assistant can count.
+
 ## O226–O229 — the OCR text-layer mode: two synced views, a PDF↔text slider, merge and split
 
 ### What the four rows are, as one build

@@ -146,7 +146,11 @@ impl BookmarksUi {
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
 use crate::panels::PanelsState;
+use crate::panels::footer;
 use crate::text::panels as t;
+
+/// The footer's collapsible header, published so a driven check can open it.
+pub const REGION_TOOLS: &str = "bookmarks.tools"; // ui-text-exempt: trace region name, never displayed
 
 /// Draw the Bookmarks panel.
 pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut Vec<Action>) {
@@ -191,188 +195,91 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     {
         ui.label(egui::RichText::new(t::bookmarks_truncated()).small().weak());
     }
+    // Every authoring control lives in the footer under the list, collapsed
+    // until opened, so nothing the operator does to the list — above all the
+    // click that selects a row — grows anything above the rows. See
+    // `panels::footer`. In Read there is no footer: every control in it
+    // changes the document.
+    let panel_height = ui.available_height();
     if outline.items.is_empty() {
         ui.label(t::bookmarks_empty());
-        // NOT an early return. A document with no bookmarks is exactly the
-        // one an operator most wants to add the first one to, so the add row
-        // is drawn before the function gives up.
-        //
-        // …in a mode that authors. In Read the sentence above is the whole
-        // panel, which is the correct Read answer: *this document has no
-        // bookmarks*, with nothing offered to change that.
+        // Not an early return before the footer: a document with no bookmarks
+        // is the one an operator most wants to add the first one to.
         if authoring {
-            add::show(ui, doc, state.bookmarks_mut(), actions);
+            footer::show(
+                ui,
+                REGION_TOOLS,
+                panel_height,
+                t::bookmarks_tools(),
+                |_| {},
+                Some(|ui: &mut egui::Ui| add::show(ui, doc, state.bookmarks_mut(), actions)),
+            );
         }
         return;
     }
     ui.separator();
 
-    // Collected first, applied after — the actions-not-mutations discipline
-    // at its smallest: the click is recorded while the tree is being walked
-    // and turned into an `Action` once the walk is over.
+    // Collected first, applied after: the click is recorded while the tree is
+    // walked and turned into an `Action` once the walk is over.
     let mut harvest = Harvest::default();
-    // The authoring row is drawn BEFORE the list, and the ordering is load
-    // bearing: **a control that must always be reachable cannot be placed after
-    // an unbounded `ScrollArea`.** A row laid out after a list of 122 bookmarks
-    // lands below the bottom of the panel — drawn, publishing its region, and
-    // unclickable — and capping the list with a reserve only moves the
-    // overflow: it works at the pane height it was tuned against and fails
-    // quietly at every other one. Reserve-and-hope is not a second option; it
-    // is the same defect with a tuning parameter. Nothing follows the scroll
-    // area here, so nothing can be pushed past the end of the panel at any pane
-    // height with any size of outline.
-    //
-    // It also reads better. A control's position is a claim about what it acts
-    // on, and this row acts on the LIST — it files the new bookmark under
-    // whichever row was last clicked — so above the list is where the claim is
-    // true, and the operator sees the destination before they scroll rather
-    // than after.
-    //
-    // Gated on the mode, and the whole authoring block goes together — the
-    // add row, the rename-and-remove block below it, and the drag hint. Half a
-    // form is worse than none: an operator shown a title field with no Add
-    // button, or a drag hint for a gesture the mode refuses, has been told the
-    // panel is broken rather than that the mode is read-only.
-    if authoring {
-        add::show(ui, doc, state.bookmarks_mut(), actions);
-    }
-    // The rename-and-remove block, and it is drawn ONLY when a row has been
-    // clicked. That is R9 rather than tidiness: with nothing selected there is
-    // no bookmark for either verb to name, so the controls would be offering a
-    // capability that cannot act. They are absent, not greyed — greying is for
-    // something *temporarily* unavailable that can explain itself, and "click a
-    // row first" is already what the add row's parent hint says two lines up.
-    //
-    // Resolved here rather than inside `edit::show` so the whole block can be
-    // skipped in one place, and so that module never has to consider an id that
-    // no longer names anything — the ordinary state one frame after an undo of
-    // a delete, and the state `add::show` above has already cleared.
-    // The drag is the one gesture in this panel with no widget to look at, so
-    // it is the one that has to be written down. See
-    // `crate::text::panels::bookmarks::bookmark_drag_hint`: R83 forbids
-    // offering a control that cannot work, and its quieter twin is that a
-    // gesture nobody is told about is a capability the program does not have.
-    // The drag hint goes with the drag. In Read the reorder gesture is not
-    // offered, so a sentence teaching it would be describing a capability the
-    // mode does not have — R83's quieter twin, inverted.
-    if authoring {
-        ui.weak(crate::text::panels::bookmarks::bookmark_drag_hint());
-    }
-    ui.separator();
-
-    // Read before the scroll area, because the walk needs it and the walk
-    // cannot borrow `state` — `edit::show` above already holds it mutably for
-    // part of this function, and the drag is one `Copy` id rather than a
-    // borrow.
+    // Read before the scroll area: the walk cannot borrow `state`, and the drag
+    // is one `Copy` id.
     let dragging = state.bookmarks_mut().drag;
-    // Where the drag would land. Resolved INSIDE the scroll area, for
-    // `reorder::VisibleRow`'s stated reason: a row's bands and the end of its
-    // subtree have no position until the tree has been laid out.
+    // Where the drag would land, resolved inside the scroll area because a
+    // row's bands have no position until the tree is laid out.
     let mut target: Option<reorder::DropTarget> = None;
     egui::ScrollArea::vertical()
         .id_salt("bookmark-rows")
+        .max_height(footer::list_height(ui, REGION_TOOLS))
+        .auto_shrink([false, false])
         .show(ui, |ui| {
-            // The full-width strip a row occupies, captured once: the caret
-            // spans the list rather than stopping under the longest title, and
-            // a band test over the label alone would miss the pointer whenever
-            // it was to the right of a short name.
-            // THE PER-SELECTION CONTROLS LIVE IN HERE, inside the scroll area.
-            //
-            // The dock gives a panel body a FIXED rectangle and no scrolling of
-            // its own, so the body is expected to create one — and anything the
-            // body lays out *outside* that scroll area has only the space the
-            // panel happens to have. With the selection block above the
-            // scroller, Remove and Copy are laid out tens of points below the
-            // bottom edge of their own panel: drawn, publishing a rect, and
-            // unclickable. `D:/dev/rag/egui/` records the shape — a panel
-            // unreachable in a real build with every gate green — and it is
-            // invisible to any test that does not select a bookmark first.
-            //
-            // Inside the scroll area rather than given a scroll area of their
-            // own: two sibling scrollers in one narrow panel is two scrollbars
-            // and two places the operator's wheel might go. One region that
-            // scrolls is what every other panel here does.
-            //
-            // ABOVE the rows, not below, because they are about the row that
-            // is already selected — putting them under a list of forty
-            // bookmarks would mean scrolling past the list to act on something
-            // at the top of it.
-            let selected = state
-                .bookmarks_mut()
-                .selected
-                .and_then(|id| tree::find(&outline.items, id));
-            // `authoring` gates this too — see the top of `body`. Rename,
-            // Remove, Copy and Cut all change the document, so in Read the
-            // selection is for navigating with and nothing more.
-            if let Some(item) = selected.filter(|_| authoring) {
-                // Cloned because `state` is borrowed mutably by `edit::show` and the
-                // item is borrowed out of `outline`, which `state` does not own. One
-                // `OutlineItem` per frame in which a bookmark is selected, against
-                // restructuring the whole panel to read the outline twice.
-                let item = item.clone();
-                edit::show(ui, &item, state.bookmarks_mut(), actions);
-                // Copy and Cut sit with the other verbs that act on the SELECTED
-                // bookmark, under the same heading, because that is the question the
-                // operator is answering when they are looking at this block.
-                clip::copy_row(ui, doc, &item, actions);
-            }
-            // PASTE IS OUTSIDE THE `if`, and that is the whole difference between
-            // it and the two above.
-            //
-            // Copy and Cut act on a selected bookmark, so with none selected there is
-            // nothing for them to act on and R9 says draw nothing. A paste has no
-            // operand on the tree at all -- it reads the CLIPBOARD -- and pasting at
-            // the top level of a document with nothing selected is not merely legal, it
-            // is the ordinary case for putting a copied chapter into an empty outline.
-            //
-            // ⇒ Gating it on the selection would have made the one thing this feature
-            // exists for -- carrying a chapter's bookmarks into another drawing --
-            // reachable only by first selecting a bookmark in the document that has
-            // none.
-            let selected_for_paste = state
-                .bookmarks_mut()
-                .selected
-                .and_then(|id| tree::find(&outline.items, id))
-                .cloned();
-            clip::paste_row(ui, doc, selected_for_paste.as_ref(), actions);
-
+            // The full-width strip a row occupies, so the caret spans the list
+            // and the band test catches a pointer right of a short title.
             let strip = (ui.max_rect().left(), ui.max_rect().right());
             rows(ui, &outline.items, strip, dragging, &mut harvest);
             target = reorder::resolve(ui, &harvest.rows, &outline.items, dragging);
-            // Painted AFTER the rows and INSIDE the scroll area, which is what
-            // puts it over them rather than under — egui paints in call order —
-            // and what keeps it in the coordinate space it was measured in.
+            // After the rows and inside the scroll area: egui paints in call
+            // order, and the caret is in the coordinate space it was measured in.
             reorder::paint_caret(ui, target.as_ref());
         });
 
+    if authoring {
+        let selected = state
+            .bookmarks_mut()
+            .selected
+            .and_then(|id| tree::find(&outline.items, id))
+            .cloned();
+        footer::show(
+            ui,
+            REGION_TOOLS,
+            panel_height,
+            t::bookmarks_tools(),
+            // The drag has no widget to look at, so it stays written down
+            // while the footer is collapsed.
+            |ui: &mut egui::Ui| {
+                ui.weak(crate::text::panels::bookmarks::bookmark_drag_hint());
+            },
+            Some(|ui: &mut egui::Ui| {
+                // Add files under the selected row, so it comes first.
+                add::show(ui, doc, state.bookmarks_mut(), actions);
+                // Rename, Remove, Copy and Cut need a selected bookmark (R9:
+                // absent, not greyed, without one).
+                if let Some(item) = &selected {
+                    edit::show(ui, item, state.bookmarks_mut(), actions);
+                    clip::copy_row(ui, doc, item, actions);
+                }
+                // Paste reads the clipboard and needs no selection: pasting at
+                // the top level of an empty outline is its ordinary case.
+                clip::paste_row(ui, doc, selected.as_ref(), actions);
+            }),
+        );
+    }
+
     let ui_state = state.bookmarks_mut();
-    // **A DRAG DOES NOT SELECT THE ROW IT BEGAN ON**, although
-    // `panels::pages`' tile does, on a rule worth keeping — *a gesture's verbs
-    // must apply to the tile the operator pointed at*.
-    //
-    // The difference is that the *Selected bookmark* block is **drawn above the
-    // list** and only when something is selected. Selecting on press therefore
-    // GROWS THE PANEL ABOVE THE ROWS, mid-gesture: measured at 187 points, with
-    // the strip narrowing by fourteen more as a scroll bar appears with it. The
-    // row the operator is aiming at slides a third of a panel's height out from
-    // under the pointer at the instant they commit to the drag, and the drop
-    // lands on empty space above the list — a gesture that does nothing, with
-    // no explanation.
-    //
-    // ⇒ R128's feedback loop, and the rule is more general than this surface:
-    // **a surface may not change size in response to a gesture that is aimed at
-    // it.**
-    //
-    // Nothing is lost. `BookmarksUi::drag` carries the operand, captured at
-    // the press, so the move acts on the row the operator pointed at exactly as
-    // the pages rule requires. What is given up is the *Selected bookmark*
-    // block naming the row in flight — a convenience that cost the gesture it
-    // was decorating.
-    //
-    // And selection is unchanged as a **click**: egui reports no `clicked()`
-    // for a press that travelled, so a press-and-release without movement still
-    // selects, and a drag does not. Those are two gestures with two meanings,
-    // which is what every other outline panel does.
+    // A drag does not select the row it began on; a click (a press that did
+    // not travel) does. Selection opens the footer's per-bookmark controls,
+    // and a surface may not change size in response to a gesture aimed at it.
+    // `BookmarksUi::drag` carries the operand from the press.
     if let Some(id) = harvest.started {
         ui_state.drag = Some(id);
     }

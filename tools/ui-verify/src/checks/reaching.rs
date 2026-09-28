@@ -203,3 +203,35 @@ pub fn scroll_to(
     }
     Ok(None)
 }
+
+/// **Open a panel's collapsed footer** — the header published as region
+/// `footer` by `panels::footer::show` — so the controls inside it publish
+/// their regions. The footer reports its state as `panel-footer id=… open=…`;
+/// an open footer is left alone, since the header is a toggle. Returns whether
+/// the footer is open afterwards.
+pub fn open_footer(
+    session: &Session,
+    driver: &Driver,
+    ui_rect: &str,
+    footer: &str,
+) -> Result<bool> {
+    session.settle(4);
+    let trace = session.trace()?;
+    let open = |t: &crate::trace::Trace| {
+        t.events("panel-footer")
+            .filter(|l| l.get("id") == Some(footer))
+            .last()
+            .map(|l| l.get("open") == Some("true"))
+    };
+    match open(&trace) {
+        Some(true) => return Ok(true),
+        None => return Ok(false),
+        Some(false) => {}
+    }
+    let Some(header) = declared(&trace, ui_rect, footer) else {
+        return Ok(false);
+    };
+    driver.click_at(session.frame()?.declared_center(header))?;
+    session.settle(20);
+    Ok(open(&session.trace()?) == Some(true))
+}

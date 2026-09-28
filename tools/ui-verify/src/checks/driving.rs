@@ -609,7 +609,7 @@ pub fn click_mode_segment(
 // here so `driving::scroll_to`, `driving::raise_dock_tab` and
 // `driving::bring_into_body` keep resolving at every call site. See that
 // module's header for the seam and for R2.
-pub use super::reaching::{bring_into_body, raise_dock_tab, scroll_to};
+pub use super::reaching::{bring_into_body, open_footer, raise_dock_tab, scroll_to};
 
 /// The select tool's ribbon control, on View ▸ Navigate.
 pub const SELECT_TOOL_REGION: &str = "ribbon.item.view.tool_select";

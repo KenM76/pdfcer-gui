@@ -69,6 +69,10 @@ pub(crate) fn click(
     region: &str,
     what: &str,
 ) -> Result<std::result::Result<(), String>> {
+    // New layer and Flatten are in the panel's footer, collapsed until opened.
+    if declared(&session.trace()?, ui_rect, region).is_none() {
+        crate::checks::driving::open_footer(session, driver, ui_rect, "layers.tools")?;
+    }
     let trace = session.trace()?;
     let Some(r) = declared(&trace, ui_rect, region) else {
         return Ok(Err(format!(

@@ -19,7 +19,11 @@ use pdfcer_core::object::ObjId;
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
 use crate::panels::PanelsState;
+use crate::panels::footer;
 use crate::text::panels as t;
+
+/// The footer's collapsible header, published so a driven check can open it.
+pub const REGION_TOOLS: &str = "layers.tools"; // ui-text-exempt: trace region name, never displayed
 use crate::text::panels::layers as tl;
 use crate::text::panels::layersearch as ts;
 
@@ -58,6 +62,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     let read = pdfcer_core::layers::read_layers(&view);
 
     let authoring = authoring::enabled(ui.ctx());
+    let panel_height = ui.available_height();
     if authoring {
         authoring::windows(ui.ctx(), actions);
         combine::windows(ui.ctx(), &read, actions);
@@ -65,15 +70,18 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     if read.diagnostics.no_optional_content {
         ui.label(t::layers_none());
         if authoring {
-            authoring::new_layer_row(ui, &read, actions);
+            footer::show(
+                ui,
+                REGION_TOOLS,
+                panel_height,
+                t::layers_tools(),
+                |_| {},
+                Some(|ui: &mut egui::Ui| authoring::new_layer_row(ui, &read, actions)),
+            );
         }
         return;
     }
     ui.label(t::layers_count(read.layers.len()));
-    if authoring {
-        authoring::new_layer_row(ui, &read, actions);
-        combine::flatten_button(ui, &read);
-    }
     ui.label(
         egui::RichText::new(t::layers_session_only_note())
             .small()
@@ -92,21 +100,6 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     let differing = effective_hidden
         .symmetric_difference(&document_hidden)
         .count();
-
-    // Offered only once there is something to undo, so the control never sits
-    // there implying a change that has not happened.
-    if differing > 0 {
-        ui.horizontal(|ui| {
-            ui.label(t::layers_overridden(differing));
-            if ui
-                .button(t::layers_reset_label())
-                .on_hover_text(t::layers_reset_tooltip())
-                .clicked()
-            {
-                actions.push(Action::ResetLayers);
-            }
-        });
-    }
 
     // §8.11.4.4: some of these states are not the document's to state — a
     // viewer recomputes them from the magnification. The rows below show
@@ -254,18 +247,14 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
             }
         }
     };
-    if let Some(sentence) = tl::layer_selection_report(membership, row) {
-        ui.label(egui::RichText::new(sentence).small());
-    }
+    let report = tl::layer_selection_report(membership, row);
     // **The operator's own finding, said back to him.** One path object on
     // his drawing holds 1,194 subpaths across half a sheet, so *"this is on
     // layer Grid"* is exact about a thing far larger than the circle he
     // clicked. Stated as a count rather than as a hedge, and only when the
     // number is greater than one — see
     // [`crate::text::panels::layers::layer_selection_granularity`].
-    if let Some(parts) = highlight::parts_in_selected_object(doc) {
-        ui.label(egui::RichText::new(tl::layer_selection_granularity(parts)).small());
-    }
+    let granularity = highlight::parts_in_selected_object(doc).map(tl::layer_selection_granularity);
     ui.separator();
 
     // Collected while the read is borrowed, turned into actions after — the
@@ -275,6 +264,8 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
 
     egui::ScrollArea::vertical()
         .id_salt("layers-rows")
+        .max_height(footer::list_height(ui, REGION_TOOLS))
+        .auto_shrink([false, false])
         .show(ui, |ui| {
             for l in shown {
                 // An undeclared name shows as a placeholder, never as an
@@ -444,6 +435,38 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
             }
         });
 
+    // Everything that appears in answer to a click — the reset row after a
+    // toggle, the selection report after a canvas click — is in the footer, so
+    // it grows the footer upward and never moves a row. See `panels::footer`.
+    let mut reset = false;
+    footer::show(
+        ui,
+        REGION_TOOLS,
+        panel_height,
+        t::layers_tools(),
+        |ui: &mut egui::Ui| {
+            // Offered only once there is something to undo.
+            if differing > 0 {
+                ui.horizontal(|ui| {
+                    ui.label(t::layers_overridden(differing));
+                    reset = ui
+                        .button(t::layers_reset_label())
+                        .on_hover_text(t::layers_reset_tooltip())
+                        .clicked();
+                });
+            }
+            for line in report.iter().chain(granularity.iter()) {
+                ui.label(egui::RichText::new(line).small());
+            }
+        },
+        authoring.then_some(|ui: &mut egui::Ui| {
+            authoring::new_layer_row(ui, &read, actions);
+            combine::flatten_button(ui, &read);
+        }),
+    );
+    if reset {
+        actions.push(Action::ResetLayers);
+    }
     if let Some((id, visible)) = toggled {
         actions.extend(toggle_actions(&read, id, visible));
     }

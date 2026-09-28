@@ -20,6 +20,7 @@ pub mod dimension_groups;
 /// argument.
 pub mod docprops;
 pub mod fonts;
+pub mod footer;
 pub mod forms;
 pub mod layers;
 pub mod objects;

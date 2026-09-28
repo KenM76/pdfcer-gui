@@ -133,6 +133,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // layout Bookmarks shares a stack with Pages. See
     // [`crate::checks::driving::raise_dock_tab`].
     driving::raise_dock_tab(&session, &driver, ui_rect, "view.panel_bookmarks")?;
+    // The authoring row is in the panel's footer, collapsed until opened.
+    crate::checks::driving::open_footer(&session, &driver, ui_rect, "bookmarks.tools")?;
 
     // --- A: author the bookmark this check then edits -----------------------
     let trace = session.trace()?;
@@ -242,6 +244,23 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(20);
 
     let trace = session.trace()?;
+    // THE CLICKED ROW MUST NOT MOVE. Selecting opens the per-bookmark
+    // controls; they belong below the list, and anything that grows above it
+    // slides the row out from under the pointer that just chose it.
+    let clicked_id = row.get("id").map(str::to_owned);
+    if let Some(moved) = trace
+        .events(ROW)
+        .filter(|l| l.get("id").map(str::to_owned) == clicked_id)
+        .last()
+        .and_then(|l| l.get_rect("rect"))
+        .filter(|r| (r.min.y - row_rect.min.y).abs() > 1.0)
+    {
+        return Ok(Some(format!(
+            "selecting a bookmark moved its row from y={:.1} to y={:.1}: something grew above the list in answer to the click.",
+            row_rect.min.y, moved.min.y
+        )));
+    }
+    report.note("the clicked row stayed where it was");
     let Some(rename_box) = declared(&trace, ui_rect, RENAME_BOX) else {
         let names = declared_names(&trace, ui_rect, "bookmarks");
         report.note(format!(

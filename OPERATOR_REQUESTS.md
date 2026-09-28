@@ -167,7 +167,7 @@ O247 did for page text. They get Acrobat's paragraph and font controls: left,
 centre, right and justified alignment, face, size, bold, italic, underline and
 colour.
 
-## O256 — **FILED** — in Edit mode, the Bookmarks and Layers add/edit controls sit collapsed below the tree, and nothing jumps when clicked
+## O256 — **BUILT, NOT YET DRIVEN** — in Edit mode, the Bookmarks and Layers add/edit controls sit collapsed below the tree, and nothing jumps when clicked
 
 The add/edit controls of the Bookmarks and Layers panels go in a collapsed
 section below the tree. Selecting something must never move the thing he just
@@ -175,12 +175,25 @@ clicked, because newly available options were inserted above it. This applies
 to every panel: controls that appear on selection go below, or reserve their
 space.
 
+**Built:** both panels end in a collapsed *Add and edit …* footer under the list. Selecting a bookmark, toggling a layer or clicking the canvas now adds lines only to that footer, which grows upward; the list never moves. `a_bookmark_can_be_renamed_and_removed` asserts the clicked row stays put. Not driven yet (the PC is in use). The other panels have not been swept for the same pattern.
+
 ## O257 — **FILED** — export to word-processor and spreadsheet formats, with structure
 
 Export to `.docx` (and the other word-processor formats worth having) and to
 `.xlsx`/`.csv`, carrying real structure: headings, paragraphs, headers and
 footers, tables, numbers as numbers, one sheet per table or page. Use PaddleOCR's
 layout and table recognition where it helps. Support the best exports we can.
+
+## O258 — **FILED, designed** — an LLM can drive the open document, off by default, asking him the first time one tries
+
+An assistant working from a chat prompt ("add a bookmark called Details on
+this page", "set the scale to 1 in = 20 ft") can operate the pdfcer window he
+already has open, and he watches it happen; every change is undoable like any
+other. The capability is **disabled by default**. When an assistant tries to
+connect, pdfcer asks him whether to allow it, rather than silently refusing
+or silently accepting. Design: `DESIGNS.md` § O258.
+
+**His decisions:** the prompt offers *Allow once*, *Allow for this session* and *Always allow*. Undo stays one command per step. How many to roll back is the assistant's call, because only it knows what the prompt meant, so the remote offers "undo n".
 
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 

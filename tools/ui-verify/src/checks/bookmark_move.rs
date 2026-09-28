@@ -111,6 +111,8 @@ fn author(
     keys: &[u16],
     label: &str,
 ) -> Result<()> {
+    // The authoring row is in the panel's footer, collapsed until opened.
+    crate::checks::driving::open_footer(session, driver, ui_rect, "bookmarks.tools")?;
     let trace = session.trace()?;
     let title_box = declared(&trace, ui_rect, TITLE_BOX).ok_or_else(|| {
         Error::new(format!(

@@ -193,3 +193,12 @@ the caller because the failure message does. A properties pane is a few
 notches deep; a settings dialog with seven collapsed groups is more. A
 constant here would make every caller's "I looked and it was not there"
 mean a different distance without saying so.
+
+## `open_footer`
+
+Opens a panel's collapsed footer (`panels::footer`) so the controls inside it
+publish their regions. It reads the footer's own `panel-footer id=… open=…`
+line and clicks the header only when that says closed, because the header is
+a toggle and a second click would hide what the caller came for. Returns
+whether the footer is open afterwards; `false` when no footer was traced (the
+panel is not showing, or the mode draws none).

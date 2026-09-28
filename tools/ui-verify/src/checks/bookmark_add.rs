@@ -194,6 +194,7 @@ fn drive_read(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
     // each of these is a `crate::diag::ui_rect` the panel publishes when it
     // draws the control.
     const AUTHORING: &[&str] = &[
+        "bookmarks.tools",
         TITLE_BOX,
         ADD_BUTTON,
         "bookmarks.rename",
@@ -279,9 +280,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // Toggled only if it is not already showing, for the reason
     // `properties_metadata` gives: the ribbon item is a TOGGLE, and pressing it
     // over an open panel closes the thing under test.
-    if declared(&session.trace()?, ui_rect, TITLE_BOX).is_none() {
+    if declared(&session.trace()?, ui_rect, "bookmarks.tools").is_none() {
         open_bookmarks(&session, &driver, ui_rect)?;
     }
+    // The authoring row is in the panel's footer, collapsed until opened.
+    crate::checks::driving::open_footer(&session, &driver, ui_rect, "bookmarks.tools")?;
     let trace = session.trace()?;
     if declared(&trace, ui_rect, TITLE_BOX).is_none() {
         return Ok(Some(format!(

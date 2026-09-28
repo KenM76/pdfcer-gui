@@ -304,6 +304,18 @@ pub fn layer_radio_locked_sibling_tooltip() -> &'static str {
 // Bookmarks
 // ---------------------------------------------------------------------------
 
+/// The collapsed footer holding every control that changes the outline.
+#[must_use]
+pub fn bookmarks_tools() -> &'static str {
+    "Add and edit bookmarks"
+}
+
+/// The collapsed footer holding every control that changes the layers.
+#[must_use]
+pub fn layers_tools() -> &'static str {
+    "Add and edit layers"
+}
+
 /// Summary line above the tree.
 #[must_use]
 pub fn bookmarks_count(total: usize) -> String {

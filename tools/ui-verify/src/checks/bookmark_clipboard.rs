@@ -222,6 +222,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(20);
 
     // --- author one, so the check does not depend on the fixture ------------
+    // The authoring row is in the panel's footer, collapsed until opened.
+    crate::checks::driving::open_footer(&session, &driver, ui_rect, "bookmarks.tools")?;
     let Some(title_box) = wait_for_region(&session, ui_rect, TITLE_BOX, 12)? else {
         // The region list is built HERE rather than inside an `ok_or_else`
         // closure, because building it needs `session.trace()?` and a closure
