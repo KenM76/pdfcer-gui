@@ -112,25 +112,27 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 # OPEN
 
-## O249 — **OPEN — shell half in progress, engine asked (G049–G051)** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
+## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 
 > **Ken:** *"Also can we make it so everything about the dimensions show a live preview? Can we make it so when we click on a dimension, the end points on the connection side of the dimension can have their lengths adjusted? And when I click on the dimension text and drag it should live preview so that it is apparent I am just moving the dimension text. Also did we make it so we can change between radius and diameter, and make these easy to move and extend again with live preview."*
 
-**Your question answered.** Yes: a placed radius or diameter ce dimension
-switches between the two in the Properties panel. It cannot be moved or
-extended on the page yet, because the engine has no place to store where its
-leader and text go. That is filed as G051.
-
 **Where each part stands.**
 
-- *Live preview*: every drag of a ce dimension previews, but the preview
-  draws only the lines, never the text. The engine is asked for a preview of
-  the real appearance (G049).
-- *Extension-line ends*: their length is fixed by the drafting standard, with
-  nothing per dimension. That is filed as G050.
+- *Live preview*: every drag of a ce dimension draws the engine's own bake of
+  the moved dimension, text included, so the release lands what was shown.
+  Driven: `a_dimension_drag_previews_what_it_places`.
+- *Extension-line ends*: a selected linear ce dimension has a grip at the near
+  end of each extension line; dragging it shortens or lengthens that line,
+  previewed live. Driven: `an_extension_line_grip_shortens_its_line`.
 - *Text drag*: on a linear ce dimension, pressing on the text and dragging
   slides the text along the line while the line stays put, previewed live.
-  Pressing elsewhere on the dimension moves line and text together.
+  Pressing elsewhere on the dimension moves line and text together. Driven:
+  `a_dimension_text_slides_alone`.
+- *Radius and diameter*: the right-click menu and the Properties panel switch
+  between the two. Dragging the label swings the leader round the circle and
+  moves the text in or out, previewed live. Driven:
+  `a_radius_switches_to_a_diameter_from_its_right_click_menu`,
+  `a_radius_label_drag_swings_the_leader_to_the_drop`.
 
 Four parts, all about ce dimensions (the ones pdfcer authors):
 
@@ -139,7 +141,7 @@ Four parts, all about ce dimensions (the ones pdfcer authors):
    extension lines, and dragging one changes that line's length.
 3. Dragging the text previews the text alone moving, so it is plain that the
    dimension line is staying put.
-4. A radius/diameter switch (answered below from the survey), plus live-preview
+4. A radius/diameter switch, plus live-preview
    move and extend for those ce dimensions.
 
 Continues the open clauses of O183.
