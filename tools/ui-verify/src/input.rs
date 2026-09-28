@@ -37,6 +37,9 @@ const DWELL_NUDGE_TICKS: u32 = 8;
 /// The mid-gesture verb: hold a drag open and hand control to an observer.
 mod observed;
 
+/// Pointer steps through the application's own seam, for a window OS input cannot reach.
+pub mod scripted;
+
 /// The OS-level input driver.
 ///
 /// Owns the operator's pointer position for its lifetime and returns it on

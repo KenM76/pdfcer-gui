@@ -128,6 +128,14 @@ impl WindowPoint {
     pub fn y(&self) -> f32 {
         self.y
     }
+    /// The centre of a declared rectangle.
+    #[must_use]
+    pub fn centre_of(r: LRect) -> Self {
+        Self {
+            x: (r.min.x + r.max.x) / 2.0,
+            y: (r.min.y + r.max.y) / 2.0,
+        }
+    }
 }
 
 /// A point in physical desktop pixels — what the OS input API accepts.

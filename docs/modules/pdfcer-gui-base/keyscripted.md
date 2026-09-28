@@ -67,11 +67,16 @@ changes nothing about what the operator can reach.
 
 # Where it enters, and why nowhere else would do
 
-Into `RawInput`'s event stream, before [`super::collect`] reads it, so the
+Into the frame's `InputState` event list (through `ctx.input_mut`, after
+egui's `begin_pass`), before [`super::collect`] reads it, so the
 synthetic press goes through every line a real one does: the D1 typing
 guard, the modifier match, the action push, the dispatcher. A seam that
 called `Action::ZoomIn` directly would pass on a build where `Ctrl` `+`
 was broken, which is the one thing it is here to detect.
+
+That route is only good for keys. Pointer state and hit-testing are built
+from `RawInput` inside `begin_pass`, so a scripted click has to enter
+through an `egui::Plugin::input_hook` instead (`pointerscripted`).
 
 # ⚠ The standing modifier state is set too, and it must be
 

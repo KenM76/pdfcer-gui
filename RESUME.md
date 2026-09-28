@@ -258,6 +258,13 @@ versioned home). `reports_confidence()` is an R8 capability (`ocrs` answers
    all the seam can honestly say — it runs before `collect` and cannot know
    what became of the press, so **a check must read the effect from
    `status … zoom=` keyed on the rung's `index=`**, never count rungs.
+   ★ **Pointer steps have their own seam: `PDFCER_DIAG_POINTER`.** A check
+   takes `input::scripted::ScriptedPointer` and a window at `-4200,-4200`, and
+   clicks, drags and wheels in `ui-rect` points with no OS input
+   (`double_click_text_without_the_mouse`). ⚠ The seam's wake-ups must be
+   requested inside the pass (`on_end_pass`); requested from `input_hook` they
+   are lost and the app stops drawing — the symptom is an unacknowledged
+   first step.
    ⚠ **A keystroke ladder still says nothing about O220** — his `Ctrl`+wheel
    is a continuous `zoom_delta`, a different route from the discrete action,
    and it is the one he reports as trapped.

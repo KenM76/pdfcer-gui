@@ -686,3 +686,25 @@ An enum rather than a bare `u16` virtual-key code, because the whole point
 of this type is that a caller cannot accidentally hold something that is not
 a modifier — a mouse gesture with `A` held is not a gesture any application
 defines, and it would arrive as a stray keystroke.
+
+## Scripted pointer
+
+`input::scripted::ScriptedPointer` drives the application's
+`PDFCER_DIAG_POINTER` seam (`docs/modules/pdfcer-gui-base/pointerscripted.md`)
+instead of the OS. It is the driver for a window placed off the desktop,
+which lets a check run while the operator is using the machine and takes
+neither his pointer nor his keyboard.
+
+- **Points** are `WindowPoint`s — egui logical points, the space `ui-rect`
+  lines are written in — with no conversion to the desktop.
+- **Each step waits for its acknowledgement** (`diag-pointer seq=N`), or
+  fails on `diag-pointer-refused seq=N`. After 10 s it gives up with a
+  message that tells a binary predating the seam from one that stopped
+  drawing.
+- **The acknowledgement means delivered**, never effective. A check reads
+  the effect from the application's own trace.
+- **End with `gone`**, so nothing stays hovered into the next assertion.
+
+It does not replace `Driver` for D1 or for anything else decided below
+egui: focus, activation, capture, OS drag-and-drop. See the section
+above — a synthetic press skips exactly the layer those defects live in.

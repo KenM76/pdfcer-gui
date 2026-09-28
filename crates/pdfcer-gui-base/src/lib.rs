@@ -463,6 +463,8 @@ pub mod keychord;
 
 /// Scripted keystrokes for a window OS input cannot reach.
 pub mod keyscripted;
+/// Scripted clicks, drags and wheel turns for a window OS input cannot reach.
+pub mod pointerscripted;
 
 /// How a form field's in-place editor sets its text.
 pub mod formeditortext;

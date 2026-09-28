@@ -52,6 +52,7 @@ pub mod dimension_groups;
 /// Smart-Selector chain, and the one where "deeper" means the words rather
 /// than a smaller shape (`OPERATOR_REQUESTS.md` O70).
 pub mod double_click_text;
+pub mod double_click_text_scripted;
 
 pub mod driving;
 

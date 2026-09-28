@@ -387,6 +387,8 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(form_leaf_descend::TheLadderGoesAsDeepInsideAContainer),
         // The chain's last rung, and the one that leaves the geometry: text.
         Box::new(double_click_text::DoubleClickingATextBoxEditsTheText),
+        // The same rung with no OS input: the scripted-pointer seam on a window off the desktop.
+        Box::new(double_click_text_scripted::DoubleClickTextWithoutTheMouse),
         // Adjacent to that rung deliberately: the chunk boxes are its VISIBLE
         // half. The descent above proves the selection can reach one chunk of
         // text; this proves an operator can see which chunk before committing a

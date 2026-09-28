@@ -215,7 +215,7 @@ both that filters to pages holding a matching option and underlines the match.
 Tools ▸ Font folders still opens on the Fonts page. Not driven yet (the PC is
 in use).
 
-## O260 — **IN PROGRESS** — drive the program without the mouse, so checks run while he works
+## O260 — **BUILT AND DRIVEN — awaiting your verdict** — drive the program without the mouse, so checks run while he works
 
 His words: *"are you now able to drive a gui session without needing the
 mouse? Was that feature completed?"*, then *"work on the mouse-free workflow at
@@ -224,6 +224,17 @@ pointer. Clicks and drags on the page and on panels still move his real cursor,
 so every row marked "not yet driven" waits for the PC. The remedy is pointer
 input delivered into the program's own event stream rather than through the
 operating system.
+
+**Where it stands.** Clicks, right-clicks, double-clicks, drags and wheel
+turns now go into the program's own input stream, and pass through the same
+hit-testing and click counting a real press does. A window placed off the
+desktop was driven end to end with his pointer untouched: a ribbon click, a
+click that selects text on the page, and a double-click that opens the text
+caret. Driven: `double_click_text_without_the_mouse`, and made to fail once
+by aiming wrong. What still needs the real mouse: window focus and
+activation, OS drag-and-drop, and the focus-chain checks — those are about
+how the program answers the operating system. The existing drag and click
+checks still use his cursor until each is moved across.
 
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 

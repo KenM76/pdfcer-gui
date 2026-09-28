@@ -1061,6 +1061,9 @@ impl PdfcerApp {
 /// One-time egui configuration that must happen before the first frame.
 pub fn configure_context(ctx: &egui::Context) {
     ctx.options_mut(|o| o.zoom_with_keyboard = false);
+    if let Some(script) = pdfcer_gui_base::pointerscripted::PointerScript::from_env() {
+        ctx.add_plugin(script);
+    }
 }
 
 /// The application's own tests, including the `test_support` fixtures three
