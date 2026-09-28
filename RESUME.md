@@ -52,11 +52,11 @@ channel: a reply is an input to *how* a thing is built, never to *which*. Each
 row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
-**Start here on `continue`.** The release tree `3f2ff33b` is published to
-OneDrive (`pdfcer-gui2`) and GitHub as `v0.5.0-dev.20260928.1`, packaged
-WITHOUT `--verify`: the full gates passed at engine `52d898a6`, and at the
-shipped `f16dddb8` the workspace tests, clippy and the engine gates passed;
-the PaddleOCR check was driven and an off-screen smoke launch was clean. In order:
+**Start here on `continue`.** The release tree `6f94ceae` (engine `741c9cb1`)
+is published to OneDrive (`pdfcer-gui1`) and GitHub as
+`v0.5.0-dev.20260928.2`, packaged with `--verify` (tests and gates PASS); the
+placing preview and table export were driven off-screen and a smoke launch
+was clean. In order:
 
 0. **Close the channel.** `open/` still holds the answered G028–G041 exchanges
    and two audit notes. Archive each pair and write its `INDEX.md` row in the
