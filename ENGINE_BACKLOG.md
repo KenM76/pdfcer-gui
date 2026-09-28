@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **54 of 235** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `wanted` — a real gap — **54 of 236** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -82,8 +82,8 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **Export flowing text to Word (DOCX)** — `pdfcer_core::export::docx`, `write_docx` with `DocxOptions`, `DocxReport` and `DocxOutput` | **wanted; next after the table export.** A *Word document* choice in File ▸ Export, beside Export text: headings, paragraphs, lists, tables and a real header and footer. The report's counts go in the receipt, off-canvas (R8b). Our O257's remaining half. |
 | Restyle text whose own face cannot take a style, falling through to a donor the shell supplies — `FormatRequest::style_donor`, `FormatRequest::style_donors`, `EditSession::preview_style_ladder_with_donors`, `StyleRung::SuppliedFaceEmbedded` | **wanted.** Rung 3 of the style ladder: when neither the page nor the standard fourteen have the bold or italic sibling, the engine embeds a subset of a donor face the caller names. The shell passes none today, so Bold on such text still ends at synthesis or a refusal. The donor is a file the operator picks, as *Font file…* already does for a face change (that path attaches `FormatRequest::embed_font` through `embedded_font`); the preview must go through `preview_style_ladder_with_donors` with the same donors so the tooltip and the result agree. |
-| **Export detected tables to Excel (XLSX)** — `pdfcer_core::export::xlsx`, `write_xlsx` with `XlsxOptions` and `XlsxReport` | **wanted; being wired.** File ▸ Export ▸ Tables… writes CSV only. The workbook goes in as a *Save as* choice beside CSV, with the report's counts — numbers written, locale-ambiguous cells kept as text, merged cells, dropped characters — in the receipt, off-canvas (R8b). Our O257. |
 | List the form XObjects a page paints, and how many places … | **wanted.** The engine answers *how many places paint this form?* only where this shell already asks it: `canvas::textedit::report` prints `invocations=` and `pages=` at the moment of an in-form **text** edit, via `text_edit::invocation_set`. There is no standing listing. The argument for declining is real and is kept here so it is not re-derived — the number matters most exactly where it is already shown — but on a thirty-six-sheet SolidWorks set, where one title block is a single form, the operator wants the blast radius **before** picking up the tool, not in the disclosure afterwards. |
 | **`/ToUnicode` partial inversion** — a composite font's character map is inverted per CHARACTER, not per font … | **wanted — the capability is in the pin and the sentence is not.** The engine refuses an `edit_text` at the ambiguous character, naming every candidate code (`RInvTrigger::Ambiguous`), rather than refusing the whole font; only a wholly uninvertible map refuses everything. Nothing in `crates/pdfcer-gui` mentions `RInvTrigger`, `partial_inverse` or `ambiguous_chars`, so a refusal that could say *this one character is not addressable, the rest of the font edits* still arrives through `EditRefusal::of`'s four coarse buckets. That sentence is the work. `ToUnicodeCMap::partial_inverse` splits a map into `unambiguous`, `ambiguous`, `multi_char_codes` and `empty_codes`; `CompositeEncoding::ambiguous_chars` asks the same of an encoding and is the call an operator-facing sentence would make. |
 | **Edit text across show operators** — a `find` matches across consecutive … | **wanted, and what it costs now is re-measurement.** The capability is in the build this shell compiles: a document written one glyph per show operator is what `EditRefusal::SplitAcrossPieces` exists to explain, and the engine no longer refuses it. `EditReport::operators_spanned` is new and wants disclosing under rule 4, and `Plan::one_operator` stops being the thing that routes `SplitAcrossPieces`, so the operator-facing sentence must be re-derived from the engine's answer rather than deleted on the assumption it is dead. |
@@ -154,7 +154,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 235** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `blocked` — waiting on something named — **2 of 236** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -172,7 +172,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 235** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 236** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -183,7 +183,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **15 of 235** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `declined` — deliberately no surface — **15 of 236** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -224,7 +224,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **164 of 235** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **165 of 236** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -422,6 +422,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Export detected tables to Excel (XLSX)** — `pdfcer_core::export::xlsx`, `write_xlsx` with `XlsxOptions` and `XlsxReport` | **shipped — File ▸ Export ▸ Tables… ▸ *Save as: Excel workbook*.** `app::actions::export_tables` filters the detected `Table`s to the chosen pages and calls `write_xlsx` with `XlsxOptions::default()` (its error, `pdfcer_core::export::ooxml_zip::PackageError`, is shown by its own wording in the failure line); the receipt carries the report's numbers written, locale-ambiguous cells kept as text, dropped characters and cells cut or left out at Excel's limits, off-canvas (R8b). Driven by `export_tables_without_the_mouse`, which reads `format=xlsx numbers=4` and the package on disk. The *.ods* choice beside it is written in this shell because the engine has no ODS writer (our G062). |
 | **SVG export can keep text as real `<text>`, font embedded** … — `SvgText::KeepText` / `SvgText::Outlines`, `SvgTextOutcome` | **shipped — Export image › *Text: keep as text*, shown for SVG and EMF only, off by default and remembered as `export_image_keep_text`.** Our G033. The outcome is disclosed on the status line: runs kept, fonts embedded, and each nonzero fallback reason (`SvgTextOutcome::fallback_not_sfnt`, `fallback_paint`, `fallback_unmapped`, `fallback_geometry`, `fallback_font_build`, `fallback_restricted`, `fallback_conflict`; `EmfTextOutcome::fallback_symbol_face` and its three shared reasons), with `runs_as_outlines()` as the total. The EMF sentence says a metafile carries no font. The clipboard keeps outlines. **Not driven.** |
 | **EMF export can keep text as real text records** … — `EmfText::KeepText` / `EmfText::Outlines`, `EmfTextOutcome` | **shipped — the same checkbox as SVG's row above, the same disclosure path.** Our G033's second half. The status sentence says a metafile carries no font program, so a kept run draws in whatever installed face has that name. **Not driven.** |
 | Move, resize and rotate a content-stream object (path, text … | **Reachable — move, resize and rotate ANY object**, closing a request the operator made three times; `app::actions::vector` calls `transform_objects`, which wraps each object's operator run in `q <cm> … Q` and so is kind-agnostic by mechanism rather than by match arm. Driven by `resize_scales_a_shape` and `geometry_fields_resize_a_shape`. Page content only: there is no in-form equivalent, which has its own `wanted` row. |

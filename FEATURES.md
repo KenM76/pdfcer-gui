@@ -4,7 +4,7 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.61.0, a git dependency on the local engine repository, pinned at **`24b3f032`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.61.0, a git dependency on the local engine repository, pinned at **`0bf5dba4`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
 **What is new in this build.** PaddleOCR ships in the package and reads English
 and French, and dragging a ce dimension's extension line shows the shortened
@@ -434,7 +434,7 @@ declare an intention before pointing at anything.
 | ⬜ | **Text runs: how they are drawn, fit to a width, merge into one, move by line. Built, undriven.** Properties › This text gains *Drawn as* (fill, outline, both, invisible and the clip modes) and *Fit to width*; Format › Merge text runs joins consecutive runs into one; moving a line of text now carries pieces that inherit their position from it rather than refusing. A click on a glyph resolves to the run the engine says owns it |
 | ⬜ | **Text comes out; nothing goes back in** — `file.export_text` is on File ▸ Export, and the absence of an import is proved on all five routes: no command in the registry, no dispatch arm, no dialog, no `.txt` filter on any picker |
 | ⬜ | **Export text can put columns in reading order — built, undriven.** An *Order* choice in the Export text window: *As drawn* keeps the clipboard's order; *Reading order* reads side-by-side columns one after the other and leaves out running headers, footers and page numbers, saying in the receipt how many lines it left out and how many ordering decisions were guesses. Remembered between exports |
-| ⬜ | **Export tables writes each table on the page as a CSV — built, undriven.** File ▸ Export ▸ Tables… finds ruled tables and tables laid out by alignment, on the current page or every page, and writes one CSV per table (UTF-8 with a byte-order mark, so Excel reads symbols correctly). The receipt counts every guess: tables found by alignment, headers guessed, merged cells. Refuses before the file picker when there are no tables. Excel and Word formats are not built |
+| ✅ | **Export tables writes each table on the page as CSV, Excel or LibreOffice.** File ▸ Export ▸ Tables… finds ruled tables and tables laid out by alignment, on the current page or every page. *Save as* picks one CSV per table (UTF-8 with a byte-order mark, so Excel reads symbols correctly), or one Excel (.xlsx) or LibreOffice (.ods) workbook with a sheet per table, merged cells kept, header rows bold and plain numbers written as numbers. The receipt counts every guess: tables found by alignment, headers guessed, merged cells, numbers, and values like 1.234 kept as text because they read differently in different countries. Refuses before the file picker when there are no tables. Driven off-screen in all three formats. Word output is not built |
 
 ### Markup completeness
 

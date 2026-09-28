@@ -238,6 +238,7 @@ fn every_preference_round_trips_through_the_file() {
                         },
                         tables: ExportTablePrefs {
                             scope: PageScope::CurrentPage,
+                            format: crate::tableexport::TableFormat::Xlsx,
                         },
                         dxf: ExportDxfPrefs {
                             units: DxfUnits::Millimetres,
@@ -724,6 +725,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
             },
             tables: ExportTablePrefs {
                 scope: PageScope::AllPages,
+                format: crate::tableexport::TableFormat::Ods,
             },
             dxf: ExportDxfPrefs {
                 units: DxfUnits::Inches,

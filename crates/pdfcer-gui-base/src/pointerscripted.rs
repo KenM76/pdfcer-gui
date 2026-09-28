@@ -57,7 +57,9 @@ impl Target {
     fn matches(&self, id: ViewportId) -> bool {
         match self {
             Self::Root => id == ViewportId::ROOT,
-            Self::Named(name) => format!("{id:?}") == *name,
+            // The id's `Debug` form is a quoted string, and a harness's trace
+            // reader hands the value back unquoted; either spelling names it.
+            Self::Named(name) => format!("{id:?}").trim_matches('"') == name.trim_matches('"'), // ui-text-exempt: a viewport id compared, never displayed
         }
     }
 
@@ -407,5 +409,15 @@ mod tests {
             assert!(parse(line).is_err(), "{line}");
         }
         assert_eq!(parse("2 gone vp=abc").unwrap().target.token(), "abc");
+    }
+
+    #[test]
+    fn a_viewport_is_named_with_or_without_its_quotes() {
+        let id = ViewportId::from_hash_of("dialog");
+        let bare = format!("{id:?}").trim_matches('"').to_owned();
+        for spelling in [bare.clone(), format!("\"{bare}\"")] {
+            assert!(Target::Named(spelling.clone()).matches(id), "{spelling}");
+        }
+        assert!(!Target::Named(bare).matches(ViewportId::ROOT));
     }
 }

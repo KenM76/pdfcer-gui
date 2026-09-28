@@ -272,7 +272,7 @@ fn every_field_of_every_group_is_both_written_and_parsed() {
         ("pub struct ExportImagePrefs {", "image", 5),
         ("pub struct ExportTextPrefs {", "text", 4),
         ("pub struct ExportDxfPrefs {", "dxf", 4),
-        ("pub struct ExportTablePrefs {", "tables", 1),
+        ("pub struct ExportTablePrefs {", "tables", 2),
     ];
 
     for (decl, group, expected) in groups {
@@ -350,7 +350,7 @@ fn every_remembered_field_is_read_back_by_its_dialog() {
             "dialogs/export_tables.rs",
             "pub fn open(doc: &OpenDoc, remembered:",
             "    pub fn show(",
-            1,
+            2,
         ),
     ];
 
@@ -441,6 +441,7 @@ fn everything_changed() -> ExportPrefs {
         },
         tables: ExportTablePrefs {
             scope: PageScope::CurrentPage,
+            format: crate::tableexport::TableFormat::Ods,
         },
     }
 }
@@ -487,7 +488,7 @@ fn every_export_preference_round_trips_through_the_file() {
     let mut read = ExportPrefs::default();
     let accepted = parse_block(&out, &mut read);
 
-    assert_eq!(accepted, 16, "sixteen keys are declared in this module");
+    assert_eq!(accepted, 17, "seventeen keys are declared in this module");
     assert_eq!(read, written, "a value changed on its way through the file");
     assert_ne!(
         read,
@@ -504,7 +505,7 @@ fn the_defaults_are_written_too_so_the_file_teaches_its_own_vocabulary() {
     write_block(&ExportPrefs::default(), &mut out);
 
     let mut read = ExportPrefs::default();
-    assert_eq!(parse_block(&out, &mut read), 16);
+    assert_eq!(parse_block(&out, &mut read), 17);
     assert_eq!(read, ExportPrefs::default());
 
     // Each key's own comment block names it, so an operator reading the file
@@ -525,6 +526,7 @@ fn the_defaults_are_written_too_so_the_file_teaches_its_own_vocabulary() {
         "export_dxf_text",
         "export_dxf_version",
         "export_tables_pages",
+        "export_tables_format",
     ] {
         assert!(
             out.contains(&format!("# {key}:")),

@@ -67,9 +67,10 @@ pub(super) fn remember_tables(habits: ExportTablePrefs, prefs: &mut Prefs) {
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "export-tables-remembered saved={} scope={}",
+            "export-tables-remembered saved={} scope={} format={}",
             saved.is_ok(),
             exporting::page_scope_key_or(habits.scope, ExportTablePrefs::default().scope),
+            exporting::table_format_key(habits.format),
         )
     });
 }

@@ -1,14 +1,14 @@
 //! # `dialogs::export_tables` — File ▸ Export ▸ Tables…
 //!
-//! Which pages. The detection runs on Export, so the window cannot say how
-//! many tables there are; the receipt does. The scope is remembered on
-//! Export, as the other export windows remember theirs.
+//! Which pages, and what to write. The detection runs on Export, so the window cannot say how
+//! many tables there are; the receipt does. Scope and format are remembered
+//! on Export, as the other export windows remember theirs.
 
 use egui::Ui;
 
 use crate::app::actions::Action;
 use crate::app::actions::imageexport::{PageScope, resolve_pages};
-use crate::app::actions::tableexport::TableExportPlan;
+use crate::app::actions::tableexport::{TableExportPlan, TableFormat};
 use crate::app::state::{OpenDoc, Status};
 use crate::text::export_tables as t;
 use crate::text::export_text as tt;
@@ -29,6 +29,17 @@ pub const fn region_for_scope(scope: PageScope) -> &'static str {
     }
 }
 
+/// The region ONE format radio publishes.
+#[must_use]
+pub const fn region_for_format(format: TableFormat) -> &'static str {
+    match format {
+        // ui-text-exempt: trace region names, never displayed.
+        TableFormat::Csv => "export-tables.format.csv",
+        TableFormat::Xlsx => "export-tables.format.xlsx",
+        TableFormat::Ods => "export-tables.format.ods",
+    }
+}
+
 /// The Export-tables window's live state.
 pub struct ExportTablesDialog {
     /// The page on screen at open, frozen so paging behind the window does
@@ -37,6 +48,7 @@ pub struct ExportTablesDialog {
     /// Page count, frozen with `page_index`.
     page_count: usize,
     scope: PageScope,
+    format: TableFormat,
     /// The typed range; not remembered, since it names this document's pages.
     range_text: String,
     export_requested: bool,
@@ -51,6 +63,7 @@ impl ExportTablesDialog {
             page_index: doc.view.page_index,
             page_count: doc.pages.len(),
             scope: remembered.scope,
+            format: remembered.format,
             range_text: String::new(),
             export_requested: false,
             close_requested: false,
@@ -58,13 +71,14 @@ impl ExportTablesDialog {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "export-tables-open page={} pages={} scope={}",
+                "export-tables-open page={} pages={} scope={} format={}",
                 dialog.page_index,
                 dialog.page_count,
                 crate::app::prefs::exporting::page_scope_key_or(
                     dialog.scope,
                     crate::app::prefs::ExportTablePrefs::default().scope,
                 ),
+                dialog.format.extension(),
             )
         });
         dialog
@@ -80,7 +94,7 @@ impl ExportTablesDialog {
         let (frame, ()) = crate::dialogs::host::Host::new(
             "export-tables", // ui-text-exempt: a viewport key, never displayed.
             t::window_title(),
-            egui::vec2(440.0, 340.0),
+            egui::vec2(440.0, 420.0),
             egui::vec2(340.0, 260.0),
         )
         .show(ctx, |ui| {
@@ -93,16 +107,26 @@ impl ExportTablesDialog {
             && let Some(pages) = self.pages()
         {
             crate::dialogs::export_remembered::remember_tables(
-                crate::app::prefs::ExportTablePrefs { scope: self.scope },
+                crate::app::prefs::ExportTablePrefs {
+                    scope: self.scope,
+                    format: self.format,
+                },
                 prefs,
             );
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
-                format!("export-tables-requested pages={}", pages.len(),)
+                format!(
+                    "export-tables-requested pages={} format={}",
+                    pages.len(),
+                    self.format.extension()
+                )
             });
             actions.push(Action::Write(
                 crate::app::actions::write::WriteAction::Tables {
-                    plan: TableExportPlan { pages },
+                    plan: TableExportPlan {
+                        pages,
+                        format: self.format,
+                    },
                 },
             ));
             return false;
@@ -152,7 +176,12 @@ impl ExportTablesDialog {
         }
         ui.add_space(8.0);
 
-        ui.weak(t::format_hint());
+        ui.label(t::format_heading());
+        for format in TableFormat::ALL {
+            let response = ui.radio_value(&mut self.format, format, t::format_name(format));
+            crate::diag::ui_rect(region_for_format(format), response.rect);
+        }
+        ui.weak(t::format_hint(self.format));
         ui.add_space(8.0);
 
         ui.separator();

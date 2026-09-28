@@ -57,7 +57,8 @@ stops drawing, and every step times out unacknowledged.
 
 Points are in egui logical points of the target viewport, the same space
 `ui-rect` lines use. `vp=` is either `root` or the `viewport=` token of a
-`ui-rect` line.
+`ui-rect` line, with or without its quotes. A dialog is its own viewport,
+so its controls are clicked with its token and its own coordinates.
 
 ## What it cannot test
 

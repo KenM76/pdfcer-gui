@@ -1,9 +1,10 @@
 //! # `app::actions::export_tables` — File ▸ Export ▸ Tables…
 //!
 //! Runs `pdfcer_core::table_detect::detect_tables`, keeps the tables on the
-//! plan's pages, and writes one CSV per table. Every inference the detection
-//! made — an aligned table, a guessed header, a merged cell — is counted in
-//! the receipt, off-canvas (R8b).
+//! plan's pages, and writes one CSV per table or one workbook with a sheet
+//! per table. Every inference — an aligned table, a guessed header, a merged
+//! cell, a cell written as a number — is counted in the receipt, off-canvas
+//! (R8b).
 //!
 //! Detection covers the whole document and the tables are filtered to the
 //! plan afterwards: the engine has no page-subset form (request `G061`). The
@@ -13,9 +14,10 @@
 
 use std::path::{Path, PathBuf};
 
+use pdfcer_core::export::xlsx::{self, XlsxOptions, XlsxReport};
 use pdfcer_core::table_detect::{self, BoundarySource, Table, TableCell, TableOptions};
 
-use super::tableexport::{self, CellSpec, Grid, TableExportPlan};
+use super::tableexport::{self, CellSpec, Grid, Sheet, TableExportPlan, TableFormat};
 use crate::app::state::OpenDoc;
 use crate::text::export_tables as t;
 
@@ -92,7 +94,7 @@ pub(super) fn export(doc: &mut OpenDoc, plan: &TableExportPlan) {
         return;
     }
 
-    let suggested = tableexport::suggested_path(&doc.path);
+    let suggested = tableexport::suggested_path(&doc.path, plan.format);
     let crate::app::files::Picked::Path(target) =
         crate::app::files::pick_save_path(&suggested, t::save_dialog_title())
     else {
@@ -103,13 +105,38 @@ pub(super) fn export(doc: &mut OpenDoc, plan: &TableExportPlan) {
         return;
     };
 
-    match write_csv(&target, &tables) {
+    // Cells written as numbers, and the format's own disclosures.
+    let mut numbers = 0;
+    let mut format_notes = Vec::new();
+    let written = match plan.format {
+        TableFormat::Csv => write_csv(&target, &tables),
+        TableFormat::Xlsx => write_xlsx(&target, &found.tables, &plan.pages).map(|report| {
+            numbers = report.numbers;
+            format_notes = xlsx_notes(&report);
+            target.clone()
+        }),
+        TableFormat::Ods => write_ods(&target, &tables).inspect(|_| {
+            numbers = tables
+                .iter()
+                .map(|n| tableexport::numeric_cells(&n.grid))
+                .sum();
+            let dropped: usize = tables
+                .iter()
+                .map(|n| tableexport::control_characters(&n.grid))
+                .sum();
+            if dropped > 0 {
+                format_notes.push(t::characters_dropped(dropped));
+            }
+        }),
+    };
+    match written {
         Ok(first) => {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
-                    "export-tables tables={} aligned={} headers={} merged={} \
-                     dense={dense} unreadable={unreadable} first={}",
+                    "export-tables format={} tables={} aligned={} headers={} merged={} \
+                     numbers={numbers} dense={dense} unreadable={unreadable} first={}",
+                    plan.format.extension(),
                     tables.len(),
                     counts.aligned,
                     counts.headers,
@@ -117,7 +144,16 @@ pub(super) fn export(doc: &mut OpenDoc, plan: &TableExportPlan) {
                     first.display(),
                 )
             });
-            let mut notes = vec![t::wrote_csv(&first.display().to_string(), tables.len())];
+            let shown = first.display().to_string();
+            let mut notes = vec![if plan.format == TableFormat::Csv {
+                t::wrote_csv(&shown, tables.len())
+            } else {
+                t::wrote_workbook(&shown, tables.len())
+            }];
+            if numbers > 0 {
+                notes.push(t::numbers_written(numbers));
+            }
+            notes.append(&mut format_notes);
             if counts.aligned > 0 {
                 notes.push(t::aligned_tables(counts.aligned));
             }
@@ -218,4 +254,49 @@ fn write_csv(target: &Path, tables: &[Named]) -> Result<PathBuf, String> {
         first.get_or_insert(path);
     }
     first.ok_or_else(String::new)
+}
+
+/// The plan's tables as the engine's Excel workbook at `target`.
+fn write_xlsx(target: &Path, all: &[Table], pages: &[usize]) -> Result<XlsxReport, String> {
+    let tables: Vec<Table> = all
+        .iter()
+        .filter(|t| pages.binary_search(&t.page_index).is_ok())
+        .cloned()
+        .collect();
+    let output = xlsx::write_xlsx(&tables, &XlsxOptions::default()).map_err(|e| e.to_string())?;
+    std::fs::write(target, &output.bytes).map_err(|e| e.to_string())?;
+    Ok(output.report)
+}
+
+/// What the Excel writer changed or left out, as receipt lines.
+fn xlsx_notes(report: &XlsxReport) -> Vec<String> {
+    let mut notes = Vec::new();
+    if report.ambiguous_numbers > 0 {
+        notes.push(t::ambiguous_numbers(report.ambiguous_numbers));
+    }
+    if report.characters_dropped > 0 {
+        notes.push(t::characters_dropped(report.characters_dropped));
+    }
+    if report.cells_truncated > 0 {
+        notes.push(t::cells_truncated(report.cells_truncated));
+    }
+    if report.cells_beyond_limits > 0 {
+        notes.push(t::cells_beyond_limits(report.cells_beyond_limits));
+    }
+    notes
+}
+
+/// Every table as a sheet of one OpenDocument spreadsheet at `target`,
+/// which is returned.
+fn write_ods(target: &Path, tables: &[Named]) -> Result<PathBuf, String> {
+    let sheets: Vec<Sheet<'_>> = tables
+        .iter()
+        .enumerate()
+        .map(|(i, n)| Sheet {
+            name: t::sheet_name(i + 1),
+            grid: &n.grid,
+        })
+        .collect();
+    std::fs::write(target, tableexport::ods::bytes(&sheets)?).map_err(|e| e.to_string())?;
+    Ok(target.to_path_buf())
 }

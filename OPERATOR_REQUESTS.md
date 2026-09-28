@@ -190,9 +190,10 @@ Export to `.docx` (and the other word-processor formats worth having) and to
 footers, tables, numbers as numbers, one sheet per table or page. Use PaddleOCR's
 layout and table recognition where it helps. Support the best exports we can.
 
-**State:** File ▸ Export ▸ Tables… writes each detected table as a CSV (built,
-undriven). `.xlsx` waits on his OK for a writer crate the engine does not use;
-`.docx` is not built.
+**State:** File ▸ Export ▸ Tables… writes the detected tables as CSV, as an
+Excel workbook (the engine's own writer, so no new library was needed) or as
+a LibreOffice spreadsheet, chosen in the window and remembered; driven
+off-screen in all three. `.docx` is not built.
 
 ## O258 — **FILED, designed** — an LLM can drive the open document, off by default, asking him the first time one tries
 
@@ -235,6 +236,22 @@ by aiming wrong. What still needs the real mouse: window focus and
 activation, OS drag-and-drop, and the focus-chain checks — those are about
 how the program answers the operating system. The existing drag and click
 checks still use his cursor until each is moved across.
+
+## O261 — **FILED** — a new ce dimension follows the mouse after its last pick, and a click places it where its text goes
+
+His words: *"please also make it so when adding dimensions that instead of
+placing the dimension after the slection is complete, I see a live preview
+under the mouse and I click the mouse button to place it where I want it. The
+spot I click should also locate the dimension text."* Wanted: after the last pick the dimension stays uncommitted and is drawn under
+the pointer — offset, side and text position following it — and one more
+click commits it with its text at that spot. Escape abandons it. This is the
+placement step SolidWorks and AutoCAD both have.
+
+**Measured before building.** A point-to-point linear dimension already has
+this third click, but its preview is bare lines with no text, so it does not
+read as the dimension being placed. Every other kind commits on its last pick
+at a fixed spot: two-line (linear or angular), radius and diameter, perimeter
+and path length.
 
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 

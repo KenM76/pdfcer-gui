@@ -12,6 +12,7 @@ use pdfcer_core::export::dxf::{DxfText, DxfUnits, DxfVersion};
 
 use crate::exporttext::{LineEndings, PageSeparator, TextOrder};
 use crate::imageexport::{ImageFormat, PageScope};
+use crate::tableexport::TableFormat;
 
 use super::printing::KeyOutcome;
 
@@ -104,12 +105,15 @@ impl Default for ExportImagePrefs {
 pub struct ExportTablePrefs {
     /// Which pages, as a policy; a typed range is never remembered.
     pub scope: PageScope,
+    /// CSV, Excel or OpenDocument.
+    pub format: TableFormat,
 }
 
 impl Default for ExportTablePrefs {
     fn default() -> Self {
         Self {
             scope: PageScope::AllPages,
+            format: TableFormat::Csv,
         }
     }
 }
@@ -206,6 +210,22 @@ pub fn image_format_from_key(token: &str) -> Option<ImageFormat> {
         "emf" => Some(ImageFormat::Emf),
         _ => None,
     }
+}
+
+/// The file token for a table format.
+#[must_use]
+pub const fn table_format_key(value: TableFormat) -> &'static str {
+    value.extension()
+}
+
+/// A table format from its file token, or `None` if the token is not one of
+/// ours.
+#[must_use]
+pub fn table_format_from_key(token: &str) -> Option<TableFormat> {
+    let token = token.trim();
+    TableFormat::ALL
+        .into_iter()
+        .find(|f| f.extension() == token)
 }
 
 /// The file token for a page scope.
@@ -456,6 +476,7 @@ pub(super) fn parse_key(prefs: &mut ExportPrefs, key: &str, value: &str) -> KeyO
 
         // --- Export tables --------------------------------------------------
         "export_tables_pages" => store!(page_scope_from_key(value), prefs.tables.scope),
+        "export_tables_format" => store!(table_format_from_key(value), prefs.tables.format),
 
         _ => KeyOutcome::NotMine,
     }
@@ -677,6 +698,16 @@ pub(super) fn write_block(prefs: &ExportPrefs, out: &mut String) {
         prefs.tables.scope,
         ExportTablePrefs::default().scope,
     ));
+    out.push('\n');
+    out.push_str(
+        "\n\
+         # export_tables_format: csv | xlsx | ods\n\
+         # What the Export tables window writes: a CSV per table, or one Excel or\n\
+         # LibreOffice workbook with a sheet per table.\n",
+    );
+    // ui-text-exempt: a file KEY, as above.
+    out.push_str("export_tables_format = ");
+    out.push_str(table_format_key(prefs.tables.format));
     out.push('\n');
 
     if let Some(token) = dxf_version_key(prefs.dxf.version) {

@@ -53,6 +53,7 @@ pub mod dimension_groups;
 /// than a smaller shape (`OPERATOR_REQUESTS.md` O70).
 pub mod double_click_text;
 pub mod double_click_text_scripted;
+pub mod export_tables_scripted;
 
 pub mod driving;
 

@@ -1,16 +1,106 @@
-//! # `tableexport` — detected tables as CSV
+//! # `tableexport` — detected tables as CSV, Excel or OpenDocument
 //!
-//! Pure: the plan, the cell grid and the CSV encoding.
+//! Pure: the plan, the cell grid, and the CSV and OpenDocument encodings.
+//! Excel is the engine's (`pdfcer_core::export::xlsx`), called from the
+//! export action. CSV is one file per table; a workbook holds every table,
+//! one sheet each.
 //! `pdfcer_core::table_detect` finds the tables;
 //! `pdfcer_gui::app::actions::export_tables` writes them.
 
 use std::path::{Path, PathBuf};
+
+pub mod ods;
+
+/// What the tables are written as.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TableFormat {
+    /// One UTF-8 CSV file per table.
+    #[default]
+    Csv,
+    /// One Excel workbook, a sheet per table.
+    Xlsx,
+    /// One OpenDocument spreadsheet (LibreOffice Calc), a sheet per table.
+    Ods,
+}
+
+impl TableFormat {
+    /// Every format, in the order the window offers them.
+    pub const ALL: [Self; 3] = [Self::Csv, Self::Xlsx, Self::Ods];
+
+    /// The file extension, without the dot.
+    #[must_use]
+    pub const fn extension(self) -> &'static str {
+        match self {
+            // ui-text-exempt: file extensions.
+            Self::Csv => "csv",
+            Self::Xlsx => "xlsx",
+            Self::Ods => "ods",
+        }
+    }
+}
 
 /// Everything the table-export window decided.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TableExportPlan {
     /// 0-based page indices, ascending and unique.
     pub pages: Vec<usize>,
+    /// What to write.
+    pub format: TableFormat,
+}
+
+/// One worksheet of a workbook export.
+pub struct Sheet<'a> {
+    /// The tab's name; at most 31 characters, none of `[]:*?/\`.
+    pub name: String,
+    pub grid: &'a Grid,
+}
+
+/// The value of a cell the OpenDocument export writes as a number, or `None`
+/// to keep it text. Deliberately narrow: an optional minus, digits with no
+/// leading zero, an optional decimal part, at most 15 significant digits.
+/// `007`, `1,200`, `1/2`, `+5` and a 20-digit part number stay text, because
+/// turning them into numbers would change what they say.
+#[must_use]
+pub fn number(text: &str) -> Option<f64> {
+    let digits = text.strip_prefix('-').unwrap_or(text);
+    let (whole, fraction) = match digits.split_once('.') {
+        Some((w, f)) => (w, Some(f)),
+        None => (digits, None),
+    };
+    let all_digits = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit());
+    if !all_digits(whole) || (whole.len() > 1 && whole.starts_with('0')) {
+        return None;
+    }
+    if fraction.is_some_and(|f| !all_digits(f)) {
+        return None;
+    }
+    let significant = whole.trim_start_matches('0').len() + fraction.map_or(0, str::len);
+    if significant > 15 {
+        return None;
+    }
+    text.parse().ok()
+}
+
+/// How many cells of `grid` [`number`] turns into numbers.
+#[must_use]
+pub fn numeric_cells(grid: &Grid) -> usize {
+    grid.cells
+        .iter()
+        .flatten()
+        .filter(|t| number(t).is_some())
+        .count()
+}
+
+/// How many characters of `grid` XML cannot carry, which the OpenDocument
+/// export leaves out: the C0 controls other than tab, newline and return.
+#[must_use]
+pub fn control_characters(grid: &Grid) -> usize {
+    grid.cells
+        .iter()
+        .flatten()
+        .flat_map(|t| t.chars())
+        .filter(|&c| (c as u32) < 0x20 && !matches!(c, '\t' | '\n' | '\r'))
+        .count()
 }
 
 /// A merged block, by its top-left cell and its extent.
@@ -118,13 +208,13 @@ pub fn csv_bytes(grid: &Grid) -> Vec<u8> {
     bytes
 }
 
-/// The picker's suggestion: the document's name as a `.csv`.
+/// The picker's suggestion: the document's name with `format`'s extension.
 #[must_use]
-pub fn suggested_path(document: &Path) -> PathBuf {
+pub fn suggested_path(document: &Path, format: TableFormat) -> PathBuf {
     let stem = document
         .file_stem()
         .map_or_else(|| "tables".to_owned(), |s| s.to_string_lossy().into_owned()); // ui-text-exempt: a fallback file name
-    document.with_file_name(format!("{stem}.csv")) // ui-text-exempt: a file name
+    document.with_file_name(format!("{stem}.{}", format.extension())) // ui-text-exempt: a file name
 }
 
 /// The path of one table's CSV when the export writes more than one:
@@ -217,7 +307,29 @@ mod tests {
     fn paths_carry_page_and_order() {
         let p = csv_sibling(Path::new(r"C:\jobs\plan.rev2.csv"), 3, 2);
         assert_eq!(p.file_name().unwrap(), "plan.rev2-p3-t2.csv");
-        let s = suggested_path(Path::new(r"C:\jobs\plan.rev2.pdf"));
-        assert_eq!(s.file_name().unwrap(), "plan.rev2.csv");
+        let s = suggested_path(Path::new(r"C:\jobs\plan.rev2.pdf"), TableFormat::Ods);
+        assert_eq!(s.file_name().unwrap(), "plan.rev2.ods");
+    }
+
+    #[test]
+    fn only_plain_decimals_become_numbers() {
+        for yes in ["0", "12", "-3.25", "0.5", "123456789012345"] {
+            assert!(number(yes).is_some(), "{yes}");
+        }
+        for no in [
+            "",
+            "007",
+            "1,200",
+            "1/2",
+            "+5",
+            "1e3",
+            ".5",
+            "5.",
+            "-",
+            "1234567890123456",
+            "12 mm",
+        ] {
+            assert!(number(no).is_none(), "{no}");
+        }
     }
 }

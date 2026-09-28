@@ -71,6 +71,21 @@ impl ScriptedPointer {
         self.send(session, &format!("click {}", xy(at)))
     }
 
+    /// A primary click at `at` in the viewport a `ui-rect` line named with
+    /// `viewport=`, or the root one when it named none. A dialog is its own
+    /// OS window and its rects are relative to it.
+    pub fn click_in(
+        &self,
+        session: &Session,
+        viewport: Option<&str>,
+        at: WindowPoint,
+    ) -> Result<TraceLine> {
+        match viewport {
+            Some(vp) => self.send(session, &format!("click {} vp={vp}", xy(at))),
+            None => self.click(session, at),
+        }
+    }
+
     /// A secondary (right) click.
     pub fn right_click(&self, session: &Session, at: WindowPoint) -> Result<TraceLine> {
         self.send(session, &format!("click {} btn=r", xy(at)))

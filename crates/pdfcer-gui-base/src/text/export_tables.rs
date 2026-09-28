@@ -10,16 +10,49 @@ pub const fn window_title() -> &'static str {
 /// What the window does, and what it finds.
 #[must_use]
 pub const fn intro() -> &'static str {
-    "Finds the tables on the chosen pages and writes each one as a CSV file of rows \
-     and columns. Tables with drawn lines are found from the lines; tables without \
-     them are found from how the words line up."
+    "Finds the tables on the chosen pages and writes their rows and columns out. \
+     Tables with drawn lines are found from the lines; tables without them are found \
+     from how the words line up."
 }
 
-/// What the files hold.
+/// The format group's heading.
 #[must_use]
-pub const fn format_hint() -> &'static str {
-    "One file per table, UTF-8 with a byte-order mark so Excel reads symbols correctly. \
-     A merged cell's text is in its top-left cell."
+pub const fn format_heading() -> &'static str {
+    "Save as"
+}
+
+/// A format's radio label.
+#[must_use]
+pub const fn format_name(format: crate::tableexport::TableFormat) -> &'static str {
+    use crate::tableexport::TableFormat;
+    match format {
+        TableFormat::Csv => "CSV (.csv)",
+        TableFormat::Xlsx => "Excel workbook (.xlsx)",
+        TableFormat::Ods => "LibreOffice spreadsheet (.ods)",
+    }
+}
+
+/// What the chosen format produces.
+#[must_use]
+pub const fn format_hint(format: crate::tableexport::TableFormat) -> &'static str {
+    use crate::tableexport::TableFormat;
+    match format {
+        TableFormat::Csv => {
+            "One file per table, UTF-8 with a byte-order mark so Excel reads symbols \
+             correctly. A merged cell's text is in its top-left cell."
+        }
+        TableFormat::Xlsx | TableFormat::Ods => {
+            "One file, a sheet per table. Merged cells stay merged, header rows are \
+             bold, and plain numbers are written as numbers."
+        }
+    }
+}
+
+/// A workbook tab's name, `n` 1-based across the export: the names the
+/// engine's Excel writer gives, so both workbook formats read alike.
+#[must_use]
+pub fn sheet_name(n: usize) -> String {
+    format!("Table {n}")
 }
 
 /// The Export button.
@@ -52,6 +85,76 @@ pub fn wrote_csv(first: &str, files: usize) -> String {
     } else {
         format!("{files} tables written as separate files, starting with {first}.")
     }
+}
+
+/// The receipt for a workbook: every table is a sheet of one file.
+#[must_use]
+pub fn wrote_workbook(path: &str, sheets: usize) -> String {
+    if sheets == 1 {
+        format!("1 table written to {path}.")
+    } else {
+        format!("{sheets} tables written to {path}, one sheet each.")
+    }
+}
+
+/// Cells a workbook format wrote as numbers rather than text.
+#[must_use]
+pub fn numbers_written(count: usize) -> String {
+    let cell_word = if count == 1 { "cell was" } else { "cells were" };
+    format!(
+        "{count} {cell_word} written as numbers; anything with units or leading zeros \
+         was kept as text."
+    )
+}
+
+/// Cells whose value depends on the reader's number convention, kept as text.
+#[must_use]
+pub fn ambiguous_numbers(count: usize) -> String {
+    let cell_word = if count == 1 {
+        "cell reads"
+    } else {
+        "cells read"
+    };
+    format!(
+        "{count} {cell_word} as a different number in different countries — 1.234 is \
+         one thousand two hundred and thirty-four in Germany and just over one in \
+         Canada — so they were kept as text."
+    )
+}
+
+/// Control characters a spreadsheet cannot hold, left out.
+#[must_use]
+pub fn characters_dropped(count: usize) -> String {
+    let word = if count == 1 {
+        "character"
+    } else {
+        "characters"
+    };
+    format!("{count} invisible control {word} a spreadsheet cannot hold were left out.")
+}
+
+/// Cells cut to Excel's per-cell limit.
+#[must_use]
+pub fn cells_truncated(count: usize) -> String {
+    let cell_word = if count == 1 { "cell was" } else { "cells were" };
+    format!("{count} {cell_word} cut to Excel's limit of 32,767 characters.")
+}
+
+/// Cells past Excel's last row or column, left out.
+#[must_use]
+pub fn cells_beyond_limits(count: usize) -> String {
+    let cell_word = if count == 1 {
+        "cell falls"
+    } else {
+        "cells fall"
+    };
+    format!("{count} {cell_word} past Excel's last row or column and were left out.")
+}
+
+/// A spreadsheet too large for its zip container.
+#[must_use]
+pub const fn archive_too_large() -> &'static str {
+    "the spreadsheet is too large to save as one file"
 }
 
 /// Tables inferred from alignment alone, which deserve a look.
