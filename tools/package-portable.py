@@ -660,6 +660,60 @@ def copy_ocrcer_files(out: Path, ocrcer: Path) -> tuple[list[str], list[str]]:
     return copied, missing
 
 
+#: Where the engine records the OCRcer release its vendored reader was synced
+#: with, relative to :data:`ENGINE`. Its `model-*` lines are copied from
+#: OCRcer's `model/MODEL.toml`.
+OCRCER_RECORD = "vendor/ocrcer-core/VENDORED"
+
+
+def ocrcer_release_record(text: str) -> dict[str, str]:
+    """The `model-<key> = <value>` lines of a VENDORED file, keyed without
+    the `model-` prefix. Other lines are ignored."""
+    record: dict[str, str] = {}
+    for line in text.splitlines():
+        key, sep, value = line.partition("=")
+        key = key.strip()
+        if sep and key.startswith("model-"):
+            record[key[len("model-"):]] = value.strip()
+    return record
+
+
+def verify_ocrcer_model(model: Path, record: dict[str, str]) -> str | None:
+    """`None` when `model` is the release the record names; otherwise why not.
+
+    Size and sha256 are both required in the record: a record without them
+    cannot vouch for any file, and passing then would ship an unverified model.
+    """
+    want_sha, want_bytes = record.get("sha256"), record.get("bytes")
+    if not want_sha or not want_bytes:
+        return "the engine's release record carries no model-sha256/model-bytes"
+    if not model.is_file():
+        return f"{model} does not exist"
+    size = model.stat().st_size
+    if str(size) != want_bytes:
+        return f"{model} is {size} bytes; release {record.get('release', '?')} is {want_bytes}"
+    digest = hashlib.sha256(model.read_bytes()).hexdigest()
+    if digest != want_sha.lower():
+        return f"{model} has sha256 {digest}; release {record.get('release', '?')} has {want_sha}"
+    return None
+
+
+def ocrcer_provenance(record: dict[str, str]) -> str:
+    """The `models/ocrcer/PROVENANCE.md` text for a verified model."""
+    lines = "".join(f"    {k} = {v}\n" for k, v in sorted(record.items()))
+    return (
+        "# ocrcer.ocrw\n\n"
+        "The recogniser model of OCRcer (https://github.com/KenM76/ocrcer), "
+        "MIT-licensed (LICENSE beside this file).\n\n"
+        "Its prototype feature vectors are measured from glyphs rendered from "
+        "OFL-1.1, Apache-2.0 and MIT font faces; each face and its licence is "
+        "listed in the model's own `meta` block. No font file or outline data "
+        "is included.\n\n"
+        "Verified at packaging against the release record the linked engine "
+        "vendors (copied from OCRcer's model/MODEL.toml):\n\n" + lines
+    )
+
+
 def summarise_test_run(output: str) -> tuple[int, str]:
     """Total every `test result:` line; return `(binaries, one-line summary)`.
 
@@ -896,6 +950,22 @@ def self_test() -> int:
             failures.append(
                 f"a missing OCRcer file was reported as {missing}, expected ['NOTICE']"
             )
+
+        model = ocrcer / "model" / "out" / "ocrcer.ocrw"
+        good = ocrcer_release_record(
+            "commit = x\nmodel-release = v9\nmodel-bytes = 1\n"
+            + "model-sha256 = " + hashlib.sha256(model.read_bytes()).hexdigest() + "\n"
+        )
+        if verify_ocrcer_model(model, good) is not None:
+            failures.append("a model matching its release record was refused")
+        if verify_ocrcer_model(model, {**good, "sha256": "0" * 64}) is None:
+            failures.append("a model whose sha256 differs from its record was accepted")
+        if verify_ocrcer_model(model, {**good, "bytes": "2"}) is None:
+            failures.append("a model whose size differs from its record was accepted")
+        if verify_ocrcer_model(model, {"release": "v9"}) is None:
+            failures.append("a record with no sha256 or size vouched for a model")
+        if "model-" in ocrcer_provenance(good) or "sha256 = " not in ocrcer_provenance(good):
+            failures.append("PROVENANCE.md does not carry the release record")
 
     # 4. The GitHub asset is ROOTED AT THE BUILD FOLDER.
     #
@@ -1946,6 +2016,22 @@ def main() -> int:
         print("  and without its model it would refuse every run.")
         shutil.rmtree(out, ignore_errors=True)
         return 1
+    # The model is OCRcer's build output, so its bytes are checked against
+    # the release the LINKED engine revision records, not the engine's HEAD.
+    rev = locked_engine_rev(REPO)
+    record = ocrcer_release_record(git("show", f"{rev}:{OCRCER_RECORD}") if rev else "")
+    why = verify_ocrcer_model(out / "models" / "ocrcer" / "ocrcer.ocrw", record)
+    if why:
+        print("package-portable: the OCRcer model is not the release the engine records:")
+        print(f"  {why}")
+        print("  Nothing was packaged. Rebuild OCRcer's release model, or move the")
+        print("  engine pin to the revision that records this model.")
+        shutil.rmtree(out, ignore_errors=True)
+        return 1
+    (out / "models" / "ocrcer" / "PROVENANCE.md").write_text(
+        ocrcer_provenance(record), encoding="utf-8", newline="\n"
+    )
+    print(f"package-portable: OCRcer model verified as release {record.get('release', '?')}")
     copied_assets += sorted({d.rsplit("/", 1)[0] for d in copied_ocrcer})
 
     # --- what changed since the last build ----------------------------------

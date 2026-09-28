@@ -36,16 +36,11 @@ drawn by `paint`.
 
 ## Why `refresh` runs in the frame loop and not in the painter
 
-The preview verb takes `&mut EditSession`, because the engine caches the
-page's decoded walk in the session. The painter holds `&OpenDoc`. The
-render worker holds clones of the `Arc<EditSession>`.
-
-So `refresh` runs after actions apply, with `&mut OpenDoc`, and takes the
-session with `Arc::get_mut`. If a render still holds a clone, `refresh`
-tries again next frame (50 ms repaint) rather than calling
-`cancel_and_wait`. A preview is not worth stalling an in-flight render.
-
-This is a workaround and has been reported to the engine.
+Keystrokes are applied as actions after the frame is drawn, so the painter
+sees the draft's previous text. `refresh` runs after the actions apply and
+lays out the text they produced; the next frame paints it. The preview verb
+takes `&EditSession`, so it never waits on a render worker holding the
+session.
 
 The first call on a page costs about 350 ms; later keystrokes cost about
 10 ms. The cost is paid once when the draft opens.

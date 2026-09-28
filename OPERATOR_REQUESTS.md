@@ -143,7 +143,7 @@ Four parts, all about ce dimensions (the ones pdfcer authors):
 
 Continues the open clauses of O183.
 
-## O248 — **OPEN — waiting on the engine** — when pdfcer adopts the next OCRcer, surface its options and release
+## O248 — **BUILT — released, awaiting your verdict** — when pdfcer adopts the next OCRcer, surface its options and release
 
 > **Ken:** *"Pdfcer is going to release a new engine when ocrcer has a new version to implement and it will inform you when this is done. Please release a new version when pdfcer has implemented the new ocrcer and implement any options or changes in the GUI for the newest ocrcer once released."*
 
@@ -152,6 +152,8 @@ OCRcer. On that reply: move the pin, reach every new or changed OCRcer option
 from the OCR surface (by registration, R8), drive it on a scan, refresh
 FEATURES, then release to both OneDrive and GitHub. Ken has asked for this
 release in advance, so it needs no further go-ahead.
+
+**State.** The engine now carries OCRcer release v0.1.0. It adds no new option to set, so the Recognise text dialog is unchanged: the Recogniser choice already offers OCRcer. The portable package now checks that the OCRcer model it ships is byte-for-byte the one that release names, and refuses to package otherwise; the package records which release it carries. Released to OneDrive and GitHub.
 
 ## O247 — **BUILT AND DRIVEN — awaiting your verdict** — edit text in place, in the page's own font, instead of in a pop-up box
 

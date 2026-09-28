@@ -124,6 +124,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // reader who sees all three fail at the drawing step reads it as one
         // defect in authoring rather than three.
         Box::new(markup_band::TheFormatTabRestylesASelectedMark),
+        Box::new(cloud_border::APlacedSquareCanBeMadeCloudy),
         // Immediately after the move, and deliberately: the two share
         // steps 1-3 verbatim in shape — draw a rectangle, put the pen down,
         // click it — so a failure in EITHER of those here should be read

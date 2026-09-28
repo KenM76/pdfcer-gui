@@ -1,9 +1,8 @@
 //! # `canvas::textedit::shaped` — **an existing run's draft, in the run's own
 //! font, where the run is**
 //!
-//! [`refresh`] runs once a frame after actions apply, because the engine's
-//! layout (`EditSession::edit_text_preview`) needs the session mutably. It
-//! caches, per draft text, the replacement's glyph outlines
+//! [`refresh`] runs once a frame after actions apply and asks the engine's
+//! layout (`EditSession::edit_text_preview`) for the draft. It caches, per draft text, the replacement's glyph outlines
 //! (`pdfcer_render::edit_preview::preview_outlines`) and caret stops, all in
 //! page space. [`paint`] draws them over the run. [`read`] returning `None`
 //! means the caller draws the shell-font editor box instead; that happens when
@@ -93,11 +92,9 @@ pub fn read(ctx: &egui::Context, draft: &Draft) -> Option<Arc<Shaped>> {
 
 /// Lay the current draft out, when its text changed since the last layout.
 ///
-/// Takes the session with `Arc::get_mut` and never waits for it: while a render
-/// worker holds a clone the painter keeps the editor box, and this retries next
-/// frame. The first layout on a page decodes and walks it (hundreds of
+/// The first layout on a page decodes and walks it (hundreds of
 /// milliseconds on a dense drawing); later keystrokes cost about ten.
-pub fn refresh(ctx: &egui::Context, doc: &mut OpenDoc) {
+pub fn refresh(ctx: &egui::Context, doc: &OpenDoc) {
     let id = egui::Id::new(KEY);
     let Some(draft) = super::read(ctx) else {
         ctx.data_mut(|d| d.remove::<Cached>(id));
@@ -119,11 +116,7 @@ pub fn refresh(ctx: &egui::Context, doc: &mut OpenDoc) {
     let plan =
         crate::diag::muted(|| super::plan::plan(doc, key.page, key.run, &key.original, &key.text));
     super::restore_last_commit(kept);
-    let Some(session) = Arc::get_mut(&mut doc.session) else {
-        ctx.request_repaint_after(std::time::Duration::from_millis(50));
-        return;
-    };
-    let laid = session.edit_text_preview(&plan.request, &plan.options);
+    let laid = doc.session.edit_text_preview(&plan.request, &plan.options);
     let refused = laid.as_ref().err().map(ToString::to_string);
     let shaped = laid
         .ok()

@@ -2549,7 +2549,7 @@ dependencies = [
 [[package]]
 name = "ocrcer-core"
 version = "0.1.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#e8fa12ad55bcb5678b4ce75ac945f1b93d800ea2"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c1987c5e4bf2ff904f366600c18806fa2a313d3b"
 
 [[package]]
 name = "ocrs"
@@ -2660,13 +2660,13 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-color"
-version = "0.58.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#e8fa12ad55bcb5678b4ce75ac945f1b93d800ea2"
+version = "0.59.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c1987c5e4bf2ff904f366600c18806fa2a313d3b"
 
 [[package]]
 name = "pdfcer-core"
-version = "0.58.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#e8fa12ad55bcb5678b4ce75ac945f1b93d800ea2"
+version = "0.59.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c1987c5e4bf2ff904f366600c18806fa2a313d3b"
 dependencies = [
  "aes",
  "cbc",
@@ -2699,8 +2699,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-fetch"
-version = "0.58.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#e8fa12ad55bcb5678b4ce75ac945f1b93d800ea2"
+version = "0.59.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c1987c5e4bf2ff904f366600c18806fa2a313d3b"
 dependencies = [
  "sha2",
  "thiserror 2.0.21",
@@ -2709,8 +2709,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-fonts"
-version = "0.58.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#e8fa12ad55bcb5678b4ce75ac945f1b93d800ea2"
+version = "0.59.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c1987c5e4bf2ff904f366600c18806fa2a313d3b"
 dependencies = [
  "pdfcer-model",
  "thiserror 2.0.21",
@@ -2718,8 +2718,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-function"
-version = "0.58.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#e8fa12ad55bcb5678b4ce75ac945f1b93d800ea2"
+version = "0.59.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c1987c5e4bf2ff904f366600c18806fa2a313d3b"
 dependencies = [
  "pdfcer-model",
  "thiserror 2.0.21",
@@ -2765,8 +2765,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-image-codec"
-version = "0.58.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#e8fa12ad55bcb5678b4ce75ac945f1b93d800ea2"
+version = "0.59.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c1987c5e4bf2ff904f366600c18806fa2a313d3b"
 dependencies = [
  "hayro-ccitt",
  "hayro-jbig2",
@@ -2778,8 +2778,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-model"
-version = "0.58.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#e8fa12ad55bcb5678b4ce75ac945f1b93d800ea2"
+version = "0.59.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c1987c5e4bf2ff904f366600c18806fa2a313d3b"
 dependencies = [
  "aes",
  "brotli",
@@ -2793,8 +2793,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-pkix"
-version = "0.58.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#e8fa12ad55bcb5678b4ce75ac945f1b93d800ea2"
+version = "0.59.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c1987c5e4bf2ff904f366600c18806fa2a313d3b"
 dependencies = [
  "pdfcer-model",
  "thiserror 2.0.21",
@@ -2802,8 +2802,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-print"
-version = "0.58.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#e8fa12ad55bcb5678b4ce75ac945f1b93d800ea2"
+version = "0.59.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c1987c5e4bf2ff904f366600c18806fa2a313d3b"
 dependencies = [
  "thiserror 2.0.21",
  "windows",
@@ -2811,8 +2811,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-render"
-version = "0.58.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#e8fa12ad55bcb5678b4ce75ac945f1b93d800ea2"
+version = "0.59.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c1987c5e4bf2ff904f366600c18806fa2a313d3b"
 dependencies = [
  "iccce-cmm",
  "iccce-color",
@@ -2828,8 +2828,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-text"
-version = "0.58.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#e8fa12ad55bcb5678b4ce75ac945f1b93d800ea2"
+version = "0.59.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c1987c5e4bf2ff904f366600c18806fa2a313d3b"
 dependencies = [
  "pdfcer-fonts",
  "pdfcer-model",
@@ -3876,7 +3876,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.4.3",
+ "getrandom 0.3.4",
  "once_cell",
  "rustix 1.1.5",
  "windows-sys 0.61.2",

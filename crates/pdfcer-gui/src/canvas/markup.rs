@@ -100,7 +100,7 @@ pub enum Refusal {
 }
 
 /// The `/BE /I` intensity every revision cloud this shell authors carries.
-const CLOUD_INTENSITY: f64 = 1.0;
+pub const CLOUD_INTENSITY: f64 = 1.0;
 
 /// Build the `pdfcer-core` spec one markup gesture authors.
 #[must_use]

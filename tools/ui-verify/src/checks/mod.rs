@@ -632,9 +632,10 @@ pub mod render_diagnostics;
 /// moves the whole object instead.
 pub mod bezier_handle;
 
+pub mod clipboard_annotation;
 /// **The one assertion no unit test in this workspace can make** — what is
 /// actually on the operating system's clipboard after Ctrl+C.
-pub mod clipboard_annotation;
+pub mod cloud_border;
 
 pub mod clipboard_mode;
 

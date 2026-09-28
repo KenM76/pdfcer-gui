@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **46 of 215** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `wanted` — a real gap — **46 of 216** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -97,12 +97,17 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **A raster image is box-hit-tested, not pixel- or alpha-tested** — `object_hit` answers `VectorObject::Image(i) => i.page_bbox.inflate(tolerance).contains(point)` | **wanted — the half-closed row of the form-recursion table.** The deep hit test descends into forms correctly; the leaf predicate for an image never tightened. In `pdfcer-core/src/vector/hit.rs`, `object_hit`'s Path and Text arms call real geometry predicates (`path_hit`, `text_hit`) and the Image arm calls neither. A click anywhere inside a transparent image's bounding box selects the image, and a click on visible ink underneath it loses. The fix is an alpha or pixel test at the leaf, engine-side; nothing out here can narrow a box it is handed. |
 | **No rotate, scale or general-transform verb exists for anything inside a form XObject** — the engine offers translation and deletion only | **wanted, and the silence is the defect.** The ten `*_in_form` verbs are `move_node_in_form`, `move_nodes_in_form`, `move_handle_in_form`, `move_subpath_in_form`, `move_text_run_in_form`, `move_objects_in_form`, `delete_text_run_in_form`, `delete_subpath_in_form`, `delete_node_in_form` and `delete_objects_in_form`. There is no `transform_objects_in_form`. Rotate and resize are reachable only through `transform_objects`, which is page-content-only, so the Format tab's rotate and the eight resize grips are inapplicable to a form-interior selection and nothing says so. Two halves: an engine verb, and until it exists a refusal here worded by name rather than a grip that does nothing. |
 
+### ce dimensions
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| **Preview what a ce-dimension drag would bake, before it commits** — `EditSession::dimension_preview`, `DimensionPreview`, `AuthoredDimension::label_quad`, `pdfcer_render::edit_preview::paint_dimension_preview` … | **wanted — the engine half of O249, answering our `G049`.** The drag preview in `canvas::dimdrag` draws `dimension_preview_segments`, a second path that omits the label and extension-line details; this verb bakes through the commit's own baker, and `label_quad` is the grip for the text drag (T4), which otherwise has to copy the engine's private label-box arithmetic. The frame field `dimension_preview` in `canvas::painting` is the shell's own segment list, not a call. <!--namesake:dimension_preview--> |
+
 ### Annotations & markup
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | **Change a placed sticky note's icon and colour, and read `/C` / `/Name` on any subtype** — `Annotation::icon` / `Annotation::color` … | **Reached both ways; what stays wanted is narrower than the clause — the READ.** `dialogs::textannot` offers the seven icons of §12.5.6.4 Table 172 as radios at placement (region `text-annot.icon`), and authors `DEFAULT_STICKY_ICON = Comment` — Acrobat's, per `ACROBAT_DEFAULTS.md` — rather than `StickyIcon::default()`'s `Note`. A **placed** note restyles in `panels::properties::markup::textannot`: a swatch for `/C`, a combo for `/Name`, raised as `AnnotAction::SetTextAnnotStyle` and applied by `app::actions::annots::textannotstyle` through `set_text_annot_style` as one undo entry, every untouched field spelt `None` so a colour change cannot rewrite the icon. An unmodelled `/Name` survives as `StickyIcon::Other` verbatim, driven by `a_foreign_icon_name_reaches_the_panel`. **Owed:** *any subtype* is not true — the read goes through `text_spec_from_dict` and the markup family's `spec_from_dict`, never `Annotation::icon` / `Annotation::color`, so `/FreeText` is declined by name and `/C` elsewhere is unread. Neither write is driven. |
-| **Change a placed markup's cloudy border after the fact** — `/BE` (§12.5.4 Table 167) can be set, changed … | **wanted — being wired now.** Restyle carries the cloud intensity (0–2 or none) for Square and Polygon; other subtypes are refused by name, so the control belongs only where `MarkupStyleSupport::for_subtype` says the subtype takes it. It sits in the Properties panel's restyle section beside colour, width and opacity, and must read the current intensity so the control opens on what the file holds. |
 | **Review status — `/State` + `/StateModel`** (`Pass 253.1`): read `Annotation::state` … | **wanted — the row that turns Review mode into a review WORKFLOW.** `shell::manifest::markup` says the tab is not called Review because Review promises compare, resolve and track; this is the first of the three. The engine does not interpret the strings, so the vocabulary is this shell's to present and an unknown value must be shown, not normalised. Both halves are built: `panels::comments::reviewstate` shows one line per reviewer — §12.5.6.3 makes status a per-author `/IRT` chain, not a field — and builds the filter chooser from the document, so an unknown value is filterable in the file's own spelling. Owed: a driven check, and the other two thirds of the promise. |
 | Two more `/Ff` field flags and the mapping name — `FieldEdit::with_no_scroll`, `with_file_select`, `with_mapping_name` / `clearing_mapping_name` | **wanted for three of the five verbs this row first listed; `no_spell_check` and `commit_on_sel_change` are DONE** — `panels::properties::choiceopts` draws both, and bit 19, in the `/Ch` branch, spell-check only on an **editable drop-down**, which is R9 read correctly for `/Ch` and leaves one gap: a `/Tx` carries `DoNotSpellCheck` too and `panels::properties::fieldedit` offers no row for it. Neither reached flag is driven — no check names `properties.choice_opts.spell_check` or `.commit_now`, so both could vanish silently. The three left are not equal: `no_scroll` is a text-field option set on purpose and is one row on the builder `panels::properties::fieldedit` already carries; `file_select` turns a text field into a file picker and changes what the widget IS, which needs a sentence rather than a checkbox; `mapping_name` (`/TM`) is an export name for a form-data round trip, invisible on the page, wanting a text box beside the field name saying what it is for. Waiting on nothing. |
 | **Compute a page's tab-VISIT order for every `/Tabs` state — `EditSession::page_tab_sequence(page_index) -> TabSequence`, CLI `tab-order`** … | **wanted — the engine half of O204, and it landed the same day the request was written.** O204 is *“when I press tab while in a form I end up tabbing through the menus instead of the form items”*. This verb answers the half the shell cannot compute on its own: which widget is next, for every `/Tabs` state, with `/Rotate` and reading direction applied, `Hidden`/`NoView` bearers excluded, and `/S` either derived from the structure tree or refused by name rather than silently falling back. The shell half stays as O204 scopes it — a `raw_input_hook` filter in `app::frame` so egui never sees Tab, a `canvas::tabnav` claimant, Tab branches in `forms::editor` and `canvas::keys`, `vk::TAB` in the harness — but `tabnav` asks this verb rather than sorting `/Rect`s itself, and the off-canvas disclosure it owes under rule 4 comes out of the same call. Do not bind bare Tab in the manifest. |
@@ -141,7 +146,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 215** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `blocked` — waiting on something named — **2 of 216** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -159,7 +164,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 215** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 216** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -170,7 +175,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **14 of 215** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `declined` — deliberately no surface — **14 of 216** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -210,7 +215,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **153 of 215** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **154 of 216** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -287,6 +292,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **A `/FreeText`'s painted words cannot be rewritten** | **Reachable — the note re-bakes `/AP` `/N` from the new words**, and `MarkupNoteChange::appearance_rebaked` reports whether it did. `false` stays correct for a sticky or a stamp, whose `/Contents` is never painted, **and** for a `/FreeText` whose existing appearance is one pdfcer would not have drawn — a hand- or Acrobat-authored stream with a shadow, a gradient or an image, deliberately left alone rather than replaced by pdfcer's plainer rendering. `app/actions/annots.rs` reads `change.appearance_rebaked` and `text/textannot.rs` gates the disclosure on `paints_its_note(subtype) && !appearance_rebaked`, so the operator-facing sentence fires only on the narrow case that survives and says *why*: this box was drawn by another program. Owed: driven verification. |
 | **`MarkupStyle` cannot express a dashed border** | **Reachable — preservation, authoring and removal, all three.** `app/actions/apply.rs` passes `dash: pen.dash_option`. Deliberately **not** offered on a note, a text box or a stamp: `app/actions/textannot.rs` sets `dash: None` and says why — a dashed box around a comment reads as *provisional*, which R8b forbids content from doing. The dashed control belongs to the shapes. Owed: driven verification. |
 | Revision clouds — a scalloped `/BE << /S /C /I n >>` border … | **Reachable — `markup.cloud`, its own glyph, `/BE /I 1.0`** (the operator's request #6). One of the eight markup kinds Phase 6 shipped. |
+| **Change a placed markup's cloudy border after the fact** — `/BE` (§12.5.4 Table 167) can be set, changed … | **Reachable — the Properties panel's *Cloudy border* checkbox and its 0–2 intensity field**, shown only where `MarkupStyleSupport::takes_border_effect` says the subtype takes `/BE`; it reads the current intensity back from `MarkupSpec`. Driven by `a_placed_square_can_be_made_cloudy`. |
 | **Border line style — preserve, author and clear a dashed markup border** … | **Reachable — Markup ▸ Style, Format ▸ Markup, Properties panel.** The defect was wider than reported: `resize_annotation`, `reshape_annotation` and authoring each bake an appearance and each solidified a dash, so a dash died on a resize handle, not only on the colour swatch. **The lesson is about reporting** — a defect reported at one route is fixed at one route, unless the report says what that route is an instance of. Wired as `canvas::markup::linestyle`: four choices, three surfaces, **no phase control**, Table 166's `/D` carrying none. `read_border_dash` is `pub(crate)` and `spec_from_dict` carries no dash, so this shell reads `/BS` itself, DISPLAY only; bound in `NO_SURFACE.md` §1d. `build_appearance_opts` and `AppearanceOptions::quad_order` are permanently out of scope: the verbs build the options bag themselves, keeping ONE appearance path. |
 | Author a markup at an opacity, in one command and one undo entry … | **Reachable — Markup ▸ Style ▸ Opacity**, authored through `add_markup_with` so a translucent highlight costs **one** undo entry rather than author-then-restyle. |
 | Write, correct or clear a note on an annotation that already exists — `EditSession::set_markup_note(annot_id, &MarkupNote)` … | **Reachable — the Comments panel writes**: Add note, Edit note, Remove note on every row, through `set_markup_note` / `clear_markup_note` at `app::actions::annots`. Correcting somebody else's typo deliberately leaves `/T` alone, so a fixed comment is not re-attributed to nobody. |

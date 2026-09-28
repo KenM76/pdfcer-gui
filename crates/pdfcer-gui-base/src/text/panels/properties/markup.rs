@@ -76,6 +76,18 @@ pub const fn markup_line_style_label() -> &'static str {
     "Line style"
 }
 
+/// The cloudy-border checkbox's label.
+#[must_use]
+pub const fn markup_cloud_label() -> &'static str {
+    "Cloudy border"
+}
+
+/// The hover text on the cloud intensity field.
+#[must_use]
+pub const fn markup_cloud_intensity_hover() -> &'static str {
+    "How far the scallops bulge: 0 is shallow, 2 is the deepest the PDF standard allows"
+}
+
 /// The opacity control's label.
 #[must_use]
 pub const fn markup_opacity_label() -> &'static str {

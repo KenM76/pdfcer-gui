@@ -141,6 +141,76 @@ pub(super) fn dash_row(
     });
 }
 
+/// The checkbox's region, published when the row is on screen.
+pub(super) const CLOUD_REGION: &str = "properties.markup.cloud"; // ui-text-exempt: trace region name, never displayed
+/// The intensity field's region, published when the border is cloudy.
+pub(super) const CLOUD_INTENSITY_REGION: &str = "properties.markup.cloud.intensity"; // ui-text-exempt: trace region name, never displayed
+
+/// **The cloudy border, `/BE`**: on/off, and the intensity (`0..=2`) while on.
+/// Switching it on uses the Cloud tool's intensity, so a square made cloudy
+/// here matches one drawn cloudy.
+pub(super) fn cloud_row(
+    ui: &mut Ui,
+    current: &Current,
+    target: &crate::canvas::selection::annot::AnnotTarget,
+    actions: &mut Vec<Action>,
+) {
+    if !current.offers_cloud() {
+        return;
+    }
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!(
+            "markup-cloud-row id={} intensity={}",
+            target.id.num,
+            current
+                .cloud
+                .map_or_else(|| "none".to_owned(), |i| format!("{i:.2}"))
+        )
+    });
+    let push = |actions: &mut Vec<Action>, edit: StyleEdit<f64>| {
+        actions.push(Action::SetMarkupStyle {
+            page: target.page,
+            id: target.id,
+            style: MarkupStyle {
+                border_effect: Some(edit),
+                ..MarkupStyle::default()
+            },
+        });
+    };
+    ui.horizontal(|ui| {
+        let mut on = current.cloud.is_some();
+        let toggle = ui.checkbox(&mut on, t::markup_cloud_label());
+        crate::diag::ui_rect_visible(CLOUD_REGION, toggle.rect, ui.clip_rect());
+        if toggle.changed() {
+            push(
+                actions,
+                if on {
+                    StyleEdit::Set(crate::canvas::markup::CLOUD_INTENSITY)
+                } else {
+                    StyleEdit::Clear
+                },
+            );
+        }
+        let Some(mut intensity) = current.cloud else {
+            return;
+        };
+        let (widget, refusal) = entry::drag_value(ui, &mut intensity, entry::Kind::Number(&[]));
+        let response = refusal
+            .show(ui.add(widget.range(0.0..=2.0).speed(0.05).fixed_decimals(2)))
+            .on_hover_text(t::markup_cloud_intensity_hover());
+        crate::diag::ui_rect_visible(CLOUD_INTENSITY_REGION, response.rect, ui.clip_rect());
+        // Committed once, at the end of the drag or edit, for `width_row`'s reason.
+        if (response.drag_stopped() || response.lost_focus())
+            && current
+                .cloud
+                .is_some_and(|was| (was - intensity).abs() > 1e-6)
+        {
+            push(actions, StyleEdit::Set(intensity));
+        }
+    });
+}
+
 /// The border width.
 pub(super) fn width_row(
     ui: &mut Ui,

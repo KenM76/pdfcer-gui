@@ -17,7 +17,7 @@ use crate::text::panels::properties as t;
 // gave it the file with the room. The parent still owns the routing `match`.
 use textannot::Reach;
 
-use rows::{colour_row, dash_row, endings_row, fill_row, opacity_row, width_row};
+use rows::{cloud_row, colour_row, dash_row, endings_row, fill_row, opacity_row, width_row};
 
 /// The region this section publishes.
 pub const REGION: &str = "properties.markup"; // ui-text-exempt: trace region name, never displayed
@@ -177,6 +177,7 @@ fn markup_rows(
     // same reason. A panel is read top to bottom, and an operator setting a
     // mark's linework should not have to read past the arrowheads to finish.
     dash_row(ui, current, target, actions);
+    cloud_row(ui, current, target, actions);
     endings_row(ui, current, target, actions);
     opacity_row(ui, current, target, actions);
 
@@ -275,6 +276,8 @@ struct Current {
     /// setting* control, whose whole subject is the difference. So the key is
     /// looked for on the dictionary itself.
     endings_key_present: bool,
+    /// `/BE` intensity, `0..=2`, when the border is cloudy; `None` when straight.
+    cloud: Option<f64>,
 }
 
 /// A colour a swatch can show, and the honesty that goes with it.
@@ -304,6 +307,7 @@ impl Default for Current {
             dash: crate::canvas::markup::linestyle::DashReading::Solid,
             endings: None,
             endings_key_present: false,
+            cloud: None,
         }
     }
 }
@@ -529,6 +533,11 @@ impl Current {
                 _ => None,
             },
             endings_key_present,
+            cloud: match spec {
+                MarkupSpec::Square { border_effect, .. } => *border_effect,
+                MarkupSpec::Cloud { intensity, .. } => Some(*intensity),
+                _ => None,
+            },
         }
     }
 
@@ -556,6 +565,11 @@ impl Current {
     /// Whether the Line style row draws.
     const fn offers_dash(&self) -> bool {
         self.support.takes_border
+    }
+
+    /// Whether the Cloudy border row draws.
+    const fn offers_cloud(&self) -> bool {
+        self.support.takes_border_effect
     }
 
     /// Whether the two ending choosers draw.

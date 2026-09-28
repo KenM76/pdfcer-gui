@@ -278,24 +278,25 @@ fn the_engines_answer_is_what_hides_a_row_not_the_spec_arm() {
             alpha: Some(1.0),
             endings: Some((LineEnding::None, LineEnding::OpenArrow)),
             endings_key_present: true,
+            cloud: Some(1.0),
         }
     }
 
-    // (subtype, fill, width, endings)
-    let expected: &[(&[u8], bool, bool, bool)] = &[
-        (b"Square", true, true, false),
-        (b"Circle", true, true, false),
-        (b"Polygon", true, true, false),
-        (b"Line", false, true, true),
-        (b"PolyLine", false, true, false),
-        (b"Ink", false, true, false),
-        (b"Highlight", false, false, false),
-        (b"Underline", false, false, false),
-        (b"StrikeOut", false, false, false),
-        (b"Squiggly", false, false, false),
-        (b"FreeText", false, false, false),
+    // (subtype, fill, width, endings, cloud)
+    let expected: &[(&[u8], bool, bool, bool, bool)] = &[
+        (b"Square", true, true, false, true),
+        (b"Circle", true, true, false, false),
+        (b"Polygon", true, true, false, true),
+        (b"Line", false, true, true, false),
+        (b"PolyLine", false, true, false, false),
+        (b"Ink", false, true, false, false),
+        (b"Highlight", false, false, false, false),
+        (b"Underline", false, false, false, false),
+        (b"StrikeOut", false, false, false, false),
+        (b"Squiggly", false, false, false, false),
+        (b"FreeText", false, false, false, false),
     ];
-    for &(subtype, fill, width, endings) in expected {
+    for &(subtype, fill, width, endings, cloud) in expected {
         let name = String::from_utf8_lossy(subtype).into_owned();
         let c = over_supplied(subtype);
         assert_eq!(c.offers_fill(), fill, "/{name}: Fill row");
@@ -306,6 +307,7 @@ fn the_engines_answer_is_what_hides_a_row_not_the_spec_arm() {
         // with.
         assert_eq!(c.offers_dash(), width, "/{name}: line-style row");
         assert_eq!(c.offers_endings(), endings, "/{name}: ending choosers");
+        assert_eq!(c.offers_cloud(), cloud, "/{name}: cloudy-border row");
         // …and each predicate is the engine's flag, not a table kept here.
         // `NO_SURFACE.md` §1a: assert the relation, not the magnitude, or
         // two copies of one constant will simply agree with each other.
@@ -314,6 +316,7 @@ fn the_engines_answer_is_what_hides_a_row_not_the_spec_arm() {
         assert_eq!(c.offers_width(), support.takes_border);
         assert_eq!(c.offers_dash(), support.takes_border);
         assert_eq!(c.offers_endings(), support.takes_endings);
+        assert_eq!(c.offers_cloud(), support.takes_border_effect);
     }
 }
 
