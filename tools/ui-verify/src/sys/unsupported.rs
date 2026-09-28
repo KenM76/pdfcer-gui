@@ -168,3 +168,6 @@ pub const fn caps_lock_is_on() -> bool {
 pub const fn desktop_bounds() -> (i32, i32, i32, i32) {
     (0, 0, 0, 0)
 }
+
+/// Does nothing.
+pub fn type_char(_ch: char) {}

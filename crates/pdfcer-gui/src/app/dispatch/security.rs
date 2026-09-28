@@ -27,7 +27,8 @@ impl PdfcerApp {
         // set of engine refusals. One window per subject.
         #[cfg(feature = "signing")]
         if id == "file.sign" {
-            self.dialogs.open_sign(&self.status);
+            self.dialogs
+                .open_sign(&self.status, self.prefs.sign_timestamp_server.as_deref());
             return;
         }
         let task = match id {

@@ -894,6 +894,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // twenty clicks — and it is that long because its verdict cannot be
         // taken in the process that produced it. See its header.
         Box::new(signing::ADocumentCanBeSignedAndTheSignatureIsInTheFile),
+        Box::new(signing::timestamp::ATimestampedSignatureIsTimestampedOrNotWritten),
         Box::new(redaction::RedactionRemovesAndProvesIt),
         // Immediately after `redaction`, which it shares a fixture generator
         // with. Read in this order the two answer the same question from

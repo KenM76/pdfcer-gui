@@ -114,6 +114,9 @@ fn run(
         Err(PrepareFailure::Refused(refusal)) => {
             return Outcome::Failed(t::refusal_line(refusal));
         }
+        Err(PrepareFailure::TimestampUnavailable) => {
+            return Outcome::Failed(t::timestamp_unavailable().to_owned());
+        }
         Err(PrepareFailure::Engine(error)) => return Outcome::Failed(worded(&error)),
     };
 
@@ -131,6 +134,11 @@ fn run(
         // PAGE: what the box will read when somebody opens the signed
         // document. Empty for an invisible signature.
         appearance: &report.appearance_lines,
+        timestamp: report.timestamp.as_ref().map(|stamp| t::Stamped {
+            authority: &stamp.tsa_subject,
+            time: &stamp.gen_time,
+            serial: &stamp.serial_hex,
+        }),
     });
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
@@ -189,6 +197,9 @@ fn worded(error: &pdfcer_core::sign::apply::SignApplyError) -> String {
         // one. `crate::sign::prepare`'s note argues why asking would be handing
         // the operator arithmetic.
         E::ReservationTooSmall { .. } => t::reservation_too_small(&detail),
+        // A requested timestamp failed. The engine never falls back to an
+        // untimestamped signature, so the sentence names the one way to get one.
+        E::Timestamp(_) => t::timestamp_refused(&detail),
         // No arm for `Edit(FieldAuthoring(DottedPartialName))`, deliberately,
         // and this comment is the record of why — the engine's own doc names
         // `sign` among that variant's raisers, so its absence here looks like

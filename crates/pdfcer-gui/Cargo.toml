@@ -56,7 +56,7 @@ path = "src/main.rs"
 # `default = [...]` list out of `D:\Dev\pdfcer`'s manifest and fails the
 # build when a name in it is neither forwarded from here nor named in that
 # gate's DELIBERATELY-NOT-FORWARDED list with a reason.
-default = ["jpx", "ocrs", "ocrcer", "signing"]
+default = ["jpx", "ocrs", "ocrcer", "signing", "timestamp"]
 jpx = ["pdfcer-core/jpx", "pdfcer-render/jpx"]
 
 # ---------------------------------------------------------------------------
@@ -105,6 +105,12 @@ jpx = ["pdfcer-core/jpx", "pdfcer-render/jpx"]
 # error rather than a silent no-op, which is the safe direction of this
 # mistake.
 signing = ["pdfcer-core/signing", "pdfcer-gui-base/signing"]
+
+# `timestamp` — PAdES B-T: the Sign window may name an RFC 3161 server. The
+# only network code in the binary. Off, the server field is absent
+# (`pdfcer_gui_base::sign::timestamp::available`), never a field that fails.
+# Its TLS root store brings CDLA-Permissive-2.0 (see `about.toml`).
+timestamp = ["signing", "pdfcer-gui-base/timestamp"]
 
 # ---------------------------------------------------------------------------
 # `ocrs` — the OCR RECOGNISER, and only the recogniser.

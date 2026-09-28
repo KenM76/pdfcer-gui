@@ -698,7 +698,7 @@ impl DialogsState {
         // `actions` because signing needs `&mut EditSession` and a dialog
         // body is handed `&OpenDoc` — `crate::dialogs::sign`'s §2.
         #[cfg(feature = "signing")]
-        if self.sign.as_mut().map(|d| d.show(ctx, doc, actions)) == Some(false) {
+        if self.sign.as_mut().map(|d| d.show(ctx, doc, actions, prefs)) == Some(false) {
             self.sign = None;
         }
         if self.import_text.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {

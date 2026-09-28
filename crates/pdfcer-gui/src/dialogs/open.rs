@@ -67,11 +67,11 @@ impl DialogsState {
 
     /// **Open the Sign window** — `file.sign`.
     #[cfg(feature = "signing")]
-    pub fn open_sign(&mut self, status: &Status) {
+    pub fn open_sign(&mut self, status: &Status, remembered_server: Option<&str>) {
         if self.sign.is_some() {
             return;
         }
-        self.sign = super::sign::open_for(status);
+        self.sign = super::sign::open_for(status, remembered_server);
     }
 
     /// **Hand the signing outcome to the window that asked for it.**

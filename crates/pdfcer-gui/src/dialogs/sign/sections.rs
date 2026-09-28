@@ -168,6 +168,27 @@ impl SignDialog {
         if let Some(stamp) = &self.signing_time {
             ui.label(t::signing_time(stamp));
         }
+        // Offered only when this build can ask a server (R8), and blank
+        // unless the operator named one: naming it is the consent to contact it.
+        if crate::sign::timestamp::available() {
+            ui.add_space(8.0);
+            ui.label(t::timestamp_label());
+            let field = ui.add(
+                // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+                // every field in this window: the first press leaves the box, the second
+                // cancels.
+                egui::TextEdit::singleline(&mut self.timestamp_server)
+                    .hint_text(t::timestamp_hint())
+                    .desired_width(FIELD_WIDTH),
+            );
+            crate::diag::ui_rect(super::REGION_TIMESTAMP, field.rect);
+            ui.add_space(4.0);
+            ui.label(
+                egui::RichText::new(t::timestamp_note())
+                    .color(theme.palette.text_muted)
+                    .small(),
+            );
+        }
     }
 
     /// **What kind of signature** — approval, or certifying as the author.

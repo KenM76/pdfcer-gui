@@ -298,6 +298,45 @@ pub const fn name_comes_from_the_certificate() -> &'static str {
      which is the only version of it anybody can check."
 }
 
+/// The time-stamping server field's label.
+#[must_use]
+pub const fn timestamp_label() -> &'static str {
+    "Timestamp server"
+}
+
+/// Its placeholder.
+#[must_use]
+pub const fn timestamp_hint() -> &'static str {
+    "optional — for example, http://timestamp.digicert.com"
+}
+
+/// What asking a server means, said under the field.
+#[must_use]
+pub const fn timestamp_note() -> &'static str {
+    "A server named here vouches for when you signed, independently of this \
+     machine's clock. pdfcer sends it a fingerprint of the signature — not the \
+     document — and waits up to 30 seconds. If it does not answer, nothing is \
+     written; clear the field to sign without one."
+}
+
+/// A server was named and this build cannot ask one.
+#[must_use]
+pub const fn timestamp_unavailable() -> &'static str {
+    "pdfcer did not sign the document: this build cannot reach a time-stamping \
+     server. Clear the Timestamp server field to sign without one."
+}
+
+/// The engine refused over the timestamp: unreachable, or an answer it would
+/// not embed.
+#[must_use]
+pub fn timestamp_refused(detail: &str) -> String {
+    format!(
+        "pdfcer did not sign the document: {detail}. Nothing was written. Try \
+         again, try another server, or clear the Timestamp server field to sign \
+         without one."
+    )
+}
+
 /// The signing time that will be written, shown before it is written.
 #[must_use]
 pub fn signing_time(stamp: &str) -> String {
@@ -596,6 +635,19 @@ pub struct Written<'a> {
     pub notes: &'a [String],
     /// The text a visible signature's box shows.
     pub appearance: &'a [String],
+    /// The server's timestamp, when one was embedded.
+    pub timestamp: Option<Stamped<'a>>,
+}
+
+/// The parts of an embedded timestamp the disclosure names.
+#[derive(Clone, Copy, Debug)]
+pub struct Stamped<'a> {
+    /// The server certificate's subject.
+    pub authority: &'a str,
+    /// The time it vouched for, ISO 8601 UTC.
+    pub time: &'a str,
+    /// The token's serial, hex.
+    pub serial: &'a str,
 }
 
 /// **What the report says pdfcer wrote — the rule-4 disclosure.**
@@ -610,6 +662,7 @@ pub fn written_details(written: &Written<'_>) -> String {
         certification,
         notes,
         appearance,
+        timestamp,
     } = written;
     let mut out = if reused {
         format!(
@@ -634,6 +687,17 @@ pub fn written_details(written: &Written<'_>) -> String {
             "\nThe box carried a lock, so signing it also froze the fields the \
              document nominated ({action}). That was the document author's \
              instruction, honoured."
+        ));
+    }
+    if let Some(Stamped {
+        authority,
+        time,
+        serial,
+    }) = timestamp
+    {
+        out.push_str(&format!(
+            "\nTimestamped by {authority} at {time}, token serial {serial}. \
+             pdfcer checked the server's signature on it before embedding it."
         ));
     }
     if !appearance.is_empty() {

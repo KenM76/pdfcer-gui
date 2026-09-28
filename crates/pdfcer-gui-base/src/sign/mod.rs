@@ -19,6 +19,9 @@ use pdfcer_core::writer::SaveOptions;
 
 use crate::secret::Secret;
 
+/// The RFC 3161 server a B-T signature asks, and whether this build can.
+pub mod timestamp;
+
 // ---------------------------------------------------------------------------
 // What the document says today
 // ---------------------------------------------------------------------------
@@ -463,6 +466,10 @@ pub struct Authored {
     /// words — a parallel enum here would be a second spelling of a fixed list
     /// whose only possible divergence is a bug.
     pub certify: Option<MdpPermission>,
+    /// **The RFC 3161 server to timestamp the signature with**, making it
+    /// PAdES B-T. `None` is B-B. A named server that fails fails the signing;
+    /// it is never retried without the timestamp.
+    pub timestamp_server: Option<String>,
 }
 
 /// Why a signing did not produce bytes.
@@ -474,6 +481,8 @@ pub enum PrepareFailure {
     Refused(Refusal),
     /// The engine refused, by name.
     Engine(SignApplyError),
+    /// A timestamp server was named and this build cannot ask one.
+    TimestampUnavailable,
 }
 
 /// **Finished bytes, waiting for a destination.**
@@ -648,7 +657,7 @@ pub fn prepare(
         // spelling nobody chose.
         format!(
             "sign-requested visible={} page={} into_field={} certify={} reason={} location={} \
-             time_len={}",
+             time_len={} tsa={}",
             u8::from(request.visible.is_some()),
             request.visible.map_or(usize::MAX, |(p, _)| p),
             u8::from(request.field_name.is_some()),
@@ -660,12 +669,19 @@ pub fn prepare(
             u8::from(request.reason.is_some()),
             u8::from(request.location.is_some()),
             authored.signing_time.len(),
+            u8::from(authored.timestamp_server.is_some()),
         )
     });
 
-    let (bytes, report) = session
-        .sign(identity.signer_ref(), &request, options)
-        .map_err(PrepareFailure::Engine)?;
+    let (bytes, report) = match authored.timestamp_server.as_deref() {
+        None => session.sign(identity.signer_ref(), &request, options),
+        Some(url) => {
+            let authority =
+                timestamp::authority_for(url).ok_or(PrepareFailure::TimestampUnavailable)?;
+            session.sign_with_timestamp(identity.signer_ref(), &*authority, &request, options)
+        }
+    }
+    .map_err(PrepareFailure::Engine)?;
 
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
@@ -681,7 +697,7 @@ pub fn prepare(
         format!(
             "sign-prepared bytes={} field={} algorithm={:?} certificates={} cms={} reserved={} \
              prior={} level={} self_verified={} field_reused={} locked={} notes={} \
-             appearance_lines={} certified={}",
+             appearance_lines={} certified={} timestamped={}",
             bytes.len(),
             report.field_name,
             report.algorithm,
@@ -700,6 +716,7 @@ pub fn prepare(
                 || "none".to_owned(),
                 |p| p.p().to_string()
             ),
+            u8::from(report.timestamp.is_some()),
         )
     });
     Ok(Prepared { bytes, report })

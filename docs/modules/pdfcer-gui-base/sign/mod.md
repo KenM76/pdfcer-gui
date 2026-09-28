@@ -506,6 +506,10 @@ choice. pdfcer infers nothing into a signature dictionary — the engine's
 rule-4 note says the reason: *"the signing time, name, reason, location and
 contact are the caller's words, written verbatim."*
 
+`timestamp_server` is the one field that reaches outside the machine: `None`
+signs B-B, `Some(url)` signs B-T through `sign::timestamp`, and a failure is
+never retried without it.
+
 ### `fn write_to`
 
 Temp file, then rename — `crate::protect::Prepared::write_to`'s
@@ -529,7 +533,8 @@ which is how one event comes to be described twice.
 
 ### `fn prepare`
 
-The one place `EditSession::sign` is called. See §3 for why it is the open
+The one place `EditSession::sign` and `EditSession::sign_with_timestamp` are
+called; which one is `Authored::timestamp_server`'s choice. See §3 for why it is the open
 session and not a throwaway, and why nothing is undone afterwards.
 
 # The reservation is the engine's default and is not offered as a control

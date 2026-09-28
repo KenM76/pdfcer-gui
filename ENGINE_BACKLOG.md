@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **46 of 213** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `wanted` — a real gap — **46 of 214** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -74,7 +74,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Choose a layer when adding new content** — `paste_objects_on_layer`, `NewImage::on_layer`, `AddTextRequest::on_layer`, and a `layer` field on the markup options | **wanted; in the pin, not yet wired.** The add-text, add-image and markup-as-content verbs this shell already calls each gain `layer: Option<ObjId>`; `None` is the unlayered verb, and the add and its placement are one undo entry. The surface is a *Draw onto layer* chooser beside the Edit-mode add tools and Paste, defaulting to none, listing `read_layers`' layers plus New layer…. A layer the add cannot use is refused as `AddTextError::Layer`, and as `AddTextError::LayerNeedsSession` outside an edit session. |
 | **Put an annotation (including a widget) onto a layer** — `EditSession::set_annotation_layer` | **wanted; in the pin, not yet wired.** One `CommandKind::SetAnnotationLayer` undo entry returning an `AnnotationLayerChange` — `before`, `after`, `changed`, the annotation's `subtype`, and `popup_written` when its pop-up moved with it. The surface is the selection: a *Layer* chooser in Properties for a selected annotation or form field, listing the document's layers plus *none*, and the same item on the right-click menu. |
 | **Put existing page content onto a layer** — `EditSession::set_objects_layer` | **wanted; in the pin, not yet wired.** Planned by `plan_set_layer`; one `CommandKind::SetObjectsLayer` entry returning an `ObjectsLayerChange` — `moved`, `unchanged`, `binding_added` with the `property_name` bound, and `disclosures`. The surface is the same *Layer* chooser, offered for a selection of page objects; the engine refuses tagged content (`VectorEditError::LayerSectionHoldsTaggedContent`), spans crossing nesting (`VectorEditError::LayerSectionCrossesNesting`) or left unbalanced (`VectorEditError::LayerSpanUnbalanced`), and objects carrying their own `/OC`, and each refusal is an off-canvas sentence. |
-| Scale page contents to a target size ("resize page contents") … | **wanted; landed after the pin.** The Page size window changes the sheet and leaves the drawing where it was; `EditSession::scale_pages` scales the drawing onto the new sheet, uniformly, `fit` (pad, centred) or `fill` (cover, crop), rewriting every present page box and carrying annotations, widgets and link destinations with it. What it takes: a "Scale the drawing to the new size" choice in that window beside the existing box-only resize, with Fit/Fill; one undo step; the page refusal for a page carrying ce dimensions worded by name, not greyed. Needs `cargo update` past `e234bef7`. |
+| Scale page contents to a target size ("resize page contents") … | **wanted; in the pin, not yet wired.** The Page size window changes the sheet and leaves the drawing where it was; `EditSession::scale_pages` scales the drawing onto the new sheet, uniformly, `fit` (pad, centred) or `fill` (cover, crop), rewriting every present page box and carrying annotations, widgets and link destinations with it. What it takes: a "Scale the drawing to the new size" choice in that window beside the existing box-only resize, with Fit/Fill; one undo step; the page refusal for a page carrying ce dimensions worded by name, not greyed. |
 
 ### Text
 
@@ -86,6 +86,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Ask which face can hold the text about to be TYPED**, not only the text … | **wanted.** `preview_font_resources_for(page, find, pinned_span, candidate)` closes the one honest limit the face chooser carries: `panels::properties::refusedchar` coverage-tests faces against the characters ALREADY in the run, so a row can offer a face that then refuses the operator's `€`. Cost: one call swapped in `canvas::textedit::pin::font_preflight` with the refused character as candidate, and `refused_char_untested` deleted with its test. The same reply carries more than was asked — `FontPreflight.standard_14` gives a `Std14Entry` per standard-14 face whose `presence` separates `OnPage` from `WouldBeAdded`, which is the operator-licence decision nothing here reads. The two should land together. |
 | **Split one text object into several** — `split_text_object` / `text_object_split_plan`, `pdfcer text-object-split --granularity run` or `line` … | **wanted — the verbs are in the pin and nothing here calls them.** A CAD title block written as one text object cannot have one line restyled or deleted until it is split. `SplitGranularity::Run` infers nothing; `Line` infers, so its cut count is owed off-canvas (rule 4). Five refusals want sentences, not a bucket: `VectorEditError::EmptySplit`, `VectorEditError::SplitAtObjectStart`, `VectorEditError::SplitRunInheritsPosition`, `VectorEditError::SplitAtLineShowOperator`, `VectorEditError::SplitInsideMarkedContent`; the whole split is refused, never half. Wire it through `vector_edit_on_page`. G032: `Line` also cuts on clear space — take `LineSplitOptions`' defaults (`LineSplitOptions::with_max_gap`, `LineSplitOptions::with_max_backward`, `LineSplitOptions::max_gap`, `LineSplitOptions::max_backward`) and offer no knob. |
 | **Offer Tesseract as a third recogniser** — `pdfcer_core::ocr::tesseract_tsv` (`parse_tsv`, `TsvError`) | **wanted, and the spawn is this shell's.** The engine parses `tesseract … stdout tsv` and deliberately spawns nothing, so the work here is locating `tesseract.exe`, running it per page image, and handing stdout over; `TsvError::MissingHeader` and `TsvError::BadRow` want sentences naming the Tesseract build, not a generic OCR failure. Registered only when the executable is found (R8), so a machine without it never sees the choice. |
+| **Live typing preview in the run's own font** — `EditSession::edit_text_preview`, `TextEditPreview`, `pdfcer_render::edit_preview::preview_outlines` … | **wanted, next.** Answers O247 (edit text WYSIWYG instead of the pop-up box in a mismatched font). The shell draws the preview's outlines at the run's own place as the operator types, and commits through `edit_text` as today; the preview's disclosures and refusals are worded off-canvas before commit. |
 
 ### Vector objects (Inkscape-style editing)
 
@@ -126,7 +127,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **What a redraw did to a field's text** — `LayoutDisclosure` (with `::applied_autosize`, `::applied_autosize_bound`, `::da_colour_unmodelled`, `::unencodable_chars`) carried on `FieldEditOutcome::layout`, `ResetOutcome::layout`, `WidgetEditOutcome::layout` and `WidgetRotation::layout` | **wanted.** The four facts are the ones a fill already reports, now reported by every verb that redraws a widget: the size an auto-sized field landed on and which bound chose it, a `/DA` colour drawn black, characters drawn as `?`. Today only the fill route's copy is worded; a restyle, a reset or a rotation redraws silently. Wire one formatter over `LayoutDisclosure` and call it from all four. |
 | **Default selections for a list or combo** — `FieldEdit::with_default_selections` / `FieldEdit::default_selections` | **wanted, beside the Default-value box.** `/DV` for a `/Ch` field is what Reset restores; the text-field half is built and this is its choice-field twin, a multi-select of the field's own options in `panels::properties::choiceopts`. |
 | **A dashed widget border** — `WidgetChrome::with_border_dash` / `WidgetChrome::border_dash` | **wanted, small.** The border width and style controls exist; a dashed style without a dash array draws the engine default. One pattern field beside the style combo, shown only when the style is dashed (R9). |
-| **PAdES B-T — verify-then-embed an RFC 3161 timestamp** … | **wanted.** The Sign window signs B-B only. What it takes: `EditSession::sign_with_timestamp` in place of `sign` when the operator names a timestamp server; a `TimestampAuthority` impl whose `time_stamp` calls `pdfcer_fetch::post_time_stamp_query` (the engine does no I/O; `ureq`/`rustls` are already in pdfcer's lockfile, so this adds no dependency the workspace rule calls an operator decision); the call off the UI thread, since it is a network round trip; a remembered server URL; and `SignReport::timestamp` (`TimestampInfo`: genTime, TSA subject, serial) disclosed in the result. A requested B-T that fails is `SignApplyError::Timestamp` and must be shown as that, never retried as B-B. The feature is strippable: a build without `pdfcer-fetch`'s `download` offers no server field (R8), not a field that fails. |
 
 ### Fonts & rendering
 
@@ -141,7 +141,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 213** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `blocked` — waiting on something named — **2 of 214** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -159,7 +159,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 213** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 214** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -170,7 +170,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **14 of 213** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `declined` — deliberately no surface — **14 of 214** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -210,7 +210,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **151 of 213** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **152 of 214** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -349,6 +349,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Trust path validation — the DETERMINISTIC, no-network parts of RFC 5280 … | **Reachable from this shell's side, and it arrived with NO NOTE at all — caught by this gate on an engine bump.** Validity dates, CA and `keyUsage` constraints and RSA-PSS certificate signatures surface as `PathChecks`. **The shell's whole obligation is DISCLOSURE, discharged in the verdict sentence rather than a footnote:** `text::trust::trusted` states in one sentence which anchor was reached, its `/Source` provenance, that every link was checked by signature and every issuer entitled to issue, whether the dates were checked or explicitly were not because there was no signing time, and that revocation was NOT checked — because `pdfcer-core` never touches the network. A revoked certificate chains exactly as well as one that was not. `PathChecks` itself is not read here; that would be a second derivation of one fact. Revocation stays deferred; if it lands it is a NEW disclosure — the sentence gains a clause rather than losing one. |
 | Import an installed Acrobat/Reader trust store … | **Reachable — `crate::trust`, and "importing" is a live READ rather than a copy.** Settings ▸ Digital signatures ▸ *Show what is in it* reads the operator's own `addressbook.acrodata` through `pdfcer_core::trust_store::load_from_path`, reporting the anchor count by `/Source` with the file's modification time; `crate::trust::candidate_paths` mirrors `pdfcer-cli`'s four-track list exactly. Nothing is copied, and that is the design: pdfcer keeps no anchor file, takes no snapshot and caches no DER — every evaluation reads his file as it is at that moment, because a snapshot has no way to say how old it is that anybody will read. Measured on his own machine, the store was more than a year stale — exactly what an *anchors ✓* badge would hide, and why `text::trust::store_line` has no sibling yielding the count without the date. NOT DRIVEN; driving it on his machine is the thing most worth doing next. |
 | Encrypt a document (AES-256, `/R` 6 only), set … | **Reachable — File ▸ Security ▸ `Encrypt…` and `Permissions…`** (`OPERATOR_REQUESTS.md` O119). `crate::protect` is the model, `crate::dialogs::protect` the window, and all three verbs are called from `protect::prepare`: `set_encryption` on the open session, `set_permissions` and `remove_encryption` on a throwaway session re-opened with the owner password. **The throwaway is not caution:** both mutating verbs call `clear_encryption()` on the base, which would disarm `save_incremental`'s `EncryptedSaveUnsupported` guard and let the next ordinary `Ctrl+S` append plaintext objects to AES ciphertext, silently. It is also the authentication — `NotOwner` comes back from the load, not from a second code path. O119's three disclosures are all on screen and none waits for a press; the save mirrors `dialogs::redact` part for part. Moved here on the operator's ruling, not on a driven run: headless tests green, the `ui-verify` checks written and not run. |
+| **PAdES B-T — verify-then-embed an RFC 3161 timestamp** … | **shipped** (default `timestamp` feature). File ▸ Sign ▸ *Timestamp server*: `sign::prepare` calls `EditSession::sign_with_timestamp` through `sign::timestamp::HttpAuthority` (`pdfcer_fetch::post_time_stamp_query_with`, 30 s bound), and `SignReport::timestamp` is disclosed in the result. `SignApplyError::Timestamp` is worded, never retried as B-B. Strippable by the shell's `timestamp` feature (R8). The round trip still blocks the UI thread for its duration. Driven: `a_timestamped_signature_is_timestamped_or_not_written`. |
 
 ### Fonts & rendering
 

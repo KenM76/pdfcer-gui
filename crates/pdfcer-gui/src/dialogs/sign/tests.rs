@@ -42,6 +42,7 @@ fn filling() -> SignDialog {
         certify: false,
         mdp: MdpPermission::FormFillAndSign,
         signing_time: Some("D:20260906120000Z".to_owned()),
+        timestamp_server: String::new(),
         destination: Destination::NewFile,
         overwrite_acknowledged: false,
         open_certificate_requested: false,
@@ -395,6 +396,7 @@ fn the_written_summary_carries_the_reuse_the_lock_and_the_notes() {
         certification: Some("form fill-in and signing"),
         notes: &["seed value: a timestamp was recommended".to_owned()],
         appearance: &[],
+        timestamp: None,
     });
     assert!(written.contains("already on the document"), "{written}");
     assert!(written.contains("SignHere"), "{written}");
@@ -413,6 +415,7 @@ fn the_written_summary_carries_the_reuse_the_lock_and_the_notes() {
         certification: None,
         notes: &[],
         appearance: &[],
+        timestamp: None,
     });
     assert!(plain.contains("Signature field Signature1"), "{plain}");
     assert!(!plain.contains("already on the document"), "{plain}");
@@ -435,6 +438,7 @@ fn the_written_summary_carries_the_text_the_signature_box_shows() {
             "Date: 2026-09-18 10:04:11 -04'00'".to_owned(),
             "Reason: I approve this drawing".to_owned(),
         ],
+        timestamp: None,
     });
     assert!(
         visible.contains("Digitally signed by Ken Mantle"),
@@ -462,6 +466,7 @@ fn the_written_summary_carries_the_text_the_signature_box_shows() {
         certification: None,
         notes: &[],
         appearance: &[],
+        timestamp: None,
     });
     assert!(
         !invisible.to_lowercase().contains("box"),
@@ -485,6 +490,7 @@ fn the_appearance_counter_measures_the_sentence_not_the_slice() {
         certification: None,
         notes: &[],
         appearance: &lines,
+        timestamp: None,
     });
     assert_eq!(
         crate::text::sign::appearance_shown(&full, &lines),
@@ -503,6 +509,7 @@ fn the_appearance_counter_measures_the_sentence_not_the_slice() {
         certification: None,
         notes: &[],
         appearance: &[],
+        timestamp: None,
     });
     assert_eq!(
         crate::text::sign::appearance_shown(&none, &lines),

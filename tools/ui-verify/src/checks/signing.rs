@@ -141,6 +141,7 @@ impl Check for ADocumentCanBeSignedAndTheSignatureIsInTheFile {
 // ---------------------------------------------------------------------------
 
 mod reaching;
+pub mod timestamp;
 
 use reaching::{
     click, click_scrolled, click_tab, disclosed_appearance, drawn, engine_fixture, field_name_of,

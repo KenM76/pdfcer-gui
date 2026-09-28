@@ -494,6 +494,17 @@ impl Driver {
 
     /// Press a **chord** — a virtual key with modifiers held — in the target
     /// window.
+    /// **Type any text by code point**, for strings `type_ascii` refuses —
+    /// a URL's `:` and `/`. Layout-independent; see `sys::type_char`.
+    pub fn type_text(&self, text: &str) -> Result<()> {
+        self.raise_and_confirm()?;
+        for ch in text.chars() {
+            sys::type_char(ch);
+            std::thread::sleep(MOVE_SETTLE);
+        }
+        Ok(())
+    }
+
     pub fn press_chord(&self, modifiers: &[u16], vk: u16) -> Result<()> {
         self.raise_and_confirm()?;
         sys::key_stroke_with(modifiers, vk);

@@ -279,6 +279,10 @@ impl Prefs {
                         line,
                     }),
                 },
+                // ui-text-exempt: a file KEY, parsed out of preferences.txt.
+                "sign_timestamp_server" => {
+                    prefs.sign_timestamp_server = (!value.is_empty()).then(|| value.to_owned());
+                }
                 "default_page_display" => match crate::viewer::PageDisplay::from_id(value) {
                     Some(d) => prefs.default_page_display = Some(d),
                     None => notes.push(PrefNote::BadValue {
@@ -745,6 +749,17 @@ impl Prefs {
             // ui-text-exempt: a file KEY, as above.
             out.push_str("ocr_engine = ");
             out.push_str(engine.key());
+            out.push('\n');
+        }
+        if let Some(server) = &self.sign_timestamp_server {
+            // ui-text-exempt: settings-file COMMENT text and a file KEY, as above.
+            out.push_str(
+                "\n\
+                 # sign_timestamp_server: the RFC 3161 server Sign last asked.\n\
+                 # Remembered from the last signature; delete the line for none.\n\
+                 sign_timestamp_server = ",
+            );
+            out.push_str(server);
             out.push('\n');
         }
         if let Some(display) = self.default_page_display {

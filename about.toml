@@ -55,12 +55,6 @@
 # headroom, not evidence — a reader must not take an id's presence here as a
 # claim that some crate uses it.
 #
-# ONE DELIBERATE OMISSION: `CDLA-Permissive-2.0`. pdfcer accepted it on
-# 2026-08-13 for `webpki-roots`, which arrives with an HTTPS client. This
-# workspace has no HTTP client and no TLS stack, and if one ever lands here
-# the generator should stop and say so rather than wave it through on an
-# acceptance recorded for a different binary. That is the list doing its job.
-#
 # NOTE: all top-level keys must appear BEFORE the [private] table header — in
 # TOML every key after a table header belongs to that table.
 
@@ -102,6 +96,14 @@ accepted = [
     # ("accept the ijg attribution line").
     "IJG",
     "ISC",
+    # CDLA-Permissive-2.0 — a DATA licence (Linux Foundation Community Data
+    # License Agreement), reached via `webpki-roots`: Mozilla's trusted root
+    # certificates, compiled in for `rustls`, which the `timestamp` feature
+    # needs to reach an RFC 3161 server over HTTPS. Permissive, no share-alike;
+    # the obligation is to ship the agreement text with the data, which the
+    # generated notice does. Accepted by the operator for this binary on
+    # 2026-09-27, as pdfcer accepted it for its own.
+    "CDLA-Permissive-2.0",
     "MIT",
     "MIT-0",
     "Unicode-3.0",

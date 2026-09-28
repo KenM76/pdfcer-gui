@@ -796,3 +796,43 @@ pub fn caps_lock_is_on() -> bool {
     // return is the TOGGLE state, which is what a latch is.
     (unsafe { GetKeyState(VK_CAPITAL as i32) } & 1) != 0
 }
+
+/// **Type one character by its code point**, independent of keyboard layout.
+///
+/// `KEYEVENTF_UNICODE` delivers the character itself as `WM_CHAR`, so `:` and
+/// `/` arrive as themselves on any layout — the reason `Driver::type_ascii`
+/// refuses punctuation does not apply here. Characters outside the BMP are
+/// sent as their two UTF-16 units.
+pub fn type_char(ch: char) {
+    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
+        INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_UNICODE, SendInput,
+    };
+    let mut units = [0u16; 2];
+    for &unit in ch.encode_utf16(&mut units).iter() {
+        let key = |flags| INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: 0,
+                    wScan: unit,
+                    dwFlags: flags,
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        };
+        let inputs = [
+            key(KEYEVENTF_UNICODE),
+            key(KEYEVENTF_UNICODE | KEYEVENTF_KEYUP),
+        ];
+        // SAFETY: `inputs` is a live array of fully initialised INPUTs and the
+        // size argument is that struct's own.
+        unsafe {
+            SendInput(
+                inputs.len() as u32,
+                inputs.as_ptr(),
+                std::mem::size_of::<INPUT>() as i32,
+            );
+        }
+    }
+}

@@ -67,6 +67,8 @@ pub(super) const REGION_PAGE: &str = "sign-page"; // ui-text-exempt: trace regio
 /// The radio that makes this a **certifying** signature (`Pass 10.12`),
 /// declared only while the document permits one.
 pub(super) const REGION_CERTIFY: &str = "sign-certify"; // ui-text-exempt: trace region name, never displayed
+/// The time-stamping server field; drawn only when this build can ask one.
+pub(super) const REGION_TIMESTAMP: &str = "sign-timestamp"; // ui-text-exempt: trace region name, never displayed
 
 /// One row in the list of pre-placed signature fields, by index.
 pub(super) fn field_region(index: usize) -> String {
@@ -206,6 +208,9 @@ pub struct SignDialog {
     /// different moment from the one on screen, and the difference would be
     /// invisible and unfalsifiable.
     signing_time: Option<String>,
+    /// The time-stamping server, as typed; blank asks for none. Seeded from
+    /// the last one signed with.
+    timestamp_server: String,
     /// Where the bytes go.
     destination: Destination,
     /// The acknowledgement asked for **only** while the operator has chosen to
@@ -252,7 +257,7 @@ impl std::fmt::Debug for SignDialog {
 
 impl SignDialog {
     /// **Read the document, then build the window around what it said.**
-    fn open(doc: &OpenDoc) -> Self {
+    fn open(doc: &OpenDoc, remembered_server: Option<&str>) -> Self {
         let standing = Standing::read(&doc.session, &doc.path, &doc.pages);
         let signing_time = crate::app::clock::pdf_date_utc();
         // The clock failure is a REFUSAL, not a warning. PAdES requires `/M`
@@ -328,6 +333,7 @@ impl SignDialog {
             certify: false,
             mdp: MdpPermission::FormFillAndSign,
             signing_time,
+            timestamp_server: remembered_server.unwrap_or_default().to_owned(),
             destination: Destination::NewFile,
             overwrite_acknowledged: false,
             open_certificate_requested: false,
@@ -344,6 +350,7 @@ impl SignDialog {
         ctx: &egui::Context,
         doc: &OpenDoc,
         actions: &mut Vec<Action>,
+        prefs: &mut crate::app::prefs::Prefs,
     ) -> bool {
         // Read BEFORE the body draws its fields, so a box ticked or a
         // character typed on this frame does not enable the confirm control
@@ -371,6 +378,7 @@ impl SignDialog {
         }
         if std::mem::take(&mut self.confirm_requested) && ready {
             self.commit(doc, actions);
+            self.remember_server(prefs);
         }
         if std::mem::take(&mut self.open_signed_requested)
             && let Phase::Written { path, .. } = &self.phase
@@ -379,6 +387,27 @@ impl SignDialog {
             self.close_requested = true;
         }
         open && !std::mem::take(&mut self.close_requested)
+    }
+
+    /// The server this signing asks, or `None` — always `None` in a build
+    /// that cannot ask one, whatever a remembered preference says.
+    fn server_requested(&self) -> Option<&str> {
+        crate::sign::timestamp::available()
+            .then(|| crate::sign::timestamp::requested(&self.timestamp_server))
+            .flatten()
+    }
+
+    /// Keep the server just signed with for next time, once a signing was
+    /// actually sent.
+    fn remember_server(&self, prefs: &mut crate::app::prefs::Prefs) {
+        if !matches!(self.phase, Phase::Signing) || !crate::sign::timestamp::available() {
+            return;
+        }
+        let server = self.server_requested().map(str::to_owned);
+        if prefs.sign_timestamp_server != server {
+            prefs.sign_timestamp_server = server;
+            let _ = prefs.save();
+        }
     }
 
     /// **Take the outcome the handler produced.**
@@ -568,6 +597,7 @@ impl SignDialog {
                 // the operator read when the window opened with one he meets
                 // after the picker.
                 certify: (self.certify && self.standing.may_certify().is_ok()).then_some(self.mdp),
+                timestamp_server: self.server_requested().map(str::to_owned),
             },
             target,
             replace: self.destination == Destination::ReplaceOriginal,
@@ -733,11 +763,14 @@ pub(super) fn file_name_of(path: &Path) -> String {
 }
 
 /// Build the window for `doc`, or nothing when there is no document.
-pub(super) fn open_for(status: &crate::app::state::Status) -> Option<SignDialog> {
+pub(super) fn open_for(
+    status: &crate::app::state::Status,
+    remembered_server: Option<&str>,
+) -> Option<SignDialog> {
     let crate::app::state::Status::Open(doc) = status else {
         return None;
     };
-    Some(SignDialog::open(doc))
+    Some(SignDialog::open(doc, remembered_server))
 }
 
 mod sections;

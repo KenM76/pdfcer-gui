@@ -285,6 +285,10 @@ pub struct Prefs {
     /// its first available engine without erasing the choice, so a build that
     /// has it again picks it back up.
     pub ocr_engine: Option<crate::ocr::EngineId>,
+    /// The time-stamping server the Sign window last signed with; `None` for
+    /// none. Never filled in on the operator's behalf: naming a server is
+    /// consent to contact it.
+    pub sign_timestamp_server: Option<String>,
     /// **How a document the program has never seen is laid out** —
     /// `OPERATOR_REQUESTS.md` O80.
     ///
@@ -811,6 +815,7 @@ impl Default for Prefs {
             // that drifts away from the sentence justifying it.
             ocr_layer_colour: crate::ocrlayerpref::DEFAULT_COLOUR,
             ocr_engine: None,
+            sign_timestamp_server: None,
             // `None` — "he has not said" — so a fresh profile keeps
             // `MODES_AND_PANELS.md`'s per-mode rule. See the field.
             default_page_display: None,
