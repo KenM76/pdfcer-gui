@@ -75,6 +75,7 @@ pub fn cursor_for(
             // not.
             DragKind::Handle { .. }
             | DragKind::DimensionVertex { .. }
+            | DragKind::DimensionExtension { .. }
             | DragKind::MarkupVertex { .. } => CursorIcon::Grabbing,
             // The I-beam for a sweep that began under the MODE rule rather
             // than under an armed tool, which is the whole of what this arm is

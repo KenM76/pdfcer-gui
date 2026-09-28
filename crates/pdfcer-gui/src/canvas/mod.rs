@@ -118,6 +118,7 @@ pub mod destination;
 /// per-axis scroll that must not acquire a magnification. O200, D47.
 pub mod destscroll;
 pub mod dimdrag;
+pub mod dimext;
 pub mod dimpreview;
 /// Which of the three move verbs one drag reaches. Split out of `interact`
 /// under R2; its header carries the argument that a fork whose branches can

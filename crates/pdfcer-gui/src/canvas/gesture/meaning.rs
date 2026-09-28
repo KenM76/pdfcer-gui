@@ -64,6 +64,9 @@ pub enum DimensionPress {
     /// readings, the one the operator aimed at is the small square they can
     /// see.
     Vertex(usize),
+    /// On a linear dimension's extension-line grip. Outranks [`Self::Body`]
+    /// for [`Self::Vertex`]'s reason.
+    Extension(pdfcer_core::dimension::DimensionEnd),
     /// Inside the dimension's own box, but not on a handle.
     Body,
 }
@@ -167,6 +170,12 @@ pub enum DragKind {
     DimensionVertex {
         /// Which vertex of the selected perimeter, by index into its points.
         index: usize,
+    },
+    /// The press was on a **linear ce dimension's extension-line grip**: drag
+    /// it along the line to change that line's gap. `set_dimension_extension_gap`.
+    DimensionExtension {
+        /// Which extension line, sampled at the press.
+        end: pdfcer_core::dimension::DimensionEnd,
     },
     /// The press was on a **node of a selected markup shape**: drag it, or —
     /// with the Points tool armed and `Ctrl` held — add or remove one.
@@ -284,6 +293,7 @@ impl DragKind {
             Self::Rotate => "Rotate",
             Self::Handle { .. } => "Handle",
             Self::DimensionVertex { .. } => "DimensionVertex",
+            Self::DimensionExtension { .. } => "DimensionExtension",
             Self::MarkupVertex { .. } => "MarkupVertex",
             Self::TextSelect => "TextSelect",
             Self::Markup(_) => "Markup",
@@ -738,6 +748,9 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
             // The corner. Reshapes, and re-measures — the one gesture in this
             // family that changes the number.
             DimensionPress::Vertex(index) => DragKind::DimensionVertex { index },
+            // An extension line's near end. Changes where the line starts and
+            // never the number.
+            DimensionPress::Extension(end) => DragKind::DimensionExtension { end },
             // The body. Moves where the dimension is DRAWN and cannot alter
             // what it says; `canvas::dimdrag`'s header carries that argument.
             DimensionPress::Body => DragKind::Move,

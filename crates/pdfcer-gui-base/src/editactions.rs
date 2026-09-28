@@ -755,6 +755,22 @@ pub enum DimensionAction {
         /// `true` ⇒ print the diameter; `false` ⇒ print the radius.
         show_diameter: bool,
     },
+
+    /// **Set the gap between a linear ce dimension's measured point and its
+    /// extension line**, from a drag of the grip at the line's near end.
+    /// `EditSession::set_dimension_extension_gap`.
+    ///
+    /// Changes where an extension line starts and never what the dimension
+    /// measures, so it owes no re-measure disclosure. One annotation redrawn.
+    SetExtensionGap {
+        /// The linear ce dimension.
+        dimension: DimensionId,
+        /// Which of its two extension lines.
+        end: pdfcer_core::dimension::DimensionEnd,
+        /// The gap in points, page space; `None` returns the end to the
+        /// style's standard gap.
+        gap: Option<f64>,
+    },
 }
 impl DimensionAction {
     /// Whether this verb's blast radius is **the whole document** rather than

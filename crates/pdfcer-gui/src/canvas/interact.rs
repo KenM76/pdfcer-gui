@@ -802,6 +802,28 @@ pub(super) fn interact(
             pv.markup_nodes = routed.markup;
             pv.vertex_snap = routed.snap;
         }
+        GestureOutcome::DimensionExtension {
+            end,
+            from,
+            at,
+            phase,
+        } => {
+            if let Some(placed) = crate::canvas::dimext::drag(
+                crate::canvas::dimext::Frame {
+                    ctx: &ctx,
+                    end,
+                    from,
+                    at,
+                    phase,
+                    doc,
+                    selection: &selection,
+                },
+                actions,
+            ) {
+                pv.dimension = Some(placed.segments);
+                pv.dimension_baked = placed.baked;
+            }
+        }
         GestureOutcome::Handle {
             node,
             handle,

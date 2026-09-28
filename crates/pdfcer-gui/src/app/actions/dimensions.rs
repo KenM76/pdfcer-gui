@@ -288,6 +288,17 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                     .map(|_| Vec::new())
             });
         }
+        DimensionAction::SetExtensionGap {
+            dimension,
+            end,
+            gap,
+        } => {
+            super::apply::vector_edit(doc, "set-dimension-extension-gap", 0, 1, |session| {
+                session
+                    .set_dimension_extension_gap(dimension, end, gap)
+                    .map(|()| Vec::new())
+            });
+        }
     }
 }
 

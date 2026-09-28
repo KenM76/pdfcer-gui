@@ -236,6 +236,17 @@ pub enum GestureOutcome {
         /// Draw, or commit.
         phase: Phase,
     },
+    /// A **linear ce dimension's extension-line grip** being dragged.
+    DimensionExtension {
+        /// Which extension line, sampled at the press.
+        end: pdfcer_core::dimension::DimensionEnd,
+        /// Where the press landed, in canvas space.
+        from: egui::Pos2,
+        /// Where the pointer is now, in canvas space.
+        at: egui::Pos2,
+        /// Draw, or commit.
+        phase: Phase,
+    },
     /// A **markup shape's node** being dragged — a `/Polygon`, `/PolyLine` or
     /// `/Line` the operator drew as a comment. `Pass 255.0`.
     ///
@@ -427,6 +438,12 @@ impl Drag {
             },
             DragKind::DimensionVertex { index } => GestureOutcome::DimensionVertex {
                 index,
+                from: self.origin,
+                at: self.latest,
+                phase,
+            },
+            DragKind::DimensionExtension { end } => GestureOutcome::DimensionExtension {
+                end,
                 from: self.origin,
                 at: self.latest,
                 phase,

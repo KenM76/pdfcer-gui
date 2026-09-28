@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **48 of 220** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `wanted` — a real gap — **48 of 221** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -101,13 +101,13 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
-| **Set a per-end extension-line gap on a Linear ce dimension** — `EditSession::set_dimension_extension_gap`, `DimensionEnd` (`DimensionEnd::A`, `DimensionEnd::B`), `extension_segments`, `extension_reach`, `CommandKind::SetDimensionExtensionGap`, and its refusals `EditError::NoExtensionLines` and `EditError::ExtensionGapOutOfRange` … | **wanted — the second engine half of O249, answering our `G050`.** He asked to drag the extension line's end on the connection side; this is the verb a grip on each end writes, with `extension_reach` bounding the drag. |
 
 ### Annotations & markup
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | **Author a page-level `/FileAttachment` marker annotation** — `EditSession::add_file_attachment_annotation`, `FileAttachmentSpec`, `AttachmentIcon` … | **wanted — the engine's head has it and this repository's pin does not yet.** A paperclip or push-pin on the page carrying an embedded file is a Review-mode markup Acrobat offers beside the sticky note; it belongs with the Comment tools and waits on the next `cargo update`. |
+| **Author a `/Sound` annotation, with WAV import** — `EditSession::add_sound_annotation`, `SoundSpec`, `SoundIcon`, `SoundData::from_wav`, `SoundRatePolicy`, `WavImport` … | **wanted — the engine's head has it and this repository's pin does not yet.** A speaker or microphone icon on the page carrying a recorded clip belongs with the Comment tools beside the file-attachment marker. Consuming it needs a file picker for `.wav`, a choice of icon, the rate policy and downmix exposed as settings (the rate is a setting because ISO 32000 §13.3 contradicts itself), and each `WavImport.conversions` entry disclosed off-canvas. It waits on the next `cargo update`. |
 | **Author a `/Caret` annotation, and a paired Replace Text edit** — `EditSession::add_caret_annotation`, `CaretSpec`, `CaretSymbol`, `add_replace_text` … | **wanted — the engine's head has it and this repository's pin does not yet.** Acrobat's Insert Text and Replace Text proofreading marks; they belong with the text-markup tools in Review and wait on the next `cargo update`. |
 | **Change a placed sticky note's icon and colour, and read `/C` / `/Name` on any subtype** — `Annotation::icon` / `Annotation::color` … | **Reached both ways; what stays wanted is narrower than the clause — the READ.** `dialogs::textannot` offers the seven icons of §12.5.6.4 Table 172 as radios at placement (region `text-annot.icon`), and authors `DEFAULT_STICKY_ICON = Comment` — Acrobat's, per `ACROBAT_DEFAULTS.md` — rather than `StickyIcon::default()`'s `Note`. A **placed** note restyles in `panels::properties::markup::textannot`: a swatch for `/C`, a combo for `/Name`, raised as `AnnotAction::SetTextAnnotStyle` and applied by `app::actions::annots::textannotstyle` through `set_text_annot_style` as one undo entry, every untouched field spelt `None` so a colour change cannot rewrite the icon. An unmodelled `/Name` survives as `StickyIcon::Other` verbatim, driven by `a_foreign_icon_name_reaches_the_panel`. **Owed:** *any subtype* is not true — the read goes through `text_spec_from_dict` and the markup family's `spec_from_dict`, never `Annotation::icon` / `Annotation::color`, so `/FreeText` is declined by name and `/C` elsewhere is unread. Neither write is driven. |
 | **Review status — `/State` + `/StateModel`** (`Pass 253.1`): read `Annotation::state` … | **wanted — the row that turns Review mode into a review WORKFLOW.** `shell::manifest::markup` says the tab is not called Review because Review promises compare, resolve and track; this is the first of the three. The engine does not interpret the strings, so the vocabulary is this shell's to present and an unknown value must be shown, not normalised. Both halves are built: `panels::comments::reviewstate` shows one line per reviewer — §12.5.6.3 makes status a per-author `/IRT` chain, not a field — and builds the filter chooser from the document, so an unknown value is filterable in the file's own spelling. Owed: a driven check, and the other two thirds of the promise. |
@@ -148,7 +148,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 220** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `blocked` — waiting on something named — **2 of 221** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -166,7 +166,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 220** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 221** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -177,7 +177,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **14 of 220** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `declined` — deliberately no surface — **14 of 221** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -217,7 +217,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **156 of 220** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **157 of 221** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -431,5 +431,6 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Write a field's `/DA` font, size and colour** — `FieldEdit::with_appearance`, `FieldAppearance`, `FieldFont::Standard` / `FieldFont::Resource`, `EditError::FieldFontNotInResources` | **shipped — `panels::properties::fieldedit`'s `text_appearance_rows`.** A face chooser of the fourteen, a size spinner where zero is Table 224's auto, and a colour swatch, drawn for `/Tx`, `/Ch` and `/Btn`, never `/Sig`. `/DA` is one string, so `with_appearance` writes all three or none: `current_appearance` is the single place the existing values are recovered, and every press re-sends the two he did not touch — one gesture, one undo entry. `FieldAppearance::standard` is the chooser's route and `::resource` re-authors an embedded key verbatim, which is why the file's own face is the selected entry and not an offer: an invented key would meet `EditError::FieldFontNotInResources`. It narrows rather than breaks `canvas::forms` §3: a size chosen in a face pdfcer authored is the document's own value. Over a `/DA` stating its colour in a space with no `TextColor` all three rows vanish behind a sentence. Owed: no check names the three regions, and `FieldFontNotInResources` has only the generic refusal. |
 | **Scope the residual sweep by carrier visibility** — `ResidualScope` (`MarkedOnly` / `HiddenCarriers` default / `WholeDocument`), `set_residual_scope`, `residual_scope`, `has_unscrubbed_matches`, `residual_matches_left`, `CarrierAction::FoundNotScrubbed` | **shipped — Settings → *Redaction*, *How far a redaction reaches beyond what you marked*: three radios over `RedactionReach`, the only place this shell names `ResidualScope::*`.** O211's remaining choice. A preference because the apply dialog removes the instant it opens. `redact::stage_into_session` calls `set_residual_scope` before the staging verb, and the scope survives onto the session `save_applying_pending` reads, so the previewed reach is the reach written. The two report predicates must not collapse: `has_disclosed_residuals` means pdfcer COULD NOT act and blocks the save; declined matches are named off-canvas by `dialogs::redact::disclosures::left_by_choice` filtering `CarrierAction::FoundNotScrubbed`, and gate nothing. Driven by `the_redaction_reach_setting_decides_what_survives`. `has_unscrubbed_matches` and `residual_matches_left` stay unreached: the block needs carrier NAMES, not a bool and a count. |
 | **Preview what a ce-dimension drag would bake, before it commits** — `EditSession::dimension_preview`, `DimensionPreview`, `AuthoredDimension::label_quad`, `pdfcer_render::edit_preview::paint_dimension_preview` … | **shipped — dragging a ce dimension's label (select tool) draws `EditSession::dimension_preview`'s bake through `paint_dimension_preview` while the button is held; `canvas::dimpreview`. Driven by `a_dimension_drag_previews_what_it_places`. `label_quad` is traced for the check; the text grip (T4) is not built yet.** <!--namesake:dimension_preview--> |
-| **Circular ce-dimension placement — leader angle and text distance beyond the rim** — `DimensionKind::Circular::leader_angle`, `text_distance`, `circular_text_distance` … | **shipped — drag a radius or diameter ce dimension's label (select tool).** `canvas::dimdrag::circular_placed` hands the drop point to `placement_from_point` and re-reads the distance through `circular_text_distance`, so the preview and the committed `place_dimension` agree on the clamped value. The leader swings to face the drop. The live preview is still the shell's segment list until the `dimension_preview` row above is wired. |
+| **Circular ce-dimension placement — leader angle and text distance beyond the rim** — `DimensionKind::Circular::leader_angle`, `text_distance`, `circular_text_distance` … | **shipped — drag a radius or diameter ce dimension's label (select tool).** `canvas::dimdrag::circular_placed` hands the drop point to `placement_from_point` and re-reads the distance through `circular_text_distance`, so the preview and the committed `place_dimension` agree on the clamped value. The leader swings to face the drop. The drag is previewed through `dimension_preview`. |
+| **Set a per-end extension-line gap on a Linear ce dimension** — `EditSession::set_dimension_extension_gap`, `DimensionEnd` (`DimensionEnd::A`, `DimensionEnd::B`), `extension_segments`, `extension_reach`, `CommandKind::SetDimensionExtensionGap`, and its refusals `EditError::NoExtensionLines` and `EditError::ExtensionGapOutOfRange` … | **shipped — select a linear ce dimension and drag the grip at the near end of either extension line; `canvas::dimext`. The drag is previewed through `dimension_preview` and the grip follows the pointer; release commits `set_dimension_extension_gap`. Driven by `an_extension_line_grip_shortens_its_line`. A shortening drag shows only through the moving grip until a page render can omit the dragged annotation (our `G052`).** |
 | `pdfcer_core::edit::WidgetEdit::with_border_color` and `pdfcer_core::forms::MkColor::to_array` | **shipped — both `/MK` colour keys are reached; what is missing is a driven check, not a capability.** `panels::properties::widgetedit`'s `chrome_rows` draws two swatches, *Background* and *Border colour*, ungated for every widget, and `chrome_row` calls through the `Setters::build` pointer — `WidgetEdit::with_background` for one row, `with_border_color` for the other — so a pick reaches `FieldAction::EditWidget`; *Remove* goes to `without_border_color`. The placement dialog offers the same key on the `New*` builders. `canvas::forms` §3 is untouched: it tests whether a property promises where a glyph LANDS; colour does not. A border drawn against a theme-chosen interior is `DEFECTS.md` D2's shape, so it goes through `Theme::foreign_fill_pair`, which returns a fill AND a readable foreground or neither. `MkColor::to_array` has no call site and is not a gap — it writes a raw `/MK` array where the builder takes an `MkColor`; read-back is `Widget::border_color`, and `MkColor::Cmyk` stays raw on the control. Owed: nothing names `properties.widget_edit.border_color`. |

@@ -503,6 +503,10 @@ pub fn look(
         dimdrag::vertex_at(doc, map, selection, p)
             .map(gesture::DimensionPress::Vertex)
             .or_else(|| {
+                crate::canvas::dimext::grip_at(doc, map, selection, p)
+                    .map(gesture::DimensionPress::Extension)
+            })
+            .or_else(|| {
                 // Asked of `dimdrag` directly rather than of `grabbable`'s
                 // box, because the two answer different questions: `grabbable`
                 // says *what may be grabbed* and this says *is the thing under
