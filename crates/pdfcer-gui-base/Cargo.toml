@@ -82,12 +82,18 @@ syn = { version = "2.0.119", features = ["full", "visit"] }
 # `default-features = false` and forwards its own `ocrs`, which documents what
 # the flag gates; it is a default here only so this crate builds and tests
 # alone as the program ships.
-default = ["ocrs", "ocrcer"]
+default = ["ocrs", "ocrcer", "paddle"]
 ocrs = ["pdfcer-core/ocrs"]
 # `ocrcer` — the second recogniser, `pdfcer_core::ocr::engine_ocrcer`, whose
 # `ocrcer-core` the engine vendors from OCRcer's newest local commit. Offered
 # beside `ocrs`, never instead of it.
 ocrcer = ["pdfcer-core/ocrcer"]
+
+# `paddle` — the third recogniser, `pdfcer_core::ocr::engine_paddle`
+# (PaddleOCR PP-OCR exports run through `rten`, which `ocrs` already links).
+# No model is packaged: the operator places det.onnx and rec.onnx, and
+# optionally dict.txt, in `models/paddle`.
+paddle = ["pdfcer-core/paddle"]
 # The private-key side; `pdfcer-gui` forwards its own `signing` here. Not a
 # default: base carries no capability the top crate did not ask for.
 signing = ["pdfcer-core/signing"]

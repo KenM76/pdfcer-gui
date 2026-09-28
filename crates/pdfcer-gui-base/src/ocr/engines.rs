@@ -25,11 +25,13 @@ pub enum EngineId {
     Ocrs,
     /// OCRcer: prototype matching with a calibrated per-word confidence.
     Ocrcer,
+    /// PaddleOCR (PP-OCR): operator-supplied ONNX exports; scores every word.
+    Paddle,
 }
 
 impl EngineId {
     /// Every engine, in preference order. [`available`] filters this.
-    pub const ALL: [Self; 2] = [Self::Ocrs, Self::Ocrcer];
+    pub const ALL: [Self; 3] = [Self::Ocrs, Self::Ocrcer, Self::Paddle];
 
     /// The stable key: the preferences-file value and the trace token.
     #[must_use]
@@ -37,6 +39,7 @@ impl EngineId {
         match self {
             Self::Ocrs => "ocrs",
             Self::Ocrcer => "ocrcer",
+            Self::Paddle => "paddle",
         }
     }
 
@@ -52,6 +55,7 @@ impl EngineId {
         match self {
             Self::Ocrs => cfg!(feature = "ocrs"),
             Self::Ocrcer => cfg!(feature = "ocrcer"),
+            Self::Paddle => cfg!(feature = "paddle"),
         }
     }
 
@@ -67,6 +71,10 @@ impl EngineId {
             #[cfg(not(feature = "ocrs"))]
             Self::Ocrs => "ocrs",
             Self::Ocrcer => OCRCER_MODEL_DIR,
+            #[cfg(feature = "paddle")]
+            Self::Paddle => pdfcer_core::ocr::engine_paddle::MODEL_DIR,
+            #[cfg(not(feature = "paddle"))]
+            Self::Paddle => "paddle",
         }
     }
 
@@ -84,6 +92,11 @@ impl EngineId {
             ],
             #[cfg(feature = "ocrcer")]
             Self::Ocrcer => &[OCRCER_MODEL_FILE],
+            #[cfg(feature = "paddle")]
+            Self::Paddle => &[
+                pdfcer_core::ocr::engine_paddle::DETECTION_MODEL,
+                pdfcer_core::ocr::engine_paddle::RECOGNITION_MODEL,
+            ],
             #[allow(unreachable_patterns)]
             _ => &[],
         }
@@ -94,9 +107,27 @@ impl EngineId {
     pub const fn reports_confidence(self) -> bool {
         match self {
             Self::Ocrs => false,
-            Self::Ocrcer => true,
+            Self::Ocrcer | Self::Paddle => true,
         }
     }
+
+    /// Whether a pdfcer package carries this engine's model. PaddleOCR's
+    /// weights are never bundled: their licence is the operator's to accept.
+    #[must_use]
+    pub const fn model_shipped(self) -> bool {
+        !matches!(self, Self::Paddle)
+    }
+}
+
+/// Where a run's character dictionary came from, for an engine that reads
+/// through one. A mismatched dictionary reads as confident nonsense, so the
+/// report names it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Dictionary {
+    /// A dictionary file beside the model.
+    File(std::path::PathBuf),
+    /// The character list embedded in the recognition model.
+    Embedded,
 }
 
 /// The engines this build can run, default first. Empty in a build with none.
@@ -118,12 +149,14 @@ pub const OCRCER_MODEL_DIR: models::EngineDirName = "ocrcer";
 pub const OCRCER_MODEL_FILE: &str = "ocrcer.ocrw";
 
 /// A loaded model, held for a whole run so a hundred pages load it once.
-/// Boxed: the two engines differ in size by kilobytes.
+/// Boxed: the engines differ in size by kilobytes.
 pub(super) enum Recogniser {
     #[cfg(feature = "ocrs")]
     Ocrs(Box<pdfcer_core::ocr::engine_ocrs::OcrsEngine>),
     #[cfg(feature = "ocrcer")]
     Ocrcer(Box<pdfcer_core::ocr::engine_ocrcer::OcrcerEngine>),
+    #[cfg(feature = "paddle")]
+    Paddle(Box<pdfcer_core::ocr::engine_paddle::PaddleEngine>),
 }
 
 impl Recogniser {
@@ -144,6 +177,12 @@ impl Recogniser {
                     .map(|e| Self::Ocrcer(Box::new(e)))
                     .map_err(|e| Refusal::Engine(e.to_string()))
             }
+            #[cfg(feature = "paddle")]
+            EngineId::Paddle => {
+                pdfcer_core::ocr::engine_paddle::PaddleEngine::from_model_dir(model_dir)
+                    .map(|e| Self::Paddle(Box::new(e)))
+                    .map_err(|e| Refusal::Engine(e.to_string()))
+            }
             #[allow(unreachable_patterns)]
             _ => Err(Refusal::EngineAbsent),
         }
@@ -157,7 +196,7 @@ impl Recogniser {
         height: u32,
         grey: &[u8],
     ) -> Result<Vec<RecognizedWord>, Refusal> {
-        #[cfg(any(feature = "ocrs", feature = "ocrcer"))]
+        #[cfg(any(feature = "ocrs", feature = "ocrcer", feature = "paddle"))]
         use pdfcer_core::ocr::OcrEngine as _;
         let _ = (width, height, grey);
         match self {
@@ -169,6 +208,10 @@ impl Recogniser {
             Self::Ocrcer(e) => e
                 .recognize(width, height, grey)
                 .map_err(|e| Refusal::Engine(e.to_string())),
+            #[cfg(feature = "paddle")]
+            Self::Paddle(e) => e
+                .recognize(width, height, grey)
+                .map_err(|e| Refusal::Engine(e.to_string())),
             #[allow(unreachable_patterns)]
             _ => Err(Refusal::EngineAbsent),
         }
@@ -176,15 +219,33 @@ impl Recogniser {
 
     /// The loaded engine's own `OcrEngine::reports_confidence`.
     pub(super) fn reports_confidence(&self) -> bool {
-        #[cfg(any(feature = "ocrs", feature = "ocrcer"))]
+        #[cfg(any(feature = "ocrs", feature = "ocrcer", feature = "paddle"))]
         use pdfcer_core::ocr::OcrEngine as _;
         match self {
             #[cfg(feature = "ocrs")]
             Self::Ocrs(e) => e.reports_confidence(),
             #[cfg(feature = "ocrcer")]
             Self::Ocrcer(e) => e.reports_confidence(),
+            #[cfg(feature = "paddle")]
+            Self::Paddle(e) => e.reports_confidence(),
             #[allow(unreachable_patterns)]
             _ => false,
+        }
+    }
+
+    /// The character dictionary the loaded engine reads through, if it has
+    /// one.
+    pub(super) fn dictionary(&self) -> Option<Dictionary> {
+        match self {
+            #[cfg(feature = "paddle")]
+            Self::Paddle(e) => Some(match e.dictionary_source() {
+                pdfcer_core::ocr::engine_paddle::DictionarySource::File(p) => {
+                    Dictionary::File(p.clone())
+                }
+                _ => Dictionary::Embedded,
+            }),
+            #[allow(unreachable_patterns)]
+            _ => None,
         }
     }
 }
@@ -223,8 +284,11 @@ mod tests {
 
     #[test]
     fn the_model_directories_are_distinct() {
-        assert_ne!(EngineId::Ocrs.model_dir(), EngineId::Ocrcer.model_dir());
+        let dirs: std::collections::HashSet<_> =
+            EngineId::ALL.into_iter().map(EngineId::model_dir).collect();
+        assert_eq!(dirs.len(), EngineId::ALL.len());
         assert_eq!(EngineId::Ocrs.model_dir(), "ocrs");
+        assert_eq!(EngineId::Paddle.model_dir(), "paddle");
     }
 
     #[test]
@@ -233,6 +297,34 @@ mod tests {
         use pdfcer_core::ocr::engine_ocrcer::{MODEL_DIR, MODEL_FILE};
         assert_eq!(OCRCER_MODEL_DIR, MODEL_DIR);
         assert_eq!(OCRCER_MODEL_FILE, MODEL_FILE);
+    }
+
+    #[test]
+    #[cfg(feature = "paddle")]
+    fn the_paddle_names_are_the_engines() {
+        use pdfcer_core::ocr::engine_paddle::{DETECTION_MODEL, MODEL_DIR, RECOGNITION_MODEL};
+        assert_eq!(EngineId::Paddle.model_dir(), MODEL_DIR);
+        assert_eq!(
+            EngineId::Paddle.model_files(),
+            &[DETECTION_MODEL, RECOGNITION_MODEL]
+        );
+        assert!(!EngineId::Paddle.model_shipped());
+    }
+
+    /// PaddleOCR files that are not ONNX models are a named engine refusal.
+    #[test]
+    #[cfg(feature = "paddle")]
+    fn a_corrupt_paddle_model_is_refused_by_the_engine() {
+        let dir = std::env::temp_dir().join(format!("pdfcer-paddle-bad-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("temp dir");
+        for f in EngineId::Paddle.model_files() {
+            std::fs::write(dir.join(f), b"not a model").expect("write");
+        }
+        let err = Recogniser::load(EngineId::Paddle, &dir)
+            .err()
+            .expect("refused");
+        assert!(matches!(err, Refusal::Engine(_)), "{err:?}");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// A model file that is not an `.ocrw` container is a named engine

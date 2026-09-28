@@ -141,3 +141,12 @@ adapter are never driven. It needs a packaged build: OCRcer's model sits in
 
 Falsified by seeding `ocrs` under it: the check fails and names the
 recogniser that ran.
+
+# The PaddleOCR variant
+
+`paddle_recognises_a_page_and_the_document_keeps_it` drives the same chain
+with `ocr_engine = paddle`. pdfcer ships no PP-OCR models, so before launching
+it copies `det.onnx` and `rec.onnx` into `models/paddle/` beside the sandboxed
+binary. The source is `UI_VERIFY_PADDLE_MODELS`, falling back to the engine
+repository's test models at `../pdfcer/target/paddle-models`; neither present
+is a SKIP. It fails unless `ocr-started engine=` names `paddle`.

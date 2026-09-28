@@ -284,10 +284,11 @@ pub mod bookmark_clipboard;
 
 pub mod cut_gate;
 
+/// A ce dimension drag previews the dimension the release writes.
+pub mod dimension_circular_label_drag;
 /// **A shape the operator drew can gain and lose a corner** — his own
 /// report. ⬜ WRITTEN AND NOT DRIVEN; see the module header.
 pub mod dimension_corner_count;
-/// A ce dimension drag previews the dimension the release writes.
 pub mod dimension_extension_grip;
 pub mod dimension_label_drag;
 

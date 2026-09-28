@@ -78,7 +78,7 @@ impl Check for ADimensionDragPreviewsWhatItPlaces {
 }
 
 /// The eight numbers of a `label=` field, as four page-space points.
-fn label_quad(field: &str) -> Option<[(f64, f64); 4]> {
+pub(crate) fn label_quad(field: &str) -> Option<[(f64, f64); 4]> {
     let n: Vec<f64> = field
         .split(',')
         .map(str::parse)
@@ -91,7 +91,7 @@ fn label_quad(field: &str) -> Option<[(f64, f64); 4]> {
 }
 
 /// The capture-pixel box round a page-space quad, padded and clipped to `to`.
-fn quad_pixels(
+pub(crate) fn quad_pixels(
     mapping: &CanvasMapping,
     frame: &WindowFrame,
     quad: [(f64, f64); 4],
@@ -113,7 +113,7 @@ fn quad_pixels(
 }
 
 /// The ink fraction of `region`, and a one-line account of it.
-fn ink(img: &Image, region: PixRect) -> (f64, String) {
+pub(crate) fn ink(img: &Image, region: PixRect) -> (f64, String) {
     let report = pixels::ink_run_into(img, region);
     #[allow(clippy::cast_precision_loss)]
     let fraction = report.ink as f64 / report.sampled.max(1) as f64;

@@ -215,6 +215,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(dimension_corner_count::ACornerCanBeAddedAndTakenAway),
         Box::new(dimension_label_drag::ADimensionDragPreviewsWhatItPlaces),
         Box::new(dimension_extension_grip::AnExtensionLineGripShortensItsLine),
+        Box::new(dimension_circular_label_drag::ARadiusLabelDragSwingsTheLeaderToTheDrop),
         // Beside it, and after it, because they are the two halves of one
         // report and this is the half that needed an engine Pass. It is placed
         // second on purpose: if both fail, the ce-dimension one failing too
@@ -1233,6 +1234,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(point_destination::APointDestinationOffScreenMovesTheHorizontal),
         Box::new(ocr::OcrRecognisesAPageAndTheDocumentKeepsIt),
         Box::new(ocr::OcrcerRecognisesAPageAndTheDocumentKeepsIt),
+        Box::new(ocr::PaddleRecognisesAPageAndTheDocumentKeepsIt),
         // The three about a run in progress. After the one-page check, because
         // a build in which recognition does not work at all should say so
         // before three checks spend a minute apiece observing it not working.

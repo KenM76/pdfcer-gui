@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 use egui_shell::theme::Theme;
 
 use crate::app::state::{OpenDoc, Status};
-use crate::ocr::{self, EngineId, Job, Refusal, Request};
+use crate::ocr::{self, Dictionary, EngineId, Job, Refusal, Request};
 use crate::text::ocr as t;
 
 // ---------------------------------------------------------------------------
@@ -83,6 +83,9 @@ enum Phase {
         /// document is done — and finds out months later, searching for a word
         /// on page 150 that is not in the layer.
         stopped_at: Option<(usize, usize)>,
+        /// The character dictionary the recogniser read through, when it
+        /// has one.
+        dictionary: Option<Dictionary>,
     },
     /// **The operator pressed Cancel.** Nothing was kept and nothing written.
     ///
@@ -411,6 +414,7 @@ impl OcrDialog {
                     written: recognised.pages_written,
                     skipped: recognised.pages_skipped,
                     words: recognised.words_recognised,
+                    dictionary: recognised.dictionary.clone(),
                     // Carried into the outcome so the sentence the operator
                     // reads afterwards can say the run ended early. A partial
                     // layer reported as a whole one is the failure this whole
@@ -573,6 +577,7 @@ impl OcrDialog {
                 skipped,
                 words,
                 stopped_at,
+                dictionary,
             } => {
                 // **What this says now, and what it no longer has to.**
                 //
@@ -608,7 +613,9 @@ impl OcrDialog {
                 // the RECOGNITION rather than about the edit — so it does not
                 // belong on the disclosure channel with the counts.
                 let confidence = confidence_sentence(self.engine);
-                Self::answered(ui, &theme, confidence, &[confidence.to_owned()]);
+                let mut disclosures = vec![confidence.to_owned()];
+                disclosures.extend(dictionary.as_ref().map(dictionary_sentence));
+                Self::answered(ui, &theme, confidence, &disclosures);
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     format!("ocr-applied written={written} skipped={skipped} words={words}")
@@ -622,7 +629,7 @@ impl OcrDialog {
                 ui.label(t::cancelled(*attempted));
             }
             Phase::Refused(refusal) => {
-                ui.label(sentence(refusal));
+                ui.label(sentence(refusal, self.engine));
             }
         }
 
@@ -652,7 +659,7 @@ impl OcrDialog {
     /// without running anything.
     fn ready(&mut self, ui: &mut egui::Ui, doc: &OpenDoc) {
         if let Some(refusal) = Self::preflight(doc, self.engine) {
-            ui.label(sentence(&refusal));
+            ui.label(sentence(&refusal, self.engine));
             // The choice stays reachable: another recogniser may have its
             // models where this one has none.
             self.engine_group(ui);
@@ -891,8 +898,16 @@ const FOOTER_RESERVE: f32 = 96.0;
 /// The least height the disclosure list may be given.
 const LIST_FLOOR: f32 = 48.0;
 
-/// The operator-visible sentence for a refusal.
-fn sentence(refusal: &Refusal) -> String {
+/// The sentence naming the character dictionary a run read through.
+fn dictionary_sentence(dictionary: &Dictionary) -> String {
+    match dictionary {
+        Dictionary::File(path) => t::dictionary_file(&path.display().to_string()),
+        Dictionary::Embedded => t::dictionary_embedded().to_owned(),
+    }
+}
+
+/// The operator-visible sentence for a refusal by `engine`.
+fn sentence(refusal: &Refusal, engine: EngineId) -> String {
     match refusal {
         // Unreachable from the dialog, which turns a cancellation into
         // `Phase::Cancelled` before it ever reaches here — and worded anyway,
@@ -912,7 +927,7 @@ fn sentence(refusal: &Refusal) -> String {
         // lives.
         Refusal::ModelsMissing(searched) => {
             let paths: Vec<String> = searched.iter().map(|p| p.display().to_string()).collect();
-            t::models_missing(&paths)
+            t::models_missing(engine.model_shipped(), &paths)
         }
         Refusal::NothingRecognised => t::nothing_recognised().to_owned(),
         Refusal::AlreadyHasText => t::already_has_text().to_owned(),
@@ -1059,7 +1074,7 @@ mod tests {
         ];
         let mut seen: Vec<String> = Vec::new();
         for refusal in &all {
-            let s = sentence(refusal);
+            let s = sentence(refusal, EngineId::Ocrs);
             assert!(!s.is_empty(), "{refusal:?} produced no sentence");
             assert!(
                 !seen.contains(&s),
@@ -1072,12 +1087,26 @@ mod tests {
     /// The searched paths survive into the message an operator reads.
     #[test]
     fn a_missing_model_directory_names_every_place_that_was_tried() {
-        let s = sentence(&Refusal::ModelsMissing(vec![
-            PathBuf::from("C:\\app\\models\\ocrs"),
-            PathBuf::from("C:\\users\\x\\models\\ocrs"),
-        ]));
+        let s = sentence(
+            &Refusal::ModelsMissing(vec![
+                PathBuf::from("C:\\app\\models\\ocrs"),
+                PathBuf::from("C:\\users\\x\\models\\ocrs"),
+            ]),
+            EngineId::Ocrs,
+        );
         assert!(s.contains("C:\\app\\models\\ocrs"));
         assert!(s.contains("C:\\users\\x\\models\\ocrs"));
+    }
+
+    /// PaddleOCR's weights never ship, so its missing-model sentence must not
+    /// say they do.
+    #[test]
+    fn a_missing_paddle_model_is_not_described_as_shipped() {
+        let missing = Refusal::ModelsMissing(vec![PathBuf::from("C:\\app\\models\\paddle")]);
+        let paddle = sentence(&missing, EngineId::Paddle);
+        assert_ne!(paddle, sentence(&missing, EngineId::Ocrs));
+        assert!(!paddle.contains("ship in"), "{paddle}");
+        assert!(paddle.contains("C:\\app\\models\\paddle"), "{paddle}");
     }
 
     /// A dialog opened with nothing loaded is not built at all.

@@ -160,6 +160,75 @@ fn choose_engine(exe: &std::path::Path, engine: &str) -> Result<()> {
         .map_err(|e| Error::new(format!("could not write preferences: {e}")))
 }
 
+/// The same chain with the recogniser set to PaddleOCR. pdfcer ships no PP-OCR
+/// models, so the check stages the operator's own copy beside the sandboxed
+/// binary first, where a packaged build looks for them.
+pub struct PaddleRecognisesAPageAndTheDocumentKeepsIt;
+
+/// The `ocr_engine` preference key for PaddleOCR.
+const PADDLE: &str = "paddle";
+
+/// The environment variable naming a directory holding `det.onnx` and `rec.onnx`.
+const PADDLE_MODELS_VAR: &str = "UI_VERIFY_PADDLE_MODELS";
+
+impl Check for PaddleRecognisesAPageAndTheDocumentKeepsIt {
+    fn name(&self) -> &'static str {
+        "paddle_recognises_a_page_and_the_document_keeps_it"
+    }
+
+    fn defect(&self) -> &'static str {
+        "choosing PaddleOCR runs another recogniser instead, or it cannot find models placed in the paddle models folder beside the binary, or it reads nothing from a page of plain text"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        let staged = stage_paddle_models(ctx).map(|from| {
+            report.note(format!("staged PP-OCR models from {}", from.display()));
+        });
+        let outcome = staged.and_then(|()| drive(ctx, &mut report, Some(PADDLE)));
+        match outcome {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+/// Copy `det.onnx` and `rec.onnx` into `models/paddle` beside the binary this
+/// check will drive. The source is `UI_VERIFY_PADDLE_MODELS`, else the engine
+/// repository's test models; neither present is a SKIP, not a pass.
+fn stage_paddle_models(ctx: &CheckContext) -> Result<std::path::PathBuf> {
+    let from = std::env::var_os(PADDLE_MODELS_VAR).map_or_else(
+        || {
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../../pdfcer/target/paddle-models")
+        },
+        std::path::PathBuf::from,
+    );
+    let exe = ctx
+        .resolve_exe()
+        .ok_or_else(|| Error::new("no binary to drive"))?;
+    let to = exe
+        .parent()
+        .ok_or_else(|| Error::new("the binary has no parent directory"))?
+        .join("models")
+        .join(PADDLE);
+    std::fs::create_dir_all(&to)
+        .map_err(|e| Error::new(format!("could not create {}: {e}", to.display())))?;
+    for file in ["det.onnx", "rec.onnx"] {
+        let source = from.join(file);
+        if !source.is_file() {
+            return Err(Error::new(format!(
+                "no PP-OCR model at {}. pdfcer ships none; set {PADDLE_MODELS_VAR} to a directory holding det.onnx and rec.onnx.",
+                source.display()
+            )));
+        }
+        std::fs::copy(&source, to.join(file))
+            .map_err(|e| Error::new(format!("could not copy {}: {e}", source.display())))?;
+    }
+    Ok(from)
+}
+
 /// A cheap content digest — length plus FNV-1a over the bytes.
 fn digest(bytes: &[u8]) -> (usize, u64) {
     let mut hash: u64 = 0xcbf2_9ce4_8422_2325;

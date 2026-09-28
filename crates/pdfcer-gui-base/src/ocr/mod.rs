@@ -35,7 +35,7 @@ pub use job::{Job, Tally};
 /// Which recognisers this build carries, their model directories, and the
 /// loaded model a run holds.
 mod engines;
-pub use engines::{EngineId, OCRCER_MODEL_DIR, OCRCER_MODEL_FILE, available};
+pub use engines::{Dictionary, EngineId, OCRCER_MODEL_DIR, OCRCER_MODEL_FILE, available};
 
 use engines::Recogniser;
 
@@ -146,6 +146,9 @@ pub struct Recognised {
     /// The recogniser that read these pages; its key is written into the
     /// layer's marker, so the file says which engine produced the text.
     pub engine: EngineId,
+    /// The character dictionary the recogniser read through, for an engine
+    /// that has one; the report names it.
+    pub dictionary: Option<Dictionary>,
     /// The resolution the page was actually rasterized at.
     ///
     /// Derived from the page's area by [`fitted_dpi`], so it varies per page and
@@ -447,6 +450,7 @@ pub(in crate::ocr) fn recognise(
         pages_written: pages.len(),
         pages,
         engine: request.engine,
+        dictionary: recogniser.dictionary(),
         effective_dpi: dpi,
         words_recognised: total_words,
         pages_skipped,
