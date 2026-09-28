@@ -4,10 +4,11 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.59.0, a git dependency on the local engine repository, pinned at **`52d898a6`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.60.0, a git dependency on the local engine repository, pinned at **`52d898a6`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
-**What is new in this build.** OCR has a second recogniser, a single page stays
-put, and the Print dialog maximises.
+**What is new in this build.** PaddleOCR ships in the package and reads English
+and French, and dragging a ce dimension's extension line shows the shortened
+line while the button is held.
 
 **PaddleOCR is a third recogniser, and it is in the package.** Choose it under
 *Recogniser* in File › Recognise text. Its PP-OCRv5 models read English and
@@ -16,7 +17,7 @@ confidence per word, and the result names which character dictionary it read
 with. For another language, replace `rec.onnx` and `dict.txt` with that
 language's PP-OCR export.
 
-**Choose the recogniser: ocrs or OCRcer.** File › Recognise text shows a
+**Choose the recogniser: ocrs, OCRcer or PaddleOCR.** File › Recognise text shows a
 *Recogniser* choice. ocrs is still the default, and the choice is remembered.
 OCRcer scores every word it reads. The dialog says that the score is the
 recogniser's own estimate, not a check. The saved text layer records which
