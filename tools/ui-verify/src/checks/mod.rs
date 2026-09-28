@@ -890,6 +890,10 @@ pub mod shape_preview;
 
 pub mod std14_face;
 
+/// **Font file…** — restyle swept text into a face from a file on disk,
+/// embedding the subset it needs; asserted on the trace and the pixels.
+pub mod font_file_face;
+
 /// **The operator's own two gestures** — press T and type, press A and see
 /// the points. These assert the COUNT: one key, one click. A feature that
 /// exists but takes four steps and three gestures to reach, resembling no

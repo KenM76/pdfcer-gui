@@ -19,6 +19,7 @@ because somebody asked the engine instead of inferring from its index.
 | **size** | `set_size` | none — the `Tf` operand changes and the line is relaid out |
 | **colour** | `set_fill` | none. pdfcer stores the SPACE the operator chose (`rg`/`g`/`k`) instead of force-converting to DeviceRGB the way Acrobat does |
 | **face** | `set_font` | the target must **already be a font resource on the page**; refused by name otherwise (`FF-C`) |
+| **face from a file** | `embedded_font` | the file must subset (`plan_subset`) and cover every character of the runs; one plan per gesture, built from every swept run's characters, so each operator's request carries the same subset |
 | **bold / italic** | `set_style` | walks the ladder below; one named refusal, on italic only |
 
 ## The style ladder belongs to the engine, and rung 2 is why that matters
@@ -31,7 +32,7 @@ inside the engine and reporting which one bound:
 |---|---|---|
 | 1 | a real face already on the page that claims the style and passes the coverage gate — same family first, then any family | `StyleRung::RealFaceOnPage` |
 | 2 | the **standard-14 sibling of the run's own family**, as a new `/Font` resource, nothing embedded | `StyleRung::StandardFourteenSibling` |
-| 3 | a `--font-dir` donor | not built |
+| 3 | a donor face the caller supplies (`FormatRequest::style_donor`) | the shell passes none, so this rung never binds from the GUI |
 | 4 | synthesis — the stroke or the shear | `StyleRung::Synthetic` |
 
 Rung 2 is the rung that fires constantly and the one a shell-side walk

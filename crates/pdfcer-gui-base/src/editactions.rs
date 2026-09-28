@@ -21,6 +21,11 @@ pub enum StyleChange {
     /// derives `PartialEq` and `FontSelector` is `#[non_exhaustive]`. The
     /// conversion is one line at the point of use.
     Face(String),
+    /// A face taken from a font file and embedded as a subset of the
+    /// characters the restyled runs carry (`FormatRequest::embedded_font`).
+    /// `None` asks the operator which file; the dispatcher asks, and restyles
+    /// with `Some` only when a file was picked.
+    FaceFile(Option<std::path::PathBuf>),
     /// Weight and slant, as two independent flags.
     ///
     /// Deliberately **not** named `Synthetic`, because whether it ends up
@@ -72,8 +77,10 @@ impl StyleChange {
             // press is one verb.
             Self::Weight { bold, italic } => req.style(StyleSynthesis::new(*bold, *italic)),
             Self::RenderMode(mode) => req.render_mode(*mode),
-            // Never stamped: `apply` routes it to `runwidth` first.
-            Self::RunWidth { .. } => req,
+            // Never stamped: `apply` routes it to `runwidth` first, and a
+            // font file's plan is built once per gesture by `textstyle`,
+            // which attaches it after this call.
+            Self::RunWidth { .. } | Self::FaceFile(_) => req,
         }
     }
 
@@ -83,6 +90,7 @@ impl StyleChange {
             Self::Size(_) => "size",
             Self::Fill(_) => "fill",
             Self::Face(_) => "face",
+            Self::FaceFile(_) => "face-file",
             Self::Weight { .. } => "weight",
             Self::RenderMode(_) => "render-mode",
             Self::RunWidth { .. } => "run-width",

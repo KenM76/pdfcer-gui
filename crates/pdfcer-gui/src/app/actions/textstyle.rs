@@ -30,6 +30,12 @@ pub(super) fn apply(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &Sty
         resweep(doc, page);
         return;
     }
+    if *change == StyleChange::FaceFile(None) {
+        if let crate::app::files::Picked::Path(path) = crate::app::files::pick_font_file() {
+            apply(doc, page, runs, &StyleChange::FaceFile(Some(path)));
+        }
+        return;
+    }
     restyle(doc, page, runs, change);
     resweep(doc, page);
 }
@@ -123,6 +129,22 @@ fn restyle(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &StyleChange)
         decline::record_text_style(t::TextStyleRefusal::NoRun);
         return;
     }
+    // One plan for the whole gesture, covering every run's characters, so
+    // the first operator embeds the face and the rest reuse that resource.
+    let plan = match change {
+        StyleChange::FaceFile(Some(path)) => match donor_plan(doc, &ordered, path) {
+            Ok(plan) => Some(plan),
+            Err(why) => {
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed in the UI
+                    format!("text-style-declined page={page} font-file={path:?} detail={why}")
+                });
+                decline::record_text_style(t::TextStyleRefusal::FontFileUnusable(why));
+                return;
+            }
+        },
+        _ => None,
+    };
 
     // Accumulated across the whole gesture and surfaced on the LAST successful
     // step, because `super::apply::vector_edit` records the disclosure slot per
@@ -174,7 +196,11 @@ fn restyle(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &StyleChange)
                 // whose answer can change between them.
                 let options = FormatOptions::default().with_style_policy(policy);
 
-                match session.format_text(&change.stamp(request(page, op.pin)), &options) {
+                let mut req = change.stamp(request(page, op.pin));
+                if let Some(plan) = &plan {
+                    req = req.embedded_font(plan.clone());
+                }
+                match session.format_text(&req, &options) {
                     Ok(report) => {
                         // The ladder's own sentence **first**, then the engine's
                         // disclosures. The order is the operator's reading
@@ -238,6 +264,34 @@ fn restyle(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &StyleChange)
             change.label()
         )
     });
+}
+
+/// The subset of the font at `path` covering every character of `runs` on
+/// the current page. `Err` is the reason in the operator's words.
+fn donor_plan(
+    doc: &OpenDoc,
+    runs: &[usize],
+    path: &std::path::Path,
+) -> Result<pdfcer_core::font_embed::FontEmbedPlan, String> {
+    use pdfcer_render::font::subset::{plan_subset, subset_tag_for};
+    let mut wanted: Vec<char> = doc.page_text().map_or_else(Vec::new, |text| {
+        runs.iter()
+            .filter_map(|r| text.runs.get(*r))
+            .flat_map(|r| r.text.chars())
+            .collect()
+    });
+    wanted.sort_unstable();
+    wanted.dedup();
+    let donor = std::fs::read(path).map_err(|e| e.to_string())?;
+    let stem = path.file_stem().map_or_else(
+        || "EmbeddedFont".to_owned(),
+        |s| s.to_string_lossy().into_owned(),
+    );
+    // The tag names the character set too, so two gestures with different
+    // letters never share a tag for two different subsets (§9.6.4).
+    let keyed: String = wanted.iter().collect();
+    let tag = subset_tag_for(&format!("{stem}\u{0}{keyed}"));
+    plan_subset(&donor, 0, &wanted, &stem, &tag).map_err(|e| e.to_string())
 }
 
 /// Re-record the whole gesture's disclosures, on the last step.

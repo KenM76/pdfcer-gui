@@ -824,6 +824,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // stamp — is in front of this one, so a failure there should be read
         // first.
         Box::new(std14_face::TheFaceChooserOffersAFaceTheDocumentDoesNotContain),
+        Box::new(font_file_face::AFontFileRestylesSweptText),
         Box::new(refused_character_face::ARefusedCharacterOffersAFaceThatCanTypeIt),
         Box::new(font_group::TheFormatTabOffersFontControlsForSweptText),
         // Immediately after its twin, and the adjacency is the point: the two

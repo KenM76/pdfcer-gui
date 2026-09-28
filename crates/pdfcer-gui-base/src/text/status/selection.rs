@@ -200,6 +200,9 @@ pub enum TextStyleRefusal {
     /// message's tail is absent; [`TextStyleRefusal::line`] falls back to the
     /// sentence that was there before this field existed.
     FaceLacksCharacters(Vec<String>),
+    /// The picked font file could not be read or subset; carries the reason
+    /// in the engine's words.
+    FontFileUnusable(String),
     /// The operator's `style_policy` is `Refuse` and the only way to satisfy
     /// this request was to fake the weight or the slant.
     ///
@@ -279,28 +282,8 @@ impl TextStyleRefusal {
             Self::Unpinnable => {
                 "pdfcer could not tell exactly which piece of text that is, so it changed nothing rather than risk restyling a different one that reads the same."
             }
-            //
-            // It read: *"pdfcer can only switch text to a font this page already
-            // carries. Pick one of the faces in the list."* That was true and
-            // `Pass 162.0` made it false: pdfcer now authors a standard-14 `/Font`
-            // resource on demand, so a face this page does not carry is a change
-            // that WORKS for fourteen of them.
-            //
-            // ⇒ A refusal sentence that states a limit the build no longer has
-            // is worse than no sentence: it teaches the operator not to try
-            // something the program can do, and it does so with the program's
-            // own voice. This is the obligation in the engine's release
-            // note — *"a face outside those fourteen still refuses by name"* —
-            // discharged as a sentence rather than a silence, and it now says
-            // WHICH boundary was crossed and why that boundary exists.
-            //
-            // It names embedding as the reason rather than a deferral code.
-            // `FF-C` means nothing to an operator; *"the font itself would have
-            // to be copied into the file"* is the same fact in terms they can
-            // weigh — and it is the honest account of why fourteen faces work
-            // and a fifteenth does not.
             Self::FaceNotOnPage => {
-                "pdfcer can switch text to a font this page already carries, or to one of the fourteen standard faces it can add itself. Any other face would have to be copied into the file, which pdfcer cannot do yet. Pick one of the faces in the list."
+                "pdfcer can switch text to a font this page already carries, or to one of the fourteen standard faces it can add itself. Any other face has to be copied into the file: press Font file… beside the face list and pick it."
             }
             // The refusal an operator would otherwise read as a bug. It says
             // what WOULD have happened, because "it moved my next line" is the
@@ -312,6 +295,12 @@ impl TextStyleRefusal {
             // with a subject the operator can see. See the variant's own docs
             // for why the list could not be had until `Pass 296.1`.
             Self::FaceLacksCharacters(remedy) => return coverage_line(remedy),
+            Self::FontFileUnusable(why) => {
+                return std::borrow::Cow::Owned(format!(
+                    "pdfcer could not use that font file and changed nothing — {}.",
+                    why.trim_end_matches('.')
+                ));
+            }
             // Remedy first, and the remedy is a SETTING, so the sentence
             // names where it lives. A refusal caused by the operator's own
             // choice that does not say which choice reads as a program defect.

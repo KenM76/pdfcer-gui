@@ -15,6 +15,31 @@ pub const fn text_face_label() -> &'static str {
     "Font"
 }
 
+/// The button beside the face chooser that restyles into a font file.
+#[must_use]
+pub const fn font_file_button() -> &'static str {
+    "Font file…"
+}
+
+/// Hover for [`font_file_button`].
+#[must_use]
+pub const fn font_file_hover() -> &'static str {
+    "Switch this text to a font from a file on your computer. pdfcer copies into the document \
+     only the letters this text uses."
+}
+
+/// Title of the file picker [`font_file_button`] opens.
+#[must_use]
+pub const fn font_file_dialog_title() -> &'static str {
+    "Choose a font file"
+}
+
+/// The picker's filter name for font files.
+#[must_use]
+pub const fn font_file_filter() -> &'static str {
+    "Font files"
+}
+
 /// Shown in the face chooser when **nothing at all** can be offered for this
 /// run.
 #[must_use]

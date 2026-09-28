@@ -40,6 +40,9 @@ pub const SIZE_REGION: &str = "properties.text.size";
 /// The face chooser's own region.
 // ui-text-exempt: trace region name, never displayed
 pub const FACE_REGION: &str = "properties.text.face";
+/// The *Font file…* button beside the face chooser.
+// ui-text-exempt: trace region name, never displayed
+pub const FONT_FILE_REGION: &str = "properties.text.font-file";
 /// The render-mode chooser's own region.
 // ui-text-exempt: trace region name, never displayed
 pub const RENDER_REGION: &str = "properties.text.render";
@@ -418,27 +421,6 @@ pub fn section(
     true
 }
 
-//
-// It drew one sentence — *"press T for the Text tool and sweep across them"* —
-// whenever a text OBJECT was selected and nothing had been swept, and it was
-// `OPERATOR_REQUESTS.md` O89's second candidate, *"the Properties panel naming
-// the missing step where the swatch would be."* Built 2026-08-29, correct, and
-// still not what he asked for: he wanted the colour, and the panel told him
-// where to go and get it.
-//
-// It has moved WHOLE — sentence, region name, `object_kind` gate and the
-// one-object rule — into [`super::textobject`], which draws a **working colour
-// control** for the clicked object and keeps the sentence underneath it for the
-// four properties that genuinely still need the sweep. Moved rather than
-// duplicated: two sections that both claim the object-selection state would
-// draw two headings, and the argument for the `object_kind` gate is worth more
-// than a retyped copy of the code it justifies.
-//
-// ⇒ This section is now exactly what its own header always said it was: the
-// editor for a **swept range**. With nothing swept it returns `false` and says
-// nothing, and `super::textobject` speaks instead.
-// ===========================================================================
-
 /// The face: what this page carries, and what pdfcer can add to the document.
 fn face_row(
     ui: &mut Ui,
@@ -469,6 +451,17 @@ fn face_row(
                 page,
                 runs: runs.to_vec(),
                 change: StyleChange::Face(selector),
+            });
+        }
+        let file = ui
+            .button(crate::text::panels::face::font_file_button())
+            .on_hover_text(crate::text::panels::face::font_file_hover());
+        crate::diag::ui_rect_visible(FONT_FILE_REGION, file.rect, ui.clip_rect());
+        if file.clicked() {
+            actions.push(Action::TextStyle {
+                page,
+                runs: runs.to_vec(),
+                change: StyleChange::FaceFile(None),
             });
         }
     });

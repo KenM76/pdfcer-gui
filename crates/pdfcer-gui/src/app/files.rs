@@ -14,6 +14,8 @@ const DIAG_IMAGE_PATH: &str = "PDFCER_DIAG_IMAGE_PATH"; // ui-text-exempt: an en
 pub const DIAG_OPEN_PATH: &str = "PDFCER_DIAG_OPEN_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
 /// The seam that answers the **attach a file** picker.
+/// Answers [`pick_font_file`] without a dialog, for `ui-verify`.
+pub const DIAG_FONT_FILE_PATH: &str = "PDFCER_DIAG_FONT_FILE_PATH"; // ui-text-exempt: an environment variable name, never displayed
 pub const DIAG_ATTACH_PATH: &str = "PDFCER_DIAG_ATTACH_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
 /// The seam that answers the **save an attachment out** dialog.
@@ -281,6 +283,32 @@ pub fn pick_attachment_target(suggested: &std::path::Path) -> Picked {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!("attachment-save-picked source=native answer={answer:?}")
+    });
+    answer
+}
+
+/// **Ask which font file to restyle text into.**
+#[must_use]
+pub fn pick_font_file() -> Picked {
+    if let Some(answer) = from_env(std::env::var_os(DIAG_FONT_FILE_PATH)) {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("font-file-picked source=env answer={answer:?}")
+        });
+        return answer;
+    }
+    let answer = rfd::FileDialog::new()
+        .set_title(crate::text::panels::face::font_file_dialog_title())
+        .add_filter(
+            crate::text::panels::face::font_file_filter(),
+            &["ttf", "otf"],
+        )
+        .add_filter(crate::text::files::filter_all(), &["*"])
+        .pick_file()
+        .map_or(Picked::Cancelled, Picked::Path);
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("font-file-picked source=native answer={answer:?}")
     });
     answer
 }

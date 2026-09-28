@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **50 of 226** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `wanted` — a real gap — **51 of 229** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -80,6 +80,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| Restyle text whose own face cannot take a style, falling through to a donor the shell supplies — `FormatRequest::style_donor`, `FormatRequest::style_donors`, `EditSession::preview_style_ladder_with_donors`, `StyleRung::SuppliedFaceEmbedded` | **wanted.** Rung 3 of the style ladder: when neither the page nor the standard fourteen have the bold or italic sibling, the engine embeds a subset of a donor face the caller names. The shell passes none today, so Bold on such text still ends at synthesis or a refusal. The donor is a file the operator picks, as *Font file…* already does for a face change (that path attaches `FormatRequest::embed_font` through `embedded_font`); the preview must go through `preview_style_ladder_with_donors` with the same donors so the tooltip and the result agree. |
 | List the form XObjects a page paints, and how many places … | **wanted.** The engine answers *how many places paint this form?* only where this shell already asks it: `canvas::textedit::report` prints `invocations=` and `pages=` at the moment of an in-form **text** edit, via `text_edit::invocation_set`. There is no standing listing. The argument for declining is real and is kept here so it is not re-derived — the number matters most exactly where it is already shown — but on a thirty-six-sheet SolidWorks set, where one title block is a single form, the operator wants the blast radius **before** picking up the tool, not in the disclosure afterwards. |
 | **`/ToUnicode` partial inversion** — a composite font's character map is inverted per CHARACTER, not per font … | **wanted — the capability is in the pin and the sentence is not.** The engine refuses an `edit_text` at the ambiguous character, naming every candidate code (`RInvTrigger::Ambiguous`), rather than refusing the whole font; only a wholly uninvertible map refuses everything. Nothing in `crates/pdfcer-gui` mentions `RInvTrigger`, `partial_inverse` or `ambiguous_chars`, so a refusal that could say *this one character is not addressable, the rest of the font edits* still arrives through `EditRefusal::of`'s four coarse buckets. That sentence is the work. `ToUnicodeCMap::partial_inverse` splits a map into `unambiguous`, `ambiguous`, `multi_char_codes` and `empty_codes`; `CompositeEncoding::ambiguous_chars` asks the same of an encoding and is the call an operator-facing sentence would make. |
 | **Edit text across show operators** — a `find` matches across consecutive … | **wanted, and what it costs now is re-measurement.** The capability is in the build this shell compiles: a document written one glyph per show operator is what `EditRefusal::SplitAcrossPieces` exists to explain, and the engine no longer refuses it. `EditReport::operators_spanned` is new and wants disclosing under rule 4, and `Plan::one_operator` stops being the thing that routes `SplitAcrossPieces`, so the operator-facing sentence must be re-derived from the engine's answer rather than deleted on the assumption it is dead. |
@@ -150,7 +151,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 226** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `blocked` — waiting on something named — **2 of 229** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -168,7 +169,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 226** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 229** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -179,7 +180,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **14 of 226** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `declined` — deliberately no surface — **15 of 229** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -206,6 +207,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, declined) | Why |
 |---|---|
+| Upgrade a below-opset-13 OCR model on load — `pdfcer_core::ocr::onnx_upgrade` | **declined as a surface.** `PaddleEngine::from_model_dir` applies it inside the load; the shell benefits by calling the loader and has no choice to offer. The consequence for packaging — the official PP-OCRv5 `inference.onnx` now loads unconverted — is the package's business, not a control's. |
 | Form XObject viewport culling — a `Do` whose `/BBox`, mapped … | **declined — the cull is lossless by construction.** §8.10.1 makes `/BBox` a clip, so a culled form cannot mark a pixel and the raster is byte-identical. `app::status::notes::findings` reports only findings that change *what the operator can see*, and it excludes `tolerated` and `compat_skipped` on exactly that argument; `forms_culled` belongs with those two. It becomes wanted the day a **performance** readout exists; it is not wanted on a correctness one. |
 | Image viewport culling — an image `Do` whose unit square, ma… | **declined, on the row above's argument** — lossless by construction (§8.9.5.2: `Do` paints only the unit square), byte-identical across the engine's fixtures, so a culled image cannot change what the operator sees and has no place on a **correctness** readout. Filed apart from `forms_culled` — the engine spells this one `interpret::Diagnostics::images_culled` — because the gap between the two counters is itself the diagnostic. On a large street map nearly every image culls with peak memory unchanged, so that file's cost is `ContentToken` volume rather than image decoding. Becomes wanted with its sibling the day a **performance** readout exists. |
 | Decode `/BrotliDecode` streams (`Pass 123.0`) — read … | **declined — a decode filter has no control and should not have one.** `/BrotliDecode` is read-only, reached through every path that opens a stream, and the operator's experience of it is that a file opens. The only surfaceable fact would be a refusal — an inline image, or the nonstandard `/Br` abbreviation — and that already arrives as a load error rather than as a setting. |
@@ -219,7 +221,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **160 of 226** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **161 of 229** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -258,7 +260,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Move one text run independently of others sharing its text object** — `move_text_run` / `move_text_run_in_form` | **Reachable and driven.** `VectorAction::MoveTextRun` / `MoveTextRunInForm` go through `vector_edit_on_page`, so the inserted-`Td` disclosure is recorded off-canvas by the same mechanism as every other one. The wiring RETIRED a shipped sentence, which was the hard half: one refusal became TWO, because the engine distinguishes two causes and the operator's next action differs — `TextRunHasNoPositionOfItsOwn` and `MoveWouldMoveNextRun`. The old *offer* clause was dropped rather than carried: delete's own refusal mirrors the second case, so the offer would have been false for a selection reachable from the refusal carrying it. `fixtures/inherited-runs.pdf` exists because `paragraph.pdf` cannot reach either refusal; `dragging_one_line_of_text_moves_it_or_says_why` drives all three answers. |
 | **Use a real bold face before synthesising one** — `StyleLadder` / `StyleRung` (`pdfcer-core/src/text_edit/format.rs`) / `std14_styled` (`fontdata/mod.rs`) … | **Reachable, not driven.** `StyleChange::stamp` calls `FormatRequest::style(…)` (`app/actions/textstyle.rs`), so the ladder runs. Rung 2 is what mattered and it fires on his commonest page: a title block carrying only `Helvetica` has no bold resource, so the R90 gate passed and the strokes were thickened — where `Helvetica-Bold`, standard-14 and needing no font file, binds. Asserted on the run's `/Font` resource key CHANGING, which synthesis cannot do. The `Refuse`-pinned probe, the gate pre-check and the whole `RealFaceAvailable` retry are deleted with it. Owed: a driven check. |
 | **Make a run bold (or italic) without choosing between two verbs** — `FormatRequest::set_style` … | **Reachable, not driven.** The rung is disclosed off-canvas (`ladder_note`, rule 4) and `SynthesisRefusedByPosture` reaches a NAMED refusal ahead of the wildcard. `preview_style_ladder` runs the planner the COMMIT runs, which killed the headline defect: the old hover previewed the R90 gate, which cannot see rung 2 by construction, so on a `Helvetica` title block it promised thickened letters where the press binds `Helvetica-Bold`. `same_family` restored `text_style_used_other_family` and added `text_style_used_sibling_face`; `None` is never flattened to `Some(false)`. Typed `passed_over` plus `Refusal::character` put the passed-over faces on the **hover**, not the status line, where `disclosure_style_ladder` already covers them. The `preview_style_resolution` join, its ordering constraint in `sync` and `StyleOutlook::FaceCannotCover` died together, being one workaround. Owed: a driven check. |
-| Restyle existing text into a donor face not already on the page, embedding a subset … — `FormatRequest::embedded_font`, `FontEmbedPlan` | **wanted.** The shell restyles a run only into faces the page already carries or the standard 14. The engine can now embed a subset of a font file the operator picks and re-encode the run into it, refusing by name (`CoverageFailure`) when the file lacks a character. What it takes: a *Font file…* entry beside the Properties › text face combo that opens a file picker and builds the plan from the run's own text (the verb needs the text to find), then routes `CoverageFailure` to a sentence naming the missing character. The subset is exactly that run's characters, so a later edit that types a new letter needs the file again. Disclosure: the status line names the embedded file. |
+| Restyle existing text into a donor face not already on the page, embedding a subset … — `FormatRequest::embedded_font`, `FontEmbedPlan` | **built and driven.** *Font file…* beside the Properties › This text face chooser picks a file; `textstyle::donor_plan` builds one `plan_subset` plan per gesture from every swept run's characters and attaches it to each operator's request. A file `plan_subset` refuses becomes `TextStyleRefusal::FontFileUnusable` with the engine's reason; `CoverageFailure` takes the existing coverage sentence. The engine's own format disclosure names the embedded subset on the status line. Driven: `a_font_file_restyles_swept_text`. |
 | Text on a rotated baseline — a CAD title block's `Tm = [0 1 -1 0 e f]` … | **Consumed — `canvas::textsel` reads `line.direction`.** It is read in the line model and in the selection geometry, which is what makes a swept selection follow a CAD title block's rotated baseline instead of boxing it page-axis. The engine's *filed the request and has not yet consumed* is stale. |
 | Choose what pdfcer does when bold or italic needs … | **Reachable — Settings, honoured at `app::actions::textstyle`**, which reads `doc.settings.style_policy` and passes it into `FormatOptions`. The three-option control is drawn, and the settings-completeness test would have failed the build if the key had no control. <!-- old-name-exempt: the engine's own row names the deleted `crates/pdfce-gui` by its real historical path --> |
 | Copy-on-write a shared form XObject onto one page … | **Reachable — `app::actions::xobject` calls `unshare_form`**, offered as *Give this page its own copy* with seven worded refusals (`EDITABLE_SURFACES.md`, the twelve-gap table). It is the option the engine's decision `112` names for an edit that would otherwise change every invocation. |
