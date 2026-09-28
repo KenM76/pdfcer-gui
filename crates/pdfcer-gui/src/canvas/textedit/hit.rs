@@ -4,7 +4,7 @@
 //!
 //! One fact, published once a frame by [`super::paint`] and read by everything
 //! that needs to know whether a pointer event belongs to the draft: **the
-//! editor box's rectangle, and the galley that was drawn inside it.**
+//! editor box's rectangle, and how a point inside it becomes a caret slot.**
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/hit.md`.
 
@@ -16,10 +16,18 @@ use egui::{Galley, Pos2, Rect};
 /// that hit-tests it.
 const KEY: &str = "textedit-hit-layout"; // ui-text-exempt: a memory key, never displayed.
 
+/// **How the drawn text maps screen points to character slots.**
+#[derive(Clone)]
+pub enum Caret {
+    /// The shell-font box: a galley, and where its origin sits on screen.
+    /// An `Arc` because egui hands galleys out that way; cloning is a refcount.
+    Galley { origin: Pos2, galley: Arc<Galley> },
+    /// The in-font draft ([`super::shaped`]): one screen point per caret slot,
+    /// `chars + 1` of them, in character order.
+    Stops(Vec<Pos2>),
+}
+
 /// **The editor box as it was last drawn.**
-///
-/// Cloned in and out of `egui::Memory`, which is why the galley is an `Arc`:
-/// egui already hands them out that way and the clone is a refcount bump.
 #[derive(Clone)]
 pub struct Layout {
     /// The box, in **screen** coordinates — what a raw pointer position is in.
@@ -32,11 +40,8 @@ pub struct Layout {
     /// map to hand at the moment it asks. Publishing both puts the one
     /// conversion in the one place that owns the map.
     pub body_canvas: Rect,
-    /// Where the galley's origin sits on screen, so a screen position can be
-    /// made galley-relative.
-    pub origin: Pos2,
-    /// The galley that was drawn — see the module header.
-    pub galley: Arc<Galley>,
+    /// How a screen point inside the box becomes a character index.
+    pub caret: Caret,
 }
 
 impl Layout {
@@ -44,10 +49,16 @@ impl Layout {
     /// the draft's text.
     #[must_use]
     pub fn index_at(&self, screen: Pos2) -> usize {
-        self.galley
-            .cursor_from_pos(screen - self.origin)
-            .index
-            .into()
+        match &self.caret {
+            Caret::Galley { origin, galley } => {
+                galley.cursor_from_pos(screen - *origin).index.into()
+            }
+            Caret::Stops(stops) => stops
+                .iter()
+                .enumerate()
+                .min_by(|a, b| a.1.distance_sq(screen).total_cmp(&b.1.distance_sq(screen)))
+                .map_or(0, |(i, _)| i),
+        }
     }
 }
 

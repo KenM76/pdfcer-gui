@@ -90,6 +90,9 @@ pub mod pin;
 /// key the run's font cannot spell is declined as it is pressed instead of
 /// costing the operator the whole word at commit.
 pub mod repertoire;
+/// **An existing run's draft drawn in the run's own font, where the run is**
+/// — the engine's typing preview, with the shell-font box as its fallback.
+pub mod shaped;
 
 pub use place::{Click, begin_box, click};
 // The experiment that decides whose defect O141's last step is: ONE
@@ -464,6 +467,12 @@ thread_local! {
 #[must_use]
 pub fn last_commit() -> Option<Committing> {
     LAST_COMMIT.with_borrow(Clone::clone)
+}
+
+/// Put back what [`last_commit`] said before a plan that was not a commit,
+/// such as [`shaped`]'s preview, overwrote it.
+pub(super) fn restore_last_commit(kept: Option<Committing>) {
+    LAST_COMMIT.with_borrow_mut(|slot| *slot = kept);
 }
 
 // ===========================================================================

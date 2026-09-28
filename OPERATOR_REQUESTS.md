@@ -112,7 +112,48 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 # OPEN
 
-## O247 — **OPEN — waiting on the engine (G046)** — edit text in place, in the page's own font, instead of in a pop-up box
+## O249 — **OPEN — shell half in progress, engine asked (G049–G051)** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
+
+> **Ken:** *"Also can we make it so everything about the dimensions show a live preview? Can we make it so when we click on a dimension, the end points on the connection side of the dimension can have their lengths adjusted? And when I click on the dimension text and drag it should live preview so that it is apparent I am just moving the dimension text. Also did we make it so we can change between radius and diameter, and make these easy to move and extend again with live preview."*
+
+**Your question answered.** Yes: a placed radius or diameter ce dimension
+switches between the two in the Properties panel. It cannot be moved or
+extended on the page yet, because the engine has no place to store where its
+leader and text go. That is filed as G051.
+
+**Where each part stands.**
+
+- *Live preview*: every drag of a ce dimension previews, but the preview
+  draws only the lines, never the text. The engine is asked for a preview of
+  the real appearance (G049).
+- *Extension-line ends*: their length is fixed by the drafting standard, with
+  nothing per dimension. That is filed as G050.
+- *Text drag*: one drag moves line and text together. The shell half (a
+  separate text grip) is next, and uses G049's label rectangle when it lands.
+
+Four parts, all about ce dimensions (the ones pdfcer authors):
+
+1. Every edit to a ce dimension previews live while the gesture is in flight.
+2. A selected linear ce dimension has handles at the attachment ends of its
+   extension lines, and dragging one changes that line's length.
+3. Dragging the text previews the text alone moving, so it is plain that the
+   dimension line is staying put.
+4. A radius/diameter switch (answered below from the survey), plus live-preview
+   move and extend for those ce dimensions.
+
+Continues the open clauses of O183.
+
+## O248 — **OPEN — waiting on the engine** — when pdfcer adopts the next OCRcer, surface its options and release
+
+> **Ken:** *"Pdfcer is going to release a new engine when ocrcer has a new version to implement and it will inform you when this is done. Please release a new version when pdfcer has implemented the new ocrcer and implement any options or changes in the GUI for the newest ocrcer once released."*
+
+**Trigger:** a reply in the request channel saying the engine carries the new
+OCRcer. On that reply: move the pin, reach every new or changed OCRcer option
+from the OCR surface (by registration, R8), drive it on a scan, refresh
+FEATURES, then release to both OneDrive and GitHub. Ken has asked for this
+release in advance, so it needs no further go-ahead.
+
+## O247 — **BUILT AND DRIVEN — awaiting your verdict** — edit text in place, in the page's own font, instead of in a pop-up box
 
 > **Ken:** *"When we edit text can we make it edit wysiwyg fashion instead of the pop up text box with unmatched font?"*
 
@@ -121,7 +162,7 @@ wants to type directly into the text as it is drawn: the characters appear in
 the document's own font, size and position as he types, with the caret in the
 line itself.
 
-**Where it stands.** The route is designed (GUI_ROADMAP, *Typing in the page's own font*): draw the typed characters from the run's own font and keep Enter committing as now. What it needs from the engine is a fast read-only preview of an edit's glyphs, filed as G046. Drawing the glyphs without it would mean the shell guessing the page's font encoding, and a preview that guesses can show text that differs from what gets saved.
+**State.** Click into existing text with Edit text and type: the characters appear in the drawing's own font, size, colour and place, and the line reflows as you type. Enter, Escape or a click elsewhere commits as before. New text on empty page still uses the plain box, because there is no font there to borrow. Driven on a real drawing: the draft matches the page's own rendering to within anti-aliasing. While it is open, the draft hides any line work under the old text.
 
 ## O242–O246 — five asks in one message, FILED BEFORE ANY WORK
 

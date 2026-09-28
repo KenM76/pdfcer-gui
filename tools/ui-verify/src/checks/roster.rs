@@ -1043,6 +1043,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(text_box::TextBoxTakesAParagraph),
         Box::new(text_edit::TextEditPinsAnAlignedTail),
         Box::new(text_edit_real::TextEditOnARealDrawing),
+        Box::new(text_in_own_font::TypingIsDrawnInTheRunsOwnFont),
         // After both, because it is the only driving check that does not touch
         // the ribbon band at all — it clicks mode segments and the page — and
         // because it is the slowest: it searches for a point with content

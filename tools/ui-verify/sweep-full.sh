@@ -312,6 +312,7 @@ tab_moves_between_form_fields|--pdf fixtures/three-text-fields.pdf
 # run of text in a document with real text objects in it; the a1 sheet is
 # CAD line-work with a title block, and per-glyph runs at that.
 text_edit_on_a_real_drawing|--pdf fixtures/layered-drawing.pdf --doc-point 0,337.8,1505.0
+typing_is_drawn_in_the_runs_own_font|--pdf fixtures/layered-drawing.pdf --doc-point 0,337.8,1505.0
 arrow_keys_walk_between_blocks|--pdf fixtures/layered-drawing.pdf --doc-point 0,337.8,1505.0
 text_selection_sweeps_and_copies|--pdf fixtures/layered-drawing.pdf --doc-point 0,337.8,1505.0
 text_markup_marks_a_selection|--pdf fixtures/layered-drawing.pdf --doc-point 0,337.8,1505.0

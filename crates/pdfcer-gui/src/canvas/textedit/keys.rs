@@ -749,8 +749,10 @@ mod tests {
             hit::Layout {
                 body: egui::Rect::from_min_size(origin, galley.rect.size() + egui::vec2(8.0, 8.0)),
                 body_canvas: egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1.0, 1.0)),
-                origin,
-                galley: galley.clone(),
+                caret: hit::Caret::Galley {
+                    origin,
+                    galley: galley.clone(),
+                },
             },
         );
         galley

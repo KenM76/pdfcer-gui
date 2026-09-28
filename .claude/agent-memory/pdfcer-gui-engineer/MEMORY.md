@@ -156,3 +156,4 @@
 - [Crate split is standing work](project_crate_split_standing.md) — work Stages 2–3 between tasks unasked; Stage 3 approved.
 - [fmt moves a literal off its exemption](feedback_fmt_moves_exemption.md) — trail the exempt comment on the literal's line.
 - [Moving comments can fail a gate](feedback_moving_comments_blinds.md) — check-conventions reads header blocks; keep them in source.
+- [OCRcer adoption triggers a release](project_ocrcer_release_trigger.md) — pre-approved: wire options + publish when the engine says so.

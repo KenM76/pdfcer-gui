@@ -1222,6 +1222,11 @@ impl eframe::App for PdfcerApp {
         // Step 3 — apply, after the frame is drawn.
         let pixels_per_point = ctx.pixels_per_point();
         self.apply_actions(actions, pixels_per_point);
+        // Before a render is started below, while the session is least
+        // likely to be shared: the in-font draft needs it mutably.
+        if let Status::Open(doc) = &mut self.status {
+            crate::canvas::textedit::shaped::refresh(&ctx, doc);
+        }
 
         // Step 4 — decide whether the picture on screen still matches the
         // state that was just updated, and start a render if not.

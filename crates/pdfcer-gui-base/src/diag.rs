@@ -19,9 +19,26 @@ pub fn enabled() -> bool {
     })
 }
 
+thread_local! {
+    /// Set while [`muted`] runs its closure.
+    static MUTED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Run `f` with [`trace`] silenced on this thread.
+///
+/// For a caller that reuses a planning path which traces what it decides,
+/// such as a preview built from the commit's own plan. Without it the trace
+/// would record a decision that was never acted on.
+pub fn muted<R>(f: impl FnOnce() -> R) -> R {
+    let was = MUTED.replace(true);
+    let out = f();
+    MUTED.set(was);
+    out
+}
+
 /// Emit one trace line, building the message only if tracing is on.
 pub fn trace(f: impl FnOnce() -> String) {
-    if enabled() {
+    if enabled() && !MUTED.get() {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         eprintln!("pdfcer-diag {}", f());
     }

@@ -669,6 +669,9 @@ pub mod enter_newline;
 /// `OPERATOR_REQUESTS.md` O223.
 pub mod escape_commits_text;
 
+/// **A draft on existing page text is drawn in that text's own font** — O247.
+pub mod text_in_own_font;
+
 /// **Zero clicks.** The only check in this suite that drives no gesture: it
 /// opens a document, enters Edit, and asks what an operator SEES. Every other
 /// test of the tool list asks whether a named command is present — a question

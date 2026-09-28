@@ -22,6 +22,8 @@ pub enum Surface {
     Preview,
     /// One glyph of the icon sheet.
     Icon,
+    /// A text draft's ink, drawn in the run's own font while it is typed.
+    TextDraft,
 }
 
 /// The page-shaped part of an upload, present only when there is one.

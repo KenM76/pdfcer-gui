@@ -1,5 +1,8 @@
 //! # `canvas::textedit::paint` — **what a draft looks like on the page**
 //!
+//! A draft on an existing run is drawn in the run's own font by
+//! [`super::shaped`]; everything below is the shell-font box used otherwise.
+//!
 //! ## Why this is its own file
 //!
 //!
@@ -74,40 +77,16 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
         return;
     };
     let screen = egui::Rect::from_two_pos(p.map.to_screen(rect.min), p.map.to_screen(rect.max));
-    //
-    // The operator: *"I can edit text now, but there is no live preview of that
-    // either."* He is right and it made the feature nearly unusable — the page
-    // renders **committed** glyphs, the draft lived beside them, and nothing
-    // drew it. So an operator saw the old text, a blinking caret, and no
-    // evidence that their keystrokes had landed anywhere.
-    //
-    // # Why an in-place EDITOR BOX and not text overlaid on the page
-    //
-    // The tempting shape is "draw the draft where the glyphs are, in the
-    // document's own font, so it looks like the finished result". Two problems,
-    // and the second is fatal:
-    //
-    // 1. **This shell does not have the document's font.** The page is
-    //    rasterised by `pdfcer-render` from embedded programs; egui's text stack
-    //    has its own faces. The draft would render in a different typeface at a
-    //    different width whatever we did.
-    // 2. **The original glyphs are still underneath.** They are baked into
-    //    the page raster and this shell cannot un-draw them. Text drawn on top
-    //    of text is illegible, and the shorter the edit the worse it gets —
-    //    changing `SHEET 1 OF 4` to `SHEET 2 OF 4` would show both `1` and `2`
-    //    superimposed, which is the one character the operator is looking at.
-    //
-    // Masking the original needs the page's local background colour, which this
-    // shell would have to *guess* — it is whatever the drawing has there, not
-    // necessarily white.
-    //
-    // So: an **opaque editor box**, which is what every in-place editor in every
-    // program already is. A spreadsheet cell, a Word table cell, a CAD attribute
-    // editor, a file-name rename in Explorer — all of them cover the original
-    // with a filled box while you type and reveal the result on commit. It is
-    // the convention *and* the honest picture: the box says "this is a draft in
-    // an editor", which is exactly what it is, and it makes no promise about
-    // typeface or metrics that the commit would then break.
+    // An existing run is drawn in its own font, where it is, when the engine
+    // can lay it out (`shaped`). Otherwise, and for new text, an opaque
+    // editor box in the shell's font: it covers the original glyphs, which
+    // are baked into the page raster, and promises nothing about typeface or
+    // metrics that the commit would then break.
+    if let Some(s) = super::shaped::read(ctx, &draft)
+        && super::shaped::paint(ui, ctx, p, &draft, &s, screen)
+    {
+        return;
+    }
     //
     // # The size is the RUN's, not the UI's
     //
@@ -243,8 +222,10 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
         crate::canvas::textedit::hit::Layout {
             body,
             body_canvas: egui::Rect::from_two_pos(p.map.to_page(body.min), p.map.to_page(body.max)),
-            origin: text_origin,
-            galley: laid.clone(),
+            caret: crate::canvas::textedit::hit::Caret::Galley {
+                origin: text_origin,
+                galley: laid.clone(),
+            },
         },
     );
     selection(
