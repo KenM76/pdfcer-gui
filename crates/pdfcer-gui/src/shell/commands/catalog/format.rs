@@ -148,6 +148,19 @@ pub(super) fn band() -> Vec<Command> {
         command("format.merge_text_runs", t::format_merge_text_runs(), 816)
             .with_icon("combine")
             .enabled_when(crate::shell::menus::TEXT_MERGE_ALLOWED),
+        // The radius / diameter switch of a circular ce dimension, from the
+        // canvas.markup menu. Enabled on the condition that draws the row, so
+        // a route that never consults the item cannot press it with no operand.
+        command(
+            "format.dimension_diameter",
+            t::format_dimension_diameter(),
+            817,
+        )
+        .with_icon("measure-radius")
+        .enabled_when(crate::shell::menus::DIMENSION_DIAMETER_OFFERED),
+        command("format.dimension_radius", t::format_dimension_radius(), 818)
+            .with_icon("measure-radius")
+            .enabled_when(crate::shell::menus::DIMENSION_RADIUS_OFFERED),
         //
         // `RIBBON_IA.md` §5.8 is what puts it here. That section's table gives
         // the **Vector object** row as `Stroke · Fill · Winding rule · Node

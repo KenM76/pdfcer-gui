@@ -143,6 +143,7 @@ pub fn attach(click: Click<'_>) -> Vec<HandlerToken> {
         // `Capabilities` for exactly this, and `app::conditions`' delete ladder
         // already reads them apart the same way.
         author_markup: click.caps.author_markup,
+        author_measure: click.caps.author_measure,
         doc: click.doc,
         map: click.map,
         screen_pos: click.screen_pos,

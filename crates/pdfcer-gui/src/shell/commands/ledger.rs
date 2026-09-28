@@ -373,9 +373,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 164 → 165: `format.merge_text_runs` (G035), canvas object menu and Format ▸ Selection.
     // 165 → 166: `markup.flatten`, canvas markup menu.
     // 166 → 167: `markup.flatten_page`, Markup ▸ Comments.
+    // 167 → 169: `format.dimension_diameter` and `format.dimension_radius`, canvas markup menu.
     assert_eq!(
         registry().len(),
-        167 + usize::from(cfg!(feature = "signing"))
+        169 + usize::from(cfg!(feature = "signing"))
     );
 }
 
@@ -757,9 +758,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // one is a canvas menu row, the other a Forms panel button.
     // 148 → 149: `markup.flatten_page` names `form-flatten` too: the same act
     // on every markup of a page.
+    // 149 → 151: `format.dimension_diameter` and `format.dimension_radius`
+    // name `measure-radius`, the circular ce dimension tool's own glyph.
     assert_eq!(
         named,
-        149 + usize::from(cfg!(feature = "signing")),
+        151 + usize::from(cfg!(feature = "signing")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

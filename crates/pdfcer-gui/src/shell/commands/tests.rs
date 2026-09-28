@@ -262,6 +262,9 @@ fn every_predicate_names_a_documented_condition() {
         "canvas.run_select_offered",
         // Published by `PdfcerApp::conditions` and re-asked per right-click.
         "selection.text_merge_allowed",
+        // Published by `PdfcerApp::conditions` and re-asked per right-click.
+        "dimension.diameter_offered",
+        "dimension.radius_offered",
     ];
     for command in registry().iter() {
         if let egui_shell::commands::Enable::When(name) = &command.enable {

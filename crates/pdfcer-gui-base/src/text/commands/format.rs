@@ -55,6 +55,26 @@ pub const fn format_merge_text_runs() -> CommandText {
     )
 }
 
+/// `format.dimension_diameter`
+#[must_use]
+pub const fn format_dimension_diameter() -> CommandText {
+    CommandText::new(
+        "Show as diameter",
+        "Make this circular ce dimension measure the diameter, with a leader across the \
+         circle. The same switch as Radius / Diameter in Properties. Undo reverses it.",
+    )
+}
+
+/// `format.dimension_radius`
+#[must_use]
+pub const fn format_dimension_radius() -> CommandText {
+    CommandText::new(
+        "Show as radius",
+        "Make this circular ce dimension measure the radius, with a leader from the centre. \
+         The same switch as Radius / Diameter in Properties. Undo reverses it.",
+    )
+}
+
 /// `format.select_form`
 #[must_use]
 pub const fn format_select_form() -> CommandText {

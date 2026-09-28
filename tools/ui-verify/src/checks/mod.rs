@@ -289,6 +289,8 @@ pub mod dimension_circular_label_drag;
 /// **A shape the operator drew can gain and lose a corner** — his own
 /// report. ⬜ WRITTEN AND NOT DRIVEN; see the module header.
 pub mod dimension_corner_count;
+/// A circular ce dimension switches radius ↔ diameter from its right-click menu.
+pub mod dimension_display_menu;
 pub mod dimension_extension_grip;
 pub mod dimension_label_drag;
 

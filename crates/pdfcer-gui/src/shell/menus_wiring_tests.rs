@@ -71,14 +71,15 @@ fn the_icon_column_lights_up_the_rows_whose_commands_already_name_a_glyph() {
     // registration, and would have to be argued here too.
     // 35 → 36: `format.merge_text_runs` on the canvas object menu.
     // 36 → 37: `markup.flatten` on the canvas markup menu.
+    // 37 → 41: the canvas dimension menu, four rows.
     assert_eq!(
         (glyph, blank, absent),
-        (37, 1, 0),
+        (41, 1, 0),
         "menu rows by icon slot state; per-menu breakdown:\n{report}"
     );
     assert_eq!(
-        reserving_menus, 10,
-        "menus that reserve an icon column, of 10:\n{report}"
+        reserving_menus, 11,
+        "menus that reserve an icon column, of 11:\n{report}"
     );
 }
 

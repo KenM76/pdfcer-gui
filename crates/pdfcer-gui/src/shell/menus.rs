@@ -48,6 +48,12 @@ pub const CANVAS_FIELD: &str = "canvas.field";
 /// Right-click on the page **over a selected markup shape**.
 pub const CANVAS_MARKUP: &str = "canvas.markup";
 
+/// Right-click on the page **over a selected ce dimension**. Its own menu, not
+/// the markup one: a ce dimension reaches a different verb family (R8b rule
+/// 15), so the markup rows — node edits, flatten, the markup clipboard — do not
+/// apply to it.
+pub const CANVAS_DIMENSION: &str = "canvas.dimension";
+
 /// **The right-click landed on a segment of a shape that can take a new
 /// point** — the `visible_when` of `markup.add_node`.
 pub const NODE_INSERT_OFFERED: &str = "markup.node_insert_offered";
@@ -73,6 +79,14 @@ pub const NODE_REMOVABLE: &str = "markup.node_removable";
 /// `visible_when` of `markup.flatten`, asked from
 /// `EditSession::annotation_flatten_refusals` when the menu opens.
 pub const FLATTEN_OFFERED: &str = "markup.flatten_offered";
+
+/// The selection is one circular ce dimension showing its radius: the
+/// `visible_when` and `enabled_when` of `format.dimension_diameter`.
+pub const DIMENSION_DIAMETER_OFFERED: &str = "dimension.diameter_offered";
+
+/// The selection is one circular ce dimension showing its diameter: the
+/// `visible_when` and `enabled_when` of `format.dimension_radius`.
+pub const DIMENSION_RADIUS_OFFERED: &str = "dimension.radius_offered";
 
 /// **The right-click landed on one line of a MULTI-LINE text object** — the
 /// `visible_when` of `format.select_text_line`, and its `enabled_when` too.
@@ -119,6 +133,7 @@ pub const CONTEXTS: &[&str] = &[
     CANVAS_TEXT,
     CANVAS_FIELD,
     CANVAS_MARKUP,
+    CANVAS_DIMENSION,
     DOCK_TAB,
     DOCUMENT_TAB,
     OBJECTS_ROW,
@@ -569,6 +584,15 @@ pub fn built_in() -> Menus {
         // ⇒ When a draft-scoped cut and copy exist they belong here, above the
         // reflow, in the order every editor uses. Until then the menu is
         // honest at one item.
+        .with(Menu::new(CANVAS_DIMENSION).with_items([
+            Item::command("format.properties"),
+            // One click where the operator's hand already is, for the switch
+            // Properties also carries. At most one of the pair is drawn.
+            Item::command("format.dimension_diameter").shown_when(DIMENSION_DIAMETER_OFFERED),
+            Item::command("format.dimension_radius").shown_when(DIMENSION_RADIUS_OFFERED),
+            Item::Separator,
+            Item::command("format.delete").shown_when(super::manifest::DELETE_PERMITTED),
+        ]))
         .with(Menu::new(CANVAS_TEXT).with_items([Item::command("edit.reflow_block")]))
         // -------------------------------------------------------------------
         // dock.tab — a panel tab.

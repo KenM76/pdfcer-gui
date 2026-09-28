@@ -662,6 +662,19 @@
             ],
         ),
         (
+            context: "canvas.dimension",
+            items: [
+                Command(id: "format.properties"),
+                Command(
+                    id: "format.dimension_diameter",
+                    visible_when: "dimension.diameter_offered",
+                ),
+                Command(id: "format.dimension_radius", visible_when: "dimension.radius_offered"),
+                Separator,
+                Command(id: "format.delete", visible_when: "selection.delete_permitted"),
+            ],
+        ),
+        (
             context: "canvas.text",
             items: [
                 Command(id: "edit.reflow_block"),

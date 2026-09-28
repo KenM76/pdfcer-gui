@@ -583,6 +583,16 @@ pub const TAB_SCOPED: &[(&str, &str)] = &[
         "The mirror of `markup.add_node`, with the same operand and the same argument — this corner, the one under the pointer. It is additionally the more dangerous of the two to give a ribbon home: a button that removed some invented default corner would silently reshape a drawing on a press the operator read as harmless.",
     ),
     (
+        "format.dimension_diameter",
+        // ui-text-exempt: a register reason for a reviewer and a test; never rendered.
+        "Its operand is THE CIRCULAR CE DIMENSION THAT WAS RIGHT-CLICKED, and the row is drawn only when that dimension currently shows its radius. The other home for the same switch is the Properties panel's Radius / Diameter choice.",
+    ),
+    (
+        "format.dimension_radius",
+        // ui-text-exempt: a register reason for a reviewer and a test; never rendered.
+        "The twin of `format.dimension_diameter`, drawn only when the right-clicked circular ce dimension currently shows its diameter.",
+    ),
+    (
         "markup.flatten",
         // ui-text-exempt: a register reason for a reviewer and a test; never rendered.
         "Its operand is THE MARKUP THAT WAS RIGHT-CLICKED, and whether it may be burned at all is the engine's per-annotation answer (`annotation_flatten_refusals`), asked when the menu opens. A ribbon button would act on whatever happened to be selected without that answer in front of the operator, on a verb that turns a markup into page content.",

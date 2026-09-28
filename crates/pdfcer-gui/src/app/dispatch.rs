@@ -47,12 +47,13 @@ use super::PdfcerApp;
 /// wearing four ids.
 pub(crate) mod arrange;
 pub(crate) mod batch;
+/// `markup.flatten` — make the selected markup part of the page.
+pub(crate) mod dimdisplay;
 /// The File > Security band's commands — O119 plus signing; see its header.
 /// **The File > Export band** — three exports and the three imports beside
 /// them. Its header carries the seam, and the warning that is easy to read and
 /// not act on.
 pub(crate) mod exchange;
-/// `markup.flatten` — make the selected markup part of the page.
 mod flatten;
 pub(crate) mod fonts;
 mod forms;
@@ -855,6 +856,9 @@ impl PdfcerApp {
             // computed at the press would be a stale one.
             id if arrange::claims(id) => arrange::dispatch(self, id, actions),
             "markup.flatten" => flatten::dispatch(self, actions),
+            "format.dimension_diameter" | "format.dimension_radius" => {
+                dimdisplay::dispatch(self, id, actions)
+            }
             "markup.flatten_page" => flatten::dispatch_page(self, actions),
             // The three text-bearing kinds, ABOVE the geometric markup arm.
             //

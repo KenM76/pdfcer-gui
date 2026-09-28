@@ -381,6 +381,15 @@ fn each_menu_holds_exactly_the_documented_items() {
             ][..],
         ),
         (
+            CANVAS_DIMENSION,
+            &[
+                "format.properties",
+                "format.dimension_diameter",
+                "format.dimension_radius",
+                "format.delete",
+            ][..],
+        ),
+        (
             CANVAS_MARKUP,
             &[
                 "format.properties",

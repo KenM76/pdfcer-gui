@@ -101,6 +101,9 @@ pub enum CanvasMenu {
     /// pointer-versus-operand disagreement `select_under_right_click`'s rule 1
     /// exists to remove, arriving from the other side.
     Markup,
+    /// The pointer was over a **selected ce dimension**, by the same outline
+    /// rule as [`CanvasMenu::Markup`].
+    Dimension,
     /// The pointer was over blank page: act on the view.
     ///
     /// The default, so a frame before any right-click has happened attaches
@@ -121,6 +124,7 @@ impl CanvasMenu {
             Self::Field => menus::CANVAS_FIELD,
             Self::ReadObject => menus::CANVAS_READ_OBJECT,
             Self::Markup => menus::CANVAS_MARKUP,
+            Self::Dimension => menus::CANVAS_DIMENSION,
             Self::Empty => menus::CANVAS_EMPTY,
         }
     }
@@ -235,6 +239,10 @@ pub struct Attach<'a> {
     /// `crate::app::modes::Capabilities` precisely so this distinction can be
     /// made, and `app::conditions`' delete ladder already makes it.
     pub author_markup: bool,
+    /// Whether this mode may author ce dimensions — the radius / diameter
+    /// switch is a dimension edit, so a mode that places markup and no
+    /// dimensions gets the menu without those two rows.
+    pub author_measure: bool,
     /// The open document — for the annotation's geometry, and for the engine
     /// preflight behind the two node rows.
     pub doc: &'a crate::app::state::OpenDoc,
@@ -260,6 +268,7 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
         field_delete_permitted,
         reading,
         author_markup,
+        author_measure,
         doc,
         map,
         screen_pos,
@@ -294,7 +303,23 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             // right-click a field"* are one question by the time this runs, and
             // asking it twice with two hit tests is how the two answers drift.
             CanvasMenu::Field
-        } else if markup_menu(selection, author_markup, object, map, screen_pos) {
+        } else if annot_menu(
+            selection,
+            author_markup,
+            crate::canvas::selection::AnnotKind::CeDimension,
+            object,
+            map,
+            screen_pos,
+        ) {
+            CanvasMenu::Dimension
+        } else if annot_menu(
+            selection,
+            author_markup,
+            crate::canvas::selection::AnnotKind::Markup,
+            object,
+            map,
+            screen_pos,
+        ) {
             //
             // The PICK is taken here and parked, on this one frame, because
             // this is the only frame on which the pointer is still over the
@@ -483,6 +508,15 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
         });
         overrides.push((menus::FLATTEN_OFFERED, flatten));
     }
+    if matches!(chosen, CanvasMenu::Dimension) {
+        let display = crate::app::dispatch::dimdisplay::circular(doc, selection)
+            .filter(|_| author_measure)
+            .map(|(_, d)| d);
+        overrides.extend([
+            (menus::DIMENSION_DIAMETER_OFFERED, display == Some(false)),
+            (menus::DIMENSION_RADIUS_OFFERED, display == Some(true)),
+        ]);
+    }
     // **`format.select_text_line`'s one condition** — O188(A), and the
     // narrowness is the same argument the Delete above makes: it is a fact
     // about ONE right-click on ONE line, and `PdfcerApp::conditions()` ran
@@ -534,9 +568,10 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
 }
 
 /// **Is this right-click about a placed markup shape?**
-fn markup_menu(
+fn annot_menu(
     selection: &SelectionState,
     author_markup: bool,
+    kind: crate::canvas::selection::AnnotKind,
     object: Option<TargetId>,
     map: &crate::canvas::mapping::PageMapping,
     screen_pos: Option<egui::Pos2>,
@@ -547,7 +582,7 @@ fn markup_menu(
     let Some(annot) = selection.annot() else {
         return false;
     };
-    if annot.target.kind != crate::canvas::selection::AnnotKind::Markup {
+    if annot.target.kind != kind {
         return false;
     }
     if object.is_none() {
@@ -764,7 +799,16 @@ mod tests {
         );
 
         let menus = crate::shell::menus::built_in();
-        for menu in [CanvasMenu::Object, CanvasMenu::Markup, CanvasMenu::Empty] {
+        assert_eq!(
+            CanvasMenu::Dimension.context_id(),
+            crate::shell::menus::CANVAS_DIMENSION
+        );
+        for menu in [
+            CanvasMenu::Object,
+            CanvasMenu::Markup,
+            CanvasMenu::Dimension,
+            CanvasMenu::Empty,
+        ] {
             assert!(
                 menus.get(menu.context_id()).is_some(),
                 "`{}` is attached by the canvas and defined by no menu",
@@ -774,7 +818,7 @@ mod tests {
     }
 
     // -----------------------------------------------------------------------
-    // `markup_menu` — the three conditions, one test each, every one falsified
+    // `annot_menu` — the three conditions, one test each, every one falsified
     // by removing the clause it is about.
     // -----------------------------------------------------------------------
 
@@ -813,9 +857,10 @@ mod tests {
             AnnotKind::Markup,
             egui::Rect::from_min_max(egui::pos2(100.0, 100.0), egui::pos2(200.0, 200.0)),
         );
-        assert!(markup_menu(
+        assert!(annot_menu(
             &selection,
             true,
+            AnnotKind::Markup,
             Some(TargetId::Object(3)),
             &map,
             Some(egui::pos2(150.0, 150.0)),
@@ -830,12 +875,39 @@ mod tests {
             AnnotKind::CeDimension,
             egui::Rect::from_min_max(egui::pos2(100.0, 100.0), egui::pos2(200.0, 200.0)),
         );
-        assert!(!markup_menu(
+        assert!(!annot_menu(
             &selection,
             true,
+            AnnotKind::Markup,
             None,
             &map,
             Some(egui::pos2(150.0, 150.0)),
+        ));
+    }
+
+    /// **…it opens its own menu**, by the same outline rule.
+    #[test]
+    fn a_selected_ce_dimension_opens_the_dimension_menu() {
+        let map = identity_map();
+        let selection = markup_selection(
+            AnnotKind::CeDimension,
+            egui::Rect::from_min_max(egui::pos2(100.0, 100.0), egui::pos2(200.0, 200.0)),
+        );
+        assert!(annot_menu(
+            &selection,
+            true,
+            AnnotKind::CeDimension,
+            Some(TargetId::Object(3)),
+            &map,
+            Some(egui::pos2(150.0, 150.0)),
+        ));
+        assert!(!annot_menu(
+            &selection,
+            true,
+            AnnotKind::CeDimension,
+            Some(TargetId::Object(3)),
+            &map,
+            Some(egui::pos2(400.0, 400.0)),
         ));
     }
 
@@ -848,9 +920,10 @@ mod tests {
             AnnotKind::Markup,
             egui::Rect::from_min_max(egui::pos2(100.0, 100.0), egui::pos2(200.0, 200.0)),
         );
-        assert!(!markup_menu(
+        assert!(!annot_menu(
             &selection,
             false,
+            AnnotKind::Markup,
             None,
             &map,
             Some(egui::pos2(150.0, 150.0)),
@@ -866,9 +939,10 @@ mod tests {
             AnnotKind::Markup,
             egui::Rect::from_min_max(egui::pos2(100.0, 100.0), egui::pos2(200.0, 200.0)),
         );
-        assert!(!markup_menu(
+        assert!(!annot_menu(
             &selection,
             true,
+            AnnotKind::Markup,
             Some(TargetId::Object(3)),
             &map,
             Some(egui::pos2(500.0, 500.0)),
@@ -884,9 +958,10 @@ mod tests {
             AnnotKind::Markup,
             egui::Rect::from_min_max(egui::pos2(100.0, 100.0), egui::pos2(200.0, 200.0)),
         );
-        assert!(markup_menu(
+        assert!(annot_menu(
             &selection,
             true,
+            AnnotKind::Markup,
             None,
             &map,
             Some(egui::pos2(500.0, 500.0)),
