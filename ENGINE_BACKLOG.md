@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **46 of 216** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `wanted` — a real gap — **47 of 217** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -102,6 +102,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | **Preview what a ce-dimension drag would bake, before it commits** — `EditSession::dimension_preview`, `DimensionPreview`, `AuthoredDimension::label_quad`, `pdfcer_render::edit_preview::paint_dimension_preview` … | **wanted — the engine half of O249, answering our `G049`.** The drag preview in `canvas::dimdrag` draws `dimension_preview_segments`, a second path that omits the label and extension-line details; this verb bakes through the commit's own baker, and `label_quad` is the grip for the text drag (T4), which otherwise has to copy the engine's private label-box arithmetic. The frame field `dimension_preview` in `canvas::painting` is the shell's own segment list, not a call. <!--namesake:dimension_preview--> |
+| **Set a per-end extension-line gap on a Linear ce dimension** — `EditSession::set_dimension_extension_gap`, `DimensionEnd`, `extension_segments`, `extension_reach` … | **wanted — the second engine half of O249, answering our `G050`.** He asked to drag the extension line's end on the connection side; this is the verb a grip on each end writes, with `extension_reach` bounding the drag. |
 
 ### Annotations & markup
 
@@ -146,7 +147,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 216** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `blocked` — waiting on something named — **2 of 217** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -164,7 +165,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 216** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 217** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -175,7 +176,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **14 of 216** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `declined` — deliberately no surface — **14 of 217** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -215,7 +216,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **154 of 216** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **154 of 217** <!-- counted by tools/walk-engine-backlog.py, 2026-09-27; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
