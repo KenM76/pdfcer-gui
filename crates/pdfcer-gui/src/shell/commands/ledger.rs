@@ -374,9 +374,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 165 → 166: `markup.flatten`, canvas markup menu.
     // 166 → 167: `markup.flatten_page`, Markup ▸ Comments.
     // 167 → 169: `format.dimension_diameter` and `format.dimension_radius`, canvas markup menu.
+    // 169 → 170: `pages.crop`, Pages ▸ Transform.
     assert_eq!(
         registry().len(),
-        169 + usize::from(cfg!(feature = "signing"))
+        170 + usize::from(cfg!(feature = "signing"))
     );
 }
 
@@ -760,9 +761,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // on every markup of a page.
     // 149 → 151: `format.dimension_diameter` and `format.dimension_radius`
     // name `measure-radius`, the circular ce dimension tool's own glyph.
+    // 151 → 152: `pages.crop` names `page-single`, the sheet it trims.
     assert_eq!(
         named,
-        151 + usize::from(cfg!(feature = "signing")),
+        152 + usize::from(cfg!(feature = "signing")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

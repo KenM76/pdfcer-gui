@@ -157,3 +157,4 @@
 - [fmt moves a literal off its exemption](feedback_fmt_moves_exemption.md) — trail the exempt comment on the literal's line.
 - [Moving comments can fail a gate](feedback_moving_comments_blinds.md) — check-conventions reads header blocks; keep them in source.
 - [OCRcer adoption triggers a release](project_ocrcer_release_trigger.md) — pre-approved: wire options + publish when the engine says so.
+- [A filtered test run hides the registry tests](feedback_filtered_test_run.md) — a new command reddens 4 far-away tests; run the lib suite unfiltered.

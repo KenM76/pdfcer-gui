@@ -479,24 +479,12 @@ mod tests {
             square(2, 0),                   // ordinary
             square(3, AnnotFlags::NO_VIEW), // drawn by nothing
         ]);
-        let page = Page {
-            id: page_id,
-            resources: Dict::new(),
-            media_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
-            crop_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
-            crop_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            bleed_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
-            bleed_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            trim_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
-            trim_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            art_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
-            art_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            rotate: 0,
-            contents: Vec::new(),
-            contents_flattened: 0,
-            contents_unresolved: 0,
-            resources_defaulted: false,
-        };
+        let page = Page::with_boxes(
+            page_id,
+            pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
+            pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
+            0,
+        );
 
         let view = pdfcer_core::view::DocumentView::new(
             &graph,

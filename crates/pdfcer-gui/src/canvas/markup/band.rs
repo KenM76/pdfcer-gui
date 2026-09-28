@@ -217,31 +217,19 @@ pub fn draw_text_marks(
 mod tests {
     use super::*;
     use pdfcer_core::annot_author::MarkupSpec;
-    use pdfcer_core::object::{Dict, ObjId};
+    use pdfcer_core::object::ObjId;
     use pdfcer_core::page_tree::Rect as PageRect;
 
     /// A minimal page fixture — the same one `viewer`'s and `moving`'s geometry
     /// tests use, because these functions read exactly what those do:
     /// `crop_box` and `rotate`.
     fn test_page(w: f64, h: f64, rotate: u16) -> Page {
-        Page {
-            id: ObjId::new(1, 0),
-            resources: Dict::new(),
-            media_box: PageRect::from_corners(0.0, 0.0, w, h),
-            crop_box: PageRect::from_corners(0.0, 0.0, w, h),
-            crop_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            bleed_box: PageRect::from_corners(0.0, 0.0, w, h),
-            bleed_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            trim_box: PageRect::from_corners(0.0, 0.0, w, h),
-            trim_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            art_box: PageRect::from_corners(0.0, 0.0, w, h),
-            art_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
+        Page::with_boxes(
+            ObjId::new(1, 0),
+            PageRect::from_corners(0.0, 0.0, w, h),
+            PageRect::from_corners(0.0, 0.0, w, h),
             rotate,
-            contents: Vec::new(),
-            contents_unresolved: 0,
-            resources_defaulted: false,
-            contents_flattened: 0,
-        }
+        )
     }
 
     // -----------------------------------------------------------------

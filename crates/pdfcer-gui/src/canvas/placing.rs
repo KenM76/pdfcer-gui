@@ -248,24 +248,12 @@ mod tests {
     /// module's conversion reads exactly what theirs does, `crop_box` and
     /// `rotate`.
     fn test_page(w: f64, h: f64) -> pdfcer_core::page_tree::Page {
-        pdfcer_core::page_tree::Page {
-            id: pdfcer_core::object::ObjId::new(1, 0),
-            resources: pdfcer_core::object::Dict::new(),
-            media_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, w, h),
-            crop_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, w, h),
-            crop_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            bleed_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, w, h),
-            bleed_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            trim_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, w, h),
-            trim_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            art_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, w, h),
-            art_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            rotate: 0,
-            contents: Vec::new(),
-            contents_unresolved: 0,
-            resources_defaulted: false,
-            contents_flattened: 0,
-        }
+        pdfcer_core::page_tree::Page::with_boxes(
+            pdfcer_core::object::ObjId::new(1, 0),
+            pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, w, h),
+            pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, w, h),
+            0,
+        )
     }
 
     /// **A click is recorded in PDF space, not canvas space.**

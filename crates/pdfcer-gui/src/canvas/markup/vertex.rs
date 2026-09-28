@@ -345,29 +345,17 @@ pub(crate) fn plant_short_run_for_test(ctx: &egui::Context, page_index: usize, k
 mod tests {
     use super::*;
     use crate::canvas::tool::CanvasTool;
-    use pdfcer_core::object::{Dict, ObjId};
+    use pdfcer_core::object::ObjId;
     use pdfcer_core::page_tree::Rect as PageRect;
 
     /// A minimal upright page, one unit per point.
     fn test_page() -> Page {
-        Page {
-            id: ObjId::new(1, 0),
-            resources: Dict::new(),
-            media_box: PageRect::from_corners(0.0, 0.0, 200.0, 300.0),
-            crop_box: PageRect::from_corners(0.0, 0.0, 200.0, 300.0),
-            crop_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            bleed_box: PageRect::from_corners(0.0, 0.0, 200.0, 300.0),
-            bleed_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            trim_box: PageRect::from_corners(0.0, 0.0, 200.0, 300.0),
-            trim_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            art_box: PageRect::from_corners(0.0, 0.0, 200.0, 300.0),
-            art_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            rotate: 0,
-            contents: Vec::new(),
-            contents_unresolved: 0,
-            resources_defaulted: false,
-            contents_flattened: 0,
-        }
+        Page::with_boxes(
+            ObjId::new(1, 0),
+            PageRect::from_corners(0.0, 0.0, 200.0, 300.0),
+            PageRect::from_corners(0.0, 0.0, 200.0, 300.0),
+            0,
+        )
     }
 
     /// Click `n` points in a line-ish run on `ctx`, returning the actions raised.

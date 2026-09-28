@@ -108,24 +108,12 @@ fn an_arrow_key_reaches_the_nudge_through_canvas_keys() {
     use crate::app::actions::annot::AnnotAction;
     use crate::canvas::selection::{AnnotKind, AnnotSelection, AnnotTarget};
 
-    let page = pdfcer_core::page_tree::Page {
-        id: pdfcer_core::object::ObjId::new(1, 0),
-        resources: pdfcer_core::object::Dict::new(),
-        media_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
-        crop_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
-        crop_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-        bleed_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
-        bleed_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-        trim_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
-        trim_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-        art_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
-        art_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-        rotate: 0,
-        contents: Vec::new(),
-        contents_unresolved: 0,
-        resources_defaulted: false,
-        contents_flattened: 0,
-    };
+    let page = pdfcer_core::page_tree::Page::with_boxes(
+        pdfcer_core::object::ObjId::new(1, 0),
+        pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
+        pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
+        0,
+    );
     let mut selection = SelectionState::default();
     selection.select_annot(AnnotSelection {
         target: AnnotTarget {

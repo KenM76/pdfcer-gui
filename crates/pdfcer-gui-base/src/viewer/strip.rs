@@ -419,30 +419,18 @@ mod tests {
     const NORMAL: crate::renderquality::RenderQuality = crate::renderquality::RenderQuality::Normal;
 
     use super::*;
-    use pdfcer_core::object::{Dict, ObjId};
+    use pdfcer_core::object::ObjId;
     use pdfcer_core::page_tree::Rect as PageRect;
 
     /// A `w`×`h` page with no rotation — enough for the geometry, which reads
     /// only `crop_box` and `rotate`.
     fn page(w: f64, h: f64) -> Page {
-        Page {
-            id: ObjId::new(1, 0),
-            resources: Dict::new(),
-            media_box: PageRect::from_corners(0.0, 0.0, w, h),
-            crop_box: PageRect::from_corners(0.0, 0.0, w, h),
-            crop_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            bleed_box: PageRect::from_corners(0.0, 0.0, w, h),
-            bleed_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            trim_box: PageRect::from_corners(0.0, 0.0, w, h),
-            trim_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            art_box: PageRect::from_corners(0.0, 0.0, w, h),
-            art_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            rotate: 0,
-            contents: Vec::new(),
-            contents_unresolved: 0,
-            resources_defaulted: false,
-            contents_flattened: 0,
-        }
+        Page::with_boxes(
+            ObjId::new(1, 0),
+            PageRect::from_corners(0.0, 0.0, w, h),
+            PageRect::from_corners(0.0, 0.0, w, h),
+            0,
+        )
     }
 
     /// `n` identical US Letter pages.

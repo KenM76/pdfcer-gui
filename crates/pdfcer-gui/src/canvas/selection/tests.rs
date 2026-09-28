@@ -297,27 +297,17 @@ fn navigating_the_view_never_alters_the_selection() {
     // pages on screen at once, and a full strip laid out for each so the
     // geometry the mode produces is real rather than nominal.
     use crate::viewer::{PageDisplay, strip::Strip};
-    use pdfcer_core::object::{Dict, ObjId};
+    use pdfcer_core::object::ObjId;
     use pdfcer_core::page_tree::{Page, Rect as PageRect};
 
     let pages: Vec<Page> = (0..4)
-        .map(|_| Page {
-            id: ObjId::new(1, 0),
-            resources: Dict::new(),
-            media_box: PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
-            crop_box: PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
-            crop_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            bleed_box: PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
-            bleed_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            trim_box: PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
-            trim_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            art_box: PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
-            art_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            rotate: 0,
-            contents: Vec::new(),
-            contents_unresolved: 0,
-            resources_defaulted: false,
-            contents_flattened: 0,
+        .map(|_| {
+            Page::with_boxes(
+                ObjId::new(1, 0),
+                PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
+                PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
+                0,
+            )
         })
         .collect();
     for &display in PageDisplay::ALL {

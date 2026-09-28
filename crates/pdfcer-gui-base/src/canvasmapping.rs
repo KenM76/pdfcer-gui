@@ -175,24 +175,12 @@ mod tests {
 
     /// A letter page at a given `/Rotate`, for the projection tests.
     fn projection_page(rotate: u16) -> pdfcer_core::page_tree::Page {
-        pdfcer_core::page_tree::Page {
-            id: pdfcer_core::object::ObjId::new(9, 0),
-            resources: pdfcer_core::object::Dict::new(),
-            media_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
-            crop_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
-            crop_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            bleed_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
-            bleed_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            trim_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
-            trim_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-            art_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
-            art_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
+        pdfcer_core::page_tree::Page::with_boxes(
+            pdfcer_core::object::ObjId::new(9, 0),
+            pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
+            pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
             rotate,
-            contents: Vec::new(),
-            contents_unresolved: 0,
-            resources_defaulted: false,
-            contents_flattened: 0,
-        }
+        )
     }
 
     /// A 200x20 rectangle near the top of that page.
@@ -377,27 +365,17 @@ mod tests {
     fn each_page_of_a_strip_has_its_own_mapping() {
         use crate::viewer::PageDisplay;
         use crate::viewer::strip::Strip;
-        use pdfcer_core::object::{Dict, ObjId};
+        use pdfcer_core::object::ObjId;
         use pdfcer_core::page_tree::{Page, Rect as PageRect};
 
         let pages: Vec<Page> = (0..3)
-            .map(|_| Page {
-                id: ObjId::new(1, 0),
-                resources: Dict::new(),
-                media_box: PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
-                crop_box: PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
-                crop_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-                bleed_box: PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
-                bleed_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-                trim_box: PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
-                trim_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-                art_box: PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
-                art_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-                rotate: 0,
-                contents: Vec::new(),
-                contents_unresolved: 0,
-                resources_defaulted: false,
-                contents_flattened: 0,
+            .map(|_| {
+                Page::with_boxes(
+                    ObjId::new(1, 0),
+                    PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
+                    PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
+                    0,
+                )
             })
             .collect();
         let zoom = 1.5_f32;

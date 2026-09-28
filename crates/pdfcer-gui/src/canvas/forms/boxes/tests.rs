@@ -54,7 +54,6 @@
 #![cfg(test)]
 
 use super::*;
-use pdfcer_core::object::Dict;
 use pdfcer_core::page_tree::Rect as PageRect;
 use pdfcer_core::vartext::Quadding;
 
@@ -146,24 +145,12 @@ fn form_of(field: Field) -> AcroForm {
 }
 
 fn page(rotate: u16) -> Page {
-    Page {
-        id: ObjId::new(9, 0),
-        resources: Dict::new(),
-        media_box: PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
-        crop_box: PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
-        crop_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-        bleed_box: PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
-        bleed_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-        trim_box: PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
-        trim_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
-        art_box: PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
-        art_box_resolution: pdfcer_core::page_tree::BoxResolution::Defaulted,
+    Page::with_boxes(
+        ObjId::new(9, 0),
+        PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
+        PageRect::from_corners(0.0, 0.0, 612.0, 792.0),
         rotate,
-        contents: Vec::new(),
-        contents_unresolved: 0,
-        resources_defaulted: false,
-        contents_flattened: 0,
-    }
+    )
 }
 
 /// **A field with no `/AP` is not offered on the page.**
