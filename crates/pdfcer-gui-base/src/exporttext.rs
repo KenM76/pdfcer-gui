@@ -41,6 +41,20 @@ pub enum LineEndings {
     Windows,
 }
 
+/// In what order a page's words are written.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TextOrder {
+    /// The engine's `plain_text()`: lines top to bottom as drawn, so two
+    /// columns interleave a line at a time. The clipboard's own bytes.
+    #[default]
+    AsDrawn,
+    /// `pdfcer_core::block_layout` reading order: one block per line, a blank
+    /// line between blocks, columns read one after the other, and running
+    /// headers, footers and page numbers left out. Every kind decision is an
+    /// inference and the receipt counts them.
+    Reading,
+}
+
 /// Everything a text export needs, frozen when Export was pressed.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TextExportPlan {
@@ -48,6 +62,8 @@ pub struct TextExportPlan {
     pub pages: Vec<usize>,
     /// What goes between one page and the next.
     pub separator: PageSeparator,
+    /// In what order each page's words are written.
+    pub order: TextOrder,
     /// How lines end.
     pub line_endings: LineEndings,
     /// Whether the file opens with a UTF-8 byte-order mark.
@@ -326,6 +342,7 @@ mod tests {
         let plan = TextExportPlan {
             pages: vec![0],
             separator: PageSeparator::default(),
+            order: TextOrder::default(),
             line_endings: LineEndings::default(),
             byte_order_mark: false,
         };
@@ -339,6 +356,7 @@ mod tests {
         let plan = TextExportPlan {
             pages: vec![0],
             separator: PageSeparator::FormFeed,
+            order: TextOrder::default(),
             line_endings: LineEndings::AsExtracted,
             byte_order_mark: true,
         };
@@ -353,6 +371,7 @@ mod tests {
         let plan = TextExportPlan {
             pages: vec![0],
             separator: PageSeparator::FormFeed,
+            order: TextOrder::default(),
             line_endings: LineEndings::Windows,
             byte_order_mark: false,
         };
@@ -371,6 +390,7 @@ mod tests {
         let plan = TextExportPlan {
             pages: vec![0],
             separator: PageSeparator::Marker,
+            order: TextOrder::default(),
             line_endings: LineEndings::Windows,
             byte_order_mark: true,
         };

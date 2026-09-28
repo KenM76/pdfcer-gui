@@ -64,6 +64,63 @@ pub fn pages_range_invalid(count: usize) -> String {
 // Where one page ends and the next begins
 // ---------------------------------------------------------------------------
 
+/// The heading over the text-order controls.
+#[must_use]
+pub const fn order_heading() -> &'static str {
+    "Order"
+}
+
+/// The default: lines as they sit on the page.
+#[must_use]
+pub const fn order_as_drawn() -> &'static str {
+    "As drawn on the page"
+}
+
+/// What [`order_as_drawn`] does to columns.
+#[must_use]
+pub const fn order_as_drawn_hint() -> &'static str {
+    "Each line as it sits on the page, the same text Copy gives. Side-by-side \
+     columns come out interleaved."
+}
+
+/// Inferred reading order.
+#[must_use]
+pub const fn order_reading() -> &'static str {
+    "Reading order"
+}
+
+/// What [`order_reading`] changes, including what it leaves out.
+#[must_use]
+pub const fn order_reading_hint() -> &'static str {
+    "One paragraph per line with a blank line between them, columns read one \
+     after the other. Running headers, footers and page numbers are left out. \
+     pdfcer works the order out from the layout, and the receipt says how much \
+     it inferred."
+}
+
+/// Reading order left repeated page furniture out of the file.
+#[must_use]
+pub fn running_text_left_out(count: usize) -> String {
+    format!(
+        "{count} running header(s), footer(s) and page number(s) were left out \
+         because they repeat on most pages."
+    )
+}
+
+/// How much of the reading order pdfcer inferred rather than read.
+#[must_use]
+pub fn reading_order_inferred(decisions: usize, multi_column_pages: usize) -> String {
+    let columns = match multi_column_pages {
+        0 => String::new(),
+        1 => " One page was read as columns.".to_owned(),
+        n => format!(" {n} pages were read as columns."),
+    };
+    format!(
+        "The reading order is pdfcer's inference from the layout, not the document's: \
+         {decisions} heading, list, caption or running-text decision(s).{columns}"
+    )
+}
+
 /// The heading over the page-separator controls.
 #[must_use]
 pub const fn separator_heading() -> &'static str {

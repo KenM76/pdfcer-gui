@@ -765,11 +765,23 @@ pub(super) fn text(doc: &mut OpenDoc, plan: &super::exporttext::TextExportPlan) 
     // sentences and the marker lines, and a conversion done at the point of
     // display is a conversion that gets forgotten at one of several points of
     // display.
-    let pages: Vec<(usize, String)> = extracted
-        .pages
-        .iter()
-        .map(|page| (page.page_index.saturating_add(1), page.plain_text()))
-        .collect();
+    let (pages, extracted, layout) = match plan.order {
+        super::exporttext::TextOrder::AsDrawn => {
+            let pages: Vec<(usize, String)> = extracted
+                .pages
+                .iter()
+                .map(|page| (page.page_index.saturating_add(1), page.plain_text()))
+                .collect();
+            (pages, extracted, None)
+        }
+        super::exporttext::TextOrder::Reading => {
+            let (pages, layout) = reading_order(&doc.pages, extracted);
+            let pdfcer_core::block_layout::DocumentLayout {
+                text, diagnostics, ..
+            } = layout;
+            (pages, text, Some(diagnostics))
+        }
+    };
     let assembled = super::exporttext::assemble(&pages, plan.separator);
 
     // THE REFUSAL. Before the picker. See the header.
@@ -810,14 +822,17 @@ pub(super) fn text(doc: &mut OpenDoc, plan: &super::exporttext::TextExportPlan) 
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
                     "export-text pages={} chars={} bytes={} empty={} separator={:?} \
-                     bom={} crlf={:?}",
+                     bom={} crlf={:?} order={} inferred={} left_out={}",
                     pages.len(),
                     assembled.characters,
                     bytes.len(),
                     assembled.empty_pages.len(),
                     plan.separator,
                     u8::from(plan.byte_order_mark),
-                    plan.line_endings
+                    plan.line_endings,
+                    crate::app::prefs::exporting::text_order_key(plan.order),
+                    layout.as_ref().map_or(0, |d| d.inferred()),
+                    layout.as_ref().map_or(0, running_left_out),
                 )
             });
             // The receipt goes FIRST — `record_notes`' own rule: *"the first
@@ -839,6 +854,18 @@ pub(super) fn text(doc: &mut OpenDoc, plan: &super::exporttext::TextExportPlan) 
             if !assembled.empty_pages.is_empty() {
                 notes.push(t::pages_without_text(&assembled.empty_pages));
             }
+            if let Some(diagnostics) = &layout {
+                let left_out = running_left_out(diagnostics);
+                if left_out > 0 {
+                    notes.push(t::running_text_left_out(left_out));
+                }
+                if diagnostics.inferred() > 0 || diagnostics.multi_column_pages > 0 {
+                    notes.push(t::reading_order_inferred(
+                        diagnostics.inferred(),
+                        diagnostics.multi_column_pages,
+                    ));
+                }
+            }
             notes.extend(honesty_notes(&extracted.diagnostics));
             super::record_notes(doc.edit_epoch, notes);
         }
@@ -850,6 +877,63 @@ pub(super) fn text(doc: &mut OpenDoc, plan: &super::exporttext::TextExportPlan) 
             super::record_note(doc.edit_epoch, t::export_failed(&error.to_string()));
         }
     }
+}
+
+/// Each extracted page in `block_layout` reading order: one block per line,
+/// a blank line between blocks, running headers, footers and page numbers
+/// left out. Pairs with one-based page numbers, as `assemble` expects.
+fn reading_order(
+    pages: &[pdfcer_core::page_tree::Page],
+    extracted: pdfcer_core::text_extract::ExtractedText,
+) -> (
+    Vec<(usize, String)>,
+    pdfcer_core::block_layout::DocumentLayout,
+) {
+    use pdfcer_core::block_layout::{self, BlockKind, LayoutOptions, PageGeometry};
+
+    // Geometry per EXTRACTED page, by its own index: `layout_text` pairs
+    // `geometry[i]` with `text.pages[i]`, and the export may skip pages.
+    let geometry: Vec<PageGeometry> = extracted
+        .pages
+        .iter()
+        .map(|page| {
+            pages.get(page.page_index).map_or(
+                PageGeometry::new(
+                    pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
+                    0,
+                ),
+                |page| PageGeometry::new(page.crop_box, page.rotate),
+            )
+        })
+        .collect();
+    let layout = block_layout::layout_text(extracted, &geometry, &LayoutOptions::default());
+    let text = layout
+        .pages
+        .iter()
+        .map(|page| {
+            let blocks: Vec<String> = page
+                .blocks
+                .iter()
+                .filter(|block| {
+                    !matches!(
+                        block.kind,
+                        BlockKind::RunningHeader | BlockKind::RunningFooter | BlockKind::PageNumber
+                    )
+                })
+                .map(|block| block.text(page))
+                .collect();
+            (page.page_index.saturating_add(1), blocks.join("\n\n"))
+        })
+        .collect();
+    (text, layout)
+}
+
+/// How many blocks reading order left out as running text.
+fn running_left_out(diagnostics: &pdfcer_core::block_layout::LayoutDiagnostics) -> usize {
+    diagnostics
+        .running_headers
+        .saturating_add(diagnostics.running_footers)
+        .saturating_add(diagnostics.page_numbers)
 }
 
 /// The four counters from `TextDiagnostics` that change what an operator

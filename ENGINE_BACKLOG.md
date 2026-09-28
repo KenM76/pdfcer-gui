@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **54 of 233** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `wanted` — a real gap — **54 of 234** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -82,7 +82,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
-| **Block-level layout for an untagged page** — reading-order blocks; `block_layout::analyze_layout`, `block_layout::layout_text`, `BlockKind`, `BlockSource`, `LayoutOptions`; CLI `pdfcer extract-layout` | **wanted; landed in the engine, not in the pin.** Reading-order blocks with a kind (heading, paragraph, list item, caption, running header, running footer, page number), columns, alignment and an inference count per decision. Owed: a reader for it — reading order for Export text and Read aloud, and the *N headings inferred from size* disclosure off-canvas from `LayoutDiagnostics::inferred`. Our request `G054`. |
+| **Extract a page's tables as a cell grid** — `pdfcer_core::table_detect`, `table_detect::detect_tables`, `TableOptions`, `BoundarySource`, `HeaderEvidence`; CLI `pdfcer extract-tables` | **wanted.** Ruled and whitespace-aligned tables as a row-major cell grid with spans, a header-row guess and every ambiguous call counted. Owed: a reader for it — Export ▸ Table as CSV/XLSX and the table half of DOCX export (O257), with the header guess and each aligned (inferred) table disclosed off-canvas from the diagnostics. Our request `G055`. |
 | Restyle text whose own face cannot take a style, falling through to a donor the shell supplies — `FormatRequest::style_donor`, `FormatRequest::style_donors`, `EditSession::preview_style_ladder_with_donors`, `StyleRung::SuppliedFaceEmbedded` | **wanted.** Rung 3 of the style ladder: when neither the page nor the standard fourteen have the bold or italic sibling, the engine embeds a subset of a donor face the caller names. The shell passes none today, so Bold on such text still ends at synthesis or a refusal. The donor is a file the operator picks, as *Font file…* already does for a face change (that path attaches `FormatRequest::embed_font` through `embedded_font`); the preview must go through `preview_style_ladder_with_donors` with the same donors so the tooltip and the result agree. |
 | List the form XObjects a page paints, and how many places … | **wanted.** The engine answers *how many places paint this form?* only where this shell already asks it: `canvas::textedit::report` prints `invocations=` and `pages=` at the moment of an in-form **text** edit, via `text_edit::invocation_set`. There is no standing listing. The argument for declining is real and is kept here so it is not re-derived — the number matters most exactly where it is already shown — but on a thirty-six-sheet SolidWorks set, where one title block is a single form, the operator wants the blast radius **before** picking up the tool, not in the disclosure afterwards. |
 | **`/ToUnicode` partial inversion** — a composite font's character map is inverted per CHARACTER, not per font … | **wanted — the capability is in the pin and the sentence is not.** The engine refuses an `edit_text` at the ambiguous character, naming every candidate code (`RInvTrigger::Ambiguous`), rather than refusing the whole font; only a wholly uninvertible map refuses everything. Nothing in `crates/pdfcer-gui` mentions `RInvTrigger`, `partial_inverse` or `ambiguous_chars`, so a refusal that could say *this one character is not addressable, the rest of the font edits* still arrives through `EditRefusal::of`'s four coarse buckets. That sentence is the work. `ToUnicodeCMap::partial_inverse` splits a map into `unambiguous`, `ambiguous`, `multi_char_codes` and `empty_codes`; `CompositeEncoding::ambiguous_chars` asks the same of an encoding and is the call an operator-facing sentence would make. |
@@ -154,7 +154,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 233** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `blocked` — waiting on something named — **2 of 234** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -172,7 +172,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 233** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 234** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -183,7 +183,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **15 of 233** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `declined` — deliberately no surface — **15 of 234** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -224,7 +224,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **162 of 233** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **163 of 234** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -233,6 +233,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
 | **Set or remove a page's `/CropBox`** — `EditSession::set_crop_boxes`, `CropBoxEdit::{Set, Reset}`, disclosing `overhangs_media_box` and the `CropBoxEntry` written | **shipped — Pages ▸ Transform ▸ Crop….** Four margins in millimetres, measured from the edges as the sheet is seen after `/Rotate`, become one `CropBoxEdit::Set`; all four at zero, or *Show whole sheet*, is `CropBoxEdit::Reset`. One `CommandKind::SetCropBoxes` undo entry however many sheets; a pick of mixed sizes or rotations offers only the whole sheet. Margins that leave nothing hide the commit button, so `EditError::CropBoxEmpty` is not reachable from the window. `app::actions::pagesize::crop` traces every `CropBoxEntry::ExplicitWritten`, `CropBoxEntry::BaseSpellingKept`, `CropBoxEntry::InheritedSoOwnEntryRemoved` and `CropBoxEntry::Absent` count and reports `overhangs_media_box` and an inherited removal off-canvas. `CropBoxChange`'s `page_index`, `before` and `after` are unread: the status line reports counts. Our request `G056`. |
+| **Block-level layout for an untagged page** — reading-order blocks; `block_layout::analyze_layout`, `block_layout::layout_text`, `BlockKind`, `BlockSource`, `LayoutOptions`; CLI `pdfcer extract-layout` | **shipped — File ▸ Export ▸ Text…, Order: Reading order.** `app::actions::export::text` passes the extraction and one `PageGeometry` per page (crop box and `/Rotate`) to `block_layout::layout_text`, drops `BlockKind::RunningHeader`, `BlockKind::RunningFooter` and `BlockKind::PageNumber` blocks, and joins the rest with a blank line. The receipt reports how many running lines were left out, and `LayoutDiagnostics::inferred` with the multi-column page count, off-canvas. As drawn stays the default. Still unread: Read aloud keeps content-stream order, and `BlockKind::Heading` levels are not a bookmark source. Our request `G054`. |
 | **Edit a layer's own properties** — name, default on/off, lock, Print/Export usage, Intent; `EditSession::set_layer_properties` | **shipped — Layers panel, Edit mode: right-click a row ▸ Layer properties….** The window sends only the fields changed as a `LayerEdit`, one `CommandKind::SetLayerProperties` undo entry, and traces the `LayerEditOutcome`'s `changed`. Print, Export and Intent start at *Leave as it is*, because `pdfcer_core::layers::Layer` does not report them (`request_layer_read_usage_intent.md`). `EditError::EmptyLayerName` and `EditError::LayerNotFound` are worded as `LayerRefusal`. Driven by `a_layer_can_be_made_renamed_and_deleted`. |
 | **Create and delete a layer** — Acrobat has no New Layer command; `EditSession::add_layer`, `EditSession::delete_layer` | **shipped — Layers panel, Edit mode: a name box and New layer button, and right-click a row ▸ Delete layer….** New layer is one `CommandKind::AddLayer` entry and works on a document with no layers; a delete is one `CommandKind::DeleteLayer` entry. Delete asks *Keep the drawing, always shown* (`LayerContentPolicy::KeepUnlayered`) or *Remove the drawing too* (`LayerContentPolicy::RemoveContent`), and the status bar reports the `LayerDeleteOutcome` counts. `EditError::LayerHasWidget`, `EditError::LayerInMembership` and `EditError::LayerContentNotRewritable` are worded as `LayerRefusal`. Driven by `a_layer_can_be_made_renamed_and_deleted`, which undoes the delete with Ctrl+Z. |
 | **Bake existing annotations into page content** — `EditSession::flatten_annotations`, `EditSession::annotation_flatten_refusals` | **shipped — right-click a selected markup ▸ Make part of the page.** One annotation per call, one `CommandKind::FlattenAnnotations` undo entry. The row is drawn only where `annotation_flatten_refusals` and `flatten_refusal` would accept, so a refused markup offers no row; a refusal the verb still raises is worded per `AnnotFlattenRefusalReason` on the status bar. `AnnotFlattenOutcome`'s count, its `layered` count and its `disclosures` go to the status bar. `AnnotFlattenRefusal`'s `subtype` is not read: the menu needs only whether and why. Markup ▸ Comments ▸ Make all part of the page passes `None` for the page in view and counts `skipped` by kind on the status bar, ignoring pop-ups. Both driven by `a_markup_can_be_made_part_of_the_page`. |

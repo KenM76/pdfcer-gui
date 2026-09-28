@@ -421,6 +421,7 @@ fn everything_changed() -> ExportPrefs {
         text: ExportTextPrefs {
             scope: PageScope::CurrentPage,
             separator: PageSeparator::Marker,
+            order: crate::exporttext::TextOrder::Reading,
             line_endings: LineEndings::Windows,
             byte_order_mark: true,
         },
@@ -475,7 +476,7 @@ fn every_export_preference_round_trips_through_the_file() {
     let mut read = ExportPrefs::default();
     let accepted = parse_block(&out, &mut read);
 
-    assert_eq!(accepted, 14, "fourteen keys are declared in this module");
+    assert_eq!(accepted, 15, "fifteen keys are declared in this module");
     assert_eq!(read, written, "a value changed on its way through the file");
     assert_ne!(
         read,
@@ -492,7 +493,7 @@ fn the_defaults_are_written_too_so_the_file_teaches_its_own_vocabulary() {
     write_block(&ExportPrefs::default(), &mut out);
 
     let mut read = ExportPrefs::default();
-    assert_eq!(parse_block(&out, &mut read), 14);
+    assert_eq!(parse_block(&out, &mut read), 15);
     assert_eq!(read, ExportPrefs::default());
 
     // Each key's own comment block names it, so an operator reading the file
@@ -505,6 +506,7 @@ fn the_defaults_are_written_too_so_the_file_teaches_its_own_vocabulary() {
         "export_image_quality",
         "export_text_pages",
         "export_text_separator",
+        "export_text_order",
         "export_text_line_endings",
         "export_text_byte_order_mark",
         "export_dxf_units",

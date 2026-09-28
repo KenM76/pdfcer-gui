@@ -6,7 +6,7 @@
 use egui::Ui;
 
 use crate::app::actions::Action;
-use crate::app::actions::exporttext::{LineEndings, PageSeparator, TextExportPlan};
+use crate::app::actions::exporttext::{LineEndings, PageSeparator, TextExportPlan, TextOrder};
 use crate::app::actions::imageexport::{PageScope, resolve_pages};
 use crate::app::state::{OpenDoc, Status};
 use crate::text::export_text as t;
@@ -37,6 +37,16 @@ pub const fn region_for_separator(separator: PageSeparator) -> &'static str {
         // never displayed.
         PageSeparator::FormFeed => "export-text.separator.form-feed",
         PageSeparator::Marker => "export-text.separator.marker",
+    }
+}
+/// The region ONE text-order radio publishes.
+#[must_use]
+pub const fn region_for_order(order: TextOrder) -> &'static str {
+    match order {
+        // ui-text-exempt: trace region names, matched by tools/ui-verify and
+        // never displayed.
+        TextOrder::AsDrawn => "export-text.order.as-drawn",
+        TextOrder::Reading => "export-text.order.reading",
     }
 }
 /// The region the Windows-line-endings checkbox publishes.
@@ -91,6 +101,8 @@ pub struct ExportTextDialog {
     /// and undo, and the argument for that is now on
     /// [`crate::app::prefs::ExportTextPrefs`] with the value it argues for.
     separator: PageSeparator,
+    /// As drawn, or in inferred reading order.
+    order: TextOrder,
     /// How lines end.
     line_endings: LineEndings,
     /// Whether the file opens with a UTF-8 byte-order mark.
@@ -115,6 +127,7 @@ impl ExportTextDialog {
             // Deliberately empty — see the note on this function.
             range_text: String::new(),
             separator: remembered.separator,
+            order: remembered.order,
             line_endings: remembered.line_endings,
             byte_order_mark: remembered.byte_order_mark,
             export_requested: false,
@@ -127,7 +140,7 @@ impl ExportTextDialog {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "export-text-open page={} pages={} scope={} separator={} endings={} bom={}",
+                "export-text-open page={} pages={} scope={} separator={} order={} endings={} bom={}",
                 dialog.page_index,
                 dialog.page_count,
                 // Stable lowercase tokens, never `{:?}`. This project's
@@ -139,6 +152,7 @@ impl ExportTextDialog {
                     crate::app::prefs::ExportTextPrefs::default().scope,
                 ),
                 crate::app::prefs::exporting::separator_key(dialog.separator),
+                crate::app::prefs::exporting::text_order_key(dialog.order),
                 crate::app::prefs::exporting::line_endings_key(dialog.line_endings),
                 u8::from(dialog.byte_order_mark),
             )
@@ -152,6 +166,7 @@ impl ExportTextDialog {
         crate::app::prefs::ExportTextPrefs {
             scope: self.scope,
             separator: self.separator,
+            order: self.order,
             line_endings: self.line_endings,
             byte_order_mark: self.byte_order_mark,
         }
@@ -226,6 +241,7 @@ impl ExportTextDialog {
         Some(TextExportPlan {
             pages: self.pages()?,
             separator: self.separator,
+            order: self.order,
             line_endings: self.line_endings,
             byte_order_mark: self.byte_order_mark,
         })
@@ -237,6 +253,8 @@ impl ExportTextDialog {
         ui.add_space(8.0);
 
         let pages = self.pages_group(ui);
+        ui.add_space(8.0);
+        self.order_group(ui);
         ui.add_space(8.0);
         self.separator_group(ui);
         ui.add_space(8.0);
@@ -303,6 +321,27 @@ impl ExportTextDialog {
         }
         crate::diag::ui_rect(REGION_PAGES, start.union(ui.cursor()));
         pages
+    }
+
+    /// In what order each page's words are written.
+    fn order_group(&mut self, ui: &mut Ui) {
+        ui.label(t::order_heading());
+        for (order, label, hint) in [
+            (
+                TextOrder::AsDrawn,
+                t::order_as_drawn(),
+                t::order_as_drawn_hint(),
+            ),
+            (
+                TextOrder::Reading,
+                t::order_reading(),
+                t::order_reading_hint(),
+            ),
+        ] {
+            let response = ui.radio_value(&mut self.order, order, label);
+            crate::diag::ui_rect(region_for_order(order), response.rect);
+            ui.weak(hint);
+        }
     }
 
     /// What goes between one page and the next.

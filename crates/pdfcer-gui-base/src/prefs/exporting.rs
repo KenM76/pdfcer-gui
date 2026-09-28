@@ -10,7 +10,7 @@
 
 use pdfcer_core::export::dxf::{DxfText, DxfUnits, DxfVersion};
 
-use crate::exporttext::{LineEndings, PageSeparator};
+use crate::exporttext::{LineEndings, PageSeparator, TextOrder};
 use crate::imageexport::{ImageFormat, PageScope};
 
 use super::printing::KeyOutcome;
@@ -107,6 +107,8 @@ pub struct ExportTextPrefs {
     pub scope: PageScope,
     /// Form feed, or a visible line naming the page that follows.
     pub separator: PageSeparator,
+    /// As drawn, or in inferred reading order.
+    pub order: TextOrder,
     /// The engine's own line breaks, or `\r\n` for a Windows tool.
     pub line_endings: LineEndings,
     /// Whether a UTF-8 byte-order mark is written.
@@ -122,6 +124,7 @@ impl Default for ExportTextPrefs {
             // reason these are two keys and not one.
             scope: PageScope::AllPages,
             separator: PageSeparator::FormFeed,
+            order: TextOrder::AsDrawn,
             line_endings: LineEndings::AsExtracted,
             byte_order_mark: false,
         }
@@ -242,6 +245,26 @@ pub fn separator_from_key(token: &str) -> Option<PageSeparator> {
     match token.trim() {
         "form-feed" => Some(PageSeparator::FormFeed),
         "marker" => Some(PageSeparator::Marker),
+        _ => None,
+    }
+}
+
+/// The file token for a text order.
+#[must_use]
+pub const fn text_order_key(value: TextOrder) -> &'static str {
+    match value {
+        // ui-text-exempt: file VALUES, as above.
+        TextOrder::AsDrawn => "as-drawn",
+        TextOrder::Reading => "reading",
+    }
+}
+
+/// A text order from its file token, or `None`.
+#[must_use]
+pub fn text_order_from_key(token: &str) -> Option<TextOrder> {
+    match token.trim() {
+        "as-drawn" => Some(TextOrder::AsDrawn),
+        "reading" => Some(TextOrder::Reading),
         _ => None,
     }
 }
@@ -399,6 +422,7 @@ pub(super) fn parse_key(prefs: &mut ExportPrefs, key: &str, value: &str) -> KeyO
         // --- Export text ----------------------------------------------------
         "export_text_pages" => store!(page_scope_from_key(value), prefs.text.scope),
         "export_text_separator" => store!(separator_from_key(value), prefs.text.separator),
+        "export_text_order" => store!(text_order_from_key(value), prefs.text.order),
         "export_text_line_endings" => {
             store!(line_endings_from_key(value), prefs.text.line_endings)
         }
@@ -536,6 +560,18 @@ pub(super) fn write_block(prefs: &ExportPrefs, out: &mut String) {
     // ui-text-exempt: a file KEY, as above.
     out.push_str("export_text_separator = ");
     out.push_str(separator_key(prefs.text.separator));
+    out.push('\n');
+
+    out.push_str(
+        "\n\
+         # export_text_order: as-drawn | reading\n\
+         # as-drawn writes each line as it sits on the page, so two columns\n\
+         # interleave. reading writes one paragraph per line in the order pdfcer\n\
+         # infers, and leaves out running headers, footers and page numbers.\n",
+    );
+    // ui-text-exempt: a file KEY, as above.
+    out.push_str("export_text_order = ");
+    out.push_str(text_order_key(prefs.text.order));
     out.push('\n');
 
     out.push_str(

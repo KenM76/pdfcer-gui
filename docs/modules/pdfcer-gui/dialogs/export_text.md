@@ -57,6 +57,19 @@ afterwards, off-canvas, from `app::actions::export::text`. That is the same
 two-part shape [`crate::text::export_text`]'s header sets out, and it is why
 the losses are said twice in two different registers rather than once.
 
+## Order: as drawn, or reading order
+
+*As drawn* is the content-stream order the clipboard copies, so the default
+file is still the clipboard's bytes. *Reading order* hands the extraction to
+the engine's block layout, which orders a page into columns and blocks and
+tells running headers, running footers and page numbers apart from the body.
+Those three are left out — a page number between two paragraphs of a book is
+noise in a text file — and the receipt says how many lines went. Every
+ordering decision the layout took on inference (a heading guessed from type
+size, columns guessed from gaps) is counted in the receipt too, because the
+operator cannot see an inference in a `.txt` file (R8b). The choice is
+remembered as `export_text_order`.
+
 ## The page scope is `imageexport`'s, called rather than copied
 
 [`crate::app::actions::imageexport::PageScope`] and `resolve_pages`, which in

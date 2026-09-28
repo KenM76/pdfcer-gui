@@ -232,6 +232,7 @@ fn every_preference_round_trips_through_the_file() {
                         text: ExportTextPrefs {
                             scope: PageScope::CurrentPage,
                             separator: PageSeparator::Marker,
+                            order: crate::exporttext::TextOrder::Reading,
                             line_endings: LineEndings::Windows,
                             byte_order_mark: true,
                         },
@@ -714,6 +715,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
             text: ExportTextPrefs {
                 scope: PageScope::AllPages,
                 separator: PageSeparator::FormFeed,
+                order: crate::exporttext::TextOrder::AsDrawn,
                 line_endings: LineEndings::AsExtracted,
                 byte_order_mark: true,
             },

@@ -44,10 +44,11 @@ pub(super) fn remember_text(habits: ExportTextPrefs, prefs: &mut Prefs) {
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "export-text-remembered saved={} scope={} separator={} endings={} bom={}",
+            "export-text-remembered saved={} scope={} separator={} order={} endings={} bom={}",
             saved.is_ok(),
             exporting::page_scope_key_or(text.scope, ExportTextPrefs::default().scope),
             exporting::separator_key(text.separator),
+            exporting::text_order_key(text.order),
             exporting::line_endings_key(text.line_endings),
             u8::from(text.byte_order_mark),
         )
