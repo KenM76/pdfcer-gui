@@ -79,6 +79,8 @@ pub mod entry;
 /// only real if the lines are extended.
 pub mod export_dxf;
 pub mod export_form;
+/// Every word File ▸ Export ▸ Tables… shows, and its receipt.
+pub mod export_tables;
 /// Every word the Export-text window shows, and every sentence a text
 /// export owes afterwards.
 pub mod export_text;

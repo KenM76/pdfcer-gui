@@ -176,6 +176,7 @@ pub(super) fn tab() -> Tab {
                     // with no order at all.
                     command("file.export_text"),
                     command("file.import_text"),
+                    command("file.export_tables"),
                     //
                     // **No import twin beside it, and none is missing.** The
                     // three pairs above are pairs because their formats are not

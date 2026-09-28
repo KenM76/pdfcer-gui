@@ -236,6 +236,9 @@ fn every_preference_round_trips_through_the_file() {
                             line_endings: LineEndings::Windows,
                             byte_order_mark: true,
                         },
+                        tables: ExportTablePrefs {
+                            scope: PageScope::CurrentPage,
+                        },
                         dxf: ExportDxfPrefs {
                             units: DxfUnits::Millimetres,
                             fit_arcs: false,
@@ -718,6 +721,9 @@ fn the_writer_emits_no_key_the_parser_rejects() {
                 order: crate::exporttext::TextOrder::AsDrawn,
                 line_endings: LineEndings::AsExtracted,
                 byte_order_mark: true,
+            },
+            tables: ExportTablePrefs {
+                scope: PageScope::AllPages,
             },
             dxf: ExportDxfPrefs {
                 units: DxfUnits::Inches,

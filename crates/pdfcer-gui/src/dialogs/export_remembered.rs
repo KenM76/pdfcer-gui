@@ -4,7 +4,9 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/dialogs/export_remembered.md`.
 
 use crate::app::prefs::exporting;
-use crate::app::prefs::{ExportDxfPrefs, ExportImagePrefs, ExportTextPrefs, Prefs};
+use crate::app::prefs::{
+    ExportDxfPrefs, ExportImagePrefs, ExportTablePrefs, ExportTextPrefs, Prefs,
+};
 
 /// Persist the Export-image window's habits.
 pub(super) fn remember_image(habits: ExportImagePrefs, prefs: &mut Prefs) {
@@ -51,6 +53,23 @@ pub(super) fn remember_text(habits: ExportTextPrefs, prefs: &mut Prefs) {
             exporting::text_order_key(text.order),
             exporting::line_endings_key(text.line_endings),
             u8::from(text.byte_order_mark),
+        )
+    });
+}
+
+/// Persist the Export-tables window's habits.
+pub(super) fn remember_tables(habits: ExportTablePrefs, prefs: &mut Prefs) {
+    if prefs.export.tables == habits {
+        return;
+    }
+    prefs.export.tables = habits;
+    let saved = prefs.save();
+    crate::diag::trace(|| {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "export-tables-remembered saved={} scope={}",
+            saved.is_ok(),
+            exporting::page_scope_key_or(habits.scope, ExportTablePrefs::default().scope),
         )
     });
 }

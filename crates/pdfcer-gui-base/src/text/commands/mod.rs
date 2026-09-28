@@ -28,7 +28,9 @@ impl CommandText {
 /// [`annotate`] and [`view`] are drawn on. Re-exported, so callers keep
 /// spelling it `text::commands::file_save_as`.
 mod file;
-pub use file::{file_export_image, file_export_text, file_import_text, file_save_as};
+pub use file::{
+    file_export_image, file_export_tables, file_export_text, file_import_text, file_save_as,
+};
 
 /// **The View tab's entries**, a module of its own under R2.
 mod view;

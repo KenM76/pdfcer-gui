@@ -12,6 +12,7 @@ pub(crate) fn claims(id: &str) -> bool {
         "file.export_dxf"
             | "file.export_image"
             | "file.export_text"
+            | "file.export_tables"
             | "file.import_text"
             | "file.export_form_data"
             | "file.import_form_data"
@@ -46,6 +47,9 @@ impl PdfcerApp {
             "file.export_text" => self
                 .dialogs
                 .open_export_text(&self.status, &self.prefs.export.text),
+            "file.export_tables" => self
+                .dialogs
+                .open_export_tables(&self.status, &self.prefs.export.tables),
             // **Import text as pages** — the other half of that ask.
             //
             // A picker THEN a dialog, which is `file.insert_pages`' shape and

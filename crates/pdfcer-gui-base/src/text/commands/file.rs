@@ -34,6 +34,16 @@ pub const fn file_export_text() -> CommandText {
     )
 }
 
+/// **Export tables** — the tables on the page as spreadsheet cells.
+pub const fn file_export_tables() -> CommandText {
+    CommandText::new(
+        "Export tables…",
+        "Find the tables on the chosen pages and write each one as a CSV file of \
+         rows and columns. Tables with drawn lines and tables laid out by \
+         alignment are both found; the receipt says which were guessed.",
+    )
+}
+
 /// **Import text** — the return journey, `pdfcer-core` `Pass 252.0`.
 pub const fn file_import_text() -> CommandText {
     CommandText::new(

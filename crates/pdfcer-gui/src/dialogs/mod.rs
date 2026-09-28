@@ -43,6 +43,8 @@ pub mod export_image;
 /// projection differs, and that stays in each window beside the fields it
 /// reads.
 mod export_remembered;
+/// File ▸ Export ▸ Tables…
+pub mod export_tables;
 /// The Export-text window. Its header carries the record of what the
 /// return journey — a text file back into a PDF — demanded of the engine,
 /// which is what that engine request was argued from. [`import_text`] is the
@@ -398,6 +400,9 @@ pub struct DialogsState {
     /// a statement about the open document's pages.
     export_text: Option<export_text::ExportTextDialog>,
 
+    /// The Export-tables window, when one is open. Document-scoped.
+    export_tables: Option<export_tables::ExportTablesDialog>,
+
     /// The unsaved-edits confirmation, when one is open.
     ///
     /// **Document-scoped in subject and deliberately NOT closed by
@@ -747,6 +752,14 @@ impl DialogsState {
         {
             self.export_text = None;
         }
+        if self
+            .export_tables
+            .as_mut()
+            .map(|d| d.show(ctx, actions, prefs))
+            == Some(false)
+        {
+            self.export_tables = None;
+        }
         if self.embed.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.embed = None;
         }
@@ -1062,6 +1075,7 @@ impl DialogsState {
         self.stamp_collection = None;
         self.export_image = None;
         self.export_text = None;
+        self.export_tables = None;
         self.embed = None;
         self.unembed = None;
         // On this list for `stamp_collection`'s reason in its strongest form:

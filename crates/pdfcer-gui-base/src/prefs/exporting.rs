@@ -99,6 +99,21 @@ impl Default for ExportImagePrefs {
     }
 }
 
+/// What the **Export tables** window opens with.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ExportTablePrefs {
+    /// Which pages, as a policy; a typed range is never remembered.
+    pub scope: PageScope,
+}
+
+impl Default for ExportTablePrefs {
+    fn default() -> Self {
+        Self {
+            scope: PageScope::AllPages,
+        }
+    }
+}
+
 /// What the **Export text** window opens with.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExportTextPrefs {
@@ -367,6 +382,8 @@ pub struct ExportPrefs {
     pub text: ExportTextPrefs,
     /// The Export-to-DXF window's group.
     pub dxf: ExportDxfPrefs,
+    /// The Export-tables window's group.
+    pub tables: ExportTablePrefs,
 }
 
 /// Read one `key = value` line into [`ExportPrefs`], if it belongs to this
@@ -436,6 +453,9 @@ pub(super) fn parse_key(prefs: &mut ExportPrefs, key: &str, value: &str) -> KeyO
         "export_dxf_fit_arcs" => store!(super::opening::bool_from_key(value), prefs.dxf.fit_arcs),
         "export_dxf_text" => store!(dxf_text_from_key(value), prefs.dxf.text),
         "export_dxf_version" => store!(dxf_version_from_key(value), prefs.dxf.version),
+
+        // --- Export tables --------------------------------------------------
+        "export_tables_pages" => store!(page_scope_from_key(value), prefs.tables.scope),
 
         _ => KeyOutcome::NotMine,
     }
@@ -643,6 +663,20 @@ pub(super) fn write_block(prefs: &ExportPrefs, out: &mut String) {
     // ui-text-exempt: a file KEY, as above.
     out.push_str("export_dxf_text = ");
     out.push_str(dxf_text_key(prefs.dxf.text));
+    out.push('\n');
+
+    // --- Export tables ------------------------------------------------------
+    out.push_str(
+        "\n\
+         # export_tables_pages: current | all\n\
+         # As above, for the Export tables window.\n",
+    );
+    // ui-text-exempt: a file KEY, as above.
+    out.push_str("export_tables_pages = ");
+    out.push_str(page_scope_key_or(
+        prefs.tables.scope,
+        ExportTablePrefs::default().scope,
+    ));
     out.push('\n');
 
     if let Some(token) = dxf_version_key(prefs.dxf.version) {

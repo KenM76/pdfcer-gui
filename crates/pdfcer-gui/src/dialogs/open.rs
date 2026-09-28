@@ -4,9 +4,10 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/dialogs/open.md`.
 
 use super::{
-    DialogsState, about, compact, diagnostics, embed, export_dxf, export_image, export_text,
-    formfield, import_text, insert_image, insert_pages, new_document, ocr, offpage, page_crop,
-    page_size, print, protect, redact, scale, shortcuts, stamp_collection, textannot, unembed,
+    DialogsState, about, compact, diagnostics, embed, export_dxf, export_image, export_tables,
+    export_text, formfield, import_text, insert_image, insert_pages, new_document, ocr, offpage,
+    page_crop, page_size, print, protect, redact, scale, shortcuts, stamp_collection, textannot,
+    unembed,
 };
 use crate::app::prefs::RedactionReach;
 use crate::app::state::Status;
@@ -276,6 +277,19 @@ impl DialogsState {
             return;
         }
         self.export_text = export_text::open_for(status, remembered);
+    }
+
+    /// The dispatch target for `file.export_tables`, guarded as
+    /// [`Self::open_export_text`] is.
+    pub fn open_export_tables(
+        &mut self,
+        status: &Status,
+        remembered: &crate::app::prefs::ExportTablePrefs,
+    ) {
+        if self.export_tables.is_some() {
+            return;
+        }
+        self.export_tables = export_tables::open_for(status, remembered);
     }
 
     /// Open the Export-image window for the open document.

@@ -349,6 +349,9 @@ pub mod imageexport;
 /// Exporting a document as plain text.
 pub mod exporttext;
 
+/// Exporting detected tables as spreadsheet cells.
+pub mod tableexport;
+
 /// Attaching the context menus to the command registry.
 pub mod menus_wiring;
 

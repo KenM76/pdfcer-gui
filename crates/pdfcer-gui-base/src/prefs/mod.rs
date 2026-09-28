@@ -71,8 +71,8 @@ pub use chrome::{DEFAULT_UI_SCALE, MAX_UI_SCALE, MIN_UI_SCALE, UI_SCALE_STEP};
 // own `DxfUnits` and `DxfText` -- is already `pub`, so no visibility chain
 // forces them down. Same storage decision, different constraint.
 pub use exporting::{
-    ExportDxfPrefs, ExportImagePrefs, ExportPrefs, ExportTextPrefs, MAX_EXPORT_DPI,
-    MAX_JPEG_QUALITY, MIN_EXPORT_DPI, MIN_JPEG_QUALITY,
+    ExportDxfPrefs, ExportImagePrefs, ExportPrefs, ExportTablePrefs, ExportTextPrefs,
+    MAX_EXPORT_DPI, MAX_JPEG_QUALITY, MIN_EXPORT_DPI, MIN_JPEG_QUALITY,
 };
 pub use offpage::OffPagePrefs;
 pub use opening::{OpeningFit, PageChrome};

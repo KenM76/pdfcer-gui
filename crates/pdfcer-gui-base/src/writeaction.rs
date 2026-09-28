@@ -108,6 +108,11 @@ pub enum WriteAction {
         /// Everything the write needs, frozen when Export was pressed.
         plan: crate::exporttext::TextExportPlan,
     },
+    /// **Write the detected tables as a workbook or CSV files.**
+    Tables {
+        /// The pages and format, frozen when Export was pressed.
+        plan: crate::tableexport::TableExportPlan,
+    },
     /// **Write the form's values out as FDF, XFDF or CSV.**
     ///
     /// # It carries nothing, and that is the difference from [`Self::Dxf`]

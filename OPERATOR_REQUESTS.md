@@ -183,12 +183,16 @@ space.
 
 **Built:** both panels end in a collapsed *Add and edit …* footer under the list. Selecting a bookmark, toggling a layer or clicking the canvas now adds lines only to that footer, which grows upward; the list never moves. `a_bookmark_can_be_renamed_and_removed` asserts the clicked row stays put. Not driven yet (the PC is in use). The other panels have not been swept for the same pattern.
 
-## O257 — **FILED** — export to word-processor and spreadsheet formats, with structure
+## O257 — **IN PROGRESS** — export to word-processor and spreadsheet formats, with structure
 
 Export to `.docx` (and the other word-processor formats worth having) and to
 `.xlsx`/`.csv`, carrying real structure: headings, paragraphs, headers and
 footers, tables, numbers as numbers, one sheet per table or page. Use PaddleOCR's
 layout and table recognition where it helps. Support the best exports we can.
+
+**State:** File ▸ Export ▸ Tables… writes each detected table as a CSV (built,
+undriven). `.xlsx` waits on his OK for a writer crate the engine does not use;
+`.docx` is not built.
 
 ## O258 — **FILED, designed** — an LLM can drive the open document, off by default, asking him the first time one tries
 
@@ -210,6 +214,16 @@ Authoring and Output, the selected page on the right, and a search box over
 both that filters to pages holding a matching option and underlines the match.
 Tools ▸ Font folders still opens on the Fonts page. Not driven yet (the PC is
 in use).
+
+## O260 — **IN PROGRESS** — drive the program without the mouse, so checks run while he works
+
+His words: *"are you now able to drive a gui session without needing the
+mouse? Was that feature completed?"*, then *"work on the mouse-free workflow at
+the same time."* Commands, keys and typed text already run off-screen with no
+pointer. Clicks and drags on the page and on panels still move his real cursor,
+so every row marked "not yet driven" waits for the PC. The remedy is pointer
+input delivered into the program's own event stream rather than through the
+operating system.
 
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 

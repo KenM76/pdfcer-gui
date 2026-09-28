@@ -226,6 +226,11 @@ pub use pdfcer_gui_base::imageexport;
 /// **What a TEXT export is** — which pages, what goes between them, and how
 /// the bytes are encoded — plus the pure parts of making one.
 pub use pdfcer_gui_base::exporttext;
+/// **What a TABLE export is** — the plan, the cell grid, number recognition
+/// and CSV encoding.
+pub use pdfcer_gui_base::tableexport;
+/// File ▸ Export ▸ Tables…: detect, filter to the plan, write.
+mod export_tables;
 /// **A text file becomes pages** — `Action::ImportText`'s body, on
 /// `EditSession::place_text`. Mostly a disclosure: its header lists the
 /// judgements `PlaceTextReport` carries about the operator's own file, and why

@@ -1031,6 +1031,9 @@ impl PdfcerApp {
                 // returns nothing, and a zero-byte `.txt` on disk is
                 // indistinguishable from a successful export.
                 super::write::WriteAction::Text { plan } => super::export::text(doc, &plan),
+                super::write::WriteAction::Tables { plan } => {
+                    super::export_tables::export(doc, &plan)
+                }
                 super::write::WriteAction::FormData => super::export::form_data(doc),
                 // O169. The picker, the folder Acrobat scans, and the
                 // whole disclosure live in `super::stamps`. It changes no
