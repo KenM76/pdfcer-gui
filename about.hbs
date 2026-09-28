@@ -157,8 +157,9 @@ stated per entry rather than assumed:
   faces below, which are `include_bytes!` payloads and static tables in crates
   this program links;
 - **loose files in this folder** — the `ocrs` OCR model weights below, which
-  live at `models/ocrs/` beside the executable, and the OCRcer model, at
-  `models/ocrcer/`; the program loads both from disk on demand.
+  live at `models/ocrs/` beside the executable, the OCRcer model, at
+  `models/ocrcer/`, and the PaddleOCR models, at `models/paddle/`; the program
+  loads them from disk on demand.
 
 They all arrive through the engine: `pdfcer-gui` depends on `pdfcer-core` and
 `pdfcer-render` **by path** into `D:\Dev\pdfcer`, and Rust links them
@@ -291,6 +292,24 @@ from: feature vectors measured from glyphs rendered from OFL-1.1 and
 Apache-2.0 font faces (no font file or outline data is included), and
 evaluation datasets of which no text or image is redistributed. The engine's
 code is the `ocrcer-core` crate, listed with the other crates above.
+
+### Bundled PaddleOCR PP-OCRv5 models (Apache-2.0)
+
+The files in `models/paddle/` in this portable folder are the PP-OCRv5 text
+detection model and the PP-OCRv5 Latin-script recognition model, which reads
+English and French: the third recogniser the OCR dialog offers. They were
+trained and exported to ONNX by the **PaddleOCR authors** (PaddlePaddle,
+<https://github.com/PaddlePaddle/PaddleOCR>) and published on Hugging Face as
+`PaddlePaddle/PP-OCRv5_mobile_det_onnx` and
+`PaddlePaddle/latin_PP-OCRv5_mobile_rec_onnx`, licensed **Apache-2.0**; the
+licence text ships beside them as `models/paddle/LICENSE`.
+
+**pdfcer has modified two of these files.** `det.onnx` is unchanged and
+renamed only. `rec.onnx` was converted from ONNX opset 7 to opset 13 so the
+runtime pdfcer links can load it; its weights are unchanged. `dict.txt` is the
+model's character list, extracted from the export's `inference.yml`.
+Per-file SHA-256 hashes are recorded in
+`crates/pdfcer-gui/assets/models/paddle/PROVENANCE.md`.
 
 ### Bundled Foxit substitute faces (BSD-3-Clause, via pdfium)
 

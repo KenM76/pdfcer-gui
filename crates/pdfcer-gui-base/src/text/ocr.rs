@@ -213,7 +213,7 @@ pub const fn engine_tooltip(engine: crate::ocr::EngineId) -> &'static str {
             "The OCRcer recogniser: matches each character against its model and gives every word a confidence score."
         }
         crate::ocr::EngineId::Paddle => {
-            "The PaddleOCR recogniser: runs PP-OCR models you supply in the models\\paddle folder, and gives every word a confidence score."
+            "The PaddleOCR recogniser: PP-OCRv5 neural networks that read English and French. It gives every word a confidence score."
         }
     }
 }
@@ -253,19 +253,12 @@ pub fn close() -> &'static str {
 
 /// The models are not where this build looks for them.
 #[must_use]
-pub fn models_missing(shipped: bool, searched: &[String]) -> String {
+pub fn models_missing(searched: &[String]) -> String {
     let list = searched.join(", ");
-    if shipped {
-        format!(
-            "The recognition models are not installed. They ship in the models folder beside \
-             pdfcer-gui.exe; this build looked in: {list}"
-        )
-    } else {
-        format!(
-            "No PaddleOCR models were found. pdfcer does not include them: place PP-OCR ONNX \
-             exports named det.onnx and rec.onnx (and optionally dict.txt) in one of: {list}"
-        )
-    }
+    format!(
+        "The recognition models are not installed. They ship in the models folder beside \
+         pdfcer-gui.exe; this build looked in: {list}"
+    )
 }
 
 /// The run read characters through a dictionary file.
@@ -556,10 +549,9 @@ mod tests {
     /// Two different absences produce two different sentences.
     #[test]
     fn a_missing_engine_and_missing_models_are_not_the_same_message() {
-        assert_ne!(engine_absent(), models_missing(true, &["x".to_owned()]));
+        assert_ne!(engine_absent(), models_missing(&["x".to_owned()]));
         assert!(
-            models_missing(true, &["C:\\a".to_owned(), "C:\\b".to_owned()])
-                .contains("C:\\a, C:\\b"),
+            models_missing(&["C:\\a".to_owned(), "C:\\b".to_owned()]).contains("C:\\a, C:\\b"),
             "the searched paths are the actionable half and must survive into the message — \
              and so must the separator between them, which is why this function joins the \
              list rather than taking one already joined"

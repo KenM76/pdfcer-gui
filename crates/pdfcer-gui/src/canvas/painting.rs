@@ -74,7 +74,7 @@ pub(super) struct Frame<'a> {
     pub dimension_preview: Option<&'a [(pdfcer_core::vector::Point, pdfcer_core::vector::Point)]>,
     /// The engine's bake of the same dragged dimension, drawn in place of
     /// [`Self::dimension_preview`] whenever `canvas::dimpreview` can paint it.
-    pub dimension_baked: Option<&'a pdfcer_core::dimension::DimensionPreview>,
+    pub dimension_baked: Option<&'a crate::canvas::dimpreview::Baked>,
     /// **A markup shape being reshaped, as the page-space segments it
     /// would be drawn as on release** — `Pass 255.0`.
     ///

@@ -160,9 +160,9 @@ fn choose_engine(exe: &std::path::Path, engine: &str) -> Result<()> {
         .map_err(|e| Error::new(format!("could not write preferences: {e}")))
 }
 
-/// The same chain with the recogniser set to PaddleOCR. pdfcer ships no PP-OCR
-/// models, so the check stages the operator's own copy beside the sandboxed
-/// binary first, where a packaged build looks for them.
+/// The same chain with the recogniser set to PaddleOCR. The check first stages
+/// the PP-OCR models the portable package ships beside the sandboxed binary,
+/// where a packaged build finds them.
 pub struct PaddleRecognisesAPageAndTheDocumentKeepsIt;
 
 /// The `ocr_engine` preference key for PaddleOCR.
@@ -195,13 +195,14 @@ impl Check for PaddleRecognisesAPageAndTheDocumentKeepsIt {
 }
 
 /// Copy `det.onnx` and `rec.onnx` into `models/paddle` beside the binary this
-/// check will drive. The source is `UI_VERIFY_PADDLE_MODELS`, else the engine
-/// repository's test models; neither present is a SKIP, not a pass.
+/// check will drive, with `dict.txt` when the source has one. The source is
+/// `UI_VERIFY_PADDLE_MODELS`, else `crates/pdfcer-gui/assets/models/paddle`,
+/// the directory the packager copies; a missing model is a SKIP, not a pass.
 fn stage_paddle_models(ctx: &CheckContext) -> Result<std::path::PathBuf> {
     let from = std::env::var_os(PADDLE_MODELS_VAR).map_or_else(
         || {
             std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join("../../../pdfcer/target/paddle-models")
+                .join("../../crates/pdfcer-gui/assets/models/paddle")
         },
         std::path::PathBuf::from,
     );
@@ -219,12 +220,17 @@ fn stage_paddle_models(ctx: &CheckContext) -> Result<std::path::PathBuf> {
         let source = from.join(file);
         if !source.is_file() {
             return Err(Error::new(format!(
-                "no PP-OCR model at {}. pdfcer ships none; set {PADDLE_MODELS_VAR} to a directory holding det.onnx and rec.onnx.",
+                "no PP-OCR model at {}; set {PADDLE_MODELS_VAR} to a directory holding det.onnx and rec.onnx.",
                 source.display()
             )));
         }
         std::fs::copy(&source, to.join(file))
             .map_err(|e| Error::new(format!("could not copy {}: {e}", source.display())))?;
+    }
+    let dict = from.join("dict.txt");
+    if dict.is_file() {
+        std::fs::copy(&dict, to.join("dict.txt"))
+            .map_err(|e| Error::new(format!("could not copy {}: {e}", dict.display())))?;
     }
     Ok(from)
 }

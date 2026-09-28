@@ -48,7 +48,7 @@ pub struct Previews {
     pub dimension: Option<Vec<(pdfcer_core::vector::Point, pdfcer_core::vector::Point)>>,
     /// The engine's bake of that dimension, drawn in place of
     /// [`Self::dimension`] whenever it can be.
-    pub dimension_baked: Option<pdfcer_core::dimension::DimensionPreview>,
+    pub dimension_baked: Option<crate::canvas::dimpreview::Baked>,
 }
 
 /// Everything one move frame needs that is not the delta.

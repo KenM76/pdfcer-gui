@@ -236,5 +236,15 @@ pub fn attributions() -> &'static [Attribution] {
             licence_url: None,
             changes: "The model file is shipped as OCRcer builds it.",
         },
+        // `check-shipped-assets.py` looks for the directory path:
+        // crates/pdfcer-gui/assets/models/paddle
+        Attribution {
+            component: "The PaddleOCR PP-OCRv5 English and French models, the third OCR engine",
+            creator: "The PaddleOCR authors (PaddlePaddle)",
+            origin: "Hugging Face, PaddlePaddle/PP-OCRv5_mobile_det_onnx and latin_PP-OCRv5_mobile_rec_onnx; the licence ships beside them in models/paddle",
+            licence: "Apache-2.0",
+            licence_url: None,
+            changes: "The recognition model was converted from ONNX opset 7 to 13, its weights unchanged, and its character list extracted to dict.txt; the detection model is unchanged.",
+        },
     ]
 }

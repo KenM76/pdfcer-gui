@@ -377,6 +377,15 @@ PAYLOAD_ASSET_DIRS: list[tuple[str, str]] = [
     (f"crates/{_engine_path.crate_name('core')}/assets/models/ocrs", "models/ocrs"),
 ]
 
+#: Asset directories this repository owns, copied into the package from
+#: :data:`REPO` as :data:`PAYLOAD_ASSET_DIRS` is from the engine.
+PAYLOAD_SHELL_ASSET_DIRS: list[tuple[str, str]] = [
+    # PaddleOCR PP-OCRv5 English/French models, Apache-2.0; the directory's
+    # PROVENANCE.md holds the hashes and the changes. LICENSE travels with
+    # them: Apache-2.0 requires the licence text beside the work.
+    ("crates/pdfcer-gui/assets/models/paddle", "models/paddle"),
+]
+
 #: OCRcer's local repository — the second recogniser, linked as `ocrcer-core`.
 #: Local, never GitHub: its `master` here leads anything published.
 OCRCER = Path("D:/Dev/OCRcer")
@@ -602,11 +611,14 @@ def previous_build(dest: Path) -> tuple[str, str, str] | None:
     return None
 
 
-def copy_asset_dirs(out: Path, engine: Path) -> tuple[list[str], list[str]]:
+def copy_asset_dirs(
+    out: Path, engine: Path, dirs: list[tuple[str, str]] | None = None
+) -> tuple[list[str], list[str]]:
     """Copy every `PAYLOAD_ASSET_DIRS` entry into the package.
 
     Returns `(copied, missing)` — destination paths that were written, and
-    source paths that were declared and are not there.
+    source paths that were declared and are not there. `dirs` replaces
+    `PAYLOAD_ASSET_DIRS`, for `PAYLOAD_SHELL_ASSET_DIRS` against :data:`REPO`.
 
     `engine` is a parameter rather than the module constant so `--self-test`
     can exercise this against a synthetic tree. That matters more than it
@@ -622,7 +634,7 @@ def copy_asset_dirs(out: Path, engine: Path) -> tuple[list[str], list[str]]:
     """
     copied: list[str] = []
     missing: list[str] = []
-    for source, dest in PAYLOAD_ASSET_DIRS:
+    for source, dest in PAYLOAD_ASSET_DIRS if dirs is None else dirs:
         src = engine / source
         if not src.is_dir():
             missing.append(source)
@@ -1996,6 +2008,9 @@ def main() -> int:
     # `README.md` going missing costs a reader a document; this costs the
     # package its correctness in both directions at once.
     copied_assets, missing_assets = copy_asset_dirs(out, ENGINE)
+    shell_copied, shell_missing = copy_asset_dirs(out, REPO, PAYLOAD_SHELL_ASSET_DIRS)
+    copied_assets += shell_copied
+    missing_assets += shell_missing
     if missing_assets:
         print("package-portable: declared asset directories are missing from the engine tree:")
         for m in missing_assets:

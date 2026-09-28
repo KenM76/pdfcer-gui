@@ -91,8 +91,8 @@ ocrcer = ["pdfcer-core/ocrcer"]
 
 # `paddle` — the third recogniser, `pdfcer_core::ocr::engine_paddle`
 # (PaddleOCR PP-OCR exports run through `rten`, which `ocrs` already links).
-# No model is packaged: the operator places det.onnx and rec.onnx, and
-# optionally dict.txt, in `models/paddle`.
+# The package ships PP-OCRv5 det.onnx, a Latin rec.onnx and its dict.txt in
+# `models/paddle`; an operator may replace rec.onnx and dict.txt for another language.
 paddle = ["pdfcer-core/paddle"]
 # The private-key side; `pdfcer-gui` forwards its own `signing` here. Not a
 # default: base carries no capability the top crate did not ask for.

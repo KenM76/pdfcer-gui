@@ -629,7 +629,7 @@ impl OcrDialog {
                 ui.label(t::cancelled(*attempted));
             }
             Phase::Refused(refusal) => {
-                ui.label(sentence(refusal, self.engine));
+                ui.label(sentence(refusal));
             }
         }
 
@@ -659,7 +659,7 @@ impl OcrDialog {
     /// without running anything.
     fn ready(&mut self, ui: &mut egui::Ui, doc: &OpenDoc) {
         if let Some(refusal) = Self::preflight(doc, self.engine) {
-            ui.label(sentence(&refusal, self.engine));
+            ui.label(sentence(&refusal));
             // The choice stays reachable: another recogniser may have its
             // models where this one has none.
             self.engine_group(ui);
@@ -906,8 +906,8 @@ fn dictionary_sentence(dictionary: &Dictionary) -> String {
     }
 }
 
-/// The operator-visible sentence for a refusal by `engine`.
-fn sentence(refusal: &Refusal, engine: EngineId) -> String {
+/// The operator-visible sentence for a refusal.
+fn sentence(refusal: &Refusal) -> String {
     match refusal {
         // Unreachable from the dialog, which turns a cancellation into
         // `Phase::Cancelled` before it ever reaches here — and worded anyway,
@@ -927,7 +927,7 @@ fn sentence(refusal: &Refusal, engine: EngineId) -> String {
         // lives.
         Refusal::ModelsMissing(searched) => {
             let paths: Vec<String> = searched.iter().map(|p| p.display().to_string()).collect();
-            t::models_missing(engine.model_shipped(), &paths)
+            t::models_missing(&paths)
         }
         Refusal::NothingRecognised => t::nothing_recognised().to_owned(),
         Refusal::AlreadyHasText => t::already_has_text().to_owned(),
@@ -1074,7 +1074,7 @@ mod tests {
         ];
         let mut seen: Vec<String> = Vec::new();
         for refusal in &all {
-            let s = sentence(refusal, EngineId::Ocrs);
+            let s = sentence(refusal);
             assert!(!s.is_empty(), "{refusal:?} produced no sentence");
             assert!(
                 !seen.contains(&s),
@@ -1087,26 +1087,12 @@ mod tests {
     /// The searched paths survive into the message an operator reads.
     #[test]
     fn a_missing_model_directory_names_every_place_that_was_tried() {
-        let s = sentence(
-            &Refusal::ModelsMissing(vec![
-                PathBuf::from("C:\\app\\models\\ocrs"),
-                PathBuf::from("C:\\users\\x\\models\\ocrs"),
-            ]),
-            EngineId::Ocrs,
-        );
+        let s = sentence(&Refusal::ModelsMissing(vec![
+            PathBuf::from("C:\\app\\models\\ocrs"),
+            PathBuf::from("C:\\users\\x\\models\\ocrs"),
+        ]));
         assert!(s.contains("C:\\app\\models\\ocrs"));
         assert!(s.contains("C:\\users\\x\\models\\ocrs"));
-    }
-
-    /// PaddleOCR's weights never ship, so its missing-model sentence must not
-    /// say they do.
-    #[test]
-    fn a_missing_paddle_model_is_not_described_as_shipped() {
-        let missing = Refusal::ModelsMissing(vec![PathBuf::from("C:\\app\\models\\paddle")]);
-        let paddle = sentence(&missing, EngineId::Paddle);
-        assert_ne!(paddle, sentence(&missing, EngineId::Ocrs));
-        assert!(!paddle.contains("ship in"), "{paddle}");
-        assert!(paddle.contains("C:\\app\\models\\paddle"), "{paddle}");
     }
 
     /// A dialog opened with nothing loaded is not built at all.

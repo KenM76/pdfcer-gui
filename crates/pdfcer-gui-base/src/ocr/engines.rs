@@ -110,13 +110,6 @@ impl EngineId {
             Self::Ocrcer | Self::Paddle => true,
         }
     }
-
-    /// Whether a pdfcer package carries this engine's model. PaddleOCR's
-    /// weights are never bundled: their licence is the operator's to accept.
-    #[must_use]
-    pub const fn model_shipped(self) -> bool {
-        !matches!(self, Self::Paddle)
-    }
 }
 
 /// Where a run's character dictionary came from, for an engine that reads
@@ -308,7 +301,6 @@ mod tests {
             EngineId::Paddle.model_files(),
             &[DETECTION_MODEL, RECOGNITION_MODEL]
         );
-        assert!(!EngineId::Paddle.model_shipped());
     }
 
     /// PaddleOCR files that are not ONNX models are a named engine refusal.

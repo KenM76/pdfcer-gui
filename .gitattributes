@@ -118,3 +118,8 @@
 *.otf binary
 *.cff binary
 *.pfb binary
+
+# PaddleOCR models: dict.txt is read line by line and must keep its bytes;
+# the .onnx files are binary.
+*.onnx binary
+crates/pdfcer-gui/assets/models/paddle/dict.txt -text

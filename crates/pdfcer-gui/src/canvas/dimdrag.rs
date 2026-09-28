@@ -239,7 +239,7 @@ pub struct Placed {
     pub segments: Vec<(Point, Point)>,
     /// The engine's bake of the moved dimension, drawn instead of
     /// [`Self::segments`] whenever it can be. `None` when the engine refused.
-    pub baked: Option<pdfcer_core::dimension::DimensionPreview>,
+    pub baked: Option<super::dimpreview::Baked>,
 }
 
 /// Advance one frame of a placement drag.

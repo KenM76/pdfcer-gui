@@ -560,19 +560,23 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
             // indistinguishable from a paste that did nothing at all unless
             // this field is beside it.
             let mut annots = 0_u64;
+            // Replies whose `/IRT` link the clip stripped; the engine's own
+            // disclosure line carries the sentence to the operator.
+            let mut unthreaded = 0_u64;
             vector_edit_on_page(doc, "paste-objects", page, clip.len(), |session| {
                 let clip = pdfcer_core::vector::ObjectClip::from_bytes(&clip)?;
                 session.paste_objects(page, &clip, at).map(|outcome| {
                     added = outcome.resources_added;
                     pasted = outcome.objects_pasted;
                     annots = outcome.annotations_pasted;
+                    unthreaded = outcome.replies_unthreaded;
                     outcome.disclosures
                 })
             });
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!(
-                    "paste-objects-applied page={page} pasted={pasted} annots={annots} \
+                    "paste-objects-applied page={page} pasted={pasted} annots={annots} unthreaded={unthreaded} \
                      resources_added={added} at=[{:.4} {:.4} {:.4} {:.4} {:.2} {:.2}]",
                     at.a, at.b, at.c, at.d, at.e, at.f,
                 )

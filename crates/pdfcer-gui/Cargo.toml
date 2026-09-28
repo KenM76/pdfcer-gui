@@ -169,8 +169,7 @@ ocrs = ["pdfcer-core/ocrs", "pdfcer-gui-base/ocrs"]
 ocrcer = ["pdfcer-core/ocrcer", "pdfcer-gui-base/ocrcer"]
 
 # `paddle` — PaddleOCR, the third recogniser in the Recognise-text dialog.
-# Its weights are never packaged (their licence is the operator's to accept);
-# see `pdfcer-gui-base/Cargo.toml`.
+# Its PP-OCRv5 English/French models ship in the portable folder's `models/paddle`.
 paddle = ["pdfcer-core/paddle", "pdfcer-gui-base/paddle"]
 
 [dependencies]

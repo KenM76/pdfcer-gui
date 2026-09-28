@@ -302,13 +302,25 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let from: ScreenPoint = screen(grip_at);
     let to: ScreenPoint = screen(to_at);
     let during_shot = ctx.out("dimension_extension_grip_during.png");
-    let grip_during = driver.drag_observed(from, to, || {
-        crate::capture::window_to_png(&session, &during_shot)?;
-        Ok(declared(&session.trace()?, ui_rect, GRIP))
+    let (during, grip_during) = driver.drag_observed(from, to, || {
+        let image = crate::capture::window_to_png(&session, &during_shot)?;
+        Ok((image, declared(&session.trace()?, ui_rect, GRIP)))
     })?;
     report.artifact(during_shot);
-    // The page raster still shows the committed line mid-drag, so a
-    // shortening is visible only through the grip travelling with the pointer.
+    // With the button down the committed line must already be gone from the
+    // stretch: the preview draws over a render that omits the committed
+    // dimension.
+    let (mid, mid_account) = ink(&during, &frame, cut);
+    if mid >= LINED {
+        return Ok(Some(format!(
+            "★ THE SHORTENING DID NOT SHOW DURING THE DRAG. With the button down the stretch \
+             {cut:?} still carries {mid_account} (before: {was_account}), so the committed line \
+             shows through the preview. `canvas::dimpreview::underlay` covers it."
+        )));
+    }
+    report.note(format!(
+        "mid-drag the removed stretch is clear ({was_account} → {mid_account})"
+    ));
     let Some(moved) = grip_during else {
         return Ok(Some(format!(
             "★ THE GRIP VANISHED MID-DRAG: no `{GRIP}` region was declared with the button down."

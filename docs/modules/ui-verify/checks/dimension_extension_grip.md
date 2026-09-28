@@ -2,8 +2,8 @@
 
 `an_extension_line_grip_shortens_its_line` checks that dragging a linear ce
 dimension's extension-line grip towards the dimension line shortens that
-line. The grip follows the pointer while the button is held, and the release
-commits the change.
+line. The grip and the shortened line follow the pointer while the button is
+held, and the release commits the change.
 
 ## What it drives
 
@@ -27,10 +27,13 @@ commits the change.
   there is at least one `dim-preview baked=1` line.
 - **The release committed.** A `dimension-extension-gap` line and a
   `set-dimension-extension-gap` funnel line both follow.
-- **The line is shorter on the glass.** The check samples a strip
-  `HALF_WIDTH` px either side of the stretch between the grip and the drop,
-  shortened by `END_CLEAR` px at each end. The strip must be at least 5 %
-  ink before the drag and under 1 % after it.
+- **The line is shorter on the glass, while held and after.** The check
+  samples a strip `HALF_WIDTH` px either side of the stretch between the grip
+  and the drop, shortened by `END_CLEAR` px at each end. The strip must be at
+  least 5 % ink before the drag, and under 1 % both in the capture taken with
+  the button held and after the release. The held capture fails a build that
+  draws the preview over the committed dimension without the underlay that
+  omits it, because the committed line still shows through.
 
 The picks are on blank paper because the fixture's title block, and the
 selection outline, both put ink in the strip and hide the line.
