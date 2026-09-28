@@ -101,12 +101,14 @@ pub fn selected(doc: &OpenDoc, selection: &SelectionState) -> Option<(DimensionI
     // See the module header: an angular dimension's placement is a radius and
     // an angle, and this module's delta is in points.
     //
-    // Perimeter joined Linear on 2026-08-20, when the engine shipped the kind
-    // and confirmed that `place_dimension` carries it *"with no new semantics
-    // and no new fields"*.
+    // A circular one's pair is polar (text distance past the rim, leader
+    // angle), which `placed` resolves through the engine's own
+    // `placement_from_point`.
     if !matches!(
         record.kind,
-        DimensionKind::Linear { .. } | DimensionKind::Perimeter { .. }
+        DimensionKind::Linear { .. }
+            | DimensionKind::Perimeter { .. }
+            | DimensionKind::Circular { .. }
     ) {
         return None;
     }
@@ -166,12 +168,16 @@ pub fn placed(kind: &DimensionKind, dx: f64, dy: f64) -> Option<(DimensionKind, 
             text_along,
         ));
     }
+    if let DimensionKind::Circular { .. } = kind {
+        return circular_placed(kind, dx, dy);
+    }
     let DimensionKind::Linear {
         a,
         b,
         constraint,
         offset,
         text_along,
+        extension_gap,
     } = *kind
     else {
         return None;
@@ -186,10 +192,34 @@ pub fn placed(kind: &DimensionKind, dx: f64, dy: f64) -> Option<(DimensionKind, 
             constraint,
             offset,
             text_along,
+            extension_gap,
         },
         offset,
         text_along,
     ))
+}
+
+/// A circular ce dimension's label moved by a page-space delta: the engine
+/// resolves the moved anchor into `(text distance, leader angle)`, and the
+/// distance is the clamped one the verb will store.
+fn circular_placed(kind: &DimensionKind, dx: f64, dy: f64) -> Option<(DimensionKind, f64, f64)> {
+    let at = kind.label_anchor()?;
+    let (distance, angle) = kind.placement_from_point(Point::new(at.x + dx, at.y + dy))?;
+    let mut moved = kind.clone();
+    if let DimensionKind::Circular {
+        leader_angle,
+        text_distance,
+        ..
+    } = &mut moved
+    {
+        *leader_angle = angle;
+        *text_distance = Some(distance);
+    }
+    let distance = moved.circular_text_distance()?;
+    if let DimensionKind::Circular { text_distance, .. } = &mut moved {
+        *text_distance = Some(distance);
+    }
+    Some((moved, distance, angle))
 }
 
 /// Everything one frame of a placement drag needs, gathered at the call site.

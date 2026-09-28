@@ -55,7 +55,7 @@ one for authoring — where there is no grab to preserve, because the
 dimension does not exist yet — and that is precisely where `canvas::measure`
 uses it.
 
-## Two kinds may be dragged, and a perimeter is the easier of them
+## Three kinds may be dragged, and a perimeter is the easiest of them
 
 **Linear** resolves the delta in the dimension's own axis frame, above.
 **Perimeter** does not have one — a shape has no single axis to build a
@@ -69,6 +69,17 @@ diagonally and it is flattened onto its axis, because that is where a
 dimension line's text lives; drag a perimeter's and it lands where you
 dropped it. That is not an inconsistency to iron out — it is the difference
 between a label that belongs to a line and one that belongs to a shape.
+
+**Circular** is placed in polar terms about the fitted centre: a leader angle
+in degrees and the text's distance past the rim (negative is inside). The drop point is
+handed to the engine's `DimensionKind::placement_from_point`, which answers
+both. That answer is **unclamped**, so the distance is then re-read through
+`circular_text_distance`, the value the engine will actually draw, before it
+reaches either the preview or `place_dimension`. Without that re-read, a label
+dropped inside the circle would preview in one place and be committed in
+another: a radius's text stops at the centre, a diameter's at the
+opposite rim. The leader turns to face the drop, and a diameter's leader runs rim
+to rim through the centre.
 
 ## Why an ANGULAR dimension may not (and why that is not a stub)
 
@@ -283,8 +294,7 @@ its way.
 
 `None` when the delta cannot be resolved — an **angular** dimension (see the
 module header: its placement is a radius and an angle, and this delta is in
-points), a **circular** one (which the engine refuses outright, having no
-axis to place along), or a degenerate `Aligned` linear one whose two picks
+points), a **circular** one whose label has no anchor, or a degenerate `Aligned` linear one whose two picks
 coincide and which `axis_frame` refuses rather than fabricating.
 
 # TODO — angular placement

@@ -46,6 +46,7 @@ fn horizontal() -> DimensionKind {
         constraint: AxisConstraint::Horizontal,
         offset: 0.0,
         text_along: 0.0,
+        extension_gap: [None; 2],
     }
 }
 
@@ -117,6 +118,7 @@ fn a_degenerate_dimension_has_no_frame_and_is_refused() {
         constraint: AxisConstraint::Aligned,
         offset: 0.0,
         text_along: 0.0,
+        extension_gap: [None; 2],
     };
     assert!(placed(&degenerate, 5.0, 5.0).is_none());
 }
@@ -506,4 +508,38 @@ fn the_points_tool_survives_review_and_still_retires_in_read() {
             "the armed tool after the mode change is wrong in {mode}"
         );
     }
+}
+
+/// **A circular ce dimension's label lands where it is dropped**: the engine's
+/// polar placement round-trips, so the label anchor after the move is the drop
+/// point, and the leader turns to face it.
+#[test]
+fn a_circular_label_drag_lands_where_it_is_dropped() {
+    use pdfcer_core::dimension::FitCircle;
+    use pdfcer_core::vector::Point;
+    let fit = FitCircle {
+        center: Point::new(100.0, 100.0),
+        radius: 20.0,
+        residual: 0.0,
+    };
+    let kind = DimensionKind::Circular {
+        fit,
+        show_diameter: false,
+        leader_angle: 0.0,
+        text_distance: None,
+    };
+    let from = kind.label_anchor().expect("an anchor");
+    let (dx, dy) = (0.0 - (from.x - 100.0), 40.0 - (from.y - 100.0));
+    let (moved, _, angle) = placed(&kind, dx, dy).expect("a circular drag is admitted");
+    let to = moved.label_anchor().expect("an anchor after the move");
+    assert!(
+        (to.x - (from.x + dx)).abs() < 1e-6 && (to.y - (from.y + dy)).abs() < 1e-6,
+        "dropped at ({}, {}), landed at {to:?}",
+        from.x + dx,
+        from.y + dy
+    );
+    assert!(
+        (angle - 90.0).abs() < 1e-6,
+        "the leader faces the drop: {angle}"
+    );
 }

@@ -40,3 +40,9 @@ applies to `PDFCER_RELEASE_DISTANCE` and anything else the build stamps from
 `describe`. Related:
 [[a-tool-that-mutates-the-tree-before-stamping-it-reports-its-own-dirt]],
 [[a-verbatim-quotation-of-another-files-count-goes-stale-invisibly]].
+
+**Second trap, same command:** `--target` takes a branch or a **full** 40-char
+SHA. An abbreviated SHA (`d0642d43`) fails with *HTTP 422 Release.
+target_commitish is invalid* (measured 2026-09-28). Pass
+`--target $(git rev-parse <short>)` to tag the commit the package was
+actually built from, rather than whatever `main` is by then.

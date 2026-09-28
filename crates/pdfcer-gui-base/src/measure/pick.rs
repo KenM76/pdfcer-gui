@@ -103,6 +103,7 @@ impl LinearPick {
                         constraint: self.constraint,
                         offset: 0.0,
                         text_along: 0.0,
+                        extension_gap: [None; 2],
                     })
                 }
             }
@@ -129,6 +130,7 @@ impl LinearPick {
             constraint: self.constraint,
             offset: 0.0,
             text_along: 0.0,
+            extension_gap: [None; 2],
         };
         let (offset, text_along) = probe.placement_from_point(p).unwrap_or((0.0, 0.0));
         DimensionKind::Linear {
@@ -137,6 +139,7 @@ impl LinearPick {
             constraint: self.constraint,
             offset,
             text_along,
+            extension_gap: [None; 2],
         }
     }
 
@@ -417,11 +420,14 @@ pub fn dimension_preview_segments(kind: &DimensionKind) -> Vec<(Point, Point)> {
         // identically, and an operator toggling between them would see nothing
         // happen and reasonably conclude the toggle was broken.
         //
-        // Along +x rather than towards the pointer, deliberately: the committed
-        // dimension's leader is the engine's to place, and a preview that
-        // pointed somewhere the commit will not would be describing a dimension
-        // nobody is about to author.
-        DimensionKind::Circular { fit, show_diameter } => {
+        // Along the stored leader angle, which is where the commit draws it.
+        DimensionKind::Circular {
+            fit,
+            show_diameter,
+            leader_angle,
+            ..
+        } => {
+            let lead = leader_angle.to_radians();
             let at = |ang: f64| {
                 Point::new(
                     fit.radius.mul_add(ang.cos(), fit.center.x),
@@ -442,11 +448,11 @@ pub fn dimension_preview_segments(kind: &DimensionKind) -> Vec<(Point, Point)> {
             }
             out.push((
                 if show_diameter {
-                    at(std::f64::consts::PI)
+                    at(lead + std::f64::consts::PI)
                 } else {
                     fit.center
                 },
-                at(0.0),
+                at(lead),
             ));
             out
         }
@@ -614,6 +620,7 @@ mod tests {
             constraint,
             offset: 0.0,
             text_along: 0.0,
+            extension_gap: [None; 2],
         };
 
         assert_eq!(gui_kind, cli_kind);
@@ -831,6 +838,7 @@ mod tests {
             constraint: AxisConstraint::Horizontal,
             offset: 20.0,
             text_along: 0.0,
+            extension_gap: [None; 2],
         });
         assert_eq!(segs.len(), 3, "dimension line + two extension lines");
     }
@@ -918,6 +926,8 @@ mod tests {
         let segs = dimension_preview_segments(&DimensionKind::Circular {
             fit,
             show_diameter: false,
+            leader_angle: 0.0,
+            text_distance: None,
         });
         assert_eq!(
             segs.len(),
@@ -949,6 +959,8 @@ mod tests {
         let dia = dimension_preview_segments(&DimensionKind::Circular {
             fit,
             show_diameter: true,
+            leader_angle: 0.0,
+            text_distance: None,
         });
         assert_eq!(
             dia[..ARC_PREVIEW_STEPS],

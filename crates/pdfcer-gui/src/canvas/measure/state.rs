@@ -472,6 +472,7 @@ mod tests {
             constraint: pdfcer_core::vector::AxisConstraint::Aligned,
             offset: 0.0,
             text_along: 0.0,
+            extension_gap: [None; 2],
         });
         assert!(
             st.gesture_in_progress(),
