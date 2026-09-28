@@ -1230,6 +1230,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(point_destination::APointDestinationLeavesTheMagnificationAlone),
         Box::new(point_destination::APointDestinationOffScreenMovesTheHorizontal),
         Box::new(ocr::OcrRecognisesAPageAndTheDocumentKeepsIt),
+        Box::new(ocr::OcrcerRecognisesAPageAndTheDocumentKeepsIt),
         // The three about a run in progress. After the one-page check, because
         // a build in which recognition does not work at all should say so
         // before three checks spend a minute apiece observing it not working.

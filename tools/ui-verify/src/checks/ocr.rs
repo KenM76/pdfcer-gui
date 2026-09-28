@@ -113,12 +113,51 @@ impl Check for OcrRecognisesAPageAndTheDocumentKeepsIt {
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         let mut report = CheckReport::new(self.name(), self.defect());
-        match drive(ctx, &mut report) {
+        match drive(ctx, &mut report, None) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
             Err(why) => report.from_error(&why),
         }
     }
+}
+
+/// The same chain with the remembered recogniser set to OCRcer, asserting
+/// that OCRcer is the engine that ran: the first check takes the default,
+/// which is ocrs, so OCRcer's model and adapter are otherwise never driven.
+pub struct OcrcerRecognisesAPageAndTheDocumentKeepsIt;
+
+/// The `ocr_engine` preference key and the value `ocr-started engine=` carries.
+const OCRCER: &str = "ocrcer";
+
+impl Check for OcrcerRecognisesAPageAndTheDocumentKeepsIt {
+    fn name(&self) -> &'static str {
+        "ocrcer_recognises_a_page_and_the_document_keeps_it"
+    }
+
+    fn defect(&self) -> &'static str {
+        "choosing OCRcer as the recogniser runs ocrs instead, or OCRcer cannot find its model in a packaged build, or it reads nothing from a page of plain text"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        match drive(ctx, &mut report, Some(OCRCER)) {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+/// Seed `ocr_engine` in the preferences beside the (sandboxed) binary.
+fn choose_engine(exe: &std::path::Path, engine: &str) -> Result<()> {
+    let dir = exe
+        .parent()
+        .ok_or_else(|| Error::new("the binary has no parent directory"))?
+        .join("userdata");
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| Error::new(format!("could not create {}: {e}", dir.display())))?;
+    crate::sandbox::write_prefs(&dir, &format!("ocr_engine = {engine}\n"))
+        .map_err(|e| Error::new(format!("could not write preferences: {e}")))
 }
 
 /// A cheap content digest — length plus FNV-1a over the bytes.
@@ -244,7 +283,13 @@ pub(super) fn click_region(
 
 /// Run the sequence. `Err` is SKIP, `Ok(Some(_))` is FAIL, `Ok(None)` is a pass.
 #[allow(clippy::too_many_lines)]
-fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
+/// `engine`: `None` drives whatever recogniser the build defaults to; `Some`
+/// seeds that preference and fails unless it is the one that ran.
+fn drive(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    engine: Option<&str>,
+) -> Result<Option<String>> {
     // --- preconditions -----------------------------------------------------
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
@@ -319,6 +364,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         before.0,
         before.1
     ));
+
+    if let Some(e) = engine {
+        choose_engine(&exe, e)?;
+        report.note(format!("seeded `ocr_engine = {e}`"));
+    }
 
     // --- launch ------------------------------------------------------------
     let mut spec = LaunchSpec::new(&exe, ctx.out("ocr.trace.txt"));
@@ -443,6 +493,18 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
     report.note(format!("recognition finished: `{}`", recognised.raw));
+    if let Some(wanted) = engine {
+        let ran = trace
+            .last(STARTED_EVENT)
+            .and_then(|l| l.get("engine").map(str::to_owned));
+        report.note(format!("the recogniser that ran: {ran:?}"));
+        if ran.as_deref() != Some(wanted) {
+            return Ok(Some(format!(
+                "`ocr_engine = {wanted}` was seeded and `{STARTED_EVENT}` names {ran:?}: the remembered recogniser is not the one that runs. Trace: {}.",
+                session.trace_path().display()
+            )));
+        }
+    }
 
     let words = recognised.get_usize("recognised").unwrap_or(0);
     if words == 0 {

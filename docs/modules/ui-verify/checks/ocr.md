@@ -129,3 +129,15 @@ The same shape as [`driving::click_mode_segment`], for the other half of the
 ribbon. Not folded into that module because it is the first check to need
 it: a second caller is the moment to move it, and moving it on the first
 would leave `driving` with an untested function.
+
+# The OCRcer variant
+
+`ocrcer_recognises_a_page_and_the_document_keeps_it` drives the same chain
+with `ocr_engine = ocrcer` seeded in the sandbox's preferences, and fails
+unless `ocr-started engine=` names `ocrcer`. The first check takes the
+build's default recogniser, ocrs, so without this one OCRcer's model path and
+adapter are never driven. It needs a packaged build: OCRcer's model sits in
+`models/ocrcer/` beside the binary.
+
+Falsified by seeding `ocrs` under it: the check fails and names the
+recogniser that ran.
