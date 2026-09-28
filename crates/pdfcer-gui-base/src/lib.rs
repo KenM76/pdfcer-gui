@@ -551,3 +551,6 @@ pub mod redactlook;
 
 /// One reader for everything typed into a value box: units, arithmetic, relative entry.
 pub mod entry;
+
+/// The visible area a conforming reader shows: crop box ∩ media box.
+pub mod pagebox;

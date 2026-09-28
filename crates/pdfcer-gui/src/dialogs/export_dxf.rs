@@ -4,6 +4,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/dialogs/export_dxf.md`.
 
 use egui::Ui;
+use pdfcer_core::dimension::Unit;
 use pdfcer_core::export::dxf::{
     DxfOptions, DxfScaleSuggestion, DxfText, DxfUnits, suggest_scale_for_groups,
 };
@@ -15,8 +16,10 @@ use crate::text::export_dxf as t;
 
 /// The region this dialog publishes for its body.
 pub const REGION_BODY: &str = "dialog:export-dxf"; // ui-text-exempt: trace region name, never displayed
-/// The region the scale field publishes.
+/// The region the scale field publishes: the ratio's real-world number.
 pub const REGION_SCALE: &str = "export-dxf.scale"; // ui-text-exempt: trace region name, never displayed
+/// The region the scale-group picker publishes.
+pub const REGION_GROUP: &str = "export-dxf.group"; // ui-text-exempt: trace region name, never displayed
 /// The region ONE units radio publishes.
 #[must_use]
 pub const fn region_for_units(units: DxfUnits) -> &'static str {
@@ -78,6 +81,11 @@ pub struct ExportDxfDialog {
     /// write another, and `DxfOptions` is already exactly the shape the writer
     /// takes.
     options: DxfOptions,
+    /// Every calibrated scale group in the document, for the picker.
+    groups: Vec<GroupScale>,
+    /// The ratio row. `options.scale` is derived from it on every edit, and
+    /// it is reseeded whenever something else writes `options.scale`.
+    ratio: Ratio,
     /// Set by Export, consumed after the window's closure returns.
     export_requested: bool,
     /// Set by Cancel, consumed by [`Self::show`].
@@ -95,11 +103,15 @@ impl ExportDxfDialog {
         let groups = doc.session.dimension_groups_on_page(page_index);
         let suggestion = suggest_scale_for_groups(&model, &groups);
         let options = seeded_options(remembered, &suggestion);
+        let calibrated = calibrated_groups(&model);
+        let ratio = Ratio::of_scale(options.scale, options.units, None);
 
         let dialog = Self {
             page_index,
             suggestion,
             options,
+            groups: calibrated,
+            ratio,
             export_requested: false,
             close_requested: false,
         };
@@ -195,25 +207,13 @@ impl ExportDxfDialog {
         // --- scale --------------------------------------------------------
         // No `.strong()` — R84 / DEFECTS.md D11.
         ui.label(t::scale_heading());
+        let before = (self.options.scale, self.options.units);
         self.scale_disclosure(ui);
-        ui.horizontal(|ui| {
-            ui.label(t::scale_label());
-            let (widget, refusal) =
-                entry::drag_value(ui, &mut self.options.scale, entry::Kind::Number(&[]));
-            let response = refusal.show(
-                ui.add(
-                    widget
-                        .speed(0.01)
-                        // Positive and finite. A zero or negative scale produces a
-                        // DXF whose geometry is collapsed or mirrored — refused by
-                        // the control's range rather than by a sentence, because
-                        // unlike a placement rectangle there is no reading of a
-                        // negative scale that an operator could have meant.
-                        .range(0.000_001..=1_000_000.0),
-                ),
-            );
-            crate::diag::ui_rect(REGION_SCALE, response.rect);
-        });
+        if (self.options.scale, self.options.units) != before {
+            self.ratio = Ratio::of_scale(self.options.scale, self.options.units, None);
+        }
+        self.group_row(ui);
+        self.ratio_row(ui);
         ui.add_space(8.0);
 
         // --- units --------------------------------------------------------
@@ -269,6 +269,89 @@ impl ExportDxfDialog {
         });
     }
 
+    /// The picker over every calibrated scale group in the document. Absent
+    /// when the document has none: an empty picker offers nothing.
+    fn group_row(&mut self, ui: &mut Ui) {
+        if self.groups.is_empty() {
+            return;
+        }
+        let current = self.groups.iter().position(|g| {
+            (g.scale - self.options.scale).abs() <= 1e-9 * g.scale.max(1.0)
+                && DxfUnits::for_unit(g.unit) == self.options.units
+        });
+        let mut picked = None;
+        ui.horizontal(|ui| {
+            ui.label(t::group_label());
+            let selected =
+                current.map_or_else(|| t::group_typed().to_owned(), |i| self.groups[i].label());
+            let combo = egui::ComboBox::from_id_salt(REGION_GROUP)
+                .selected_text(selected)
+                .show_ui(ui, |ui| {
+                    for (i, group) in self.groups.iter().enumerate() {
+                        if ui
+                            .selectable_label(current == Some(i), group.label())
+                            .clicked()
+                        {
+                            picked = Some(i);
+                        }
+                    }
+                });
+            let response = combo.response.on_hover_text(t::group_hover());
+            crate::diag::ui_rect(REGION_GROUP, response.rect);
+        });
+        if let Some(i) = picked {
+            let group = &self.groups[i];
+            self.options.scale = group.scale;
+            self.options.units = DxfUnits::for_unit(group.unit);
+            self.ratio = Ratio::of_scale(group.scale, self.options.units, Some(group.unit));
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!(
+                    "export-dxf-group-picked group={} scale={}",
+                    self.groups[i].name, self.options.scale
+                )
+            });
+        }
+    }
+
+    /// `1 [in] on paper = 20 [ft] in reality`, the Set Scale window's row.
+    /// Every edit rewrites `options.scale`; a world-unit change also moves
+    /// the DXF units to that unit's measurement system.
+    fn ratio_row(&mut self, ui: &mut Ui) {
+        let before = self.ratio;
+        ui.horizontal(|ui| {
+            ui.label(t::ratio_label());
+            let (paper, refusal) = entry::drag_value_unlabelled(
+                ui,
+                &mut self.ratio.paper,
+                entry::Kind::Length(entry::LengthUnit::Of(self.ratio.basis)),
+            );
+            let _ = refusal.show(ui.add(paper.speed(0.01).range(0.0001..=10_000.0)));
+            let _ = unit_combo(ui, BASIS_ID, &mut self.ratio.basis);
+            ui.label(crate::text::scale::ratio_separator());
+            let (real, refusal) = entry::drag_value_unlabelled(
+                ui,
+                &mut self.ratio.real,
+                entry::Kind::Length(entry::LengthUnit::Of(self.ratio.real_unit)),
+            );
+            // Positive and finite: a zero or negative scale collapses or
+            // mirrors the geometry, and no reading of one is meant.
+            let real = refusal.show(ui.add(real.speed(0.01).range(0.0001..=1_000_000.0)));
+            crate::diag::ui_rect(REGION_SCALE, real.rect);
+            let _ = unit_combo(ui, REAL_UNIT_ID, &mut self.ratio.real_unit);
+            ui.label(crate::text::scale::ratio_real_suffix());
+        });
+        ui.label(egui::RichText::new(t::ratio_hint()).small().weak());
+        if self.ratio != before {
+            if let Some(scale) = self.ratio.scale() {
+                self.options.scale = scale;
+            }
+            if self.ratio.real_unit != before.real_unit {
+                self.options.units = DxfUnits::for_unit(self.ratio.real_unit);
+            }
+        }
+    }
+
     /// What pdfcer inferred, and what the operator should make of it.
     fn scale_disclosure(&mut self, ui: &mut Ui) {
         match &self.suggestion {
@@ -319,6 +402,97 @@ impl ExportDxfDialog {
                 ui.label(t::scale_uncalibrated());
             }
         }
+    }
+}
+
+/// Widget ids of the ratio row's two unit pickers.
+const BASIS_ID: &str = "export-dxf.basis"; // ui-text-exempt: widget id, never displayed
+const REAL_UNIT_ID: &str = "export-dxf.real-unit"; // ui-text-exempt: widget id, never displayed
+
+/// A unit picker over every unit a scale group can measure in.
+fn unit_combo(ui: &mut Ui, id: &str, unit: &mut Unit) -> egui::Rect {
+    egui::ComboBox::from_id_salt(id)
+        .selected_text(crate::text::scale::unit_name(*unit))
+        .show_ui(ui, |ui| {
+            for option in Unit::all().iter().copied() {
+                ui.selectable_value(unit, option, crate::text::scale::unit_name(option));
+            }
+        })
+        .response
+        .rect
+}
+
+/// One calibrated scale group, as the picker offers it.
+struct GroupScale {
+    /// The group's name.
+    name: String,
+    /// Real-world units per paper unit — `DxfOptions::scale`.
+    scale: f64,
+    /// The unit the group measures in; the ratio row's world side.
+    unit: Unit,
+}
+
+impl GroupScale {
+    fn label(&self) -> String {
+        let ratio = Ratio::of_scale(self.scale, DxfUnits::for_unit(self.unit), Some(self.unit));
+        t::group_choice(
+            &self.name,
+            crate::text::scale::unit_name(ratio.basis),
+            ratio.real,
+            crate::text::scale::unit_name(ratio.real_unit),
+        )
+    }
+}
+
+/// Every group in `model` with a scale set, in the model's order. Each is
+/// asked of the engine alone, so its scale is the engine's arithmetic.
+fn calibrated_groups(model: &pdfcer_core::dimension::DimensionModel) -> Vec<GroupScale> {
+    model
+        .groups()
+        .iter()
+        .filter_map(|group| match suggest_scale_for_groups(model, &[group.id]) {
+            DxfScaleSuggestion::Calibrated { scale, .. } => Some(GroupScale {
+                name: group.name.clone(),
+                scale,
+                unit: group.format.unit,
+            }),
+            _ => None,
+        })
+        .collect()
+}
+
+/// The ratio row's four fields: `paper basis = real real_unit`.
+#[derive(Clone, Copy, PartialEq, Debug)]
+struct Ratio {
+    paper: f64,
+    basis: Unit,
+    real: f64,
+    real_unit: Unit,
+}
+
+impl Ratio {
+    /// One paper unit of `units`' system (inch or millimetre) against its
+    /// real-world length in `world`, or in the paper unit when `None`.
+    fn of_scale(scale: f64, units: DxfUnits, world: Option<Unit>) -> Self {
+        let basis = match units {
+            DxfUnits::Inches => Unit::Inch,
+            DxfUnits::Millimetres => Unit::Millimeter,
+        };
+        let real_unit = world.unwrap_or(basis);
+        Self {
+            paper: 1.0,
+            basis,
+            real: scale * real_unit.baseline_per_point() / basis.baseline_per_point(),
+            real_unit,
+        }
+    }
+
+    /// Real-world units per paper unit, or `None` when the row is degenerate.
+    fn scale(&self) -> Option<f64> {
+        let world = self.real / self.real_unit.baseline_per_point();
+        let paper = self.paper / self.basis.baseline_per_point();
+        let scale = world / paper;
+        (scale.is_finite() && scale > 0.0).then_some(scale)
     }
 }
 
@@ -379,6 +553,30 @@ pub fn open_for(
 mod tests {
     use super::*;
     use crate::app::prefs::ExportDxfPrefs;
+
+    /// **A title-block ratio becomes the engine's dimensionless scale**, and
+    /// back. 1 in = 20 ft is 240 inches per inch; 1 mm = 100 mm is 100.
+    #[test]
+    fn a_title_block_ratio_is_the_engines_scale() {
+        let feet = Ratio {
+            paper: 1.0,
+            basis: Unit::Inch,
+            real: 20.0,
+            real_unit: Unit::DecimalFeet,
+        };
+        assert!((feet.scale().unwrap() - 240.0).abs() < 1e-9);
+        let plain = Ratio {
+            paper: 1.0,
+            basis: Unit::Millimeter,
+            real: 100.0,
+            real_unit: Unit::Millimeter,
+        };
+        assert!((plain.scale().unwrap() - 100.0).abs() < 1e-9);
+        let back = Ratio::of_scale(240.0, DxfUnits::Inches, Some(Unit::DecimalFeet));
+        assert!((back.real - 20.0).abs() < 1e-9, "{back:?}");
+        let zero = Ratio { real: 0.0, ..plain };
+        assert_eq!(zero.scale(), None);
+    }
 
     /// A calibrated answer: **inches**, at half scale, from a named group.
     ///

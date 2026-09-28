@@ -51,6 +51,23 @@ calibration of its own — **silently export it at page 3's scale**."*
 That is the same defect the feature exists to prevent, arriving through the
 front door.
 
+## The group picker and the ratio row
+
+The seed stays page-scoped, for the reason above. The **Take the scale from**
+picker is document-wide on purpose: it is the operator choosing, not pdfcer
+inferring, and the group he wants may have its dimensions on another sheet.
+Each group is asked of `suggest_scale_for_groups` alone, so its figure is the
+engine's arithmetic; groups with no scale are not offered, and the picker is
+absent when none is calibrated.
+
+The **Scale** row is `Ratio`: `paper basis = real real_unit`. `DxfOptions::scale`
+is dimensionless (real units per paper unit, same unit both sides), so
+`scale = (real / bpp(real_unit)) / (paper / bpp(basis))` with `bpp` =
+`Unit::baseline_per_point`. Every edit rewrites `options.scale`; a world-unit
+change also sets `options.units` to `DxfUnits::for_unit` of it. Anything else
+that writes `options.scale` — a conflicting-candidate radio, the group picker —
+reseeds the row, so the row and the field never disagree.
+
 ## Item notes
 
 ### `fn habits`

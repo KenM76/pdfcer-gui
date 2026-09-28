@@ -256,7 +256,23 @@ pub(super) fn set(
         )
     });
 
-    Ok(disclosures(&changes))
+    let mut notes = disclosures(&changes);
+    let hidden = pages
+        .iter()
+        .filter(|&&i| {
+            after
+                .get(i)
+                .is_some_and(pdfcer_gui_base::pagebox::crop_hides_sheet)
+        })
+        .count();
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("page-size-crop-hides n={hidden}")
+    });
+    if hidden > 0 {
+        notes.push(t::disclosure_crop_inside(hidden));
+    }
+    Ok(notes)
 }
 
 /// How many changes ended in `want`.

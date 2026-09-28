@@ -76,10 +76,45 @@ pub fn scale_candidate(scale: f64, group: &str) -> String {
     format!("{scale} — {group}")
 }
 
-/// The label on the scale field itself.
+/// The label on the scale-group picker.
 #[must_use]
-pub const fn scale_label() -> &'static str {
-    "Real units per paper unit"
+pub const fn group_label() -> &'static str {
+    "Take the scale from"
+}
+
+/// The picker's text when the scale was typed rather than taken from a group.
+#[must_use]
+pub const fn group_typed() -> &'static str {
+    "the scale typed below"
+}
+
+/// One calibrated scale group in the picker: `plan — 1 Inches = 20 Feet`.
+#[must_use]
+pub fn group_choice(group: &str, paper_unit: &str, real: f64, real_unit: &str) -> String {
+    let real = format!("{real:.4}");
+    let real = real.trim_end_matches('0').trim_end_matches('.');
+    format!("{group} — 1 {paper_unit} = {real} {real_unit}")
+}
+
+/// Hover on the scale-group picker.
+#[must_use]
+pub const fn group_hover() -> &'static str {
+    "Every scale group in this document that has a scale set. Choosing one \
+     writes its scale and its units into the row below."
+}
+
+/// The label in front of the ratio row.
+#[must_use]
+pub const fn ratio_label() -> &'static str {
+    "Scale"
+}
+
+/// What the ratio row means.
+#[must_use]
+pub const fn ratio_hint() -> &'static str {
+    "As the title block states it: 1 in on paper = 20 ft in reality. The same \
+     unit on both sides is a plain ratio, 1 : 100. The DXF is written full size \
+     in the units chosen below."
 }
 
 /// The heading over the unit choice.
