@@ -215,6 +215,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(dimension_corner_count::ACornerCanBeAddedAndTakenAway),
         Box::new(dimension_label_drag::ADimensionDragPreviewsWhatItPlaces),
         Box::new(dimension_extension_grip::AnExtensionLineGripShortensItsLine),
+        Box::new(dimension_text_slide::ADimensionTextSlidesAlone),
         Box::new(dimension_circular_label_drag::ARadiusLabelDragSwingsTheLeaderToTheDrop),
         Box::new(dimension_display_menu::ARadiusSwitchesToADiameterFromItsRightClickMenu),
         // Beside it, and after it, because they are the two halves of one

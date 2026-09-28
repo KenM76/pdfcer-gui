@@ -436,6 +436,12 @@ pub(super) fn draw(
     // driven check that aimed at a ce dimension and hit a markup shape would
     // report a working build as broken.
     //
+    // The linear ce dimension's text, where a press slides it alone. Not
+    // drawn: the text itself is the affordance. Published so a driven check
+    // aims at the text the engine placed rather than at a guess.
+    if let Some(q) = crate::canvas::dimlabel::screen_quad(ui.ctx(), doc, map, selection) {
+        crate::diag::ui_rect(crate::canvas::dimlabel::REGION, egui::Rect::from_points(&q));
+    }
     let anchors = crate::canvas::dimdrag::vertices(doc, selection)
         .into_iter()
         .enumerate()

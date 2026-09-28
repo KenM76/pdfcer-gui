@@ -128,8 +128,9 @@ leader and text go. That is filed as G051.
   the real appearance (G049).
 - *Extension-line ends*: their length is fixed by the drafting standard, with
   nothing per dimension. That is filed as G050.
-- *Text drag*: one drag moves line and text together. The shell half (a
-  separate text grip) is next, and uses G049's label rectangle when it lands.
+- *Text drag*: on a linear ce dimension, pressing on the text and dragging
+  slides the text along the line while the line stays put, previewed live.
+  Pressing elsewhere on the dimension moves line and text together.
 
 Four parts, all about ce dimensions (the ones pdfcer authors):
 

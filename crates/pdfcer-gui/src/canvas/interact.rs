@@ -824,6 +824,21 @@ pub(super) fn interact(
                 pv.dimension_baked = placed.baked;
             }
         }
+        GestureOutcome::DimensionLabel { from, at, phase } => {
+            if let Some(placed) = crate::canvas::dimlabel::drag(
+                crate::canvas::dimlabel::Frame {
+                    from,
+                    at,
+                    phase,
+                    doc,
+                    selection: &selection,
+                },
+                actions,
+            ) {
+                pv.dimension = Some(placed.segments);
+                pv.dimension_baked = placed.baked;
+            }
+        }
         GestureOutcome::Handle {
             node,
             handle,

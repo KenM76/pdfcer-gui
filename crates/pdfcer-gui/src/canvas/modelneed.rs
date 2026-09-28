@@ -128,6 +128,8 @@ pub fn gesture_needs_model(outcome: &GestureOutcome) -> bool {
         | GestureOutcome::MarkupVertex { .. }
         // A gap is a sidecar number; nothing on the page is asked about.
         | GestureOutcome::DimensionExtension { .. }
+        // A placement is a sidecar number too.
+        | GestureOutcome::DimensionLabel { .. }
         | GestureOutcome::TextSelect { .. }
         | GestureOutcome::Markup { .. }
         | GestureOutcome::TextAnnot { .. }

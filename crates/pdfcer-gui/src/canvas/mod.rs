@@ -119,6 +119,7 @@ pub mod destination;
 pub mod destscroll;
 pub mod dimdrag;
 pub mod dimext;
+pub mod dimlabel;
 pub mod dimpreview;
 /// Which of the three move verbs one drag reaches. Split out of `interact`
 /// under R2; its header carries the argument that a fork whose branches can

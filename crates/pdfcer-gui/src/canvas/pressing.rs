@@ -507,6 +507,10 @@ pub fn look(
                     .map(gesture::DimensionPress::Extension)
             })
             .or_else(|| {
+                crate::canvas::dimlabel::label_at(ctx, doc, map, selection, p)
+                    .then_some(gesture::DimensionPress::Label)
+            })
+            .or_else(|| {
                 // Asked of `dimdrag` directly rather than of `grabbable`'s
                 // box, because the two answer different questions: `grabbable`
                 // says *what may be grabbed* and this says *is the thing under

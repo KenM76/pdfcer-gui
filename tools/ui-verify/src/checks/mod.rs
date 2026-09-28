@@ -293,6 +293,8 @@ pub mod dimension_corner_count;
 pub mod dimension_display_menu;
 pub mod dimension_extension_grip;
 pub mod dimension_label_drag;
+/// A linear ce dimension's text slides along its line; the line stays.
+pub mod dimension_text_slide;
 
 pub mod field_clipboard;
 
