@@ -52,11 +52,11 @@ channel: a reply is an input to *how* a thing is built, never to *which*. Each
 row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
-**Start here on `continue`.** The release tree `51490e45` (engine `eaa7f064`)
-is published to OneDrive and GitHub as `v0.5.0-dev.20260928.3`, packaged with
-`--verify` (tests and gates PASS); Word export and Remove old passwords were
-driven off-screen against the shipped exe and a smoke launch was clean.
-Bates numbering (`stamp_bates`) is in the pin and is the next feature. In order:
+**Start here on `continue`.** The release tree `5a120513` (engine `415a5b11`)
+is published to OneDrive and GitHub as `v0.5.0-dev.20260929.1`, packaged with
+`--verify` (tests and gates PASS); Bates numbering and Remove Bates numbers
+were driven off-screen against the shipped exe and a smoke launch was clean.
+The engine is two commits past the pin. In order:
 
 0. **Close the channel.** `open/` still holds the answered G028–G041 exchanges
    and two audit notes. Archive each pair and write its `INDEX.md` row in the
