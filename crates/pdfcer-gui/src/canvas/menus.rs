@@ -401,6 +401,10 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             crate::canvas::runmenu::RunPick::Elsewhere
         };
         crate::canvas::runmenu::park(&ctx, run_pick);
+        let merge = matches!(chosen, CanvasMenu::Object)
+            .then(|| crate::canvas::runmerge::operand(targets, selection, page))
+            .flatten();
+        crate::canvas::runmerge::park(&ctx, crate::canvas::runmerge::MenuRow::of(merge.as_ref()));
         crate::canvas::runmenu::trace(run_pick);
         crate::diag::trace(|| {
             format!(
@@ -540,14 +544,12 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             crate::canvas::runmenu::parked(&ctx).offered(),
         ));
         // The frame's conditions predate a right-click that moved the
-        // selection, so the merge row is re-asked here.
-        let merge = crate::canvas::runmerge::operand(targets, selection, page);
+        // selection, and the object model exists only on the click frame, so
+        // the merge row is read from what that click parked.
+        let merge = crate::canvas::runmerge::parked(&ctx);
         overrides.extend([
-            (menus::TEXT_MERGE_OFFERED, merge.is_some()),
-            (
-                menus::TEXT_MERGE_ALLOWED,
-                merge.as_ref().is_some_and(|m| m.allowed()),
-            ),
+            (menus::TEXT_MERGE_OFFERED, merge.offered),
+            (menus::TEXT_MERGE_ALLOWED, merge.allowed),
         ]);
     }
     let conditions = host.with_conditions(&overrides);

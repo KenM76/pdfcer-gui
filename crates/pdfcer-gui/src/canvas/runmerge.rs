@@ -85,3 +85,46 @@ pub fn operand(
         refusal,
     })
 }
+
+/// The merge row's two answers — offered, and pressable — as the right-click
+/// that opened the menu found them.
+///
+/// Parked because the page's object model is built only on the click frame
+/// (`canvas::modelneed`): on every later frame the menu is open, `operand`
+/// has no targets and would answer `None`, deleting the row one frame after
+/// it was drawn. The press re-derives the operand, so a parked answer can
+/// never merge anything the preflight has not just approved.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct MenuRow {
+    /// `shell::menus::TEXT_MERGE_OFFERED`.
+    pub offered: bool,
+    /// `shell::menus::TEXT_MERGE_ALLOWED`.
+    pub allowed: bool,
+}
+
+impl MenuRow {
+    /// The row `merge` implies.
+    #[must_use]
+    pub fn of(merge: Option<&MergeOperand>) -> Self {
+        Self {
+            offered: merge.is_some(),
+            allowed: merge.is_some_and(MergeOperand::allowed),
+        }
+    }
+}
+
+const ROW_MEMORY_KEY: &str = "pdfcer-gui.canvas.runmerge.row";
+
+/// Park the row the right-click found.
+pub fn park(ctx: &egui::Context, row: MenuRow) {
+    ctx.data_mut(|d| d.insert_temp(egui::Id::new(ROW_MEMORY_KEY), row));
+}
+
+/// The parked row; neither offered nor allowed before any right-click.
+#[must_use]
+pub fn parked(ctx: &egui::Context) -> MenuRow {
+    ctx.data_mut(|d| {
+        d.get_temp::<MenuRow>(egui::Id::new(ROW_MEMORY_KEY))
+            .unwrap_or_default()
+    })
+}
