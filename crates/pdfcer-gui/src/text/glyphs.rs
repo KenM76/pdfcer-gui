@@ -654,7 +654,9 @@ pub fn after() -> &'static str { "after —" }
             }
         }
         // The catalog spans two crates: the base holds the copy that names
-        // nothing above it, this crate the copy that still reaches up.
+        // nothing above it, this crate the copy that still reaches up. The
+        // scanner itself stays here: egui's bundled fonts depend on features
+        // only this crate's build enables, so the base measures other fonts.
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/text");
         let base =
             std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../pdfcer-gui-base/src/text");

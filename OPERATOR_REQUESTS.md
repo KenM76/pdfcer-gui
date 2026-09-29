@@ -6325,16 +6325,17 @@ assumed: no `pdfcer-gui`, `ui-verify`, `cargo`, `rustc` or stray shell
 processes were running on the machine. The entries are completed tasks that
 stay listed. One genuinely stuck watchdog was killed earlier in the session.
 
-## O262 — **INVESTIGATING — awaiting your Reader test** — text fields added by pdfcer are invisible in Acrobat Reader, and so is what you type into them
+## O262 — **CAUSE FOUND — engine request G068 filed** — text fields added by pdfcer are invisible in Acrobat Reader, and so is what you type into them
 
 His words: *"I have a pdf that I saved out of Word: "C:\Users\KenMa\OneDrive\pdfTests\Rental Application (Blank) - formed.pdf" I added two text form fields with just the default options. They show up in pdfcer-gui, but when I go into Acrobat Reader they don't show. i can click and fill them out and they keep the text, but the text doesn't show either."*
 
-**Measured.** The file is well formed. Its incremental update's xref offsets all resolve, and both widgets are in the page's `/Annots` and in `/AcroForm /Fields`. Each has `/DA`, an `/AP /N` whose `/BBox` matches its `/Rect`, and `/F 4`. Three differences from what Acrobat writes:
+He added: *"Fyi this happens with a pdf created out of SolidWorks too."*
 
-- **No `/MK` at all.** The draft's default border colour is unstated, and Reader draws no chrome around a text field without `/MK /BC`. That explains why the fields do not show.
-- **`/DR /Font /Helv` is a direct dictionary.** Acrobat's is an indirect object carrying `/Name`.
-- **`/DA` is a hex string** (`/Helv 0 Tf 0 g`).
+**Measured in Acrobat Pro.** The test is driven: type into the field, Tab, click away, then count dark pixels inside the box.
 
-One of the last two is the suspect for the typed text not showing, since Reader regenerates the appearance from `/DA` and `/DR` when a field loses focus.
+- **The typed value is hidden because pdfcer writes the form's default font (`/AcroForm /DR /Font /Helv`) as an inline dictionary.** Minimal one-field files that differ only in this entry: inline hides the value, an indirect object shows it. That holds with or without `/Name`, and holds for pdfcer's own field bytes as well. The same one-entry change fixes his Word file. The cause does not depend on who produced the file, which matches the SolidWorks report.
+- **Ruled out, each one alone:** the hex `/DA` with `0 Tf`, `/BS`, `/Ff 0` with `/V ()`, a missing `/MK`, and pdfcer's `/AP` stream. Each of these still shows the value.
+- **Empty fields have no visible chrome** because no border colour is written. This is a separate ask on our side: new text fields should default to a visible border, as the conventional form tools do.
+- **Found alongside, filed as G069:** on a Word (hybrid-reference) file, a *second* pdfcer save forwards Word's original xref stream. That stream then hides what the first save changed. This was measured on a hand-built second section of pdfcer's shape and still needs confirming with two real saves.
 
-**State:** five copies are in `pdfTests\reader-field-test`: the control, one per difference, and all three together. Reader's answer picks the engine request. Also owed: new text fields default to a visible border, as the conventional form tools do.
+**State:** G068 and G069 are open in the request channel. Repro files are in `pdfTestseader-field-test`. The shell has no workaround: it cannot reach `/DR`. **Closes when** a field added by a build carrying the G068 fix shows its typed value in his Reader, on the Word file and on a SolidWorks one.
