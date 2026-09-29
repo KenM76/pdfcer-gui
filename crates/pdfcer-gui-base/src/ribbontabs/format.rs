@@ -1,7 +1,7 @@
 //! The **Format** tab — contextual, appearing only while something is
 //! selected.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/shell/manifest/format.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/ribbontabs/format.md`.
 
 use super::{command, group};
 use crate::text::ribbon;
@@ -9,7 +9,7 @@ use egui_shell::manifest::{Item, Tab};
 
 /// The condition, published by the application each frame, under which the
 /// Format tab appears.
-pub(super) const VISIBLE_WHEN: &str = "selection.formattable"; // ui-text-exempt: a condition name, never displayed
+pub const VISIBLE_WHEN: &str = "selection.formattable"; // ui-text-exempt: a condition name, never displayed
 
 /// The condition under which a mode may change page content, and therefore
 /// under which the Font group is drawn at all.
@@ -20,7 +20,7 @@ const FONT_VISIBLE_WHEN: &str = "mode.edit_content"; // ui-text-exempt: a condit
 const MARKUP_VISIBLE_WHEN: &str = "selection.markup_restylable"; // ui-text-exempt: a condition name, never displayed
 
 /// The Format tab.
-pub(super) fn tab() -> Tab {
+pub fn tab() -> Tab {
     Tab::new("format", ribbon::tab_format())
         .with_question(ribbon::question_format())
         .with_visible_when(VISIBLE_WHEN)

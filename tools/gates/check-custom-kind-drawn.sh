@@ -93,7 +93,8 @@ cd "$ROOT" || exit 1
 # that is not in the product, which is worth a red line of its own.
 emissions() {
     local mdir="$1"
-    grep -rh --include='*.rs' 'Item::custom(' "$mdir" 2>/dev/null |
+    # shellcheck disable=SC2086 # a space-separated list of scan roots
+    grep -rh --include='*.rs' 'Item::custom(' $mdir 2>/dev/null |
         sed -E 's/^[[:space:]]+//' |
         grep -vE '^(//|\*|/\*)' |
         sed -E 's/.*Item::custom\(([^)]*)\).*/\1/' |
@@ -236,7 +237,8 @@ RS
     exit 0
 fi
 
-MDIR="crates/pdfcer-gui/src/shell/manifest"
+# The View tab stays in the app; the other tabs are in the base crate.
+MDIR="crates/pdfcer-gui/src/shell/manifest crates/pdfcer-gui-base/src/ribbontabs"
 TREE="crates/pdfcer-gui/src"
 
 echo "check-custom-kind-drawn: checking every Item::custom kind has a renderer…"

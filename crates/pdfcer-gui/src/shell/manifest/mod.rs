@@ -7,23 +7,20 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/shell/manifest/mod.md`.
 
-mod edit;
-mod file;
-mod format;
 use pdfcer_gui_base::ribbonladder as ladder;
 #[cfg(test)]
 mod ladder_tests;
-mod markup;
-mod measure;
-mod pages;
 pub use pdfcer_gui_base::railmanifest as rail;
 #[cfg(test)]
 mod rail_tests;
-mod tools;
 mod view;
 
+use pdfcer_gui_base::ribbontabs::{
+    command, edit, file, format, group, group_two_rows, icon_only, markup, measure, pages, tools,
+};
+
 use crate::text::ribbon;
-use egui_shell::manifest::{Group, Item, ItemSize, Mode, Shell};
+use egui_shell::manifest::{Item, Mode, Shell};
 
 /// **The complete pdfcer shell.**
 pub fn apply_paste_chords(shell: &mut Shell, order: crate::app::prefs::PasteChords) {
@@ -426,57 +423,11 @@ pub fn built_in() -> Shell {
     shell
 }
 
-/// **The condition, published by the application each frame, under which an
-/// OBJECT is selected on the page.**
-pub const SELECTION_ANY: &str = "selection.any"; // ui-text-exempt: a condition name, never displayed
-
-/// **Something Delete and Properties can act on** — wider than
-/// [`SELECTION_ANY`], and named separately for the reason `app::conditions`
-/// gives at the site that publishes it: a selected **form field** lives in
-/// `doc.selected_field`, not in `SelectionState`, so `selection.any` is false
-/// while one is selected.
-pub const SELECTION_ACTIONABLE: &str = "selection.actionable"; // ui-text-exempt: a condition name, never displayed
-
-/// **An Acrobat was found on this machine, or the operator has pointed
-/// pdfcer at one** — the condition under which `file.open_in_acrobat` is
-/// DRAWN AT ALL. `OPERATOR_REQUESTS.md` O122.
-pub const ACROBAT_AVAILABLE: &str = "acrobat.available"; // ui-text-exempt: a condition name, never displayed
-
-/// **The engine would not refuse a delete of what is selected** — the
-/// condition under which `format.delete` is DRAWN AT ALL.
-pub const DELETE_PERMITTED: &str = "selection.delete_permitted"; // ui-text-exempt: a condition name, never displayed
-
-/// **The `Item::Custom` kinds of the Format ▸ Font controls.**
-pub const FONT_FACE: &str = "font_face"; // ui-text-exempt: a custom-item kind, never displayed
-/// See [`FONT_FACE`].
-pub const FONT_SIZE: &str = "font_size"; // ui-text-exempt: a custom-item kind, never displayed
-/// See [`FONT_FACE`].
-pub const FONT_COLOUR: &str = "font_colour"; // ui-text-exempt: a custom-item kind, never displayed
-
-/// **The `Item::Custom` kind of the Recent-documents control.**
-pub const RECENT_FILES: &str = "recent_files"; // ui-text-exempt: a custom-item kind, never displayed
-
-/// **The `Item::Custom` kind of the Markup ▸ Style controls.**
-pub const COLOUR_SWATCH: &str = "colour_swatch"; // ui-text-exempt: a custom-item kind, never displayed
-
-/// **The `Item::Custom` kind of the View ▸ Display OCR blend control.**
-pub const OCR_BLEND: &str = "ocr_blend"; // ui-text-exempt: a custom-item kind, never displayed
-
-/// **The `Item::Custom` kinds of the Format ▸ Markup controls** — the six
-/// that restyle a mark already on the page.
-pub const MARKUP_STROKE: &str = "markup_stroke"; // ui-text-exempt: a custom-item kind, never displayed
-/// See [`MARKUP_STROKE`].
-pub const MARKUP_FILL: &str = "markup_fill"; // ui-text-exempt: a custom-item kind, never displayed
-/// See [`MARKUP_STROKE`].
-pub const MARKUP_WIDTH: &str = "markup_width"; // ui-text-exempt: a custom-item kind, never displayed
-/// See [`MARKUP_STROKE`].
-pub const MARKUP_OPACITY: &str = "markup_opacity"; // ui-text-exempt: a custom-item kind, never displayed
-/// See [`MARKUP_STROKE`].
-pub const MARKUP_ENDINGS: &str = "markup_endings"; // ui-text-exempt: a custom-item kind, never displayed
-/// See [`MARKUP_STROKE`]. The sixth, added 2026-09-06 with the engine verb it
-/// had been waiting for — `RIBBON_IA.md` §5.8's *Line style*, which was the one
-/// entry in that row with **no engine verb at all** until `MarkupStyle::dash`.
-pub const MARKUP_DASH: &str = "markup_dash"; // ui-text-exempt: a custom-item kind, never displayed
+pub use pdfcer_gui_base::ribbontabs::{
+    ACROBAT_AVAILABLE, COLOUR_SWATCH, DELETE_PERMITTED, FONT_COLOUR, FONT_FACE, FONT_SIZE,
+    MARKUP_DASH, MARKUP_ENDINGS, MARKUP_FILL, MARKUP_OPACITY, MARKUP_STROKE, MARKUP_WIDTH,
+    OCR_BLEND, RECENT_FILES, SELECTION_ACTIONABLE, SELECTION_ANY,
+};
 
 // ===========================================================================
 // CUSTOM_BACKED
@@ -590,34 +541,6 @@ pub const CUSTOM_BACKED: &[(&str, &str, &str)] = &[
          is drawn for `/Line` alone, because nothing else has ends to put one on.",
     ),
 ];
-
-/// A captioned band of items.
-fn group(id: &str, caption: &str, items: impl IntoIterator<Item = Item>) -> Group {
-    Group::new(id, caption).with_items(items)
-}
-
-/// The same, laid out on **two rows** even when one would fit.
-fn group_two_rows(id: &str, caption: &str, items: impl IntoIterator<Item = Item>) -> Group {
-    group(id, caption, items).with_prefer_rows(2)
-}
-
-/// A command reference, by id.
-///
-/// Named `command` rather than used as `Item::command` so that a tab
-/// module's item lists read as a list of commands, which is what they are.
-pub(super) fn command(id: &str) -> Item {
-    Item::command(id)
-}
-
-/// A command drawn **icon-only** — `RIBBON_SCALING.md` §5.1.
-pub(super) fn icon_only(id: &str) -> Item {
-    Item::command(id).sized(ItemSize::Small)
-}
-
-/// A command drawn **large** — icon above label, spanning the band's rows.
-pub(super) fn large(id: &str) -> Item {
-    Item::command(id).sized(ItemSize::Large)
-}
 
 //
 // `PLANNED` (every command `RIBBON_IA.md` specifies that this manifest does

@@ -86,8 +86,9 @@ The engine is two commits past the pin. In order:
    prefs, `clipboard`, `protect` and the whole Find bar are in
    `pdfcer-gui-base`. What stays in `render` needs eframe's glow (`pressure`)
    or the app (`settle`). Every `text` file, the blank-document template
-   and the redaction notes are in base; the next candidates are
-   `dialogs/settings/*` and `shell/manifest/*` (`python tools/module-graph.py`
+   and the redaction notes are in base; seven of the eight ribbon tabs
+   are in base (View names an app action). The next candidate is
+   `dialogs/settings/*` (`python tools/module-graph.py`
    lists what reaches only base).
 
 **★ Newest, and ahead of everything numbered below: O226 – O229, the OCR

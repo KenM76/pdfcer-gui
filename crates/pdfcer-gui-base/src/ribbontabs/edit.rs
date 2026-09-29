@@ -1,14 +1,14 @@
 //! The **Edit** tab — *what am I changing about content that is already
 //! there?*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/shell/manifest/edit.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/ribbontabs/edit.md`.
 
 use super::{command, group, icon_only, large};
 use crate::text::ribbon;
 use egui_shell::manifest::Tab;
 
 /// The Edit tab.
-pub(super) fn tab() -> Tab {
+pub fn tab() -> Tab {
     Tab::new("edit", ribbon::tab_edit())
         .with_question(ribbon::question_edit())
         .with_groups([

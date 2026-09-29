@@ -1,13 +1,13 @@
 //! The **Tools** tab — *what do I run across files, or configure once?*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/shell/manifest/tools.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/ribbontabs/tools.md`.
 
 use super::{command, group, large};
 use crate::text::ribbon;
 use egui_shell::manifest::Tab;
 
 /// The Tools tab.
-pub(super) fn tab() -> Tab {
+pub fn tab() -> Tab {
     Tab::new("tools", ribbon::tab_tools())
         .with_question(ribbon::question_tools())
         .with_groups([

@@ -1,13 +1,13 @@
 //! The **Pages** tab — *what am I doing to the set of pages?*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/shell/manifest/pages.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/ribbontabs/pages.md`.
 
 use super::{command, group, icon_only, large};
 use crate::text::ribbon;
 use egui_shell::manifest::Tab;
 
 /// The Pages tab.
-pub(super) fn tab() -> Tab {
+pub fn tab() -> Tab {
     Tab::new("pages", ribbon::tab_pages())
         .with_question(ribbon::question_pages())
         .with_groups([

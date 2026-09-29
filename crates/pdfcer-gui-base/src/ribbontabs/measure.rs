@@ -1,13 +1,13 @@
 //! The **Measure** tab — *what am I measuring, and in what units?*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/shell/manifest/measure.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/ribbontabs/measure.md`.
 
 use super::{command, group, large};
 use crate::text::ribbon;
 use egui_shell::manifest::Tab;
 
 /// The Measure tab.
-pub(super) fn tab() -> Tab {
+pub fn tab() -> Tab {
     Tab::new("measure", ribbon::tab_measure())
         .with_question(ribbon::question_measure())
         .with_groups([

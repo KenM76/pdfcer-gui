@@ -1,14 +1,14 @@
 //! The **File** tab — *what do I do with the file as a whole, or with
 //! pdfcer itself?*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/shell/manifest/file.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/ribbontabs/file.md`.
 
 use super::{command, group, large};
 use crate::text::ribbon;
 use egui_shell::manifest::{Item, Tab};
 
 /// The File tab.
-pub(super) fn tab() -> Tab {
+pub fn tab() -> Tab {
     Tab::new("file", ribbon::tab_file())
         .with_question(ribbon::question_file())
         .with_groups([

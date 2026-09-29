@@ -1,13 +1,13 @@
 //! The **Markup** tab — *what am I adding for someone else to read?*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/shell/manifest/markup.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/ribbontabs/markup.md`.
 
 use super::{command, group, icon_only, large};
 use crate::text::ribbon;
 use egui_shell::manifest::{Item, Tab};
 
 /// The Markup tab.
-pub(super) fn tab() -> Tab {
+pub fn tab() -> Tab {
     Tab::new("markup", ribbon::tab_markup())
         .with_question(ribbon::question_markup())
         .with_groups([

@@ -72,6 +72,8 @@ pub mod rasterstrategy;
 /// Rendered pixmaps into egui textures, and what each upload is a picture of.
 pub mod raster;
 
+pub mod ribbontabs;
+
 /// A string the operator typed that must never reach a log — one type, and its
 /// whole reason for existing is its `Debug`. See its header: a `{:?}` on an
 /// action carrying a password writes it into the trace file `tools/ui-verify`
