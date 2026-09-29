@@ -6325,7 +6325,7 @@ assumed: no `pdfcer-gui`, `ui-verify`, `cargo`, `rustc` or stray shell
 processes were running on the machine. The entries are completed tasks that
 stay listed. One genuinely stuck watchdog was killed earlier in the session.
 
-## O262 — **CAUSE FOUND — engine request G068 filed** — text fields added by pdfcer are invisible in Acrobat Reader, and so is what you type into them
+## O262 — **FIXED for new fields (engine pin `5dae6462`); older forms owe G070** — text fields added by pdfcer are invisible in Acrobat Reader, and so is what you type into them
 
 His words: *"I have a pdf that I saved out of Word: "C:\Users\KenMa\OneDrive\pdfTests\Rental Application (Blank) - formed.pdf" I added two text form fields with just the default options. They show up in pdfcer-gui, but when I go into Acrobat Reader they don't show. i can click and fill them out and they keep the text, but the text doesn't show either."*
 
@@ -6338,4 +6338,6 @@ He added: *"Fyi this happens with a pdf created out of SolidWorks too."*
 - **Empty fields have no visible chrome** because no border colour is written. **Built on our side:** new text and choice fields now default to a black outline. The field-placement dialog still offers a different colour. Driven check `field_outline` measures the outline on screen and fails without it. This makes an empty field visible; it does not fix the hidden value, which is G068.
 - **Found alongside, filed as G069:** on a Word (hybrid-reference) file, a *second* pdfcer save forwards Word's original xref stream. That stream then hides what the first save changed. This was measured on a hand-built second section of pdfcer's shape and still needs confirming with two real saves.
 
-**State:** G068 and G069 are open in the request channel. Repro files are in `D:\Dev\pdfTests\reader-field-test`. The shell has no workaround: it cannot reach `/DR`. **Closes when** a field added by a build carrying the G068 fix shows its typed value in his Reader, on the Word file and on a SolidWorks one.
+**Measured at pin `5dae6462` (2026-09-29).** A text field added by the engine to a form-less file writes `/DR /Font /Helv` as an indirect object; in Acrobat Pro, typing `HELLO` and clicking away leaves the value visible (622 dark pixels in the field, 0 before). The inline control is T2/M1 in the repro folder, measured hidden by the same drive. **A form already saved with an inline `/Helv` stays hidden:** the engine reuses an existing `/DR` font unchanged by design, so those files need an explicit repair verb, filed as G070. His "all fields" copy was built with an indirect `/Helv` and is not affected.
+
+**State:** G068 and G069 are both in the pin. G069 is not yet confirmed in Acrobat: two CLI saves on the Word repro still forward the original `/XRefStm` in every trailer, and Acrobat's screen shows no field highlight to count. Confirming it needs a drive that tabs into the second save's field. G070 is open. Repro files are in `D:\Dev\pdfTests\reader-field-test`. The shell has no workaround: it cannot reach `/DR`. **Closes when** a field added by a build carrying the G068 fix shows its typed value in his Reader, on the Word file and on a SolidWorks one.
