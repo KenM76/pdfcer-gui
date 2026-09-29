@@ -165,3 +165,11 @@ line is a run where the selection never changed. A guard that defaulted
 to one would pass on a click that selected nothing, and every oracle
 below it would then be asserting sentences about a selection that does
 not exist.
+
+# What else it covers
+
+The Properties text section draws only when `pin::object_text` gathers the
+clicked object's runs, and that gathering admits a glyph only where the
+engine's `vector::text_locate::locate_text_run` places it in that object. The
+check therefore also drives glyph-to-run resolution. Falsified: with
+`engine_places_in` answering `false`, it fails at `no-section`.
