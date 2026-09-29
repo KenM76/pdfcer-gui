@@ -137,5 +137,11 @@ pub(super) fn band() -> Vec<Command> {
         command("pages.paste", t::pages_paste(), 324)
             .with_icon("paste")
             .enabled_when("doc.pages"),
+        // Pages ▸ Stamp, `RIBBON_IA.md` §5.3. `stamp` is shared with
+        // `file.stamp_collection` and the markup stamp; the three are on
+        // different tabs or menus and never drawn side by side.
+        command("pages.bates", t::pages_bates(), 330)
+            .with_icon("stamp")
+            .enabled_when("doc.pages"),
     ]
 }

@@ -4,10 +4,10 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/dialogs/open.md`.
 
 use super::{
-    DialogsState, about, compact, diagnostics, embed, export_dxf, export_image, export_tables,
-    export_text, formfield, import_text, insert_image, insert_pages, new_document, ocr, offpage,
-    page_crop, page_size, print, protect, redact, scale, shortcuts, stamp_collection, textannot,
-    unembed,
+    DialogsState, about, bates, compact, diagnostics, embed, export_dxf, export_image,
+    export_tables, export_text, formfield, import_text, insert_image, insert_pages, new_document,
+    ocr, offpage, page_crop, page_size, print, protect, redact, scale, shortcuts, stamp_collection,
+    textannot, unembed,
 };
 use crate::app::prefs::RedactionReach;
 use crate::app::state::Status;
@@ -227,6 +227,15 @@ impl DialogsState {
             return;
         }
         self.page_crop = page_crop::PageCropDialog::open(doc, pages);
+    }
+
+    /// **Open the Bates window** on a document of `of` pages, offering the
+    /// rail's `picked` pages as an alternative to all of them.
+    pub fn open_bates(&mut self, picked: &[usize], of: usize) {
+        if self.bates.is_some() {
+            return;
+        }
+        self.bates = bates::BatesDialog::open(picked, of, self.bates_form.as_ref());
     }
 
     /// **Open the sheet-size window** over `pages`, the operand sheets.

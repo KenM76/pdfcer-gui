@@ -204,18 +204,13 @@ pub const PLANNED: &[(&str, &str)] = &[
     // *within* the paper, and it hides edges without changing the paper.
     (
         "pages.watermark",
-        "N — the whole Pages ▸ Stamp group is unbuilt, so the GROUP is absent too rather \
-         than present and empty.",
+        // ui-text-exempt: developer note about an ABSENT command; never rendered.
+        "N — not built; Bates numbering is the only item in its Pages ▸ Stamp group.",
     ),
     (
         "pages.header_footer",
         // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — as `pages.watermark`, in the same absent group.",
-    ),
-    (
-        "pages.bates",
-        // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — Bates numbering, in the same absent group. See DEFECTS.md §2.",
+        "N — not built, as `pages.watermark`.",
     ),
     // -- Edit -- `RIBBON_IA.md` §5.4 ----------------------------------------
     (

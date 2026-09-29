@@ -114,5 +114,12 @@ pub(super) fn tab() -> Tab {
                     command("pages.resize"),
                 ],
             ),
+            // Pages ▸ Stamp, `RIBBON_IA.md` §5.3. Watermark and Header &
+            // footer are not built, so Bates numbering stands alone (R9).
+            group(
+                "stamp",
+                ribbon::group_pages_stamp(),
+                [command("pages.bates")],
+            ),
         ])
 }

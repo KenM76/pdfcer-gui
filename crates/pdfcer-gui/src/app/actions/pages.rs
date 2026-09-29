@@ -524,6 +524,13 @@ pub(super) fn apply(
                 );
             }
         }
+        PageAction::StampBates { stamp, first } => {
+            let page = stamp.pages.as_ref().and_then(|p| p.first().copied());
+            let n = stamp.pages.as_ref().map_or(0, Vec::len);
+            super::apply::vector_edit(doc, "bates-stamped", page.unwrap_or(0), n, |session| {
+                super::pagesize::bates(session, &stamp, first)
+            });
+        }
         PageAction::SetCropBox { pages, edit } => {
             if !pages.is_empty() {
                 let first = pages.first().copied().unwrap_or(0);

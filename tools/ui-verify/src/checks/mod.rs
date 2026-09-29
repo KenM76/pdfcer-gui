@@ -42,6 +42,7 @@ pub mod delete_key;
 /// group comes back joinable.
 pub mod dimension_groups;
 
+pub mod bates_scripted;
 /// **The second half of the descent** — something inside a wrapped drawing
 /// can be DRAGGED, not merely selected (`OPERATOR_REQUESTS.md` O70). Reads the
 /// funnel's own applied line, which the engine's `Ok` is what produces.

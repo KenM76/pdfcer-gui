@@ -706,39 +706,8 @@ mod tests {
         assert_eq!(shell.contextual_tabs().len(), 1, "one contextual tab");
         assert_eq!(
             shell.all_tabs().flat_map(Tab::groups).count(),
-            37,
-            "thirty-seven groups. ★★★ 36 → 37 on 2026-09-06: Markup ▸ Arrange — Bring to \
-             front, Bring forward, Send backward, Send to back, the other half of the same \
-             operator ask. A SIXTH group on a tab `RIBBON_IA.md` §5.5 documents as five, \
-             placed under his standing directive of 2026-09-06 (*\"never ask — placement, \
-             wording and scope are yours\"*) with the reasoning recorded at the group in \
-             `manifest::markup` for the doc edit to be made from. It is not folded into \
-             Style because Style sets the style of the NEXT mark — §5.5's own words — and \
-             these four act on one already placed; it sits after Style and before Comments \
-             because the tab reads left to right as a sequence of tenses and that is the \
-             seam. \
-             ★★★ 35 → 36 on 2026-09-06: Format ▸ Markup — the five controls \
-             that restyle a mark already on the page, and the answer to the operator's \
-             *\"getting full editing working for the Markup tools.\"* A group of its own rather \
-             than five more items under Selection, because Selection's three commands act on \
-             ANY selection — describe it, re-aim it, destroy it — and these five exist only \
-             while the selection is a markup annotation. A band whose items disappear as a \
-             body is a band. \
-             ⚠ The five prose sites this test's own note enumerates all read `thirty-three` \
-             when this ran: they had drifted through 34 and 35 without moving. All five were \
-             re-measured against `built_in()` and rewritten with this line, which is the \
-             procedure the note prescribes and the fourth time it has been needed. \
-             ★★ 34 → 35 on 2026-09-04: File ▸ Security (O119) — \
-             `Encrypt…` and `Permissions…`, in their own band immediately after Export. \
-             A new group rather than two rows under Document, and rather than a row on \
-             Edit ▸ Protect where a reader would first look: every other command on Edit \
-             is an undoable edit to page CONTENT, and these two rewrite every byte and \
-             enter nothing in the undo log. \
-             ★ 33 → 34 on 2026-08-29: Pages ▸ Clipboard (O59 item 2). \
-             Its own band rather than three more entries under Organise, for the reason that \
-             band's own note gives about Delete leading it — an operator comes to a band \
-             because of what it is CALLED, and Cut/Copy/Paste under a caption reading \
-             `Organise` are three commands nobody scanning for a clipboard would look at"
+            38,
+            "thirty-eight groups; a group added or removed is a ribbon change `RIBBON_IA.md` must record"
         );
         assert_eq!(shell.modes().len(), 3, "three modes");
         assert_eq!(

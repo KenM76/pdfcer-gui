@@ -393,6 +393,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(export_tables_scripted::ExportTablesWithoutTheMouse),
         Box::new(export_word_scripted::ExportWordWithoutTheMouse),
         Box::new(purge_passwords_scripted::StoredPasswordsRemovedWithoutTheMouse),
+        Box::new(bates_scripted::BatesNumberingWithoutTheMouse),
         Box::new(measure_place_scripted::MeasurePlaceWithoutTheMouse),
         // Adjacent to that rung deliberately: the chunk boxes are its VISIBLE
         // half. The descent above proves the selection can reach one chunk of

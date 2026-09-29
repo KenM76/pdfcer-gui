@@ -405,6 +405,15 @@ pub const fn pages_crop() -> CommandText {
     )
 }
 
+/// `pages.bates`
+#[must_use]
+pub const fn pages_bates() -> CommandText {
+    CommandText::new(
+        "Bates numbering…",
+        "Stamp a running number, with an optional prefix and suffix, on every page or on the pages picked in the page rail.",
+    )
+}
+
 /// `pages.resize`.
 #[must_use]
 pub const fn pages_resize() -> CommandText {

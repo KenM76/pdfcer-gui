@@ -263,6 +263,12 @@ pub fn group_pages_transform() -> &'static str {
     "Transform"
 }
 
+/// Caption of the Pages ▸ Stamp group.
+#[must_use]
+pub fn group_pages_stamp() -> &'static str {
+    "Stamp"
+}
+
 // ---------------------------------------------------------------------------
 // GROUP CAPTIONS — Edit
 // ---------------------------------------------------------------------------

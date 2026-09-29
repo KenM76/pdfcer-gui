@@ -41,6 +41,7 @@ pub(crate) fn handles(id: &str) -> bool {
             | "pages.move_down"
             | "pages.resize"
             | "pages.crop"
+            | "pages.bates"
     )
 }
 
@@ -85,6 +86,26 @@ pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
                 return;
             };
             app.dialogs.open_page_crop(doc, &pages);
+        }
+        // **Bates-number the picked sheets.** A window: the numbering is a
+        // question, and its preview is the answer checked before committing.
+        //
+        // Not the shared operand rule: with nothing picked that rule means the
+        // current sheet, and a Bates run defaults to the whole document. The
+        // rail's pick is offered as the alternative scope.
+        "pages.bates" => {
+            let Status::Open(doc) = &app.status else {
+                return;
+            };
+            let of = doc.pages.len();
+            let picked: Vec<usize> = app
+                .panels
+                .selected_pages()
+                .iter()
+                .copied()
+                .filter(|p| *p < of)
+                .collect();
+            app.dialogs.open_bates(&picked, of);
         }
         // ===============================================================
         // THE PAGE VERBS — one operand rule, shared by every arm below

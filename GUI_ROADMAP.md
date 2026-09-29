@@ -292,6 +292,7 @@ Each is small, independently shippable, and can fill a gap in any sprint.
 |---|---|
 | Imposition in the print dialog | Sheet composition lifted into `pdfcer-print` so both shells share one implementation, including the mutual-exclusion guard that is CLI-local today. A control before that is an affordance for something that cannot happen. |
 | Insert blank page | A size-and-count dialog. The engine inserts blank pages already. |
+| Bates numbering across several files | A batch window that takes a list of documents and stamps them in order, carrying the next number from one to the next and writing each as a copy. The one-document stamp and its continuation already ship; the batch is shell work only. |
 | Unencrypted-wrapper warning | A surface. The engine can tell that an otherwise unencrypted document carries encrypted embedded files; nothing on screen says so. |
 
 Two capabilities are **built and undriven** — they exist, they are registered,

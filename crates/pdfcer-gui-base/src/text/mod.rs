@@ -50,6 +50,9 @@ pub mod assoc;
 /// The attachment clipboard's words, including the one question a paste must
 /// ask before the press: the engine REPLACES a same-named attachment.
 pub mod attachclip;
+/// Pages ▸ Stamp ▸ Bates numbering…: its window and its receipt.
+/// Consumed by `pdfcer_gui::dialogs::bates`.
+pub mod bates;
 pub mod commands;
 /// The words form-data export says — `file.export_form_data`, wired
 /// 2026-08-27. Its one load-bearing sentence is the CSV neutralisation

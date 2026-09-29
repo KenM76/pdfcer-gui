@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **55 of 243** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `wanted` — a real gap — **54 of 243** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -140,7 +140,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Default selections for a list or combo** — `FieldEdit::with_default_selections` / `FieldEdit::default_selections` | **wanted, beside the Default-value box.** `/DV` for a `/Ch` field is what Reset restores; the text-field half is built and this is its choice-field twin, a multi-select of the field's own options in `panels::properties::choiceopts`. |
 | **A dashed widget border** — `WidgetChrome::with_border_dash` / `WidgetChrome::border_dash` | **wanted, small.** The border width and style controls exist; a dashed style without a dash array draws the engine default. One pattern field beside the style combo, shown only when the style is dashed (R9). |
 | **Say on the security summary that old password values are still in the file** — the scan behind `password_history::PasswordValueScan` <!--namesake:scan_stored_password_values: called by File ▸ Security ▸ Remove old passwords…, not by any summary--> | **wanted, and it is a disclosure, not a command.** The purge ships (see *shipped*). What is missing is telling the operator, before he runs it, that the file holds password values in earlier revisions, as a line on the document's security summary giving field and revision only, never the value. |
-| **Bates numbering across a batch of PDFs** — `EditSession::stamp_bates`, `BatesStamp`; the whole `pdfcer_core::bates` module, its undo entry `CommandKind::StampBates` and refusal `EditError::Bates` | **wanted.** The engine labels pages as a `/Bates` artifact and refuses before any write on encryption, certification, bad digits, an unencodable character, geometry or overflow. It stamps a signed file incrementally and discloses the signature impact. A shell surface needs: prefix, suffix, start number and digit count; placement; the document set and its order, since numbering runs across files; the refusal worded before any file is written; and the signature disclosure. |
 
 ### Fonts & rendering
 
@@ -225,7 +224,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **171 of 243** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **172 of 243** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -376,6 +375,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Encrypt a document (AES-256, `/R` 6 only), set … | **Reachable — File ▸ Security ▸ `Encrypt…` and `Permissions…`** (`OPERATOR_REQUESTS.md` O119). `crate::protect` is the model, `crate::dialogs::protect` the window, and all three verbs are called from `protect::prepare`: `set_encryption` on the open session, `set_permissions` and `remove_encryption` on a throwaway session re-opened with the owner password. **The throwaway is not caution:** both mutating verbs call `clear_encryption()` on the base, which would disarm `save_incremental`'s `EncryptedSaveUnsupported` guard and let the next ordinary `Ctrl+S` append plaintext objects to AES ciphertext, silently. It is also the authentication — `NotOwner` comes back from the load, not from a second code path. O119's three disclosures are all on screen and none waits for a press; the save mirrors `dialogs::redact` part for part. Moved here on the operator's ruling, not on a driven run: headless tests green, the `ui-verify` checks written and not run. |
 | **PAdES B-T — verify-then-embed an RFC 3161 timestamp** … | **shipped** (default `timestamp` feature). File ▸ Sign ▸ *Timestamp server*: `sign::prepare` calls `EditSession::sign_with_timestamp` through `sign::timestamp::HttpAuthority` (`pdfcer_fetch::post_time_stamp_query_with`, 30 s bound), and `SignReport::timestamp` is disclosed in the result. `SignApplyError::Timestamp` is worded, never retried as B-B. Strippable by the shell's `timestamp` feature (R8). The round trip still blocks the UI thread for its duration. Driven: `a_timestamped_signature_is_timestamped_or_not_written`. |
 | **Find AND purge password-field values left in earlier revisions** — `password_history::scan_stored_password_values`, `EditSession::purge_password_values` | **shipped — File ▸ Security ▸ Remove old passwords….** `app::actions::purge_passwords` scans every revision, purges a fresh session, rewrites with `to_full_bytes_decomposing_containers`, re-scans the output, and writes nothing if a value survives. It refuses signed documents. The receipt counts values removed and discloses inherited, read-only and unreadable-revision cases without quoting a value. Driven by `stored_passwords_removed_without_the_mouse`. |
+| **Bates numbering across a batch of PDFs** — `EditSession::stamp_bates`, `BatesStamp`; the whole `pdfcer_core::bates` module, its undo entry `CommandKind::StampBates` and refusal `EditError::Bates` | **shipped — Pages ▸ Stamp ▸ Bates numbering…, one document at a time.** `dialogs::bates` takes prefix, digits, suffix, start number, one of six positions, margin and size. It previews the first and last label and words every `BatesError` before commit, with no Stamp button while one applies. `app::actions::pagesize::bates` calls `stamp_bates` as one undo entry, and the receipt names the labels and the next number. The form carries the next number to the next document's window, so a batch continues by hand. Stamping several files in one pass is shell work, recorded in `GUI_ROADMAP.md`. Driven by `bates_numbering_without_the_mouse`. |
 
 ### Fonts & rendering
 

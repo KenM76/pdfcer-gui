@@ -340,6 +340,40 @@ pub fn crop(
     Ok(notes)
 }
 
+/// The body of `PageAction::StampBates`: stamp the labels as one
+/// `CommandKind::StampBates` undo step and return the receipt, which names the
+/// labels written and the number the next document of a batch starts at.
+///
+/// # Errors
+///
+/// The engine's refusals, raised before anything is written.
+pub fn bates(
+    session: &mut EditSession,
+    stamp: &pdfcer_core::bates::BatesStamp,
+    first: u64,
+) -> Result<Vec<String>, EditError> {
+    let pdfcer_core::bates::BatesOutcome {
+        pages,
+        first_label,
+        last_label,
+        next,
+        ..
+    } = session.stamp_bates(stamp, first)?;
+    crate::diag::trace(|| {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "bates-applied n={} first_label={first_label} last_label={last_label} next={next}",
+            pages.len(),
+        )
+    });
+    Ok(vec![crate::text::bates::receipt(
+        pages.len(),
+        &first_label,
+        &last_label,
+        next,
+    )])
+}
+
 /// How many changes ended in `want`.
 fn count_entry(changes: &[MediaBoxChange], want: MediaBoxEntry) -> usize {
     changes.iter().filter(|c| c.entry == want).count()

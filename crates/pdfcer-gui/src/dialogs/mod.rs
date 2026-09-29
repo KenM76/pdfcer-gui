@@ -85,6 +85,7 @@ pub mod open;
 /// Its header carries why there is no third *"open without saving"* button,
 /// which is the one place it deliberately departs from [`unsaved`]'s shape.
 pub use pdfcer_gui_base::acrobatprompt as open_in_acrobat;
+pub mod bates;
 /// **Changing the paper an open drawing sits on** — `pages.resize`. Its
 /// header carries the design decision the window is built around: a
 /// `/MediaBox` change crops, it does not shrink, so the window's real product
@@ -212,6 +213,12 @@ pub struct DialogsState {
     /// The open crop window, if any; it holds the operand sheets' size, so it
     /// closes with their document.
     page_crop: Option<page_crop::PageCropDialog>,
+    /// The open Bates window; it holds the operand pages, so it closes with
+    /// their document.
+    bates: Option<bates::BatesDialog>,
+    /// The Bates form the last window left, kept across documents so a
+    /// batch continues its numbering.
+    bates_form: Option<bates::BatesForm>,
     /// The open text-annotation dialog, if a text box, sticky or stamp has
     /// just been placed.
     text_annot: Option<textannot::TextAnnotDialog>,
@@ -821,6 +828,9 @@ impl DialogsState {
         if self.page_crop.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.page_crop = None;
         }
+        if self.bates.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.bates_form = self.bates.take().map(|d| d.remembered());
+        }
         if self.form_field.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.form_field = None;
         }
@@ -1066,6 +1076,9 @@ impl DialogsState {
         // number in it would still look authoritative.
         self.page_size = None;
         self.page_crop = None;
+        if let Some(d) = self.bates.take() {
+            self.bates_form = Some(d.remembered());
+        }
         self.insert_image = None;
         self.export_dxf = None;
         // On this list because it holds a SNAPSHOT: the page count it built
