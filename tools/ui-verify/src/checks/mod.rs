@@ -15,6 +15,7 @@ pub mod annot_delete_gate;
 pub mod annot_rotate;
 
 pub mod blend_space;
+pub mod export_keep_text;
 pub mod field_outline;
 pub mod merge_runs;
 pub mod remove_ocr;

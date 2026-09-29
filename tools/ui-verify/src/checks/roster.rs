@@ -177,6 +177,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(merge_runs::MergingTextRunsReachesTheDocument),
         Box::new(repair_form_fonts::RepairingFormFontsReachesTheDocument),
         Box::new(remove_ocr::RemovingOcrTextReachesTheDocument),
+        Box::new(export_keep_text::KeepTextDecidesTheSvg),
         // Beside `blend_space`, because they are the same shape of check on
         // the same two surfaces: both climb the zoom with Ctrl+wheel, both read
         // pixels out of the canvas, and both end at a status-bar disclosure. A
