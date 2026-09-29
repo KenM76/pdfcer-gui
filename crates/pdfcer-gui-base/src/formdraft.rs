@@ -144,11 +144,13 @@ impl Draft {
             required: false,
             read_only: false,
             border_width: 1.0,
-            // Neither key written, which is what every `add_*` verb
-            // authors on its own: a text field draws no box and a push
-            // button keeps its plate.
+            // No background, so a push button keeps its plate. A text or
+            // choice field gets a black outline: with no `/BC` it draws no
+            // box, and an empty field is then invisible in a reader that
+            // does not highlight fields (O262).
             background: None,
-            border_color: None,
+            border_color: matches!(kind, FormFieldKind::Text | FormFieldKind::Choice)
+                .then_some(MkColor::Gray(0.0)),
             value: String::new(),
             multiline: false,
             password: false,
@@ -293,13 +295,19 @@ mod tests {
         assert!(check.required);
     }
 
-    /// **Both `/MK` colours carry across kinds, and neither is invented.**
+    /// **Both `/MK` colours carry across kinds. Only a box you type into or
+    /// pick from starts with an outline; no kind starts with a background.**
     #[test]
-    fn both_mk_colours_carry_across_kinds_and_default_to_stating_nothing() {
+    fn both_mk_colours_carry_across_kinds_and_only_boxes_start_outlined() {
         for kind in FormFieldKind::ALL {
             let fresh = Draft::fresh(kind);
             assert_eq!(fresh.background, None, "{kind:?} invents a background");
-            assert_eq!(fresh.border_color, None, "{kind:?} invents a border colour");
+            let outlined = matches!(kind, FormFieldKind::Text | FormFieldKind::Choice);
+            assert_eq!(
+                fresh.border_color,
+                outlined.then_some(MkColor::Gray(0.0)),
+                "{kind:?} border colour"
+            );
         }
 
         let mut mem = Remembered::default();

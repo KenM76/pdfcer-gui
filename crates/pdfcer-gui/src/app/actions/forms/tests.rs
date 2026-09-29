@@ -343,3 +343,32 @@ mod authoring_is_available {
         );
     }
 }
+
+/// **A text field placed with the dialog's defaults is saved with an outline
+/// colour**, so an empty one is visible in a reader that does not highlight
+/// fields (O262). The engine strokes the frame whenever `/MK /BC` is set and
+/// the `/BS` width is positive; this asserts the half the shell owns.
+#[test]
+fn a_default_text_field_is_authored_with_a_black_outline() {
+    use crate::canvas::formfield::{Draft, FormFieldKind};
+    let mut doc = crate::app::state::open_local_fixture("action-names-field.pdf");
+    let mut draft = Draft::fresh(FormFieldKind::Text);
+    draft.name = "Outlined".to_owned();
+    draft.tooltip = "Outlined field".to_owned();
+    let rect = pdfcer_core::page_tree::Rect::from_corners(100.0, 100.0, 300.0, 130.0);
+
+    super::author::author(&mut doc, 0, rect, &draft);
+
+    let view = doc.session.view();
+    let form = pdfcer_core::forms::parse_acroform(&view).expect("the field was authored");
+    let field = form
+        .fields
+        .iter()
+        .find(|f| f.fully_qualified_name == "Outlined")
+        .expect("the authored field is in the form");
+    assert_eq!(
+        field.widgets[0].border_color,
+        Some(pdfcer_core::forms::MkColor::Gray(0.0)),
+        "a default text field must carry a stated border colour"
+    );
+}
