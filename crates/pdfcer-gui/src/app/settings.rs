@@ -165,7 +165,7 @@ mod tests {
     ///
     /// - **`app/settings.rs`** — this file. It is the funnel.
     /// - **`ocr/fixture.rs`** — a synthetic-document generator, not a surface.
-    /// - **`app/blank.rs`** — the sized-New path serializes and re-parses a
+    /// - **`pdfcer-gui-base/src/blank.rs`** — the sized-New path serializes and re-parses a
     ///   443-byte template, and **no operator-visible byte of that rewrite
     ///   survives**: two of `SaveOptions`' three fields spell the written
     ///   file, which is discarded in the same statement, and the third writes
@@ -188,7 +188,7 @@ mod tests {
     /// guard. `tools/verb-coverage.py` is the instrument that asks that
     /// question mechanically, and it is what surfaced this.
     ///
-    /// `app/blank.rs` is exempt for its existing reason extended: its session
+    /// `blank.rs` is exempt for its existing reason extended: its session
     /// rewrites a 443-byte template whose bytes are discarded in the same
     /// statement, and it authors no annotation, so no `/QuadPoints` array
     /// exists for the order to govern.
@@ -346,7 +346,7 @@ mod tests {
                 // check works from any working directory.
                 if name.ends_with("app/settings.rs")
                     || name.ends_with("pdfcer-gui-base/src/settings.rs")
-                    || name.ends_with("app/blank.rs")
+                    || name.ends_with("pdfcer-gui-base/src/blank.rs")
                     || name.ends_with("ocr/fixture.rs")
                     || name.contains("/redact/")
                     //

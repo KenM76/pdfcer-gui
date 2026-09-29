@@ -15,10 +15,8 @@ pub mod actions;
 /// carries why the second half cannot be automated on Windows 10/11 and why
 /// `reg.exe` was chosen over the registry API under `#![forbid(unsafe_code)]`.
 pub use pdfcer_gui_base::assoc;
-/// Where a document made by `file.new` comes from: the 443-byte blank-A4
-/// template that ships as an asset, and the argument for why New parses a file
-/// rather than the engine growing a way to create one.
-pub mod blank;
+/// The blank-A4 template `file.new` parses, in `pdfcer-gui-base`.
+pub use pdfcer_gui_base::blank;
 pub mod cache;
 /// The wall clock, in `pdfcer-gui-base`; re-exported so `app::clock` names it.
 pub use pdfcer_gui_base::clock;

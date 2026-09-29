@@ -98,7 +98,7 @@ covering more than it does:
 * **the page being blank.** Nothing here reads a pixel. A template with a
   watermark on it would pass. `app::blank::tests` and the 443-byte size
   assertion are the guard against that, and
-  `crates/pdfcer-gui/src/app/assets/PROVENANCE.md` is the reason it matters.
+  `crates/pdfcer-gui-base/src/assets/PROVENANCE.md` is the reason it matters.
 * **anything about saving it.** There is no save in this build, for any
   document — see `app::blank` §5.
 

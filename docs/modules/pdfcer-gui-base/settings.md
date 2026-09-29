@@ -54,7 +54,7 @@ syntax tree contains no comments at all.
    behaviour must be able to say `ExtractOptions::default()`, or it is
    testing the operator's configuration instead of the engine's contract.
    The check skips `#[cfg(test)]` modules, `ocr/fixture.rs` and
-   `app/blank.rs` — see [`tests::no_call_site_builds_its_own_options`] for
+   `pdfcer-gui-base/src/blank.rs` — see [`tests::no_call_site_builds_its_own_options`] for
    each one's argument.
 2. **`with_provenance(true)`.** Text editing needs provenance, which no
    setting controls. It is a *modifier* on the funnel's output rather than

@@ -17,7 +17,7 @@ to state terms.
 
 The format follows the sibling records in this tree
 (`crates/pdfcer-gui-base/src/icons/assets/PROVENANCE.md`,
-`crates/pdfcer-gui/src/app/assets/PROVENANCE.md`) and `D:\Dev\pdfcer`'s own, so
+`crates/pdfcer-gui-base/src/assets/PROVENANCE.md`) and `D:\Dev\pdfcer`'s own, so
 a reader moving between them meets one convention rather than three.
 
 ## Read this first: the author is NOT the operator

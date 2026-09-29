@@ -809,7 +809,7 @@ this check's subset. They follow from `TABS`, so the repair above fixes them.
 
 ### D31 — OPEN: "the engine cannot create a document" is false
 
-`crates/pdfcer-gui/src/app/blank.rs:9` heads a section *"1. The engine cannot
+`crates/pdfcer-gui-base/src/blank.rs` heads a section *"1. The engine cannot
 create a document, and that is deliberate"*, echoed at
 `crates/pdfcer-gui/src/app/lifecycle.rs:366-367`. The engine has
 `pdfcer_core::text_edit::placetext::blank_document`, `pub fn`.

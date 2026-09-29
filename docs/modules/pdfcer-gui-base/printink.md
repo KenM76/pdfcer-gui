@@ -71,7 +71,7 @@ which sets **every** pixel's alpha to 255. `RenderOptions::backdrop`
 defaults to `PageBackdrop::White`, and `super::render_options` never calls
 `with_backdrop`, so the preview always gets the white-composited result.
 
-Measured on three documents (`src/app/assets/blank-a4.pdf`,
+Measured on three documents (`crates/pdfcer-gui-base/src/assets/blank-a4.pdf`,
 `fixtures/a1-titleblock.pdf`, `fixtures/paragraph.pdf`): **`non_opaque = 0`
 on all three**, every pixel alpha 255. A transparency test would therefore
 find no ink anywhere and hatch **nothing, ever** — the failure mode is

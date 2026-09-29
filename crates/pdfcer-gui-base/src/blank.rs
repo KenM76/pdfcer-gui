@@ -1,12 +1,12 @@
-//! # `app::blank` — where a new document comes from, and why it is a file
+//! # `blank` — where a new document comes from, and why it is a file
 //!
 //! `file.new` (`RIBBON_IA.md` §5.1, the File ▸ File band) makes a blank
 //! document. This module holds the 443 bytes it makes it *out of*, the
 //! decisions behind them, and nothing else — the lifetime transition itself is
-//! [`crate::app::PdfcerApp::new_document`]'s, beside `open_path` and
+//! `pdfcer-gui`'s `PdfcerApp::new_document`'s, beside `open_path` and
 //! `close_document`, because that is one subject and this is another.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/blank.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/blank.md`.
 
 use pdfcer_core::document::Document;
 use pdfcer_core::page_tree::Page;
@@ -51,7 +51,7 @@ pub fn document() -> Result<(Document, Vec<Page>), String> {
 /// with [`EditSession::to_full_bytes`] and parsed back, and what the caller
 /// receives is an ordinary freshly-parsed `Document` whose page simply is that
 /// size. Nothing is pending, nothing is undoable, and
-/// [`crate::app::lifecycle`] needs no special case.
+/// `pdfcer-gui`'s `app::lifecycle` needs no special case.
 ///
 /// The cost is one save and one parse of a ~450-byte file, which is not
 /// measurable. The cost of the alternative is a permanent oddity in the undo
@@ -68,7 +68,7 @@ pub fn document() -> Result<(Document, Vec<Page>), String> {
 ///
 /// # `SaveOptions::identity()`, and why this is not a hole in the funnel
 ///
-/// `crate::app::settings`' funnel exists because an option struct built at a
+/// `pdfcer-gui`'s `app::settings`' funnel exists because an option struct built at a
 /// call site discards every setting the operator chose, and a test parses this
 /// crate's syntax tree to enforce it. This call site is exempt, and the
 /// argument is not "it is only a template" — it is that **no operator-visible
@@ -77,7 +77,7 @@ pub fn document() -> Result<(Document, Vec<Page>), String> {
 /// `SaveOptions` has three fields. Two of them, `xref_entry_eol` and
 /// `trailing_eol`, are byte-level spellings of the *written file*, and this
 /// file is parsed back and discarded within the same statement — the document
-/// the operator eventually saves is written by `crate::app::save`, which does
+/// the operator eventually saves is written by `pdfcer-gui`'s `app::save`, which does
 /// read their settings. The third, `producer`, writes `/Producer` into an
 /// **existing** `/Info` dictionary and explicitly does not create one; the
 /// template has no `/Info` (read it — it is 443 bytes and hand-legible), so

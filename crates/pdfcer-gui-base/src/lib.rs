@@ -13,6 +13,8 @@
 // registry, starting a process — is behind a trait in there, so the decisions
 // are testable without either.
 pub mod acrobat;
+/// The blank-A4 template a new document is parsed from.
+pub mod blank;
 
 /// The one place the program reads a wall clock: PDF and ISO dates in UTC.
 /// `pdfcer-core` refuses to supply a timestamp, for determinism and because a

@@ -2,7 +2,7 @@
 
 `blank-a4.pdf` beside this note is **redistributed** by pdfcer-gui: it is
 compiled into `pdfcer-gui.exe` by an `include_bytes!` in
-`crates/pdfcer-gui/src/app/blank.rs`, so every operator who is handed a binary
+`crates/pdfcer-gui-base/src/blank.rs`, so every operator who is handed a binary
 is handed these 443 bytes. `cargo-about` generates `THIRD_PARTY_LICENSES.md`
 from `Cargo.lock` and is **structurally incapable** of seeing a file that is
 not a Cargo dependency, so nothing about this asset would appear there
@@ -68,7 +68,7 @@ at:
 1. **`/MediaBox [0 0 595.276 841.89]`** is ISO 216 **A4** — 210 × 297 mm at
    72 units to the inch. The decision to make A4 the default, and the
    reference applications it was taken from, is argued in full at
-   `crates/pdfcer-gui/src/app/blank.rs`; it is not repeated here, because a
+   `crates/pdfcer-gui-base/src/blank.rs`; it is not repeated here, because a
    provenance note's job is what the bytes are and where they came from.
 2. **`/Resources << >>`** is present and empty. ISO 32000-1 Table 30 makes
    `/Resources` required but inheritable; a page that draws nothing needs no

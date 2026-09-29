@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **53 of 240** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `wanted` — a real gap — **54 of 241** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -139,6 +139,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **What a redraw did to a field's text** — `LayoutDisclosure` (with `::applied_autosize`, `::applied_autosize_bound`, `::da_colour_unmodelled`, `::unencodable_chars`) carried on `FieldEditOutcome::layout`, `ResetOutcome::layout`, `WidgetEditOutcome::layout` and `WidgetRotation::layout` | **wanted.** The four facts are the ones a fill already reports, now reported by every verb that redraws a widget: the size an auto-sized field landed on and which bound chose it, a `/DA` colour drawn black, characters drawn as `?`. Today only the fill route's copy is worded; a restyle, a reset or a rotation redraws silently. Wire one formatter over `LayoutDisclosure` and call it from all four. |
 | **Default selections for a list or combo** — `FieldEdit::with_default_selections` / `FieldEdit::default_selections` | **wanted, beside the Default-value box.** `/DV` for a `/Ch` field is what Reset restores; the text-field half is built and this is its choice-field twin, a multi-select of the field's own options in `panels::properties::choiceopts`. |
 | **A dashed widget border** — `WidgetChrome::with_border_dash` / `WidgetChrome::border_dash` | **wanted, small.** The border width and style controls exist; a dashed style without a dash array draws the engine default. One pattern field beside the style combo, shown only when the style is dashed (R9). |
+| **Find AND purge password-field values left in earlier revisions** — `password_history::scan_stored_password_values`, `EditSession::purge_password_values` | **wanted, and it belongs beside Protect's other *what is still in this file* checks.** An incrementally saved form keeps every earlier `/V` of a Password field in the bytes, so a value the screen shows as dots — or as empty after a clear — can be recovered by anyone who splits the file at an earlier `%%EOF`. The shell wants two things: the scan as a finding on the document's security summary (field and revision only; the engine never prints the value, and neither may the receipt), and a *Remove old password values* command that calls the purge and saves with `to_full_bytes_decomposing_containers`, because an incremental save appends and removes nothing. A signed file refuses unless the operator accepts invalidating the signatures, which is the existing sanitize confirmation's shape. An inherited `/V` is reported by the engine and not removed; the receipt must say so. Needs the pin moved past v0.62.0. |
 
 ### Fonts & rendering
 
@@ -153,7 +154,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 240** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `blocked` — waiting on something named — **2 of 241** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -171,7 +172,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 240** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 241** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -182,7 +183,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **15 of 240** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `declined` — deliberately no surface — **15 of 241** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -223,7 +224,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **170 of 240** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **170 of 241** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
