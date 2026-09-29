@@ -35,26 +35,25 @@ pub const fn nothing_found() -> &'static str {
 #[must_use]
 pub fn summary(pages: usize, objects: usize) -> String {
     let sheets = if pages == 1 { "page" } else { "pages" };
-    let marks = if objects == 1 { "object" } else { "objects" };
-    format!("{objects} {marks} sit outside the boundary, on {pages} {sheets}.")
+    let (marks, verb) = if objects == 1 {
+        ("object", "sits")
+    } else {
+        ("objects", "sit")
+    };
+    format!("{objects} {marks} {verb} outside the boundary, on {pages} {sheets}.")
 }
 
-/// **Why a picture crossing the edge is still on this list after a
-/// clean** — the disclosure Rule 4 owes, added 2026-09-12.
+/// **Pictures left out of the list because nothing of them shows past the
+/// edge** — the engine decoded their samples and found only paper there, which
+/// is what a clean leaves. An inference the operator cannot see, so it is said.
 #[must_use]
-pub fn partial_image_note(pictures: usize) -> String {
+pub fn blank_overhang_note(pictures: usize) -> String {
     if pictures == 1 {
-        "The picture crossing the edge stays on this list after a clean. Clearing \
-         erases what is off the sheet but cannot move the picture, so its outline \
-         still crosses the edge and this list counts by position. It is not a \
-         failed clean."
+        "One picture crosses a page edge but shows nothing beyond it, as a clean leaves it, so it is not listed."
             .to_owned()
     } else {
         format!(
-            "The {pictures} pictures crossing the edge stay on this list after a \
-             clean. Clearing erases what is off the sheet but cannot move a \
-             picture, so its outline still crosses the edge and this list counts \
-             by position. It is not a failed clean."
+            "{pictures} pictures cross a page edge but show nothing beyond it, as a clean leaves them, so they are not listed."
         )
     }
 }
@@ -214,6 +213,24 @@ mod tests {
 
     /// The undo note states the number of steps, because the number is the
     /// whole disclosure.
+    #[test]
+    fn the_summary_agrees_in_number() {
+        assert_eq!(
+            summary(1, 1),
+            "1 object sits outside the boundary, on 1 page."
+        );
+        assert_eq!(
+            summary(2, 3),
+            "3 objects sit outside the boundary, on 2 pages."
+        );
+    }
+
+    #[test]
+    fn the_blank_overhang_note_counts_its_pictures() {
+        assert!(blank_overhang_note(1).starts_with("One picture crosses"));
+        assert!(blank_overhang_note(4).starts_with("4 pictures cross"));
+    }
+
     #[test]
     fn the_undo_note_carries_the_step_count() {
         let note = marked_undo_note(4);

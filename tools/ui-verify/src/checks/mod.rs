@@ -18,6 +18,8 @@ pub mod blend_space;
 pub mod export_keep_text;
 pub mod field_outline;
 pub mod merge_runs;
+pub mod ocr_layer_view;
+pub mod off_page_blank_overhang;
 pub mod remove_ocr;
 pub mod repair_form_fonts;
 pub mod run_width;

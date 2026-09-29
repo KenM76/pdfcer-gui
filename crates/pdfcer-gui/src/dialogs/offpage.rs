@@ -59,6 +59,9 @@ pub struct OffPageDialog {
     /// Running total of off-page objects across [`Self::scans`], so the summary
     /// line does not re-sum a growing list every frame.
     objects: usize,
+    /// Running total of `PageScan::inkless_overhang`: pictures the engine
+    /// found crossing an edge with only paper beyond it, left off the list.
+    blank_overhangs: usize,
     mark_requested: bool,
     close_requested: bool,
 }
@@ -81,6 +84,7 @@ impl OffPageDialog {
             scans: Vec::new(),
             unreadable: Vec::new(),
             objects: 0,
+            blank_overhangs: 0,
             mark_requested: false,
             close_requested: false,
         }
@@ -105,6 +109,7 @@ impl OffPageDialog {
             self.next_page += 1;
             match offpage::scan_page(&view, page, index, offpage::DEFAULT_TOLERANCE_PT) {
                 Ok(scan) => {
+                    self.blank_overhangs += scan.inkless_overhang;
                     if !scan.is_clean() {
                         self.objects += scan.objects.len();
                         self.scans.push(scan);
@@ -121,10 +126,11 @@ impl OffPageDialog {
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed
                     format!(
-                        "offpage-scanned pages={} dirty={} objects={} unreadable={}",
+                        "offpage-scanned pages={} dirty={} objects={} blank_overhangs={} unreadable={}",
                         self.total_pages,
                         self.scans.len(),
                         self.objects,
+                        self.blank_overhangs,
                         self.unreadable.len()
                     )
                 });
@@ -229,27 +235,10 @@ impl OffPageDialog {
         } else if !self.scans.is_empty() {
             ui.label(t::summary(self.scans.len(), self.objects));
             ui.add_space(4.0);
-            // The residual disclosure, and it is owed rather than
-            // decorative: a picture that only CROSSES the edge is still on
-            // this list after a clean, because clearing erases ink and
-            // cannot move a placement. See `text::offpage::partial_image_note`
-            // for the engine's own statement of it and for why the sentence
-            // says pictures rather than objects.
-            //
-            // Counted here rather than carried on the scan because it is a
-            // question about this window's wording, not about the census —
-            // `PageScan::partial()` counts all three kinds and is right to.
-            let pictures = self
-                .scans
-                .iter()
-                .flat_map(|s| &s.objects)
-                // ui-text-exempt: the engine's stable object token, never displayed.
-                .filter(|o| o.kind == "image" && o.how == offpage::OffPage::Partial)
-                .count();
-            if pictures > 0 {
-                ui.small(t::partial_image_note(pictures));
-                ui.add_space(4.0);
-            }
+        }
+        if self.blank_overhangs > 0 {
+            ui.small(t::blank_overhang_note(self.blank_overhangs));
+            ui.add_space(4.0);
         }
 
         ui.separator();

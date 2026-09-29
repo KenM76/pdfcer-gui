@@ -176,6 +176,8 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(run_width::TypingARunWidthReachesTheDocument),
         Box::new(merge_runs::MergingTextRunsReachesTheDocument),
         Box::new(repair_form_fonts::RepairingFormFontsReachesTheDocument),
+        Box::new(ocr_layer_view::OcrLayerIsShownAndBlended),
+        Box::new(off_page_blank_overhang::BlankOverhangIsCountedNotListed),
         Box::new(remove_ocr::RemovingOcrTextReachesTheDocument),
         Box::new(export_keep_text::KeepTextDecidesTheSvg),
         // Beside `blend_space`, because they are the same shape of check on
