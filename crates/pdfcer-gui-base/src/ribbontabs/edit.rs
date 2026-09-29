@@ -255,6 +255,7 @@ pub fn tab() -> Tab {
                     command("edit.form_push_button"),
                     command("edit.form_manage_fields"),
                     command("edit.form_flatten"),
+                    command("edit.form_repair_fonts"),
                 ],
             ),
             // ---------------------------------------------------------------

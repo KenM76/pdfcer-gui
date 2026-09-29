@@ -276,6 +276,7 @@ fn no_two_declines_share_a_sentence() {
         Declined::Layer(crate::text::panels::layeredit::LayerRefusal::ContentNotRewritable),
         Declined::Layer(crate::text::panels::layeredit::LayerRefusal::HiddenNeedChoice),
         Declined::MarkupFlatten(pdfcer_core::edit::AnnotFlattenRefusalReason::Locked),
+        Declined::FormFontsNothingToRepair,
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::StylesDiffer),
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::WouldMoveNextRun),
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::Other),
@@ -621,7 +622,8 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         | Declined::TextRunWouldDragTheNextLine
         | Declined::OcrLayer(_)
         | Declined::Layer(_)
-        | Declined::MarkupFlatten(_) => {}
+        | Declined::MarkupFlatten(_)
+        | Declined::FormFontsNothingToRepair => {}
     }
 }
 

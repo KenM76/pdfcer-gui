@@ -100,6 +100,7 @@ pub mod files;
 pub mod find;
 /// What making a markup part of the page says.
 pub mod flattenannot;
+pub mod formfonts;
 pub mod forms;
 pub mod images;
 /// **The words of the Import-text window** — the return journey's chooser.

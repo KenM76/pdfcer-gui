@@ -382,6 +382,9 @@ pub(super) fn band() -> Vec<Command> {
         command("edit.form_flatten", t::edit_form_flatten(), 433)
             .with_icon("form-flatten")
             .enabled_when("doc.pages"),
+        command("edit.form_repair_fonts", t::edit_form_repair_fonts(), 439)
+            .with_icon("embed-fonts")
+            .enabled_when("doc.pages"),
         // Find — registered, bound to Ctrl+F, and on **no tab**.
         //
         // A third documented exception to the "every command is on its owning

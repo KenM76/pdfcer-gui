@@ -151,6 +151,11 @@ pub(crate) fn record_layer(why: crate::text::panels::layeredit::LayerRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::Layer(why)));
 }
 
+/// Record that Repair fonts found nothing to move.
+pub(crate) fn record_form_fonts_nothing_to_repair() {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::FormFontsNothingToRepair));
+}
+
 /// Record that making a markup part of the page was refused, and why.
 pub(crate) fn record_markup_flatten(why: pdfcer_core::edit::AnnotFlattenRefusalReason) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::MarkupFlatten(why)));

@@ -327,7 +327,7 @@ selection is correct.
 | **Insert** | Image… · Attachments · Shape ⌄ |
 | **Arrange** | Align ⌄ · Distribute ⌄ · Bring forward / Send backward · Group / Ungroup · Flip horizontal / vertical |
 | **Clipboard** | Cut · Copy · Paste · Paste in place · Copy as vector · Duplicate |
-| **Forms** | Create field ⌄ (text, check box, radio button, choice, push button) · Manage fields · Flatten |
+| **Forms** | Create field ⌄ (text, check box, radio button, choice, push button) · Manage fields · Flatten · Repair fonts |
 | **Protect** | Redact ⌄ (mark page / by text / by pattern) · Redact selection · Off-page · Apply redactions · Sanitise… |
 
 **Reflow follows the tool that does the retyping**, not the tool that selects:

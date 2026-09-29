@@ -156,6 +156,8 @@ pub mod textstyle;
 /// things".
 pub mod vector;
 
+/// Edit ▸ Forms ▸ Repair fonts.
+mod formfonts;
 /// Create, change and delete a layer: `Action::Layer`.
 mod layers;
 /// OCR text layers pdfcer wrote: the re-run policy and Remove OCR text.

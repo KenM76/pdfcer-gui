@@ -522,6 +522,7 @@ impl PdfcerApp {
                 });
             }
             Action::RemoveOcrLayers => super::ocrlayers::remove_all(doc),
+            Action::RepairFormFonts => super::formfonts::repair(doc),
             Action::Layer(action) => super::layers::apply(doc, action),
             // Nothing is invalidated beyond the epoch, deliberately. Document
             // metadata is not drawn on any page, so clearing rasters would

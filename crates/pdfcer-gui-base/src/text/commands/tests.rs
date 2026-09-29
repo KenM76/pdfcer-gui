@@ -84,6 +84,7 @@ fn all() -> Vec<CommandText> {
         edit_form_create_field(),
         edit_form_manage_fields(),
         edit_form_flatten(),
+        edit_form_repair_fonts(),
         edit_redact(),
         edit_redact_apply(),
         edit_undo(),

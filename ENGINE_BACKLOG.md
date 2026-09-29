@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **53 of 245** <!-- counted by tools/walk-engine-backlog.py, 2026-09-29; do not retype -->
+## `wanted` — a real gap — **53 of 246** <!-- counted by tools/walk-engine-backlog.py, 2026-09-29; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -153,7 +153,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 245** <!-- counted by tools/walk-engine-backlog.py, 2026-09-29; do not retype -->
+## `blocked` — waiting on something named — **2 of 246** <!-- counted by tools/walk-engine-backlog.py, 2026-09-29; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -171,7 +171,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 245** <!-- counted by tools/walk-engine-backlog.py, 2026-09-29; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 246** <!-- counted by tools/walk-engine-backlog.py, 2026-09-29; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -182,7 +182,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 245** <!-- counted by tools/walk-engine-backlog.py, 2026-09-29; do not retype -->
+## `declined` — deliberately no surface — **16 of 246** <!-- counted by tools/walk-engine-backlog.py, 2026-09-29; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -224,7 +224,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **174 of 245** <!-- counted by tools/walk-engine-backlog.py, 2026-09-29; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **175 of 246** <!-- counted by tools/walk-engine-backlog.py, 2026-09-29; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -261,6 +261,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Choose the OCR engine** — `pdfcer ocr --ocr-engine ocrs\|ocrcer\|tesseract` — `pdfcer_core::ocr::engine_ocrcer::OcrcerEngine`, `engine_ocrcer::MODEL_DIR`, `engine_ocrcer::MODEL_FILE`, `OcrLayerOptions::with_engine` | **shipped — File › Recognise offers a *Recogniser* choice, ocrs or OCRcer, whenever the build links both; ocrs is the default and the choice persists.** Our O230. Feature `ocrcer` is forwarded, so a build without it offers ocrs alone and never draws the choice (R8). The model is packaged from the local OCRcer build into `models/ocrcer/` with its licence (our G042 asks the engine for a versioned home). OCRcer's per-word confidence is disclosed through `EngineId::reports_confidence`. The layer marker carries the engine that ran. The engine's third recogniser, Tesseract, lands after our pin and is not offered yet. **Not driven.** |
 | **PaddleOCR as a recogniser** — `pdfcer_core::ocr::engine_paddle::PaddleEngine`, `engine_paddle::MODEL_DIR`, `DictionarySource` … | **shipped — File › Recognise offers PaddleOCR beside ocrs and OCRcer; driven by `paddle_recognises_a_page_and_the_document_keeps_it`.** Our O248. Feature `paddle` is forwarded (R8). The package ships its own PP-OCRv5 English/French models in `models/paddle/`, not the engine's Chinese set. The dictionary a run read through is disclosed. The `pdfcer_core::ocr::paddle_post` module is the engine's detection and CTC post-processing under `PaddleEngine`; this shell reaches it only through the engine, and calling it directly would be a second recogniser pipeline. |
 | **The OCR sandwich layer now carries an identity, so a re-run REPLACES it instead of stacking** … — `EditSession::find_ocr_layers`, `EditSession::remove_ocr_layer`, `OcrLayerOptions::with_existing`, `OcrLayerOptions::with_engine`, module `pdfcer_core::ocr::marker` | **shipped — a re-run of *Recognise text* replaces the old layer (`ExistingLayers::Replace`, set explicitly), and File › Recognise › *Remove OCR text* removes every layer pdfcer wrote, as one undo.** Our G036. `OcrLayerReport::layers_replaced` is totalled on the status line; `OcrLayerError::LayerPresent` and `OcrLayerError::LayerNotFound` have their own sentences; `CommandKind::RemoveOcrLayer` is held opaquely. `ExistingLayers::Refuse` and `ExistingLayers::Stack` are not offered: a second invisible copy of every word is the defect G036 was filed against, and a refusal is what the operator gets by not re-running. **Not driven.** |
+| **Repair a form already saved with an inline `/AcroForm` `/DR` font** — `EditSession::promote_inline_dr_fonts`, `CommandKind::PromoteInlineDrFonts` | **shipped — Edit ▸ Forms ▸ *Repair fonts*.** Our G070. One undo entry through the edit funnel; the count is on the status line, and a zero is the worded decline "nothing to repair" with the document untouched. `CommandKind::PromoteInlineDrFonts` is held opaquely. Driven by `repair_form_fonts`; measured in Acrobat Pro on the O262 rental form, blank before and visible after. |
 | **Import a plain-text file INTO a PDF as pages** — the other half of "export/import as text" (`EditSession::place_text(text, &PageTemplate, InsertPosition)`, `pdfcer place-text`) … | **Reachable and driven — File ▸ Import, `app::actions::importtext`, driven by `import_text::ATextFileBecomesPages` (`tools/ui-verify/src/checks/roster.rs:170`).** `EditSession::place_text` paginates, so the `add_text`-overflows-off-the-sheet hazard does not arise. What the module spends its lines on is the disclosure: `PlaceTextReport` has 23 fields, six of them judgements the import made about the operator's own file — a paragraph split across a page break, a tab collapsed to a space, control bytes dropped, unmappable characters dropped, a U+000C he may not know he typed becoming a page break, a word too wide to wrap. Every one is an inference he cannot see by looking at the result, so rule 4 applies six times over. The undo promise is **read** from `coalesced` rather than assumed: past 255 non-blank pages every page still places and simply fails to group. |
 | **Session verbs plan against the SESSION graph, not the base revision** — every text-edit planner takes `&DocumentView<'_>` and every `EditSession` verb passes `self.view()` … | **Reached by the pin, with nothing owed here.** A `/Font` that `format_text` authored this session is typeable by the next `edit_text` at once, and handing a planner the base revision is a compile error upstream. The save-and-reopen workaround is deleted. The durable rule this row earned: **verify a capability by its own surface, not by a hash** — the engine rebases, so `git merge-base --is-ancestor` can answer *not an ancestor* for a revision that shipped, which is indistinguishable from *not shipped* and is a false negative wearing a measurement's clothes. Grep the pinned engine for the refusal strings the change removed instead. |
 | **Move one text run independently of others sharing its text object** — `move_text_run` / `move_text_run_in_form` | **Reachable and driven.** `VectorAction::MoveTextRun` / `MoveTextRunInForm` go through `vector_edit_on_page`, so the inserted-`Td` disclosure is recorded off-canvas by the same mechanism as every other one. The wiring RETIRED a shipped sentence, which was the hard half: one refusal became TWO, because the engine distinguishes two causes and the operator's next action differs — `TextRunHasNoPositionOfItsOwn` and `MoveWouldMoveNextRun`. The old *offer* clause was dropped rather than carried: delete's own refusal mirrors the second case, so the offer would have been false for a selection reachable from the refusal carrying it. `fixtures/inherited-runs.pdf` exists because `paragraph.pdf` cannot reach either refusal; `dragging_one_line_of_text_moves_it_or_says_why` drives all three answers. |

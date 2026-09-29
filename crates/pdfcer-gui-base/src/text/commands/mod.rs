@@ -550,6 +550,15 @@ pub const fn edit_form_manage_fields() -> CommandText {
     )
 }
 
+/// `edit.form_repair_fonts`
+#[must_use]
+pub const fn edit_form_repair_fonts() -> CommandText {
+    CommandText::new(
+        "Repair fonts",
+        "Fix a form whose filled values Acrobat shows blank: each font the form keeps inline is moved into an object of its own. Nothing changes how the form looks here.",
+    )
+}
+
 /// `edit.form_flatten`
 #[must_use]
 pub const fn edit_form_flatten() -> CommandText {

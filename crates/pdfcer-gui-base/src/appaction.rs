@@ -185,6 +185,9 @@ pub enum Action {
     /// File ▸ Remove OCR text: every OCR layer pdfcer wrote comes off, as one
     /// undo entry. See `super::ocrlayers`.
     RemoveOcrLayers,
+    /// Edit ▸ Forms ▸ Repair fonts: every inline `/DR` font becomes an object
+    /// of its own, as one undo entry. See `super::formfonts`.
+    RepairFormFonts,
 
     /// **The verbs whose subject is a whole annotation** — move it, resize
     /// it, remove it.

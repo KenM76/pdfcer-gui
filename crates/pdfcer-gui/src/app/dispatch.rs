@@ -918,6 +918,7 @@ impl PdfcerApp {
             // *"a command buried in a panel is reachable only by someone who
             // already opened the panel."*
             "edit.form_flatten" => forms::flatten(self, id, actions),
+            "edit.form_repair_fonts" => actions.push(Action::RepairFormFonts),
             id if crate::shell::commands::markup_for_command(id).is_some() => {
                 if !self.capabilities().author_markup {
                     crate::diag::trace(|| {

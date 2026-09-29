@@ -333,6 +333,7 @@
                         Command(id: "edit.form_push_button"),
                         Command(id: "edit.form_manage_fields"),
                         Command(id: "edit.form_flatten"),
+                        Command(id: "edit.form_repair_fonts"),
                     ],
                     collapse: 2,
                 ),
