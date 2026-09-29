@@ -166,6 +166,7 @@ def sources():
 #: as a prefix, so a directory entry covers everything under it.
 HANDLERS_NOT_CONSUMERS = (
     "dialogs/settings/",
+    "settingspages/",
     "app/settings_window.rs",
     "app/prefs/",
     "prefs/",

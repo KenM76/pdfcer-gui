@@ -5,7 +5,7 @@
 //! words, and it is the whole reason they are grouped together rather than filed
 //! with the settings whose effects an operator can look at.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/settings/saving.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/settingspages/saving.md`.
 
 use egui::Ui;
 use pdfcer_core::settings::{QuadPointOrder, TrailingEol, XrefEntryEol};

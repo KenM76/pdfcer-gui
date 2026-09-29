@@ -18,7 +18,7 @@
 //! "says nothing about what an editor should do" rather than "does not define",
 //! which is the accurate sentence and reads no worse.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/settings/pages.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/settingspages/pages.md`.
 
 use egui::Ui;
 use pdfcer_core::pageops::SeparationPolicy;

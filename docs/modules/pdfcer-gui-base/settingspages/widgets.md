@@ -1,4 +1,4 @@
-# `dialogs::settings::widgets` — the shapes every setting is made of
+# `settingspages::widgets` — the shapes every setting is made of
 
 Every setting on every page is built from these functions. A settings window
 whose entries are hand-laid-out drifts into slightly different layouts, and

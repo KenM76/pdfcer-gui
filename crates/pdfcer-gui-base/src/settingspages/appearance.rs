@@ -3,7 +3,7 @@
 //! One setting, and the only one in the window that is not about the PDF
 //! standard at all.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/settings/appearance.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/settingspages/appearance.md`.
 
 use egui::Ui;
 use egui_shell::theme::Preset;
@@ -49,8 +49,8 @@ pub fn theme(ui: &mut Ui, draft: &mut Draft) {
 }
 
 /// **How big pdfcer's own controls are drawn.**
-pub fn ui_scale(ui: &mut Ui, prefs: &mut crate::app::prefs::Prefs) {
-    use crate::app::prefs::{MAX_UI_SCALE, MIN_UI_SCALE, UI_SCALE_STEP};
+pub fn ui_scale(ui: &mut Ui, prefs: &mut crate::prefs::Prefs) {
+    use crate::prefs::{MAX_UI_SCALE, MIN_UI_SCALE, UI_SCALE_STEP};
 
     widgets::header(
         ui,
@@ -74,7 +74,7 @@ pub fn ui_scale(ui: &mut Ui, prefs: &mut crate::app::prefs::Prefs) {
 
 /// The coloured-icons switch, `OPERATOR_REQUESTS.md` O232. Edits the draft,
 /// which the frame previews live, as [`ui_scale`] does.
-pub fn colour_icons(ui: &mut Ui, prefs: &mut crate::app::prefs::Prefs) {
+pub fn colour_icons(ui: &mut Ui, prefs: &mut crate::prefs::Prefs) {
     widgets::header(
         ui,
         t::colour_icons_title(),
@@ -119,7 +119,7 @@ mod tests {
     fn an_unknown_token_is_not_silently_replaced() {
         let mut settings = Settings::default();
         settings.theme = "midnight".to_owned();
-        let draft = Draft::new(&settings, &crate::app::prefs::Prefs::default());
+        let draft = Draft::new(&settings, &crate::prefs::Prefs::default());
         assert_eq!(draft.working.theme, "midnight");
         assert!(Preset::from_key(&draft.working.theme).is_none());
     }

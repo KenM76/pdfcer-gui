@@ -9,7 +9,7 @@
 //! person reading this radio group is precisely the person who has noticed the
 //! difference and is deciding whether it is a bug.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/settings/colour.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/settingspages/colour.md`.
 
 use egui::Ui;
 use pdfcer_core::settings::{CmykIntent, CmykJpegPolarity, MeshPatchPadding, PageBlendSpaceSource};

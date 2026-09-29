@@ -1,4 +1,4 @@
-# `dialogs::settings::measuring` — the group the source did not have
+# `settingspages::measuring` — the group the source did not have
 
 One setting: the angular tolerance below which two lines are dimensioned as
 a **distance** rather than as an **angle**.

@@ -3,7 +3,7 @@
 //! Every setting is drawn with these functions, so the pages share one layout,
 //! and every option name passes through them, which is what the search reads.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/settings/widgets.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/settingspages/widgets.md`.
 
 use std::cell::RefCell;
 

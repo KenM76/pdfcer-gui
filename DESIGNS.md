@@ -1379,7 +1379,7 @@ not be. **There is no cheaper test available:** `NoteView` carries
 in_reply_to` and does **not** expose `/IT`, so the subtype marker cannot be read
 off it. The fix stands on the once-per-click sidecar walk.
 
-**The preference, which does not exist today.** `dialogs/settings/measuring.rs`
+**The preference, which does not exist today.** `settingspages/measuring.rs` (in `pdfcer-gui-base`)
 exposes exactly one function, `pub fn parallel(ui, draft)`. Its header says the
 group exists rather than folding into Pages and printing because dimensioning is
 a growing subject with an obvious next tenant — which is this preference's
@@ -1469,7 +1469,7 @@ not a shell row.
 
 | Tranche | Contents | Size | Why it is here |
 |---|---|---|---|
-| T1 — stop the comment box | Item 7: the ce-dimension arm in `clicked_on`'s gate, the preference in `dialogs/settings/measuring.rs`, one key in `app/prefs/` | half a day | The single highest return. It makes items 2, 4, 8a and 9 stop being complaints, because it stops hiding the panel they all live in. Four of nine, closed by one gate. |
+| T1 — stop the comment box | Item 7: the ce-dimension arm in `clicked_on`'s gate, the preference in `settingspages/measuring.rs` (in `pdfcer-gui-base`), one key in `app/prefs/` | half a day | The single highest return. It makes items 2, 4, 8a and 9 stop being complaints, because it stops hiding the panel they all live in. Four of nine, closed by one gate. |
 | T2 — say where the controls are | Pure discoverability: on selecting a ce dimension make the Properties section visibly the place — expand it by default, and if the panel is closed surface a one-line affordance pointing at it. No new control, no engine call. | half a day | T1 removes the distraction; T2 supplies the direction. They ship together — T1 alone is a subtraction. |
 | T3 — fractions on an existing group | Item 1's real defect: a fraction/precision row beside the unit combo, reusing `dialogs/scale.rs`'s `FRACTIONS`, and disclosure of a fraction mode that could not survive a unit change | one day | Genuinely missing, cheap, shell only, and the half of item 1 that is true. |
 | T4 — two grips, not one | Item 6's second half, the free part: a distinct grip and cursor for the label anchor versus the dimension line, so `text_along` and `offset` are separately draggable | two to three days | The disclosure Rule 4 wants, built from geometry the shell already holds. No engine dependency. |

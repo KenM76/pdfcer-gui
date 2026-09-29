@@ -87,9 +87,10 @@ The engine is two commits past the pin. In order:
    `pdfcer-gui-base`. What stays in `render` needs eframe's glow (`pressure`)
    or the app (`settle`). Every `text` file, the blank-document template
    and the redaction notes are in base; seven of the eight ribbon tabs
-   are in base (View names an app action). The next candidate is
-   `dialogs/settings/*` (`python tools/module-graph.py`
-   lists what reaches only base).
+   are in base (View names an app action). Twelve Settings pages and
+   `Draft` are in base `settingspages`; acrobat, fonts, display, nav and
+   signatures stay (they read document or app state). Find the next
+   candidate with `python tools/module-graph.py`.
 
 **★ Newest, and ahead of everything numbered below: O226 – O229, the OCR
 text-layer editor.** Two views side by side, a slider that fades between the

@@ -1,4 +1,4 @@
-# `dialogs::settings::preset` — a named vector of answers
+# `settingspages::preset` — a named vector of answers
 
 
 > *"I'd like a preset setting for rendering things to what the [print

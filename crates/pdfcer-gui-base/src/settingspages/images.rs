@@ -5,7 +5,7 @@
 //! shell, which is the specific instance of the window failing its own stated
 //! contract that this port fixes.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/settings/images.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/settingspages/images.md`.
 
 use egui::Ui;
 use pdfcer_core::settings::{MaskResample, MinifyFilter};

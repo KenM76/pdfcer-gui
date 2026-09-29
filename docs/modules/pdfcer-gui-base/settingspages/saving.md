@@ -1,4 +1,4 @@
-# `dialogs::settings::saving` — three settings nobody can see
+# `settingspages::saving` — three settings nobody can see
 
 All three change the **bytes pdfcer writes** and none of them changes
 anything visible. That is stated in all three radius lines in nearly the same

@@ -1,4 +1,4 @@
-# `dialogs::settings::appearance` — the theme picker
+# `settingspages::appearance` — the theme picker
 
 One setting, and the only one in the window that is not about the PDF
 standard at all.

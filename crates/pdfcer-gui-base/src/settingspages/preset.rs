@@ -6,7 +6,7 @@
 //! > conformance to PDF/X-4 (ISO 15930-7) … maybe we should have a dropdown to
 //! > select view options between the different standards."*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/settings/preset.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/settingspages/preset.md`.
 
 use pdfcer_core::settings::Settings;
 use pdfcer_core::settings::presets::{Evidence, PresetKey, RenderPreset, RenderStandard};
@@ -602,7 +602,7 @@ mod tests {
     #[test]
     fn every_preset_in_the_list_can_actually_be_selected() {
         for c in choices() {
-            let mut draft = Draft::new(&Settings::default(), &crate::app::prefs::Prefs::default());
+            let mut draft = Draft::new(&Settings::default(), &crate::prefs::Prefs::default());
             // Exactly what `row` does on a click, in the same order.
             c.apply(&mut draft.working);
             draft.chosen_preset = Some(c.id());
@@ -626,8 +626,7 @@ mod tests {
                 if first.id() == second.id() {
                     continue;
                 }
-                let mut draft =
-                    Draft::new(&Settings::default(), &crate::app::prefs::Prefs::default());
+                let mut draft = Draft::new(&Settings::default(), &crate::prefs::Prefs::default());
                 // Choose one, save it — i.e. start the second sitting from the
                 // state the first one left.
                 first.apply(&mut draft.working);
@@ -657,7 +656,7 @@ mod tests {
     #[test]
     fn a_chosen_standard_is_what_the_window_shows_when_it_reopens() {
         for choice in choices() {
-            let mut draft = Draft::new(&Settings::default(), &crate::app::prefs::Prefs::default());
+            let mut draft = Draft::new(&Settings::default(), &crate::prefs::Prefs::default());
             choice.apply(&mut draft.working);
             draft.chosen_preset = Some(choice.id());
             draft.working_prefs.chosen_standard = Some(choice.id().to_owned());
@@ -680,7 +679,7 @@ mod tests {
             .into_iter()
             .find(|c| matches!(c, Choice::Standard(_)))
             .expect("the engine offers at least one standard");
-        let mut draft = Draft::new(&Settings::default(), &crate::app::prefs::Prefs::default());
+        let mut draft = Draft::new(&Settings::default(), &crate::prefs::Prefs::default());
         x4.apply(&mut draft.working);
         draft.chosen_preset = Some(x4.id());
         draft.working_prefs.chosen_standard = Some(x4.id().to_owned());
@@ -723,7 +722,7 @@ mod tests {
     /// cannot go on claiming a standard the settings no longer describe.
     #[test]
     fn changing_a_setting_by_hand_retires_the_chosen_preset() {
-        let mut draft = Draft::new(&Settings::default(), &crate::app::prefs::Prefs::default());
+        let mut draft = Draft::new(&Settings::default(), &crate::prefs::Prefs::default());
         let x4 = choices()
             .into_iter()
             .find(|c| c.id() == "pdf-x4")

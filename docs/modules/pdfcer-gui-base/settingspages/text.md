@@ -1,4 +1,4 @@
-# `pdfcer-gui/dialogs/settings/text`
+# `pdfcer-gui-base/settingspages/text`
 
 ## Item notes
 

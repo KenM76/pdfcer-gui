@@ -18,7 +18,7 @@
 //! a redaction and then changes one of these settings has invalidated the
 //! reasoning behind the review, and nothing told them.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/settings/text.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/settingspages/text.md`.
 
 use egui::Ui;
 use pdfcer_core::settings::{
@@ -26,7 +26,7 @@ use pdfcer_core::settings::{
 };
 
 use super::{Draft, widgets};
-use crate::app::prefs::Prefs;
+use crate::prefs::Prefs;
 use crate::text::settings as t;
 
 /// How wide a gap between glyphs means a space.

@@ -3,7 +3,7 @@
 //! One setting: the angular tolerance below which two lines are dimensioned as
 //! a **distance** rather than as an **angle**.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/settings/measuring.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/settingspages/measuring.md`.
 
 use egui::Ui;
 use pdfcer_core::settings::{MAX_PARALLEL_EPSILON_DEGREES, MIN_PARALLEL_EPSILON_DEGREES};

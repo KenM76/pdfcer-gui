@@ -26,7 +26,7 @@
 //! Changing it therefore cannot make pdfcer quieter about the ambiguity — it
 //! only chooses which side of it this machine takes.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/settings/forms.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/settingspages/forms.md`.
 
 use egui::Ui;
 use pdfcer_core::settings::{MAX_TAB_ROW_TOLERANCE, MIN_TAB_ROW_TOLERANCE, WidgetTabTail};

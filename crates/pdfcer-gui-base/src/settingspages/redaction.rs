@@ -16,12 +16,12 @@
 //! with the right one — so it sits where a reader arrives deliberately rather
 //! than where a reader scrolling past can click it.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/settings/redaction.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/settingspages/redaction.md`.
 
 use egui::Ui;
 
 use super::widgets;
-use crate::app::prefs::{Prefs, RedactionReach};
+use crate::prefs::{Prefs, RedactionReach};
 use crate::text::settings as t;
 
 /// How far a redaction reaches beyond the marked regions.

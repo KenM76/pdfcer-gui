@@ -287,38 +287,56 @@ mod tests {
     const GROUP_SOURCES: &[(&str, &str)] = &[
         (
             "appearance",
-            include_str!("../../dialogs/settings/appearance.rs"),
+            include_str!("../../../../pdfcer-gui-base/src/settingspages/appearance.rs"),
         ),
-        ("colour", include_str!("../../dialogs/settings/colour.rs")),
+        (
+            "colour",
+            include_str!("../../../../pdfcer-gui-base/src/settingspages/colour.rs"),
+        ),
         ("acrobat", include_str!("../../dialogs/settings/acrobat.rs")),
         (
             "comments",
-            include_str!("../../dialogs/settings/comments.rs"),
+            include_str!("../../../../pdfcer-gui-base/src/settingspages/comments.rs"),
         ),
         ("display", include_str!("../../dialogs/settings/display.rs")),
-        ("forms", include_str!("../../dialogs/settings/forms.rs")),
+        (
+            "forms",
+            include_str!("../../../../pdfcer-gui-base/src/settingspages/forms.rs"),
+        ),
         ("fonts", include_str!("../../dialogs/settings/fonts.rs")),
-        ("images", include_str!("../../dialogs/settings/images.rs")),
+        (
+            "images",
+            include_str!("../../../../pdfcer-gui-base/src/settingspages/images.rs"),
+        ),
         (
             "measuring",
-            include_str!("../../dialogs/settings/measuring.rs"),
+            include_str!("../../../../pdfcer-gui-base/src/settingspages/measuring.rs"),
         ),
-        ("pages", include_str!("../../dialogs/settings/pages.rs")),
+        (
+            "pages",
+            include_str!("../../../../pdfcer-gui-base/src/settingspages/pages.rs"),
+        ),
         (
             "redaction",
-            include_str!("../../dialogs/settings/redaction.rs"),
+            include_str!("../../../../pdfcer-gui-base/src/settingspages/redaction.rs"),
         ),
-        ("saving", include_str!("../../dialogs/settings/saving.rs")),
+        (
+            "saving",
+            include_str!("../../../../pdfcer-gui-base/src/settingspages/saving.rs"),
+        ),
         (
             "signatures",
             include_str!("../../dialogs/settings/signatures.rs"),
         ),
-        ("text", include_str!("../../dialogs/settings/text.rs")),
+        (
+            "text",
+            include_str!("../../../../pdfcer-gui-base/src/settingspages/text.rs"),
+        ),
     ];
 
     #[test]
     fn the_window_draws_exactly_the_settings_this_catalog_describes() {
-        // Every module under `dialogs/settings/` that draws a setting. `mod.rs`
+        // Every module under `dialogs/settings/` or base `settingspages/` that draws a setting. `mod.rs`
         // draws none (it composes groups) and `widgets.rs` defines the helper
         // rather than calling it.
 
@@ -379,11 +397,18 @@ mod tests {
         // for catalog entries that must not exist.
         // `nav` draws the page list and search, and no setting.
         const NOT_A_GROUP: &[&str] = &["widgets", "preset", "defaultapp", "nav"];
-        let src = include_str!("../../dialogs/settings/mod.rs");
-        let file = syn::parse_file(src).expect("dialogs/settings/mod.rs did not parse");
-        let declared: Vec<String> = file
-            .items
+        // The pages without document state are declared in base's `settingspages`.
+        let sources = [
+            include_str!("../../dialogs/settings/mod.rs"),
+            include_str!("../../../../pdfcer-gui-base/src/settingspages/mod.rs"),
+        ];
+        let declared: Vec<String> = sources
             .iter()
+            .flat_map(|src| {
+                syn::parse_file(src)
+                    .expect("a settings mod.rs did not parse")
+                    .items
+            })
             .filter_map(|item| match item {
                 syn::Item::Mod(m) if m.content.is_none() => Some(m.ident.to_string()),
                 _ => None,
@@ -392,7 +417,7 @@ mod tests {
             .collect();
         assert!(
             declared.len() >= 8,
-            "parsed {} module declaration(s) out of dialogs/settings/mod.rs — the PARSER is \
+            "parsed {} module declaration(s) out of the two settings mod.rs files — the PARSER is \
              stale, not the list. A test that can only return one answer cannot detect the \
              thing it was added to detect.",
             declared.len()

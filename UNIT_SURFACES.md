@@ -138,7 +138,7 @@ Not unit defects. Recorded so a future reader does not "discover" them.
 | 48 | DXF export *Units* control | `text/export_dxf.rs` — `units_heading`, `units_name`; enum in `pdfcer-core/src/export/dxf.rs` | a file-format field (`$INSUNITS`), separate vocabulary, two entries. See §2 |
 | 49 | DXF scale field | `text/export_dxf.rs` | a unitless ratio |
 | 50 | Find panel position | `text/find.rs` — `position` | `n of N`, not a coordinate |
-| 51 | Parallel-tolerance slider | `dialogs/settings/measuring.rs` — `degree_suffix` | an angle |
+| 51 | Parallel-tolerance slider | `settingspages/measuring.rs` (in `pdfcer-gui-base`) — `degree_suffix` | an angle |
 | 52 | Markup opacity | `app/markupband.rs` — `opacity`; `markupswatch.rs` (base) | a percentage |
 
 ---

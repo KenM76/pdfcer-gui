@@ -1,4 +1,4 @@
-# `dialogs::settings::comments` — who signs the comments you write
+# `settingspages::comments` — who signs the comments you write
 
 One control, and a module for it because the *placement* of that control is
 the part with an argument.

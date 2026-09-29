@@ -80,6 +80,8 @@ pub mod ribbontabs;
 /// keeps as evidence.
 pub mod secret;
 
+pub mod settingspages;
+
 pub mod settings;
 
 /// **Acrobat-compatible custom stamp collections** — the shell half of

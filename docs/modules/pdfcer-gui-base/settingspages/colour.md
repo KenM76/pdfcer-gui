@@ -1,4 +1,4 @@
-# `pdfcer-gui/dialogs/settings/colour`
+# `pdfcer-gui-base/settingspages/colour`
 
 ## Item notes
 
