@@ -10,7 +10,7 @@
 
 mod staged;
 
-mod disclosures;
+use pdfcer_gui_base::redact::disclosures;
 
 use std::path::{Path, PathBuf};
 

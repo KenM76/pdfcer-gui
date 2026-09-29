@@ -168,7 +168,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let Some(line) = drawn(&trace) else {
         return Ok(Some(format!(
             "★ THE REPORT DOES NOT SAY WHAT IT WILL REMOVE. The apply dialog is open and no \
-             `{REMOVED_TEXT}` line was traced, so `dialogs::redact::disclosures::removed_text` \
+             `{REMOVED_TEXT}` line was traced, so `redact::disclosures::removed_text` \
              was never called — the block is either absent from this build or its call site in \
              `RedactDialog::report` has been deleted. Every count in the report is still drawn, \
              which is exactly why this is invisible to a reading of the dialog: it looks \

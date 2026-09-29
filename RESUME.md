@@ -85,8 +85,8 @@ was clean. In order:
 6. **Crate split Stage 3.** Standing work between tasks, approved. `OpenDoc`,
    prefs, `clipboard`, `protect` and the whole Find bar are in
    `pdfcer-gui-base`. What stays in `render` needs eframe's glow (`pressure`)
-   or the app (`settle`). Every `text` file and the blank-document template
-   are in base; the next candidates are `dialogs/redact/disclosures.rs`,
+   or the app (`settle`). Every `text` file, the blank-document template
+   and the redaction notes are in base; the next candidates are
    `dialogs/settings/*` and `shell/manifest/*` (`python tools/module-graph.py`
    lists what reaches only base).
 

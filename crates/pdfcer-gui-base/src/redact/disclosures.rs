@@ -1,7 +1,7 @@
-//! # `dialogs::redact::disclosures` — the parts of the engine's report that
+//! # `redact::disclosures` — the parts of the engine's report that
 //! reached nobody
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/redact/disclosures.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/redact/disclosures.md`.
 
 use egui_shell::theme::Theme;
 use pdfcer_core::redact::{CarrierAction, RedactionReport};
@@ -16,7 +16,7 @@ const REGION_ENGINE_NOTES: &str = "redact-apply-engine-notes"; // ui-text-exempt
 // ---------------------------------------------------------------------------
 
 /// **The whole-file sweep's own counts**, drawn with the other removal counts.
-pub(super) fn sweep(ui: &mut egui::Ui, report: &RedactionReport) {
+pub fn sweep(ui: &mut egui::Ui, report: &RedactionReport) {
     if report.residual_sweep_objects_scrubbed == 0 {
         return;
     }
@@ -34,7 +34,7 @@ pub(super) fn sweep(ui: &mut egui::Ui, report: &RedactionReport) {
 
 /// **The diligence census** — every carrier the engine looked inside and found
 /// nothing in.
-pub(super) fn checked_clean(ui: &mut egui::Ui, theme: &Theme, report: &RedactionReport) {
+pub fn checked_clean(ui: &mut egui::Ui, theme: &Theme, report: &RedactionReport) {
     let names = checked_clean_names(report);
     if names.is_empty() {
         return;
@@ -56,7 +56,7 @@ pub(super) fn checked_clean(ui: &mut egui::Ui, theme: &Theme, report: &Redaction
 /// write the guard locally, so the guard is the gate, and this note is here so
 /// the next person does not go looking for one.
 #[must_use]
-pub(super) fn checked_clean_names(report: &RedactionReport) -> Vec<&'static str> {
+pub fn checked_clean_names(report: &RedactionReport) -> Vec<&'static str> {
     report
         .carriers
         .iter()
@@ -70,7 +70,7 @@ pub(super) fn checked_clean_names(report: &RedactionReport) -> Vec<&'static str>
 // ---------------------------------------------------------------------------
 
 /// **The matches a narrower redaction reach declines to act on.**
-pub(super) fn left_by_choice(ui: &mut egui::Ui, theme: &Theme, report: &RedactionReport) {
+pub fn left_by_choice(ui: &mut egui::Ui, theme: &Theme, report: &RedactionReport) {
     let names = left_by_choice_names(report);
     if names.is_empty() {
         return;
@@ -83,7 +83,7 @@ pub(super) fn left_by_choice(ui: &mut egui::Ui, theme: &Theme, report: &Redactio
 /// **The carriers holding a copy that the reach setting leaves alone**, already
 /// in the operator's words.
 #[must_use]
-pub(super) fn left_by_choice_names(report: &RedactionReport) -> Vec<&'static str> {
+pub fn left_by_choice_names(report: &RedactionReport) -> Vec<&'static str> {
     report
         .carriers
         .iter()
@@ -97,7 +97,7 @@ pub(super) fn left_by_choice_names(report: &RedactionReport) -> Vec<&'static str
 // ---------------------------------------------------------------------------
 
 /// **`RedactionReport::notes`, at the foot of the report, collapsed.**
-pub(super) fn engine_notes(ui: &mut egui::Ui, theme: &Theme, report: &RedactionReport) {
+pub fn engine_notes(ui: &mut egui::Ui, theme: &Theme, report: &RedactionReport) {
     if report.notes.is_empty() {
         return;
     }
@@ -127,7 +127,7 @@ pub(super) fn engine_notes(ui: &mut egui::Ui, theme: &Theme, report: &RedactionR
 const REGION_REMOVED_TEXT: &str = "redact-apply-removed-text"; // ui-text-exempt: trace region name, never displayed
 
 /// What [`removed_text_lines`] decided, and the lines it decided on.
-pub(super) struct RemovedText {
+pub struct RemovedText {
     /// `listed`, `no-text` or `unreported` — the trace's word for the branch.
     pub state: &'static str,
     /// How many characters the engine reported across every region, before any
@@ -174,7 +174,7 @@ pub(super) struct RemovedText {
 ///
 /// [`ui_rect_visible`]: crate::diag::ui_rect_visible
 /// [`ui_rect`]: crate::diag::ui_rect
-pub(super) fn removed_text(ui: &mut egui::Ui, theme: &Theme, report: &RedactionReport) {
+pub fn removed_text(ui: &mut egui::Ui, theme: &Theme, report: &RedactionReport) {
     let drawn = removed_text_lines(report);
 
     let block = ui.vertical(|ui| {
@@ -202,7 +202,7 @@ pub(super) fn removed_text(ui: &mut egui::Ui, theme: &Theme, report: &RedactionR
 }
 
 /// Every line [`removed_text`] will draw, in order, and which branch drew them.
-pub(super) fn removed_text_lines(report: &RedactionReport) -> RemovedText {
+pub fn removed_text_lines(report: &RedactionReport) -> RemovedText {
     // Counted over the whole vector rather than over `lines`, so that a report
     // long enough to hit either cap still measures what is GOING rather than
     // what is shown. The two numbers diverging is the caps working.

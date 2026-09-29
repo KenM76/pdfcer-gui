@@ -75,7 +75,7 @@ pub fn mark_selection(doc: &mut OpenDoc, appearance: &RedactAppearance) {
     // ⚠ It is GEOMETRY, never text. `PDFCER_DIAG` is redirected into files and
     // a redaction surface that copied the strings it is about to destroy into a
     // second file would have undone its own job — the same rule
-    // `dialogs::redact::disclosures` states for the apply report, which
+    // `redact::disclosures` states for the apply report, which
     // publishes counts and never a character.
     let bbox = rects
         .iter()

@@ -3,6 +3,8 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/redact/mod.md`.
 
+/// The apply report's off-canvas notes: what the engine found, left and removed.
+pub mod disclosures;
 pub mod proof;
 
 mod reach;

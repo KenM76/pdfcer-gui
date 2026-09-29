@@ -1,6 +1,6 @@
 //! # `text::redactremoved` — the words themselves, not the count of them
 //!
-//! Consumed by `pdfcer_gui::dialogs::redact::disclosures::removed_text`, drawn
+//! Consumed by `crate::redact::disclosures::removed_text`, drawn
 //! under `pdfcer_gui::text::redact::will_remove_heading` beneath the counts.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/redactremoved.md`.

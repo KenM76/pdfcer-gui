@@ -1,6 +1,6 @@
 # `text::redactremoved` — the words themselves, not the count of them
 
-Consumed by [`crate::dialogs::redact::disclosures::removed_text`], drawn
+Consumed by `crate::redact::disclosures::removed_text`, drawn
 under [`super::will_remove_heading`] beneath the counts.
 
 ## What this block exists to prevent

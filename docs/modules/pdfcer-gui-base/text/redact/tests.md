@@ -160,7 +160,7 @@ wording, which discloses nothing about the other twelve carriers.
 
 A promise kept across two modules: [`super::residual_sweep_line`] tells the
 operator that pdfcer's own notes *"at the foot of this report"* say which
-objects were left, and `dialogs::redact::disclosures::engine_notes` is what
+objects were left, and `redact::disclosures::engine_notes` is what
 puts them there. Before 2026-09-09 `RedactionReport::notes` was read by
 nothing in this crate, so a sentence like this one would have pointed at an
 empty part of the screen.

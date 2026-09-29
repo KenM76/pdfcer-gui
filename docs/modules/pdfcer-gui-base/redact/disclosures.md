@@ -1,4 +1,4 @@
-# `dialogs::redact::disclosures` — the parts of the engine's report that
+# `redact::disclosures` — the parts of the engine's report that
 reached nobody
 
 
