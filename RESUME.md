@@ -58,9 +58,14 @@ packaged with `--verify` (4751 tests and the gates PASS) and smoke-launched
 off-screen clean. It adds Word and Tables export that follow a tagged PDF's
 own structure (G066, G067 consumed). In order:
 
-0. **Close the channel.** `open/` still holds the answered G028–G041 exchanges
-   and two audit notes. Archive each pair and write its `INDEX.md` row in the
-   same sitting (see the Request channel row above).
+0. **The channel is triaged: 13 files stay in `open/`, each owing something.**
+   G068 and G069 are fixed in the engine but not yet in the pin: move the pin,
+   then re-measure O262 in Acrobat. The GUI still owes: G034's add-text half
+   (item 4); a reader for `Annotation::border_dash` (the Line style control's
+   current value); an off-canvas notice for `FillOutcome::exceeds_max_len`;
+   `add_named_destination`; a print disclosure for the `strokes_width_fixed`
+   counter; optionally, shipping Paddle's official `inference.onnx`. G057
+   waits on Ken opening a DXF.
 1. **Drive the print work.** Pause the ET-16600 queue first, and ask Ken in one
    line before running `ui-verify`. Three drives are owed:
    - O233, fixed line width: the preview stroke changes with *Auto* and with a
@@ -69,7 +74,7 @@ own structure (G066, G067 consumed). In order:
      (`Tile::marks`, `Tile::label_rect`).
    - The print-resolution field reappearing after a change.
 2. **Drive the G028–G038 wiring:**
-   - Properties › *Drawn as* and *Fit to width*.
+   - Properties › *Fit to width* (*Drawn as* is driven: `text_render_mode`).
    - Format › Merge text runs.
    - Moving a line that carries inherited pieces.
    - A glyph click resolving through `locate_text_run`.

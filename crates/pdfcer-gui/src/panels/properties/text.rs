@@ -543,10 +543,15 @@ fn render_row(ui: &mut Ui, page: usize, runs: &[usize], actions: &mut Vec<Action
             .selected_text(t::text_render_choose())
             .show_ui(ui, |ui| {
                 for mode in 0..=7_u8 {
-                    if ui
-                        .selectable_label(false, t::text_render_mode_name(mode))
-                        .clicked()
-                    {
+                    let entry = ui.selectable_label(false, t::text_render_mode_name(mode));
+                    // One region per entry, `properties.text.render.<mode>`,
+                    // so a driven check can aim at the popup.
+                    crate::diag::ui_rect_visible(
+                        &format!("{RENDER_REGION}.{mode}"),
+                        entry.rect,
+                        ui.clip_rect(),
+                    );
+                    if entry.clicked() {
                         chosen = Some(mode);
                     }
                 }
