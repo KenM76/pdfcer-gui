@@ -169,6 +169,8 @@ pub mod panels;
 pub mod placing;
 /// Every word the print dialog shows. Consumed by `pdfcer_gui::dialogs::print`.
 pub mod print;
+/// Every word File ▸ Security ▸ Remove old passwords… shows, and its receipt.
+pub mod purge_passwords;
 /// The left rail's own words — O123 part 7.
 pub mod rail;
 /// Every word the **review-status** control says — `/State` and

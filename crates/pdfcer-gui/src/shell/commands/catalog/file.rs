@@ -673,6 +673,16 @@ pub(super) fn band() -> Vec<Command> {
         // rule that the later arrival yields. A token is what a trace prints;
         // reusing a retired one would make an old trace read as whatever
         // inherited its number, so 125 stays with `file.export_text`.
+        // Token 131. `doc.pages`, not a capability: whether THIS document
+        // is signed or encrypted is known only when pressed, and the receipt
+        // says why it refused.
+        command(
+            "file.purge_password_values",
+            crate::text::purge_passwords::file_purge_password_values(),
+            131,
+        )
+        .with_icon("encrypt")
+        .enabled_when("doc.pages"),
         command("file.encrypt", crate::text::protect::file_encrypt(), 126)
             .with_icon("encrypt")
             .enabled_when("doc.open"),

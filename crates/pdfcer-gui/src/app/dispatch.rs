@@ -681,8 +681,9 @@ impl PdfcerApp {
             // capability: an export reads the document and writes elsewhere, so
             // there is no mode in which it should be refused. Read mode
             // exporting a drawing is exactly what a reading stance is for.
-            // File > Security: Encrypt…, Permissions…, Sign…. See that module.
-            id if security::claims(id) => self.dispatch_security(id),
+            // File > Security: Remove old passwords…, Encrypt…, Permissions…,
+            // Sign…. See that module.
+            id if security::claims(id) => self.dispatch_security(id, actions),
             // File > Export: the three exports and the three imports beside
             // them. `dispatch::exchange`'s header carries the seam and the
             // warning that is easy to read and not act on.

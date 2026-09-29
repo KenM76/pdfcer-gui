@@ -238,6 +238,7 @@ mod export_word;
 /// judgements `PlaceTextReport` carries about the operator's own file, and why
 /// the engine's ready-made sentences are not the ones printed.
 pub mod importtext;
+mod purge_passwords;
 /// **The two actions that change what is SELECTED and nothing else.** Its
 /// header records why that is a real boundary rather than a size cut — every
 /// other `Action` variant asks the document to

@@ -263,12 +263,13 @@ pub(super) fn tab() -> Tab {
             // rule is that a promotion is only safe where hoisting is a no-op —
             // here the whole group is promoted together, so it is. Third
             // because the band reads in order of how far the operator is from
-            // sending the file: put a password on it, decide what it allows,
-            // sign it.
+            // sending the file: clear the passwords it still holds, put a
+            // password on it, decide what it allows, sign it.
             group(
                 "security",
                 crate::text::protect::group_file_security(),
                 [
+                    large("file.purge_password_values"),
                     large("file.encrypt"),
                     large("file.permissions"),
                     large("file.sign").provided_by("signing"),

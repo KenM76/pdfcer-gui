@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **54 of 241** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `wanted` — a real gap — **55 of 243** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -139,7 +139,8 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **What a redraw did to a field's text** — `LayoutDisclosure` (with `::applied_autosize`, `::applied_autosize_bound`, `::da_colour_unmodelled`, `::unencodable_chars`) carried on `FieldEditOutcome::layout`, `ResetOutcome::layout`, `WidgetEditOutcome::layout` and `WidgetRotation::layout` | **wanted.** The four facts are the ones a fill already reports, now reported by every verb that redraws a widget: the size an auto-sized field landed on and which bound chose it, a `/DA` colour drawn black, characters drawn as `?`. Today only the fill route's copy is worded; a restyle, a reset or a rotation redraws silently. Wire one formatter over `LayoutDisclosure` and call it from all four. |
 | **Default selections for a list or combo** — `FieldEdit::with_default_selections` / `FieldEdit::default_selections` | **wanted, beside the Default-value box.** `/DV` for a `/Ch` field is what Reset restores; the text-field half is built and this is its choice-field twin, a multi-select of the field's own options in `panels::properties::choiceopts`. |
 | **A dashed widget border** — `WidgetChrome::with_border_dash` / `WidgetChrome::border_dash` | **wanted, small.** The border width and style controls exist; a dashed style without a dash array draws the engine default. One pattern field beside the style combo, shown only when the style is dashed (R9). |
-| **Find AND purge password-field values left in earlier revisions** — `password_history::scan_stored_password_values`, `EditSession::purge_password_values` | **wanted, and it belongs beside Protect's other *what is still in this file* checks.** An incrementally saved form keeps every earlier `/V` of a Password field in the bytes, so a value the screen shows as dots — or as empty after a clear — can be recovered by anyone who splits the file at an earlier `%%EOF`. The shell wants two things: the scan as a finding on the document's security summary (field and revision only; the engine never prints the value, and neither may the receipt), and a *Remove old password values* command that calls the purge and saves with `to_full_bytes_decomposing_containers`, because an incremental save appends and removes nothing. A signed file refuses unless the operator accepts invalidating the signatures, which is the existing sanitize confirmation's shape. An inherited `/V` is reported by the engine and not removed; the receipt must say so. Needs the pin moved past v0.62.0. |
+| **Say on the security summary that old password values are still in the file** — the scan behind `password_history::PasswordValueScan` <!--namesake:scan_stored_password_values: called by File ▸ Security ▸ Remove old passwords…, not by any summary--> | **wanted, and it is a disclosure, not a command.** The purge ships (see *shipped*). What is missing is telling the operator, before he runs it, that the file holds password values in earlier revisions, as a line on the document's security summary giving field and revision only, never the value. |
+| **Bates numbering across a batch of PDFs** — `EditSession::stamp_bates`, `BatesStamp` | **wanted.** The engine labels pages as a `/Bates` artifact and refuses before any write on encryption, certification, bad digits, an unencodable character, geometry or overflow. It stamps a signed file incrementally and discloses the signature impact. A shell surface needs: prefix, suffix, start number and digit count; placement; the document set and its order, since numbering runs across files; the refusal worded before any file is written; and the signature disclosure. |
 
 ### Fonts & rendering
 
@@ -154,7 +155,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 241** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `blocked` — waiting on something named — **2 of 243** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -172,7 +173,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 241** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 243** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -183,7 +184,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **15 of 241** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `declined` — deliberately no surface — **15 of 243** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -224,7 +225,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **170 of 241** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **171 of 243** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -374,6 +375,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Import an installed Acrobat/Reader trust store … | **Reachable — `crate::trust`, and "importing" is a live READ rather than a copy.** Settings ▸ Digital signatures ▸ *Show what is in it* reads the operator's own `addressbook.acrodata` through `pdfcer_core::trust_store::load_from_path`, reporting the anchor count by `/Source` with the file's modification time; `crate::trust::candidate_paths` mirrors `pdfcer-cli`'s four-track list exactly. Nothing is copied, and that is the design: pdfcer keeps no anchor file, takes no snapshot and caches no DER — every evaluation reads his file as it is at that moment, because a snapshot has no way to say how old it is that anybody will read. Measured on his own machine, the store was more than a year stale — exactly what an *anchors ✓* badge would hide, and why `text::trust::store_line` has no sibling yielding the count without the date. NOT DRIVEN; driving it on his machine is the thing most worth doing next. |
 | Encrypt a document (AES-256, `/R` 6 only), set … | **Reachable — File ▸ Security ▸ `Encrypt…` and `Permissions…`** (`OPERATOR_REQUESTS.md` O119). `crate::protect` is the model, `crate::dialogs::protect` the window, and all three verbs are called from `protect::prepare`: `set_encryption` on the open session, `set_permissions` and `remove_encryption` on a throwaway session re-opened with the owner password. **The throwaway is not caution:** both mutating verbs call `clear_encryption()` on the base, which would disarm `save_incremental`'s `EncryptedSaveUnsupported` guard and let the next ordinary `Ctrl+S` append plaintext objects to AES ciphertext, silently. It is also the authentication — `NotOwner` comes back from the load, not from a second code path. O119's three disclosures are all on screen and none waits for a press; the save mirrors `dialogs::redact` part for part. Moved here on the operator's ruling, not on a driven run: headless tests green, the `ui-verify` checks written and not run. |
 | **PAdES B-T — verify-then-embed an RFC 3161 timestamp** … | **shipped** (default `timestamp` feature). File ▸ Sign ▸ *Timestamp server*: `sign::prepare` calls `EditSession::sign_with_timestamp` through `sign::timestamp::HttpAuthority` (`pdfcer_fetch::post_time_stamp_query_with`, 30 s bound), and `SignReport::timestamp` is disclosed in the result. `SignApplyError::Timestamp` is worded, never retried as B-B. Strippable by the shell's `timestamp` feature (R8). The round trip still blocks the UI thread for its duration. Driven: `a_timestamped_signature_is_timestamped_or_not_written`. |
+| **Find AND purge password-field values left in earlier revisions** — `password_history::scan_stored_password_values`, `EditSession::purge_password_values` | **shipped — File ▸ Security ▸ Remove old passwords….** `app::actions::purge_passwords` scans every revision, purges a fresh session, rewrites with `to_full_bytes_decomposing_containers`, re-scans the output, and writes nothing if a value survives. It refuses signed documents. The receipt counts values removed and discloses inherited, read-only and unreadable-revision cases without quoting a value. Driven by `stored_passwords_removed_without_the_mouse`. |
 
 ### Fonts & rendering
 

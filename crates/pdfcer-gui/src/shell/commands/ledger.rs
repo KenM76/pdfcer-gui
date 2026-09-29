@@ -377,9 +377,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 169 → 170: `pages.crop`, Pages ▸ Transform.
     // 170 → 171: `file.export_tables`, File ▸ Export.
     // 171 → 172: `file.export_word`, File ▸ Export.
+    // 172 → 173: `file.purge_password_values`, File ▸ Security.
     assert_eq!(
         registry().len(),
-        172 + usize::from(cfg!(feature = "signing"))
+        173 + usize::from(cfg!(feature = "signing"))
     );
 }
 
@@ -766,9 +767,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 151 → 152: `pages.crop` names `page-single`, the sheet it trims.
     // 152 → 153: `file.export_tables` names `export`, as its neighbours do.
     // 153 → 154: `file.export_word` names `export` too.
+    // 154 → 155: `file.purge_password_values` names `encrypt`, its band's lock.
     assert_eq!(
         named,
-        154 + usize::from(cfg!(feature = "signing")),
+        155 + usize::from(cfg!(feature = "signing")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

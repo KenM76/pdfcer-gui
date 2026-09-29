@@ -4,13 +4,13 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.62.0, a git dependency on the local engine repository, pinned at **`741c9cb1`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.62.0, a git dependency on the local engine repository, pinned at **`ed31c675`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
 **What is new in this build.** A new ce dimension follows the pointer after its
 last pick, drawn exactly as it will be placed, and the click puts its text
 where you clicked — angles included. File › Export › Tables… writes CSV, Excel
 or LibreOffice spreadsheets, and File › Export › Word document… writes an
-editable Word file with real headings, tables, header and footer. A radius or diameter's leader stops short of its
+editable Word file with real headings, tables, header and footer. File › Security › Remove old passwords… writes a copy with no password left over from an earlier save. A radius or diameter's leader stops short of its
 text instead of running through it.
 
 **PaddleOCR is a third recogniser, and it is in the package.** Choose it under
@@ -127,6 +127,7 @@ than the number it produced last.
 - ✅ **Command reachability is checked** — `shell::commands::reach`: every registered command must reach a dispatch arm or carry an **argued** entry in `SCAFFOLDED`. A reason under 40 characters, or one that merely restates the id, is refused, as is an entry whose command has since been wired. `UNREACHED_ARMS` is empty, its length pinned at 0, so a dispatch arm for a command that does not exist cannot be added quietly
 - ✅ **Sign a document** — File ▸ Security ▸ Sign…, a `.pfx` or `.p12` and its passphrase, driven, and the signature is read back out of the saved **file**. `tools/gates/check-forwarded-features.sh` reads the engine's own default feature list and fails when a capability is missing from this build, because the engine's `signing` feature is default-on and this crate takes `pdfcer-core` with `default-features = false`: forgetting to forward does not fail to compile
 - ✅ **Signatures can carry a trusted timestamp** — the Sign window's *Timestamp server* field (PAdES B-T). The server vouches for when you signed, independently of this machine's clock; the result names the authority, the time and the token serial. A server that does not answer within 30 s writes nothing, never an untimestamped signature. The field is empty until you type one and remembers the last server used. Driven both ways: a dead server refuses, DigiCert's public server timestamps
+- ✅ **Old passwords hidden in a saved form can be removed.** File ▸ Security ▸ Remove old passwords…. A form saved more than once still holds every password typed into it, in earlier versions inside the file, even when the field now shows empty. This finds them and writes a new copy holding none: one version, checked again after writing, and never written if a value survives. The open document is unchanged. The receipt counts the values removed and never quotes one. Refused on a signed document. Driven off-screen.
 - ⬜ **Encrypt and Permissions — built, undriven.** File ▸ Security, after Export, both controls Large, on the File tab, which is present in all three modes. `Encrypt…` sets a password, changes the passwords keeping what the document allowed, or removes the protection — one subject, one control. `Permissions…` offers the **eight bits** `pdfcer-core` models, in Table 22 order, each rendered from the document's own three-valued answer. Seven are tick-boxes and the eighth is a sentence: the engine sets the accessibility bit on every file it writes, so a box you could clear would come back ticked. The window reports the cipher, which password opened the file and all eight bits under *This document, as it is now* before it offers anything editable
 
 ### Several documents at once

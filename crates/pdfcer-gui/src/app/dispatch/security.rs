@@ -14,12 +14,28 @@ pub(crate) fn claims(id: &str) -> bool {
     // §5b's rule binds the RIBBON and the registry; a `#[cfg]` here would put
     // a second place that knows about a capability into the dispatcher, and
     // the string costs nothing because nothing can raise it.
-    matches!(id, "file.encrypt" | "file.permissions" | "file.sign")
+    matches!(
+        id,
+        "file.purge_password_values" | "file.encrypt" | "file.permissions" | "file.sign"
+    )
 }
 
 impl PdfcerApp {
-    /// Open the Encrypt / Permissions window on the right starting point.
-    pub(in crate::app) fn dispatch_security(&mut self, id: &str) {
+    /// Route one Security command: a window for Encrypt / Permissions / Sign, an
+    /// action for Remove old passwords.
+    pub(in crate::app) fn dispatch_security(
+        &mut self,
+        id: &str,
+        actions: &mut Vec<crate::app::actions::Action>,
+    ) {
+        // No window: the scan decides whether there is anything to do, and the
+        // picker opens in the apply phase once the clean copy exists.
+        if id == "file.purge_password_values" {
+            actions.push(crate::app::actions::Action::Write(
+                crate::app::actions::write::WriteAction::PurgePasswords,
+            ));
+            return;
+        }
         // Signing is its own window, not a third `Task`. The two encryption
         // commands share a window because they differ in exactly one value; a
         // signature shares nothing with them — no password fields, no
@@ -59,11 +75,16 @@ mod tests {
         // registration path rather than of a list.
         let mut reg = egui_shell::commands::CommandRegistry::new();
         crate::shell::commands::register(&mut reg);
-        let registered: Vec<String> = ["file.encrypt", "file.permissions", "file.sign"]
-            .into_iter()
-            .filter(|id| reg.get(id).is_some())
-            .map(str::to_owned)
-            .collect();
+        let registered: Vec<String> = [
+            "file.purge_password_values",
+            "file.encrypt",
+            "file.permissions",
+            "file.sign",
+        ]
+        .into_iter()
+        .filter(|id| reg.get(id).is_some())
+        .map(str::to_owned)
+        .collect();
         // Build-dependent: `file.sign` is registered only with the `signing`
         // feature, which is `SHELL_FRAMEWORK.md` §5b's whole mechanism. Written
         // as arithmetic over `cfg!` rather than as a number, because both
@@ -71,7 +92,7 @@ mod tests {
         // supported builds.
         assert_eq!(
             registered.len(),
-            2 + usize::from(cfg!(feature = "signing")),
+            3 + usize::from(cfg!(feature = "signing")),
             "every registered Security command: {registered:?}"
         );
         for id in &registered {
@@ -80,7 +101,7 @@ mod tests {
                 "`{id}` is registered and the guard does not claim it"
             );
         }
-        assert!(!claims("file.print"), "the guard claims only its own two");
+        assert!(!claims("file.print"), "the guard claims only its own");
         assert!(!claims("file.export_dxf"));
     }
 

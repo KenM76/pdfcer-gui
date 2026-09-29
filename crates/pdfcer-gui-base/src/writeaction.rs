@@ -133,6 +133,9 @@ pub enum WriteAction {
     /// [`Self::FormData`]'s reason: there is no dialog, and the picker must
     /// open in the apply phase, not inside a layout pass.
     Word,
+    /// **Write a copy holding no stored password-field value.** Carries
+    /// nothing, for [`Self::Word`]'s reason.
+    PurgePasswords,
     /// **Write the already-serialised compacted copy to a file the operator
     /// picks.**
     ///

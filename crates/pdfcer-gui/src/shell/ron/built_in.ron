@@ -92,6 +92,7 @@
                     id: "security",
                     caption: "Security",
                     items: [
+                        Command(id: "file.purge_password_values", size: Large),
                         Command(id: "file.encrypt", size: Large),
                         Command(id: "file.permissions", size: Large),
                         Command(
