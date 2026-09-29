@@ -604,10 +604,11 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 format!(
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
-                    "cmyk_buffer={} refused={} wrong_space={} scale={:.3}",
+                    "cmyk_buffer={} refused={} wrong_space={} spots_flattened={} scale={:.3}",
                     rendered.diagnostics.cmyk_buffer_engaged,
                     rendered.diagnostics.cmyk_buffer_refused,
                     rendered.diagnostics.blends_in_wrong_space,
+                    rendered.diagnostics.cmyk_spots_flattened,
                     request.raster_scale
                 )
             });

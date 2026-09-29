@@ -435,6 +435,21 @@ pub fn blend_space_status_line() -> String {
         .to_owned()
 }
 
+/// Shown when the renderer reports `cmyk_spots_flattened`: `inks` distinct spot
+/// inks on the page beyond what it keeps as separate colours.
+#[must_use]
+pub fn spots_flattened_status_line(inks: u64) -> String {
+    let (count, verb) = if inks == 1 {
+        ("1 spot colour".to_owned(), "is")
+    } else {
+        (format!("{inks} spot colours"), "are")
+    };
+    format!(
+        "{count} on this page {verb} shown as ordinary print colours \u{2014} there are more \
+         than can be kept separate, so where they overlap or blend the colours are approximate."
+    )
+}
+
 /// The status-bar line for a document whose index pdfcer had to rebuild.
 #[must_use]
 pub const fn recovered_status_line() -> &'static str {
@@ -483,6 +498,12 @@ pub fn ocr_layer_line(percent: u32, blocks: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_spots_flattened_count_agrees_with_its_verb() {
+        assert!(spots_flattened_status_line(1).starts_with("1 spot colour on this page is "));
+        assert!(spots_flattened_status_line(3).starts_with("3 spot colours on this page are "));
+    }
 
     /// **The absent case is a different sentence, not the same one with a
     /// zero in it.**

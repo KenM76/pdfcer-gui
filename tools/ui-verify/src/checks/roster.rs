@@ -168,6 +168,9 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // climbs with Ctrl+wheel and a wheel that does not reach the canvas is
         // `zoom_gallery`'s failure to report, not this one's.
         Box::new(blend_space::BlendSpaceFallbackIsDisclosed),
+        // The other render approximation the status bar discloses; it opens
+        // its own fixture, so it needs no --pdf.
+        Box::new(spots_flattened::ExtraSpotInksAreDisclosed),
         // Beside `blend_space`, because they are the same shape of check on
         // the same two surfaces: both climb the zoom with Ctrl+wheel, both read
         // pixels out of the canvas, and both end at a status-bar disclosure. A

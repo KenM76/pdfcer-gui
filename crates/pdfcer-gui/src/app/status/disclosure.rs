@@ -11,7 +11,7 @@ use egui::{Align, Layout, Vec2};
 use super::{
     NOTES_WIDTH_FRACTION, REGION_BLEND_SPACE, REGION_CATCHING_UP, REGION_EDIT_DISCLOSURE,
     REGION_FILL_DISCLOSURE, REGION_LINE_WEIGHTS, REGION_LOAD_ANOMALIES, REGION_RECOVERED,
-    ROW_HEIGHT_PTS,
+    REGION_SPOTS_FLATTENED, ROW_HEIGHT_PTS,
 };
 use crate::app::state::OpenDoc;
 use crate::text::forms as t_forms;
@@ -171,6 +171,25 @@ fn blend_space_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
     disclosure_line(ui, REGION_BLEND_SPACE, &t::blend_space_status_line());
 }
 
+/// **Some of the page's spot inks are drawn as process colour**: the page names
+/// more than the colorant buffer holds, so the extras paint through their tint
+/// transforms and overprint and blending treat them as CMYK. A property of the
+/// page, so it follows the texture like [`blend_space_disclosure`].
+fn spots_flattened_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
+    let Some(texture) = doc.page_texture.as_ref() else {
+        return;
+    };
+    let inks = texture.diagnostics.cmyk_spots_flattened;
+    if inks == 0 {
+        return;
+    }
+    disclosure_line(
+        ui,
+        REGION_SPOTS_FLATTENED,
+        &t::spots_flattened_status_line(inks),
+    );
+}
+
 /// **The canvas is deliberately not showing what will print** —
 /// `OPERATOR_REQUESTS.md` **O137**, and the line that makes the whole feature
 /// safe to ship.
@@ -267,6 +286,7 @@ pub(super) fn all(ui: &mut egui::Ui, doc: &OpenDoc) {
     // objects it found said twice.
     load_anomalies_disclosure(ui, doc);
     blend_space_disclosure(ui, doc);
+    spots_flattened_disclosure(ui, doc);
     // LAST, and the position is the argument. Every line above is about
     // something that HAPPENED — a fill, an edit, how the file was assembled, a
     // buffer that would not fit. This one is about a stance the operator is
