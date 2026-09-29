@@ -460,6 +460,12 @@ pub enum PageAction {
         /// The number on the first stamped page.
         first: u64,
     },
+    /// Remove the Bates labels pdfcer stamped, as one undo step. `None` is
+    /// every page.
+    RemoveBates {
+        /// 0-based page indices, ascending and unique; `None` for all.
+        pages: Option<Vec<usize>>,
+    },
     /// Set or remove the picked sheets' visible area, as one undo step.
     SetCropBox {
         /// 0-based page indices, ascending and unique.

@@ -1,7 +1,8 @@
 //! `bates_numbering_without_the_mouse` — Pages ▸ Stamp ▸ Bates numbering… on
 //! `fixtures/four-pages.pdf`, with nothing picked in the rail, stamps all four
 //! pages `000001` to `000004` as one edit, and the window reopened afterwards
-//! continues the run at 5. The window is placed off the desktop and driven
+//! continues the run at 5. Remove Bates numbers then takes all four labels
+//! off as one edit, and a second press finds none. The window is placed off the desktop and driven
 //! through the scripted pointer.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/bates_scripted.md`.
@@ -23,6 +24,9 @@ const OPENED: &str = "bates-opened"; // ui-text-exempt: a trace event name, neve
 const MODE: &str = "ribbon.mode.review"; // ui-text-exempt: a trace region name, never displayed
 const TAB: &str = "ribbon.tab.pages"; // ui-text-exempt: a trace region name, never displayed
 const ITEM: &str = "ribbon.item.pages.bates"; // ui-text-exempt: a trace region name, never displayed
+const REMOVE: &str = "ribbon.item.pages.bates_remove"; // ui-text-exempt: a trace region name, never displayed
+/// The removal verb's outcome line.
+const REMOVAL: &str = "bates-removal"; // ui-text-exempt: a trace event name, never displayed
 /// The Stamp group when the band is too narrow to show it open.
 const COLLAPSED: &str = "ribbon.group.pages.stamp.collapsed"; // ui-text-exempt: a trace region name, never displayed
 const STAMP: &str = "bates.stamp"; // ui-text-exempt: a trace region name, never displayed
@@ -111,17 +115,25 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.settle(15);
         Ok(())
     };
-    let open_window = || -> Result<()> {
-        if fresh(ITEM)?.is_none() && fresh(COLLAPSED)?.is_some() {
+    let press = |item: &str| -> Result<()> {
+        if fresh(item)?.is_none() && fresh(COLLAPSED)?.is_some() {
             click(COLLAPSED)?;
         }
-        click(ITEM)
+        click(item)
     };
+    let open_window = || press(ITEM);
 
     click(MODE)?;
     click(TAB)?;
     open_window()?;
     click(STAMP)?;
+    session.settle(20);
+    // Take the labels off, then press again over a page with none.
+    click(TAB)?;
+    press(REMOVE)?;
+    session.settle(20);
+    click(TAB)?;
+    press(REMOVE)?;
     session.settle(20);
     // Reopen: the run must continue where the stamp left it.
     click(TAB)?;
@@ -173,6 +185,27 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             second.raw
         )));
     }
+    let removals: Vec<_> = trace.events(REMOVAL).collect();
+    let (Some(first), Some(again)) = (removals.first(), removals.get(1)) else {
+        return Ok(Some(format!(
+            "Remove Bates numbers was pressed twice and traced `{REMOVAL}` {} time(s).",
+            removals.len()
+        )));
+    };
+    if first.get("pages") != Some("4") || first.get("labels") != Some("4") {
+        return Ok(Some(format!(
+            "removing after a four-page stamp should take four labels off four pages; it traced `{}`.",
+            first.raw
+        )));
+    }
+    if again.get("labels") != Some("0") {
+        return Ok(Some(format!(
+            "a second removal over pages with no label should find none; it traced `{}`.",
+            again.raw
+        )));
+    }
+    report.note(format!("`{}`", first.raw));
+    report.note(format!("`{}`", again.raw));
     report.note(format!("`{}`", applied.raw));
     report.note(format!("`{}`", funnel.raw));
     report.note(format!("`{}`", second.raw));

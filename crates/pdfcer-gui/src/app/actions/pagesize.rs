@@ -374,6 +374,32 @@ pub fn bates(
     )])
 }
 
+/// The body of `PageAction::RemoveBates`: one `CommandKind::RemoveBates` undo
+/// step, or none when nothing in scope carries a label, and its receipt.
+///
+/// # Errors
+///
+/// The engine's refusals, raised before anything is written.
+pub fn remove_bates(
+    session: &mut EditSession,
+    pages: Option<&[usize]>,
+) -> Result<Vec<String>, EditError> {
+    let pdfcer_core::bates::BatesRemoval { pages, labels, .. } = session.remove_bates(pages)?;
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!(
+            "bates-removal pages={} labels={}",
+            pages.len(),
+            labels.len()
+        )
+    });
+    Ok(vec![if labels.is_empty() {
+        crate::text::bates::none_removed().to_owned()
+    } else {
+        crate::text::bates::removed(labels.len(), pages.len())
+    }])
+}
+
 /// How many changes ended in `want`.
 fn count_entry(changes: &[MediaBoxChange], want: MediaBoxEntry) -> usize {
     changes.iter().filter(|c| c.entry == want).count()

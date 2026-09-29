@@ -42,6 +42,7 @@ pub(crate) fn handles(id: &str) -> bool {
             | "pages.resize"
             | "pages.crop"
             | "pages.bates"
+            | "pages.bates_remove"
     )
 }
 
@@ -106,6 +107,23 @@ pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
                 .filter(|p| *p < of)
                 .collect();
             app.dialogs.open_bates(&picked, of);
+        }
+        // **Remove the stamped labels.** The Bates scope rule, with no window:
+        // a rail pick of two or more pages, else the whole document.
+        "pages.bates_remove" => {
+            let Status::Open(doc) = &app.status else {
+                return;
+            };
+            let of = doc.pages.len();
+            let picked: Vec<usize> = app
+                .panels
+                .selected_pages()
+                .iter()
+                .copied()
+                .filter(|p| *p < of)
+                .collect();
+            let pages = (picked.len() >= 2 && picked.len() < of).then_some(picked);
+            actions.push(Action::Page(PageAction::RemoveBates { pages }));
         }
         // ===============================================================
         // THE PAGE VERBS — one operand rule, shared by every arm below

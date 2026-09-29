@@ -531,6 +531,13 @@ pub(super) fn apply(
                 super::pagesize::bates(session, &stamp, first)
             });
         }
+        PageAction::RemoveBates { pages } => {
+            let page = pages.as_ref().and_then(|p| p.first().copied());
+            let n = pages.as_ref().map_or(0, Vec::len);
+            super::apply::vector_edit(doc, "bates-removed", page.unwrap_or(0), n, |session| {
+                super::pagesize::remove_bates(session, pages.as_deref())
+            });
+        }
         PageAction::SetCropBox { pages, edit } => {
             if !pages.is_empty() {
                 let first = pages.first().copied().unwrap_or(0);

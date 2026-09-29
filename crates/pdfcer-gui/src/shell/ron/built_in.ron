@@ -280,6 +280,7 @@
                     caption: "Stamp",
                     items: [
                         Command(id: "pages.bates"),
+                        Command(id: "pages.bates_remove"),
                     ],
                 ),
             ],

@@ -414,6 +414,15 @@ pub const fn pages_bates() -> CommandText {
     )
 }
 
+/// `pages.bates_remove`
+#[must_use]
+pub const fn pages_bates_remove() -> CommandText {
+    CommandText::new(
+        "Remove Bates numbers",
+        "Take off the Bates numbers pdfcer stamped, from every page or from the pages picked in the page rail. Numbers stamped by another program are left alone.",
+    )
+}
+
 /// `pages.resize`.
 #[must_use]
 pub const fn pages_resize() -> CommandText {

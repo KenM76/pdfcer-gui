@@ -18,13 +18,17 @@ check runs under `--no-input`.
    operand rule.
 3. The edit funnel must write a `bates-stamped` line. That is the undoable
    edit landing in the session, not only the engine call.
-4. The window is opened again, and its `bates-opened` line must carry
+4. `ribbon.item.pages.bates_remove` is pressed twice. The first
+   `bates-removal` line must carry `pages=4 labels=4`, and the second
+   `labels=0`: the labels are gone, and a press over clean pages is a no-op.
+5. The window is opened again, and its `bates-opened` line must carry
    `start=5`.
 
 ## Falsification
 
 This was falsified by making the dialog's whole-document scope return page 0
-only. Step 2 fails, naming `n=1 … last_label=000001 next=2`.
+only. Step 2 fails, naming `n=1 … last_label=000001 next=2`. Removal was
+falsified by scoping it to page 0; step 4 fails.
 
 ## What it does not cover
 

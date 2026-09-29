@@ -157,6 +157,20 @@ pub fn receipt(pages: usize, first: &str, last: &str, next: u64) -> String {
     )
 }
 
+/// The receipt after Remove Bates numbers took labels off.
+#[must_use]
+pub fn removed(labels: usize, pages: usize) -> String {
+    format!(
+        "Removed {labels} Bates label(s) from {pages} page(s). Save keeps the earlier version inside the file, labels included; Save a compacted copy… writes one without them."
+    )
+}
+
+/// The receipt when no page in scope carries a label pdfcer stamped.
+#[must_use]
+pub const fn none_removed() -> &'static str {
+    "No Bates numbers stamped by pdfcer were found. Numbers stamped by another program are part of the page and are not removed."
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

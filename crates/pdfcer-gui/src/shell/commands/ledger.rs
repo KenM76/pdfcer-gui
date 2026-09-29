@@ -379,9 +379,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 171 → 172: `file.export_word`, File ▸ Export.
     // 172 → 173: `file.purge_password_values`, File ▸ Security.
     // 173 → 174: `pages.bates`, Pages ▸ Stamp.
+    // 174 → 175: `pages.bates_remove`, beside it.
     assert_eq!(
         registry().len(),
-        174 + usize::from(cfg!(feature = "signing"))
+        175 + usize::from(cfg!(feature = "signing"))
     );
 }
 
@@ -770,9 +771,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 153 → 154: `file.export_word` names `export` too.
     // 154 → 155: `file.purge_password_values` names `encrypt`, its band's lock.
     // 155 → 156: `pages.bates` names `stamp`, shared with `file.stamp_collection`.
+    // 156 → 157: `pages.bates_remove` names `delete`.
     assert_eq!(
         named,
-        156 + usize::from(cfg!(feature = "signing")),
+        157 + usize::from(cfg!(feature = "signing")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands
