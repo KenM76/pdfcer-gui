@@ -134,7 +134,7 @@ area cropped to part of the sheet is kept, and the status line says the page
 still looks the size it was. A smaller page draws smaller, because the engine
 now clips the visible area to the sheet. Not driven yet.
 
-## O251 — **DIAGNOSED — engine defect, filed as `G057`** — an exported DXF does not open in eDrawings or AutoCAD LT 2004
+## O251 — **FIXED IN THE PUBLISHED BUILD — awaiting his open in eDrawings / LT 2004** — an exported DXF does not open in eDrawings or AutoCAD LT 2004
 
 A defect report. The DXF pdfcer writes must open in eDrawings and in AutoCAD LT
 2004, which reads up to AC1018 (DXF 2004) and nothing newer.
@@ -145,6 +145,13 @@ the ODA File Converter refuses both test exports at the first line of drawing.
 Removing the version claim, or adding model space, makes it convert. The
 writer is the engine's; the shell passes its bytes through unchanged. Non-ASCII
 characters such as µ and ° are also written in a form AutoCAD shows garbled.
+
+**Fixed.** The engine now writes the model space, block records, owner links and
+objects the format requires, and writes non-ASCII as `\U+XXXX`. The published
+build carries it. The ODA File Converter (audit on) converts pdfcer's exports of
+`banana-at-scale.pdf` as R2000, R2004 and R12, and of the dense site plan; the
+earlier export still fails at its first line. Closes when a file opens in his
+eDrawings or LT 2004.
 
 ## O252 — **PART BUILT, NOT YET DRIVEN** — export options for each format: DXF version, and the drawing scale
 
