@@ -38,9 +38,21 @@ pub const fn file_export_text() -> CommandText {
 pub const fn file_export_tables() -> CommandText {
     CommandText::new(
         "Export tables…",
-        "Find the tables on the chosen pages and write each one as a CSV file of \
-         rows and columns. Tables with drawn lines and tables laid out by \
-         alignment are both found; the receipt says which were guessed.",
+        "Find the tables on the chosen pages and write their rows and columns to \
+         an Excel or LibreOffice workbook, or to CSV files. Tables with drawn lines \
+         and tables laid out by alignment are both found; the receipt says which \
+         were guessed.",
+    )
+}
+
+/// **Word document** — the whole document as an editable `.docx`.
+pub const fn file_export_word() -> CommandText {
+    CommandText::new(
+        "Word document…",
+        "Write the whole document as a Word file you can edit: headings, \
+         paragraphs, lists and tables as Word's own, and the text repeated on \
+         every page as a real header and footer. The receipt says what was \
+         guessed.",
     )
 }
 

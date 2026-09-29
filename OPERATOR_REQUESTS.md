@@ -193,7 +193,11 @@ layout and table recognition where it helps. Support the best exports we can.
 **State:** File ▸ Export ▸ Tables… writes the detected tables as CSV, as an
 Excel workbook (the engine's own writer, so no new library was needed) or as
 a LibreOffice spreadsheet, chosen in the window and remembered; driven
-off-screen in all three. `.docx` is not built.
+off-screen in all three. File ▸ Export ▸ Word document… writes the whole
+document as a `.docx` — headings, paragraphs, lists, tables as Word tables,
+the repeated header and footer as Word's own with a live page number — and
+the receipt counts what was guessed; driven off-screen. Other word-processor
+formats (.odt, .rtf) are not built; the engine has no writer for them.
 
 ## O258 — **FILED, designed** — an LLM can drive the open document, off by default, asking him the first time one tries
 

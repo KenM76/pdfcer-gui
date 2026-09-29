@@ -938,7 +938,9 @@ fn running_left_out(diagnostics: &pdfcer_core::block_layout::LayoutDiagnostics) 
 
 /// The four counters from `TextDiagnostics` that change what an operator
 /// should do next, worded — or nothing, when all four are zero.
-fn honesty_notes(diagnostics: &pdfcer_core::text_extract::TextDiagnostics) -> Vec<String> {
+pub(super) fn honesty_notes(
+    diagnostics: &pdfcer_core::text_extract::TextDiagnostics,
+) -> Vec<String> {
     use crate::text::export_text as t;
 
     let mut notes = Vec::new();

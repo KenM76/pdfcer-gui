@@ -54,6 +54,7 @@ pub mod dimension_groups;
 pub mod double_click_text;
 pub mod double_click_text_scripted;
 pub mod export_tables_scripted;
+pub mod export_word_scripted;
 pub mod measure_place_scripted;
 
 pub mod driving;

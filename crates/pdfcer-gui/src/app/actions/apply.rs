@@ -1035,6 +1035,7 @@ impl PdfcerApp {
                     super::export_tables::export(doc, &plan)
                 }
                 super::write::WriteAction::FormData => super::export::form_data(doc),
+                super::write::WriteAction::Word => super::export_word::export(doc),
                 // O169. The picker, the folder Acrobat scans, and the
                 // whole disclosure live in `super::stamps`. It changes no
                 // document: the ticked pages are extracted into a new one and

@@ -427,6 +427,10 @@ pub(super) fn band() -> Vec<Command> {
         command("file.export_tables", t::file_export_tables(), 105)
             .with_icon("export")
             .enabled_when("doc.pages"),
+        // `doc.pages` for `file.export_text`'s reason.
+        command("file.export_word", t::file_export_word(), 106)
+            .with_icon("export")
+            .enabled_when("doc.pages"),
         //
         // Directly after its twin, which is the rule this band already follows
         // for `export_form_data` / `import_form_data` and states there: *"the

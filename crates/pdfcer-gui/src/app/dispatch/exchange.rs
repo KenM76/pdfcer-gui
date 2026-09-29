@@ -13,6 +13,7 @@ pub(crate) fn claims(id: &str) -> bool {
             | "file.export_image"
             | "file.export_text"
             | "file.export_tables"
+            | "file.export_word"
             | "file.import_text"
             | "file.export_form_data"
             | "file.import_form_data"
@@ -95,6 +96,11 @@ impl PdfcerApp {
             "file.export_form_data" => actions.push(Action::Write(
                 crate::app::actions::write::WriteAction::FormData,
             )),
+            // No window: the whole document, the engine's defaults, and the
+            // receipt says what was inferred.
+            "file.export_word" => {
+                actions.push(Action::Write(crate::app::actions::write::WriteAction::Word))
+            }
             // The picker runs HERE, before the action, where the export's runs
             // inside the apply phase. Both are right for their case: an export
             // computes the bytes before it can honestly ask where they go, and

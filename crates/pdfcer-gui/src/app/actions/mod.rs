@@ -231,6 +231,8 @@ pub use pdfcer_gui_base::exporttext;
 pub use pdfcer_gui_base::tableexport;
 /// File ▸ Export ▸ Tables…: detect, filter to the plan, write.
 mod export_tables;
+/// File ▸ Export ▸ Word document…: lay out, find tables, write `.docx`.
+mod export_word;
 /// **A text file becomes pages** — `Action::ImportText`'s body, on
 /// `EditSession::place_text`. Mostly a disclosure: its header lists the
 /// judgements `PlaceTextReport` carries about the operator's own file, and why

@@ -129,6 +129,10 @@ pub enum WriteAction {
     /// Nothing about the document is being ordered, and nothing about it
     /// changes.
     FormData,
+    /// **Write the whole document as a Word file.** Carries nothing, for
+    /// [`Self::FormData`]'s reason: there is no dialog, and the picker must
+    /// open in the apply phase, not inside a layout pass.
+    Word,
     /// **Write the already-serialised compacted copy to a file the operator
     /// picks.**
     ///

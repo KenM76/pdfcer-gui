@@ -25,6 +25,7 @@ fn all() -> Vec<CommandText> {
         file_export_image(),
         file_stamp_collection(),
         file_export_form_data(),
+        file_export_word(),
         file_copy_page_text(),
         file_copy_document_text(),
         file_print(),
