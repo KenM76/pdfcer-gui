@@ -52,12 +52,11 @@ channel: a reply is an input to *how* a thing is built, never to *which*. Each
 row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
-**Start here on `continue`.** The release tree `5a120513` (engine `415a5b11`)
-is published to OneDrive and GitHub as `v0.5.0-dev.20260929.1`, packaged with
-`--verify` (tests and gates PASS); Bates numbering and Remove Bates numbers
-were driven off-screen against the shipped exe and a smoke launch was clean.
-Main is ahead of the release and pins engine `a8f7b266`: Word and Tables export
-follow a tagged PDF's own structure (G066 and G067, consumed). In order:
+**Start here on `continue`.** The release tree `0a6f93b5` (engine `a8f7b266`)
+is published to OneDrive (`pdfcer-gui2`) and GitHub as `v0.5.0-dev.20260929.2`,
+packaged with `--verify` (4751 tests and the gates PASS) and smoke-launched
+off-screen clean. It adds Word and Tables export that follow a tagged PDF's
+own structure (G066, G067 consumed). In order:
 
 0. **Close the channel.** `open/` still holds the answered G028–G041 exchanges
    and two audit notes. Archive each pair and write its `INDEX.md` row in the

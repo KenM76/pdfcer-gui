@@ -6324,3 +6324,17 @@ You said you saw *"a lot of residual background tasks"*. Measured rather than
 assumed: no `pdfcer-gui`, `ui-verify`, `cargo`, `rustc` or stray shell
 processes were running on the machine. The entries are completed tasks that
 stay listed. One genuinely stuck watchdog was killed earlier in the session.
+
+## O262 — **INVESTIGATING — awaiting your Reader test** — text fields added by pdfcer are invisible in Acrobat Reader, and so is what you type into them
+
+His words: *"I have a pdf that I saved out of Word: "C:\Users\KenMa\OneDrive\pdfTests\Rental Application (Blank) - formed.pdf" I added two text form fields with just the default options. They show up in pdfcer-gui, but when I go into Acrobat Reader they don't show. i can click and fill them out and they keep the text, but the text doesn't show either."*
+
+**Measured.** The file is well formed. Its incremental update's xref offsets all resolve, and both widgets are in the page's `/Annots` and in `/AcroForm /Fields`. Each has `/DA`, an `/AP /N` whose `/BBox` matches its `/Rect`, and `/F 4`. Three differences from what Acrobat writes:
+
+- **No `/MK` at all.** The draft's default border colour is unstated, and Reader draws no chrome around a text field without `/MK /BC`. That explains why the fields do not show.
+- **`/DR /Font /Helv` is a direct dictionary.** Acrobat's is an indirect object carrying `/Name`.
+- **`/DA` is a hex string** (`/Helv 0 Tf 0 g`).
+
+One of the last two is the suspect for the typed text not showing, since Reader regenerates the appearance from `/DA` and `/DR` when a field loses focus.
+
+**State:** five copies are in `pdfTests\reader-field-test`: the control, one per difference, and all three together. Reader's answer picks the engine request. Also owed: new text fields default to a visible border, as the conventional form tools do.
