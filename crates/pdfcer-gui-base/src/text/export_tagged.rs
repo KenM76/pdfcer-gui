@@ -5,12 +5,12 @@ fn plural(n: usize, one: &'static str, many: &'static str) -> &'static str {
     if n == 1 { one } else { many }
 }
 
-/// The tree was used. `percent` is the share of the text it owns, 0–100.
+/// The tree was used. `percent` is the share of the exported pages' text it owns, 0–100.
 #[must_use]
 pub fn followed(percent: u32) -> String {
     format!(
         "Headings, paragraphs, lists and tables were taken from the document's own tags, \
-         which cover {percent}% of its text. The rest was laid out from the page."
+         which cover {percent}% of the text exported. The rest was laid out from the page."
     )
 }
 
@@ -18,7 +18,7 @@ pub fn followed(percent: u32) -> String {
 #[must_use]
 pub fn too_little(percent: u32) -> String {
     format!(
-        "The document is tagged, but its tags cover only {percent}% of its text, so \
+        "The document is tagged, but its tags cover only {percent}% of the text exported, so \
          headings, paragraphs and tables were judged from the page instead."
     )
 }
@@ -26,7 +26,7 @@ pub fn too_little(percent: u32) -> String {
 /// The tree exists and owns none of the text.
 #[must_use]
 pub const fn owns_nothing() -> &'static str {
-    "The document is tagged, but its tags own none of its text, so headings, \
+    "The document is tagged, but its tags own none of the text exported, so headings, \
      paragraphs and tables were judged from the page instead."
 }
 

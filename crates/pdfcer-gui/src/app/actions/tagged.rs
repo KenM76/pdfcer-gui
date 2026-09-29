@@ -6,9 +6,9 @@
 //! the receipt says which source was followed and what the tree could not
 //! express (R8b).
 //!
-//! `read_structure_tree` extracts every page's text whatever the tree holds,
-//! so the table export, which may cover a few pages of a long drawing set,
-//! asks [`has_tree`] first and skips the read on an untagged file.
+//! The table export, which may cover a few sheets of a long drawing set,
+//! asks `has_structure_tree` (catalog only) first and reads only its own
+//! pages. `StructureUse::Auto` then judges coverage over those pages alone.
 
 use pdfcer_core::block_layout::{DocumentLayout, LayoutOptions, PageGeometry};
 use pdfcer_core::page_tree::Page;
@@ -41,22 +41,19 @@ impl Structured {
     }
 }
 
-/// Whether the catalog names a `/StructTreeRoot`. Reads one key.
-pub(super) fn has_tree(view: &DocumentView<'_>) -> bool {
-    use pdfcer_core::graph::ObjectGraph;
-    view.catalog_dict()
-        .is_some_and(|catalog| catalog.get(b"StructTreeRoot").is_some())
-}
-
-/// Lays the whole document out. With `keep`, the result is cut to those page
-/// indices and sorted into their order.
+/// Lays the document out: every page, or with `keep` only those page indices,
+/// in that order. `keep` must name each page once.
 pub(super) fn lay_out(
     view: &DocumentView<'_>,
     pages: &[Page],
     options: &ExtractOptions,
     keep: Option<&[usize]>,
 ) -> Result<Structured, String> {
-    let tree = structure_tree::read_structure_tree(view, options).map_err(|e| e.to_string())?;
+    let tree = match keep {
+        Some(keep) => structure_tree::read_structure_tree_in_pages(view, keep, options),
+        None => structure_tree::read_structure_tree(view, options),
+    }
+    .map_err(|e| e.to_string())?;
     let geometry_of = |indices: &mut dyn Iterator<Item = usize>| -> Vec<PageGeometry> {
         indices
             .map(|i| {
@@ -70,20 +67,13 @@ pub(super) fn lay_out(
             })
             .collect()
     };
-    let all = geometry_of(&mut tree.text.pages.iter().map(|p| p.page_index));
-    let mut tagged = tagged_layout::layout_from_structure(
+    let geometry = geometry_of(&mut tree.text.pages.iter().map(|p| p.page_index));
+    let tagged = tagged_layout::layout_from_structure(
         &tree,
-        &all,
+        &geometry,
         &LayoutOptions::default(),
         &TaggedLayoutOptions::default(),
     );
-    if let Some(keep) = keep {
-        tagged.retain_pages(keep);
-        let rank = |page: usize| keep.iter().position(|&i| i == page);
-        tagged.layout.pages.sort_by_key(|p| rank(p.page_index));
-        tagged.tables.sort_by_key(|t| rank(t.page_index));
-    }
-    let geometry = geometry_of(&mut tagged.layout.pages.iter().map(|p| p.page_index));
     let tables = table_detect::tables_from_structure(&tagged.tables, &tagged.layout.text);
     Ok(Structured {
         layout: tagged.layout,

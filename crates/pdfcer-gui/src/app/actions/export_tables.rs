@@ -49,7 +49,7 @@ pub(super) fn export(doc: &mut OpenDoc, plan: &TableExportPlan) {
     let options = doc.settings.extract_options();
     let view = doc.session.view();
     // An untagged file skips the tree read, which extracts every page.
-    let structured = super::tagged::has_tree(&view)
+    let structured = pdfcer_core::structure_tree::has_structure_tree(&view)
         .then(|| super::tagged::lay_out(&view, &doc.pages, &options, Some(&plan.pages)).ok())
         .flatten();
     let found = match structured.as_ref().filter(|s| s.followed()) {
