@@ -46,3 +46,5 @@ SHA. An abbreviated SHA (`d0642d43`) fails with *HTTP 422 Release.
 target_commitish is invalid* (measured 2026-09-28). Pass
 `--target $(git rev-parse <short>)` to tag the commit the package was
 actually built from, rather than whatever `main` is by then.
+
+**`--target` takes a full SHA.** A short hash fails with HTTP 422 `target_commitish is invalid`; pass `$(git rev-parse HEAD)`.
