@@ -831,7 +831,14 @@ def run_verification(repo: Path) -> tuple[bool, str]:
             else:
                 evidence.append(summary)
         else:
-            evidence.extend(output.strip().splitlines()[-3:])
+            # The runner's own verdict rows. stderr is appended after stdout,
+            # so a plain tail quotes cargo's last progress line instead.
+            verdict = [
+                line.strip()
+                for line in (r.stdout or "").splitlines()
+                if re.match(r"\s+(FAIL|SKIP)\s", line) or line.startswith("RESULT:")
+            ]
+            evidence.extend(verdict or output.strip().splitlines()[-3:])
         ok = ok and passed
         lines.append(f"  {label}: {'PASS' if passed else 'FAIL'}")
         lines.extend(f"    {t}" for t in evidence)
