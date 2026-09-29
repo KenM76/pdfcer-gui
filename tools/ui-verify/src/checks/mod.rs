@@ -16,6 +16,7 @@ pub mod annot_rotate;
 
 pub mod blend_space;
 pub mod field_outline;
+pub mod run_width;
 pub mod spots_flattened;
 pub mod text_render_mode;
 

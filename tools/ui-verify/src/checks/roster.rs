@@ -173,6 +173,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(spots_flattened::ExtraSpotInksAreDisclosed),
         Box::new(field_outline::DefaultFieldIsOutlined),
         Box::new(text_render_mode::ChoosingARenderModeReachesTheDocument),
+        Box::new(run_width::TypingARunWidthReachesTheDocument),
         // Beside `blend_space`, because they are the same shape of check on
         // the same two surfaces: both climb the zoom with Ctrl+wheel, both read
         // pixels out of the canvas, and both end at a status-bar disclosure. A

@@ -74,9 +74,8 @@ own structure (G066, G067 consumed). In order:
      (`Tile::marks`, `Tile::label_rect`).
    - The print-resolution field reappearing after a change.
 2. **Drive the G028–G038 wiring:**
-   - Properties › *Fit to width* (*Drawn as* is driven: `text_render_mode`).
-   - Format › Merge text runs.
-   - Moving a line that carries inherited pieces.
+   - Format › Merge text runs. (*Drawn as*, *Fit to width* and the
+     inherited-piece line move are driven.)
    - A glyph click resolving through `locate_text_run`.
    - An OCR re-run replacing the layer, and File › Recognise › Remove OCR text.
    - SVG/EMF *Keep text as text*.
