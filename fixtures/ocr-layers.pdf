@@ -1,0 +1,71 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R 5 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents [6 0 R 7 0 R] >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents [8 0 R 9 0 R 10 0 R] >>
+endobj
+6 0 obj
+<< /Length 47 >>
+stream
+BT /F1 12 Tf 72 720 Td (Visible page one) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Length 123 >>
+stream
+/pdfc_OCR << /Producer (pdfcer) /Version 1 /Engine (ocrs) >> BDC
+q BT 3 Tr /F1 12 Tf 72 700 Td (recognised one) Tj ET Q
+EMC
+endstream
+endobj
+8 0 obj
+<< /Length 47 >>
+stream
+BT /F1 12 Tf 72 720 Td (Visible page two) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Length 123 >>
+stream
+/pdfc_OCR << /Producer (pdfcer) /Version 1 /Engine (ocrs) >> BDC
+q BT 3 Tr /F1 12 Tf 72 700 Td (recognised two) Tj ET Q
+EMC
+endstream
+endobj
+10 0 obj
+<< /Length 123 >>
+stream
+/pdfc_OCR << /Producer (someone else) /Version 1 /Engine (ocrs) >> BDC
+q BT 3 Tr /F1 12 Tf 72 700 Td (not ours) Tj ET Q
+EMC
+endstream
+endobj
+xref
+0 11
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000127 00000 n 
+0000000224 00000 n 
+0000000358 00000 n 
+0000000499 00000 n 
+0000000596 00000 n 
+0000000770 00000 n 
+0000000867 00000 n 
+0000001041 00000 n 
+trailer
+<< /Size 11 /Root 1 0 R >>
+startxref
+1216
+%%EOF

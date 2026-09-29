@@ -17,6 +17,7 @@ pub mod annot_rotate;
 pub mod blend_space;
 pub mod field_outline;
 pub mod merge_runs;
+pub mod remove_ocr;
 pub mod repair_form_fonts;
 pub mod run_width;
 pub mod spots_flattened;

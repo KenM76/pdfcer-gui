@@ -116,6 +116,13 @@ fn remove_in(session: &mut EditSession) -> Result<Vec<String>, RemoveError> {
             format!("remove-ocr-layers-unfolded n={removed}")
         });
     }
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!(
+            "remove-ocr-layers-applied removed={removed} pages={}",
+            pages.len()
+        )
+    });
     Ok(vec![match failure {
         None => t::layers_removed(removed, pages.len()),
         Some(e) => {
