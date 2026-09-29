@@ -36,7 +36,7 @@ mod tests {
         s.word_gap_ratio = 0.42;
         s.unmappable_code = UnmappableCode::Omit;
         s.actual_text = ActualTextPrecedence::Glyphs;
-        s.cmyk_intent = CmykIntent::Calibrated;
+        s.cmyk_intent = CmykIntent::NeutralBlack;
         s.mask_resample = MaskResample::Bilinear;
         s.image_minify = MinifyFilter::Smooth;
         s.cmyk_jpeg_polarity = CmykJpegPolarity::InvertOnApp14;
@@ -97,7 +97,7 @@ mod tests {
             "render options ignore every setting fed to them"
         );
         for expected in [
-            "Calibrated",
+            "NeutralBlack",
             "Bilinear",
             "Smooth",
             "InvertOnApp14",
