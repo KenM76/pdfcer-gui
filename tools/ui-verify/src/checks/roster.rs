@@ -391,7 +391,9 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(double_click_text_scripted::DoubleClickTextWithoutTheMouse),
         // File ▸ Export ▸ Tables… in all three formats, with no OS input.
         Box::new(export_tables_scripted::ExportTablesWithoutTheMouse),
+        Box::new(export_tables_scripted::ExportTablesFollowsTheTags),
         Box::new(export_word_scripted::ExportWordWithoutTheMouse),
+        Box::new(export_word_scripted::ExportWordFollowsTheTags),
         Box::new(purge_passwords_scripted::StoredPasswordsRemovedWithoutTheMouse),
         Box::new(bates_scripted::BatesNumberingWithoutTheMouse),
         Box::new(measure_place_scripted::MeasurePlaceWithoutTheMouse),

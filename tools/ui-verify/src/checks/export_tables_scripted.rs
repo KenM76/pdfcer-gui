@@ -2,6 +2,8 @@
 //! ruled table in `fixtures/ruled-table.pdf` as CSV, as an Excel workbook and
 //! as an OpenDocument spreadsheet, each chosen by clicking its radio, on a
 //! window placed off the desktop and driven through the scripted pointer.
+//! `export_tables_follows_the_tags` exports the unruled table of
+//! `fixtures/tagged-report.pdf` as CSV and Excel, which only its tags yield.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/export_tables_scripted.md`.
 
@@ -27,7 +29,7 @@ const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an envir
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 
 /// Each format: its radio key, and bytes the file must contain.
-const FORMATS: [(&str, &[u8]); 3] = [
+const FORMATS: &[(&str, &[u8])] = &[
     ("csv", b"Item,Qty,Mass"),
     ("xlsx", b"xl/worksheets/"),
     ("ods", b"application/vnd.oasis.opendocument.spreadsheet"),
@@ -47,7 +49,13 @@ impl Check for ExportTablesWithoutTheMouse {
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         let mut report = CheckReport::new(self.name(), self.defect());
-        match drive(ctx, &mut report) {
+        let run = Run {
+            fixture: "ruled-table.pdf",
+            stem: "export-tables",
+            formats: FORMATS,
+            expect: &[("structure", "untagged")],
+        };
+        match drive(ctx, &mut report, &run) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
             Err(why) => report.from_error(&why),
@@ -55,7 +63,45 @@ impl Check for ExportTablesWithoutTheMouse {
     }
 }
 
-fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
+pub struct ExportTablesFollowsTheTags;
+
+impl Check for ExportTablesFollowsTheTags {
+    fn name(&self) -> &'static str {
+        "export_tables_follows_the_tags"
+    }
+
+    fn defect(&self) -> &'static str {
+        "File ▸ Export ▸ Tables… on a tagged PDF ignores the tables its tags state"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        // No rules are drawn, so table detection alone finds nothing.
+        let run = Run {
+            fixture: "tagged-report.pdf",
+            stem: "export-tables-tagged",
+            formats: &[("csv", b"Name,Qty"), ("xlsx", b"xl/worksheets/")],
+            expect: &[("structure", "tree"), ("structure_fallback", "none")],
+        };
+        match drive(ctx, &mut report, &run) {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+/// One file exported in several formats.
+struct Run {
+    fixture: &'static str,
+    /// Names this run's artifacts.
+    stem: &'static str,
+    formats: &'static [(&'static str, &'static [u8])],
+    /// Fields every `export-tables` line must carry.
+    expect: &'static [(&'static str, &'static str)],
+}
+
+fn drive(ctx: &CheckContext, report: &mut CheckReport, run: &Run) -> Result<Option<String>> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -72,18 +118,18 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
     let pdf = crate::fixture::workspace_root()
         .join("fixtures")
-        .join("ruled-table.pdf");
+        .join(run.fixture);
     if !pdf.is_file() {
         return Ok(Some(format!(
-            "the table fixture is not at {}; it is committed, so this is a broken checkout.",
+            "the fixture is not at {}; it is committed, so this is a broken checkout.",
             pdf.display()
         )));
     }
     // One path for every export; it is removed before each, so a file left
     // by the previous format cannot pass for this one's.
-    let target = ctx.out("export-tables.out");
+    let target = ctx.out(&format!("{}.out", run.stem));
 
-    let mut spec = LaunchSpec::new(&exe, ctx.out("export-tables-scripted.trace.txt"));
+    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{}-scripted.trace.txt", run.stem)));
     spec.pdf = Some(pdf);
     spec.env.push((
         ctx.profile.diag_env.0.to_owned(),
@@ -98,8 +144,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    let pointer =
-        ScriptedPointer::attach(&mut spec, ctx.out("export-tables-scripted.pointer.txt"))?;
+    let pointer = ScriptedPointer::attach(
+        &mut spec,
+        ctx.out(&format!("{}-scripted.pointer.txt", run.stem)),
+    )?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
@@ -125,7 +173,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         Ok(())
     };
 
-    for (format, needle) in FORMATS {
+    for &(format, needle) in run.formats {
         let _ = std::fs::remove_file(&target);
         if target.exists() {
             return Err(Error::new(format!(
@@ -169,8 +217,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
         if line.get("tables") != Some("1") {
             return Ok(Some(format!(
-                "the fixture holds one ruled table and the export reports `{}`.",
-                line.raw
+                "{} holds one table and the export reports `{}`.",
+                run.fixture, line.raw
+            )));
+        }
+        if let Some((key, want)) = run.expect.iter().find(|(k, v)| line.get(k) != Some(v)) {
+            return Ok(Some(format!(
+                "{format}: {} should export with `{key}={want}`; it traced `{}`.",
+                run.fixture, line.raw
             )));
         }
         let bytes = std::fs::read(&target).map_err(|e| {
@@ -194,7 +248,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
         if format != "csv" && line.get("numbers").is_none_or(|n| n == "0") {
             return Ok(Some(format!(
-                "{format}: the table holds four unambiguous numbers and the export wrote \
+                "{format}: the table holds unambiguous numbers and the export wrote \
                  none as a number: `{}`.",
                 line.raw
             )));

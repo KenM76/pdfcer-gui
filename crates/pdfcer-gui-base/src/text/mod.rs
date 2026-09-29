@@ -84,6 +84,8 @@ pub mod export_dxf;
 pub mod export_form;
 /// Every word File ▸ Export ▸ Tables… shows, and its receipt.
 pub mod export_tables;
+/// What the Word and table exports add when they follow a tagged PDF's own structure.
+pub mod export_tagged;
 /// Every word the Export-text window shows, and every sentence a text
 /// export owes afterwards.
 pub mod export_text;

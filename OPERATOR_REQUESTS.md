@@ -203,7 +203,9 @@ a LibreOffice spreadsheet, chosen in the window and remembered; driven
 off-screen in all three. File ▸ Export ▸ Word document… writes the whole
 document as a `.docx` — headings, paragraphs, lists, tables as Word tables,
 the repeated header and footer as Word's own with a live page number — and
-the receipt counts what was guessed; driven off-screen. Other word-processor
+the receipt counts what was guessed; driven off-screen. On a tagged PDF both
+exports follow the file's own tags for headings, paragraphs, lists and
+tables, and say so in the receipt; driven off-screen. Other word-processor
 formats (.odt, .rtf) are not built; the engine has no writer for them.
 
 ## O258 — **FILED, designed** — an LLM can drive the open document, off by default, asking him the first time one tries

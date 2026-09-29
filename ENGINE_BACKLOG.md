@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **54 of 243** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `wanted` — a real gap — **53 of 244** <!-- counted by tools/walk-engine-backlog.py, 2026-09-29; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -74,7 +74,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Organise `/Order` folders** — add/rename/delete a folder, move a layer in or out, reorder; `EditSession::add_layer_folder`, `EditSession::rename_layer_folder`, `EditSession::delete_layer_folder`, `EditSession::move_layer_node` | **wanted; in the pin, not yet wired.** Each returns a `LayerOrderOutcome` — `changed`, the node's new `path`, and `follows_layer` — as one `CommandKind::EditLayerOrder` undo entry. It needs the folder tree above first, since a folder cannot be edited in a panel that does not show one: then a New folder button, rename in place, Delete on a folder row, and dragging a row into, out of or along a folder. Refusals: `EditError::NotALayerFolder`, `EditError::LayerOrderNotEditable`, `EditError::LayerOrderInexpressible`, `EditError::LayerOrderPathNotFound`. |
 | **Choose a layer when adding new content** — `paste_objects_on_layer`, `NewImage::on_layer`, `AddTextRequest::on_layer`, and a `layer` field on the markup options | **wanted; in the pin, not yet wired.** The add-text, add-image and markup-as-content verbs this shell already calls each gain `layer: Option<ObjId>`; `None` is the unlayered verb, and the add and its placement are one undo entry. The surface is a *Draw onto layer* chooser beside the Edit-mode add tools and Paste, defaulting to none, listing `read_layers`' layers plus New layer…. A layer the add cannot use is refused as `AddTextError::Layer`, and as `AddTextError::LayerNeedsSession` outside an edit session. |
 | **Put an annotation (including a widget) onto a layer** — `EditSession::set_annotation_layer` | **wanted; in the pin, not yet wired.** One `CommandKind::SetAnnotationLayer` undo entry returning an `AnnotationLayerChange` — `before`, `after`, `changed`, the annotation's `subtype`, and `popup_written` when its pop-up moved with it. The surface is the selection: a *Layer* chooser in Properties for a selected annotation or form field, listing the document's layers plus *none*, and the same item on the right-click menu. |
-| **Read a tagged PDF's structure tree back** — `pdfcer_core::structure_tree::read_structure_tree`, CLI `extract-tags` | **wanted — the engine half of O257.** Word and spreadsheet export (O257) is to take headings, paragraphs, lists and tables from the tree a tagged PDF states, rather than guess them from loose lines. The reader is in the pin (G053 answered); the Word and spreadsheet writers take only a `DocumentLayout` and `Table`s, so using it needs a writer that takes the tree, asked as `G066` rather than a shell-local tree-to-layout mapping. Owed after that: the export reads the tree when the document is tagged and discloses off-canvas when it falls back to layout. |
 | **Put existing page content onto a layer** — `EditSession::set_objects_layer` | **wanted; in the pin, not yet wired.** Planned by `plan_set_layer`; one `CommandKind::SetObjectsLayer` entry returning an `ObjectsLayerChange` — `moved`, `unchanged`, `binding_added` with the `property_name` bound, and `disclosures`. The surface is the same *Layer* chooser, offered for a selection of page objects; the engine refuses tagged content (`VectorEditError::LayerSectionHoldsTaggedContent`), spans crossing nesting (`VectorEditError::LayerSectionCrossesNesting`) or left unbalanced (`VectorEditError::LayerSpanUnbalanced`), and objects carrying their own `/OC`, and each refusal is an off-canvas sentence. |
 | Scale page contents to a target size ("resize page contents") … | **wanted; in the pin, not yet wired.** The Page size window changes the sheet and leaves the drawing where it was; `EditSession::scale_pages` scales the drawing onto the new sheet, uniformly, `fit` (pad, centred) or `fill` (cover, crop), rewriting every present page box and carrying annotations, widgets and link destinations with it. What it takes: a "Scale the drawing to the new size" choice in that window beside the existing box-only resize, with Fit/Fill; one undo step; the page refusal for a page carrying ce dimensions worded by name, not greyed. |
 
@@ -154,7 +153,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 243** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `blocked` — waiting on something named — **2 of 244** <!-- counted by tools/walk-engine-backlog.py, 2026-09-29; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -172,7 +171,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 243** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 244** <!-- counted by tools/walk-engine-backlog.py, 2026-09-29; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -183,7 +182,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **15 of 243** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `declined` — deliberately no surface — **15 of 244** <!-- counted by tools/walk-engine-backlog.py, 2026-09-29; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -224,7 +223,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **172 of 243** <!-- counted by tools/walk-engine-backlog.py, 2026-09-28; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **174 of 244** <!-- counted by tools/walk-engine-backlog.py, 2026-09-29; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -428,7 +427,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 |---|---|
 | **Export detected tables to Excel (XLSX)** — `pdfcer_core::export::xlsx`, `write_xlsx` with `XlsxOptions` and `XlsxReport` | **shipped — File ▸ Export ▸ Tables… ▸ *Save as: Excel workbook*.** `app::actions::export_tables` detects on the chosen pages and calls `write_xlsx` with `XlsxOptions::default()` (its error, `pdfcer_core::export::PackageError`, re-exported from the private `pdfcer_core::export::ooxml_zip`, is shown by its own wording in the failure line); the receipt carries the report's numbers written, locale-ambiguous cells kept as text, dropped characters and cells cut or left out at Excel's limits, off-canvas (R8b). Driven by `export_tables_without_the_mouse`, which reads `format=xlsx numbers=4` and the package on disk. |
 | **Export detected tables to an OpenDocument spreadsheet (.ods)** — `pdfcer_core::export::ods::write_ods` with `OdsOptions` and `OdsReport` | **shipped — File ▸ Export ▸ Tables… ▸ *Save as: LibreOffice spreadsheet*.** `app::actions::export_tables` calls `write_ods` with `OdsOptions::default()` beside `write_xlsx`; the receipt carries `OdsReport`'s numbers written, locale-ambiguous cells kept as text, dropped characters and cells past Calc's limits, off-canvas (R8b). Driven by `export_tables_without_the_mouse`, which reads `format=ods numbers=4` and the package's mimetype on disk. |
-| **Word/Excel/ODS export can drive layout from a tagged PDF's structure tree instead of inferred layout** — `pdfcer_core::tagged_layout::layout_from_structure`, `TaggedLayoutOptions`, `StructureUse`, `TaggedLayoutReport`, `table_detect::tables_from_structure` (our `G066`) | **wanted — O257's last half.** File ▸ Export ▸ Word, Excel and ODS lay the document out from loose lines. With a tagged PDF they are to take headings, paragraphs, lists and tables from its tree (`StructureUse::Auto`), keep `detect_tables` for the fallback, and disclose in the receipt which source was used, the coverage, and the fallback reason (R8b). |
+| **Word/Excel/ODS export can drive layout from a tagged PDF's structure tree instead of inferred layout** — `pdfcer_core::tagged_layout::layout_from_structure`, `TaggedLayoutOptions`, `StructureUse`, `TaggedLayoutReport`, `table_detect::tables_from_structure` (our `G066`) | **shipped — File ▸ Export ▸ Word document… and Tables….** `app::actions::tagged` calls `layout_from_structure` under `StructureUse::Auto`; Word takes the result's layout in every case and the tree's tables when the tree is followed, else `detect_tables`; Tables reads the tree only when the catalog names a `/StructTreeRoot` (the read extracts every page), cuts it to the plan's pages with `retain_pages`, and falls back to `detect_tables_in_pages`. A tagged header is not counted as guessed. The receipt says the tags were followed and their coverage, or why not, and counts elements made paragraphs, nested tables flattened, stray table content and broken references (R8b). Driven by `export_word_follows_the_tags` and `export_tables_follows_the_tags` on `fixtures/tagged-report.pdf`, whose table has no rules; both fail on the previous release. |
+| **Read a tagged PDF's structure tree back** — `pdfcer_core::structure_tree::read_structure_tree`, CLI `extract-tags` | **shipped — the input to Word and Tables export.** `app::actions::tagged::lay_out` reads the tree and hands it to `layout_from_structure` (row above). The table export calls it only when the catalog names `/StructTreeRoot`, because the read extracts every page; the cheaper probe is asked as `G067`. |
 | **Export flowing text to Word (DOCX)** — `pdfcer_core::export::docx`, `write_docx` with `DocxOptions`, `DocxReport` and `DocxOutput` | **shipped — File ▸ Export ▸ Word document….** `app::actions::export_word` lays the whole document out with `block_layout::analyze_layout`, finds tables with `detect_tables`, and calls `write_docx` with `DocxOptions::default()`; no window. It refuses before the picker when no page has text. The receipt carries the report's pages, headings, paragraphs and tables, styles inferred, the running header and footer moved to Word's own, variants dropped, over-wide tables and dropped characters, off-canvas (R8b). Driven by `export_word_without_the_mouse`, which reads `tables=1` and the package's main part on disk. Our O257's remaining half. |
 | **Limit table detection to chosen pages** — `table_detect::detect_tables_in_pages` in `pdfcer_core` | **shipped — File ▸ Export ▸ Tables… ▸ *Current page* / *All pages*.** `app::actions::export_tables` passes the plan's pages to `detect_tables_in_pages`, so *Current page* reads one page and the receipt's too-dense and unreadable counts are about the pages chosen. Driven by `export_tables_without_the_mouse` (current page of a one-page fixture). |
 | **SVG export can keep text as real `<text>`, font embedded** … — `SvgText::KeepText` / `SvgText::Outlines`, `SvgTextOutcome` | **shipped — Export image › *Text: keep as text*, shown for SVG and EMF only, off by default and remembered as `export_image_keep_text`.** Our G033. The outcome is disclosed on the status line: runs kept, fonts embedded, and each nonzero fallback reason (`SvgTextOutcome::fallback_not_sfnt`, `fallback_paint`, `fallback_unmapped`, `fallback_geometry`, `fallback_font_build`, `fallback_restricted`, `fallback_conflict`; `EmfTextOutcome::fallback_symbol_face` and its three shared reasons), with `runs_as_outlines()` as the total. The EMF sentence says a metafile carries no font. The clipboard keeps outlines. **Not driven.** |

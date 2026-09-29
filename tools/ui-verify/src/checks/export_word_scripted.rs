@@ -1,7 +1,10 @@
 //! `export_word_without_the_mouse` — File ▸ Export ▸ Word document… writes
 //! `fixtures/ruled-table.pdf` as a `.docx` holding its table as a Word table,
-//! on a window placed off the desktop and driven through the scripted
-//! pointer.
+//! found by its rules because the file is untagged.
+//! `export_word_follows_the_tags` — the same export of
+//! `fixtures/tagged-report.pdf`, whose one table has no rules, takes its
+//! heading and table from the file's tags. Both run on a window placed off the
+//! desktop and driven through the scripted pointer.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/export_word_scripted.md`.
 
@@ -39,7 +42,12 @@ impl Check for ExportWordWithoutTheMouse {
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         let mut report = CheckReport::new(self.name(), self.defect());
-        match drive(ctx, &mut report) {
+        let expect = [
+            ("tables", "1"),
+            ("structure", "layout"),
+            ("structure_fallback", "no-tree"),
+        ];
+        match drive(ctx, &mut report, "ruled-table.pdf", "export-word", &expect) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
             Err(why) => report.from_error(&why),
@@ -47,7 +55,49 @@ impl Check for ExportWordWithoutTheMouse {
     }
 }
 
-fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
+pub struct ExportWordFollowsTheTags;
+
+impl Check for ExportWordFollowsTheTags {
+    fn name(&self) -> &'static str {
+        "export_word_follows_the_tags"
+    }
+
+    fn defect(&self) -> &'static str {
+        "File ▸ Export ▸ Word document… on a tagged PDF ignores its tags and guesses headings and tables from the page"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        // The table has no rules, so only the tags can yield it.
+        let expect = [
+            ("structure", "tree"),
+            ("structure_fallback", "none"),
+            ("tables", "1"),
+            ("headings", "1"),
+        ];
+        match drive(
+            ctx,
+            &mut report,
+            "tagged-report.pdf",
+            "export-word-tagged",
+            &expect,
+        ) {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+/// Exports `fixture` to Word and requires each `expect` field on the
+/// `export-word` line. `stem` names this run's artifacts.
+fn drive(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    fixture: &str,
+    stem: &str,
+    expect: &[(&str, &str)],
+) -> Result<Option<String>> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -64,14 +114,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
     let pdf = crate::fixture::workspace_root()
         .join("fixtures")
-        .join("ruled-table.pdf");
+        .join(fixture);
     if !pdf.is_file() {
         return Ok(Some(format!(
-            "the table fixture is not at {}; it is committed, so this is a broken checkout.",
+            "the fixture is not at {}; it is committed, so this is a broken checkout.",
             pdf.display()
         )));
     }
-    let target = ctx.out("export-word.docx");
+    let target = ctx.out(&format!("{stem}.docx"));
     let _ = std::fs::remove_file(&target);
     if target.exists() {
         return Err(Error::new(format!(
@@ -80,7 +130,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    let mut spec = LaunchSpec::new(&exe, ctx.out("export-word-scripted.trace.txt"));
+    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}-scripted.trace.txt")));
     spec.pdf = Some(pdf);
     spec.env.push((
         ctx.profile.diag_env.0.to_owned(),
@@ -95,7 +145,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("export-word-scripted.pointer.txt"))?;
+    let pointer =
+        ScriptedPointer::attach(&mut spec, ctx.out(&format!("{stem}-scripted.pointer.txt")))?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
@@ -141,9 +192,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    if line.get("tables") != Some("1") {
+    if let Some((key, want)) = expect.iter().find(|(k, v)| line.get(k) != Some(v)) {
         return Ok(Some(format!(
-            "the fixture holds one ruled table and the Word export wrote `{}`.",
+            "{fixture} should export with `{key}={want}`; the Word export traced `{}`.",
             line.raw
         )));
     }

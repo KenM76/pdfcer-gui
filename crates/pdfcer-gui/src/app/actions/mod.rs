@@ -244,6 +244,8 @@ mod purge_passwords;
 /// other `Action` variant asks the document to
 /// change, and these two touch only shell state.
 pub mod selecting;
+/// A tagged PDF's own structure for the Word and table exports, with its disclosure.
+mod tagged;
 
 #[cfg(test)]
 mod tests;

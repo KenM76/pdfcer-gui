@@ -1,8 +1,10 @@
 //! # `app::actions::export_word` — File ▸ Export ▸ Word document…
 //!
 //! The whole document through `pdfcer_core::export::docx::write_docx` with
-//! the engine's defaults: reading-order blocks from `analyze_layout`, tables
-//! from `detect_tables`, page breaks kept. No window — there is nothing to
+//! the engine's defaults, page breaks kept. A tagged PDF whose tree owns
+//! enough of the text gives its own headings, paragraphs, lists and tables
+//! (`super::tagged`); otherwise blocks are inferred and tables come from
+//! `detect_tables`. No window — there is nothing to
 //! choose that the receipt cannot disclose afterwards. Every inference (a
 //! block's style guessed, running text moved to the header or footer, a table
 //! found by alignment) is counted in the receipt, off-canvas (R8b).
@@ -12,7 +14,6 @@
 
 use std::path::PathBuf;
 
-use pdfcer_core::block_layout::{self, LayoutOptions, PageGeometry};
 use pdfcer_core::export::docx::{self, DocxOptions, DocxReport};
 use pdfcer_core::table_detect::{self, BoundarySource, TableOptions};
 
@@ -25,8 +26,8 @@ pub(super) fn export(doc: &mut OpenDoc) {
 
     let options = doc.settings.extract_options();
     let view = doc.session.view();
-    let layout = match block_layout::analyze_layout(&view, &options, &LayoutOptions::default()) {
-        Ok(layout) => layout,
+    let structured = match super::tagged::lay_out(&view, &doc.pages, &options, None) {
+        Ok(structured) => structured,
         Err(error) => {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
@@ -37,6 +38,7 @@ pub(super) fn export(doc: &mut OpenDoc) {
         }
     };
 
+    let layout = &structured.layout;
     if layout.pages.iter().all(|page| page.blocks.is_empty()) {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
@@ -51,26 +53,12 @@ pub(super) fn export(doc: &mut OpenDoc) {
         return;
     }
 
-    // Geometry per LAYOUT page, by its own index: `write_docx` pairs
-    // `geometry[i]` with `layout.pages[i]`.
-    let geometry: Vec<PageGeometry> = layout
-        .pages
-        .iter()
-        .map(|page| {
-            doc.pages.get(page.page_index).map_or(
-                PageGeometry::new(
-                    pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
-                    0,
-                ),
-                |page| PageGeometry::new(page.crop_box, page.rotate),
-            )
-        })
-        .collect();
-
     // Tables are an improvement, not a precondition: a failed search still
     // writes the text, and says the tables arrived as paragraphs.
     let mut notes_after = Vec::new();
-    let (tables, aligned, dense, unreadable) =
+    let (tables, aligned, dense, unreadable) = if structured.followed() {
+        (structured.tables.clone(), 0, 0, 0)
+    } else {
         match table_detect::detect_tables(&view, &options, &TableOptions::default()) {
             Ok(found) => {
                 let aligned = found
@@ -86,7 +74,8 @@ pub(super) fn export(doc: &mut OpenDoc) {
                 notes_after.push(t::tables_not_searched(&error.to_string()));
                 (Vec::new(), 0, 0, 0)
             }
-        };
+        }
+    };
 
     let suggested = suggested_path(&doc.path);
     let crate::app::files::Picked::Path(target) =
@@ -99,17 +88,23 @@ pub(super) fn export(doc: &mut OpenDoc) {
         return;
     };
 
-    let written = docx::write_docx(&layout, &geometry, &tables, &DocxOptions::default())
-        .map_err(|error| error.to_string())
-        .and_then(|out| {
-            std::fs::write(&target, &out.bytes)
-                .map(|()| out.report)
-                .map_err(|error| error.to_string())
-        });
+    let written = docx::write_docx(
+        layout,
+        &structured.geometry,
+        &tables,
+        &DocxOptions::default(),
+    )
+    .map_err(|error| error.to_string())
+    .and_then(|out| {
+        std::fs::write(&target, &out.bytes)
+            .map(|()| out.report)
+            .map_err(|error| error.to_string())
+    });
     match written {
         Ok(report) => {
-            trace_report(&report, aligned, &target);
+            trace_report(&report, aligned, &structured.report, &target);
             let mut notes = receipt(&report, &target);
+            notes.extend(super::tagged::notes(&structured.report));
             if aligned > 0 {
                 notes.push(tt::aligned_tables(aligned));
             }
@@ -173,14 +168,19 @@ fn receipt(report: &DocxReport, target: &std::path::Path) -> Vec<String> {
     notes
 }
 
-fn trace_report(report: &DocxReport, aligned: usize, target: &std::path::Path) {
+fn trace_report(
+    report: &DocxReport,
+    aligned: usize,
+    structure: &pdfcer_core::tagged_layout::TaggedLayoutReport,
+    target: &std::path::Path,
+) {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed
         format!(
             "export-word pages={} headings={} paragraphs={} list_items={} captions={} \
              inferred={} tables={} cells={} merged={} aligned={aligned} too_wide={} \
              header={} footer={} page_field={} running={} variants_dropped={} \
-             dropped_chars={} path={}",
+             dropped_chars={} {} path={}",
             report.pages,
             report.headings,
             report.paragraphs,
@@ -197,6 +197,7 @@ fn trace_report(report: &DocxReport, aligned: usize, target: &std::path::Path) {
             report.running_blocks,
             report.running_variants_dropped,
             report.characters_dropped,
+            super::tagged::trace_fields(structure),
             target.display(),
         )
     });
