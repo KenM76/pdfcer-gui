@@ -78,6 +78,6 @@ shell does not split paths from images.
 
 Each stage ships driven before the next starts.
 
-**Built:** Stage 1 except its chords — the panel, Edit ▸ Arrange, selection
-order, the arithmetic and one driven check. The keypad chords each need a
-command id of their own; they land with Ctrl+Shift+A.
+**Built:** Stage 1 except the keypad chords — the panel, Edit ▸ Arrange,
+Ctrl+Shift+A, selection order, the arithmetic and one driven check, which opens
+the panel by the chord. The keypad chords each need a command id of their own.

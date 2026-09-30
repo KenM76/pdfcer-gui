@@ -267,6 +267,8 @@ pub fn built_in() -> Shell {
         // means on the CANVAS — which is where an operator who has lost an
         // object off the sheet is pressing it.
         .with_binding("Ctrl+A", "edit.select_all")
+        // Inkscape's chord for its Align and Distribute dialog.
+        .with_binding("Ctrl+Shift+A", "edit.align")
         .with_binding("Ctrl+S", "file.save")
         .with_binding("Ctrl+Shift+S", "file.save_copy")
         .with_binding("Ctrl+Z", "edit.undo")

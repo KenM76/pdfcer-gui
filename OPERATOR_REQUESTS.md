@@ -290,7 +290,7 @@ Wanted: the whole Inkscape Align and Distribute set, reachable from its own plac
 - node align and distribute;
 - the Grid and Circular arrange tabs.
 
-**State: Stage 1 of 4 built and driven.** Edit ▸ Arrange ▸ *Align and Distribute* opens a panel with Inkscape's Align frame (six horizontal, six vertical buttons, text anchors included), its Distribute frame (five and five), *Relative to* with all seven choices (Page and Drawing alone when one object is selected) and *Move/align selection as group*. One press is one undo step. Driven: `align_left_moves_every_box_in_one_undo`, which checks each box's own distance. Not yet built: Ctrl+Shift+A and the keypad chords, Rearrange and Remove overlaps (Stage 2), the Grid and Circular tabs (Stage 3), node mode and on-canvas handles (Stage 4). The plan is `ALIGN_AND_DISTRIBUTE.md`.
+**State: Stage 1 of 4 built and driven.** Edit ▸ Arrange ▸ *Align and Distribute* opens a panel with Inkscape's Align frame (six horizontal, six vertical buttons, text anchors included), its Distribute frame (five and five), *Relative to* with all seven choices (Page and Drawing alone when one object is selected) and *Move/align selection as group*. Ctrl+Shift+A opens it. One press is one undo step. Driven: `align_left_moves_every_box_in_one_undo`, which opens the panel by the chord and checks each box's own distance. Not yet built: the keypad chords, Rearrange and Remove overlaps (Stage 2), the Grid and Circular tabs (Stage 3), node mode and on-canvas handles (Stage 4). The plan is `ALIGN_AND_DISTRIBUTE.md`.
 
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 

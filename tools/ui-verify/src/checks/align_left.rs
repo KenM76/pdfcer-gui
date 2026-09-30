@@ -138,15 +138,21 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    driver.click_at(session.frame()?.declared_center(item))?;
+    report.note(format!("the Edit tab offers `{ALIGN_ITEM}` at {item:?}"));
+    // The control is a toggle, so it is left unpressed: the panel is opened
+    // by its keyboard chord, which proves the binding and the control reach
+    // the same command.
+    driver.press_chord(&[vk::CONTROL, vk::SHIFT], u16::from(b'A'))?;
     session.settle(30);
     if declared(&session.trace()?, ui_rect, LEFT_BUTTON).is_none() {
         return Ok(Some(format!(
-            "★ `{ALIGN_ITEM}` was clicked and the panel published no `{LEFT_BUTTON}`: the \
-             control opens nothing, or the panel is mounted behind another tab. Trace: {}.",
+            "★ Ctrl+Shift+A was pressed and the panel published no `{LEFT_BUTTON}`: the chord \
+             is unbound, reaches another command, or the panel is mounted behind another tab. \
+             Trace: {}.",
             session.trace_path().display()
         )));
     }
+    report.note("★ Ctrl+Shift+A opened the Align and Distribute panel");
 
     // --- select the three boxes: click, then Shift-click twice -------------
     let trace = session.trace()?;

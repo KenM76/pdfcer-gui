@@ -605,6 +605,7 @@
         "Ctrl+O": "file.open",
         "Ctrl+P": "file.print",
         "Ctrl+S": "file.save",
+        "Ctrl+Shift+A": "edit.align",
         "Ctrl+Shift+C": "file.copy_page_text",
         "Ctrl+Shift+E": "edit.add_text",
         "Ctrl+Shift+S": "file.save_copy",
