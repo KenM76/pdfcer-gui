@@ -87,7 +87,7 @@ own structure (G066, G067 consumed). In order:
    prefs, `clipboard`, `protect` and the whole Find bar are in
    `pdfcer-gui-base`. What stays in `render` needs eframe's glow (`pressure`)
    or the app (`settle`). Every `text` file, the blank-document template
-   the redaction notes and the tagged-structure export helper and the export windows' remembered settings are in base; seven of the eight ribbon tabs
+   the redaction notes and the tagged-structure export helper and the export windows' remembered settings and the panel footer are in base; seven of the eight ribbon tabs
    are in base (View names an app action). Twelve Settings pages and
    `Draft` are in base `settingspages`; acrobat, fonts, display, nav and
    signatures stay (they read document or app state). Find the next

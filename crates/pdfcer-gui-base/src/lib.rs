@@ -361,6 +361,9 @@ pub mod taggedexport;
 /// What the export windows remember between jobs.
 pub mod exportremembered;
 
+/// A panel's controls pinned under its list, so no row moves when they appear.
+pub mod panelfooter;
+
 /// Exporting detected tables as spreadsheet cells.
 pub mod tableexport;
 

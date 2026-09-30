@@ -1,4 +1,4 @@
-# `panels::footer` — a panel's controls pinned under its list
+# `pdfcer-gui-base/panelfooter`
 
 **Rule:** a list panel draws nothing conditional above its rows. Anything that
 appears in answer to a gesture — the controls a selection unlocks, the reset
