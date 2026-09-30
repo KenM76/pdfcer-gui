@@ -52,11 +52,10 @@ channel: a reply is an input to *how* a thing is built, never to *which*. Each
 row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
-**Start here on `continue`.** The release tree `0a6f93b5` (engine `a8f7b266`)
-is published to OneDrive (`pdfcer-gui2`) and GitHub as `v0.5.0-dev.20260929.2`,
-packaged with `--verify` (4751 tests and the gates PASS) and smoke-launched
-off-screen clean. It adds Word and Tables export that follow a tagged PDF's
-own structure (G066, G067 consumed). In order:
+**Start here on `continue`.** The release tree `f544f3b4` (engine `5b4a302d`)
+was first published to OneDrive and GitHub as `v0.5.0-dev.20260930.1`,
+packaged with `--verify` (4822 tests and the gates PASS) and smoke-launched
+off-screen clean. It completes O263, Align and Distribute. In order:
 
 **O263, Align and Distribute: all four stages built and driven** (Align,
 Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting
