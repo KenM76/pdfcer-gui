@@ -64,7 +64,7 @@ shell does not split paths from images.
 | Nicely arrange connector network | **Not offered.** A PDF has no connectors: no object records that it joins two others, so there is never a network to arrange. R9: nothing is drawn for it. |
 | Remove overlaps | Ported (VPSC), with H and V gaps in points. |
 | Node mode | Align and distribute the entered object's selected anchors. |
-| On-canvas alignment handles | A third click on the selection cycles resize → rotate → align, when the panel's toggle is on. |
+| On-canvas alignment handles | With the panel's toggle on, nine handles inside the selection box of two or more objects; click aligns to that side of the selection area, Shift+click just outside. Not a third-click cycle: this canvas shows resize grips and the rotate handle together, so there is no cycle to extend. |
 | Grid tab | Ported, spacing in points. |
 | Circular tab | Parameterized works as Inkscape's. *First/last selected circle/ellipse/arc* takes a selected path whose shape is an ellipse, measured from its anchors. *Rotational centers* is the box centre, because a PDF object has no stored rotation centre. |
 
@@ -78,7 +78,23 @@ shell does not split paths from images.
 
 Each stage ships driven before the next starts.
 
-**Built:** Stages 1 and 2. The panel scrolls; Edit ▸ Arrange carries Align
+**Built:** Stages 1–4. The panel has three tabs — Align, Grid, Circular —
+and switches to node rows when anchors are selected at the Node rung. Grid
+lays the selection out in rows and columns (rows 0 = as square as possible),
+equal heights or widths, a nine-way anchor in the cell, fitted or set
+spacing in points. Circular arranges on a Parameterized ellipse (centre,
+radii, start and end angle, canvas points, y down) or on the first or last
+selected object when its shape is an ellipse, anchored by object centre or
+box, optionally turning each object to follow the arc — one
+`transform_objects_each` call. Node mode aligns the entered object's
+selected anchors on a vertical or horizontal line or spreads them, relative
+to last, first, middle, min or max — one `move_nodes` call; anchors selected
+on a second path are not moved, and the panel says so. *On-canvas alignment*
+draws nine handles inside the selection box of two or more objects: a click
+aligns to that side of the selection area, Shift+click just outside it; the
+handles sit inside the box, not in a resize/rotate/align click cycle,
+because this canvas shows its resize grips and rotate handle together.
+The panel scrolls; Edit ▸ Arrange carries Align
 and Distribute and the seven one-click aligns; Ctrl+Shift+A opens the panel;
 Ctrl+Alt+keypad 4/6/8/2/7/1/5 run the aligns, keypad or top row. Rearrange
 offers Exchange (selection, stacking, clockwise), Randomize and Unclump;

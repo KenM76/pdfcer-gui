@@ -19,6 +19,15 @@ use crate::app::state::OpenDoc;
 use crate::canvas::selection::SelectionLevel;
 use crate::text::panels::align as t;
 
+mod arrange;
+mod handles;
+/// The *On-canvas alignment* toggle.
+pub const ON_CANVAS_REGION: &str = "align.on_canvas"; // ui-text-exempt: diagnostic region name
+mod nodes;
+pub use arrange::{CircleSource, CircleUi, GridUi};
+pub use handles::{HANDLE_REGIONS, publish_box, show as show_handles};
+pub use nodes::NODE_REGIONS;
+
 /// The panel's whole extent.
 pub const REGION: &str = "align.panel"; // ui-text-exempt: diagnostic region name
 /// The horizontal Align row's buttons, left to right.
@@ -57,6 +66,29 @@ pub const REARRANGE_REGIONS: [&str; 5] = [
     "rearrange.3",
     "rearrange.4", // ui-text-exempt: diagnostic region names
 ];
+/// The tab strip: Align, Grid, Circular.
+pub const TAB_REGIONS: [&str; 3] = [
+    "align.tab.align",
+    "align.tab.grid",
+    "align.tab.circular", // ui-text-exempt: diagnostic region names
+];
+pub use arrange::{
+    CIRCLE_ARRANGE_REGION, CIRCLE_ROTATE_REGION, CIRCLE_SOURCE_REGIONS, GRID_ARRANGE_REGION,
+};
+
+/// The panel's three tabs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Tab {
+    #[default]
+    Align,
+    Grid,
+    Circular,
+}
+
+impl Tab {
+    const ALL: [Tab; 3] = [Tab::Align, Tab::Grid, Tab::Circular];
+}
+
 /// The Remove overlaps button.
 pub const REMOVE_OVERLAPS_REGION: &str = "overlaps.remove"; // ui-text-exempt: diagnostic region name
 
@@ -75,6 +107,14 @@ pub struct AlignUi {
     /// Presses of Randomize so far: each press's seed, so every press lands
     /// somewhere new and a replay of the same presses lands the same way.
     pub randomized: u64,
+    /// The tab showing.
+    pub tab: Tab,
+    pub grid: GridUi,
+    pub circle: CircleUi,
+    /// Node mode's *Relative to*.
+    pub node_rel: rearrange::NodeRelative,
+    /// *On-canvas alignment*: the nine handles inside the selection box.
+    pub on_canvas: bool,
 }
 
 impl Default for AlignUi {
@@ -86,6 +126,11 @@ impl Default for AlignUi {
             gap_x: 0.0,
             gap_y: 0.0,
             randomized: 0,
+            tab: Tab::Align,
+            grid: GridUi::default(),
+            circle: CircleUi::default(),
+            node_rel: rearrange::NodeRelative::default(),
+            on_canvas: false,
         }
     }
 }
@@ -317,13 +362,24 @@ pub fn plan(doc: &OpenDoc, m: &Measured, ops: &[Op], settings: AlignUi) -> Optio
             acc.1 += dy;
         }
     }
+    moves_action(doc, m, sum, first.gesture())
+}
+
+/// Canvas `deltas`, one per measured object, as one page-space
+/// [`VectorAction::MoveEach`], or `None` when every delta is negligible.
+fn moves_action(
+    doc: &OpenDoc,
+    m: &Measured,
+    deltas: Vec<(f64, f64)>,
+    gesture: &'static str,
+) -> Option<Action> {
     let sheet = doc.pages.get(m.page)?;
     // Canvas space is f32.
     #[allow(clippy::cast_possible_truncation)]
     let moves: Vec<(usize, f64, f64)> = m
         .objects
         .iter()
-        .zip(sum)
+        .zip(deltas)
         .filter(|(_, d)| !layout::negligible(*d))
         .filter_map(|(&i, (dx, dy))| {
             let d = crate::canvas::moving::page_delta(Vec2::new(dx as f32, dy as f32), sheet)?;
@@ -334,7 +390,7 @@ pub fn plan(doc: &OpenDoc, m: &Measured, ops: &[Op], settings: AlignUi) -> Optio
         VectorAction::MoveEach {
             page: m.page,
             moves,
-            gesture: first.gesture(),
+            gesture,
         }
         .into()
     })
@@ -371,11 +427,18 @@ pub fn body(ui: &mut Ui, doc: &OpenDoc, settings: &mut AlignUi, actions: &mut Ve
     egui::ScrollArea::vertical()
         .id_salt("align-panel") // ui-text-exempt: widget id
         .show(ui, |ui| contents(ui, doc, settings, actions));
+    // The pane as it stands, not the content scrolled inside it: this is
+    // where a wheel notch lands, however tall the tab's contents are.
+    crate::diag::ui_rect_visible(REGION, ui.min_rect(), ui.clip_rect());
 }
 
 /// The panel's frames, top to bottom.
 fn contents(ui: &mut Ui, doc: &OpenDoc, settings: &mut AlignUi, actions: &mut Vec<Action>) {
-    let top = ui.min_rect().min;
+    if doc.selection.level() == SelectionLevel::Node {
+        ui.label(t::nodes_heading());
+        nodes::body(ui, doc, &mut settings.node_rel, actions);
+        return;
+    }
     if doc.selection.annot().is_some() || doc.selected_field.is_some() {
         ui.label(t::not_content());
     }
@@ -386,11 +449,35 @@ fn contents(ui: &mut Ui, doc: &OpenDoc, settings: &mut AlignUi, actions: &mut Ve
     } else {
         t::selected_count(n)
     });
-
+    ui.horizontal(|ui| {
+        for (index, tab) in Tab::ALL.into_iter().enumerate() {
+            let response = ui.selectable_value(&mut settings.tab, tab, t::tab(index));
+            crate::diag::ui_rect_visible(TAB_REGIONS[index], response.rect, ui.clip_rect());
+        }
+    });
     ui.separator();
+    match settings.tab {
+        Tab::Align => align_tab(ui, doc, settings, n, actions),
+        Tab::Grid => arrange::grid_tab(ui, doc, &mut settings.grid, n, actions),
+        Tab::Circular => arrange::circular_tab(ui, doc, &mut settings.circle, n, actions),
+    }
+}
+
+/// The Align tab: Align, Distribute, Rearrange, Remove overlaps.
+fn align_tab(
+    ui: &mut Ui,
+    doc: &OpenDoc,
+    settings: &mut AlignUi,
+    n: usize,
+    actions: &mut Vec<Action>,
+) {
     ui.label(t::align_heading());
     ui.checkbox(&mut settings.as_group, t::as_group())
         .on_hover_text(t::as_group_tip());
+    let toggle = ui
+        .checkbox(&mut settings.on_canvas, t::on_canvas())
+        .on_hover_text(t::on_canvas_tip());
+    crate::diag::ui_rect_visible(ON_CANVAS_REGION, toggle.rect, ui.clip_rect());
     ui.horizontal(|ui| {
         ui.label(t::relative_to());
         let single = n == 1;
@@ -479,12 +566,6 @@ fn contents(ui: &mut Ui, doc: &OpenDoc, settings: &mut AlignUi, actions: &mut Ve
             pressed = Some(Op::RemoveOverlaps);
         }
     });
-
-    crate::diag::ui_rect_visible(
-        REGION,
-        egui::Rect::from_min_max(top, ui.min_rect().max),
-        ui.clip_rect(),
-    );
 
     if let Some(op) = pressed {
         crate::diag::trace(|| {

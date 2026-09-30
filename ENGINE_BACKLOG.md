@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **55 of 253** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `wanted` — a real gap — **56 of 255** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -126,8 +126,9 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | Detect an unencrypted wrapper (§7.6.7) and warn that the visible … | **wanted, and the cheapest row on O108's Security tab.** Nothing here detects the §7.6.7 wrapper. An unencrypted wrapper is a cover sheet standing in front of a document this reader cannot open, and pdfcer renders the cover in full, silently — an operator looking at a plausible page has no way to know they are not looking at the drawing. |
-| Transform several selected objects, each by its own matrix, as one command | **wanted — being consumed now by O263 Stage 3.** `EditSession::transform_objects_each` is what Align and Distribute › Circular with *Rotate objects* needs: each object translated onto the ellipse and turned about its own centre, one command and one undo step, all-or-nothing. The shell asked for it (`request_transform_objects_each.md`) rather than fold N `transform_objects` calls with `coalesce_last`, which is not all-or-nothing. |
-| PAdES B-LT — embed supplied validation material (certs/CRLs/OCSP) into `/DSS` … | **wanted — the natural next step after the Signatures panel's revocation line.** `EditSession::add_validation_material` writes certificates, CRLs and OCSP responses into `/DSS` as an incremental update, so a signature stays verifiable after its CA's servers are gone. The shell would offer it on the Signatures panel as *Add validation evidence…*: pick CRL/OCSP/certificate files, show what was added, skipped or wrapped, then re-read each signature's revocation verdict. Needs a file picker for three kinds and the `/DocMDP` `/P 1` refusal worded. Not pinned yet: arrives with the next engine bump. |
+| Embed a supplied U3D/PRC model as a `/3D` annotation, with a poster … | **wanted — next after the O263 release.** `EditSession::add_3d_annotation` takes the model bytes and a poster; the shell owes a file picker and a placement rectangle, reached from Insert. The engine renders no 3D scene (refused on scope), so the canvas shows the poster, which is what saved content shows too. |
+| List and extract embedded 3D model streams … | **wanted — next after the O263 release.** `pdfcer_core::threed` (`list_3d`, `list_3d_with_notes`, `extract_3d`, `ThreeDArtwork`, `ThreeDFormat`, `ThreeDSource`, `Extracted3D`, `ThreeDError`, `MAX_3D_ARTWORKS`, `MAX_RICH_MEDIA_ENTRIES`) lists a document's U3D/PRC/STEP streams and hands their bytes back; the shell owes a list (beside Attachments is the natural home) with a Save-as per model. |
+| PAdES B-LT — embed supplied validation material (certs/CRLs/OCSP) into `/DSS` … | **wanted — the natural next step after the Signatures panel's revocation line.** Its module is `pdfcer_core::sign::ltv` (`DssReport`, `MaterialKind`); the undo entry is `CommandKind::AddValidationMaterial`, and its refusals — `EditError::NoSignatureToValidate`, `EditError::ValidationMaterialUnreadable`, `EditError::DssUnderNoChangesCertification` — each name an act the operator can take (sign first, pick a readable file, the certification forbids it), so the surface words them rather than falling to the funnel's Display. Next after the O263 release. `EditSession::add_validation_material` writes certificates, CRLs and OCSP responses into `/DSS` as an incremental update, so a signature stays verifiable after its CA's servers are gone. The shell would offer it on the Signatures panel as *Add validation evidence…*: pick CRL/OCSP/certificate files, show what was added, skipped or wrapped, then re-read each signature's revocation verdict. Needs a file picker for three kinds and the `/DocMDP` `/P 1` refusal worded. Not pinned yet: arrives with the next engine bump. |
 | Tell me what this document would run in Acrobat/Reader … | **wanted — the second row of O108's Security tab, and arguably the one with the most value per line.** *What would this document run if I opened it in Acrobat, and does it reach outside itself?* is the question an operator asks of a drawing that arrived by email. The engine answers it across every place an action can live — page open triggers, navigation nodes, annotation triggers, chains — without executing anything, and nothing here reads the census. |
 | **A pasted markup carries what was copied — dash, opacity, note, author and blend mode travel** | **wanted no longer — this is the same capability as the shipped row of the same opening words**, which carries the argument and the evidence. Kept as its own entry because the register deletes no row; read the sibling under `shipped` → *Annotations & markup*, and do not repeat the gap sentence from here. |
 | **Write a field's four advisory flags and its export mapping name (`/TM`)** — | **wanted, split, and the split is the useful part of this row.** `DoNotScroll` is the only one of the five an operator would ask for by name, because its effect is visible and destructive: text past the end of the box is clipped, not scrolled, so a field that looks fine on screen can print short. It belongs beside `/DV` and `/Q`, and pairs with `applied_autosize_bound`'s `Floor` case — auto-size warns the text will overflow, `DoNotScroll` decides whether that overflow is unscrollable or gone. `DoNotSpellCheck` is trivial and last. `FileSelect` gets no surface: setting it changes what the field IS, a submit hazard the engine discloses rather than refuses, and nothing in this shell submits — it earns a row the day `file.export_form_data` can say what such a field would send. `/TM`'s effect is invisible inside pdfcer and nobody has asked for it. |
@@ -155,7 +156,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 253** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `blocked` — waiting on something named — **2 of 255** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -173,7 +174,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 253** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 255** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -184,7 +185,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 253** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `declined` — deliberately no surface — **16 of 255** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -226,7 +227,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **180 of 253** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **181 of 255** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -234,6 +235,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| Transform several selected objects, each by its own matrix, as one command | **consumed** — Align and Distribute › Circular with *Rotate objects*. `pdfcer_core::vector::edit::plan_transform_each` is the engine's own planning half of that verb; the shell calls the verb, which runs it. `EditSession::transform_objects_each` is what Align and Distribute › Circular with *Rotate objects* needs: each object translated onto the ellipse and turned about its own centre, one command and one undo step, all-or-nothing. The shell asked for it (`request_transform_objects_each.md`) rather than fold N `transform_objects` calls with `coalesce_last`, which is not all-or-nothing. |
 | **Set or remove a page's `/CropBox`** — `EditSession::set_crop_boxes`, `CropBoxEdit::{Set, Reset}`, disclosing `overhangs_media_box` and the `CropBoxEntry` written | **shipped — Pages ▸ Transform ▸ Crop….** Four margins in millimetres, measured from the edges as the sheet is seen after `/Rotate`, become one `CropBoxEdit::Set`; all four at zero, or *Show whole sheet*, is `CropBoxEdit::Reset`. One `CommandKind::SetCropBoxes` undo entry however many sheets; a pick of mixed sizes or rotations offers only the whole sheet. Margins that leave nothing hide the commit button, so `EditError::CropBoxEmpty` is not reachable from the window. `app::actions::pagesize::crop` traces every `CropBoxEntry::ExplicitWritten`, `CropBoxEntry::BaseSpellingKept`, `CropBoxEntry::InheritedSoOwnEntryRemoved` and `CropBoxEntry::Absent` count and reports `overhangs_media_box` and an inherited removal off-canvas. `CropBoxChange`'s `page_index`, `before` and `after` are unread: the status line reports counts. Our request `G056`. |
 | **Block-level layout for an untagged page** — reading-order blocks; `block_layout::analyze_layout`, `block_layout::layout_text`, `BlockKind`, `BlockSource`, `LayoutOptions`; CLI `pdfcer extract-layout` | **shipped — File ▸ Export ▸ Text…, Order: Reading order.** `app::actions::export::text` passes the extraction and one `PageGeometry` per page (crop box and `/Rotate`) to `block_layout::layout_text`, drops `BlockKind::RunningHeader`, `BlockKind::RunningFooter` and `BlockKind::PageNumber` blocks, and joins the rest with a blank line. The receipt reports how many running lines were left out, and `LayoutDiagnostics::inferred` with the multi-column page count, off-canvas. As drawn stays the default. Still unread: Read aloud keeps content-stream order, and `BlockKind::Heading` levels are not a bookmark source. Our request `G054`. |
 | **Edit a layer's own properties** — name, default on/off, lock, Print/Export usage, Intent; `EditSession::set_layer_properties` | **shipped — Layers panel, Edit mode: right-click a row ▸ Layer properties….** The window sends only the fields changed as a `LayerEdit`, one `CommandKind::SetLayerProperties` undo entry, and traces the `LayerEditOutcome`'s `changed`. Print, Export and Intent start at *Leave as it is*, because `pdfcer_core::layers::Layer` does not report them (`request_layer_read_usage_intent.md`). `EditError::EmptyLayerName` and `EditError::LayerNotFound` are worded as `LayerRefusal`. Driven by `a_layer_can_be_made_renamed_and_deleted`. |

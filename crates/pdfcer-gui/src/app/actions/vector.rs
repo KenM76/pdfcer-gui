@@ -168,6 +168,15 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 move_each(doc, page, &moves, gesture);
             }
         }
+        VectorAction::TransformEach {
+            page,
+            transforms,
+            gesture,
+        } => {
+            if !transforms.is_empty() {
+                transform_each(doc, page, &transforms, gesture);
+            }
+        }
         VectorAction::DeleteLeavesInForm { page, leaves } => {
             if !leaves.is_empty() {
                 // No shell-side invalidation here either — see
@@ -695,6 +704,46 @@ fn move_each(
             .collect();
         format!(
             "move-each-applied gesture={gesture} page={page} moved={moved} of={n} moves={}",
+            asked.join(";")
+        )
+    });
+}
+
+/// Commit [`VectorAction::TransformEach`]: one `transform_objects_each` call,
+/// so one plan, one undo step, and all-or-nothing.
+fn transform_each(
+    doc: &mut crate::app::state::OpenDoc,
+    page: usize,
+    transforms: &[(usize, pdfcer_core::vector::Matrix)],
+    gesture: &'static str,
+) {
+    let n = transforms.len();
+    let mut transformed = 0_u64;
+    super::apply::vector_edit_on_page(doc, "transform-each", page, n, |session| {
+        session
+            .transform_objects_each(
+                page,
+                transforms,
+                pdfcer_core::vector::TransformOptions::default(),
+            )
+            .map(|outcome| {
+                transformed = outcome.objects_transformed;
+                outcome.disclosures
+            })
+    });
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        let asked: Vec<String> = transforms
+            .iter()
+            .map(|(i, m)| {
+                format!(
+                    "{i}:{:.4},{:.4},{:.4},{:.4},{:.1},{:.1}",
+                    m.a, m.b, m.c, m.d, m.e, m.f
+                )
+            })
+            .collect();
+        format!(
+            "transform-each-applied gesture={gesture} page={page} transformed={transformed} of={n} m={}",
             asked.join(";")
         )
     });

@@ -3,11 +3,16 @@
 //! panel, the two boxes not already at the left edge move, and one undo
 //! takes the whole alignment back. Then **Ctrl+Alt+keypad 5** centres all
 //! three on both axes, as one move and one undo step. Last, Rearrange ›
-//! **Exchange positions** cycles the three centres in selection order.
+//! **Exchange positions** cycles the three centres in selection order, and
+//! the Grid and Circular tabs arrange them (see [`arrange`]).
 //!
 //! Pinned to `fixtures/three-boxes.pdf`, whose provenance script lists the
 //! boxes. Relative to the selection area (the panel's default), box 0 is the
 //! leftmost and stays put, so the right answer is `moved=2 of=3`.
+
+mod arrange;
+mod handles;
+mod nodes;
 
 use crate::checks::driving::{
     SHELL_DIAG_ENV, click_mode_segment, declared, declared_or_in_overflow,
@@ -336,5 +341,20 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note("★★ Exchange positions cycled all three centres");
-    Ok(None)
+    driver.press_chord(&[vk::CONTROL], vk::Z)?;
+    session.settle(24);
+    if let Some(fail) = arrange::drive(&session, &driver, ui_rect, report)? {
+        return Ok(Some(fail));
+    }
+    driver.press_chord(&[vk::CONTROL], vk::Z)?;
+    session.settle(24);
+    if let Some(fail) = handles::drive(&session, &driver, ui_rect, report)? {
+        return Ok(Some(fail));
+    }
+    let trace = session.trace()?;
+    let mapping = CanvasMapping::from_trace(&trace, vocab, page, 0)?;
+    let box0 = session
+        .frame()?
+        .to_screen(mapping.doc_to_window(DocPoint::new(0, AIMS[0].0, AIMS[0].1))?);
+    nodes::drive(&session, &driver, ui_rect, box0, report)
 }

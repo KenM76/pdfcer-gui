@@ -277,7 +277,7 @@ updated to click-to-place but not run while you are using the PC. Also
 fixed: a quick run of picks ending in a double-click no longer removes the
 last point instead of finishing the circle.
 
-## O263 — **NOT BUILT — in progress** — a tab with everything Inkscape's Align and Distribute has
+## O263 — **BUILT AND DRIVEN — awaiting your verdict** — a tab with everything Inkscape's Align and Distribute has
 
 His words: *"Can we get a tab with exactly all the same functions and features of the alignment tab in inkscape?"*
 
@@ -290,7 +290,7 @@ Wanted: the whole Inkscape Align and Distribute set, reachable from its own plac
 - node align and distribute;
 - the Grid and Circular arrange tabs.
 
-**State: Stages 1 and 2 of 4 built and driven.** Edit ▸ Arrange ▸ *Align and Distribute* opens a scrolling panel. It has Inkscape's Align frame (six horizontal and six vertical buttons, text anchors included) and its Distribute frame (five and five). *Relative to* offers all seven choices, narrowing to Page and Drawing when one object is selected, and *Move/align selection as group* is there. The Rearrange frame has Exchange by selection, stacking or clockwise, Randomize and Unclump, and Remove overlaps takes H and V gaps. Ctrl+Shift+A opens the panel. Ctrl+Alt+keypad 4/6/8/2/7/1/5 run the seven one-click aligns, which are also buttons in Edit ▸ Arrange. One press is one undo step. Driven: `align_left_moves_every_box_in_one_undo` (Align left, keypad 5, Exchange, each checked box by box). Not yet built: the Grid and Circular tabs (Stage 3), node mode and on-canvas handles (Stage 4). The plan is `ALIGN_AND_DISTRIBUTE.md`.
+**State: all four stages built and driven.** Edit ▸ Arrange ▸ *Align and Distribute* opens a scrolling panel. It has Inkscape's Align frame (six horizontal and six vertical buttons, text anchors included) and its Distribute frame (five and five). *Relative to* offers all seven choices, narrowing to Page and Drawing when one object is selected, and *Move/align selection as group* is there. The Rearrange frame has Exchange by selection, stacking or clockwise, Randomize and Unclump, and Remove overlaps takes H and V gaps. Ctrl+Shift+A opens the panel. Ctrl+Alt+keypad 4/6/8/2/7/1/5 run the seven one-click aligns, which are also buttons in Edit ▸ Arrange. One press is one undo step. Driven: `align_left_moves_every_box_in_one_undo` (Align left, keypad 5, Exchange, each checked box by box). The Grid and Circular tabs, node mode and *On-canvas alignment* handles are built; the driven check now also covers Grid, Circular (refusing a box as an ellipse, then a rotated arrange as one step), the on-canvas left handle and node mode. Anchors on a second path are not moved by node mode, and the panel says so. The plan is `ALIGN_AND_DISTRIBUTE.md`.
 
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 

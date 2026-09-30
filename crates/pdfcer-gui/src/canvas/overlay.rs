@@ -278,6 +278,9 @@ pub fn draw_selection(
         // it, so a harness that has this rect has every grip and cannot
         // disagree with the application about where they are.
         crate::diag::ui_rect(SELECTION_OUTLINE_REGION, box_);
+        if grab.offer.resize {
+            crate::panels::align::publish_box(painter.ctx(), box_);
+        }
         // The SAME `offer` the hit test was given, which for page content is
         // `GripSet::all()` at the Object rung and `GripSet::default()` at every
         // inner one. Deliberately NOT re-spelled here as

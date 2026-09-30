@@ -98,6 +98,17 @@ pub enum VectorAction {
         /// The gesture, for the trace: `align`, `distribute`, `rearrange`.
         gesture: &'static str,
     },
+    /// Transform several page objects, **each by its own PAGE-space
+    /// matrix**, as one undo step, all-or-nothing — what Circular arrange
+    /// with *Rotate objects* commits.
+    TransformEach {
+        /// The 0-based page the indices are positions on.
+        page: usize,
+        /// `(index, matrix)` per object, indices unique.
+        transforms: Vec<(usize, Matrix)>,
+        /// The gesture, for the trace.
+        gesture: &'static str,
+    },
     /// Delete every selected object **inside a form XObject** —
     /// `EditSession::delete_objects_in_form`, `OPERATOR_REQUESTS.md` O70.
     ///

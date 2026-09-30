@@ -973,6 +973,9 @@ impl eframe::App for PdfcerApp {
         // the window that raised it.
         //
         self.floating_panels(&ctx, &mut actions);
+        if let Status::Open(doc) = &self.status {
+            crate::panels::align::show_handles(&ctx, doc, self.panels.align, &mut actions);
+        }
 
         // The unsaved-edits answer, drained IMMEDIATELY after the dialogs
         // draw and before anything else in this frame reads the document.

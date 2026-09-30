@@ -215,3 +215,234 @@ pub fn relative_choice(r: crate::alignlayout::RelativeTo) -> &'static str {
         RelativeTo::Selection => "Selection area",
     }
 }
+
+/// The panel's three tabs, as Inkscape names them.
+#[must_use]
+pub const fn tab(index: usize) -> &'static str {
+    match index {
+        0 => "Align",
+        1 => "Grid",
+        _ => "Circular",
+    }
+}
+
+/// Grid: the rows and columns labels.
+#[must_use]
+pub const fn rows() -> &'static str {
+    "Rows:"
+}
+
+/// Grid: the columns label.
+#[must_use]
+pub const fn columns() -> &'static str {
+    "Columns:"
+}
+
+/// Grid: the columns field's hover, since rows decide the shape.
+#[must_use]
+pub const fn columns_tip() -> &'static str {
+    "Follows from Rows and the number of objects selected, as in Inkscape."
+}
+
+/// Grid: equal-height rows.
+#[must_use]
+pub const fn equal_height() -> &'static str {
+    "Equal height"
+}
+
+/// Grid: equal-width columns.
+#[must_use]
+pub const fn equal_width() -> &'static str {
+    "Equal width"
+}
+
+/// The anchor-in-cell (Grid) or anchor-on-object (Circular) label.
+#[must_use]
+pub const fn anchor() -> &'static str {
+    "Anchor:"
+}
+
+/// Horizontal anchor choice `i` (0‥3).
+#[must_use]
+pub const fn anchor_h(i: u8) -> &'static str {
+    match i {
+        0 => "Left",
+        1 => "Centre",
+        _ => "Right",
+    }
+}
+
+/// Vertical anchor choice `i` (0‥3).
+#[must_use]
+pub const fn anchor_v(i: u8) -> &'static str {
+    match i {
+        0 => "Top",
+        1 => "Middle",
+        _ => "Bottom",
+    }
+}
+
+/// Grid: fit the grid into the selection box.
+#[must_use]
+pub const fn fit_spacing() -> &'static str {
+    "Fit into selection box"
+}
+
+/// Grid: set the gaps explicitly.
+#[must_use]
+pub const fn set_spacing() -> &'static str {
+    "Set spacing:"
+}
+
+/// The Arrange button on the Grid and Circular tabs, as `(label, tooltip)`.
+#[must_use]
+pub const fn arrange_button(circular: bool) -> (&'static str, &'static str) {
+    if circular {
+        ("Arrange", "Arrange selected objects on an ellipse or arc")
+    } else {
+        ("Arrange", "Arrange selected objects in a table")
+    }
+}
+
+/// Circular: where the ellipse comes from, choice `i` (0‥3).
+#[must_use]
+pub const fn circle_source(i: usize) -> &'static str {
+    match i {
+        0 => "Parameterized",
+        1 => "First selected circle/ellipse",
+        _ => "Last selected circle/ellipse",
+    }
+}
+
+/// Circular: the centre fields' label.
+#[must_use]
+pub const fn centre_xy() -> &'static str {
+    "Centre X/Y:"
+}
+
+/// Circular: the radius fields' label.
+#[must_use]
+pub const fn radius_xy() -> &'static str {
+    "Radius X/Y:"
+}
+
+/// Circular: the angle fields' label.
+#[must_use]
+pub const fn angles() -> &'static str {
+    "Angle start/end:"
+}
+
+/// Circular: the unit after an angle.
+#[must_use]
+pub const fn deg_suffix() -> &'static str {
+    "°"
+}
+
+/// Circular: the anchor choice that means the object's centre.
+#[must_use]
+pub const fn anchor_centre() -> &'static str {
+    "Object centre"
+}
+
+/// Circular: the anchor choice that means a point on the object's box.
+#[must_use]
+pub const fn anchor_box() -> &'static str {
+    "Point on bounding box"
+}
+
+/// Circular: rotate each object to face out.
+#[must_use]
+pub const fn rotate_objects() -> &'static str {
+    "Rotate objects"
+}
+
+/// Circular: the coordinate note under the fields.
+#[must_use]
+pub const fn circle_coords_note() -> &'static str {
+    "Points from the sheet's top-left corner, y down; 0° points right, 90° down."
+}
+
+/// Said off-canvas when the reference circle/ellipse is not one.
+#[must_use]
+pub const fn not_an_ellipse(first: bool) -> &'static str {
+    if first {
+        "The first selected object is not a circle or ellipse, so there is nothing to arrange on. \
+         Select the ellipse first, or use Parameterized."
+    } else {
+        "The last selected object is not a circle or ellipse, so there is nothing to arrange on. \
+         Select the ellipse last, or use Parameterized."
+    }
+}
+
+/// Node mode: how many anchors the node rows act on.
+#[must_use]
+pub fn nodes_selected(n: usize) -> String {
+    if n == 1 {
+        "1 node selected.".to_owned()
+    } else {
+        format!("{n} nodes selected.")
+    }
+}
+
+/// Node mode: anchors selected on other paths, which the node rows leave.
+#[must_use]
+pub fn nodes_elsewhere(n: usize) -> String {
+    format!(
+        "{n} more selected on another path; the node rows move the anchors of the path you \
+         entered first, one path at a time."
+    )
+}
+
+/// Node mode: what the anchors line up with.
+#[must_use]
+pub const fn node_relative(rel: crate::alignlayout::rearrange::NodeRelative) -> &'static str {
+    use crate::alignlayout::rearrange::NodeRelative;
+    match rel {
+        NodeRelative::Last => "Last selected",
+        NodeRelative::First => "First selected",
+        NodeRelative::Middle => "Middle of selection",
+        NodeRelative::Min => "Min value",
+        NodeRelative::Max => "Max value",
+    }
+}
+
+/// Node mode's four buttons, as `(label, tooltip)`, Inkscape's wording.
+#[must_use]
+pub const fn node_button(index: usize) -> (&'static str, &'static str) {
+    match index {
+        0 => (
+            "Vertical line",
+            "Align selected nodes to a common vertical line",
+        ),
+        1 => (
+            "Horizontal line",
+            "Align selected nodes to a common horizontal line",
+        ),
+        2 => ("Spread across", "Distribute selected nodes horizontally"),
+        _ => ("Spread down", "Distribute selected nodes vertically"),
+    }
+}
+
+/// Node mode's heading.
+#[must_use]
+pub const fn nodes_heading() -> &'static str {
+    "Nodes"
+}
+
+/// The on-canvas alignment toggle.
+#[must_use]
+pub const fn on_canvas() -> &'static str {
+    "On-canvas alignment"
+}
+
+/// The on-canvas alignment toggle's tooltip.
+#[must_use]
+pub const fn on_canvas_tip() -> &'static str {
+    "Show nine alignment handles inside the selection box while two or more objects are selected"
+}
+
+/// An on-canvas alignment handle's tooltip.
+#[must_use]
+pub const fn handle_tip() -> &'static str {
+    "Click: align the selected objects to this side of the selection. Shift+click: align them just outside it."
+}
