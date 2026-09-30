@@ -273,6 +273,7 @@ pub fn tab() -> Tab {
                     large("file.encrypt"),
                     large("file.permissions"),
                     large("file.sign").provided_by("signing"),
+                    large("file.add_validation_evidence").provided_by("signing"),
                 ],
             ),
             // ---------------------------------------------------------------

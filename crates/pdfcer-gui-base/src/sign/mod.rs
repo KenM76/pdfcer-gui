@@ -22,6 +22,9 @@ use crate::secret::Secret;
 /// The RFC 3161 server a B-T signature asks, and whether this build can.
 pub mod timestamp;
 
+/// Reading certificate, CRL and OCSP files for Add validation evidence….
+pub mod evidence;
+
 // ---------------------------------------------------------------------------
 // What the document says today
 // ---------------------------------------------------------------------------

@@ -500,7 +500,7 @@ pub(super) fn band() -> Vec<Command> {
         // 119 sits immediately below the derivative cluster (120-125: DXF, form
         // data, page text, document text, image, text) and immediately above
         // `file.import_form_data` at 118. The File band's genuinely free tokens
-        // after this one are 105-109, 114-117, 131-139, 143-149 and 153-159.
+        // after this one are 107-109, 114-117, 133-139, 143-149 and 153-159.
         command("file.stamp_collection", t::file_stamp_collection(), 119)
             .with_icon("stamp")
             .enabled_when("doc.pages"),
@@ -737,6 +737,16 @@ pub(super) fn band() -> Vec<Command> {
         command("file.sign", crate::text::sign::file_sign(), 128)
             .with_icon("sign")
             .enabled_when("doc.open"),
+        // Token 132. `doc.open`, not "signed": whether the document carries a
+        // signature is known only when pressed, and the refusal says so.
+        #[cfg(feature = "signing")]
+        command(
+            "file.add_validation_evidence",
+            crate::text::evidence::file_add_validation_evidence(),
+            132,
+        )
+        .with_icon("sign")
+        .enabled_when("doc.open"),
         command("file.print", t::file_print(), 130)
             .with_icon("print")
             .enabled_when("doc.open"),

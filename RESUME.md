@@ -62,6 +62,12 @@ Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting
 Ken's verdict. Measure: `ui-verify --check align_left_moves_every_box_in_one_undo`
 on `fixtures/three-boxes.pdf`.
 
+**Since that release, unpublished:** File ▸ Security ▸ *Add validation
+evidence…* (PAdES B-LT, `add_validation_material`), driven by
+`validation_evidence_added_without_the_mouse`. Next: `cargo update` the engine
+(3D embed and the insert page-label fix are in it), then 3D list/extract and
+embed, then the crate split.
+
 0. **The channel is triaged: 13 files stay in `open/`, each owing something.**
    G068 is in the pin and measured in Acrobat for new fields; forms saved
    earlier with an inline `/Helv` wait on G070 (open). The GUI still owes: G034's add-text half

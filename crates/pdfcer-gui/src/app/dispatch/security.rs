@@ -16,7 +16,11 @@ pub(crate) fn claims(id: &str) -> bool {
     // the string costs nothing because nothing can raise it.
     matches!(
         id,
-        "file.purge_password_values" | "file.encrypt" | "file.permissions" | "file.sign"
+        "file.purge_password_values"
+            | "file.encrypt"
+            | "file.permissions"
+            | "file.sign"
+            | "file.add_validation_evidence"
     )
 }
 
@@ -30,6 +34,10 @@ impl PdfcerApp {
     ) {
         // No window: the scan decides whether there is anything to do, and the
         // picker opens in the apply phase once the clean copy exists.
+        if id == "file.add_validation_evidence" {
+            actions.push(crate::app::actions::Action::AddValidationEvidence);
+            return;
+        }
         if id == "file.purge_password_values" {
             actions.push(crate::app::actions::Action::Write(
                 crate::app::actions::write::WriteAction::PurgePasswords,
@@ -80,6 +88,7 @@ mod tests {
             "file.encrypt",
             "file.permissions",
             "file.sign",
+            "file.add_validation_evidence",
         ]
         .into_iter()
         .filter(|id| reg.get(id).is_some())
@@ -92,7 +101,7 @@ mod tests {
         // supported builds.
         assert_eq!(
             registered.len(),
-            3 + usize::from(cfg!(feature = "signing")),
+            3 + 2 * usize::from(cfg!(feature = "signing")),
             "every registered Security command: {registered:?}"
         );
         for id in &registered {

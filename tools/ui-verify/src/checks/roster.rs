@@ -411,6 +411,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(export_word_scripted::ExportWordWithoutTheMouse),
         Box::new(export_word_scripted::ExportWordFollowsTheTags),
         Box::new(purge_passwords_scripted::StoredPasswordsRemovedWithoutTheMouse),
+        Box::new(evidence_scripted::ValidationEvidenceAddedWithoutTheMouse),
         Box::new(bates_scripted::BatesNumberingWithoutTheMouse),
         Box::new(measure_place_scripted::MeasurePlaceWithoutTheMouse),
         // Adjacent to that rung deliberately: the chunk boxes are its VISIBLE

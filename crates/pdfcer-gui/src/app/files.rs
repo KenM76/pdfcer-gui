@@ -445,6 +445,43 @@ pub fn pick_insert_source() -> Picked {
     answer
 }
 
+/// The seam for [`pick_validation_evidence`]: `;`-separated paths.
+#[cfg(feature = "signing")]
+pub const DIAG_EVIDENCE_FILES: &str = "PDFCER_DIAG_EVIDENCE_FILES"; // ui-text-exempt: an environment variable name, never displayed
+
+/// **Ask for the certificate, CRL and OCSP files Add validation evidence…
+/// embeds.** Empty means cancelled.
+#[cfg(feature = "signing")]
+#[must_use]
+pub fn pick_validation_evidence() -> Vec<PathBuf> {
+    let (source, answer) = if let Some(raw) = std::env::var_os(DIAG_EVIDENCE_FILES) {
+        let text = raw.to_string_lossy().into_owned();
+        let paths = text
+            .split(';')
+            .filter(|part| !part.is_empty())
+            .map(PathBuf::from)
+            .collect();
+        ("env", paths)
+    } else {
+        let t = crate::text::evidence::picker_title();
+        let paths = rfd::FileDialog::new()
+            .set_title(t)
+            .add_filter(
+                crate::text::evidence::picker_filter(),
+                &["cer", "crt", "der", "pem", "crl", "ocsp", "ors", "resp"],
+            )
+            .add_filter(crate::text::files::filter_all(), &["*"])
+            .pick_files()
+            .unwrap_or_default();
+        ("native", paths)
+    };
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("evidence-picked source={source} n={}", answer.len())
+    });
+    answer
+}
+
 /// **Ask for several PDFs to combine into a new one** —
 /// `OPERATOR_REQUESTS.md` O68.
 #[must_use]

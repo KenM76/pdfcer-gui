@@ -383,9 +383,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 175 → 176: `edit.form_repair_fonts` (G070), Edit ▸ Forms.
     // 176 → 177: `edit.align` (O263), Edit ▸ Arrange — the Align and Distribute panel.
     // 177 → 184: the seven one-click aligns beside it, for the Ctrl+Alt+keypad chords.
+    // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     assert_eq!(
         registry().len(),
-        184 + usize::from(cfg!(feature = "signing"))
+        184 + 2 * usize::from(cfg!(feature = "signing"))
     );
 }
 
@@ -777,9 +778,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 156 → 157: `pages.bates_remove` names `delete`.
     // 157 → 158: `edit.form_repair_fonts` names `embed-fonts`, shared with
     // `tools.embed_fonts`: both act on the document's fonts, on different tabs.
+    // +1 more with signing: `file.add_validation_evidence` names `sign`.
     assert_eq!(
         named,
-        158 + usize::from(cfg!(feature = "signing")),
+        158 + 2 * usize::from(cfg!(feature = "signing")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

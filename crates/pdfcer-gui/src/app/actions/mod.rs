@@ -156,6 +156,9 @@ pub mod textstyle;
 /// things".
 pub mod vector;
 
+/// File ▸ Security ▸ Add validation evidence….
+#[cfg(feature = "signing")]
+mod evidence;
 /// Edit ▸ Forms ▸ Repair fonts.
 mod formfonts;
 /// Create, change and delete a layer: `Action::Layer`.

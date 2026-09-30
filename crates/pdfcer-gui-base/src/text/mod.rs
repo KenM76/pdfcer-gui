@@ -209,6 +209,9 @@ pub mod unembed;
 pub mod security;
 pub mod shortcuts;
 
+/// File ▸ Security ▸ Add validation evidence….
+#[cfg(feature = "signing")]
+pub mod evidence;
 /// Every operator-facing string on the control that SIGNS a document — the
 /// write side of a subject whose read side is `text::security` (what a document
 /// says about its protection) and `text::trust` (what pdfcer could and could

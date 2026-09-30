@@ -188,6 +188,9 @@ pub enum Action {
     /// Edit ▸ Forms ▸ Repair fonts: every inline `/DR` font becomes an object
     /// of its own, as one undo entry. See `super::formfonts`.
     RepairFormFonts,
+    /// File ▸ Security ▸ Add validation evidence…: pick files, embed them in
+    /// `/DSS`, as one undo entry. See `super::evidence`.
+    AddValidationEvidence,
 
     /// **The verbs whose subject is a whole annotation** — move it, resize
     /// it, remove it.
