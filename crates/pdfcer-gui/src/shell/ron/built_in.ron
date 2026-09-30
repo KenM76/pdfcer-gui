@@ -315,6 +315,7 @@
                     caption: "Insert",
                     items: [
                         Command(id: "edit.insert_image", size: Large),
+                        Command(id: "edit.insert_3d", size: Large),
                         Command(id: "edit.attachments", size: Large),
                     ],
                     collapse: 4,

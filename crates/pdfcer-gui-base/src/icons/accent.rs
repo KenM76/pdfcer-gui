@@ -105,7 +105,8 @@ pub const fn accent(icon: Icon) -> Option<(Hue, &'static [usize])> {
         | Icon::NodesSpreadAcross
         | Icon::NodesSpreadDown
         | Icon::AlignCentre
-        | Icon::AlignPanel => (Hue::Primary, &[0]),
+        | Icon::AlignPanel
+        | Icon::Model3d => (Hue::Primary, &[0]),
         Icon::ExchangeSelection => (Hue::Primary, &[0, 1]),
         Icon::Undo | Icon::Redo | Icon::Split | Icon::Cut | Icon::FormFlatten => {
             (Hue::Primary, &[0, 1])

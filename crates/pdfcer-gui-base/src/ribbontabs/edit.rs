@@ -78,7 +78,11 @@ pub fn tab() -> Tab {
             group(
                 "insert",
                 ribbon::group_edit_insert(),
-                [large("edit.insert_image"), large("edit.attachments")],
+                [
+                    large("edit.insert_image"),
+                    large("edit.insert_3d"),
+                    large("edit.attachments"),
+                ],
             ),
             // Arrange: one Align and Distribute control where `RIBBON_IA.md`
             // once listed two, because Inkscape's is one panel holding both;

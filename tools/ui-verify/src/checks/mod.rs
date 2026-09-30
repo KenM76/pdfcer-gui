@@ -1015,6 +1015,9 @@ pub mod attachment_clip;
 /// symptom at all.
 pub mod attachments;
 
+/// A 3D model placed from the ribbon, listed, and saved back byte for byte.
+pub mod models;
+
 /// The harness's own ribbon search, driven: a command two scroll stops past
 /// the fold is still reachable. Its header records a HARNESS defect that
 /// reported the application as broken for eight days.

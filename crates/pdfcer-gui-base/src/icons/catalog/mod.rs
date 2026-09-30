@@ -1214,6 +1214,8 @@ pub enum Icon {
     AlignCentre,
     /// The Align and Distribute panel: line objects up, then space them evenly.
     AlignPanel,
+    /// A 3D model: a cube, its top face the accent.
+    Model3d,
 }
 
 // The mapping lives next door. `Icon::ALL`, `Icon::source` and `Icon::name`

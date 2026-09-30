@@ -921,3 +921,6 @@ pub(super) const ALIGN_CENTRE: &str = include_str!("assets/align-centre.svg");
 
 /// `align-panel.svg` — the art for [`super::Icon::AlignPanel`].
 pub(super) const ALIGN_PANEL: &str = include_str!("assets/align-panel.svg");
+
+/// `model-3d.svg` — the art for [`super::Icon::Model3d`].
+pub(super) const MODEL_3D: &str = include_str!("assets/model-3d.svg");

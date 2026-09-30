@@ -22,6 +22,8 @@ pub(super) fn apply(doc: &mut OpenDoc, action: AttachmentAction) {
         AttachmentAction::Detach { key, name } => detach(doc, &key, &name),
         AttachmentAction::SaveCopy { at, name } => save_copy(doc, &at, &name),
         AttachmentAction::Paste { clip, replacing } => paste(doc, &clip, replacing),
+        AttachmentAction::SaveModel { artwork } => super::models::save(doc, &artwork),
+        AttachmentAction::InsertModel { page } => super::models::insert(doc, page),
     }
 }
 

@@ -18,6 +18,9 @@ pub const DIAG_OPEN_PATH: &str = "PDFCER_DIAG_OPEN_PATH"; // ui-text-exempt: an 
 pub const DIAG_FONT_FILE_PATH: &str = "PDFCER_DIAG_FONT_FILE_PATH"; // ui-text-exempt: an environment variable name, never displayed
 pub const DIAG_ATTACH_PATH: &str = "PDFCER_DIAG_ATTACH_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
+/// The seam that answers the **3D model to insert** picker.
+pub const DIAG_MODEL_PATH: &str = "PDFCER_DIAG_MODEL_PATH"; // ui-text-exempt: an environment variable name, never displayed
+
 /// The seam that answers the **save an attachment out** dialog.
 pub const DIAG_ATTACHMENT_SAVE_PATH: &str = "PDFCER_DIAG_ATTACHMENT_SAVE_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
@@ -256,6 +259,32 @@ pub fn pick_attachment_source() -> Picked {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!("attach-picked source=native answer={answer:?}")
+    });
+    answer
+}
+
+/// **Ask which 3D model file to place on the page.**
+#[must_use]
+pub fn pick_model_source() -> Picked {
+    if let Some(answer) = from_env(std::env::var_os(DIAG_MODEL_PATH)) {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("model-picked source=env answer={answer:?}")
+        });
+        return answer;
+    }
+    let answer = rfd::FileDialog::new()
+        .set_title(crate::text::panels::models::insert_dialog_title())
+        .add_filter(
+            crate::text::panels::models::insert_filter(),
+            &["u3d", "prc"],
+        )
+        .add_filter(crate::text::files::filter_all(), &["*"])
+        .pick_file()
+        .map_or(Picked::Cancelled, Picked::Path);
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("model-picked source=native answer={answer:?}")
     });
     answer
 }

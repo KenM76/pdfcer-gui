@@ -221,6 +221,7 @@ impl Icon {
         Icon::NodesSpreadDown,
         Icon::AlignCentre,
         Icon::AlignPanel,
+        Icon::Model3d,
     ];
 
     /// The asset's SVG source.
@@ -404,6 +405,7 @@ impl Icon {
             Icon::NodesSpreadDown => assets::NODES_SPREAD_DOWN,
             Icon::AlignCentre => assets::ALIGN_CENTRE,
             Icon::AlignPanel => assets::ALIGN_PANEL,
+            Icon::Model3d => assets::MODEL_3D,
         }
     }
 
@@ -602,6 +604,7 @@ impl Icon {
             Icon::NodesSpreadDown => "nodes-spread-down",
             Icon::AlignCentre => "align-centre",
             Icon::AlignPanel => "align-panel",
+            Icon::Model3d => "model-3d",
         }
     }
 

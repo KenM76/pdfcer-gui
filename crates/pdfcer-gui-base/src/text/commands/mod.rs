@@ -466,6 +466,16 @@ pub const fn edit_insert_image() -> CommandText {
     CommandText::new("Image…", "Place an image file on this page.")
 }
 
+/// `edit.insert_3d`
+#[must_use]
+pub const fn edit_insert_3d() -> CommandText {
+    CommandText::new(
+        "3D model…",
+        "Place a U3D, PRC or STEP model on this page, as Acrobat's 3D tool does. \
+         Save one back out from the Attachments panel.",
+    )
+}
+
 /// `edit.attachments`
 #[must_use]
 pub const fn edit_attachments() -> CommandText {

@@ -35,6 +35,8 @@ pub mod face;
 /// strings here that describe a FILTER'S EFFECT on a list, and the wording
 /// rules for that job are written down with them.
 pub mod layersearch;
+/// The 3D models section of the Attachments panel.
+pub mod models;
 
 /// The Objects panel, and the wording of every object fact.
 pub mod objects;

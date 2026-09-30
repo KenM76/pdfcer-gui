@@ -62,7 +62,7 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // group that does not earn it.
     assert_eq!(
         Icon::ALL.len(),
-        178,
+        179,
         "the catalogue changed size: add the new variant to Icon::ALL and update this count"
     );
 }

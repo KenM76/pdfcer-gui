@@ -23,6 +23,9 @@ use crate::text::panels::attachments as t;
 /// Putting a file into the document — the writing half of this panel.
 pub mod attach;
 
+/// The 3D models section.
+pub mod models;
+
 /// The region the first row's Save button publishes.
 pub const REGION_SAVE: &str = "attachments.save"; // ui-text-exempt: trace region name, never displayed
 /// The region the first row's Remove button publishes. See [`REGION_SAVE`].
@@ -103,6 +106,7 @@ pub fn body(ui: &mut Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut V
     let existing: Vec<String> = listed.iter().map(|a| a.name.clone()).collect();
     clip::paste_control(ui, &existing, actions);
     ui.separator();
+    models::section(ui, doc, actions);
 
     if listed.is_empty() {
         ui.label(t::empty());

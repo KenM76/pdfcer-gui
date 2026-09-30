@@ -672,6 +672,23 @@ impl PdfcerApp {
                 }
                 images::insert(&mut self.dialogs, &self.status);
             }
+            // Insert ▸ 3D model: the picker runs in the apply arm, as Attach's does.
+            "edit.insert_3d" => {
+                if !self.capabilities().edit_content {
+                    crate::diag::trace(|| {
+                        // ui-text-exempt: diagnostic trace, never displayed.
+                        format!("command-declined id={id} reason=mode-cannot-edit-content")
+                    });
+                    return;
+                }
+                if let Status::Open(doc) = &self.status {
+                    actions.push(Action::Attachment(
+                        crate::app::actions::attachments::AttachmentAction::InsertModel {
+                            page: doc.view.page_index,
+                        },
+                    ));
+                }
+            }
             // **Export to DXF.** The FIRST entry in `reach`'s scaffold list
             // and one of three whose recorded reason was *"No recorded reason
             // anywhere. Scaffolded by omission, not by decision."* — while

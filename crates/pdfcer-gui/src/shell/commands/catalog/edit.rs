@@ -184,6 +184,9 @@ pub(super) fn band() -> Vec<Command> {
         command("edit.insert_image", t::edit_insert_image(), 410)
             .with_icon("insert-image")
             .enabled_when("doc.pages"),
+        command("edit.insert_3d", t::edit_insert_3d(), 412)
+            .with_icon("model-3d")
+            .enabled_when("doc.pages"),
         // **The paperclip is the right picture, and it must be a drawn one.**
         // `icons/assets/PROVENANCE.md` makes the assets directory the
         // operator's own work, so a home-made paperclip beside hand-drawn

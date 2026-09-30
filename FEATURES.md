@@ -6,7 +6,7 @@ authoritative for status.
 
 **Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.68.0, a git dependency on the local engine repository, pinned at **`37f02ba4`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
-**What is new in this build.** Edit › Align and Distribute (Ctrl+Shift+A)
+**What is new in this build.** Edit › Insert › *3D model…* places a U3D or PRC model on the page, and the Attachments panel lists every 3D model a document carries, with *Save model…* to write it out unchanged. pdfcer draws a placeholder picture; the model itself opens in a 3D-capable reader such as Acrobat. STEP files are refused with the advice to convert them. Edit › Align and Distribute (Ctrl+Shift+A)
 lines up, spaces and arranges selected objects: align to an edge or centre,
 distribute, match sizes, exchange positions, remove overlaps, lay out in a grid
 or round a circle, and align the nodes of one shape. Ctrl+Alt+keypad aligns in
@@ -174,6 +174,7 @@ than the number it produced last.
 - ✅ **Tool** — the panel that says what tool is active and what its options are
 - ✅ **Dimension groups** — create, rename, delete, recalibrate, restyle, and the **Draw into** picker, which is the control the feature had been missing. A group's unit is settable through `set_group_scale`, which takes a whole `NumberFormat`
 - ✅ **Attachments** — a PDF can carry whole files inside itself; `attach_file`, `detach_file`, `list_attachments_with_notes`, `extract_attachment` and `sanitize_attachment_name` are all reachable
+- ✅ **3D models** — Edit › Insert › *3D model…* places a U3D or PRC file on the current page (`add_3d_annotation`, one undo entry, the engine's placeholder picture shown; STEP refused by name); the Attachments panel lists every model (`list_3d_with_notes`) with *Save model…* (`extract_3d`, bytes as stored). Driven by `a_3d_model_is_placed_listed_and_saved_back`. Next: *Save as mesh (STL/OBJ)* once `pdfcer-3d` is a dependency, and a chosen poster picture
 - ✅ **Layers** — full `/RBGroups` radio semantics, locked-member handling, Reset to the document's own default
 - ✅ **Layer authoring** (Edit mode) — New layer, and a row's right-click Layer properties… (name, shown on open, lock, printing, exporting, purpose — opening on the file's own values, with "Leave as it is" for one pdfcer cannot name) and Delete layer… (keep the drawing or remove it); each one undo entry. Driven by `a_layer_can_be_made_renamed_and_deleted`
 - ✅ **Merge and flatten layers** (Edit mode) — right-click a row ▸ Merge into another layer…, and Flatten layers… (asking what becomes of layers hidden on open); each one undo entry. Driven by `layers_can_be_merged_and_flattened`

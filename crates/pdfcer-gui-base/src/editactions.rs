@@ -1132,4 +1132,20 @@ pub enum AttachmentAction {
         /// says whether pdfcer had to use a different one on disk.
         name: String,
     },
+    /// **Write one embedded 3D model's data to a file the operator picks**,
+    /// as stored (U3D, PRC or STEP), with only its compression undone.
+    ///
+    /// Carries the listing's own row; the apply arm re-lists and acts only on
+    /// an identical row, so a model that moved or vanished is refused.
+    SaveModel {
+        /// The row as the panel listed it.
+        artwork: pdfcer_core::threed::ThreeDArtwork,
+    },
+    /// **Pick a U3D, PRC or STEP file and place it on `page`** as a 3D
+    /// annotation, centred, one undo entry. The picker runs in the apply arm,
+    /// as it does for [`Self::Attach`].
+    InsertModel {
+        /// The 0-based page, frozen when the command ran.
+        page: usize,
+    },
 }

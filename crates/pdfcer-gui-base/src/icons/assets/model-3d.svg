@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- A 3D model: a cube seen from above one corner. Drawn for pdfcer; the accent is the first 1 shape(s), the top face. -->
+  <path d="M24 5L41 14L24 23L7 14Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M7 14L7 34L24 43L24 23" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M41 14L41 34L24 43" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
