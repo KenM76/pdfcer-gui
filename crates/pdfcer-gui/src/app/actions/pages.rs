@@ -226,11 +226,13 @@ pub(super) fn merge_into(doc: &mut OpenDoc, path: &Path) {
                     // the convention is what stops the third.
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
                     format!(
-                        "merge-document-applied pages={} fields={} renamed={} bookmarks={}",
+                        "merge-document-applied pages={} fields={} renamed={} bookmarks={} layers={} configs_dropped={}",
                         outcome.pages_merged,
                         outcome.fields_merged,
                         outcome.fields_renamed,
-                        outcome.outline_items_carried
+                        outcome.outline_items_carried,
+                        outcome.layers_merged,
+                        outcome.layer_configs_dropped
                     )
                 });
                 crate::text::pages::merged(&outcome)
@@ -732,6 +734,29 @@ mod tests {
     fn select_object_on(doc: &mut OpenDoc, page: usize) {
         use crate::panels::objects::provider::TargetId;
         doc.selection.marquee(page, &[TargetId::Object(0)], false);
+    }
+
+    /// **A merge that brings layers says so.** The count is the engine's;
+    /// this pins that the receipt reads it.
+    #[test]
+    fn merging_a_layered_file_names_its_layers() {
+        let mut doc = open_fixture(FOUR_PAGES);
+        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/layered-drawing.pdf");
+        let source = pdfcer_core::document::Document::load(&path).expect("the fixture loads");
+        let view = source.view();
+        let mut notes = Vec::new();
+        edit(&mut doc, |s| {
+            let outcome = s
+                .merge_document(&view, pdfcer_core::pageops::InsertPosition::End)
+                .expect("a plain merge succeeds");
+            assert!(outcome.layers_merged > 0, "{outcome:?}");
+            notes = crate::text::pages::merged(&outcome);
+        });
+        assert!(
+            notes.iter().any(|n| n.contains("layer(s) came across")),
+            "{notes:?}"
+        );
     }
 
     /// **A delete shortens the page vector, and the view follows it.**

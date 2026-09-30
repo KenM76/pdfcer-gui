@@ -564,6 +564,18 @@ pub fn merged(outcome: &pdfcer_core::edit::MergeOutcome) -> Vec<String> {
     if outcome.page_label_ranges > 0 {
         notes.push("Every page keeps the page number it showed in its own file.".to_owned());
     }
+    if outcome.layers_merged > 0 {
+        notes.push(format!(
+            "{} layer(s) came across. Each stays separate, even where a layer here has the same name, so hiding one never hides the other document's content.",
+            outcome.layers_merged
+        ));
+    }
+    if outcome.layer_configs_dropped > 0 {
+        notes.push(format!(
+            "{} alternate layer view(s) in the merged file were left behind: they name only that file's layers. Its default view came across.",
+            outcome.layer_configs_dropped
+        ));
+    }
     notes
 }
 
