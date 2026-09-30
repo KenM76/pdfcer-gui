@@ -251,6 +251,9 @@ pub mod status;
 /// already drawn. Everything in it is re-exported from [`textedit`], so no call
 /// site moved.
 pub mod editrefusal;
+/// Every sentence the text-editing tool shows: the refusals a caret can meet,
+/// and the disclosure the engine does not write for a pinned tail.
+pub mod textedit;
 /// The one-line tool status's own two strings — `OPERATOR_REQUESTS.md` O123.
 pub mod toolstatus;
 /// Whether a signature's signer can be trusted — and the four different

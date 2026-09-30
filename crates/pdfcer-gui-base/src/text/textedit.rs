@@ -21,10 +21,10 @@
 //! "right-aligned" and "rotated" are different facts about the operator's
 //! document and only one of them is something they chose.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/textedit.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/textedit.md`.
 
-use crate::canvas::textedit::Refusal;
-use crate::canvas::textedit::disposition::Reason;
+use crate::editmodel::disposition::Reason;
+use crate::editmodel::refusal::Refusal;
 use pdfcer_core::text_edit::BlockAlignment;
 
 // ===========================================================================

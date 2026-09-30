@@ -19,6 +19,8 @@ pub mod lines;
 /// The face, size and colour new page text is written in, kept in
 /// `egui::Memory`; its header says why there and not with the markup pen.
 pub mod pen;
+/// Why a click could not open a caret.
+pub mod refusal;
 // The byte-level proof that the untouched tail did not move, with an
 // `EditOptions::default()` run beside it as the falsifier. `#[cfg(test)]`
 // inside; it compiles to nothing in a release build.

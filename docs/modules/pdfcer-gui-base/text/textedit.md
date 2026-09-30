@@ -1,4 +1,4 @@
-# `pdfcer-gui/text/textedit`
+# `pdfcer-gui-base/text/textedit`
 
 ## Item notes
 
