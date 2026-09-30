@@ -1,4 +1,4 @@
-# `canvas::annotnodes::ink` — **a freehand mark's points, addressed two
+# `pdfcer-gui-base/inkaddress` — **a freehand mark's points, addressed two
 ways at once**
 
 ## The operator's report, and the day it stopped being a refusal

@@ -277,6 +277,21 @@ updated to click-to-place but not run while you are using the PC. Also
 fixed: a quick run of picks ending in a double-click no longer removes the
 last point instead of finishing the circle.
 
+## O263 — **NOT BUILT — in progress** — a tab with everything Inkscape's Align and Distribute has
+
+His words: *"Can we get a tab with exactly all the same functions and features of the alignment tab in inkscape?"*
+
+Wanted: the whole Inkscape Align and Distribute set, reachable from its own place:
+- **Align**, relative to the last selected, first selected, biggest or smallest object, the page, the drawing or the selection area, with *treat selection as group*;
+- the five horizontal and five vertical buttons, anchor edge to edge included;
+- text baselines;
+- **Distribute** by edges, centres, even gaps and baselines;
+- **Rearrange**: exchange positions (selection order, stacking order, clockwise), randomise, unclump, remove overlaps with gaps;
+- node align and distribute;
+- the Grid and Circular arrange tabs.
+
+**State:** nothing built. `RIBBON_IA.md` §5.4 has an Edit ▸ Arrange group with Align ⌄ and Distribute ⌄, registered as absent. The engine moves page objects (`move_objects`, `transform_objects`) and nodes (`move_nodes`).
+
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 
 > **Ken:** *"Also can we make it so everything about the dimensions show a live preview? Can we make it so when we click on a dimension, the end points on the connection side of the dimension can have their lengths adjusted? And when I click on the dimension text and drag it should live preview so that it is apparent I am just moving the dimension text. Also did we make it so we can change between radius and diameter, and make these easy to move and extend again with live preview."*

@@ -574,3 +574,9 @@ pub mod entry;
 
 /// Whether a page's crop box hides part of its sheet.
 pub mod pagebox;
+
+/// What a corner drag on a ce dimension or ink mark asks for.
+pub mod vertexintent;
+
+/// A freehand mark's points, addressed per stroke and flat at once.
+pub mod inkaddress;

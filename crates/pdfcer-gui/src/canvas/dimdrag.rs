@@ -381,32 +381,7 @@ pub struct VertexFrame<'a> {
     pub alt_held: bool,
 }
 
-/// **What a corner drag is asking for** — move that corner, add one after it,
-/// or take it away.
-///
-/// Derived from the armed tool and the modifiers held on the frame being drawn;
-/// see [`intent`] for the decision and the module header for why it is read
-/// live rather than sampled at the press.
-///
-/// Three variants rather than a `bool` pair, for [`DimensionPress`]'s own
-/// reason one module over: the three reach **three different engine verbs**,
-/// and the one thing that must never happen on this canvas is a gesture aimed
-/// at the wrong verb. A pair of booleans has a fourth state that means nothing
-/// and would have to be resolved somewhere.
-///
-/// [`DimensionPress`]: crate::canvas::gesture::DimensionPress
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum VertexIntent {
-    /// Reshape: the corner follows the pointer. `move_dimension_vertex`.
-    #[default]
-    Move,
-    /// Add a corner immediately **after** the grabbed one, at the drop point.
-    /// `insert_dimension_vertex`.
-    Insert,
-    /// Take the grabbed corner away. The drop point is ignored — a removal has
-    /// no destination. `remove_dimension_vertex`.
-    Remove,
-}
+pub use pdfcer_gui_base::vertexintent::VertexIntent;
 
 /// **What this frame's corner drag means**, from the armed tool and the live
 /// modifiers.

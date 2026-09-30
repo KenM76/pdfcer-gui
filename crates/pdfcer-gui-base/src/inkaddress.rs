@@ -1,12 +1,12 @@
-//! # `canvas::annotnodes::ink` — **a freehand mark's points, addressed two
+//! # `inkaddress` — **a freehand mark's points, addressed two
 //! ways at once**
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/annotnodes/ink.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/inkaddress.md`.
 
 use pdfcer_core::edit::InkEdit;
 use pdfcer_core::vector::Point;
 
-use crate::canvas::dimdrag::VertexIntent;
+use crate::vertexintent::VertexIntent;
 
 /// **Where each stroke of an `/InkList` sits in the flat anchor list.**
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -783,7 +783,7 @@ pub mod menu;
 
 /// **The stroke table of an `/Ink`** — flat anchor index ↔ `(stroke, point)`,
 /// the within-stroke segment list, and why every point is an anchor for now.
-pub mod ink;
+pub use pdfcer_gui_base::inkaddress as ink;
 
 #[cfg(test)]
 mod tests;
