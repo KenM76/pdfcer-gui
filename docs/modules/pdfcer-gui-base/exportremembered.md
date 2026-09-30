@@ -1,4 +1,4 @@
-# `pdfcer-gui/dialogs/export_remembered`
+# `pdfcer-gui-base/exportremembered`
 
 **What the three export windows remember between jobs** —
 `OPERATOR_REQUESTS.md` **O196**, the operator's words of 2026-09-13:
@@ -12,7 +12,7 @@ from what it is handed.
 
 # Why one file for three windows rather than three `remembered.rs`
 
-[`crate::dialogs::print::remembered`] is the precedent and it is one window,
+`pdfcer_gui::dialogs::print::remembered` is the precedent and it is one window,
 so it put its argument beside its projection. Here the projection is three
 different struct literals — an image format is nothing like a DXF unit — but
 **the argument is identical three times**, and an argument written out three
@@ -32,11 +32,11 @@ So the split is by *what varies*:
 Exporting the same page twice with the same answers is the commonest export
 there is, and rewriting the whole preferences file on each one buys nothing.
 The comparison is a plain `!=` on the group struct, which is why
-[`crate::app::prefs::ExportImagePrefs`] and its two siblings derive
+[`crate::prefs::ExportImagePrefs`] and its two siblings derive
 `PartialEq`.
 
 ⚠ The comparison is **per group**, not on the whole of
-[`crate::app::prefs::ExportPrefs`]. An operator who exports a DXF and then
+[`crate::prefs::ExportPrefs`]. An operator who exports a DXF and then
 an image must not have the image write suppressed because the DXF group is
 unchanged — and, in the other direction, a DXF export must not rewrite the
 file merely because the image group differs from what it was at startup.
@@ -90,7 +90,7 @@ what makes the assignment below a store rather than a clone.
 ⚠ **No `scale=` here, and its absence is the design rather than an
 oversight.** The DXF scale is derived per open from the page's own
 dimension groups and is deliberately not a remembered preference — see
-[`crate::app::prefs::ExportDxfPrefs`] for the argument. A trace key naming
+[`crate::prefs::ExportDxfPrefs`] for the argument. A trace key naming
 a value this function does not store would be the first place somebody
 looked when the scale failed to survive a restart, and it would tell them
 the opposite of the truth.

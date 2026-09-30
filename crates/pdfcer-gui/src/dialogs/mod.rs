@@ -42,7 +42,7 @@ pub mod export_image;
 /// token-not-`{:?}` rule for the trace) is one decision made once; only the
 /// projection differs, and that stays in each window beside the fields it
 /// reads.
-mod export_remembered;
+use pdfcer_gui_base::exportremembered as export_remembered;
 /// File ▸ Export ▸ Tables…
 pub mod export_tables;
 /// The Export-text window. Its header carries the record of what the

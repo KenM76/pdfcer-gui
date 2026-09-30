@@ -358,6 +358,9 @@ pub mod exporttext;
 /// A tagged PDF's own structure for the Word and table exports, with its disclosure.
 pub mod taggedexport;
 
+/// What the export windows remember between jobs.
+pub mod exportremembered;
+
 /// Exporting detected tables as spreadsheet cells.
 pub mod tableexport;
 

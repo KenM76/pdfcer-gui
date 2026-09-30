@@ -1,15 +1,13 @@
 //! **What the three export windows remember between jobs** —
 //! `OPERATOR_REQUESTS.md` **O196**, the operator's words of 2026-09-13:
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/export_remembered.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/exportremembered.md`.
 
-use crate::app::prefs::exporting;
-use crate::app::prefs::{
-    ExportDxfPrefs, ExportImagePrefs, ExportTablePrefs, ExportTextPrefs, Prefs,
-};
+use crate::prefs::exporting;
+use crate::prefs::{ExportDxfPrefs, ExportImagePrefs, ExportTablePrefs, ExportTextPrefs, Prefs};
 
 /// Persist the Export-image window's habits.
-pub(super) fn remember_image(habits: ExportImagePrefs, prefs: &mut Prefs) {
+pub fn remember_image(habits: ExportImagePrefs, prefs: &mut Prefs) {
     if prefs.export.image == habits {
         return;
     }
@@ -36,7 +34,7 @@ pub(super) fn remember_image(habits: ExportImagePrefs, prefs: &mut Prefs) {
 }
 
 /// Persist the Export-text window's habits.
-pub(super) fn remember_text(habits: ExportTextPrefs, prefs: &mut Prefs) {
+pub fn remember_text(habits: ExportTextPrefs, prefs: &mut Prefs) {
     if prefs.export.text == habits {
         return;
     }
@@ -58,7 +56,7 @@ pub(super) fn remember_text(habits: ExportTextPrefs, prefs: &mut Prefs) {
 }
 
 /// Persist the Export-tables window's habits.
-pub(super) fn remember_tables(habits: ExportTablePrefs, prefs: &mut Prefs) {
+pub fn remember_tables(habits: ExportTablePrefs, prefs: &mut Prefs) {
     if prefs.export.tables == habits {
         return;
     }
@@ -76,7 +74,7 @@ pub(super) fn remember_tables(habits: ExportTablePrefs, prefs: &mut Prefs) {
 }
 
 /// Persist the Export-DXF window's habits.
-pub(super) fn remember_dxf(habits: ExportDxfPrefs, prefs: &mut Prefs) {
+pub fn remember_dxf(habits: ExportDxfPrefs, prefs: &mut Prefs) {
     if prefs.export.dxf == habits {
         return;
     }
