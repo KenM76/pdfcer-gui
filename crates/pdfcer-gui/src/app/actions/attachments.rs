@@ -24,6 +24,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: AttachmentAction) {
         AttachmentAction::Paste { clip, replacing } => paste(doc, &clip, replacing),
         AttachmentAction::SaveModel { artwork } => super::models::save(doc, &artwork),
         AttachmentAction::InsertModel { page } => super::models::insert(doc, page),
+        AttachmentAction::SaveMesh { artwork } => super::models::save_mesh(doc, &artwork),
     }
 }
 

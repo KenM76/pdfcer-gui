@@ -1148,4 +1148,10 @@ pub enum AttachmentAction {
         /// The 0-based page, frozen when the command ran.
         page: usize,
     },
+    /// **Decode a listed PRC model and write its triangles as STL or OBJ**
+    /// to a file the operator picks.
+    SaveMesh {
+        /// The row as listed when the button was pressed.
+        artwork: pdfcer_core::threed::ThreeDArtwork,
+    },
 }

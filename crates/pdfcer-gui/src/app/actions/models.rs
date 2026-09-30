@@ -84,6 +84,156 @@ pub(super) fn save(doc: &mut OpenDoc, artwork: &ThreeDArtwork) {
     }
 }
 
+/// What [`mesh_bytes`] decoded.
+#[cfg(feature = "3d")]
+struct Meshed {
+    bytes: Vec<u8>,
+    meshes: usize,
+    triangles: usize,
+    skipped: usize,
+}
+
+/// Decode a PRC model's triangle meshes to STL, or OBJ when `obj`. The error
+/// is the sentence to show.
+#[cfg(feature = "3d")]
+fn mesh_bytes(data: &[u8], obj: bool) -> Result<Meshed, String> {
+    use pdfcer_3d::{PrcFile, Tessellation};
+    if !data.starts_with(b"PRC") {
+        return Err(t::mesh_not_prc().to_owned());
+    }
+    let prc = PrcFile::parse(data).map_err(|e| t::mesh_unreadable(&e.to_string()))?;
+    let (mut meshes, mut skipped, mut compressed) = (Vec::new(), 0usize, 0usize);
+    for structure in &prc.file_structures {
+        let found = structure
+            .tessellations()
+            .map_err(|e| t::mesh_unreadable(&e.to_string()))?;
+        for tessellation in found {
+            match tessellation {
+                Tessellation::Mesh(mesh) => meshes.push(mesh),
+                Tessellation::Compressed { .. } => {
+                    compressed += 1;
+                    skipped += 1;
+                }
+                _ => skipped += 1,
+            }
+        }
+    }
+    let triangles: usize = meshes.iter().map(|m| m.triangles.len()).sum();
+    if triangles == 0 {
+        return Err(t::mesh_empty(compressed));
+    }
+    let bytes = if obj {
+        pdfcer_3d::to_obj(&meshes).into_bytes()
+    } else {
+        pdfcer_3d::to_stl(&meshes).map_err(|e| t::mesh_unreadable(&e.to_string()))?
+    };
+    Ok(Meshed {
+        bytes,
+        meshes: meshes.len(),
+        triangles,
+        skipped,
+    })
+}
+
+/// Decode `artwork` and write its triangles as STL or OBJ, chosen by the
+/// picked file's ending.
+#[cfg(feature = "3d")]
+pub(super) fn save_mesh(doc: &mut OpenDoc, artwork: &ThreeDArtwork) {
+    let epoch = doc.edit_epoch;
+    let data = if list_3d_with_notes(&*doc.session).0.contains(artwork) {
+        extract_3d(&doc.session.view(), artwork)
+            .map(|e| e.data)
+            .map_err(|e| t::extract_failed(&e.to_string()))
+    } else {
+        Err(t::gone().to_owned())
+    };
+    let mut suggested = doc.path.clone();
+    let stem = doc
+        .path
+        .file_stem()
+        .map_or_else(String::new, |s| s.to_string_lossy().into_owned());
+    suggested.set_file_name(format!(
+        "{}.stl",
+        t::suggested_stem(&stem, artwork.page_index)
+    ));
+    let data = match data {
+        Ok(data) => data,
+        Err(said) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!("mesh-save-declined page={}", artwork.page_index)
+            });
+            super::record_note(epoch, said);
+            return;
+        }
+    };
+    let crate::app::files::Picked::Path(target) = crate::app::files::pick_mesh_target(&suggested)
+    else {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            "mesh-save-cancelled".to_owned()
+        });
+        return;
+    };
+    let obj = target
+        .extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case("obj"));
+    let meshed = match mesh_bytes(&data, obj) {
+        Ok(meshed) => meshed,
+        Err(said) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                "mesh-save-refused".to_owned()
+            });
+            super::record_note(epoch, said);
+            return;
+        }
+    };
+    match std::fs::write(&target, &meshed.bytes) {
+        Ok(()) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!(
+                    "mesh-saved obj={obj} bytes={} meshes={} triangles={} skipped={}",
+                    meshed.bytes.len(),
+                    meshed.meshes,
+                    meshed.triangles,
+                    meshed.skipped
+                )
+            });
+            let mut notes = vec![
+                t::mesh_saved(
+                    &target.display().to_string(),
+                    meshed.meshes,
+                    meshed.triangles,
+                ),
+                t::mesh_placement_note().to_owned(),
+            ];
+            if meshed.skipped > 0 {
+                notes.push(t::mesh_skipped(meshed.skipped));
+            }
+            super::record_edit_disclosure(Some(super::EditDisclosure { epoch, notes }));
+        }
+        Err(error) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!("mesh-save-failed kind={:?}", error.kind())
+            });
+            super::record_note(epoch, t::save_failed(&error.to_string()));
+        }
+    }
+}
+
+/// Without the `3d` feature the button is not drawn, so this is unreachable
+/// from the panel.
+#[cfg(not(feature = "3d"))]
+pub(super) fn save_mesh(_doc: &mut OpenDoc, _artwork: &ThreeDArtwork) {
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed
+        "mesh-save-declined reason=built-without-3d".to_owned()
+    });
+}
+
 /// Pick a U3D or PRC file and place it, centred, on `page`: one undo entry.
 pub(super) fn insert(doc: &mut OpenDoc, page: usize) {
     let crate::app::files::Picked::Path(source) = crate::app::files::pick_model_source() else {
@@ -190,5 +340,23 @@ mod tests {
         let extracted = extract_3d(&session.view(), &listed[0]).expect("it reads back");
         assert_eq!(extracted.data, data);
         assert!(!extracted.contradicts(listed[0].declared.as_ref()));
+    }
+
+    /// **The engine's square fixture meshes to a well-formed binary STL**, and
+    /// a non-PRC model is refused rather than written empty.
+    #[cfg(feature = "3d")]
+    #[test]
+    fn a_prc_square_meshes_and_u3d_is_refused() {
+        let Ok(square) = std::fs::read("D:/Dev/pdfcer/fixtures/synthetic/prc/square.prc") else {
+            return; // The engine corpus is absent on this machine.
+        };
+        let stl = super::mesh_bytes(&square, false).expect("the square decodes");
+        assert!(stl.triangles > 0);
+        let count = u32::from_le_bytes(stl.bytes[80..84].try_into().expect("four bytes"));
+        assert_eq!(count as usize, stl.triangles);
+        assert_eq!(stl.bytes.len(), 84 + 50 * stl.triangles);
+        let obj = super::mesh_bytes(&square, true).expect("the square decodes");
+        assert!(String::from_utf8_lossy(&obj.bytes).contains("\nf "));
+        assert!(super::mesh_bytes(b"U3D\0 not a prc", false).is_err());
     }
 }

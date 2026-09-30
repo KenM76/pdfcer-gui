@@ -183,6 +183,88 @@ pub fn inserted(format: &ThreeDFormat, page_index: usize) -> String {
     )
 }
 
+/// The row's second button, on a PRC model.
+#[must_use]
+pub fn mesh_button() -> &'static str {
+    "Save as mesh…"
+}
+
+/// Its tip.
+#[must_use]
+pub fn mesh_tooltip() -> &'static str {
+    "Write this PRC model's triangles as an STL or OBJ file, for a 3D printer, a mesh editor or a CAD import. Give the file an .obj ending for OBJ."
+}
+
+/// The mesh save dialog's title.
+#[must_use]
+pub fn mesh_dialog_title() -> &'static str {
+    "Save the 3D model as a mesh"
+}
+
+/// The STL filter name.
+#[must_use]
+pub fn mesh_filter_stl() -> &'static str {
+    "STL mesh"
+}
+
+/// The OBJ filter name.
+#[must_use]
+pub fn mesh_filter_obj() -> &'static str {
+    "Wavefront OBJ mesh"
+}
+
+/// Only PRC is decoded.
+#[must_use]
+pub fn mesh_not_prc() -> &'static str {
+    "Only a PRC model can be saved as a mesh; nothing was written. Save model… writes this one as it is stored."
+}
+
+/// The model could not be decoded.
+#[must_use]
+pub fn mesh_unreadable(detail: &str) -> String {
+    format!("pdfcer could not read this PRC model's shape: {detail}")
+}
+
+/// The model holds no triangles pdfcer can decode.
+#[must_use]
+pub fn mesh_empty(compressed: usize) -> String {
+    match compressed {
+        0 => "This model holds no triangle mesh; nothing was written.".to_owned(),
+        1 => "This model's mesh is stored compressed, which pdfcer does not decode yet; nothing was written.".to_owned(),
+        n => format!(
+            "This model's {n} meshes are stored compressed, which pdfcer does not decode yet; nothing was written."
+        ),
+    }
+}
+
+/// Written.
+#[must_use]
+pub fn mesh_saved(path: &str, meshes: usize, triangles: usize) -> String {
+    let parts = if meshes == 1 {
+        "1 part".to_owned()
+    } else {
+        format!("{meshes} parts")
+    };
+    format!("Saved {triangles} triangles in {parts} to {path}.")
+}
+
+/// Parts are not moved into place.
+#[must_use]
+pub fn mesh_placement_note() -> &'static str {
+    "Each part is written where the model file stores it; how the parts are positioned relative to one another is not applied."
+}
+
+/// Parts left out.
+#[must_use]
+pub fn mesh_skipped(skipped: usize) -> String {
+    match skipped {
+        1 => "One part is not a triangle mesh (wire lines, markup or a compressed mesh) and was left out.".to_owned(),
+        n => format!(
+            "{n} parts are not triangle meshes (wire lines, markup or compressed meshes) and were left out."
+        ),
+    }
+}
+
 /// The document's version predates the format.
 #[must_use]
 pub fn below_version(required: &str, document: &str) -> String {

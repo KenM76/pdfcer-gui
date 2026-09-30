@@ -11,6 +11,9 @@ use crate::text::panels::models as t;
 
 /// The region the first model's Save button publishes.
 pub const REGION_SAVE: &str = "models.save"; // ui-text-exempt: trace region name, never displayed
+/// The region the first PRC model's Save as mesh button publishes.
+#[cfg(feature = "3d")]
+pub const REGION_MESH: &str = "models.mesh"; // ui-text-exempt: trace region name, never displayed
 
 /// Draw the section; a document with no 3D content draws nothing.
 pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) {
@@ -33,20 +36,38 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) {
     for said in t::listing_notes(&notes) {
         ui.label(egui::RichText::new(said).small().weak());
     }
+    #[cfg(feature = "3d")]
+    let mut first_mesh = true;
     for (ordinal, artwork) in listed.iter().enumerate() {
         ui.label(t::row(artwork));
         if let Some(said) = t::source(artwork) {
             ui.label(egui::RichText::new(said).small().weak());
         }
-        let save = ui.button(t::save_button()).on_hover_text(t::save_tooltip());
-        if ordinal == 0 {
-            crate::diag::ui_rect_visible(REGION_SAVE, save.rect, ui.clip_rect());
-        }
-        if save.clicked() {
-            actions.push(Action::Attachment(AttachmentAction::SaveModel {
-                artwork: artwork.clone(),
-            }));
-        }
+        ui.horizontal(|ui| {
+            let save = ui.button(t::save_button()).on_hover_text(t::save_tooltip());
+            if ordinal == 0 {
+                crate::diag::ui_rect_visible(REGION_SAVE, save.rect, ui.clip_rect());
+            }
+            if save.clicked() {
+                actions.push(Action::Attachment(AttachmentAction::SaveModel {
+                    artwork: artwork.clone(),
+                }));
+            }
+            // Only PRC is decoded; a U3D row offers its bytes alone.
+            #[cfg(feature = "3d")]
+            if artwork.declared == Some(pdfcer_core::threed::ThreeDFormat::Prc) {
+                let mesh = ui.button(t::mesh_button()).on_hover_text(t::mesh_tooltip());
+                if first_mesh {
+                    crate::diag::ui_rect_visible(REGION_MESH, mesh.rect, ui.clip_rect());
+                    first_mesh = false;
+                }
+                if mesh.clicked() {
+                    actions.push(Action::Attachment(AttachmentAction::SaveMesh {
+                        artwork: artwork.clone(),
+                    }));
+                }
+            }
+        });
     }
     ui.separator();
 }

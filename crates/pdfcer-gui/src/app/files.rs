@@ -21,6 +21,9 @@ pub const DIAG_ATTACH_PATH: &str = "PDFCER_DIAG_ATTACH_PATH"; // ui-text-exempt:
 /// The seam that answers the **3D model to insert** picker.
 pub const DIAG_MODEL_PATH: &str = "PDFCER_DIAG_MODEL_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
+/// The seam that answers the **save a 3D model as a mesh** dialog.
+pub const DIAG_MESH_SAVE_PATH: &str = "PDFCER_DIAG_MESH_SAVE_PATH"; // ui-text-exempt: an environment variable name, never displayed
+
 /// The seam that answers the **save an attachment out** dialog.
 pub const DIAG_ATTACHMENT_SAVE_PATH: &str = "PDFCER_DIAG_ATTACHMENT_SAVE_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
@@ -312,6 +315,35 @@ pub fn pick_attachment_target(suggested: &std::path::Path) -> Picked {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!("attachment-save-picked source=native answer={answer:?}")
+    });
+    answer
+}
+
+/// **Ask where to write a 3D model's mesh.** An `.obj` ending chooses OBJ;
+/// anything else is STL.
+#[must_use]
+pub fn pick_mesh_target(suggested: &std::path::Path) -> Picked {
+    if let Some(answer) = from_env(std::env::var_os(DIAG_MESH_SAVE_PATH)) {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("mesh-save-picked source=env answer={answer:?}")
+        });
+        return answer;
+    }
+    let mut dialog = rfd::FileDialog::new()
+        .set_title(crate::text::panels::models::mesh_dialog_title())
+        .add_filter(crate::text::panels::models::mesh_filter_stl(), &["stl"])
+        .add_filter(crate::text::panels::models::mesh_filter_obj(), &["obj"]);
+    if let Some(dir) = suggested.parent().filter(|d| !d.as_os_str().is_empty()) {
+        dialog = dialog.set_directory(dir);
+    }
+    if let Some(name) = suggested.file_name() {
+        dialog = dialog.set_file_name(name.to_string_lossy());
+    }
+    let answer = dialog.save_file().map_or(Picked::Cancelled, Picked::Path);
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("mesh-save-picked source=native answer={answer:?}")
     });
     answer
 }

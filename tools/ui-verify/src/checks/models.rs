@@ -2,13 +2,14 @@
 //! Attachments panel and saves back out byte for byte**
 //!
 //! Drives the window off the desktop through the scripted pointer (no OS mouse
-//! or keyboard). The pickers are answered by `PDFCER_DIAG_MODEL_PATH` and
-//! `PDFCER_DIAG_ATTACHMENT_SAVE_PATH`. The model is a few bytes opening with
-//! the PRC signature: the engine checks the signature, not the geometry.
+//! or keyboard). The pickers are answered by `PDFCER_DIAG_MODEL_PATH`,
+//! `PDFCER_DIAG_ATTACHMENT_SAVE_PATH` and `PDFCER_DIAG_MESH_SAVE_PATH`. The
+//! model is the engine corpus's `square.prc`, a real PRC triangle mesh.
 //!
 //! Oracles: the `add-3d` funnel line (the engine wrote it), the
 //! `models-section count=1` census (the panel reads it back from the session),
-//! `model-saved` and the saved file's bytes against the source.
+//! `model-saved` and the saved file's bytes against the source, then
+//! `mesh-saved` and the STL's triangle count agreeing with its length.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, declared_in};
 use crate::checks::{Check, CheckContext};
@@ -27,10 +28,10 @@ const RIBBON_ITEM: &str = "ribbon.item.edit.insert_3d";
 const SAVE_REGION: &str = "models.save";
 const MODEL_ENV: &str = "PDFCER_DIAG_MODEL_PATH";
 const SAVE_ENV: &str = "PDFCER_DIAG_ATTACHMENT_SAVE_PATH";
+const MESH_ENV: &str = "PDFCER_DIAG_MESH_SAVE_PATH";
+const MESH_REGION: &str = "models.mesh";
 const DOC: &str = "D:/Dev/pdfcer/fixtures/synthetic/pageops/four-pages.pdf";
-/// A PRC signature and a payload long enough to show truncation.
-const MODEL: &[u8] =
-    b"PRC\x08\x00 pdfcer-gui driven check: a placeholder model, not geometry. 0123456789";
+const MODEL: &str = "D:/Dev/pdfcer/fixtures/synthetic/prc/square.prc";
 
 /// See the module documentation.
 pub struct AModelIsPlacedListedAndSavedBack;
@@ -42,7 +43,7 @@ impl Check for AModelIsPlacedListedAndSavedBack {
 
     fn defect(&self) -> &'static str {
         "Edit ▸ 3D model places nothing, or the placed model is not listed in the Attachments \
-         panel, or Save model writes different bytes"
+         panel, or Save model writes different bytes, or Save as mesh writes no well-formed STL"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -78,18 +79,25 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .vocab
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
-    if !std::path::Path::new(DOC).is_file() {
-        return Err(Error::new(format!(
-            "the engine corpus's four-page document is missing at {DOC}."
-        )));
+    for needed in [DOC, MODEL] {
+        if !std::path::Path::new(needed).is_file() {
+            return Err(Error::new(format!(
+                "the engine corpus's fixture is missing at {needed}."
+            )));
+        }
     }
+    let source_model =
+        std::fs::read(MODEL).map_err(|e| Error::new(format!("reading {MODEL}: {e}")))?;
     // Driven on a copy: the source belongs to the engine repository.
     let doc = ctx.out("models-source.pdf");
     std::fs::copy(DOC, &doc).map_err(|e| Error::new(format!("copying {DOC}: {e}")))?;
     let model = ctx.out("models-input.prc");
-    std::fs::write(&model, MODEL).map_err(|e| Error::new(format!("writing the model: {e}")))?;
+    std::fs::write(&model, &source_model)
+        .map_err(|e| Error::new(format!("writing the model: {e}")))?;
     let saved_to = ctx.out("models-saved.prc");
     let _ = std::fs::remove_file(&saved_to);
+    let mesh_to = ctx.out("models-mesh.stl");
+    let _ = std::fs::remove_file(&mesh_to);
 
     let mut spec = LaunchSpec::new(&exe, ctx.out("models.trace.txt"));
     spec.pdf = Some(doc);
@@ -107,6 +115,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((MODEL_ENV.to_owned(), model.to_string_lossy().into_owned()));
     spec.env
         .push((SAVE_ENV.to_owned(), saved_to.to_string_lossy().into_owned()));
+    spec.env
+        .push((MESH_ENV.to_owned(), mesh_to.to_string_lossy().into_owned()));
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
@@ -166,6 +176,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     pointer.click_in(&session, vp.as_deref(), WindowPoint::centre_of(save))?;
     session.settle(20);
+    let trace = session.trace()?;
+    let Some((mesh, vp)) = declared_in(&trace, ui_rect, MESH_REGION) else {
+        pointer.gone(&session)?;
+        return Ok(Some(format!(
+            "no `{MESH_REGION}` region beside the listed PRC model."
+        )));
+    };
+    pointer.click_in(&session, vp.as_deref(), WindowPoint::centre_of(mesh))?;
+    session.settle(20);
     let shot = ctx.out("models-after.png");
     if pointer.screenshot(&session, &shot).is_ok() {
         report.artifact(shot);
@@ -173,8 +192,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     pointer.gone(&session)?;
     let trace = session.trace()?;
     let saved = trace.events("model-saved").last().map(|l| l.raw.clone());
+    let meshed = trace.events("mesh-saved").last().map(|l| l.raw.clone());
     drop(session);
-    report.note(format!("saved: {saved:?}"));
+    report.note(format!("saved: {saved:?}; meshed: {meshed:?}"));
     if saved.is_none() {
         return Ok(Some(
             "Save model raised no `model-saved` line (look for `model-save-declined`).".to_owned(),
@@ -182,12 +202,29 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     let written = std::fs::read(&saved_to)
         .map_err(|e| Error::new(format!("reading {}: {e}", saved_to.display())))?;
-    if written != MODEL {
+    if written != source_model {
         return Ok(Some(format!(
             "the saved model is {} bytes and differs from the {} placed.",
             written.len(),
-            MODEL.len()
+            source_model.len()
         )));
     }
-    Ok(None)
+    if meshed.is_none() {
+        return Ok(Some(
+            "Save as mesh raised no `mesh-saved` line (look for `mesh-save-refused`).".to_owned(),
+        ));
+    }
+    let stl = std::fs::read(&mesh_to)
+        .map_err(|e| Error::new(format!("reading {}: {e}", mesh_to.display())))?;
+    let triangles = stl
+        .get(80..84)
+        .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]) as usize);
+    match triangles {
+        Some(n) if n > 0 && stl.len() == 84 + 50 * n => Ok(None),
+        _ => Ok(Some(format!(
+            "the mesh file is {} bytes and is not a binary STL whose triangle count \
+             ({triangles:?}) matches its length.",
+            stl.len()
+        ))),
+    }
 }

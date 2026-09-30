@@ -56,8 +56,13 @@ path = "src/main.rs"
 # `default = [...]` list out of `D:\Dev\pdfcer`'s manifest and fails the
 # build when a name in it is neither forwarded from here nor named in that
 # gate's DELIBERATELY-NOT-FORWARDED list with a reason.
-default = ["jpx", "ocrs", "ocrcer", "paddle", "signing", "timestamp"]
+default = ["jpx", "ocrs", "ocrcer", "paddle", "signing", "timestamp", "3d"]
 jpx = ["pdfcer-core/jpx", "pdfcer-render/jpx"]
+
+# `3d` — the PRC reader in `pdfcer-3d`, for the Attachments panel's
+# *Save as mesh…* (STL/OBJ). Without it the button is not drawn; listing,
+# placing and saving a model as stored need no decoding.
+3d = ["dep:pdfcer-3d"]
 
 # ---------------------------------------------------------------------------
 # `signing` — the PRIVATE-KEY side, and only the private-key side.
@@ -373,6 +378,11 @@ pdfcer-render = { git = "file:///D:/Dev/pdfcer", branch = "main", default-featur
 # found": a build that cannot ask and a machine with nothing to ask about
 # must never collapse into one message.
 pdfcer-print = { git = "file:///D:/Dev/pdfcer", branch = "main" }
+
+# pdfcer-3d — decodes a PRC model's tessellation to triangles for STL/OBJ
+# export (feature `3d`). Its own dependencies, thiserror and flate2, are
+# already in the graph.
+pdfcer-3d = { git = "file:///D:/Dev/pdfcer", branch = "main", optional = true }
 
 [build-dependencies]
 # embed-resource — puts the application icon inside the executable.
