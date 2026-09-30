@@ -160,6 +160,11 @@ pub fn show(
     ui.add_space(4.0);
     let rest = (height - (ui.cursor().top() - top)).max(120.0);
     ui.horizontal_top(|ui| {
+        // The vertical separator below spans the row's AVAILABLE height, which
+        // uncapped is the whole window: the row then pushes the footer past
+        // the bottom edge, and the host's fit-to-content grows the window
+        // after it until its budget runs out with Save off-screen.
+        ui.set_max_height(rest);
         ui.allocate_ui_with_layout(
             egui::vec2(NAV_WIDTH, rest),
             egui::Layout::top_down_justified(egui::Align::LEFT),

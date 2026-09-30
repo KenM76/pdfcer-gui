@@ -149,6 +149,9 @@ pub fn field_shade(ui: &mut Ui, prefs: &mut Prefs) {
     );
 }
 
+/// The OCR colour's Reset button, declared only while it is drawn.
+pub const OCR_RESET_REGION: &str = "settings.display.ocr_colour.reset"; // ui-text-exempt: trace region name, never displayed
+
 /// **What colour the recognised text is drawn in over a scan** —
 /// `OPERATOR_REQUESTS.md` O229.
 pub fn ocr_colour(ui: &mut Ui, prefs: &mut Prefs) {
@@ -166,10 +169,12 @@ pub fn ocr_colour(ui: &mut Ui, prefs: &mut Prefs) {
         // where a named palette would be an obstacle.
         ui.color_edit_button_srgb(&mut prefs.ocr_layer_colour);
         ui.label(t::ocr_colour_label());
-        if prefs.ocr_layer_colour != crate::canvas::ocrlayer::DEFAULT_COLOUR
-            && ui.button(t::ocr_colour_reset()).clicked()
-        {
-            prefs.ocr_layer_colour = crate::canvas::ocrlayer::DEFAULT_COLOUR;
+        if prefs.ocr_layer_colour != crate::canvas::ocrlayer::DEFAULT_COLOUR {
+            let reset = ui.button(t::ocr_colour_reset());
+            crate::diag::ui_rect_visible(OCR_RESET_REGION, reset.rect, ui.clip_rect());
+            if reset.clicked() {
+                prefs.ocr_layer_colour = crate::canvas::ocrlayer::DEFAULT_COLOUR;
+            }
         }
     });
     ui.label(egui::RichText::new(t::ocr_colour_note()).small().weak());

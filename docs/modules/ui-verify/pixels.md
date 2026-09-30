@@ -103,6 +103,14 @@ region with no pixels — off the edge of the image, or degenerate — reports
 black on black at 1.0 with `sampled: 0`, and callers are expected to look
 at `sampled` before reading the ratio as a verdict.
 
+### `fn ink_extent`
+
+The bounding box of the pixels at least 24 luma-sum units from the region's
+dominant colour, darker or lighter, searched 3 px inside the region so a
+selection fill's rounded corners are not taken for ink. It exists because
+[`contrast_at`] needs the foreground to be at least `MIN_FOREGROUND_SHARE` of
+what it samples, and a label rect is usually far wider than its word.
+
 ### `fn mean_luminance`
 
 The companion to [`contrast_at`] for a different question. That one asks

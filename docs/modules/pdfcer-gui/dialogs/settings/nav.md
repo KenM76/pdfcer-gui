@@ -10,7 +10,7 @@ grown past the point where anything could be found in it.
 |---|---|
 | `PAGES` | Every page as `(section, key)`, in list order. Start (General, Presets), Program, Document, Authoring, Output. The order is the contract; `super::page_body` draws a key's settings |
 | `has_page(key)` | Whether a route may select `key`. Tools ▸ Font folders selects `fonts` through `Draft::focus`; a focus naming no page is ignored |
-| `show(ui, height, draft, focus, viewer)` | Search box, then list and pane side by side, filling `height`. The selected page and the query are egui temp data, so they survive the frame and reset with the process |
+| `show(ui, height, draft, focus, viewer)` | Search box, then list and pane side by side, filling `height` and no more: the row sets its own maximum height, because the vertical separator between list and pane spans the row's *available* height, and uncapped that is the whole window. The row then pushes Save and Cancel below the window, the host's fit-to-content grows the window after it, and the fit's budget runs out with the footer off-screen (`dialog-fit-runaway` in the trace). The selected page and the query are egui temp data, so they survive the frame and reset with the process |
 | `REGION_SEARCH`, `REGION_PAGE` | The search box and the pane, for driven checks |
 | list entries | Each publishes `settings.heading.<key>` (see `super::REGION_HEADING_PREFIX`). A click selects; it never toggles |
 | trace | `settings-page key=…` when the selection changes |

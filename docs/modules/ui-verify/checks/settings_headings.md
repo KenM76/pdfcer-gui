@@ -55,6 +55,20 @@ becoming an argument about whether the grey is nice.
 
 The defect measures around **1.1:1**.
 
+Each heading is measured over its **text's own extent**
+(`pixels::ink_extent`), not its declared rect. The rect is the whole
+170-pt row, and a short word such as *Fonts* covers so little of it that no
+single shade of its antialiased ink reaches `MIN_FOREGROUND_SHARE`. Measured
+over the row it read 1.00:1 while rendering at 15:1. A row with nothing
+drawn keeps its full rect, so it still reaches the uniformity verdict.
+
+## Falsification
+
+Measuring over the row again (`label_ink` returning `row`) fails eight
+headings at 1.00–1.12:1: seven short words and the selected row. The pale-text arm of
+`a_short_label_in_a_wide_row_is_measured_over_its_own_ink` shows near-white
+on light grey is still found and still fails.
+
 # Two modes, and why the offline one exists
 
 * **Live** — drive the application to its Settings dialog and capture. This

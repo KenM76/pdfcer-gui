@@ -28,7 +28,7 @@ const BLEND_EVENT: &str = "ocr-blend";
 /// The drawn line's glyph band, `(x0, y_bottom, x1, y_top)` in PDF points.
 const DRAWN_BAND: (f64, f64, f64, f64) = (72.0, 719.0, 150.0, 729.0);
 /// The invisible line's glyph band.
-const OCR_BAND: (f64, f64, f64, f64) = (72.0, 699.0, 150.0, 709.0);
+pub(super) const OCR_BAND: (f64, f64, f64, f64) = (72.0, 699.0, 150.0, 709.0);
 /// How far the slider is dragged past its own rect, in logical points, so the
 /// pointer ends beyond the rail's end whatever the rail's length.
 const OVERSHOOT_PT: f32 = 220.0;
@@ -62,15 +62,17 @@ struct Ink {
     ocr: usize,
 }
 
-struct Scene<'a> {
-    session: &'a Session,
-    frame: WindowFrame,
-    mapping: CanvasMapping,
-    canvas: PixRect,
+/// A launched window's canvas, mapped, so a band in PDF points becomes capture pixels.
+pub(super) struct Scene<'a> {
+    pub(super) session: &'a Session,
+    pub(super) frame: WindowFrame,
+    pub(super) mapping: CanvasMapping,
+    pub(super) canvas: PixRect,
 }
 
 impl Scene<'_> {
-    fn band(&self, band: (f64, f64, f64, f64)) -> Result<PixRect> {
+    /// `band`, `(x0, y_bottom, x1, y_top)` in page-1 PDF points, clipped to the canvas.
+    pub(super) fn band(&self, band: (f64, f64, f64, f64)) -> Result<PixRect> {
         let (x0, y0, x1, y1) = band;
         let tl = self.mapping.doc_to_window(DocPoint::new(0, x0, y1))?;
         let br = self.mapping.doc_to_window(DocPoint::new(0, x1, y0))?;

@@ -167,7 +167,10 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
             .filter(|r| visible(r.rect))
             .map(|r| legibility::PlannedRegion {
                 name: r.name.clone(),
-                area: legibility::RegionArea::Pixels(frame.logical_to_capture_pixels(r.rect)),
+                area: legibility::RegionArea::Pixels(label_ink(
+                    &image,
+                    frame.logical_to_capture_pixels(r.rect),
+                )),
             })
             .collect(),
         declared: declared_regions.iter().map(|r| r.name.clone()).collect(),
@@ -278,4 +281,11 @@ fn open_settings(
     }
     report.note("the Settings dialog is open and declared its own body rect");
     Ok(())
+}
+
+/// The heading's own text, or its whole row when nothing is drawn there: a
+/// row-wide rect under-samples a short word (`pixels::ink_extent`), and an empty
+/// row must still reach the uniformity verdict.
+fn label_ink(image: &crate::image::Image, row: crate::geom::PixRect) -> crate::geom::PixRect {
+    crate::pixels::ink_extent(image, row).unwrap_or(row)
 }

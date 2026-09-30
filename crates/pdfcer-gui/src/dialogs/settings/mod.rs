@@ -58,6 +58,11 @@ pub const REGION_BODY: &str = "dialog:settings"; // ui-text-exempt: trace region
 /// rather than pressing Escape and assuming the two agree.
 pub const REGION_CANCEL: &str = "dialog:settings.cancel"; // ui-text-exempt: trace region name, never displayed
 
+/// The Save button's rect, so a driven check can commit a change it made.
+/// Every check runs in its own profile directory, so pressing it writes that
+/// directory's files, never the operator's.
+pub const REGION_SAVE: &str = "dialog:settings.save"; // ui-text-exempt: trace region name, never displayed
+
 /// The region each page's entry in the page list publishes, suffixed with its key.
 pub const REGION_HEADING_PREFIX: &str = "settings.heading."; // ui-text-exempt: trace region name, never displayed
 
@@ -122,6 +127,7 @@ pub fn show(
         ui.horizontal(|ui| {
             let dirty = draft.is_dirty();
             let save = ui.add_enabled(dirty, egui::Button::new(t::save()));
+            crate::diag::ui_rect(REGION_SAVE, save.rect);
             if save.clicked() {
                 // Retire a stored choice the settings no longer express,
                 // **before** it is written.

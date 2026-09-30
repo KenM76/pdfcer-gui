@@ -348,6 +348,51 @@ impl InkReport {
     }
 }
 
+/// **The part of a region something is drawn in**: the bounding box of every
+/// pixel, at least three pixels inside it, whose luminance differs from the
+/// region's dominant colour, grown by one pixel, or `None` when nothing differs.
+///
+/// A label's declared rect is its whole row, and a short word covers so little
+/// of it that its antialiased shades each fall under `MIN_FOREGROUND_SHARE`:
+/// [`contrast_at`] then finds no foreground and reports 1:1 about text that
+/// reads perfectly. Measuring over the ink's own extent keeps the shares honest
+/// without lowering that floor. Lighter-than-plate ink counts too, so a
+/// near-white label on a light fill is still found and still fails.
+#[must_use]
+pub fn ink_extent(img: &Image, region: PixRect) -> Option<PixRect> {
+    /// Luma-sum distance from the plate that counts as drawn.
+    const DRAWN: i32 = 24;
+    let (buckets, _) = bucketize(img, region);
+    let plate = buckets.first().map(|(_, b)| {
+        let n = b.count.max(1);
+        i32::try_from((b.r + b.g + b.b) / n).unwrap_or(0)
+    })?;
+    // A selected row's fill has rounded corners, whose pixels are the window
+    // behind it and would otherwise stretch the extent to the whole row.
+    const CORNER: u32 = 3;
+    let (mut x0, mut y0, mut x1, mut y1) = (u32::MAX, u32::MAX, 0, 0);
+    for y in region.y + CORNER..(region.y + region.h).saturating_sub(CORNER) {
+        for x in region.x + CORNER..(region.x + region.w).saturating_sub(CORNER) {
+            let Some(px) = img.pixel(x, y) else { continue };
+            let luma = i32::from(px.r) + i32::from(px.g) + i32::from(px.b);
+            if (luma - plate).abs() >= DRAWN {
+                x0 = x0.min(x);
+                y0 = y0.min(y);
+                x1 = x1.max(x);
+                y1 = y1.max(y);
+            }
+        }
+    }
+    if x0 > x1 {
+        return None;
+    }
+    let x0 = x0.saturating_sub(1).max(region.x);
+    let y0 = y0.saturating_sub(1).max(region.y);
+    let x1 = (x1 + 2).min(region.x + region.w);
+    let y1 = (y1 + 2).min(region.y + region.h);
+    Some(PixRect::new(x0, y0, x1 - x0, y1 - y0))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -501,5 +546,53 @@ mod tests {
         let c = contrast_at(&img, PixRect::new(50, 50, 10, 10));
         assert_eq!(c.sampled, 0);
         assert!((c.ratio - 1.0).abs() < 1e-9);
+    }
+
+    /// A `w` x `h` image of `bg` with `cells` painted over it.
+    fn painted(w: u32, h: u32, bg: Rgb, cells: &[(u32, u32, Rgb)]) -> Image {
+        let mut bgra = Vec::new();
+        for y in 0..h {
+            for x in 0..w {
+                let c = cells
+                    .iter()
+                    .find(|(cx, cy, _)| (*cx, *cy) == (x, y))
+                    .map_or(bg, |(_, _, c)| *c);
+                bgra.extend_from_slice(&[c.b, c.g, c.r, 255]);
+            }
+        }
+        Image::from_bgra(w, h, bgra).unwrap()
+    }
+
+    #[test]
+    fn a_short_label_in_a_wide_row_is_measured_over_its_own_ink() {
+        let bg = Rgb::new(241, 241, 242);
+        let ink = Rgb::new(40, 40, 40);
+        let word: Vec<_> = (4..16)
+            .flat_map(|x| (8..9).map(move |y| (x, y, ink)))
+            .collect();
+        let img = painted(170, 24, bg, &word);
+        let row = PixRect::new(0, 0, 170, 24);
+        assert!(
+            contrast_at(&img, row).ratio < 1.01,
+            "the whole row finds no foreground"
+        );
+        let extent = ink_extent(&img, row).expect("something is drawn");
+        assert!(extent.area() < row.area() / 10);
+        assert!(contrast_at(&img, extent).meets(3.0));
+        assert!(ink_extent(&painted(170, 24, bg, &[]), row).is_none());
+        // Near-white text on light grey is still found, and still fails.
+        let pale: Vec<_> = word
+            .iter()
+            .map(|&(x, y, _)| (x, y, Rgb::new(252, 252, 252)))
+            .collect();
+        let grey = painted(170, 24, Rgb::new(215, 215, 215), &pale);
+        let extent = ink_extent(&grey, row).expect("pale text is drawn");
+        assert!(!contrast_at(&grey, extent).meets(3.0));
+        // A selection fill whose rounded corners show the window behind it.
+        let corners: Vec<_> = [(0, 0), (169, 0), (0, 23), (169, 23)]
+            .into_iter()
+            .map(|(x, y)| (x, y, bg))
+            .collect();
+        assert!(ink_extent(&painted(170, 24, Rgb::new(168, 189, 222), &corners), row).is_none());
     }
 }

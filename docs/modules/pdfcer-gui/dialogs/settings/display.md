@@ -173,6 +173,11 @@ off is tidying their view, not altering how fields behave.
 [`crate::app::prefs::Prefs::shade_form_fields`] carries why a wash over part
 of a page is an affordance rather than the content marking rule 4 forbids.
 
+### `const OCR_RESET_REGION`
+
+The Reset button's rect, declared only while Reset is drawn, so a check can
+read its absence as "the colour is the default".
+
 ### `fn ocr_colour`
 
 In *Display* beside the field wash, because it is the same kind of

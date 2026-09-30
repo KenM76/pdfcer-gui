@@ -206,6 +206,13 @@ draft — but a check that can only reach one of them proves nothing about the
 other, and the whole point of the check that wanted this is that the
 coupling it guards fails **silently**.
 
+### `const REGION_SAVE`
+
+Save's rect, so a driven check can commit what it changed. It is safe to
+press from a check because every check runs in its own profile directory;
+the files Save writes are that directory's. `ocr_colour_setting` presses it
+and also asserts it lies inside the window's body.
+
 ### `const REGION_HEADING_PREFIX`
 
 One per entry in the page list, suffixed with the page's key rather than its
@@ -289,5 +296,7 @@ over the document is in the way of the document it is about.
 
 # The page area's height is computed, not fixed
 
-`available − 40`, floored at 180: everything above the Save/Cancel row. The
+`available − 40`, floored at 180: everything above the Save/Cancel row. It
+holds only because `nav::show` caps its row at the height it is given; see
+`nav.md`. The
 store line sits above it; the intro paragraph is on the General page.
