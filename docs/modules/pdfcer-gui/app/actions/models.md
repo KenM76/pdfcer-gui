@@ -36,9 +36,10 @@ warning when the data disagrees with what the document declares.
 Re-lists and extracts as `save` does, then asks for a target
 (`files::pick_mesh_target`, `PDFCER_DIAG_MESH_SAVE_PATH`); an `.obj` ending
 writes OBJ, anything else binary STL. `mesh_bytes` parses the PRC
-(`pdfcer_3d::PrcFile`), keeps every `Tessellation::Mesh`, counts the rest as
-skipped, and refuses with a sentence when there are no triangles — naming
-compressed meshes when that is why. Traces `mesh-saved obj= bytes= meshes=
+(`pdfcer_3d::PrcFile`), keeps every `Tessellation::Mesh` and every rebuilt
+`Compressed { mesh: Some(..) }`, counts the rest as skipped, and refuses with
+a sentence when there are no triangles — naming compressed meshes the engine
+could not rebuild when that is why. Traces `mesh-saved obj= bytes= meshes=
 triangles= skipped=`, `mesh-save-refused`, `mesh-save-declined`,
 `mesh-save-cancelled`, `mesh-save-failed`. Notes say the part placements are
 not applied. Without the feature the button is not drawn.

@@ -230,9 +230,9 @@ pub fn mesh_unreadable(detail: &str) -> String {
 pub fn mesh_empty(compressed: usize) -> String {
     match compressed {
         0 => "This model holds no triangle mesh; nothing was written.".to_owned(),
-        1 => "This model's mesh is stored compressed, which pdfcer does not decode yet; nothing was written.".to_owned(),
+        1 => "This model's mesh is stored in a compressed form pdfcer cannot rebuild; nothing was written.".to_owned(),
         n => format!(
-            "This model's {n} meshes are stored compressed, which pdfcer does not decode yet; nothing was written."
+            "This model's {n} meshes are stored in a compressed form pdfcer cannot rebuild; nothing was written."
         ),
     }
 }
@@ -258,9 +258,9 @@ pub fn mesh_placement_note() -> &'static str {
 #[must_use]
 pub fn mesh_skipped(skipped: usize) -> String {
     match skipped {
-        1 => "One part is not a triangle mesh (wire lines, markup or a compressed mesh) and was left out.".to_owned(),
+        1 => "One part is not a triangle mesh pdfcer can rebuild (wire lines, markup or an unusual compressed mesh) and was left out.".to_owned(),
         n => format!(
-            "{n} parts are not triangle meshes (wire lines, markup or compressed meshes) and were left out."
+            "{n} parts are not triangle meshes pdfcer can rebuild (wire lines, markup or unusual compressed meshes) and were left out."
         ),
     }
 }

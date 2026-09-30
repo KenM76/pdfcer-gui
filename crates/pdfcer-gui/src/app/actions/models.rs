@@ -109,8 +109,11 @@ fn mesh_bytes(data: &[u8], obj: bool) -> Result<Meshed, String> {
             .map_err(|e| t::mesh_unreadable(&e.to_string()))?;
         for tessellation in found {
             match tessellation {
-                Tessellation::Mesh(mesh) => meshes.push(mesh),
-                Tessellation::Compressed { .. } => {
+                Tessellation::Mesh(mesh)
+                | Tessellation::Compressed {
+                    mesh: Some(mesh), ..
+                } => meshes.push(mesh),
+                Tessellation::Compressed { mesh: None, .. } => {
                     compressed += 1;
                     skipped += 1;
                 }
@@ -358,5 +361,20 @@ mod tests {
         let obj = super::mesh_bytes(&square, true).expect("the square decodes");
         assert!(String::from_utf8_lossy(&obj.bytes).contains("\nf "));
         assert!(super::mesh_bytes(b"U3D\0 not a prc", false).is_err());
+    }
+
+    /// A compressed PRC mesh the engine rebuilds is saved with the rest.
+    #[cfg(feature = "3d")]
+    #[test]
+    fn a_compressed_prc_triangle_is_rebuilt() {
+        let Ok(model) =
+            std::fs::read("D:/Dev/pdfcer/fixtures/synthetic/prc/compressed_triangle.prc")
+        else {
+            return; // The engine corpus is absent on this machine.
+        };
+        let stl = super::mesh_bytes(&model, false).expect("the compressed triangle rebuilds");
+        assert_eq!(stl.triangles, 1);
+        assert_eq!(stl.skipped, 0);
+        assert_eq!(stl.bytes.len(), 84 + 50);
     }
 }
