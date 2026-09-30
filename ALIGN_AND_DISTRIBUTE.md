@@ -78,6 +78,11 @@ shell does not split paths from images.
 
 Each stage ships driven before the next starts.
 
-**Built:** Stage 1 except the keypad chords — the panel, Edit ▸ Arrange,
-Ctrl+Shift+A, selection order, the arithmetic and one driven check, which opens
-the panel by the chord. The keypad chords each need a command id of their own.
+**Built:** Stages 1 and 2. The panel scrolls; Edit ▸ Arrange carries Align
+and Distribute and the seven one-click aligns; Ctrl+Shift+A opens the panel;
+Ctrl+Alt+keypad 4/6/8/2/7/1/5 run the aligns, keypad or top row. Rearrange
+offers Exchange (selection, stacking, clockwise), Randomize and Unclump;
+Remove overlaps takes H and V gaps in points. One driven check covers Align
+left, keypad 5 and Exchange, each as one undo step. Remove overlaps,
+Randomize and Unclump share Exchange's plan-and-commit path and are covered
+by unit tests only; the three-box fixture has no overlap to remove.

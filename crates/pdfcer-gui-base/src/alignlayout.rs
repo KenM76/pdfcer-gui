@@ -9,6 +9,11 @@
 //! are positions in that list. The result is indexed like the input, and an
 //! item that does not move gets `(0, 0)`.
 
+/// The Grid and Circular tabs.
+pub mod arrange;
+/// The Rearrange and Remove-overlaps frames, and node alignment.
+pub mod rearrange;
+
 /// An axis-aligned box in canvas space. `x0 <= x1`, `y0 <= y1`.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Bx {

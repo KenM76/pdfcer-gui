@@ -102,6 +102,70 @@ pub const fn distribute_button(horizontal: bool, index: usize) -> (&'static str,
     }
 }
 
+/// The Rearrange section's heading.
+#[must_use]
+pub const fn rearrange_heading() -> &'static str {
+    "Rearrange"
+}
+
+/// Rearrange button `index` (0‥5), as `(label, tooltip)`: Exchange by
+/// selection order, stacking order and clockwise, then Randomize and Unclump.
+#[must_use]
+pub const fn rearrange_button(index: usize) -> (&'static str, &'static str) {
+    match index {
+        0 => (
+            "Exchange",
+            "Exchange positions of selected objects - selection order",
+        ),
+        1 => (
+            "By stacking",
+            "Exchange positions of selected objects - stacking order",
+        ),
+        2 => (
+            "Clockwise",
+            "Exchange positions of selected objects - rotate around center point",
+        ),
+        3 => ("Randomize", "Randomize centers in both dimensions"),
+        _ => (
+            "Unclump",
+            "Unclump objects: try to equalize edge-to-edge distances",
+        ),
+    }
+}
+
+/// The Remove overlaps section's heading.
+#[must_use]
+pub const fn overlaps_heading() -> &'static str {
+    "Remove overlaps"
+}
+
+/// The horizontal gap's label.
+#[must_use]
+pub const fn gap_h() -> &'static str {
+    "H:"
+}
+
+/// The vertical gap's label.
+#[must_use]
+pub const fn gap_v() -> &'static str {
+    "V:"
+}
+
+/// The unit after a gap.
+#[must_use]
+pub const fn pt_suffix() -> &'static str {
+    " pt"
+}
+
+/// The Remove overlaps button, as `(label, tooltip)`.
+#[must_use]
+pub const fn remove_overlaps_button() -> (&'static str, &'static str) {
+    (
+        "Remove",
+        "Move objects as little as possible so that their bounding boxes do not overlap",
+    )
+}
+
 /// Shown when nothing on this page is selected at the object level.
 #[must_use]
 pub const fn nothing_selected() -> &'static str {

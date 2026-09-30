@@ -10,7 +10,9 @@
 use egui::{Pos2, Ui, Vec2};
 use pdfcer_core::page_tree::Page;
 use pdfcer_core::vector::{Bounds, Point, VectorObject};
-use pdfcer_gui_base::alignlayout::{self as layout, Axis, Bx, Edge, Frame, RelativeTo, Spacing};
+use pdfcer_gui_base::alignlayout::{
+    self as layout, Axis, Bx, Edge, Frame, RelativeTo, Spacing, rearrange,
+};
 
 use crate::app::actions::{Action, VectorAction};
 use crate::app::state::OpenDoc;
@@ -46,6 +48,18 @@ pub const DISTRIBUTE_V_REGIONS: [&str; 5] = [
     "distribute.v4", // ui-text-exempt: diagnostic region names
 ];
 
+/// The Rearrange frame's buttons: Exchange by selection, stacking and
+/// clockwise, then Randomize and Unclump.
+pub const REARRANGE_REGIONS: [&str; 5] = [
+    "rearrange.0",
+    "rearrange.1",
+    "rearrange.2",
+    "rearrange.3",
+    "rearrange.4", // ui-text-exempt: diagnostic region names
+];
+/// The Remove overlaps button.
+pub const REMOVE_OVERLAPS_REGION: &str = "overlaps.remove"; // ui-text-exempt: diagnostic region name
+
 /// The operator's settings, kept across documents as Inkscape keeps them.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct AlignUi {
@@ -55,6 +69,12 @@ pub struct AlignUi {
     pub single: RelativeTo,
     /// *Move/align selection as group*.
     pub as_group: bool,
+    /// Remove overlaps' horizontal and vertical gaps, in points.
+    pub gap_x: f64,
+    pub gap_y: f64,
+    /// Presses of Randomize so far: each press's seed, so every press lands
+    /// somewhere new and a replay of the same presses lands the same way.
+    pub randomized: u64,
 }
 
 impl Default for AlignUi {
@@ -63,6 +83,9 @@ impl Default for AlignUi {
             multi: RelativeTo::Selection,
             single: RelativeTo::Page,
             as_group: false,
+            gap_x: 0.0,
+            gap_y: 0.0,
+            randomized: 0,
         }
     }
 }
@@ -82,6 +105,30 @@ pub enum Op {
     AlignText(Axis),
     Distribute(Axis, Spacing),
     DistributeText(Axis),
+    /// Rearrange › Exchange positions, walking the selection in this order.
+    Exchange(ExchangeOrder),
+    /// Rearrange › Randomize, with this press's seed.
+    Randomize(u64),
+    /// Rearrange › Unclump.
+    Unclump,
+    /// Remove overlaps, with the panel's gaps.
+    RemoveOverlaps,
+}
+
+/// The order *Exchange positions* walks the selection in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ExchangeOrder {
+    /// The order the objects were selected in.
+    Selection,
+    /// Paint order, bottom-most first.
+    Stacking,
+    /// Clockwise around the selection's centre.
+    Clockwise,
+}
+
+impl ExchangeOrder {
+    /// The Rearrange frame's three, left to right.
+    pub const ALL: [ExchangeOrder; 3] = [Self::Selection, Self::Stacking, Self::Clockwise];
 }
 
 impl Op {
@@ -115,7 +162,12 @@ impl Op {
     pub const fn needs(self) -> usize {
         match self {
             Op::Align(..) | Op::AlignText(_) => 1,
-            Op::Distribute(..) | Op::DistributeText(_) => 2,
+            Op::Distribute(..)
+            | Op::DistributeText(_)
+            | Op::Exchange(_)
+            | Op::Randomize(_)
+            | Op::Unclump
+            | Op::RemoveOverlaps => 2,
         }
     }
 
@@ -125,6 +177,8 @@ impl Op {
         match self {
             Op::Align(..) | Op::AlignText(_) => "align",
             Op::Distribute(..) | Op::DistributeText(_) => "distribute",
+            Op::Exchange(_) | Op::Randomize(_) | Op::Unclump => "rearrange",
+            Op::RemoveOverlaps => "remove-overlaps",
         }
     }
 }
@@ -237,6 +291,17 @@ fn deltas(m: &Measured, op: Op, settings: AlignUi) -> Vec<(f64, f64)> {
         Op::AlignText(axis) => layout::align_text(&m.boxes, &m.anchors, axis, rel, m.frame),
         Op::Distribute(axis, spacing) => layout::distribute(&m.boxes, axis, spacing),
         Op::DistributeText(axis) => layout::distribute_text(&m.anchors, axis),
+        Op::Exchange(order) => {
+            let order: Vec<usize> = match order {
+                ExchangeOrder::Selection => (0..m.boxes.len()).collect(),
+                ExchangeOrder::Stacking => rearrange::stacking_order(&m.objects),
+                ExchangeOrder::Clockwise => rearrange::clockwise_order(&m.boxes),
+            };
+            rearrange::exchange(&m.boxes, &order)
+        }
+        Op::Randomize(seed) => rearrange::randomize(&m.boxes, seed),
+        Op::Unclump => rearrange::unclump(&m.boxes),
+        Op::RemoveOverlaps => rearrange::remove_overlaps(&m.boxes, settings.gap_x, settings.gap_y),
     }
 }
 
@@ -301,8 +366,15 @@ pub fn run(doc: &OpenDoc, ops: &[Op], settings: AlignUi, actions: &mut Vec<Actio
     }
 }
 
-/// Draw the panel.
+/// Draw the panel, scrolling: it is taller than a docked pane usually is.
 pub fn body(ui: &mut Ui, doc: &OpenDoc, settings: &mut AlignUi, actions: &mut Vec<Action>) {
+    egui::ScrollArea::vertical()
+        .id_salt("align-panel") // ui-text-exempt: widget id
+        .show(ui, |ui| contents(ui, doc, settings, actions));
+}
+
+/// The panel's frames, top to bottom.
+fn contents(ui: &mut Ui, doc: &OpenDoc, settings: &mut AlignUi, actions: &mut Vec<Action>) {
     let top = ui.min_rect().min;
     if doc.selection.annot().is_some() || doc.selected_field.is_some() {
         ui.label(t::not_content());
@@ -367,6 +439,47 @@ pub fn body(ui: &mut Ui, doc: &OpenDoc, settings: &mut AlignUi, actions: &mut Ve
             }
         });
     }
+    ui.separator();
+    ui.label(t::rearrange_heading());
+    ui.horizontal_wrapped(|ui| {
+        for (index, order) in ExchangeOrder::ALL.into_iter().enumerate() {
+            let (label, tip) = t::rearrange_button(index);
+            if button(ui, n >= 2, label, tip, REARRANGE_REGIONS[index]) {
+                pressed = Some(Op::Exchange(order));
+            }
+        }
+        let (label, tip) = t::rearrange_button(3);
+        if button(ui, n >= 2, label, tip, REARRANGE_REGIONS[3]) {
+            settings.randomized = settings.randomized.wrapping_add(1);
+            pressed = Some(Op::Randomize(settings.randomized));
+        }
+        let (label, tip) = t::rearrange_button(4);
+        if button(ui, n >= 2, label, tip, REARRANGE_REGIONS[4]) {
+            pressed = Some(Op::Unclump);
+        }
+    });
+
+    ui.separator();
+    ui.label(t::overlaps_heading());
+    ui.horizontal_wrapped(|ui| {
+        ui.label(t::gap_h());
+        ui.add(
+            egui::DragValue::new(&mut settings.gap_x)
+                .range(0.0..=1000.0)
+                .suffix(t::pt_suffix()),
+        );
+        ui.label(t::gap_v());
+        ui.add(
+            egui::DragValue::new(&mut settings.gap_y)
+                .range(0.0..=1000.0)
+                .suffix(t::pt_suffix()),
+        );
+        let (label, tip) = t::remove_overlaps_button();
+        if button(ui, n >= 2, label, tip, REMOVE_OVERLAPS_REGION) {
+            pressed = Some(Op::RemoveOverlaps);
+        }
+    });
+
     crate::diag::ui_rect_visible(
         REGION,
         egui::Rect::from_min_max(top, ui.min_rect().max),

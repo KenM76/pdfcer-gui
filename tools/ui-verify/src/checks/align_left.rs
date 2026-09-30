@@ -2,7 +2,8 @@
 //! Shift-selected, **Align left edges** pressed in the Align and Distribute
 //! panel, the two boxes not already at the left edge move, and one undo
 //! takes the whole alignment back. Then **Ctrl+Alt+keypad 5** centres all
-//! three on both axes, as one move and one undo step.
+//! three on both axes, as one move and one undo step. Last, Rearrange ›
+//! **Exchange positions** cycles the three centres in selection order.
 //!
 //! Pinned to `fixtures/three-boxes.pdf`, whose provenance script lists the
 //! boxes. Relative to the selection area (the panel's default), box 0 is the
@@ -41,6 +42,13 @@ const EXPECTED_MOVES: &str = "1:-150.0,0.0;2:-80.0,0.0";
 /// What Ctrl+Alt+keypad 5 must move: every centre to (215, 495), the
 /// selection area's, in PDF points (y up).
 const EXPECTED_CENTRE: &str = "0:85.0,-125.0;1:-75.0,-30.0;2:15.0,110.0";
+/// The Rearrange frame's *Exchange positions — selection order* button.
+const EXCHANGE_BUTTON: &str = "rearrange.0";
+/// The panel's whole extent, the wheel's aim while scrolling to it.
+const PANEL: &str = "align.panel";
+/// What Exchange must move, selection order 0, 1, 2: box 1 to box 0's centre
+/// (130, 620), box 2 to box 1's (290, 525), box 0 to box 2's (200, 385).
+const EXPECTED_EXCHANGE: &str = "0:70.0,-235.0;1:-160.0,95.0;2:90.0,140.0";
 /// A point inside each box, PDF user space, page 0.
 const AIMS: [(f64, f64); 3] = [(130.0, 620.0), (290.0, 525.0), (200.0, 385.0)];
 
@@ -288,5 +296,45 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note("★★ Ctrl+Alt+keypad 5 centred all three, one undo step");
+
+    // --- Rearrange › Exchange positions (selection order) -------------------
+    let mark = session.trace()?.mark();
+    // The dock is shorter than the panel: wheel the panel until the Rearrange
+    // frame is on screen, as the operator would.
+    let Some(exchange) = crate::checks::reaching::scroll_to(
+        &session,
+        &driver,
+        ui_rect,
+        PANEL,
+        EXCHANGE_BUTTON,
+        12,
+        report,
+    )?
+    else {
+        return Ok(Some(format!(
+            "★ THE PANEL PUBLISHED NO `{EXCHANGE_BUTTON}`: the Rearrange frame is missing or \
+             clipped out of the dock. Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    driver.click_at(session.frame()?.declared_center(exchange))?;
+    session.settle(30);
+    let trace = session.trace()?;
+    let Some(applied) = trace.last_after(APPLIED_EVENT, mark) else {
+        return Ok(Some(format!(
+            "★ Exchange positions was clicked and no `{APPLIED_EVENT}` followed. Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    report.note(format!("★ `{}`", applied.raw));
+    let asked = applied.get("moves").unwrap_or("");
+    if asked != EXPECTED_EXCHANGE {
+        return Ok(Some(format!(
+            "★★ EXCHANGE MOVED `moves={asked}`, expected `{EXPECTED_EXCHANGE}` — box 1 to box \
+             0's centre, box 2 to box 1's, box 0 to box 2's. `{}`",
+            applied.raw
+        )));
+    }
+    report.note("★★ Exchange positions cycled all three centres");
     Ok(None)
 }

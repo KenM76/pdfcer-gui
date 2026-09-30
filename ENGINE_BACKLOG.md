@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **54 of 252** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `wanted` — a real gap — **55 of 253** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -126,6 +126,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | Detect an unencrypted wrapper (§7.6.7) and warn that the visible … | **wanted, and the cheapest row on O108's Security tab.** Nothing here detects the §7.6.7 wrapper. An unencrypted wrapper is a cover sheet standing in front of a document this reader cannot open, and pdfcer renders the cover in full, silently — an operator looking at a plausible page has no way to know they are not looking at the drawing. |
+| Transform several selected objects, each by its own matrix, as one command | **wanted — being consumed now by O263 Stage 3.** `EditSession::transform_objects_each` is what Align and Distribute › Circular with *Rotate objects* needs: each object translated onto the ellipse and turned about its own centre, one command and one undo step, all-or-nothing. The shell asked for it (`request_transform_objects_each.md`) rather than fold N `transform_objects` calls with `coalesce_last`, which is not all-or-nothing. |
 | PAdES B-LT — embed supplied validation material (certs/CRLs/OCSP) into `/DSS` … | **wanted — the natural next step after the Signatures panel's revocation line.** `EditSession::add_validation_material` writes certificates, CRLs and OCSP responses into `/DSS` as an incremental update, so a signature stays verifiable after its CA's servers are gone. The shell would offer it on the Signatures panel as *Add validation evidence…*: pick CRL/OCSP/certificate files, show what was added, skipped or wrapped, then re-read each signature's revocation verdict. Needs a file picker for three kinds and the `/DocMDP` `/P 1` refusal worded. Not pinned yet: arrives with the next engine bump. |
 | Tell me what this document would run in Acrobat/Reader … | **wanted — the second row of O108's Security tab, and arguably the one with the most value per line.** *What would this document run if I opened it in Acrobat, and does it reach outside itself?* is the question an operator asks of a drawing that arrived by email. The engine answers it across every place an action can live — page open triggers, navigation nodes, annotation triggers, chains — without executing anything, and nothing here reads the census. |
 | **A pasted markup carries what was copied — dash, opacity, note, author and blend mode travel** | **wanted no longer — this is the same capability as the shipped row of the same opening words**, which carries the argument and the evidence. Kept as its own entry because the register deletes no row; read the sibling under `shipped` → *Annotations & markup*, and do not repeat the gap sentence from here. |
@@ -154,7 +155,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 252** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `blocked` — waiting on something named — **2 of 253** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -172,7 +173,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 252** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 253** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -183,7 +184,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 252** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `declined` — deliberately no surface — **16 of 253** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -225,7 +226,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **180 of 252** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **180 of 253** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
