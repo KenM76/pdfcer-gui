@@ -64,7 +64,16 @@ on `fixtures/three-boxes.pdf`.
 
 **Since that release, unpublished:** File ▸ Security ▸ *Add validation
 evidence…* (PAdES B-LT, `add_validation_material`), driven by
-`validation_evidence_added_without_the_mouse`. Next: `cargo update` the engine
+`validation_evidence_added_without_the_mouse`. **O258, the live link:**
+`pdfcer-remote.exe` drives the open window over a per-user named pipe, gated by
+Settings ▸ Remote control (Ask / Always / Never); driven end to end on a scratch
+copy with `remote_control = always`. The Ask banner is NOT yet driven (needs a
+click). Gaps against `DESIGNS.md` § O258: `history` shows only the top step
+(engine request `request_undo_history_listing.md`), and `open <path>` does not
+ask a second time. **Open defect:** Home / "go to page 1" on a mixed-size
+document whose page 1 has off-sheet content lands on page 3 — the pasteboard
+overhang is recomputed for the new current page and the scroll offset is not
+rebased (`canvas::viewpos`, `canvas::offset::decide`). Next: `cargo update` the engine
 (3D embed and the insert page-label fix are in it), then 3D list/extract and
 embed, then the crate split.
 

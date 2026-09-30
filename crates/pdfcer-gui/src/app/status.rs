@@ -249,6 +249,7 @@ const STATUS_SLOT: &str = "status"; // ui-text-exempt: trace slot name, never di
 /// stays last because it takes whatever is left.
 ///
 /// Raises actions and mutates nothing — see the module docs.
+#[allow(clippy::too_many_arguments)] // each is a separate owner's state the bar edits
 pub fn show(
     ui: &mut egui::Ui,
     status: &Status,
@@ -259,6 +260,7 @@ pub fn show(
     // for the same reason — see `app::frame`'s status-bar block.
     max_zoom_percent: &mut f32,
     wheel_paging: &mut crate::app::prefs::WheelPaging,
+    remote: &mut crate::app::remote::Link,
     actions: &mut Vec<Action>,
 ) {
     // One allocated row, of a height that does not depend on what there is
@@ -297,6 +299,7 @@ pub fn show(
         // only when a document happened to be open would go silent in the state
         // where the window has the least in it.
         readmode::show(ui);
+        remote.status_item(ui);
 
         // With nothing open there is no page to number, no zoom to report
         // and no raster to have notes about. The bar still occupies its
@@ -668,6 +671,7 @@ pub(super) mod test_support {
                 &mut filter,
                 &mut max_zoom,
                 &mut crate::app::prefs::WheelPaging::default(),
+                &mut crate::app::remote::Link::default(),
                 &mut actions,
             )
         });
@@ -710,6 +714,7 @@ pub(super) mod test_support {
                         &mut filter,
                         &mut max_zoom,
                         &mut crate::app::prefs::WheelPaging::default(),
+                        &mut crate::app::remote::Link::default(),
                         &mut actions,
                     )
                 })

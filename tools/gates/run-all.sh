@@ -341,6 +341,8 @@ run "check-escape-disposition --self-test" bash "$HERE/check-escape-disposition.
 run "check-escape-disposition" bash "$HERE/check-escape-disposition.sh"
 run "check-file-size"    bash "$HERE/check-file-size.sh"
 run "check-shell-purity" bash "$HERE/check-shell-purity.sh"
+run "check-shell-purity command-remote" bash "$HERE/check-shell-purity.sh" crates/command-remote
+run "check-shell-purity native-pipe" bash "$HERE/check-shell-purity.sh" crates/native-pipe
 run "check-shipped-assets" bash "$HERE/check-shipped-assets.sh"
 run "check-string-gaps"  bash "$HERE/check-string-gaps.sh"
 # ★★★ The first gate here aimed at PROSE being false rather than at code being

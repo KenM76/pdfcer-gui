@@ -208,7 +208,7 @@ exports follow the file's own tags for headings, paragraphs, lists and
 tables, and say so in the receipt; driven off-screen. Other word-processor
 formats (.odt, .rtf) are not built; the engine has no writer for them.
 
-## O258 — **FILED, designed** — an LLM can drive the open document, off by default, asking him the first time one tries
+## O258 — **BUILT, driven except the Ask banner** — an LLM can drive the open document, off by default, asking him the first time one tries
 
 An assistant working from a chat prompt ("add a bookmark called Details on
 this page", "set the scale to 1 in = 20 ft") can operate the pdfcer window he

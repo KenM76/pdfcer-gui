@@ -82,6 +82,7 @@ pub use pastechords::PasteChords;
 // `pub` and holds it on a `pub(crate)` field, which is legal and is what keeps
 // `private_interfaces` quiet.
 pub use crate::redact::RedactionReach;
+pub use crate::remotecontrol::RemoteControl;
 pub use printing::PrintPrefs;
 pub use quality::{DEFAULT_SETTLE_MS, MAX_SETTLE_MS, MIN_SETTLE_MS, RenderQuality};
 pub use wheel::WheelPaging;
@@ -220,6 +221,8 @@ pub struct Prefs {
     /// See [`WheelPaging`] for why the choice exists only under
     /// `PageDisplay::Single` and `Facing`.
     pub wheel_paging: WheelPaging,
+    /// Whether another program may drive the window through the live link.
+    pub remote_control: RemoteControl,
     /// **Wash the fillable fields, so you can see what can be typed into** —
     /// `OPERATOR_REQUESTS.md` O96.
     ///
@@ -807,6 +810,7 @@ impl Default for Prefs {
             use_os_fonts: false,
             opening_fit: OpeningFit::default(),
             wheel_paging: WheelPaging::default(),
+            remote_control: RemoteControl::default(),
             // True, which is Acrobat's answer — see the field's on why the
             // default is the useful one rather than the unobtrusive one.
             shade_form_fields: true,

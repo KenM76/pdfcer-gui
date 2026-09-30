@@ -121,6 +121,9 @@ pub mod doctabs;
 /// Save happen in.
 pub mod settings_window;
 
+/// The live link: verbs a connected program may send.
+pub mod remote;
+
 pub mod state;
 pub mod status;
 
@@ -580,6 +583,9 @@ pub struct PdfcerApp {
     /// nothing behind them.
     pub prefs: prefs::Prefs,
 
+    /// The live link to another program; see [`remote`].
+    pub remote: remote::Link,
+
     /// **The Acrobat this machine has, resolved once** —
     /// `OPERATOR_REQUESTS.md` **O122**.
     ///
@@ -1035,6 +1041,7 @@ impl PdfcerApp {
                 )
             },
             prefs,
+            remote: remote::Link::default(),
         }
     }
 

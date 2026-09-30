@@ -87,6 +87,8 @@ than the number it produced last.
 
 ### Shell and chrome
 
+- ✅ **Live link (O258)** — another program run by the same user drives the open window through `pdfcer-remote.exe`: state, objects, select, run any registered command, undo/redo n, page, render to PNG, open. Consent is Settings ▸ Remote control, Ask / Always / Never; under Never nothing listens. Driven end to end off-screen; the Ask banner awaits a manned drive
+
 - ✅ **Ribbon, seven tabs** — File · View · Pages · Edit · Markup · Measure · Tools, plus the contextual **Format** tab that appears on selection
 - ✅ **The ribbon is data, not code** — a serializable manifest, which is what makes it customizable and reusable by another application
 - ✅ **Mode selector** — Read / Review / Edit, right-aligned on the tab row, driving both the tab set and the panel layout

@@ -313,6 +313,14 @@ impl Prefs {
                         line,
                     }),
                 },
+                "remote_control" => match RemoteControl::from_key(value) {
+                    Some(r) => prefs.remote_control = r,
+                    None => notes.push(PrefNote::BadValue {
+                        key: key.to_owned(),
+                        value: value.to_owned(),
+                        line,
+                    }),
+                },
                 "opening_fit" => match OpeningFit::from_key(value) {
                     Some(f) => prefs.opening_fit = f,
                     None => notes.push(PrefNote::BadValue {
@@ -724,6 +732,16 @@ impl Prefs {
         // ui-text-exempt: a file KEY, as above.
         out.push_str("wheel_paging = ");
         out.push_str(self.wheel_paging.key());
+        out.push('\n');
+        // ui-text-exempt: settings-file COMMENT text, as above.
+        out.push_str(
+            "\n\
+             # remote_control: ask | always | never. Whether another program\n\
+             # you run (an AI assistant, a script) may drive this window.\n",
+        );
+        // ui-text-exempt: a file KEY, as above.
+        out.push_str("remote_control = ");
+        out.push_str(self.remote_control.key());
         out.push('\n');
         // O80. Written only when he has stated one — an absent key is how
         // "fall through to the per-mode default" is spelled on disk, and

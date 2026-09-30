@@ -718,6 +718,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "command-remote"
+version = "0.1.0"
+dependencies = [
+ "egui",
+ "native-pipe",
+]
+
+[[package]]
 name = "concurrent-queue"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2180,6 +2188,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "native-pipe"
+version = "0.1.0"
+
+[[package]]
 name = "native-window"
 version = "0.1.0"
 
@@ -2730,6 +2742,7 @@ dependencies = [
 name = "pdfcer-gui"
 version = "0.1.0"
 dependencies = [
+ "command-remote",
  "eframe",
  "egui",
  "egui-shell",
@@ -2808,6 +2821,13 @@ source = "git+file:///D:/Dev/pdfcer?branch=main#5b4a302df196f10f4e9a3731fab8bfd2
 dependencies = [
  "thiserror 2.0.21",
  "windows",
+]
+
+[[package]]
+name = "pdfcer-remote"
+version = "0.1.0"
+dependencies = [
+ "command-remote",
 ]
 
 [[package]]

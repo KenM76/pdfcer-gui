@@ -479,6 +479,7 @@ mod tests {
                 &mut crate::canvas::pick::PickFilter::default(),
                 &mut crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT.to_owned(),
                 &mut crate::app::prefs::WheelPaging::default(),
+                &mut crate::app::remote::Link::default(),
                 &mut actions,
             );
         });
@@ -524,6 +525,7 @@ mod tests {
                 &mut crate::canvas::pick::PickFilter::default(),
                 &mut crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT.to_owned(),
                 &mut crate::app::prefs::WheelPaging::default(),
+                &mut crate::app::remote::Link::default(),
                 &mut actions,
             );
         });
@@ -662,6 +664,7 @@ mod tests {
                 &mut crate::canvas::pick::PickFilter::default(),
                 &mut crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT.to_owned(),
                 &mut crate::app::prefs::WheelPaging::default(),
+                &mut crate::app::remote::Link::default(),
                 &mut actions,
             );
         });

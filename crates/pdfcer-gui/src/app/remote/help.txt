@@ -1,0 +1,16 @@
+pdfcer live link. One request per line; quote an argument containing spaces.
+Every command acts on the active document, exactly as the operator's own click would, with the same undo.
+
+hello <client> "<purpose>"   ask the operator for permission (required first)
+help                         this text
+state                        active document, page, zoom, unsaved edits, selection, undo
+commands                     every command: id, enabled|disabled|hidden, label
+run <command-id>             run a command as a ribbon click would (format.delete, file.save, ...)
+page <n>                     go to page n (1-based)
+objects                      the current page's objects: index, kind, page-space bounds in points
+select <i,j,...> | none      select objects on the current page by index from `objects`
+undo [n] | redo [n]          step the undo history
+history                      undo depth and the kinds on top of the undo and redo stacks
+render [page] [dpi]          render a page (default: current, 96 dpi) to a PNG; replies with its path
+open <path>                  open a PDF in a new tab
+bye                          end the connection

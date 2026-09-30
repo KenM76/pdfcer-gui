@@ -1,0 +1,23 @@
+[package]
+name = "command-remote"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Let another local process run an egui application's registered commands, with the operator's consent."
+license = "MIT"
+
+# Generic: knows commands by id and nothing about any document type. The
+# shell-purity gate holds it to the same rule as egui-shell.
+[dependencies]
+egui = { workspace = true, optional = true }
+native-pipe = { path = "../native-pipe" }
+
+# `ui` is the operator's side (banner, status item, log window). A client
+# needs only the protocol and discovery, so it builds without egui.
+[features]
+default = ["ui"]
+ui = ["dep:egui"]
+
+[lints.rust]
+missing_docs = "deny"
+unsafe_code = "forbid"

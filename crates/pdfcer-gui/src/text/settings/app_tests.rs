@@ -78,12 +78,17 @@ mod tests {
     //
     // The coloured-icons switch (O232) is a shell preference beside the UI
     // scale in the Appearance group.
-    const SETTINGS_COUNT: usize = 40;
+    const SETTINGS_COUNT: usize = 41;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     fn triples() -> Vec<(&'static str, &'static str, &'static str)> {
         vec![
             (theme_title(), theme_silence(), theme_radius()),
+            (
+                remote_control_title(),
+                remote_control_silence(),
+                remote_control_radius(),
+            ),
             // O122's triple, reached across into `crate::text::acrobat`. See
             // `SETTINGS_COUNT` on why that module holds it.
             (
@@ -299,6 +304,10 @@ mod tests {
             include_str!("../../../../pdfcer-gui-base/src/settingspages/comments.rs"),
         ),
         ("display", include_str!("../../dialogs/settings/display.rs")),
+        (
+            "remote",
+            include_str!("../../../../pdfcer-gui-base/src/settingspages/remote.rs"),
+        ),
         (
             "forms",
             include_str!("../../../../pdfcer-gui-base/src/settingspages/forms.rs"),

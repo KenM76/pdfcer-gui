@@ -642,6 +642,7 @@ impl eframe::App for PdfcerApp {
             // the menu path.
             self.dock_menu_panel = None;
         }
+        self.remote_poll(&ctx, &mut actions);
 
         // Step 1b — the ribbon, above the canvas.
         //
@@ -664,6 +665,8 @@ impl eframe::App for PdfcerApp {
         if chrome {
             self.ribbon_band(ui, &mut actions);
         }
+        // Drawn in Read mode too: a question nobody can see is a refusal.
+        self.remote_banner(ui);
 
         // Step 1b¹ — the DOCUMENT TAB STRIP, under the ribbon and over
         // everything else.
@@ -743,6 +746,7 @@ impl eframe::App for PdfcerApp {
                     &mut self.pick_filter,
                     &mut self.prefs.max_zoom_percent,
                     &mut self.prefs.wheel_paging,
+                    &mut self.remote,
                     &mut actions,
                 );
                 let wheel_now = self.prefs.wheel_paging;
@@ -1225,6 +1229,7 @@ impl eframe::App for PdfcerApp {
         // Step 3 — apply, after the frame is drawn.
         let pixels_per_point = ctx.pixels_per_point();
         self.apply_actions(actions, pixels_per_point);
+        self.remote_settle(&ctx);
         // After the actions, so the in-font draft is laid out for the text
         // this frame's keystrokes produced.
         if let Status::Open(doc) = &self.status {

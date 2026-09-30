@@ -7,19 +7,18 @@ safe way to do it.
 
 ## The one fact that governs everything
 
-**You cannot control the pdfcer-gui window Ken already has open.** It has no
-API, no socket and no pipe yet (a remote-control link is designed, not built).
-A second `pdfcer-gui.exe` does not forward anything to the first; it starts a
-separate program in its own window.
+**You can drive the window Ken has open, but only through `pdfcer-remote.exe`,
+and only with his permission.** It sits beside `pdfcer-gui.exe` in the same
+folder. If it is not there, that build predates the live link: use the
+hand-off procedure below instead.
 
-**You can do the work without interrupting him**: with the `pdfcer`
-command-line tool on a copy of the file, or by driving a private, hidden
-pdfcer-gui (see *Driving a hidden pdfcer-gui*). Either way the result is a
-file, so the hand-off rules below still apply.
+A live-link edit happens *inside* the open document, with the same undo as his
+own click, so there is no hand-off and nothing to reload. **Prefer it** whenever
+the window is running. See *Driving the open window*.
 
-**The open file is not live.** When pdfcer-gui opens a PDF it reads the whole
-file into memory and closes it. It holds no lock, so you *can* write the file,
-but:
+Without the live link, **the open file is not live.** pdfcer-gui reads the
+whole file into memory and closes it. It holds no lock, so you *can* write the
+file, but:
 
 - **pdfcer-gui does not notice.** It keeps showing its own copy. Nothing
   watches the file on disk, and there is no Reload. Opening the same path again
@@ -28,9 +27,68 @@ but:
   copy, plus Ken's edits, and replaces what is on disk. Your edit is lost and
   nothing reports it.
 
-So an edit is a hand-off between you and Ken. It is never a background change.
+So an edit made from outside is a hand-off between you and Ken. It is never a
+background change. A second `pdfcer-gui.exe` does not forward anything to the
+first; it starts a separate program in its own window.
 
-## The safe procedure for changing a file Ken has open
+## Driving the open window: `pdfcer-remote`
+
+```
+pdfcer-remote list                          running windows: pid, active document
+pdfcer-remote help                          the verb list
+pdfcer-remote --purpose "<why>" <verb> [args...]
+pdfcer-remote --pid <pid> <verb> ...        a particular window (default: newest)
+```
+
+Each call connects, introduces itself, sends one request, prints the reply and
+disconnects. Exit code: `0` success, `1` the window refused or the verb failed
+(`error <code>: <reason>` on stdout), `2` no window is running or bad usage.
+
+**Permission.** Settings ▸ Remote control holds Ken's answer: *ask* (the
+default), *always* or *never*. Under *ask*, your first call puts a bar across
+the top of his window naming your `--client` and `--purpose`, and **your call
+waits** (up to two minutes) until he answers. So pass a `--purpose` a person
+can decide on, like `--purpose "apply the red markup on sheet 3"`. A refusal
+holds for a minute; do not retry in a loop. The window's status bar shows while
+a program is connected and keeps a log of every request.
+
+**Verbs.** Every one acts on the **active** document:
+
+| Verb | What it does |
+|---|---|
+| `state` | document, page `n/total`, zoom, `unsaved=`, `selected=`, `undo_depth=` |
+| `commands` | every command: `id`, `enabled`/`disabled`/`hidden`, label |
+| `run <id>` | run a command exactly as its ribbon button would |
+| `page <n>` | go to page n (1-based) |
+| `objects` | the current page's objects: index, `path`/`text`/`image`, bounds in PDF points |
+| `select <i,j,…>` / `select none` | select objects on the current page by `objects` index |
+| `undo [n]` / `redo [n]` | step the undo history |
+| `history` | undo depth, and the kinds on top of the undo and redo stacks |
+| `render [page] [dpi]` | render a page to a PNG; the reply is its path. **Read the image.** |
+| `open <path>` | open a PDF in a new tab |
+
+A `run`, `page`, `undo` or `open` replies with `state` as it stands *after* the
+change, so you can check it in the same call.
+
+**The loop that works:** `render` → look → `objects` → `select` → `run` →
+`render` again to check what changed. Every change is one Undo for Ken. **Do not
+save** (`run file.save`) unless he asked: leaving it unsaved lets him review and
+undo your change.
+
+**Things that bite:**
+
+- `run` refuses a command the current mode hides (`error hidden`): editing
+  commands need Edit mode, so send `run mode.edit` first. `commands` shows
+  which state each command is in.
+- A command that opens a dialog opens it on **his** screen. Prefer commands
+  that act on the selection directly.
+- `objects` indices are paint order on the current page and **change after a
+  delete**. Re-read `objects` after every edit; never reuse an old index. A
+  delete clears the selection.
+- `page` is where the view is, and the view moves when Ken scrolls. Check
+  `page=` in the reply before you `select`.
+
+## Without the live link: changing a file Ken has open
 
 1. **Ask Ken to Save (Ctrl+S) and close that tab** (File ▸ Close, or Ctrl+W).
    If he has unsaved edits, the tab shows a marker, and Close asks before it

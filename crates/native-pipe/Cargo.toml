@@ -1,0 +1,14 @@
+[package]
+name = "native-pipe"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "A local, current-user-only Windows named-pipe server: accept a connection, read and write it as a stream."
+license = "MIT"
+
+# No dependencies: the Win32 calls are declared by hand, as native-clipboard
+# does, so `unsafe` stays out of every crate that forbids it.
+[dependencies]
+
+[lints.rust]
+missing_docs = "deny"

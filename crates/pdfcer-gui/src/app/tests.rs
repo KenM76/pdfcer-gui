@@ -393,6 +393,29 @@ fn the_ribbon_delete_raises_the_delete_action() {
     );
 }
 
+/// A delete renumbers the page, so a selection that survived it would name
+/// objects the operator never picked; a second Delete would remove them.
+#[test]
+fn a_delete_leaves_nothing_selected() {
+    let ctx = egui::Context::default();
+    let mut app = opened();
+    app.ribbon.set_mode("edit");
+    select_object(&mut app, 0, false);
+    let delete = token_for(&app, "format.delete");
+    let mut actions = Vec::new();
+    app.dispatch_token(&ctx, delete, &mut actions);
+    assert_eq!(actions.len(), 1);
+    app.apply_actions(actions, 1.0);
+    let Status::Open(doc) = &app.status else {
+        unreachable!()
+    };
+    assert!(
+        doc.edit_epoch > 0,
+        "the delete must have landed for this to test anything"
+    );
+    assert!(doc.selection.object_indices_on(0).is_empty());
+}
+
 /// **The ribbon's Delete obeys the same rung rule as the key.**
 #[test]
 fn the_ribbon_delete_declines_inside_an_object_just_as_the_key_does() {

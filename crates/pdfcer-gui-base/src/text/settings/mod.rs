@@ -21,6 +21,8 @@ pub mod overprint;
 /// the module grows.
 pub mod print_colour;
 pub mod redaction;
+/// Whether another program may drive the window.
+pub mod remote;
 /// The settings that change pdfcer's own window.
 pub mod shell;
 
@@ -32,6 +34,7 @@ pub use ocrlayer::*;
 pub use overprint::*;
 pub use print_colour::*;
 pub use redaction::*;
+pub use remote::*;
 pub use shell::*;
 
 use pdfcer_core::settings::StoreKind;

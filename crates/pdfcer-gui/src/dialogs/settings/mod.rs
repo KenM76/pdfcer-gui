@@ -40,6 +40,7 @@ pub use pdfcer_gui_base::settingspages::measuring;
 pub(crate) mod nav;
 pub use pdfcer_gui_base::settingspages::pages;
 pub use pdfcer_gui_base::settingspages::redaction;
+use pdfcer_gui_base::settingspages::remote;
 pub use pdfcer_gui_base::settingspages::saving;
 /// May pdfcer read the trust list Acrobat has downloaded, and where is it.
 pub mod signatures;
@@ -319,6 +320,7 @@ fn page_body(
             saving::quad_point_order(ui, draft);
         }
         "redaction" => redaction::residual_reach(ui, &mut draft.working_prefs),
+        "remote" => remote::remote_control(ui, &mut draft.working_prefs),
         _ => {}
     }
 }
@@ -390,6 +392,10 @@ mod tests {
         (
             "redaction",
             include_str!("../../../../pdfcer-gui-base/src/settingspages/redaction.rs"),
+        ),
+        (
+            "remote",
+            include_str!("../../../../pdfcer-gui-base/src/settingspages/remote.rs"),
         ),
         (
             "saving",

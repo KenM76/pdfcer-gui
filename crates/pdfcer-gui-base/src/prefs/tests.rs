@@ -116,6 +116,7 @@ fn every_preference_round_trips_through_the_file() {
                     // pass by landing back on `Scroll`.
                     paste_chords: PasteChords::AcrobatOrder,
                     wheel_paging: WheelPaging::FlipPages,
+                    remote_control: RemoteControl::Never,
                     // Deliberately not all-true and not all-false: an assignment
                     // that crossed two of the three fields would survive either.
                     chrome: PageChrome {
@@ -629,6 +630,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
         max_zoom_percent: 25_000.0,
         opening_fit: OpeningFit::ActualSize,
         wheel_paging: WheelPaging::FlipPages,
+        remote_control: RemoteControl::Always,
         chrome: PageChrome {
             rulers: true,
             grid: true,

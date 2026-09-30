@@ -14,6 +14,7 @@ pub mod measuring;
 pub mod pages;
 pub mod preset;
 pub mod redaction;
+pub mod remote;
 pub mod saving;
 pub mod text;
 pub mod widgets;

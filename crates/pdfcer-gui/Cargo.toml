@@ -203,6 +203,10 @@ native-window = { path = "../native-window" }
 # *cannot* change.
 native-clipboard = { path = "../native-clipboard" }
 
+# command-remote = the live link: another program, run by this user, drives
+# the window through its registered commands with the operator's consent.
+command-remote = { path = "../command-remote" }
+
 # native-gl = read the OpenGL error flag, which the render stack does not.
 #
 # The third `native-*` crate and the same single reason as the other two: this

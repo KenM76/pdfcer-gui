@@ -247,6 +247,7 @@ pub mod prefscache;
 /// Which chord means which paste.
 pub mod pastechords;
 
+pub mod remotecontrol;
 /// What the mouse wheel does when the document is not a scroll.
 pub mod wheelpaging;
 

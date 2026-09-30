@@ -101,6 +101,15 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
     // a mistake here can be about which page's content changed and never about
     // which sheet an index names.
     use super::apply::vector_edit_on_page;
+    let deletes = matches!(
+        action,
+        VectorAction::DeleteSelection { .. }
+            | VectorAction::DeleteLeavesInForm { .. }
+            | VectorAction::DeleteSubpath { .. }
+            | VectorAction::DeleteTextLine { .. }
+            | VectorAction::DeleteNode { .. }
+    );
+    let epoch = doc.edit_epoch;
     match action {
         VectorAction::DeleteSelection { page, objects } => {
             if !objects.is_empty() {
@@ -676,6 +685,11 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                     })
             });
         }
+    }
+    // A delete renumbers what follows it, so a surviving selection would name
+    // objects the operator never picked, and a second Delete would remove them.
+    if deletes && doc.edit_epoch != epoch {
+        doc.selection.clear();
     }
 }
 

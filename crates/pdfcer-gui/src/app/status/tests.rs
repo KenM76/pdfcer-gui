@@ -56,6 +56,7 @@ fn bar_height(ctx: &Context, status: &Status) -> f32 {
                     &mut filter,
                     &mut max_zoom,
                     &mut crate::app::prefs::WheelPaging::default(),
+                    &mut crate::app::remote::Link::default(),
                     &mut actions,
                 )
             })

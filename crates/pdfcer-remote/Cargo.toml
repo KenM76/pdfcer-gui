@@ -1,0 +1,18 @@
+[package]
+name = "pdfcer-remote"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Command-line client for pdfcer-gui's live link."
+license = "MIT"
+
+[[bin]]
+name = "pdfcer-remote"
+path = "src/main.rs"
+
+[dependencies]
+command-remote = { path = "../command-remote", default-features = false }
+
+[lints.rust]
+missing_docs = "deny"
+unsafe_code = "forbid"

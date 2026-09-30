@@ -34,6 +34,14 @@ members = [
     # `unsafe`. See `crates/native-clipboard/Cargo.toml` for the full argument
     # and for what must never go into it.
     "crates/native-clipboard",
+    # native-pipe — the current-user-only named pipe the command remote
+    # listens on; hand-declared Win32, quarantined for the same reason.
+    "crates/native-pipe",
+    # command-remote — another local process runs registered commands, with
+    # the operator's consent. Generic; held to the shell-purity rule.
+    "crates/command-remote",
+    # The live link's command-line client.
+    "crates/pdfcer-remote",
     # native-gl — the OpenGL error flag, read. Third instance of the same
     # quarantine and the only one with a dependency: its subject is a
     # `glow::Context` the caller already holds, so hand-declaring the call
