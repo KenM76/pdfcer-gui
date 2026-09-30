@@ -175,6 +175,32 @@ visual treatments in this crate for a line of disclosure (warn colour, or
 small-and-weak), and a two-valued answer is the honest shape for a two-valued
 question. It becomes an enum the day a third treatment exists.
 
+### `const REGION_CHOOSER_PREFIX`
+
+Page `n`'s tab-order combo publishes `forms.tab_order.tabs.<n>` (clip-aware)
+and each popup option `….<absent|R|C|S|A|W>`. `ui-verify`'s
+`page_tabs_chooser` drives them.
+
+### `fn tabs_chooser`
+
+The "Tab order:" combo above a page's rows. It shows the page's own `/Tabs`;
+an inherited value shows as Not stated, because choosing writes the page's own
+key and the note below already discloses the inheritance. A change raises
+`FieldAction::SetPageTabs`; the engine owns every refusal (`/A` and `/W` below
+PDF 2.0, PDF/UA's `/S`, a certified document), and its sentence reaches the
+status line through the edit funnel.
+
+### `fn choice_name`, `fn tabs_name`
+
+The operator's name for a value, and the key it writes (`absent` for none):
+the second names regions and trace fields. `PageTabs` is `#[non_exhaustive]`,
+so an unknown future variant names itself `?`.
+
+### `fn every_tabs_choice_is_named_and_addressable_apart`
+
+Two choices sharing a name or a region suffix would be indistinguishable to
+the operator or to the harness.
+
 ### `fn mode_name`
 
 Used only where the *name* is quoted back — the ancestor sentence and the

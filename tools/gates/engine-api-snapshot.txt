@@ -7897,3 +7897,8 @@ pdfcer-render variant pdfcer_render::text::UnsupportedFont::UnusableProgram
 pdfcer-render variant pdfcer_render::text::UnsupportedFont::VerticalWriting
 pdfcer-render variant pdfcer_render::type3::GlyphColorSource::ShapeAndColor
 pdfcer-render variant pdfcer_render::type3::GlyphColorSource::ShapeOnly
+exempt pdfcer-core variant pdfcer_core::edit::CommandKind::SetPageTabs -- the undo entry `EditSession::set_page_tabs` records. `app::actions::reorder::set_page_tabs` makes one call per choice and never coalesces it, so the shell has no reason to name the kind; the history label is the engine's.
+exempt pdfcer-core variant pdfcer_core::edit::EditError::TabsNeedPdf20 -- a `set_page_tabs` refusal. The edit funnel words every refusal from the error's own Display, which names the value and the file's version; the shell has no different act to offer per variant, so matching it would restate the engine's sentence.
+exempt pdfcer-core variant pdfcer_core::edit::EditError::TabsBreakPdfUa -- a `set_page_tabs` refusal on a PDF/UA document; reaches the status line through the funnel's Display wording, like `TabsNeedPdf20` above.
+exempt pdfcer-core variant pdfcer_core::edit::EditError::TabsValueUndefined -- a `set_page_tabs` refusal for a name ISO 32000 does not define. The chooser offers only defined values, so the operator cannot reach it; the funnel's Display wording covers it if the engine ever answers it.
+exempt pdfcer-render method pdfcer_render::text::TextState::clips -- whether the current text rendering mode (Tr 4-7) adds glyphs to the clip. The rasteriser consumes it while painting; the shell holds no TextState and draws only what the renderer returns.

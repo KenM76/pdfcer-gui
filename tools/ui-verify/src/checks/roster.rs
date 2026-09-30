@@ -177,6 +177,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(merge_runs::MergingTextRunsReachesTheDocument),
         Box::new(repair_form_fonts::RepairingFormFontsReachesTheDocument),
         Box::new(ocr_layer_view::OcrLayerIsShownAndBlended),
+        Box::new(ocr_colour_setting::OcrColourIsReadAndReset),
         Box::new(off_page_blank_overhang::BlankOverhangIsCountedNotListed),
         Box::new(remove_ocr::RemovingOcrTextReachesTheDocument),
         Box::new(export_keep_text::KeepTextDecidesTheSvg),
@@ -308,6 +309,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // which is what makes this check possible.
         Box::new(pages_drag::PagesDragShowsWhereItLands),
         Box::new(tab_order_drag::TabOrderDragMovesAFieldAndShowsWhere),
+        Box::new(page_tabs_chooser::PageTabsChooser),
         Box::new(forms_spotlight::ClickingAFormRowLightsTheFieldOnThePage),
         Box::new(password_fill::ATypedPasswordIsNotSavedUnlessAsked),
         Box::new(layer_authoring::ALayerCanBeMadeRenamedAndDeleted),

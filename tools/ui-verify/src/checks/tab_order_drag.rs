@@ -15,13 +15,13 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The mode the Forms panel is reachable from.
-const MODE: &str = "edit";
+pub(super) const MODE: &str = "edit";
 /// The ribbon item that opens the Forms panel, and the tab it lives on.
-const PANEL_ITEM: &str = "ribbon.item.view.panel_forms";
+pub(super) const PANEL_ITEM: &str = "ribbon.item.view.panel_forms";
 /// The collapsing header for the Tab-order section, which ships **closed**.
-const HEADER: &str = "forms.tab_order.header";
+pub(super) const HEADER: &str = "forms.tab_order.header";
 /// The Forms panel's dock body — an on-screen-by-construction scroll target.
-const PANEL_BODY: &str = "dock.body.view.panel_forms";
+pub(super) const PANEL_BODY: &str = "dock.body.view.panel_forms";
 /// The prefix of the per-row regions: `page.row`, both 0-based.
 const ROW: &str = "forms.tab_order.row.";
 /// The insertion caret's region.
@@ -359,7 +359,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// Drag the dock splitter above the Forms pane upward, so the panel has room.
-fn enlarge_forms_pane(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+pub(super) fn enlarge_forms_pane(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
     let trace = session.trace()?;
     let Some(body) = declared(&trace, ui_rect, PANEL_BODY) else {
         return Ok(());
@@ -440,14 +440,14 @@ const FIXTURE: &str = "forms/demo-form.pdf";
 ///
 /// Read-only, as everything under `D:\Dev\pdfcer` is until fold-in day. The
 /// harness opens it, drags in the shell's own window, and never saves.
-fn form_fixture() -> Option<std::path::PathBuf> {
+pub(super) fn form_fixture() -> Option<std::path::PathBuf> {
     let path = std::path::Path::new("D:/Dev/pdfcer/fixtures/synthetic").join(FIXTURE);
     path.is_file().then_some(path)
 }
 
 /// Click a ribbon tab, then the item on it, following it into the overflow if
 /// the group has collapsed.
-fn open_from_tab(
+pub(super) fn open_from_tab(
     session: &Session,
     driver: &Driver,
     ui_rect: &str,
@@ -479,7 +479,7 @@ fn open_from_tab(
 }
 
 /// Expand the Tab-order collapsing header, which ships closed.
-fn open_tab_order(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+pub(super) fn open_tab_order(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
     let trace = session.trace()?;
     if let Some(header) = declared(&trace, ui_rect, HEADER) {
         driver.click_at(session.frame()?.declared_center(header))?;

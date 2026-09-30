@@ -229,6 +229,15 @@ pub enum FieldAction {
         /// Vertical displacement, PDF points. **Positive is up.**
         dy: f64,
     },
+    /// Write or remove a page's `/Tabs` entry —
+    /// `EditSession::set_page_tabs`. The engine refuses a PDF 2.0 value below
+    /// 2.0, a value PDF/UA forbids, and a value ISO 32000 does not define.
+    SetPageTabs {
+        /// The page, 0-based.
+        page: usize,
+        /// What to write; `PageTabs::Absent` removes the entry.
+        tabs: pdfcer_core::edit::PageTabs,
+    },
     /// **Put a page's annotations in a new order** — `OPERATOR_REQUESTS.md` O99.
     ///
     /// The operator: *"the tab order list is supposed to be able to be reordered

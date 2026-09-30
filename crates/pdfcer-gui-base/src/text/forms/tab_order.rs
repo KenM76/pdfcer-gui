@@ -313,3 +313,67 @@ pub const fn reorder_copied_shared_array() -> &'static str {
     "This page shared its annotation list with another page, so the list was copied before it \
      was reordered. The other page is unchanged."
 }
+
+// --- Choosing the page's `/Tabs` ---------------------------------------------
+
+/// The label before the per-page tab-order chooser.
+#[must_use]
+pub const fn tab_order_choose_label() -> &'static str {
+    "Tab order:"
+}
+
+/// The chooser's hover: what each kind of choice writes.
+#[must_use]
+pub const fn tab_order_choose_hover() -> &'static str {
+    "Writes this page's /Tabs entry. Rows, columns and tag structure are worked out by the \
+     viewer from the page; the two PDF 2.0 choices make the list below the tab order. Not \
+     stated removes the entry."
+}
+
+/// No `/Tabs` entry.
+#[must_use]
+pub const fn tab_order_choice_absent() -> &'static str {
+    "Not stated"
+}
+
+/// `/R`.
+#[must_use]
+pub const fn tab_order_choice_row() -> &'static str {
+    "Rows"
+}
+
+/// `/C`.
+#[must_use]
+pub const fn tab_order_choice_column() -> &'static str {
+    "Columns"
+}
+
+/// `/S`.
+#[must_use]
+pub const fn tab_order_choice_structure() -> &'static str {
+    "Tag structure"
+}
+
+/// `/A`.
+#[must_use]
+pub const fn tab_order_choice_array() -> &'static str {
+    "This list (PDF 2.0)"
+}
+
+/// `/W`.
+#[must_use]
+pub const fn tab_order_choice_widgets() -> &'static str {
+    "Fields in this list, then the rest (PDF 2.0)"
+}
+
+/// A `/Tabs` value the chooser cannot write, shown as the current value only.
+#[must_use]
+pub fn tab_order_choice_other(name: &str) -> String {
+    format!("/{name} (unrecognised)")
+}
+
+/// The status line after the entry was written.
+#[must_use]
+pub fn page_tabs_set(page_number: usize, choice: &str) -> String {
+    format!("Page {page_number}'s tab order is now: {choice}.")
+}

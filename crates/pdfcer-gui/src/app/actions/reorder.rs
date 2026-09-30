@@ -53,6 +53,25 @@ pub(super) fn reorder_annotations(
 // Z-ORDER — the operator's half of the same array
 // ===========================================================================
 
+/// Write or remove page `page`'s `/Tabs`. The engine's refusals reach the
+/// status line through `vector_edit`; an unchanged value records nothing.
+pub(super) fn set_page_tabs(doc: &mut OpenDoc, page: usize, tabs: pdfcer_core::edit::PageTabs) {
+    let chosen = crate::panels::forms::tab_order::choice_name(&tabs);
+    super::apply::vector_edit(doc, "set-page-tabs", page, 1, |session| {
+        session.set_page_tabs(page, tabs.clone()).map(|before| {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!(
+                    "page-tabs-set page={page} before={} after={}",
+                    crate::panels::forms::tab_order::tabs_name(&before),
+                    crate::panels::forms::tab_order::tabs_name(&tabs)
+                )
+            });
+            vec![crate::text::forms::page_tabs_set(page + 1, &chosen)]
+        })
+    });
+}
+
 pub use pdfcer_gui_base::subactions::ArrangeTo;
 
 /// **Put one markup annotation at a new depth in its page's paint order.**

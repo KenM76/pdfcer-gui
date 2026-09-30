@@ -11,6 +11,7 @@ pub use pdfcer_gui_base::tabordermodel as model;
 mod register;
 pub use pdfcer_gui_base::taborderstated as tabs;
 
+use pdfcer_core::edit::PageTabs as EngineTabs;
 use pdfcer_core::forms::AcroForm;
 use pdfcer_core::view::DocumentView;
 
@@ -293,6 +294,8 @@ fn page_block(
         ui.label(egui::RichText::new(sentence).small().weak());
     }
 
+    tabs_chooser(ui, page, actions);
+
     if page.rows.is_empty() {
         ui.label(
             egui::RichText::new(t::tab_order_page_no_widgets())
@@ -449,6 +452,91 @@ fn page_block(
 }
 
 /// The sentence for one page's `/Tabs` state, and whether it is a warning.
+/// The rect prefix of the per-page `/Tabs` chooser; the page index follows,
+/// and each choice appends `.<code>` (`absent`, `R`, `C`, `S`, `A`, `W`).
+pub const REGION_CHOOSER_PREFIX: &str = "forms.tab_order.tabs."; // ui-text-exempt: trace region name, never displayed
+
+/// Every value the chooser can write, in menu order.
+const CHOICES: [EngineTabs; 6] = [
+    EngineTabs::Absent,
+    EngineTabs::Row,
+    EngineTabs::Column,
+    EngineTabs::Structure,
+    EngineTabs::ArrayOrder,
+    EngineTabs::WidgetOrder,
+];
+
+/// Pick the page's `/Tabs`, pushing `FieldAction::SetPageTabs` on a change.
+/// An ancestor's entry does not reach the page, so it shows as not stated.
+fn tabs_chooser(ui: &mut egui::Ui, page: &PageTabs, actions: &mut Vec<Action>) {
+    let current = match &page.tabs {
+        TabsEntry::Absent | TabsEntry::OnAncestor(_) => EngineTabs::Absent,
+        TabsEntry::OnPage(mode) => match mode {
+            TabsMode::Row => EngineTabs::Row,
+            TabsMode::Column => EngineTabs::Column,
+            TabsMode::Structure => EngineTabs::Structure,
+            TabsMode::AnnotsArray => EngineTabs::ArrayOrder,
+            TabsMode::Widgets => EngineTabs::WidgetOrder,
+            TabsMode::Unrecognised(name) => EngineTabs::Other(name.clone()),
+        },
+    };
+    let prefix = format!("{REGION_CHOOSER_PREFIX}{}", page.page_index);
+    let mut chosen = None;
+    ui.horizontal(|ui| {
+        ui.label(t::tab_order_choose_label());
+        let combo = egui::ComboBox::from_id_salt(("tab-order-tabs", page.page_index))
+            .selected_text(choice_name(&current))
+            .show_ui(ui, |ui| {
+                for choice in CHOICES {
+                    let row = ui.selectable_label(choice == current, choice_name(&choice));
+                    crate::diag::ui_rect(&format!("{prefix}.{}", tabs_name(&choice)), row.rect);
+                    if row.clicked() && choice != current {
+                        chosen = Some(choice);
+                    }
+                }
+            });
+        let combo = combo.response.on_hover_text(t::tab_order_choose_hover());
+        crate::diag::ui_rect_visible(&prefix, combo.rect, ui.clip_rect());
+    });
+    if let Some(tabs) = chosen {
+        actions.push(Action::Field(
+            crate::app::actions::forms::FieldAction::SetPageTabs {
+                page: page.page_index,
+                tabs,
+            },
+        ));
+    }
+}
+
+/// The operator's name for a `/Tabs` value.
+#[must_use]
+pub fn choice_name(tabs: &EngineTabs) -> String {
+    match tabs {
+        EngineTabs::Absent => t::tab_order_choice_absent().to_owned(),
+        EngineTabs::Row => t::tab_order_choice_row().to_owned(),
+        EngineTabs::Column => t::tab_order_choice_column().to_owned(),
+        EngineTabs::Structure => t::tab_order_choice_structure().to_owned(),
+        EngineTabs::ArrayOrder => t::tab_order_choice_array().to_owned(),
+        EngineTabs::WidgetOrder => t::tab_order_choice_widgets().to_owned(),
+        other => t::tab_order_choice_other(&tabs_name(other)),
+    }
+}
+
+/// The `/Tabs` name a value writes, or `absent`; for traces and region names.
+#[must_use]
+pub fn tabs_name(tabs: &EngineTabs) -> String {
+    match tabs {
+        EngineTabs::Absent => "absent".to_owned(),
+        EngineTabs::Row => "R".to_owned(),
+        EngineTabs::Column => "C".to_owned(),
+        EngineTabs::Structure => "S".to_owned(),
+        EngineTabs::ArrayOrder => "A".to_owned(),
+        EngineTabs::WidgetOrder => "W".to_owned(),
+        EngineTabs::Other(name) => name.clone(),
+        _ => "?".to_owned(),
+    }
+}
+
 fn tabs_note(tabs: &TabsEntry) -> (String, bool) {
     match tabs {
         TabsEntry::Absent => (t::tab_order_no_tabs_entry().to_owned(), false),
@@ -550,6 +638,17 @@ fn trace(listing: &Listing) {
 mod tests {
     use self::tabs::Sequence;
     use super::*;
+
+    /// Every choice has a distinct name and a distinct region suffix.
+    #[test]
+    fn every_tabs_choice_is_named_and_addressable_apart() {
+        let names: std::collections::HashSet<_> = CHOICES.iter().map(choice_name).collect();
+        let keys: std::collections::HashSet<_> = CHOICES.iter().map(tabs_name).collect();
+        assert_eq!(names.len(), CHOICES.len());
+        assert_eq!(keys.len(), CHOICES.len());
+        assert_eq!(tabs_name(&EngineTabs::Other("Q".into())), "Q");
+        assert!(choice_name(&EngineTabs::Other("Q".into())).contains("/Q"));
+    }
 
     /// **Only the states where the sequence is NOT the tab order warn.**
     #[test]

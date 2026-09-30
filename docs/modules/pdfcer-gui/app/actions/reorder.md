@@ -131,6 +131,14 @@ order the page already had, the engine recorded no command, and there is
 nothing to disclose. It is the common case for a drag that ends where it
 started, and it must not read as a refusal.
 
+### `fn set_page_tabs`
+
+Writes one page's `/Tabs` through `EditSession::set_page_tabs`, in the edit
+funnel as `set-page-tabs`. The engine returns the previous value, traced as
+`page-tabs-set page=… before=… after=…`; an unchanged value records no undo
+step. Every refusal is the engine's and reaches the status line as the funnel's
+`set-page-tabs-refused … detail=…`.
+
 ### `enum ArrangeTo`
 
 # Why all four, when only two were asked for

@@ -79,6 +79,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: FieldAction) {
         FieldAction::ReorderAnnotations { page, order } => {
             super::reorder::reorder_annotations(doc, page, &order);
         }
+        FieldAction::SetPageTabs { page, tabs } => super::reorder::set_page_tabs(doc, page, tabs),
         // The arm changes no document and bumps no epoch, so it does not go
         // near `vector_edit`; the deletion does, like every other structural
         // form verb. See `groups`' header for why a query needs to be an action

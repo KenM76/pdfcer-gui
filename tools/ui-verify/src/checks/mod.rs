@@ -18,6 +18,7 @@ pub mod blend_space;
 pub mod export_keep_text;
 pub mod field_outline;
 pub mod merge_runs;
+pub mod ocr_colour_setting;
 pub mod ocr_layer_view;
 pub mod off_page_blank_overhang;
 pub mod remove_ocr;
@@ -641,6 +642,8 @@ pub mod redact_image_warning;
 pub mod signing;
 
 pub mod tab_order_drag;
+
+pub mod page_tabs_chooser;
 
 pub mod title_build_stamp;
 
