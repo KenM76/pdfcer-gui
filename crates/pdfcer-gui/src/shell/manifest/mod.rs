@@ -269,6 +269,15 @@ pub fn built_in() -> Shell {
         .with_binding("Ctrl+A", "edit.select_all")
         // Inkscape's chord for its Align and Distribute dialog.
         .with_binding("Ctrl+Shift+A", "edit.align")
+        // Inkscape's Ctrl+Alt+keypad aligns. egui reads a keypad digit and a
+        // top-row digit as one key, so both rows answer.
+        .with_binding("Ctrl+Alt+4", "edit.align_left")
+        .with_binding("Ctrl+Alt+6", "edit.align_right")
+        .with_binding("Ctrl+Alt+8", "edit.align_top")
+        .with_binding("Ctrl+Alt+2", "edit.align_bottom")
+        .with_binding("Ctrl+Alt+7", "edit.align_centre_x")
+        .with_binding("Ctrl+Alt+1", "edit.align_centre_y")
+        .with_binding("Ctrl+Alt+5", "edit.align_centre")
         .with_binding("Ctrl+S", "file.save")
         .with_binding("Ctrl+Shift+S", "file.save_copy")
         .with_binding("Ctrl+Z", "edit.undo")
@@ -637,8 +646,8 @@ mod tests {
         assert_eq!(shell.modes().len(), 3, "three modes");
         assert_eq!(
             shell.keymap.as_ref().expect("a keymap").len(),
-            41,
-            "forty-one key bindings; a chord added or removed is a change MANUAL.md's shortcut table must record"
+            48,
+            "forty-eight key bindings; a chord added or removed is a change MANUAL.md's shortcut table must record"
         );
     }
 

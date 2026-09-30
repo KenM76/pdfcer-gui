@@ -56,6 +56,8 @@ pub mod vk {
     ///
     pub const S: u16 = 0x53;
     pub const Z: u16 = 0x5A;
+    /// `VK_NUMPAD5`, for Inkscape's `Ctrl+Alt+keypad 5` (centre on both axes).
+    pub const NUMPAD5: u16 = 0x65;
     /// `Y`, for `Ctrl+Y` — redo's other spelling.
     pub const Y: u16 = 0x59;
     /// `E`, for `Ctrl+E` and `Ctrl+Shift+E` — edit text and add text.

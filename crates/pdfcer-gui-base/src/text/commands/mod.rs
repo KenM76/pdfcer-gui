@@ -485,6 +485,69 @@ pub const fn edit_align() -> CommandText {
     )
 }
 
+/// `edit.align_left`
+#[must_use]
+pub const fn edit_align_left() -> CommandText {
+    CommandText::new(
+        "Align left edges",
+        "Line up the selected objects' left edges, relative to the Align panel's choice. Ctrl+Alt+4.",
+    )
+}
+
+/// `edit.align_right`
+#[must_use]
+pub const fn edit_align_right() -> CommandText {
+    CommandText::new(
+        "Align right edges",
+        "Line up the selected objects' right edges, relative to the Align panel's choice. Ctrl+Alt+6.",
+    )
+}
+
+/// `edit.align_top`
+#[must_use]
+pub const fn edit_align_top() -> CommandText {
+    CommandText::new(
+        "Align top edges",
+        "Line up the selected objects' top edges, relative to the Align panel's choice. Ctrl+Alt+8.",
+    )
+}
+
+/// `edit.align_bottom`
+#[must_use]
+pub const fn edit_align_bottom() -> CommandText {
+    CommandText::new(
+        "Align bottom edges",
+        "Line up the selected objects' bottom edges, relative to the Align panel's choice. Ctrl+Alt+2.",
+    )
+}
+
+/// `edit.align_centre_x`
+#[must_use]
+pub const fn edit_align_centre_x() -> CommandText {
+    CommandText::new(
+        "Centre on vertical axis",
+        "Line up the selected objects' centres left to right, relative to the Align panel's choice. Ctrl+Alt+7.",
+    )
+}
+
+/// `edit.align_centre_y`
+#[must_use]
+pub const fn edit_align_centre_y() -> CommandText {
+    CommandText::new(
+        "Centre on horizontal axis",
+        "Line up the selected objects' centres top to bottom, relative to the Align panel's choice. Ctrl+Alt+1.",
+    )
+}
+
+/// `edit.align_centre`
+#[must_use]
+pub const fn edit_align_centre() -> CommandText {
+    CommandText::new(
+        "Centre on both axes",
+        "Put the selected objects' centres on one point, relative to the Align panel's choice. Ctrl+Alt+5.",
+    )
+}
+
 /// **Text field** — the box an operator types into.
 #[must_use]
 pub const fn edit_form_text_field() -> CommandText {

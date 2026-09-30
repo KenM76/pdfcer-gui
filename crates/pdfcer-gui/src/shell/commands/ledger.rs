@@ -382,9 +382,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 174 → 175: `pages.bates_remove`, beside it.
     // 175 → 176: `edit.form_repair_fonts` (G070), Edit ▸ Forms.
     // 176 → 177: `edit.align` (O263), Edit ▸ Arrange — the Align and Distribute panel.
+    // 177 → 184: the seven one-click aligns beside it, for the Ctrl+Alt+keypad chords.
     assert_eq!(
         registry().len(),
-        177 + usize::from(cfg!(feature = "signing"))
+        184 + usize::from(cfg!(feature = "signing"))
     );
 }
 
@@ -1057,8 +1058,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         //
         // 18 → 19 — `edit.align`: a supply refusal. No align glyph exists,
         // and the nearest, `reset-layout`, means the dock, not the page.
+        //
+        // 19 → 26 — the seven `edit.align_*` one-click aligns: supply
+        // refusals, for `edit.align`'s reason.
         refused,
-        19,
+        26,
         "commands with no icon, each argued at its registration"
     );
     // Each refusal is argued at its own registration and listed in the

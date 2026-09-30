@@ -227,25 +227,38 @@ pub fn measure(doc: &OpenDoc) -> Option<Measured> {
     })
 }
 
-/// The action a button asks for, or `None` when nothing would move.
-#[must_use]
-pub fn plan(doc: &OpenDoc, m: &Measured, op: Op, settings: AlignUi) -> Option<Action> {
+/// One button's canvas deltas, per measured object.
+fn deltas(m: &Measured, op: Op, settings: AlignUi) -> Vec<(f64, f64)> {
     let rel = settings.relative(m.boxes.len());
-    let deltas = match op {
+    match op {
         Op::Align(axis, edge) => {
             layout::align(&m.boxes, axis, edge, rel, m.frame, settings.as_group)
         }
         Op::AlignText(axis) => layout::align_text(&m.boxes, &m.anchors, axis, rel, m.frame),
         Op::Distribute(axis, spacing) => layout::distribute(&m.boxes, axis, spacing),
         Op::DistributeText(axis) => layout::distribute_text(&m.anchors, axis),
-    };
+    }
+}
+
+/// The action `ops` ask for together — their deltas summed, so presses on
+/// different axes land as one undo step — or `None` when nothing would move.
+#[must_use]
+pub fn plan(doc: &OpenDoc, m: &Measured, ops: &[Op], settings: AlignUi) -> Option<Action> {
+    let first = *ops.first()?;
+    let mut sum = vec![(0.0, 0.0); m.boxes.len()];
+    for &op in ops {
+        for (acc, (dx, dy)) in sum.iter_mut().zip(deltas(m, op, settings)) {
+            acc.0 += dx;
+            acc.1 += dy;
+        }
+    }
     let sheet = doc.pages.get(m.page)?;
     // Canvas space is f32.
     #[allow(clippy::cast_possible_truncation)]
     let moves: Vec<(usize, f64, f64)> = m
         .objects
         .iter()
-        .zip(deltas)
+        .zip(sum)
         .filter(|(_, d)| !layout::negligible(*d))
         .filter_map(|(&i, (dx, dy))| {
             let d = crate::canvas::moving::page_delta(Vec2::new(dx as f32, dy as f32), sheet)?;
@@ -256,30 +269,30 @@ pub fn plan(doc: &OpenDoc, m: &Measured, op: Op, settings: AlignUi) -> Option<Ac
         VectorAction::MoveEach {
             page: m.page,
             moves,
-            gesture: op.gesture(),
+            gesture: first.gesture(),
         }
         .into()
     })
 }
 
-/// Run `op` against the current selection: push its action, or say why
-/// nothing moved.
-pub fn run(doc: &OpenDoc, op: Op, settings: AlignUi, actions: &mut Vec<Action>) {
+/// Run `ops` against the current selection as one step: push the action, or
+/// say why nothing moved.
+pub fn run(doc: &OpenDoc, ops: &[Op], settings: AlignUi, actions: &mut Vec<Action>) {
     let Some(m) = measure(doc) else {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
-            format!("align-declined op={op:?} reason=nothing-selected")
+            format!("align-declined op={ops:?} reason=nothing-selected")
         });
         crate::app::actions::record_note(doc.edit_epoch, t::nothing_selected().to_owned());
         return;
     };
-    match plan(doc, &m, op, settings) {
+    match plan(doc, &m, ops, settings) {
         Some(action) => actions.push(action),
         None => {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!(
-                    "align-declined op={op:?} reason=nothing-moves n={}",
+                    "align-declined op={ops:?} reason=nothing-moves n={}",
                     m.objects.len()
                 )
             });
@@ -369,7 +382,7 @@ pub fn body(ui: &mut Ui, doc: &OpenDoc, settings: &mut AlignUi, actions: &mut Ve
                 settings.as_group
             )
         });
-        run(doc, op, *settings, actions);
+        run(doc, &[op], *settings, actions);
     }
 }
 

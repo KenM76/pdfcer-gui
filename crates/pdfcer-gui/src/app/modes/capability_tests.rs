@@ -323,6 +323,13 @@ fn read_mode_refuses_exactly_these_bound_chords() {
             // is the mode that does not author.
             "edit.add_text",
             "edit.align",
+            "edit.align_bottom",
+            "edit.align_centre",
+            "edit.align_centre_x",
+            "edit.align_centre_y",
+            "edit.align_left",
+            "edit.align_right",
+            "edit.align_top",
             // **No clipboard id belongs in this list**
             // (`OPERATOR_REQUESTS.md` O71). A chord refused here traces
             // `chord-not-offered` and does nothing, which in Read is a

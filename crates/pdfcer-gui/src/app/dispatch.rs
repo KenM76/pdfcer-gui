@@ -8,6 +8,8 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/app/dispatch.md`.
 
 // The Pages tab's arms, split out under R2. See its header for the seam.
+/// The seven one-click aligns (Ctrl+Alt+keypad).
+mod aligning;
 /// **Cut, copy and the two pastes** — four ids over three operand kinds,
 /// which is what makes them one subject. Its header carries the three-rung
 /// fork that decides whether a `Ctrl+C` is about text, a form field or an
@@ -856,6 +858,15 @@ impl PdfcerApp {
             // built at apply time — see the module's own header for why a list
             // computed at the press would be a stale one.
             id if arrange::claims(id) => arrange::dispatch(self, id, actions),
+            "edit.align_left"
+            | "edit.align_right"
+            | "edit.align_top"
+            | "edit.align_bottom"
+            | "edit.align_centre_x"
+            | "edit.align_centre_y"
+            | "edit.align_centre" => {
+                aligning::dispatch(self, id, actions);
+            }
             "markup.flatten" => flatten::dispatch(self, actions),
             "format.dimension_diameter" | "format.dimension_radius" => {
                 dimdisplay::dispatch(self, id, actions)

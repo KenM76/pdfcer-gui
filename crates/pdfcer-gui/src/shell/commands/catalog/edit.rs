@@ -219,6 +219,15 @@ pub(super) fn band() -> Vec<Command> {
             .enabled_when("doc.open"),
         // Opens the panel; each button there says for itself why it is greyed.
         command("edit.align", t::edit_align(), 492).enabled_when("doc.pages"),
+        // The panel's align buttons as commands, so the Ctrl+Alt+keypad chords
+        // have ids to bind. No align glyphs exist: supply refusals.
+        command("edit.align_left", t::edit_align_left(), 470).enabled_when("doc.pages"),
+        command("edit.align_right", t::edit_align_right(), 471).enabled_when("doc.pages"),
+        command("edit.align_top", t::edit_align_top(), 472).enabled_when("doc.pages"),
+        command("edit.align_bottom", t::edit_align_bottom(), 473).enabled_when("doc.pages"),
+        command("edit.align_centre_x", t::edit_align_centre_x(), 474).enabled_when("doc.pages"),
+        command("edit.align_centre_y", t::edit_align_centre_y(), 475).enabled_when("doc.pages"),
+        command("edit.align_centre", t::edit_align_centre(), 476).enabled_when("doc.pages"),
         // ⚠ **Tokens 420, 421 and 430 are reserved and stay unused.** They
         // belonged to `edit.copy_page_text`, `edit.copy_document_text` and
         // `edit.form_fill`, whose commands are now `file.copy_page_text` and

@@ -1,7 +1,8 @@
 //! `align_left_moves_every_box_in_one_undo` — O263, driven: three boxes
 //! Shift-selected, **Align left edges** pressed in the Align and Distribute
 //! panel, the two boxes not already at the left edge move, and one undo
-//! takes the whole alignment back.
+//! takes the whole alignment back. Then **Ctrl+Alt+keypad 5** centres all
+//! three on both axes, as one move and one undo step.
 //!
 //! Pinned to `fixtures/three-boxes.pdf`, whose provenance script lists the
 //! boxes. Relative to the selection area (the panel's default), box 0 is the
@@ -37,6 +38,9 @@ const UNDO_EVENT: &str = "undo"; // ui-text-exempt: a trace event name, never di
 /// and 180), in PDF points, and nothing travels vertically. A sign or axis
 /// error in the canvas-to-page conversion produces different numbers.
 const EXPECTED_MOVES: &str = "1:-150.0,0.0;2:-80.0,0.0";
+/// What Ctrl+Alt+keypad 5 must move: every centre to (215, 495), the
+/// selection area's, in PDF points (y up).
+const EXPECTED_CENTRE: &str = "0:85.0,-125.0;1:-75.0,-30.0;2:15.0,110.0";
 /// A point inside each box, PDF user space, page 0.
 const AIMS: [(f64, f64); 3] = [(130.0, 620.0), (290.0, 525.0), (200.0, 385.0)];
 
@@ -248,5 +252,41 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note("★★ two boxes moved to the left edge, one undo step");
+
+    // --- Ctrl+Alt+keypad 5: centre on both axes, one step ------------------
+    let mark = session.trace()?.mark();
+    driver.press_chord(&[vk::CONTROL, vk::ALT], vk::NUMPAD5)?;
+    session.settle(30);
+    let trace = session.trace()?;
+    let Some(applied) = trace.last_after(APPLIED_EVENT, mark) else {
+        return Ok(Some(format!(
+            "★ Ctrl+Alt+keypad 5 wrote no `{APPLIED_EVENT}` line: the chord is unbound, reaches \
+             another command, or planned nothing. Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    report.note(format!("★ `{}`", applied.raw));
+    let asked = applied.get("moves").unwrap_or("");
+    if asked != EXPECTED_CENTRE {
+        return Ok(Some(format!(
+            "★★ CTRL+ALT+KEYPAD 5 MOVED `moves={asked}`, expected `{EXPECTED_CENTRE}` — every \
+             centre to the selection area's. `{}`",
+            applied.raw
+        )));
+    }
+    let mark = session.trace()?.mark();
+    driver.press_chord(&[vk::CONTROL], vk::Z)?;
+    session.settle(24);
+    let depth = session
+        .trace()?
+        .last_after(UNDO_EVENT, mark)
+        .and_then(|u| u.get_usize("undo_depth"));
+    if depth != Some(1) {
+        return Ok(Some(format!(
+            "★★ CENTRE ON BOTH AXES LEFT undo_depth={depth:?} after one undo, not 1: the two \
+             axes landed as separate steps."
+        )));
+    }
+    report.note("★★ Ctrl+Alt+keypad 5 centred all three, one undo step");
     Ok(None)
 }

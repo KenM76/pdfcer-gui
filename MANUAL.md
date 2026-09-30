@@ -866,6 +866,13 @@ overrules the DXF units you set, always in that direction.
 | **Ctrl+Shift+V** | Paste a form field as another view of the *same* field, not a new one — swappable with Ctrl+V in Settings |
 | **Ctrl+D** | Duplicate the selected comment in place — the clipboard is left alone |
 | **Ctrl+Shift+A** | Open the Align and Distribute panel (Edit mode) |
+| **Ctrl+Alt+4** | Align the selection's left edges, relative to the Align panel's *Relative to* (Edit mode; keypad or top row) |
+| **Ctrl+Alt+6** | Align right edges, relative to the Align panel's *Relative to* (Edit mode; keypad or top row) |
+| **Ctrl+Alt+8** | Align top edges, relative to the Align panel's *Relative to* (Edit mode; keypad or top row) |
+| **Ctrl+Alt+2** | Align bottom edges, relative to the Align panel's *Relative to* (Edit mode; keypad or top row) |
+| **Ctrl+Alt+7** | Centre on a vertical axis, relative to the Align panel's *Relative to* (Edit mode; keypad or top row) |
+| **Ctrl+Alt+1** | Centre on a horizontal axis, relative to the Align panel's *Relative to* (Edit mode; keypad or top row) |
+| **Ctrl+Alt+5** | Centre on both axes, relative to the Align panel's *Relative to* (Edit mode; keypad or top row) |
 | **Ctrl+E** | Edit text |
 | **Ctrl+Shift+E** | Add text |
 | **Ctrl+F** | Find |

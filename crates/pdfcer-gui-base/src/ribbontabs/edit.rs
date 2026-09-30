@@ -81,11 +81,22 @@ pub fn tab() -> Tab {
                 [large("edit.insert_image"), large("edit.attachments")],
             ),
             // Arrange: one Align and Distribute control where `RIBBON_IA.md`
-            // once listed two, because Inkscape's is one panel holding both.
+            // once listed two, because Inkscape's is one panel holding both;
+            // beside it the seven one-click aligns its Ctrl+Alt+keypad chords
+            // run.
             group(
                 "arrange",
                 ribbon::group_edit_arrange(),
-                [large("edit.align")],
+                [
+                    large("edit.align"),
+                    command("edit.align_left"),
+                    command("edit.align_right"),
+                    command("edit.align_top"),
+                    command("edit.align_bottom"),
+                    command("edit.align_centre_x"),
+                    command("edit.align_centre_y"),
+                    command("edit.align_centre"),
+                ],
             ),
             //
             // It was deleted because its two members moved to File ▸ Export and
