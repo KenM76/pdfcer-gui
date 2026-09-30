@@ -113,6 +113,9 @@ pub mod import_text;
 /// printed: they are correct, useful to a developer, and written in the
 /// implementer's voice.
 pub mod importtext;
+/// Pages ▸ Stamp ▸ Number pages…: its window and its receipts.
+/// Consumed by `pdfcer_gui::dialogs::labels`.
+pub mod labels;
 /// Every word the Recognise-text surface says — the dialog that runs OCR and
 /// discloses what it inferred, and the offer the Find bar makes on a page with
 /// no text on it. Consumed by `pdfcer_gui::dialogs::ocr` and `find::bar`.

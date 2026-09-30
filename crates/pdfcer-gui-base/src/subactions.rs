@@ -466,6 +466,17 @@ pub enum PageAction {
         /// 0-based page indices, ascending and unique; `None` for all.
         pages: Option<Vec<usize>>,
     },
+    /// Relabel pages `first..=last` with `format`, as one undo step.
+    SetLabels {
+        /// 0-based first page.
+        first: usize,
+        /// 0-based last page, inclusive.
+        last: usize,
+        /// How the run is numbered.
+        format: pdfcer_core::page_labels::LabelFormat,
+    },
+    /// Remove every page label, as one undo step.
+    ClearLabels,
     /// Set or remove the picked sheets' visible area, as one undo step.
     SetCropBox {
         /// 0-based page indices, ascending and unique.

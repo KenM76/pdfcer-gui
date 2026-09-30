@@ -958,6 +958,8 @@ pub struct OpenDoc {
     /// [`crate::doccache::LinkCache`] for why it is two caches with two keys
     /// and why the reader going stale would be silent.
     pub links: crate::doccache::LinkCache,
+    /// **The page labels**, read through [`Self::page_label`].
+    pub labels: crate::doccache::LabelCache,
     /// **What text the operator has selected on the canvas**, if any.
     ///
     /// Beside [`Self::selection`] rather than inside it, and the separation is
@@ -1109,6 +1111,7 @@ impl OpenDoc {
             provenance_text: crate::doccache::ProvenanceTextCache::default(),
             form_runs: crate::doccache::FormRunCache::default(),
             links: crate::doccache::LinkCache::default(),
+            labels: crate::doccache::LabelCache::default(),
             // Empty, like every other derived field here — see `selection`.
             text_selection: None,
             // What a reader shows. `pdfcer_render::RenderOptions` defaults the

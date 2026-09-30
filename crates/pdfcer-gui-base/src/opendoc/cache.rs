@@ -261,6 +261,53 @@ impl OpenDoc {
         .ok()
     }
 
+    /// **What `page_index` is labelled**, when the document labels its pages
+    /// and that label is not simply the page's number.
+    #[must_use]
+    pub fn page_label(&self, page_index: usize) -> Option<String> {
+        self.ensure_labels();
+        self.labels
+            .labels
+            .borrow()
+            .get(page_index)
+            .filter(|label| **label != (page_index + 1).to_string())
+            .cloned()
+    }
+
+    /// **Every page's label**, in page order, or `None` when the document
+    /// stores no labels.
+    #[must_use]
+    pub fn page_labels(&self) -> Option<Ref<'_, Vec<String>>> {
+        self.ensure_labels();
+        Ref::filter_map(self.labels.labels.borrow(), |l| {
+            (!l.is_empty()).then_some(l)
+        })
+        .ok()
+    }
+
+    /// The label ranges as the document stores them.
+    #[must_use]
+    pub fn label_ranges(&self) -> Vec<pdfcer_core::page_labels::LabelRange> {
+        self.ensure_labels();
+        self.labels.ranges.borrow().clone()
+    }
+
+    fn ensure_labels(&self) {
+        if self.labels.built_for.get() == Some(self.edit_epoch) {
+            return;
+        }
+        self.labels.built_for.set(Some(self.edit_epoch));
+        let view = self.session.view();
+        let ranges = pdfcer_core::page_labels::label_ranges(&view);
+        let labels = if ranges.is_empty() {
+            Vec::new()
+        } else {
+            pdfcer_core::page_labels::page_labels(&view).unwrap_or_default()
+        };
+        *self.labels.labels.borrow_mut() = labels;
+        *self.labels.ranges.borrow_mut() = ranges;
+    }
+
     /// **Every clickable link on `page_index`, and where each one goes.**
     #[must_use]
     pub fn page_links(&self, page_index: usize) -> Option<Ref<'_, PageLinks>> {

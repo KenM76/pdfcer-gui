@@ -87,8 +87,13 @@ pub(super) fn group(
             {
                 actions.push(Action::NextPage);
             }
-            ui.label(t::page_of_total(page_count));
-            field(ui, &mut state, current, page_count, actions);
+            let labels = doc.page_labels();
+            let labels = labels.as_deref().map(Vec::as_slice);
+            ui.label(match labels {
+                Some(_) => t::page_of_total_labelled(current + 1, page_count),
+                None => t::page_of_total(page_count),
+            });
+            field(ui, &mut state, current, labels, page_count, actions);
             if ui
                 .button(t::prev_page())
                 .on_hover_text(t::prev_page_tooltip())
@@ -104,6 +109,9 @@ pub(super) fn group(
                 let text = match note {
                     Note::Clamped { asked, landed } => {
                         t::page_clamped_note(asked, landed + 1, page_count)
+                    }
+                    Note::NotANumber if doc.page_labels().is_some() => {
+                        t::page_rejected_note_labelled().to_owned()
                     }
                     Note::NotANumber => t::page_rejected_note().to_owned(),
                 };
@@ -142,14 +150,16 @@ fn field(
     ui: &mut egui::Ui,
     state: &mut PageBox,
     current: usize,
+    labels: Option<&[String]>,
     page_count: usize,
     actions: &mut Vec<Action>,
 ) {
     let id = Id::new(PAGE_BOX_ID);
-    let mut text = state
-        .draft
-        .clone()
-        .unwrap_or_else(|| t::page_number(current + 1));
+    let mut text = state.draft.clone().unwrap_or_else(|| {
+        labels
+            .and_then(|l| l.get(current).cloned())
+            .unwrap_or_else(|| t::page_number(current + 1))
+    });
 
     // A real `egui::TextEdit`, with a stable explicit id — defect D1's
     // guard resolves the focused id and looks for a `TextEditState` under
@@ -164,7 +174,11 @@ fn field(
                 .horizontal_align(Align::Center)
                 .char_limit(PAGE_BOX_MAX_CHARS),
         )
-        .on_hover_text(t::page_box_tooltip());
+        .on_hover_text(if labels.is_some() {
+            t::page_box_tooltip_labelled()
+        } else {
+            t::page_box_tooltip()
+        });
     crate::diag::ui_rect(REGION_PAGE_BOX, response.rect);
 
     if response.changed() {
@@ -188,7 +202,7 @@ fn field(
         return;
     }
 
-    match resolve(&text, page_count) {
+    match resolve_labelled(&text, labels, page_count) {
         PageCommit::Go(index) => {
             state.draft = None;
             state.note = None;
@@ -275,6 +289,20 @@ enum PageCommit {
 
 /// Decide what a committed page-box string means.
 #[must_use]
+/// [`resolve`], but a page's label goes to that page first: on a document
+/// labelled i–iv then 1–, "3" is the page labelled 3, as a reader would mean.
+fn resolve_labelled(text: &str, labels: Option<&[String]>, page_count: usize) -> PageCommit {
+    let trimmed = text.trim();
+    if let Some(index) = labels
+        .filter(|_| !trimmed.is_empty())
+        .and_then(|l| l.iter().position(|label| label == trimmed))
+        .filter(|index| *index < page_count)
+    {
+        return PageCommit::Go(index);
+    }
+    resolve(text, page_count)
+}
+
 fn resolve(text: &str, page_count: usize) -> PageCommit {
     let trimmed = text.trim();
     if trimmed.is_empty() || page_count == 0 {
@@ -321,6 +349,20 @@ mod tests {
         for page in 1..=42usize {
             assert_eq!(resolve(&t::page_number(page), 42), PageCommit::Go(page - 1));
         }
+    }
+
+    /// On a labelled document a label goes to its page before a number is
+    /// read as a position, and a number no page is labelled falls back to
+    /// the position.
+    #[test]
+    fn a_label_goes_to_its_page_before_a_position() {
+        let labels: Vec<String> = ["i", "ii", "1", "2", "3"].map(str::to_owned).into();
+        let labels = Some(labels.as_slice());
+        assert_eq!(resolve_labelled("ii", labels, 5), PageCommit::Go(1));
+        assert_eq!(resolve_labelled(" 3 ", labels, 5), PageCommit::Go(4));
+        assert_eq!(resolve_labelled("4", labels, 5), PageCommit::Go(3));
+        assert_eq!(resolve_labelled("iii", labels, 5), PageCommit::NotANumber);
+        assert_eq!(resolve_labelled("3", None, 5), PageCommit::Go(2));
     }
 
     /// Whitespace around a pasted number is ignored.

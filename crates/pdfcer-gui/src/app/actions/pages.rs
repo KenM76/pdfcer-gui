@@ -538,6 +538,28 @@ pub(super) fn apply(
                 super::pagesize::remove_bates(session, pages.as_deref())
             });
         }
+        PageAction::SetLabels {
+            first,
+            last,
+            format,
+        } => {
+            super::apply::vector_edit(doc, "page-labels-set", first, last + 1 - first, |session| {
+                session
+                    .set_page_labels(first, last, &format)
+                    .map(|ranges| vec![crate::text::labels::applied(first, last, ranges)])
+            });
+        }
+        PageAction::ClearLabels => {
+            super::apply::vector_edit(doc, "page-labels-cleared", 0, 0, |session| {
+                session.clear_page_labels().map(|cleared| {
+                    vec![if cleared {
+                        crate::text::labels::cleared().to_owned()
+                    } else {
+                        crate::text::labels::nothing_to_clear().to_owned()
+                    }]
+                })
+            });
+        }
         PageAction::SetCropBox { pages, edit } => {
             if !pages.is_empty() {
                 let first = pages.first().copied().unwrap_or(0);

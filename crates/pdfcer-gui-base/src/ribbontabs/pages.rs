@@ -119,7 +119,11 @@ pub fn tab() -> Tab {
             group(
                 "stamp",
                 ribbon::group_pages_stamp(),
-                [command("pages.bates"), command("pages.bates_remove")],
+                [
+                    command("pages.bates"),
+                    command("pages.bates_remove"),
+                    command("pages.labels"),
+                ],
             ),
         ])
 }

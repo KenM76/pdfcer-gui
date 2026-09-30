@@ -104,6 +104,18 @@ pub struct PageTextCache {
     pub text: RefCell<Option<Result<PageText, String>>>,
 }
 
+/// **The document's page labels**, rebuilt once per edit epoch.
+#[derive(Default)]
+pub struct LabelCache {
+    /// The edit epoch the fields below describe.
+    pub built_for: Cell<Option<u64>>,
+    /// Every page's displayed label, in page order; empty when the document
+    /// stores no labels or its page tree will not walk.
+    pub labels: RefCell<Vec<String>>,
+    /// The ranges as stored; empty when there are none.
+    pub ranges: RefCell<Vec<pdfcer_core::page_labels::LabelRange>>,
+}
+
 /// **Which of the current page's runs have no show operator of their own** -
 /// the editability answer, cached because the question is asked on every click
 /// that lands on text.

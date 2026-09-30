@@ -384,11 +384,12 @@ fn registration_succeeds_and_registers_every_command() {
     // 176 → 177: `edit.align` (O263), Edit ▸ Arrange — the Align and Distribute panel.
     // 177 → 184: the seven one-click aligns beside it, for the Ctrl+Alt+keypad chords.
     // 184 → 185: `edit.insert_3d`, Edit ▸ Insert.
+    // 185 → 186: `pages.labels`, Pages ▸ Stamp.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     assert_eq!(
         registry().len(),
-        185 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
+        186 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
     );
 }
 
@@ -783,10 +784,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 158 → 166: `edit.align` names `align-panel`, and its seven one-click
     // aligns each name the glyph of the panel button they run.
     // 166 → 167: `edit.insert_3d` names `model-3d`, drawn for it.
+    // 167 → 168: `pages.labels` names `list`, shared.
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
     assert_eq!(
         named,
-        167 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
+        168 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

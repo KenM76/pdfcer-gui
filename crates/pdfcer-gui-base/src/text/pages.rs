@@ -69,6 +69,16 @@ pub fn page_number(page_index: usize) -> String {
     format!("{}", page_index + 1)
 }
 
+/// A tile's caption on a labelled document: the label, then the page number
+/// when the label is something else.
+#[must_use]
+pub fn page_caption(page_index: usize, label: Option<&str>) -> String {
+    match label {
+        Some(label) => format!("{label} ({})", page_index + 1),
+        None => page_number(page_index),
+    }
+}
+
 /// A tile's tooltip: which page, how big it is, and what a click does.
 #[must_use]
 pub fn page_tile_tooltip(page_index: usize, width_pts: f64, height_pts: f64) -> String {

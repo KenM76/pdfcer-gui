@@ -146,5 +146,10 @@ pub(super) fn band() -> Vec<Command> {
         command("pages.bates_remove", t::pages_bates_remove(), 331)
             .with_icon("delete")
             .enabled_when("doc.pages"),
+        // `list` is shared with the form-field and dimension-group managers:
+        // each opens a list to add to and remove from. Different tabs.
+        command("pages.labels", t::pages_labels(), 332)
+            .with_icon("list")
+            .enabled_when("doc.pages"),
     ]
 }

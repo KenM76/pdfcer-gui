@@ -89,6 +89,7 @@ pub mod open;
 /// which is the one place it deliberately departs from [`unsaved`]'s shape.
 pub use pdfcer_gui_base::acrobatprompt as open_in_acrobat;
 pub mod bates;
+pub mod labels;
 /// **Changing the paper an open drawing sits on** — `pages.resize`. Its
 /// header carries the design decision the window is built around: a
 /// `/MediaBox` change crops, it does not shrink, so the window's real product
@@ -222,6 +223,9 @@ pub struct DialogsState {
     /// The Bates form the last window left, kept across documents so a
     /// batch continues its numbering.
     bates_form: Option<bates::BatesForm>,
+    /// The open Number pages window; it holds the document's label ranges,
+    /// so it closes with the document.
+    labels: Option<labels::LabelsDialog>,
     /// The open text-annotation dialog, if a text box, sticky or stamp has
     /// just been placed.
     text_annot: Option<textannot::TextAnnotDialog>,
@@ -842,6 +846,9 @@ impl DialogsState {
         if self.bates.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.bates_form = self.bates.take().map(|d| d.remembered());
         }
+        if self.labels.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.labels = None;
+        }
         if self.form_field.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.form_field = None;
         }
@@ -1090,6 +1097,7 @@ impl DialogsState {
         if let Some(d) = self.bates.take() {
             self.bates_form = Some(d.remembered());
         }
+        self.labels = None;
         self.insert_image = None;
         self.export_dxf = None;
         // On this list because it holds a SNAPSHOT: the page count it built

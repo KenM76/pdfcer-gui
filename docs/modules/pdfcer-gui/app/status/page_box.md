@@ -157,6 +157,16 @@ A separate type from [`Note`] because the two answer different questions:
 this one says *what to do*, including the successful cases; `Note` says
 *what to tell the operator*, which is only the surprising subset.
 
+### `fn resolve_labelled`
+
+On a document that stores page labels (`OpenDoc::page_labels` is `Some`), the
+box shows the current page's label, the text right of it reads `(p / N)`, and
+a committed text that exactly matches a label (trimmed) goes to that page
+before [`resolve`] reads it as a position. So on a document labelled i–iv then
+1 onwards, `3` is the page labelled 3, which is what a reader holding the
+printed book means; a position that is not also a label still works. Text that
+is neither gets `page_rejected_note_labelled`.
+
 ### `fn resolve`
 
 **Pure, and that is the point.** `crate::viewer`'s header states the

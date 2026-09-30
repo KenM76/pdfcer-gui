@@ -364,6 +364,19 @@ pub fn page_of_total(total: usize) -> String {
     format!("/ {total}")
 }
 
+/// The position shown right of the box when the box shows a page label.
+#[must_use]
+pub fn page_of_total_labelled(page_1_based: usize, total: usize) -> String {
+    format!("({page_1_based} / {total})")
+}
+
+/// Hover text for the page box on a document with page labels.
+#[must_use]
+pub fn page_box_tooltip_labelled() -> &'static str {
+    "This document labels its pages; the box shows the label. Type a label, \
+     or a page's position counted from 1, and press Enter."
+}
+
 /// Hover text for the editable page box.
 #[must_use]
 pub fn page_box_tooltip() -> &'static str {
@@ -376,6 +389,13 @@ pub fn page_box_tooltip() -> &'static str {
 #[must_use]
 pub fn page_clamped_note(asked: usize, landed: usize, total: usize) -> String {
     format!("No page {asked} — went to {landed} of {total}")
+}
+
+/// Shown beside the box when the committed text was neither a page's label
+/// nor a number.
+#[must_use]
+pub fn page_rejected_note_labelled() -> &'static str {
+    "No page has that label — type a label or a number, then Enter"
 }
 
 /// Shown beside the box when the committed text was not a page number.

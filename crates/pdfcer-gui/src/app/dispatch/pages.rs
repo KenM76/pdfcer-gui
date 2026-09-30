@@ -43,6 +43,7 @@ pub(crate) fn handles(id: &str) -> bool {
             | "pages.crop"
             | "pages.bates"
             | "pages.bates_remove"
+            | "pages.labels"
     )
 }
 
@@ -124,6 +125,21 @@ pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
                 .collect();
             let pages = (picked.len() >= 2 && picked.len() < of).then_some(picked);
             actions.push(Action::Page(PageAction::RemoveBates { pages }));
+        }
+        // **Number pages.** The Bates scope rule, as the window's default range.
+        "pages.labels" => {
+            let Status::Open(doc) = &app.status else {
+                return;
+            };
+            let of = doc.pages.len();
+            let picked: Vec<usize> = app
+                .panels
+                .selected_pages()
+                .iter()
+                .copied()
+                .filter(|p| *p < of)
+                .collect();
+            app.dialogs.open_labels(doc, &picked);
         }
         // ===============================================================
         // THE PAGE VERBS — one operand rule, shared by every arm below

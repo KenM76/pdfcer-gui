@@ -423,6 +423,15 @@ pub const fn pages_bates_remove() -> CommandText {
     )
 }
 
+/// `pages.labels`
+#[must_use]
+pub const fn pages_labels() -> CommandText {
+    CommandText::new(
+        "Number pages…",
+        "Choose how pages are numbered in the page box and thumbnails — for example i, ii, iii for front matter, then 1 onwards. Nothing is printed on the pages.",
+    )
+}
+
 /// `pages.resize`.
 #[must_use]
 pub const fn pages_resize() -> CommandText {

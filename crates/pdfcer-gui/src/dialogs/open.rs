@@ -5,9 +5,9 @@
 
 use super::{
     DialogsState, about, bates, compact, diagnostics, embed, export_dxf, export_image,
-    export_tables, export_text, formfield, import_text, insert_image, insert_pages, new_document,
-    ocr, offpage, page_crop, page_size, print, protect, redact, scale, shortcuts, stamp_collection,
-    textannot, unembed,
+    export_tables, export_text, formfield, import_text, insert_image, insert_pages, labels,
+    new_document, ocr, offpage, page_crop, page_size, print, protect, redact, scale, shortcuts,
+    stamp_collection, textannot, unembed,
 };
 use crate::app::prefs::RedactionReach;
 use crate::app::state::Status;
@@ -248,6 +248,15 @@ impl DialogsState {
             return;
         }
         self.bates = bates::BatesDialog::open(picked, of, self.bates_form.as_ref());
+    }
+
+    /// **Open the Number pages window** on `doc`, offering the rail's
+    /// `picked` pages as the default range.
+    pub fn open_labels(&mut self, doc: &crate::app::state::OpenDoc, picked: &[usize]) {
+        if self.labels.is_some() {
+            return;
+        }
+        self.labels = labels::LabelsDialog::open(picked, doc.pages.len(), doc.label_ranges());
     }
 
     /// **Open the sheet-size window** over `pages`, the operand sheets.

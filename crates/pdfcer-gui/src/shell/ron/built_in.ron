@@ -291,6 +291,7 @@
                     items: [
                         Command(id: "pages.bates"),
                         Command(id: "pages.bates_remove"),
+                        Command(id: "pages.labels"),
                     ],
                 ),
             ],

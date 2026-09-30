@@ -674,7 +674,7 @@ fn tile(
     ui.painter().text(
         egui::pos2(rect.center().x, rect.bottom() + 2.0),
         egui::Align2::CENTER_TOP,
-        t::page_number(page_index),
+        t::page_caption(page_index, doc.page_label(page_index).as_deref()),
         egui::TextStyle::Small.resolve(ui.style()),
         if page_index == current {
             visuals.strong_text_color()
