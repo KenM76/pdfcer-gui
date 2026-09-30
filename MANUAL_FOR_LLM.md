@@ -117,12 +117,17 @@ be."*) and asks you to carry it out.
    around the area. A CAD door is typically a leaf rectangle (four lines),
    a dashed swing arc (many short lines), jamb boxes, and a tag (a closed
    path plus a `text` object).
-6. **Move the real geometry rather than drawing new.** There is no "draw a
-   line" command; there is no need for one:
-   - `object-transform --objects … --scale -1,1 --rotate 90 --pivot X,Y`
-     mirrors across the 45° line through X,Y, which turns a door in a
-     vertical wall into the same door in the horizontal wall at a corner,
-     with the swing reversed.
+6. **Reuse the real geometry where you can; draw where you must.**
+   - To draw new lines, rectangles, polylines, circles or freehand strokes,
+     add them as markup with `annotate --type line|polyline|square|circle|ink`
+     and then burn just those into the page with
+     `flatten-annotations --page N --index I` (repeatable; with no `--index`
+     it burns every annotation on the page, Ken's own markup included).
+   - Moving the drawing's own objects keeps its line weights and colours
+     exactly. `object-transform --objects … --scale -1,1 --rotate 90 --pivot X,Y`
+     mirrors across the 45° line through X,Y, which turns a door in a vertical
+     wall into the same door in the horizontal wall at a corner, with the
+     swing reversed.
    - `object-copy --clip f` then `object-paste --clip f` duplicates objects
      in place (they get new indices at the end of `object-list`); transform
      the copies.
