@@ -322,6 +322,7 @@ fn read_mode_refuses_exactly_these_bound_chords() {
             // Authoring the page's own content — correctly refused. Read
             // is the mode that does not author.
             "edit.add_text",
+            "edit.align",
             // **No clipboard id belongs in this list**
             // (`OPERATOR_REQUESTS.md` O71). A chord refused here traces
             // `chord-not-offered` and does nothing, which in Read is a

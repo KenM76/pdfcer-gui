@@ -4,6 +4,9 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/signatures.md`.
 
 use pdfcer_core::signature::{ByteRangeCoverage, Integrity, SignatureVerdict, Trust};
+use pdfcer_core::signature_verify::{
+    Revocation, RevocationCheck, RevocationKind, RevocationSource,
+};
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
@@ -98,6 +101,7 @@ pub fn body(
                 integrity_line(ui, verdict);
                 coverage_line(ui, c);
                 trust_line(ui, verdict, report.as_ref().and_then(|r| r.as_ref().ok()));
+                revocation_verdict_line(ui, verdict);
                 revocation_lines(ui, verdict);
 
                 crate::diag::trace(|| {
@@ -163,6 +167,157 @@ fn integrity_line(ui: &mut egui::Ui, verdict: Option<&SignatureVerdict>) {
     for note in &verdict.notes {
         ui.label(egui::RichText::new(note).small().weak());
     }
+}
+
+/// What the revocation lists say about the signer's chain, as its own line:
+/// trust and revocation are separate facts and neither implies the other.
+/// The trace token for where revocation evidence came from.
+const fn source_token(source: RevocationSource) -> &'static str {
+    match source {
+        RevocationSource::Dss => "dss",
+        RevocationSource::Supplied | _ => "supplied",
+    }
+}
+
+/// The trace token for which kind of revocation evidence answered.
+const fn kind_token(kind: RevocationKind) -> &'static str {
+    match kind {
+        RevocationKind::Ocsp => "ocsp",
+        RevocationKind::Crl | _ => "crl",
+    }
+}
+
+/// What a `Good` verdict's checks add up to: which kinds answered, whether
+/// every one came from the document, and the newest `thisUpdate`.
+struct GoodEvidence<'a> {
+    crl: bool,
+    ocsp: bool,
+    in_document: bool,
+    supplied: bool,
+    as_of: Option<&'a str>,
+    /// Some evidence states no `nextUpdate`, so newer may exist.
+    open_ended: bool,
+}
+
+fn good_evidence(checked: &[RevocationCheck]) -> GoodEvidence<'_> {
+    let mut e = GoodEvidence {
+        crl: false,
+        ocsp: false,
+        in_document: true,
+        supplied: true,
+        as_of: None,
+        open_ended: false,
+    };
+    for RevocationCheck {
+        subject: _,
+        kind,
+        source,
+        this_update,
+        next_update,
+        ..
+    } in checked
+    {
+        match kind_token(*kind) {
+            "ocsp" => e.ocsp = true,
+            _ => e.crl = true,
+        }
+        let dss = *source == RevocationSource::Dss;
+        e.in_document &= dss;
+        e.supplied &= !dss;
+        // ISO-8601 strings in one form order as their instants do.
+        e.open_ended |= next_update.is_none();
+        if let Some(t) = this_update.as_deref()
+            && e.as_of.is_none_or(|n| t > n)
+        {
+            e.as_of = Some(t);
+        }
+    }
+    e
+}
+
+/// What the revocation evidence says about the signer's chain, as its own
+/// line: trust and revocation are separate facts and neither implies the
+/// other.
+fn revocation_verdict_line(ui: &mut egui::Ui, verdict: Option<&SignatureVerdict>) {
+    let Some(verdict) = verdict else {
+        return;
+    };
+    // (verdict, before signing, kind, source, the sentence) — trace tokens.
+    let (token, before, kind, source, said) = match &verdict.revocation {
+        Revocation::Good { checked } => {
+            let e = good_evidence(checked);
+            let kind = match (e.crl, e.ocsp) {
+                (true, true) => "mixed",
+                (false, true) => "ocsp",
+                _ => "crl",
+            };
+            let source = if e.in_document {
+                "dss"
+            } else if e.supplied {
+                "supplied"
+            } else {
+                "mixed"
+            };
+            let mut said = tt::revocation_good(
+                checked.len(),
+                e.in_document,
+                tt::revocation_evidence(e.crl, e.ocsp),
+                e.as_of,
+            );
+            if e.open_ended {
+                said.push(' ');
+                said.push_str(tt::revocation_open_ended());
+            }
+            ("good", "none", kind, source, said)
+        }
+        Revocation::Revoked {
+            subject,
+            date,
+            reason,
+            before_signing,
+            kind,
+            source,
+        } => (
+            "revoked",
+            match before_signing {
+                Some(true) => "true",
+                Some(false) => "false",
+                None => "unknown",
+            },
+            kind_token(*kind),
+            source_token(*source),
+            tt::revocation_revoked(
+                subject,
+                date.as_deref(),
+                reason.as_deref(),
+                *before_signing,
+                *kind == RevocationKind::Ocsp,
+                *source == RevocationSource::Dss,
+            ),
+        ),
+        Revocation::Undetermined { reason } => (
+            "undetermined",
+            "none",
+            "none",
+            "none",
+            tt::revocation_undetermined(reason),
+        ),
+        // A variant this build does not know is worded as not checked.
+        Revocation::NotChecked | _ => (
+            "not-checked",
+            "none",
+            "none",
+            "none",
+            tt::revocation_not_checked().to_owned(),
+        ),
+    };
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!(
+            "signature-revocation verdict={token} before_signing={before} kind={kind} source={source}"
+        )
+    });
+    labelled(ui, tt::revocation_verdict_label(), &said);
 }
 
 /// Where each certificate says its revocation status lives, signer first.

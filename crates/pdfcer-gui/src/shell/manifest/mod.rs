@@ -637,25 +637,8 @@ mod tests {
         assert_eq!(shell.modes().len(), 3, "three modes");
         assert_eq!(
             shell.keymap.as_ref().expect("a keymap").len(),
-            40,
-            "forty key bindings. ★★★ 36 → 40 on 2026-09-06: the four Markup ▸ Arrange \
-             chords, `Ctrl+[`/`Ctrl+]` and their Shift forms — the four Illustrator, \
-             InDesign, Photoshop, Acrobat and Bluebeam all ship, taken after measuring \
-             that no bracket appears in `app::keyboard::OWNED`, in `canvas::keys` or in \
-             this map under a modifier. Bare `[` and `]` are the two page rotations two \
-             lines above and cannot be reached by these: `parse_chord` builds an exact \
-             `(Modifiers, Key)` pair. \
-             Ctrl+A joined on 2026-09-01 for `edit.select_all`; \
-             the four pointer tools took V, A, T and H on 
-             2026-08-19, and the document tabs took Ctrl+Tab, Ctrl+Shift+Tab and 
-             Ctrl+W the same day. Both are the layout every program in this class uses. 
-             ★ 33 → 34 on 2026-08-29: Ctrl+Shift+V for `edit.paste_duplicate`, the 
-             operator's own choice, following the Word/Excel/browser convention that 
-             'paste, but differently' is the same key with Shift. \
-             ★ 35 → 36 on 2026-09-06: Ctrl+D for `edit.duplicate` — measured \
-             free: no D anywhere in this keymap, none in `app::keyboard::OWNED`, \
-             none in `canvas::keys`, and already reserved for this verb by the \
-             approved mockup's canvas object menu"
+            41,
+            "forty-one key bindings; a chord added or removed is a change MANUAL.md's shortcut table must record"
         );
     }
 

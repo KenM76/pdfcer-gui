@@ -356,6 +356,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(signature_save::AnInvalidatingSaveIsWarnedAbout),
         Box::new(trust_store::SignatureTrustIsReportedAsItsOwnFact),
         Box::new(revocation_sources::SignatureNamesWhereRevocationLives),
+        Box::new(revocation_verdict::SignatureSaysItsRevocationVerdict),
         Box::new(os_fonts_setting::FontFoldersLandsOnTheFontsSetting),
         Box::new(unembed_fonts::RemovingEmbeddedFontsReachesTheDocument),
         Box::new(export_form_data::ExportingFormDataWritesAFile),

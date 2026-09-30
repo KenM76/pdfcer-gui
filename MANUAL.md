@@ -865,6 +865,7 @@ overrules the DXF units you set, always in that direction.
 | **Ctrl+X / C / V** | Cut, copy, paste |
 | **Ctrl+Shift+V** | Paste a form field as another view of the *same* field, not a new one — swappable with Ctrl+V in Settings |
 | **Ctrl+D** | Duplicate the selected comment in place — the clipboard is left alone |
+| **Ctrl+Shift+A** | Open the Align and Distribute panel (Edit mode) |
 | **Ctrl+E** | Edit text |
 | **Ctrl+Shift+E** | Add text |
 | **Ctrl+F** | Find |

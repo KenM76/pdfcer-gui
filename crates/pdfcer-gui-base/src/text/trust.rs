@@ -108,9 +108,8 @@ pub fn trusted(anchor_subject: &str, source: &[String], validity_checked: bool) 
     format!(
         "chains to a trusted certificate — {anchor_subject}{provenance}. Every link \
          was checked by signature, and the issuing certificates were entitled to \
-         issue. {validity} Revocation was NOT checked: pdfcer never goes on the \
-         network, so a certificate that has since been revoked would still read as \
-         trusted here."
+         issue. {validity} This does not say whether a certificate was revoked; \
+         the Revocation line below does."
     )
 }
 
@@ -221,6 +220,143 @@ pub fn revocation_sources(
         "{subject}: {}. Not fetched — pdfcer does not go online.",
         parts.join("; ")
     )
+}
+
+// ---------------------------------------------------------------------------
+// The revocation verdict — a fourth fact, never folded into trust
+// ---------------------------------------------------------------------------
+
+/// The label before the revocation verdict.
+#[must_use]
+pub const fn revocation_verdict_label() -> &'static str {
+    "Revocation:"
+}
+
+/// Where the revocation lists came from: the document's own, or ones the
+/// operator supplied.
+#[must_use]
+pub const fn revocation_list_origin(in_document: bool) -> &'static str {
+    if in_document {
+        "carried in the document"
+    } else {
+        "you supplied"
+    }
+}
+
+/// The kinds of revocation evidence that answered, as a plural noun phrase.
+#[must_use]
+pub const fn revocation_evidence(crl: bool, ocsp: bool) -> &'static str {
+    match (crl, ocsp) {
+        (false, true) => "OCSP responses",
+        (true, true) => "revocation lists and OCSP responses",
+        _ => "revocation lists",
+    }
+}
+
+/// One piece of revocation evidence, with its article.
+#[must_use]
+pub const fn revocation_evidence_one(ocsp: bool) -> &'static str {
+    if ocsp {
+        "an OCSP response"
+    } else {
+        "a revocation list"
+    }
+}
+
+/// No revocation evidence was available, so nothing was checked.
+#[must_use]
+pub const fn revocation_not_checked() -> &'static str {
+    "not checked — this document carries no revocation lists or OCSP responses, and \
+     pdfcer does not go online to fetch one."
+}
+
+/// Every certificate in the chain was covered by evidence not showing it
+/// revoked. `evidence` is [`revocation_evidence`]; `as_of` the newest
+/// `thisUpdate` among them, when stated.
+#[must_use]
+pub fn revocation_good(
+    certificates: usize,
+    in_document: bool,
+    evidence: &str,
+    as_of: Option<&str>,
+) -> String {
+    let which = if certificates == 1 {
+        "The signer's certificate is".to_owned()
+    } else {
+        format!("All {certificates} certificates are")
+    };
+    let when = as_of.map_or_else(
+        || "as of when that evidence was issued".to_owned(),
+        |d| format!("as of {d}"),
+    );
+    format!(
+        "not revoked. {which} shown good by the {evidence} {}, {when}.",
+        revocation_list_origin(in_document)
+    )
+}
+
+/// A revocation list names a certificate in the signer's chain.
+///
+/// `before_signing` compares the revocation date with the signing time the
+/// signature claims; `None` when either is unknown.
+#[must_use]
+pub fn revocation_revoked(
+    subject: &str,
+    date: Option<&str>,
+    reason: Option<&str>,
+    before_signing: Option<bool>,
+    ocsp: bool,
+    in_document: bool,
+) -> String {
+    let when = date.map_or_else(String::new, |d| format!(" on {d}"));
+    let why = reason.map_or_else(String::new, |r| format!(" ({})", revocation_reason(r)));
+    let order = match before_signing {
+        Some(true) => {
+            "That is before the time this signature claims, so it was made with a revoked \
+             certificate."
+        }
+        Some(false) => {
+            "That is after the time this signature claims, when the certificate was still \
+             good — if that claimed time is honest."
+        }
+        None => "pdfcer cannot tell whether that was before or after signing.",
+    };
+    format!(
+        "REVOKED — {subject} was revoked{when}{why}, per {} {}. {order}",
+        revocation_evidence_one(ocsp),
+        revocation_list_origin(in_document)
+    )
+}
+
+/// Appended to a good verdict when some evidence names no next update: the
+/// issuer promised no date by which it would have said otherwise.
+#[must_use]
+pub const fn revocation_open_ended() -> &'static str {
+    "Some of that evidence names no date for its next update, so newer information \
+     may exist."
+}
+
+/// Revocation lists were available and the chain could not be fully checked.
+#[must_use]
+pub fn revocation_undetermined(reason: &str) -> String {
+    format!("could not be decided — {}.", reason.trim_end_matches('.'))
+}
+
+/// An RFC 5280 `reasonCode` name in plain words; an unknown one verbatim.
+#[must_use]
+pub fn revocation_reason(code: &str) -> &str {
+    match code {
+        "keyCompromise" => "its key was compromised",
+        "cACompromise" => "its issuer's key was compromised",
+        "affiliationChanged" => "the holder's affiliation changed",
+        "superseded" => "it was replaced",
+        "cessationOfOperation" => "it is no longer used",
+        "certificateHold" => "it is on hold",
+        "privilegeWithdrawn" => "its privileges were withdrawn",
+        "aACompromise" => "its attribute authority was compromised",
+        "unspecified" => "no reason given",
+        other => other,
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -471,12 +607,12 @@ mod tests {
         assert!(all[3].contains("could not read it"), "{}", all[3]);
     }
 
-    /// **A `Trusted` verdict discloses that revocation was not checked.**
+    /// **A `Trusted` verdict says it is not a revocation verdict.**
     #[test]
     fn a_trusted_verdict_never_claims_more_than_the_engine_checked() {
         let with_clock = trusted("CN=Some CA", &["AATL".to_owned()], true);
         assert!(
-            with_clock.contains("Revocation was NOT checked"),
+            with_clock.contains("does not say whether a certificate was revoked"),
             "{with_clock}"
         );
         assert!(with_clock.contains("AATL"), "{with_clock}");
@@ -488,7 +624,7 @@ mod tests {
         let no_clock = trusted("CN=Some CA", &[], false);
         assert!(no_clock.contains("could NOT check"), "{no_clock}");
         assert!(
-            no_clock.contains("Revocation was NOT checked"),
+            no_clock.contains("does not say whether a certificate was revoked"),
             "{no_clock}"
         );
     }
@@ -568,5 +704,56 @@ mod tests {
                 && !ocsp_only.contains("issuer")
                 && !ocsp_only.contains("more")
         );
+    }
+
+    /// The revocation verdict names what it read and never overstates: a
+    /// good verdict dates itself to the lists, a revoked one orders the
+    /// revocation against the claimed signing time, and an unknown reason
+    /// code passes through verbatim.
+    #[test]
+    fn revocation_verdict_says_what_the_lists_said() {
+        let good = revocation_good(1, true, revocation_evidence(true, false), None);
+        assert!(good.starts_with("not revoked. The signer's certificate is"));
+        assert!(good.contains("revocation lists carried in the document"));
+        assert!(good.contains("when that evidence was issued"));
+        let many = revocation_good(
+            3,
+            false,
+            revocation_evidence(true, true),
+            Some("2026-09-30"),
+        );
+        assert!(many.contains("All 3 certificates are shown good"));
+        assert!(
+            many.contains("revocation lists and OCSP responses you supplied, as of 2026-09-30.")
+        );
+        assert_eq!(revocation_evidence(false, true), "OCSP responses");
+
+        let after = revocation_revoked(
+            "CN=S",
+            Some("2026-09-30T07:31:13Z"),
+            Some("keyCompromise"),
+            Some(false),
+            false,
+            true,
+        );
+        for piece in [
+            "REVOKED — CN=S was revoked on 2026-09-30T07:31:13Z",
+            "(its key was compromised)",
+            "per a revocation list carried in the document",
+            "after the time this signature claims",
+        ] {
+            assert!(after.contains(piece), "{piece:?} missing from {after:?}");
+        }
+        let before = revocation_revoked("CN=S", None, Some("madeUp"), Some(true), true, false);
+        assert!(before.contains("revoked (madeUp), per an OCSP response you supplied"));
+        assert!(before.contains("made with a revoked certificate"));
+        assert!(revocation_revoked("CN=S", None, None, None, false, true).contains("cannot tell"));
+
+        assert_eq!(
+            revocation_undetermined("no issuer."),
+            "could not be decided — no issuer."
+        );
+        assert!(revocation_not_checked().contains("does not go online"));
+        assert!(revocation_open_ended().contains("newer information may exist"));
     }
 }

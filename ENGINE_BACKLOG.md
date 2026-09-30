@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **54 of 251** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `wanted` — a real gap — **54 of 252** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -126,6 +126,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | Detect an unencrypted wrapper (§7.6.7) and warn that the visible … | **wanted, and the cheapest row on O108's Security tab.** Nothing here detects the §7.6.7 wrapper. An unencrypted wrapper is a cover sheet standing in front of a document this reader cannot open, and pdfcer renders the cover in full, silently — an operator looking at a plausible page has no way to know they are not looking at the drawing. |
+| PAdES B-LT — embed supplied validation material (certs/CRLs/OCSP) into `/DSS` … | **wanted — the natural next step after the Signatures panel's revocation line.** `EditSession::add_validation_material` writes certificates, CRLs and OCSP responses into `/DSS` as an incremental update, so a signature stays verifiable after its CA's servers are gone. The shell would offer it on the Signatures panel as *Add validation evidence…*: pick CRL/OCSP/certificate files, show what was added, skipped or wrapped, then re-read each signature's revocation verdict. Needs a file picker for three kinds and the `/DocMDP` `/P 1` refusal worded. Not pinned yet: arrives with the next engine bump. |
 | Tell me what this document would run in Acrobat/Reader … | **wanted — the second row of O108's Security tab, and arguably the one with the most value per line.** *What would this document run if I opened it in Acrobat, and does it reach outside itself?* is the question an operator asks of a drawing that arrived by email. The engine answers it across every place an action can live — page open triggers, navigation nodes, annotation triggers, chains — without executing anything, and nothing here reads the census. |
 | **A pasted markup carries what was copied — dash, opacity, note, author and blend mode travel** | **wanted no longer — this is the same capability as the shipped row of the same opening words**, which carries the argument and the evidence. Kept as its own entry because the register deletes no row; read the sibling under `shipped` → *Annotations & markup*, and do not repeat the gap sentence from here. |
 | **Write a field's four advisory flags and its export mapping name (`/TM`)** — | **wanted, split, and the split is the useful part of this row.** `DoNotScroll` is the only one of the five an operator would ask for by name, because its effect is visible and destructive: text past the end of the box is clipped, not scrolled, so a field that looks fine on screen can print short. It belongs beside `/DV` and `/Q`, and pairs with `applied_autosize_bound`'s `Floor` case — auto-size warns the text will overflow, `DoNotScroll` decides whether that overflow is unscrollable or gone. `DoNotSpellCheck` is trivial and last. `FileSelect` gets no surface: setting it changes what the field IS, a submit hazard the engine discloses rather than refuses, and nothing in this shell submits — it earns a row the day `file.export_form_data` can say what such a field would send. `/TM`'s effect is invisible inside pdfcer and nobody has asked for it. |
@@ -139,7 +140,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Default selections for a list or combo** — `FieldEdit::with_default_selections` / `FieldEdit::default_selections` | **wanted, beside the Default-value box.** `/DV` for a `/Ch` field is what Reset restores; the text-field half is built and this is its choice-field twin, a multi-select of the field's own options in `panels::properties::choiceopts`. |
 | **A dashed widget border** — `WidgetChrome::with_border_dash` / `WidgetChrome::border_dash` | **wanted, small.** The border width and style controls exist; a dashed style without a dash array draws the engine default. One pattern field beside the style combo, shown only when the style is dashed (R9). |
 | **Say on the security summary that old password values are still in the file** — the scan behind `password_history::PasswordValueScan` <!--namesake:scan_stored_password_values: called by File ▸ Security ▸ Remove old passwords…, not by any summary--> | **wanted, and it is a disclosure, not a command.** The purge ships (see *shipped*). What is missing is telling the operator, before he runs it, that the file holds password values in earlier revisions, as a line on the document's security summary giving field and revision only, never the value. |
-| Validate CRLs against a signer's chain — offline, no fetch … | **wanted — the Signatures panel's trust line gains a revocation verdict.** `SignatureVerdict::revocation` (`NotChecked` / `Good` / `Revoked { date, reason, before_signing }` / `Undetermined { reason }`) from CRLs in the document's `/DSS` or supplied by the caller. The shell's part: say the verdict as its own fact beside trust, never folded into it, and word `Revoked` with whether it predates signing. Lands with engine v0.68.0; this shell's pin predates it, so the next pin bump picks it up. |
 
 ### Fonts & rendering
 
@@ -154,7 +154,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 251** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `blocked` — waiting on something named — **2 of 252** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -172,7 +172,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 251** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 252** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -183,7 +183,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 251** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `declined` — deliberately no surface — **16 of 252** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -225,7 +225,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **179 of 251** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **180 of 252** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -381,6 +381,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Find AND purge password-field values left in earlier revisions** — `password_history::scan_stored_password_values`, `EditSession::purge_password_values` | **shipped — File ▸ Security ▸ Remove old passwords….** `app::actions::purge_passwords` scans every revision, purges a fresh session, rewrites with `to_full_bytes_decomposing_containers`, re-scans the output, and writes nothing if a value survives. It refuses signed documents. The receipt counts values removed and discloses inherited, read-only and unreadable-revision cases without quoting a value. Driven by `stored_passwords_removed_without_the_mouse`. |
 | **Bates numbering across a batch of PDFs** — `EditSession::stamp_bates`, `BatesStamp`; the whole `pdfcer_core::bates` module, its undo entry `CommandKind::StampBates` and refusal `EditError::Bates` | **shipped — Pages ▸ Stamp ▸ Bates numbering…, one document at a time.** `dialogs::bates` takes prefix, digits, suffix, start number, one of six positions, margin and size. It previews the first and last label and words every `BatesError` before commit, with no Stamp button while one applies. `app::actions::pagesize::bates` calls `stamp_bates` as one undo entry, and the receipt names the labels and the next number. The form carries the next number to the next document's window, so a batch continues by hand. Stamping several files in one pass is shell work, recorded in `GUI_ROADMAP.md`. Driven by `bates_numbering_without_the_mouse`. |
 | Name each signer certificate's revocation locations (CDP/AIA URLs) — `SignatureVerdict::revocation_sources`, `RevocationSources` | **shipped — the Signatures panel, under each signature's trust line.** One line per certificate that names any location: its subject, then its CRL, OCSP and issuer-certificate URLs, and a count of locations this build cannot read. Nothing is fetched, and the trust line keeps saying revocation was not checked. Driven by `signature_names_where_revocation_lives` on `fixtures/signed-revocation-urls.pdf` (one of each kind) against `signed-two-pages.pdf` (none). |
+| Validate CRLs AND OCSP responses against a signer's chain — offline, no fetch … | **shipped — the Signatures panel says the revocation verdict as its own line, `Revocation:`, beside trust and never folded into it.** It reads `SignatureVerdict::revocation`: CRLs and OCSP responses in the document's `/DSS` are read with nothing supplied, and the line names which kind answered; `Good` is dated to the newest `thisUpdate` and says when some evidence names no next update; `Revoked` is worded with the date, the reason in plain words, and whether it predates the claimed signing time. Driven by `signature_says_its_revocation_verdict` on `fixtures/signed-revoked-dss.pdf` against a document with no list. Supplying a CRL or OCSP file by hand (`verify_all_with_revocation` with `SuppliedRevocation`) is not yet offered. |
 
 ### Fonts & rendering
 

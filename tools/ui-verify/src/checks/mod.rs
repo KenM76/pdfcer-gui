@@ -284,6 +284,7 @@ pub mod signature_save;
 pub mod smart_select;
 
 pub mod revocation_sources;
+pub mod revocation_verdict;
 pub mod trust_store;
 
 pub mod unembed_fonts;

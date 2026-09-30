@@ -42,7 +42,7 @@ impl Check for SignatureNamesWhereRevocationLives {
         let mut report = CheckReport::new(self.name(), self.defect());
         let mut outcome = Ok(None);
         for (fixture, want) in [WITH_URLS, WITHOUT_URLS] {
-            outcome = drive(ctx, &mut report, fixture, want);
+            outcome = signature_line_matches(ctx, &mut report, fixture, EVENT, want);
             if !matches!(outcome, Ok(None)) {
                 break;
             }
@@ -55,10 +55,14 @@ impl Check for SignatureNamesWhereRevocationLives {
     }
 }
 
-fn drive(
+/// Opens `fixture`, brings the Signatures panel to the front, and compares the
+/// last `event` line's fields with `want`. `Ok(Some)` is a failure,
+/// `Err` a SKIP.
+pub(crate) fn signature_line_matches(
     ctx: &CheckContext,
     report: &mut CheckReport,
     fixture: &str,
+    event: &str,
     want: &str,
 ) -> Result<Option<String>> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
@@ -76,7 +80,7 @@ fn drive(
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
     let pdf = repo_fixture(fixture, "This check pins a signed fixture.")?;
 
-    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("revocation-{fixture}.trace.txt")));
+    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{event}-{fixture}.trace.txt")));
     spec.pdf = Some(pdf);
     spec.env.push((
         ctx.profile.diag_env.0.to_owned(),
@@ -98,16 +102,16 @@ fn drive(
         )));
     }
     let trace = session.trace()?;
-    let Some(line) = trace.last(EVENT) else {
+    let Some(line) = trace.last(event) else {
         return Ok(Some(format!(
-            "★ NO `{EVENT}` LINE on {fixture}: the panel drew and never reached the revocation \
+            "★ NO `{event}` LINE on {fixture}: the panel drew and never reached the revocation \
              lines. Trace: {}.",
             session.trace_path().display()
         )));
     };
     let got = line
         .raw
-        .split_once(EVENT)
+        .split_once(event)
         .map_or("", |(_, rest)| rest.trim());
     if got != want {
         return Ok(Some(format!(
@@ -115,6 +119,6 @@ fn drive(
             session.trace_path().display()
         )));
     }
-    report.note(format!("★ {fixture}: `{EVENT} {got}`"));
+    report.note(format!("★ {fixture}: `{event} {got}`"));
     Ok(None)
 }
