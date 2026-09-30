@@ -118,6 +118,7 @@ pub(super) fn position(
     // pasteboard is the exact defect O23 spent three attempts on — see the
     // field's own documentation.
     //
+    let previous_overhang = doc.pasteboard_overhang;
     doc.pasteboard_overhang = super::tier::overhang(doc, current);
     let overhang = doc.pasteboard_overhang;
     super::trace::pasteboard(overhang, doc.view.off_page);
@@ -214,6 +215,7 @@ pub(super) fn position(
             row_rect,
             display_size,
             vp,
+            previous_overhang,
         },
     );
 

@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **55 of 255** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `wanted` — a real gap — **56 of 257** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -71,7 +71,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **`/CropBox`/`/BleedBox`/`/TrimBox`/`/ArtBox` now resolve as their INTERSECTION with `/MediaBox`** — `Page::crop_box` is the effective box; `BoxResolution` per box | **wanted: the intersection is consumed, the disclosure is not.** <!--namesake:crop_box--> the field is read everywhere and is the effective box, so the shell no longer intersects it itself. <!--namesake:BoxResolution--> the shell's test fixtures construct `BoxResolution::Defaulted` because `Page` has no constructor (our request `G060`); no surface reads the variant. Owed: disclose a `Clipped` or `Unusable` crop box off-canvas in the page properties (R8b). The renderer reports the same fact per render as `Diagnostics::page_crop_box`; the page properties read the page, so that field has no reader here. Our request `G059`. |
 | **`/BleedBox`, `/TrimBox` and `/ArtBox` overhang is not disclosed on a sheet resize** — `MediaBoxChange` has a field for `/CropBox` and none for the other three | **wanted, and it is a disclosure gap behind an engine ask.** <!--namesake:MediaBoxChange--> the type itself is consumed — `app::actions::pagesize` imports it and walks it — and what is missing is three *fields* on it. `MediaBoxChange` carries `crop_box_outside` and nothing for the other three boxes, so a resize reports one overhang and hides three, and `app::actions::pagesize::disclosures` has no branch to write because there is no field to read. Measured: a `/BleedBox [10 10 1000 1000]` survives a resize to 595×842 with no disclosure at all, so a press or CAD export gets one overhang reported and three not. The engine's `FEATURES.md` records that the three boxes are left byte-identical without drawing that consequence. Re-measured against the pinned revision: `/BleedBox` appears once in `pdfcer-core`, in `page_tree`'s note that the three do not inherit, and `MediaBoxChange` declares no field for any of them. Three more fields on the engine's report have to exist before anything can be worded here. |
 | **View the `/OCProperties` layer tree with FOLDERS** — `list-layers --tree`; in the API `Layers::order`, the `OrderNode` tree | **wanted.** `panels::layers` lists `Layers::layers`, the flattened list, so a CAD export that nests forty layers under six folders arrives as forty rows with the folders gone and a radio group indistinguishable from independent checkboxes. The engine already hands over the declared tree unsorted; the work is a collapsing tree in the panel, a folder toggle that sets its children, and `Layers::radio_groups` honoured so turning one member on turns its siblings off. |
-| **`merge_document` carrying optional-content group (`/OCProperties`) configuration** — layers now merge with the pages | **shipped.** <!--namesake:merge_document--> File ▸ Merge and Insert from file call `EditSession::merge_document` (`app::actions::pages`), so a merged file's layers arrive with no shell change. Whether the Layers panel shows them after the merge is not yet driven. |
 | **Read every page's displayed label, and set or clear a `/PageLabels` range directly ("Number Pages")** — `page_labels`, `label_ranges`, `EditSession::set_page_labels` / `clear_page_labels` | **wanted.** The shell reads none of it: the page box and the thumbnails show 1..N, so a drawing set numbered A-101, A-102 shows as 1, 2, and there is no Number Pages dialog. Two surfaces: show the label beside the page number (and accept a label typed into the page box), and a Number Pages dialog under Pages. |
 | **Organise `/Order` folders** — add/rename/delete a folder, move a layer in or out, reorder; `EditSession::add_layer_folder`, `EditSession::rename_layer_folder`, `EditSession::delete_layer_folder`, `EditSession::move_layer_node` | **wanted; in the pin, not yet wired.** Each returns a `LayerOrderOutcome` — `changed`, the node's new `path`, and `follows_layer` — as one `CommandKind::EditLayerOrder` undo entry. It needs the folder tree above first, since a folder cannot be edited in a panel that does not show one: then a New folder button, rename in place, Delete on a folder row, and dragging a row into, out of or along a folder. Refusals: `EditError::NotALayerFolder`, `EditError::LayerOrderNotEditable`, `EditError::LayerOrderInexpressible`, `EditError::LayerOrderPathNotFound`. |
 | **Choose a layer when adding new content** — `paste_objects_on_layer`, `NewImage::on_layer`, `AddTextRequest::on_layer`, and a `layer` field on the markup options | **wanted; in the pin, not yet wired.** The add-text, add-image and markup-as-content verbs this shell already calls each gain `layer: Option<ObjId>`; `None` is the unlayered verb, and the add and its placement are one undo entry. The surface is a *Draw onto layer* chooser beside the Edit-mode add tools and Paste, defaulting to none, listing `read_layers`' layers plus New layer…. A layer the add cannot use is refused as `AddTextError::Layer`, and as `AddTextError::LayerNeedsSession` outside an edit session. |
@@ -157,7 +156,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 255** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `blocked` — waiting on something named — **2 of 257** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -175,7 +174,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 255** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 257** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -186,7 +185,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 255** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `declined` — deliberately no surface — **16 of 257** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -228,7 +227,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **182 of 255** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **183 of 257** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -236,6 +235,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **`merge_document` carrying optional-content group (`/OCProperties`) configuration** — layers now merge with the pages | **shipped.** <!--namesake:merge_document--> File ▸ Merge and Insert from file call `EditSession::merge_document` (`app::actions::pages`), so a merged file's layers arrive with no shell change. Whether the Layers panel shows them after the merge is not yet driven. |
 | Transform several selected objects, each by its own matrix, as one command | **consumed** — Align and Distribute › Circular with *Rotate objects*. `pdfcer_core::vector::edit::plan_transform_each` is the engine's own planning half of that verb; the shell calls the verb, which runs it. `EditSession::transform_objects_each` is what Align and Distribute › Circular with *Rotate objects* needs: each object translated onto the ellipse and turned about its own centre, one command and one undo step, all-or-nothing. The shell asked for it (`request_transform_objects_each.md`) rather than fold N `transform_objects` calls with `coalesce_last`, which is not all-or-nothing. |
 | **Set or remove a page's `/CropBox`** — `EditSession::set_crop_boxes`, `CropBoxEdit::{Set, Reset}`, disclosing `overhangs_media_box` and the `CropBoxEntry` written | **shipped — Pages ▸ Transform ▸ Crop….** Four margins in millimetres, measured from the edges as the sheet is seen after `/Rotate`, become one `CropBoxEdit::Set`; all four at zero, or *Show whole sheet*, is `CropBoxEdit::Reset`. One `CommandKind::SetCropBoxes` undo entry however many sheets; a pick of mixed sizes or rotations offers only the whole sheet. Margins that leave nothing hide the commit button, so `EditError::CropBoxEmpty` is not reachable from the window. `app::actions::pagesize::crop` traces every `CropBoxEntry::ExplicitWritten`, `CropBoxEntry::BaseSpellingKept`, `CropBoxEntry::InheritedSoOwnEntryRemoved` and `CropBoxEntry::Absent` count and reports `overhangs_media_box` and an inherited removal off-canvas. `CropBoxChange`'s `page_index`, `before` and `after` are unread: the status line reports counts. Our request `G056`. |
 | **Block-level layout for an untagged page** — reading-order blocks; `block_layout::analyze_layout`, `block_layout::layout_text`, `BlockKind`, `BlockSource`, `LayoutOptions`; CLI `pdfcer extract-layout` | **shipped — File ▸ Export ▸ Text…, Order: Reading order.** `app::actions::export::text` passes the extraction and one `PageGeometry` per page (crop box and `/Rotate`) to `block_layout::layout_text`, drops `BlockKind::RunningHeader`, `BlockKind::RunningFooter` and `BlockKind::PageNumber` blocks, and joins the rest with a blank line. The receipt reports how many running lines were left out, and `LayoutDiagnostics::inferred` with the multi-column page count, off-canvas. As drawn stays the default. Still unread: Read aloud keeps content-stream order, and `BlockKind::Heading` levels are not a bookmark source. Our request `G054`. |

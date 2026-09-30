@@ -66,6 +66,9 @@ pub(super) struct Frame {
     pub display_size: Vec2,
     /// The viewport, measured before the scroll area was built.
     pub vp: Vec2,
+    /// Last frame's pasteboard overhang. The overhang follows the acting page,
+    /// so it changes when that page does; see [`rebased`].
+    pub previous_overhang: Vec2,
 }
 
 /// **The canvas frame the open-seed arm places a freshly opened view on.**
@@ -131,6 +134,7 @@ pub(super) fn decide(
         row_rect,
         display_size,
         vp,
+        previous_overhang,
     } = frame;
     // The strip conversion every page-local answer below is handed back
     // through. Spelled here rather than passed in as a closure so this module
@@ -145,7 +149,17 @@ pub(super) fn decide(
     // Where the view is sitting right now, in content space. Read here with
     // the overhang, before `doc` is borrowed mutably below, and used by the
     // dest-scroll arm as the offset an axis that must not move is held at.
-    let doc_offset = doc.frame.last_scroll_offset;
+    let rebase = (doc.canvas_frames > SEED_FRAME)
+        .then(|| {
+            rebased(
+                doc.frame.last_scroll_offset,
+                vp,
+                previous_overhang,
+                doc.pasteboard_overhang,
+            )
+        })
+        .flatten();
+    let doc_offset = rebase.unwrap_or(doc.frame.last_scroll_offset);
     // Takes the RECT rather than a page index, as of O177. Every offset
     // solved above arrives measured against *something* — a page for the zoom
     // anchor and the reveal, a whole facing row for a fit and for the
@@ -322,10 +336,7 @@ pub(super) fn decide(
         // Panning subtracts the pointer delta: the content follows the hand,
         // so the page moves WITH the pointer rather than under it.
         let (x, y) = geometry::pan_offset(
-            (
-                doc.frame.last_scroll_offset.x,
-                doc.frame.last_scroll_offset.y,
-            ),
+            (doc_offset.x, doc_offset.y),
             (pan.x, pan.y),
             (display_size.x, display_size.y),
             (vp.x, vp.y),
@@ -438,6 +449,52 @@ pub(super) fn decide(
                 ),
             ),
         );
+    } else if let Some(offset) = rebase {
+        // ui-text-exempt: diagnostic token, never displayed in the UI
+        return Decision::won("overhang-rebase", offset);
     }
     Decision::NONE
+}
+
+/// Last frame's scroll offset, re-expressed under this frame's overhang, or
+/// `None` when the overhang did not change.
+///
+/// The overhang is part of the scroll content's leading margin, so when it
+/// changes, the retained offset names a different strip point: going to a page
+/// with off-sheet content, the page was drawn thousands of pixels off-screen,
+/// and in a continuous mode the view slid on to a later page. Shifting by the
+/// margin's change keeps the strip point under the viewport's top-left.
+fn rebased(last: Vec2, vp: Vec2, old: Vec2, new: Vec2) -> Option<Vec2> {
+    use pdfcer_gui_base::viewgeometry::pasteboard;
+    (old != new).then(|| {
+        vec2(
+            last.x - pasteboard(vp.x, old.x) + pasteboard(vp.x, new.x),
+            last.y - pasteboard(vp.y, old.y) + pasteboard(vp.y, new.y),
+        )
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn an_unchanged_overhang_is_left_alone() {
+        let o = vec2(3293.8, 1996.0);
+        assert_eq!(rebased(vec2(10.0, 20.0), vec2(530.0, 678.0), o, o), None);
+    }
+
+    #[test]
+    fn a_rebase_keeps_the_strip_point_under_the_viewport() {
+        use pdfcer_gui_base::viewgeometry::{scroll_to_strip, strip_to_scroll};
+        let (vp, strip) = (vec2(530.0, 678.0), vec2(470.0, 2600.0));
+        let (old, new) = (vec2(0.0, 0.0), vec2(3293.8, 1996.0));
+        let last = strip_to_scroll(300.0, strip.y, vp.y, old.y);
+        let before = scroll_to_strip(last, strip.y, vp.y, old.y);
+        let now = rebased(vec2(0.0, last), vp, old, new).expect("changed");
+        let after = scroll_to_strip(now.y, strip.y, vp.y, new.y);
+        assert!((before - after).abs() < 1e-3, "{before} vs {after}");
+        let back = rebased(now, vp, new, old).expect("changed");
+        assert!((back.y - last).abs() < 1e-3);
+    }
 }
