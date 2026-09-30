@@ -140,7 +140,9 @@ impl Check for ADocumentCanBeSignedAndTheSignatureIsInTheFile {
 // Driving
 // ---------------------------------------------------------------------------
 
+pub mod archive;
 mod reaching;
+pub mod sign_box;
 pub mod timestamp;
 
 use reaching::{

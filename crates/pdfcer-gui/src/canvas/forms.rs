@@ -29,6 +29,7 @@ mod tabbing;
 /// pick sends. Split out under R2; see its header, and in particular its on
 /// why the side is chosen before the constraint rather than after it.
 mod choosing;
+mod sigtags;
 
 /// The live `egui::TextEdit` laid over a widget rectangle, and the three
 /// document properties that dress it. Shared by the `/Tx` editor below and by
@@ -407,6 +408,7 @@ pub(super) fn overlay(
     // later frame to act on.
     tabbing::advance(&ctx, doc, list, actions);
     if list.is_empty() {
+        sigtags::overlay(ui, pages, drawn, &placed.unsigned, actions);
         return;
     }
 
@@ -440,13 +442,16 @@ pub(super) fn overlay(
     // than a mark on the content, and quotes the panel header that named this
     // gap — and named it permitted — long before it was built.
     crate::canvas::form_marks::spotlight(ui, pages, list);
+    // The red tags on unsigned signature boxes (O266). Their click is taken
+    // here, before the fill click, though the two lists never overlap.
+    let signing = sigtags::overlay(ui, pages, drawn, &placed.unsigned, actions);
 
     // The focused field's editor FIRST, so that a click on another field is
     // seen by the editor it is leaving (as a focus loss, hence a commit)
     // before it is read as a request to focus something else.
     let claimed = editor(ui, doc, pages, list, actions);
     // …then the click, which may be the one that just closed that editor.
-    if !claimed {
+    if !claimed && !signing {
         click(&ctx, doc, pages, drawn, list, actions);
     }
     cursor(&ctx, pages, list);

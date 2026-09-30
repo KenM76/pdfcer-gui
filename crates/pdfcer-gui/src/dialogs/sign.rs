@@ -453,6 +453,21 @@ impl SignDialog {
         }
     }
 
+    /// Choose the pre-placed field `name`, when the operator may sign into it.
+    pub(super) fn point_at(&mut self, name: &str) -> bool {
+        let Some(index) = self
+            .standing
+            .empty_fields
+            .iter()
+            .position(|f| f.name == name && f.selectable())
+        else {
+            return false;
+        };
+        self.place = Place::Existing;
+        self.field = index;
+        true
+    }
+
     /// Whether replacing the open document is an option at all.
     fn can_replace_original(&self) -> bool {
         self.source.is_file()

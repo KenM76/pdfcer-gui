@@ -15,7 +15,15 @@
 //! <seq> wheel X Y DY [mods=…] [vp=V]
 //! <seq> gone [vp=V]
 //! <seq> shot [vp=V]
+//! <seq> key NAME [mods=…] [vp=V]
+//! <seq> type [vp=V] TEXT
 //! ```
+//!
+//! `key` presses and releases one key named as `egui::Key::from_name` spells
+//! it (`A`, `Enter`, `Tab`, `Escape`, `Backspace`, …), so `key A mods=ctrl`
+//! selects all in a focused field. `type` delivers everything after the verb
+//! (and an optional `vp=`), spaces included, as one text event to whatever
+//! holds keyboard focus: click the field first.
 //!
 //! Points are egui logical points of the target viewport — the space
 //! `ui-rect` lines are written in. `vp=` is `root` (the default) or the
@@ -104,6 +112,10 @@ fn parse(line: &str) -> Result<Step, ()> {
     let mut words = line.split_whitespace();
     let seq: u64 = words.next().ok_or(())?.parse().map_err(|_| ())?;
     let verb = words.next().ok_or(())?.to_owned();
+    if verb == "type" {
+        return typed(seq, line);
+    }
+    let mut key = None;
     let mut numbers: Vec<f32> = Vec::new();
     let mut target = Target::Root;
     let mut modifiers = Modifiers::NONE;
@@ -127,17 +139,66 @@ fn parse(line: &str) -> Result<Step, ()> {
             };
         } else if let Some(v) = word.strip_prefix("steps=") {
             steps = v.parse().map_err(|_| ())?;
+        } else if verb == "key" && key.is_none() {
+            key = Some(egui::Key::from_name(word).ok_or(())?);
         } else {
             numbers.push(word.parse().map_err(|_| ())?);
         }
     }
-    let frames = expand(&verb, &numbers, button, modifiers, steps.max(1))?;
+    let frames = if verb == "key" {
+        if !numbers.is_empty() {
+            return Err(());
+        }
+        let key = key.ok_or(())?;
+        let event = |pressed| Event::Key {
+            key,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers,
+        };
+        VecDeque::from([vec![event(true)], vec![event(false)]])
+    } else {
+        expand(&verb, &numbers, button, modifiers, steps.max(1))?
+    };
     Ok(Step {
         seq,
         verb,
         target,
         modifiers,
         frames,
+        sent: 0,
+        clock: None,
+    })
+}
+
+/// A `type` step: the text is the rest of the line after the verb and an
+/// optional leading `vp=`, separated by single spaces.
+fn typed(seq: u64, line: &str) -> Result<Step, ()> {
+    let rest = line.trim().splitn(3, ' ').nth(2).ok_or(())?;
+    let (target, text) = match rest.split_once(' ') {
+        Some((v, text)) if v.starts_with("vp=") => {
+            let v = &v[3..];
+            (
+                if v == "root" {
+                    Target::Root
+                } else {
+                    Target::Named(v.to_owned())
+                },
+                text,
+            )
+        }
+        _ => (Target::Root, rest),
+    };
+    if text.is_empty() {
+        return Err(());
+    }
+    Ok(Step {
+        seq,
+        verb: "type".to_owned(),
+        target,
+        modifiers: Modifiers::NONE,
+        frames: VecDeque::from([vec![Event::Text(text.to_owned())]]),
         sent: 0,
         clock: None,
     })
@@ -496,6 +557,30 @@ mod tests {
             panic!("not a move")
         };
         assert!((p.x - 40.0).abs() < 1e-3);
+    }
+
+    #[test]
+    fn a_key_is_a_press_then_a_release_with_its_modifiers() {
+        let step = parse("2 key A mods=ctrl").unwrap();
+        assert_eq!(step.frames.len(), 2);
+        assert!(matches!(
+            step.frames[0][..],
+            [Event::Key { key: egui::Key::A, pressed: true, modifiers, .. }] if modifiers.command
+        ));
+        assert!(parse("2 key NoSuchKey").is_err());
+        assert!(parse("2 key").is_err());
+        assert!(parse("2 key A 5").is_err());
+    }
+
+    #[test]
+    fn type_carries_the_rest_of_the_line_spaces_included() {
+        let step = parse("3 type http://127.0.0.1:80/ a b").unwrap();
+        assert!(matches!(&step.frames[0][..], [Event::Text(t)] if t == "http://127.0.0.1:80/ a b"));
+        assert_eq!(step.target, Target::Root);
+        let step = parse("4 type vp=abc hello").unwrap();
+        assert_eq!(step.target, Target::Named("abc".to_owned()));
+        assert!(matches!(&step.frames[0][..], [Event::Text(t)] if t == "hello"));
+        assert!(parse("5 type").is_err());
     }
 
     #[test]

@@ -747,6 +747,15 @@ pub(super) fn band() -> Vec<Command> {
         )
         .with_icon("sign")
         .enabled_when("doc.open"),
+        // Token 134. Writes a copy; the open document is unchanged.
+        #[cfg(feature = "timestamp")]
+        command(
+            "file.add_archive_timestamp",
+            crate::text::archive::file_add_archive_timestamp(),
+            134,
+        )
+        .with_icon("stamp")
+        .enabled_when("doc.open"),
         command("file.print", t::file_print(), 130)
             .with_icon("print")
             .enabled_when("doc.open"),

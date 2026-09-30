@@ -129,6 +129,35 @@ impl ScriptedPointer {
     }
 
     /// Take the pointer off the window, so nothing stays hovered.
+    /// Press and release one key in `viewport` (root when `None`), spelled as
+    /// `egui::Key::from_name` spells it, with `mods` (`ctrl`, `shift`, `alt`,
+    /// joined by `+`) or none.
+    pub fn key(
+        &self,
+        session: &Session,
+        viewport: Option<&str>,
+        name: &str,
+        mods: Option<&str>,
+    ) -> Result<TraceLine> {
+        let mods = mods.map_or(String::new(), |m| format!(" mods={m}"));
+        let vp = viewport.map_or(String::new(), |v| format!(" vp={v}"));
+        self.send(session, &format!("key {name}{mods}{vp}"))
+    }
+
+    /// Deliver `text` as typed in `viewport` (root when `None`), to whatever
+    /// holds keyboard focus there.
+    pub fn type_text(
+        &self,
+        session: &Session,
+        viewport: Option<&str>,
+        text: &str,
+    ) -> Result<TraceLine> {
+        match viewport {
+            Some(vp) => self.send(session, &format!("type vp={vp} {text}")),
+            None => self.send(session, &format!("type {text}")),
+        }
+    }
+
     pub fn gone(&self, session: &Session) -> Result<TraceLine> {
         self.send(session, "gone")
     }

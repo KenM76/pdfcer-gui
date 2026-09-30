@@ -242,6 +242,9 @@ pub struct Placed {
     /// Every widget with a rectangle, fillable or not — what the **authoring**
     /// surface hit-tests. See [`FieldTarget`].
     pub targets: Vec<FieldTarget>,
+    /// Every unsigned signature widget — what gets the red tag and the
+    /// click-to-sign (O266).
+    pub unsigned: Vec<FieldTarget>,
 }
 
 /// One fillable widget, placed.
@@ -416,8 +419,11 @@ pub fn place(form: &AcroForm, pages: &[Page], annots: &[Vec<(ObjId, [f64; 4])>])
 
     let mut out: Vec<(usize, WidgetBox)> = Vec::new();
     let mut targets: Vec<(usize, FieldTarget)> = Vec::new();
+    let mut unsigned: Vec<(usize, FieldTarget)> = Vec::new();
     let mut routing = Routing::default();
     for field in &form.fields {
+        let signable =
+            field.field_type == Some(FieldType::Signature) && field.value == FieldValue::Absent;
         // A field is routed to the panel only when NO widget of it can be
         // clicked — see [`Routing`].
         let mut reachable = false;
@@ -454,6 +460,9 @@ pub fn place(form: &AcroForm, pages: &[Page], annots: &[Vec<(ObjId, [f64; 4])>])
                     rect: canvas,
                 },
             ));
+            if signable && let Some((order, target)) = targets.last() {
+                unsigned.push((*order, target.clone()));
+            }
             // `reachable` is answered by `classify` and NOT by the
             // rectangle pushed above, and the two are easy to conflate.
             //
@@ -516,10 +525,12 @@ pub fn place(form: &AcroForm, pages: &[Page], annots: &[Vec<(ObjId, [f64; 4])>])
     // LAST match, which is only "the one drawn on top" if this list is in
     // `/Annots` order within each page.
     targets.sort_by_key(|(order, t)| (t.page, *order));
+    unsigned.sort_by_key(|(order, t)| (t.page, *order));
     Placed {
         boxes: out.into_iter().map(|(_, b)| b).collect(),
         routing,
         targets: targets.into_iter().map(|(_, t)| t).collect(),
+        unsigned: unsigned.into_iter().map(|(_, t)| t).collect(),
     }
 }
 

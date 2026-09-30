@@ -17,6 +17,9 @@ pub mod about;
 /// dialog for a push button. Its own module because it is the only row group
 /// there that carries a disclosure obligation.
 pub use pdfcer_gui_base::buttonactionpicker as buttonaction;
+/// File ▸ Security ▸ Add archive time-stamp….
+#[cfg(feature = "timestamp")]
+pub mod archive;
 /// The Embed-fonts confirmation - everything `embed_fonts` would do to the
 /// document, computed by the verb's own planner and shown before any of it
 /// happens.
@@ -366,6 +369,10 @@ pub struct DialogsState {
     /// describes nothing once that document is gone — and holds it by value, so
     /// closing the document frees it.
     compact: Option<compact::CompactDialog>,
+    /// The Add archive time-stamp window. Document-scoped: it describes the
+    /// open document's signatures.
+    #[cfg(feature = "timestamp")]
+    archive: Option<archive::ArchiveDialog>,
 
     /// The Remove-fonts window, when one is open.
     ///
@@ -773,6 +780,10 @@ impl DialogsState {
         if self.compact.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.compact = None;
         }
+        #[cfg(feature = "timestamp")]
+        if self.archive.as_mut().map(|d| d.show(ctx, actions, prefs)) == Some(false) {
+            self.archive = None;
+        }
         if self.unembed.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.unembed = None;
         }
@@ -1096,6 +1107,10 @@ impl DialogsState {
         // window that merely goes stale — it is one that keeps working.
         self.offpage = None;
         self.compact = None;
+        #[cfg(feature = "timestamp")]
+        {
+            self.archive = None;
+        }
     }
 
     /// **Ask for the password of `path`**, unless we are already asking for it.

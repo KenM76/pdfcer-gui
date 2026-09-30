@@ -21,6 +21,7 @@ pub(crate) fn claims(id: &str) -> bool {
             | "file.permissions"
             | "file.sign"
             | "file.add_validation_evidence"
+            | "file.add_archive_timestamp"
     )
 }
 
@@ -49,6 +50,12 @@ impl PdfcerApp {
         // signature shares nothing with them — no password fields, no
         // permission list, a private key it must hold and drop, and a different
         // set of engine refusals. One window per subject.
+        #[cfg(feature = "timestamp")]
+        if id == "file.add_archive_timestamp" {
+            self.dialogs
+                .open_archive(&self.status, self.prefs.sign_timestamp_server.as_deref());
+            return;
+        }
         #[cfg(feature = "signing")]
         if id == "file.sign" {
             self.dialogs
@@ -89,6 +96,7 @@ mod tests {
             "file.permissions",
             "file.sign",
             "file.add_validation_evidence",
+            "file.add_archive_timestamp",
         ]
         .into_iter()
         .filter(|id| reg.get(id).is_some())
@@ -101,7 +109,8 @@ mod tests {
         // supported builds.
         assert_eq!(
             registered.len(),
-            3 + 2 * usize::from(cfg!(feature = "signing")),
+            3 + 2 * usize::from(cfg!(feature = "signing"))
+                + usize::from(cfg!(feature = "timestamp")),
             "every registered Security command: {registered:?}"
         );
         for id in &registered {

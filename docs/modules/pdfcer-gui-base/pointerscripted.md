@@ -29,6 +29,11 @@ verb spreads its events across frames:
 - **Double-click:** the move and five frames in all.
 - **Drag:** a move, the press, `steps` moves, the release.
 - **Wheel:** a move, then the wheel.
+- **Key:** `key NAME [mods=ctrl+shift] [vp=V]` — the press, then the release,
+  carrying the modifiers. `NAME` is egui's key name (`A`, `Enter`, `Tab`).
+- **Type:** `type [vp=V] TEXT` — one frame with the rest of the line as text,
+  spaces included. It goes to whichever widget has focus, so click the field
+  first.
 
 - **Shot:** one empty frame, then egui's own screenshot (below).
 
@@ -71,6 +76,11 @@ later frame's input, and writes it as a binary PPM (`P6`, maxval 255, no
 comments) at `<step file>.shot-<seq>.ppm`. The step is acknowledged only
 then, with `path= w= h=` added, or `error=` if the write failed.
 `ScriptedPointer::screenshot` reads it back and writes a PNG.
+
+Only the root viewport answers. `shot vp=<dialog>` is never acknowledged:
+the dialog windows are immediate viewports, and no `Event::Screenshot` for
+them reaches the seam. A check about a dialog asserts on its trace events,
+not on a picture of it.
 
 ## Coordinates
 

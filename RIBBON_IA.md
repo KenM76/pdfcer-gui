@@ -213,7 +213,7 @@ Groups are `**Group**`. `⌄` means the control is a split button or dropdown.
 | **Recognise** | OCR… |
 | **Save** | Save · Save as… · Save a copy… · Save compacted · Revert |
 | **Export** | Export DXF… · Export image… (PNG/JPEG/TIFF, DPI picker) · Export text… · Import text · Stamp collection · Export form data ⌄ (FDF / XFDF / CSV) · Import form data · Copy this page's text · Copy the whole document's text |
-| **Security** | Remove old passwords · Encrypt · Permissions · Sign · Add validation evidence |
+| **Security** | Remove old passwords · Encrypt · Permissions · Sign · Add validation evidence · Add archive time-stamp |
 | **Print** | Print… · Imposition… (n-up / booklet / poster) |
 | **Document** | Properties · Fonts |
 | **pdfcer** | Settings… · Keyboard shortcuts · About |

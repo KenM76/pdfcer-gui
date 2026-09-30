@@ -930,6 +930,8 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // taken in the process that produced it. See its header.
         Box::new(signing::ADocumentCanBeSignedAndTheSignatureIsInTheFile),
         Box::new(signing::timestamp::ATimestampedSignatureIsTimestampedOrNotWritten),
+        Box::new(signing::archive::AnArchiveTimestampSealsACopy),
+        Box::new(signing::sign_box::ClickingASignatureBoxOpensSign),
         Box::new(redaction::RedactionRemovesAndProvesIt),
         // Immediately after `redaction`, which it shares a fixture generator
         // with. Read in this order the two answer the same question from

@@ -528,6 +528,13 @@ impl PdfcerApp {
                 #[cfg(feature = "signing")]
                 super::evidence::add(doc);
             }
+            // Registered only with `timestamp`; without it nothing raises this.
+            Action::ArchiveTimestamp { server } => {
+                #[cfg(feature = "timestamp")]
+                super::archive::stamp(doc, &server);
+                #[cfg(not(feature = "timestamp"))]
+                let _ = server;
+            }
             Action::Layer(action) => super::layers::apply(doc, action),
             // Nothing is invalidated beyond the epoch, deliberately. Document
             // metadata is not drawn on any page, so clearing rasters would
@@ -658,6 +665,16 @@ impl PdfcerApp {
             }
             // Everything else in the family needs the document and nothing
             // else, so it routes the way `Vector`, `Dimension` and `Page` do.
+            Action::Field(FieldAction::Sign { field }) => {
+                #[cfg(feature = "signing")]
+                self.dialogs.open_sign_on(
+                    &self.status,
+                    self.prefs.sign_timestamp_server.as_deref(),
+                    &field,
+                );
+                #[cfg(not(feature = "signing"))]
+                let _ = field;
+            }
             Action::Field(action) => super::forms::apply(doc, action),
             Action::BeginTextAnnot { page, kind, rect } => {
                 self.dialogs.open_text_annot(&self.status, page, kind, rect);

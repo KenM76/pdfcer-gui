@@ -269,8 +269,10 @@ starting with a sequence number that goes up by one:
     3 dclick 300 400
     4 drag 100 200 400 260 steps=12
     5 wheel 600 400 -120
-    6 shot
-    7 gone
+    6 key A mods=ctrl
+    7 type http://example.test/
+    8 shot
+    9 gone
 
 Coordinates are the window's own logical points, not screen pixels. Read them
 from the trace: every clickable region is announced as
@@ -279,7 +281,11 @@ The app answers each step with a `diag-pointer seq=N` line, or
 `diag-pointer-refused` for a line it cannot parse. Wait for that answer before
 writing the next step. `shot` writes the window's own image and names the file
 in its answer, so you can see what you did although the window is off-screen.
-`gone` takes the pointer off the window.
+`gone` takes the pointer off the window. `key` presses and releases one key
+(egui's name: `A`, `Enter`, `Tab`, `Escape`; `mods=ctrl+shift`). `type` sends
+the rest of the line as text to whichever field has focus, so click the field
+first. A step in a pop-up window names it with `vp=` (the viewport the region
+was announced in).
 
 **4. Check the trace, not the exit code.** Features record what they did
 (for example `evidence-applied certs=2 …` or `evidence-refused reason=…`).

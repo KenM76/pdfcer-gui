@@ -304,6 +304,14 @@ His words: *"Also colour glyphs/icons should be colour by default."*
 
 Wanted: Settings › Appearance › *Coloured icons* starts ticked for a new install, and every new glyph (the O264 set included) carries its accent part. An operator who unticks it keeps his choice.
 
+## O266 — **BUILT AND DRIVEN — awaiting your verdict** — an empty signature box is clickable and signable, as in Acrobat
+
+His words: *"in \"Rental Application (Blank) - all fields 1.pdf\" ther eare sinature fields that I can't figure out how to fill out. In acrobat there's a little red tag on the corner indicating they need a signature and I can click on the field to add a signature, but in pdfcer-gui nothing happens. It should act the same way acrobat does."*
+
+Wanted: every unsigned signature box on the page carries a small red corner tag and a *Click to sign* tip; clicking it opens the Sign window already pointed at that box. A signed box shows no tag. Signing needs a digital ID file; making one (Acrobat's *Configure new digital ID*) is asked of the engine as G072.
+
+**Where it stands.** Built as asked: the red tag, the *Click to sign* tip and the click that opens Sign with that box already chosen. Driven off-screen on a form with one empty signature box, and the check fails when the box is not chosen. The part still missing is *making* a digital ID; until the engine answers G072 you need a `.pfx` or `.p12` file you already have.
+
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 
 > **Ken:** *"Also can we make it so everything about the dimensions show a live preview? Can we make it so when we click on a dimension, the end points on the connection side of the dimension can have their lengths adjusted? And when I click on the dimension text and drag it should live preview so that it is apparent I am just moving the dimension text. Also did we make it so we can change between radius and diameter, and make these easy to move and extend again with live preview."*

@@ -139,8 +139,20 @@ pub fn form_field_certification_disabled_tooltip() -> &'static str {
 /// Note on a signature-field row.
 #[must_use]
 pub fn form_field_signature_note() -> &'static str {
-    "Signature field — it is signed rather than typed into. The Signatures panel reports on the \
+    "Signature field — click its box on the page to sign it. The Signatures panel reports on the \
      signatures a document already carries."
+}
+
+/// Hover tip on an unsigned signature box on the page.
+#[must_use]
+pub fn sign_box_tooltip() -> &'static str {
+    "Click to sign"
+}
+
+/// The same tip in a build that cannot sign.
+#[must_use]
+pub fn sign_box_unavailable_tooltip() -> &'static str {
+    "Signature field — this build of pdfcer cannot sign."
 }
 
 /// Note on a pushbutton row.

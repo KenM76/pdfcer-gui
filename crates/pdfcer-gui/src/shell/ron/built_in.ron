@@ -105,6 +105,11 @@
                             size: Large,
                             capability: "signing",
                         ),
+                        Command(
+                            id: "file.add_archive_timestamp",
+                            size: Large,
+                            capability: "timestamp",
+                        ),
                     ],
                 ),
                 (

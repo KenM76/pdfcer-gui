@@ -384,9 +384,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 176 → 177: `edit.align` (O263), Edit ▸ Arrange — the Align and Distribute panel.
     // 177 → 184: the seven one-click aligns beside it, for the Ctrl+Alt+keypad chords.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
+    // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     assert_eq!(
         registry().len(),
-        184 + 2 * usize::from(cfg!(feature = "signing"))
+        184 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
     );
 }
 
@@ -783,7 +784,7 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
     assert_eq!(
         named,
-        166 + 2 * usize::from(cfg!(feature = "signing")),
+        166 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

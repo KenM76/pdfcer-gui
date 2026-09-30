@@ -191,6 +191,10 @@ pub enum Action {
     /// File ▸ Security ▸ Add validation evidence…: pick files, embed them in
     /// `/DSS`, as one undo entry. See `super::evidence`.
     AddValidationEvidence,
+    /// File ▸ Security ▸ Add archive time-stamp…: pick a target, ask `server`.
+    ArchiveTimestamp {
+        server: String,
+    },
 
     /// **The verbs whose subject is a whole annotation** — move it, resize
     /// it, remove it.

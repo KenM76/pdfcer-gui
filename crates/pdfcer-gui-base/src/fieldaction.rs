@@ -344,6 +344,12 @@ pub enum FieldAction {
         /// The rectangle, in PDF user space, already normalised.
         rect: pdfcer_core::page_tree::Rect,
     },
+    /// **Sign into this empty signature field** — a click on its box on the
+    /// page (O266). Opens the Sign window pointed at the field; writes nothing.
+    Sign {
+        /// The field's fully-qualified name.
+        field: String,
+    },
     /// **Author the form control the dialog just accepted.**
     ///
     /// Raised by `crate::dialogs::formfield` and by nothing else. This is the

@@ -75,6 +75,18 @@ impl DialogsState {
         self.sign = super::sign::open_for(status, remembered_server);
     }
 
+    /// **Open the Sign window pointed at the empty signature field `field`**
+    /// — a click on its box on the page (O266).
+    #[cfg(feature = "signing")]
+    pub fn open_sign_on(&mut self, status: &Status, remembered_server: Option<&str>, field: &str) {
+        if self.sign.is_none() {
+            self.sign = super::sign::open_for(status, remembered_server);
+        }
+        let found = self.sign.as_mut().is_some_and(|d| d.point_at(field));
+        // ui-text-exempt: diagnostic trace, never displayed.
+        crate::diag::trace(|| format!("sign-field-chosen found={}", u8::from(found)));
+    }
+
     /// **Hand the signing outcome to the window that asked for it.**
     #[cfg(feature = "signing")]
     pub fn sign_outcome(&mut self, outcome: crate::sign::Outcome) {
@@ -343,6 +355,14 @@ impl DialogsState {
         // to configure a folder they no longer need, at the exact moment they
         // were most likely to believe it.
         Some(crate::text::embed::nothing_missing().to_owned())
+    }
+
+    /// Open the Add archive time-stamp window on the open document.
+    #[cfg(feature = "timestamp")]
+    pub fn open_archive(&mut self, status: &Status, remembered: Option<&str>) {
+        if self.archive.is_none() {
+            self.archive = super::archive::open_for(status, remembered);
+        }
     }
 
     /// Open the compacted-copy window, or answer why the engine refused.

@@ -209,6 +209,9 @@ pub mod unembed;
 pub mod security;
 pub mod shortcuts;
 
+/// File ▸ Security ▸ Add archive time-stamp….
+#[cfg(feature = "signing")]
+pub mod archive;
 /// File ▸ Security ▸ Add validation evidence….
 #[cfg(feature = "signing")]
 pub mod evidence;

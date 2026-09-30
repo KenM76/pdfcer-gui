@@ -156,6 +156,9 @@ pub mod textstyle;
 /// things".
 pub mod vector;
 
+/// File ▸ Security ▸ Add archive time-stamp….
+#[cfg(feature = "timestamp")]
+mod archive;
 /// File ▸ Security ▸ Add validation evidence….
 #[cfg(feature = "signing")]
 mod evidence;
