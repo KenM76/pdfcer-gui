@@ -217,6 +217,8 @@ pub(super) fn band() -> Vec<Command> {
         command("edit.attachments", t::edit_attachments(), 411)
             .with_icon("attachment")
             .enabled_when("doc.open"),
+        // Opens the panel; each button there says for itself why it is greyed.
+        command("edit.align", t::edit_align(), 492).enabled_when("doc.pages"),
         // ⚠ **Tokens 420, 421 and 430 are reserved and stay unused.** They
         // belonged to `edit.copy_page_text`, `edit.copy_document_text` and
         // `edit.form_fill`, whose commands are now `file.copy_page_text` and

@@ -7,6 +7,9 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/panels/mod.md`.
 
+/// The Align and Distribute panel.
+pub mod align;
+
 /// **The annotation half of the Properties panel's geometry section** —
 /// X/Y/W/H, typeable over a selected markup.
 pub mod annotgeometry;

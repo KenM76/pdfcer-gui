@@ -18,8 +18,13 @@ use crate::report::CheckReport;
 const FIXTURE: &str = "signed-two-pages.pdf";
 /// The ribbon control that shows the panel.
 const PANEL_ITEM: &str = "ribbon.item.view.panel_signatures";
-/// The panel's dock tab — the evidence it is OPEN, independent of its body.
+/// The panel's dock tab, drawn only when its stack is not all on the rail.
 const PANEL_TAB: &str = "dock.tab.view.panel_signatures";
+/// The panel's rail button, drawn when the rail raises its stack instead.
+const PANEL_RAIL: &str = "rail.tabs.view.panel_signatures";
+/// The dock's body for the panel — declared only for the FRONT panel of a
+/// stack, so it is the evidence the panel is open and selected.
+const PANEL_DOCK_BODY: &str = "dock.body.view.panel_signatures";
 /// The panel body's own region — the evidence it is ON SCREEN.
 const PANEL_BODY: &str = "panel:signatures";
 /// The per-signature trace line the panel writes.
@@ -100,33 +105,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // Read is where the application starts; say so anyway, or this stops
     // testing Read the day the default moves.
     click_mode_segment(&session, &driver, ui_rect, "read")?;
-
-    // Only if it is not already showing. The ribbon control is a TOGGLE, and
-    // pressing it over an open panel closes the thing under test — which is how
-    // a sibling check produced a SKIP on one run and a FAIL on the next from
-    // the same build.
-    if declared(&session.trace()?, ui_rect, PANEL_TAB).is_none() {
-        open_signatures(&session, &driver, ui_rect)?;
-    }
-    // …and then SELECT it. A dock tab is declared whether or not it is the
-    // one in front, and the dock draws only the selected tab's body. A panel
-    // behind another tab publishes nothing, which reads exactly like a panel
-    // with nothing to say — `RESUME.md` records that misdiagnosis costing a
-    // session.
-    if let Some(tab) = declared(&session.trace()?, ui_rect, PANEL_TAB) {
-        driver.click_at(session.frame()?.declared_center(tab))?;
-        session.settle(25);
-    }
-
-    let trace = session.trace()?;
-    if declared(&trace, ui_rect, PANEL_TAB).is_none() {
+    if !show_signatures(&session, &driver, ui_rect)? {
+        let trace = session.trace()?;
         return Err(Error::new(format!(
-            "the Signatures panel is not showing — no `{PANEL_TAB}` region — so this run cannot \
-             tell 'the panel reports nothing' from 'the panel never opened'. SKIPPED, not \
-             passed. Tabs declared: {}.",
-            list(&declared_names(&trace, ui_rect, "dock.tab"))
+            "the Signatures panel is not showing — no `{PANEL_DOCK_BODY}` region — so this run \
+             cannot tell 'the panel reports nothing' from 'the panel never opened'. SKIPPED, not \
+             passed. Bodies declared: {}.",
+            list(&declared_names(&trace, ui_rect, "dock.body"))
         )));
     }
+    let trace = session.trace()?;
     // The panel's BODY, not only its tab. The tab proves the dock knows
     // about the panel; the body region proves the panel's own code ran and laid
     // itself out somewhere visible. Two different claims, and only the second
@@ -276,6 +264,29 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          module's header for what covers it instead.",
     );
     Ok(None)
+}
+
+/// **Bring the Signatures panel to the front**, whichever switch the dock drew
+/// for it, and answer whether its body is now declared.
+///
+/// The ribbon control is a toggle, so it is pressed only when neither the
+/// dock tab nor the rail button exists — pressing it over an open panel
+/// closes the thing under test.
+pub(crate) fn show_signatures(session: &Session, driver: &Driver, ui_rect: &str) -> Result<bool> {
+    let open = |t: &_| declared(t, ui_rect, PANEL_TAB).or_else(|| declared(t, ui_rect, PANEL_RAIL));
+    if declared(&session.trace()?, ui_rect, PANEL_DOCK_BODY).is_some() {
+        return Ok(true);
+    }
+    if open(&session.trace()?).is_none() {
+        open_signatures(session, driver, ui_rect)?;
+    }
+    if declared(&session.trace()?, ui_rect, PANEL_DOCK_BODY).is_none()
+        && let Some(switch) = open(&session.trace()?)
+    {
+        driver.click_at(session.frame()?.declared_center(switch))?;
+        session.settle(25);
+    }
+    Ok(declared(&session.trace()?, ui_rect, PANEL_DOCK_BODY).is_some())
 }
 
 /// Show the Signatures panel from the View tab.

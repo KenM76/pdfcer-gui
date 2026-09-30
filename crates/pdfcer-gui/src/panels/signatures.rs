@@ -98,6 +98,7 @@ pub fn body(
                 integrity_line(ui, verdict);
                 coverage_line(ui, c);
                 trust_line(ui, verdict, report.as_ref().and_then(|r| r.as_ref().ok()));
+                revocation_lines(ui, verdict);
 
                 crate::diag::trace(|| {
                     //
@@ -161,6 +162,49 @@ fn integrity_line(ui: &mut egui::Ui, verdict: Option<&SignatureVerdict>) {
     // because each names something the operator cannot see from the verdict.
     for note in &verdict.notes {
         ui.label(egui::RichText::new(note).small().weak());
+    }
+}
+
+/// Where each certificate says its revocation status lives, signer first.
+/// Nothing is fetched; the trust line keeps saying revocation was not checked.
+fn revocation_lines(ui: &mut egui::Ui, verdict: Option<&SignatureVerdict>) {
+    let Some(verdict) = verdict else {
+        return;
+    };
+    let named: Vec<&pdfcer_core::signature_verify::RevocationSources> = verdict
+        .revocation_sources
+        .iter()
+        .filter(|s| !s.is_empty())
+        .collect();
+    crate::diag::trace(|| {
+        let count = |f: fn(&pdfcer_core::signature_verify::RevocationSources) -> usize| -> usize {
+            named.iter().map(|s| f(s)).sum()
+        };
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!(
+            "signature-revocation-sources certs={} crl={} ocsp={} issuers={} unreadable={}",
+            named.len(),
+            count(|s| s.crl.len()),
+            count(|s| s.ocsp.len()),
+            count(|s| s.ca_issuers.len()),
+            count(|s| s.unreadable),
+        )
+    });
+    if named.is_empty() {
+        return;
+    }
+    ui.label(egui::RichText::new(tt::revocation_label()).small().weak());
+    for s in named {
+        ui.label(
+            egui::RichText::new(tt::revocation_sources(
+                &s.subject,
+                &s.crl,
+                &s.ocsp,
+                &s.ca_issuers,
+                s.unreadable,
+            ))
+            .small(),
+        );
     }
 }
 

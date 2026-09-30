@@ -85,6 +85,19 @@ pub enum VectorAction {
         /// Vertical displacement, PDF user-space points (Y is up).
         dy: f64,
     },
+    /// Move several page objects, **each by its own delta**, as one undo
+    /// step — what Align and Distribute commit.
+    ///
+    /// Units as [`Self::MoveSelection`]: PDF user-space points, Y up. Indices
+    /// are paint-order positions on `page`, unique.
+    MoveEach {
+        /// The 0-based page the indices are positions on.
+        page: usize,
+        /// `(index, dx, dy)` per object; zero moves are dropped before this.
+        moves: Vec<(usize, f64, f64)>,
+        /// The gesture, for the trace: `align`, `distribute`, `rearrange`.
+        gesture: &'static str,
+    },
     /// Delete every selected object **inside a form XObject** —
     /// `EditSession::delete_objects_in_form`, `OPERATOR_REQUESTS.md` O70.
     ///

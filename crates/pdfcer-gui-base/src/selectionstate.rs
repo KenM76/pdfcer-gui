@@ -13,6 +13,11 @@ use crate::selectionidentity::{ClickHit, EscapeOutcome, Selection, SelectionLeve
 pub struct SelectionState {
     /// The selected entries, in `(page, object, subpath, node)` order.
     entries: Vec<Selection>,
+    /// The same entries in the order they joined the selection, which
+    /// `entries` cannot hold because it is kept sorted. Read by Align and
+    /// Distribute's *first selected* / *last selected*. Kept in step by
+    /// [`Self::normalise`]; read through [`Self::in_selection_order`].
+    order: Vec<Selection>,
     /// The rung the operator has entered.
     level: SelectionLevel,
     /// Canvas-space outline rects for the entries on the resolved page, in
@@ -83,9 +88,37 @@ impl SelectionState {
         self.annot.as_ref()
     }
 
+    /// The selected entries in the order the operator added them: a
+    /// Shift-click appends, a marquee appends its hits in document order.
+    pub fn in_selection_order(&self) -> Vec<Selection> {
+        let held: BTreeSet<Selection> = self.entries.iter().copied().collect();
+        let mut out: Vec<Selection> = self
+            .order
+            .iter()
+            .filter(|e| held.contains(e))
+            .copied()
+            .collect();
+        let listed: BTreeSet<Selection> = out.iter().copied().collect();
+        out.extend(self.entries.iter().filter(|e| !listed.contains(e)).copied());
+        out
+    }
+
+    /// Drop from `order` what left `entries`; append what joined it.
+    fn sync_order(&mut self) {
+        let held: BTreeSet<Selection> = self.entries.iter().copied().collect();
+        let mut seen = BTreeSet::new();
+        self.order.retain(|e| held.contains(e) && seen.insert(*e));
+        for e in &self.entries {
+            if seen.insert(*e) {
+                self.order.push(*e);
+            }
+        }
+    }
+
     /// Select an annotation, **replacing** whatever was selected.
     pub fn select_annot(&mut self, selection: AnnotSelection) {
         self.entries.clear();
+        self.order.clear();
         self.outlines.clear();
         self.resolved_for = None;
         self.annot_resolved_for = None;
@@ -137,6 +170,7 @@ impl SelectionState {
             return false;
         }
         self.entries.clear();
+        self.order.clear();
         self.outlines.clear();
         self.level = SelectionLevel::Object;
         self.resolved_for = None;
@@ -269,6 +303,7 @@ impl SelectionState {
             // add; preserving the selection would make an aimless Shift-click a
             // no-op the operator cannot distinguish from a missed anchor.
             self.entries.clear();
+            self.order.clear();
             self.level = SelectionLevel::Object;
             return;
         };
@@ -350,6 +385,7 @@ impl SelectionState {
         if shift {
             self.entries.extend(found);
         } else {
+            self.order.clear();
             self.entries = found;
         }
         self.level = SelectionLevel::Object;
@@ -503,6 +539,7 @@ impl SelectionState {
             Some(SelectionLevel::Node) => EscapeOutcome::Nothing,
             None if !self.entries.is_empty() => {
                 self.entries.clear();
+                self.order.clear();
                 self.outlines.clear();
                 EscapeOutcome::ClearedSelection
             }
@@ -716,6 +753,7 @@ impl SelectionState {
             // leaves. Doing anything else here strands the operator.
             self.level = SelectionLevel::Object;
             self.entries.clear();
+            self.order.clear();
             self.outlines.clear();
             return;
         };
@@ -759,6 +797,7 @@ impl SelectionState {
     fn normalise(&mut self) {
         self.entries.sort_unstable();
         self.entries.dedup();
+        self.sync_order();
         if self.entries.is_empty() {
             self.level = SelectionLevel::Object;
             self.outlines.clear();
@@ -778,6 +817,7 @@ impl SelectionState {
                 }
                 self.entries.sort_unstable();
                 self.entries.dedup();
+                self.sync_order();
             }
         }
         // The outlines describe the entries; any change to the entries makes
@@ -785,5 +825,49 @@ impl SelectionState {
         // operator no longer has selected.
         self.resolved_for = None;
         self.annot_resolved_for = None;
+    }
+}
+
+#[cfg(test)]
+mod order_tests {
+    use super::*;
+
+    fn ids(s: &SelectionState) -> Vec<TargetId> {
+        s.in_selection_order().iter().map(|e| e.object).collect()
+    }
+
+    #[test]
+    fn additions_keep_the_order_they_arrived_in() {
+        let mut s = SelectionState::default();
+        s.marquee(0, &[TargetId::Object(3)], false);
+        s.marquee(0, &[TargetId::Object(1)], true);
+        s.marquee(0, &[TargetId::Object(2)], true);
+        assert_eq!(
+            ids(&s),
+            [
+                TargetId::Object(3),
+                TargetId::Object(1),
+                TargetId::Object(2)
+            ]
+        );
+        // `entries` stays sorted; only the order view differs.
+        assert_eq!(s.entries()[0].object, TargetId::Object(1));
+    }
+
+    #[test]
+    fn removal_drops_from_the_order_and_a_fresh_marquee_restarts_it() {
+        let mut s = SelectionState::default();
+        s.marquee(0, &[TargetId::Object(3)], false);
+        s.marquee(0, &[TargetId::Object(1)], true);
+        s.marquee(0, &[TargetId::Object(2)], true);
+        s.marquee_remove(0, &[TargetId::Object(1)]);
+        assert_eq!(ids(&s), [TargetId::Object(3), TargetId::Object(2)]);
+        s.marquee(0, &[TargetId::Object(5), TargetId::Object(4)], false);
+        assert_eq!(ids(&s), [TargetId::Object(4), TargetId::Object(5)]);
+        s.clear();
+        assert!(ids(&s).is_empty());
+        s.marquee(0, &[TargetId::Object(9)], false);
+        s.marquee(0, &[TargetId::Object(4)], true);
+        assert_eq!(ids(&s), [TargetId::Object(9), TargetId::Object(4)]);
     }
 }

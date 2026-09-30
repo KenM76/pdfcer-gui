@@ -381,9 +381,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 173 → 174: `pages.bates`, Pages ▸ Stamp.
     // 174 → 175: `pages.bates_remove`, beside it.
     // 175 → 176: `edit.form_repair_fonts` (G070), Edit ▸ Forms.
+    // 176 → 177: `edit.align` (O263), Edit ▸ Arrange — the Align and Distribute panel.
     assert_eq!(
         registry().len(),
-        176 + usize::from(cfg!(feature = "signing"))
+        177 + usize::from(cfg!(feature = "signing"))
     );
 }
 
@@ -1053,8 +1054,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         //
         // 17 → 18 — `file.remove_ocr`: a supply refusal. `recognise-text`
         // says "add a layer"; no glyph for taking one off exists yet.
+        //
+        // 18 → 19 — `edit.align`: a supply refusal. No align glyph exists,
+        // and the nearest, `reset-layout`, means the dock, not the page.
         refused,
-        18,
+        19,
         "commands with no icon, each argued at its registration"
     );
     // Each refusal is argued at its own registration and listed in the

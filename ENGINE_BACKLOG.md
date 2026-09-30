@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **54 of 249** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `wanted` — a real gap — **54 of 251** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -125,7 +125,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
-| Name each signer certificate's revocation locations (CDP/AIA URLs) … | **wanted — one line per signature in the Signatures panel.** The engine names where each certificate's revocation information lives, as `SignatureVerdict::revocation_sources`, and fetches nothing. The shell's part is to print those locations under the signature's `Signer:` line. The `Trusted` sentence keeps saying revocation was not checked, because naming a location is not checking it. It needs an engine pin that carries it. |
 | Detect an unencrypted wrapper (§7.6.7) and warn that the visible … | **wanted, and the cheapest row on O108's Security tab.** Nothing here detects the §7.6.7 wrapper. An unencrypted wrapper is a cover sheet standing in front of a document this reader cannot open, and pdfcer renders the cover in full, silently — an operator looking at a plausible page has no way to know they are not looking at the drawing. |
 | Tell me what this document would run in Acrobat/Reader … | **wanted — the second row of O108's Security tab, and arguably the one with the most value per line.** *What would this document run if I opened it in Acrobat, and does it reach outside itself?* is the question an operator asks of a drawing that arrived by email. The engine answers it across every place an action can live — page open triggers, navigation nodes, annotation triggers, chains — without executing anything, and nothing here reads the census. |
 | **A pasted markup carries what was copied — dash, opacity, note, author and blend mode travel** | **wanted no longer — this is the same capability as the shipped row of the same opening words**, which carries the argument and the evidence. Kept as its own entry because the register deletes no row; read the sibling under `shipped` → *Annotations & markup*, and do not repeat the gap sentence from here. |
@@ -140,6 +139,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Default selections for a list or combo** — `FieldEdit::with_default_selections` / `FieldEdit::default_selections` | **wanted, beside the Default-value box.** `/DV` for a `/Ch` field is what Reset restores; the text-field half is built and this is its choice-field twin, a multi-select of the field's own options in `panels::properties::choiceopts`. |
 | **A dashed widget border** — `WidgetChrome::with_border_dash` / `WidgetChrome::border_dash` | **wanted, small.** The border width and style controls exist; a dashed style without a dash array draws the engine default. One pattern field beside the style combo, shown only when the style is dashed (R9). |
 | **Say on the security summary that old password values are still in the file** — the scan behind `password_history::PasswordValueScan` <!--namesake:scan_stored_password_values: called by File ▸ Security ▸ Remove old passwords…, not by any summary--> | **wanted, and it is a disclosure, not a command.** The purge ships (see *shipped*). What is missing is telling the operator, before he runs it, that the file holds password values in earlier revisions, as a line on the document's security summary giving field and revision only, never the value. |
+| Validate CRLs against a signer's chain — offline, no fetch … | **wanted — the Signatures panel's trust line gains a revocation verdict.** `SignatureVerdict::revocation` (`NotChecked` / `Good` / `Revoked { date, reason, before_signing }` / `Undetermined { reason }`) from CRLs in the document's `/DSS` or supplied by the caller. The shell's part: say the verdict as its own fact beside trust, never folded into it, and word `Revoked` with whether it predates signing. Lands with engine v0.68.0; this shell's pin predates it, so the next pin bump picks it up. |
 
 ### Fonts & rendering
 
@@ -154,7 +154,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 249** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `blocked` — waiting on something named — **2 of 251** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -172,7 +172,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 249** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 251** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -183,7 +183,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 249** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `declined` — deliberately no surface — **16 of 251** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -225,7 +225,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **177 of 249** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **179 of 251** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -265,6 +265,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Repair a form already saved with an inline `/AcroForm` `/DR` font** — `EditSession::promote_inline_dr_fonts`, `CommandKind::PromoteInlineDrFonts` | **shipped — Edit ▸ Forms ▸ *Repair fonts*.** Our G070. One undo entry through the edit funnel; the count is on the status line, and a zero is the worded decline "nothing to repair" with the document untouched. `CommandKind::PromoteInlineDrFonts` is held opaquely. Driven by `repair_form_fonts`; measured in Acrobat Pro on the O262 rental form, blank before and visible after. |
 | **Import a plain-text file INTO a PDF as pages** — the other half of "export/import as text" (`EditSession::place_text(text, &PageTemplate, InsertPosition)`, `pdfcer place-text`) … | **Reachable and driven — File ▸ Import, `app::actions::importtext`, driven by `import_text::ATextFileBecomesPages` (`tools/ui-verify/src/checks/roster.rs:170`).** `EditSession::place_text` paginates, so the `add_text`-overflows-off-the-sheet hazard does not arise. What the module spends its lines on is the disclosure: `PlaceTextReport` has 23 fields, six of them judgements the import made about the operator's own file — a paragraph split across a page break, a tab collapsed to a space, control bytes dropped, unmappable characters dropped, a U+000C he may not know he typed becoming a page break, a word too wide to wrap. Every one is an inference he cannot see by looking at the result, so rule 4 applies six times over. The undo promise is **read** from `coalesced` rather than assumed: past 255 non-blank pages every page still places and simply fails to group. |
 | **Session verbs plan against the SESSION graph, not the base revision** — every text-edit planner takes `&DocumentView<'_>` and every `EditSession` verb passes `self.view()` … | **Reached by the pin, with nothing owed here.** A `/Font` that `format_text` authored this session is typeable by the next `edit_text` at once, and handing a planner the base revision is a compile error upstream. The save-and-reopen workaround is deleted. The durable rule this row earned: **verify a capability by its own surface, not by a hash** — the engine rebases, so `git merge-base --is-ancestor` can answer *not an ancestor* for a revision that shipped, which is indistinguishable from *not shipped* and is a false negative wearing a measurement's clothes. Grep the pinned engine for the refusal strings the change removed instead. |
+| **Move several selected objects, each by its own delta, as one command** — `move_objects_each` / `move_objects_each_in_form` | **Reachable and driven for page content.** `app::actions::vector::move_each` commits every Align and Distribute press with one `move_objects_each` call, so a press is one undo step and a refusal moves nothing. Driven by `align_left_moves_every_box_in_one_undo`, which asserts each box's own delta. The in-form variant is `wanted`: the panel acts on page objects only, and aligning leaves inside a placed form needs a form-leaf selection this shell does not offer. |
 | **Move one text run independently of others sharing its text object** — `move_text_run` / `move_text_run_in_form` | **Reachable and driven.** `VectorAction::MoveTextRun` / `MoveTextRunInForm` go through `vector_edit_on_page`, so the inserted-`Td` disclosure is recorded off-canvas by the same mechanism as every other one. The wiring RETIRED a shipped sentence, which was the hard half: one refusal became TWO, because the engine distinguishes two causes and the operator's next action differs — `TextRunHasNoPositionOfItsOwn` and `MoveWouldMoveNextRun`. The old *offer* clause was dropped rather than carried: delete's own refusal mirrors the second case, so the offer would have been false for a selection reachable from the refusal carrying it. `fixtures/inherited-runs.pdf` exists because `paragraph.pdf` cannot reach either refusal; `dragging_one_line_of_text_moves_it_or_says_why` drives all three answers. |
 | **Use a real bold face before synthesising one** — `StyleLadder` / `StyleRung` (`pdfcer-core/src/text_edit/format.rs`) / `std14_styled` (`fontdata/mod.rs`) … | **Reachable, not driven.** `StyleChange::stamp` calls `FormatRequest::style(…)` (`app/actions/textstyle.rs`), so the ladder runs. Rung 2 is what mattered and it fires on his commonest page: a title block carrying only `Helvetica` has no bold resource, so the R90 gate passed and the strokes were thickened — where `Helvetica-Bold`, standard-14 and needing no font file, binds. Asserted on the run's `/Font` resource key CHANGING, which synthesis cannot do. The `Refuse`-pinned probe, the gate pre-check and the whole `RealFaceAvailable` retry are deleted with it. Owed: a driven check. |
 | **Make a run bold (or italic) without choosing between two verbs** — `FormatRequest::set_style` … | **Reachable, not driven.** The rung is disclosed off-canvas (`ladder_note`, rule 4) and `SynthesisRefusedByPosture` reaches a NAMED refusal ahead of the wildcard. `preview_style_ladder` runs the planner the COMMIT runs, which killed the headline defect: the old hover previewed the R90 gate, which cannot see rung 2 by construction, so on a `Helvetica` title block it promised thickened letters where the press binds `Helvetica-Bold`. `same_family` restored `text_style_used_other_family` and added `text_style_used_sibling_face`; `None` is never flattened to `Some(false)`. Typed `passed_over` plus `Refusal::character` put the passed-over faces on the **hover**, not the status line, where `disclosure_style_ladder` already covers them. The `preview_style_resolution` join, its ordering constraint in `sync` and `StyleOutlook::FaceCannotCover` died together, being one workaround. Owed: a driven check. |
@@ -379,6 +380,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **PAdES B-T — verify-then-embed an RFC 3161 timestamp** … | **shipped** (default `timestamp` feature). File ▸ Sign ▸ *Timestamp server*: `sign::prepare` calls `EditSession::sign_with_timestamp` through `sign::timestamp::HttpAuthority` (`pdfcer_fetch::post_time_stamp_query_with`, 30 s bound), and `SignReport::timestamp` is disclosed in the result. `SignApplyError::Timestamp` is worded, never retried as B-B. Strippable by the shell's `timestamp` feature (R8). The round trip still blocks the UI thread for its duration. Driven: `a_timestamped_signature_is_timestamped_or_not_written`. |
 | **Find AND purge password-field values left in earlier revisions** — `password_history::scan_stored_password_values`, `EditSession::purge_password_values` | **shipped — File ▸ Security ▸ Remove old passwords….** `app::actions::purge_passwords` scans every revision, purges a fresh session, rewrites with `to_full_bytes_decomposing_containers`, re-scans the output, and writes nothing if a value survives. It refuses signed documents. The receipt counts values removed and discloses inherited, read-only and unreadable-revision cases without quoting a value. Driven by `stored_passwords_removed_without_the_mouse`. |
 | **Bates numbering across a batch of PDFs** — `EditSession::stamp_bates`, `BatesStamp`; the whole `pdfcer_core::bates` module, its undo entry `CommandKind::StampBates` and refusal `EditError::Bates` | **shipped — Pages ▸ Stamp ▸ Bates numbering…, one document at a time.** `dialogs::bates` takes prefix, digits, suffix, start number, one of six positions, margin and size. It previews the first and last label and words every `BatesError` before commit, with no Stamp button while one applies. `app::actions::pagesize::bates` calls `stamp_bates` as one undo entry, and the receipt names the labels and the next number. The form carries the next number to the next document's window, so a batch continues by hand. Stamping several files in one pass is shell work, recorded in `GUI_ROADMAP.md`. Driven by `bates_numbering_without_the_mouse`. |
+| Name each signer certificate's revocation locations (CDP/AIA URLs) — `SignatureVerdict::revocation_sources`, `RevocationSources` | **shipped — the Signatures panel, under each signature's trust line.** One line per certificate that names any location: its subject, then its CRL, OCSP and issuer-certificate URLs, and a count of locations this build cannot read. Nothing is fetched, and the trust line keeps saying revocation was not checked. Driven by `signature_names_where_revocation_lives` on `fixtures/signed-revocation-urls.pdf` (one of each kind) against `signed-two-pages.pdf` (none). |
 
 ### Fonts & rendering
 

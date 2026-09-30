@@ -310,6 +310,13 @@
                     collapse: 4,
                 ),
                 (
+                    id: "arrange",
+                    caption: "Arrange",
+                    items: [
+                        Command(id: "edit.align", size: Large),
+                    ],
+                ),
+                (
                     id: "clipboard",
                     caption: "Clipboard",
                     items: [

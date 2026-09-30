@@ -355,6 +355,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // halves of one subject in the order they were built.
         Box::new(signature_save::AnInvalidatingSaveIsWarnedAbout),
         Box::new(trust_store::SignatureTrustIsReportedAsItsOwnFact),
+        Box::new(revocation_sources::SignatureNamesWhereRevocationLives),
         Box::new(os_fonts_setting::FontFoldersLandsOnTheFontsSetting),
         Box::new(unembed_fonts::RemovingEmbeddedFontsReachesTheDocument),
         Box::new(export_form_data::ExportingFormDataWritesAFile),
@@ -861,6 +862,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // while this asserts the control. Read a sentence failure first.
         Box::new(colour_clicked_text::ClickingTextOffersItsColour),
         Box::new(multi_node::MultiNodeMoveMovesEveryPickedAnchor),
+        Box::new(align_left::AlignLeftMovesEveryBoxInOneUndo),
         Box::new(shape_preview::DraggingANodeBendsTheLine),
         // Immediately after `shape_preview`, and the order is the diagnosis
         // order: that one asks whether a preview is built and painted AT ALL,

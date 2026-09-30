@@ -11,6 +11,7 @@ use crate::app::state::OpenDoc;
 use crate::shell::menus::MenuHost;
 use egui_shell::HandlerToken;
 
+pub mod align;
 pub mod attachments;
 pub mod bookmarks;
 pub mod comments;
@@ -187,11 +188,17 @@ pub enum Panel {
     /// a panel with authoring controls does not belong on a reading stance's
     /// ribbon.
     Attachments,
+    /// Inkscape's Align and Distribute, over the selected page objects.
+    ///
+    /// `edit.align`, on Edit: aligning moves content, so it belongs to the
+    /// modes that author, and Read is shown `file` and `view` alone.
+    /// `ALIGN_AND_DISTRIBUTE.md` maps each Inkscape control.
+    AlignDistribute,
 }
 
 impl Panel {
     /// Every panel.
-    pub const ALL: [Self; 13] = [
+    pub const ALL: [Self; 14] = [
         Self::Attachments,
         Self::Bookmarks,
         Self::Layers,
@@ -205,6 +212,7 @@ impl Panel {
         Self::Comments,
         Self::Redact,
         Self::DimensionGroups,
+        Self::AlignDistribute,
     ];
 
     /// The ribbon command that shows this panel.
@@ -318,6 +326,7 @@ impl Panel {
             // been registered and drawn since the Measure tab was built, and
             // pressing it toggles a panel rather than opening a window.
             Self::DimensionGroups => "measure.manage_groups",
+            Self::AlignDistribute => "edit.align",
         }
     }
 
@@ -365,6 +374,7 @@ impl Panel {
             Self::Comments => comments::body(ui, doc, state, actions),
             Self::Redact => redact::body(ui, doc, state, actions),
             Self::DimensionGroups => dimension_groups::body(ui, doc, state, actions),
+            Self::AlignDistribute => align::body(ui, doc, &mut state.align, actions),
         }
         Vec::new()
     }
@@ -382,6 +392,9 @@ pub struct PanelsState {
     /// The epoch is in it because an edit renumbers everything after the
     /// object it touched, which does the same thing without moving page.
     tree_key: Option<(usize, u64)>,
+    /// The Align panel's settings. They answer to the operator, not the
+    /// document, so [`Self::forget_document`] carries them.
+    pub align: align::AlignUi,
     /// What the operator has opened and picked in the Objects tree.
     ///
     /// A struct rather than three loose fields so the grouping says what it
@@ -740,7 +753,9 @@ impl PanelsState {
         // here explicitly.
         let previews_on = self.pages.cache.previews_on();
         let preview_budget = self.pages.cache.budget();
+        let align = self.align;
         *self = Self::default();
+        self.align = align;
         self.pages.cache.force_on(previews_on);
         self.pages.cache.set_budget(preview_budget);
         properties::refusedchar::forget_document();

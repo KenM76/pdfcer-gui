@@ -578,5 +578,8 @@ pub mod pagebox;
 /// What a corner drag on a ce dimension or ink mark asks for.
 pub mod vertexintent;
 
+/// Align and Distribute's arithmetic: boxes in, one delta per box out.
+pub mod alignlayout;
+
 /// A freehand mark's points, addressed per stroke and flat at once.
 pub mod inkaddress;

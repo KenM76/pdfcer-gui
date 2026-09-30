@@ -21,12 +21,19 @@ use std::path::Path;
 
 /// **It worked**, with the two numbers that say whether it worked *correctly*.
 #[must_use]
-pub fn merged(sources: usize, pages: usize) -> String {
-    format!(
+///
+/// `label_ranges` is how many page-numbering ranges the merge wrote so every
+/// page keeps the number it showed in its own file; `0` says nothing.
+pub fn merged(sources: usize, pages: usize, label_ranges: usize) -> String {
+    let said = format!(
         "Combined {} into a new document of {}. The originals are unchanged.",
         files(sources),
         page_count(pages)
-    )
+    );
+    if label_ranges == 0 {
+        return said;
+    }
+    format!("{said} Every page keeps the page number it showed in its own file.")
 }
 
 /// **A source could not be read**, naming which one.
@@ -73,12 +80,12 @@ mod tests {
     /// Singular and plural are both written out, in both counts.
     #[test]
     fn the_counts_read_as_english() {
-        let one = merged(1, 1);
+        let one = merged(1, 1, 0);
         assert!(one.contains("1 file "), "{one}");
         assert!(one.contains("1 page"), "{one}");
         assert!(!one.contains("1 files"), "{one}");
         assert!(!one.contains("1 pages"), "{one}");
-        let many = merged(3, 12);
+        let many = merged(3, 12, 0);
         assert!(many.contains("3 files"), "{many}");
         assert!(many.contains("12 pages"), "{many}");
     }
@@ -86,7 +93,7 @@ mod tests {
     /// The success sentence carries BOTH counts.
     #[test]
     fn the_success_sentence_names_what_went_in_and_what_came_out() {
-        let s = merged(4, 37);
+        let s = merged(4, 37, 0);
         assert!(
             s.contains('4'),
             "the number of sources chosen is missing: {s}"
@@ -122,6 +129,13 @@ mod tests {
     /// The success sentence says the sources survived.
     #[test]
     fn the_success_sentence_says_the_originals_survived() {
-        assert!(merged(2, 4).contains("originals are unchanged"));
+        assert!(merged(2, 4, 0).contains("originals are unchanged"));
+    }
+
+    /// Page numbering is mentioned only when the merge wrote some.
+    #[test]
+    fn page_numbering_is_said_only_when_written() {
+        assert!(!merged(2, 4, 0).contains("page number"));
+        assert!(merged(2, 4, 3).contains("keeps the page number"));
     }
 }

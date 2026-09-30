@@ -159,6 +159,15 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 });
             }
         }
+        VectorAction::MoveEach {
+            page,
+            moves,
+            gesture,
+        } => {
+            if !moves.is_empty() {
+                move_each(doc, page, &moves, gesture);
+            }
+        }
         VectorAction::DeleteLeavesInForm { page, leaves } => {
             if !leaves.is_empty() {
                 // No shell-side invalidation here either — see
@@ -659,4 +668,34 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
             });
         }
     }
+}
+
+/// Commit [`VectorAction::MoveEach`]: one `move_objects_each` call, so one
+/// plan, one undo step, and all-or-nothing: a refusal moves none of them.
+/// The engine picks the rewrite per object kind (operands for paths and text,
+/// a `q cm Q` wrap for images).
+fn move_each(
+    doc: &mut crate::app::state::OpenDoc,
+    page: usize,
+    moves: &[(usize, f64, f64)],
+    gesture: &'static str,
+) {
+    let n = moves.len();
+    let mut moved = 0_usize;
+    super::apply::vector_edit_on_page(doc, "move-each", page, n, |session| {
+        let said = session.move_objects_each(page, moves)?;
+        moved = n;
+        Ok::<_, pdfcer_core::edit::EditError>(said)
+    });
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        let asked: Vec<String> = moves
+            .iter()
+            .map(|(i, dx, dy)| format!("{i}:{dx:.1},{dy:.1}"))
+            .collect();
+        format!(
+            "move-each-applied gesture={gesture} page={page} moved={moved} of={n} moves={}",
+            asked.join(";")
+        )
+    });
 }

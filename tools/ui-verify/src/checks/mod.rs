@@ -2,6 +2,8 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/mod.md`.
 
+/// O263: Align left edges moves every box, in one undo.
+pub mod align_left;
 /// **Typing an angle into the Properties panel and pressing Apply** — the
 /// write half of `OPERATOR_REQUESTS.md` O146, whose read half
 /// `annot_rotate` already asserts. It turns the mark BEFORE it types, because
@@ -281,6 +283,7 @@ pub mod signature_save;
 
 pub mod smart_select;
 
+pub mod revocation_sources;
 pub mod trust_store;
 
 pub mod unembed_fonts;

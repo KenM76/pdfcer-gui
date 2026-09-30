@@ -186,6 +186,43 @@ pub fn not_checked_unreadable(path: &str, reason: &str) -> String {
     )
 }
 
+/// The small heading over the revocation locations a signature's
+/// certificates name.
+#[must_use]
+pub fn revocation_label() -> &'static str {
+    "Revocation info at"
+}
+
+/// One certificate's revocation locations, as the certificate states them.
+/// None of them was fetched, and the line says so, because a URL beside a
+/// signature reads as a check that happened.
+#[must_use]
+pub fn revocation_sources(
+    subject: &str,
+    crl: &[String],
+    ocsp: &[String],
+    ca_issuers: &[String],
+    unreadable: usize,
+) -> String {
+    let mut parts = Vec::new();
+    if !crl.is_empty() {
+        parts.push(format!("CRL {}", crl.join(", ")));
+    }
+    if !ocsp.is_empty() {
+        parts.push(format!("OCSP {}", ocsp.join(", ")));
+    }
+    if !ca_issuers.is_empty() {
+        parts.push(format!("issuer certificate {}", ca_issuers.join(", ")));
+    }
+    if unreadable > 0 {
+        parts.push(format!("{unreadable} more this build cannot read"));
+    }
+    format!(
+        "{subject}: {}. Not fetched — pdfcer does not go online.",
+        parts.join("; ")
+    )
+}
+
 // ---------------------------------------------------------------------------
 // The anchor set's provenance
 // ---------------------------------------------------------------------------
@@ -500,6 +537,36 @@ mod tests {
             panel_intro().contains("never merges them"),
             "{}",
             panel_intro()
+        );
+    }
+
+    /// **Each kind of location is named, absent kinds are left out, and the
+    /// sentence says nothing was fetched.**
+    #[test]
+    fn revocation_sources_names_each_kind_it_was_given() {
+        let url = |u: &str| vec![u.to_owned()];
+        let all = revocation_sources(
+            "CN=Signer",
+            &url("http://crl.example.test/ca.crl"),
+            &url("http://ocsp.example.test"),
+            &url("http://ca.example.test/ca.crt"),
+            2,
+        );
+        for piece in [
+            "CN=Signer: ",
+            "CRL http://crl.example.test/ca.crl",
+            "OCSP http://ocsp.example.test",
+            "issuer certificate http://ca.example.test/ca.crt",
+            "2 more this build cannot read",
+            "Not fetched",
+        ] {
+            assert!(all.contains(piece), "{piece:?} missing from {all:?}");
+        }
+        let ocsp_only = revocation_sources("CN=S", &[], &url("http://o.test"), &[], 0);
+        assert!(
+            !ocsp_only.contains("CRL")
+                && !ocsp_only.contains("issuer")
+                && !ocsp_only.contains("more")
         );
     }
 }

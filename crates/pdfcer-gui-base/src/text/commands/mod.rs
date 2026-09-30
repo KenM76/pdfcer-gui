@@ -476,6 +476,15 @@ pub const fn edit_attachments() -> CommandText {
     )
 }
 
+/// `edit.align`
+#[must_use]
+pub const fn edit_align() -> CommandText {
+    CommandText::new(
+        "Align and Distribute",
+        "Line up the selected objects, or space them evenly — Inkscape's Align and Distribute panel.",
+    )
+}
+
 /// **Text field** — the box an operator types into.
 #[must_use]
 pub const fn edit_form_text_field() -> CommandText {

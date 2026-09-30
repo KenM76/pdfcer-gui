@@ -80,6 +80,13 @@ pub fn tab() -> Tab {
                 ribbon::group_edit_insert(),
                 [large("edit.insert_image"), large("edit.attachments")],
             ),
+            // Arrange: one Align and Distribute control where `RIBBON_IA.md`
+            // once listed two, because Inkscape's is one panel holding both.
+            group(
+                "arrange",
+                ribbon::group_edit_arrange(),
+                [large("edit.align")],
+            ),
             //
             // It was deleted because its two members moved to File ▸ Export and
             // nothing was left. What refills it is not those two returning: it

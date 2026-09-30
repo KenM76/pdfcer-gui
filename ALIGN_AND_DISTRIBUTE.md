@@ -8,8 +8,8 @@ records how each item lands here and why.
 ## Where it lives
 
 A dock panel, **Align and Distribute**, with Inkscape's three tabs (Align,
-Grid, Circular). It is opened from View ▸ Panels, from Edit ▸ Arrange, and by
-**Ctrl+Shift+A**. The Ctrl+Alt+keypad chords run the align buttons against
+Grid, Circular). It is opened from Edit ▸ Arrange (one control, `edit.align`)
+and by **Ctrl+Shift+A**. The Ctrl+Alt+keypad chords run the align buttons against
 the panel's current *Relative to*, as Inkscape's do. A panel rather than a
 ribbon tab because Inkscape's is a docked dialog with state (the Relative-to
 choice, the group toggle, gaps, grid and circle parameters) that a ribbon
@@ -40,12 +40,10 @@ what lets every Inkscape formula be tested on numbers.
 
 ## How a result is committed
 
-One action carries every item's own delta. Its arm calls the engine once per
-item (`move_objects` for paths and text, `transform_objects` with a
-translation for images, the same split the move drag makes). It then folds the
-calls into **one undo step** with `coalesce_last`. A fold that fails is
-disclosed, as `fold_undo` does everywhere. No engine verb takes a delta per
-object; that is filed as a request, and this loop is the reported workaround.
+One action carries every item's own delta, in page-space points, and its arm
+makes one engine call, `EditSession::move_objects_each`: one plan, **one undo
+step**, all-or-nothing. The engine chooses the rewrite per object kind, so the
+shell does not split paths from images.
 
 ## Item by item
 
@@ -79,3 +77,7 @@ object; that is filed as a request, and this loop is the reported workaround.
 4. Node mode and the on-canvas handles.
 
 Each stage ships driven before the next starts.
+
+**Built:** Stage 1 except its chords — the panel, Edit ▸ Arrange, selection
+order, the arithmetic and one driven check. The keypad chords each need a
+command id of their own; they land with Ctrl+Shift+A.

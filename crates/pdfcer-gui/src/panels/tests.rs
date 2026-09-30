@@ -182,6 +182,7 @@ fn the_panel_catalog_is_complete() {
             Panel::DimensionGroups => 10,
             Panel::Attachments => 11,
             Panel::DocumentProperties => 12,
+            Panel::AlignDistribute => 13,
         }
     }
     let mut ordinals: Vec<usize> = Panel::ALL.iter().copied().map(ordinal).collect();

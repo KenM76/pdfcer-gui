@@ -551,6 +551,9 @@ pub fn merged(outcome: &pdfcer_core::edit::MergeOutcome) -> Vec<String> {
             outcome.outline_items_carried
         ));
     }
+    if outcome.page_label_ranges > 0 {
+        notes.push("Every page keeps the page number it showed in its own file.".to_owned());
+    }
     notes
 }
 

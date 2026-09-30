@@ -219,13 +219,6 @@ pub const PLANNED: &[(&str, &str)] = &[
         "N — real page shapes, as distinct from the markup shapes on the Markup tab.",
     ),
     (
-        "edit.align",
-        // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — the whole Edit ▸ Arrange group is unbuilt, so the GROUP is absent too.",
-    ),
-    // ui-text-exempt: developer note about an ABSENT command; never rendered.
-    ("edit.distribute", "N — as `edit.align`, same absent group."),
-    (
         "edit.bring_forward",
         // ui-text-exempt: developer note about an ABSENT command; never rendered.
         "N — needs a content-stream reordering primitive that does not exist.",
@@ -245,12 +238,12 @@ pub const PLANNED: &[(&str, &str)] = &[
     (
         "edit.flip_horizontal",
         // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — as `edit.align`, same absent group.",
+        "N — flipping page content is unbuilt; Align and Distribute is `edit.align`.",
     ),
     (
         "edit.flip_vertical",
         // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — as `edit.align`, same absent group.",
+        "N — flipping page content is unbuilt; Align and Distribute is `edit.align`.",
     ),
     // ⚠ **Page CONTENT cannot be pasted; a MARKUP can.** The object clipboard
     // is narrower than "there is no object clipboard" suggests, and the line

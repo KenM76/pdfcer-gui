@@ -378,6 +378,9 @@ fn spec(mode_id: &str) -> ModeSpec {
                     // detail one tab away from the master, which is the failure
                     // master–detail is defined against.
                     Panel::DocumentProperties.command_id(),
+                    // Align and Distribute, in Edit alone: its toggle is on
+                    // the Edit tab, the same reason as Attachments.
+                    Panel::AlignDistribute.command_id(),
                 ],
             ],
             left_width: NAVIGATOR_WIDTH,

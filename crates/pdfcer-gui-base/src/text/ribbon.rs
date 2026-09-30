@@ -285,6 +285,12 @@ pub fn group_edit_insert() -> &'static str {
     "Insert"
 }
 
+/// Edit ▸ Arrange.
+#[must_use]
+pub fn group_edit_arrange() -> &'static str {
+    "Arrange"
+}
+
 /// Edit ▸ Clipboard.
 #[must_use]
 pub fn group_edit_clipboard() -> &'static str {
