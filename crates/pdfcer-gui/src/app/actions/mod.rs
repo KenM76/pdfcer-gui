@@ -247,7 +247,7 @@ mod purge_passwords;
 /// change, and these two touch only shell state.
 pub mod selecting;
 /// A tagged PDF's own structure for the Word and table exports, with its disclosure.
-mod tagged;
+use pdfcer_gui_base::taggedexport as tagged;
 
 #[cfg(test)]
 mod tests;

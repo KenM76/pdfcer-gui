@@ -1,4 +1,4 @@
-//! # `app::actions::tagged` — a tagged PDF's own structure, for the Word and table exports
+//! # `taggedexport` — a tagged PDF's own structure, for the Word and table exports
 //!
 //! `layout_from_structure` under `StructureUse::Auto`: the tree's headings,
 //! paragraphs, lists and tables when it owns at least half the laid-out text,
@@ -23,7 +23,7 @@ use pdfcer_core::view::DocumentView;
 use crate::text::export_tagged as t;
 
 /// The document laid out, from its tree where the tree qualified.
-pub(super) struct Structured {
+pub struct Structured {
     /// Blocks per page, in `geometry`'s order.
     pub layout: DocumentLayout,
     /// One entry per page of `layout.pages`.
@@ -43,7 +43,7 @@ impl Structured {
 
 /// Lays the document out: every page, or with `keep` only those page indices,
 /// in that order. `keep` must name each page once.
-pub(super) fn lay_out(
+pub fn lay_out(
     view: &DocumentView<'_>,
     pages: &[Page],
     options: &ExtractOptions,
@@ -85,7 +85,7 @@ pub(super) fn lay_out(
 
 /// The receipt's sentences about the tree. Silent on an untagged document:
 /// there was nothing to follow, and the inference notes already say so.
-pub(super) fn notes(report: &TaggedLayoutReport) -> Vec<String> {
+pub fn notes(report: &TaggedLayoutReport) -> Vec<String> {
     let percent = percent(report.coverage);
     let mut notes = Vec::new();
     match report.fallback {
@@ -116,7 +116,7 @@ pub(super) fn notes(report: &TaggedLayoutReport) -> Vec<String> {
 }
 
 /// The trace fields every export using this module appends.
-pub(super) fn trace_fields(report: &TaggedLayoutReport) -> String {
+pub fn trace_fields(report: &TaggedLayoutReport) -> String {
     let fallback = match report.fallback {
         None => "none",
         Some(FallbackReason::Disabled) => "disabled",
