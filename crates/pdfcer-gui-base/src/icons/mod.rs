@@ -20,7 +20,7 @@ pub mod svg;
 
 pub use cache::IconCache;
 pub use catalog::Icon;
-pub use paint::{paint_icon, paint_missing_mark, paint_ribbon_icon};
+pub use paint::{paint_icon, paint_icon_accented, paint_missing_mark, paint_ribbon_icon};
 pub use svg::{IconArt, IconError};
 
 use cache::with_cache;

@@ -760,8 +760,8 @@ pub const fn colour_icons_title() -> &'static str {
 #[must_use]
 pub const fn colour_icons_silence() -> &'static str {
     "Draws one part of each toolbar icon in a quiet colour, the way Office and \
-     SOLIDWORKS do: a green plus, a red cross, a blue arrow. Off draws every \
-     icon in one colour, as pdfcer ships."
+     SOLIDWORKS do: a green plus, a red cross, a blue arrow. On as pdfcer \
+     ships; off draws every icon in one colour."
 }
 
 /// Coloured icons: what changing it costs.

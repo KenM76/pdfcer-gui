@@ -778,10 +778,12 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 156 → 157: `pages.bates_remove` names `delete`.
     // 157 → 158: `edit.form_repair_fonts` names `embed-fonts`, shared with
     // `tools.embed_fonts`: both act on the document's fonts, on different tabs.
+    // 158 → 166: `edit.align` names `align-panel`, and its seven one-click
+    // aligns each name the glyph of the panel button they run.
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
     assert_eq!(
         named,
-        158 + 2 * usize::from(cfg!(feature = "signing")),
+        166 + 2 * usize::from(cfg!(feature = "signing")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands
@@ -1057,14 +1059,8 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         //
         // 17 → 18 — `file.remove_ocr`: a supply refusal. `recognise-text`
         // says "add a layer"; no glyph for taking one off exists yet.
-        //
-        // 18 → 19 — `edit.align`: a supply refusal. No align glyph exists,
-        // and the nearest, `reset-layout`, means the dock, not the page.
-        //
-        // 19 → 26 — the seven `edit.align_*` one-click aligns: supply
-        // refusals, for `edit.align`'s reason.
         refused,
-        26,
+        18,
         "commands with no icon, each argued at its registration"
     );
     // Each refusal is argued at its own registration and listed in the

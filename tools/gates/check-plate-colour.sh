@@ -133,7 +133,9 @@ scan() {
             END {
                 fstart[nf + 1] = NR + 1
                 for (i = 1; i <= NR; i++) {
-                    if (line[i] !~ /on_accent/) continue
+                    # A whole word: `paint_icon_accented` contains the letters
+                    # and names no colour.
+                    if (line[i] !~ /(^|[^A-Za-z0-9_])on_accent([^A-Za-z0-9_]|$)/) continue
                     if (line[i] ~ exempt) continue
                     s = line[i]; sub(/^[ \t]+/, "", s)
                     # Comments explain; they do not draw.
@@ -218,6 +220,13 @@ fn draw(ui: &mut egui::Ui, theme: &Theme) {
 }
 RS
 
+    # (6) Not the colour: a longer name that contains its letters.
+    cat > "$tmp/src/namesake.rs" <<'RS'
+fn draw(painter: &egui::Painter, icon: Icon, rect: Rect, tint: Color32) {
+    crate::icons::paint_icon_accented(painter, icon, rect, tint, true);
+}
+RS
+
     out=$(scan "$tmp/src")
     rc=$?
 
@@ -230,7 +239,7 @@ RS
         echo "plate-colour --self-test: FAIL — an unpaired plate colour was not reported."
         fail=1
     fi
-    for ok in filled painted paired exempt; do
+    for ok in filled painted paired exempt namesake; do
         if printf '%s' "$out" | grep -q "$ok.rs"; then
             echo "plate-colour --self-test: FAIL — $ok.rs is correct and was reported."
             echo "  A gate that reports the correct shape trains people to ignore it,"
@@ -239,7 +248,7 @@ RS
         fi
     done
     [ "$fail" -ne 0 ] && exit 1
-    echo "plate-colour --self-test: PASS — catches the unpaired plate, passes all four correct shapes."
+    echo "plate-colour --self-test: PASS — catches the unpaired plate, passes all five correct shapes."
     exit 0
 fi
 

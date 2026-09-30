@@ -292,6 +292,18 @@ Wanted: the whole Inkscape Align and Distribute set, reachable from its own plac
 
 **State: all four stages built and driven.** Edit ▸ Arrange ▸ *Align and Distribute* opens a scrolling panel. It has Inkscape's Align frame (six horizontal and six vertical buttons, text anchors included) and its Distribute frame (five and five). *Relative to* offers all seven choices, narrowing to Page and Drawing when one object is selected, and *Move/align selection as group* is there. The Rearrange frame has Exchange by selection, stacking or clockwise, Randomize and Unclump, and Remove overlaps takes H and V gaps. Ctrl+Shift+A opens the panel. Ctrl+Alt+keypad 4/6/8/2/7/1/5 run the seven one-click aligns, which are also buttons in Edit ▸ Arrange. One press is one undo step. Driven: `align_left_moves_every_box_in_one_undo` (Align left, keypad 5, Exchange, each checked box by box). The Grid and Circular tabs, node mode and *On-canvas alignment* handles are built; the driven check now also covers Grid, Circular (refusing a box as an ellipse, then a rotated arrange as one step), the on-canvas left handle and node mode. Anchors on a second path are not moved by node mode, and the panel says so. The plan is `ALIGN_AND_DISTRIBUTE.md`.
 
+## O264 — **BUILT, driven** — the Align and Distribute buttons get pictures like Inkscape's
+
+His words: *"Your alignment tools need user friendly glyphs similar to what inkscape has."*
+
+Wanted: every Align, Distribute, Rearrange and node button in the Align and Distribute panel shows a glyph in Inkscape's visual language — a bar for the edge or axis being aligned to and boxes against it — with the label in its tooltip, so the panel reads as a grid of pictures the way Inkscape's does. Drawn for pdfcer in the house icon style (Inkscape's own art is GPL and is not copied).
+
+## O265 — **BUILT** — coloured icons are on by default
+
+His words: *"Also colour glyphs/icons should be colour by default."*
+
+Wanted: Settings › Appearance › *Coloured icons* starts ticked for a new install, and every new glyph (the O264 set included) carries its accent part. An operator who unticks it keeps his choice.
+
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 
 > **Ken:** *"Also can we make it so everything about the dimensions show a live preview? Can we make it so when we click on a dimension, the end points on the connection side of the dimension can have their lengths adjusted? And when I click on the dimension text and drag it should live preview so that it is apparent I am just moving the dimension text. Also did we make it so we can change between radius and diameter, and make these easy to move and extend again with live preview."*

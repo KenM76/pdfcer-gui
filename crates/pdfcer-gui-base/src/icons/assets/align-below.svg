@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Align: objects placed below the anchor, touching it. Drawn for pdfcer; the accent is the first 1 shape(s). -->
+  <path d="M5 22L43 22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="19" y="6" width="10" height="16" rx="1" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <rect x="7" y="22" width="8" height="18" rx="1" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <rect x="33" y="22" width="8" height="12" rx="1" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+</svg>

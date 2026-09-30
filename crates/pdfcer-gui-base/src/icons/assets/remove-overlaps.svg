@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Remove overlaps: move boxes apart until none overlap. Drawn for pdfcer; the accent is the first 1 shape(s). -->
+  <path d="M30 9L43 9M39.56 11.9L43 9L39.56 6.1" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="5" y="14" width="18" height="20" rx="1" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <rect x="17" y="20" width="22" height="22" rx="1" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+</svg>

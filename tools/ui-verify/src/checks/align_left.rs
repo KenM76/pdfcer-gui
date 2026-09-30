@@ -170,6 +170,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note("★ Ctrl+Shift+A opened the Align and Distribute panel");
+    // Evidence for the eye: the Edit tab's Arrange group and the panel's
+    // button glyphs, which no trace line describes.
+    let shot = ctx.out("align-panel.png");
+    if crate::capture::window_to_png(&session, &shot).is_ok() {
+        report.artifact(shot);
+    }
 
     // --- select the three boxes: click, then Shift-click twice -------------
     let trace = session.trace()?;

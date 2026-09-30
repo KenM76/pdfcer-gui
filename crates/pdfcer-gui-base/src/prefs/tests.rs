@@ -128,8 +128,8 @@ fn every_preference_round_trips_through_the_file() {
                     // trip tests the writer's formatting rather than the
                     // loader's rounding — that is `an_off_step_ui_scale_is_rounded_and_reported`'s job.
                     ui_scale: 1.25,
-                    // Non-default: O232 ships `false`.
-                    colour_icons: true,
+                    // Non-default: O265 ships `true`.
+                    colour_icons: false,
                     // O166's thirteen keys, every one non-default, per this
                     // test's own rule. This is the only group whose parser and
                     // writer live outside `prefs::file` (they are in

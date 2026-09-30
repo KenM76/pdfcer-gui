@@ -813,3 +813,111 @@ pub(super) const ITALIC: &str = include_str!("assets/italic.svg");
 
 /// `line-weights.svg` — the art for [`super::Icon::LineWeights`].
 pub(super) const LINE_WEIGHTS: &str = include_str!("assets/line-weights.svg");
+
+/// `align-before.svg` — the art for [`super::Icon::AlignBefore`].
+pub(super) const ALIGN_BEFORE: &str = include_str!("assets/align-before.svg");
+
+/// `align-left.svg` — the art for [`super::Icon::AlignLeft`].
+pub(super) const ALIGN_LEFT: &str = include_str!("assets/align-left.svg");
+
+/// `align-centre-h.svg` — the art for [`super::Icon::AlignCentreH`].
+pub(super) const ALIGN_CENTRE_H: &str = include_str!("assets/align-centre-h.svg");
+
+/// `align-right.svg` — the art for [`super::Icon::AlignRight`].
+pub(super) const ALIGN_RIGHT: &str = include_str!("assets/align-right.svg");
+
+/// `align-after.svg` — the art for [`super::Icon::AlignAfter`].
+pub(super) const ALIGN_AFTER: &str = include_str!("assets/align-after.svg");
+
+/// `align-text-h.svg` — the art for [`super::Icon::AlignTextH`].
+pub(super) const ALIGN_TEXT_H: &str = include_str!("assets/align-text-h.svg");
+
+/// `align-above.svg` — the art for [`super::Icon::AlignAbove`].
+pub(super) const ALIGN_ABOVE: &str = include_str!("assets/align-above.svg");
+
+/// `align-top.svg` — the art for [`super::Icon::AlignTop`].
+pub(super) const ALIGN_TOP: &str = include_str!("assets/align-top.svg");
+
+/// `align-centre-v.svg` — the art for [`super::Icon::AlignCentreV`].
+pub(super) const ALIGN_CENTRE_V: &str = include_str!("assets/align-centre-v.svg");
+
+/// `align-bottom.svg` — the art for [`super::Icon::AlignBottom`].
+pub(super) const ALIGN_BOTTOM: &str = include_str!("assets/align-bottom.svg");
+
+/// `align-below.svg` — the art for [`super::Icon::AlignBelow`].
+pub(super) const ALIGN_BELOW: &str = include_str!("assets/align-below.svg");
+
+/// `align-text-v.svg` — the art for [`super::Icon::AlignTextV`].
+pub(super) const ALIGN_TEXT_V: &str = include_str!("assets/align-text-v.svg");
+
+/// `distribute-left.svg` — the art for [`super::Icon::DistributeLeft`].
+pub(super) const DISTRIBUTE_LEFT: &str = include_str!("assets/distribute-left.svg");
+
+/// `distribute-centre-h.svg` — the art for [`super::Icon::DistributeCentreH`].
+pub(super) const DISTRIBUTE_CENTRE_H: &str = include_str!("assets/distribute-centre-h.svg");
+
+/// `distribute-right.svg` — the art for [`super::Icon::DistributeRight`].
+pub(super) const DISTRIBUTE_RIGHT: &str = include_str!("assets/distribute-right.svg");
+
+/// `distribute-gaps-h.svg` — the art for [`super::Icon::DistributeGapsH`].
+pub(super) const DISTRIBUTE_GAPS_H: &str = include_str!("assets/distribute-gaps-h.svg");
+
+/// `distribute-text-h.svg` — the art for [`super::Icon::DistributeTextH`].
+pub(super) const DISTRIBUTE_TEXT_H: &str = include_str!("assets/distribute-text-h.svg");
+
+/// `distribute-top.svg` — the art for [`super::Icon::DistributeTop`].
+pub(super) const DISTRIBUTE_TOP: &str = include_str!("assets/distribute-top.svg");
+
+/// `distribute-centre-v.svg` — the art for [`super::Icon::DistributeCentreV`].
+pub(super) const DISTRIBUTE_CENTRE_V: &str = include_str!("assets/distribute-centre-v.svg");
+
+/// `distribute-bottom.svg` — the art for [`super::Icon::DistributeBottom`].
+pub(super) const DISTRIBUTE_BOTTOM: &str = include_str!("assets/distribute-bottom.svg");
+
+/// `distribute-gaps-v.svg` — the art for [`super::Icon::DistributeGapsV`].
+pub(super) const DISTRIBUTE_GAPS_V: &str = include_str!("assets/distribute-gaps-v.svg");
+
+/// `distribute-text-v.svg` — the art for [`super::Icon::DistributeTextV`].
+pub(super) const DISTRIBUTE_TEXT_V: &str = include_str!("assets/distribute-text-v.svg");
+
+/// `exchange-selection.svg` — the art for [`super::Icon::ExchangeSelection`].
+pub(super) const EXCHANGE_SELECTION: &str = include_str!("assets/exchange-selection.svg");
+
+/// `exchange-stacking.svg` — the art for [`super::Icon::ExchangeStacking`].
+pub(super) const EXCHANGE_STACKING: &str = include_str!("assets/exchange-stacking.svg");
+
+/// `exchange-clockwise.svg` — the art for [`super::Icon::ExchangeClockwise`].
+pub(super) const EXCHANGE_CLOCKWISE: &str = include_str!("assets/exchange-clockwise.svg");
+
+/// `randomize.svg` — the art for [`super::Icon::Randomize`].
+pub(super) const RANDOMIZE: &str = include_str!("assets/randomize.svg");
+
+/// `unclump.svg` — the art for [`super::Icon::Unclump`].
+pub(super) const UNCLUMP: &str = include_str!("assets/unclump.svg");
+
+/// `remove-overlaps.svg` — the art for [`super::Icon::RemoveOverlaps`].
+pub(super) const REMOVE_OVERLAPS: &str = include_str!("assets/remove-overlaps.svg");
+
+/// `arrange-grid.svg` — the art for [`super::Icon::ArrangeGrid`].
+pub(super) const ARRANGE_GRID: &str = include_str!("assets/arrange-grid.svg");
+
+/// `arrange-circular.svg` — the art for [`super::Icon::ArrangeCircular`].
+pub(super) const ARRANGE_CIRCULAR: &str = include_str!("assets/arrange-circular.svg");
+
+/// `nodes-align-vertical.svg` — the art for [`super::Icon::NodesAlignVertical`].
+pub(super) const NODES_ALIGN_VERTICAL: &str = include_str!("assets/nodes-align-vertical.svg");
+
+/// `nodes-align-horizontal.svg` — the art for [`super::Icon::NodesAlignHorizontal`].
+pub(super) const NODES_ALIGN_HORIZONTAL: &str = include_str!("assets/nodes-align-horizontal.svg");
+
+/// `nodes-spread-across.svg` — the art for [`super::Icon::NodesSpreadAcross`].
+pub(super) const NODES_SPREAD_ACROSS: &str = include_str!("assets/nodes-spread-across.svg");
+
+/// `nodes-spread-down.svg` — the art for [`super::Icon::NodesSpreadDown`].
+pub(super) const NODES_SPREAD_DOWN: &str = include_str!("assets/nodes-spread-down.svg");
+
+/// `align-centre.svg` — the art for [`super::Icon::AlignCentre`].
+pub(super) const ALIGN_CENTRE: &str = include_str!("assets/align-centre.svg");
+
+/// `align-panel.svg` — the art for [`super::Icon::AlignPanel`].
+pub(super) const ALIGN_PANEL: &str = include_str!("assets/align-panel.svg");

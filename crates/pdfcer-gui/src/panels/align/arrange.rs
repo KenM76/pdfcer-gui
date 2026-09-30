@@ -14,9 +14,10 @@ use pdfcer_gui_base::alignlayout::arrange::{
     self, CircleAnchor, Ellipse, GridParams, GridSpacing, Placement,
 };
 
-use super::{Measured, button, measure, moves_action};
+use super::{Measured, labelled_button, measure, moves_action};
 use crate::app::actions::{Action, VectorAction};
 use crate::app::state::OpenDoc;
+use crate::icons::Icon;
 use crate::text::panels::align as t;
 
 /// The Grid tab's Arrange button.
@@ -307,7 +308,14 @@ pub fn grid_tab(
         });
     });
     let (label, tip) = t::arrange_button(false);
-    if button(ui, n >= 2, label, tip, GRID_ARRANGE_REGION) {
+    if labelled_button(
+        ui,
+        n >= 2,
+        Icon::ArrangeGrid,
+        label,
+        tip,
+        GRID_ARRANGE_REGION,
+    ) {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             format!("align-pressed op=Grid n={n} rows={rows} cols={cols} grid={grid:?}")
@@ -382,7 +390,14 @@ pub fn circular_tab(
         2
     };
     let (label, tip) = t::arrange_button(true);
-    if button(ui, n >= needs, label, tip, CIRCLE_ARRANGE_REGION) {
+    if labelled_button(
+        ui,
+        n >= needs,
+        Icon::ArrangeCircular,
+        label,
+        tip,
+        CIRCLE_ARRANGE_REGION,
+    ) {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             format!("align-pressed op=Circular n={n} circle={circle:?}")

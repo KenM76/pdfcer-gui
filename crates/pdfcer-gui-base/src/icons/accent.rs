@@ -4,8 +4,8 @@
 //! outline in the theme foreground as always and one meaningful part in a
 //! muted hue, the way Office and SOLIDWORKS toolbars do: the plus on *New* in
 //! green, the cross on *Close* in red, the arrows on *Undo* in blue, the
-//! highlighter's band in amber. Off — the default — every icon is the plain
-//! single-colour mask it has always been, drawn by the same code path.
+//! highlighter's band in amber. On is the default; off, every icon is the plain
+//! single-colour mask, drawn by the same code path.
 //!
 //! ## Contract
 //!
@@ -71,6 +71,42 @@ pub const fn accent(icon: Icon) -> Option<(Hue, &'static [usize])> {
         Icon::Bookmarks | Icon::Layers | Icon::Signatures | Icon::Combine | Icon::ZoomSelection => {
             (Hue::Primary, &[0])
         }
+        Icon::AlignBefore
+        | Icon::AlignLeft
+        | Icon::AlignCentreH
+        | Icon::AlignRight
+        | Icon::AlignAfter
+        | Icon::AlignTextH
+        | Icon::AlignAbove
+        | Icon::AlignTop
+        | Icon::AlignCentreV
+        | Icon::AlignBottom
+        | Icon::AlignBelow
+        | Icon::AlignTextV
+        | Icon::DistributeLeft
+        | Icon::DistributeCentreH
+        | Icon::DistributeRight
+        | Icon::DistributeGapsH
+        | Icon::DistributeTextH
+        | Icon::DistributeTop
+        | Icon::DistributeCentreV
+        | Icon::DistributeBottom
+        | Icon::DistributeGapsV
+        | Icon::DistributeTextV
+        | Icon::ExchangeStacking
+        | Icon::ExchangeClockwise
+        | Icon::Randomize
+        | Icon::Unclump
+        | Icon::RemoveOverlaps
+        | Icon::ArrangeGrid
+        | Icon::ArrangeCircular
+        | Icon::NodesAlignVertical
+        | Icon::NodesAlignHorizontal
+        | Icon::NodesSpreadAcross
+        | Icon::NodesSpreadDown
+        | Icon::AlignCentre
+        | Icon::AlignPanel => (Hue::Primary, &[0]),
+        Icon::ExchangeSelection => (Hue::Primary, &[0, 1]),
         Icon::Undo | Icon::Redo | Icon::Split | Icon::Cut | Icon::FormFlatten => {
             (Hue::Primary, &[0, 1])
         }

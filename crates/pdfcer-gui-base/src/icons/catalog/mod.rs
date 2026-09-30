@@ -1140,6 +1140,80 @@ pub enum Icon {
     /// thinnest bar was measured against.
     ///
     LineWeights,
+
+    // The Align panel's buttons (O264), one per control, Inkscape's layout.
+    /// Align: objects placed to the left of the anchor, touching it.
+    AlignBefore,
+    /// Align: left edges on one line.
+    AlignLeft,
+    /// Align: centres on one vertical axis.
+    AlignCentreH,
+    /// Align: right edges on one line.
+    AlignRight,
+    /// Align: objects placed to the right of the anchor, touching it.
+    AlignAfter,
+    /// Align: text anchors on one vertical line.
+    AlignTextH,
+    /// Align: objects placed above the anchor, touching it.
+    AlignAbove,
+    /// Align: top edges on one line.
+    AlignTop,
+    /// Align: centres on one horizontal axis.
+    AlignCentreV,
+    /// Align: bottom edges on one line.
+    AlignBottom,
+    /// Align: objects placed below the anchor, touching it.
+    AlignBelow,
+    /// Align: text baselines on one horizontal line.
+    AlignTextV,
+    /// Distribute: equal steps between left edges, across.
+    DistributeLeft,
+    /// Distribute: equal steps between centres, across.
+    DistributeCentreH,
+    /// Distribute: equal steps between right edges, across.
+    DistributeRight,
+    /// Distribute: equal steps between gaps, across.
+    DistributeGapsH,
+    /// Distribute: equal steps between text anchors, across.
+    DistributeTextH,
+    /// Distribute: equal steps between top edges, down.
+    DistributeTop,
+    /// Distribute: equal steps between centres, down.
+    DistributeCentreV,
+    /// Distribute: equal steps between bottom edges, down.
+    DistributeBottom,
+    /// Distribute: equal steps between gaps, down.
+    DistributeGapsV,
+    /// Distribute: equal steps between text baselines, down.
+    DistributeTextV,
+    /// Rearrange: exchange positions in selection order.
+    ExchangeSelection,
+    /// Rearrange: exchange positions in stacking order.
+    ExchangeStacking,
+    /// Rearrange: exchange positions, rotating about the centre.
+    ExchangeClockwise,
+    /// Rearrange: randomize centres.
+    Randomize,
+    /// Rearrange: push objects apart evenly.
+    Unclump,
+    /// Remove overlaps: move boxes apart until none overlap.
+    RemoveOverlaps,
+    /// Arrange in a grid.
+    ArrangeGrid,
+    /// Arrange on a circle.
+    ArrangeCircular,
+    /// Nodes: onto one vertical line.
+    NodesAlignVertical,
+    /// Nodes: onto one horizontal line.
+    NodesAlignHorizontal,
+    /// Nodes: equal steps across.
+    NodesSpreadAcross,
+    /// Nodes: equal steps down.
+    NodesSpreadDown,
+    /// Align: centres on one point.
+    AlignCentre,
+    /// The Align and Distribute panel: line objects up, then space them evenly.
+    AlignPanel,
 }
 
 // The mapping lives next door. `Icon::ALL`, `Icon::source` and `Icon::name`

@@ -17,6 +17,7 @@ use pdfcer_gui_base::alignlayout::{
 use crate::app::actions::{Action, VectorAction};
 use crate::app::state::OpenDoc;
 use crate::canvas::selection::SelectionLevel;
+use crate::icons::Icon;
 use crate::text::panels::align as t;
 
 mod arrange;
@@ -503,7 +504,8 @@ fn align_tab(
         ui.horizontal_wrapped(|ui| {
             for (index, op) in Op::align_row(axis).into_iter().enumerate() {
                 let (label, tip) = t::align_button(axis == Axis::X, index);
-                if button(ui, n >= op.needs(), label, tip, regions[index]) {
+                let icon = align_icon(axis, index);
+                if button(ui, n >= op.needs(), icon, label, tip, regions[index]) {
                     pressed = Some(op);
                 }
             }
@@ -520,7 +522,8 @@ fn align_tab(
         ui.horizontal_wrapped(|ui| {
             for (index, op) in Op::distribute_row(axis).into_iter().enumerate() {
                 let (label, tip) = t::distribute_button(axis == Axis::X, index);
-                if button(ui, n >= op.needs(), label, tip, regions[index]) {
+                let icon = distribute_icon(axis, index);
+                if button(ui, n >= op.needs(), icon, label, tip, regions[index]) {
                     pressed = Some(op);
                 }
             }
@@ -531,17 +534,38 @@ fn align_tab(
     ui.horizontal_wrapped(|ui| {
         for (index, order) in ExchangeOrder::ALL.into_iter().enumerate() {
             let (label, tip) = t::rearrange_button(index);
-            if button(ui, n >= 2, label, tip, REARRANGE_REGIONS[index]) {
+            if button(
+                ui,
+                n >= 2,
+                REARRANGE_ICONS[index],
+                label,
+                tip,
+                REARRANGE_REGIONS[index],
+            ) {
                 pressed = Some(Op::Exchange(order));
             }
         }
         let (label, tip) = t::rearrange_button(3);
-        if button(ui, n >= 2, label, tip, REARRANGE_REGIONS[3]) {
+        if button(
+            ui,
+            n >= 2,
+            REARRANGE_ICONS[3],
+            label,
+            tip,
+            REARRANGE_REGIONS[3],
+        ) {
             settings.randomized = settings.randomized.wrapping_add(1);
             pressed = Some(Op::Randomize(settings.randomized));
         }
         let (label, tip) = t::rearrange_button(4);
-        if button(ui, n >= 2, label, tip, REARRANGE_REGIONS[4]) {
+        if button(
+            ui,
+            n >= 2,
+            REARRANGE_ICONS[4],
+            label,
+            tip,
+            REARRANGE_REGIONS[4],
+        ) {
             pressed = Some(Op::Unclump);
         }
     });
@@ -562,7 +586,14 @@ fn align_tab(
                 .suffix(t::pt_suffix()),
         );
         let (label, tip) = t::remove_overlaps_button();
-        if button(ui, n >= 2, label, tip, REMOVE_OVERLAPS_REGION) {
+        if button(
+            ui,
+            n >= 2,
+            Icon::RemoveOverlaps,
+            label,
+            tip,
+            REMOVE_OVERLAPS_REGION,
+        ) {
             pressed = Some(Op::RemoveOverlaps);
         }
     });
@@ -580,10 +611,135 @@ fn align_tab(
     }
 }
 
-/// One button, greyed with a reason when too few objects are selected.
-fn button(ui: &mut Ui, enabled: bool, label: &str, tip: &str, region: &'static str) -> bool {
-    let response = ui
-        .add_enabled(enabled, egui::Button::new(label))
+/// The glyph side of a button, in points.
+const GLYPH: f32 = 22.0;
+
+/// The Rearrange row's glyphs, in [`REARRANGE_REGIONS`] order.
+const REARRANGE_ICONS: [Icon; 5] = [
+    Icon::ExchangeSelection,
+    Icon::ExchangeStacking,
+    Icon::ExchangeClockwise,
+    Icon::Randomize,
+    Icon::Unclump,
+];
+
+/// Align button `index` of `axis`'s row, in [`t::align_button`] order.
+const fn align_icon(axis: Axis, index: usize) -> Icon {
+    const X: [Icon; 6] = [
+        Icon::AlignBefore,
+        Icon::AlignLeft,
+        Icon::AlignCentreH,
+        Icon::AlignRight,
+        Icon::AlignAfter,
+        Icon::AlignTextH,
+    ];
+    const Y: [Icon; 6] = [
+        Icon::AlignAbove,
+        Icon::AlignTop,
+        Icon::AlignCentreV,
+        Icon::AlignBottom,
+        Icon::AlignBelow,
+        Icon::AlignTextV,
+    ];
+    match axis {
+        Axis::X => X[index],
+        Axis::Y => Y[index],
+    }
+}
+
+/// Distribute button `index` of `axis`'s row, in [`t::distribute_button`] order.
+const fn distribute_icon(axis: Axis, index: usize) -> Icon {
+    const X: [Icon; 5] = [
+        Icon::DistributeLeft,
+        Icon::DistributeCentreH,
+        Icon::DistributeRight,
+        Icon::DistributeGapsH,
+        Icon::DistributeTextH,
+    ];
+    const Y: [Icon; 5] = [
+        Icon::DistributeTop,
+        Icon::DistributeCentreV,
+        Icon::DistributeBottom,
+        Icon::DistributeGapsV,
+        Icon::DistributeTextV,
+    ];
+    match axis {
+        Axis::X => X[index],
+        Axis::Y => Y[index],
+    }
+}
+
+/// One glyph button, as Inkscape draws the panel: the words are its hover and
+/// its accessible name. Greyed with a reason when too few objects are selected.
+fn button(
+    ui: &mut Ui,
+    enabled: bool,
+    icon: Icon,
+    label: &str,
+    tip: &str,
+    region: &'static str,
+) -> bool {
+    let size = Vec2::splat(GLYPH + 2.0 * ui.spacing().button_padding.y);
+    let response = ui.add_enabled(enabled, egui::Button::new("").min_size(size));
+    paint_glyph(
+        ui,
+        &response,
+        icon,
+        response
+            .rect
+            .shrink2((response.rect.size() - Vec2::splat(GLYPH)) / 2.0),
+    );
+    finish(ui, response, enabled, label, tip, region)
+}
+
+/// A glyph-and-words button, for a control Inkscape labels in words.
+fn labelled_button(
+    ui: &mut Ui,
+    enabled: bool,
+    icon: Icon,
+    label: &str,
+    tip: &str,
+    region: &'static str,
+) -> bool {
+    let pad = ui.spacing().button_padding;
+    let text = egui::RichText::new(label);
+    let response = ui.scope(|ui| {
+        ui.spacing_mut().button_padding.x = pad.x + (GLYPH + pad.x) / 2.0;
+        ui.add_enabled(
+            enabled,
+            egui::Button::new(text).min_size(Vec2::new(0.0, GLYPH + 2.0 * pad.y)),
+        )
+    });
+    let response = response.inner;
+    let r = response.rect;
+    let glyph = egui::Rect::from_center_size(
+        egui::pos2(r.left() + pad.x + GLYPH / 2.0, r.center().y),
+        Vec2::splat(GLYPH),
+    );
+    paint_glyph(ui, &response, icon, glyph);
+    finish(ui, response, enabled, label, tip, region)
+}
+
+fn paint_glyph(ui: &Ui, response: &egui::Response, icon: Icon, rect: egui::Rect) {
+    let tint = ui.style().interact(response).fg_stroke.color;
+    let tint = if response.enabled() {
+        tint
+    } else {
+        ui.visuals().weak_text_color()
+    };
+    crate::icons::paint_icon_accented(ui.painter(), icon, rect, tint, response.enabled());
+}
+
+fn finish(
+    ui: &Ui,
+    response: egui::Response,
+    enabled: bool,
+    label: &str,
+    tip: &str,
+    region: &'static str,
+) -> bool {
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, label));
+    let response = response
         .on_hover_text(tip)
         .on_disabled_hover_text(t::needs_two());
     crate::diag::ui_rect_visible(region, response.rect, ui.clip_rect());

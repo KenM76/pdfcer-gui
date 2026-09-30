@@ -20,6 +20,7 @@ use super::button;
 use crate::app::actions::{Action, VectorAction};
 use crate::app::state::OpenDoc;
 use crate::canvas::selection::SelectionLevel;
+use crate::icons::Icon;
 use crate::text::panels::align as t;
 
 /// The node rows' buttons: align on a vertical line, on a horizontal line,
@@ -29,6 +30,13 @@ pub const NODE_REGIONS: [&str; 4] = [
     "align.node.1",
     "align.node.2",
     "align.node.3", // ui-text-exempt: diagnostic region names
+];
+/// The node buttons' glyphs, in [`NODE_REGIONS`] order.
+const NODE_ICONS: [Icon; 4] = [
+    Icon::NodesAlignVertical,
+    Icon::NodesAlignHorizontal,
+    Icon::NodesSpreadAcross,
+    Icon::NodesSpreadDown,
 ];
 
 /// One node button.
@@ -162,7 +170,14 @@ pub fn body(ui: &mut Ui, doc: &OpenDoc, rel: &mut NodeRelative, actions: &mut Ve
     ui.horizontal_wrapped(|ui| {
         for (index, op) in NodeOp::ALL.into_iter().enumerate() {
             let (label, tip) = t::node_button(index);
-            if button(ui, n >= 2, label, tip, NODE_REGIONS[index]) {
+            if button(
+                ui,
+                n >= 2,
+                NODE_ICONS[index],
+                label,
+                tip,
+                NODE_REGIONS[index],
+            ) {
                 pressed = Some(op);
             }
         }

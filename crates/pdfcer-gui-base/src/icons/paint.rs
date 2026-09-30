@@ -103,6 +103,20 @@ pub fn paint_icon(
     paint_glyph(painter, icon, rect, tint, weight, None);
 }
 
+/// [`paint_icon`] with the icon's accent when coloured icons are on, as the
+/// ribbon draws it. `enabled` is the control's state: a disabled control is
+/// drawn in one colour.
+pub fn paint_icon_accented(
+    painter: &egui::Painter,
+    icon: Icon,
+    rect: egui::Rect,
+    tint: egui::Color32,
+    enabled: bool,
+) {
+    let baked = super::accent::baked(painter.ctx(), icon, tint, enabled);
+    paint_glyph(painter, icon, rect, tint, IconWeight::Regular, baked);
+}
+
 /// [`paint_icon`], or with `baked` the coloured glyph, drawn at `tint`'s alpha.
 fn paint_glyph(
     painter: &egui::Painter,

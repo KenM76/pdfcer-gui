@@ -557,8 +557,8 @@ pub struct Prefs {
     /// state that could get out of step with what will be written.
     pub ui_scale: f32,
     /// Whether toolbar icons draw one part in a muted accent colour, as
-    /// Office and SOLIDWORKS do — `OPERATOR_REQUESTS.md` O232. `false` by
-    /// default: the plain single-colour set. Previews live, like
+    /// Office and SOLIDWORKS do — `OPERATOR_REQUESTS.md` O232. `true` by
+    /// default (O265); `false` is the plain single-colour set. Previews live, like
     /// [`Self::ui_scale`], because it too changes only the program's own
     /// appearance. See [`crate::icons::accent`].
     pub colour_icons: bool,
@@ -843,7 +843,7 @@ impl Default for Prefs {
             rail_auto_hide: false,
             chrome: PageChrome::default(),
             ui_scale: DEFAULT_UI_SCALE,
-            colour_icons: false,
+            colour_icons: true,
             chosen_standard: None,
             // Empty = anonymous, deliberately. See the field's own note on
             // why the OS user name is not a defensible guess.

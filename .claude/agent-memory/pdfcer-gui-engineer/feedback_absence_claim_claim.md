@@ -44,3 +44,12 @@ not carelessness and it will not be fixed by intending to be careful.
 - When you find you were wrong, **strike the claim in place rather than
   deleting it.** A wrong table that cost six weeks is worth more as a warning
   than as a gap; both the engine and this project now do it that way.
+
+4. **Ours, 2026-09-30, told to the operator in a release-style reply.** "There
+   is no draw-a-line command" — having grepped `pdfcer --help` for
+   draw/path/line and found nothing. The route was two verbs under other
+   names: `annotate --type line|polyline|square` then
+   `flatten-annotations --index I`. He replied "I thought these already
+   existed." A request was filed and had to be withdrawn. **How to apply:** for
+   "can it draw/add X", also ask *can it make X as markup and burn it in* —
+   markup-then-flatten is the engine's general route to new page content.

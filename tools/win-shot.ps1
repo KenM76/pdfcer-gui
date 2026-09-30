@@ -49,6 +49,7 @@ using System;
 using System.Runtime.InteropServices;
 public static class Shot {
     [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r);
+    [DllImport("dwmapi.dll")] public static extern int DwmGetWindowAttribute(IntPtr h, int a, out RECT r, int size);
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
     [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
     [DllImport("user32.dll")] public static extern void mouse_event(uint f, uint dx, uint dy, uint d, IntPtr e);
@@ -96,7 +97,14 @@ if ($Rect -ne "") {
 } else {
     $proc = Get-Process -Name $Process -ErrorAction Stop | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
     $r = New-Object Shot+RECT
-    [void][Shot]::GetWindowRect($proc.MainWindowHandle, [ref]$r)
+    # The frame DWM draws, not GetWindowRect: the latter includes the invisible
+    # resize border, and CopyFromScreen would photograph whatever lies under
+    # it -- the desktop and other windows. Pixels of any window OVER the
+    # subject are still captured; raise it first when that matters.
+    $size = [System.Runtime.InteropServices.Marshal]::SizeOf([type][Shot+RECT])
+    if ([Shot]::DwmGetWindowAttribute($proc.MainWindowHandle, 9, [ref]$r, $size) -ne 0) {
+        [void][Shot]::GetWindowRect($proc.MainWindowHandle, [ref]$r)
+    }
     $x = $r.Left; $y = $r.Top; $w = $r.Right - $r.Left; $h = $r.Bottom - $r.Top
 }
 
