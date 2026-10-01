@@ -1013,6 +1013,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // test.
         Box::new(bookmark_add::ReadModeOffersNoBookmarkAuthoring),
         Box::new(bookmark_edit::ABookmarkCanBeRenamedAndRemoved),
+        Box::new(settings_nav::SettingsNavigateByPage),
         Box::new(bookmark_move::ABookmarkCanBeDraggedAndABranchCollapsed),
         Box::new(attachments::AFileCanBeAttachedAndTakenBackOut),
         Box::new(models::AModelIsPlacedListedAndSavedBack),

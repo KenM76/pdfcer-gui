@@ -219,15 +219,18 @@ or silently accepting. Design: `DESIGNS.md` § O258.
 
 **His decisions:** the prompt offers *Allow once*, *Allow for this session* and *Always allow*. Undo stays one command per step. How many to roll back is the assistant's call, because only it knows what the prompt meant, so the remote offers "undo n".
 
-## O259 — **BUILT, NOT YET DRIVEN** — the Settings window navigates like SolidWorks' options instead of one long column
+## O259 — **BUILT, DRIVEN** — the Settings window navigates like SolidWorks' options instead of one long column
 
 His words: *"our settings window is getting very long and out of control. It
 should look more like Solidworks's settings navigation."* The window now shows
 one page at a time: a page list on the left grouped under Program, Document,
 Authoring and Output, the selected page on the right, and a search box over
 both that filters to pages holding a matching option and underlines the match.
-Tools ▸ Font folders still opens on the Fonts page. Not driven yet (the PC is
-in use).
+Tools ▸ Font folders still opens on the Fonts page. **Driven off-screen
+(2026-10-01)** by `settings_navigate_by_page`: all seventeen pages listed in
+order, a click in the list changes the page shown, searching "font" narrows the
+list to Fonts, clearing it brings every page back, and Font folders opens on
+Fonts.
 
 ## O260 — **BUILT AND DRIVEN — awaiting your verdict** — drive the program without the mouse, so checks run while he works
 

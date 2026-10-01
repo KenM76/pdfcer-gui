@@ -1046,6 +1046,8 @@ pub mod bookmark_dest;
 
 pub mod bookmark_edit;
 
+pub mod settings_nav;
+
 /// **The Bookmarks panel could not REORGANISE** — `Pass 161.0` shipped
 /// `move_outline_item` and `set_outline_open`, and this drives both through the
 /// row list: a bookmark is dragged onto the middle of another and nests, then
