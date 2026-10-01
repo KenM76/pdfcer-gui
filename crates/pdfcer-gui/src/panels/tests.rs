@@ -45,21 +45,6 @@ fn every_panel_is_reachable_from_the_ribbon() {
     }
 }
 
-/// **No two panels claim the same command.**
-#[test]
-fn no_two_panels_share_a_command() {
-    let mut seen: Vec<&str> = Vec::new();
-    for panel in Panel::ALL {
-        let id = panel.command_id();
-        assert!(
-            !seen.contains(&id),
-            "{panel:?} claims `{id}`, which another panel already claims. \
-             One command opens one panel."
-        );
-        seen.push(id);
-    }
-}
-
 /// **The document's own properties have a panel of their own, in every
 /// mode, and the selection inspector still exists** — `OPERATOR_REQUESTS.md`
 /// O136.
@@ -160,38 +145,6 @@ fn document_properties_is_offered_in_every_mode_and_redact_is_not() {
         !offers_command(Some(&shell), Some("read"), "edit.redact"),
         "the gate offers Read a marking command, so it is answering `true` for everything \
          and the assertions above prove nothing"
-    );
-}
-
-/// **The hand-written catalog is exhaustive.**
-#[test]
-fn the_panel_catalog_is_complete() {
-    // Exhaustive by construction: no `_` arm.
-    const fn ordinal(p: Panel) -> usize {
-        match p {
-            Panel::Bookmarks => 0,
-            Panel::Layers => 1,
-            Panel::Signatures => 2,
-            Panel::Fonts => 3,
-            Panel::Objects => 4,
-            Panel::Properties => 5,
-            Panel::Forms => 6,
-            Panel::Pages => 7,
-            Panel::Comments => 8,
-            Panel::Redact => 9,
-            Panel::DimensionGroups => 10,
-            Panel::Attachments => 11,
-            Panel::DocumentProperties => 12,
-            Panel::AlignDistribute => 13,
-        }
-    }
-    let mut ordinals: Vec<usize> = Panel::ALL.iter().copied().map(ordinal).collect();
-    ordinals.sort_unstable();
-    ordinals.dedup();
-    assert_eq!(
-        ordinals,
-        (0..Panel::ALL.len()).collect::<Vec<_>>(),
-        "Panel::ALL is missing a variant, or lists one twice"
     );
 }
 

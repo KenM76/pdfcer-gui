@@ -195,12 +195,10 @@ fn window_size(kind: FormFieldKind, screen: egui::Rect) -> egui::Vec2 {
 }
 
 /// What a swatch's answer means to a draft that has no file behind it yet.
-const fn resolve(
-    pick: crate::panels::properties::mkcolour::Pick,
-) -> Option<pdfcer_core::forms::MkColor> {
+const fn resolve(pick: pdfcer_gui_base::mkcolour::Pick) -> Option<pdfcer_core::forms::MkColor> {
     match pick {
-        crate::panels::properties::mkcolour::Pick::Set(colour) => Some(colour),
-        crate::panels::properties::mkcolour::Pick::Remove => None,
+        pdfcer_gui_base::mkcolour::Pick::Set(colour) => Some(colour),
+        pdfcer_gui_base::mkcolour::Pick::Remove => None,
     }
 }
 
@@ -618,7 +616,7 @@ impl FormFieldDialog {
 
     /// The `/MK` `/BG` and `/BC` swatches. See [`Self::common_flags`].
     fn chrome_rows(&mut self, ui: &mut Ui) {
-        use crate::panels::properties::mkcolour;
+        use pdfcer_gui_base::mkcolour;
 
         // The disc is a fact about the ENGINE's radio builder, which fills a
         // circle and says so. A rectangular preview over a control that comes

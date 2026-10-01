@@ -1,6 +1,6 @@
 # `panels` — the dock's panel bodies
 
-**Thirteen** panels, each a **function the dock can call**. This module owns the
+The panels of `Panel::ALL`, each a **function the dock can call**. This module owns the
 set, the dispatch, the little state the bodies share, and the two layout
 rules that every one of them has to get right.
 
@@ -171,64 +171,11 @@ panel draws, so there is nothing left to confuse it with. That is what
 let the old four-field `DocKey`, with the `Arc` address in it, be
 deleted rather than repaired; see this struct's own header.
 
-### `enum Panel`
-
-An enum rather than a trait object, for one reason that matters and one
-that follows from it. The reason that matters: [`Panel::ALL`] makes the
-set **enumerable**, which is what lets a test sweep every panel and
-assert something about each one — the reachability check below is exactly
-that, and it is the check three panels shipped without. A registry of
-boxed closures would be extensible and unsweepable.
-
-The reason that follows: a dock hosting these needs to persist which
-panels are open, and a `Copy`, `Eq`, `Debug` enum serialises to a token
-that survives a restart. A closure does not.
-
-### `const ALL`
-
-Hand-written, because Rust cannot enumerate an enum. That makes it
-the classic array that silently stops being exhaustive when a variant
-is added — so [`tests::the_panel_catalog_is_complete`] pins its
-length against a match that the compiler *does* check, which is the
-only way to make a hand-written catalog self-defending.
-
-### `fn command_id`
-
-**This is the reachability contract**, and it is the answer to the
-defect in this module's header. Every panel names a command; the test
-below asserts every one of those commands is both registered in
-`crate::shell::commands` and referenced by
-`crate::shell::manifest::built_in`. A panel with no route from the
-ribbon cannot get past that.
-
-Seven of the thirteen are **not** on View ▸ Panels, and every placement is
-`RIBBON_IA.md`'s:
-
-- **Fonts is `file.fonts`.** §7's migration map moves it from View ▸
-  Panels to File ▸ Document, because the Fonts panel answers "what is
-  inside this file", not "what is on my screen".
-- **Properties is `file.properties`.** The document's own title,
-  author, subject and keywords are a second panel and a second command,
-  so this tooltip says only what its own panel does. See
-  [`Self::DocumentProperties`].
-- **Document properties is `file.document_properties`**, beside it in
-  File ▸ Document for the reason Fonts is there: it answers *"what is
-  inside this file"*.
-
-### `fn from_command_id`
-
-The dock stores opaque ids, so something has to turn one back into a
-panel, and this is deliberately the only thing that does. Written as
-a search over [`Self::ALL`] rather than a second `match`: a second
-`match` is a second list to keep in step, and the failure when it
-drifts is a panel that opens from the ribbon and draws nothing in
-the dock — which looks like a rendering bug and is not.
-
-Returns `None` for an id this build does not have, which is a
-reachable state: a saved layout can name a panel whose capability
-was compiled out.
-
 ### `fn show`
+
+`Panel` itself — the catalog, `ALL`, and the panel-to-command binding — is
+`pdfcer_gui_base::panelid`, re-exported here; see
+`docs/modules/pdfcer-gui-base/panelid.md`.
 
 The one entry point a dock calls. `doc` is `None` when nothing is
 open, and that case is handled **here** rather than once per panel: the
@@ -306,7 +253,7 @@ cache outliving the thing it described.
 What is left here genuinely does outlive a document — it hangs off the
 application — and it is handled by *forgetting* rather than by keying:
 [`Self::forget_document`] is called from `PdfcerApp::open_path`, the one
-place a document is ever opened, and from [`Panel::show`] when nothing is
+place a document is ever opened, and from [`show`] when nothing is
 open. A single statement at the one moment it is true beats a comparison
 made sixty times a second.
 
@@ -324,7 +271,7 @@ on one page of one revision**, not an identity.
 
 Called from two places, and both are needed: `PdfcerApp::open_path`,
 because a new document makes every paint-order index here meaningless,
-and [`Panel::show`] when nothing is open, because a panel that never
+and [`show`] when nothing is open, because a panel that never
 draws while the shell is empty would never get the chance.
 
 `*self = Self::default()` rather than clearing fields one at a time,

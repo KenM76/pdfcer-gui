@@ -23,7 +23,7 @@ impl PdfcerApp {
         // Park it where a dock panel can read it. `crate::panels::tool` has
         // to answer "what does a press mean in this mode" and is handed no
         // `Capabilities` — see `canvas::tool::store_capabilities` for why this
-        // is a park rather than a sixth parameter on `Panel::show`, and why it
+        // is a park rather than a sixth parameter on `panels::show`, and why it
         // must not be a second derivation.
         //
         // Here rather than anywhere else because this is the ONE function that

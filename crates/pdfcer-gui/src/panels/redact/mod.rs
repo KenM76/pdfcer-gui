@@ -83,7 +83,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // make a mark is Mark whole page, which is the widest redaction there is,
     // on the panel whose whole purpose is choosing a narrow one.
     //
-    // The host does NOT supply this. `Panel::show` calls `scroll_style`, which
+    // The host does NOT supply this. `panels::show` calls `scroll_style`, which
     // sets how a bar is PAINTED, and the dock says so itself: *"any
     // `ScrollArea` a panel body creates inherits this"*. Every sibling panel
     // that can overflow makes its own, and this one makes its own.

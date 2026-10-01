@@ -79,7 +79,7 @@ than the number it produced last.
 | **Source** | `git ls-files '*.rs'` through `xargs` with a newline delimiter, then `cat`, then `wc -l`. The `cat` matters: without it `xargs` splits into two `wc` invocations and emits two `total` lines. A `find crates -name '*.rs'` count answers a different question |
 | **Commands** | read from the build's own trace line `pdfcer-diag shell commands=… planned=… directed=…` on an off-screen smoke launch under `PDFCER_DIAG_VIEWPORT` |
 | **Engine** | `pdfcer-core` v0.70.0, pinned as above |
-| **Panels** | 13 — `Panel::ALL` is `[Self; 13]` in `crates/pdfcer-gui/src/panels/mod.rs`, pinned by `tests::the_panel_catalog_is_complete` |
+| **Panels** | 14 — `Panel::ALL` is `[Self; 14]` in `crates/pdfcer-gui-base/src/panelid.rs`, pinned by `tests::the_panel_catalog_is_complete` |
 | **Ribbon surface** | 41 captioned groups — `grep -c 'caption:' crates/pdfcer-gui/src/shell/ron/built_in.ron` |
 
 ---

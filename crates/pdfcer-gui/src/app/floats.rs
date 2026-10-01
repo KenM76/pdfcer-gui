@@ -202,8 +202,7 @@ impl PdfcerApp {
                 match crate::panels::Panel::from_command_id(panel_id.as_str()) {
                     Some(panel) => {
                         tokens.extend(
-                            panel
-                                .show(ui, doc, panels, host.as_ref(), actions)
+                            crate::panels::show(panel, ui, doc, panels, host.as_ref(), actions)
                                 .into_iter()
                                 .map(|t| (panel_id.clone(), t)),
                         );

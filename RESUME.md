@@ -43,7 +43,7 @@ grepping it — a count only goes stale, a name can be born false.
 | Backlog verdicts | `python tools/check-backlog-verdict-drift.py` | The walker counts a row by the section it SITS IN; this one asks whether an absence row is contradicted by `crates/pdfcer-gui/src`. Registered in `run-all.sh`, so it is normally green already — run it by hand after moving rows. It reads only the FIRST cell, so a symbol that shipped must leave that cell even when the row's narrowed remainder still cites it in the body. An exemption is per SYMBOL, `<!--namesake:IDENT-->`, never per row |
 | Request channel | `ls /d/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` | The invariant is *a session lists `open/` and nothing else, and empty means nothing is owed* — so a closed exchange left there mis-states the outstanding work by an order of magnitude. Closing is part of doing the work: archive both files AND write the `INDEX.md` row in the same sitting as the `done_*`. A move without a row is not a close, it is a deletion that leaves a file behind. **Nothing in that folder is in a git repository, so no gate can ever see this** — which is also why a sentence asserting an identifier's state (*can be closed*, *still open*, *we filed*) is grepped out of `INDEX.md` and `archive/` before it is written, never taken off the engine row that cites it: a row citing `E001` as filed outlived our own `done_` for it by three days |
 | Registered commands | `grep -rn --include='*.rs' -E 'command\(' crates/pdfcer-gui/src/shell/commands/catalog/ \| grep -vE ':\s*(///\|//)' \| wc -l` | The obvious command is wrong, not merely its answer: a raw `grep -rhoE` over that directory counts one extra, a line of prose in `catalog/file.rs` that quotes the very pattern being searched for. The build's own `pdfcer-diag shell commands=` trace (`app/mod.rs:925`) is the tie-breaker |
-| Dockable panels | `grep -n 'pub const ALL' crates/pdfcer-gui/src/panels/mod.rs` | — |
+| Dockable panels | `grep -n 'pub const ALL' crates/pdfcer-gui-base/src/panelid.rs` | — |
 
 ## Do next, in the operator's order
 
@@ -113,7 +113,9 @@ embed, then the crate split.
    the redaction notes and the tagged-structure export helper and the export windows' remembered settings and the panel footer and an ink mark's point addressing (with the corner-drag intent it answers to) are in base; seven of the eight ribbon tabs
    are in base (View names an app action). Twelve Settings pages and
    `Draft` are in base `settingspages`; acrobat, fonts, display, nav and
-   signatures stay (they read document or app state). Find the next
+   signatures stay (they read document or app state). The `Panel` catalog is
+   base `panelid` (drawing stays `panels::show`), which cut panels<->shell and
+   dialogs<->panels: 9 mutual pairs. Find the next
    candidate with `python tools/module-graph.py`.
 
 **★ Newest, and ahead of everything numbered below: O226 – O229, the OCR

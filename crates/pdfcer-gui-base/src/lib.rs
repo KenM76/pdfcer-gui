@@ -367,6 +367,9 @@ pub mod exportremembered;
 /// A panel's controls pinned under its list, so no row moves when they appear.
 pub mod panelfooter;
 
+/// Which dockable panels exist, and the ribbon command that opens each.
+pub mod panelid;
+
 /// Exporting detected tables as spreadsheet cells.
 pub mod tableexport;
 

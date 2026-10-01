@@ -104,7 +104,7 @@ pub(super) fn row(
     let Some((_, does)) = draft.as_mut() else {
         return;
     };
-    crate::dialogs::buttonaction::rows(ui, does);
+    pdfcer_gui_base::buttonactionpicker::rows(ui, does);
 
     // Apply is absent, not greyed, while the draft cannot be authored — the
     // blocker sentence under the chooser already says what to type, and a

@@ -116,7 +116,7 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if super::super::chrome_for_command(id).is_some() {
         return Some("chrome_for_command");
     }
-    if crate::panels::Panel::from_command_id(id).is_some() {
+    if pdfcer_gui_base::panelid::Panel::from_command_id(id).is_some() {
         return Some("from_command_id");
     }
     //

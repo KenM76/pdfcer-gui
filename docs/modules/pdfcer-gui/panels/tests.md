@@ -29,22 +29,6 @@ tell a live call from one inside a `#[cfg(test)]` block, and it
 silently stops working the day the call is spelled differently. This
 one asks the same data the ribbon draws itself from.
 
-### `fn no_two_panels_share_a_command`
-
-A shared id would make the reachability test above pass for both
-while only one of them could ever be opened — the failure hiding
-inside the fix.
-
-**It was a live hazard and on 2026-09-05 it became the live case.**
-`file.properties`' tooltip commissioned two subjects in one sentence — the
-document's own metadata and the selection's properties — and the temptation
-this refuses was to hang the second panel off that same id when the operator
-asked for the metadata to *"be in its own document properties tab"*. It has a
-new id, `file.document_properties`, and this test is what would have caught
-the shortcut: with one id claimed twice, whichever panel
-[`Panel::from_command_id`] found first would be the only one ever openable,
-and the other would sit in the arrangement drawing nothing.
-
 ### `fn the_documents_own_properties_are_their_own_panel_in_every_mode`
 
 The operator, 2026-09-05: *"the document properties are still always visible
@@ -101,16 +85,6 @@ that tab.* `every_panel_is_reachable_from_the_ribbon` catches the deletion
 too — it was the test that failed under that plant — but it asks *"is this
 referenced anywhere at all"*, which a QAT slot or a key binding satisfies,
 and a QAT slot is not a tab.
-
-### `fn the_panel_catalog_is_complete`
-
-[`Panel::ALL`] is an array, and an array cannot notice a new variant.
-The `match` below can: it has no catch-all arm, so adding a variant
-to [`Panel`] fails to compile until it is listed here, and the length
-assertion then fails until it is added to `ALL`. That chain is what
-makes a hand-written enumeration self-defending, and it matters
-because every sweep in this module — reachability included — is only
-as complete as `ALL`.
 
 ### `fn a_row_wider_than_the_viewport_widens_the_container`
 

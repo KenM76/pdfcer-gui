@@ -1,6 +1,6 @@
 //! # `panels` — the dock's panel bodies
 //!
-//! **Thirteen** panels, each a **function the dock can call**. This module owns the
+//! The panels of [`Panel::ALL`], each a **function the dock can call**. This module owns the
 //! set, the dispatch, the little state the bodies share, and the two layout
 //! rules that every one of them has to get right.
 //!
@@ -30,354 +30,49 @@ pub mod properties;
 pub mod redact;
 pub mod signatures;
 
-/// One dockable panel.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Panel {
-    /// The document's outline, as navigation.
-    Bookmarks,
-    /// The document's optional-content groups.
-    Layers,
-    /// What each digital signature covers.
-    Signatures,
-    /// What fonts the document declares, and what they cost.
-    Fonts,
-    /// Everything drawn on the current page.
-    Objects,
-    /// The read-only facts about one object — **and about nothing else**.
-    ///
-    /// That clause is the variant's WHOLE scope. A panel commissioned for
-    /// two subjects in one sentence — the document's own title, author,
-    /// subject and keywords, and the properties of whatever is selected on the
-    /// page — draws the first permanently, because it is true of no selection.
-    /// The document half is [`Self::DocumentProperties`].
-    Properties,
-    /// **The document's own title, author, subject and keywords**, and the
-    /// facts pdfcer read about the file — `file.document_properties`.
-    ///
-    /// **Its own tab, and never a section of [`Self::Properties`]**: a
-    /// block with no selection to be scoped to is on screen in the Properties
-    /// panel every frame, under everything else.
-    ///
-    /// It is the seventh panel whose command is not on View ▸ Panels, and the
-    /// placement needs no argument of its own: `RIBBON_IA.md` §5.1's **File ▸
-    /// Document** band is *"inspection of what is inside the file"* and already
-    /// holds Properties and Fonts. A document's title is inside the file.
-    ///
-    /// **A new id rather than a second meaning for `file.properties`.**
-    /// [`Self::command_id`] is the single binding between a command and a
-    /// panel, and `crate::app::dispatch` resolves toggles through
-    /// [`Self::from_command_id`] — so one id cannot open two panels, and a
-    /// second spelling of an existing id would have been a second thing to keep
-    /// in step. `crate::app::modes::defaults`' own `comments()` and `pages()`
-    /// record what that costs when it is got wrong: an id no code has ever
-    /// resolved is a guess, and that one was wrong for weeks.
-    ///
-    /// **A toggle, unlike [`Self::Properties`].** It falls through
-    /// `dispatch`'s guard arm to `toggle_panel` because its control asks *"is
-    /// this panel open?"*, which is the question `file.fonts` and the whole
-    /// `view.panel_*` family ask. `file.properties` is show-only for a reason
-    /// that does not apply here: it is offered by the **Objects row context
-    /// menu** to describe the row just clicked, and a second invocation that
-    /// closed the description would be hostile. Nothing offers this command to
-    /// describe anything.
-    ///
-    /// **Mounted by all three modes.** Reading a document's title is reading,
-    /// and Read is shown the `file` tab — so unlike [`Self::Redact`] and
-    /// [`Self::Attachments`], a mode that mounts this panel can always reopen
-    /// it after closing it, which is the trap [`Self::Forms`] had to move off
-    /// the Edit tab to escape.
-    DocumentProperties,
-    /// The document's form fields, for **filling** — not for authoring.
-    ///
-    /// The distinction is the panel's whole scope and is worth stating at
-    /// the variant rather than only in its module: creating, deleting,
-    /// renaming and grouping fields are `Edit ▸ Forms` authoring work
-    /// behind a different certification gate, and are deliberately absent.
-    Forms,
-    /// The document's pages, as pictures — navigate, pick, and act on
-    /// sheets.
-    ///
-    /// The only panel offered by **all three** modes, and the only one whose
-    /// body renders anything. Both facts are argued in [`pages`]' own header:
-    /// the first from `README.md`'s ruling that page operations do not alter
-    /// content, so a reviewer may rotate and extract without leaving the
-    /// stance Review takes; the second from `BENCHMARK.md`'s measurement that
-    /// a two-pixel render of a dense drawing costs 691 ms — which is why this
-    /// panel has a rendering *policy* rather than a loop.
-    Pages,
-    /// Every annotation on the document — the comment list a reviewer works
-    /// through.
-    ///
-    /// **The only panel whose command is not a `view.panel_*` or a `file.*`
-    /// id**, and the reason is worth stating at the variant rather than only
-    /// in its module: `RIBBON_IA.md` names Comments in two places, and §7's
-    /// migration map — the more specific of the two — sends it to Markup ▸
-    /// Comments. See [`Self::command_id`].
-    ///
-    /// It is a **report with one verb**, like [`Self::Bookmarks`]: it raises
-    /// [`Action::GoToPage`] and nothing else. The old shell's panel could also
-    /// delete an annotation; that half is deliberately absent here because no
-    /// [`Action`] variant can carry the intent, and a control with nothing
-    /// behind it is the defect this module's header is about.
-    Comments,
-    /// Marking content for permanent removal, and reviewing what is marked.
-    ///
-    /// **The only panel whose command reads as an authoring verb rather than
-    /// as a panel name**, and the reason is worth stating at the variant.
-    /// `edit.redact`'s shipped tooltip describes an *action* — *"Mark what is
-    /// to be permanently removed"* — because marking is what the surface is
-    /// for; what it opens is nonetheless somewhere an operator dips in and out
-    /// of while working, which is [`crate::dialogs`]' own test for a panel
-    /// rather than a dialog.
-    ///
-    /// It is therefore a **toggle**, like the `view.panel_*` family and unlike
-    /// [`Self::Properties`]: pressing Redact with the Redact panel open closes
-    /// it, which is what `crate::app::panels` settled for every control whose
-    /// question is *"is this panel open?"*. Nothing about that is special-cased
-    /// — it falls out of [`Self::from_command_id`] answering for this id, which
-    /// is the guard arm the toggle family already goes through.
-    ///
-    /// The **irreversible** half deliberately does not live here.
-    /// `edit.redact_apply` opens [`crate::dialogs::redact`], because applying
-    /// is a single transaction with a start and an end, and because a control
-    /// that commits an irreversible operation must not sit two rows below one
-    /// that merely marks. See [`redact`]'s header for the whole argument,
-    /// including why canvas drag-to-mark is not in this landing.
-    Redact,
-    /// Where ce-dimension groups are made, chosen and configured.
-    ///
-    /// **The only panel that was built as a window first and moved**, and
-    /// the move is the operator's, not a refactor: a window whose content is
-    /// taller than the screen can push its own title bar — and its only ✕ —
-    /// off the desktop, and he could not close it. See
-    /// [`dimension_groups`]'s header for the three findings packed into that
-    /// one report and for why a dock column removes the condition rather than
-    /// tuning it.
-    ///
-    /// Its command is `measure.manage_groups`, which is **not** a
-    /// `view.panel_*` id, and that is [`Self::Redact`]'s precedent applied
-    /// deliberately rather than an omission. A second id for one surface would
-    /// put this panel on a tab a mode without measure authoring is shown, and
-    /// the point of leaving it on Measure ▸ Scale is that the mode taxonomy
-    /// then does the gating with no capability flag of its own: `read` is not
-    /// shown the `measure` tab, so `read` cannot reach the panel, and Review
-    /// and Edit both can. The same argument, in the same words, is why there
-    /// is no `view.panel_redact`.
-    DimensionGroups,
-    /// The whole files this document carries inside itself (§7.11.4.1).
-    ///
-    /// **The sixth panel whose command is not on View ▸ Panels**, and the
-    /// only one `RIBBON_IA.md` names nowhere at all — it lists no Attachments
-    /// control on any tab, in any group. So the placement is argued rather than
-    /// read off, and the argument is [`Self::Redact`]'s, applied to the same
-    /// question:
-    ///
-    /// Read is shown `file` and `view` alone. A `view.panel_attachments` — or a
-    /// `file.attachments` beside Fonts and Properties, which is where the
-    /// *reading* half of this panel would otherwise belong — would put a
-    /// surface that **embeds and removes whole files** in front of a reading
-    /// stance. `edit.attachments` on the Edit tab makes the mode taxonomy do
-    /// that work with no capability flag and no gate of its own, which is the
-    /// property that decided Redact and is the closest defensible precedent
-    /// this IA has.
-    ///
-    /// The cost is stated rather than hidden: Acrobat *Reader* lists
-    /// attachments and saves them out, and this build's Read mode cannot. The
-    /// day that matters, the fix is a second panel — a listing with no verbs —
-    /// and not a second id for this one, because P1 gives a command one tab and
-    /// a panel with authoring controls does not belong on a reading stance's
-    /// ribbon.
-    Attachments,
-    /// Inkscape's Align and Distribute, over the selected page objects.
-    ///
-    /// `edit.align`, on Edit: aligning moves content, so it belongs to the
-    /// modes that author, and Read is shown `file` and `view` alone.
-    /// `ALIGN_AND_DISTRIBUTE.md` maps each Inkscape control.
-    AlignDistribute,
-}
+pub use pdfcer_gui_base::panelid::Panel;
 
-impl Panel {
-    /// Every panel.
-    pub const ALL: [Self; 14] = [
-        Self::Attachments,
-        Self::Bookmarks,
-        Self::Layers,
-        Self::Signatures,
-        Self::Fonts,
-        Self::Objects,
-        Self::Properties,
-        Self::DocumentProperties,
-        Self::Forms,
-        Self::Pages,
-        Self::Comments,
-        Self::Redact,
-        Self::DimensionGroups,
-        Self::AlignDistribute,
-    ];
-
-    /// The ribbon command that shows this panel.
-    #[must_use]
-    pub fn command_id(self) -> &'static str {
-        match self {
-            // **The sixth panel whose command is not on View ▸ Panels**, and
-            // the only one `RIBBON_IA.md` places nowhere: §5.2's Panels row
-            // names Pages, Objects, Bookmarks, Layers, Signatures, Comments and
-            // Forms, and no section of that document mentions attachments at
-            // all. The variant's own doc carries the argument for Edit, which
-            // is `Self::Redact`'s applied to the same question — a surface that
-            // embeds and removes whole files must not be reachable from a
-            // reading stance, and Read is shown `file` and `view` alone.
-            Self::Attachments => "edit.attachments",
-            Self::Bookmarks => "view.panel_bookmarks",
-            Self::Layers => "view.panel_layers",
-            Self::Signatures => "view.panel_signatures",
-            Self::Fonts => "file.fonts",
-            Self::Objects => "view.panel_objects",
-            Self::Properties => "file.properties",
-            // The seventh id that is not a `view.panel_*`, and the one that
-            // needed no argument: File ▸ Document is the band for *"what is
-            // inside this file"*, and it already holds Properties and Fonts.
-            // See the variant for why it is a NEW id rather than a second
-            // meaning for the one above it.
-            Self::DocumentProperties => "file.document_properties",
-            // **On View ▸ Panels**, not on Edit. A form panel does answer
-            // "what can I fill in this file", which is an edit of the
-            // document rather than of the view — and that is the wrong
-            // question. The question is *which modes may fill*, and the
-            // answer is all three, because Acrobat Reader fills forms in its
-            // default view.
-            //
-            // Read is shown `file` and `view` alone, so the tab followed
-            // the mode. `crate::app::modes` carries the amended taxonomy;
-            // `crate::shell::manifest::edit` records what stayed behind.
-            //
-            // The command was registered and reachable from the ribbon well
-            // before this panel existed — it had no dispatch arm, which is
-            // precisely the class of half-built surface this module's
-            // header is about.
-            Self::Forms => "view.panel_forms",
-            // **This command is not registered in this build**, and the
-            // panel is therefore filtered out of every arrangement by
-            // `SHELL_FRAMEWORK.md` §5b — see `pages`' own header, which
-            // carries the account and the exact lines needed.
-            //
-            // The id is `RIBBON_IA.md`'s and `crate::app::modes`' both:
-            // `modes::defaults::spec` has named it in all three default arrangements
-            // since before this panel existed, and `modes::ABSENT_PANELS`
-            // carried the matching "not built yet" entry, which this panel's
-            // arrival removes. It is on View ▸ Panels rather than anywhere
-            // else because a thumbnail grid answers *"what is on my
-            // screen"* — it is a navigator, and navigators live in View.
-            Self::Pages => "view.panel_pages",
-            // **The third panel whose command is not on View ▸ Panels**, and
-            // the only one whose placement had to be *chosen* between two
-            // sentences of `RIBBON_IA.md` rather than read off one.
-            //
-            // §5.2 lists `Comments` among View ▸ Panels. §5.5 gives the Markup
-            // tab a `Comments` group containing `Comments panel`. P1 gives a
-            // command one tab, so both cannot be honoured — and §7's migration
-            // map settles it by naming the control: `Review ▸ Comments ▸
-            // Comments` → `Markup ▸ Comments`. A per-control ruling is more
-            // specific than a list of panel names, so Markup wins.
-            //
-            // `crate::shell::manifest::markup` reached the same conclusion in
-            // the same words when that tab was built, which is why this
-            // command was **already registered and already on the ribbon**
-            // before this panel existed — a control with no body, the mirror
-            // image of the defect in this module's header, and the reason
-            // `crate::panels::comments` is the last panel the taxonomy names
-            // to acquire one.
-            //
-            // The mode taxonomy agrees, which is what makes it safe: Comments
-            // is mounted by Review and Edit alone, and both are shown the
-            // `markup` tab. Contrast [`Self::Forms`], which had to move off
-            // Edit precisely because Read mounts it and Read is shown `file`
-            // and `view` only.
-            //
-            // `crate::app::modes::defaults` still names the panel by the
-            // OTHER id — `view.panel_comments`, with a matching
-            // `ABSENT_PANELS` entry — so the default arrangements will not
-            // mount this panel until both are changed. That file is not this
-            // panel's to edit; the two lines it needs are in this work's
-            // report to the shell owner.
-            Self::Comments => "markup.comments",
-            // **The fourth panel whose command is not on View ▸ Panels**, and
-            // the only one whose command was written as a *verb*.
-            //
-            // `RIBBON_IA.md` §5.4 puts Redact on **Edit ▸ Protect**, and
-            // `crate::shell::manifest::edit`'s header carries the placement
-            // argument: *"a user editing a document looks under Edit for the
-            // command that removes content from it. Tools is for jobs that run
-            // across other files."* It moved there from Tools ▸ Protect when
-            // this shell's ribbon was built, long before either half of the
-            // feature existed.
-            //
-            // There is deliberately no `view.panel_redact`. A second id for the
-            // same surface would put the panel on a tab Read is shown, and Read
-            // must not be able to reach a marking surface at all: `edit.redact`
-            // sitting on the Edit tab is what makes the mode taxonomy do that
-            // work, with no capability flag and no gate of its own. Contrast
-            // [`Self::Forms`], which had to acquire a `view.` id precisely
-            // because Read *should* reach it.
-            Self::Redact => "edit.redact",
-            // **The fifth panel whose command is not on View ▸ Panels.** It
-            // stays where `RIBBON_IA.md` put the control — Measure ▸ Scale —
-            // and the variant's own doc carries the argument. The command has
-            // been registered and drawn since the Measure tab was built, and
-            // pressing it toggles a panel rather than opening a window.
-            Self::DimensionGroups => "measure.manage_groups",
-            Self::AlignDistribute => "edit.align",
-        }
+/// Draw `panel`. The one entry point a dock calls.
+#[must_use]
+pub fn show(
+    panel: Panel,
+    ui: &mut egui::Ui,
+    doc: Option<&OpenDoc>,
+    state: &mut PanelsState,
+    host: Option<&MenuHost<'_>>,
+    actions: &mut Vec<Action>,
+) -> Vec<HandlerToken> {
+    scroll_style(ui);
+    let Some(doc) = doc else {
+        // Nothing open: forget the operator's tree state. Doing this
+        // here rather than in each body is what makes it unforgettable —
+        // a panel that never draws while the shell is empty would never
+        // get the chance. (The document's own caches need no equivalent:
+        // they live on `OpenDoc` and were dropped with it.)
+        state.forget_document();
+        ui.label(crate::text::panels::panel_no_document());
+        return Vec::new();
+    };
+    state.sync(doc);
+    match panel {
+        Panel::Attachments => attachments::body(ui, doc, state, actions),
+        Panel::Bookmarks => bookmarks::body(ui, doc, state, actions),
+        Panel::Layers => layers::body(ui, doc, state, actions),
+        Panel::Signatures => signatures::body(ui, doc, state, actions),
+        Panel::Fonts => fonts::body(ui, doc, state, actions),
+        Panel::Objects => return objects::body(ui, doc, state, host, actions),
+        Panel::Properties => properties::body(ui, doc, state, actions),
+        Panel::DocumentProperties => docprops::body(ui, doc, state.docprops_mut(), actions),
+        Panel::Forms => forms::body(ui, doc, state, actions),
+        // The second panel with a menu, and the second `return` for the
+        // same reason: it has tokens to hand back.
+        Panel::Pages => return pages::body(ui, doc, state, host, actions),
+        Panel::Comments => comments::body(ui, doc, state, actions),
+        Panel::Redact => redact::body(ui, doc, state, actions),
+        Panel::DimensionGroups => dimension_groups::body(ui, doc, state, actions),
+        Panel::AlignDistribute => align::body(ui, doc, &mut state.align, actions),
     }
-
-    /// The panel whose [`Self::command_id`] is `id`, if any.
-    #[must_use]
-    pub fn from_command_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|p| p.command_id() == id)
-    }
-
-    /// Draw this panel.
-    #[must_use]
-    pub fn show(
-        self,
-        ui: &mut egui::Ui,
-        doc: Option<&OpenDoc>,
-        state: &mut PanelsState,
-        host: Option<&MenuHost<'_>>,
-        actions: &mut Vec<Action>,
-    ) -> Vec<HandlerToken> {
-        scroll_style(ui);
-        let Some(doc) = doc else {
-            // Nothing open: forget the operator's tree state. Doing this
-            // here rather than in each body is what makes it unforgettable —
-            // a panel that never draws while the shell is empty would never
-            // get the chance. (The document's own caches need no equivalent:
-            // they live on `OpenDoc` and were dropped with it.)
-            state.forget_document();
-            ui.label(crate::text::panels::panel_no_document());
-            return Vec::new();
-        };
-        state.sync(doc);
-        match self {
-            Self::Attachments => attachments::body(ui, doc, state, actions),
-            Self::Bookmarks => bookmarks::body(ui, doc, state, actions),
-            Self::Layers => layers::body(ui, doc, state, actions),
-            Self::Signatures => signatures::body(ui, doc, state, actions),
-            Self::Fonts => fonts::body(ui, doc, state, actions),
-            Self::Objects => return objects::body(ui, doc, state, host, actions),
-            Self::Properties => properties::body(ui, doc, state, actions),
-            Self::DocumentProperties => docprops::body(ui, doc, state.docprops_mut(), actions),
-            Self::Forms => forms::body(ui, doc, state, actions),
-            // The second panel with a menu, and the second `return` for the
-            // same reason: it has tokens to hand back.
-            Self::Pages => return pages::body(ui, doc, state, host, actions),
-            Self::Comments => comments::body(ui, doc, state, actions),
-            Self::Redact => redact::body(ui, doc, state, actions),
-            Self::DimensionGroups => dimension_groups::body(ui, doc, state, actions),
-            Self::AlignDistribute => align::body(ui, doc, &mut state.align, actions),
-        }
-        Vec::new()
-    }
+    Vec::new()
 }
 
 /// The little state the panel bodies own between frames.
@@ -741,7 +436,7 @@ impl PanelsState {
         // the seed and the first draw.
         //
         // Why a carry rather than a reseed at the call site: this
-        // function is also called from `Panel::show` EVERY FRAME while
+        // function is also called from `show` EVERY FRAME while
         // nothing is open, and that call site has no `Prefs` to reseed from.
         // A carry holds for every caller, present and future, and it is
         // idempotent — `set_budget` returns early on an unchanged value.
