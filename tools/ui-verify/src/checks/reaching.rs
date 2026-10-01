@@ -4,14 +4,14 @@
 
 use crate::error::Result;
 use crate::geom::LRect;
-use crate::input::Driver;
+use crate::input::Click;
 use crate::launch::Session;
 
 use super::driving::declared;
 /// **Bring a docked panel to the front of its tab stack.**
 pub fn raise_dock_tab(
     session: &Session,
-    driver: &Driver,
+    driver: &impl Click,
     ui_rect: &str,
     panel_command_id: &str,
 ) -> Result<bool> {
@@ -27,7 +27,7 @@ pub fn raise_dock_tab(
     if let Some(tab) = declared(&trace, ui_rect, &region)
         && tab.is_substantial()
     {
-        driver.click_at(session.frame()?.declared_center(tab))?;
+        driver.click_rect(session, tab)?;
         session.settle(20);
         return Ok(true);
     }
@@ -58,7 +58,7 @@ pub fn raise_dock_tab(
         return Ok(false);
     }
     let mark = trace.mark();
-    driver.click_at(session.frame()?.declared_center(entry))?;
+    driver.click_rect(session, entry)?;
     session.settle(24);
 
     // Verify rather than assume, and anchor the question at `mark`.
@@ -81,7 +81,7 @@ pub fn raise_dock_tab(
         .last_after("panel-closed", mark)
         .is_some_and(|l| l.get("id") == Some(panel_command_id));
     if reclosed {
-        driver.click_at(session.frame()?.declared_center(entry))?;
+        driver.click_rect(session, entry)?;
         session.settle(24);
     }
     Ok(true)
@@ -91,7 +91,7 @@ pub fn raise_dock_tab(
 /// body, and hand back the control's fresh rectangle.**
 pub fn bring_into_body(
     session: &Session,
-    driver: &Driver,
+    driver: &impl Click,
     ui_rect: &str,
     body: &str,
     wanted: &str,
@@ -149,8 +149,7 @@ pub fn bring_into_body(
                 y: body_rect.min.y + h * 0.8,
             },
         );
-        let point = session.frame()?.declared_center(lower);
-        driver.scroll_at(point, -1)?;
+        driver.scroll_rect(session, lower, -1)?;
         session.settle(12);
     }
     Ok(last)
@@ -211,7 +210,7 @@ pub fn scroll_to(
 /// the footer is open afterwards.
 pub fn open_footer(
     session: &Session,
-    driver: &Driver,
+    driver: &impl Click,
     ui_rect: &str,
     footer: &str,
 ) -> Result<bool> {
@@ -231,7 +230,7 @@ pub fn open_footer(
     let Some(header) = declared(&trace, ui_rect, footer) else {
         return Ok(false);
     };
-    driver.click_at(session.frame()?.declared_center(header))?;
+    driver.click_rect(session, header)?;
     session.settle(20);
     Ok(open(&session.trace()?) == Some(true))
 }

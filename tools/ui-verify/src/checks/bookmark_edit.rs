@@ -8,13 +8,16 @@ use crate::checks::driving::{
 };
 use crate::checks::{Check, CheckContext};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::Click;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
-use crate::sys::vk;
 
 /// The mode the Bookmarks panel is **authored** in.
 const MODE: &str = "review";
+
+/// Off the desktop, so the check runs while the operator uses the machine.
+const OFFSCREEN: &str = "-4200,-4200,1400,900";
 /// Supplied at launch. **Nothing**, deliberately.
 ///
 const INVOKE: &str = "";
@@ -44,9 +47,9 @@ const DELETED: &str = "delete-bookmark";
 /// `TITLE`, the name the bookmark is authored with — five keystrokes, matching
 /// `bookmark_can_be_written` so a reader comparing the two traces sees the same
 /// word.
-const TITLE_KEYS: [u16; 5] = [vk::T, vk::I, vk::T, vk::L, vk::E];
+const TITLE: &str = "TITLE";
 /// `DETAIL`, the name it is renamed to — a DIFFERENT LENGTH, deliberately.
-const RENAME_KEYS: [u16; 6] = [vk::D, vk::E, vk::T, vk::A, vk::I, vk::L];
+const RENAME: &str = "DETAIL";
 
 /// See the module documentation.
 pub struct ABookmarkCanBeRenamedAndRemoved;
@@ -83,13 +86,6 @@ fn census(session: &Session) -> Result<Option<usize>> {
 /// Run the sequence. `Err` is SKIP, `Ok(Some(_))` is FAIL, `Ok(None)` is a pass.
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a mode segment and four panel \
-             controls and types eleven letters. Reported as SKIPPED rather than passed: a check \
-             that did not run has learned nothing.",
-        ));
-    }
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -100,6 +96,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .pdf
         .clone()
         .ok_or_else(|| Error::new("no fixture document. Pass --pdf."))?;
+    let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
+        Error::new("the profile has no viewport variable to place the window off the desktop.")
+    })?;
     let ui_rect = ctx
         .profile
         .vocab
@@ -116,25 +115,29 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+    spec.env
+        .push((viewport_env.to_owned(), OFFSCREEN.to_owned()));
+    spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("bookmark-edit.pointer.txt"))?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
         session.pid()
     ));
     session.settle(40);
-    let driver = Driver::new(session.window());
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     // The dock draws only the ACTIVE tab's body, and in this mode's default
     // layout Bookmarks shares a stack with Pages. See
     // [`crate::checks::driving::raise_dock_tab`].
-    driving::raise_dock_tab(&session, &driver, ui_rect, "view.panel_bookmarks")?;
+    driving::raise_dock_tab(&session, &pointer, ui_rect, "view.panel_bookmarks")?;
     // The authoring row is in the panel's footer, collapsed until opened.
-    crate::checks::driving::open_footer(&session, &driver, ui_rect, "bookmarks.tools")?;
+    crate::checks::driving::open_footer(&session, &pointer, ui_rect, "bookmarks.tools")?;
 
     // --- A: author the bookmark this check then edits -----------------------
     let trace = session.trace()?;
@@ -146,15 +149,21 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&trace, ui_rect, "bookmarks"))
         )));
     };
-    driver.click_at(session.frame()?.declared_center(title_box))?;
+    let title_box = driving::bring_into_body(
+        &session, &pointer, ui_rect, PANEL_BODY, TITLE_BOX, 12, report,
+    )?
+    .unwrap_or(title_box);
+    pointer.click_rect(&session, title_box)?;
     session.settle(8);
-    for key in TITLE_KEYS {
-        driver.press(key)?;
-    }
+    pointer.type_text(&session, None, TITLE)?;
     session.settle(8);
     let add = declared(&session.trace()?, ui_rect, ADD_BUTTON)
         .ok_or_else(|| Error::new(format!("no `{ADD_BUTTON}` region to press.")))?;
-    driver.click_at(session.frame()?.declared_center(add))?;
+    let add = driving::bring_into_body(
+        &session, &pointer, ui_rect, PANEL_BODY, ADD_BUTTON, 12, report,
+    )?
+    .unwrap_or(add);
+    pointer.click_rect(&session, add)?;
     session.settle(20);
 
     let Some(after_add) = census(&session)? else {
@@ -240,7 +249,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             row.raw
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(row_rect))?;
+    pointer.click_rect(&session, row_rect)?;
     session.settle(20);
 
     let trace = session.trace()?;
@@ -279,12 +288,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // Select the whole field and type over it: the draft is seeded with the
     // existing name, so typing alone would append.
-    driver.click_at(session.frame()?.declared_center(rename_box))?;
+    let rename_box = driving::bring_into_body(
+        &session, &pointer, ui_rect, PANEL_BODY, RENAME_BOX, 12, report,
+    )?
+    .unwrap_or(rename_box);
+    pointer.click_rect(&session, rename_box)?;
     session.settle(8);
-    driver.press_chord(&[vk::CONTROL], vk::A)?;
-    for key in RENAME_KEYS {
-        driver.press(key)?;
-    }
+    pointer.key(&session, None, "A", Some("ctrl"))?;
+    pointer.type_text(&session, None, RENAME)?;
     session.settle(10);
     //
     // Enter rather than the button, and not by preference: the Rename button
@@ -294,7 +305,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // header commits to the keystroke in as many words ("Enter commits …
     // checking only the button would make that keystroke do nothing"), which is
     // what makes it safe to pin a check to.
-    driver.press(vk::ENTER)?;
+    pointer.key(&session, None, "Enter", None)?;
     session.settle(20);
 
     let trace = session.trace()?;
@@ -326,11 +337,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // genuinely delivered keystrokes — and failing on that would be reporting
     // the harness as a defect in the panel.
     match pressed.get_usize("chars") {
-        Some(n) if n != TITLE_KEYS.len() => {
+        Some(n) if n != TITLE.len() => {
             report.note(format!(
                 "★ the committed name is {n} character(s) long, against the {} it was authored \
                  with — so a different name reached the verb",
-                TITLE_KEYS.len()
+                TITLE.len()
             ));
         }
         Some(n) => {
@@ -342,7 +353,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  and that is a no-op wearing a success line: the funnel writes its line, the count \
                  does not move, and every assertion below this one passes.",
                 pressed.raw,
-                TITLE_KEYS.len()
+                TITLE.len()
             )));
         }
         None => {
@@ -384,7 +395,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&trace, ui_rect, "bookmarks"))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(delete))?;
+    let delete = driving::bring_into_body(
+        &session,
+        &pointer,
+        ui_rect,
+        PANEL_BODY,
+        DELETE_BUTTON,
+        12,
+        report,
+    )?
+    .unwrap_or(delete);
+    pointer.click_rect(&session, delete)?;
     session.settle(20);
 
     let trace = session.trace()?;

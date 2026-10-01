@@ -44,6 +44,63 @@ pub mod scripted;
 ///
 /// Owns the operator's pointer position for its lifetime and returns it on
 /// drop.
+/// **Click the centre of a declared rect in the root viewport**, by whichever
+/// route the check drives with: the OS pointer ([`Driver`]) or the scripted one
+/// ([`scripted::ScriptedPointer`]). The setup helpers take this so a check can
+/// move to the scripted pointer without a second copy of each.
+pub trait Click {
+    /// Click `rect`'s centre.
+    fn click_rect(&self, session: &crate::launch::Session, rect: crate::geom::LRect) -> Result<()>;
+    /// Turn the wheel `notches` at `rect`'s centre; negative scrolls the content up, showing
+    /// what is below.
+    fn scroll_rect(
+        &self,
+        session: &crate::launch::Session,
+        rect: crate::geom::LRect,
+        notches: i32,
+    ) -> Result<()>;
+}
+
+impl Click for Driver {
+    fn click_rect(&self, session: &crate::launch::Session, rect: crate::geom::LRect) -> Result<()> {
+        self.click_at(session.frame()?.declared_center(rect))
+    }
+
+    fn scroll_rect(
+        &self,
+        session: &crate::launch::Session,
+        rect: crate::geom::LRect,
+        notches: i32,
+    ) -> Result<()> {
+        self.scroll_at(session.frame()?.declared_center(rect), notches)
+    }
+}
+
+impl Click for scripted::ScriptedPointer {
+    fn click_rect(&self, session: &crate::launch::Session, rect: crate::geom::LRect) -> Result<()> {
+        self.click_in(session, None, crate::coords::WindowPoint::centre_of(rect))
+            .map(|_| ())
+    }
+
+    fn scroll_rect(
+        &self,
+        session: &crate::launch::Session,
+        rect: crate::geom::LRect,
+        notches: i32,
+    ) -> Result<()> {
+        // One OS notch is one wheel line, which is what the scripted wheel takes.
+        #[allow(clippy::cast_precision_loss)]
+        let lines = notches as f32;
+        self.wheel_in(
+            session,
+            None,
+            crate::coords::WindowPoint::centre_of(rect),
+            lines,
+        )
+        .map(|_| ())
+    }
+}
+
 pub struct Driver {
     original_cursor: Option<(i32, i32)>,
     target: Option<WindowHandle>,

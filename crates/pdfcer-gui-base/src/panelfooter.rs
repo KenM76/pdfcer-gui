@@ -41,24 +41,34 @@ pub fn show(
     let top = ui.cursor().top();
     ui.separator();
     always(ui);
+    // What the open body wanted beyond what it was given. The list sizes itself
+    // from the stored height, so storing only what fitted lets the list keep the
+    // space and squeezes the open body to a sliver, frame after frame.
+    let mut shortfall = 0.0_f32;
     if let Some(tools) = tools {
         let header = egui::CollapsingHeader::new(title)
             .id_salt(id)
             .default_open(false)
             .show(ui, |ui| {
-                egui::ScrollArea::vertical()
+                let body = egui::ScrollArea::vertical()
                     .id_salt((id, "body"))
                     .max_height(panel_height * 0.5)
                     .show(ui, tools);
+                body.content_size.y.min(panel_height * 0.5) - body.inner_rect.height()
             });
+        shortfall = header.body_returned.unwrap_or(0.0).max(0.0);
         crate::diag::ui_rect(id, header.header_response.rect);
         let open = header.openness > 0.99;
+        let drawn = ui.cursor().top() - top;
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            format!("panel-footer id={id} open={open}")
+            format!(
+                "panel-footer id={id} open={open} height={drawn:.1} wants={:.1}",
+                drawn + shortfall
+            )
         });
     }
-    let height = ui.cursor().top() - top;
+    let height = ui.cursor().top() - top + shortfall;
     let key = memory_id(id);
     let before = ui.ctx().data(|d| d.get_temp::<f32>(key));
     if before.is_none_or(|b| (b - height).abs() > 0.5) {

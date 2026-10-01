@@ -554,7 +554,7 @@ pub const MIN_PRESSED_DELTA: u16 = 12;
 /// **Click a mode segment and confirm the shell saw the click.**
 pub fn click_mode_segment(
     session: &Session,
-    driver: &Driver,
+    driver: &impl crate::input::Click,
     ui_rect: &str,
     mode_id: &str,
 ) -> Result<()> {
@@ -581,7 +581,7 @@ pub fn click_mode_segment(
         .events(MODE_EVENT)
         .filter(|l| l.get("mode") == Some(mode_id))
         .count();
-    driver.click_at(session.frame()?.declared_center(rect))?;
+    driver.click_rect(session, rect)?;
     session.settle(12);
     let after = shell_trace(session)?
         .events(MODE_EVENT)

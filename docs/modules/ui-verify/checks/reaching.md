@@ -194,6 +194,13 @@ notches deep; a settings dialog with seven collapsed groups is more. A
 constant here would make every caller's "I looked and it was not there"
 mean a different distance without saying so.
 
+## Which pointer
+
+`raise_dock_tab`, `open_footer`, `bring_into_body` and
+`driving::click_mode_segment` take `&impl input::Click`, which both the OS
+`Driver` and the scripted pointer implement (`click_rect`, `scroll_rect`), so a
+check moves to the off-screen pointer without a second copy of each helper.
+
 ## `open_footer`
 
 Opens a panel's collapsed footer (`panels::footer`) so the controls inside it

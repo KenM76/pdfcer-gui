@@ -3,6 +3,19 @@
 `a_bookmark_can_be_renamed_and_removed` — **the panel that could only ever
 create.**
 
+# Driven off-screen
+
+The check drives the scripted pointer in a window placed off the desktop, so it
+runs under `--no-input` while the operator uses the machine. It needs `--pdf`;
+`fixtures/four-pages.pdf` (four bookmarks already) is the one it was driven on.
+Every footer control is first scrolled wholly inside the panel with
+`bring_into_body`, because on a 900-high window the open footer's controls start
+below the panel's bottom edge.
+
+Falsified both ways: with the footer storing its drawn height it fails at the
+rename (the field is below the panel and the typing reaches nothing); with a
+label drawn above the list on selection it fails on the row moving.
+
 # What this proves, and why the two verbs are one check
 
 `pdfcer-core` `Pass 156.0` shipped `set_outline_title` and
