@@ -30,10 +30,8 @@ PDFs"*:
 
   * a portrait page with a folded top-right corner, in near-white on a thin
     grey outline, so it reads as a document at 16 px;
-  * a red badge across the lower half carrying **PDF** over **CE** — the
-    product's own name, split the way it is spelled. The second line was
-    added on the operator's instruction, 2026-08-18: *"just add CE below
-    PDF in the same red box."*
+  * a red badge across the lower half carrying **PDF** over **CER** — the
+    product's own name, split the way it is spelled.
 
 Red because that is the colour every PDF file-type icon has used for twenty
 years and the one an operator's eye is trained on. It is deliberately NOT
@@ -51,13 +49,14 @@ HOW THE LETTERS ARE DRAWN WITHOUT A FONT
 
 There is no font renderer here and pulling one in for five letters would be
 absurd. P, D, F and E are a vertical stem plus, at most, one bowl and two
-bars; C is an ellipse ring with its right flank opened. Each is defined as a
+bars; R is the P with a diagonal leg; C is an ellipse ring with its right
+flank opened. Each is defined as a
 handful of primitives in a unit square, and scaled.
 
 The two lines share ONE cap height and are CENTRED rather than justified, so
-`PDF` and `CE` have the same stroke weight and read as one lockup. Stretching
+`PDF` and `CER` have the same stroke weight and read as one lockup. Stretching
 each line to the badge's width — which is what the single-line version did —
-would give the two-letter line half again the stride of the three-letter one.
+would give lines of unequal width unequal strides.
 
 The result is a geometric sans that is legible at 16 px, which is the only
 requirement. It is not a typeface and does not need to be.
@@ -249,6 +248,24 @@ def glyph_e(x, y):
     return _bar(x, y, 0.0, 0.78, 1.0 - STEM, 1.0)  # foot
 
 
+def _leg(x, y, x0, y0, x1, y1):
+    """A stroke of width `STEM` from (x0, y0) to (x1, y1), clipped to the
+    segment's own vertical extent so its ends are cut flat."""
+    if y < y0 or y > y1:
+        return False
+    dx, dy = x1 - x0, y1 - y0
+    # Horizontal distance from the centre line, scaled to perpendicular.
+    cx = x0 + dx * (y - y0) / dy
+    return abs(x - cx) * dy / (dx * dx + dy * dy) ** 0.5 <= STEM / 2.0
+
+
+def glyph_r(x, y):
+    """`P` with a leg from the bowl's foot to the baseline."""
+    if glyph_p(x, y):
+        return True
+    return _leg(x, y, 0.40, 0.58 - STEM / 2.0, 0.86 - STEM / 2.0, 1.0)
+
+
 # `C`'s geometry. An ellipse RING with the right flank opened, rather than the
 # flat-left/rounded-right capsule the P and D bowls use — a C is the mirror of
 # that shape and reusing `_capsule` would have produced a backwards letter.
@@ -272,14 +289,13 @@ def glyph_c(x, y):
     return ((x - cx) / irx) ** 2 + ((y - cy) / iry) ** 2 > 1.0
 
 
-# The badge's two lines. `pdfcer` is PDF + ce, and the operator asked for the
-# second line on 2026-08-18: *"just add CE below PDF in the same red box."*
+# The badge's two lines: `pdfcer` is PDF + cer.
 LINE_PDF = [(0.86, glyph_p), (0.85, glyph_d), (0.78, glyph_f)]
-LINE_CE = [(2 * C_RX, glyph_c), (0.78, glyph_e)]
+LINE_CER = [(2 * C_RX, glyph_c), (0.78, glyph_e), (0.86, glyph_r)]
 GLYPH_GAP = 0.20
 
 # Fractions of the badge's height. The two lines share one cap height, so
-# `PDF` and `CE` have the same stroke weight and read as one lockup rather
+# `PDF` and `CER` have the same stroke weight and read as one lockup rather
 # than as a heading and a subtitle.
 LINE_PAD = 0.13
 LINE_GAP = 0.11
@@ -288,12 +304,8 @@ LINE_GAP = 0.11
 def _text_line(u, v, box, glyphs):
     """One line of glyphs at the box's height, CENTRED, never stretched.
 
-    ★ Centred rather than justified, which is the whole reason this helper
-    exists. The previous version mapped `x` across the box so a line always
-    FILLED it — fine for one line, wrong the moment there are two: `CE` is
-    two glyphs where `PDF` is three, so stretching both to the same width
-    would draw `CE` half again as wide-strided as `PDF` and the pair would not
-    read as one word.
+    Stretching each line to fill the box would give lines of unequal natural
+    width unequal strides, and the pair would not read as one word.
     """
     x0, x1, y0, y1 = box
     height = y1 - y0
@@ -314,7 +326,7 @@ def _text_line(u, v, box, glyphs):
 
 
 def _letters(box):
-    """`PDF` over `CE`, as a predicate over the badge's text box."""
+    """`PDF` over `CER`, as a predicate over the badge's text box."""
     x0, x1, y0, y1 = box
     height = y1 - y0
     pad = height * LINE_PAD
@@ -324,7 +336,7 @@ def _letters(box):
     bottom = (x0, x1, y1 - pad - cap, y1 - pad)
 
     def test(u, v):
-        return _text_line(u, v, top, LINE_PDF) or _text_line(u, v, bottom, LINE_CE)
+        return _text_line(u, v, top, LINE_PDF) or _text_line(u, v, bottom, LINE_CER)
 
     return test
 
