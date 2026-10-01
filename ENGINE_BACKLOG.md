@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **61 of 266** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
+## `wanted` — a real gap — **61 of 267** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -87,9 +87,9 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Edit text across show operators** — a `find` matches across consecutive … | **wanted, and what it costs now is re-measurement.** The capability is in the build this shell compiles: a document written one glyph per show operator is what `EditRefusal::SplitAcrossPieces` exists to explain, and the engine no longer refuses it. `EditReport::operators_spanned` is new and wants disclosing under rule 4, and `Plan::one_operator` stops being the thing that routes `SplitAcrossPieces`, so the operator-facing sentence must be re-derived from the engine's answer rather than deleted on the assumption it is dead. |
 | **Ask which face can hold the text about to be TYPED**, not only the text … | **wanted.** `preview_font_resources_for(page, find, pinned_span, candidate)` closes the one honest limit the face chooser carries: `panels::properties::refusedchar` coverage-tests faces against the characters ALREADY in the run, so a row can offer a face that then refuses the operator's `€`. Cost: one call swapped in `canvas::textedit::pin::font_preflight` with the refused character as candidate, and `refused_char_untested` deleted with its test. The same reply carries more than was asked — `FontPreflight.standard_14` gives a `Std14Entry` per standard-14 face whose `presence` separates `OnPage` from `WouldBeAdded`, which is the operator-licence decision nothing here reads. The two should land together. |
 | **Split one text object into several** — `split_text_object` / `text_object_split_plan`, `pdfcer text-object-split --granularity run` or `line` … | **wanted — the verbs are in the pin and nothing here calls them.** A CAD title block written as one text object cannot have one line restyled or deleted until it is split. `SplitGranularity::Run` infers nothing; `Line` infers, so its cut count is owed off-canvas (rule 4). Five refusals want sentences, not a bucket: `VectorEditError::EmptySplit`, `VectorEditError::SplitAtObjectStart`, `VectorEditError::SplitRunInheritsPosition`, `VectorEditError::SplitAtLineShowOperator`, `VectorEditError::SplitInsideMarkedContent`; the whole split is refused, never half. Wire it through `vector_edit_on_page`. G032: `Line` also cuts on clear space — take `LineSplitOptions`' defaults (`LineSplitOptions::with_max_gap`, `LineSplitOptions::with_max_backward`, `LineSplitOptions::max_gap`, `LineSplitOptions::max_backward`) and offer no knob. |
-| **Edit and sign an encrypted document the supplied password permits** — incremental save of an AES document appends new objects under the file's own key; every edit verb is gated by the `/P` bits the password grants; RC4 append is refused by name | **wanted; our request G077, answered FIXED (unreleased).** The consumer is step 12 of `docs/plans/WORDLIKE_PLAN.md`: edit when the permission allows and save incrementally, otherwise one sentence plus an Unlock button. Today the shell's refusal sentence for an encrypted document stands. Needs a `cargo update` of core/render/print. |
-| **Edit text across TEXT-OBJECT boundaries** — a pinned `EditRequest::spanning_from` match continues past `ET` into the next text object on the same line (same font resource and size, state, colour, CTM, row); unpinned `find_replace` still refuses with `NotFoundReason::SpansTextObjects`; a font seam is not crossed | **wanted; our request G074, answered FIXED (unreleased).** What is missing is the crossing itself in the pinned engine, not a call: <!--namesake:spanning_from--> `canvas::textedit::tier` already sends the pinned request, and the pin still stops it at `ET`; <!--namesake:find_replace--> the shell's calls are the unpinned path the row says still refuses. Once picked up, `tier` retries on `SpansTextObjects` with `spanning_from` from the clicked operator before narrowing. It turns O270's one remaining cross-object refusal on the rental form into a commit. Needs a `cargo update` of core/render/print; `run_repertoire(page, find, Some(pin))` then answers for the run that receives the replacement. A font seam (a curly apostrophe in a `Type0` font) still refuses and waits on Pass 436.0. |
-| **Text-edit refusals as data** — `UnsupportedCause` (`#[non_exhaustive]`), `NotFoundReason`, `EditSession::edit_capability`, `RunRepertoire::cause` … | **wanted; our request G081, answered FIXED.** Three consumers are owed, all in `docs/plans/WORDLIKE_PLAN.md`: `canvas::textedit::tier` matches `NotFoundReason::SpansTextObjects` instead of reading a split from the refusal's shape; the caret calls `edit_capability` when it lands so a refusal never follows typing (step 13); and `app::status::decline::textedit` words each `UnsupportedCause` by variant, with a `_` arm. `FormatError` still carries a `String`. |
+| **Edit and sign an encrypted document the supplied password permits** — incremental save of an AES document appends new objects under the file's own key; every edit verb is gated by the `/P` bits the password grants; RC4 append is refused by name | **wanted; our request G077, answered FIXED and in the pin.** The consumer is step 12 of `docs/plans/WORDLIKE_PLAN.md`: edit when the permission allows and save incrementally, otherwise one sentence plus an Unlock button. Today the shell's refusal sentence for an encrypted document stands. The engine's own wording of the refusal, `pdfcer_core::edit::ENCRYPTED_EDIT_REFUSED`, is not shown: step 12 words it in the catalog with the Unlock button beside it. |
+| **Accept a character whose glyph exists only in the embedded font program** — `EditOptions::with_embedded_glyphs` with `pdfcer_render::font::embedded_glyphs::EmbeddedProgramGlyphs`, and `run_repertoire_with` for the keystroke sieve | **wanted; the first half of our request G075, answered PARTIAL.** It is in the engine's HEAD and not yet in the pin. Covered: simple `/TrueType` with WinAnsi or MacRoman and no `/ToUnicode`. Wiring it means passing the same options to `edit_text` and to the sieve's `run_repertoire_with`, so a key the program outlines is accepted at the keystroke and committed with its width. Composite fonts, the rental form's case, wait on the engine's later passes. |
+| **Text-edit refusals as data** — `UnsupportedCause` (`#[non_exhaustive]`), `NotFoundReason`, `EditSession::edit_capability`, `RunRepertoire::cause` … | **wanted; our request G081, answered FIXED.** <!--namesake:UnsupportedCause--> The causes live in the module `pdfcer_core::text_edit::cause`. The shell names the cause only in tests that construct refusals; no production arm matches it yet. Three consumers are owed, all in `docs/plans/WORDLIKE_PLAN.md`: `canvas::textedit::tier` matches `NotFoundReason::SpansTextObjects` instead of reading a split from the refusal's shape; the caret calls `edit_capability` when it lands so a refusal never follows typing (step 13); and `app::status::decline::textedit` words each `UnsupportedCause` by variant, with a `_` arm. `FormatError` still carries a `String`. |
 | **Offer Tesseract as a third recogniser** — `pdfcer_core::ocr::tesseract_tsv` (`parse_tsv`, `TsvError`) | **wanted, and the spawn is this shell's.** The engine parses `tesseract … stdout tsv` and deliberately spawns nothing, so the work here is locating `tesseract.exe`, running it per page image, and handing stdout over; `TsvError::MissingHeader` and `TsvError::BadRow` want sentences naming the Tesseract build, not a generic OCR failure. Registered only when the executable is found (R8), so a machine without it never sees the choice. |
 
 ### Vector objects (Inkscape-style editing)
@@ -161,7 +161,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 266** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
+## `blocked` — waiting on something named — **2 of 267** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -179,7 +179,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 266** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 267** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -190,7 +190,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 266** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
+## `declined` — deliberately no surface — **16 of 267** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -232,7 +232,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **187 of 266** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **188 of 267** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -265,6 +265,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Edit text across TEXT-OBJECT boundaries** — a pinned `EditRequest::spanning_from` match continues past `ET` into the next text object on the same line (same font resource and size, state, colour, CTM, row); unpinned `find_replace` still refuses with `NotFoundReason::SpansTextObjects`; a font seam is not crossed | **shipped — our request G074, answered FIXED and in the pin.** `canvas::textedit::plan` pins the whole-line request with `spanning_from`, and the engine carries it across `ET` on a one-font line; its preview lays out only the part it rewrites, which `canvas::textedit::splice` places back into the line (our request G082 asks the preview to name that part). Driven by `a_line_written_in_pieces_edits`, which commits a one-font Word line on the line tier and a two-font line on the narrowed tier. A font seam still refuses the line and narrows to the touched operators; crossing it waits on Pass 436.0. |
 | **Extract a page's tables as a cell grid** — `pdfcer_core::table_detect`, `table_detect::detect_tables`, `TableOptions`, `BoundarySource`, `HeaderEvidence`; CLI `pdfcer extract-tables` | **shipped — File ▸ Export ▸ Tables… (CSV).** `app::actions::export_tables`. Ruled and whitespace-aligned tables as a row-major cell grid with spans, a header-row guess and every ambiguous call counted. Still owed: XLSX (a writer crate, operator decision) and the table half of DOCX export (O257). Disclosed: the header guess and each aligned (inferred) table disclosed off-canvas from the diagnostics. Our request `G055`. |
 | **Live typing preview in the run's own font** — `EditSession::edit_text_preview`, `TextEditPreview`, `pdfcer_render::edit_preview::preview_outlines` … | **shipped — the caret in an existing run draws the draft from the preview's outlines; driven by `typing_is_drawn_in_the_runs_own_font`.** Answers O247 (edit text WYSIWYG instead of the pop-up box in a mismatched font). The shell draws the preview's outlines at the run's own place as the operator types, and commits through `edit_text` as today; the preview's disclosures and refusals are worded off-canvas before commit. |
 | Set an explicit text rendering mode (`Tr`, §9.3.6 Table 106) on existing text … — `FormatRequest::render_mode`, `FormatRequest::set_render_mode`, `TextRenderMode` (`TextRenderMode::Fill`, `TextRenderMode::Stroke`, `TextRenderMode::FillStroke`, `TextRenderMode::Invisible`, `TextRenderMode::FillClip`, `TextRenderMode::StrokeClip`, `TextRenderMode::FillStrokeClip`, `TextRenderMode::Clip`), `TextRenderMode::is_invisible` | **shipped — Properties › text › *Drawn as*, all eight modes by their §9.3.6 number through `TextRenderMode::try_from`.** Our G034. The operator's act is making an edited OCR word invisible again over its scan. `FormatReport::render_mode_change` landing on an invisible mode puts a sentence on the status line; the canvas is not marked. `FormatError::InvalidRenderMode` and `FormatError::ConflictingRenderMode` each have their own sentence. The combo reads *Choose…* because nothing reports a run's current mode. **Not driven.** Add-text's half — `AddTextRequest::with_render_mode` and its refusal `AddTextError::InvalidRenderMode` — is not wired: this shell's add-text writes visible text only, and the OCR layer is written by the engine, which sets its own mode. |
@@ -485,11 +486,9 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 The requests `docs/plans/WORDLIKE_PLAN.md` waits on, filed in the request
 channel. They join a verdict section when the engine answers.
 
-- **G074** — a pinned edit cannot cross a text-object boundary. The shell sends only the operators an edit touches (`canvas::textedit::tier`); an edit reaching two objects stays refused as a split until this lands.
 - **G075** — an embedded subset refuses characters whose glyphs are in the embedded program, and cannot take new ones from the installed face.
 - **G076** — no verb replaces a paragraph's text and re-wraps it as one edit. Needs G074 and G075.
-- **G077** — every edit is refused on an encrypted document, including one that permits modification.
 - **G078** — a character the run's font cannot take refuses the edit instead of being set in a fallback face.
 - **G079** — re-wrapping a paragraph keeps one font, one size and no kerning, and refuses Chrome-printed paragraphs.
 - **G080** — the block model reads a table row as one line of prose, so a cell cannot be edited as a cell.
-- **G081** — text-edit refusals arrive as free text the shell cannot name, and a vertical-writing run is not refused.
+- **G082** — the preview of an edit spanning several operators lays out only the part it rewrites and does not say which; `editmodel::narrow::engine_trim` repeats the engine's trim to place it.

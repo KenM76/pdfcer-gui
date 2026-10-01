@@ -142,12 +142,7 @@ pub fn refresh(ctx: &egui::Context, doc: &OpenDoc) {
     });
     let refused = laid.as_ref().err().map(ToString::to_string);
     let shaped = match laid {
-        Ok(p) => match (tier, &plan.narrowed) {
-            (super::tier::Tier::Narrowed, Some(n)) => {
-                super::splice::shape(doc, &p, key.page, key.run, n, &key.text)
-            }
-            _ => shape(doc, &p, &key.text),
-        },
+        Ok(p) => shape_any(doc, &p, &key, tier, &plan),
         Err(_) => Err(PreviewFallback::Refused),
     };
     let fallback = shaped
@@ -178,6 +173,38 @@ pub fn refresh(ctx: &egui::Context, doc: &OpenDoc) {
         );
     });
     ctx.request_repaint();
+}
+
+/// The preview of `plan` on `tier`, whole or spliced: a narrowed request lays
+/// out its operators, and a whole-line request spanning several operators lays
+/// out only the part the engine trims it to.
+fn shape_any(
+    doc: &OpenDoc,
+    preview: &TextEditPreview,
+    key: &Key,
+    tier: super::tier::Tier,
+    plan: &super::plan::Plan,
+) -> Result<Shaped, PreviewFallback> {
+    use super::splice::Part;
+    let splice =
+        |part: Part<'_>| super::splice::shape(doc, preview, key.page, key.run, &part, &key.text);
+    if let (super::tier::Tier::Narrowed, Some(n)) = (tier, &plan.narrowed) {
+        return splice(Part {
+            span: n.touched.original.clone(),
+            replacement: &n.touched.replacement,
+        });
+    }
+    if preview.glyphs.len() == key.text.chars().count() {
+        return shape(doc, preview, &key.text);
+    }
+    let request = &plan.request;
+    match pdfcer_gui_base::editmodel::narrow::engine_trim(&request.find, &request.replace) {
+        Some((span, replacement)) if request.find == key.original => splice(Part {
+            span,
+            replacement: &replacement,
+        }),
+        _ => Err(PreviewFallback::Unpaired),
+    }
 }
 
 #[allow(clippy::cast_possible_truncation)]

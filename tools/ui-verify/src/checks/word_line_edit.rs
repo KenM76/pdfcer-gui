@@ -1,6 +1,7 @@
 //! `a_line_written_in_pieces_edits` — typing into a line a word processor wrote
-//! as several text objects previews in the line's own face and commits, by
-//! the narrowed request that reaches only the piece that changed.
+//! as several text objects previews in the line's own face and commits: a
+//! one-font line by the whole-line request, a two-font line by the narrowed
+//! request that reaches only the piece that changed.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/word_line_edit.md`.
 
@@ -17,8 +18,10 @@ const OFFSCREEN: &str = "-4200,-4200,1400,900";
 const FIXTURE: &str = "word-fragmented-lines.pdf";
 /// Edit mode with the Edit Text tool armed, so one click opens a caret.
 const INVOKE: &str = "mode.edit,edit.text";
-/// Inside `Required` on the fixture's first line, in PDF points.
-const CLICK: (f64, f64) = (150.0, 703.0);
+/// Inside `Required` on the fixture's one-font first line, in PDF points.
+const ONE_FONT: (f64, f64) = (150.0, 703.0);
+/// Inside `Applicant` on the fixture's two-font third line, in PDF points.
+const TWO_FONTS: (f64, f64) = (100.0, 643.0);
 const NARROWED: &str = "edit-text-narrowed"; // ui-text-exempt: a trace event name, never displayed
 const SHAPED: &str = "text-edit-shaped"; // ui-text-exempt: a trace event name, never displayed
 const LEFT_EDGE: &str = "edit-text-left-edge"; // ui-text-exempt: a trace event name, never displayed
@@ -88,46 +91,96 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let page = crate::fixture::page_geometry(&doc)
         .ok_or_else(|| Error::new("could not read a page size from the fixture."))?;
     let mapping = CanvasMapping::from_trace(&session.trace()?, &ctx.profile.vocab, page, 0)?;
-    let at = mapping.doc_to_window(DocPoint::new(0, CLICK.0, CLICK.1))?;
-    pointer.click(&session, at)?;
-    session.settle(20);
-    pointer.key(&session, None, "End", None)?;
-    pointer.type_text(&session, None, "_")?;
-    session.settle(25);
-    let trace = session.trace()?;
-    let preview = trace.events(SHAPED).last().map(|l| l.raw.clone());
-    pointer.key(&session, None, "Escape", None)?;
-    session.settle(25);
+    let path = session.trace_path().display().to_string();
+    for (at, tier) in [(ONE_FONT, "tier=Line"), (TWO_FONTS, "tier=Narrowed")] {
+        let edited = edit_once(&session, &pointer, &mapping, at)?;
+        if let Some(failure) = judge(&edited, tier, &path) {
+            return Ok(Some(failure));
+        }
+        report.note(format!(
+            "the line at y={} previewed and committed on {tier}",
+            at.1
+        ));
+    }
     pointer.gone(&session)?;
+    Ok(None)
+}
+
+/// What one click, `End`, `_` and `Escape` left in the trace: the last
+/// preview line, the narrowed commit line counted from this edit, and the
+/// last commit line.
+struct Edited {
+    preview: Option<String>,
+    narrowed: Option<String>,
+    committed: Option<String>,
+}
+
+fn edit_once(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    mapping: &CanvasMapping,
+    click: (f64, f64),
+) -> Result<Edited> {
+    let before = session.trace()?.events(LEFT_EDGE).count();
+    let narrowed_before = session.trace()?.events(NARROWED).count();
+    let at = mapping.doc_to_window(DocPoint::new(0, click.0, click.1))?;
+    pointer.click(session, at)?;
+    session.settle(20);
+    pointer.key(session, None, "End", None)?;
+    pointer.type_text(session, None, "_")?;
+    session.settle(25);
+    let preview = session
+        .trace()?
+        .events(SHAPED)
+        .last()
+        .map(|l| l.raw.clone());
+    pointer.key(session, None, "Escape", None)?;
+    session.settle(25);
     let trace = session.trace()?;
-    let landed = trace
+    let narrowed = trace
         .events(NARROWED)
+        .skip(narrowed_before)
         .filter(|l| l.get("for") == Some("commit"))
         .last()
         .map(|l| l.raw.clone());
-    let committed = trace.events(LEFT_EDGE).last().map(|l| l.raw.clone());
-    let path = session.trace_path().display().to_string();
-    let Some(preview) = preview else {
-        return Ok(Some(format!(
-            "★ a click and a keystroke on the first line produced no `{SHAPED}` line: no \
-             caret opened or no key reached it. Trace: {path}."
-        )));
+    let committed = trace
+        .events(LEFT_EDGE)
+        .skip(before)
+        .last()
+        .map(|l| l.raw.clone());
+    Ok(Edited {
+        preview,
+        narrowed,
+        committed,
+    })
+}
+
+/// The failure sentence for an edit that should have previewed shaped and
+/// committed on `tier`, or `None` when it did.
+fn judge(edited: &Edited, tier: &str, path: &str) -> Option<String> {
+    let Some(preview) = &edited.preview else {
+        return Some(format!(
+            "★ a click and a keystroke produced no `{SHAPED}` line: no caret opened or no key \
+             reached it. Trace: {path}."
+        ));
     };
-    if !(preview.contains("shaped=1") && preview.contains("tier=Narrowed")) {
-        return Ok(Some(format!(
-            "★★ the live preview was not shaped by the narrowed request, so it shows a \
-             stand-in face: `{preview}`. Trace: {path}."
-        )));
+    if !(preview.contains("shaped=1") && preview.contains(tier)) {
+        return Some(format!(
+            "★★ the live preview was not the engine's layout on {tier}, so it shows a stand-in \
+             face: `{preview}`. Trace: {path}."
+        ));
     }
-    report.note("★★ the preview is the engine's, from the narrowed request");
-    match (landed, committed) {
-        (Some(l), Some(c)) if l.contains("landed=1") && c.contains("committed=yes") => {
-            report.note(format!("★★★ the commit landed through `{l}`"));
-            Ok(None)
-        }
-        (l, c) => Ok(Some(format!(
-            "★★★ Escape did not commit the edit through the narrowed request. Narrowed: \
-             {l:?}; commit: {c:?}. Trace: {path}."
-        ))),
+    let narrowed_ok = match (&edited.narrowed, tier) {
+        (Some(l), "tier=Narrowed") => l.contains("landed=1"),
+        (None, "tier=Line") => true,
+        _ => false,
+    };
+    match &edited.committed {
+        Some(c) if c.contains("committed=yes") && narrowed_ok => None,
+        c => Some(format!(
+            "★★★ Escape did not commit the edit on {tier}. Narrowed: {:?}; commit: {c:?}. \
+             Trace: {path}.",
+            edited.narrowed
+        )),
     }
 }

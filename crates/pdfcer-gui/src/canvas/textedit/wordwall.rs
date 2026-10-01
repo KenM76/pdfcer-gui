@@ -2,11 +2,10 @@
 //! many text objects
 //!
 //! Each line of `fixtures/word-fragmented-lines.pdf` is several `BT … ET`
-//! objects. The whole-line request matches nothing there; these tests pin that
-//! the narrowed fallback lands an edit touching one object and that an edit
-//! reaching across objects is refused as a split, not as a moved line.
+//! objects. The engine matches a whole-line request across those objects when
+//! the line is in one font; a line in two fonts still refuses it, and the
+//! narrowed fallback lands an edit touching the one piece that changed.
 
-#![cfg(test)]
 #![cfg(test)]
 
 use pdfcer_core::document::Document;
@@ -60,31 +59,32 @@ const DATE: &str = "Date Premises Required____ ";
 const LAW: &str = "(   ) Common-Law ";
 const NAME: &str = "Applicant\u{2019}s Name____ ";
 
-/// The control: every line really is several operators, and the request for
-/// the whole line really is refused — or the tests below prove nothing.
+/// The control: every line really is several operators, and the whole-line
+/// request lands only on the one-font lines — or the tests below prove nothing.
 #[test]
-fn every_line_is_several_operators_and_the_line_request_is_refused() {
+fn every_line_is_several_operators_and_only_the_one_font_lines_match_whole() {
     let doc = crate::app::state::open_local_fixture(FIXTURE);
     let text = doc.provenance_page_text(0).expect("the page's text");
-    for (run, line, parts) in [(0, DATE, 2), (2, LAW, 4), (4, NAME, 4)] {
+    for (run, line, parts, whole) in [(0, DATE, 2, true), (2, LAW, 4, true), (4, NAME, 4, false)] {
         assert_eq!(text.runs[run].text, line, "regenerate the fixture");
         let ops = super::tier::operator_ranges(&text.runs[run]).expect("provenance");
         assert_eq!(ops.len(), parts, "run {run} must be {parts} operators");
         let planned = super::plan(&doc, 0, run, line, &line.replacen(' ', "  ", 1));
-        let refused = session().edit_text(&planned.request, &planned.options);
-        assert!(
-            refused.is_err(),
-            "the whole-line request for run {run} must fail"
+        let landed = session()
+            .edit_text(&planned.request, &planned.options)
+            .is_ok();
+        assert_eq!(
+            landed, whole,
+            "the whole-line request for run {run}: landed={landed}"
         );
     }
 }
 
 #[test]
-fn typing_inside_a_fragment_lands_through_the_narrowed_request() {
-    let (landed, tier, one, page) = commit(0, DATE, "Date Premises Required_____ ");
+fn typing_inside_a_fragment_lands_on_the_whole_line() {
+    let (landed, tier, _, page) = commit(0, DATE, "Date Premises Required_____ ");
     assert!(landed, "the edit must land");
-    assert_eq!(tier, Tier::Narrowed);
-    assert!(one, "it reaches one operator");
+    assert_eq!(tier, Tier::Line);
     assert!(
         page.contains("Required_____"),
         "and the page holds it: {page}"
@@ -95,7 +95,7 @@ fn typing_inside_a_fragment_lands_through_the_narrowed_request() {
 fn a_word_split_across_objects_edits_the_piece_that_changed() {
     let (landed, tier, _, page) = commit(2, LAW, "(   ) Common-Laws ");
     assert!(
-        landed && tier == Tier::Narrowed,
+        landed && tier == Tier::Line,
         "landed={landed} tier={tier:?}"
     );
     assert!(page.contains("Laws"), "{page}");
@@ -111,18 +111,13 @@ fn the_text_after_a_second_font_run_edits() {
     assert!(page.contains("Names____"), "{page}");
 }
 
-/// An edit reaching across two text objects is refused, and refused as a
-/// split — the classifier's input says more than one operator was reached.
+/// An edit reaching across two text objects of a one-font line lands.
 #[test]
-fn a_change_across_two_objects_is_refused_as_a_split() {
-    let (landed, tier, one, page) = commit(2, LAW, "(   ) CommonXaw ");
+fn a_change_across_two_objects_lands() {
+    let (landed, tier, _, page) = commit(2, LAW, "(   ) CommonXaw ");
     assert!(
-        !landed,
-        "the engine cannot match across text objects yet: {page}"
+        landed && tier == Tier::Line,
+        "landed={landed} tier={tier:?}"
     );
-    assert_eq!(tier, Tier::Narrowed);
-    assert!(
-        !one,
-        "the refusal must be classified as reaching several pieces"
-    );
+    assert!(page.contains("CommonXaw"), "{page}");
 }

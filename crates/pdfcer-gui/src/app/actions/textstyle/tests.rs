@@ -320,33 +320,34 @@ fn an_engine_decline_with_no_discriminant_names_no_cause_and_promises_no_remedy(
     use crate::text::textedit::ReflowRefusal;
     use pdfcer_core::text_edit::ReflowApplyError as E;
 
-    // Every sentence `ReflowApplyError::Unsupported` carries, read from the
-    // engine's `text_edit::reflow_apply` and from `EditSession::reflow_block`,
-    // which raises the no-`/Contents` one itself. They are listed in full
-    // rather than sampled, because the point of this test is that the shell
-    // must give the SAME honest answer to every one of them — a test that tried
-    // one string would pass against a build that special-cased that string.
+    // The causes a reflow can raise as `Unsupported`. The shell must give the
+    // same honest answer to each until it maps causes on purpose; a test that
+    // tried one cause would pass against a build that special-cased it.
+    use pdfcer_core::text_edit::UnsupportedCause as C;
     let every_unsupported = [
-        "the page has no /Contents to reflow",
-        "the block carries no font resource",
-        "the block's font resource is unresolvable",
-        "the block has no locatable show operators",
-        "the block's show operators were not found in the content stream; refusing",
-        "a block glyph was shown with no font selected (malformed); refusing",
-        "the block's CTM has a degenerate (zero) scale; refusing",
-        "rotated text refused by name",
-        "the document is encrypted; reflow of encrypted files is out of scope",
+        C::NoContents,
+        C::NoFont,
+        C::FontUnresolvable,
+        C::NoShowOperators,
+        C::ShowOperatorsNotFound,
+        C::ShowWithoutFont,
+        C::DegenerateCtm,
+        C::RotatedOrSkewed { matrix: "CTM" },
+        C::MixedScale {
+            matrix: "text matrix",
+        },
     ];
 
-    for sentence in every_unsupported {
-        let got = super::reflow_refusal(&E::Unsupported(sentence.to_owned()));
+    for cause in every_unsupported {
+        let sentence = cause.to_string();
+        let got = super::reflow_refusal(&E::Unsupported(cause));
         assert_eq!(
             got,
             ReflowRefusal::EngineDeclined,
-            "`Unsupported` carries no discriminant, so every one of its sentences must reach the \
-             same shell refusal. This one did not: {sentence:?}.\n\
-             If a discriminant has landed at the engine, this test is the place to split the \
-             mapping — do NOT match on the string."
+            "every `Unsupported` cause must reach the same shell refusal until the shell maps \
+             causes deliberately. This one did not: {sentence:?}.\n\
+             Splitting the mapping belongs here, by matching on `UnsupportedCause` — never on \
+             its sentence."
         );
     }
 
@@ -400,7 +401,9 @@ fn a_named_cause_comes_from_a_named_engine_variant() {
     // the right response is to delete this line, not the variant.
     assert!(
         !matches!(
-            super::reflow_refusal(&E::Unsupported(String::new())),
+            super::reflow_refusal(&E::Unsupported(
+                pdfcer_core::text_edit::UnsupportedCause::NoContents
+            )),
             ReflowRefusal::PageSetChanged
         ),
         "`PageSetChanged` is being reached from an undiscriminated `Unsupported` again, which is \
@@ -642,7 +645,9 @@ fn each_engine_decline_reaches_a_refusal_that_suits_it() {
         (E::PageEditedThisSession, D::RetryAfterSaveAndReopen),
         (E::PageIndex(99), D::NotFound),
         (
-            E::Unsupported("rotated text refused by name".to_owned()),
+            E::Unsupported(pdfcer_core::text_edit::UnsupportedCause::RotatedOrSkewed {
+                matrix: "CTM",
+            }),
             D::NotReflowable,
         ),
     ];

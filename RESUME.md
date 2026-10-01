@@ -30,7 +30,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 | What | Command | What the command alone will not tell you |
 |---|---|---|
-| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `4fc9de7b` — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
+| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `01de1762` — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
 | Engine HEAD | `git -C /d/Dev/pdfcer log --oneline -1 main` | The question is never whether the two shas MATCH — it is whether CODE has landed since the pin, because only that can falsify a sentence beginning *"the engine cannot"*. `git -C /d/Dev/pdfcer diff --stat <pin>..main -- '*.rs'` is the test; empty means such a sentence may be written. Read this log in the same breath as listing `open/`: a delivery has arrived here as a commit before it arrived as a reply three times |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | — |
 | Last release | `git fetch --tags origin && gh api repos/KenM76/pdfcer-gui/releases/latest` | **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in an unfetched tree answers with an older tag and reports a commits-unreleased count wrong by a factor. Read every field back out of the API rather than inferring it from the flags passed in, and check the local zip's byte count against the asset's — agreement to the unit is the cheapest proof the upload is the file and not a truncation. The binary's own stamp and `published_at` sit twelve to twenty minutes apart on every release; label which clock |
@@ -82,12 +82,15 @@ first click on a cold launch and passed on re-run; unexplained.
 The plan is `docs/plans/WORDLIKE_PLAN.md`; work it in its order (steps 1, 2,
 3, 4, 6, 7, 8, 9 remain GUI-only; step 7 carries O271's alignment buttons, in
 both places). A line Word wrote as several text objects is edited by the
-narrowed fallback (`canvas::textedit::tier`): the whole-line request first,
-then only the touched operators. Measure: `ui-verify --check
+pinned whole-line request, which the engine carries across `ET` on a one-font
+line; a two-font line falls back to the narrowed request
+(`canvas::textedit::tier`). Measure: `ui-verify --check
 a_line_written_in_pieces_edits` on `fixtures/word-fragmented-lines.pdf`, and
-`cargo test -p pdfcer-gui --lib wordwall`. Still refused: an edit across two
-objects (G074), a character the subset lacks (G075). Trap: a fragment that
-grows overlaps the next one, which is a separate object with its own `Tm`.
+`cargo test -p pdfcer-gui --lib wordwall`. Still refused: a character the
+subset lacks (G075). Trap: the engine previews a multi-operator edit as only
+the part it rewrites, and `editmodel::narrow::engine_trim` repeats its trim to
+place it (G082); a change to the engine's `narrow_span` shows as
+`text-edit-preview-fallback reason=unpaired`.
 A preview that cannot use the run's font is sized from the run's size times
 the zoom and says why in the status bar (`canvas::textedit::fallback`);
 measure with `ui-verify --check a_stand_in_preview_is_the_texts_size_and_says_why`.
@@ -97,8 +100,10 @@ to the nearest face that has them (`canvas::textedit::refused`); measure with
 A Text-tool click on text arms the caret tool (`canvas::clicking`), because
 `app::frame` settles any draft whose tool is not armed; measure with
 `ui-verify --check a_text_tool_click_on_text_types_there`.
-Step 3's automatic substring re-face is still to build. G081 is answered FIXED
-and needs a `cargo update` of core/render/print before step 13.
+Step 3's automatic substring re-face is still to build. The engine pin carries
+G074, G077 and G081 (`UnsupportedCause` is data); steps 12 and 13 consume them.
+Rental-form sweep (`tmp` script, Ken's copy only): 31 of 32 line edits commit;
+the one left is a key the composite font's subset lacks (G075).
 
 **Since that release, unpublished:** File ▸ Security ▸ *Add validation
 evidence…* (PAdES B-LT, `add_validation_material`), driven by

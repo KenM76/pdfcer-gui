@@ -1,5 +1,5 @@
-//! A narrowed preview spliced into its line: the engine lays out only the
-//! touched operators, and the untouched ones keep their page positions.
+//! A partial preview spliced into its line: the engine lays out only the part
+//! of the line it rewrites, and the rest keeps its page positions.
 //!
 //! Contract: the result's stops are one per character of the whole draft plus
 //! the end, so the caret, the selection and the hit test index it exactly as
@@ -13,26 +13,35 @@ use pdfcer_core::text_extract::TextRun;
 use pdfcer_gui_base::text::previewfallback::PreviewFallback;
 
 use super::shaped::Shaped;
-use super::tier::Narrowed;
 use crate::app::state::OpenDoc;
 
-/// The whole-line `Shaped` for `draft`, from a preview of `narrowed` alone;
-/// the reason when the preview cannot be shaped, `Unpaired` when the counts do
-/// not reconcile.
+/// What a partial preview lays out: bytes `span` of the run's text, rewritten
+/// as `replacement`.
+pub struct Part<'a> {
+    pub span: std::ops::Range<usize>,
+    pub replacement: &'a str,
+}
+
+/// The whole-line `Shaped` for `draft`, from a preview of `part` alone; the
+/// reason when the preview cannot be shaped, `Unpaired` when the counts do not
+/// reconcile.
 pub fn shape(
     doc: &OpenDoc,
     preview: &TextEditPreview,
     page: usize,
     run: usize,
-    narrowed: &Narrowed,
+    part: &Part<'_>,
     draft: &str,
 ) -> Result<Shaped, PreviewFallback> {
-    let mut shaped = super::shaped::shape(doc, preview, &narrowed.touched.replacement)?;
+    let mut shaped = super::shaped::shape(doc, preview, part.replacement)?;
     let unpaired = PreviewFallback::Unpaired;
     let text = doc.provenance_page_text(page).ok_or(unpaired)?;
     let line = text.runs.get(run).ok_or(unpaired)?;
-    let span = narrowed.touched.original.clone();
+    let span = part.span.clone();
     let original = &line.text;
+    if span.end > original.len() || !original.is_char_boundary(span.start) {
+        return Err(unpaired);
+    }
     let before = original[..span.start].chars().count();
     let held = original[span.clone()].chars().count();
     let stops = char_stops(line);
