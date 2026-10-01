@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **57 of 262** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `wanted` — a real gap — **58 of 263** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -143,6 +143,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Default selections for a list or combo** — `FieldEdit::with_default_selections` / `FieldEdit::default_selections` | **wanted, beside the Default-value box.** `/DV` for a `/Ch` field is what Reset restores; the text-field half is built and this is its choice-field twin, a multi-select of the field's own options in `panels::properties::choiceopts`. |
 | **A dashed widget border** — `WidgetChrome::with_border_dash` / `WidgetChrome::border_dash` | **wanted, small.** The border width and style controls exist; a dashed style without a dash array draws the engine default. One pattern field beside the style combo, shown only when the style is dashed (R9). |
 | **Say on the security summary that old password values are still in the file** — the scan behind `password_history::PasswordValueScan` <!--namesake:scan_stored_password_values: called by File ▸ Security ▸ Remove old passwords…, not by any summary--> | **wanted, and it is a disclosure, not a command.** The purge ships (see *shipped*). What is missing is telling the operator, before he runs it, that the file holds password values in earlier revisions, as a line on the document's security summary giving field and revision only, never the value. |
+| **Create a self-signed digital ID** — `sign::digital_id::create_self_signed_id(&DigitalIdSpec, password)` … | **wanted — the Sign window's missing first step.** File ▸ Security ▸ *Sign…* asks for a `.pfx` and offers nothing to an operator who has none, so today the first signature needs another program. The surface is a *Create a digital ID…* button beside the certificate picker: name, organisation, e-mail, key type, validity, password, a save location; on success the new file becomes the picked certificate and the SHA-256 fingerprint is shown so it can be read out to the people who will trust it. Each `IdError` gets its own sentence. The window must say that a self-signed ID proves the document was not changed and that the signer held this file, and does not prove who the signer is until the recipient trusts the certificate. Defaults follow the engine's (RSA-2048, five years). |
 
 ### Fonts & rendering
 
@@ -157,7 +158,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 262** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `blocked` — waiting on something named — **2 of 263** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -175,7 +176,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 262** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 263** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -186,7 +187,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 262** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `declined` — deliberately no surface — **16 of 263** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -228,7 +229,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **187 of 262** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **187 of 263** <!-- counted by tools/walk-engine-backlog.py, 2026-09-30; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
