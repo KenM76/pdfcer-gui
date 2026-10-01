@@ -465,7 +465,7 @@ impl Theme {
                 control_height: 24.0,
                 gutter: 4.0,
                 panel_padding: 6.0,
-                corner_radius: 3,
+                corner_radius: 4,
                 icon_pts: 16.0,
                 // The mockup's own numbers, unscaled — `Quiet` is the preset
                 // the mock was drawn against, so these are transcriptions
@@ -942,6 +942,14 @@ impl Theme {
             w.bg_stroke = egui::Stroke::new(1.0, p.outline);
             w.fg_stroke = egui::Stroke::new(1.0, p.text);
         }
+        // A resting control carries half an outline, so a form reads as
+        // its fields rather than as a grid of boxes; hover restores it.
+        v.widgets.inactive.bg_stroke =
+            egui::Stroke::new(1.0, p.outline.lerp_to_gamma(p.panel, 0.5));
+        // Popups, menus and floating windows round more than the controls
+        // inside them, as the host OS's own do.
+        v.window_corner_radius = egui::CornerRadius::same(m.corner_radius.saturating_mul(2));
+        v.menu_corner_radius = egui::CornerRadius::same(m.corner_radius.saturating_add(2));
 
         // D2. Both fills, every state, from the palette — see this
         // function's doc comment. `bg_fill` and `weak_bg_fill` are two
