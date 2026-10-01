@@ -4,13 +4,14 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/plan.md`.
 
 use pdfcer_core::text_edit::{
-    BlockRecognitionOptions, EditOptions, EditRequest, EditableTextModel, ReflowEngine,
+    BlockRecognitionOptions, EditError, EditOptions, EditRequest, EditableTextModel, ReflowEngine,
     TextPosition, reflow_recognition_options,
 };
 
 use crate::app::state::OpenDoc;
 
 use super::disposition::{self, Reason};
+use super::tier::{self, Narrowed, Tier};
 use super::{Committing, LAST_COMMIT, pin};
 
 /// A planned in-place edit: the request, the options, and the disclosure the
@@ -86,6 +87,51 @@ pub struct Plan {
     /// and the refusal it fed are the route that has to come back — and it must
     /// come back with the correction above, never as the count alone.
     pub occurrences: Option<usize>,
+    /// The request reaching only the touched operators, tried when `request`
+    /// finds nothing; `None` for a one-operator run, which `request` already
+    /// reaches whole.
+    pub narrowed: Option<Narrowed>,
+}
+
+impl Plan {
+    /// Run `act` (`what`, for the trace: `commit` or `preview`) with `request`, then with the narrowed request when the first
+    /// refusal [`tier::retries`]; answers the result and the tier it ended on.
+    pub fn attempt<T>(
+        &self,
+        what: &str,
+        mut act: impl FnMut(&EditRequest) -> Result<T, EditError>,
+    ) -> (Result<T, EditError>, Tier) {
+        let first = act(&self.request);
+        let Some(narrowed) = self.narrowed.as_ref() else {
+            return (first, Tier::Line);
+        };
+        match first {
+            Err(error) if tier::retries(&error) => {
+                let second = act(&narrowed.request);
+                crate::diag::trace(|| {
+                    format!(
+                        "edit-text-narrowed for={what} page={} operators={} whole={} landed={}",
+                        narrowed.request.page_index,
+                        narrowed.touched.operators(),
+                        u8::from(narrowed.request.find.is_empty()),
+                        u8::from(second.is_ok())
+                    )
+                });
+                (second, Tier::Narrowed)
+            }
+            other => (other, Tier::Line),
+        }
+    }
+
+    /// Whether the request that ended on `tier` reached one operator — what
+    /// the refusal classifier needs to tell a split edit from a moved one.
+    #[must_use]
+    pub fn reached_one_operator(&self, tier: Tier) -> bool {
+        match (tier, &self.narrowed) {
+            (Tier::Narrowed, Some(n)) => n.touched.operators() == 1,
+            _ => self.one_operator,
+        }
+    }
 }
 
 /// **Plan a commit against the page as it is now.**
@@ -121,6 +167,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
     // Always `None` — see [`Plan::occurrences`], which carries the whole
     // argument. Nothing in this function counts.
     let occurrences = None;
+    let mut narrowed = None;
 
     // **This extraction is its own, and it is NOT `doc.page_text()`.**
     //
@@ -284,6 +331,8 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
                 });
                 if one_operator {
                     request.find.clear();
+                } else {
+                    narrowed = tier::narrowed(&text, page, run, original, replacement);
                 }
             }
             // The SAME model the caret's hit test used, with the same
@@ -321,5 +370,6 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
         reason,
         one_operator,
         occurrences,
+        narrowed,
     }
 }

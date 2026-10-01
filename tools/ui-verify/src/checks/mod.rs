@@ -968,6 +968,8 @@ pub mod colour_icons;
 
 pub mod wheel_flips_pages;
 
+pub mod word_line_edit;
+
 pub mod zoom_burst;
 pub mod zoom_gallery;
 pub mod zoom_notch_walk;

@@ -111,8 +111,10 @@ pub enum EditRefusal {
     /// more than one piece** — the operator's own document, and the case
     /// `RefusalKind` cannot name because it is not the engine's to see.
     ///
-    /// Raised only when the engine answered `RefusalKind::NotFound` *and*
-    /// `pin::spans_one_operator` had already said `false`. Both halves are
+    /// Raised only when the engine answered `RefusalKind::NotFound` *and* the
+    /// last request tried reached more than one operator — the line request
+    /// of a multi-operator run with no narrowed request, or a narrowed
+    /// request that still spans operators (`Plan::reached_one_operator`). Both halves are
     /// required: a split run whose refusal is a font refusal gets the font
     /// sentence, because that is what actually stopped it.
     SplitAcrossPieces,
@@ -419,12 +421,11 @@ impl EditRefusal {
             // promise, it was kept, and repeating it after the fix would
             // promise a second one nobody has made.
             Self::SplitAcrossPieces => {
-                "pdfcer cannot change these words. This line is drawn in separate pieces, and \
-                 something between them — a change of font, or a shift in position — stops \
-                 pdfcer joining them into the one piece it would have to rewrite. It can usually \
-                 join them, so most lines like this edit normally, and text you added with \
-                 pdfcer is always written in one piece, which is why those lines do edit. Your \
-                 document is unchanged."
+                "pdfcer cannot make this change in one step. This line is drawn in separate \
+                 pieces, your change reaches across more than one of them, and pdfcer can \
+                 rewrite only one piece at a time. Change one part of the line, finish the edit, \
+                 then change the next part. Text you added with pdfcer is written in one \
+                 piece, which is why those lines do edit. Your document is unchanged."
             }
             Self::UnsupportedFont => {
                 "pdfcer cannot write new letters into this text. Its font records what each shape \

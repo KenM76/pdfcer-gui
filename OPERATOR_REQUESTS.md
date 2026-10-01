@@ -390,6 +390,24 @@ Wanted:
 - *Picture*: not built yet.
 - Known gap: after the file is saved and reopened pdfcer cannot yet tell a hand-signed box from an empty one, so the red tag returns and the bar counts it as unsigned; asked of the engine as G073.
 
+## O270 — **BUILDING** — editing text in a PDF saved from Word works the way Word does
+
+His words: *"text editing just works in all cases as if this were a Word document."* Raised on his rental application form, where typing into a line was refused, the preview showed in the wrong size and face, and some keys did nothing.
+
+The plan, in build order, is `docs/plans/WORDLIKE_PLAN.md`.
+
+**Where each part stands.**
+
+- *Lines that refused every edit*: built and driven. Word writes one line as several separate pieces; pdfcer now sends the engine only the piece your change touches. On a copy of his form, edits that commit went from 0 of 32 to 31 of 32, with the live preview in the line's own face. Driven: `a_line_written_in_pieces_edits`.
+- Still refused: a change reaching across two pieces at once (asked of the engine as G074), and a character the form's font does not carry (G075).
+- Known gap: when a piece grows, the piece after it on the same line does not move along, so they can overlap.
+
+## O271 — **DECIDED, to build** — alignment buttons go in both places
+
+His words: *"alignment buttons should go in both places."*
+
+Left, centre, right and justify go on the ribbon beside font and size, and in the text Properties panel. Both dispatch the same command. Built as part of O270, step 7 of `docs/plans/WORDLIKE_PLAN.md`.
+
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 
 > **Ken:** *"Also can we make it so everything about the dimensions show a live preview? Can we make it so when we click on a dimension, the end points on the connection side of the dimension can have their lengths adjusted? And when I click on the dimension text and drag it should live preview so that it is apparent I am just moving the dimension text. Also did we make it so we can change between radius and diameter, and make these easy to move and extend again with live preview."*

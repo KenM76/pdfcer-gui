@@ -93,6 +93,8 @@ pub mod repertoire;
 /// **An existing run's draft drawn in the run's own font, where the run is**
 /// — the engine's typing preview, with the shell-font box as its fallback.
 pub mod shaped;
+/// A narrowed preview spliced into the line it edits.
+mod splice;
 
 pub use place::{Click, begin_box, click};
 // The experiment that decides whose defect O141's last step is: ONE
@@ -104,6 +106,8 @@ mod facewall;
 /// caret and two strings to one `EditRequest`. `plan` and `Plan` are
 /// re-exported below, so every caller reaches them through this module.
 mod plan;
+/// The narrowed fallback request: only the operators an edit touches.
+pub mod tier;
 pub use plan::{Plan, plan};
 // O142 — a typo in a run written one glyph per show operator, which only
 // a spanning match can reach, and the guard that keeps the spanning match
@@ -111,6 +115,10 @@ pub use plan::{Plan, plan};
 // run is unique, one where the same text appears twice and the edit must land
 // on the clicked one. `#[cfg(test)]` inside.
 mod glyphwall;
+// Lines a word processor wrote as many text objects: the narrowed fallback
+// lands a one-object edit and a cross-object edit is refused as a split.
+// `#[cfg(test)]` inside.
+mod wordwall;
 
 use crate::app::state::OpenDoc;
 use crate::canvas::mapping::PageMapping;

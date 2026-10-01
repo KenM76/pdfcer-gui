@@ -67,11 +67,6 @@ pub(super) fn commit_text_edit(
     // whole argument, including the nested-form case where the
     // remedy would succeed and change nothing.
     let page_forms = crate::canvas::textedit::report::PageLevelForms::of(doc);
-    // **The one fact that turns the engine's answer into a sentence an
-    // operator can act on** — `OPERATOR_REQUESTS.md` O140. Copied
-    // out of the plan before the closure takes `plan` by reference,
-    // because the classification below runs inside it.
-    let one_operator = plan.one_operator;
     // **O213's oracle, half one.** The left edge of the line as it stands
     // before the correction, so that a driven check can assert the thing he
     // reported rather than a proxy for it. `report::read_line` carries the
@@ -84,8 +79,12 @@ pub(super) fn commit_text_edit(
     // one discriminator available for "did anything actually commit".
     let epoch_before = doc.edit_epoch;
     vector_edit(doc, "edit-text", page, 1, |session| {
-        session
-            .edit_text(&plan.request, &plan.options)
+        // The line request, then the narrowed one when the line matches
+        // nothing; `Plan::attempt` owns the order and why.
+        let (result, tier) = plan.attempt("commit", |request| {
+            session.edit_text(request, &plan.options)
+        });
+        result
             // **O140 — the refusal is CLASSIFIED, and the arm routes
             // rather than deciding.**
             //
@@ -106,7 +105,7 @@ pub(super) fn commit_text_edit(
                 crate::app::status::decline::record_edit_text_refusal(
                     page,
                     run,
-                    one_operator,
+                    plan.reached_one_operator(tier),
                     error,
                 );
             })

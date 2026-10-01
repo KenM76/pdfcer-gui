@@ -16,6 +16,8 @@ pub mod caret;
 pub mod disposition;
 /// The caret's arithmetic inside a draft that holds more than one line.
 pub mod lines;
+/// Which show operators a line edit touches.
+pub mod narrow;
 /// The face, size and colour new page text is written in, kept in
 /// `egui::Memory`; its header says why there and not with the markup pen.
 pub mod pen;

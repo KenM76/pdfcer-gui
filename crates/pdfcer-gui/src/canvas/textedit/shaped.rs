@@ -58,7 +58,7 @@ pub struct Shaped {
     /// One outline per character; `None` for a blank.
     outlines: Vec<Option<Path>>,
     /// The caret positions: before each character, then after the last.
-    stops: Vec<Pos2>,
+    pub(super) stops: Vec<Pos2>,
     /// One em along the run's own vertical.
     up: Vec2,
     /// The run's ink.
@@ -66,7 +66,11 @@ pub struct Shaped {
     /// The replacement's extent: advance by ascent and descent.
     bbox: [f64; 4],
     /// The text laid out.
-    text: String,
+    pub(super) text: String,
+    /// The page-space box `[x0, y0, x1, y1]` of the original glyphs the
+    /// replacement covers, when the preview is spliced from a narrowed edit
+    /// (`splice`); `None` blanks the whole body.
+    pub(super) blank: Option<[f32; 4]>,
 }
 
 #[derive(Clone)]
@@ -116,16 +120,23 @@ pub fn refresh(ctx: &egui::Context, doc: &OpenDoc) {
     let plan =
         crate::diag::muted(|| super::plan::plan(doc, key.page, key.run, &key.original, &key.text));
     super::restore_last_commit(kept);
-    let laid = doc.session.edit_text_preview(&plan.request, &plan.options);
+    let (laid, tier) = plan.attempt("preview", |request| {
+        doc.session.edit_text_preview(request, &plan.options)
+    });
     let refused = laid.as_ref().err().map(ToString::to_string);
     let shaped = laid
         .ok()
-        .and_then(|p| shape(doc, &p, &key.text))
+        .and_then(|p| match (tier, &plan.narrowed) {
+            (super::tier::Tier::Narrowed, Some(n)) => {
+                super::splice::shape(doc, &p, key.page, key.run, n, &key.text)
+            }
+            _ => shape(doc, &p, &key.text),
+        })
         .map(Arc::new);
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
-            "text-edit-shaped page={} run={} chars={} shaped={} refused={}",
+            "text-edit-shaped page={} run={} chars={} shaped={} refused={} tier={tier:?}",
             key.page,
             key.run,
             key.text.chars().count(),
@@ -138,7 +149,7 @@ pub fn refresh(ctx: &egui::Context, doc: &OpenDoc) {
 }
 
 #[allow(clippy::cast_possible_truncation)]
-fn shape(doc: &OpenDoc, preview: &TextEditPreview, text: &str) -> Option<Shaped> {
+pub(super) fn shape(doc: &OpenDoc, preview: &TextEditPreview, text: &str) -> Option<Shaped> {
     let count = text.chars().count();
     if count == 0 || preview.glyphs.len() != count {
         return None;
@@ -178,6 +189,7 @@ fn shape(doc: &OpenDoc, preview: &TextEditPreview, text: &str) -> Option<Shaped>
         ink: colour(ink),
         bbox: preview.bbox,
         text: text.to_owned(),
+        blank: None,
     })
 }
 
@@ -256,7 +268,13 @@ pub fn paint(
 
     // NOT A THEME COLOUR: paper white, the page's own background, which the
     // cover must match; the image tint below is the identity.
-    painter.rect_filled(body, 0.0, Color32::WHITE);
+    let white = shaped.blank.map_or(body, |[x0, y0, x1, y1]| {
+        let held = egui::Rect::from_points(
+            &[(x0, y0), (x1, y0), (x0, y1), (x1, y1)].map(|(x, y)| apply(&m, Pos2::new(x, y))),
+        );
+        ink_box.union(held).expand(1.0)
+    });
+    painter.rect_filled(white, 0.0, Color32::WHITE);
     if let Some((from, to)) = super::caret::range(draft.mark, draft.caret) {
         for i in from..to.min(shaped.stops.len() - 1) {
             let (a, b) = (shaped.stops[i], shaped.stops[i + 1]);

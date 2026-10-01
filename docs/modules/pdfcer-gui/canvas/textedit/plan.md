@@ -54,3 +54,23 @@ The three things it derives, all from `(page_text, run)`:
    and a fragmented block is a one-line block, and a one-line block reports
    `SingleLineDefault`. Using the default model would make the alignment
    fix unreachable on precisely the documents it is for.
+
+### `Plan::narrowed` and `Plan::attempt`
+
+A line a word processor wrote is several text objects: each fragment its own
+`BT … ET`, often with a trailing object holding one space. The engine matches
+show operators inside one text object only, so the whole-line request answers
+`NotFound` there. `plan` therefore also builds a narrowed request
+(`super::tier`) from the edit's common prefix and suffix mapped onto each
+operator's glyphs (`editmodel::narrow`), and `Plan::attempt` sends it only
+when the whole-line request found nothing and its pin was not stale.
+
+The whole-line request stays first because it is what lands an edit spread
+over the per-glyph operators of one text object (`super::glyphwall`). One
+touched operator is replaced whole; several are sent as one spanning request,
+which the engine refuses across text objects until request G074 lands, and
+`Plan::reached_one_operator` tells the refusal classifier it was a split.
+
+Known limit: the other fragments of the line are separate text objects with
+their own `Tm`, so a fragment that grows overlaps the one after it rather than
+pushing it along.

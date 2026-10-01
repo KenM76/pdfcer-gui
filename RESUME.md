@@ -78,6 +78,17 @@ the bar's all-signed line. The hand-signed state is session-only until
 G073. Trap: the drawn check failed once with no `hand-sign-opened` after its
 first click on a cold launch and passed on re-run; unexplained.
 
+**O270, Word-like text editing: plan step 5 built and driven**, unpublished.
+The plan is `docs/plans/WORDLIKE_PLAN.md`; work it in its order (steps 1, 2,
+3, 4, 6, 7, 8, 9 remain GUI-only; step 7 carries O271's alignment buttons, in
+both places). A line Word wrote as several text objects is edited by the
+narrowed fallback (`canvas::textedit::tier`): the whole-line request first,
+then only the touched operators. Measure: `ui-verify --check
+a_line_written_in_pieces_edits` on `fixtures/word-fragmented-lines.pdf`, and
+`cargo test -p pdfcer-gui --lib wordwall`. Still refused: an edit across two
+objects (G074), a character the subset lacks (G075). Trap: a fragment that
+grows overlaps the next one, which is a separate object with its own `Tm`.
+
 **Since that release, unpublished:** File ▸ Security ▸ *Add validation
 evidence…* (PAdES B-LT, `add_validation_material`), driven by
 `validation_evidence_added_without_the_mouse`. **O258, the live link:**
