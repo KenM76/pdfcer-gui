@@ -368,6 +368,26 @@ Then: *"Our menus have the same button look. Anywhere you see that button look i
 - *Not done*: making Match the system the default. The default lives in the
   engine's settings, so it is a pdfcer request if wanted.
 
+## O269 — **BUILDING** — sign a form by drawing or typing a name, no certificate, guided box to box
+
+His words: *"For the signature fields in [his rental application form] when I click on it the options that come up is very basic compared to what I get in other programs. Someone who doesn't know anything about computers wouldn't know what to do at this step. Also for this form I just need the person to have the ability to sign their name using the mouse or type on a keyboard without having to go through the process of getting a certificate - is this an option in pdfs? I'm pretty sure it is, then it jumps to each field where the person just clicks and it fills the signature. I think that is how it normally works for some documents. Correct me if I am wrong."*
+
+Decided with him: *"Remember my signature on this computer"* exists (kept beside the program, never in the document); a signature may rise to twice a short box's height, as Acrobat's Fill & Sign does.
+
+Wanted:
+
+- Clicking an empty signature box opens a plain *Sign here* window: draw with the mouse, type a name, or use a picture, then one *Place signature* button.
+- No certificate needed. The certificate route stays, as *Use a digital ID (certificate) instead…*, only in builds that can sign with one.
+- The signature becomes part of the page, so it prints and looks the same everywhere, and one Undo removes it.
+- Guided: *Signed 1 of 3 — Next ▸* moves to the next empty box. pdfcer never fills a box by itself.
+
+**Where each part stands.**
+
+- *Draw*: built and driven. Clicking an empty box opens *Sign here*; draw with the mouse, press *Place signature*, and the signature is ink on the page inside the box, removed by one Undo, with the box's tag gone. *Remember my signature on this computer* is in. Driven: `a_drawn_signature_lands_in_its_box`.
+- *Certificate route*: the *Use a digital ID (certificate) instead…* link opens the existing Sign window on that box. Driven: `clicking_a_signature_box_opens_sign`.
+- *Type*, the *Signed 1 of 3 — Next ▸* strip and *Picture*: not built yet, in that order.
+- Known gap: after the file is saved and reopened pdfcer cannot yet tell a hand-signed box from an empty one, so the red tag returns; asked of the engine as G073.
+
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 
 > **Ken:** *"Also can we make it so everything about the dimensions show a live preview? Can we make it so when we click on a dimension, the end points on the connection side of the dimension can have their lengths adjusted? And when I click on the dimension text and drag it should live preview so that it is apparent I am just moving the dimension text. Also did we make it so we can change between radius and diameter, and make these easy to move and extend again with live preview."*

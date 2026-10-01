@@ -75,6 +75,23 @@ impl DialogsState {
         self.sign = super::sign::open_for(status, remembered_server);
     }
 
+    /// **Open the *Sign here* window on the box `rect` (canvas space) of the
+    /// empty signature field `field`** — a click on that box on the page.
+    pub fn open_hand_sign(&mut self, status: &Status, field: &str, page: usize, rect: egui::Rect) {
+        let Status::Open(_) = status else {
+            return;
+        };
+        self.hand_sign = Some(super::handsign::HandSignDialog::open(
+            field,
+            page,
+            rect,
+            self.last_hand_mark.clone(),
+        ));
+        // ui-text-exempt: diagnostic trace, never displayed. No field name: it
+        // is text from the operator's own document.
+        crate::diag::trace(|| format!("hand-sign-opened page={page}"));
+    }
+
     /// **Open the Sign window pointed at the empty signature field `field`**
     /// — a click on its box on the page (O266).
     #[cfg(feature = "signing")]

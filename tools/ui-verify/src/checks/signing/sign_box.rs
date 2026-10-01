@@ -1,14 +1,15 @@
-//! `checks::signing::sign_box` — **a click on an empty signature box opens
-//! the Sign window pointed at that box** (O266, as Acrobat)
+//! `checks::signing::sign_box` — a click on an empty signature box opens the
+//! *Sign here* window, and its digital-ID link opens the Sign window pointed at
+//! that box.
 //!
-//! Drives the canvas off the desktop through the scripted pointer (no OS mouse
-//! or keyboard), on the engine corpus's document with one pre-placed, empty
-//! `/FT /Sig` field. A build without the `signing` feature draws the tag but
-//! opens nothing, and the check fails with that reason.
+//! Drives the canvas off the desktop through the scripted pointer, on the
+//! engine corpus's document with one empty `/FT /Sig` field. A build without
+//! the `signing` feature draws no digital-ID link, and the check fails there.
 //!
-//! Oracles: the `form.sign-box` region (the tag was drawn), the
-//! `sign-box-click` trace line (the click reached the box), and
-//! `sign-field-chosen found=1` (the window opened with that field chosen).
+//! Oracles: the `form.sign-box` region (the tag was drawn), `sign-box-click`
+//! (the click reached the box), `hand-sign-opened` (the Sign here window
+//! opened), and `sign-field-chosen found=1` (the certificate route chose the
+//! clicked field).
 
 use super::reaching::engine_fixture;
 use crate::checks::driving::{SHELL_DIAG_ENV, declared_in};
@@ -22,6 +23,7 @@ use crate::report::CheckReport;
 /// Off every monitor, unfocused: the drive needs neither mouse nor keyboard.
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 const REGION_BOX: &str = "form.sign-box";
+const REGION_DIGITAL_ID: &str = "handsign.digital-id";
 const FIELD_DOC: &str = "signing/sig-field-empty.pdf";
 
 /// See the module documentation.
@@ -34,7 +36,7 @@ impl Check for ClickingASignatureBoxOpensSign {
 
     fn defect(&self) -> &'static str {
         "an empty signature box on the page carries no tag, or a click on it does nothing, or \
-         the Sign window opens without that box chosen"
+         the digital-ID route opens the Sign window without that box chosen"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -100,6 +102,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     pointer.click_in(&session, viewport.as_deref(), WindowPoint::centre_of(rect))?;
     session.settle(30);
+    let hand = session.trace()?.events("hand-sign-opened").last().is_some();
+    if let Some((link, link_vp)) = declared_in(&session.trace()?, ui_rect, REGION_DIGITAL_ID) {
+        pointer.click_in(&session, link_vp.as_deref(), WindowPoint::centre_of(link))?;
+        session.settle(30);
+    }
     let shot = ctx.out("sign-box-after.png");
     if pointer.screenshot(&session, &shot).is_ok() {
         report.artifact(shot);
@@ -115,16 +122,20 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .and_then(|l| l.get("found").map(str::to_owned));
     drop(session);
     report.note(format!(
-        "clicked={clicked}; sign window opened={opened}; field chosen={chosen:?}"
+        "clicked={clicked}; sign here opened={hand}; sign window opened={opened}; field chosen={chosen:?}"
     ));
 
     let mut findings = Vec::new();
     if !clicked {
         findings.push("the click on the tagged box raised no `sign-box-click`.".to_owned());
     }
+    if !hand {
+        findings.push("the click opened no Sign here window (no `hand-sign-opened`).".to_owned());
+    }
     if !opened {
         findings.push(
-            "no Sign window opened (a build without the `signing` feature cannot sign).".to_owned(),
+            "the digital-ID link opened no Sign window (a build without the `signing` feature draws no link)."
+                .to_owned(),
         );
     }
     if chosen.as_deref() != Some("1") {

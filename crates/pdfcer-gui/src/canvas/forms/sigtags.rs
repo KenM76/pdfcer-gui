@@ -1,6 +1,6 @@
 //! Unsigned signature boxes on the page: a red corner tag, a *Click to sign*
-//! tip, and a click that opens the Sign window on that field — Acrobat's
-//! behaviour, `OPERATOR_REQUESTS.md` O266.
+//! tip, and a click that opens the *Sign here* window on that box — Acrobat's
+//! behaviour. A box this session has signed by hand is not passed in.
 
 use egui::{Pos2, Ui, vec2};
 use egui_shell::theme::Theme;
@@ -23,8 +23,15 @@ pub(super) fn overlay(
     pages: &[PageView],
     drawn: &[DrawnPage],
     unsigned: &[FieldTarget],
+    signed: &pdfcer_gui_base::handsign::Ledger,
     actions: &mut Vec<Action>,
 ) -> bool {
+    let unsigned: Vec<FieldTarget> = unsigned
+        .iter()
+        .filter(|t| !signed.is_signed(&t.field))
+        .cloned()
+        .collect();
+    let unsigned = unsigned.as_slice();
     if unsigned.is_empty() {
         return false;
     }
@@ -53,11 +60,7 @@ pub(super) fn overlay(
         && under(&ctx, pages, unsigned, pos).is_some()
     {
         ctx.set_cursor_icon(egui::CursorIcon::PointingHand);
-        let tip = if cfg!(feature = "signing") {
-            t::sign_box_tooltip()
-        } else {
-            t::sign_box_unavailable_tooltip()
-        };
+        let tip = t::sign_box_tooltip();
         egui::Area::new(egui::Id::new("pdfcer-sign-box-tooltip")) // ui-text-exempt: internal widget id, never displayed
             .order(egui::Order::Tooltip)
             .fixed_pos(pos + vec2(TIP_OFFSET, TIP_OFFSET))
@@ -88,7 +91,7 @@ fn under<'a>(
         .find_map(|v| hit_target(unsigned, v.page, v.map.to_page(pos)))
 }
 
-/// A primary click on an unsigned box asks for the Sign window on that field.
+/// A primary click on an unsigned box asks for the *Sign here* window on it.
 fn click(
     ctx: &egui::Context,
     pages: &[PageView],
@@ -113,6 +116,8 @@ fn click(
     crate::diag::trace(|| format!("sign-box-click page={}", target.page));
     actions.push(Action::Field(FieldAction::Sign {
         field: target.field.clone(),
+        page: target.page,
+        rect: target.rect,
     }));
     true
 }

@@ -665,7 +665,11 @@ impl PdfcerApp {
             }
             // Everything else in the family needs the document and nothing
             // else, so it routes the way `Vector`, `Dimension` and `Page` do.
-            Action::Field(FieldAction::Sign { field }) => {
+            Action::Field(FieldAction::Sign { field, page, rect }) => {
+                self.dialogs
+                    .open_hand_sign(&self.status, &field, page, rect);
+            }
+            Action::Field(FieldAction::SignWithId { field }) => {
                 #[cfg(feature = "signing")]
                 self.dialogs.open_sign_on(
                     &self.status,
@@ -675,6 +679,12 @@ impl PdfcerApp {
                 #[cfg(not(feature = "signing"))]
                 let _ = field;
             }
+            Action::Field(FieldAction::HandSign {
+                field,
+                page,
+                rect,
+                mark,
+            }) => super::handsign::place(doc, &field, page, rect, &mark),
             Action::Field(action) => super::forms::apply(doc, action),
             Action::BeginTextAnnot { page, kind, rect } => {
                 self.dialogs.open_text_annot(&self.status, page, kind, rect);

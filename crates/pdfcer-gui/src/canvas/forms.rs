@@ -408,7 +408,14 @@ pub(super) fn overlay(
     // later frame to act on.
     tabbing::advance(&ctx, doc, list, actions);
     if list.is_empty() {
-        sigtags::overlay(ui, pages, drawn, &placed.unsigned, actions);
+        sigtags::overlay(
+            ui,
+            pages,
+            drawn,
+            &placed.unsigned,
+            &doc.hand_signed,
+            actions,
+        );
         return;
     }
 
@@ -444,7 +451,14 @@ pub(super) fn overlay(
     crate::canvas::form_marks::spotlight(ui, pages, list);
     // The red tags on unsigned signature boxes (O266). Their click is taken
     // here, before the fill click, though the two lists never overlap.
-    let signing = sigtags::overlay(ui, pages, drawn, &placed.unsigned, actions);
+    let signing = sigtags::overlay(
+        ui,
+        pages,
+        drawn,
+        &placed.unsigned,
+        &doc.hand_signed,
+        actions,
+    );
 
     // The focused field's editor FIRST, so that a click on another field is
     // seen by the editor it is leaving (as a focus loss, hence a commit)

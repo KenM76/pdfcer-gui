@@ -146,13 +146,7 @@ pub fn form_field_signature_note() -> &'static str {
 /// Hover tip on an unsigned signature box on the page.
 #[must_use]
 pub fn sign_box_tooltip() -> &'static str {
-    "Click to sign"
-}
-
-/// The same tip in a build that cannot sign.
-#[must_use]
-pub fn sign_box_unavailable_tooltip() -> &'static str {
-    "Signature field — this build of pdfcer cannot sign."
+    "Click to sign — draw your signature"
 }
 
 /// Note on a pushbutton row.

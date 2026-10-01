@@ -90,11 +90,15 @@ pub(super) fn apply(doc: &mut OpenDoc, action: FieldAction) {
         FieldAction::Edit(edit) => crate::panels::forms::edit::apply(doc, &edit),
         // Unreachable rather than unhandled, and named so the compiler will
         // say so if the split above is ever changed without changing this.
-        FieldAction::Begin { .. } | FieldAction::Commit { .. } | FieldAction::Sign { .. } => {
+        FieldAction::Begin { .. }
+        | FieldAction::Commit { .. }
+        | FieldAction::Sign { .. }
+        | FieldAction::SignWithId { .. }
+        | FieldAction::HandSign { .. } => {
             debug_assert!(
                 false,
                 // ui-text-exempt: a debug_assert message for a developer; never rendered.
-                "FieldAction::Begin, ::Commit and ::Sign are applied in super::apply, which holds the dialog and defaults state this function cannot reach"
+                "FieldAction::Begin, ::Commit and the signing actions are applied in super::apply, which holds the dialog and defaults state this function cannot reach"
             );
         }
     }

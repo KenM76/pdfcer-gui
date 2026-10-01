@@ -54,6 +54,8 @@ pub mod export_tables;
 /// other half.
 pub mod export_text;
 pub mod formfield;
+/// The *Sign here* window: a signature drawn by hand, placed in a box.
+pub mod handsign;
 /// **A dialog is an OS window** — the operator's report, and
 /// `ui-conventions/dialogs.md` G1. One host, so the path of least resistance
 /// and the right answer are the same call; its header carries what an OS
@@ -379,6 +381,13 @@ pub struct DialogsState {
     /// describes nothing once that document is gone — and holds it by value, so
     /// closing the document frees it.
     compact: Option<compact::CompactDialog>,
+    /// The *Sign here* window. Document-scoped: it signs a box in the open
+    /// document.
+    hand_sign: Option<handsign::HandSignDialog>,
+    /// The signature last placed this run, normalised, which *Use my last
+    /// signature* restores. Application-scoped: it is the operator's, not the
+    /// document's.
+    last_hand_mark: Option<pdfcer_gui_base::handsign::Mark>,
     /// The Add archive time-stamp window. Document-scoped: it describes the
     /// open document's signatures.
     #[cfg(feature = "timestamp")]
@@ -790,6 +799,17 @@ impl DialogsState {
         if self.compact.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.compact = None;
         }
+        // `registry`: the digital-ID link is drawn only when the certificate
+        // route is registered (R8).
+        if let Some(dialog) = self.hand_sign.as_mut() {
+            let (open, placed) = dialog.show(ctx, actions, registry.get("file.sign").is_some());
+            if placed.is_some() {
+                self.last_hand_mark = placed;
+            }
+            if !open {
+                self.hand_sign = None;
+            }
+        }
         #[cfg(feature = "timestamp")]
         if self.archive.as_mut().map(|d| d.show(ctx, actions, prefs)) == Some(false) {
             self.archive = None;
@@ -1129,6 +1149,7 @@ impl DialogsState {
         // window that merely goes stale — it is one that keeps working.
         self.offpage = None;
         self.compact = None;
+        self.hand_sign = None;
         #[cfg(feature = "timestamp")]
         {
             self.archive = None;

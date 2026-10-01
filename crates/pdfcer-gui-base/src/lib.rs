@@ -122,6 +122,10 @@ pub mod renderworker;
 #[cfg(feature = "signing")]
 pub mod sign;
 
+/// A signature drawn by hand: fitting it into a box, keeping it, and which
+/// boxes this session has signed.
+pub mod handsign;
+
 /// Where signature trust ANCHORS come from, and the three facts they let
 /// this shell state.
 pub mod trust;

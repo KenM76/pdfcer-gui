@@ -345,10 +345,32 @@ pub enum FieldAction {
         rect: pdfcer_core::page_tree::Rect,
     },
     /// **Sign into this empty signature field** — a click on its box on the
-    /// page (O266). Opens the Sign window pointed at the field; writes nothing.
+    /// page. Opens the *Sign here* window on that box; writes nothing.
     Sign {
         /// The field's fully-qualified name.
         field: String,
+        /// The 0-based page the clicked box is on.
+        page: usize,
+        /// The clicked box, in canvas space.
+        rect: egui::Rect,
+    },
+    /// **Sign this field with a digital ID instead** — the certificate route,
+    /// chosen from the *Sign here* window. Opens the Sign window on the field.
+    SignWithId {
+        /// The field's fully-qualified name.
+        field: String,
+    },
+    /// **Write a hand-drawn signature into the page, inside this box.** One
+    /// undo step; the `/Sig` field itself is left empty.
+    HandSign {
+        /// The field's fully-qualified name, for the session's ledger.
+        field: String,
+        /// The 0-based page.
+        page: usize,
+        /// The box, in canvas space.
+        rect: egui::Rect,
+        /// The signature, normalised (`handsign::Mark::normalised`).
+        mark: crate::handsign::Mark,
     },
     /// **Author the form control the dialog just accepted.**
     ///

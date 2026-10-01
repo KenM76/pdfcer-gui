@@ -96,6 +96,9 @@ pub(super) fn history_step(doc: &mut OpenDoc, direction: Direction) {
         format!("{event} kind={kind:?} undo_depth={depth}")
     });
 
+    // Hand signatures are followed by undo depth; see `handsign::Ledger`.
+    let redo = doc.session.redo_depth();
+    doc.hand_signed.reconcile(redo);
     let page = doc.view.page_index;
     vector_edit(doc, direction.applied(), page, 1, |session| {
         // `peek` answered `Some` against this same session and nothing has run
@@ -113,4 +116,9 @@ pub(super) fn history_step(doc: &mut OpenDoc, direction: Direction) {
         // comparing the arms should not have to notice a second one.
         Ok::<_, EditError>(Vec::new())
     });
+    let undo = doc.session.undo_depth();
+    match direction {
+        Direction::Undo => doc.hand_signed.undone(undo),
+        Direction::Redo => doc.hand_signed.redone(undo),
+    }
 }

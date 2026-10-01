@@ -104,6 +104,8 @@ pub mod find;
 pub mod flattenannot;
 pub mod formfonts;
 pub mod forms;
+/// The *Sign here* window.
+pub mod handsign;
 pub mod images;
 /// **The words of the Import-text window** — the return journey's chooser.
 /// Its header carries the one way it departs from `export_text`'s shape:

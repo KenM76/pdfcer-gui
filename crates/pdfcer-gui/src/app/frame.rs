@@ -354,6 +354,9 @@ impl eframe::App for PdfcerApp {
         // measured at, and is ignored once that epoch is stale.
         if let Status::Open(doc) = &mut self.status {
             doc.refresh_content_generation();
+            // An empty redo stack holds no undone hand signature.
+            let redo = doc.session.redo_depth();
+            doc.hand_signed.reconcile(redo);
         }
 
         // Step 0b³ — **publish whether this mode edits page content**, for

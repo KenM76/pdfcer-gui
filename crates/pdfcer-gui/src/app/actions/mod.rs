@@ -98,6 +98,8 @@ mod fonts;
 /// addresses a control by fully qualified name or by widget `ObjId`, never by
 /// a paint-order index.
 pub mod forms;
+/// A hand-drawn signature written into the page inside a signature box.
+mod handsign;
 /// Stepping the command log, in both directions — `Direction`, its four
 /// per-direction answers, and `history_step`.
 mod history;

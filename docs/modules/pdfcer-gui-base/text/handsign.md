@@ -1,0 +1,11 @@
+# `text::handsign` — the *Sign here* window's words
+
+Plain words for someone who has never signed a PDF. Two sentences carry
+weight:
+
+- `what_it_is` says this is a picture of a handwritten signature, like ink on
+  paper, and **not** a digital (certificate) signature. That is the honest
+  disclosure: the result proves nothing cryptographically, and the operator
+  must not be led to think it does.
+- `remember_hover` says where the copy is kept (this computer only) and that
+  unticking removes it.
