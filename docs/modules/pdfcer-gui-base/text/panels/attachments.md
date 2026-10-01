@@ -83,14 +83,6 @@ the listing is complete and everything parsed"* — and a
 [`listing_notes`] that returned a reassurance instead of nothing would
 put a permanent sentence above every ordinary document's list.
 
-### `fn a_well_formed_document_needs_no_caveat`
-
-The companion to [`an_undamaged_listing_discloses_nothing`], and the one
-that would catch a flag pdfcer sets over-eagerly: a `Default` is a value
-nobody produced, and a listing that quietly reported *"pdfcer stopped
-reading early"* about every well-formed document would still pass that
-test.
-
 ### `fn one_is_never_spelled_as_a_plural`
 
 The tell this catalog's header names, checked on the panel's own first

@@ -535,3 +535,28 @@ fn the_two_node_rows_are_absent_greyed_and_live_in_the_three_states() {
          the removal and must not also offer to split an edge"
     );
 }
+
+/// **The menu surface owns no copy of its own — asserted, not
+/// assumed.**
+#[test]
+fn the_menu_surface_owns_no_copy_of_its_own() {
+    for menu in built_in().iter() {
+        for item in menu.items() {
+            match item {
+                // A command carries an id; its words are the registry's.
+                Item::Command { .. } => {}
+                // Punctuation. No words.
+                Item::Separator => {}
+                Item::Custom { kind, .. } => panic!(
+                    // ui-text-exempt: a test panic, read by whoever is looking at
+                    // the failure. Never rendered to an operator.
+                    "menu `{}` holds a custom row `{kind}`, which the application draws \
+                     itself — so it has words, and they belong in `text::menus` rather \
+                     than at the call site. This module is empty only while every menu \
+                     item is a command reference.",
+                    menu.context
+                ),
+            }
+        }
+    }
+}

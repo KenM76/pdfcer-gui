@@ -53,7 +53,7 @@ Three reasons, and the first is mechanical.
    a markup's menu, say, which is exactly the shape
    `manifest::markup`'s Style band already uses on the ribbon — is drawn
    by the application and *would* carry its own words.
-   [`tests::the_menu_surface_owns_no_copy_of_its_own`] is what turns the
+   [`crate::shell::menus::tests::the_menu_surface_owns_no_copy_of_its_own`] is what turns the
    paragraph above from an assertion into a check.
 3. **Absence is documented as data in this project.** Same discipline as
    `shell::manifest::PLANNED`: the next person to read this should be
@@ -103,19 +103,3 @@ catalogs.
 **where the words are looked up**, not about how general they read.
 `crate::text::commands::annotate` carries both, with the argument for the
 deixis at the registration.
-
-## Item notes
-
-### `fn the_menu_surface_owns_no_copy_of_its_own`
-
-This module's emptiness is a *consequence* of every menu item being a
-command reference, and that consequence has a precise failure mode:
-an `Item::Custom` row is drawn by the application, so its words come
-from the application, and there is no other honest place for them
-than this file. A separator has no words either, so it is allowed —
-it is punctuation.
-
-If this fails, the fix is **not** to delete the test. It is to write
-the string into this module and hand it to whatever renders the
-custom row, which is the sequence the whole catalog rule exists to
-force.

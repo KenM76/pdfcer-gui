@@ -116,7 +116,9 @@ embed, then the crate split.
    `Draft` are in base `settingspages`; acrobat, fonts, display, nav and
    signatures stay (they read document or app state). The `Panel` catalog is
    base `panelid` (drawing stays `panels::show`), which cut panels<->shell and
-   dialogs<->panels; moving `settle` cut app<->render: 8 mutual pairs. Find the next
+   dialogs<->panels; moving `settle` cut app<->render; moving the attachment-listing and menu-copy
+   tests beside their panel and menu cut panels<->text and shell<->text: 6 mutual
+   pairs, all among app, canvas, dialogs, panels and shell. Find the next
    candidate with `python tools/module-graph.py`.
 
 **★ Newest, and ahead of everything numbered below: O226 – O229, the OCR

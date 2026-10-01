@@ -185,3 +185,17 @@ item makes case 1 fail (the row is drawn where it can never work); dropping
 is offered as pressable); and setting `enabled` without `offered` — which no
 caller does, because `RowState::enabled` implies `RowState::shown` — would
 leave case 3 asserting nothing, which is why case 3 sets both.
+
+### `fn the_menu_surface_owns_no_copy_of_its_own`
+
+`text::menus`' emptiness is a *consequence* of every menu item being a
+command reference, and that consequence has a precise failure mode:
+an `Item::Custom` row is drawn by the application, so its words come
+from the application, and there is no other honest place for them
+than `text::menus`. A separator has no words either, so it is allowed —
+it is punctuation.
+
+If this fails, the fix is **not** to delete the test. It is to write
+the string into `text::menus` and hand it to whatever renders the
+custom row, which is the sequence the whole catalog rule exists to
+force.

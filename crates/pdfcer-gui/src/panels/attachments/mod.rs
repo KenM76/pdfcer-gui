@@ -26,6 +26,8 @@ pub mod attach;
 /// The 3D models section.
 pub mod models;
 
+mod listing_tests;
+
 /// The region the first row's Save button publishes.
 pub const REGION_SAVE: &str = "attachments.save"; // ui-text-exempt: trace region name, never displayed
 /// The region the first row's Remove button publishes. See [`REGION_SAVE`].
