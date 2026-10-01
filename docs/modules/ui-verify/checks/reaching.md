@@ -198,7 +198,9 @@ mean a different distance without saying so.
 
 `raise_dock_tab`, `open_footer`, `bring_into_body` and
 `driving::click_mode_segment` take `&impl input::Click`, which both the OS
-`Driver` and the scripted pointer implement (`click_rect`, `scroll_rect`), so a
+`Driver` and the scripted pointer implement (`click_rect`, `scroll_rect`,
+`right_click_rect`, `escape`); so do the ribbon band search and
+`forms_spotlight::open_from_tab`. A
 check moves to the off-screen pointer without a second copy of each helper.
 
 ## `open_footer`

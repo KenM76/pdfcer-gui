@@ -20,6 +20,20 @@ Any `--pdf`; the check adds its own layer, so a document with none works.
    follow and the row must be gone.
 5. Ctrl+Z: the row must be back.
 
+# Driven off-screen
+
+The check drives the scripted pointer in a window placed off the desktop, so it
+runs under `--no-input`. Footer controls (`panel.layers.new.name`,
+`panel.layers.new`, `panel.layers.flatten`) are scrolled wholly inside the dock
+body with `bring_into_body` before they are clicked, and a control that still
+is not wholly inside fails the check by name. That containment is what found
+the New layer button clipped at the panel's right edge; with the field fixed at
+140 pt it fails at step 2, and it passes on `fixtures/four-pages.pdf`.
+
+The setup helpers it shares (`open_from_tab`, `click`, `right_click_row`, the
+band search) take `&impl input::Click`, so `layer_combine` still drives them
+with the OS pointer.
+
 # Why rows are witnessed by region, not by `layer-row`
 
 A row's presence is the declared-and-not-retired state of its region, which

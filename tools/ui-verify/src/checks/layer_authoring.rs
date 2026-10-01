@@ -8,7 +8,8 @@ use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared, decla
 use crate::checks::forms_spotlight::open_from_tab;
 use crate::checks::{Check, CheckContext};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::Click;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
@@ -30,9 +31,12 @@ const DELETE_KEEP: &str = "panel.layers.delete.keep";
 const FIRST: &str = "Welds";
 const SECOND: &str = "Welds2";
 
-const VK_CONTROL: u16 = 0x11;
-const VK_A: u16 = 0x41;
-const VK_Z: u16 = 0x5A;
+/// Off the desktop, so the check runs while the operator uses the machine.
+const OFFSCREEN: &str = "-4200,-4200,1400,900";
+/// The Layers panel's dock body, which footer controls are scrolled inside.
+const PANEL_BODY: &str = "dock.body.view.panel_layers";
+/// The controls in the panel's footer, the ones that can sit below the panel.
+const FOOTER: [&str; 3] = [NEW_NAME, NEW, "panel.layers.flatten"];
 
 /// See the module documentation.
 pub struct ALayerCanBeMadeRenamedAndDeleted;
@@ -64,7 +68,7 @@ pub(crate) fn row(name: &str) -> String {
 /// Click a declared region, or say which one was missing.
 pub(crate) fn click(
     session: &Session,
-    driver: &Driver,
+    driver: &impl Click,
     ui_rect: &str,
     region: &str,
     what: &str,
@@ -80,7 +84,30 @@ pub(crate) fn click(
             list(&declared_names(&trace, ui_rect, "panel.layers."))
         )));
     };
-    driver.click_at(session.frame()?.declared_center(r))?;
+    // On a short window the open footer's controls can sit below the panel.
+    let r = if FOOTER.contains(&region) {
+        let mut scratch = CheckReport::new("", "");
+        let r = crate::checks::driving::bring_into_body(
+            session,
+            driver,
+            ui_rect,
+            PANEL_BODY,
+            region,
+            12,
+            &mut scratch,
+        )?
+        .unwrap_or(r);
+        let body = declared(&session.trace()?, ui_rect, PANEL_BODY);
+        if body.is_some_and(|b| !b.contains_rect(r)) {
+            return Ok(Err(format!(
+                "{what}: `{region}` is at {r:?}, not wholly inside the Layers panel {body:?} after scrolling it."
+            )));
+        }
+        r
+    } else {
+        r
+    };
+    driver.click_rect(session, r)?;
     session.settle(20);
     Ok(Ok(()))
 }
@@ -88,7 +115,7 @@ pub(crate) fn click(
 /// Open a row's right-click menu.
 pub(crate) fn right_click_row(
     session: &Session,
-    driver: &Driver,
+    driver: &impl Click,
     ui_rect: &str,
     name: &str,
 ) -> Result<std::result::Result<(), String>> {
@@ -99,7 +126,7 @@ pub(crate) fn right_click_row(
             list(&declared_names(&trace, ui_rect, "panel.layers.row."))
         )));
     };
-    driver.right_click_at(session.frame()?.declared_center(r))?;
+    driver.right_click_rect(session, r)?;
     session.settle(20);
     Ok(Ok(()))
 }
@@ -119,11 +146,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let pdf = ctx.pdf.clone().ok_or_else(|| {
         Error::new("no --pdf. Any document will do; the check adds its own layer.")
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check types and clicks in the Layers panel.",
-        ));
-    }
+    let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
+        Error::new("the profile has no viewport variable to place the window off the desktop.")
+    })?;
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -139,15 +164,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
+    spec.env
+        .push((viewport_env.to_owned(), OFFSCREEN.to_owned()));
+    spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let driver = ScriptedPointer::attach(&mut spec, ctx.out("layer_authoring.pointer.txt"))?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(driver.path().to_path_buf());
     report.note(format!("launched as pid {}", session.pid()));
     session.settle(40);
 
-    let driver = Driver::new(session.window());
     click_mode_segment(&session, &driver, ui_rect, MODE)?;
     session.settle(20);
     if declared(&session.trace()?, ui_rect, NEW).is_none() {
@@ -159,7 +188,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if let Err(why) = click(&session, &driver, ui_rect, NEW_NAME, "no name field")? {
         return Ok(Some(why));
     }
-    driver.type_ascii(FIRST)?;
+    driver.type_text(&session, None, FIRST)?;
     session.settle(10);
     if let Err(why) = click(&session, &driver, ui_rect, NEW, "no New layer button")? {
         return Ok(Some(why));
@@ -223,8 +252,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     )? {
         return Ok(Some(why));
     }
-    driver.press_chord(&[VK_CONTROL], VK_A)?;
-    driver.type_ascii(SECOND)?;
+    driver.key(&session, None, "A", Some("ctrl"))?;
+    driver.type_text(&session, None, SECOND)?;
     session.settle(10);
     let mark = session.trace()?.mark();
     if let Err(why) = click(
@@ -285,7 +314,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- Undo ----------------------------------------------------------------
-    driver.press_chord(&[VK_CONTROL], VK_Z)?;
+    driver.key(&session, None, "Z", Some("ctrl"))?;
     session.settle(30);
     let trace = session.trace()?;
     if !has_row(&trace, ui_rect, SECOND) {

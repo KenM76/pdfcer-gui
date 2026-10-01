@@ -59,6 +59,14 @@ pub trait Click {
         rect: crate::geom::LRect,
         notches: i32,
     ) -> Result<()>;
+    /// Right-click `rect`'s centre.
+    fn right_click_rect(
+        &self,
+        session: &crate::launch::Session,
+        rect: crate::geom::LRect,
+    ) -> Result<()>;
+    /// Press and release Escape in the root viewport.
+    fn escape(&self, session: &crate::launch::Session) -> Result<()>;
 }
 
 impl Click for Driver {
@@ -73,6 +81,18 @@ impl Click for Driver {
         notches: i32,
     ) -> Result<()> {
         self.scroll_at(session.frame()?.declared_center(rect), notches)
+    }
+
+    fn right_click_rect(
+        &self,
+        session: &crate::launch::Session,
+        rect: crate::geom::LRect,
+    ) -> Result<()> {
+        self.right_click_at(session.frame()?.declared_center(rect))
+    }
+
+    fn escape(&self, _session: &crate::launch::Session) -> Result<()> {
+        self.press(crate::sys::vk::ESCAPE)
     }
 }
 
@@ -98,6 +118,19 @@ impl Click for scripted::ScriptedPointer {
             lines,
         )
         .map(|_| ())
+    }
+
+    fn right_click_rect(
+        &self,
+        session: &crate::launch::Session,
+        rect: crate::geom::LRect,
+    ) -> Result<()> {
+        self.right_click(session, crate::coords::WindowPoint::centre_of(rect))
+            .map(|_| ())
+    }
+
+    fn escape(&self, session: &crate::launch::Session) -> Result<()> {
+        self.key(session, None, "Escape", None).map(|_| ())
     }
 }
 

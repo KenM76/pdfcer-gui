@@ -50,11 +50,24 @@ pub(super) fn new_layer_row(ui: &mut egui::Ui, read: &Layers, actions: &mut Vec<
     let key = egui::Id::new(NEW_NAME_KEY);
     let mut name: String = ui.ctx().data(|d| d.get_temp(key)).unwrap_or_default();
     ui.horizontal(|ui| {
+        // The field gives up width so the button is never cut off by a narrow panel.
+        let button_w = egui::WidgetText::from(t::new_layer())
+            .into_galley(
+                ui,
+                Some(egui::TextWrapMode::Extend),
+                f32::INFINITY,
+                egui::TextStyle::Button,
+            )
+            .size()
+            .x
+            + 2.0 * ui.spacing().button_padding.x;
+        let field_w = (ui.available_width() - button_w - 2.0 * ui.spacing().item_spacing.x)
+            .clamp(60.0, 140.0);
         let field = ui.add(
             // escape-disposition: not-content — a layer name, stored as a text string.
             egui::TextEdit::singleline(&mut name)
                 .hint_text(t::new_name_hint())
-                .desired_width(140.0),
+                .desired_width(field_w),
         );
         crate::diag::ui_rect(REGION_NEW_NAME, field.rect);
         let enter = field.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));

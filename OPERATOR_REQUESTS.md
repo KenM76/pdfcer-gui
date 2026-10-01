@@ -180,7 +180,7 @@ O247 did for page text. They get Acrobat's paragraph and font controls: left,
 centre, right and justified alignment, face, size, bold, italic, underline and
 colour.
 
-## O256 — **BUILT, Bookmarks driven** — in Edit mode, the Bookmarks and Layers add/edit controls sit collapsed below the tree, and nothing jumps when clicked
+## O256 — **BUILT, DRIVEN** — in Edit mode, the Bookmarks and Layers add/edit controls sit collapsed below the tree, and nothing jumps when clicked
 
 The add/edit controls of the Bookmarks and Layers panels go in a collapsed
 section below the tree. Selecting something must never move the thing he just
@@ -188,7 +188,7 @@ clicked, because newly available options were inserted above it. This applies
 to every panel: controls that appear on selection go below, or reserve their
 space.
 
-**Built:** both panels end in a collapsed *Add and edit …* footer under the list. Selecting a bookmark, toggling a layer or clicking the canvas now adds lines only to that footer, which grows upward; the list never moves. `a_bookmark_can_be_renamed_and_removed` asserts the clicked row stays put. **Driven off-screen for Bookmarks (2026-09-30):** add, select, rename and remove all work and the clicked row does not move. Driving it found the open footer squeezed to a 66 px sliver, with the add row and Rename below the panel's bottom edge on a 900-high window; fixed, so the open footer now takes the room it needs and the list gives it up. Layers not driven yet. The other panels have not been swept for the same pattern.
+**Built:** both panels end in a collapsed *Add and edit …* footer under the list. Selecting a bookmark, toggling a layer or clicking the canvas now adds lines only to that footer, which grows upward; the list never moves. `a_bookmark_can_be_renamed_and_removed` asserts the clicked row stays put. **Driven off-screen for Bookmarks (2026-09-30):** add, select, rename and remove all work and the clicked row does not move. Driving it found the open footer squeezed to a 66 px sliver, with the add row and Rename below the panel's bottom edge on a 900-high window; fixed, so the open footer now takes the room it needs and the list gives it up. **Layers driven off-screen too (2026-09-30):** create, rename, delete and Ctrl+Z all work; driving it found the New layer button cut off at the panel's right edge at the default width, now fixed. The other panels have not been swept for the same pattern.
 
 ## O257 — **IN PROGRESS** — export to word-processor and spreadsheet formats, with structure
 

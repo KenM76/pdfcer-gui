@@ -262,7 +262,7 @@ fn form_fixture() -> Option<std::path::PathBuf> {
 /// the group has collapsed.
 pub(crate) fn open_from_tab(
     session: &Session,
-    driver: &Driver,
+    driver: &impl crate::input::Click,
     ui_rect: &str,
     tab: &str,
     item: &str,
@@ -274,7 +274,7 @@ pub(crate) fn open_from_tab(
             list(&declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(tab_region))?;
+    driver.click_rect(session, tab_region)?;
     session.settle(14);
     let found = declared_or_in_overflow(session, driver, ui_rect, item)?.ok_or_else(|| {
         Error::new(format!(
@@ -286,7 +286,7 @@ pub(crate) fn open_from_tab(
             ))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(found))?;
+    driver.click_rect(session, found)?;
     session.settle(20);
     Ok(())
 }

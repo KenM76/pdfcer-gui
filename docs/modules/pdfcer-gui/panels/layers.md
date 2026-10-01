@@ -202,6 +202,10 @@ the footer's unconditional part: both appear in answer to a click, and above
 the list they would move every row. The search field and the static notes stay
 above the list; they do not change in answer to a click on it.
 
+The name field beside New layer takes up to 140 pt and gives up width (to 60
+pt) so the button always fits: at the default panel width a fixed 140 pt field
+pushed the button 5 pt past the panel's right edge, where it was clipped.
+
 ## Item notes
 
 ### `fn row_name`

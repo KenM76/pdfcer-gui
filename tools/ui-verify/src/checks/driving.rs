@@ -275,7 +275,7 @@ const MAX_BAND_SCROLLS: usize = 32;
 /// **Find a ribbon item wherever the responsive band has put it.**
 pub fn declared_or_in_overflow(
     session: &Session,
-    driver: &crate::input::Driver,
+    driver: &impl crate::input::Click,
     ui_rect: &str,
     name: &str,
 ) -> Result<Option<LRect>> {
@@ -314,7 +314,7 @@ pub struct BandSearch {
 /// [`declared_or_in_overflow`], reporting how it got there.
 pub fn search_the_band(
     session: &Session,
-    driver: &crate::input::Driver,
+    driver: &impl crate::input::Click,
     ui_rect: &str,
     name: &str,
 ) -> Result<(Option<LRect>, BandSearch)> {
@@ -346,7 +346,7 @@ pub fn search_the_band(
             // so there is nowhere further to look. Step 4.
             break;
         };
-        driver.click_at(frame_of(session, &trace, ui_rect, OVERFLOW)?.declared_center(arrow))?;
+        driver.click_rect(session, arrow)?;
         session.settle(16);
         seen.scrolls += 1;
     }
@@ -359,7 +359,7 @@ pub fn search_the_band(
 /// group on it in turn.
 fn at_this_stop(
     session: &Session,
-    driver: &crate::input::Driver,
+    driver: &impl crate::input::Click,
     ui_rect: &str,
     name: &str,
 ) -> Result<(Option<(LRect, bool)>, usize)> {
@@ -369,7 +369,7 @@ fn at_this_stop(
     }
     let mut popups = 0;
     for group in collapsed_groups(&trace, ui_rect) {
-        driver.click_at(session.frame()?.declared_center(group))?;
+        driver.click_rect(session, group)?;
         session.settle(16);
         popups += 1;
         if let Some(rect) = declared(&session.trace()?, ui_rect, name) {
@@ -378,20 +378,24 @@ fn at_this_stop(
         // Shut it again, so the next candidate is not clicked through an open
         // popup — and so a caller that goes on to measure the band sees the
         // band rather than a menu lying over it.
-        driver.press(crate::sys::vk::ESCAPE)?;
+        driver.escape(session)?;
         session.settle(8);
     }
     Ok((None, popups))
 }
 
 /// Scroll the band back to its first group, and leave it there.
-fn rewind_band(session: &Session, driver: &crate::input::Driver, ui_rect: &str) -> Result<usize> {
+fn rewind_band(
+    session: &Session,
+    driver: &impl crate::input::Click,
+    ui_rect: &str,
+) -> Result<usize> {
     for clicks in 0..MAX_BAND_SCROLLS {
         let trace = session.trace()?;
         let Some(arrow) = declared(&trace, ui_rect, SCROLL_LEFT) else {
             return Ok(clicks);
         };
-        driver.click_at(frame_of(session, &trace, ui_rect, SCROLL_LEFT)?.declared_center(arrow))?;
+        driver.click_rect(session, arrow)?;
         session.settle(16);
     }
     Ok(MAX_BAND_SCROLLS)
