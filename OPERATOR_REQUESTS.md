@@ -116,7 +116,7 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 > **Ken:** *"Changing the page size doesn't seem to work. also dxf export when i try to view in edrawings or autocad lt 2004. We need to improve our export capabilities and options for each type. Dxf version, a drop down to select the scale from one of our scale groups. plus the more robust Scale setting option with unit dropdowns that was added to the Set Scale feature. The stuff in the Markup menu that can be made part of the page should be duplicated into an edit tab where they are default made part of the page. The right-click only access of the make part of the page should also be accessable under the markup and edit and format tabs. Also we should be able to do the opposite. Also can we make Text boxes and anything else that should be WYSIWYG live editing, and have the justification and font features that are availble in Acrobat? Also when in edit mode the Bookmark and the Layer add and edit, etc features should be in a collapsed menu at the below the tree - it is always distracting and not user friendly when clicking on an object causes the thing that you clicked on to jump to a new position because new options are available with having clicked that thing. We also need to add export for word processor formats and spreadsheet formats - I think PaddleOCR has a bunch of capabilties to be able to make this happen with proper formatting for headers, paragraphs, footers, tables, numbers, sheets, etc applied. We should try to support the best exports that we can."*
 
-## O250 — **BUILT, NOT YET DRIVEN** — changing the page size does not work
+## O250 — **BUILT, DRIVEN** — changing the page size does not work
 
 A defect report. Find what the page-size command does on his drawing, and make
 it change the page size.
@@ -132,7 +132,12 @@ filed as `G056` (set it) and `G059` (the renderer should clip it to the sheet).
 it showed the whole old sheet, so a bigger page shows its new area; a visible
 area cropped to part of the sheet is kept, and the status line says the page
 still looks the size it was. A smaller page draws smaller, because the engine
-now clips the visible area to the sheet. Not driven yet.
+now clips the visible area to the sheet.
+
+**Driven off-screen (2026-10-01).** On a sheet whose visible area matched its
+paper, growing it to A6 and saving gives a file that a second pdfcer reads as A6,
+framed at A6; the sheet beside it is unchanged. Planting the old behaviour
+(visible area left behind) fails the check by name.
 
 ## O251 — **FIXED IN THE PUBLISHED BUILD — awaiting his open in eDrawings / LT 2004** — an exported DXF does not open in eDrawings or AutoCAD LT 2004
 

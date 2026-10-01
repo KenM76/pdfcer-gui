@@ -181,14 +181,14 @@ fn control(trace: &Trace, ui_rect: &str, name: &str) -> Result<LRect> {
 /// Click a band control and confirm the **shell** reported the invoke.
 pub(crate) fn click_command(
     session: &Session,
-    driver: &Driver,
+    driver: &impl crate::input::Click,
     ui_rect: &str,
     (region, id): (&str, &str),
     settle: u32,
 ) -> Result<()> {
     let rect = control(&session.trace()?, ui_rect, region)?;
     let before = invokes(session, id)?;
-    driver.click_at(session.frame()?.declared_center(rect))?;
+    driver.click_rect(session, rect)?;
     session.settle(settle);
     if invokes(session, id)? <= before {
         return Err(Error::new(format!(

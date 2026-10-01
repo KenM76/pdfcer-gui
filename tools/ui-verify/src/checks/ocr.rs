@@ -294,7 +294,7 @@ pub(super) fn click_command(
 /// Click a tab by id.
 pub(super) fn click_tab(
     session: &Session,
-    driver: &Driver,
+    driver: &impl crate::input::Click,
     ui_rect: &str,
     tab: &str,
 ) -> Result<()> {
@@ -313,7 +313,7 @@ pub(super) fn click_tab(
         .events(driving::TAB_EVENT)
         .filter(|l| l.get("tab") == Some(tab))
         .count();
-    driver.click_at(session.frame()?.declared_center(rect))?;
+    driver.click_rect(session, rect)?;
     session.settle(12);
     let after = driving::shell_trace(session)?
         .events(driving::TAB_EVENT)

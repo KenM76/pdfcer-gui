@@ -24,6 +24,10 @@ the writing process — which is exactly why the verdict is taken elsewhere.
 | send `(0..doc.pages.len())` instead of the operands | everything, unchanged | page 1 **also** A6 ⇒ **FAIL on the negative control** |
 | trace the *requested* rectangle instead of `session.pages()` | a perfect `page-size-sheet w=297.64` | phase D is a different process reading a file off disk; the plant cannot reach it ⇒ still **FAIL** if the write was dropped |
 | transpose in `sheet_pt` | a plausible summary line | page 0 at 419.53 × 297.64 ⇒ **FAIL**, and the message says *transposed* rather than *wrong size* |
+| pass `CropFollow::Keep` in `actions::pagesize::set` | everything, unchanged | page 0 is A6 and the canvas frames it by the old 200 × 280 visible area ⇒ **FAIL**, *the visible area did not follow the paper* |
+
+Run on 2026-10-01: the whole-document plant and the `Keep` plant each failed
+the check by name, off-screen.
 
 **How to run the falsification.** Plant one, `cargo build --release -p
 pdfcer-gui`, run this check alone, and require its own `[FAIL]` line in the
@@ -54,21 +58,41 @@ own falsification run is the argument: a planted flipped byte left the
 writing phase's trace *character for character identical* and the reading
 phase caught it.
 
+# The visible area must follow the paper (O250)
+
+The fixture is `fixtures/cropped-sheets.pdf`, written by its
+`PROVENANCE.py`. Page 0 is 200 × 280 pt with a `/CropBox` equal to its paper;
+page 1 is smaller still, with a `/CropBox` inset from its paper. After the
+verdict on the sheet size, phase D reads the `canvas` trace line for page 0 and
+requires its `crop=` to be A6 too. Every viewer frames a page by its visible
+area, so a resize that leaves `/CropBox` behind looks like it did nothing. That
+is what Ken reported in O250.
+
+The check grows page 0, because shrinking cannot show the defect: the visible
+area is clipped to the sheet, so a stale one shrinks with it. Page 1 is the
+smaller page so that in continuous view, where the current page is the one with
+the most area on screen, page 0 is the page the resize acts on.
+
+# Driven off-screen
+
+Both processes run with the scripted pointer in a window placed off the
+desktop, so the check runs under `--no-input`. Dialog controls are clicked in
+the viewport that declared them.
+
 # The operand rule is used rather than driven
 
 Nothing is picked in the Pages panel, deliberately. `pages.resize` takes the
 same operand as every other `pages.*` command —
 `panels::pages::ops::operands`: the picked sheets when there are any, **the
 current sheet when there are none** — so a launch with no picks aims the
-command at page 0 and leaves pages 1–3 as the control. Driving the panel's
+command at page 0 and leaves page 1 as the control. Driving the panel's
 multi-select would test the panel, which has its own checks, and would put a
 second failure mode between this check and its subject.
 
 # A6, and why not A4
 
-A6 is 297.64 × 419.53 pt. `four-pages.pdf` carries three distinct sheet
-sizes — 2383.94 × 1683.78, 612 × 792 and 306 × 396 — and A6 differs from
-every one of them **in both dimensions**, so neither a no-op nor a
+A6 is 297.64 × 419.53 pt. `cropped-sheets.pdf` carries 200 × 280 and
+180 × 250, and A6 differs from both **in both dimensions**, so neither a no-op nor a
 transposition can pass vacuously. A4 would have been the lazy choice and is
 also the size the *other* size window opens on, which is precisely the
 coincidence a check should not rest on.

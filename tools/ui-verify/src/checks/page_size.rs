@@ -7,13 +7,17 @@
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV};
 use crate::checks::{Check, CheckContext, CheckReport};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
+
+/// Off the desktop, so the check runs while the operator uses the machine.
+const OFFSCREEN: &str = "-4200,-4200,1400,900";
 
 /// The fixture, pinned. See the module header: this check needs **more than
 /// one page**, so that the sheet it does not touch can be the control.
-const FIXTURE: &str = "fixtures/four-pages.pdf";
+const FIXTURE: &str = "fixtures/cropped-sheets.pdf";
 
 /// The Pages tab.
 const PAGES_TAB: &str = "pages";
@@ -97,6 +101,21 @@ struct Sheet {
     h: f64,
 }
 
+/// The canvas line naming the visible area it frames.
+const CANVAS_EVENT: &str = "canvas"; // ui-text-exempt: a trace event name, never displayed
+
+/// The visible area (`/CropBox`) the canvas last framed page 0 by, as width and height.
+fn visible_area(trace: &crate::trace::Trace) -> Option<(f64, f64)> {
+    let crop = trace
+        .events(CANVAS_EVENT)
+        .filter(|l| l.get("page") == Some("0"))
+        .last()?
+        .get("crop")?
+        .to_owned();
+    let v: Vec<f64> = crop.split(',').filter_map(|n| n.parse().ok()).collect();
+    (v.len() == 4).then(|| (v[2] - v[0], v[3] - v[1]))
+}
+
 /// Every `page-size-document` line in `trace`, by page index.
 fn sheets(trace: &crate::trace::Trace) -> std::collections::BTreeMap<usize, Sheet> {
     let mut out = std::collections::BTreeMap::new();
@@ -118,7 +137,7 @@ fn sheets(trace: &crate::trace::Trace) -> std::collections::BTreeMap<usize, Shee
 /// Open the sheet-size window and return the census it publishes.
 fn open_and_census(
     session: &Session,
-    driver: &Driver,
+    driver: &ScriptedPointer,
     ui_rect: &str,
     report: &mut CheckReport,
     what: &str,
@@ -164,13 +183,9 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input), and this check is six clicks across two processes. \
-             Reported as SKIPPED rather than passed — a check that did not run has learned \
-             nothing.",
-        ));
-    }
+    let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
+        Error::new("the profile has no viewport variable to place the window off the desktop.")
+    })?;
 
     // The fixture is PINNED and any `--pdf` is ignored. See the module
     // header: this check needs MORE THAN ONE PAGE, because the sheet it does
@@ -245,8 +260,13 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         .push(("PDFCER_DIAG_INVOKE".to_owned(), "mode.edit".to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    spec.env
+        .push((viewport_env.to_owned(), OFFSCREEN.to_owned()));
+    spec.place = false;
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("page_size.a.pointer.txt"))?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} on {} as pid {}",
         exe.display(),
@@ -274,10 +294,9 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     }
 
     let ui_rect = ctx.profile.vocab.ui_rect_event.unwrap_or("ui-rect");
-    let driver = Driver::new(session.window());
-    session.raise();
+    let driver = &pointer;
 
-    let before = open_and_census(&session, &driver, ui_rect, report, "the fixture")?;
+    let before = open_and_census(&session, driver, ui_rect, report, "the fixture")?;
     if before.len() < 2 {
         return Err(Error::new(format!(
             "{FIXTURE} resolved to {} sheet(s). This check needs at least two: one to resize and \
@@ -307,7 +326,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     let entry = format!("page-size.size.item.{A6_INDEX}");
     let mut opened = false;
     for _ in 0..3 {
-        click_dialog_region(&session, &driver, ui_rect, SIZE_COMBO)?;
+        click_dialog_region(&session, driver, ui_rect, SIZE_COMBO)?;
         session.settle(10);
         if driving::declared(&session.trace()?, ui_rect, &entry).is_some() {
             opened = true;
@@ -325,15 +344,13 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
             ))
         )));
     }
-    click_dialog_region(&session, &driver, ui_rect, &entry)?;
+    click_dialog_region(&session, driver, ui_rect, &entry)?;
     session.settle(10);
-    // Portrait explicitly. The window opens on the operand sheet's own
-    // orientation, and page 0 of this fixture is landscape — so leaving the
-    // radio alone would ask for A6 *landscape* and the assertion below would be
-    // about a sheet nobody chose.
-    click_dialog_region(&session, &driver, ui_rect, PORTRAIT)?;
+    // Portrait explicitly: the window opens on the operand sheet's own
+    // orientation, so the assertion below is about a sheet this check chose.
+    click_dialog_region(&session, driver, ui_rect, PORTRAIT)?;
     session.settle(10);
-    click_dialog_region(&session, &driver, ui_rect, APPLY)?;
+    click_dialog_region(&session, driver, ui_rect, APPLY)?;
     session.settle(30);
 
     let trace = session.trace()?;
@@ -375,10 +392,10 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 
     // -- PHASE C: save a copy -----------------------------------------------
     report.note("phase C: saving a copy, so the verdict can be taken from a file");
-    crate::checks::ocr::click_tab(&session, &driver, ui_rect, "file")?;
+    crate::checks::ocr::click_tab(&session, driver, ui_rect, "file")?;
     crate::checks::save_copy::click_command(
         &session,
-        &driver,
+        driver,
         ui_rect,
         crate::checks::save_copy::SAVE,
         40,
@@ -424,15 +441,19 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         .push(("PDFCER_DIAG_INVOKE".to_owned(), "mode.edit".to_owned()));
     spec2.allow_stale = ctx.allow_stale;
     spec2.source_root = ctx.source_root.clone();
+    spec2
+        .env
+        .push((viewport_env.to_owned(), OFFSCREEN.to_owned()));
+    spec2.place = false;
+    let pointer2 = ScriptedPointer::attach(&mut spec2, ctx.out("page_size.d.pointer.txt"))?;
 
     let verdict = Session::launch(&spec2, ctx.profile.trace_prefix)?;
+    report.artifact(pointer2.path().to_path_buf());
     report.note(format!("the saved copy is open in pid {}", verdict.pid()));
     report.artifact(verdict.trace_path().to_path_buf());
     verdict.settle(30);
-    let driver2 = Driver::new(verdict.window());
-    verdict.raise();
 
-    let after = open_and_census(&verdict, &driver2, ui_rect, report, "the SAVED copy")?;
+    let after = open_and_census(&verdict, &pointer2, ui_rect, report, "the SAVED copy")?;
 
     let Some(&resized) = after.get(&0) else {
         return Ok(Some(
@@ -481,6 +502,24 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         "★★★ VERDICT: a second process reading the saved file resolves page 0 as {:.2} x {:.2} \
          — A6 portrait, the size that was asked for. It was {:.2} x {:.2} before.",
         resized.w, resized.h, baseline_0.w, baseline_0.h
+    ));
+
+    // The visible area must follow the paper. Page 0's `/CropBox` matched its
+    // old sheet; left behind, every viewer shows the old size (O250).
+    let Some(seen) = visible_area(&verdict.trace()?) else {
+        return Err(Error::new(format!(
+            "the verdict process published no `{CANVAS_EVENT}` line for page 0 with a `crop=`, so the visible area cannot be judged."
+        )));
+    };
+    if (seen.0 - A6_PT.0).abs() > TOLERANCE_PT || (seen.1 - A6_PT.1).abs() > TOLERANCE_PT {
+        return Ok(Some(format!(
+            "★★★ THE VISIBLE AREA DID NOT FOLLOW THE PAPER. The saved page 0 is A6, and the canvas frames it by a visible area of {:.2} x {:.2}. Its `/CropBox` matched the old sheet, so it should have moved with the resize; left behind, every viewer shows the page at its old size and the resize looks like it did nothing.",
+            seen.0, seen.1
+        )));
+    }
+    report.note(format!(
+        "and its visible area followed: the canvas frames page 0 at {:.2} x {:.2}",
+        seen.0, seen.1
     ));
 
     // -- PHASE D′: THE NEGATIVE CONTROL -------------------------------------
@@ -535,12 +574,12 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 ///
 fn click_dialog_region(
     session: &Session,
-    driver: &Driver,
+    driver: &ScriptedPointer,
     ui_rect: &str,
     name: &str,
 ) -> Result<()> {
     let trace = session.trace()?;
-    let rect = driving::declared(&trace, ui_rect, name).ok_or_else(|| {
+    let (rect, viewport) = driving::declared_in(&trace, ui_rect, name).ok_or_else(|| {
         Error::new(format!(
             "the application declared no `{name}` region. Regions it did declare beginning \
              `page-size.`: {}.",
@@ -552,8 +591,7 @@ fn click_dialog_region(
             "`{name}` was declared at {rect:?}, which has no usable area to click."
         )));
     }
-    let frame = driving::frame_of(session, &trace, ui_rect, name)?;
-    driver.click_at(frame.declared_center(rect))?;
+    driver.click_in(session, viewport.as_deref(), WindowPoint::centre_of(rect))?;
     Ok(())
 }
 
@@ -601,6 +639,10 @@ mod tests {
             "{FIXTURE} carries {} /MediaBox entries; this check needs at least two pages so the \
              sheet it leaves alone can be its negative control",
             boxes.len()
+        );
+        assert!(
+            text.contains("/CropBox"),
+            "{FIXTURE} carries no /CropBox, so a visible area left behind by the resize could not be told from one that moved"
         );
         assert!(
             !text.contains("297.63") && !text.contains("419.52"),
