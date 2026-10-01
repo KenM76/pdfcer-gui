@@ -135,7 +135,13 @@ pub(crate) fn tab_bar(
     }
 
     let addr = StackAddr::new(side, column, stack_index);
-    ui.painter().rect_filled(rect, 0.0, ctx.theme.palette.panel);
+    ui.painter()
+        .rect_filled(rect, 0.0, ctx.theme.palette.surface);
+    ui.painter().hline(
+        rect.x_range(),
+        rect.bottom() - 0.5,
+        egui::Stroke::new(1.0, ctx.theme.palette.outline),
+    );
     ctx.reporter
         .report(ui, rect, || report::tab_bar(side, column, stack_index));
     ctx.geometry.push_strip(addr, rect);
@@ -212,7 +218,7 @@ pub(crate) fn tab_bar(
     outcome
 }
 
-/// Draw one tab button.
+/// Draw one tab: the selected one joins the panel below it, the rest sit flat on the bar.
 #[allow(clippy::too_many_arguments)]
 fn draw_tab(
     ui: &mut egui::Ui,
@@ -229,14 +235,10 @@ fn draw_tab(
     let selected = index == stack.active;
     let (_, announced) = ctx.describe(panel);
 
-    // R84 — selected state is never colour alone. The fill is the
-    // familiar cue; the weight is the one that survives greyscale and
-    // colour-vision deficiency. Colour-fill-only selection is a recurring
-    // blind spot, which is why the rule is written as a rule.
+    // R84: the joined outline and the accent rule (`crate::tabshape`) carry
+    // selection; the label colour is only a third cue.
     let text = if selected {
-        RichText::new(label)
-            .strong()
-            .color(ctx.theme.palette.on_accent)
+        RichText::new(label).strong().color(ctx.theme.palette.text)
     } else {
         RichText::new(label).color(ctx.theme.palette.text_muted)
     };
@@ -244,6 +246,7 @@ fn draw_tab(
     let id = ctx
         .id("tab", side, column, stack_index)
         .with(panel.as_str());
+    let backdrop = ui.painter().add(egui::Shape::Noop);
     let response = ui
         .scope_builder(
             UiBuilder::new()
@@ -252,68 +255,32 @@ fn draw_tab(
                 .layout(Layout::left_to_right(Align::Center)),
             |ui| {
                 ui.set_max_width(rect.width());
-                // `min_size` fills the allocation so the control is
-                // exactly as big as the arithmetic promised, and
-                // `truncate` is the other half: without it a label wider
-                // than its rect makes the *button* wider than the rect,
-                // and the tab would overhang into the reservation — the
-                // defect this file exists to prevent, arriving from the
-                // tab's side rather than the affordance's.
-                // THE PLATE IS STATED, and it has to be.
-                //
-                // `Button::selected(true)` alone does NOT leave the fill
-                // alone. `egui::Style::button_style` overwrites it:
-                //
-                //     visuals.weak_bg_fill = self.visuals.selection.bg_fill;
-                //     visuals.bg_fill      = self.visuals.selection.bg_fill;
-                //     visuals.fg_stroke    = self.visuals.selection.stroke;
-                //     ws.text.color        = self.visuals.selection.stroke.color;
-                //
-                // (`egui-0.35.0/src/widget_style.rs:150-155`, verbatim.)
-                //
-                // This theme points `selection.bg_fill` at
-                // `Palette::selection_fill`, a **27 %-alpha wash** whose real
-                // job is tinting selected objects on the CANVAS. Composited
-                // over the tab bar's `palette.panel` it leaves the
-                // `on_accent` label above with a luminance gap of
-                //
-                //     Quiet 44.8 · Airy 28.2 · Dark 52.6
-                //
-                // against this project's own readable floor of **90**. Airy is
-                // the worst because its panel is pure white, so the wash barely
-                // darkens it.
-                //
-                // `ribbon::tabs` has the identical shape and states its
-                // fill the same way — `Button::selectable(...).fill(accent)`.
-                // The two are the same control in two docks and they agree.
-                //
-                // AND `tools/gates/check-strong-text.sh` PASSES THIS SITE
-                // ON THAT PREMISE. Its header says of both tab files that both
-                // are drawn on the accent fill, so `on_accent` is the right
-                // colour anyway. That sentence is true only while both files
-                // state their fill; drop the `.fill(` below and the gate goes
-                // on passing a site whose reason has stopped being true.
-                //
-                // `.fill()` wins over the class-based styling because
-                // `Button`'s own fill is applied after `button_style` has run.
-                // `click_and_drag`, not the default `click()` and not
-                // `Sense::drag()`. `egui` still reports `clicked()` when the
-                // press and release are close enough together in space and
-                // time, so activating a tab is unchanged; `Sense::drag()`
-                // alone would swallow that click, which is the regression the
-                // document strip learned expensively.
-                let mut button = egui::Button::new(text)
+                // `min_size` + `truncate` keep the control exactly as wide as
+                // the reservation arithmetic promised. No frame: the tab's
+                // shape is painted into `backdrop` once hover is known.
+                // `click_and_drag` still reports `clicked()`; `Sense::drag()`
+                // alone would swallow the click.
+                let button = egui::Button::new(text)
+                    .frame(false)
                     .min_size(rect.size())
                     .truncate()
                     .sense(egui::Sense::click_and_drag())
                     .selected(selected);
-                if selected {
-                    button = button.fill(ctx.theme.palette.accent);
-                }
                 ui.add(button)
             },
         )
         .inner;
+    ui.painter().set(
+        backdrop,
+        crate::tabshape::body(
+            &ctx.theme.palette,
+            ctx.theme.metrics.corner_radius,
+            ctx.theme.palette.panel,
+            rect,
+            selected,
+            response.hovered(),
+        ),
+    );
 
     if response.clicked() {
         ctx.intents.push(Intent::Activate(panel.clone()));

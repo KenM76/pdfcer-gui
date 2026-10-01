@@ -452,7 +452,10 @@ fn contents(ui: &mut Ui, doc: &OpenDoc, settings: &mut AlignUi, actions: &mut Ve
     });
     ui.horizontal(|ui| {
         for (index, tab) in Tab::ALL.into_iter().enumerate() {
-            let response = ui.selectable_value(&mut settings.tab, tab, t::tab(index));
+            let response = egui_shell::tabshape::underline(ui, settings.tab == tab, t::tab(index));
+            if response.clicked() {
+                settings.tab = tab;
+            }
             crate::diag::ui_rect_visible(TAB_REGIONS[index], response.rect, ui.clip_rect());
         }
     });

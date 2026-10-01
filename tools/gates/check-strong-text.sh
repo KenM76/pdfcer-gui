@@ -50,26 +50,11 @@
 #   egui-shell/src/ribbon/tabs.rs   selected ribbon tab
 #   egui-shell/src/dock/tabs.rs     selected dock tab
 #
-# Both are drawn ON the accent fill, so `on_accent` is the right colour anyway,
-# and both state it rather than inheriting it. R84 is why they want the weight
-# at all: selected state is never colour alone, because weight is the cue that
-# survives greyscale and colour-vision deficiency.
-#
-# ★★★ THAT SENTENCE WAS FALSE FOR ONE OF THE TWO UNTIL 2026-09-03, and this
-# gate was blessing the site on it.
-#
-# `ribbon/tabs.rs` fills: `Button::selectable(...).fill(accent)`. `dock/tabs.rs`
-# contained **no `.fill(` at all** — it passed `.selected(true)` and let
-# `egui::Style::button_style` choose, which takes the fill from
-# `visuals.selection.bg_fill`. This theme points that at a 27 %-alpha CANVAS
-# tint, so the "accent fill" this paragraph asserted did not exist and
-# `on_accent` was landing on a pale wash: a luminance gap of 44.8 / 28.2 / 52.6
-# across the three presets, against a readable floor of 90.
-#
-# Both files now state their fill and the sentence above is true of both. It is
-# kept, with this correction beneath it, because the useful record is not that
-# the rule was right — it is that **a gate can pass a site for a reason that
-# stopped being true, and the passing tells you nothing about the reason.**
+# Both sit on the panel colour, joined to the panel below (`egui-shell`'s
+# `tabshape`), so they state `palette.text` rather than inheriting egui's
+# selection colour. R84 is why they want the weight at all: selected state is
+# never colour alone. In egui 0.35 `.strong()` changes colour only, so the
+# shape cues (the joined outline and the accent rule) carry the selection.
 #
 # The window is deliberately narrow — the SAME statement, or the next two
 # lines. A `.color()` five lines away is not a pairing a reader can see, and

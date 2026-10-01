@@ -91,6 +91,7 @@ pub mod embed_fonts;
 /// counts the shell reported.
 pub mod export_dxf;
 pub mod export_dxf_options;
+pub mod tabs_look;
 
 /// **Press Export form data and a file appears on disk with the form's
 /// values in it.** The oracle is the FILE, not a trace line: a build that

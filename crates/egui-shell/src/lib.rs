@@ -133,6 +133,7 @@ pub mod peek;
 pub mod ribbon;
 /// **The document tab strip** — the row of tabs an application draws when the
 /// operator has several documents open at once.
+pub mod tabshape;
 pub mod tabstrip;
 pub mod theme;
 pub mod verify;

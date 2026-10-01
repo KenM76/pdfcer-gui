@@ -20,6 +20,11 @@ label, so when the row is narrow the tab loses characters rather than
 losing its place. See [`super::band::command_button`]'s `truncate`
 section on why the band makes the opposite choice.
 
+Drawn frameless with `tabshape::body` behind it on the band's `surface`
+colour. In the overflow menu (`in_menu`) it is a plain selectable row instead.
+The active tab's rect is stored for the pass so `strip_underline` can break
+the baseline beneath it.
+
 ### `fn a_tab_with_every_item_conditioned_away_is_not_shown`
 
 The symmetric completion of the band's *"a group with nothing left is

@@ -328,6 +328,35 @@ His words: *"just a heads up that the engine is working on completing 3d model s
 
 **Where it stands.** Built from what the engine already has at the pin: Edit › Insert › *3D model…* places a U3D or PRC file, centred on the current page, as one undo step; the Attachments panel gains a *3D models* section listing every model in the document, each with *Save model…* that writes the data out unchanged. pdfcer draws the engine's placeholder picture, not the model; the model opens in a 3D-capable reader. STEP is refused with advice to convert it. Driven off-screen: `a_3d_model_is_placed_listed_and_saved_back` (fails when the saved bytes differ). *Save as mesh…* on a PRC model writes its triangles as STL (or OBJ, by the file's ending); the same check drives it and fails when the STL is malformed. Models stored with compressed meshes are now rebuilt and saved too (engine pin `233abf17`; test `a_compressed_prc_triangle_is_rebuilt`, falsified by dropping one-triangle meshes); a compressed mesh the engine cannot rebuild is named and left out. Parts are now placed relative to one another, in the saved mesh and in the new viewer: *View…* on a PRC model opens a window that draws it with the engine's renderer (pin `370a1fcc`), turned by dragging, moved by right-dragging, zoomed by scrolling, with five named views, Fit and a Perspective switch. Driven off-screen: `a_3d_model_turns_under_the_pointer` (falsified by stopping the drag from turning). It draws in one colour. Not yet: the model's own colours and saved views, and choosing a poster picture.
 
+## O268 — **PART BUILT — tabs and dialog button order done; softer dialogs and OS looks to come** — tabs that look like tabs, dialogs that are not boxy, and a look that follows the OS
+
+His words: *"Our tabs on the right look more like buttons than tabs and our dialogue boxes look boxy. Is there any easy way to have these match the look of whatever OS the software is running on?"* Then: *"Go"*.
+
+Wanted:
+
+- **Panel tabs** read as tabs: the selected one joins the panel under it, the rest sit flat and dimmer, no button outline.
+- **Dialogs** stop looking boxy: softer corners, a gentle shadow, more room inside, the commit buttons ordered as the OS orders them.
+- **An OS look** chosen at start from where pdfcer runs (Windows 11, macOS, Linux), following the system's light or dark mode and accent colour where it can read them.
+
+Not wanted: native OS controls. pdfcer draws its own controls (that is what keeps the web build possible), so this is a close match by theme, not the OS's own widgets.
+
+Then: *"Our menus have the same button look. Anywhere you see that button look instead of tabs should get fixed."*
+
+**Where each part stands.**
+
+- *Tabs*: panel tabs, the ribbon's menu tabs and the open-document tabs share
+  one look. The selected tab joins the surface below it, with a thin outline
+  and an accent line along its top; the others sit flat with no outline and
+  get a soft highlight on hover. The Align panel's Align / Grid / Circular row
+  is plain text with an accent underline. Driven off-screen:
+  `tabs_read_as_tabs` (falsified against the old code).
+- *Kept as it is*: the Read / Review / Edit switch. It is a mode switch, not
+  tabs, and a joined button group is the usual OS look for one.
+- *Dialog buttons*: on Windows the main button is first ([OK] [Cancel]); on
+  macOS and Linux it is last. Not driven: no check depends on the order.
+- *To come*: softer dialog controls (fewer outlines, rounder corners), and OS
+  presets that follow the system's light/dark mode and accent colour.
+
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 
 > **Ken:** *"Also can we make it so everything about the dimensions show a live preview? Can we make it so when we click on a dimension, the end points on the connection side of the dimension can have their lengths adjusted? And when I click on the dimension text and drag it should live preview so that it is apparent I am just moving the dimension text. Also did we make it so we can change between radius and diameter, and make these easy to move and extend again with live preview."*

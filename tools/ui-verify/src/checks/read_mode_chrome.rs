@@ -217,14 +217,22 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     let before_image = crate::capture::window_to_png(&session, &before_png)?;
     report.artifact(before_png);
     let frame = session.frame()?;
-    //
-    // The active tab is the one region on the band whose colour is chosen to be
-    // unmistakable: it paints `accent` on `on_accent` (`FEATURES.md`'s theme
-    // row, after the stock-style defect D10 was fixed), so its distance from
-    // any backdrop is a property of the palette rather than an accident of the
-    // widget. It is also the *strictest* place to look — a build that hid the
-    // band but left the tab strip would fail here and pass at the control.
-    let Some(before_fill) = driving::fill_of(&before_image, &frame, tab) else {
+    // The active tab's accent rule, a 2 pt strip along its top edge inset past
+    // the rounded corners (`egui-shell`'s `tabshape`): the one place on the
+    // band whose colour is the accent, so its distance from any backdrop is a
+    // property of the palette. A build that hid the band but left the tab
+    // strip fails here and passes at the control.
+    let rule = crate::geom::LRect::new(
+        crate::geom::Pt {
+            x: tab.min.x + 8.0,
+            y: tab.min.y,
+        },
+        crate::geom::Pt {
+            x: (tab.max.x - 8.0).max(tab.min.x + 9.0),
+            y: tab.min.y + 2.0,
+        },
+    );
+    let Some(before_fill) = driving::fill_of(&before_image, &frame, rule) else {
         return Ok(Some(format!(
             "`{TAB}` was declared at {tab:?}, which resolves to no pixels of the capture — the \
              application declared a tab outside its own window."
@@ -328,7 +336,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     let after_image = crate::capture::window_to_png(&session, &after_png)?;
     report.artifact(after_png);
     let frame = session.frame()?;
-    let Some(after_fill) = driving::fill_of(&after_image, &frame, tab) else {
+    let Some(after_fill) = driving::fill_of(&after_image, &frame, rule) else {
         return Ok(Some(format!(
             "the region `{TAB}` occupied resolves to no pixels after the press. The window is \
              expected to keep its size — read mode hides the chrome, it does not resize the \
@@ -341,7 +349,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         return Ok(Some(format!(
             "the canvas moved but the pixels where the active tab was did not: {before_fill:?} \
              → {after_fill:?}, a difference of {delta} against the {MIN_REPAINT_DELTA} two \
-             genuinely different fills are worth. An active tab paints `accent`, so this is \
+             genuinely different fills are worth. The active tab's rule is `accent`, so this is \
              saying the tab strip is still on screen — a layout that reserves no space while \
              still painting the old band over the canvas is worse than one that does neither, \
              because the operator sees a ribbon they can no longer click."

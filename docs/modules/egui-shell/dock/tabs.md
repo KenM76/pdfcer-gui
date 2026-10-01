@@ -118,3 +118,6 @@ The name is the panel's **purpose** — its tooltip — per
 `rect` is the whole bar. The affordance's reservation is taken from
 its right edge; see the module header for why that subtraction comes
 first.
+
+The bar is `surface` with an outline baseline; each tab is frameless with
+`tabshape::body` behind it, so the selected tab joins the `panel` body below.

@@ -218,7 +218,12 @@ pub fn strip(ui: &mut egui::Ui, theme: &Theme, tabs: &[TabItem], active: usize) 
         return out;
     }
 
-    ui.painter().rect_filled(rect, 0.0, theme.palette.panel);
+    ui.painter().rect_filled(rect, 0.0, theme.palette.surface);
+    ui.painter().hline(
+        rect.x_range(),
+        rect.bottom() - 0.5,
+        egui::Stroke::new(1.0, theme.palette.outline),
+    );
 
     // 1 & 2 — measure, and pay for the close control up front.
     let widths: Vec<f32> = tabs
@@ -397,37 +402,9 @@ fn draw_tab(
     // open. Reserving the control and truncating the label is the same
     // discipline the overflow affordance gets one level up, applied inside the
     // tab.
-    // THE SELECTED TAB'S PLATE, PAINTED ACROSS THE WHOLE RECT AND BEFORE
-    // IT IS SPLIT. Two contrast failures meet here and one paint closes both.
-    //
-    // (1) The label button below is `.selected(selected)` with no `.fill()`,
-    //     and `egui::Style::button_style` overwrites the fill from
-    //     `visuals.selection.bg_fill` — which this theme points at the 27 %
-    //     CANVAS tint. `on_accent` over that, composited on `palette.panel`,
-    //     is a luminance gap of Quiet 44.8 / Airy 28.2 / Dark 52.6 against a
-    //     floor of 90.
-    //
-    // (2) **The ✕ is worse, and it is `DEFECTS.md` D2's exact shape.** Its
-    //     `close_rect` is carved OUT of the tab rect immediately below, and it
-    //     is drawn `.frame(false)`, so *nothing paints behind it at all*. The
-    //     `on_accent` glyph therefore lands on the bare `palette.panel` from
-    //     this strip's own background fill: gap **Quiet 17.9 / Airy 5.0 /
-    //     Dark 29.1**. Airy is white-on-white to within five levels of
-    //     luminance. That is a plate colour used against a background nobody
-    //     ever paired it with — which is the definition of D2.
-    //
-    // Painting the plate first means every child of this rect — label and ✕
-    // alike — sits on `accent`, which is the background `on_accent` is NAMED
-    // for. The ✕'s own colour choice below then becomes correct rather than
-    // being worked around, which is why it is left untouched.
-    //
-    // Before the split, deliberately: after it there are two rects, and the
-    // one the ✕ sits in is drawn frameless, so a plate painted per-rect would
-    // miss precisely the control that needs it most.
-    if selected {
-        ui.painter()
-            .rect_filled(rect, theme.metrics.corner_radius, theme.palette.accent);
-    }
+    // The tab's body covers label and close control alike; it is painted
+    // into this slot once the label's hover is known (`crate::tabshape`).
+    let backdrop = ui.painter().add(egui::Shape::Noop);
 
     let close_rect = if tab.closable {
         Rect::from_min_max(
@@ -442,20 +419,10 @@ fn draw_tab(
         egui::pos2(close_rect.left(), rect.bottom()),
     );
 
-    // R84 — a selected tab is never distinguished by colour alone, because
-    // colour-fill-only selection is a recurring blind spot.
-    //
-    // `.strong()` is **not** the second cue: in `egui` 0.35 it resolves to a
-    // colour and not to a heavier face, so it sharpens the label against the
-    // plate rather than adding a cue that survives greyscale. It is safe here
-    // only because the colour is stated on the next line instead of inherited
-    // from the accent-filled widget state — see `crate::ribbon::tabs`' header
-    // for the walk through the toolkit, and `DEFECTS.md` D11 for what a bare
-    // `.strong()` costs.
+    // R84: the joined outline and the accent rule carry selection; `.strong()`
+    // only changes colour in `egui`, so it is a third cue, not a second.
     let text = if selected {
-        RichText::new(&tab.label)
-            .strong()
-            .color(theme.palette.on_accent)
+        RichText::new(&tab.label).strong().color(theme.palette.text)
     } else {
         RichText::new(&tab.label).color(theme.palette.text_muted)
     };
@@ -472,17 +439,8 @@ fn draw_tab(
                     egui::Button::new(text)
                         .min_size(label_rect.size())
                         .truncate()
+                        .frame(false)
                         .selected(selected)
-                        // States the fill, so `egui` cannot substitute the
-                        // canvas tint OVER the plate painted above. Without
-                        // this the wash composites on `accent` and the label's
-                        // background becomes a third value again — see the
-                        // block above `close_rect` for the arithmetic.
-                        .fill(if selected {
-                            theme.palette.accent
-                        } else {
-                            ui.visuals().widgets.inactive.weak_bg_fill
-                        })
                         // `click_and_drag`, so the tab can be **reordered**.
                         //
                         // A `Button` senses clicks only, and adding the drag
@@ -498,6 +456,17 @@ fn draw_tab(
             },
         )
         .inner;
+    ui.painter().set(
+        backdrop,
+        crate::tabshape::body(
+            &theme.palette,
+            theme.metrics.corner_radius,
+            theme.palette.panel,
+            rect,
+            selected,
+            response.hovered(),
+        ),
+    );
 
     if response.clicked() {
         out.intents.push(TabIntent::Activate(index));
@@ -543,7 +512,7 @@ fn draw_tab(
                 ui.set_max_width(close_rect.width());
                 ui.add(
                     egui::Button::new(RichText::new(CLOSE_GLYPH).color(if selected {
-                        theme.palette.on_accent
+                        theme.palette.text
                     } else {
                         theme.palette.text_muted
                     }))

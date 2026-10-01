@@ -362,6 +362,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(export_form_data::ExportingFormDataWritesAFile),
         Box::new(export_dxf::ExportDxfWritesThePagesGeometry),
         Box::new(export_dxf_options::ExportDxfWritesTheVersionAndScaleChosen),
+        Box::new(tabs_look::TabsReadAsTabs),
         Box::new(export_image_emf::ExportImageWritesAMetafile),
         Box::new(copy_as_vector::CopyAsVectorPlacesTheMeasuredOrder),
         Box::new(export_text::ExportTextWritesTheDocumentsWords),

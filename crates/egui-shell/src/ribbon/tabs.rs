@@ -72,10 +72,10 @@
 //!
 //! | Cue | Inactive | Active | Kind |
 //! |---|---|---|---|
-//! | Accent rule under the tab | absent | present | **shape** |
-//! | Border stroke around the tab | absent | present | **shape** |
-//! | Fill behind the label | none | accent | colour |
-//! | Text emphasis | plain | `strong()` | colour — see above |
+//! | Accent rule along the tab's top | absent | present | **shape** |
+//! | Outline on top and sides, open into the band | absent | present | **shape** |
+//! | Fill behind the label | none | none | — |
+//! | Text emphasis | `text_muted` | `strong()` + `text` | colour — see above |
 //!
 //! Two of the four are the *presence or absence of a shape*, which
 //! survives greyscale, colour blindness and a bad projector, and either
@@ -127,8 +127,8 @@ pub struct TabCues {
     /// losing the underline to a clipping edge does not leave the strip
     /// unreadable.
     pub outlined: bool,
-    /// The accent fill behind the label. A **colour** cue, and
-    /// deliberately not the only one.
+    /// The accent fill behind the label. A **colour** cue. No tab in the
+    /// strip is filled any more: a filled tab reads as a button.
     pub filled: bool,
     /// `RichText::strong()` on the label.
     ///
@@ -154,7 +154,7 @@ pub fn tab_cues(active: bool) -> TabCues {
     TabCues {
         underline: active,
         outlined: active,
-        filled: active,
+        filled: false,
         emphasised_text: active,
     }
 }
@@ -265,7 +265,7 @@ pub(crate) fn render_tabs(
     let mut clicked = None;
     for tab in visible {
         let is_active = active_id == Some(tab.id.as_str());
-        if draw_tab(ui, ctx, tab, is_active) {
+        if draw_tab(ui, ctx, tab, is_active, false) {
             clicked = Some(tab.id.clone());
         }
     }
@@ -273,100 +273,55 @@ pub(crate) fn render_tabs(
 }
 
 /// Draw one tab button, wherever it is. Returns whether it was clicked.
-fn draw_tab(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, tab: &Tab, is_active: bool) -> bool {
-    let accent = ctx.theme.palette.accent;
+fn draw_tab(
+    ui: &mut egui::Ui,
+    ctx: &mut Ctx<'_>,
+    tab: &Tab,
+    is_active: bool,
+    in_menu: bool,
+) -> bool {
+    let palette = ctx.theme.palette;
     let cues = tab_cues(is_active);
     let label = tab_label(tab);
 
-    // The active tab's plate and label are painted from the CHROME roles,
-    // not from `egui`'s selection visuals. See `DEFECTS.md` D10's second
-    // half.
-    //
-    // `Button::selectable(true, …)` fills from `visuals.selection.bg_fill`
-    // and colours its label from the same family — and this theme points
-    // `selection.bg_fill` at `palette.selection_fill`, which is the
-    // **canvas object-selection tint**: a deliberately translucent blue
-    // (alpha 70/255) designed to sit *over page content* without hiding it.
-    // Used as a chrome plate it is a 27 % wash, and the label would keep its
-    // ordinary foreground — pale blue-grey text on pale blue, beside an
-    // inactive tab that stayed crisp. That is `DEFECTS.md` D2's failure, a
-    // label invisible in the default theme, one step outside where D2's fix
-    // reaches.
-    //
-    // The palette carries the right pair: `accent` is *"the single accent —
-    // selection, focus, the active tab"* and `on_accent` is *"text and icons
-    // drawn ON accent"*. Two roles exist here on purpose, and borrowing a
-    // third from a different concept is what produces the wash.
-    //
-    // `super::mode_selector` does exactly this — it paints `palette.accent`
-    // and picks `palette.on_accent` for its label — and this module matches
-    // it, for the tab that sits beside it. Keeping `Button::selectable`
-    // rather than hand-painting preserves the inactive tab's *unplated* look,
-    // the truncation promise, the sizing and the `Response`; only the two
-    // colours are taken back.
-    // WEIGHT AND COLOUR ARE ONE DECISION, and `.strong()` is unreachable
-    // without the colour that makes it legible.
-    //
-    // Written as two independent `if`s — one on `emphasised_text`, one on
-    // `filled` — this is a latent `DEFECTS.md` **D11**: a tab with
-    // `emphasised_text` and not `filled` gets a bare `.strong()`, which `egui`
-    // resolves to `widgets.active.fg_stroke` — the foreground chosen for the
-    // accent-FILLED state — on a background that is not the accent. Pale text
-    // on a pale plate.
-    //
-    // That state is not reachable through this crate's own constructor,
-    // because `tab_cues` derives all four cues from one `active` flag. It is
-    // reachable by anyone building a `TabCues` by hand — every field is `pub`,
-    // and this module's own tests do it — so a guarantee resting on two lines
-    // agreeing is not a guarantee.
-    //
-    // Nesting is what makes it structural: the weight can only be applied
-    // inside the branch that has already stated the colour, so the two cannot
-    // be separated by an edit that looks at only one of them.
-    //
-    // `tools/gates/check-strong-text.sh` is the outer guard, and it is needed
-    // because D11's rule is easy to re-break in another crate by someone who
-    // has read it.
-    let mut text = RichText::new(label);
-    if cues.filled {
-        text = text.color(ctx.theme.palette.on_accent);
-        if cues.emphasised_text {
-            // A stronger ink on the accent plate. It is **not** a non-colour
-            // cue — `.strong()` in `egui` 0.35 changes the colour and not the
-            // face (see this module's header), and the underline and the
-            // stroke are what R84 counts. Safe here and only here, because
-            // the line above has already said what colour the text is.
-            text = text.strong();
-        }
-    }
+    let text = if cues.emphasised_text {
+        RichText::new(label).strong().color(palette.text)
+    } else {
+        RichText::new(label).color(palette.text_muted)
+    };
 
-    let mut button = egui::Button::selectable(cues.filled, text).truncate();
-    if cues.filled {
-        button = button.fill(accent);
-    }
-    if cues.outlined {
-        // R84's second non-colour cue. A stroke's *presence* is a
-        // shape difference and reads with no colour information; the
-        // colour it happens to be drawn in is a bonus, not the cue.
-        button = button.stroke(Stroke::new(1.0, accent));
-    }
-    let response = ui.add(button);
-
-    // R84's non-colour cue. Painted rather than themed, because a
-    // fill is a colour and a rule under the label is a shape — the
-    // whole reason both exist. Drawn at the bottom of the tab's own
-    // rect so it moves with the tab and cannot drift out of
-    // alignment when the strip's height changes.
-    if cues.underline {
-        let y = response.rect.bottom() - 1.0;
-        ui.painter().line_segment(
-            [
-                egui::pos2(response.rect.left(), y),
-                egui::pos2(response.rect.right(), y),
-            ],
-            Stroke::new(2.0, accent),
+    let response = if in_menu {
+        ui.add(egui::Button::selectable(is_active, text).truncate())
+    } else {
+        // Frameless, at the width `measure_tab` planned for (or what is left
+        // of the row); the tab's shape is painted into `body` once hover is known.
+        let width = measure_tab(ui, tab).min(ui.available_width());
+        let body = ui.painter().add(egui::Shape::Noop);
+        let response = ui.add(
+            egui::Button::new(text)
+                .frame(false)
+                .truncate()
+                .min_size(vec2(width, strip_height(ctx)))
+                .selected(is_active),
         );
-    }
+        ui.painter().set(
+            body,
+            crate::tabshape::body(
+                &palette,
+                ctx.theme.metrics.corner_radius,
+                palette.surface,
+                response.rect,
+                cues.outlined,
+                response.hovered(),
+            ),
+        );
+        if is_active {
+            let pass = ui.ctx().cumulative_pass_nr();
+            ui.ctx()
+                .data_mut(|d| d.insert_temp(active_tab_key(), (pass, response.rect)));
+        }
+        response
+    };
 
     a11y::describe_tab(&response, label, is_active);
 
@@ -401,7 +356,7 @@ pub(crate) fn render_overflow_menu(
     let mut clicked = None;
     for tab in hidden {
         let is_active = active_id == Some(tab.id.as_str());
-        if draw_tab(ui, ctx, tab, is_active) {
+        if draw_tab(ui, ctx, tab, is_active, true) {
             clicked = Some(tab.id.clone());
         }
     }
@@ -410,6 +365,12 @@ pub(crate) fn render_overflow_menu(
 
 /// Height reserved for one tab-strip row, used to align the mode selector
 /// with the tabs.
+/// Where the active tab was drawn this pass, so the strip's baseline can
+/// open beneath it.
+fn active_tab_key() -> egui::Id {
+    egui::Id::new("egui-shell-ribbon-active-tab")
+}
+
 pub(crate) fn strip_height(ctx: &Ctx<'_>) -> f32 {
     ctx.theme.metrics.control_height
 }
@@ -417,10 +378,29 @@ pub(crate) fn strip_height(ctx: &Ctx<'_>) -> f32 {
 /// A thin rule under the tab strip, separating it from the band.
 pub(crate) fn strip_underline(ui: &mut egui::Ui, ctx: &Ctx<'_>) {
     let (rect, _) = ui.allocate_exact_size(vec2(ui.available_width(), 1.0), egui::Sense::hover());
-    ui.painter().line_segment(
-        [rect.left_center(), rect.right_center()],
-        Stroke::new(1.0, ctx.theme.palette.outline),
-    );
+    let stroke = Stroke::new(1.0, ctx.theme.palette.outline);
+    let y = rect.center().y;
+    let pass = ui.ctx().cumulative_pass_nr();
+    let active = ui
+        .ctx()
+        .data(|d| d.get_temp::<(u64, egui::Rect)>(active_tab_key()))
+        .filter(|(drawn, tab)| *drawn == pass && tab.x_range().intersects(rect.x_range()))
+        .map(|(_, tab)| tab);
+    let painter = ui.painter();
+    match active {
+        // The active tab's sides run down to the baseline, and the baseline
+        // breaks under it, so the tab opens into the band below.
+        Some(tab) => {
+            let (l, r) = (tab.left() + 0.5, tab.right() - 0.5);
+            painter.line_segment([egui::pos2(rect.left(), y), egui::pos2(l, y)], stroke);
+            painter.line_segment([egui::pos2(r, y), egui::pos2(rect.right(), y)], stroke);
+            painter.line_segment([egui::pos2(l, tab.bottom()), egui::pos2(l, y)], stroke);
+            painter.line_segment([egui::pos2(r, tab.bottom()), egui::pos2(r, y)], stroke);
+        }
+        None => {
+            painter.line_segment([rect.left_center(), rect.right_center()], stroke);
+        }
+    }
 }
 
 #[cfg(test)]

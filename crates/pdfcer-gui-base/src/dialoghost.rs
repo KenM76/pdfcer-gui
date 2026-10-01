@@ -829,66 +829,46 @@ impl Host {
         let mut accepted = false;
         let mut cancelled = false;
         let mut kept = false;
+        // Laid right to left, so the first button drawn is the rightmost.
+        // Windows puts the affirmative first: [Accept] [Keep] [Cancel].
+        // macOS and the Linux desktops put it last: [Keep] [Cancel] [Accept].
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            //
-            // His words: *"it looks greyed out as though it doesn't do anything
-            // even when I hit print — but it is working, so after many clicks I
-            // checked the printer and of course there was a dozen jobs there."*
-            //
-            //
-            //     v.selection.bg_fill = p.selection_fill
-            //                         = Color32::from_rgba_unmultiplied(90, 140, 220, 70)
-            //
-            // — a **27 %-opacity** wash, because that role's real job is tinting
-            // selected objects on the CANVAS, where translucency is the whole
-            // point. Composited over a light panel it becomes roughly
-            // `rgb(193, 207, 230)`: a pale blue-grey, *paler than
-            // `widgets.inactive.weak_bg_fill`*, which is the opaque fill every
-            // ordinary button gets. So the affirmative button rendered **less
-            // solid than the Cancel button beside it** — which is exactly what
-            // a disabled control looks like.
-            //
-            // THIS IS DEFECT D2 AGAIN, in the one place its fix did not
-            // reach. When the active ribbon tab had the identical bug it was
-            // moved to `accent` + `on_accent`; `FEATURES.md` records that fix
-            // and even says the mode selector beside it "always did" paint the
-            // accent. `Host::buttons` was written from the same wrong role and
-            // nobody noticed, because a *dialog* button is not a *ribbon* tab
-            // and no test compares the two.
-            //
-            // `on_accent` rather than `strong_text_color()` is not a detail.
-            // `accent` is a saturated blue in the light presets and a lighter
-            // blue in the dark one, and `strong_text_color()` follows
-            // `override_text_color` — which is the body text colour, near-black
-            // in a light theme. Black on a saturated blue is poor; in the dark
-            // preset it would be near-black text on a light blue, which is
-            // fine, and in a future preset with a dark accent it would be black
-            // on black. `Palette::on_accent` exists precisely so that pairing is
-            // decided by the theme and moves with it — its own doc comment says
-            // so, and says the two must never be welded together.
-            //
-            // Read through `egui-shell`'s accessor rather than reconstructed, so
-            // there is one claimant for "what colour is this application's
-            // accent" and `check-theme-colors.sh` still has nothing to object
-            // to.
-            let (fill, text) = egui_shell::Theme::accent_pair(ui.ctx());
-            let default = egui::Button::new(egui::RichText::new(accept.0).color(text)).fill(fill);
-            let response = explained(ui.add(default), accept.1);
-            crate::diag::ui_rect(REGION_ACCEPT, response.rect);
-            if response.clicked() || enter {
-                accepted = true;
-            }
-            let response = explained(ui.button(cancel.0), cancel.1);
-            crate::diag::ui_rect(REGION_CANCEL, response.rect);
-            if response.clicked() {
-                cancelled = true;
-            }
-            if let Some((label, hover)) = keep {
-                let response = explained(ui.button(label), hover);
-                crate::diag::ui_rect(REGION_KEEP, response.rect);
-                if response.clicked() {
-                    kept = true;
+            // The default action is a solid accent plate, never the 27 % canvas
+            // selection wash, which made it look disabled (DEFECTS.md D2).
+            let mut draw_accept = |ui: &mut egui::Ui| {
+                let (fill, text) = egui_shell::Theme::accent_pair(ui.ctx());
+                let default =
+                    egui::Button::new(egui::RichText::new(accept.0).color(text)).fill(fill);
+                let response = explained(ui.add(default), accept.1);
+                crate::diag::ui_rect(REGION_ACCEPT, response.rect);
+                if response.clicked() || enter {
+                    accepted = true;
                 }
+            };
+            let mut draw_cancel = |ui: &mut egui::Ui| {
+                let response = explained(ui.button(cancel.0), cancel.1);
+                crate::diag::ui_rect(REGION_CANCEL, response.rect);
+                if response.clicked() {
+                    cancelled = true;
+                }
+            };
+            let mut draw_keep = |ui: &mut egui::Ui| {
+                if let Some((label, hover)) = keep {
+                    let response = explained(ui.button(label), hover);
+                    crate::diag::ui_rect(REGION_KEEP, response.rect);
+                    if response.clicked() {
+                        kept = true;
+                    }
+                }
+            };
+            if cfg!(target_os = "windows") {
+                draw_cancel(ui);
+                draw_keep(ui);
+                draw_accept(ui);
+            } else {
+                draw_accept(ui);
+                draw_cancel(ui);
+                draw_keep(ui);
             }
         });
         (accepted, cancelled, kept)
