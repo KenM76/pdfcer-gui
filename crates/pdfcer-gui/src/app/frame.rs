@@ -711,6 +711,9 @@ impl eframe::App for PdfcerApp {
                     self.document_tabs(ui, &mut actions);
                 });
         }
+        // The signing strip, under the tab of the document it counts; drawn
+        // in Read mode too, since a signing task is not chrome.
+        self.sign_strip(ui, &mut actions);
 
         // Step 1b² — the status bar, before the docks.
         //

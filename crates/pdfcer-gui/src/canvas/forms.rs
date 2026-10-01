@@ -477,6 +477,12 @@ fn offer(doc: &OpenDoc, tool: CanvasTool) -> bool {
     offered_in(tool) && doc.annotations_visible() && doc.session.fill_refusal().is_none()
 }
 
+/// Whether the canvas draws signature tags this frame — the signing strip's
+/// condition, so the strip never counts boxes the page will not let you click.
+pub(crate) fn offers_signing(doc: &OpenDoc, tool: CanvasTool) -> bool {
+    offer(doc, tool)
+}
+
 /// Commit and forget whatever was focused, because it cannot be focused any
 /// more.
 pub(super) fn settle(ctx: &egui::Context, doc: &OpenDoc, actions: &mut Vec<Action>) {

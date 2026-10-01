@@ -139,6 +139,8 @@ pub mod surfaces;
 /// floating panel, and the coordinate questions being in another window
 /// forces.
 pub mod floats;
+/// The signing strip: *Signed N of M* and Next, over the page (O269).
+pub mod signstrip;
 /// **Which runs a Format command acts on** - one answer, two gestures.
 pub(crate) mod textoperand;
 /// **The one-line tool status** — `OPERATOR_REQUESTS.md` O123.

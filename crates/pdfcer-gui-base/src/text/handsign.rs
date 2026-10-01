@@ -143,3 +143,38 @@ pub const fn type_needs_upright_page() -> &'static str {
     "A typed signature can only be placed on a page shown upright. Turn the page back, or \
      draw your signature instead."
 }
+
+/// The signing strip's count while boxes remain.
+#[must_use]
+pub fn signed_of(signed: usize, total: usize) -> String {
+    format!("Signed {signed} of {total}")
+}
+
+/// The signing strip's line once every box is signed.
+#[must_use]
+pub fn all_signed(total: usize) -> String {
+    if total == 1 {
+        "The signature box is signed".to_owned()
+    } else {
+        format!("All {total} signature boxes are signed")
+    }
+}
+
+/// Hover on the signing strip's count.
+#[must_use]
+pub const fn strip_hint() -> &'static str {
+    "Signature boxes in this document with no digital signature. Click a box on the page \
+     to sign it."
+}
+
+/// The signing strip's button.
+#[must_use]
+pub const fn next_box() -> &'static str {
+    "Next box to sign"
+}
+
+/// Hover on the signing strip's button.
+#[must_use]
+pub const fn next_box_hint() -> &'static str {
+    "Scroll to the next signature box still to sign. Click the box to sign it."
+}

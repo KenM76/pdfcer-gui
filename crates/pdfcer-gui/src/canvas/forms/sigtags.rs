@@ -26,11 +26,14 @@ pub(super) fn overlay(
     signed: &pdfcer_gui_base::handsign::Ledger,
     actions: &mut Vec<Action>,
 ) -> bool {
-    let unsigned: Vec<FieldTarget> = unsigned
+    // Each kept box carries its index in the full list: the signing strip's
+    // Next numbers boxes the same way, and the trace names them by it.
+    let (index, unsigned): (Vec<usize>, Vec<FieldTarget>) = unsigned
         .iter()
-        .filter(|t| !signed.is_signed(&t.field))
-        .cloned()
-        .collect();
+        .enumerate()
+        .filter(|(_, t)| !signed.is_signed(&t.field))
+        .map(|(i, t)| (i, t.clone()))
+        .unzip();
     let unsigned = unsigned.as_slice();
     if unsigned.is_empty() {
         return false;
@@ -38,15 +41,17 @@ pub(super) fn overlay(
     let painter = ui.painter().clone();
     // The signature-needed red of Acrobat's tag is the palette's warning red.
     let tag = Theme::of(ui.ctx()).palette.danger;
-    for target in unsigned {
+    for (k, target) in unsigned.iter().enumerate() {
         let Some(view) = pages.iter().find(|v| v.page == target.page) else {
             continue;
         };
         let screen = view.map.rect_to_screen(target.rect);
-        if std::ptr::eq(target, &unsigned[0]) {
+        if k == 0 {
             // ui-text-exempt: a diagnostic region name, never displayed.
             crate::diag::ui_rect("form.sign-box", screen);
         }
+        // ui-text-exempt: a diagnostic region name, never displayed.
+        crate::diag::ui_rect(&format!("form.sign-box.{}", index[k]), screen);
         let leg = TAG_LEG.min(screen.width()).min(screen.height());
         let corner = screen.left_top();
         painter.add(egui::Shape::convex_polygon(

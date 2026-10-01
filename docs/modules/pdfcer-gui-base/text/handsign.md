@@ -11,3 +11,6 @@ weight:
   unticking removes it.
 - `type_needs_upright_page` explains the greyed Type tab in the operator's
   terms (turn the page upright), not the engine's.
+- The signing strip's lines count fields (`signed_of`, `all_signed`); its
+  button says it moves to a box (`next_box`) and its hover says the click
+  still signs, so Next is never mistaken for signing.
