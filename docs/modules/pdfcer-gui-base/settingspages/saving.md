@@ -1,7 +1,7 @@
-# `settingspages::saving` — three settings nobody can see
+# `settingspages::saving` — four settings nobody can see
 
-All three change the **bytes pdfcer writes** and none of them changes
-anything visible. That is stated in all three radius lines in nearly the same
+All four change the **bytes pdfcer writes** and none of them changes
+anything visible. That is stated in every radius line in nearly the same
 words, and it is the whole reason they are grouped together rather than filed
 with the settings whose effects an operator can look at.
 
@@ -19,6 +19,16 @@ That is the failure mode a settings window is genuinely for. An operator can
 mark up a document, look at it, save, reopen, and be entirely satisfied while
 the file is wrong for the recipient. Nothing on this side of the handover can
 tell them.
+
+## Compression of edited content
+
+[`edited_stream_compression`] is the engine's `edited_stream_compression`
+key. It applies only to a stream that was `/FlateDecode` in the original and
+was edited: untouched streams are copied as they were. The default compresses
+it again, because the edit routes stage decoded bytes, and without it a
+1.6 MB compressed content stream saves as 14 MB of text. The alternative is
+for reading the edited content in a text editor. Its radius line names the
+file size, the one effect an operator can notice.
 
 ## Why a setting nobody can see is worth having
 

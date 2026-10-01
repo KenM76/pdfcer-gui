@@ -78,7 +78,7 @@ mod tests {
     //
     // The coloured-icons switch (O232) is a shell preference beside the UI
     // scale in the Appearance group.
-    const SETTINGS_COUNT: usize = 41;
+    const SETTINGS_COUNT: usize = 42;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     fn triples() -> Vec<(&'static str, &'static str, &'static str)> {
@@ -183,6 +183,11 @@ mod tests {
                 trailing_eol_title(),
                 trailing_eol_silence(),
                 trailing_eol_radius(),
+            ),
+            (
+                edited_compression_title(),
+                edited_compression_silence(),
+                edited_compression_radius(),
             ),
             // The one setting in this window whose SILENCE line does not
             // describe a silence. §12.5.6.10 states a corner order and almost
@@ -457,6 +462,7 @@ mod tests {
             separations_radius(),
             xref_eol_radius(),
             trailing_eol_radius(),
+            edited_compression_radius(),
             polarity_radius(),
             // The least obvious member of this list, which is why it is in
             // it. A faked weight looks like a rendering choice and is written

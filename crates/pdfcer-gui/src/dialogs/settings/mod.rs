@@ -317,6 +317,8 @@ fn page_body(
             ui.add_space(10.0);
             saving::trailing_eol(ui, draft);
             ui.add_space(10.0);
+            saving::edited_stream_compression(ui, draft);
+            ui.add_space(10.0);
             saving::quad_point_order(ui, draft);
         }
         "redaction" => redaction::residual_reach(ui, &mut draft.working_prefs),

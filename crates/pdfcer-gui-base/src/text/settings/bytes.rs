@@ -269,6 +269,52 @@ pub const fn trailing_eol_none_note() -> &'static str {
 }
 
 // ===========================================================================
+// Saving files — edited-stream compression
+// ===========================================================================
+
+/// Edited-stream compression: what it is.
+#[must_use]
+pub const fn edited_compression_title() -> &'static str {
+    "Compression of edited content"
+}
+
+/// Edited-stream compression: what the standard leaves open.
+#[must_use]
+pub const fn edited_compression_silence() -> &'static str {
+    "The standard does not say whether edited content keeps the compression it had."
+}
+
+/// Edited-stream compression: what changing it costs.
+#[must_use]
+pub const fn edited_compression_radius() -> &'static str {
+    "Changes the bytes pdfcer writes and the file's size. Nothing visible."
+}
+
+/// The default.
+#[must_use]
+pub const fn edited_compression_keep_label() -> &'static str {
+    "Compress it again (pdfcer's default)"
+}
+
+/// Why it is the default.
+#[must_use]
+pub const fn edited_compression_keep_note() -> &'static str {
+    "Content that was compressed stays compressed, so an edited file stays about the size it was."
+}
+
+/// The alternative.
+#[must_use]
+pub const fn edited_compression_plain_label() -> &'static str {
+    "Save it uncompressed"
+}
+
+/// Who wants it.
+#[must_use]
+pub const fn edited_compression_plain_note() -> &'static str {
+    "Larger, often many times over, but the edited content can be read in a text editor."
+}
+
+// ===========================================================================
 // Saving files — /QuadPoints corner order
 //
 // The register's own WORST CASE, and the one setting in this window whose

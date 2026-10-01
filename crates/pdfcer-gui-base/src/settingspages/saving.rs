@@ -1,14 +1,14 @@
-//! # `dialogs::settings::saving` — three settings nobody can see
+//! # `dialogs::settings::saving` — four settings nobody can see
 //!
-//! All three change the **bytes pdfcer writes** and none of them changes
-//! anything visible. That is stated in all three radius lines in nearly the same
+//! All four change the **bytes pdfcer writes** and none of them changes
+//! anything visible. That is stated in every radius line in nearly the same
 //! words, and it is the whole reason they are grouped together rather than filed
 //! with the settings whose effects an operator can look at.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/settingspages/saving.md`.
 
 use egui::Ui;
-use pdfcer_core::settings::{QuadPointOrder, TrailingEol, XrefEntryEol};
+use pdfcer_core::settings::{EditedStreamCompression, QuadPointOrder, TrailingEol, XrefEntryEol};
 
 use super::{Draft, widgets};
 use crate::text::settings as t;
@@ -72,6 +72,30 @@ pub fn trailing_eol(ui: &mut Ui, draft: &mut Draft) {
         TrailingEol::None,
         t::trailing_eol_none_label(),
         Some(t::trailing_eol_none_note()),
+    );
+}
+
+/// Whether an edited stream that was compressed is compressed again.
+pub fn edited_stream_compression(ui: &mut Ui, draft: &mut Draft) {
+    widgets::header(
+        ui,
+        t::edited_compression_title(),
+        t::edited_compression_silence(),
+        t::edited_compression_radius(),
+    );
+    widgets::option(
+        ui,
+        &mut draft.working.edited_stream_compression,
+        EditedStreamCompression::KeepSourceFilter,
+        t::edited_compression_keep_label(),
+        Some(t::edited_compression_keep_note()),
+    );
+    widgets::option(
+        ui,
+        &mut draft.working.edited_stream_compression,
+        EditedStreamCompression::AsAuthored,
+        t::edited_compression_plain_label(),
+        Some(t::edited_compression_plain_note()),
     );
 }
 
