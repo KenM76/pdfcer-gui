@@ -402,6 +402,7 @@ The plan, in build order, is `docs/plans/WORDLIKE_PLAN.md`.
 - Still refused: a change reaching across two pieces at once (asked of the engine as G074), and a character the form's font does not carry (G075).
 - Known gap: when a piece grows, the piece after it on the same line does not move along, so they can overlap.
 - *Keys that did nothing*: built and driven. Every key the text's font cannot take is now named in a note just under the box you are typing in, never dropped silently. One click changes the text to the nearest font that has them all, and the keys you typed go back in. Driven: `every_refused_key_is_named_with_a_face_that_takes_them`.
+- *Caret that flickered*: built and driven. In Edit with the Text tool, a click on text opened a caret and closed it again at once, so it flickered and typing went nowhere. The click now leaves a caret that takes the next key. Driven: `a_text_tool_click_on_text_types_there`.
 - *Preview in the wrong size*: built and driven. When the preview cannot use the text's own font, the stand-in is now the text's own size at the current zoom, and the status bar says why. Driven: `a_stand_in_preview_is_the_texts_size_and_says_why`.
 
 ## O271 — **DECIDED, to build** — alignment buttons go in both places
@@ -409,6 +410,14 @@ The plan, in build order, is `docs/plans/WORDLIKE_PLAN.md`.
 His words: *"alignment buttons should go in both places."*
 
 Left, centre, right and justify go on the ribbon beside font and size, and in the text Properties panel. Both dispatch the same command. Built as part of O270, step 7 of `docs/plans/WORDLIKE_PLAN.md`.
+
+## O272 — **OPEN, design in progress** — a snapshot box that copies what you see, as vector or picture
+
+His words: *"can we add a marquee selector that stays on with the creeping catapillar, and is adjustable in size after being placed, and can copy and paste all visible layers including the review layer cropped to the size of the box, and will paste into other software either as a vector, etc or an image with a dpi set from somewhere?"*
+
+A box drawn over the page that stays, with its moving dashed outline, until dismissed, and can be resized after it is placed. Copy takes everything visible inside it, review marks included, cropped to the box, and pastes into other programs either as a vector drawing or as a picture at a resolution set in settings.
+
+**Where it stands.** Not built. The design is being drafted.
 
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 

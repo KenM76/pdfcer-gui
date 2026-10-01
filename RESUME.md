@@ -94,6 +94,9 @@ measure with `ui-verify --check a_stand_in_preview_is_the_texts_size_and_says_wh
 Every key a run's font refuses is named under the editor box with one click
 to the nearest face that has them (`canvas::textedit::refused`); measure with
 `ui-verify --check every_refused_key_is_named_with_a_face_that_takes_them`.
+A Text-tool click on text arms the caret tool (`canvas::clicking`), because
+`app::frame` settles any draft whose tool is not armed; measure with
+`ui-verify --check a_text_tool_click_on_text_types_there`.
 Step 3's automatic substring re-face is still to build. G081 is answered FIXED
 and needs a `cargo update` of core/render/print before step 13.
 

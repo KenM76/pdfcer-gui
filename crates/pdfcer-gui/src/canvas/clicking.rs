@@ -345,6 +345,12 @@ pub fn click(
             },
             actions,
         ) {
+            // A caret placed by the Text tool arms the caret tool, as a
+            // double-click does: only that tool paints and types into a
+            // draft, and `app::frame` settles a draft whose tool is not armed.
+            Ok(()) if active_tool.is_text() && crate::canvas::textedit::read(ctx).is_some() => {
+                crate::canvas::tool::select(ctx, crate::canvas::tool::CanvasTool::TextEdit(kind));
+            }
             Ok(()) => {}
             Err(refusal) => {
                 crate::app::actions::record_note(
