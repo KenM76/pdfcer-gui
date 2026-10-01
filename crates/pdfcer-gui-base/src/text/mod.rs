@@ -9,6 +9,8 @@
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/mod.md`.
 
 pub mod about;
+/// What the clipboard verbs say on the status row.
+pub mod clipboard;
 
 /// **Every word `OPERATOR_REQUESTS.md` O122 puts on screen** — the
 /// *Open in Acrobat* control beside the mode selector, the three things it can

@@ -11,9 +11,9 @@
 //!    alone has two possible operands and the button cannot show which was
 //!    taken.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/clipboard.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/clipboard.md`.
 
-use crate::canvas::clipboard::Refusal;
+use crate::refusals::clipboard::Refusal;
 // Aliased. Two different refusals share the word in this crate — the object
 // clipboard's, imported above, and the vector copy-out's — and importing both
 // under one name would be a compile error while importing the second

@@ -9,6 +9,7 @@ use pdfcer_core::object::ObjId;
 use crate::app::state::OpenDoc;
 use crate::text::markup as t;
 use crate::text::markup::AnnotDeleteRefusal;
+pub use pdfcer_gui_base::refusals::annotdelete::Refusal;
 
 /// The section's rect, for `ui-verify`.
 const REGION: &str = "properties.annot_delete"; // ui-text-exempt: trace region name, never displayed
@@ -102,27 +103,6 @@ pub fn refuses(doc: &OpenDoc, selection: &crate::canvas::selection::SelectionSta
     selection
         .annot()
         .is_some_and(|selected| gate(doc, &selected.target).is_some())
-}
-
-/// What [`gate`] found, when it found something.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Refusal {
-    /// §12.5.3 Table 165 bit 8 is set on this annotation.
-    Locked,
-    /// The document itself refuses, for the reason carried.
-    Document(AnnotDeleteRefusal),
-}
-
-impl Refusal {
-    /// The sentence.
-    ///
-    #[must_use]
-    pub(crate) const fn line(self) -> &'static str {
-        match self {
-            Self::Locked => t::annot_delete_locked(),
-            Self::Document(why) => why.line(),
-        }
-    }
 }
 
 /// Which sentence an `EditError` from `annotation_deletion_refusal` earns.

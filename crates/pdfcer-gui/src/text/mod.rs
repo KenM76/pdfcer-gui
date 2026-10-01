@@ -10,8 +10,6 @@ pub mod menus;
 pub mod panels;
 pub mod settings;
 
-/// The four sentences the object clipboard can say when it cannot act.
-pub mod clipboard;
 /// Font-glyph coverage: *can the stack actually draw this character?*
 #[cfg(test)]
 pub mod glyphs;

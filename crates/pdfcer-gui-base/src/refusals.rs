@@ -133,3 +133,98 @@ pub mod fieldclip {
         EngineRefused(String),
     }
 }
+
+/// Whether the selected annotation can be deleted.
+pub mod annotdelete {
+    use crate::text::markup as t;
+    use crate::text::markup::AnnotDeleteRefusal;
+
+    /// What [`gate`] found, when it found something.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum Refusal {
+        /// §12.5.3 Table 165 bit 8 is set on this annotation.
+        Locked,
+        /// The document itself refuses, for the reason carried.
+        Document(AnnotDeleteRefusal),
+    }
+
+    impl Refusal {
+        /// The sentence.
+        #[must_use]
+        pub const fn line(self) -> &'static str {
+            match self {
+                Self::Locked => t::annot_delete_locked(),
+                Self::Document(why) => why.line(),
+            }
+        }
+    }
+}
+
+/// Why a copy or a cut could not happen.
+pub mod clipboard {
+    /// Why a copy or a cut could not happen.
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub enum Refusal {
+        /// **The cut's DELETE half would be refused, so its copy half did not
+        /// run either.**
+        ///
+        /// Only `cut` can answer this, and only `cut` returns it: a plain copy
+        /// changes nothing and is correct on a document that forbids every change.
+        ///
+        /// It exists as its own variant rather than reusing [`Self::Unreadable`]
+        /// because the operator's next move differs — a clip the engine could not
+        /// assemble is a fact about *the selection*, and this is a fact about *the
+        /// document*, true of every annotation in it until the signature or the
+        /// encryption goes. The sentence is on the status row already, put there by
+        /// `app::status::decline`, which is the same surface the three other doors
+        /// onto this verb use.
+        DeleteRefused(super::annotdelete::Refusal),
+        /// **The clipboard could not carry it, so the cut was refused before
+        /// anything was removed.**
+        ///
+        /// `pdfcer-core`'s `CutWouldNotSurvive { subtype }`, and the subtype travels
+        /// so the sentence can name it — a greyed button has one static tooltip and
+        /// the operator may have several things selected.
+        ///
+        /// # Why a cut is refused where a copy is not
+        ///
+        /// The engine's own words: *"a copy of something pdfcer cannot carry costs
+        /// nothing — the original stays, the clip carries an `Unsupported` marker,
+        /// the paste declines by name. A cut of the same thing is a deletion
+        /// wearing a clipboard's clothes."*
+        ///
+        /// `&'static str` rather than an enum, matching `canvas::cutgate::Blocker`
+        /// and for its reason: the set of subtypes is the file format's, and a
+        /// second taxonomy here would be one more thing to keep in step with
+        /// another crate.
+        CutWouldNotSurvive(&'static str),
+        /// Nothing is selected.
+        NothingSelected,
+        /// The engine refused to copy the selection: a clip it could not
+        /// assemble. One variant rather than a mirror of the engine's taxonomy.
+        EngineRefused,
+        /// **The engine refuses to put that annotation on a clipboard at
+        /// all**, and the `/Subtype`s it named travel with the refusal.
+        ///
+        /// `/Widget`, `/Popup` and `/Redact` — `EditSession::raw_copy_refusal`,
+        /// and each for a stated reason rather than because it is hard: a widget
+        /// would need a field name in the destination's `/AcroForm` that pdfcer
+        /// cannot guess, a popup is not an independent annotation (§12.5.6.14) and
+        /// belongs to the comment that opens it, and a redaction is a **pending
+        /// destructive operation** — pasting one arms a redaction in a document
+        /// nobody reviewed.
+        ///
+        /// The list is read off the clip, never mirrored here. `canvas::cutgate`
+        /// does keep a mirror of the same three, and its own header explains why
+        /// that one has to exist — it greys a control *before* the gesture, where
+        /// nothing but a compile-time string will do. This is after the gesture,
+        /// and the engine has already answered.
+        CannotCarry(Vec<String>),
+        /// **The selected annotation is no longer on the page it names** — a
+        /// stale selection after an undo, an external reload, or a truncated
+        /// `/Annots` walk. Clicking it again is the operator's next move.
+        Unreadable,
+        /// The clipboard is empty.
+        NothingCopied,
+    }
+}
