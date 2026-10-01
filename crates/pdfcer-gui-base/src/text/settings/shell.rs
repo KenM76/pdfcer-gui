@@ -41,6 +41,7 @@ pub fn theme_preset_label(preset: Preset) -> &'static str {
         Preset::Quiet => "Quiet",
         Preset::Airy => "Airy",
         Preset::Dark => "Dark",
+        Preset::System => "Match the system",
         // ui-text-exempt: not a literal — the shell's own key for a preset this
         // catalog predates. See the doc comment.
         other => other.key(),
@@ -62,6 +63,10 @@ pub const fn theme_preset_note(preset: Preset) -> &'static str {
         Preset::Dark => {
             "A dark window against a light page, as CAD tools do it. Strong page \
              edge, easier on a long session."
+        }
+        Preset::System => {
+            "Light or dark as the system is set, in its accent colour. A \
+             colour that would be hard to read is darkened or lightened."
         }
         _ => "",
     }

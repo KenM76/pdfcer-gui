@@ -328,7 +328,7 @@ His words: *"just a heads up that the engine is working on completing 3d model s
 
 **Where it stands.** Built from what the engine already has at the pin: Edit › Insert › *3D model…* places a U3D or PRC file, centred on the current page, as one undo step; the Attachments panel gains a *3D models* section listing every model in the document, each with *Save model…* that writes the data out unchanged. pdfcer draws the engine's placeholder picture, not the model; the model opens in a 3D-capable reader. STEP is refused with advice to convert it. Driven off-screen: `a_3d_model_is_placed_listed_and_saved_back` (fails when the saved bytes differ). *Save as mesh…* on a PRC model writes its triangles as STL (or OBJ, by the file's ending); the same check drives it and fails when the STL is malformed. Models stored with compressed meshes are now rebuilt and saved too (engine pin `233abf17`; test `a_compressed_prc_triangle_is_rebuilt`, falsified by dropping one-triangle meshes); a compressed mesh the engine cannot rebuild is named and left out. Parts are now placed relative to one another, in the saved mesh and in the new viewer: *View…* on a PRC model opens a window that draws it with the engine's renderer (pin `370a1fcc`), turned by dragging, moved by right-dragging, zoomed by scrolling, with five named views, Fit and a Perspective switch. Driven off-screen: `a_3d_model_turns_under_the_pointer` (falsified by stopping the drag from turning). It draws in one colour. Not yet: the model's own colours and saved views, and choosing a poster picture.
 
-## O268 — **PART BUILT — tabs, dialog button order and softer controls done; OS looks to come** — tabs that look like tabs, dialogs that are not boxy, and a look that follows the OS
+## O268 — **BUILT AND DRIVEN — awaiting your verdict** — tabs that look like tabs, dialogs that are not boxy, and a look that follows the OS
 
 His words: *"Our tabs on the right look more like buttons than tabs and our dialogue boxes look boxy. Is there any easy way to have these match the look of whatever OS the software is running on?"* Then: *"Go"*.
 
@@ -359,8 +359,14 @@ Then: *"Our menus have the same button look. Anywhere you see that button look i
   windows round more than the controls inside them. Dialog windows already get
   the OS's own rounded frame. Seen in the off-screen shot; no check measures
   the outline weight.
-- *To come*: OS presets that follow the system's light/dark mode and accent
-  colour.
+- *Match the system*: a fourth theme in Settings › Appearance. It is light or
+  dark as Windows is set, in the Windows accent colour; an accent that would
+  be hard to read is darkened or lightened until it reads. The accent is read
+  at start, so a change in Windows shows on the next launch. Driven
+  off-screen: `system_theme_follows_the_host` (the app drew Windows' exact
+  accent). macOS and Linux keep the app's own accent and follow light/dark.
+- *Not done*: making Match the system the default. The default lives in the
+  engine's settings, so it is a pdfcer request if wanted.
 
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 

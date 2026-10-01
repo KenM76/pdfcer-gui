@@ -387,12 +387,15 @@ pub enum Preset {
     /// Dark chrome against light content, as CAD tools do it. High
     /// contrast at the content edge and easier on a long session.
     Dark,
+    /// Follows the host: Quiet in light mode, Dark in dark mode, with the
+    /// system's accent colour where it reads. See [`Theme::for_system`].
+    System,
 }
 
 impl Preset {
     /// Every preset, for the picker and for the tests that check all of
     /// them. A preset missing here ships unverified.
-    pub const ALL: &'static [Preset] = &[Preset::Quiet, Preset::Airy, Preset::Dark];
+    pub const ALL: &'static [Preset] = &[Preset::Quiet, Preset::Airy, Preset::Dark, Preset::System];
 
     /// The settings-file token for this preset.
     #[must_use]
@@ -401,6 +404,7 @@ impl Preset {
             Preset::Quiet => "quiet",
             Preset::Airy => "airy",
             Preset::Dark => "dark",
+            Preset::System => "system",
         }
     }
 
@@ -419,6 +423,44 @@ impl Theme {
             Preset::Quiet => Self::quiet(),
             Preset::Airy => Self::airy(),
             Preset::Dark => Self::dark(),
+            Preset::System => Self::for_system(false, None),
+        }
+    }
+
+    /// The look that follows the host: Quiet's palette when `dark` is false,
+    /// Dark's when true, with `accent` swapped in. The result's `preset` is
+    /// the one it resolved to, so everything keyed by preset (icon accents,
+    /// `dark_mode`) follows the resolved look.
+    ///
+    /// An accent that would fail the contrast gate is moved toward the text
+    /// colour until it passes; one that never does is dropped for the
+    /// preset's own. `accent` is `[r, g, b]`, as the host reports it.
+    #[must_use]
+    pub fn for_system(dark: bool, accent: Option<[u8; 3]>) -> Self {
+        let mut theme = if dark { Self::dark() } else { Self::quiet() };
+        if let Some([r, g, b]) = accent {
+            theme.adopt_accent(Color32::from_rgb(r, g, b));
+        }
+        theme
+    }
+
+    fn adopt_accent(&mut self, accent: Color32) {
+        let toward = self.palette.text;
+        for step in 0..=10_u8 {
+            let candidate = accent.lerp_to_gamma(toward, f32::from(step) / 10.0);
+            let mut trial = *self;
+            trial.palette.accent = candidate;
+            // Each base preset's own plate rule: Quiet tints the panel 30 %,
+            // Dark deepens the accent to 15 % of its intensity.
+            trial.palette.selected_plate = if matches!(self.preset, Preset::Dark) {
+                candidate.lerp_to_gamma(Color32::BLACK, 0.85)
+            } else {
+                candidate.lerp_to_gamma(trial.palette.panel, 0.7)
+            };
+            if trial.check_contrast(contrast::READABLE_LUMA_GAP).is_ok() {
+                *self = trial;
+                return;
+            }
         }
     }
 

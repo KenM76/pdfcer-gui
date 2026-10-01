@@ -105,6 +105,21 @@ pub mod clipboard {
 #[cfg(windows)]
 pub use win32::{cursor_position, own_window};
 
+#[cfg(windows)]
+mod accent;
+
+/// **The operator's accent colour** as `[r, g, b]`, for a theme that follows
+/// the system. `None` off Windows, or when the system does not say.
+#[cfg(windows)]
+pub use accent::system_accent;
+
+/// Off Windows there is no accent to read; the caller keeps its own.
+#[cfg(not(windows))]
+#[must_use]
+pub fn system_accent() -> Option<[u8; 3]> {
+    None
+}
+
 /// **Where the pointer is, in physical desktop pixels.** `None` off Windows.
 ///
 /// See [`win32::cursor_position`] for why this is asked of the operating

@@ -44,7 +44,7 @@ impl IconAccents {
     #[must_use]
     pub fn for_preset(preset: Preset) -> Self {
         match preset {
-            Preset::Quiet | Preset::Airy => Self {
+            Preset::Quiet | Preset::Airy | Preset::System => Self {
                 primary: Color32::from_rgb(0x2B, 0x6C, 0xC4),
                 affirm: Color32::from_rgb(0x2E, 0x8B, 0x45),
                 remove: Color32::from_rgb(0xC8, 0x37, 0x2F),

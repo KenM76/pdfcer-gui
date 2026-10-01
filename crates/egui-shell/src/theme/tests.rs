@@ -585,3 +585,51 @@ fn a_foreign_fill_is_the_documents_own_colour_and_an_absurd_one_is_clamped() {
         "an over-range component clamps to one"
     );
 }
+
+/// Any accent the system hands over, in either mode, yields a theme that
+/// passes the contrast gate — adjusted or dropped, never shipped unreadable.
+#[test]
+fn every_system_accent_yields_a_readable_theme() {
+    let accents = [
+        Color32::from_rgb(0x00, 0x78, 0xD4), // Windows default blue
+        Color32::from_rgb(0xFF, 0xD7, 0x00), // yellow
+        Color32::from_rgb(0xE8, 0xE8, 0xEA), // as pale as the panel
+        Color32::from_rgb(0x1C, 0x1C, 0x1E), // as dark as the text
+        Color32::from_rgb(0x2E, 0x31, 0x36), // as dark as the Dark panel
+        Color32::WHITE,
+        Color32::BLACK,
+        Color32::from_rgb(0xC3, 0x00, 0x52), // magenta-red
+        Color32::from_rgb(0x10, 0x89, 0x3E), // green
+    ];
+    for dark in [false, true] {
+        for accent in accents {
+            let theme = Theme::for_system(dark, Some([accent.r(), accent.g(), accent.b()]));
+            assert_eq!(
+                theme.preset,
+                if dark { Preset::Dark } else { Preset::Quiet }
+            );
+            assert!(
+                theme.check_contrast(contrast::READABLE_LUMA_GAP).is_ok(),
+                "accent {accent:?} dark={dark} produced {:?}",
+                theme.palette.accent
+            );
+        }
+    }
+}
+
+/// The Windows default blue is taken as it is in light mode, not
+/// needlessly darkened.
+#[test]
+fn the_windows_default_accent_is_kept_in_light_mode() {
+    let blue = Theme::for_system(false, Some([0x00, 0x78, 0xD4]))
+        .palette
+        .accent;
+    assert_eq!(blue, Color32::from_rgb(0x00, 0x78, 0xD4));
+}
+
+/// No accent: the system look is exactly its base preset.
+#[test]
+fn a_system_look_without_an_accent_is_its_base_preset() {
+    assert_eq!(Theme::for_system(false, None), Theme::quiet());
+    assert_eq!(Theme::for_system(true, None), Theme::dark());
+}

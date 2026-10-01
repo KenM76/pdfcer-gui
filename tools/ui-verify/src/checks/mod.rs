@@ -91,6 +91,7 @@ pub mod embed_fonts;
 /// counts the shell reported.
 pub mod export_dxf;
 pub mod export_dxf_options;
+pub mod system_theme;
 pub mod tabs_look;
 
 /// **Press Export form data and a file appears on disk with the form's

@@ -165,7 +165,16 @@ impl eframe::App for PdfcerApp {
                 draft.working.theme.as_str()
             });
         let preset = egui_shell::theme::Preset::from_key(theme_token).unwrap_or_default();
-        let theme = egui_shell::theme::Theme::new(preset);
+        let theme = if preset == egui_shell::theme::Preset::System {
+            // The accent is read once: the registry is not a per-frame source,
+            // and a change made in Windows Settings applies on the next start.
+            static ACCENT: std::sync::OnceLock<Option<[u8; 3]>> = std::sync::OnceLock::new();
+            let accent = *ACCENT.get_or_init(native_window::system_accent);
+            let dark = ctx.system_theme() == Some(egui::Theme::Dark);
+            egui_shell::theme::Theme::for_system(dark, accent)
+        } else {
+            egui_shell::theme::Theme::new(preset)
+        };
         theme.apply(&ctx);
         // Step 0a-bis — publish the application's own colour roles.
         //
