@@ -91,50 +91,132 @@ struct Meshed {
     meshes: usize,
     triangles: usize,
     skipped: usize,
+    placed: bool,
 }
 
-/// Decode a PRC model's triangle meshes to STL, or OBJ when `obj`. The error
-/// is the sentence to show.
+/// A PRC model's triangles, each part placed where its assembly puts it.
 #[cfg(feature = "3d")]
-fn mesh_bytes(data: &[u8], obj: bool) -> Result<Meshed, String> {
+pub(crate) struct Assembled {
+    /// One mesh per placed part.
+    pub meshes: Vec<pdfcer_3d::TriangleMesh>,
+    pub triangles: usize,
+    /// Tessellations that are not triangles pdfcer can rebuild.
+    pub skipped: usize,
+    /// `false` when the assembly tree could not be read and each mesh is
+    /// where its file stores it.
+    pub placed: bool,
+}
+
+/// Why [`assemble`] produced nothing to draw or save.
+#[cfg(feature = "3d")]
+pub(crate) enum Unassembled {
+    NotPrc,
+    Unreadable(String),
+    /// No triangles; `compressed` of the parts were compressed meshes the
+    /// engine could not rebuild.
+    Empty {
+        compressed: usize,
+    },
+}
+
+/// Decode a PRC model and place its parts, as the engine's `3d-render` does.
+#[cfg(feature = "3d")]
+pub(crate) fn assemble(data: &[u8]) -> Result<Assembled, Unassembled> {
     use pdfcer_3d::{PrcFile, Tessellation};
     if !data.starts_with(b"PRC") {
-        return Err(t::mesh_not_prc().to_owned());
+        return Err(Unassembled::NotPrc);
     }
-    let prc = PrcFile::parse(data).map_err(|e| t::mesh_unreadable(&e.to_string()))?;
-    let (mut meshes, mut skipped, mut compressed) = (Vec::new(), 0usize, 0usize);
+    let prc = PrcFile::parse(data).map_err(|e| Unassembled::Unreadable(e.to_string()))?;
+    let (mut skipped, mut compressed) = (0usize, 0usize);
+    let mut by_index = Vec::with_capacity(prc.file_structures.len());
     for structure in &prc.file_structures {
         let found = structure
             .tessellations()
-            .map_err(|e| t::mesh_unreadable(&e.to_string()))?;
-        for tessellation in found {
-            match tessellation {
+            .map_err(|e| Unassembled::Unreadable(e.to_string()))?;
+        let row: Vec<_> = found
+            .into_iter()
+            .map(|tessellation| match tessellation {
                 Tessellation::Mesh(mesh)
                 | Tessellation::Compressed {
                     mesh: Some(mesh), ..
-                } => meshes.push(mesh),
+                } => Some(mesh),
                 Tessellation::Compressed { mesh: None, .. } => {
                     compressed += 1;
                     skipped += 1;
+                    None
                 }
-                _ => skipped += 1,
-            }
+                _ => {
+                    skipped += 1;
+                    None
+                }
+            })
+            .collect();
+        by_index.push(row);
+    }
+    let mut meshes = Vec::new();
+    let placements = prc.placements().unwrap_or_default();
+    for p in &placements {
+        let mesh = by_index
+            .get(p.file_structure)
+            .and_then(|row: &Vec<Option<pdfcer_3d::TriangleMesh>>| row.get(p.tessellation))
+            .and_then(Option::as_ref);
+        if let Some(mesh) = mesh {
+            meshes.push(mesh.transformed(&p.matrix));
         }
+    }
+    let placed = !meshes.is_empty();
+    if !placed {
+        meshes = by_index.into_iter().flatten().flatten().collect();
     }
     let triangles: usize = meshes.iter().map(|m| m.triangles.len()).sum();
     if triangles == 0 {
-        return Err(t::mesh_empty(compressed));
+        return Err(Unassembled::Empty { compressed });
     }
+    Ok(Assembled {
+        meshes,
+        triangles,
+        skipped,
+        placed,
+    })
+}
+
+/// Decode a PRC model's placed triangle meshes to STL, or OBJ when `obj`.
+/// The error is the sentence to show.
+#[cfg(feature = "3d")]
+fn mesh_bytes(data: &[u8], obj: bool) -> Result<Meshed, String> {
+    let model = assemble(data).map_err(|why| match why {
+        Unassembled::NotPrc => t::mesh_not_prc().to_owned(),
+        Unassembled::Unreadable(detail) => t::mesh_unreadable(&detail),
+        Unassembled::Empty { compressed } => t::mesh_empty(compressed),
+    })?;
     let bytes = if obj {
-        pdfcer_3d::to_obj(&meshes).into_bytes()
+        pdfcer_3d::to_obj(&model.meshes).into_bytes()
     } else {
-        pdfcer_3d::to_stl(&meshes).map_err(|e| t::mesh_unreadable(&e.to_string()))?
+        pdfcer_3d::to_stl(&model.meshes).map_err(|e| t::mesh_unreadable(&e.to_string()))?
     };
     Ok(Meshed {
         bytes,
-        meshes: meshes.len(),
-        triangles,
-        skipped,
+        meshes: model.meshes.len(),
+        triangles: model.triangles,
+        skipped: model.skipped,
+        placed: model.placed,
+    })
+}
+
+/// Re-list `artwork`, read its data and assemble it for the viewer. The
+/// error is the sentence to show.
+#[cfg(feature = "3d")]
+pub(crate) fn load_view(doc: &OpenDoc, artwork: &ThreeDArtwork) -> Result<Assembled, String> {
+    if !list_3d_with_notes(&*doc.session).0.contains(artwork) {
+        return Err(t::gone().to_owned());
+    }
+    let data = extract_3d(&doc.session.view(), artwork)
+        .map_err(|e| t::extract_failed(&e.to_string()))?
+        .data;
+    assemble(&data).map_err(|why| match why {
+        Unassembled::NotPrc => t::view_not_prc().to_owned(),
+        Unassembled::Unreadable(detail) => t::mesh_unreadable(&detail),
+        Unassembled::Empty { compressed } => t::view_empty(compressed),
     })
 }
 
@@ -197,11 +279,12 @@ pub(super) fn save_mesh(doc: &mut OpenDoc, artwork: &ThreeDArtwork) {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
-                    "mesh-saved obj={obj} bytes={} meshes={} triangles={} skipped={}",
+                    "mesh-saved obj={obj} bytes={} meshes={} triangles={} skipped={} placed={}",
                     meshed.bytes.len(),
                     meshed.meshes,
                     meshed.triangles,
-                    meshed.skipped
+                    meshed.skipped,
+                    meshed.placed
                 )
             });
             let mut notes = vec![
@@ -210,7 +293,12 @@ pub(super) fn save_mesh(doc: &mut OpenDoc, artwork: &ThreeDArtwork) {
                     meshed.meshes,
                     meshed.triangles,
                 ),
-                t::mesh_placement_note().to_owned(),
+                if meshed.placed {
+                    t::mesh_placed_note()
+                } else {
+                    t::mesh_placement_note()
+                }
+                .to_owned(),
             ];
             if meshed.skipped > 0 {
                 notes.push(t::mesh_skipped(meshed.skipped));
@@ -361,6 +449,31 @@ mod tests {
         let obj = super::mesh_bytes(&square, true).expect("the square decodes");
         assert!(String::from_utf8_lossy(&obj.bytes).contains("\nf "));
         assert!(super::mesh_bytes(b"U3D\0 not a prc", false).is_err());
+    }
+
+    /// **An assembly's parts are placed**, so its two copies of one part do
+    /// not land on top of each other.
+    #[cfg(feature = "3d")]
+    #[test]
+    fn an_assembly_is_placed_part_by_part() {
+        let Ok(model) = std::fs::read("D:/Dev/pdfcer/fixtures/synthetic/prc/assembly.prc") else {
+            return; // The engine corpus is absent on this machine.
+        };
+        let Ok(assembled) = super::assemble(&model) else {
+            panic!("the assembly decodes");
+        };
+        assert!(assembled.placed);
+        assert!(
+            assembled.meshes.len() >= 2,
+            "{} parts",
+            assembled.meshes.len()
+        );
+        let bounds = |m: &pdfcer_3d::TriangleMesh| pdfcer_3d::Bounds::of(std::slice::from_ref(m));
+        assert_ne!(
+            bounds(&assembled.meshes[0]),
+            bounds(&assembled.meshes[1]),
+            "two placed parts sit in the same place"
+        );
     }
 
     /// A compressed PRC mesh the engine rebuilds is saved with the rest.

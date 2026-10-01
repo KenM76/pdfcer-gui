@@ -90,6 +90,8 @@ pub mod open;
 pub use pdfcer_gui_base::acrobatprompt as open_in_acrobat;
 pub mod bates;
 pub mod labels;
+#[cfg(feature = "3d")]
+pub mod model3d;
 /// **Changing the paper an open drawing sits on** — `pages.resize`. Its
 /// header carries the design decision the window is built around: a
 /// `/MediaBox` change crops, it does not shrink, so the window's real product
@@ -226,6 +228,10 @@ pub struct DialogsState {
     /// The open Number pages window; it holds the document's label ranges,
     /// so it closes with the document.
     labels: Option<labels::LabelsDialog>,
+    /// The open 3D model viewer; it shows one of the document's models, so it
+    /// closes with the document.
+    #[cfg(feature = "3d")]
+    model3d: Option<model3d::ModelView>,
     /// The open text-annotation dialog, if a text box, sticky or stamp has
     /// just been placed.
     text_annot: Option<textannot::TextAnnotDialog>,
@@ -849,6 +855,10 @@ impl DialogsState {
         if self.labels.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.labels = None;
         }
+        #[cfg(feature = "3d")]
+        if self.model3d.as_mut().map(|d| d.show(ctx)) == Some(false) {
+            self.model3d = None;
+        }
         if self.form_field.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.form_field = None;
         }
@@ -1098,6 +1108,10 @@ impl DialogsState {
             self.bates_form = Some(d.remembered());
         }
         self.labels = None;
+        #[cfg(feature = "3d")]
+        {
+            self.model3d = None;
+        }
         self.insert_image = None;
         self.export_dxf = None;
         // On this list because it holds a SNAPSHOT: the page count it built

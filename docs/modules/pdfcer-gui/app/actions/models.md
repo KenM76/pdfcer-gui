@@ -35,13 +35,28 @@ warning when the data disagrees with what the document declares.
 
 Re-lists and extracts as `save` does, then asks for a target
 (`files::pick_mesh_target`, `PDFCER_DIAG_MESH_SAVE_PATH`); an `.obj` ending
-writes OBJ, anything else binary STL. `mesh_bytes` parses the PRC
-(`pdfcer_3d::PrcFile`), keeps every `Tessellation::Mesh` and every rebuilt
-`Compressed { mesh: Some(..) }`, counts the rest as skipped, and refuses with
-a sentence when there are no triangles — naming compressed meshes the engine
-could not rebuild when that is why. Traces `mesh-saved obj= bytes= meshes=
-triangles= skipped=`, `mesh-save-refused`, `mesh-save-declined`,
-`mesh-save-cancelled`, `mesh-save-failed`. Notes say the part placements are
-not applied. Without the feature the button is not drawn.
+writes OBJ, anything else binary STL, from `assemble`'s meshes. Traces
+`mesh-saved obj= bytes= meshes= triangles= skipped= placed=`,
+`mesh-save-refused`, `mesh-save-declined`, `mesh-save-cancelled`,
+`mesh-save-failed`. The receipt says whether parts were placed. Without the
+feature the button is not drawn.
 
 Driven by `ui-verify` check `a_3d_model_is_placed_listed_and_saved_back`.
+
+## `assemble(data)` — decode and place a PRC model (feature `3d`)
+
+Parses the PRC (`pdfcer_3d::PrcFile`), keeps every `Tessellation::Mesh` and
+every rebuilt `Compressed { mesh: Some(..) }`, and counts the rest as
+skipped. Each `PrcFile::placements` entry transforms its mesh into place;
+when placements yield nothing (the tree is unreadable or empty) every mesh is
+kept where its file stores it and `placed` is false. `Unassembled` says why
+there is nothing: not PRC, unreadable, or no triangles (naming compressed
+meshes the engine could not rebuild).
+
+## `load_view(doc, artwork)` — the View… button (feature `3d`)
+
+Re-lists and extracts as `save` does, then `assemble`s; the error is the
+sentence `apply` records as a note (with `model-view-declined page=`). On
+success `apply` opens `dialogs::model3d`.
+
+Driven by `ui-verify` check `a_3d_model_turns_under_the_pointer`.

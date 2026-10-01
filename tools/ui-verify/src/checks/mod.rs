@@ -1019,6 +1019,10 @@ pub mod attachments;
 /// A 3D model placed from the ribbon, listed, and saved back byte for byte.
 pub mod models;
 
+/// A placed 3D model opened in the viewer turns, pans and zooms under the
+/// scripted pointer.
+pub mod model_view;
+
 /// The harness's own ribbon search, driven: a command two scroll stops past
 /// the fold is still reachable. Its header records a HARNESS defect that
 /// reported the application as broken for eight days.

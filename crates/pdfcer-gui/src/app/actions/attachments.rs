@@ -25,6 +25,9 @@ pub(super) fn apply(doc: &mut OpenDoc, action: AttachmentAction) {
         AttachmentAction::SaveModel { artwork } => super::models::save(doc, &artwork),
         AttachmentAction::InsertModel { page } => super::models::insert(doc, page),
         AttachmentAction::SaveMesh { artwork } => super::models::save_mesh(doc, &artwork),
+        // Opened in `apply`, which holds the dialogs; without `3d` there is
+        // no button.
+        AttachmentAction::ViewModel { .. } => {}
     }
 }
 

@@ -50,7 +50,7 @@ pub mod bookmarks;
 /// Where a Review mark lands: an annotation, or the page's own content.
 mod markupdest;
 /// Saving an embedded 3D model out to a file.
-mod models;
+pub(crate) mod models;
 /// `ViewChrome` — which piece of View ▸ Display an action is about.
 use pdfcer_gui_base::displaypiece as chrome;
 /// **Placing one of the operator's OWN stamps** — O172's second half.

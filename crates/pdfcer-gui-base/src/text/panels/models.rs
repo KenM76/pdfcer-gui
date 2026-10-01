@@ -248,10 +248,114 @@ pub fn mesh_saved(path: &str, meshes: usize, triangles: usize) -> String {
     format!("Saved {triangles} triangles in {parts} to {path}.")
 }
 
-/// Parts are not moved into place.
+/// Parts are not moved into place: the assembly could not be read.
 #[must_use]
 pub fn mesh_placement_note() -> &'static str {
-    "Each part is written where the model file stores it; how the parts are positioned relative to one another is not applied."
+    "pdfcer could not read how this model's parts are assembled, so each part is where the model file stores it and parts may overlap."
+}
+
+/// Parts are moved into place.
+#[must_use]
+pub fn mesh_placed_note() -> &'static str {
+    "Each part is where the model's assembly puts it."
+}
+
+/// The row's third button, on a PRC model.
+#[must_use]
+pub fn view_button() -> &'static str {
+    "View…"
+}
+
+/// Its tip.
+#[must_use]
+pub fn view_tooltip() -> &'static str {
+    "Look at this PRC model from any side: drag to turn it, scroll to zoom."
+}
+
+/// The viewer's title.
+#[must_use]
+pub fn view_title(page_index: usize) -> String {
+    format!("3D model on page {}", page_index + 1)
+}
+
+/// How to move the camera.
+#[must_use]
+pub fn view_hint() -> &'static str {
+    "Drag to turn the model, drag with the right button to move it, scroll to zoom."
+}
+
+/// What the picture leaves out.
+#[must_use]
+pub fn view_flat_note() -> &'static str {
+    "Drawn in one colour, lit from where you look. The model's own colours, textures, lights and saved views are not shown."
+}
+
+/// The size of what is shown.
+#[must_use]
+pub fn view_census(parts: usize, triangles: usize) -> String {
+    let parts = if parts == 1 {
+        "1 part".to_owned()
+    } else {
+        format!("{parts} parts")
+    };
+    format!("{parts}, {triangles} triangles")
+}
+
+/// The named views, in button order.
+#[must_use]
+pub fn view_names() -> [&'static str; 5] {
+    ["Isometric", "Front", "Right", "Top", "Back"]
+}
+
+/// The fit-and-reset button.
+#[must_use]
+pub fn view_reset() -> &'static str {
+    "Fit"
+}
+
+/// Its tip.
+#[must_use]
+pub fn view_reset_tooltip() -> &'static str {
+    "Frame the whole model again, without changing the side you look from."
+}
+
+/// The projection switch.
+#[must_use]
+pub fn view_perspective() -> &'static str {
+    "Perspective"
+}
+
+/// Its tip.
+#[must_use]
+pub fn view_perspective_tooltip() -> &'static str {
+    "On, nearer parts look bigger, as to the eye. Off, sizes stay true at every depth, as in a drawing."
+}
+
+/// The picture could not be drawn.
+#[must_use]
+pub fn view_render_failed(detail: &str) -> String {
+    format!("pdfcer could not draw this view: {detail}")
+}
+
+/// The close button.
+#[must_use]
+pub fn view_close() -> &'static str {
+    "Close"
+}
+
+/// Only PRC is decoded.
+#[must_use]
+pub fn view_not_prc() -> &'static str {
+    "Only a PRC model can be viewed in pdfcer. Save model… writes this one out for a 3D program."
+}
+
+/// The model holds no triangles pdfcer can decode.
+#[must_use]
+pub fn view_empty(compressed: usize) -> String {
+    match compressed {
+        0 => "This model holds no triangle mesh, so there is nothing to show.".to_owned(),
+        _ => "This model's shape is stored in a compressed form pdfcer cannot rebuild, so there is nothing to show.".to_owned(),
+    }
 }
 
 /// Parts left out.

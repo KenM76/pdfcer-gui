@@ -1016,6 +1016,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(bookmark_move::ABookmarkCanBeDraggedAndABranchCollapsed),
         Box::new(attachments::AFileCanBeAttachedAndTakenBackOut),
         Box::new(models::AModelIsPlacedListedAndSavedBack),
+        Box::new(model_view::AModelTurnsUnderThePointer),
         Box::new(comment_note::ANoteCanBeWrittenOntoAShape),
         // Its opposite number: `comment_note` proves a
         // comment can be WRITTEN, and this one proves one can be READ — in

@@ -1154,4 +1154,9 @@ pub enum AttachmentAction {
         /// The row as listed when the button was pressed.
         artwork: pdfcer_core::threed::ThreeDArtwork,
     },
+    /// **Decode a listed PRC model and open the 3D viewer on it.**
+    ViewModel {
+        /// The row as listed when the button was pressed.
+        artwork: pdfcer_core::threed::ThreeDArtwork,
+    },
 }

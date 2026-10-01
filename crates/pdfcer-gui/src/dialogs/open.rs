@@ -259,6 +259,17 @@ impl DialogsState {
         self.labels = labels::LabelsDialog::open(picked, doc.pages.len(), doc.label_ranges());
     }
 
+    /// **Open the 3D viewer** on a decoded model from page `page_index`,
+    /// replacing any model already shown.
+    #[cfg(feature = "3d")]
+    pub(crate) fn open_model_view(
+        &mut self,
+        page_index: usize,
+        model: crate::app::actions::models::Assembled,
+    ) {
+        self.model3d = Some(super::model3d::ModelView::open(page_index, model));
+    }
+
     /// **Open the sheet-size window** over `pages`, the operand sheets.
     pub fn open_page_size(&mut self, doc: &crate::app::state::OpenDoc, pages: &[usize]) {
         if self.page_size.is_some() {

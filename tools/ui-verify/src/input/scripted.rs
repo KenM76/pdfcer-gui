@@ -115,6 +115,36 @@ impl ScriptedPointer {
         )
     }
 
+    /// [`Self::drag`] in `viewport` (root when `None`), with button `btn`
+    /// (`l`, `r` or `m`).
+    pub fn drag_in(
+        &self,
+        session: &Session,
+        viewport: Option<&str>,
+        from: WindowPoint,
+        to: WindowPoint,
+        steps: u32,
+        btn: &str,
+    ) -> Result<TraceLine> {
+        let vp = viewport.map_or(String::new(), |v| format!(" vp={v}"));
+        self.send(
+            session,
+            &format!("drag {} {} steps={steps} btn={btn}{vp}", xy(from), xy(to)),
+        )
+    }
+
+    /// [`Self::wheel`] in `viewport` (root when `None`), without modifiers.
+    pub fn wheel_in(
+        &self,
+        session: &Session,
+        viewport: Option<&str>,
+        at: WindowPoint,
+        dy: f32,
+    ) -> Result<TraceLine> {
+        let vp = viewport.map_or(String::new(), |v| format!(" vp={v}"));
+        self.send(session, &format!("wheel {} {dy}{vp}", xy(at)))
+    }
+
     /// Wheel lines at `at`; positive `dy` moves the content down. `ctrl`
     /// makes it a zoom.
     pub fn wheel(
@@ -166,7 +196,21 @@ impl ScriptedPointer {
     /// which sees a window placed off the desktop where an OS capture sees
     /// whatever is on screen there.
     pub fn screenshot(&self, session: &Session, png: &Path) -> Result<()> {
-        let ack = self.send(session, "shot")?;
+        self.screenshot_in(session, None, png)
+    }
+
+    /// [`Self::screenshot`] of `viewport` (root when `None`), such as a
+    /// dialog's own window.
+    pub fn screenshot_in(
+        &self,
+        session: &Session,
+        viewport: Option<&str>,
+        png: &Path,
+    ) -> Result<()> {
+        let ack = match viewport {
+            Some(vp) => self.send(session, &format!("shot vp={vp}"))?,
+            None => self.send(session, "shot")?,
+        };
         let Some(ppm) = ack.get("path") else {
             return Err(Error::new(format!(
                 "the screenshot was not written: `{}`",

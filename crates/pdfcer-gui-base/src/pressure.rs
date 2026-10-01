@@ -26,6 +26,8 @@ pub enum Surface {
     TextDraft,
     /// A ce dimension's baked appearance, drawn where a drag would put it.
     DimensionDrag,
+    /// The 3D model viewer's picture, sized by its window, not the zoom.
+    ModelView,
 }
 
 /// The page-shaped part of an upload, present only when there is one.

@@ -1094,6 +1094,19 @@ impl PdfcerApp {
             // `vector_edit`, and `SaveCopy` deliberately does not, because it
             // changes nothing and bumping the epoch for it would retire a
             // disclosure that is still true.
+            #[cfg(feature = "3d")]
+            Action::Attachment(super::attachments::AttachmentAction::ViewModel { artwork }) => {
+                match super::models::load_view(doc, &artwork) {
+                    Ok(model) => self.dialogs.open_model_view(artwork.page_index, model),
+                    Err(said) => {
+                        crate::diag::trace(|| {
+                            // ui-text-exempt: diagnostic trace, never displayed
+                            format!("model-view-declined page={}", artwork.page_index)
+                        });
+                        super::record_note(doc.edit_epoch, said);
+                    }
+                }
+            }
             Action::Attachment(action) => super::attachments::apply(doc, action),
             // The form-XObject family — give this page its own copy, today.
             //

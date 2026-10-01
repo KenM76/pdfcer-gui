@@ -14,6 +14,9 @@ pub const REGION_SAVE: &str = "models.save"; // ui-text-exempt: trace region nam
 /// The region the first PRC model's Save as mesh button publishes.
 #[cfg(feature = "3d")]
 pub const REGION_MESH: &str = "models.mesh"; // ui-text-exempt: trace region name, never displayed
+/// The region the first PRC model's View button publishes.
+#[cfg(feature = "3d")]
+pub const REGION_VIEW: &str = "models.view"; // ui-text-exempt: trace region name, never displayed
 
 /// Draw the section; a document with no 3D content draws nothing.
 pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) {
@@ -56,10 +59,17 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) {
             // Only PRC is decoded; a U3D row offers its bytes alone.
             #[cfg(feature = "3d")]
             if artwork.declared == Some(pdfcer_core::threed::ThreeDFormat::Prc) {
+                let view = ui.button(t::view_button()).on_hover_text(t::view_tooltip());
                 let mesh = ui.button(t::mesh_button()).on_hover_text(t::mesh_tooltip());
                 if first_mesh {
+                    crate::diag::ui_rect_visible(REGION_VIEW, view.rect, ui.clip_rect());
                     crate::diag::ui_rect_visible(REGION_MESH, mesh.rect, ui.clip_rect());
                     first_mesh = false;
+                }
+                if view.clicked() {
+                    actions.push(Action::Attachment(AttachmentAction::ViewModel {
+                        artwork: artwork.clone(),
+                    }));
                 }
                 if mesh.clicked() {
                     actions.push(Action::Attachment(AttachmentAction::SaveMesh {
