@@ -385,7 +385,8 @@ Wanted:
 
 - *Draw*: built and driven. Clicking an empty box opens *Sign here*; draw with the mouse, press *Place signature*, and the signature is ink on the page inside the box, removed by one Undo, with the box's tag gone. *Remember my signature on this computer* is in. Driven: `a_drawn_signature_lands_in_its_box`.
 - *Certificate route*: the *Use a digital ID (certificate) instead…* link opens the existing Sign window on that box. Driven: `clicking_a_signature_box_opens_sign`.
-- *Type*, the *Signed 1 of 3 — Next ▸* strip and *Picture*: not built yet, in that order.
+- *Type*: built and driven. A *Type* tab beside *Draw*: type a name, pick a handwriting style (Segoe Script, Ink Free or Segoe Print, whichever this computer has), see it previewed, press *Place signature*. The name is written into the page in that style, with the style carried inside the file so every reader shows the same, and one Undo removes it. On a page shown turned the tab is greyed and says why. Driven: `a_typed_signature_lands_in_its_box`.
+- The *Signed 1 of 3 — Next ▸* strip and *Picture*: not built yet, in that order.
 - Known gap: after the file is saved and reopened pdfcer cannot yet tell a hand-signed box from an empty one, so the red tag returns; asked of the engine as G073.
 
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move

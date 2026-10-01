@@ -9,3 +9,5 @@ weight:
   must not be led to think it does.
 - `remember_hover` says where the copy is kept (this computer only) and that
   unticking removes it.
+- `type_needs_upright_page` explains the greyed Type tab in the operator's
+  terms (turn the page upright), not the engine's.

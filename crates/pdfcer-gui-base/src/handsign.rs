@@ -1,4 +1,4 @@
-//! # `handsign` — a signature drawn by hand: its strokes, their fit into a signature box, the copy kept on this computer, and which boxes this session has signed
+//! # `handsign` — a hand signature, drawn or typed: its strokes, their fit into a signature box, the copy kept on this computer, and which boxes this session has signed
 //!
 //! Contract: [`Mark`] holds strokes in a y-down space of any unit; [`fit`]
 //! places a mark inside a y-down target rectangle by the rule below and
@@ -13,6 +13,18 @@ use egui::{Pos2, Rect, pos2};
 
 /// The file a remembered signature is kept in, beside `settings.txt`.
 pub const SAVED_FILE: &str = "hand-signature.txt"; // ui-text-exempt: a file name, never displayed as copy
+
+pub mod typed;
+
+/// A signature the operator made: drawn with the mouse, or typed in a
+/// handwriting face.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Signature {
+    /// Strokes, normalised ([`Mark::normalised`]).
+    Drawn(Mark),
+    /// A name and the face it is written in.
+    Typed(typed::Typed),
+}
 
 /// The tolerance [`Mark::simplified`] removes detail below, in pad points.
 pub const SIMPLIFY_TOLERANCE: f32 = 0.6;

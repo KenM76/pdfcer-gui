@@ -88,3 +88,58 @@ pub const fn digital_id_hover() -> &'static str {
     "A certificate signature proves who signed and shows any later change. You need a digital \
      ID file (.pfx or .p12)."
 }
+
+/// The tab for drawing a signature with the mouse.
+#[must_use]
+pub const fn tab_draw() -> &'static str {
+    "Draw"
+}
+
+/// The tab for typing a name in a handwriting style.
+#[must_use]
+pub const fn tab_type() -> &'static str {
+    "Type"
+}
+
+/// The Type tab's instruction.
+#[must_use]
+pub const fn type_intro() -> &'static str {
+    "Type your name. It is written in a handwriting style."
+}
+
+/// Shown faintly inside the empty name field.
+#[must_use]
+pub const fn name_hint() -> &'static str {
+    "Your name"
+}
+
+/// The handwriting-style choice.
+#[must_use]
+pub const fn style() -> &'static str {
+    "Style"
+}
+
+/// Shown faintly in the preview before a name is typed.
+#[must_use]
+pub const fn preview_hint() -> &'static str {
+    "Your signature appears here"
+}
+
+/// Hover on the place button while the name is blank.
+#[must_use]
+pub const fn place_needs_name() -> &'static str {
+    "Type your name first."
+}
+
+/// The chosen style cannot write the typed name; `detail` is the reason.
+#[must_use]
+pub fn style_cannot_write(detail: &str) -> String {
+    format!("This style cannot write that name ({detail}). Try another style.")
+}
+
+/// Hover on the greyed Type tab when the page is shown turned.
+#[must_use]
+pub const fn type_needs_upright_page() -> &'static str {
+    "A typed signature can only be placed on a page shown upright. Turn the page back, or \
+     draw your signature instead."
+}

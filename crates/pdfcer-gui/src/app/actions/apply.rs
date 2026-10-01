@@ -683,8 +683,8 @@ impl PdfcerApp {
                 field,
                 page,
                 rect,
-                mark,
-            }) => super::handsign::place(doc, &field, page, rect, &mark),
+                signature,
+            }) => super::handsign::place(doc, &field, page, rect, &signature),
             Action::Field(action) => super::forms::apply(doc, action),
             Action::BeginTextAnnot { page, kind, rect } => {
                 self.dialogs.open_text_annot(&self.status, page, kind, rect);

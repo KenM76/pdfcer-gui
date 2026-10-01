@@ -65,12 +65,17 @@ Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting
 Ken's verdict. Measure: `ui-verify --check align_left_moves_every_box_in_one_undo`
 on `fixtures/three-boxes.pdf`.
 
-**O269, hand signatures: Step 1 (Draw) built and driven**, unpublished.
-Clicking an empty signature box opens *Sign here*; the drawn mark is written as
-page content by one `add_markup_as_content` Ink call. Measure: `ui-verify
---check a_drawn_signature_lands_in_its_box` on `fixtures/esign-three-boxes.pdf`.
-Next: Step 2 (Type, an embedded handwriting face), Step 3 (the *Signed 1 of 3 —
-Next ▸* strip), then Picture. The hand-signed state is session-only until G073.
+**O269, hand signatures: Draw and Type built and driven**, unpublished.
+Clicking an empty signature box opens *Sign here*; a drawn mark is written as
+page content by one `add_markup_as_content` Ink call, a typed name by one
+`add_text` call in an embedded subset of an OS handwriting face. Measure:
+`ui-verify --check a_drawn_signature_lands_in_its_box --check
+a_typed_signature_lands_in_its_box` on `fixtures/esign-three-boxes.pdf`.
+Next: Step 3 (the *Signed 1 of 3 — Next ▸* strip), then Picture. Undriven:
+the Type tab greyed on a turned page (no rotated fixture yet) and the
+remembered typed copy restoring. The hand-signed state is session-only until
+G073. Trap: the drawn check failed once with no `hand-sign-opened` after its
+first click on a cold launch and passed on re-run; unexplained.
 
 **Since that release, unpublished:** File ▸ Security ▸ *Add validation
 evidence…* (PAdES B-LT, `add_validation_material`), driven by

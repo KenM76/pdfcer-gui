@@ -1,15 +1,18 @@
-//! # `dialogs::handsign` — the *Sign here* window: draw a signature, place it in the box
+//! # `dialogs::handsign` — the *Sign here* window: draw or type a signature, place it in the box
 //!
 //! Opened by a click on an unsigned signature box. Contract: Place pushes one
-//! [`FieldAction::HandSign`] carrying the normalised mark; the digital-ID link
-//! pushes [`FieldAction::SignWithId`] and is drawn only when `file.sign` is
-//! registered. The window writes nothing to the document itself.
+//! [`FieldAction::HandSign`] carrying the drawn mark (normalised) or the typed
+//! name and face; the Type tab is drawn only when a handwriting face is
+//! usable; the digital-ID link pushes [`FieldAction::SignWithId`] and is drawn
+//! only when `file.sign` is registered. The window writes nothing to the
+//! document itself.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/dialogs/handsign.md`.
 
-use egui::{Pos2, Sense, Stroke, Ui, vec2};
+use egui::{FontFamily, FontId, Pos2, Sense, Stroke, Ui, vec2};
 use egui_shell::theme::Theme;
-use pdfcer_gui_base::handsign::{self, Mark};
+use pdfcer_gui_base::handsign::typed::{self, Typed};
+use pdfcer_gui_base::handsign::{self, Mark, Signature};
 
 use crate::app::actions::Action;
 use crate::app::actions::forms::FieldAction;
@@ -27,6 +30,15 @@ pub const REGION_PLACE: &str = "handsign.place";
 /// The digital-ID link.
 // ui-text-exempt: trace region name, never displayed
 pub const REGION_DIGITAL_ID: &str = "handsign.digital-id";
+/// The Type tab.
+// ui-text-exempt: trace region name, never displayed
+pub const REGION_TAB_TYPE: &str = "handsign.tab-type";
+/// The name field on the Type tab.
+// ui-text-exempt: trace region name, never displayed
+pub const REGION_NAME: &str = "handsign.name";
+/// The typed signature's preview.
+// ui-text-exempt: trace region name, never displayed
+pub const REGION_PREVIEW: &str = "handsign.preview";
 
 /// The drawing area's height, in points; its width is the window's.
 const PAD_HEIGHT: f32 = 160.0;
@@ -34,18 +46,67 @@ const PAD_HEIGHT: f32 = 160.0;
 const PAD_PEN: f32 = 2.0;
 /// A new point is kept only this far from the last, in points.
 const MIN_STEP: f32 = 0.75;
+/// The preview's largest font size, in points.
+const PREVIEW_MAX: f32 = 56.0;
+
+/// The signatures placed this run, which *Use my last signature* and the
+/// Type tab's starting name restore. Application-scoped: it is the
+/// operator's, not the document's.
+#[derive(Clone, Debug, Default)]
+pub struct LastSignature {
+    /// The last drawn signature, normalised.
+    pub drawn: Option<Mark>,
+    /// The last typed signature.
+    pub typed: Option<Typed>,
+    /// Whether the last placed was typed, so the window opens on that tab.
+    pub was_typed: bool,
+}
+
+impl LastSignature {
+    /// Record `placed` as the latest.
+    pub fn record(&mut self, placed: Signature) {
+        match placed {
+            Signature::Drawn(mark) => {
+                self.drawn = Some(mark);
+                self.was_typed = false;
+            }
+            Signature::Typed(typed) => {
+                self.typed = Some(typed);
+                self.was_typed = true;
+            }
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Tab {
+    Draw,
+    Type,
+}
 
 /// The window, and the box it signs.
 pub struct HandSignDialog {
     field: String,
     page: usize,
     rect: egui::Rect,
+    tab: Tab,
     /// Strokes in pad-local points, y-down.
     mark: Mark,
     /// Whether the pointer is down and drawing into the last stroke.
     drawing: bool,
     /// The signature *Use my last signature* restores, normalised.
     last: Option<Mark>,
+    /// The name on the Type tab.
+    name: String,
+    /// The index into [`typed::faces`] the name is shown in.
+    face: usize,
+    /// Whether a typed name would read along the box on this page.
+    typeable: bool,
+    /// Whether the name field still needs keyboard focus.
+    focus_name: bool,
+    /// The name and face last checked against the face's characters, and
+    /// the reason it cannot write them, if any.
+    coverage: Option<(String, usize, Option<String>)>,
     remember: bool,
     place_requested: bool,
     id_requested: bool,
@@ -53,20 +114,48 @@ pub struct HandSignDialog {
 }
 
 impl HandSignDialog {
-    /// Open on the box `rect` (canvas space) of `field` on `page`. `last` is
-    /// this session's last placed signature, if any; the remembered one on
-    /// disk is the fallback.
+    /// Open on the box `rect` (canvas space) of `field` on `page`. This run's
+    /// last signatures come first; the copies remembered on disk are the
+    /// fallback. `typeable` is whether the page is shown upright, which a
+    /// typed signature needs.
     #[must_use]
-    pub fn open(field: &str, page: usize, rect: egui::Rect, last: Option<Mark>) -> Self {
+    pub fn open(
+        field: &str,
+        page: usize,
+        rect: egui::Rect,
+        last: &LastSignature,
+        typeable: bool,
+    ) -> Self {
         let saved = handsign::load_saved();
-        let remember = saved.is_some();
+        let saved_typed = typed::load();
+        let remember = saved.is_some() || saved_typed.is_some();
+        let typed_last = last.typed.clone().or(saved_typed);
+        let faces = typed::faces();
+        let face = typed_last
+            .as_ref()
+            .and_then(|t| faces.iter().position(|f| f.label == t.face))
+            .unwrap_or(0);
+        let can_type = typeable && !faces.is_empty();
+        let typed_first =
+            last.was_typed || (last.drawn.is_none() && saved.is_none() && typed_last.is_some());
+        let tab = if can_type && typed_first {
+            Tab::Type
+        } else {
+            Tab::Draw
+        };
         Self {
             field: field.to_owned(),
             page,
             rect,
+            tab,
             mark: Mark::default(),
             drawing: false,
-            last: last.or(saved),
+            last: last.drawn.clone().or(saved),
+            name: typed_last.map(|t| t.name).unwrap_or_default(),
+            face,
+            typeable,
+            focus_name: tab == Tab::Type,
+            coverage: None,
             remember,
             place_requested: false,
             id_requested: false,
@@ -81,12 +170,12 @@ impl HandSignDialog {
         ctx: &egui::Context,
         actions: &mut Vec<Action>,
         offer_id: bool,
-    ) -> (bool, Option<Mark>) {
+    ) -> (bool, Option<Signature>) {
         let (frame, ()) = crate::dialogs::host::Host::new(
             "hand-sign", // ui-text-exempt: a viewport key, never displayed.
             t::window_title(),
-            egui::vec2(560.0, 400.0),
-            egui::vec2(420.0, 340.0),
+            egui::vec2(560.0, 440.0),
+            egui::vec2(420.0, 380.0),
         )
         .show(ctx, |ui| {
             crate::diag::ui_rect(REGION_BODY, ui.max_rect());
@@ -94,34 +183,37 @@ impl HandSignDialog {
         });
         let open = !frame.closed;
 
-        if std::mem::take(&mut self.place_requested) {
-            let mark = self
-                .mark
-                .simplified(handsign::SIMPLIFY_TOLERANCE)
-                .normalised();
-            let kept = if self.remember {
-                handsign::save(&mark)
-            } else {
-                handsign::forget();
-                false
-            };
+        if std::mem::take(&mut self.place_requested)
+            && let Some(signature) = self.signature()
+        {
+            let kept = self.keep(&signature);
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
-                format!(
-                    "hand-sign-requested page={} strokes={} points={} remembered={}",
-                    self.page,
-                    mark.strokes.len(),
-                    mark.point_count(),
-                    u8::from(kept)
-                )
+                match &signature {
+                    Signature::Drawn(mark) => format!(
+                        "hand-sign-requested via=draw page={} strokes={} points={} remembered={}",
+                        self.page,
+                        mark.strokes.len(),
+                        mark.point_count(),
+                        u8::from(kept)
+                    ),
+                    // No name: it is the operator's own.
+                    Signature::Typed(typed) => format!(
+                        "hand-sign-requested via=type page={} face={} chars={} remembered={}",
+                        self.page,
+                        typed.face.replace(' ', "_"),
+                        typed.name.chars().count(),
+                        u8::from(kept)
+                    ),
+                }
             });
             actions.push(Action::Field(FieldAction::HandSign {
                 field: self.field.clone(),
                 page: self.page,
                 rect: self.rect,
-                mark: mark.clone(),
+                signature: signature.clone(),
             }));
-            return (false, Some(mark));
+            return (false, Some(signature));
         }
         if std::mem::take(&mut self.id_requested) {
             actions.push(Action::Field(FieldAction::SignWithId {
@@ -132,7 +224,105 @@ impl HandSignDialog {
         (open && !std::mem::take(&mut self.close_requested), None)
     }
 
+    /// What Place would place on the current tab, or `None` when it is not
+    /// ready.
+    fn signature(&self) -> Option<Signature> {
+        match self.tab {
+            Tab::Draw => self.mark.has_extent().then(|| {
+                Signature::Drawn(
+                    self.mark
+                        .simplified(handsign::SIMPLIFY_TOLERANCE)
+                        .normalised(),
+                )
+            }),
+            Tab::Type => {
+                let name = self.name.trim();
+                let face = typed::faces().get(self.face)?;
+                let covered = self
+                    .coverage
+                    .as_ref()
+                    .is_some_and(|(n, f, why)| n == name && *f == self.face && why.is_none());
+                (!name.is_empty() && covered).then(|| {
+                    Signature::Typed(Typed {
+                        face: face.label.to_owned(),
+                        name: name.to_owned(),
+                    })
+                })
+            }
+        }
+    }
+
+    /// Keep or delete the copies on this computer per the checkbox. Returns
+    /// whether `signature` was kept.
+    fn keep(&self, signature: &Signature) -> bool {
+        if !self.remember {
+            handsign::forget();
+            typed::forget();
+            return false;
+        }
+        match signature {
+            Signature::Drawn(mark) => handsign::save(mark),
+            Signature::Typed(typed) => typed::save(typed),
+        }
+    }
+
     fn body(&mut self, ui: &mut Ui, offer_id: bool) {
+        if !typed::faces().is_empty() {
+            ui.horizontal(|ui| {
+                ui.selectable_value(&mut self.tab, Tab::Draw, t::tab_draw());
+                let typing = ui
+                    .add_enabled_ui(self.typeable, |ui| {
+                        ui.selectable_value(&mut self.tab, Tab::Type, t::tab_type())
+                    })
+                    .inner
+                    .on_disabled_hover_text(t::type_needs_upright_page());
+                crate::diag::ui_rect_visible(REGION_TAB_TYPE, typing.rect, ui.clip_rect());
+                if typing.clicked() {
+                    self.focus_name = true;
+                }
+            });
+            ui.add_space(4.0);
+        }
+        match self.tab {
+            Tab::Draw => self.draw_tab(ui),
+            Tab::Type => self.type_tab(ui),
+        }
+        ui.checkbox(&mut self.remember, t::remember())
+            .on_hover_text(t::remember_hover());
+        ui.add_space(4.0);
+        ui.small(t::what_it_is());
+        ui.add_space(8.0);
+        ui.separator();
+        ui.horizontal(|ui| {
+            let ready = self.signature().is_some();
+            let why = match self.tab {
+                Tab::Draw => t::place_needs_drawing(),
+                Tab::Type => t::place_needs_name(),
+            };
+            let place = ui
+                .add_enabled(ready, egui::Button::new(t::place()))
+                .on_disabled_hover_text(why);
+            crate::diag::ui_rect_visible(REGION_PLACE, place.rect, ui.clip_rect());
+            if place.clicked() {
+                self.place_requested = true;
+            }
+            if ui.button(t::cancel()).clicked() {
+                self.close_requested = true;
+            }
+        });
+        if offer_id {
+            ui.add_space(6.0);
+            let link = ui
+                .link(t::digital_id())
+                .on_hover_text(t::digital_id_hover());
+            crate::diag::ui_rect_visible(REGION_DIGITAL_ID, link.rect, ui.clip_rect());
+            if link.clicked() {
+                self.id_requested = true;
+            }
+        }
+    }
+
+    fn draw_tab(&mut self, ui: &mut Ui) {
         ui.label(t::intro());
         ui.add_space(6.0);
         self.pad(ui);
@@ -155,35 +345,114 @@ impl HandSignDialog {
                 self.drawing = false;
             }
         });
-        ui.checkbox(&mut self.remember, t::remember())
-            .on_hover_text(t::remember_hover());
-        ui.add_space(4.0);
-        ui.small(t::what_it_is());
-        ui.add_space(8.0);
-        ui.separator();
+    }
+
+    fn type_tab(&mut self, ui: &mut Ui) {
+        let faces = typed::faces();
+        ui.label(t::type_intro());
+        ui.add_space(6.0);
         ui.horizontal(|ui| {
-            let ready = self.mark.has_extent();
-            let place = ui
-                .add_enabled(ready, egui::Button::new(t::place()))
-                .on_disabled_hover_text(t::place_needs_drawing());
-            crate::diag::ui_rect_visible(REGION_PLACE, place.rect, ui.clip_rect());
-            if place.clicked() {
-                self.place_requested = true;
+            let field = ui.add(
+                // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+                // every field in this window: the first press leaves the box, the second
+                // cancels.
+                egui::TextEdit::singleline(&mut self.name)
+                    .hint_text(t::name_hint())
+                    .desired_width(240.0),
+            );
+            crate::diag::ui_rect_visible(REGION_NAME, field.rect, ui.clip_rect());
+            if std::mem::take(&mut self.focus_name) {
+                field.request_focus();
             }
-            if ui.button(t::cancel()).clicked() {
-                self.close_requested = true;
+            if faces.len() > 1 {
+                ui.label(t::style());
+                egui::ComboBox::from_id_salt("hand-sign-style") // ui-text-exempt: a widget id, never displayed.
+                    .selected_text(faces.get(self.face).map_or("", |f| f.label))
+                    .show_ui(ui, |ui| {
+                        for (i, face) in faces.iter().enumerate() {
+                            ui.selectable_value(&mut self.face, i, face.label);
+                        }
+                    });
             }
         });
-        if offer_id {
-            ui.add_space(6.0);
-            let link = ui
-                .link(t::digital_id())
-                .on_hover_text(t::digital_id_hover());
-            crate::diag::ui_rect_visible(REGION_DIGITAL_ID, link.rect, ui.clip_rect());
-            if link.clicked() {
-                self.id_requested = true;
-            }
+        self.check_coverage();
+        if let Some((_, _, Some(why))) = &self.coverage {
+            let danger = Theme::of(ui.ctx()).palette.danger;
+            ui.colored_label(danger, t::style_cannot_write(why));
         }
+        ui.add_space(6.0);
+        self.preview(ui);
+    }
+
+    /// Re-check, when the name or face changed, that the face has every
+    /// character of the name, so Place is never offered for one it would
+    /// refuse.
+    fn check_coverage(&mut self) {
+        let name = self.name.trim();
+        if name.is_empty()
+            || self
+                .coverage
+                .as_ref()
+                .is_some_and(|(n, f, _)| n == name && *f == self.face)
+        {
+            return;
+        }
+        let why = typed::faces()
+            .get(self.face)
+            .and_then(|face| typed::plan(face, name).err());
+        self.coverage = Some((name.to_owned(), self.face, why));
+    }
+
+    /// The typed name in the face that will be embedded, sized to the area.
+    fn preview(&self, ui: &mut Ui) {
+        let palette = Theme::of(ui.ctx()).palette;
+        let (rect, _) = ui.allocate_exact_size(self.pad_size(ui), Sense::hover());
+        crate::diag::ui_rect_visible(REGION_PREVIEW, rect, ui.clip_rect());
+        let painter = ui.painter_at(rect);
+        painter.rect_filled(rect, 4.0, palette.surface);
+        painter.rect_stroke(
+            rect,
+            4.0,
+            Stroke::new(1.0, palette.outline),
+            egui::StrokeKind::Inside,
+        );
+        let name = self.name.trim();
+        let Some(face) = typed::faces().get(self.face) else {
+            return;
+        };
+        let Some(family) = preview_family(ui.ctx(), self.face, face) else {
+            return;
+        };
+        if name.is_empty() {
+            painter.text(
+                rect.center(),
+                egui::Align2::CENTER_CENTER,
+                t::preview_hint(),
+                egui::FontId::proportional(15.0),
+                palette.text_muted,
+            );
+            return;
+        }
+        // Lay out once at a reference size, then scale to fit the area.
+        let reference = 32.0;
+        let width = ui.ctx().fonts_mut(|f| {
+            f.layout_no_wrap(
+                name.to_owned(),
+                FontId::new(reference, family.clone()),
+                palette.text,
+            )
+            .size()
+            .x
+        });
+        let fit = (0.9 * rect.width() / width.max(1.0)) * reference;
+        let size = fit.min(PREVIEW_MAX);
+        painter.text(
+            rect.center(),
+            egui::Align2::CENTER_CENTER,
+            name,
+            FontId::new(size, family),
+            palette.text,
+        );
     }
 
     fn pad_size(&self, ui: &Ui) -> egui::Vec2 {
@@ -269,6 +538,32 @@ impl HandSignDialog {
             }
         }
     }
+}
+
+/// The egui family the preview of face `index` is drawn in, registering the
+/// face on first use. `None` until egui has rebuilt its fonts with it, which
+/// is the next frame: naming an unknown family panics inside egui.
+fn preview_family(
+    ctx: &egui::Context,
+    index: usize,
+    face: &'static typed::Face,
+) -> Option<FontFamily> {
+    // ui-text-exempt: an egui font key, never displayed.
+    let key = format!("hand-sign-face-{index}");
+    let family = FontFamily::Name(key.clone().into());
+    if ctx.fonts(|f| f.definitions().families.contains_key(&family)) {
+        return Some(family);
+    }
+    ctx.add_font(egui::epaint::text::FontInsert::new(
+        &key,
+        egui::FontData::from_static(face.bytes.as_slice()),
+        vec![egui::epaint::text::InsertFontFamily {
+            family,
+            priority: egui::epaint::text::FontPriority::Highest,
+        }],
+    ));
+    ctx.request_repaint();
+    None
 }
 
 /// A normalised mark scaled back into a pad of `size`, centred, with margin.

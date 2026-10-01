@@ -78,14 +78,19 @@ impl DialogsState {
     /// **Open the *Sign here* window on the box `rect` (canvas space) of the
     /// empty signature field `field`** — a click on that box on the page.
     pub fn open_hand_sign(&mut self, status: &Status, field: &str, page: usize, rect: egui::Rect) {
-        let Status::Open(_) = status else {
+        let Status::Open(doc) = status else {
             return;
         };
+        let typeable = doc
+            .pages
+            .get(page)
+            .is_some_and(pdfcer_gui_base::handsign::typed::writes_along);
         self.hand_sign = Some(super::handsign::HandSignDialog::open(
             field,
             page,
             rect,
-            self.last_hand_mark.clone(),
+            &self.last_signature,
+            typeable,
         ));
         // ui-text-exempt: diagnostic trace, never displayed. No field name: it
         // is text from the operator's own document.

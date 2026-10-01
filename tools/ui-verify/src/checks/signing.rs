@@ -145,6 +145,7 @@ pub mod hand_sign;
 mod reaching;
 pub mod sign_box;
 pub mod timestamp;
+pub mod typed_sign;
 
 use reaching::{
     click, click_scrolled, click_tab, disclosed_appearance, drawn, engine_fixture, field_name_of,
