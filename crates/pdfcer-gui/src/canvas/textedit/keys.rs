@@ -133,6 +133,12 @@ pub fn typing(
     // a keystroke arriving in the same frame must land at the new caret rather
     // than the old one.
     let mut changed = pointer(ui, ctx, &mut draft);
+    // Keys held by the refused-keys notice go in once their face has landed.
+    if let Some(back) = super::refused::resume(ctx, doc, &draft) {
+        draft.caret = take_selection(&mut draft);
+        draft.caret = insert(&mut draft.text, draft.caret, &back);
+        changed = true;
+    }
     // The diagnostic seam, consumed exactly once per draft. See [`DIAG_TYPE`].
     if !draft.seeded {
         draft.seeded = true;
@@ -188,9 +194,11 @@ pub fn typing(
                             refused: None,
                         },
                     };
-                    if let (Anchor::Run { run, .. }, Some((character, base_font))) =
+                    let refused_now = sieved.refused.clone();
+                    if let (Anchor::Run { run, .. }, Some((missing, base_font))) =
                         (&draft.anchor, sieved.refused)
                     {
+                        let character = missing[0];
                         crate::diag::trace(|| {
                             // ui-text-exempt: diagnostic trace, never displayed.
                             //
@@ -217,6 +225,15 @@ pub fn typing(
                         draft.caret = take_selection(&mut draft);
                         draft.caret = insert(&mut draft.text, draft.caret, &sieved.kept);
                         changed = true;
+                    }
+                    if let Some((missing, base_font)) = &refused_now {
+                        super::refused::note(
+                            ctx,
+                            &draft,
+                            missing,
+                            base_font,
+                            !sieved.kept.is_empty(),
+                        );
                     }
                 }
                 // Rule 3: with a selection, Backspace and Delete remove

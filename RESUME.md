@@ -91,6 +91,11 @@ grows overlaps the next one, which is a separate object with its own `Tm`.
 A preview that cannot use the run's font is sized from the run's size times
 the zoom and says why in the status bar (`canvas::textedit::fallback`);
 measure with `ui-verify --check a_stand_in_preview_is_the_texts_size_and_says_why`.
+Every key a run's font refuses is named under the editor box with one click
+to the nearest face that has them (`canvas::textedit::refused`); measure with
+`ui-verify --check every_refused_key_is_named_with_a_face_that_takes_them`.
+Step 3's automatic substring re-face is still to build. G081 is answered FIXED
+and needs a `cargo update` of core/render/print before step 13.
 
 **Since that release, unpublished:** File ▸ Security ▸ *Add validation
 evidence…* (PAdES B-LT, `add_validation_material`), driven by

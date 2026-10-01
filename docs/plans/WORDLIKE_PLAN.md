@@ -106,7 +106,7 @@ structure. Effort is in engineer-days, including the driven check.
 |---|---|---|---|---|
 | 1 | **Draft basics:** draft-level undo stack (Ctrl+Z/Ctrl+Y); Escape discards and Enter-outside/click-away commits; Ctrl+S commits then saves; paste runs through the sieve; newline → space on paste, with a status note; Ctrl+Backspace/Delete; Tab → spaces to the next 0.5 in stop; Ctrl+A selects the run | A2 A3 A5 A6 A7 A10 A11 B6 | 2 | - |
 | 2 | **Clicks reach the right thing:** text tool on an image-only page → status "This page is a picture of text — Recognise text" with a button, and no Add text; on a form widget → field value editor; on FreeText → its editor; correct both wrong menu paths; refusals become a short sentence plus a button | E1 E2 E3 E4(msg) E5(msg) E11 | 2–3 | - |
-| 3 | **Never refuse a keystroke (interim):** when the sieve rejects a character, commit that substring re-faced via `FormatRequest::new(page, find).embedded_font(plan)` with the nearest installed face. Disclose it off-canvas. Undo is one entry | A1 | 2–3 | Replaced by G075(b)/G078 when they land |
+| 3 | **Never refuse a keystroke (interim):** when the sieve rejects a character, commit that substring re-faced via `FormatRequest::new(page, find).embedded_font(plan)` with the nearest installed face. Disclose it off-canvas. Undo is one entry. **Built first:** every refused key is named in a notice under the editor box (`canvas::textedit::refused`), with one click to the nearest face that has them all through the Properties font-change path, and the held keys typed back in once it lands. The notice is a pre-commit affordance about keys not in the document, on its own layer, so it does not mark applied content (R8b). **Still to build:** the automatic substring re-face | A1 | 2–3 | Replaced by G075(b)/G078 when they land |
 | 4 | **Chrome preview:** instrument `shape()` to log which branch (count mismatch or `outlines.skipped`) fires, then fix; also the Down-arrow line preview | A13 | 1–2 | - |
 | 5 | **plan.rs narrowing:** send the engine only the operators an edit touches; a cross-object edit is refused as a split | - | 1 | Cross-object edits wait on G074 |
 | 6 | **Selection gestures:** double-click word, triple-click line, text-tool drag selects when it starts on text (box only on blank), Shift+Up/Down extends, rotated first click via `hit_test` | B1 B2 B3 B4 B7 | 2 | - |
@@ -116,7 +116,7 @@ structure. Effort is in engineer-days, including the driven check.
 | 10 | **Paragraph draft:** Enter, Backspace-join, wrap on overflow, multi-line paste, triple-click paragraph, alignment buttons with re-justify | A4 A8 A9 A15 A3 C5 C7 D3 D4 D5 | 4–6 | G074, G076, G079 |
 | 11 | **Table cells:** cell draft, Up/Down between cells | D2 D7 | 2 | G080 (+ G074) |
 | 12 | **Encrypted editing:** edit when `/P` permits and save incrementally; otherwise one sentence plus an Unlock button | E4 | 1 | G077 |
-| 13 | **Refusal precheck:** call `edit_capability` at caret placement so a refusal never follows typing; per-cause sentences | E11 E7 | 1 | G081 |
+| 13 | **Refusal precheck:** call `edit_capability` at caret placement so a refusal never follows typing; per-cause sentences | E11 E7 | 1 | G081 (answered FIXED; picked up with `cargo update`) |
 | 14 | **Spell check** | E10 | 3–5 | - |
 | 15 | **RTL and vertical writing** | E7 E8 | unknown | ENGINE, not filed |
 

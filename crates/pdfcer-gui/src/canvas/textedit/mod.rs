@@ -87,6 +87,8 @@ pub mod fallback;
 /// one producer of `(pinned_span, EditTarget)` in this shell, shared by the
 /// caret's `edit_text` and the restyle verbs' `format_text`.
 pub mod pin;
+/// The keys a run's font refused, named beside the edit with a face that has them.
+pub mod refused;
 /// **The alphabet the caret's run will accept, measured once when the caret
 /// lands** — the shell side of `EditSession::run_repertoire`, and the reason a
 /// key the run's font cannot spell is declined as it is pressed instead of
@@ -305,6 +307,7 @@ pub fn abandon(ctx: &egui::Context) -> bool {
     // pair of braces, and the reason is in `repertoire::forget`'s own docs — a
     // slot that outlives its subject is a fossil a later reader will trust.
     repertoire::forget(ctx);
+    refused::forget(ctx);
     if had {
         // ui-text-exempt: diagnostic trace, never displayed.
         crate::diag::trace(|| "text-edit-abandon".to_owned());

@@ -257,6 +257,8 @@ pub mod status;
 pub mod editrefusal;
 /// Why a text edit's live preview is in a stand-in font, for the status bar.
 pub mod previewfallback;
+/// The notice naming every key a run's font refused.
+pub mod refusedkeys;
 /// Every sentence the text-editing tool shows: the refusals a caret can meet,
 /// and the disclosure the engine does not write for a pinned tail.
 pub mod textedit;

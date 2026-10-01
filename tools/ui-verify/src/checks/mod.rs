@@ -970,6 +970,8 @@ pub mod wheel_flips_pages;
 
 /// A stand-in preview is the text's size, and the status bar says why.
 pub mod preview_fallback;
+/// Every refused key is named, with one click to a face that has them.
+pub mod refused_keys;
 pub mod word_line_edit;
 
 pub mod zoom_burst;

@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **59 of 264** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
+## `wanted` — a real gap — **60 of 265** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -87,6 +87,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Edit text across show operators** — a `find` matches across consecutive … | **wanted, and what it costs now is re-measurement.** The capability is in the build this shell compiles: a document written one glyph per show operator is what `EditRefusal::SplitAcrossPieces` exists to explain, and the engine no longer refuses it. `EditReport::operators_spanned` is new and wants disclosing under rule 4, and `Plan::one_operator` stops being the thing that routes `SplitAcrossPieces`, so the operator-facing sentence must be re-derived from the engine's answer rather than deleted on the assumption it is dead. |
 | **Ask which face can hold the text about to be TYPED**, not only the text … | **wanted.** `preview_font_resources_for(page, find, pinned_span, candidate)` closes the one honest limit the face chooser carries: `panels::properties::refusedchar` coverage-tests faces against the characters ALREADY in the run, so a row can offer a face that then refuses the operator's `€`. Cost: one call swapped in `canvas::textedit::pin::font_preflight` with the refused character as candidate, and `refused_char_untested` deleted with its test. The same reply carries more than was asked — `FontPreflight.standard_14` gives a `Std14Entry` per standard-14 face whose `presence` separates `OnPage` from `WouldBeAdded`, which is the operator-licence decision nothing here reads. The two should land together. |
 | **Split one text object into several** — `split_text_object` / `text_object_split_plan`, `pdfcer text-object-split --granularity run` or `line` … | **wanted — the verbs are in the pin and nothing here calls them.** A CAD title block written as one text object cannot have one line restyled or deleted until it is split. `SplitGranularity::Run` infers nothing; `Line` infers, so its cut count is owed off-canvas (rule 4). Five refusals want sentences, not a bucket: `VectorEditError::EmptySplit`, `VectorEditError::SplitAtObjectStart`, `VectorEditError::SplitRunInheritsPosition`, `VectorEditError::SplitAtLineShowOperator`, `VectorEditError::SplitInsideMarkedContent`; the whole split is refused, never half. Wire it through `vector_edit_on_page`. G032: `Line` also cuts on clear space — take `LineSplitOptions`' defaults (`LineSplitOptions::with_max_gap`, `LineSplitOptions::with_max_backward`, `LineSplitOptions::max_gap`, `LineSplitOptions::max_backward`) and offer no knob. |
+| **Edit text across TEXT-OBJECT boundaries** — a pinned `EditRequest::spanning_from` match continues past `ET` into the next text object on the same line (same font resource and size, state, colour, CTM, row); unpinned `find_replace` still refuses with `NotFoundReason::SpansTextObjects`; a font seam is not crossed | **wanted; our request G074, answered FIXED (unreleased).** What is missing is the crossing itself in the pinned engine, not a call: <!--namesake:spanning_from--> `canvas::textedit::tier` already sends the pinned request, and the pin still stops it at `ET`; <!--namesake:find_replace--> the shell's calls are the unpinned path the row says still refuses. Once picked up, `tier` retries on `SpansTextObjects` with `spanning_from` from the clicked operator before narrowing. It turns O270's one remaining cross-object refusal on the rental form into a commit. Needs a `cargo update` of core/render/print; `run_repertoire(page, find, Some(pin))` then answers for the run that receives the replacement. A font seam (a curly apostrophe in a `Type0` font) still refuses and waits on Pass 436.0. |
 | **Text-edit refusals as data** — `UnsupportedCause` (`#[non_exhaustive]`), `NotFoundReason`, `EditSession::edit_capability`, `RunRepertoire::cause` … | **wanted; our request G081, answered FIXED.** Three consumers are owed, all in `docs/plans/WORDLIKE_PLAN.md`: `canvas::textedit::tier` matches `NotFoundReason::SpansTextObjects` instead of reading a split from the refusal's shape; the caret calls `edit_capability` when it lands so a refusal never follows typing (step 13); and `app::status::decline::textedit` words each `UnsupportedCause` by variant, with a `_` arm. `FormatError` still carries a `String`. |
 | **Offer Tesseract as a third recogniser** — `pdfcer_core::ocr::tesseract_tsv` (`parse_tsv`, `TsvError`) | **wanted, and the spawn is this shell's.** The engine parses `tesseract … stdout tsv` and deliberately spawns nothing, so the work here is locating `tesseract.exe`, running it per page image, and handing stdout over; `TsvError::MissingHeader` and `TsvError::BadRow` want sentences naming the Tesseract build, not a generic OCR failure. Registered only when the executable is found (R8), so a machine without it never sees the choice. |
 
@@ -159,7 +160,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 264** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
+## `blocked` — waiting on something named — **2 of 265** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -177,7 +178,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 264** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 265** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -188,7 +189,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 264** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
+## `declined` — deliberately no surface — **16 of 265** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -230,7 +231,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **187 of 264** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **187 of 265** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

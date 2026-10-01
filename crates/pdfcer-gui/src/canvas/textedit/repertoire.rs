@@ -59,20 +59,20 @@ pub(crate) fn of_run(
 }
 
 /// **What one keystroke's text survives as** — the characters the run will
-/// take, and the first one it will not.
+/// take, and every one it will not.
 pub(crate) struct Sieved {
     /// The typed characters the run will take, in the order they were typed.
     ///
     /// Empty when every character was refused, which is the ordinary case for a
     /// single keystroke that hit the wall.
     pub kept: String,
-    /// The first character the run will not take, and the `/BaseFont` that will
-    /// not take it.
+    /// Every character the run will not take, in the order typed, and the
+    /// `/BaseFont` that will not take them. `None` when all were taken.
     ///
     /// The font travels with the character because the offer needs both:
     /// `panels::properties::refusedchar` names the face being replaced and
     /// keys its list of candidates on the character.
-    pub refused: Option<(char, String)>,
+    pub refused: Option<(Vec<char>, String)>,
 }
 
 /// **Split a keystroke's text into what this run can take and what it cannot.**
@@ -91,14 +91,15 @@ pub(crate) fn sieve(
         };
     };
     let mut kept = String::with_capacity(typed.len());
-    let mut refused = None;
+    let mut missing = Vec::new();
     for c in typed.chars() {
         if rep.accepts(c) {
             kept.push(c);
-        } else if refused.is_none() {
-            refused = Some((c, rep.base_font.clone()));
+        } else {
+            missing.push(c);
         }
     }
+    let refused = (!missing.is_empty()).then(|| (missing, rep.base_font.clone()));
     Sieved { kept, refused }
 }
 
@@ -389,7 +390,7 @@ mod tests {
 
         assert_eq!(out.kept, "AB", "the letters the subset carries survive");
         let (c, font) = out.refused.expect("and the one it does not is named");
-        assert_eq!(c, OUTSIDE_THE_SUBSET);
+        assert_eq!(c, vec![OUTSIDE_THE_SUBSET]);
         assert!(
             !font.is_empty(),
             "the face travels with the character, because the offer names the face it \
@@ -397,9 +398,9 @@ mod tests {
         );
     }
 
-    /// **Only the first refused character is reported.**
+    /// **Every refused character is reported, in the order typed.**
     #[test]
-    fn the_sieve_names_the_first_refusal_only() {
+    fn the_sieve_names_every_refusal() {
         let doc = open_local_fixture(FIXTURE);
         let ctx = ctx();
 
@@ -408,8 +409,8 @@ mod tests {
         assert_eq!(out.kept, "A");
         assert_eq!(
             out.refused.map(|(c, _)| c),
-            Some('q'),
-            "the first one typed, not the last one seen"
+            Some(vec!['q', 'z']),
+            "each one typed, in order"
         );
     }
 
