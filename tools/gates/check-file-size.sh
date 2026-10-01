@@ -195,6 +195,8 @@ fi
 echo "file-size: clean — $scanned .rs file(s) scanned, none over $LIMIT lines"
 if [ -n "$all" ]; then
     echo "           largest:"
-    printf '%s' "$all" | sort -rn | head -3 | awk '{ printf "             %7d  %s\n", $1, $2 }'
+    # awk reads to the end: `head` would exit early, `sort` would take SIGPIPE, and
+    # pipefail would turn a clean run into exit 141.
+    printf '%s' "$all" | sort -rn | awk 'NR <= 3 { printf "             %7d  %s\n", $1, $2 }'
 fi
 exit 0

@@ -88,6 +88,9 @@ a_line_written_in_pieces_edits` on `fixtures/word-fragmented-lines.pdf`, and
 `cargo test -p pdfcer-gui --lib wordwall`. Still refused: an edit across two
 objects (G074), a character the subset lacks (G075). Trap: a fragment that
 grows overlaps the next one, which is a separate object with its own `Tm`.
+A preview that cannot use the run's font is sized from the run's size times
+the zoom and says why in the status bar (`canvas::textedit::fallback`);
+measure with `ui-verify --check a_stand_in_preview_is_the_texts_size_and_says_why`.
 
 **Since that release, unpublished:** File ▸ Security ▸ *Add validation
 evidence…* (PAdES B-LT, `add_validation_material`), driven by

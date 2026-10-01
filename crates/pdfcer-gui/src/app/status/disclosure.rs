@@ -10,8 +10,8 @@ use egui::{Align, Layout, Vec2};
 
 use super::{
     NOTES_WIDTH_FRACTION, REGION_BLEND_SPACE, REGION_CATCHING_UP, REGION_EDIT_DISCLOSURE,
-    REGION_FILL_DISCLOSURE, REGION_LINE_WEIGHTS, REGION_LOAD_ANOMALIES, REGION_RECOVERED,
-    REGION_SPOTS_FLATTENED, ROW_HEIGHT_PTS,
+    REGION_FILL_DISCLOSURE, REGION_LINE_WEIGHTS, REGION_LOAD_ANOMALIES, REGION_PREVIEW_FALLBACK,
+    REGION_RECOVERED, REGION_SPOTS_FLATTENED, ROW_HEIGHT_PTS,
 };
 use crate::app::state::OpenDoc;
 use crate::text::forms as t_forms;
@@ -115,6 +115,19 @@ fn catching_up(ui: &mut egui::Ui, doc: &OpenDoc) {
         return;
     }
     disclosure_line(ui, REGION_CATCHING_UP, t::page_catching_up());
+}
+
+/// **The draft being typed is shown in a stand-in font, and why** — a state,
+/// live while the draft is open.
+fn preview_fallback(ui: &mut egui::Ui) {
+    let Some(why) = crate::canvas::textedit::fallback::live(ui.ctx()) else {
+        return;
+    };
+    disclosure_line(
+        ui,
+        REGION_PREVIEW_FALLBACK,
+        crate::text::previewfallback::line(why),
+    );
 }
 
 /// Draw one disclosure sentence into the bar's single row, and publish its
@@ -275,6 +288,9 @@ pub(super) fn all(ui: &mut egui::Ui, doc: &OpenDoc) {
     // result yet. Reading "the picture is still being drawn" after a sentence
     // about what was drawn puts the two in the wrong causal order.
     catching_up(ui, doc);
+    // Second: it describes what the operator is typing now, which outranks
+    // every sentence about something already done.
+    preview_fallback(ui);
     fill_disclosure(ui, doc);
     edit_disclosure(ui, doc);
     recovered_disclosure(ui, doc);

@@ -23,7 +23,11 @@ drawn by `paint`.
     placed on each character.
 
   Falling back is never an error. The shell-font box is the older, complete
-  editor.
+  editor. Each case has a `PreviewFallback` reason, held in the cache beside
+  the layout; `paint` adds `TooLarge` when the ink would exceed the texture
+  limit. `fallback::publish` hands the reason to the status bar, which says
+  it in a sentence from `text::previewfallback` (R8b: off-canvas, never on the
+  page).
 - **Coordinate spaces.**
   - Outlines, `stops` and `up` are in page user space.
   - `page_to_screen` reads the page→screen affine off three mapped points, so
@@ -73,7 +77,9 @@ A render-without-this-run from the engine would remove the assumption.
 
 ## Trace
 
-`text-edit-shaped page= run= chars= shaped=0|1 refused=0|1`, once per
-distinct draft text. `plan::plan` is run under `diag::muted`, and the
+`text-edit-shaped page= run= chars= shaped=0|1 refused=0|1 tier=`, once per
+distinct draft text, and `text-edit-preview-fallback page= run= reason=
+font_pt=` each time the reason for the open draft changes; `font_pt` is the
+stand-in's size in screen points. `plan::plan` is run under `diag::muted`, and the
 previous `last_commit` is restored, so the preview does not emit a second
 `edit-text-pin` or change what a commit reports.

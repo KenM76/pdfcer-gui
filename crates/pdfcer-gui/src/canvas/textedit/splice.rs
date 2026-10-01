@@ -10,14 +10,15 @@
 use egui::Pos2;
 use pdfcer_core::text_edit::TextEditPreview;
 use pdfcer_core::text_extract::TextRun;
+use pdfcer_gui_base::text::previewfallback::PreviewFallback;
 
 use super::shaped::Shaped;
 use super::tier::Narrowed;
 use crate::app::state::OpenDoc;
 
 /// The whole-line `Shaped` for `draft`, from a preview of `narrowed` alone;
-/// `None` when the preview cannot be shaped or the counts do not reconcile.
-#[must_use]
+/// the reason when the preview cannot be shaped, `Unpaired` when the counts do
+/// not reconcile.
 pub fn shape(
     doc: &OpenDoc,
     preview: &TextEditPreview,
@@ -25,10 +26,11 @@ pub fn shape(
     run: usize,
     narrowed: &Narrowed,
     draft: &str,
-) -> Option<Shaped> {
+) -> Result<Shaped, PreviewFallback> {
     let mut shaped = super::shaped::shape(doc, preview, &narrowed.touched.replacement)?;
-    let text = doc.provenance_page_text(page)?;
-    let line = text.runs.get(run)?;
+    let unpaired = PreviewFallback::Unpaired;
+    let text = doc.provenance_page_text(page).ok_or(unpaired)?;
+    let line = text.runs.get(run).ok_or(unpaired)?;
     let span = narrowed.touched.original.clone();
     let original = &line.text;
     let before = original[..span.start].chars().count();
@@ -39,15 +41,15 @@ pub fn shape(
     if span.end < original.len() {
         spliced.extend_from_slice(&stops[before + held..]);
     } else {
-        spliced.push(*shaped.stops.last()?);
+        spliced.push(*shaped.stops.last().ok_or(unpaired)?);
     }
     if spliced.len() != draft.chars().count() + 1 {
-        return None;
+        return Err(unpaired);
     }
     shaped.stops = spliced;
     shaped.text = draft.to_owned();
-    shaped.blank = Some(glyph_extent(line, span)?);
-    Some(shaped)
+    shaped.blank = Some(glyph_extent(line, span).ok_or(unpaired)?);
+    Ok(shaped)
 }
 
 /// One caret stop per character of `line` plus the end, in page space. A

@@ -9,7 +9,8 @@
 //! the draft is not on an existing run, the engine would refuse the edit, the
 //! font has no outlines (Type 3, unsupported machinery), the run is invisible
 //! (render mode 3 or 7), or glyphs and characters do not pair one to one, so no
-//! caret could be placed.
+//! caret could be placed. Each case is held as a `PreviewFallback` reason
+//! ([`fallback`]) for the status bar to word.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/shaped.md`.
 
@@ -17,6 +18,7 @@ use std::sync::Arc;
 
 use egui::{Color32, Pos2, Vec2};
 use pdfcer_core::text_edit::{PreviewColour, TextEditPreview};
+use pdfcer_gui_base::text::previewfallback::PreviewFallback;
 use pdfcer_render::tiny_skia::{self, Path};
 
 use super::{Anchor, Draft, Preview};
@@ -77,6 +79,9 @@ pub struct Shaped {
 struct Cached {
     key: Key,
     shaped: Option<Arc<Shaped>>,
+    /// Why `shaped` is `None`; `None` for an empty draft, which has nothing
+    /// to draw in any font.
+    fallback: Option<PreviewFallback>,
 }
 
 /// The latest layout for the run `draft` edits.
@@ -92,6 +97,18 @@ pub fn read(ctx: &egui::Context, draft: &Draft) -> Option<Arc<Shaped>> {
             c.key.page == key.page && c.key.run == key.run && c.key.original == key.original
         })
         .and_then(|c| c.shaped)
+}
+
+/// Why the run `draft` edits has no layout: `None` before its first layout,
+/// `Some(None)` when it has one or the draft is empty. Matched as [`read`] is.
+#[must_use]
+pub fn fallback(ctx: &egui::Context, draft: &Draft) -> Option<Option<PreviewFallback>> {
+    let key = Key::of(draft)?;
+    ctx.data(|d| d.get_temp::<Cached>(egui::Id::new(KEY)))
+        .filter(|c| {
+            c.key.page == key.page && c.key.run == key.run && c.key.original == key.original
+        })
+        .map(|c| c.fallback)
 }
 
 /// Lay the current draft out, when its text changed since the last layout.
@@ -124,15 +141,21 @@ pub fn refresh(ctx: &egui::Context, doc: &OpenDoc) {
         doc.session.edit_text_preview(request, &plan.options)
     });
     let refused = laid.as_ref().err().map(ToString::to_string);
-    let shaped = laid
-        .ok()
-        .and_then(|p| match (tier, &plan.narrowed) {
+    let shaped = match laid {
+        Ok(p) => match (tier, &plan.narrowed) {
             (super::tier::Tier::Narrowed, Some(n)) => {
                 super::splice::shape(doc, &p, key.page, key.run, n, &key.text)
             }
             _ => shape(doc, &p, &key.text),
-        })
-        .map(Arc::new);
+        },
+        Err(_) => Err(PreviewFallback::Refused),
+    };
+    let fallback = shaped
+        .as_ref()
+        .err()
+        .copied()
+        .filter(|_| !key.text.is_empty());
+    let shaped = shaped.ok().map(Arc::new);
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
@@ -144,20 +167,33 @@ pub fn refresh(ctx: &egui::Context, doc: &OpenDoc) {
             u8::from(refused.is_some()),
         )
     });
-    ctx.data_mut(|d| d.insert_temp(id, Cached { key, shaped }));
+    ctx.data_mut(|d| {
+        d.insert_temp(
+            id,
+            Cached {
+                key,
+                shaped,
+                fallback,
+            },
+        );
+    });
     ctx.request_repaint();
 }
 
 #[allow(clippy::cast_possible_truncation)]
-pub(super) fn shape(doc: &OpenDoc, preview: &TextEditPreview, text: &str) -> Option<Shaped> {
+pub(super) fn shape(
+    doc: &OpenDoc,
+    preview: &TextEditPreview,
+    text: &str,
+) -> Result<Shaped, PreviewFallback> {
     let count = text.chars().count();
     if count == 0 || preview.glyphs.len() != count {
-        return None;
+        return Err(PreviewFallback::Unpaired);
     }
     let ink = match preview.render_mode {
         0 | 2 | 4 | 6 => &preview.fill,
         1 | 5 => &preview.stroke,
-        _ => return None,
+        _ => return Err(PreviewFallback::Invisible),
     };
     let outlines = pdfcer_render::edit_preview::preview_outlines(
         &doc.session.view(),
@@ -165,14 +201,18 @@ pub(super) fn shape(doc: &OpenDoc, preview: &TextEditPreview, text: &str) -> Opt
         &doc.settings.render_options().fonts,
     );
     if outlines.skipped.is_some() {
-        return None;
+        return Err(PreviewFallback::NoOutlines);
     }
     let origin = |m: &[f64; 6]| Pos2::new(m[4] as f32, m[5] as f32);
     let mut stops: Vec<Pos2> = preview.glyphs.iter().map(|g| origin(&g.matrix)).collect();
-    let last = preview.glyphs.last()?.matrix;
+    let last = preview
+        .glyphs
+        .last()
+        .ok_or(PreviewFallback::Unpaired)?
+        .matrix;
     let along = Vec2::new(last[0] as f32, last[1] as f32);
     if along.length() <= f32::EPSILON {
-        return None;
+        return Err(PreviewFallback::Unpaired);
     }
     let unit = along.normalized();
     let from = origin(&last);
@@ -182,7 +222,7 @@ pub(super) fn shape(doc: &OpenDoc, preview: &TextEditPreview, text: &str) -> Opt
         .map(|(x, y)| (Pos2::new(x, y) - from).dot(unit))
         .fold(0.0_f32, f32::max);
     stops.push(from + unit * reach);
-    Some(Shaped {
+    Ok(Shaped {
         outlines: outlines.glyphs,
         stops,
         up: Vec2::new(last[2] as f32, last[3] as f32),

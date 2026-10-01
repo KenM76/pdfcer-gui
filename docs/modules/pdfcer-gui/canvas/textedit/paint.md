@@ -2,11 +2,17 @@
 
 ## Item notes
 
-### `const MIN_PREVIEW_PT`
+### `fn sizes`
 
-A 4 pt note at 25 % zoom is a box two pixels high, and an operator cannot
-type into a line. The box grows past the run it covers rather than becoming
-illegible — the alternative is a preview that technically exists.
+A draft on an existing run is set in the shell's font at **the run's own size
+times the zoom**, unclamped, so the stand-in occupies the space the saved text
+will and a long draft is visibly long. Small text at low zoom is small here
+too; zooming in is the remedy, as it is for reading the page.
+
+New text (an origin or a box) has no run to take a size from. Its box is the
+nominal slot's screen height clamped to `MIN_PREVIEW_PT`–`MAX_PREVIEW_PT`, and
+its glyphs `PREVIEW_FILL` of that, because a 4 pt slot at 25 % zoom is a box
+two pixels high.
 
 ### `fn selection`
 

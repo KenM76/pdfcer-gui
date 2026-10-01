@@ -968,6 +968,8 @@ pub mod colour_icons;
 
 pub mod wheel_flips_pages;
 
+/// A stand-in preview is the text's size, and the status bar says why.
+pub mod preview_fallback;
 pub mod word_line_edit;
 
 pub mod zoom_burst;

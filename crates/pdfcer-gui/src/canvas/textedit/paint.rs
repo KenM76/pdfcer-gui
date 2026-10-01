@@ -32,10 +32,12 @@
 
 use egui::{Pos2, Ui};
 
+use pdfcer_gui_base::text::previewfallback::PreviewFallback;
+
 use super::{Anchor, Draft, Preview, read};
 use crate::app::state::OpenDoc;
 
-/// The smallest the in-place editor's text may be drawn, in points.
+/// The smallest the editor box for NEW text may be drawn, in points.
 const MIN_PREVIEW_PT: f32 = 11.0;
 
 /// The largest, in points. A title at 400 % zoom would otherwise fill the canvas
@@ -82,24 +84,24 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
     // editor box in the shell's font: it covers the original glyphs, which
     // are baked into the page raster, and promises nothing about typeface or
     // metrics that the commit would then break.
-    if let Some(s) = super::shaped::read(ctx, &draft)
-        && super::shaped::paint(ui, ctx, p, &draft, &s, screen)
-    {
-        return;
+    let reason = match super::shaped::read(ctx, &draft) {
+        Some(s) if super::shaped::paint(ui, ctx, p, &draft, &s, screen) => {
+            super::fallback::publish(ctx, &draft, None, 0.0);
+            return;
+        }
+        Some(_) => Some(Some(PreviewFallback::TooLarge)),
+        None => super::shaped::fallback(ctx, &draft),
+    };
+    let (height, font_pt) = sizes(p, &draft, page, screen);
+    // Unknown until the draft's first layout; published once it is known.
+    if let Some(why) = reason {
+        super::fallback::publish(ctx, &draft, why, font_pt);
     }
-    //
-    // # The size is the RUN's, not the UI's
-    //
-    // The glyph box gives the run's height, so the editor sits at the size of
-    // the text it is replacing and a long draft is visibly long. Clamped to
-    // something legible, because a 4 pt note at 25 % zoom is a box two pixels
-    // high and the operator would be typing into a line.
-    let height = screen.height().clamp(MIN_PREVIEW_PT, MAX_PREVIEW_PT);
     // ONE font binding and ONE layout, shared by the fill, the text and the
     // caret below. Two `FontId`s built separately would be two derivations of
     // one fact, and the caret would sit where a *slightly different* string
     // would have ended. See this module's header.
-    let font = egui::FontId::proportional(height * PREVIEW_FILL);
+    let font = egui::FontId::proportional(font_pt);
     // A BOX DRAFT WRAPS; EVERY OTHER DRAFT DOES NOT.
     //
     // The operator, 2026-08-21: *"I should be able to make it multi line."*
@@ -185,6 +187,7 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
             ),
         )
     } else {
+        let height = height.max(laid.rect.height());
         egui::Rect::from_min_size(
             egui::pos2(screen.left(), screen.center().y - height / 2.0),
             egui::vec2(width, height),
@@ -301,6 +304,47 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
 // measures the same string in the same font at the same size, inline above.
 // Removed rather than left unused, because a plausible-looking helper is
 // something a later hand reaches for.
+
+/// The editor box's height and its font size, in screen points.
+///
+/// A draft on an existing run is set at the run's own size times the zoom,
+/// unclamped, so the stand-in takes the space the saved text will. New text
+/// has no size to take, and keeps a legible clamp.
+fn sizes(
+    p: &Preview<'_>,
+    draft: &Draft,
+    page: &pdfcer_core::page_tree::Page,
+    screen: egui::Rect,
+) -> (f32, f32) {
+    if let Anchor::Run { run, .. } = &draft.anchor
+        && let Some(size) = run_size(p.doc, *run)
+        && let Some(scale) = screen_per_point(p, page)
+    {
+        let font = size * scale;
+        return (screen.height().max(font), font);
+    }
+    let height = screen.height().clamp(MIN_PREVIEW_PT, MAX_PREVIEW_PT);
+    (height, height * PREVIEW_FILL)
+}
+
+/// The run's largest glyph size, in PDF points.
+fn run_size(doc: &OpenDoc, run: usize) -> Option<f32> {
+    let text = doc.page_text()?;
+    text.runs
+        .get(run)?
+        .glyphs
+        .iter()
+        .map(|g| g.size)
+        .reduce(f32::max)
+        .filter(|s| s.is_finite() && *s > 0.0)
+}
+
+/// Screen points per PDF point at the current zoom, rotation-independent.
+fn screen_per_point(p: &Preview<'_>, page: &pdfcer_core::page_tree::Page) -> Option<f32> {
+    let a = crate::viewer::pdf_space_to_canvas(Pos2::ZERO, page)?;
+    let b = crate::viewer::pdf_space_to_canvas(Pos2::new(0.0, 100.0), page)?;
+    Some((p.map.to_screen(b) - p.map.to_screen(a)).length() / 100.0)
+}
 
 /// The draft's box in **canvas** space, or `None` when it cannot be derived.
 fn selection(

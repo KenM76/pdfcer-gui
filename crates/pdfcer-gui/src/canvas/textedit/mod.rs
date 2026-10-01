@@ -81,6 +81,8 @@ pub mod reflow;
 /// middle row of it exists.
 pub mod report;
 pub use caret::{backspace, delete_forward, insert, word_left, word_right};
+/// Why the open draft's preview is in a stand-in font, for the status bar.
+pub mod fallback;
 /// **Naming the exact show operator, and the exact buffer it lives in** — the
 /// one producer of `(pinned_span, EditTarget)` in this shell, shared by the
 /// caret's `edit_text` and the restyle verbs' `format_text`.

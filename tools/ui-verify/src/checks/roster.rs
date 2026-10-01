@@ -411,6 +411,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(double_click_text_scripted::DoubleClickTextWithoutTheMouse),
         // A line a word processor wrote in pieces: preview and commit, no OS input.
         Box::new(word_line_edit::ALineWrittenInPiecesEdits),
+        Box::new(preview_fallback::AStandInPreviewIsTheTextsSize),
         // File ▸ Export ▸ Tables… in all three formats, with no OS input.
         Box::new(export_tables_scripted::ExportTablesWithoutTheMouse),
         Box::new(export_tables_scripted::ExportTablesFollowsTheTags),

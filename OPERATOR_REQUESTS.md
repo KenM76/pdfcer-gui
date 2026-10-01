@@ -401,6 +401,7 @@ The plan, in build order, is `docs/plans/WORDLIKE_PLAN.md`.
 - *Lines that refused every edit*: built and driven. Word writes one line as several separate pieces; pdfcer now sends the engine only the piece your change touches. On a copy of his form, edits that commit went from 0 of 32 to 31 of 32, with the live preview in the line's own face. Driven: `a_line_written_in_pieces_edits`.
 - Still refused: a change reaching across two pieces at once (asked of the engine as G074), and a character the form's font does not carry (G075).
 - Known gap: when a piece grows, the piece after it on the same line does not move along, so they can overlap.
+- *Preview in the wrong size*: built and driven. When the preview cannot use the text's own font, the stand-in is now the text's own size at the current zoom, and the status bar says why. Driven: `a_stand_in_preview_is_the_texts_size_and_says_why`.
 
 ## O271 — **DECIDED, to build** — alignment buttons go in both places
 
