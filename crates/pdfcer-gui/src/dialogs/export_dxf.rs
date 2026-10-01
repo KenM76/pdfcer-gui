@@ -34,6 +34,8 @@ pub const fn region_for_units(units: DxfUnits) -> &'static str {
 pub const REGION_UNITS: &str = "export-dxf.units"; // ui-text-exempt: trace region name, never displayed
 /// The region the DXF version drop-down publishes.
 pub const REGION_VERSION: &str = "export-dxf.version"; // ui-text-exempt: trace region name, never displayed
+/// One region per entry in the OPEN version list, indexed in [`VERSIONS`] order.
+const REGION_VERSION_ITEM_PREFIX: &str = "export-dxf.version.item."; // ui-text-exempt: trace region name, never displayed
 /// The versions the drop-down offers, oldest first.
 const VERSIONS: [DxfVersion; 3] = [DxfVersion::R12, DxfVersion::R2000, DxfVersion::R2004];
 /// The region the fit-arcs checkbox publishes.
@@ -244,11 +246,15 @@ impl ExportDxfDialog {
             let combo = egui::ComboBox::from_id_salt(REGION_VERSION)
                 .selected_text(t::version_name(self.options.version))
                 .show_ui(ui, |ui| {
-                    for version in VERSIONS {
-                        ui.selectable_value(
+                    for (index, version) in VERSIONS.into_iter().enumerate() {
+                        let entry = ui.selectable_value(
                             &mut self.options.version,
                             version,
                             t::version_name(version),
+                        );
+                        crate::diag::ui_rect(
+                            &format!("{REGION_VERSION_ITEM_PREFIX}{index}"),
+                            entry.rect,
                         );
                     }
                 });

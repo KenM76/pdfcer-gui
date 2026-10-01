@@ -158,14 +158,16 @@ build carries it. The ODA File Converter (audit on) converts pdfcer's exports of
 earlier export still fails at its first line. Closes when a file opens in his
 eDrawings or LT 2004.
 
-## O252 — **PART BUILT, NOT YET DRIVEN** — export options for each format: DXF version, and the drawing scale
+## O252 — **BUILT, PART DRIVEN** — export options for each format: DXF version, and the drawing scale
 
 Each export format gets the options that format has. For DXF: a version
 drop-down (at least R12, 2000 and 2004), and the scale. The scale is chosen from
 one of the document's scale groups in a drop-down, or typed in the same
 paper-to-world form, with unit drop-downs, that Set Scale uses (O242).
 
-**Built:** the DXF dialog takes its scale from a chosen scale group or a typed title-block ratio. The DXF dialog also has a **DXF version** drop-down (R12, R2000, R2004), remembered like the other DXF choices; an R12 export reports the curves it flattened and the units the file cannot record. Not driven yet.
+**Built:** the DXF dialog takes its scale from a chosen scale group or a typed title-block ratio. The DXF dialog also has a **DXF version** drop-down (R12, R2000, R2004), remembered like the other DXF choices; an R12 export reports the curves it flattened and the units the file cannot record.
+
+**Driven off-screen (2026-10-01):** `export_dxf_writes_the_version_and_scale_chosen` picks R12 then R2004 and types two different real-world numbers into the scale ratio. Each file's `$ACADVER` matches the pick, the window reopens on the last version, and the file's extents grow by the typed ratio. Falsified twice: a build that ignores the version, and one that ignores the scale, each fail by name. Picking the scale from a scale group is not driven: the fixture has no calibrated ce dimension groups.
 
 ## O253 — **FILED** — an Edit-tab copy of the Markup tools that can become page content, drawing into the page by default
 

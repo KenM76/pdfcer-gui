@@ -90,6 +90,7 @@ pub mod embed_fonts;
 /// Export to DXF: the file reaches disk, and its contents agree with the
 /// counts the shell reported.
 pub mod export_dxf;
+pub mod export_dxf_options;
 
 /// **Press Export form data and a file appears on disk with the form's
 /// values in it.** The oracle is the FILE, not a trace line: a build that
