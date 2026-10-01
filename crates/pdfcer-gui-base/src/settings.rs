@@ -113,6 +113,7 @@ impl SettingsExt for Settings {
         let mut options = SaveOptions::identity();
         options.xref_entry_eol = self.xref_entry_eol;
         options.trailing_eol = self.trailing_eol;
+        options.edited_stream_compression = self.edited_stream_compression;
         options
     }
 }

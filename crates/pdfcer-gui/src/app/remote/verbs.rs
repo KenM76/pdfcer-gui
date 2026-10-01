@@ -184,10 +184,23 @@ fn history(app: &PdfcerApp) -> Result<Reply, Reply> {
         return Err(no_document());
     };
     let kind = |k: Option<_>| k.map_or_else(|| "-".to_owned(), |k| format!("{k:?}"));
+    // Newest first, so the Nth entry is what `undo N` reaches back to.
+    let kinds = |ks: &mut dyn Iterator<Item = _>| {
+        let all: Vec<String> = ks.map(|k| format!("{k:?}")).collect();
+        if all.is_empty() {
+            "-".to_owned()
+        } else {
+            all.join(",")
+        }
+    };
+    let session = &doc.session;
     Ok(Reply::ok("").with_body(vec![
-        format!("undo_depth={}", doc.session.undo_depth()),
-        format!("undo_top={}", kind(doc.session.undo_kind())),
-        format!("redo_top={}", kind(doc.session.redo_kind())),
+        format!("undo_depth={}", session.undo_depth()),
+        format!("undo_top={}", kind(session.undo_kind())),
+        format!("redo_top={}", kind(session.redo_kind())),
+        format!("redo_depth={}", session.redo_depth()),
+        format!("undo_kinds={}", kinds(&mut session.undo_kinds())),
+        format!("redo_kinds={}", kinds(&mut session.redo_kinds())),
     ]))
 }
 

@@ -63,7 +63,7 @@ a program is connected and keeps a log of every request.
 | `objects` | the current page's objects: index, `path`/`text`/`image`, bounds in PDF points |
 | `select <i,j,…>` / `select none` | select objects on the current page by `objects` index |
 | `undo [n]` / `redo [n]` | step the undo history |
-| `history` | undo depth, and the kinds on top of the undo and redo stacks |
+| `history` | undo and redo depths, the kind on top of each stack, and every kind on each stack, newest first (`undo_kinds=A,B,C`; `-` when empty) |
 | `render [page] [dpi]` | render a page to a PNG; the reply is its path. **Read the image.** |
 | `open <path>` | open a PDF in a new tab |
 

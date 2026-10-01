@@ -4,7 +4,7 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.68.0, a git dependency on the local engine repository, pinned at **`370a1fcc`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.70.0, a git dependency on the local engine repository, pinned at **`96f10e3c`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
 **What is new in this build.** Edit › Insert › *3D model…* places a U3D or PRC model on the page, and the Attachments panel lists every 3D model a document carries, with *Save model…* to write it out unchanged, and *Save as mesh…* to write a PRC model's triangles as STL or OBJ. pdfcer draws a placeholder picture; the model itself opens in a 3D-capable reader such as Acrobat. STEP files are refused with the advice to convert them. Edit › Align and Distribute (Ctrl+Shift+A)
 lines up, spaces and arranges selected objects: align to an edge or centre,
@@ -78,7 +78,7 @@ than the number it produced last.
 | **Gates** | `bash tools/gates/run-all.sh` — exit 0 pass, 1 fail, 3 skipped. A skip is not a pass. Every grep-over-source gate carries a `--self-test` that plants a violation |
 | **Source** | `git ls-files '*.rs'` through `xargs` with a newline delimiter, then `cat`, then `wc -l`. The `cat` matters: without it `xargs` splits into two `wc` invocations and emits two `total` lines. A `find crates -name '*.rs'` count answers a different question |
 | **Commands** | read from the build's own trace line `pdfcer-diag shell commands=… planned=… directed=…` on an off-screen smoke launch under `PDFCER_DIAG_VIEWPORT` |
-| **Engine** | `pdfcer-core` v0.64.0, pinned as above |
+| **Engine** | `pdfcer-core` v0.70.0, pinned as above |
 | **Panels** | 13 — `Panel::ALL` is `[Self; 13]` in `crates/pdfcer-gui/src/panels/mod.rs`, pinned by `tests::the_panel_catalog_is_complete` |
 | **Ribbon surface** | 41 captioned groups — `grep -c 'caption:' crates/pdfcer-gui/src/shell/ron/built_in.ron` |
 
