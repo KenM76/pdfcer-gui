@@ -138,7 +138,7 @@ pub fn attributions_heading() -> &'static str {
 /// The sentence that points at the full texts.
 #[must_use]
 pub fn full_texts_note() -> &'static str {
-    "Full licence texts for these, and for every Rust crate pdfcer links, are in THIRD_PARTY_LICENSES.md in the folder beside the program."
+    "Full licence texts for these, and for every Rust crate pdfcer links, are in THIRD_PARTY_LICENSES-GUI.md in the folder beside the program."
 }
 
 /// The button that closes the dialog.

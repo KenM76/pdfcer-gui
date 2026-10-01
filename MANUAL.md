@@ -37,7 +37,7 @@ The document appears in the middle. Around it:
 
 | | |
 |---|---|
-| **top strip** | the quick buttons (open, save a copy, undo, redo), then the tabs, then **Read / Review / Edit** on the right |
+| **top strip** | the quick buttons (open, save, undo, redo), then the tabs, then **Read / Review / Edit** on the right |
 | **the ribbon** | the band of commands under the tabs. What is on it depends on the tab *and* on which of the three modes you are in |
 | **left panel** | page thumbnails, bookmarks, and whatever else you switch it to |
 | **bottom strip** | the **Select** filter, the page number, zoom, the fit buttons, find |
@@ -927,7 +927,7 @@ you are typing in, then abandons a drag in flight, then a guide you are
 dragging, then a measurement or vertex run in progress, then puts the armed tool
 away, then clears the selection. One press, one effect.
 
-The window under **Help ▸ Keyboard shortcuts** is generated from the same keymap
+The window under **File ▸ Keyboard shortcuts** is generated from the same keymap
 the program dispatches, so it cannot drift from what the keys do.
 
 ---
@@ -943,6 +943,8 @@ Beside the program, in a folder called **`userdata`**:
 | `layout.ron` | your panel arrangement |
 | `select-filter.txt` | which classes the Select filter allows |
 | `recent.txt` | recently opened files |
+| `guides.txt` | the guide lines placed on each document |
+| `page-display.txt` | the page display chosen for each document |
 
 **Keep the `userdata` folder when you update pdfcer.** Replace everything else.
 
@@ -990,5 +992,5 @@ or the machine — clears it.
 
 ---
 
-*This manual describes the portable build. `FEATURES.md`, shipped beside it,
+*This manual describes the portable build. `FEATURES-GUI.md`, shipped beside it,
 lists every capability with what is and is not established about each.*
