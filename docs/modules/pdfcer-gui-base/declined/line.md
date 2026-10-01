@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/status/decline/line`
+# `pdfcer-gui-base/declined/line`
 
 ## Item notes
 

@@ -9,7 +9,7 @@ use crate::canvas::zoom::ZoomOutcome;
 
 /// Record what a framing zoom did, so the bar can say so if it declined.
 pub(crate) fn record(outcome: ZoomOutcome) {
-    let declined = Declined::of(outcome);
+    let declined = super::of(outcome);
     LAST.with_borrow_mut(|slot| *slot = declined);
 }
 

@@ -1,25 +1,25 @@
-//! # `app::status::decline::fresh` — is the sentence still true?
+//! # `declined::fresh` — is the sentence still true?
 //!
 //!
 //! ## The seam
 //!
-//! [`super`]'s header sets itself two jobs: *what is a decline* and *how long
+//! `super`'s header sets itself two jobs: *what is a decline* and *how long
 //! does it owe its sentence*. Every split so far has taken a question that was
 //! neither of those — `floor` answers one about somebody else's protocol,
 //! `record` answers *who says one*, `line` answers *in what words*. This one is
 //! different and is the better cut for it: it takes **the whole of the second
-//! job**, leaving [`super`] the enum and the store.
+//! job**, leaving `super` the enum and the store.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/status/decline/fresh.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/declined/fresh.md`.
 
 use super::Declined;
-use crate::app::state::OpenDoc;
+use crate::opendoc::OpenDoc;
 
 impl Declined {
     /// Whether this decline still describes the application in front of the
     /// operator.
     #[must_use]
-    pub(super) fn still_true(
+    pub fn still_true(
         &self,
         has_bounds: bool,
         canvas_has_drawn: bool,
@@ -273,12 +273,12 @@ impl Declined {
 /// **What the command log says right now** — the fact
 /// [`Declined::NothingToUndo`] and [`Declined::NothingToRedo`] are retired by.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub(crate) struct History {
+pub struct History {
     /// `EditSession::can_undo` — something has been changed and not taken back.
-    pub(crate) can_undo: bool,
+    pub can_undo: bool,
     /// `EditSession::can_redo` — something has been taken back and not
     /// re-applied, and no command has been recorded since.
-    pub(crate) can_redo: bool,
+    pub can_redo: bool,
 }
 
 impl History {
@@ -287,7 +287,7 @@ impl History {
     /// The one derivation, so the bar cannot learn this from a different
     /// question than the one that produced the sentence.
     #[must_use]
-    pub(super) fn of(doc: &OpenDoc) -> Self {
+    pub fn of(doc: &OpenDoc) -> Self {
         Self {
             can_undo: doc.session.can_undo(),
             can_redo: doc.session.can_redo(),

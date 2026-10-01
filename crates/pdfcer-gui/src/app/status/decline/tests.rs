@@ -212,13 +212,13 @@ fn a_partial_grant_is_not_a_decline() {
         "the fixture must really be the clamped case, or this proves nothing"
     );
     assert_eq!(
-        Declined::of(clamped),
+        of(clamped),
         None,
         "the ceiling reports itself through the zoom readout; a second \
          report in words would fire when nothing was declined"
     );
     assert_eq!(
-        Declined::of(ZoomOutcome::Zoomed {
+        of(ZoomOutcome::Zoomed {
             requested: 2.0,
             applied: 2.0
         }),
@@ -226,14 +226,8 @@ fn a_partial_grant_is_not_a_decline() {
     );
 
     // …and both genuine declines are carried.
-    assert_eq!(
-        Declined::of(ZoomOutcome::NoBounds),
-        Some(Declined::NothingToFrame)
-    );
-    assert_eq!(
-        Declined::of(ZoomOutcome::NoCanvas),
-        Some(Declined::CanvasNotDrawn)
-    );
+    assert_eq!(of(ZoomOutcome::NoBounds), Some(Declined::NothingToFrame));
+    assert_eq!(of(ZoomOutcome::NoCanvas), Some(Declined::CanvasNotDrawn));
 }
 
 /// Each decline says its own thing, from the catalog.

@@ -1,4 +1,4 @@
-# `app::status::decline::fresh` — is the sentence still true?
+# `pdfcer-gui-base/declined/fresh` — is the sentence still true?
 
 
 ## The seam

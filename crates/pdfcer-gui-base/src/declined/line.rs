@@ -1,10 +1,10 @@
-//! # `app::status::decline::line` — one decline, one sentence
+//! # `declined::line` — one decline, one sentence
 //!
 //!
 //! ## Why THIS was the half to move
 //!
 //! Because it is the only part of `impl Declined` that is a pure mapping.
-//! [`super::Declined::still_true`] is a *ruling* — every arm of it is an
+//! `super::Declined::still_true` is a *ruling* — every arm of it is an
 //! argument about whether a sentence has gone stale, and several of those
 //! arguments are about the enum's shape rather than about any one variant, so
 //! moving it would separate a ruling from the thing it rules on. This function
@@ -24,7 +24,7 @@
 //! subject, so that a second wording of the same refusal cannot grow up beside
 //! the first without somebody noticing.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/status/decline/line.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/declined/line.md`.
 
 use super::Declined;
 use crate::text::status as t;
@@ -32,7 +32,7 @@ use crate::text::status as t;
 impl Declined {
     /// The sentence, from the catalog.
     #[must_use]
-    pub(super) fn line(&self) -> std::borrow::Cow<'static, str> {
+    pub fn line(&self) -> std::borrow::Cow<'static, str> {
         // Bound through a `&'static str` so only the arms that interpolate
         // carry machinery. They `return`; the catalog below is unchanged.
         let fixed: &'static str = match self {

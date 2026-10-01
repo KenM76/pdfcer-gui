@@ -2,6 +2,10 @@
 
 The worded decline: telling the operator that a command did *not* run.
 
+The `Declined` enum, its sentence (`line`) and its lifetime (`fresh`) live in
+`pdfcer_gui_base::declined` and are re-exported here; this module keeps the
+store, the recorders, `of` (a framing zoom's outcome) and the bar slot.
+
 A decline ("Nothing to zoom to") occupies the status bar's left half beside
 the two rule-4 disclosures in [`super`], and is a different speech act from
 them:
@@ -88,9 +92,9 @@ requirement of a decline is that it is **on screen and legible**, and
 Matched literally by `tools/ui-verify`, so renaming it silently un-aims
 whatever check was measuring it.
 
-### `mod fresh`
+### `fresh` (now `pdfcer_gui_base::declined::fresh`)
 
-See `decline/fresh.rs`'s header for the seam. In one line: it is the
+See its header for the seam. In one line: it is the
 **pure** half of this module's second job, and it leaves behind the half
 that needs a context and a document ([`live`], [`show`]), so each file now
 has one testability story instead of two.

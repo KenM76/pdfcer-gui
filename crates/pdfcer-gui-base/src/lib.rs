@@ -347,6 +347,8 @@ pub mod pick;
 /// Where the pick filter is kept between runs.
 pub mod pickstore;
 
+/// The worded decline: a refused command's sentence and its lifetime.
+pub mod declined;
 /// Why a canvas verb declined.
 pub mod refusals;
 
