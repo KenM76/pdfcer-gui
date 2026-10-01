@@ -348,6 +348,7 @@ impl Strip {
     /// scrolled to.**
     #[must_use]
     pub fn page_at_view(&self, view: Rect) -> Option<usize> {
+        let view_area = view.width() * view.height();
         let mut best: Option<(usize, f32)> = None;
         for placement in self.placements() {
             let overlap = placement.rect.intersect(view);
@@ -355,9 +356,11 @@ impl Strip {
             if area <= 0.0 {
                 continue;
             }
+            let page_area = placement.rect.width() * placement.rect.height();
+            let score = (area / page_area).max(area / view_area);
             match best {
-                Some((_, best_area)) if best_area >= area => {}
-                _ => best = Some((placement.page, area)),
+                Some((_, best_score)) if best_score >= score => {}
+                _ => best = Some((placement.page, score)),
             }
         }
         best.map(|(page, _)| page)
@@ -582,6 +585,20 @@ mod tests {
             strip.page_at_view(Rect::from_min_size(pos2(0.0, -5000.0), viewport)),
             None
         );
+    }
+
+    /// **A page seen whole counts as fully looked at**, however small: a
+    /// postcard-sized page 0 above a Letter page 1 is page 0 at launch, where
+    /// raw area would answer page 1 and page commands would act on it.
+    #[test]
+    fn a_small_page_seen_whole_is_the_current_page() {
+        let pages = vec![page(200.0, 280.0), page(612.0, 792.0)];
+        let strip = Strip::new(&pages, PageDisplay::Continuous, 0, 1.0);
+        let view = Rect::from_min_size(pos2(0.0, 0.0), vec2(612.0, 900.0));
+        assert_eq!(strip.page_at_view(view), Some(0));
+        // Scrolled so page 1 fills the view: page 1.
+        let lower = Rect::from_min_size(pos2(0.0, 280.0 + ROW_GAP), vec2(612.0, 700.0));
+        assert_eq!(strip.page_at_view(lower), Some(1));
     }
 
     /// The visible set is intersection, not containment: a page one pixel of

@@ -301,10 +301,14 @@ canvas asks this before deciding a click landed on anything.
 ### `fn page_at_view`
 
 `GUI_ROADMAP.md` Phase 4.3's *"scroll-driven current-page tracking"*.
-The rule is **the greatest visible area wins**, with the lowest page
-index breaking a tie, and both halves matter:
+The rule is **the page most looked at wins**: each visible page scores
+the larger of the share of itself that is visible and the share of the
+view it fills, with the lowest page index breaking a tie. Each part matters:
 
-* *Greatest area*, not "the page under the viewport centre": on a
+* *Share, not raw area*: a postcard page seen whole above a Letter page
+  is the page being looked at, though the Letter page covers more of the
+  view. Raw area would make page commands act on the Letter page.
+* *Visible share*, not "the page under the viewport centre": on a
   drawing sheet zoomed in past the viewport, the centre is always on
   some page and the two rules agree; on a document zoomed out far enough
   to show four pages, the centre rule flips the reported page as soon as
