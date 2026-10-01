@@ -83,7 +83,7 @@ const UNAVAILABLE_EVENT: &str = "canvas-unavailable";
 /// zero — see the module header.
 const BEYOND_EVENT: &str = "strip-beyond-raster";
 
-/// `render::settle`'s record of whether the CURRENT page's raster order
+/// `app::settle`'s record of whether the CURRENT page's raster order
 /// could be filled at all — O186's third route, added 2026-09-12.
 const UNFILLABLE_EVENT: &str = "current-order-unfillable";
 /// One strip raster actually ordered, with the page it was ordered for.
@@ -349,7 +349,7 @@ fn part_a(
                      `canvas::tier::decide`'s region tier has nothing to intersect and leaves \
                      `OpenDoc::raster_region` as `None`; a request with no region is a request \
                      for the WHOLE SHEET, which at this scale is the refusal above. \
-                     `render::settle::settle_and_rasterize` must ask \
+                     `app::settle::settle_and_rasterize` must ask \
                      `OpenDoc::raster_order_fillable` before it spawns. ★★ And the damage is not \
                      the refusal: `absorb_render` learns a zoom CEILING from it, so a page that \
                      renders through the region tier at ten billion percent gets capped at a \
@@ -373,7 +373,7 @@ fn part_a(
                         "it names page {p}, which the canvas was NEVER acting on (it acted on \
                          {acting:?}) — the operator's own finding, and the defect this check was \
                          written for: the sheet that could not be drawn is not the sheet he was \
-                         looking at. `render::settle::fill_strip` must ask \
+                         looking at. `app::settle::fill_strip` must ask \
                          `OpenDoc::strip_page_orderable` before it places a strip order, because \
                          a strip page is handed `region: None` by construction and above the \
                          pixmap ceiling there is nothing to ask for"
@@ -463,7 +463,7 @@ fn part_a(
         return Ok(Some(format!(
             "at zoom {:.1} ({:.0} %) the canvas drew {} pages and NONE of them had a raster. The \
              neighbour being unorderable is correct and expected; the operator's OWN sheet going \
-             blank is not. `render::settle::fill_strip`'s orderability filter must exclude only \
+             blank is not. `app::settle::fill_strip`'s orderability filter must exclude only \
              pages that are not the current one — `page != current` — or it skips the one page \
              the region tier could have drawn.",
             state.zoom,
@@ -708,7 +708,7 @@ fn part_b(
              {:.0},{:.0}..{:.0},{:.0}. The operator's fourth clause is explicit: *\"zoom should \
              stop at the limit and not end up showing an error … the error can still be shown on \
              the bottom bar\"*. A refusal of kind `BeyondRaster` must be absorbed into a ceiling \
-             by `render::settle::absorb`'s `absorb_render`, which leaves `render_error` unset and the page \
+             by `app::settle::absorb`'s `absorb_render`, which leaves `render_error` unset and the page \
              texture in place; a published `{MESSAGE_REGION}` means some refusal reached \
              `RefusalKind::Other` and was painted.",
             rect.min.x, rect.min.y, rect.max.x, rect.max.y

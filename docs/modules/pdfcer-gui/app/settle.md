@@ -1,4 +1,4 @@
-# `render::settle` — is the picture on screen still a picture of what I am looking at?
+# `app::settle` — is the picture on screen still a picture of what I am looking at?
 
 The per-frame raster decision: what is stale, what to re-rasterize now,
 what to debounce until a zoom gesture stops, and which of a continuous

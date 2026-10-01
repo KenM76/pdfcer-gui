@@ -96,7 +96,7 @@ Deliberately silent under [`CATCHING_UP_AFTER`]: see that constant.
 
 **Both sides of the comparison must come from the same counter.**
 `edit_epoch` is incremented by the action modules; `page_texture_epoch`
-holds a `PageEpochs` value written by `render::settle`. They are issued
+holds a `PageEpochs` value written by `app::settle`. They are issued
 independently, so an `EditScope::Page(other)` edit advances `edit_epoch`
 without advancing this page's entry and the two pass each other for good
 — deleting a page guarantees it, because `actions::pages` calls

@@ -111,7 +111,7 @@ place the base key is computed.
 > always render the new exposed area, and the same thing happens
 > usually when I zoom out."*
 
-The staleness test in `render::settle` asked two things — has a
+The staleness test in `app::settle` asked two things — has a
 **discrete input** changed (page, annotations, layers), and has the
 **scale** changed — and the region was in the key without being in
 either. So a pan that changed nothing but *which part of the page is on
@@ -177,7 +177,7 @@ rounding step.
 
 Added at Phase 4, and it is what makes a strip's routing correct: a
 finished render is labelled with the key it was run from, so
-`crate::render::settle` can file it against the page it is *of* rather
+`crate::app::settle` can file it against the page it is *of* rather
 than against whatever slot asked for it. Those differ exactly when the
 operator scrolled while it was running, which under a continuous mode
 is the common case rather than the rare one.

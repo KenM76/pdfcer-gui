@@ -4,7 +4,7 @@
 
 ### `fn the_render_order_starts_at_the_middle_of_the_viewport`
 
-`render::settle` starts one render per frame and takes the first entry
+`app::settle` starts one render per frame and takes the first entry
 of this list that has no raster, so the order **is** the fill order. Top
 down would mean that whenever the operator has scrolled to a page
 boundary — which is when a continuous mode is being used — the page they
@@ -59,7 +59,7 @@ no stated reason is that it has not been drawn.
 
 ### `fn nearest_first`
 
-The order [`crate::render::settle`] fills the strip in. Nearest-first rather
+The order [`crate::app::settle`] fills the strip in. Nearest-first rather
 than top-down because the operator is looking at the middle of the viewport:
 filling from the top means the page they are reading is the last one to
 arrive whenever they have scrolled to a boundary, which is exactly the

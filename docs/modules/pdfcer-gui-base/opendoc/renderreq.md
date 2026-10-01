@@ -39,7 +39,7 @@ be rasterized with nothing reporting an error.
 
 The one constructor for a [`RenderRequest`], so the current page and a
 strip page cannot be rendered with different options. It exists here,
-on the document, rather than in [`crate::render::settle`] because the
+on the document, rather than in [`crate::app::settle`] because the
 annotation stance and the layer override are **private** fields of this
 type — and they should stay private: they are changed through
 [`Self::set_annotations_visible`] and [`Self::set_hidden_layers`],

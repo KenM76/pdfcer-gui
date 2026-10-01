@@ -207,7 +207,7 @@ fn with_hold(
     doc.edit_epoch = edit_epoch;
     // THE TEXTURE'S EPOCH IS SET THROUGH ITS REAL RELATIONSHIP, never by
     // assignment. `page_texture_epoch` carries a **`PageEpochs`** value and
-    // `render::settle` is its only writer — `self.page_texture_epoch =
+    // `app::settle` is its only writer — `self.page_texture_epoch =
     // self.page_epochs.get(page)`. It is not an `edit_epoch`.
     //
     // Callers pass the two arguments EQUAL to mean *"the raster has caught up"*
@@ -355,7 +355,7 @@ fn a_page_edit_elsewhere_does_not_strand_the_catching_up_line() {
     let mut doc = open_local_fixture("polyline-nodes.pdf");
     doc.view.page_index = 0;
 
-    // The raster for page 0 has landed and is current: `render::settle` writes
+    // The raster for page 0 has landed and is current: `app::settle` writes
     // this field from `page_epochs.get(page)`, so that is how the test writes
     // it too.
     doc.page_texture_epoch = doc.page_epochs.get(0);

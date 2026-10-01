@@ -264,7 +264,7 @@ pub struct OpenDoc {
     /// centre first.
     ///
     /// Published by [`crate::canvas::show`] during layout and read by
-    /// [`crate::render::settle`] after the frame, because "which pages are on
+    /// [`crate::app::settle`] after the frame, because "which pages are on
     /// screen" is only knowable once the scroll area has settled — the same
     /// reason [`ViewFrame::last_scroll_offset`] is stored rather than derived. It is
     /// the **complete** input to the strip's scheduling: what to keep, what to
@@ -333,7 +333,7 @@ pub struct OpenDoc {
     /// # Why a separate field, when `render_error` already exists
     ///
     ///
-    /// `render::settle`'s spawn gate did have a hold, spelled
+    /// `app::settle`'s spawn gate did have a hold, spelled
     /// `doc.render_error.is_some() && !stale_discrete`, and it could not fire,
     /// for two independent reasons:
     ///
@@ -385,7 +385,7 @@ pub struct OpenDoc {
     /// [`crate::rasterceiling::RasterCeiling`] for the whole of the reasoning:
     /// why the number cannot be derived, why one observation is enough, and why
     /// it is keyed on the page and its epoch. Written in
-    /// `crate::render::settle::absorb`'s `absorb_render`, read by
+    /// `crate::app::settle::absorb`'s `absorb_render`, read by
     /// [`crate::viewer::zoom_ceiling`] and by `crate::app::status::rasterstop`.
     pub raster_ceiling: crate::rasterceiling::RasterCeiling,
     /// **How many fonts the last mark-by-search in this document could not
@@ -846,7 +846,7 @@ pub struct OpenDoc {
     /// tier the answer was needed for — and it is not true at all of a shell
     /// that would rather not derive an engine fact it can ask for (R74).
     ///
-    /// The observed write in `crate::render::settle` is kept, as a second
+    /// The observed write in `crate::app::settle` is kept, as a second
     /// writer that can only ever agree: the engine's test pins the ask and the
     /// render to the same answer, so a disagreement would be a bug in the
     /// engine and this shell would rather record `true` than argue.
@@ -872,7 +872,7 @@ pub struct OpenDoc {
     ///
     /// # Why it has ONE writer where [`Self::ink_pages`] has two
     ///
-    /// `crate::render::settle` writes `ink_pages` from the render counters, as
+    /// `crate::app::settle` writes `ink_pages` from the render counters, as
     /// a second observer that can only agree with the ask. Those counters say
     /// *the colorant buffer was engaged or refused*; they do **not** say which
     /// of Table 147, the output intent or the device decided it. So an

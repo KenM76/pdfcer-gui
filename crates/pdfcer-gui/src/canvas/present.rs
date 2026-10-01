@@ -22,7 +22,7 @@ use egui_shell::HandlerToken;
 use crate::app::actions::Action;
 use crate::app::modes::Capabilities;
 use crate::app::state::OpenDoc;
-use crate::render::settle::StripOrders;
+use pdfcer_gui_base::stripschedule::StripOrders;
 // The interaction half, next door. `Frame` is this frame's settled facts on the
 // way in; `interact` is everything that follows from them. Imported by name
 // rather than called as `interact::interact(…)` so the one call site below
@@ -537,7 +537,7 @@ fn show_in(
                     .as_ref()
                     // And only if it is a picture of THIS page. The slot is
                     // normally kept in step with the current page by
-                    // `render::settle`, but a raster that lands in the same
+                    // `app::settle`, but a raster that lands in the same
                     // frame as a page change would otherwise be placed by a
                     // region computed for its neighbour — a rectangle that is
                     // perfectly valid and completely wrong, which is the
@@ -831,7 +831,7 @@ fn show_in(
     let extent = viewer::page_extent_pts(&doc.pages[acting]);
 
     // **Publish what the renderer should work on**, nearest the viewport
-    // centre first — the order `render::settle` fills the strip in, and the
+    // centre first — the order `app::settle` fills the strip in, and the
     // whole of why a scroll feels like it is keeping up rather than starting
     // from the top every time. Only knowable here, once the scroll area has
     // settled, which is the same reason `last_scroll_offset` is stored.

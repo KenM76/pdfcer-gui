@@ -121,6 +121,9 @@ pub mod doctabs;
 /// Save happen in.
 pub mod settings_window;
 
+/// The per-frame raster decision and the strip's scheduling.
+pub mod settle;
+
 /// The live link: verbs a connected program may send.
 pub mod remote;
 

@@ -35,7 +35,7 @@ This is the single most important property of this check, and getting it
 wrong would have produced a check that passes on a build with the defect
 still in it.
 
-`render::settle::absorb`'s `absorb_render` now has a `BeyondRaster` arm that learns
+`app::settle::absorb`'s `absorb_render` now has a `BeyondRaster` arm that learns
 a raster ceiling from the refusal and **returns early** — without setting
 `render_error` and without clearing the page texture. That arm is part of
 O186's own fix (clause two), and it is upstream of the sentence. So on a
@@ -161,7 +161,7 @@ state was never entered"* (skip).
 Part B leaves the strip, enters Single, and climbs until the rasterizer's
 own content-dependent wall is met — `RasterizerLimit`, which is a different
 refusal from the pixmap-edge one and arrives at a scale that depends on how
-much ink the page holds. `render::settle::absorb`'s `learn_raster_ceiling` turns it
+much ink the page holds. `app::settle::absorb`'s `learn_raster_ceiling` turns it
 into a learned ceiling and pulls the zoom back, tracing
 `raster-ceiling-learned … moved=true`. From that point the operator's fourth
 clause is the specification, and it is checked literally: the zoom does not

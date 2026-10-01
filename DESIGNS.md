@@ -1772,7 +1772,7 @@ must end up thin, or Stage 3 buys a directory rearrangement and no seconds.
 **Where Stage 3 stands.** `OpenDoc` and every type its fields name are in
 `pdfcer-gui-base`, with `prefs`, `clipboard` and `protect`. Behaviour that
 must stay in the gui is a `pub(crate)` trait implemented for `OpenDoc`
-(`render::settle`'s `ZoomSettle`, `prefetch`'s `Prefetch`): an inherent
+(`app::settle`'s `ZoomSettle`, `prefetch`'s `Prefetch`): an inherent
 `impl` can only live in the defining crate. Test fixtures cross the seam
 through the base's `test-fixtures` feature, enabled only from the gui's
 `[dev-dependencies]`. Next: the modules `python tools/module-graph.py` shows

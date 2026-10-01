@@ -198,7 +198,7 @@ So the property asserted is not "the field reaches the renderer". It is
 
 * `RenderKey` equality, which `render::strip` uses to decide whether a
   cached raster may be served at all; and
-* [`RenderKey::discrete_inputs`], which `render::settle` uses to decide
+* [`RenderKey::discrete_inputs`], which `app::settle` uses to decide
   whether to re-rasterize **at once** rather than after `ZOOM_SETTLE`.
 
 The second matters on its own: a stroke display that landed in the

@@ -1,10 +1,10 @@
-//! # `render::settle` — is the picture on screen still a picture of what I am looking at?
+//! # `app::settle` — is the picture on screen still a picture of what I am looking at?
 //!
 //! The per-frame raster decision: what is stale, what to re-rasterize now,
 //! what to debounce until a zoom gesture stops, and which of a continuous
 //! strip's several visible pages to render next.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/render/settle.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui/app/settle.md`.
 
 use std::time::{Duration, Instant};
 

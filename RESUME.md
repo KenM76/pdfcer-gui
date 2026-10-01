@@ -108,14 +108,15 @@ embed, then the crate split.
    parity table (poster is done).
 6. **Crate split Stage 3.** Standing work between tasks, approved. `OpenDoc`,
    prefs, `clipboard`, `protect` and the whole Find bar are in
-   `pdfcer-gui-base`. What stays in `render` needs eframe's glow (`pressure`)
-   or the app (`settle`). Every `text` file (the text editor's and the clipboard's sentences included; only tests that read the app's own build or sources stay), the status bar's worded decline (enum, sentence, lifetime), the blank-document template
+   `pdfcer-gui-base`. `render` is a leaf (only `pressure`, which needs eframe's
+   glow, plus base re-exports); the raster scheduling is `app::settle`, an
+   `impl PdfcerApp`. Every `text` file (the text editor's and the clipboard's sentences included; only tests that read the app's own build or sources stay), the status bar's worded decline (enum, sentence, lifetime), the blank-document template
    the redaction notes and the tagged-structure export helper and the export windows' remembered settings and the panel footer and an ink mark's point addressing (with the corner-drag intent it answers to) are in base; seven of the eight ribbon tabs
    are in base (View names an app action). Twelve Settings pages and
    `Draft` are in base `settingspages`; acrobat, fonts, display, nav and
    signatures stay (they read document or app state). The `Panel` catalog is
    base `panelid` (drawing stays `panels::show`), which cut panels<->shell and
-   dialogs<->panels: 9 mutual pairs. Find the next
+   dialogs<->panels; moving `settle` cut app<->render: 8 mutual pairs. Find the next
    candidate with `python tools/module-graph.py`.
 
 **★ Newest, and ahead of everything numbered below: O226 – O229, the OCR
@@ -185,7 +186,7 @@ versioned home). `reports_confidence()` is an R8 capability (`ocrs` answers
    mode's off-page display on, the rasterized box is the **off-page halo
    union** — fixed in *page* coordinates, larger than the sheet, growing with
    zoom — so it strikes the engine's per-axis pixmap limit long before the page
-   would, and `render::settle` was asking whether the *whole page* fit before
+   would, and `app::settle` was asking whether the *whole page* fit before
    sending the *halo*. Fixed via `render::strategy::region_raster_fits`; driven
    by `ui-verify::the_off_page_halo_never_costs_the_operator_his_zoom`, every
    arm falsified against the preserved pre-fix binary. Measured on
@@ -311,7 +312,7 @@ versioned home). `reports_confidence()` is an R8 capability (`ocrs` answers
    rasterized**, all rungs in one sweep on one machine.
    ★ **The mechanism the series is meant to test is also located:**
    `zoom_ceiling` takes five inputs and none counts documents, but the strip
-   cache is a field on `OpenDoc` and `render::settle` prunes it against
+   cache is a field on `OpenDoc` and `app::settle` prunes it against
    `doc.prefs.page_cache.texels()` — a **per-document** budget, so *N* drawings
    are each permitted the whole cache against one machine's graphics memory.
    That is a hypothesis with a citation, not a measurement, and it may not be

@@ -476,7 +476,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              ceiling is learned from what the rasterizer refused, and a blank canvas refuses \
              everything — so this ceiling is learned from the defect and then caps the zoom for \
              the rest of the session, outliving any fix to the placement. \
-             `render::settle::raster_order_fillable` is the guard that is supposed to make this \
+             `app::settle::raster_order_fillable` is the guard that is supposed to make this \
              unreachable."
         )));
     }

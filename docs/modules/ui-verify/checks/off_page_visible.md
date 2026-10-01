@@ -106,7 +106,7 @@ failures, and they are the two this check exists to find.
 tier was decided. `OpenDoc::content_bounds_if_known` peeks and never
 builds — a build costs 469 ms on the operator's own drawing and the canvas
 runs every frame — so on the first frame of any document the answer is
-`false` and there is no halo. `render::settle` builds it immediately after,
+`false` and there is no halo. `app::settle` builds it immediately after,
 so by the time this check reads anything it must be `true`.
 
 ⇒ `known=false` in the **last** line is therefore a real failure with a

@@ -1063,7 +1063,7 @@ The engine's behaviour is right for the engine. The filter belongs here.
 `tools/ui-verify/src/checks/page_cache.rs` drives forty wheel notches away and
 forty back, and asserts no page is rastered twice. A smooth continuous scroll
 rehomes each page it passes into the strip cache
-(`crates/pdfcer-gui/src/render/settle.rs`: *"scrolling to a page is precisely
+(`crates/pdfcer-gui/src/app/settle.rs`: *"scrolling to a page is precisely
 the gesture that guarantees the page is already cached"*), so the gesture fills
 the cache by travelling through it, and scrolling **further** makes this more
 true rather than less.

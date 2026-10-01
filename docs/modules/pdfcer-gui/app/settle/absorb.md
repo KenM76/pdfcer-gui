@@ -1,4 +1,4 @@
-# `render::settle::absorb` — what to do with the picture that came back
+# `app::settle::absorb` — what to do with the picture that came back
 
 The parent module decides what the picture *should* be: what is stale, what
 to re-rasterize now, what to debounce, which strip page is next. This one
@@ -38,9 +38,9 @@ side from the code that depends on it.
 `rasterize` and `poll_render` are `pub(super)` because the parent's
 `settle_and_rasterize` and `fill_strip` call them; `absorb_render` and
 `learn_raster_ceiling` stay private because their only callers moved here
-too. ⚠ `super` is `render::settle`. If this file is ever re-homed as a
+too. `super` is `app::settle`. If this file is ever re-homed as a
 sibling of `settle.rs` rather than a child, both spellings have to widen to
-`pub(in crate::render)` — the compiler will say so, but the reason will not
+`pub(in crate::app)` — the compiler will say so, but the reason will not
 be obvious from the error.
 
 ## Item notes

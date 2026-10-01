@@ -9,7 +9,7 @@ The **raster bookkeeping** — the per-frame decision about whether the
 cached page texture is still a picture of what the operator is looking at,
 and if not whether to re-rasterize now or wait for a zoom gesture to settle
 — was the second half of this file until Phase 4 and now lives in
-[`crate::render::settle`]. Phase 4 made it considerably larger (one texture
+[`crate::app::settle`]. Phase 4 made it considerably larger (one texture
 became a texture plus a bounded strip cache, and one staleness question
 became two), and the seam is the one this header had already named:
 everything here answers *"what is open, and what is the operator looking
@@ -81,7 +81,7 @@ compared on one side and not the other is a control that ticks and redraws
 nothing).
 
 **The comparison, the zoom debounce and the strip's scheduling all live in
-[`crate::render::settle`]**, which carries the full argument for both
+[`crate::app::settle`]**, which carries the full argument for both
 staleness policies. What lives here is the state they read.
 
 [`OpenDoc`] also carries the page decomposition and the font inventory,

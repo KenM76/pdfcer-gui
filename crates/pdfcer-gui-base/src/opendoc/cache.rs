@@ -70,7 +70,7 @@ impl OpenDoc {
     ///
     /// So the canvas reads what is already there, and
     /// [`Self::ensure_content_bounds`] is called separately from
-    /// `render::settle`, **after** the picture has landed. The consequence is
+    /// `app::settle`, **after** the picture has landed. The consequence is
     /// visible and is the honest one: on the first frame after opening a huge
     /// drawing there is no halo, and one frame later there is. A picture that
     /// arrives a moment late beats an edit that stalls.

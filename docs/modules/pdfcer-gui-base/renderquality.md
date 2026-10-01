@@ -75,6 +75,6 @@ the CPU cost it saves.
 ### `const DEFAULT_SETTLE_MS`
 
 150 ms, measured against real CAD sheets, and the same value
-`crate::render::settle::ZOOM_SETTLE` compiles in. The two must agree: a
+`crate::app::settle::ZOOM_SETTLE` compiles in. The two must agree: a
 preferences file that names no settle has to debounce exactly as the
 compiled-in deadline does, or the choice changes behaviour by existing.

@@ -508,7 +508,7 @@ Adding the settings to `built_for` would mean hashing a
 would spread the answer across three tuples that must each be updated
 when a fourteenth setting arrives. Clearing at the one moment the
 configuration changes is both cheaper and visible in one place — the
-same reasoning `render::settle` applies to the raster keys.
+same reasoning `app::settle` applies to the raster keys.
 
 # What is NOT cleared, and why
 

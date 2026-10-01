@@ -347,7 +347,7 @@ cargo run --release -q -p ui-verify -- --list
 The off-page halo union is a box fixed in **page** coordinates, so it grows with
 zoom and strikes `MAX_PIXMAP_EDGE` well before the sheet does — on
 `fixtures/off-page-object.pdf` at raster scale ≈ 45.5, on a dense site plan at
-≈ 6.87. Above that wall `render::settle` correctly declines the halo region and
+≈ 6.87. Above that wall `app::settle` correctly declines the halo region and
 falls back, the page keeps zooming, and **the off-page content silently stops
 being drawn**.
 

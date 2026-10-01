@@ -151,7 +151,7 @@ defer for the same period as a fast one, because the quantity being waited
 for is the OPERATOR settling, not the renderer finishing.
 
 It is a constant rather than a literal so the next person to tune it does
-so once, with a paper trail — the same argument `render::settle`'s
+so once, with a paper trail — the same argument `app::settle`'s
 `ZOOM_SETTLE` makes, and this is its sibling on the other end of the frame.
 
 ### `struct DropTarget`

@@ -1,7 +1,7 @@
 # `pdfcer-gui-base/stripschedule`
 
 Which pages the continuous strip may order at a raster scale, what it holds
-for each, and how long a zoom must settle. `render::settle` schedules with these;
+for each, and how long a zoom must settle. `app::settle` schedules with these;
 render-ahead is in [`prefetch`](stripschedule/prefetch.md).
 
 ## Item notes

@@ -8,7 +8,7 @@
 //! Not by size. These two are both about **the cost of drawing** — a trade of
 //! sharpness or responsiveness against the time a machine takes — and both are
 //! read on the hot path, by `pdfcer_gui::viewer::raster_scale` and by
-//! `pdfcer_gui::render::settle` respectively. `pdfcer_gui::app::prefs::opening`'s preferences are
+//! `pdfcer_gui::app::settle` respectively. `pdfcer_gui::app::prefs::opening`'s preferences are
 //! about **what an operator is shown first** and are read exactly once per
 //! document, in the open path.
 //!

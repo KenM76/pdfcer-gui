@@ -306,7 +306,7 @@ strip asked for.
 
 ### `fn take`
 
-The other half of the rehoming `crate::render::settle` performs when a
+The other half of the rehoming `crate::app::settle` performs when a
 scroll makes a different page current: the incoming page's texture
 leaves this cache and takes up the current page's dedicated slot, so
 scrolling never re-renders a page whose picture is already in memory.

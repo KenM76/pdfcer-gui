@@ -687,7 +687,7 @@ trust in the page should follow the weaker word.
 That sentence is a complete specification and it has two halves. The first —
 *stop, do not show an error* — is
 [`crate::viewer::zoom_ceiling`]'s learned clause and
-`crate::render::settle`'s pull-back. This is the second: without it the `+`
+`crate::app::settle`'s pull-back. This is the second: without it the `+`
 button and Ctrl+wheel would simply stop responding with nothing anywhere
 saying why, which is the silently-inert control the project has already been
 corrected about twice.

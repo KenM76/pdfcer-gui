@@ -94,7 +94,7 @@ impl DiagnosticsDialog {
         // sentence about neither.
         //
         // Drawn only when `learn_ink` has an answer - R9. A page whose ink was
-        // learned by OBSERVING a render (`render::settle`, the second writer)
+        // learned by OBSERVING a render (`app::settle`, the second writer)
         // has a `composites_in_ink` and no source, because the render counters
         // say the colorant buffer was engaged and do not say who decided it.
         // That page gets nothing here rather than a guessed origin.

@@ -44,7 +44,7 @@ pub(super) fn decide(
         //
         // `_if_known` and not a build: the decomposition costs 469 ms on
         // the operator's own drawing and this runs every frame. It is
-        // built from `render::settle`, after the picture has landed, so
+        // built from `app::settle`, after the picture has landed, so
         // the halo appears a frame after the page rather than the edit
         // stalling for half a second. See
         // `OpenDoc::content_bounds_if_known` for the whole argument.

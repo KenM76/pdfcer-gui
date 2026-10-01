@@ -697,7 +697,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
         // one, so a visible neighbour sheet would be ordered as a WHOLE-PAGE
         // raster at the current page's deep scale unless something asks
         // whether the order can be filled at all — which is what
-        // `pdfcer_gui::render::settle`'s `fill_strip` exists to ask.
+        // `pdfcer_gui::app::settle`'s `fill_strip` exists to ask.
         // `50411508 x 32619210` is 1,224 x 792 pt at scale 41,185.87: an
         // odd-sized neighbour in a mixed-size set, never the sheet the
         // operator was zoomed into.

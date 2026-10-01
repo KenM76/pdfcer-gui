@@ -189,7 +189,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "★★ NO RENDER WAS REQUESTED. The view moved from region {before_region} to \
              {after_region} at {:.0}% and not one raster completed in the {} frames after it. \
              This is the operator's \"it doesn't always render the new exposed area\": \
-             `render::settle`'s staleness test compares the page, the annotations, the layers and \
+             `app::settle`'s staleness test compares the page, the annotations, the layers and \
              the scale — and the REGION is in the cache key without being in any of them, so a \
              pan is not stale by any measure it applies. See `RenderKey::same_region`.",
             zoom * 100.0,

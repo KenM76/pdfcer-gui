@@ -291,7 +291,7 @@ This is the operator's *"the canvas will just stop zooming in"*, made into a
 number. It is deliberately set between the two outcomes rather than near
 either: the A1 sheet's deep threshold is about **440**, the defect's own
 measured trajectory stalled around **329** (the ceiling
-`render::settle` learned from a refused whole-page raster at scale 438), and
+`app::settle` learned from a refused whole-page raster at scale 438), and
 a healthy eighty-notch climb from 0.29 ends in the hundreds of thousands.
 A thousand is comfortably above every stall that has been measured and four
 orders of magnitude below where a working build finishes.

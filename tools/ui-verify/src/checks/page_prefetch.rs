@@ -139,7 +139,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              display, or render-ahead is never reached. Reported as SKIPPED rather than FAILED \
              because the first two are properties of the fixture and not of the program — but if \
              this run used a multi-page document in Read mode it is the THIRD, and \
-             `render::settle::fill_strip` is where to look. Trace: {}",
+             `app::settle::fill_strip` is where to look. Trace: {}",
             session.trace_path().display()
         )));
     }

@@ -83,7 +83,7 @@ this check could read would already be right.**
 **`(page index, edit epoch)` pair** and suppresses the rest — that
 suppression is what makes it an epoch oracle rather than a page count. It is
 written by a different subsystem from the one under test
-(`app::state`, called from `render::settle`), about a cache it owns, and it
+(`app::state`, called from `app::settle`), about a cache it owns, and it
 is *silent* unless the epoch moved.
 
 So: no new `objects` line after the undo ⇒ `edit_epoch` did not change ⇒ the

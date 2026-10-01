@@ -163,7 +163,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.maximize();
     // A long settle, on purpose. The halo cannot appear on the first frame:
     // the page must be decomposed before the shell knows where its ink reaches,
-    // and that build happens in `render::settle` AFTER the picture is asked
+    // and that build happens in `app::settle` AFTER the picture is asked
     // for. Then the widened raster itself has to be rendered and uploaded. The
     // sequence is page → decomposition → halo raster, and this check reads the
     // end of it.
@@ -215,7 +215,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              `OpenDoc::content_bounds_if_known` and NEVER builds them — a decomposition costs \
              469 ms on the operator's own drawing and the canvas runs every frame. The build is \
              `OpenDoc::ensure_content_bounds`, called once per frame from \
-             `render::settle::settle_and_rasterize`. `known=false` on the last line means that \
+             `app::settle::settle_and_rasterize`. `known=false` on the last line means that \
              call is gone, or that it is failing on this fixture.\n\n\
              ★ Not a timing wobble: this check settles 100 frames' worth after launch, and the \
              build happens on the frame after the first render is requested. Trace: {}.",

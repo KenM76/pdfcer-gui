@@ -169,7 +169,7 @@ pub fn apply(doc: &mut OpenDoc, edit: &FormEdit) {
             }
             // 4. Nothing else notices an edit — the render key compares page
             //    index and raster scale, and a fill changes neither. The epoch
-            //    bump above is what `render::settle` reads, through
+            //    bump above is what `app::settle` reads, through
             //    `OpenDoc::page_texture_epoch`.
             //
             let disclosed_size = disclosed.as_ref().and_then(|d| d.applied_autosize);

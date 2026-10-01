@@ -974,7 +974,7 @@ requirement above — *the ceiling is a number the shell knows before it asks* �
 is broader than the one path now repaired. But the specific refusal he was
 hitting has a name.
 
-**What it was.** `render::settle`'s orderability test asked whether the *whole
+**What it was.** `app::settle`'s orderability test asked whether the *whole
 page* would fit at a given scale. When Edit mode has off-page display on, the
 canvas does not rasterize the page — it rasterizes the **off-page halo union**,
 a box fixed in the page's own coordinates that encloses content reaching
@@ -991,7 +991,7 @@ constant as zoom rises and it never approaches the limit. The halo's region is
 fixed in *page* space and grows without bound. Two rectangles arrive at the
 same code path and behave oppositely.
 
-**The fix.** `render::settle` now measures whichever rectangle it is actually
+**The fix.** `app::settle` now measures whichever rectangle it is actually
 going to send, via a new `render::strategy::region_raster_fits`, falling back
 to the whole-page test only when there is no region.
 
@@ -1101,7 +1101,7 @@ arithmetic effect.
 
 The ceiling he *reaches* is a different quantity, and there the route is
 explicit in the source: the strip cache is a field on `OpenDoc`, and
-`render::settle` prunes it with `doc.prefs.page_cache.texels()` — **a
+`app::settle` prunes it with `doc.prefs.page_cache.texels()` — **a
 per-document budget**. Every open drawing is therefore independently permitted
 the whole cache, the process holds up to *N ×* it, and graphics memory is
 per-machine and shared across processes. That is the one classification
@@ -1189,7 +1189,7 @@ It says nothing about `Ctrl`+wheel, which is O220's separate route.
 ### ⚠⚠ That ladder measured a real zero of the wrong variable
 
 **Every one of the eight rungs ran in Read mode with off-page display off.** In
-that configuration `render::settle` has no region to send and asks the
+that configuration `app::settle` has no region to send and asks the
 whole-page question, which is the one path the O218 defect never touched. The
 ladder was a correct, careful, falsified measurement of a quantity that was
 never moving.
@@ -2020,7 +2020,7 @@ Three requirements, not one:
 
 ### Measured, 2026-09-15 — the request side is visibility-bound; the cache side already is not
 
-`render::settle`'s `PdfcerApp::fill_strip`
+`app::settle`'s `PdfcerApp::fill_strip`
 builds its candidate set from `doc.strip_visible` and nothing else. Every
 `filter`/`find` in the function scans that set, so **a page that is not on
 screen is never ordered**, at any zoom, in any document. That is the whole of

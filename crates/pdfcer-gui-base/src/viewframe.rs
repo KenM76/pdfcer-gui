@@ -18,7 +18,7 @@ pub struct ViewFrame {
     /// the zoom changed at all.
     pub observed_zoom: f32,
     /// The earliest instant at which the current zoom may be committed to a
-    /// real rasterization — the `pdfcer_gui::render::settle::ZOOM_SETTLE`
+    /// real rasterization — the `pdfcer_gui::app::settle::ZOOM_SETTLE`
     /// debounce deadline.
     pub zoom_commit_at: Instant,
     /// Set by any *discrete* zoom command during this frame's action

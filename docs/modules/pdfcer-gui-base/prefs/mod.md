@@ -41,7 +41,7 @@ this engine can honour:
 | commissioned | verdict |
 |---|---|
 | **Render quality** | ✅ [`RenderQuality`] — a raster-scale multiplier over `viewer::raster_scale`, which is otherwise `zoom × pixels_per_point` exactly |
-| **Zoom settle delay** | ✅ [`Prefs::zoom_settle_ms`] — the operator's number in place of `render::settle::ZOOM_SETTLE`'s compiled-in one |
+| **Zoom settle delay** | ✅ [`Prefs::zoom_settle_ms`] — the operator's number in place of `app::settle::ZOOM_SETTLE`'s compiled-in one |
 | Render strategy (whole page · tiled progressive) | ❌ there is no tiled-progressive path in this shell. `pdfcer_render::render_page_region` exists, so it is buildable — but it is a rendering **architecture**, not a setting, and a radio offering it would be an affordance for a code path that does not exist |
 | Thin lines | ⚠ Not a preference. `RenderOptions::stroke_display` is the engine's knob, and this shell drives it as a **View toggle** — `view.line_weights`, per document, on `crate::viewer::ViewState` — because it is flipped several times while reading one sheet, which is what a ribbon tab is for. Where a persisted default would go, if one is ever asked for, is argued at `crate::text::commands::view_line_weights` |
 | Antialiasing | ❌ `RenderOptions` exposes no knob; the rasteriser sets `anti_alias: true` as a literal. (`shading.rs`'s `anti_alias` is the *document's* `/AntiAlias` key — a property of the shading pattern, not a viewer preference, and honouring it is correct.) |

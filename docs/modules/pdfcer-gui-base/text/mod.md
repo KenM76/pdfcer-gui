@@ -455,7 +455,7 @@ the sheet, nothing is wrong with the document, and the engine's wording
 names a constant the operator has never heard of and a pixel count he cannot
 act on.
 
-Closing the hole that ordered that raster (`render::settle::fill_strip` now
+Closing the hole that ordered that raster (`app::settle::fill_strip` now
 declines to place an order it knows cannot be filled) leaves the page with
 no picture and no sentence. [`canvas_page_waiting`] would then be the
 obvious thing to show and it would be a **lie**: nothing is coming, at this

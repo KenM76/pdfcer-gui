@@ -14,7 +14,7 @@ strip, made falsifiable.
 
 Above the pixmap ceiling a raster covers the **visible region** rather than
 the page, so two textures of the same page at the same scale can be pictures
-of *different places*. `render::settle`'s staleness test asked two questions
+of *different places*. `app::settle`'s staleness test asked two questions
 — has a discrete input changed (page, annotations, layers), and has the
 scale changed — and **the region was in the cache key without being in
 either**.
@@ -63,7 +63,7 @@ check now uses — and it never takes the asynchronous path at all.
 
 ⇒ **A check that counts one completion path fails on a build that took the
 other one**, and it fails by naming the feature rather than the instrument.
-This one printed `render::settle`'s staleness test as the suspect, in detail,
+This one printed `app::settle`'s staleness test as the suspect, in detail,
 down to `RenderKey::same_region` — and that mechanism was working perfectly.
 
 The general rule, which this project has now met three times in one day:

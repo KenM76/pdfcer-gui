@@ -69,7 +69,7 @@ neighbour sheet blanked for nothing or the operator's
 ### `fn an_ink_page_pushed_to_the_region_tier_still_fits_whole`
 
 The regression guard for the mistake O186's fix was one keystroke from
-making. `render::settle::fill_strip` declines to order a strip page whose
+making. `app::settle::fill_strip` declines to order a strip page whose
 whole-sheet raster cannot be allocated; had it asked [`for_page`] instead
 — the union of this hard limit and the soft ink one — then a page observed
 compositing in ink, above the CMYK buffer ceiling but comfortably below
@@ -412,7 +412,7 @@ hard limit and the soft ink one.
 `SW41177.pdf` has exactly two pages that size against thirty-four at
 1584 × 1224. The failing raster was a **neighbour** sheet in the continuous
 strip, ordered whole-page at the current page's deep scale, because
-`render::settle::fill_strip` asked for every visible page without ever
+`app::settle::fill_strip` asked for every visible page without ever
 asking whether the order could be filled.
 
 And the union would have been the *wrong* predicate for the strip even so:

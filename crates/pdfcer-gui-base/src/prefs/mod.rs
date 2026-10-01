@@ -129,7 +129,7 @@ pub struct Prefs {
     /// **How much memory the page cache may hold**, so a page already drawn
     /// is not drawn again.
     ///
-    /// Read every frame by `crate::render::settle::fill_strip`, which hands it
+    /// Read every frame by `crate::app::settle::fill_strip`, which hands it
     /// to `StripRasters::retain` — the one place it is spent. Read live rather
     /// than at open, unlike [`Self::opening_fit`]: shrinking it must take effect
     /// at once, because an operator reaching for a smaller value is an operator
@@ -139,7 +139,7 @@ pub struct Prefs {
     /// rasterisation, in milliseconds.
     ///
     /// Stored as a number rather than as a `Duration` because that is what the
-    /// file holds and what the control edits; `render::settle` converts once,
+    /// file holds and what the control edits; `app::settle` converts once,
     /// at the one place it is read.
     pub zoom_settle_ms: u64,
     /// **The highest zoom the operator wants to be able to reach**, as a

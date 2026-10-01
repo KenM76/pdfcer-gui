@@ -317,7 +317,7 @@ Returns `pixels_per_point` when it is a usable density and `1.0` otherwise.
 # Why this is a named function rather than a `.max()` at each site
 
 Four places divide or multiply by the display density — [`raster_scale`],
-[`ceiling::zoom_ceiling`]'s learned clause, `render::settle`'s
+[`ceiling::zoom_ceiling`]'s learned clause, `app::settle`'s
 `learn_raster_ceiling`, and `app::status::rasterstop` — and they are not free
 to guard it differently, because they are three readings of *one* number
 (`crate::render::ceiling::RasterCeiling`'s stored raster scale) and a
@@ -354,7 +354,7 @@ on the developer's external monitor.
 A raster scale is `zoom × pixels_per_point × quality.multiplier()`, and four
 places in the shell need to run that conversion **backwards**:
 [`max_zoom_for_page`], [`ceiling::zoom_ceiling`]'s learned clause,
-`render::settle::absorb`'s `learn_raster_ceiling`, and `app::status::rasterstop`.
+`app::settle::absorb`'s `learn_raster_ceiling`, and `app::status::rasterstop`.
 Every one of them divided by the density alone, and the quality factor was
 simply absent — so on View ▸ Render ▸ Quality ≥ Normal the derived ceiling
 asked the engine for a pixmap over [`pdfcer_render::MAX_PIXMAP_EDGE`], the

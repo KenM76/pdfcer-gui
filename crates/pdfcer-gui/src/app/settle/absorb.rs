@@ -1,4 +1,4 @@
-//! # `render::settle::absorb` — what to do with the picture that came back
+//! # `app::settle::absorb` — what to do with the picture that came back
 //!
 //! The parent module decides what the picture *should* be: what is stale, what
 //! to re-rasterize now, what to debounce, which strip page is next. This one
@@ -6,7 +6,7 @@
 //! collecting the result, and turning whatever came back into a cached texture,
 //! a promoted backdrop, an ink census or a learned zoom ceiling.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/render/settle/absorb.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui/app/settle/absorb.md`.
 
 use crate::app::state::OpenDoc;
 use crate::render::pressure::Surface;

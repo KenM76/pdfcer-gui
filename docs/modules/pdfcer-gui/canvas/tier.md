@@ -42,7 +42,7 @@ it reads the page's content bounds through
 [`OpenDoc::content_bounds_if_known`] and **never** builds them: a
 decomposition measured **469 ms** on the operator's own CAD sheet and this
 runs every frame. The build is `OpenDoc::ensure_content_bounds`, called from
-`render::settle` after the picture has been asked for — so the halo appears
+`app::settle` after the picture has been asked for — so the halo appears
 a frame after the page rather than every edit stalling for half a second.
 
 # Its trace

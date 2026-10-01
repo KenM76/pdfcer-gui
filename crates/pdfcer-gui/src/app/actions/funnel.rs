@@ -121,7 +121,7 @@ fn vector_edit_scoped<E: std::fmt::Display>(
             // operator reported as *"the page goes blank and flashes after
             // every change."*
             //
-            // `doc.page_texture = None` does two jobs: it makes `render::settle`
+            // `doc.page_texture = None` does two jobs: it makes `app::settle`
             // notice the edit, and it takes the picture off the screen. Only the
             // first is wanted; the second puts an empty page in front of the
             // operator between every edit and its raster.

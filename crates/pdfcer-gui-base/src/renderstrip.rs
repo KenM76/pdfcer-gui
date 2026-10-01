@@ -23,7 +23,7 @@ pub enum PageState {
     /// allocate at this zoom, and a strip page has no region tier to fall back
     /// on.** O186, 2026-09-12.
     ///
-    /// Nothing was ordered and nothing failed: `render::settle::fill_strip`
+    /// Nothing was ordered and nothing failed: `app::settle::fill_strip`
     /// declined to place an order it knew could not be filled. See
     /// `render::strategy::whole_page_raster_fits` for the whole report,
     /// including the operator's `50411508x32619210` and why the page he was
