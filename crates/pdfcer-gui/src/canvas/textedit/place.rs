@@ -282,30 +282,39 @@ pub fn begin_box(
     });
 }
 
+/// Whether a page run lies under `canvas_point` on `page_index`, by the
+/// engine's `hit_test` (one line-height of reach).
+pub fn run_under(doc: &OpenDoc, page_index: usize, canvas_point: Pos2) -> bool {
+    let (Some(page), Some(text)) = (doc.pages.get(page_index), doc.page_text()) else {
+        return false;
+    };
+    let Some(pdf) = crate::viewer::canvas_to_pdf_space(canvas_point, page) else {
+        return false;
+    };
+    EditableTextModel::recognize(&text, &BlockRecognitionOptions::default())
+        .hit_test(f64::from(pdf.x), f64::from(pdf.y))
+        .is_some()
+}
+
 /// **Does `run` have no show operator of its own?** `Some(true)` /
 /// `Some(false)`, or `None` when the question could not be asked.
 fn has_no_anchor(c: &Click<'_>, run: usize) -> Option<bool> {
     c.doc.run_has_no_anchor(run)
 }
 
-/// **Which character boundary a click landed on, inside `run`.**
+/// **Which character boundary a click landed on, inside `run`**: the
+/// engine's `hit_test`, which measures along the run's own direction, so a
+/// rotated line places the caret where it was clicked. `None` when the click
+/// resolves to another run.
 fn caret_index_at(c: &Click<'_>, run: usize) -> Option<usize> {
     let page = c.doc.pages.get(c.page_index)?;
     let pdf = crate::viewer::canvas_to_pdf_space(c.canvas_point, page)?;
     let text = c.doc.page_text()?;
-    let glyphs = &text.runs.get(run)?.glyphs;
-    if glyphs.is_empty() {
-        return None;
-    }
-    let x = pdf.x;
-    let mut index = 0;
-    for g in glyphs {
-        if x < g.x + g.advance / 2.0 {
-            return Some(index);
-        }
-        index += 1;
-    }
-    Some(index)
+    let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
+    let pos = model.hit_test(f64::from(pdf.x), f64::from(pdf.y))?;
+    let line = &text.runs.get(run)?.text;
+    (pos.run == run && line.is_char_boundary(pos.byte_offset))
+        .then(|| line[..pos.byte_offset].chars().count())
 }
 
 /// Resolve a click on existing page text to the run it landed in.

@@ -11,6 +11,7 @@ mouse and keyboard are never used.
 <seq> move X Y [vp=V]
 <seq> click X Y [btn=l|r|m] [mods=ctrl+shift+alt] [vp=V]
 <seq> dclick X Y [mods=...] [vp=V]
+<seq> tclick X Y [mods=...] [vp=V]
 <seq> down X Y [btn=...] [mods=...] [vp=V]
 <seq> up X Y [btn=...] [mods=...] [vp=V]
 <seq> drag X0 Y0 X1 Y1 [steps=N] [btn=...] [mods=...] [vp=V]    steps default 6

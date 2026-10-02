@@ -420,6 +420,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(mid_line_preview::AKeyTypedMidLinePreviewsWhereItCommits),
         Box::new(augment_subset::AKeyTheSubsetLacksComesFromItsInstalledFace),
         Box::new(text_tool_click_types::ATextToolClickTypes),
+        Box::new(selection_gestures::TheTextToolSelectsAsAWordProcessorDoes),
         // File ▸ Export ▸ Tables… in all three formats, with no OS input.
         Box::new(export_tables_scripted::ExportTablesWithoutTheMouse),
         Box::new(export_tables_scripted::ExportTablesFollowsTheTags),

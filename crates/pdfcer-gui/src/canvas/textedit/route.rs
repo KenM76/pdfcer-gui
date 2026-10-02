@@ -64,14 +64,19 @@ pub fn click(r: &Routed<'_>, actions: &mut Vec<Action>) -> bool {
     match super::click(r.ctx, &click, actions) {
         Ok(()) => true,
         Err(refusal) => {
-            actions.push(Action::DeclineOnCanvas(CanvasDecline::TextClick(refusal)));
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed.
-                format!("text-edit-declined reason={refusal:?}{}", r.via)
-            });
+            decline(actions, refusal, r.via);
             false
         }
     }
+}
+
+/// Raise `refusal` for the status bar and trace it with `via` appended.
+pub fn decline(actions: &mut Vec<Action>, refusal: super::Refusal, via: &str) {
+    actions.push(Action::DeclineOnCanvas(CanvasDecline::TextClick(refusal)));
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("text-edit-declined reason={refusal:?}{via}")
+    });
 }
 
 /// The surface other than the caret that owns this click, if any.

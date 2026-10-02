@@ -972,12 +972,15 @@ pub mod wheel_flips_pages;
 pub mod augment_subset;
 /// Undo, redo, word delete, Tab, paste, select-all and save inside a draft.
 pub mod draft_keys;
-/// Every refused key is named, with one click to a face that has them.
+/// A key typed mid-line is previewed where the commit puts it.
 pub mod mid_line_preview;
 /// A stand-in preview is the text's size, and the status bar says why.
 pub mod preview_fallback;
 pub mod reface_commit;
+/// Every refused key is named, with one click to a face that has them.
 pub mod refused_keys;
+/// Double, triple and Shift+arrow selection, a drag over text, rotated carets.
+pub mod selection_gestures;
 /// A letter an embedded subset outlines but never showed can be typed.
 pub mod subset_glyph;
 /// Text-tool clicks reach a note, a field or a scan's remedy.

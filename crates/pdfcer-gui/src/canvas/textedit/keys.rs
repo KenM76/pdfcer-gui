@@ -18,23 +18,30 @@ use egui::Ui;
 
 use pdfcer_gui_base::editmodel::history::EditKind;
 
-use super::caret::{self, insert, word_left, word_right};
+use super::caret::{self, insert};
 use super::edits::{Flow, Keys};
 use super::{Anchor, DIAG_TYPE, Draft, hit, read, store};
 use crate::app::state::OpenDoc;
 
 /// **What the pointer does inside the editor box** — place the caret, sweep a
-/// selection, or take a word on a double click.
+/// selection, take a word on a double click or a line on a triple click.
 fn pointer(ui: &Ui, ctx: &egui::Context, draft: &mut Draft) -> bool {
     let Some(layout) = hit::read(ctx) else {
         return false;
     };
-    let (pressed, down, double, pos, origin) = ui.input(|i| {
+    let (pressed, down, clicks, pos, origin) = ui.input(|i| {
+        let primary = egui::PointerButton::Primary;
+        let clicks = if i.pointer.button_triple_clicked(primary) {
+            3
+        } else if i.pointer.button_double_clicked(primary) {
+            2
+        } else {
+            1
+        };
         (
             i.pointer.primary_pressed(),
             i.pointer.primary_down(),
-            i.pointer
-                .button_double_clicked(egui::PointerButton::Primary),
+            clicks,
             i.pointer.interact_pos(),
             i.pointer.press_origin(),
         )
@@ -49,13 +56,10 @@ fn pointer(ui: &Ui, ctx: &egui::Context, draft: &mut Draft) -> bool {
     // matter where it is dragged to.
     let began_inside = origin.is_some_and(|o| layout.body.contains(o));
 
-    if double && began_inside {
-        // The word under the pointer. `word_left`/`word_right` are the same
-        // two functions `Ctrl+Left`/`Ctrl+Right` use, so a double click and a
-        // chord agree about where a word ends.
-        let at = layout.index_at(pos);
-        let from = word_left(&draft.text, (at + 1).min(draft.text.chars().count()));
-        let to = word_right(&draft.text, at);
+    // A double or triple click is reported on its release, when egui has
+    // already dropped the press origin, so it is the box's by where it ends.
+    if clicks > 1 && layout.body.contains(pos) {
+        let (from, to) = clicked_span(&draft.text, layout.index_at(pos), clicks);
         draft.mark = Some(from);
         draft.caret = to;
         return true;
@@ -70,7 +74,7 @@ fn pointer(ui: &Ui, ctx: &egui::Context, draft: &mut Draft) -> bool {
         && let Some(origin) = origin
     {
         let from = layout.index_at(origin);
-        let to = layout.index_at(pos);
+        let to = layout.swept_index_at(pos, draft.text.chars().count());
         if from != to {
             draft.mark = Some(from);
             draft.caret = to;
@@ -78,6 +82,34 @@ fn pointer(ui: &Ui, ctx: &egui::Context, draft: &mut Draft) -> bool {
         }
     }
     false
+}
+
+/// The span a multiple click at character `at` takes: on a double click the
+/// word under it without its trailing space (or the run of spaces under it),
+/// so typing over it keeps the separator; on a triple the draft's line.
+fn clicked_span(text: &str, at: usize, clicks: u8) -> (usize, usize) {
+    if clicks >= 3 {
+        return (
+            super::lines::start_of_line(text, at),
+            super::lines::end_of_line(text, at),
+        );
+    }
+    let chars: Vec<char> = text.chars().collect();
+    let Some(last) = chars.len().checked_sub(1) else {
+        return (0, 0);
+    };
+    let at = at.min(last);
+    let blank = chars[at].is_whitespace();
+    let same = |i: usize| chars[i].is_whitespace() == blank;
+    let mut from = at;
+    while from > 0 && same(from - 1) {
+        from -= 1;
+    }
+    let mut to = at + 1;
+    while to < chars.len() && same(to) {
+        to += 1;
+    }
+    (from, to)
 }
 
 /// **Remove whatever is selected**, and answer the caret.
@@ -569,6 +601,58 @@ mod tests {
             Some((0, 5)),
             "the sweep must select the characters it crossed, not place a caret"
         );
+    }
+
+    /// `n` clicks at `x` on a box showing `text`, one frame per press or
+    /// release, the box republished before each as `paint` does.
+    fn clicks_at(ctx: &egui::Context, text: &str, x: f32, n: usize) {
+        for _ in 0..n {
+            for down in [true, false] {
+                publish_layout(ctx, text);
+                frame(ctx, at(x, down));
+            }
+        }
+    }
+
+    #[test]
+    fn a_double_click_in_the_box_selects_the_word_under_it() {
+        let ctx = egui::Context::default();
+        let _ = ctx.run_ui(egui::RawInput::default(), |_| {});
+        let galley = publish_layout(&ctx, "SHEET 1 OF 4");
+        draft_of(&ctx, "SHEET 1 OF 4");
+        clicks_at(&ctx, "SHEET 1 OF 4", slot_x(&galley, 2) + 1.0, 2);
+        let after = read(&ctx).expect("the draft survives a double click");
+        assert_eq!(caret::range(after.mark, after.caret), Some((0, 5)));
+    }
+
+    #[test]
+    fn shift_down_on_the_last_line_selects_to_the_end_and_keeps_the_draft() {
+        let ctx = egui::Context::default();
+        draft_of(&ctx, "SHEET 1 OF 4");
+        let mut d = read(&ctx).unwrap();
+        d.caret = 3;
+        store(&ctx, d);
+        let actions = key_frame(&ctx, egui::Key::ArrowDown, egui::Modifiers::SHIFT);
+        assert!(
+            actions.is_empty(),
+            "Shift+Down must not commit: {actions:?}"
+        );
+        let after = read(&ctx).expect("the draft stays open");
+        assert_eq!(caret::range(after.mark, after.caret), Some((3, 12)));
+        key_frame(&ctx, egui::Key::ArrowUp, egui::Modifiers::SHIFT);
+        let after = read(&ctx).expect("the draft stays open");
+        assert_eq!(caret::range(after.mark, after.caret), Some((0, 3)));
+    }
+
+    #[test]
+    fn a_triple_click_in_the_box_selects_its_line() {
+        let ctx = egui::Context::default();
+        let _ = ctx.run_ui(egui::RawInput::default(), |_| {});
+        let galley = publish_layout(&ctx, "SHEET 1 OF 4");
+        draft_of(&ctx, "SHEET 1 OF 4");
+        clicks_at(&ctx, "SHEET 1 OF 4", slot_x(&galley, 2) + 1.0, 3);
+        let after = read(&ctx).expect("the draft survives a triple click");
+        assert_eq!(caret::range(after.mark, after.caret), Some((0, 12)));
     }
 
     /// **A press with no travel places the caret and clears any selection**,

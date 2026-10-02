@@ -710,15 +710,19 @@ pub(super) fn interact(
         // whole difference from a markup band, and why `canvas::textedit` gets
         // the box rather than `apply` getting an action.
         GestureOutcome::TextBox { from, to, phase } => {
-            pv.band = Some(markup::band::Preview {
-                kind: markup::MarkupKind::Rectangle,
-                from,
-                to,
-            });
-            if phase == crate::canvas::gesture::Phase::Complete
-                && let Some(page) = doc.current_page()
-            {
-                crate::canvas::textedit::begin_box(&ctx, doc, page_index, from, to, page);
+            let kind = active_tool.text_edit_kind();
+            let sweep = crate::canvas::textedit::sweep::over_text;
+            if !sweep(&ctx, doc, page_index, kind, from, actions) {
+                pv.band = Some(markup::band::Preview {
+                    kind: markup::MarkupKind::Rectangle,
+                    from,
+                    to,
+                });
+                if phase == crate::canvas::gesture::Phase::Complete
+                    && let Some(page) = doc.current_page()
+                {
+                    crate::canvas::textedit::begin_box(&ctx, doc, page_index, from, to, page);
+                }
             }
         }
         GestureOutcome::Resize { grip, delta, phase } => {

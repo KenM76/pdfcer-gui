@@ -318,16 +318,20 @@ impl Keys<'_> {
     }
 
     /// Up and Down: the draft's own lines first, then the page's lines, which
-    /// commit this draft and open the next ([`blocks::step`]).
+    /// commit this draft and open the next ([`blocks::step`]). Shifted past
+    /// the draft's first or last line, they extend the selection to its start
+    /// or end and the draft stays open.
     fn vertical(&mut self, up: bool, m: Modifiers) -> Flow {
+        let shift = caret::shifted(m.shift, self.frame_shift);
         let d = &mut *self.draft;
         let to = if up {
             super::lines::up(&d.text, d.caret)
         } else {
             super::lines::down(&d.text, d.caret)
         };
+        let to = to.or_else(|| shift.then(|| if up { 0 } else { d.text.chars().count() }));
         if let Some(to) = to {
-            d.mark = caret::moved(d.mark, d.caret, caret::shifted(m.shift, self.frame_shift));
+            d.mark = caret::moved(d.mark, d.caret, shift);
             d.caret = to;
             self.moved();
             return Flow::Continue;

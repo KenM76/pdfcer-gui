@@ -30,7 +30,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 | What | Command | What the command alone will not tell you |
 |---|---|---|
-| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `7206a9d0` — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
+| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `35769c3b` (engine tag v0.72.0) — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
 | Engine HEAD | `git -C /d/Dev/pdfcer log --oneline -1 main` | The question is never whether the two shas MATCH — it is whether CODE has landed since the pin, because only that can falsify a sentence beginning *"the engine cannot"*. `git -C /d/Dev/pdfcer diff --stat <pin>..main -- '*.rs'` is the test; empty means such a sentence may be written. Read this log in the same breath as listing `open/`: a delivery has arrived here as a commit before it arrived as a reply three times |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | — |
 | Last release | `git fetch --tags origin && gh api repos/KenM76/pdfcer-gui/releases/latest` | **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in an unfetched tree answers with an older tag and reports a commits-unreleased count wrong by a factor. Read every field back out of the API rather than inferring it from the flags passed in, and check the local zip's byte count against the asset's — agreement to the unit is the cheapest proof the upload is the file and not a truncation. The binary's own stamp and `published_at` sit twelve to twenty minutes apart on every release; label which clock |
@@ -78,10 +78,12 @@ the bar's all-signed line. The hand-signed state is session-only until
 G073. Trap: the drawn check failed once with no `hand-sign-opened` after its
 first click on a cold launch and passed on re-run; unexplained.
 
-**O270, Word-like text editing: plan steps 1 to 5 built and driven**,
+**O270, Word-like text editing: plan steps 1 to 6 built and driven**,
 unpublished. The plan is `docs/plans/WORDLIKE_PLAN.md`; work it in its order
-(steps 6, 7, 8, 9 remain GUI-only; step 7 carries O271's alignment
-buttons, in both places). Step 1's keys live in `canvas::textedit::edits`,
+(steps 7, 8, 9 remain GUI-only; step 7 carries O271's alignment
+buttons, in both places). Step 6's selection gestures (double, triple,
+Shift+Up/Down, a drag over text, a rotated click) are measured with
+`ui-verify --check the_text_tool_selects_as_a_word_processor_does`. Step 1's keys live in `canvas::textedit::edits`,
 the draft's undo history in `editmodel::history`; measure with
 `ui-verify --check the_draft_keys_do_what_a_word_processor_does`. Step 2's
 routing of a text-tool click to a note, a field or a scan's refusal is

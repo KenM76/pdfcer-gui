@@ -45,9 +45,11 @@
 //!   stays and the newline has its own door, [`caret::newline`]: relaxing
 //!   `insert` would let a stray `\t` or `\r` from a paste into a show string as
 //!   well.
-//! - T8 selection: **GAP** — no Shift+arrow, no Ctrl+A, no drag-select within a
-//!   draft. Named rather than left implied, because a highlight that some keys
-//!   respect and others silently ignore is worse than none.
+//! - T8 selection: Shift+arrows extend it (Shift+Up/Down past the first or last
+//!   line reach its start or end and keep the draft), Ctrl+A takes the run, a
+//!   double click the word and a triple click the line ([`keys::pointer`]); a
+//!   text-tool drag that starts on page text opens it and sweeps rather than
+//!   drawing a box ([`sweep::over_text`]).
 
 /// **The page's lines, reassembled into paragraphs** — and the arrow keys
 /// that walk between them. Its header carries the four lines the behaviour is
@@ -110,6 +112,8 @@ pub mod repertoire;
 pub mod shaped;
 /// A narrowed preview spliced into the line it edits.
 mod splice;
+/// A text-tool drag that starts on text selects it instead of drawing a box.
+pub mod sweep;
 
 pub use place::{Click, begin_box, click};
 /// Where a text-tool click goes: a note, a form field, or the caret.

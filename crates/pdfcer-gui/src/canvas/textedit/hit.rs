@@ -61,6 +61,41 @@ impl Layout {
         }
     }
 
+    /// **Where a sweep reaching `screen` ends**: [`Self::index_at`], except
+    /// that a point past the box on the side the next line would be takes the
+    /// end of the text, and one past the side the previous line would be its
+    /// start, as a word processor's sweep off a last or first line does.
+    /// "Next line" is across the reading direction, so rotated text sweeps the
+    /// same way.
+    #[must_use]
+    pub fn swept_index_at(&self, screen: Pos2, len: usize) -> usize {
+        let (first, along) = match &self.caret {
+            Caret::Galley { origin, .. } => (*origin, egui::vec2(1.0, 0.0)),
+            Caret::Stops(stops) => match (stops.first(), stops.last()) {
+                (Some(a), Some(b)) if a.distance(*b) > f32::EPSILON => (*a, (*b - *a).normalized()),
+                _ => return self.index_at(screen),
+            },
+        };
+        let across = egui::vec2(-along.y, along.x);
+        let depth = |p: Pos2| (p - first).dot(across);
+        let corners = [
+            self.body.left_top(),
+            self.body.right_top(),
+            self.body.left_bottom(),
+            self.body.right_bottom(),
+        ];
+        let (lo, hi) = corners
+            .iter()
+            .fold((f32::INFINITY, f32::NEG_INFINITY), |(lo, hi), c| {
+                (lo.min(depth(*c)), hi.max(depth(*c)))
+            });
+        match depth(screen) {
+            d if d > hi => len,
+            d if d < lo => 0,
+            _ => self.index_at(screen),
+        }
+    }
+
     /// The screen x of the caret slot before character `i`, clamped to the
     /// last slot.
     #[must_use]
@@ -101,4 +136,40 @@ pub fn owns_screen(ctx: &egui::Context, screen: Pos2) -> bool {
 #[must_use]
 pub fn owns_canvas(ctx: &egui::Context, canvas: Pos2) -> bool {
     super::read(ctx).is_some() && read(ctx).is_some_and(|l| l.body_canvas.contains(canvas))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Caret, Layout};
+    use egui::{Pos2, Rect, pos2};
+
+    fn layout(stops: &[Pos2], body: Rect) -> Layout {
+        Layout {
+            body,
+            body_canvas: body,
+            caret: Caret::Stops(stops.to_vec()),
+        }
+    }
+
+    #[test]
+    fn a_sweep_off_the_line_reaches_its_end_or_start() {
+        let flat = layout(
+            &[pos2(0.0, 0.0), pos2(10.0, 0.0), pos2(20.0, 0.0)],
+            Rect::from_min_max(pos2(0.0, -8.0), pos2(20.0, 2.0)),
+        );
+        assert_eq!(flat.swept_index_at(pos2(5.0, 20.0), 2), 2);
+        assert_eq!(flat.swept_index_at(pos2(5.0, -20.0), 2), 0);
+        assert_eq!(flat.swept_index_at(pos2(12.0, 0.0), 2), 1);
+    }
+
+    #[test]
+    fn a_sweep_off_rotated_text_goes_across_its_reading_direction() {
+        let upward = layout(
+            &[pos2(0.0, 0.0), pos2(0.0, -10.0), pos2(0.0, -20.0)],
+            Rect::from_min_max(pos2(-8.0, -20.0), pos2(2.0, 0.0)),
+        );
+        assert_eq!(upward.swept_index_at(pos2(20.0, -5.0), 2), 2);
+        assert_eq!(upward.swept_index_at(pos2(-20.0, -5.0), 2), 0);
+        assert_eq!(upward.swept_index_at(pos2(0.0, 30.0), 2), 0);
+    }
 }
