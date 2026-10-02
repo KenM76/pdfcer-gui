@@ -27,13 +27,20 @@ pub const fn image_needs_a_document() -> &'static str {
      then drop the picture again."
 }
 
+/// A text file was dropped with no document open.
+#[must_use]
+pub const fn text_needs_a_document() -> &'static str {
+    "A dropped text file becomes new pages after the one you are on, so it needs a document. \
+     Open a PDF first, then drop the text file again."
+}
+
 /// The file is not one pdfcer takes; names the extension back, because seeing
 /// which file was caught is what tells the operator they grabbed the wrong one.
 #[must_use]
 pub fn not_accepted(ext: &str) -> String {
     if ext.is_empty() {
-        "pdfcer takes a PDF to open, or a PNG, JPEG, BMP or TIFF to place on the page. That file \
-         has no extension, so pdfcer could not tell what it was."
+        "pdfcer takes a PDF to open, a PNG, JPEG, BMP or TIFF to place on the page, or a .txt \
+         file to add as pages. That file has no extension, so pdfcer could not tell what it was."
             .to_owned()
     } else if CONVERTIBLE.contains(&ext) {
         format!(
@@ -42,8 +49,8 @@ pub fn not_accepted(ext: &str) -> String {
         )
     } else {
         format!(
-            "pdfcer takes a PDF to open, or a PNG, JPEG, BMP or TIFF to place on the page. It \
-             does not read .{ext} files."
+            "pdfcer takes a PDF to open, a PNG, JPEG, BMP or TIFF to place on the page, or a \
+             .txt file to add as pages. It does not read .{ext} files."
         )
     }
 }
@@ -58,6 +65,7 @@ mod tests {
         let all = [
             alt_takes_the_first(4),
             image_needs_a_document().to_owned(),
+            text_needs_a_document().to_owned(),
             not_accepted("dwg"),
             not_accepted("gif"),
             not_accepted(""),

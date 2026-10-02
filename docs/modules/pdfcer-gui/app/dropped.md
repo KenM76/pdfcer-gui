@@ -33,6 +33,7 @@ of them tells the operator anything.
 | the same, with **Alt** held | open the placement window for the first picture, the one `edit.insert_image` opens |
 | the same, in a mode that does not change page content | refuse, naming Edit |
 | a raster image with **no** document open | say so, and say what to do about it |
+| a **text file** (`.txt`) with a document open | set it as new pages directly after the page on screen, as File ▸ Import text as pages does with its controls untouched; several keep their drop order, and an empty one is the engine's refusal |
 | a **GIF or WebP** | say how to convert it |
 | anything else | say what pdfcer accepts |
 

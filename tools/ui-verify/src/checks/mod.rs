@@ -693,6 +693,8 @@ pub mod deeper_rung_delete;
 /// A picture dropped on a page lands where it was dropped, through the
 /// scripted pointer's `drop` step.
 pub mod dropped_file;
+/// A text file dropped on the window becomes pages after the one on screen.
+pub mod dropped_text;
 
 /// Every window's title bar follows the Dark and Quiet presets.
 pub mod caption_theme;

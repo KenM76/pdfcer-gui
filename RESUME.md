@@ -60,22 +60,23 @@ signatures and O268's theme work. The engine has commits past v0.72.0; take
 them only for a fix a step needs, since the next release follows the next
 engine tag. In order:
 
-**O279, paste from another program: plan steps P0 to P4 built and driven**
-(`docs/plans/PASTEIN_PLAN.md`; work P5 to P7 and P10 in order, P11 deferred).
+**O279, paste from another program: plan steps P0 to P5 built and driven**
+(`docs/plans/PASTEIN_PLAN.md`; work P6, P7 and P10 in order, P11 deferred).
 A picture on the OS clipboard pastes at the pointer in Edit, and text as page
 text in Edit or a comment in Review (`app::dispatch::ospaste`); a dropped
-picture lands at the drop point (`app::dropped::land`, driven through the
+picture lands at the drop point and a `.txt` becomes pages (`app::dropped::land`, driven through the
 scripted pointer's `drop` step), and `canvas::clipseq` makes a paste after an
 outside copy take that copy over an older pdfcer clip. `native_window::pastechord` hooks the main window so `Ctrl+V` reaches
 `app::keyboard::commands` when egui drops it (no text on the clipboard).
 Measure: `ui-verify --no-input --check a_picture_copied_in_another_program_pastes_at_the_pointer
 --check ctrl_v_pastes_a_picture_when_the_clipboard_holds_no_text
 --check text_copied_in_another_program_pastes_as_a_text_box_at_the_pointer
---check a_dropped_picture_lands_where_it_was_dropped`; the second
+--check a_dropped_picture_lands_where_it_was_dropped
+--check a_dropped_text_file_becomes_pages_after_this_one`; the second
 posts key messages to the launched window only.
 The check writes the real clipboard; `ClipGuard` snapshots it and restores it
-only if nothing else wrote it meanwhile. Next: P5, a dropped `.txt` becomes
-pages after the current one.
+only if nothing else wrote it meanwhile. Next: P6, a PDF dropped on the canvas
+asks Open, Insert after this page, or Place as artwork.
 
 **O263, Align and Distribute: all four stages built and driven** (Align,
 Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting

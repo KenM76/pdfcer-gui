@@ -2,7 +2,8 @@
 //!
 //! The drop nobody claimed: each PDF opens, each picture lands on the page at
 //! the drop point at its natural size (later ones cascading down and to the
-//! right), and anything else is named back. Alt held as it lands opens the
+//! right), each text file becomes pages after the one on screen, and anything
+//! else is named back. Alt held as it lands opens the
 //! placement window for the first picture instead.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/dropped.md`.
@@ -21,6 +22,8 @@ pub enum Dropped {
     Document(PathBuf),
     /// A raster image `image_import` should be able to read.
     Image(PathBuf),
+    /// A plain-text file. Set it as new pages.
+    Text(PathBuf),
     /// Something pdfcer does not take. Carries the extension, lower-cased, for
     /// the sentence — an empty string when the file had none.
     Unknown(String),
@@ -45,6 +48,8 @@ pub fn classify(path: &Path) -> Dropped {
         Dropped::Document(path.to_path_buf())
     } else if IMAGE_EXTENSIONS.contains(&ext.as_str()) {
         Dropped::Image(path.to_path_buf())
+    } else if ext == "txt" {
+        Dropped::Text(path.to_path_buf())
     } else {
         Dropped::Unknown(ext)
     }
@@ -57,6 +62,8 @@ pub struct Sorted {
     pub documents: Vec<PathBuf>,
     /// Pictures, to place.
     pub images: Vec<PathBuf>,
+    /// Text files, to set as pages.
+    pub texts: Vec<PathBuf>,
     /// The extension of each file pdfcer does not take.
     pub refused: Vec<String>,
 }
@@ -69,6 +76,7 @@ pub fn sort(files: &[PathBuf]) -> Sorted {
         match classify(file) {
             Dropped::Document(p) => out.documents.push(p),
             Dropped::Image(p) => out.images.push(p),
+            Dropped::Text(p) => out.texts.push(p),
             Dropped::Unknown(ext) => out.refused.push(ext),
         }
     }
@@ -105,6 +113,7 @@ pub fn land(app: &mut PdfcerApp, ctx: &egui::Context, landing: &Landed, actions:
         crate::app::actions::record_note(0, crate::text::dropped::not_accepted(ext));
     }
     actions.extend(sorted.documents.into_iter().map(Action::Open));
+    pages(app, &sorted.texts, actions);
     if sorted.images.is_empty() {
         return;
     }
@@ -128,6 +137,33 @@ pub fn land(app: &mut PdfcerApp, ctx: &egui::Context, landing: &Landed, actions:
         return;
     }
     place(app, ctx, landing.at, &sorted.images, actions);
+}
+
+/// Each text file as pages after the one on screen, in the order dropped,
+/// with Import text as pages' defaults.
+fn pages(app: &PdfcerApp, texts: &[PathBuf], actions: &mut Vec<Action>) {
+    if texts.is_empty() {
+        return;
+    }
+    let Status::Open(doc) = &app.status else {
+        crate::app::actions::record_note(
+            0,
+            crate::text::dropped::text_needs_a_document().to_owned(),
+        );
+        return;
+    };
+    let current = doc.view.page_index;
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("text-dropped n={} page={current}", texts.len())
+    });
+    // Each lands directly after `current`, so pushing them last-first leaves
+    // the first dropped first.
+    actions.extend(
+        texts.iter().rev().map(|path| {
+            crate::dialogs::import_text::ImportTextDialog::dropped(path.clone(), current)
+        }),
+    );
 }
 
 /// Each picture at its natural size, the first centred on `at`.
@@ -221,7 +257,7 @@ mod tests {
 
     #[test]
     fn a_mixed_drop_keeps_every_file_in_its_order() {
-        let files: Vec<PathBuf> = ["a.png", "b.pdf", "c.gif", "d.jpg", "e.pdf"]
+        let files: Vec<PathBuf> = ["a.png", "b.pdf", "c.gif", "d.jpg", "e.pdf", "f.TXT"]
             .into_iter()
             .map(PathBuf::from)
             .collect();
@@ -232,6 +268,7 @@ mod tests {
             [PathBuf::from("b.pdf"), PathBuf::from("e.pdf")]
         );
         assert_eq!(s.refused, ["gif"]);
+        assert_eq!(s.texts, [PathBuf::from("f.TXT")]);
     }
 
     #[test]

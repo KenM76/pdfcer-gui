@@ -108,6 +108,18 @@ impl ImportTextDialog {
         }
     }
 
+    /// The action a `.txt` dropped on the window raises: the pages this
+    /// window makes with its controls untouched, after `current_page`.
+    #[must_use]
+    pub fn dropped(path: std::path::PathBuf, current_page: usize) -> Action {
+        let window = Self::open(path, current_page);
+        Action::File(crate::app::actions::importtext::FileAction::ImportText {
+            template: Box::new(window.template()),
+            position: window.insert_position(),
+            path: window.path,
+        })
+    }
+
     /// The engine's position for the selected radio.
     const fn insert_position(&self) -> pdfcer_core::pageops::InsertPosition {
         use pdfcer_core::pageops::InsertPosition;

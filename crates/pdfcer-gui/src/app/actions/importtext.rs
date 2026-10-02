@@ -94,9 +94,10 @@ fn import(
                     // placed nothing, a build that promised one undo it cannot
                     // deliver, and a build whose fold silently stopped working.
                     format!(
-                        "import-text-applied pages={} coalesced={} undo={} split={} \
-                         tabs={} breaks={} overlong={} overflow={}",
+                        "import-text-applied pages={} first={} coalesced={} undo={} \
+                         split={} tabs={} breaks={} overlong={} overflow={}",
                         report.pages_created,
+                        report.first_page_index,
                         u8::from(report.coalesced),
                         report.undo_entries,
                         report.paragraphs_split_across_pages,
