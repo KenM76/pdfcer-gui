@@ -6,6 +6,10 @@
 mod win32;
 #[cfg(windows)]
 pub use win32::*;
+#[cfg(windows)]
+mod win32_clip;
+#[cfg(windows)]
+pub use win32_clip::*;
 
 #[cfg(not(windows))]
 mod unsupported;

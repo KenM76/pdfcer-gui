@@ -665,7 +665,7 @@ const OPEN_ATTEMPTS: u32 = 20;
 const OPEN_RETRY_MS: u64 = 25;
 
 /// Take ownership of the clipboard, run `body`, and always release it.
-fn with_clipboard<T>(body: impl FnOnce() -> T) -> Option<T> {
+pub(super) fn with_clipboard<T>(body: impl FnOnce() -> T) -> Option<T> {
     for _ in 0..OPEN_ATTEMPTS {
         // SAFETY: a null window handle is documented as associating the
         // clipboard with the current task, which is what a harness wants.

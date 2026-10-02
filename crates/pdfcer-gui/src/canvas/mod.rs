@@ -96,6 +96,8 @@ pub mod chunks;
 /// why each rung sits where it does.
 pub mod clicking;
 pub mod clipboard;
+/// Whether another program wrote the clipboard since pdfcer last copied.
+pub mod clipseq;
 /// **What Shift does to a drag** - the axis lock and the aspect lock, written
 /// down once for the five drags that share them. `ui-conventions/drag-moves.md`
 /// D5, found absent from every one of them by the conventions sweep of

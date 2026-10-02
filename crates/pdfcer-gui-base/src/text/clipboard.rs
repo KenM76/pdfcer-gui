@@ -306,6 +306,9 @@ pub enum ModeRefusal {
     /// not author page content. A field is part of the document rather than a
     /// comment on it.
     PasteField,
+    /// `edit.paste` with **another program's picture** on the clipboard, in a
+    /// mode that does not author page content.
+    PastePicture,
     /// `edit.cut` over **page content**, in a mode that does not change it.
     CutContent,
     /// `edit.cut` over a **comment or markup**, in a mode that authors none.
@@ -347,6 +350,9 @@ impl ModeRefusal {
             }
             Self::PasteField => {
                 "The clipboard holds a form field, which is part of the document rather than a comment on it, and this mode does not change what is on the page. Switch to Edit to paste it."
+            }
+            Self::PastePicture => {
+                "The clipboard holds a picture from another program, and this mode does not change what is on the page. Switch to Edit to paste it."
             }
             Self::CutContent => {
                 "That is page content, and this mode does not change what is on the page. Nothing has been removed — switch to Edit to cut it."
@@ -461,6 +467,7 @@ mod tests {
             (ModeRefusal::PasteContent, edit),
             (ModeRefusal::PasteMarkup, review),
             (ModeRefusal::PasteField, edit),
+            (ModeRefusal::PastePicture, edit),
             (ModeRefusal::CutContent, edit),
             (ModeRefusal::CutMarkup, review),
             (ModeRefusal::CutField, edit),
@@ -474,14 +481,15 @@ mod tests {
         }
     }
 
-    /// **Every one of the seven is a distinct sentence**, and the four that
+    /// **Every refusal is a distinct sentence**, and the three that
     /// follow a gesture over a visible operand say the document is unchanged.
     #[test]
-    fn the_seven_mode_refusals_are_seven_sentences_and_the_gestures_reassure() {
+    fn the_mode_refusals_are_distinct_sentences_and_the_gestures_reassure() {
         let all = [
             ModeRefusal::PasteContent,
             ModeRefusal::PasteMarkup,
             ModeRefusal::PasteField,
+            ModeRefusal::PastePicture,
             ModeRefusal::CutContent,
             ModeRefusal::CutMarkup,
             ModeRefusal::CutField,

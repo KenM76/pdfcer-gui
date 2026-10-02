@@ -101,6 +101,7 @@ impl eframe::App for PdfcerApp {
         // See `dialogs::host::set_owner` for why it travels this way, and the
         // host's G3 section for what ownership buys.
         crate::dialogs::host::set_owner(&ctx, self.window);
+        crate::canvas::clipseq::settle(&ctx);
         crate::diag::trace_on_change("root-focus", || {
             // ui-text-exempt: diagnostic trace, never displayed.
             format!("focused={:?}", ctx.input(|i| i.viewport().focused))

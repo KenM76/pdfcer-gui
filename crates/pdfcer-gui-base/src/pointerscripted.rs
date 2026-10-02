@@ -17,13 +17,16 @@
 //! <seq> shot [vp=V]
 //! <seq> key NAME [mods=…] [vp=V]
 //! <seq> type [vp=V] TEXT
+//! <seq> paste [vp=V] TEXT
+//! <seq> copy [vp=V]                      <seq> cut [vp=V]
 //! ```
 //!
 //! `key` presses and releases one key named as `egui::Key::from_name` spells
 //! it (`A`, `Enter`, `Tab`, `Escape`, `Backspace`, …), so `key A mods=ctrl`
 //! selects all in a focused field. `type` delivers everything after the verb
 //! (and an optional `vp=`), spaces included, as one text event to whatever
-//! holds keyboard focus: click the field first.
+//! holds keyboard focus: click the field first. `copy` and `cut` deliver the
+//! platform's Copy and Cut commands, as Ctrl+C and Ctrl+X reach the app.
 //!
 //! Points are egui logical points of the target viewport — the space
 //! `ui-rect` lines are written in. `vp=` is `root` (the default) or the
@@ -330,6 +333,14 @@ fn expand(
             want(0)?;
             vec![Vec::new()]
         }
+        "copy" => {
+            want(0)?;
+            vec![vec![Event::Copy]]
+        }
+        "cut" => {
+            want(0)?;
+            vec![vec![Event::Cut]]
+        }
         _ => return Err(()),
     };
     Ok(frames.into())
@@ -613,6 +624,16 @@ mod tests {
         let step = parse("6 paste a\\nb\\\\c").unwrap();
         assert_eq!(step.verb, "paste");
         assert!(matches!(&step.frames[0][..], [Event::Paste(t)] if t == "a\nb\\c"));
+    }
+
+    #[test]
+    fn copy_and_cut_are_one_platform_command_each() {
+        let step = parse("7 copy").unwrap();
+        assert!(matches!(&step.frames[0][..], [Event::Copy]));
+        let step = parse("8 cut vp=abc").unwrap();
+        assert!(matches!(&step.frames[0][..], [Event::Cut]));
+        assert_eq!(step.target, Target::Named("abc".to_owned()));
+        assert!(parse("9 copy 5").is_err());
     }
 
     #[test]

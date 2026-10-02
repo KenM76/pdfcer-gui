@@ -146,6 +146,8 @@ pub mod ocr;
 /// count. Consumed by `pdfcer_gui::dialogs::offpage` and
 /// `pdfcer_gui::app::actions::offpage`.
 pub mod offpage;
+/// What pasting another program's copy says.
+pub mod ospaste;
 /// The words for **the visible area of a sheet** — the Crop… window and the
 /// disclosures its commit raises. Consumed by `pdfcer_gui::dialogs::page_crop`
 /// and `pdfcer_gui::app::actions::pagesize::crop`.

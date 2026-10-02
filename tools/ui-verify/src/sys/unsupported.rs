@@ -157,6 +157,47 @@ pub fn clear_clipboard() -> bool {
     false
 }
 
+/// `CF_UNICODETEXT`.
+pub const CF_UNICODETEXT: u32 = 13;
+/// `CF_DIB`.
+pub const CF_DIB: u32 = 8;
+/// `CF_DIBV5`.
+pub const CF_DIBV5: u32 = 17;
+
+/// Always 0 — there is no clipboard here.
+#[must_use]
+pub fn clipboard_sequence() -> u32 {
+    0
+}
+
+/// Always 0 — there is no clipboard here.
+#[must_use]
+pub fn register_format(_name: &str) -> u32 {
+    0
+}
+
+/// Always `false` — there is no clipboard here.
+pub fn set_clipboard(_items: &[(u32, Vec<u8>)]) -> bool {
+    false
+}
+
+/// Always `None` — there is no clipboard here.
+#[must_use]
+pub fn clipboard_bytes(_format: u32) -> Option<Vec<u8>> {
+    None
+}
+
+/// Always empty — there is no clipboard here.
+#[must_use]
+pub fn snapshot() -> Vec<(u32, Vec<u8>)> {
+    Vec::new()
+}
+
+/// Always `false` — there is no clipboard here.
+pub fn restore(_saved: &[(u32, Vec<u8>)]) -> bool {
+    false
+}
+
 /// Always `None` — there is no clipboard here, so there are no formats on it.
 #[must_use]
 pub fn clipboard_formats() -> Option<Vec<(u32, String)>> {

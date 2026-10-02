@@ -315,14 +315,14 @@ impl Drop for Staged {
 /// *"Windows' clipboard has stopped working"*, with nothing connecting it to a
 /// PDF viewer. That is not a class of bug worth being careful about; it is one
 /// worth making unrepresentable.
-struct OpenGuard;
+pub(crate) struct OpenGuard;
 
 impl OpenGuard {
     /// Ask for the clipboard, retrying while another process holds it.
     ///
     /// `None` means the budget ran out, which is a transient and reportable
     /// condition rather than an error in this program.
-    fn acquire() -> Option<Self> {
+    pub(crate) fn acquire() -> Option<Self> {
         for attempt in 0..OPEN_ATTEMPTS {
             // SAFETY: a null owner means "this task", which is what a caller
             // with no window handle uses. No pointer is dereferenced. On
@@ -352,7 +352,7 @@ impl Drop for OpenGuard {
 }
 
 /// Register a clipboard format name, or `None`.
-fn register(name: &str) -> Option<u32> {
+pub(crate) fn register(name: &str) -> Option<u32> {
     // UTF-16 with an explicit terminator. `RegisterClipboardFormatW` reads
     // until a NUL; a `Vec<u16>` built from `encode_utf16` alone has none, and
     // the call would read past the end of the allocation.

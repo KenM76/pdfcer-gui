@@ -485,7 +485,7 @@ His words: *"I can't copy from another program such as an image from the snippin
 
 Ctrl+V and the ribbon's Paste take what another program copied: a picture (Snipping Tool, a browser, Paint) lands on the page at the pointer, and text from Word lands as a text box there. After you copy in another program, Paste always takes that newer copy, never an older pdfcer one. A picture, text or PDF file dropped on a page lands where it was dropped. New PDF from Clipboard and Insert Pages from Clipboard come as Acrobat has them. An SVG dropped or pasted is drawn as vector artwork once the engine can read SVG. The plan is in `docs/plans/PASTEIN_PLAN.md`.
 
-**Where it stands.** Queued behind the 3D viewer work. Dragging a picture or text straight out of another program's window (not a file) waits for your decision.
+**Where it stands.** In progress. A picture copied in another program now pastes at the pointer in Edit, and a paste after any outside copy takes that newer copy instead of an older pdfcer clip. Driven: `a_picture_copied_in_another_program_pastes_at_the_pointer`. Text from Word, dropped files, SVG and the clipboard-to-pages commands are next. Dragging a picture or text straight out of another program's window (not a file) waits for your decision.
 
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 

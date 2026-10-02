@@ -266,7 +266,8 @@ impl Declined {
             Self::OcrLayer(_)
             | Self::Layer(_)
             | Self::MarkupFlatten(_)
-            | Self::FormFontsNothingToRepair => true,
+            | Self::FormFontsNothingToRepair
+            | Self::OsPaste(_) => true,
         }
     }
 }

@@ -210,6 +210,23 @@ impl ScriptedPointer {
         }
     }
 
+    /// Deliver the platform's Copy command in `viewport` (root when `None`),
+    /// as Ctrl+C reaches the app through the windowing layer.
+    pub fn copy(&self, session: &Session, viewport: Option<&str>) -> Result<TraceLine> {
+        match viewport {
+            Some(vp) => self.send(session, &format!("copy vp={vp}")),
+            None => self.send(session, "copy"),
+        }
+    }
+
+    /// Deliver the platform's Cut command, as [`Self::copy`] does Copy.
+    pub fn cut(&self, session: &Session, viewport: Option<&str>) -> Result<TraceLine> {
+        match viewport {
+            Some(vp) => self.send(session, &format!("cut vp={vp}")),
+            None => self.send(session, "cut"),
+        }
+    }
+
     /// Take the pointer off the window, so nothing stays hovered.
     pub fn gone(&self, session: &Session) -> Result<TraceLine> {
         self.send(session, "gone")

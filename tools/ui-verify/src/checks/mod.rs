@@ -1052,6 +1052,8 @@ pub mod model_poster;
 pub mod model_view;
 /// The 3D viewer zooms about the pointer, fills the screen and comes back.
 pub mod model_view_window;
+/// A picture another program copied pastes at the pointer; the newer copy wins.
+pub mod os_image_paste;
 /// Every kind of form field loses its border through Properties' No border.
 pub mod widget_no_border;
 

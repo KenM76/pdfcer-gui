@@ -266,6 +266,7 @@ pub fn read(ctx: &egui::Context) -> Option<Clipped> {
 /// Write it.
 pub fn store(ctx: &egui::Context, clipped: Clipped) {
     ctx.data_mut(|d| d.insert_temp(egui::Id::new(KEY), clipped));
+    crate::canvas::clipseq::mark(ctx);
 }
 
 /// **Copy what is selected** — page content, an annotation, or both — and say

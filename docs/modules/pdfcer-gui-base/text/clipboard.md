@@ -95,7 +95,7 @@ what stops that being a quiet duplication: rename a mode and this fails
 and names the sentence, instead of leaving the operator directed at a
 control that no longer exists.
 
-### `fn the_seven_mode_refusals_are_seven_sentences_and_the_gestures_reassure`
+### `fn the_mode_refusals_are_distinct_sentences_and_the_gestures_reassure`
 
 `DuplicateMarkup` says *"Nothing has been added"* rather than
 *"removed"*, which is why it is asserted separately below rather than

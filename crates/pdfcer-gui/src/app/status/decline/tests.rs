@@ -276,6 +276,11 @@ fn no_two_declines_share_a_sentence() {
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::StylesDiffer),
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::WouldMoveNextRun),
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::Other),
+        Declined::OsPaste(crate::text::ospaste::OsPasteRefusal::Unreadable(
+            "x".to_owned(),
+        )),
+        Declined::OsPaste(crate::text::ospaste::OsPasteRefusal::Text),
+        Declined::OsPaste(crate::text::ospaste::OsPasteRefusal::Nothing),
     ];
     for (i, a) in all.iter().enumerate() {
         for b in &all[i + 1..] {
@@ -464,7 +469,7 @@ fn a_clipboard_verb_the_mode_refuses_is_worded_and_then_retired() {
     assert_eq!(LAST.with_borrow(Clone::clone), None);
 }
 
-/// **The six mode refusals are six sentences, and none of them is any
+/// **The mode refusals are distinct sentences, and none of them is any
 /// other decline's.**
 #[test]
 fn a_mode_refusal_reads_like_no_other_decline() {
@@ -474,6 +479,7 @@ fn a_mode_refusal_reads_like_no_other_decline() {
         ModeRefusal::PasteContent,
         ModeRefusal::PasteMarkup,
         ModeRefusal::PasteField,
+        ModeRefusal::PastePicture,
         ModeRefusal::CutContent,
         ModeRefusal::CutMarkup,
         ModeRefusal::CutField,
@@ -519,6 +525,60 @@ fn a_paste_the_mode_refuses_reaches_the_bar_through_the_dispatcher() {
         "Read authors no markup, so the paste is refused — and a refusal that \
          reaches only the trace is a keystroke that does nothing and says nothing"
     );
+}
+
+/// A tiny clipboard bitmap, decoded the way a real paste decodes one.
+fn os_picture() -> pdfcer_gui_base::clippaste::Incoming {
+    let mut b = Vec::new();
+    for v in [40u32, 2, 2] {
+        b.extend(v.to_le_bytes());
+    }
+    b.extend(1u16.to_le_bytes());
+    b.extend(32u16.to_le_bytes());
+    b.extend([0u8; 24]);
+    b.resize(40 + 2 * 2 * 4, 128);
+    let image = pdfcer_gui_base::clippaste::image_from_dib(&b).expect("a 2x2 bitmap decodes");
+    pdfcer_gui_base::clippaste::Incoming::Image {
+        image: Box::new(image),
+        format: "dib",
+    }
+}
+
+/// **Another program's picture is refused outside Edit with its own
+/// sentence**, and another program's text is declined, not dropped.
+#[test]
+fn an_os_paste_the_app_cannot_place_reaches_the_bar() {
+    use crate::app::dispatch::ospaste::tests_fake;
+    use crate::text::clipboard::ModeRefusal;
+    use crate::text::ospaste::OsPasteRefusal;
+
+    let ctx = Context::default();
+    let mut app = crate::app::tests::opened();
+    app.dispatch_command(&ctx, "mode.read", &mut Vec::new());
+    retire();
+    tests_fake::set(os_picture());
+    app.dispatch_command(&ctx, "edit.paste", &mut Vec::new());
+    let Status::Open(doc) = &app.status else {
+        unreachable!("the fixture is open")
+    };
+    assert_eq!(
+        live(&ctx, doc),
+        Some(Declined::ClipboardMode(ModeRefusal::PastePicture))
+    );
+
+    app.dispatch_command(&ctx, "mode.edit", &mut Vec::new());
+    retire();
+    tests_fake::set(pdfcer_gui_base::clippaste::Incoming::Text("hi".into()));
+    let mut actions = Vec::new();
+    app.dispatch_command(&ctx, "edit.paste", &mut actions);
+    let Status::Open(doc) = &app.status else {
+        unreachable!("the fixture is open")
+    };
+    assert_eq!(
+        live(&ctx, doc),
+        Some(Declined::OsPaste(OsPasteRefusal::Text))
+    );
+    assert!(actions.is_empty(), "a declined paste edits nothing");
 }
 
 // =======================================================================
@@ -620,7 +680,8 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         | Declined::OcrLayer(_)
         | Declined::Layer(_)
         | Declined::MarkupFlatten(_)
-        | Declined::FormFontsNothingToRepair => {}
+        | Declined::FormFontsNothingToRepair
+        | Declined::OsPaste(_) => {}
     }
 }
 

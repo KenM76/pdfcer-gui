@@ -209,6 +209,10 @@ fn paste(
         return;
     };
     let clipped = crate::canvas::clipboard::read(ctx);
+    if let Some(incoming) = super::ospaste::newer(ctx, clipped.is_some()) {
+        super::ospaste::paste(app, ctx, id, incoming, actions);
+        return;
+    }
 
     // The gate follows WHAT IS ON THE CLIPBOARD, for the same reason the
     // cut's follows what is selected: a paste has no operand on the page to

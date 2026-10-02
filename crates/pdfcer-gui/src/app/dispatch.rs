@@ -24,6 +24,8 @@ mod measure;
 /// See its header for what makes them one subject rather than five arms that
 /// happen to be adjacent.
 pub(crate) mod navigate;
+/// Pasting another program's picture at the pointer.
+pub(crate) mod ospaste;
 /// **Cut, copy and paste of whole PAGES** — O59 item 2. Its header carries
 /// the decision that shapes it: these are named commands rather than `Ctrl+C`,
 /// because the `pages.*` operand rule always resolves and a chord rung reading

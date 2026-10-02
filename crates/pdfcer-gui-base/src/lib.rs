@@ -218,6 +218,9 @@ pub mod saveoutcome;
 /// The copied selection, as a picture other programs can paste.
 pub mod clipimage;
 
+/// What another program copied, read as a picture or text a page can take.
+pub mod clippaste;
+
 /// How a placed stamp is sized to its box.
 pub mod stampfit;
 

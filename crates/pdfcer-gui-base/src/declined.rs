@@ -1026,4 +1026,7 @@ pub enum Declined {
     /// [`crate::text::textedit::refusal`]; a picture of text offers
     /// Recognise text through [`Declined::remedy`].
     TextClick(crate::editmodel::refusal::Refusal),
+    /// A paste of another program's copy placed nothing. Worded in
+    /// [`crate::text::ospaste::OsPasteRefusal`].
+    OsPaste(crate::text::ospaste::OsPasteRefusal),
 }

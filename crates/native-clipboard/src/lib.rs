@@ -86,7 +86,55 @@
 #![cfg_attr(not(windows), allow(unused))]
 
 #[cfg(windows)]
+mod read;
+#[cfg(windows)]
 mod win32;
+
+/// A clipboard format to read: a predefined id, or a name registered with
+/// Windows (such as `PNG`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Format {
+    /// A predefined id such as [`CF_DIB`].
+    Predefined(u32),
+    /// A registered format's name.
+    Registered(&'static str),
+}
+
+/// **`CF_DIB`** — a `BITMAPINFO` header followed by pixel data.
+pub const CF_DIB: u32 = 8;
+
+/// **`CF_UNICODETEXT`** — NUL-terminated UTF-16LE text.
+pub const CF_UNICODETEXT: u32 = 13;
+
+/// The clipboard's change counter: it differs whenever any program has written
+/// the clipboard since it was last read. Always 0 off Windows.
+#[must_use]
+pub fn sequence() -> u32 {
+    #[cfg(windows)]
+    return read::sequence();
+    #[cfg(not(windows))]
+    0
+}
+
+/// Whether `format` is on the clipboard. Always `false` off Windows.
+#[must_use]
+pub fn available(format: Format) -> bool {
+    #[cfg(windows)]
+    return read::available(format);
+    #[cfg(not(windows))]
+    false
+}
+
+/// A copy of `format`'s bytes, or `None` when it is absent, is a GDI or
+/// private handle rather than a memory block, or the clipboard is held by
+/// another program past the retry budget. The clipboard is closed on return.
+#[must_use]
+pub fn get(format: Format) -> Option<Vec<u8>> {
+    #[cfg(windows)]
+    return read::get(format);
+    #[cfg(not(windows))]
+    None
+}
 
 /// **`CF_DIBV5`** — a `BITMAPV5HEADER` followed by pixel data.
 ///
