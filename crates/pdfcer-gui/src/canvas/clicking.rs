@@ -237,7 +237,8 @@ pub fn click(
     // feature exists for. `notepopup` runs its own hit test with its own
     // exclusions, and its `model` header states where the two differ and why
     // each is right for its surface.
-    if let Some(id) = crate::canvas::notepopup::clicked_on(ctx, doc, page_index, point, map) {
+    let note_hit = crate::canvas::notepopup::clicked_on(ctx, doc, page_index, point, map);
+    if let Some(id) = &note_hit {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             format!("note-popup-toggle page={page_index} id={}", id.num)
@@ -335,33 +336,26 @@ pub fn click(
             )
         });
     } else if let Some(kind) = text_kind {
-        match crate::canvas::textedit::click(
+        let routed = crate::canvas::textedit::route::Routed {
             ctx,
-            &crate::canvas::textedit::Click {
-                doc,
-                page_index,
-                kind,
-                canvas_point: point,
-            },
-            actions,
-        ) {
-            // A caret placed by the Text tool arms the caret tool, as a
-            // double-click does: only that tool paints and types into a
-            // draft, and `app::frame` settles a draft whose tool is not armed.
-            Ok(()) if active_tool.is_text() && crate::canvas::textedit::read(ctx).is_some() => {
-                crate::canvas::tool::select(ctx, crate::canvas::tool::CanvasTool::TextEdit(kind));
-            }
-            Ok(()) => {}
-            Err(refusal) => {
-                crate::app::actions::record_note(
-                    doc.edit_epoch,
-                    crate::text::textedit::refusal(refusal).to_owned(),
-                );
-                crate::diag::trace(|| {
-                    // ui-text-exempt: diagnostic trace, never displayed.
-                    format!("text-edit-declined reason={refusal:?}")
-                });
-            }
+            doc,
+            page_index,
+            kind,
+            tool: active_tool,
+            point,
+            map,
+            targets,
+            on_note: note_hit.is_some(),
+            via: "",
+        };
+        // A caret placed by the Text tool arms the caret tool, as a
+        // double-click does: only that tool paints and types into a draft,
+        // and `app::frame` settles a draft whose tool is not armed.
+        if crate::canvas::textedit::route::click(&routed, actions)
+            && active_tool.is_text()
+            && crate::canvas::textedit::read(ctx).is_some()
+        {
+            crate::canvas::tool::select(ctx, crate::canvas::tool::CanvasTool::TextEdit(kind));
         }
     // **AN ANNOTATION UNDER THE POINTER TAKES THE CLICK.**
     //
@@ -841,35 +835,23 @@ pub fn click(
                     crate::canvas::textedit::TextEditKind::Edit,
                 ),
             );
-            match crate::canvas::textedit::click(
+            let routed = crate::canvas::textedit::route::Routed {
                 ctx,
-                &crate::canvas::textedit::Click {
-                    doc,
-                    page_index,
-                    kind: crate::canvas::textedit::TextEditKind::Edit,
-                    canvas_point: point,
-                },
-                actions,
-            ) {
-                Ok(()) => crate::diag::trace(|| {
+                doc,
+                page_index,
+                kind: crate::canvas::textedit::TextEditKind::Edit,
+                tool: active_tool,
+                point,
+                map,
+                targets,
+                on_note: false,
+                via: " via=double-click", // ui-text-exempt: trace suffix, never displayed
+            };
+            if crate::canvas::textedit::route::click(&routed, actions) {
+                crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     "canvas-double-click-text via=descend".to_owned()
-                }),
-                Err(refusal) => {
-                    // The refusal is the operator's, not the trace's alone.
-                    // A double-click that opened no caret and said nothing
-                    // would read as a text object that cannot be edited, which
-                    // is a different and more discouraging claim than the one
-                    // `textedit` is actually making.
-                    crate::app::actions::record_note(
-                        doc.edit_epoch,
-                        crate::text::textedit::refusal(refusal).to_owned(),
-                    );
-                    crate::diag::trace(|| {
-                        // ui-text-exempt: diagnostic trace, never displayed.
-                        format!("text-edit-declined reason={refusal:?} via=double-click")
-                    });
-                }
+                });
             }
             return;
         }

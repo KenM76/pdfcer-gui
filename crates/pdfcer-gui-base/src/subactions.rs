@@ -842,6 +842,9 @@ pub enum CanvasDecline {
     /// a consequence rather than an absence: the move is possible and pdfcer is
     /// declining it, because it would carry a line the operator never selected.
     TextRunWouldDragTheNextLine,
+    /// A text-tool click that could open no caret; worded by
+    /// [`crate::text::textedit::refusal`].
+    TextClick(crate::editmodel::refusal::Refusal),
 }
 impl CanvasDecline {
     /// The stable identifier this decline is **traced** under.
@@ -854,6 +857,8 @@ impl CanvasDecline {
             Self::TextRunHasNoPositionOfItsOwn => "text-run-no-position-of-its-own",
             // ui-text-exempt: stable diagnostic token, never displayed.
             Self::TextRunWouldDragTheNextLine => "text-run-would-drag-next-line",
+            // ui-text-exempt: stable diagnostic token, never displayed.
+            Self::TextClick(_) => "text-click",
         }
     }
 }

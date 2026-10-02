@@ -52,6 +52,7 @@ fn bar_height(ctx: &Context, status: &Status) -> f32 {
                 show(
                     ui,
                     status,
+                    &egui_shell::CommandRegistry::new(),
                     &mut find,
                     &mut filter,
                     &mut max_zoom,

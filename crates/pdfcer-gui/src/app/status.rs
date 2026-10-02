@@ -257,6 +257,8 @@ const STATUS_SLOT: &str = "status"; // ui-text-exempt: trace slot name, never di
 pub fn show(
     ui: &mut egui::Ui,
     status: &Status,
+    // The registry, so a decline offers a remedy only this build registers.
+    commands: &egui_shell::CommandRegistry,
     find: &mut FindState,
     filter: &mut PickFilter,
     // The operator's configured maximum zoom, edited by the popup behind
@@ -478,7 +480,7 @@ pub fn show(
         // may not have thought to ask yet.
         ocrlayer::show(ui, doc);
 
-        decline::show(ui, doc);
+        decline::show(ui, doc, commands, actions);
 
         // Right: the controls that must never move.
         //
@@ -671,6 +673,7 @@ pub(super) mod test_support {
             show(
                 ui,
                 status,
+                &egui_shell::CommandRegistry::new(),
                 &mut find,
                 &mut filter,
                 &mut max_zoom,
@@ -714,6 +717,7 @@ pub(super) mod test_support {
                     show(
                         ui,
                         status,
+                        &egui_shell::CommandRegistry::new(),
                         &mut find,
                         &mut filter,
                         &mut max_zoom,

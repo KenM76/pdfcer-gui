@@ -50,7 +50,9 @@ use egui::{Id, Key, Ui};
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
-use crate::canvas::forms::boxes::{BoxKind, WidgetBox, editor_rect, hit, offered_in, truncate};
+use crate::canvas::forms::boxes::{
+    BoxKind, WidgetBox, editor_rect, hit, offered_in, truncate, types_into_fields,
+};
 use crate::canvas::strip::{DrawnPage, PageView};
 use crate::canvas::tool::CanvasTool;
 use crate::panels::forms::edit::FormEdit;
@@ -344,7 +346,7 @@ pub(super) fn overlay(
     // document, where the operator may still legitimately want to look at what
     // a field IS. What it does share is `annotations_visible`, because a
     // hidden widget is one nobody can see to click.
-    if authoring {
+    if authoring && !types_into_fields(tool) {
         settle(&ctx, doc, actions);
         if doc.annotations_visible() {
             let placed = placed(&ctx, doc);
@@ -473,7 +475,7 @@ pub(super) fn overlay(
 
 /// Whether this frame offers form filling at all — the two document-wide
 /// gates, asked once. See the module header §5.
-fn offer(doc: &OpenDoc, tool: CanvasTool) -> bool {
+pub(crate) fn offer(doc: &OpenDoc, tool: CanvasTool) -> bool {
     offered_in(tool) && doc.annotations_visible() && doc.session.fill_refusal().is_none()
 }
 

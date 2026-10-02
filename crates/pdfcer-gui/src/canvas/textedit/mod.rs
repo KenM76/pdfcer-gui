@@ -108,6 +108,8 @@ pub mod shaped;
 mod splice;
 
 pub use place::{Click, begin_box, click};
+/// Where a text-tool click goes: a note, a form field, or the caret.
+pub mod route;
 // The experiment that decides whose defect O141's last step is: ONE
 // `EditSession`, `format_text` then `edit_text`, located by find text alone so
 // no operand this shell computes is in the request. It refuses; the same pair

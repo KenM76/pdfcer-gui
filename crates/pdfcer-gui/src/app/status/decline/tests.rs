@@ -260,6 +260,8 @@ fn no_two_declines_share_a_sentence() {
         // the only fact he needs.
         Declined::TextRunHasNoPositionOfItsOwn,
         Declined::TextRunWouldDragTheNextLine,
+        Declined::TextClick(pdfcer_gui_base::editmodel::refusal::Refusal::PictureOfText),
+        Declined::TextClick(pdfcer_gui_base::editmodel::refusal::Refusal::NoText),
         Declined::OcrLayer(crate::text::ocr::OcrLayerRefusal::AlreadyPresent),
         Declined::OcrLayer(crate::text::ocr::OcrLayerRefusal::LayerGone),
         Declined::OcrLayer(crate::text::ocr::OcrLayerRefusal::NoneFound),
@@ -614,6 +616,7 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         // how a completeness test quietly stops being complete.
         | Declined::TextRunHasNoPositionOfItsOwn
         | Declined::TextRunWouldDragTheNextLine
+        | Declined::TextClick(_)
         | Declined::OcrLayer(_)
         | Declined::Layer(_)
         | Declined::MarkupFlatten(_)

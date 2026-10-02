@@ -752,6 +752,7 @@ impl eframe::App for PdfcerApp {
                 crate::app::status::show(
                     ui,
                     &self.status,
+                    &self.commands,
                     &mut self.find,
                     &mut self.pick_filter,
                     &mut self.prefs.max_zoom_percent,

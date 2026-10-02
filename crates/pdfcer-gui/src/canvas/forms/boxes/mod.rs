@@ -289,7 +289,17 @@ pub struct WidgetBox {
 /// Whether this tool offers form filling at all.
 #[must_use]
 pub fn offered_in(tool: CanvasTool) -> bool {
-    matches!(tool, CanvasTool::Select)
+    matches!(tool, CanvasTool::Select) || types_into_fields(tool)
+}
+
+/// Whether this tool is a text tool, whose click on a field fills it even
+/// where the Select tool would select the field for authoring.
+#[must_use]
+pub fn types_into_fields(tool: CanvasTool) -> bool {
+    matches!(
+        tool,
+        CanvasTool::Text | CanvasTool::TextEdit(crate::canvas::textedit::TextEditKind::Edit)
+    )
 }
 
 /// The widget's own background colour as sRGB components, or `None` for

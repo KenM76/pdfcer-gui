@@ -78,12 +78,16 @@ the bar's all-signed line. The hand-signed state is session-only until
 G073. Trap: the drawn check failed once with no `hand-sign-opened` after its
 first click on a cold launch and passed on re-run; unexplained.
 
-**O270, Word-like text editing: plan steps 1 and 5 built and driven**,
+**O270, Word-like text editing: plan steps 1, 2 and 5 built and driven**,
 unpublished. The plan is `docs/plans/WORDLIKE_PLAN.md`; work it in its order
-(steps 2, 3, 4, 6, 7, 8, 9 remain GUI-only; step 7 carries O271's alignment
+(steps 3, 4, 6, 7, 8, 9 remain GUI-only; step 7 carries O271's alignment
 buttons, in both places). Step 1's keys live in `canvas::textedit::edits`,
 the draft's undo history in `editmodel::history`; measure with
-`ui-verify --check the_draft_keys_do_what_a_word_processor_does`. A line Word wrote as several text objects is edited by the
+`ui-verify --check the_draft_keys_do_what_a_word_processor_does`. Step 2's
+routing of a text-tool click to a note, a field or a scan's refusal is
+`canvas::textedit::route`; a decline's button comes from
+`Declined::remedy`; measure with
+`ui-verify --check a_text_tool_click_reaches_what_is_under_it`. A line Word wrote as several text objects is edited by the
 pinned whole-line request, which the engine carries across `ET` on a one-font
 line; a two-font line falls back to the narrowed request
 (`canvas::textedit::tier`). Measure: `ui-verify --check

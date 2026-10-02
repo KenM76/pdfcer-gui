@@ -8,6 +8,7 @@
 
 mod fresh;
 mod line;
+mod remedy;
 
 pub use fresh::History;
 
@@ -1021,4 +1022,8 @@ pub enum Declined {
     /// Edit ▸ Forms ▸ Repair fonts found no inline font to move. Worded in
     /// [`crate::text::formfonts::nothing_to_repair`].
     FormFontsNothingToRepair,
+    /// A text-tool click opened no caret. Worded by
+    /// [`crate::text::textedit::refusal`]; a picture of text offers
+    /// Recognise text through [`Declined::remedy`].
+    TextClick(crate::editmodel::refusal::Refusal),
 }

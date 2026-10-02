@@ -483,12 +483,17 @@ fn max_len_counts_characters_not_bytes() {
     assert_eq!(truncate("", Some(0)), "");
 }
 
-/// **Filling is offered in the select tool and in no other.**
+/// **Filling is offered in the select tool and the text tools, and in no
+/// other.** Add text places new text, so it does not fill.
 #[test]
-fn only_the_select_tool_fills_a_form() {
+fn the_select_and_text_tools_fill_a_form() {
     use crate::canvas::markup::MarkupKind;
+    use crate::canvas::textedit::TextEditKind;
 
     assert!(offered_in(CanvasTool::Select));
+    assert!(offered_in(CanvasTool::Text));
+    assert!(offered_in(CanvasTool::TextEdit(TextEditKind::Edit)));
+    assert!(!offered_in(CanvasTool::TextEdit(TextEditKind::Add)));
     assert!(!offered_in(CanvasTool::Hand));
     for &kind in MarkupKind::ALL {
         assert!(!offered_in(CanvasTool::Markup(kind)), "{kind:?}");

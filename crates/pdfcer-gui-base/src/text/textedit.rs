@@ -48,8 +48,8 @@ pub const fn refusal(reason: Refusal) -> &'static str {
              Add text to place new text here."
         }
         Refusal::NoText => {
-            "pdfcer cannot read any text on this page. If it is a scan, run Tools > OCR first — \
-             editing needs real text, not a picture of it."
+            "pdfcer cannot read any text on this page. If it is a scan, File > Recognise text… \
+             reads its words so they can be found and copied."
         }
         //
         // It read: *"This text is inside a block placed by the program that
@@ -114,6 +114,13 @@ pub const fn refusal(reason: Refusal) -> &'static str {
              does not spell any letter pdfcer could put back. Other text in this document may \
              still edit normally. Use Add text to write over it, or open Properties to give \
              this line a face pdfcer can type in."
+        }
+        // It promises no editing after recognition: recognised words are
+        // invisible text behind the picture, and typing into them would not
+        // change what prints.
+        Refusal::PictureOfText => {
+            "This page is a picture of text, not text, so there is nothing here to type into. \
+             Recognise text reads its words so they can be found and copied."
         }
     }
 }
@@ -387,8 +394,8 @@ impl ReflowRefusal {
                  yet. Your document has not been changed."
             }
             Self::Encrypted => {
-                "This document is encrypted, so pdfcer cannot re-write its text. Remove the \
-                 protection first, using Protect > Remove security."
+                "This document is encrypted, so pdfcer cannot re-write its text. To take the \
+                 protection off, use Encrypt… and choose Remove the protection entirely."
             }
             Self::CannotTrace => {
                 "pdfcer cannot tell which parts of the page drew these lines, so it will not \
@@ -559,6 +566,7 @@ mod tests {
             Refusal::NoText,
             Refusal::NoAnchor,
             Refusal::NoUsableEncoding,
+            Refusal::PictureOfText,
         ] {
             let s = refusal(r);
             assert!(s.len() > 40, "{r:?} needs a real sentence, got {s:?}");

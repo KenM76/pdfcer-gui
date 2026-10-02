@@ -27,6 +27,9 @@ pub struct Click<'a> {
     pub kind: TextEditKind,
     /// Where, in canvas space.
     pub canvas_point: Pos2,
+    /// Whether an image is under the click — with no text on the page, a
+    /// click on one refuses as [`Refusal::PictureOfText`].
+    pub on_image: bool,
 }
 
 /// **Start (or move) a draft from a click.**
@@ -88,6 +91,11 @@ pub fn click(
         // with a nicer opening move.
         TextEditKind::Edit => match resolve_run(click) {
             Ok(anchor) => anchor,
+            Err(Refusal::NoRun)
+                if click.on_image && click.doc.page_text().is_none_or(|t| t.runs.is_empty()) =>
+            {
+                return Err(Refusal::PictureOfText);
+            }
             Err(Refusal::NoRun) => {
                 let page = click
                     .doc

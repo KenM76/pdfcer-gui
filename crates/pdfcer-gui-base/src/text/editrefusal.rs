@@ -428,10 +428,10 @@ impl EditRefusal {
                  piece, which is why those lines do edit. Your document is unchanged."
             }
             Self::UnsupportedFont => {
-                "pdfcer cannot write new letters into this text. Its font records what each shape \
-                 looks like but not which letter it is, so pdfcer cannot spell a letter that is \
-                 not already there. Text you added with pdfcer uses a font it can spell in, which \
-                 is why those lines do edit. Your document is unchanged."
+                "pdfcer cannot write new letters into this text in the font it is drawn with. \
+                 Open Properties to give it a face pdfcer can type in, or use Add text to write \
+                 over it. Text you added with pdfcer uses a font it can spell in, which is why \
+                 those lines do edit. Your document is unchanged."
             }
             // O141. The one decline in this catalog whose whole purpose is
             // to hand the operator on to a control, so the last clause names
@@ -454,8 +454,8 @@ impl EditRefusal {
             }
             Self::DocumentProtected => {
                 "This document's protection does not allow its text to be changed, so pdfcer left \
-                 it alone. If you have the password, remove the protection first with Protect > \
-                 Remove security, then edit."
+                 it alone. If you have the password, use Encrypt… and choose Remove the \
+                 protection entirely, then edit."
             }
             Self::TextMovedAway => {
                 "pdfcer could not find the text this edit named — the page has moved on since the \

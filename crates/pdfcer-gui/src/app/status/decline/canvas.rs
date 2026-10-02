@@ -95,6 +95,7 @@ pub(crate) fn record_canvas(what: CanvasDecline) {
             super::Declined::TextRunHasNoPositionOfItsOwn
         }
         CanvasDecline::TextRunWouldDragTheNextLine => super::Declined::TextRunWouldDragTheNextLine,
+        CanvasDecline::TextClick(why) => super::Declined::TextClick(why),
     };
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI

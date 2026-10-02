@@ -75,4 +75,12 @@ pub enum Refusal {
     /// engine's sentence travelling towards a surface that must not show it,
     /// and `Refusal` would stop being `Copy` to carry it.
     NoUsableEncoding,
+    /// **The click landed on a picture on a page that has no text at all** —
+    /// a scan, or a page printed to an image.
+    ///
+    /// Refused rather than turned into Add text: a caret here would type new
+    /// words over a picture of the old ones, which is never what a click on
+    /// words in a scan means. The remedy is File ▸ Recognise text…, which
+    /// `crate::declined::Declined::remedy` offers as a button.
+    PictureOfText,
 }

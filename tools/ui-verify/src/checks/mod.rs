@@ -974,6 +974,8 @@ pub mod draft_keys;
 pub mod preview_fallback;
 /// Every refused key is named, with one click to a face that has them.
 pub mod refused_keys;
+/// Text-tool clicks reach a note, a field or a scan's remedy.
+pub mod text_click_routes;
 pub mod text_tool_click_types;
 pub mod word_line_edit;
 

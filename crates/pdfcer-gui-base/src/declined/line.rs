@@ -196,6 +196,7 @@ impl Declined {
             Self::Layer(why) => (*why).line(),
             Self::MarkupFlatten(why) => crate::text::flattenannot::refused(*why),
             Self::FormFontsNothingToRepair => crate::text::formfonts::nothing_to_repair(),
+            Self::TextClick(why) => crate::text::textedit::refusal(*why),
         };
         std::borrow::Cow::Borrowed(fixed)
     }

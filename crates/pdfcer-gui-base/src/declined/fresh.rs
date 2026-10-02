@@ -260,7 +260,8 @@ impl Declined {
             // this arm exists to refuse.
             //
             Self::TextRunHasNoPositionOfItsOwn
-            | Self::TextRunWouldDragTheNextLine => true,
+            | Self::TextRunWouldDragTheNextLine
+            | Self::TextClick(_) => true,
             // Past tense: reports the press; `retire` owns stale.
             Self::OcrLayer(_)
             | Self::Layer(_)

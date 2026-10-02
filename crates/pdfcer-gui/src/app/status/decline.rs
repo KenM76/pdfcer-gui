@@ -10,6 +10,9 @@ use crate::canvas::zoom::{self, ZoomOutcome};
 /// Named region: the worded decline, when one is live.
 const REGION_DECLINE: &str = "status-group:decline"; // ui-text-exempt: trace region name, never displayed
 
+/// Named region: the button beside a decline that runs its remedy.
+const REGION_DECLINE_REMEDY: &str = "status-group:decline.remedy"; // ui-text-exempt: trace region name, never displayed
+
 // ---------------------------------------------------------------------------
 // What was declined
 // ---------------------------------------------------------------------------
@@ -86,12 +89,29 @@ pub(crate) fn live_for_test(ctx: &egui::Context, doc: &OpenDoc) -> Option<Declin
 // The line
 // ---------------------------------------------------------------------------
 
-/// Draw the worded decline into the bar's single row, if one is live.
-pub(super) fn show(ui: &mut egui::Ui, doc: &OpenDoc) {
+/// Draw the worded decline into the bar's single row, if one is live, and
+/// beside it the button for its remedy when that command is registered.
+pub(super) fn show(
+    ui: &mut egui::Ui,
+    doc: &OpenDoc,
+    commands: &egui_shell::CommandRegistry,
+    actions: &mut Vec<crate::app::actions::Action>,
+) {
     let Some(declined) = live(ui.ctx(), doc) else {
         return;
     };
     super::disclosure::disclosure_line(ui, REGION_DECLINE, &declined.line());
+    let Some(command) = declined.remedy().and_then(|id| commands.get(id)) else {
+        return;
+    };
+    let mut button = ui.button(&command.label);
+    if let Some(tip) = &command.tooltip {
+        button = button.on_hover_text(tip);
+    }
+    crate::diag::ui_rect(REGION_DECLINE_REMEDY, button.rect);
+    if button.clicked() {
+        actions.push(crate::app::actions::Action::Command(command.id.clone()));
+    }
 }
 
 /// **The funnel's floor**, split out under R2 when this file reached 1,530
