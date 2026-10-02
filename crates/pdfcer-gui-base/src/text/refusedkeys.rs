@@ -51,6 +51,28 @@ pub fn no_face(chars: &[char]) -> String {
     )
 }
 
+/// The notice's line when the keys went in, planned for another face.
+#[must_use]
+pub fn planned(chars: &[char], font: &str, face: &str) -> String {
+    let what = if chars.len() == 1 { "it" } else { "they" };
+    format!(
+        "{font} has no {}, so {what} will be set in {face} when you commit.",
+        list(chars)
+    )
+}
+
+/// The button changing the whole line to the face instead.
+#[must_use]
+pub fn use_whole(face: &str) -> String {
+    format!("Use {face} for the whole line instead")
+}
+
+/// The whole line's face change landed, with the planned keys already in.
+#[must_use]
+pub fn now_whole(face: &str) -> String {
+    format!("This line is now in {face}.")
+}
+
 /// The face change was asked for and has not landed yet.
 #[must_use]
 pub fn switching(face: &str) -> String {

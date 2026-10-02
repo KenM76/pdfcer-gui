@@ -813,7 +813,15 @@ impl PdfcerApp {
                 run,
                 original,
                 replacement,
-            } => super::textcommit::commit_text_edit(doc, page, run, &original, &replacement),
+                reface,
+            } => super::textcommit::commit_text_edit(
+                doc,
+                page,
+                run,
+                &original,
+                &replacement,
+                reface.as_ref(),
+            ),
             // New page text, through the same funnel and the same four steps.
             //
             // `AddTextRequest::new` supplies the engine's own documented default

@@ -152,6 +152,14 @@ impl Keys<'_> {
             Anchor::Origin { .. } | Anchor::Box { .. } => (t.to_owned(), None),
         };
         if let (Anchor::Run { run, .. }, Some((missing, base_font))) = (&draft.anchor, &refused) {
+            if let Some(face) = super::reface::plan(self.ctx, self.doc, draft, missing, base_font) {
+                self.record(kind);
+                self.draft.caret = take_selection(self.draft);
+                self.draft.caret = insert_lines(&mut self.draft.text, self.draft.caret, t);
+                self.changed = true;
+                super::refused::planned(self.ctx, self.draft, missing, base_font, &face);
+                return;
+            }
             self.key_refused(*run, missing[0], base_font.clone());
         }
         if !kept.is_empty() {

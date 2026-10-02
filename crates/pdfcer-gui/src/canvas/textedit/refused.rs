@@ -46,12 +46,19 @@ impl Snapshot {
 enum Stage {
     /// Naming the keys, with a face if one takes them all.
     Offer,
-    /// The face change is raised; `epoch` and `frame` are when.
+    /// The keys went in, to be set in `face` at the commit; the offer of a
+    /// whole-line face change stands.
+    Planned { face: String },
+    /// The face change is raised; `epoch` and `frame` are when; `whole` when
+    /// it was asked from [`Stage::Planned`], whose keys are already in.
     Asked {
         face: String,
         epoch: u64,
         frame: u64,
+        whole: bool,
     },
+    /// The whole-line face change landed over planned keys.
+    Whole { face: String },
     /// The face landed and the held keys went back in.
     Retyped { face: String, keys: Vec<char> },
     /// The face landed, but the draft had moved on, so nothing was put back.
@@ -106,19 +113,7 @@ pub(super) fn note(
     let Anchor::Run { run, .. } = &draft.anchor else {
         return;
     };
-    let mut held = read(ctx)
-        .filter(|h| h.page == draft.page && h.run == *run)
-        .unwrap_or_else(|| Held {
-            page: draft.page,
-            run: *run,
-            base_font: base_font.to_owned(),
-            chars: Vec::new(),
-            tail: String::new(),
-            at: None,
-            faces: None,
-            stage: Stage::Offer,
-            traced: String::new(),
-        });
+    let mut held = held_for(ctx, draft.page, *run, base_font);
     if held.stage != Stage::Offer {
         held.chars.clear();
         held.tail.clear();
@@ -146,11 +141,64 @@ pub(super) fn note(
     write(ctx, held);
 }
 
+/// Record keys that went into the draft planned to be set in `face`.
+pub(super) fn planned(
+    ctx: &egui::Context,
+    draft: &Draft,
+    keys: &[char],
+    base_font: &str,
+    face: &str,
+) {
+    let Anchor::Run { run, .. } = &draft.anchor else {
+        return;
+    };
+    let mut held = held_for(ctx, draft.page, *run, base_font);
+    if !matches!(held.stage, Stage::Planned { .. }) {
+        held.chars.clear();
+    }
+    held.base_font = base_font.to_owned();
+    for c in keys {
+        if !held.chars.contains(c) {
+            held.chars.push(*c);
+            held.faces = None;
+        }
+    }
+    held.tail.clear();
+    held.at = None;
+    held.stage = Stage::Planned {
+        face: face.to_owned(),
+    };
+    write(ctx, held);
+}
+
+/// The notice held for `run`, or a fresh one.
+fn held_for(ctx: &egui::Context, page: usize, run: usize, base_font: &str) -> Held {
+    read(ctx)
+        .filter(|h| h.page == page && h.run == run)
+        .unwrap_or_else(|| Held {
+            page,
+            run,
+            base_font: base_font.to_owned(),
+            chars: Vec::new(),
+            tail: String::new(),
+            at: None,
+            faces: None,
+            stage: Stage::Offer,
+            traced: String::new(),
+        })
+}
+
 /// The held keys to type back in, on the frame the chosen face has landed
 /// and only if the draft is exactly as it was when they were refused.
 pub(super) fn resume(ctx: &egui::Context, doc: &OpenDoc, draft: &Draft) -> Option<String> {
     let mut held = read(ctx)?;
-    let Stage::Asked { face, epoch, frame } = held.stage.clone() else {
+    let Stage::Asked {
+        face,
+        epoch,
+        frame,
+        whole,
+    } = held.stage.clone()
+    else {
         return None;
     };
     if doc.edit_epoch == epoch {
@@ -161,6 +209,12 @@ pub(super) fn resume(ctx: &egui::Context, doc: &OpenDoc, draft: &Draft) -> Optio
             held.at = None;
             write(ctx, held);
         }
+        return None;
+    }
+    if whole {
+        held.stage = Stage::Whole { face };
+        held.at = None;
+        write(ctx, held);
         return None;
     }
     let placeable = held.at.as_ref() == Some(&Snapshot::of(draft)) && !held.tail.is_empty();
@@ -197,7 +251,7 @@ pub fn notice(ctx: &egui::Context, doc: &OpenDoc, actions: &mut Vec<Action>) {
     if !retire_closing(ctx, &mut held, &draft) {
         return;
     }
-    if held.stage == Stage::Offer {
+    if matches!(held.stage, Stage::Offer | Stage::Planned { .. }) {
         sync_faces(doc, &mut held);
     }
     let best = best_face(&held).cloned();
@@ -230,7 +284,10 @@ pub fn notice(ctx: &egui::Context, doc: &OpenDoc, actions: &mut Vec<Action>) {
 /// End a closing stage once the draft changes after it; answer whether
 /// anything is left to draw.
 fn retire_closing(ctx: &egui::Context, held: &mut Held, draft: &Draft) -> bool {
-    if matches!(held.stage, Stage::Offer | Stage::Asked { .. }) {
+    if matches!(
+        held.stage,
+        Stage::Offer | Stage::Planned { .. } | Stage::Asked { .. }
+    ) {
         return true;
     }
     let now = Snapshot::of(draft);
@@ -271,20 +328,17 @@ fn body(
                         .small(),
                 );
             }
-            let button = ui.button(t::use_face(&face.label, held.chars.len()));
-            crate::diag::ui_rect_visible(USE_REGION, button.rect, ui.clip_rect());
-            if button.clicked() {
-                held.stage = Stage::Asked {
-                    face: face.label.clone(),
-                    epoch: doc.edit_epoch,
-                    frame: ui.ctx().cumulative_frame_nr(),
-                };
-                actions.push(Action::TextStyle {
-                    page: held.page,
-                    runs: vec![held.run],
-                    change: StyleChange::Face(face.selector.clone()),
-                });
+            let label = t::use_face(&face.label, held.chars.len());
+            offer(ui, doc, held, face, &label, actions);
+        }
+        Stage::Planned { face: planned } => {
+            ui.label(t::planned(&held.chars, &font, &planned));
+            if let Some(face) = best {
+                offer(ui, doc, held, face, &t::use_whole(&face.label), actions);
             }
+        }
+        Stage::Whole { face } => {
+            ui.label(t::now_whole(&face));
         }
         Stage::Asked { face, .. } => {
             ui.label(t::switching(&face));
@@ -298,6 +352,32 @@ fn body(
         Stage::SwapRefused { face } => {
             ui.label(t::swap_refused(&face));
         }
+    }
+}
+
+/// The one-click button, raising the whole-line face change to `face`.
+fn offer(
+    ui: &mut egui::Ui,
+    doc: &OpenDoc,
+    held: &mut Held,
+    face: &FaceChoice,
+    label: &str,
+    actions: &mut Vec<Action>,
+) {
+    let button = ui.button(label);
+    crate::diag::ui_rect_visible(USE_REGION, button.rect, ui.clip_rect());
+    if button.clicked() {
+        held.stage = Stage::Asked {
+            face: face.label.clone(),
+            epoch: doc.edit_epoch,
+            frame: ui.ctx().cumulative_frame_nr(),
+            whole: matches!(held.stage, Stage::Planned { .. }),
+        };
+        actions.push(Action::TextStyle {
+            page: held.page,
+            runs: vec![held.run],
+            change: StyleChange::Face(face.selector.clone()),
+        });
     }
 }
 
@@ -339,6 +419,8 @@ fn trace(held: &mut Held, best: Option<&FaceChoice>) {
         Stage::Offer if held.faces.is_none() => "reading", // ui-text-exempt: a trace token, never displayed
         Stage::Offer if best.is_none() => "no-face", // ui-text-exempt: a trace token, never displayed
         Stage::Offer => "offer", // ui-text-exempt: a trace token, never displayed
+        Stage::Planned { .. } => "planned", // ui-text-exempt: a trace token, never displayed
+        Stage::Whole { .. } => "whole", // ui-text-exempt: a trace token, never displayed
         Stage::Asked { .. } => "asked", // ui-text-exempt: a trace token, never displayed
         Stage::Retyped { .. } => "retyped", // ui-text-exempt: a trace token, never displayed
         Stage::TypeAgain { .. } => "type-again", // ui-text-exempt: a trace token, never displayed

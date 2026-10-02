@@ -61,6 +61,10 @@ mod customstamp;
 mod extract;
 /// Combine several PDFs into a new file — `OPERATOR_REQUESTS.md` O68.
 pub(crate) mod merge;
+/// **Committing an edit to text that is already on the page** — the body of
+/// `Action::CommitTextEdit`. Its header carries why that body computes rather
+/// than routes, and why the two neighbouring commit verbs are not here.
+mod reface;
 /// Author an Acrobat **stamp collection** from this document's pages —
 /// `OPERATOR_REQUESTS.md` O169.
 mod stamps;
@@ -68,9 +72,6 @@ mod stamps;
 /// and the stamp. Its header carries the seam, which is *composes rather
 /// than routes*.
 mod textannot;
-/// **Committing an edit to text that is already on the page** — the body of
-/// `Action::CommitTextEdit`. Its header carries why that body computes rather
-/// than routes, and why the two neighbouring commit verbs are not here.
 mod textcommit;
 
 /// **Pages dragged out of one open document and into another.**

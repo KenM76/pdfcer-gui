@@ -1,8 +1,17 @@
 # `canvas::textedit::refused`
 
-When a key typed into existing text is one the run's font cannot take, the
-sieve in `keys` leaves it out of the draft. This module makes sure that is
-never silent and never a dead end:
+When a key typed into existing text is one the run's font cannot take, one
+of two things happens:
+
+- **A face nearby has it** (`canvas::textedit::reface::plan`): the key goes
+  into the draft and the notice reads `Planned` — the keys will be set in that
+  face at the commit, with the rest of the line untouched
+  (`app::actions::reface`). The button then offers the whole line in that
+  face instead (`Whole`).
+- **No planned face**: the sieve in `keys` leaves the key out of the draft,
+  and the rest of this page applies.
+
+Either way it is never silent and never a dead end:
 
 - **Every refused key is named.** [`note`] collects each distinct refused
   character for the open draft; the notice's first line names them all
@@ -30,6 +39,8 @@ never silent and never a dead end:
 
 | Stage | Shown | Ends |
 |---|---|---|
+| `Planned` | the keys went in, the face they will be set in, the whole-line button | the draft closes, or the button is clicked |
+| `Whole` | the whole line took the face; the keys stayed | the draft changes |
 | `Offer` | the named keys, the disclosure if any, the button | the draft closes, or the button is clicked |
 | `Asked` | "Changing this text to …" | the revision moves (the face landed), or two frames pass without it (refused) |
 | `Retyped` | the face, and the keys that went in | the draft changes |
@@ -53,6 +64,6 @@ notice. It is a pre-commit affordance of the same kind as the caret.
 
 `text-edit-refused-keys page= run= characters=U+0071,U+007A font= faces= face= state=`,
 written when any field changes. `state` is `reading`, `offer`, `no-face`,
-`asked`, `retyped`, `type-again` or `swap-refused`. `face` is the selector the
+`planned`, `whole`, `asked`, `retyped`, `type-again` or `swap-refused`. `face` is the selector the
 button would send. Regions: `textedit.refused-keys` (the notice) and
 `textedit.refused-keys.use-face` (the button).

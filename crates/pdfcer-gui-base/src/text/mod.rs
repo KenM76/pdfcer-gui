@@ -259,6 +259,8 @@ pub mod draftnote;
 pub mod editrefusal;
 /// Why a text edit's live preview is in a stand-in font, for the status bar.
 pub mod previewfallback;
+/// What a text edit says when some of its characters were set in another face.
+pub mod reface;
 /// The notice naming every key a run's font refused.
 pub mod refusedkeys;
 /// Every sentence the text-editing tool shows: the refusals a caret can meet,

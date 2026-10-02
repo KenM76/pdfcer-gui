@@ -41,7 +41,13 @@ pub(super) fn commit_text_edit(
     run: usize,
     original: &str,
     replacement: &str,
+    reface: Option<&pdfcer_gui_base::editmodel::reface::Reface>,
 ) {
+    if let Some(reface) = reface
+        && super::reface::try_commit(doc, page, run, original, replacement, reface)
+    {
+        return;
+    }
     let plan = crate::canvas::textedit::plan(doc, page, run, original, replacement);
     let reason = plan.reason;
     crate::diag::trace(|| {

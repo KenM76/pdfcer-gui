@@ -1,6 +1,7 @@
 //! `every_refused_key_is_named_with_a_face_that_takes_them` — keys typed into
-//! existing text that its font cannot take are all named beside the edit, and
-//! one click changes the text to a face that has them and types them back in.
+//! existing text that its font cannot take go in, are all named beside the
+//! edit with the face they will be set in, and one click changes the whole
+//! line to that face instead.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/refused_keys.md`.
 
@@ -43,8 +44,8 @@ impl Check for EveryRefusedKeyIsNamed {
     }
 
     fn defect(&self) -> &'static str {
-        "keys the text's font cannot take are dropped with only the first one named, \
-         nowhere near the edit, and with no way to a face that has them"
+        "keys the text's font cannot take are dropped, or go in unannounced, with no way to \
+         a face that has them"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -150,9 +151,19 @@ fn assess(
     report.note(format!(
         "★ both refused keys are named, beside the edit: `{offer}`"
     ));
-    if !offer.contains("state=offer") {
+    // The draft's own length, written by the canvas rather than the notice, so
+    // a notice that claims keys went in that did not cannot pass.
+    let want = format!("len={}", RUN_TEXT.len() + TYPED.len());
+    let grew = |trace: &Trace| {
+        trace
+            .events(TYPING_EVENT)
+            .last()
+            .is_some_and(|l| l.raw.ends_with(&want))
+    };
+    if !offer.contains("state=planned") || !grew(&trace) {
         return Ok(Some(format!(
-            "★★ no face was offered for keys every standard face has: `{offer}`. Trace: {path}."
+            "★★ the keys did not go in planned for a face every standard face has: the notice \
+             reads `{offer}` and the draft is not {want}. Trace: {path}."
         )));
     }
     let Some(button) = declared(&trace, ui_rect, USE_REGION) else {
@@ -161,7 +172,8 @@ fn assess(
         )));
     };
     report.note(format!(
-        "★★ a face that has them is one click away: `{USE_REGION}`"
+        "★★ the keys went in, and the whole line in their face is one click away: \
+         `{USE_REGION}`"
     ));
     pointer.click(session, WindowPoint::centre_of(button))?;
     session.settle(30);
@@ -174,21 +186,14 @@ fn assess(
              notice now reads `{after}`. Trace: {path}."
         )));
     };
-    // The draft's own length, written by the canvas rather than the notice, so
-    // a notice that claims a put-back it did not make cannot pass.
-    let want = format!("len={}", RUN_TEXT.len() + TYPED.len());
-    let grew = trace
-        .events(TYPING_EVENT)
-        .last()
-        .is_some_and(|l| l.raw.ends_with(&want));
-    if !after.contains("state=retyped") || !grew {
+    if !after.contains("state=whole") || !grew(&trace) {
         return Ok(Some(format!(
-            "★★★ the face landed (`{styled}`) but the held keys did not go back in: the notice \
-             reads `{after}` and the draft is not {want}. Trace: {path}."
+            "★★★ the face landed (`{styled}`) but the notice reads `{after}` or the draft is \
+             not {want}. Trace: {path}."
         )));
     }
     report.note(format!(
-        "★★★ the face landed through the font-change path and the keys went back in: `{styled}`"
+        "★★★ the whole line took the face through the font-change path, keys kept: `{styled}`"
     ));
     Ok(None)
 }

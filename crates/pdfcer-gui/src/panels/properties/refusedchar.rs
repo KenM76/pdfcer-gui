@@ -264,6 +264,7 @@ pub(super) fn section(
             run: typed.run,
             original: typed.original,
             replacement: typed.replacement,
+            reface: None,
         });
         ui.separator();
         return true;
@@ -710,6 +711,7 @@ mod tests {
                     run,
                     original,
                     replacement,
+                    ..
                 } => Some((*page, *run, original.clone(), replacement.clone())),
                 _ => None,
             })

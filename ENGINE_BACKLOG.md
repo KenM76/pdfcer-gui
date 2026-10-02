@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **60 of 267** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
+## `wanted` — a real gap — **62 of 269** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -90,6 +90,8 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Edit and sign an encrypted document the supplied password permits** — incremental save of an AES document appends new objects under the file's own key; every edit verb is gated by the `/P` bits the password grants; RC4 append is refused by name | **wanted; our request G077, answered FIXED and in the pin.** The consumer is step 12 of `docs/plans/WORDLIKE_PLAN.md`: edit when the permission allows and save incrementally, otherwise one sentence plus an Unlock button. Today the shell's refusal sentence for an encrypted document stands. The engine's own wording of the refusal, `pdfcer_core::edit::ENCRYPTED_EDIT_REFUSED`, is not shown: step 12 words it in the catalog with the Unlock button beside it. |
 | **Text-edit refusals as data** — `UnsupportedCause` (`#[non_exhaustive]`), `NotFoundReason`, `EditSession::edit_capability`, `RunRepertoire::cause` … | **wanted; our request G081, answered FIXED.** <!--namesake:UnsupportedCause--> The causes live in the module `pdfcer_core::text_edit::cause`. The shell names the cause only in tests that construct refusals; no production arm matches it yet. Three consumers are owed, all in `docs/plans/WORDLIKE_PLAN.md`: `canvas::textedit::tier` matches `NotFoundReason::SpansTextObjects` instead of reading a split from the refusal's shape; the caret calls `edit_capability` when it lands so a refusal never follows typing (step 13); and `app::status::decline::textedit` words each `UnsupportedCause` by variant, with a `_` arm. `FormatError` still carries a `String`. |
 | **Offer Tesseract as a third recogniser** — `pdfcer_core::ocr::tesseract_tsv` (`parse_tsv`, `TsvError`) | **wanted, and the spawn is this shell's.** The engine parses `tesseract … stdout tsv` and deliberately spawns nothing, so the work here is locating `tesseract.exe`, running it per page image, and handing stdout over; `TsvError::MissingHeader` and `TsvError::BadRow` want sentences naming the Tesseract build, not a generic OCR failure. Registered only when the executable is found (R8), so a machine without it never sees the choice. |
+| **A narrowed text-edit preview names the part it rewrote** — `TextEditPreview::rewritten` (our `G082`, Pass 437.0) | **wanted — not in the pin.** `canvas::textedit::splice` places a partial preview by repeating the engine's trim in `editmodel::narrow::engine_trim`; moving the pin past `3affd3db` lets it read the part from the preview and delete that copy. |
+| **Augment a subset from a same-name installed face** — `EditOptions::with_subset_augment`, `SubsetAugment`, `pdfcer_render::font::InstalledFaceAugmenter` (our `G075` (b), Pass 430.1) | **wanted — not in the pin.** It would keep a key in the run's own font where today it is re-faced (`app::actions::reface`). Wiring it is `editmodel::disposition` building the augmenter once from the settings' font folders; the keystroke sieve agrees only once `run_repertoire_with` learns augmentation, still open in the same Pass. |
 
 ### Vector objects (Inkscape-style editing)
 
@@ -160,7 +162,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 267** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
+## `blocked` — waiting on something named — **2 of 269** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -178,7 +180,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 267** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 269** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -189,7 +191,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 267** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
+## `declined` — deliberately no surface — **16 of 269** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -231,7 +233,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **189 of 267** <!-- counted by tools/walk-engine-backlog.py, 2026-10-01; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **189 of 269** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -488,7 +490,8 @@ channel. They join a verdict section when the engine answers.
 
 - **G075** — an embedded subset refuses characters whose glyphs are in the embedded program, and cannot take new ones from the installed face.
 - **G076** — no verb replaces a paragraph's text and re-wraps it as one edit. Needs G074 and G075.
-- **G078** — a character the run's font cannot take refuses the edit instead of being set in a fallback face.
+- **G078** — a character the run's font cannot take refuses the edit instead of being set in a fallback face. Worked around in `app::actions::reface` (placeholder tokens, `format_text`, `find_replace`, `coalesce_last`).
+- **G083** — a gesture of several verbs that fails part-way can only be unwound with `undo()`, which leaves its steps on the redo stack.
 - **G079** — re-wrapping a paragraph keeps one font, one size and no kerning, and refuses Chrome-printed paragraphs.
 - **G080** — the block model reads a table row as one line of prose, so a cell cannot be edited as a cell.
 - **G082** — the preview of an edit spanning several operators lays out only the part it rewrites and does not say which; `editmodel::narrow::engine_trim` repeats the engine's trim to place it.

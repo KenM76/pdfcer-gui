@@ -24,6 +24,9 @@ pub enum PreviewFallback {
     Unpaired,
     /// At this zoom the text is larger than the preview's ink buffer.
     TooLarge,
+    /// Some typed characters are not in the text's font and will be set in
+    /// the nearest font that has them.
+    Reface,
 }
 
 impl PreviewFallback {
@@ -36,6 +39,7 @@ impl PreviewFallback {
             Self::Invisible => "invisible", // ui-text-exempt: a trace token, never displayed
             Self::Unpaired => "unpaired", // ui-text-exempt: a trace token, never displayed
             Self::TooLarge => "too-large", // ui-text-exempt: a trace token, never displayed
+            Self::Reface => "reface",   // ui-text-exempt: a trace token, never displayed
         }
     }
 }
@@ -65,6 +69,11 @@ pub const fn line(why: PreviewFallback) -> &'static str {
             "Your typing is shown in a stand-in font because the text is too large to preview at \
              this zoom. Zoom out to see it in its own font."
         }
+        PreviewFallback::Reface => {
+            "Your typing is shown in a stand-in font: some of the characters you typed are not in \
+             this text's font. When you commit, pdfcer sets them in the nearest font that has \
+             them and says which."
+        }
     }
 }
 
@@ -80,6 +89,7 @@ mod tests {
             P::Invisible,
             P::Unpaired,
             P::TooLarge,
+            P::Reface,
         ];
         for (i, a) in all.iter().enumerate() {
             for b in &all[i + 1..] {

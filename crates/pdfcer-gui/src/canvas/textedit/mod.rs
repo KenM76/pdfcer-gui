@@ -94,6 +94,7 @@ pub mod fallback;
 /// one producer of `(pinned_span, EditTarget)` in this shell, shared by the
 /// caret's `edit_text` and the restyle verbs' `format_text`.
 pub mod pin;
+mod reface;
 /// The keys a run's font refused, named beside the edit with a face that has them.
 pub mod refused;
 /// **The alphabet the caret's run will accept, measured once when the caret
@@ -317,6 +318,7 @@ pub fn abandon(ctx: &egui::Context) -> bool {
     // slot that outlives its subject is a fossil a later reader will trust.
     repertoire::forget(ctx);
     refused::forget(ctx);
+    reface::forget(ctx);
     history::forget(ctx);
     note::forget(ctx);
     if had {
@@ -340,6 +342,7 @@ pub(super) fn commit_into(
                 run: *run,
                 original: original.clone(),
                 replacement: draft.text.clone(),
+                reface: reface::take(ctx, draft),
             });
         }
         Anchor::Origin { x, y } if !draft.text.is_empty() => {
@@ -581,6 +584,7 @@ mod tests {
                 run: 1,
                 original: "A".to_owned(),
                 replacement: String::new(),
+                reface: None,
             },
             "emptying a run is an edit, not a change of mind"
         );
@@ -615,6 +619,7 @@ mod tests {
                 run: 7,
                 original: "REV A".to_owned(),
                 replacement: "REV B".to_owned(),
+                reface: None,
             }
         );
     }

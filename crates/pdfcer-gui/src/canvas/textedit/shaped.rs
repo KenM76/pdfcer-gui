@@ -143,6 +143,7 @@ pub fn refresh(ctx: &egui::Context, doc: &OpenDoc) {
     let refused = laid.as_ref().err().map(ToString::to_string);
     let shaped = match laid {
         Ok(p) => shape_any(doc, &p, &key, tier, &plan),
+        Err(_) if super::reface::is_planned(ctx, key.page, key.run) => Err(PreviewFallback::Reface),
         Err(_) => Err(PreviewFallback::Refused),
     };
     let fallback = shaped

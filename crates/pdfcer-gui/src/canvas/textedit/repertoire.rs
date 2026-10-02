@@ -103,6 +103,16 @@ pub(crate) fn sieve(
     Sieved { kept, refused }
 }
 
+/// Which of `chars` the run refuses now, measured afresh (no slot: the
+/// commit has no `egui::Context`). Answers all of them when nothing could be
+/// measured, so the caller keeps its plan.
+pub(crate) fn refused_now(doc: &OpenDoc, page: usize, run: usize, chars: &[char]) -> Vec<char> {
+    let Some(rep) = measure(doc, page, run) else {
+        return chars.to_vec();
+    };
+    chars.iter().copied().filter(|c| !rep.accepts(*c)).collect()
+}
+
 /// Drop the held measurement.
 pub(crate) fn forget(ctx: &egui::Context) {
     ctx.data_mut(|d| d.remove::<Held>(egui::Id::new(MEMORY_KEY)));

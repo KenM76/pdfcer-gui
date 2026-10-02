@@ -105,13 +105,18 @@ place it (G082); a change to the engine's `narrow_span` shows as
 A preview that cannot use the run's font is sized from the run's size times
 the zoom and says why in the status bar (`canvas::textedit::fallback`);
 measure with `ui-verify --check a_stand_in_preview_is_the_texts_size_and_says_why`.
-Every key a run's font refuses is named under the editor box with one click
-to the nearest face that has them (`canvas::textedit::refused`); measure with
-`ui-verify --check every_refused_key_is_named_with_a_face_that_takes_them`.
+A key a run's font lacks goes into the draft when a nearby face has it
+(`canvas::textedit::reface::plan`) and commits set in that face, the rest of
+the line untouched, as one undo entry (`app::actions::reface`, the G078
+workaround; a refused step unwinds with `undo()` and leaves redo entries,
+G083). The notice under the editor box names the keys and the face, with one
+click to the whole line in it (`canvas::textedit::refused`); measure with
+`ui-verify --check a_key_the_font_lacks_is_set_in_the_nearest_face` and
+`every_refused_key_is_named_with_a_face_that_takes_them`.
 A Text-tool click on text arms the caret tool (`canvas::clicking`), because
 `app::frame` settles any draft whose tool is not armed; measure with
 `ui-verify --check a_text_tool_click_on_text_types_there`.
-Step 3's automatic substring re-face is still to build. The engine pin carries
+The engine pin carries
 G074, G077 and G081 (`UnsupportedCause` is data); steps 12 and 13 consume them.
 Rental-form sweep (`tmp` script, Ken's copy only): 32 of 32 line edits commit
 at pin `dd5747d1`. Queued after the WORDLIKE steps: O273 (Ctrl+B/I/U on the

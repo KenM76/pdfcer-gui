@@ -955,9 +955,7 @@ pub enum Action {
     /// `canvas::textedit::plan`, from the page **as it is when the action
     /// lands** — not from what the canvas believed when the key was pressed.
     /// Carrying it would make the choice a fact about a frame; deriving it makes
-    /// it a fact about the document. The old shell's failure was of exactly the
-    /// second kind read the first way: it wrote `EditOptions::default()` at its
-    /// single call site and never asked the page anything.
+    /// it a fact about the document.
     CommitTextEdit {
         /// The 0-based page holding the run.
         page: usize,
@@ -968,6 +966,9 @@ pub enum Action {
         original: String,
         /// What the operator typed. `EditRequest::replace`.
         replacement: String,
+        /// Typed characters the run's font lacks, planned at the keystroke to
+        /// be set in the nearest face that has them.
+        reface: Option<crate::editmodel::reface::Reface>,
     },
     /// **Place NEW page text** — `edit.add_text`'s verb.
     ///

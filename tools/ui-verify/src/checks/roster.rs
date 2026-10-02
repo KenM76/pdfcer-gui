@@ -416,6 +416,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(subset_glyph::AGlyphTheSubsetOutlinesTypes),
         Box::new(preview_fallback::AStandInPreviewIsTheTextsSize),
         Box::new(refused_keys::EveryRefusedKeyIsNamed),
+        Box::new(reface_commit::AKeyTheFontLacksIsSetInTheNearestFace),
         Box::new(text_tool_click_types::ATextToolClickTypes),
         // File ▸ Export ▸ Tables… in all three formats, with no OS input.
         Box::new(export_tables_scripted::ExportTablesWithoutTheMouse),
