@@ -89,36 +89,6 @@ fn well_formed(operators: &[Range<usize>], text: &str) -> bool {
     })
 }
 
-/// The part of `find` the engine rewrites when a match spans several
-/// operators, and its replacement: the engine trims the common prefix, then
-/// the common suffix of the rest, and keeps at least one `find` character.
-/// `None` when nothing trims, as the engine then rewrites the whole match.
-///
-/// Mirrors `pdfcer_core::text_edit` `narrow_span`, whose preview reports
-/// glyphs for the trimmed replacement only and does not say which part it is.
-#[must_use]
-pub fn engine_trim(find: &str, replace: &str) -> Option<(Range<usize>, String)> {
-    if find.is_empty() {
-        return None;
-    }
-    let mut pre = common_prefix(find, replace);
-    let mut suf = common_suffix(&find[pre..], &replace[pre..]);
-    if pre + suf == find.len() {
-        if let Some(c) = find[..pre].chars().next_back() {
-            pre -= c.len_utf8();
-        } else if let Some(c) = find[find.len() - suf..].chars().next() {
-            suf -= c.len_utf8();
-        }
-    }
-    if pre == 0 && suf == 0 {
-        return None;
-    }
-    Some((
-        pre..find.len() - suf,
-        replace[pre..replace.len() - suf].to_owned(),
-    ))
-}
-
 /// Bytes shared at the front, ending on a character boundary of both.
 fn common_prefix(a: &str, b: &str) -> usize {
     a.char_indices()
@@ -140,24 +110,6 @@ fn common_suffix(a: &str, b: &str) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn the_engine_trim_keeps_one_find_character_for_an_append() {
-        assert_eq!(
-            engine_trim("Required__ ", "Required__ _"),
-            Some((10..11, " _".to_owned()))
-        );
-    }
-
-    #[test]
-    fn the_engine_trim_takes_the_prefix_before_the_suffix() {
-        assert_eq!(
-            engine_trim("Common-Law ", "CommonXaw "),
-            Some((6..8, "X".to_owned()))
-        );
-        assert_eq!(engine_trim("abc", "xyz"), None);
-        assert_eq!(engine_trim("", "x"), None);
-    }
 
     // Word's shape: the words, then a separate object holding one space.
     const LINE: &str = "Date Required__ ";

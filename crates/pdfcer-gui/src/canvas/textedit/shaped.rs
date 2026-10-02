@@ -57,16 +57,16 @@ impl Key {
 
 /// The engine's layout of a draft. Page space throughout.
 pub struct Shaped {
-    /// One outline per character; `None` for a blank.
-    outlines: Vec<Option<Path>>,
+    /// One outline per glyph drawn; `None` for a blank.
+    pub(super) outlines: Vec<Option<Path>>,
     /// The caret positions: before each character, then after the last.
     pub(super) stops: Vec<Pos2>,
     /// One em along the run's own vertical.
     up: Vec2,
     /// The run's ink.
     ink: Color32,
-    /// The replacement's extent: advance by ascent and descent.
-    bbox: [f64; 4],
+    /// The extent of everything drawn: advance by ascent and descent.
+    pub(super) bbox: [f64; 4],
     /// The text laid out.
     pub(super) text: String,
     /// The page-space box `[x0, y0, x1, y1]` of the original glyphs the
@@ -177,8 +177,9 @@ pub fn refresh(ctx: &egui::Context, doc: &OpenDoc) {
 }
 
 /// The preview of `plan` on `tier`, whole or spliced: a narrowed request lays
-/// out its operators, and a whole-line request spanning several operators lays
-/// out only the part the engine trims it to.
+/// out its operators, and a request spanning several operators lays out only
+/// the part the engine names in `TextEditPreview::rewritten`, a range of the
+/// request's `find`.
 fn shape_any(
     doc: &OpenDoc,
     preview: &TextEditPreview,
@@ -190,19 +191,23 @@ fn shape_any(
     let splice =
         |part: Part<'_>| super::splice::shape(doc, preview, key.page, key.run, &part, &key.text);
     if let (super::tier::Tier::Narrowed, Some(n)) = (tier, &plan.narrowed) {
-        return splice(Part {
-            span: n.touched.original.clone(),
-            replacement: &n.touched.replacement,
-        });
+        let at = n.touched.original.start;
+        return match &preview.rewritten {
+            Some((part, replacement)) => splice(Part {
+                span: at + part.start..at + part.end,
+                replacement,
+            }),
+            None => splice(Part {
+                span: n.touched.original.clone(),
+                replacement: &n.touched.replacement,
+            }),
+        };
     }
-    if preview.glyphs.len() == key.text.chars().count() {
-        return shape(doc, preview, &key.text);
-    }
-    let request = &plan.request;
-    match pdfcer_gui_base::editmodel::narrow::engine_trim(&request.find, &request.replace) {
-        Some((span, replacement)) if request.find == key.original => splice(Part {
-            span,
-            replacement: &replacement,
+    match &preview.rewritten {
+        None if preview.glyphs.len() == key.text.chars().count() => shape(doc, preview, &key.text),
+        Some((span, replacement)) if plan.request.find == key.original => splice(Part {
+            span: span.clone(),
+            replacement,
         }),
         _ => Err(PreviewFallback::Unpaired),
     }

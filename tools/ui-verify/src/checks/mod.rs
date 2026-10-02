@@ -970,9 +970,10 @@ pub mod wheel_flips_pages;
 
 /// Undo, redo, word delete, Tab, paste, select-all and save inside a draft.
 pub mod draft_keys;
+/// Every refused key is named, with one click to a face that has them.
+pub mod mid_line_preview;
 /// A stand-in preview is the text's size, and the status bar says why.
 pub mod preview_fallback;
-/// Every refused key is named, with one click to a face that has them.
 pub mod reface_commit;
 pub mod refused_keys;
 /// A letter an embedded subset outlines but never showed can be typed.

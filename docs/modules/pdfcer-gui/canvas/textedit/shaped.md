@@ -38,6 +38,22 @@ drawn by `paint`.
   a frame between a keystroke and the next `refresh` draws the previous
   layout rather than dropping back to the box.
 
+## A preview of part of a line (`splice`)
+
+An edit that spans several show operators, or that is narrowed to the operators
+it touches, is previewed by the engine as the part it rewrites only.
+`TextEditPreview::rewritten` names that part as a byte range of the request's
+`find` and its replacement. On the narrowed tier the range is offset by where
+the touched operators start in the run. `splice::shape` lays the part out and
+puts the rest of the line's caret stops back around it, so the caret, the
+selection and the hit test index the whole draft.
+
+The commit re-lays the rest of the operator that holds the part. Those glyphs
+(the tail) are drawn through the preview's font, moved by the part's change
+in advance, and the original glyphs beneath them are blanked. Glyphs of other
+operators stay where the page render draws them, because the commit leaves
+them there. Driven by `a_key_typed_mid_line_previews_where_it_commits`.
+
 ## Why `refresh` runs in the frame loop and not in the painter
 
 Keystrokes are applied as actions after the frame is drawn, so the painter
