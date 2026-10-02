@@ -53,6 +53,10 @@ The application follows the file. The root viewport polls it every 50 ms
 and queues only complete lines. It answers each step with
 `diag-pointer seq= verb= vp= frames=` once the step's last frame has gone
 out, or with `diag-pointer-refused seq= line=` for a line it cannot read.
+A started step whose target viewport has closed — a key that closes its
+own dialog on the press, leaving a release no viewport will take — is
+answered from the root with `closed=1` added, so the harness does not
+wait out its timeout on a step that already did its work.
 All waiting is done on the harness side, so the application stays a
 doorbell.
 

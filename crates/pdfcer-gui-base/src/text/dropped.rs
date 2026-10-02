@@ -55,6 +55,51 @@ pub fn not_accepted(ext: &str) -> String {
     }
 }
 
+/// The dropped-PDF window's title.
+#[must_use]
+pub const fn drop_pdf_title() -> &'static str {
+    "Dropped PDF"
+}
+
+/// The question the dropped-PDF window asks about `name`.
+#[must_use]
+pub fn drop_pdf_question(name: &str, pages: usize) -> String {
+    let count = if pages == 1 {
+        "1 page".to_owned()
+    } else {
+        format!("{pages} pages")
+    };
+    format!("{name} has {count}. Open it on its own, or bring it into this document?")
+}
+
+/// The insert answer: all `pages` pages after page `page` (1-based).
+#[must_use]
+pub fn drop_pdf_insert(pages: usize, page: usize) -> String {
+    if pages == 1 {
+        format!("Insert its page after page {page}")
+    } else {
+        format!("Insert its {pages} pages after page {page}")
+    }
+}
+
+/// The place answer.
+#[must_use]
+pub const fn drop_pdf_place() -> &'static str {
+    "Place its first page here, as artwork"
+}
+
+/// The open answer, the window's default.
+#[must_use]
+pub const fn drop_pdf_open() -> &'static str {
+    "Open it"
+}
+
+/// The cancel answer.
+#[must_use]
+pub const fn drop_pdf_cancel() -> &'static str {
+    "Cancel"
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -74,6 +119,14 @@ mod tests {
             assert!(s.len() > 50, "too short to be an explanation: {s:?}");
             assert!(s.ends_with('.'), "must be a sentence: {s:?}");
         }
+    }
+
+    /// The dropped-PDF answers count pages as the operator does.
+    #[test]
+    fn the_drop_pdf_answers_count_pages() {
+        assert_eq!(drop_pdf_insert(1, 3), "Insert its page after page 3");
+        assert_eq!(drop_pdf_insert(4, 3), "Insert its 4 pages after page 3");
+        assert!(drop_pdf_question("a.pdf", 1).contains("has 1 page."));
     }
 
     /// The extension travels into the sentence, so a mis-drag is identifiable.

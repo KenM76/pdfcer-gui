@@ -693,6 +693,8 @@ pub mod deeper_rung_delete;
 /// A picture dropped on a page lands where it was dropped, through the
 /// scripted pointer's `drop` step.
 pub mod dropped_file;
+/// A PDF dropped on an open document asks whether to open, insert or place it.
+pub mod dropped_pdf;
 /// A text file dropped on the window becomes pages after the one on screen.
 pub mod dropped_text;
 

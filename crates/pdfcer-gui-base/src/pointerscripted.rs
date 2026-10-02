@@ -46,7 +46,8 @@
 //! for a window placed off the desktop, where an OS capture sees whatever is
 //! on screen there — and writes it beside the step file as a binary PPM,
 //! `<step file>.shot-<seq>.ppm`. Its acknowledgement waits for the file and
-//! adds `path= w= h=`.
+//! adds `path= w= h=`. A step whose viewport closes before its last frame
+//! (Enter that closes its own dialog) is acknowledged with `closed=1`.
 //!
 //! An unreadable line answers `diag-pointer-refused seq=… line=…`. The
 //! acknowledgement says the events were **delivered**, never what they did:
@@ -499,6 +500,25 @@ impl PointerScript {
         });
     }
 
+    /// Acknowledge, with `closed=1`, a started step whose viewport has closed:
+    /// a key that closes its own window leaves frames no viewport will take.
+    fn retire_orphan(&mut self, root: &RawInput) {
+        let Some(step) = self.queue.front() else {
+            return;
+        };
+        let alive = root.viewports.keys().any(|id| step.target.matches(*id));
+        if step.sent == 0 || alive || matches!(step.target, Target::Root) {
+            return;
+        }
+        let (seq, sent, verb) = (step.seq, step.sent, step.verb.clone());
+        let vp = step.target.token().to_owned();
+        self.queue.pop_front();
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("diag-pointer seq={seq} verb={verb} vp={vp} frames={sent} closed=1")
+        });
+    }
+
     /// Read what the harness appended since last time; queue whole lines.
     fn poll(&mut self) {
         let Ok(mut file) = std::fs::File::open(&self.path) else {
@@ -580,6 +600,7 @@ impl egui::Plugin for PointerScript {
         }
         if viewport == ViewportId::ROOT {
             self.poll();
+            self.retire_orphan(input);
         }
         self.write_shot(viewport, input);
         let Some(step) = self.queue.front_mut() else {
@@ -641,6 +662,32 @@ impl egui::Plugin for PointerScript {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn script_with(step: Step) -> PointerScript {
+        PointerScript {
+            path: PathBuf::new(),
+            offset: 0,
+            partial: String::new(),
+            queue: VecDeque::from([step]),
+            last: None,
+            seen: Vec::new(),
+            shot: None,
+        }
+    }
+
+    #[test]
+    fn a_started_step_whose_viewport_closed_is_retired_and_an_unstarted_one_waits() {
+        let root_only = RawInput::default();
+        let mut started = parse("8 key Enter vp=1071").unwrap();
+        started.sent = 1;
+        let mut script = script_with(started);
+        script.retire_orphan(&root_only);
+        assert!(script.queue.is_empty());
+
+        let mut waiting = script_with(parse("8 key Enter vp=1071").unwrap());
+        waiting.retire_orphan(&root_only);
+        assert_eq!(waiting.queue.len(), 1);
+    }
 
     #[test]
     fn a_click_is_a_move_then_a_press_then_a_release_on_three_frames() {

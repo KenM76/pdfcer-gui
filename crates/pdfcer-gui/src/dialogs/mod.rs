@@ -62,6 +62,8 @@ pub mod handsign;
 /// window actually buys, how it degrades on the web target, and the two rows
 /// (G3 ownership, G5 focus trapping) that eframe 0.35 cannot express.
 pub use pdfcer_gui_base::dialoghost as host;
+/// A PDF dropped alone on an open document: open, insert or place it.
+pub mod drop_pdf;
 /// **A text file becomes pages** — the return journey. Its header records
 /// what it needs from `pdfcer-core` that reading a PDF does not (the ability to
 /// CREATE a page, not only to copy one) and why it is a CHOOSER where its
@@ -346,6 +348,10 @@ pub struct DialogsState {
     /// the reason the group exists — a dialog configuring an edit to a file
     /// that is no longer open is configuring nothing.
     insert_pages: Option<insert_pages::InsertPagesDialog>,
+
+    /// The dropped-PDF question, when one is open. **Document-scoped**: two
+    /// of its answers edit the open document.
+    drop_pdf: Option<drop_pdf::DropPdfDialog>,
 
     /// The Import-text window, when one is open.
     ///
@@ -749,6 +755,9 @@ impl DialogsState {
         if self.insert_pages.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.insert_pages = None;
         }
+        if self.drop_pdf.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.drop_pdf = None;
+        }
         if self.insert_image.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.insert_image = None;
         }
@@ -1133,6 +1142,7 @@ impl DialogsState {
             self.model3d = None;
         }
         self.insert_image = None;
+        self.drop_pdf = None;
         self.export_dxf = None;
         // On this list because it holds a SNAPSHOT: the page count it built
         // its rows from, and the names it read out of the file's name tree.

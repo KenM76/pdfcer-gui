@@ -1,6 +1,7 @@
 //! # `app::dropped` — **files dragged onto the window**
 //!
-//! The drop nobody claimed: each PDF opens, each picture lands on the page at
+//! The drop nobody claimed: each PDF opens (one dropped alone on an open
+//! document asks whether to open, insert or place it), each picture lands on the page at
 //! the drop point at its natural size (later ones cascading down and to the
 //! right), each text file becomes pages after the one on screen, and anything
 //! else is named back. Alt held as it lands opens the
@@ -112,7 +113,7 @@ pub fn land(app: &mut PdfcerApp, ctx: &egui::Context, landing: &Landed, actions:
         });
         crate::app::actions::record_note(0, crate::text::dropped::not_accepted(ext));
     }
-    actions.extend(sorted.documents.into_iter().map(Action::Open));
+    documents(app, ctx, landing.at, &sorted, actions);
     pages(app, &sorted.texts, actions);
     if sorted.images.is_empty() {
         return;
@@ -137,6 +138,44 @@ pub fn land(app: &mut PdfcerApp, ctx: &egui::Context, landing: &Landed, actions:
         return;
     }
     place(app, ctx, landing.at, &sorted.images, actions);
+}
+
+/// Each PDF opens, except one dropped alone on an open document, which asks
+/// what it is for when the mode offers more than opening it.
+fn documents(
+    app: &mut PdfcerApp,
+    ctx: &egui::Context,
+    at: Option<egui::Pos2>,
+    sorted: &Sorted,
+    actions: &mut Vec<Action>,
+) {
+    if let [only] = sorted.documents.as_slice()
+        && sorted.images.is_empty()
+        && sorted.texts.is_empty()
+        && let Status::Open(doc) = &app.status
+    {
+        let caps = app.capabilities();
+        let offer = crate::dialogs::drop_pdf::Offer {
+            insert_after: caps.edit_content.then_some(doc.view.page_index),
+            place_at: caps
+                .author_markup
+                .then(|| crate::app::dispatch::ospaste::target_at(app, ctx, at))
+                .flatten(),
+        };
+        if let Some(dialog) = crate::dialogs::drop_pdf::DropPdfDialog::read(only.clone(), offer) {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!(
+                    "drop-pdf-asked insert={} place={}",
+                    offer.insert_after.is_some(),
+                    offer.place_at.is_some()
+                )
+            });
+            app.dialogs.open_drop_pdf(dialog);
+            return;
+        }
+    }
+    actions.extend(sorted.documents.iter().cloned().map(Action::Open));
 }
 
 /// Each text file as pages after the one on screen, in the order dropped,

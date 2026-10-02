@@ -436,6 +436,13 @@ impl DialogsState {
         Some(crate::text::unembed::nothing_removable().to_owned())
     }
 
+    /// Ask what a dropped PDF is for, unless the question is already open.
+    pub fn open_drop_pdf(&mut self, dialog: crate::dialogs::drop_pdf::DropPdfDialog) {
+        if self.drop_pdf.is_none() {
+            self.drop_pdf = Some(dialog);
+        }
+    }
+
     /// Open the Insert-image window for an already-imported picture.
     pub fn open_insert_image(
         &mut self,

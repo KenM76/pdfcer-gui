@@ -29,6 +29,7 @@ of them tells the operator anything.
 | dropped | action |
 |---|---|
 | a **PDF** | open it — the same [`Action::Open`] the File ▸ Open picker raises; every PDF in the drop opens |
+| **one PDF alone**, with a document open | ask: open it (the default, Enter), insert all its pages after the page on screen, or place its first page as artwork at the drop point — see `dialogs/drop_pdf.md`; with neither of the last two offered by the mode, or no readable page, it opens |
 | a **raster image** (png/jpg/bmp/tif) with a document open | place it at the drop point at its natural size, as one undoable edit; later pictures in the same drop cascade one `CASCADE_PT` step down and right |
 | the same, with **Alt** held | open the placement window for the first picture, the one `edit.insert_image` opens |
 | the same, in a mode that does not change page content | refuse, naming Edit |
