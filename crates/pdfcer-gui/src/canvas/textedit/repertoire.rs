@@ -122,7 +122,10 @@ fn write(ctx: &egui::Context, held: Held) {
 fn measure(doc: &OpenDoc, page: usize, run: usize) -> Option<Arc<RunRepertoire>> {
     let pin = super::pin::resolve(doc, page, run)?;
     let started = std::time::Instant::now();
-    let answer = doc.session.run_repertoire(page, "", Some(pin.span));
+    let options = pdfcer_gui_base::editmodel::disposition::typing();
+    let answer = doc
+        .session
+        .run_repertoire_with(page, "", Some(pin.span), &options);
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI.
         //

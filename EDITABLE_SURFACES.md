@@ -60,6 +60,7 @@ The shell calls a different door onto the same body. Nothing is missing.
 
 | Verb | What the shell calls instead |
 |---|---|
+| `run_repertoire` | `run_repertoire_with(page, "", Some(span), &typing())` in `canvas::textedit::repertoire`, so the keystroke query carries the same `EditOptions` as the commit; `run_repertoire` is the same query under the default options, which would refuse a key the commit accepts. |
 | `rotate_page_by` | `rotate_pages(&[...], delta)` — the same act for a set rather than for one page, which is what the Pages panel's selection is. |
 | `add_text_annotation`, `add_text_annotation_with` | `add_text_annotation_reporting`, at `app/actions/textannot.rs:409`. This shell always holds a `MarkupNote` (author name, UTC `/M`) and the pen's opacity to pass on every sticky note, text box and stamp, and it needs the new annotation's id back. The plain verb is the `_with` form under `MarkupOptions::default()`; the `_with` form discards the report. |
 | `delete_dimension_group` | `delete_dimension_group_with(group, policy)` at `app/actions/dimensions.rs:946`, for both policies including `Refuse` — which is what the no-argument verb does internally. The ce-dimension-group dialog always has a policy, because what happens to the members is the operator's decision and it is asked before the press. One call site rather than two, so the default policy has one claimant. |

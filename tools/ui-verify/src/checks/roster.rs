@@ -413,6 +413,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(word_line_edit::ALineWrittenInPiecesEdits),
         Box::new(draft_keys::TheDraftKeysDoWhatAWordProcessorDoes),
         Box::new(text_click_routes::ATextToolClickReachesWhatIsUnderIt),
+        Box::new(subset_glyph::AGlyphTheSubsetOutlinesTypes),
         Box::new(preview_fallback::AStandInPreviewIsTheTextsSize),
         Box::new(refused_keys::EveryRefusedKeyIsNamed),
         Box::new(text_tool_click_types::ATextToolClickTypes),

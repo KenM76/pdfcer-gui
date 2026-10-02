@@ -30,7 +30,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 | What | Command | What the command alone will not tell you |
 |---|---|---|
-| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `01de1762` — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
+| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `6375b19a` — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
 | Engine HEAD | `git -C /d/Dev/pdfcer log --oneline -1 main` | The question is never whether the two shas MATCH — it is whether CODE has landed since the pin, because only that can falsify a sentence beginning *"the engine cannot"*. `git -C /d/Dev/pdfcer diff --stat <pin>..main -- '*.rs'` is the test; empty means such a sentence may be written. Read this log in the same breath as listing `open/`: a delivery has arrived here as a commit before it arrived as a reply three times |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | — |
 | Last release | `git fetch --tags origin && gh api repos/KenM76/pdfcer-gui/releases/latest` | **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in an unfetched tree answers with an older tag and reports a commits-unreleased count wrong by a factor. Read every field back out of the API rather than inferring it from the flags passed in, and check the local zip's byte count against the asset's — agreement to the unit is the cheapest proof the upload is the file and not a truncation. The binary's own stamp and `published_at` sit twelve to twenty minutes apart on every release; label which clock |
@@ -92,8 +92,13 @@ pinned whole-line request, which the engine carries across `ET` on a one-font
 line; a two-font line falls back to the narrowed request
 (`canvas::textedit::tier`). Measure: `ui-verify --check
 a_line_written_in_pieces_edits` on `fixtures/word-fragmented-lines.pdf`, and
-`cargo test -p pdfcer-gui --lib wordwall`. Still refused: a character the
-subset lacks (G075). Trap: the engine previews a multi-operator edit as only
+`cargo test -p pdfcer-gui --lib wordwall`. A glyph a subset's program
+outlines but never showed is typeable: `editmodel::disposition::typing`
+carries the engine's embedded-program reader into every commit and into the
+keystroke query; measure with
+`ui-verify --check a_glyph_the_subset_outlines_but_never_showed_types`.
+Still refused: a key a composite `/Identity-H` subset lacks (G075, engine
+Pass 430.2/430.3). Trap: the engine previews a multi-operator edit as only
 the part it rewrites, and `editmodel::narrow::engine_trim` repeats its trim to
 place it (G082); a change to the engine's `narrow_span` shows as
 `text-edit-preview-fallback reason=unpaired`.
@@ -108,8 +113,9 @@ A Text-tool click on text arms the caret tool (`canvas::clicking`), because
 `ui-verify --check a_text_tool_click_on_text_types_there`.
 Step 3's automatic substring re-face is still to build. The engine pin carries
 G074, G077 and G081 (`UnsupportedCause` is data); steps 12 and 13 consume them.
-Rental-form sweep (`tmp` script, Ken's copy only): 31 of 32 line edits commit;
-the one left is a key the composite font's subset lacks (G075).
+Rental-form sweep (`tmp` script, Ken's copy only): 31 of 32 line edits commit
+at pin `6375b19a` with the reader wired; the one left is a key a one-glyph
+composite subset lacks (G075, engine Pass 430.2/430.3).
 
 **Since that release, unpublished:** File ▸ Security ▸ *Add validation
 evidence…* (PAdES B-LT, `add_validation_material`), driven by

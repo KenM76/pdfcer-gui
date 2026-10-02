@@ -164,7 +164,17 @@ pub fn choose(
 /// The [`EditOptions`] a commit built from `reason` must carry.
 #[must_use]
 pub fn options(reason: Reason) -> EditOptions {
-    EditOptions::default().with_disposition(reason.disposition())
+    typing().with_disposition(reason.disposition())
+}
+
+/// The options every typed edit and its keystroke query share: the embedded
+/// program reader, so a character a subset outlines but never showed can be
+/// typed. `EditSession::run_repertoire_with` must be asked with these, or the
+/// query refuses a key the commit would take.
+#[must_use]
+pub fn typing() -> EditOptions {
+    EditOptions::default()
+        .with_embedded_glyphs(&pdfcer_render::font::embedded_glyphs::EmbeddedProgramGlyphs)
 }
 
 #[cfg(test)]
