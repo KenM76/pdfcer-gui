@@ -241,7 +241,7 @@ pub const fn columns() -> &'static str {
 /// Grid: the columns field's hover, since rows decide the shape.
 #[must_use]
 pub const fn columns_tip() -> &'static str {
-    "Follows from Rows and the number of objects selected, as in Inkscape."
+    "Follows from Rows and the number of objects selected."
 }
 
 /// Grid: equal-height rows.

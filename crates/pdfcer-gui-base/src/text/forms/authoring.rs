@@ -196,6 +196,13 @@ pub fn field_appearance_not_repainted(resized: bool, why: &str) -> String {
     }
 }
 
+/// **Another program's check box or radio artwork was replaced by pdfcer's.**
+#[must_use]
+pub const fn field_foreign_appearance_replaced() -> &'static str {
+    "This box was drawn by another program, so pdfcer redrew it in its own style. The look it \
+     had while being pressed or hovered over is gone."
+}
+
 /// **A widget was moved or resized.**
 #[must_use]
 pub fn field_widget_moved(resized: bool, regenerated: bool) -> &'static str {

@@ -34,6 +34,9 @@ pub const GEOMETRY_REGION: &str = "properties.widget_edit.geometry";
 /// The border-style combo's region.
 // ui-text-exempt: trace region name, never displayed
 pub const BORDER_REGION: &str = "properties.widget_edit.border";
+/// The border combo's *No border* entry, drawn while the combo is open.
+// ui-text-exempt: trace region name, never displayed
+pub const BORDER_NONE_REGION: &str = "properties.widget_edit.border.none";
 /// The border-width spinner's region.
 // ui-text-exempt: trace region name, never displayed
 pub const BORDER_WIDTH_REGION: &str = "properties.widget_edit.border_width";
@@ -110,7 +113,7 @@ pub fn section(
     // one they will not find, and a driven check could not reach it either.
     rotation_row(ui, widget, fqn, widget_index, actions);
     ui.add_space(4.0);
-    border_rows(ui, widget, fqn, widget_index, actions);
+    border_rows(ui, field, widget, fqn, widget_index, actions);
     ui.add_space(4.0);
     // Directly under the border STYLE and WIDTH, because the three are one
     // thought and `/BC` is the ink the style is stroked in. Above
@@ -258,7 +261,71 @@ fn geometry_rows(
 /// The border's style and width — `/BS`, `Pass 146.0`.
 fn border_rows(
     ui: &mut Ui,
+    field: &Field,
     widget: &Widget,
+    fqn: &str,
+    widget_index: usize,
+    actions: &mut Vec<Action>,
+) {
+    use pdfcer_core::forms::ButtonKind;
+    // A check box's or radio's mark is drawn in `/BC` (the engine's builders
+    // read it as the control's ink), so *No border* keeps that colour there.
+    let keeps_mark = matches!(
+        field.button_kind,
+        Some(ButtonKind::Check | ButtonKind::Radio)
+    );
+    trace_shown(ui.ctx(), fqn, widget_index, widget);
+    border_style_row(ui, widget, keeps_mark, fqn, widget_index, actions);
+    // The width is offered only once the file has a border to widen. A
+    // spinner over `border: None` would have to show *something*, and any
+    // number it showed would be the invention.
+    if let Some(border) = widget.border {
+        border_width_row(ui, border, fqn, widget_index, actions);
+    }
+}
+
+/// Whether `border` draws no frame: no stated border reads as the standard's
+/// width of 1, so only a stated width of 0 is none.
+fn borderless(border: Option<pdfcer_core::edit::BorderSpec>) -> bool {
+    border.is_some_and(|b| b.width <= 0.0)
+}
+
+/// Trace the border the panel shows, once per change: what a re-read of the
+/// document says after an edit, which is what a driven check asserts on.
+fn trace_shown(ctx: &egui::Context, fqn: &str, widget_index: usize, widget: &Widget) {
+    let shown = format!(
+        // ui-text-exempt: diagnostic trace, never displayed
+        "widget-border-shown field={fqn} widget={widget_index} border={} width={} \
+         border_colour={}",
+        if borderless(widget.border) {
+            "none"
+        } else if widget.border.is_some() {
+            "stated"
+        } else {
+            "unstated"
+        },
+        widget
+            .border
+            .map_or_else(|| "-".to_owned(), |b| format!("{:.2}", b.width)),
+        if widget.border_color.is_some() {
+            "present"
+        } else {
+            "absent"
+        },
+    );
+    let id = egui::Id::new("widget-border-shown"); // ui-text-exempt: memory key, never displayed
+    let last: Option<String> = ctx.data(|d| d.get_temp(id));
+    if last.as_deref() != Some(shown.as_str()) {
+        crate::diag::trace(|| shown.clone());
+        ctx.data_mut(|d| d.insert_temp(id, shown));
+    }
+}
+
+/// The style combo, with *No border* first.
+fn border_style_row(
+    ui: &mut Ui,
+    widget: &Widget,
+    keeps_mark: bool,
     fqn: &str,
     widget_index: usize,
     actions: &mut Vec<Action>,
@@ -276,48 +343,83 @@ fn border_rows(
     ];
 
     let current = widget.border;
+    let none = borderless(current);
+    let mut push = |edit: WidgetEdit| {
+        actions.push(
+            FieldAction::EditWidget {
+                field: fqn.to_owned(),
+                widget: widget_index,
+                edit,
+                touched: t::touched_border(),
+            }
+            .into(),
+        );
+    };
     ui.horizontal(|ui| {
         ui.label(t::label_border());
-        let shown = current.map_or_else(t::border_unstated, |b| t::border_style_label(b.style));
+        let shown = if none {
+            t::border_none()
+        } else {
+            current.map_or_else(t::border_unstated, |b| t::border_style_label(b.style))
+        };
         let combo = egui::ComboBox::from_id_salt("widget-border-style")
             .selected_text(shown)
             .show_ui(ui, |ui| {
+                let entry = ui
+                    .selectable_label(none, t::border_none())
+                    .on_hover_text(t::border_none_hover(keeps_mark));
+                crate::diag::ui_rect_visible(BORDER_NONE_REGION, entry.rect, ui.clip_rect());
+                if entry.clicked() && !none {
+                    // Width 0 is the standard's own "no border shall be
+                    // drawn"; the style is kept for a later style choice.
+                    let style = current.map_or(BorderStyle::Solid, |b| b.style);
+                    let edit = border_edit(BorderSpec { style, width: 0.0 });
+                    push(if keeps_mark {
+                        edit
+                    } else {
+                        edit.without_border_color()
+                    });
+                }
                 for style in STYLES {
-                    let selected = current.is_some_and(|b| b.style == style);
+                    let selected = !none && current.is_some_and(|b| b.style == style);
                     if ui
                         .selectable_label(selected, t::border_style_label(style))
                         .clicked()
                         && !selected
                     {
                         // The width travels with the style, because `/BS` is
-                        // one dictionary and `BorderSpec` is one value — there
-                        // is no "change the style and leave the width" to
-                        // express. A widget with no stated border gets the
-                        // standard's own Table 166 default of 1, which is
-                        // reading rather than inventing: choosing a style is
-                        // the operator committing to having a border.
+                        // one dictionary and `BorderSpec` is one value. No
+                        // stated border, or none, gets the standard's
+                        // default of 1: choosing a style is the operator
+                        // committing to a border that shows.
                         let width = current.map_or(1.0, |b| b.width);
-                        actions.push(
-                            FieldAction::EditWidget {
-                                field: fqn.to_owned(),
-                                widget: widget_index,
-                                edit: WidgetEdit::new().with_border(BorderSpec { style, width }),
-                                touched: t::touched_border(),
-                            }
-                            .into(),
-                        );
+                        let width = if width > 0.0 { width } else { 1.0 };
+                        push(border_edit(BorderSpec { style, width }));
                     }
                 }
             });
         crate::diag::ui_rect_visible(BORDER_REGION, combo.response.rect, ui.clip_rect());
     });
+}
 
-    // The width is offered only once the file has a border to widen. A
-    // spinner over `border: None` would have to show *something*, and any
-    // number it showed would be the invention.
-    let Some(border) = current else {
-        return;
-    };
+/// A border edit. It lets the engine redraw a check box or radio button
+/// another program drew, because otherwise that artwork keeps its old frame
+/// and the change shows nothing; the status line says when it happened.
+fn border_edit(border: pdfcer_core::edit::BorderSpec) -> WidgetEdit {
+    WidgetEdit::new()
+        .with_border(border)
+        .with_replace_foreign_appearance(true)
+}
+
+/// The width spinner, for a widget with a stated border.
+fn border_width_row(
+    ui: &mut Ui,
+    border: pdfcer_core::edit::BorderSpec,
+    fqn: &str,
+    widget_index: usize,
+    actions: &mut Vec<Action>,
+) {
+    use pdfcer_core::edit::BorderSpec;
     ui.horizontal(|ui| {
         ui.label(t::label_border_width());
         let mut width = border.width;
@@ -330,7 +432,7 @@ fn border_rows(
                 FieldAction::EditWidget {
                     field: fqn.to_owned(),
                     widget: widget_index,
-                    edit: WidgetEdit::new().with_border(BorderSpec {
+                    edit: border_edit(BorderSpec {
                         style: border.style,
                         width,
                     }),

@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **65 of 277** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `wanted` — a real gap — **71 of 285** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -94,7 +94,13 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Cell-aware block model** — each cell of a ruled table is its own block, `BlockKind::TableCell` (our `G080`, Pass 434.0) | **wanted — the caret half; Reflow shipped.** <!--namesake:TableCell--> `app::actions::export_tables`'s `TableCell` is the table extractor's. `canvas::textedit::reflow::block_of_run` numbers blocks over `pdfcer_core::text_edit::model::cells` as `reflow_block` does; overflow arrives as the reflow's own disclosure line, so `ReflowApplyReport::cell_overflow`, `ReflowPreview::cell_overflow` and `CellOverflow` (`pdfcer_core::text_edit::reflow_fit`) are not read. Wanted: Up/Down in `canvas::textedit::blocks` (`pdfcer_core::text_edit::model::navigate`) reads the plain recognition, so Down from a cell can reach the cell beside it; a cell selected as a block would read `Block::cell_rect`. No surface: `BlockDiagnostics::table_cell_blocks`, `BlockDiagnostics::lines_split_by_cell`, `BlockDiagnostics::lines_split_by_gutter`, `BlockDiagnostics::list_item_blocks`, `BlockRecognitionOptions::gutter_min_em`, `BlockRecognitionOptions::gutter_min_lines`. |
 | **Fallback face for an unencodable character** — a character the run's font can't encode is set in a fallback face: `TextEdit::with_fallback`, `FallbackFace`, the module `pdfcer_core::text_edit::fallback` (our `G078`, Pass 431.0) | **wanted, and it is in the pin, not yet wired.** The engine sets a character the run's font cannot encode in a fallback face, splitting the run with a `Tf` switch at its own size and baseline, as one undo entry. `app::actions::reface` still does the same by placeholder tokens over `format_text`, `find_replace` and `coalesce_last`. Owed: route a foreign key through `with_fallback`, read `pdfcer_core::text_edit::format::RunRepertoire::via_fallback` to say which keys it will take, and delete the placeholder route with its cause. |
 | **Replace a block's text and re-wrap it** — `EditSession::edit_block_text`, `edit_block_text_preview`, `block_at_point` (our `G076`, Pass 433.0) | **wanted, and it is in the pin, not yet wired.** One verb replaces a paragraph's text and re-wraps it as one undo entry, and its report names the lines before and after, the overflow and every unencodable character. It is what `docs/plans/WORDLIKE_PLAN.md` steps 8 and 9 wait on. The modules are `pdfcer_core::edit::block_text` and `pdfcer_core::text_edit::block_text`, and the undo entry is `pdfcer_core::edit::CommandKind::EditBlockText`. Owed: commit a multi-line draft through it, and word its report off-canvas. |
-| **Opt-in disclosed workaround for a refused text edit** — `EditOptions::with_workarounds`, `WorkaroundPolicy::{Refuse, Apply}` (Pass 436.0) | **wanted — not in the pinned engine.** The verb is a later engine commit than `Cargo.lock` holds. When the pin moves, the offer belongs on the text-edit refusal: the status line names the retry, and the retype path, which the engine labels approximate, is applied only on the operator's click, never by default. |
+| **Opt-in disclosed workaround for a refused text edit** — `EditOptions::with_workarounds`, `EditOptions::workarounds`, `WorkaroundPolicy::{Refuse, Apply}`, the module `pdfcer_core::text_edit::workaround`, `EditError::WorkaroundRefused` (Pass 436.0) | **wanted — in the pin, not yet wired.** The offer belongs on the text-edit refusal: the status line names the retry, and the retype path, which the engine labels approximate, is applied only on the operator's click, never by default. `EditError::WorkaroundRefused` is the refusal of that retry, worded from its own Display through the edit funnel. |
+| **Replacement-face ladder** — the module `pdfcer_core::text_edit::face_ladder` (`ReplacementFaces`, `FaceCandidate`, `FaceClass`), `EditOptions::with_replacement_faces`, `EditOptions::replacement_faces`, and the installed-face source `pdfcer_render::font::installed_faces` (Pass 436.2) | **wanted — in the pin, not yet wired.** It picks the face a fallback character and a retype are set in from the installed faces, by name, then family and class, then coverage; a face whose `fsType` forbids embedding is skipped and the skip is disclosed. This shell already indexes the operator's font folders for subset augmentation (`editmodel::installedfaces`), so the ladder takes the same folder list; it lands with the G078 fallback wiring, which is the route it feeds. |
+| **Take a style axis OFF** — `StyleTarget` (per-axis on, off or kept) on `FormatRequest::style`, `StyleRung::SynthesisRemoved`, `FormatError::NoFaceWithoutStyle` (our `G086`, Pass 441.0) | **wanted — answered FIXED after the pin.** Ctrl+B and Ctrl+I on a run that is already bold or italic should take the style off, and today the ladder can only add one. The fix is engine `adcf9ff5`, later than `Cargo.lock`, so it lands with the next engine tag: the pressed ribbon toggle then sends `Some(false)` for its axis, and the status line words the ladder's `removed` rung. |
+| **`GlyphProvenance` carries line width and render mode** — `GlyphProvenance::line_width`, `render_mode()`, `text_edit::synth::detect_at` (our `G087`, Pass 441.0) | **wanted — answered FIXED after the pin.** <!--namesake:GlyphProvenance--> The shell reads provenance's font, matrix and text state today, not the new fields. <!--namesake:line_width--> Its other `line_width`s are markup stroke widths. <!--namesake:render_mode--> `weight::at` reads the text state's `render_mode` operand, not the new method. `canvas::textedit::weight::at` decides whether Bold and Italic show pressed from the font name and the render mode, passing a line width of 0 because provenance carries none, so a synthetic bold drawn by widening the stroke is judged without its width. `detect_at` reads the width from the glyph; it arrives with `G086` in engine `adcf9ff5` and replaces that call. |
+| **OCR model add-on folders** — drop-in `models/<name>/` with a `pdfcer-ocr-model.txt` manifest, `pdfcer_core::ocr::addons::discover_ocr_models` (Pass 442.0) | **wanted — after the pin.** The Recognise text dialog's engine list should name every discovered model, bundled first, with its label, languages and licence, and a folder whose manifest fails its `sha256` should be listed as refused with the engine's reason rather than hidden. Engine `c31e502c` is later than `Cargo.lock`; it lands with the next engine tag. |
+| **3D annotation poster renders from the model when possible** — the default poster rasterised from the PRC model, `PlaceholderReason` naming why it fell back (our `G091`, Pass 440.0) | **wanted — answered FIXED after the pin, and it is what O276 asks for.** A 3D annotation placed here today gets the placeholder poster. Engine `716e616f` is later than `Cargo.lock`; when the pin moves, placing a model draws its own picture on the page, and the status line words `PlaceholderReason` when it cannot. |
+| **Replace an existing 3D annotation's poster** — `EditSession::set_3d_poster` (our `G092`, Pass 440.0) | **wanted — answered FIXED after the pin.** The 3D annotation's context menu gains *Set poster from image…*, and *Use the model's view* once the rendered poster is reachable; one undo entry each. Engine `716e616f`, later than `Cargo.lock`. |
 
 ### Vector objects (Inkscape-style editing)
 
@@ -165,7 +171,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 277** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `blocked` — waiting on something named — **2 of 285** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -183,7 +189,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 277** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 285** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -194,7 +200,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 277** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `declined` — deliberately no surface — **16 of 285** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -236,7 +242,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **194 of 277** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **196 of 285** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -363,6 +369,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Rebuild an unsigned `/Sig` widget's appearance after a border/colour edit** … | **Reachable — `panels::properties::widgetedit` sends every border edit through `edit_widget`**, and an unsigned signature field comes back redrawn; Border ▸ No border takes its frame off (O275, driven by `every_field_kind_can_lose_its_border`). |
+| **Opt-in: rebuild a foreign producer's check-box/radio artwork** … | **Reachable — every border edit in `panels::properties::widgetedit` sets `with_replace_foreign_appearance(true)`**, because without it another program's check box keeps its frame and the edit shows nothing; `app::actions::forms` puts the replacement on the status line when `foreign_appearance_replaced` is true. |
 | **Write or remove a page's stated tab order — `EditSession::set_page_tabs(page, PageTabs)`, CLI `set-page-tabs`** … | **Shipped** — `app::actions::reorder::set_page_tabs`. The Forms panel's Tab-order section gives each page a "Tab order:" combo offering all six states (not stated, `/R`, `/C`, `/S`, and `/A` / `/W` labelled PDF 2.0); a change calls the verb through the edit funnel, so `TabsNeedPdf20`, `TabsBreakPdfUa` and a certification refusal reach the status line as the engine words them. Driven by `page_tabs_chooser`: Columns written and read back, `/A` refused on a PDF 1.7 file, the key removed again. |
 | **Paint a widget in its own `/MK` `/BG` instead of the theme's** -- `forms::MkColor` and `Widget::background` (`pdfcer-core/src/forms.rs`) | **Reachable — `canvas::forms::boxes::editor_fill(&Widget)` reads it.** The tint is carried on the cached `WidgetBox`, and the in-canvas editor no longer turns a pale-yellow field grey the moment it is clicked, which was a rule-4 violation live in shipped builds. The engine's three-state model is preserved and merged at the POINT OF USE, not at the point of reading: absent and `MkColor::None` (`/BG []`, transparent on purpose) both answer *leave the theme box alone* and are different facts about the file. D2's pair concern is honoured STRUCTURALLY rather than by care: `Theme::foreign_fill_pair` returns a fill AND a readable foreground or neither, and there is deliberately no `foreign_fill()`. `MkColor::Cmyk` IS converted here via the engine's own `cmyk_to_srgb`, argued in `editor_fill`'s doc, because the shell's no-conversion rule is about a READBACK and this writes nothing. `/MK` `/BC` is NOT consumed; that half is its own row. |
 | Import and export form data — FDF, XFDF and two-column … | **Reachable — `app::actions::forms` calls `import_form_data` and `app::actions::export` calls `export_form_data`**, so FDF, XFDF and CSV all move. |
@@ -499,3 +507,16 @@ channel. They join a verdict section when the engine answers.
 - **G075** — a composite (Type0) subset still refuses a character it never carried; simple TrueType subsets take it from the installed face.
 - **G076** — no verb replaces a paragraph's text and re-wraps it as one edit. Needs G074 and G075.
 - **G078** — a character the run's font cannot take refuses the edit instead of being set in a fallback face. Worked around in `app::actions::reface` (placeholder tokens, `format_text`, `find_replace`, `coalesce_last`).
+
+## Filed requests for pasting in from other programs — not verdict rows
+
+The requests `docs/plans/PASTEIN_PLAN.md` waits on, filed in the request
+channel. They join a verdict section when the engine answers. FreeText
+authoring is not among them: `EditSession::add_text_annotation` with
+`TextAnnotSpec::FreeText` already exists.
+
+- **G093** — an SVG cannot be placed on a page; the engine exports SVG and imports none. Dropped `.svg` files are refused with the formats that work, and step P8 waits.
+- **G094** — an EMF, Office's vector copy on the clipboard, cannot be placed on a page. Office's PNG copy is pasted as a picture meanwhile, and step P9 waits.
+- **G095** — a stamp annotation cannot be made from an image. Review-mode paste wraps the picture in a one-page PDF and places it as a custom stamp meanwhile (step P7).
+- **G096** — GIF is recognised and refused, never decoded. A dropped `.gif` is refused with the engine's sentence; a GIF copied in a browser pastes through the PNG the browser also puts on the clipboard.
+- **G097** — a push button's icon cannot be set from an image. No icon row is offered.

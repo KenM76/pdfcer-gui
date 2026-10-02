@@ -1048,6 +1048,8 @@ pub mod models;
 /// A placed 3D model opened in the viewer turns, pans and zooms under the
 /// scripted pointer.
 pub mod model_view;
+/// Every kind of form field loses its border through Properties' No border.
+pub mod widget_no_border;
 
 /// The harness's own ribbon search, driven: a command two scroll stops past
 /// the fold is still reachable. Its header records a HARNESS defect that

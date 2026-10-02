@@ -500,7 +500,7 @@ pub const fn edit_attachments() -> CommandText {
 pub const fn edit_align() -> CommandText {
     CommandText::new(
         "Align and Distribute",
-        "Line up the selected objects, or space them evenly — Inkscape's Align and Distribute panel.",
+        "Line up the selected objects, or space them evenly.",
     )
 }
 

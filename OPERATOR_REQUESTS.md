@@ -447,6 +447,46 @@ A page in Settings listing every command with its key, grouped by ribbon tab, wi
 
 **Where it stands.** Not built. It comes after the Word-like text steps and before the snapshot box (O272).
 
+## O275 — **BUILT AND DRIVEN — awaiting your verdict** — every form field's Border choice offers No border
+
+His words: *"I noticed on the properties for border selection for form fields some of them did not have the option to have no border. I couldn't turn off the border on a signature form field."*
+
+The Border control in Properties offers *No border* for every kind of field: text, check box, radio, list, drop-down, push button and signature. Choosing it saves the field with a border width of 0 and no border colour, and the field's look is redrawn with no frame. On a check box or radio button the border colour stays, because the check mark or dot is drawn in it.
+
+**Where it stands.** Built. *No border* is the first choice in the Border list for every kind of field, and choosing it saves a border width of 0 and takes the border colour out (kept on check boxes and radio buttons, whose mark is drawn in it). Driven on a text field, check box, radio, drop-down, list, push button and signature field: `every_field_kind_can_lose_its_border`. Every one of them is redrawn with no frame, the signature field included, except a push button another program drew, which keeps its picture and the status bar says so. A check box or radio button another program drew is redrawn in pdfcer's own style, and the status bar says that too.
+
+## O276 — **OPEN, building** — an inserted 3D model shows a picture of the model on the page
+
+His words: *"Also I didn't see a preview of the 3D model."*
+
+A placed 3D model shows the model itself on the page, seen from the corner, instead of an empty box with a cube in it. Why he saw no model: pdfcer placed every model with its stand-in picture, a frame and a wireframe cube, because nothing rendered a preview at insert time (sent to the engine as G091). A U3D model, which pdfcer cannot draw, keeps the stand-in and the status line says so.
+
+**Where it stands.** Being built.
+
+## O277 — **OPEN, building** — the 3D viewer zooms in on the mouse pointer
+
+His words: *"when I zoom in the 3D navigator window it should zoom centered around the mouse cursor"*
+
+Scrolling in the 3D viewer zooms about the point under the pointer, so that point stays where it is, as in a CAD viewer.
+
+**Where it stands.** Being built.
+
+## O278 — **OPEN, building** — the 3D viewer window can be maximised and filled to the screen
+
+His words: *"and the window itselt should have controls to make it full screen etc."*
+
+The 3D viewer's window has maximise, restore and close in its title bar, a Full screen button and F11 to fill the screen, and Esc or F11 to come back. Fit stays on the toolbar.
+
+**Where it stands.** Being built.
+
+## O279 — **OPEN, queued** — copy from another program and paste onto a page; drag an SVG onto a page
+
+His words: *"I can't copy from another program such as an image from the snipping tool and paste onto a page. I can't copy paste text such as from word either. Also we should be able to support dragging and dropping an svg file onto a page. this is just the tings I've tried, but we should aim for full support of whatever acrobat can support of these sorts of features."*
+
+Ctrl+V and the ribbon's Paste take what another program copied: a picture (Snipping Tool, a browser, Paint) lands on the page at the pointer, and text from Word lands as a text box there. After you copy in another program, Paste always takes that newer copy, never an older pdfcer one. A picture, text or PDF file dropped on a page lands where it was dropped. New PDF from Clipboard and Insert Pages from Clipboard come as Acrobat has them. An SVG dropped or pasted is drawn as vector artwork once the engine can read SVG. The plan is in `docs/plans/PASTEIN_PLAN.md`.
+
+**Where it stands.** Queued behind the 3D viewer work. Dragging a picture or text straight out of another program's window (not a file) waits for your decision.
+
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 
 > **Ken:** *"Also can we make it so everything about the dimensions show a live preview? Can we make it so when we click on a dimension, the end points on the connection side of the dimension can have their lengths adjusted? And when I click on the dimension text and drag it should live preview so that it is apparent I am just moving the dimension text. Also did we make it so we can change between radius and diameter, and make these easy to move and extend again with live preview."*

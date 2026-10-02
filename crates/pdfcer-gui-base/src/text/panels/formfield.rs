@@ -780,6 +780,25 @@ pub const fn border_unstated() -> &'static str {
     "—  (this file says nothing about a border)"
 }
 
+/// The border combo's entry that takes the frame away: `/BS /W 0`.
+#[must_use]
+pub const fn border_none() -> &'static str {
+    "No border"
+}
+
+/// Its tip. `keeps_mark` for a check box or radio button, whose mark is drawn
+/// in the border colour.
+#[must_use]
+pub const fn border_none_hover(keeps_mark: bool) -> &'static str {
+    if keeps_mark {
+        "Draw no frame around this box. The border colour stays, because it is the colour of \
+         the check mark or dot. A box another program drew is redrawn in pdfcer's style."
+    } else {
+        "Draw no frame around this box: the border width becomes 0 and the border colour is \
+         taken out."
+    }
+}
+
 /// One border style, in the operator's words.
 #[must_use]
 pub fn border_style_label(style: pdfcer_core::edit::BorderStyle) -> &'static str {

@@ -235,9 +235,18 @@ pub(super) fn edit_widget(
                 format!(
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
                     "edit-widget-applied field={field} widget={widget} touched={touched:?} \
-                     geometry={} resized={} appearance={:?}",
+                     geometry={} resized={} redrawn={} foreign_replaced={} appearance={:?}",
                     outcome.rect_after.is_some(),
                     outcome.resized,
+                    if matches!(
+                        outcome.appearance,
+                        pdfcer_core::edit::AppearanceOutcome::RecordedNotPainted(_)
+                    ) {
+                        "no"
+                    } else {
+                        "yes"
+                    },
+                    u8::from(outcome.foreign_appearance_replaced),
                     outcome.appearance,
                 )
             });
@@ -279,6 +288,9 @@ pub(super) fn edit_widget(
                     touched,
                     outcome.appearance_regenerated,
                 ));
+            }
+            if outcome.foreign_appearance_replaced {
+                lines.push(crate::text::forms::field_foreign_appearance_replaced().to_owned());
             }
             if outcome.siblings_untouched > 0 {
                 lines.push(crate::text::forms::field_siblings_untouched(

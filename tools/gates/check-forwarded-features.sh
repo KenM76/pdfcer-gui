@@ -66,10 +66,6 @@
 #   * Whether the forwarded feature reaches the shipped binary. Cargo unifies
 #     across the graph and a third crate in the middle can still strip it.
 #     `cargo tree -i <backend-crate>` answers that; this cannot.
-#   * The LOCKED engine revision. It reads the engine checkout's WORKING TREE
-#     manifest, so a default feature added since the pin is demanded before it
-#     can be forwarded, and one deleted since the pin stops being demanded
-#     while the pinned build still carries it.
 #   * A relocated or renamed engine checkout. The path is a literal here rather
 #     than derived from `Cargo.lock` the way `tools/engine_path.py` derives it,
 #     so an engine that has moved reads as an engine that is absent, and the
@@ -115,7 +111,24 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 # Both sides are overridable so `--self-test` can point the gate at synthetic
 # manifests and exercise every branch without a pdfcer checkout, a network, or
 # any dependence on what this repository's own manifest happens to say today.
-ENGINE_MANIFEST="${FORWARDED_ENGINE_MANIFEST:-D:/Dev/pdfcer/crates/pdfcer-core/Cargo.toml}"
+#
+# The engine side is the manifest at the revision `Cargo.lock` pins, not the
+# checkout's working tree: a default added after the pin cannot be forwarded
+# until the pin moves, and one removed after it is still in the build.
+ENGINE_CHECKOUT="D:/Dev/pdfcer"
+if [ -n "${FORWARDED_ENGINE_MANIFEST:-}" ]; then
+    ENGINE_MANIFEST="$FORWARDED_ENGINE_MANIFEST"
+else
+    ENGINE_MANIFEST="$ENGINE_CHECKOUT/crates/pdfcer-core/Cargo.toml (not readable at the pin)"
+    pin="$(grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]{40}' "$ROOT/Cargo.lock" 2>/dev/null | sed 's/.*#//')"
+    if [ -n "$pin" ]; then
+        PINNED_TD="$(mktemp -d)"
+        trap 'rm -rf "$PINNED_TD"' EXIT
+        if git -C "$ENGINE_CHECKOUT" show "$pin:crates/pdfcer-core/Cargo.toml"             > "$PINNED_TD/Cargo.toml" 2>/dev/null; then
+            ENGINE_MANIFEST="$PINNED_TD/Cargo.toml"
+        fi
+    fi
+fi
 OUR_MANIFEST="${FORWARDED_OUR_MANIFEST:-$ROOT/crates/pdfcer-gui/Cargo.toml}"
 
 # ---------------------------------------------------------------------------
