@@ -67,6 +67,10 @@ pub const PREFIX: &str = "ribbon";
 /// pressable**.
 pub const ENABLEMENT_EVENT: &str = "ribbon-item-enablement";
 
+/// The trace event name under which a control publishes **whether it was drawn
+/// pressed**, on each change.
+pub const SELECTED_EVENT: &str = "ribbon-item-selected";
+
 /// The name under which one ribbon **tab button** is published.
 #[must_use]
 pub fn tab(tab_id: &str) -> String {

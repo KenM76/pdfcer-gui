@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **64 of 276** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `wanted` — a real gap — **65 of 277** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -94,6 +94,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Cell-aware block model** — each cell of a ruled table is its own block, `BlockKind::TableCell` (our `G080`, Pass 434.0) | **wanted — the caret half; Reflow shipped.** <!--namesake:TableCell--> `app::actions::export_tables`'s `TableCell` is the table extractor's. `canvas::textedit::reflow::block_of_run` numbers blocks over `pdfcer_core::text_edit::model::cells` as `reflow_block` does; overflow arrives as the reflow's own disclosure line, so `ReflowApplyReport::cell_overflow`, `ReflowPreview::cell_overflow` and `CellOverflow` (`pdfcer_core::text_edit::reflow_fit`) are not read. Wanted: Up/Down in `canvas::textedit::blocks` (`pdfcer_core::text_edit::model::navigate`) reads the plain recognition, so Down from a cell can reach the cell beside it; a cell selected as a block would read `Block::cell_rect`. No surface: `BlockDiagnostics::table_cell_blocks`, `BlockDiagnostics::lines_split_by_cell`, `BlockDiagnostics::lines_split_by_gutter`, `BlockDiagnostics::list_item_blocks`, `BlockRecognitionOptions::gutter_min_em`, `BlockRecognitionOptions::gutter_min_lines`. |
 | **Fallback face for an unencodable character** — a character the run's font can't encode is set in a fallback face: `TextEdit::with_fallback`, `FallbackFace`, the module `pdfcer_core::text_edit::fallback` (our `G078`, Pass 431.0) | **wanted, and it is in the pin, not yet wired.** The engine sets a character the run's font cannot encode in a fallback face, splitting the run with a `Tf` switch at its own size and baseline, as one undo entry. `app::actions::reface` still does the same by placeholder tokens over `format_text`, `find_replace` and `coalesce_last`. Owed: route a foreign key through `with_fallback`, read `pdfcer_core::text_edit::format::RunRepertoire::via_fallback` to say which keys it will take, and delete the placeholder route with its cause. |
 | **Replace a block's text and re-wrap it** — `EditSession::edit_block_text`, `edit_block_text_preview`, `block_at_point` (our `G076`, Pass 433.0) | **wanted, and it is in the pin, not yet wired.** One verb replaces a paragraph's text and re-wraps it as one undo entry, and its report names the lines before and after, the overflow and every unencodable character. It is what `docs/plans/WORDLIKE_PLAN.md` steps 8 and 9 wait on. The modules are `pdfcer_core::edit::block_text` and `pdfcer_core::text_edit::block_text`, and the undo entry is `pdfcer_core::edit::CommandKind::EditBlockText`. Owed: commit a multi-line draft through it, and word its report off-canvas. |
+| **Opt-in disclosed workaround for a refused text edit** — `EditOptions::with_workarounds`, `WorkaroundPolicy::{Refuse, Apply}` (Pass 436.0) | **wanted — not in the pinned engine.** The verb is a later engine commit than `Cargo.lock` holds. When the pin moves, the offer belongs on the text-edit refusal: the status line names the retry, and the retype path, which the engine labels approximate, is applied only on the operator's click, never by default. |
 
 ### Vector objects (Inkscape-style editing)
 
@@ -164,7 +165,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 276** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `blocked` — waiting on something named — **2 of 277** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -182,7 +183,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 276** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 277** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -193,7 +194,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 276** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `declined` — deliberately no surface — **16 of 277** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -235,7 +236,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **194 of 276** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **194 of 277** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -268,7 +269,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
-| **Augment a subset from a same-name installed face** — `EditOptions::with_subset_augment`, `SubsetAugment`, `pdfcer_render::font::InstalledFaceAugmenter`; the modules `pdfcer_core::text_edit::subset_augment` and `pdfcer_render::font::augment`; `TextEditPreview::font_program` (our `G075` (b), Pass 430.1) | **shipped — every typed edit's options carry an augmenter over this computer's font folders.** `editmodel::installedfaces` indexes the folders on a background thread at start and after Settings is saved; `canvas::textedit::installed::augmented` hands it to the plan, the commit and `run_repertoire_with` alike, and `pdfcer_render::edit_preview::preview_outlines` draws `TextEditPreview::font_program`. The engine's disclosure names the face it took the glyph from, and `app::actions::textcommit` reports it. Until the index is built the augmenter offers nothing and says why. Simple TrueType only: a composite subset still refuses until the rest of Pass 430.1 lands. Driven: `a_key_the_subset_lacks_comes_from_its_installed_face`. |
+| **Augment an embedded font subset from an installed face — simple and composite** — `EditOptions::with_subset_augment`, `SubsetAugment`, `pdfcer_render::font::InstalledFaceAugmenter`; the modules `pdfcer_core::text_edit::subset_augment` and `pdfcer_render::font::augment`; `TextEditPreview::font_program` (our `G075` (b), Pass 430.1) | **shipped — every typed edit's options carry an augmenter over this computer's font folders.** `editmodel::installedfaces` indexes the folders on a background thread at start and after Settings is saved; `canvas::textedit::installed::augmented` hands it to the plan, the commit and `run_repertoire_with` alike, and `pdfcer_render::edit_preview::preview_outlines` draws `TextEditPreview::font_program`. The engine's disclosure names the face it took the glyph from, and `app::actions::textcommit` reports it. Until the index is built the augmenter offers nothing and says why. Simple TrueType only at this pin: the composite slice is a later engine commit than `Cargo.lock` holds, and reaches the same call site without GUI work when the pin moves. Driven: `a_key_the_subset_lacks_comes_from_its_installed_face`. |
 | **Set a refused text-edit replacement in a same-face sibling font resource** — `EditOptions::with_sibling_fonts`, `EditOptions::sibling_fonts` (Pass 430.1, decision 174) | **shipped — `editmodel::disposition::typing` turns it on for every typed edit.** A key the run's subset refuses is set in another resource on the page naming the same face before the shell re-faces it; the commit's own disclosure says so, and `app::actions::textcommit` reports it. |
 | **Abandon a partly-applied gesture** — `EditSession::checkpoint`, `EditSession::rollback`, `Checkpoint`, `Rollback`, `CheckpointError`, the module `pdfcer_core::edit::checkpoint` (our `G083`, Pass 438.0) | **shipped — `app::actions::reface::commit` takes a checkpoint before its first verb and rolls back to it when a later step is refused**, so Undo and Redo are as they were and Ctrl+Y cannot re-apply half the gesture. Undo history the rollback could not keep is said in the refusal's sentence. A gesture longer than the undo bound cannot be rolled back and is undone step by step. |
 | **Reflow fidelity for multi-resource/composite/list/justified blocks** — each glyph keeps its own font resource, size, text-state and colour; `BlockKind::ListItem`; `UnsupportedCause::NoSpaceGlyph`, `UnsupportedCause::MixedScale` (our `G079`, Pass 432.0) | **shipped — no new verb; Edit ▸ Reflow paragraph reaches it through `reflow_block`.** The engine's disclosures (no new pair kerning, a gap written as code 32) go to the status line with the rest of the report; the two new refusal causes take the general reflow refusal, as every `Unsupported` cause does. |

@@ -222,6 +222,12 @@ impl Icon {
         Icon::AlignCentre,
         Icon::AlignPanel,
         Icon::Model3d,
+        Icon::ParaAlignLeft,
+        Icon::ParaAlignCentre,
+        Icon::ParaAlignRight,
+        Icon::ParaJustify,
+        Icon::Underline,
+        Icon::Strikethrough,
     ];
 
     /// The asset's SVG source.
@@ -406,6 +412,12 @@ impl Icon {
             Icon::AlignCentre => assets::ALIGN_CENTRE,
             Icon::AlignPanel => assets::ALIGN_PANEL,
             Icon::Model3d => assets::MODEL_3D,
+            Icon::ParaAlignLeft => assets::PARA_ALIGN_LEFT,
+            Icon::ParaAlignCentre => assets::PARA_ALIGN_CENTRE,
+            Icon::ParaAlignRight => assets::PARA_ALIGN_RIGHT,
+            Icon::ParaJustify => assets::PARA_JUSTIFY,
+            Icon::Underline => assets::UNDERLINE,
+            Icon::Strikethrough => assets::STRIKETHROUGH,
         }
     }
 
@@ -605,6 +617,12 @@ impl Icon {
             Icon::AlignCentre => "align-centre",
             Icon::AlignPanel => "align-panel",
             Icon::Model3d => "model-3d",
+            Icon::ParaAlignLeft => "para-align-left",
+            Icon::ParaAlignCentre => "para-align-centre",
+            Icon::ParaAlignRight => "para-align-right",
+            Icon::ParaJustify => "para-justify",
+            Icon::Underline => "underline",
+            Icon::Strikethrough => "strikethrough",
         }
     }
 

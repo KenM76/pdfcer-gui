@@ -875,6 +875,7 @@ overrules the DXF units you set, always in that direction.
 | **Ctrl+Alt+5** | Centre on both axes, relative to the Align panel's *Relative to* (Edit mode; keypad or top row) |
 | **Ctrl+E** | Edit text |
 | **Ctrl+Shift+E** | Add text |
+| **Ctrl+B** / **Ctrl+I** / **Ctrl+U** | Bold, italic, underline — the selected characters, the word at the caret, or what you type next |
 | **Ctrl+F** | Find |
 | **Ctrl+Shift+C** | Copy the page's text |
 | **Delete** *or* **Backspace** | Delete what is selected |

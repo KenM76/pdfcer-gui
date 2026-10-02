@@ -116,6 +116,12 @@ impl Keys<'_> {
             Key::Z if m.command => return self.step(Step::Undo),
             Key::Y if m.command => return self.step(Step::Redo),
             Key::S if m.command => return self.save(),
+            // The global chords yield while a draft is open, so the draft
+            // routes the three it shares with the ribbon itself.
+            Key::B | Key::I | Key::U if m.command && !m.alt && !m.shift => {
+                self.actions
+                    .push(Action::Command(style_command(key).into()));
+            }
             Key::Tab if !m.command && !m.alt => self.tab(),
             Key::ArrowLeft | Key::ArrowRight => self.horizontal(key == Key::ArrowRight, m),
             Key::ArrowUp | Key::ArrowDown => return self.vertical(key == Key::ArrowUp, m),
@@ -422,6 +428,16 @@ fn space_px(l: &super::hit::Layout, text: &str) -> f32 {
         .map(|i| l.x_at(i + 1) - l.x_at(i))
         .filter(|w| *w > 0.0)
         .unwrap_or(l.body.height() * 0.25)
+}
+
+/// The ribbon command Ctrl plus `key` stands for inside a draft.
+fn style_command(key: Key) -> &'static str {
+    // ui-text-exempt: registered command ids, never displayed.
+    match key {
+        Key::B => "format.bold",
+        Key::I => "format.italic",
+        _ => "format.underline",
+    }
 }
 
 #[cfg(test)]

@@ -161,6 +161,17 @@ pub fn reresolve(ctx: &PageContext<'_>, previous: &TextSelection) -> Option<Text
     (renewed.text == previous.text).then_some(renewed)
 }
 
+/// **The selection `anchor..focus` names on this page now** — its text and
+/// page quads, for a verb that recorded positions earlier and must check them
+/// against a fresh extraction before acting.
+pub fn span(
+    ctx: &PageContext<'_>,
+    anchor: TextPosition,
+    focus: TextPosition,
+) -> Option<TextSelection> {
+    resolve(&model(ctx), ctx, anchor, focus)
+}
+
 /// **Update the selection from a drag** — press at `from`, pointer now at `to`,
 /// both in canvas space.
 pub fn drag(ctx: &PageContext<'_>, from: Pos2, to: Pos2) -> Option<TextSelection> {

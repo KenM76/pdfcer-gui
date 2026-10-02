@@ -120,6 +120,23 @@ fn report_enablement(ctx: &egui::Context, id: &str, enabled: bool) {
         .emit();
 }
 
+/// Report that `id` is drawn pressed or not, but only when that has changed.
+fn report_selected(ctx: &egui::Context, id: &str, selected: bool) {
+    if !crate::verify::enabled() {
+        return;
+    }
+    let key = egui::Id::new(("egui-shell/ribbon/selected", id));
+    let previous: Option<bool> = ctx.data(|d| d.get_temp(key));
+    if previous.unwrap_or(false) == selected {
+        return;
+    }
+    ctx.data_mut(|d| d.insert_temp(key, selected));
+    crate::verify::event(report::SELECTED_EVENT)
+        .kv("id", id)
+        .kv("selected", u8::from(selected))
+        .emit();
+}
+
 /// Draw one command control, honouring its enable predicate and its
 /// selected condition.
 pub(crate) fn render_command(
@@ -135,6 +152,7 @@ pub(crate) fn render_command(
     let enabled = command.is_enabled(ctx.conditions);
     report_enablement(ui.ctx(), &command.id, enabled);
     let selected = ctx.conditions.is_set(&selected_condition(&command.id));
+    report_selected(ui.ctx(), &command.id, selected);
 
     // The three sizes — `RIBBON_SCALING.md`, and `sizing`'s header for the
     // measured case.

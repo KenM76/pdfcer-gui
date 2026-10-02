@@ -59,11 +59,11 @@ Fix classes: **GUI** (this repo only) or **ENGINE** (needs a request; the number
 
 | # | Expectation | Verdict | Root cause | Fix |
 |---|---|---|---|---|
-| C1 | Ctrl+B, Ctrl+I and Ctrl+U on a selection | missing | Dead while composing (driven, code). | GUI (the engine's `format_text` takes a substring `find`) |
-| C2 | Restyling a selection restyles only that selection | partial | The GUI applies the style to the whole run (code). The engine supports a substring. | GUI |
+| C1 | Ctrl+B, Ctrl+I and Ctrl+U on a selection | fixed (step 7) | Dead while composing (driven, code). | GUI (the engine's `format_text` takes a substring `find`) |
+| C2 | Restyling a selection restyles only that selection | partial (step 7: the ribbon and Ctrl+B/I/U do; the Properties fields still restyle whole runs) | The GUI applies the style to the whole run (code). The engine supports a substring. | GUI |
 | C3 | Font, size and colour | works | Run granularity only, so this inherits C2. | GUI via C2 |
-| C4 | Underline is real text formatting | partial | It exists only as an annotation (code). | GUI (drawn rule in the content stream via the engine's line verbs); ask if absent |
-| C5 | Alignment buttons (left, centre, right, justify) | missing | The engine detects alignment, but no GUI control exists (code). Placement decided by Ken: in both places, see step 7. | GUI; re-justify needs G079 |
+| C4 | Underline is real text formatting | partial (step 7: a drawn line in the content, not tied to the run; G085) | It exists only as an annotation (code). | GUI (drawn rule in the content stream via the engine's line verbs); ask if absent |
+| C5 | Alignment buttons (left, centre, right, justify) | fixed (step 7) | The engine detects alignment, but no GUI control exists (code). Placement decided by Ken: in both places, see step 7. | GUI; re-justify needs G079 |
 | C6 | Superscript and subscript | missing | The engine has `set_rise`/`set_script`, but no command reaches them, and reflow flattens them (code). | GUI; reflow keep needs G079 |
 | C7 | Bullets, numbering and hanging indent | missing | `BlockKind` has only `Paragraph` (code). | ENGINE G079 |
 
@@ -110,7 +110,7 @@ structure. Effort is in engineer-days, including the driven check.
 | 4 | **Chrome preview:** instrument `shape()` to log which branch (count mismatch or `outlines.skipped`) fires, then fix; also the Down-arrow line preview | A13 | 1–2 | Done; the preview names its fallback reason, and a partial preview moves the rest of its operator (`a_key_typed_mid_line_previews_where_it_commits`) |
 | 5 | **plan.rs narrowing:** send the engine only the operators an edit touches; a cross-object edit is refused as a split | - | 1 | Done; G074 is in the pin, so a one-font line crosses objects and only a font seam narrows |
 | 6 | **Selection gestures:** double-click word, triple-click line, text-tool drag selects when it starts on text (box only on blank), Shift+Up/Down extends, rotated first click via `hit_test` | B1 B2 B3 B4 B7 | 2 | Done; driven by `the_text_tool_selects_as_a_word_processor_does` |
-| 7 | **Formatting from the selection:** Ctrl+B/I/U and the Properties fields apply to the selected substring (`format_text` with `find`); superscript/subscript commands; Delete paragraph; HTML clipboard out; alignment buttons (left, centre, right, justify) **in both places**: on the ribbon beside font and size, and in the text Properties panel, both dispatching the same command. O273: inside a draft Ctrl+B/I/U act on the selected characters or on the typing style at the caret, outside one on the selected runs; bold and italic take a real face from `nearface` before a synthetic one, and disclose the synthetic; underline and strikethrough are path segments tied to the run (a G request if the engine cannot keep them tied); ribbon toggles beside Bold and Italic show pressed when the selection carries the style | C1 C2 C3 C6 D6 B8 C5 | 3 | - |
+| 7 | **Formatting from the selection:** Ctrl+B/I/U and the Properties fields apply to the selected substring (`format_text` with `find`); superscript/subscript commands; Delete paragraph; HTML clipboard out; alignment buttons (left, centre, right, justify) **in both places**: on the ribbon beside font and size, and in the text Properties panel, both dispatching the same command. O273: inside a draft Ctrl+B/I/U act on the selected characters or on the typing style at the caret, outside one on the selected runs; bold and italic take a real face from `nearface` before a synthetic one, and disclose the synthetic; underline and strikethrough are path segments tied to the run (a G request if the engine cannot keep them tied); ribbon toggles beside Bold and Italic show pressed when the selection carries the style | C1 C2 C3 C6 D6 B8 C5 | 3 | Half done: alignment in both places and O273 are built and driven (`the_ribbon_aligns_the_paragraph_at_the_caret`, `ctrl_b_bolds_the_word_at_the_caret`). Left: Properties fields on a substring, superscript/subscript, Delete paragraph, HTML clipboard |
 | 8 | **Find and replace:** a dialog, Replace / Replace all as one undo, with skips reported | E9 | 3–4 | Benefits from G074 (more hits succeed) |
 | 9 | **IME:** `Event::Ime` preedit/commit into the draft | A12 | 1–2 | - |
 | 9b | **O274, a Keyboard Shortcuts page in Settings:** every command with its chord, grouped by tab, plus a "While editing text" group; rebind by pressing, clear to disable, reset to default; a clash is shown before saving; writes the operator layer `userdata/shell.ron` through the existing merge | - | 2 | - |
@@ -140,6 +140,10 @@ are blocked on requests.
 | **G079** (new) | Re-wrap keeps per-word state and kerning; composite fonts; lists; re-justify | Step 10; C5, C6 keep through reflow |
 | **G080** (new) | Table cells (and columns) as blocks | Step 11 |
 | **G081** (new) | Typed refusal causes, `NotFound` reasons, vertical refused, `edit_capability` | Step 13; E7 safety |
+| **G084** (new) | Address a cut inside an operator by position, not first `find` match | Removes step 7's `SpanAmbiguous` refusal |
+| **G085** (new) | Underline and strikethrough tied to the run, and readable | C4; pressed state for drawn lines |
+| **G086** (new) | The style ladder takes an axis off | Bold and Italic toggle both ways on a real face |
+| **G087** (new) | `GlyphProvenance` line width and render mode | Bold's pressed state on outlined faces (workaround report) |
 
 ## 4. Verification drive per step
 

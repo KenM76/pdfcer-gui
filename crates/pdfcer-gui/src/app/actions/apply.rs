@@ -1036,8 +1036,27 @@ impl PdfcerApp {
             // `Action`s only because a native dialog must not open inside a
             // layout pass, and none of them changes the open document.
             Action::Text(super::text::TextAction::Reflow { page, block }) => {
-                super::textstyle::reflow(doc, page, block);
+                super::textstyle::reflow(doc, page, block, None);
             }
+            Action::Text(super::text::TextAction::Align {
+                page,
+                blocks,
+                alignment,
+            }) => super::textstyle::align(doc, page, &blocks, alignment),
+            Action::Text(super::text::TextAction::SpanStyle {
+                page,
+                from,
+                to,
+                expected,
+                change,
+            }) => super::textstyle::span::apply(doc, page, (from, to), &expected, &change),
+            Action::Text(super::text::TextAction::Decorate {
+                page,
+                from,
+                to,
+                expected,
+                kind,
+            }) => super::textstyle::span::decorate(doc, page, (from, to), &expected, kind),
             // The one arm here that changes no document. It carries a
             // sentence from a keystroke handler across the `crate::app`
             // boundary to the bar — see the variant's own docs for why a

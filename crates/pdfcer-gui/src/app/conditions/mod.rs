@@ -13,6 +13,7 @@ use crate::app::state::Status;
 /// header for why the pressed conditions are a different subject from the
 /// enable conditions above them.
 mod armed;
+mod textformat;
 
 impl PdfcerApp {
     /// The conditions the ribbon evaluates its predicates against.
@@ -723,6 +724,7 @@ impl PdfcerApp {
         // the argument, and the defect it is the home of: adding a tool is five
         // changes and the fifth has no unit test to remind you.
         self.armed_conditions(ctx, &mut set);
+        self.text_format_conditions(ctx, &mut set);
 
         set
     }

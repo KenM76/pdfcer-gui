@@ -12,7 +12,6 @@
 
 use crate::app::PdfcerApp;
 use crate::app::actions::Action;
-use crate::app::actions::textstyle::StyleChange;
 use crate::app::state::Status;
 
 /// Whether this file owns `id`.
@@ -47,16 +46,13 @@ pub(crate) fn handles(id: &str) -> bool {
             | "format.unshare_form"
             // Joins the selected runs of one text object (G035).
             | "format.merge_text_runs"
-            // The Font group. All five, including the three whose
-            // ribbon control is an `Item::Custom` — a custom control REPORTS
-            // (it parks an operand and returns a token) and this file ACTS, so
-            // every one of the five arrives here and none of them has a second
-            // implementation inside the renderer.
+            // The Font group's three custom controls: a custom control REPORTS
+            // (it parks an operand and returns a token) and this file ACTS.
+            // Bold, Italic, the decorations and alignment are
+            // `dispatch::textformat`'s.
             | "format.font"
             | "format.font_size"
             | "format.font_colour"
-            | "format.bold"
-            | "format.italic"
             // The Markup group. All six are drawn by an
             // `Item::Custom` — `app::markupband` REPORTS (it parks a
             // `(target, edit)` pair and returns a token) and this file ACTS, so
@@ -569,46 +565,21 @@ pub(crate) fn dispatch(
                 "file.properties".to_owned(),
             ));
         }
-        // The Font group. Five ids, two operand shapes, ONE derivation of
-        // *which text*.
-        //
-        // Bold and Italic carry their operand in the button they are, so their
-        // `StyleChange` is built here. The face chooser, the size field and the
-        // colour swatch cannot — a `HandlerToken` has no room for
-        // "Helvetica-Bold" — so `app::fontband` parks theirs on
+        // The Font group's custom controls. A `HandlerToken` has no room for
+        // "Helvetica-Bold", so `app::fontband` parks the change on
         // `PdfcerApp::font_change` and this takes it.
         //
-        // **The page and the runs are derived here for all five**, through
+        // **The page and the runs are derived here for all three**, through
         // `app::textoperand::resolve`, and that is the point of routing the custom
         // controls through a command at all. The alternative — the renderer
         // building a whole `Action::TextStyle` because it already has the
         // document in hand — would put the *"which runs does a restyle act
         // on?"* rule in two places, and the copy in the renderer would be the
         // one a chord never reached.
-        "format.font" | "format.font_size" | "format.font_colour" | "format.bold"
-        | "format.italic" => {
-            // Built before the document is borrowed, because `take` needs
+        "format.font" | "format.font_size" | "format.font_colour" => {
+            // Taken before the document is borrowed, because `take` needs
             // `&mut app` and the operand read needs `&app.status`.
-            let change = match id {
-                // Bold and Italic are **buttons that apply, not switches
-                // that reflect**, which is why each names one attribute and
-                // sets the other false rather than toggling a remembered pair.
-                // There is no "is this run bold" bit in a PDF — weight is a
-                // property of the *face*, and a synthetic weight is a stroke
-                // width in the content stream — so a toggle would be claiming
-                // to have read a fact that is not recorded. The Properties
-                // panel's twin controls make the same choice and its header
-                // carries the full argument.
-                "format.bold" => Some(StyleChange::Weight {
-                    bold: true,
-                    italic: false,
-                }),
-                "format.italic" => Some(StyleChange::Weight {
-                    bold: false,
-                    italic: true,
-                }),
-                _ => app.font_change.take(),
-            };
+            let change = app.font_change.take();
             // `None` here is not a defect and raises nothing. It is the
             // ordinary state of a custom control the operator hovered without
             // changing: the ribbon returns a token only when something was

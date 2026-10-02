@@ -334,6 +334,9 @@ pub fn built_in() -> Shell {
         .with_binding("H", "view.tool_hand")
         .with_binding("Ctrl+E", "edit.text")
         .with_binding("Ctrl+Shift+E", "edit.add_text")
+        .with_binding("Ctrl+B", "format.bold")
+        .with_binding("Ctrl+I", "format.italic")
+        .with_binding("Ctrl+U", "format.underline")
         //
         // `Ctrl+Tab` / `Ctrl+Shift+Tab` to cycle and `Ctrl+W` to close: the
         // three every tabbed application on this desktop has bound, and
@@ -646,8 +649,8 @@ mod tests {
         assert_eq!(shell.modes().len(), 3, "three modes");
         assert_eq!(
             shell.keymap.as_ref().expect("a keymap").len(),
-            48,
-            "forty-eight key bindings; a chord added or removed is a change MANUAL.md's shortcut table must record"
+            51,
+            "fifty-one key bindings; a chord added or removed is a change MANUAL.md's shortcut table must record"
         );
     }
 

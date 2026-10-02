@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Strikethrough: a capital S with a rule through its middle. Drawn for pdfcer; generic geometry, no trademark risk. -->
+  <path d="M32 13a9 7 0 0 0-8-4c-5 0-8 3-8 6.5 0 4 4 6 8 7.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M28 29c2 1.5 4 3 4 5.5 0 3.5-3.5 6.5-8 6.5a9 7 0 0 1-8.5-4.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M10 25h28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

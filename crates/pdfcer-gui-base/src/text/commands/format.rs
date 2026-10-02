@@ -158,9 +158,10 @@ pub const fn format_font_size() -> CommandText {
 pub const fn format_bold() -> CommandText {
     CommandText::new(
         "Bold",
-        "Set the selected text in bold — the page's real bold face where it has one, and \
-         thickened letters with a note in the status bar where it does not. Sweeping \
-         text with the Text tool (T) chooses what it applies to.",
+        "Set the selected text in bold, or take bold off text that has it — the page's \
+         real bold face where it has one, and thickened letters with a note in the status \
+         bar where it does not. While typing, it applies to the selected characters, the \
+         word at the caret, or what you type next. Ctrl+B.",
     )
 }
 
@@ -169,9 +170,74 @@ pub const fn format_bold() -> CommandText {
 pub const fn format_italic() -> CommandText {
     CommandText::new(
         "Italic",
-        "Slant the selected text — the page's real italic face where it has one, and \
-         slanted letters with a note in the status bar where it does not. Sweeping text \
-         with the Text tool (T) chooses what it applies to.",
+        "Slant the selected text, or take italic off text that has it — the page's real \
+         italic face where it has one, and slanted letters with a note in the status bar \
+         where it does not. While typing, it applies to the selected characters, the word \
+         at the caret, or what you type next. Ctrl+I.",
+    )
+}
+
+/// `format.underline`
+#[must_use]
+pub const fn format_underline() -> CommandText {
+    CommandText::new(
+        "Underline",
+        "Draw a line under the selected characters, in the text's own colour. The line is \
+         page content of its own: it does not move if the text is later moved or re-wrapped. \
+         While typing, it applies to the selected characters, the word at the caret, or what \
+         you type next. Ctrl+U.",
+    )
+}
+
+/// `format.strikethrough`
+#[must_use]
+pub const fn format_strikethrough() -> CommandText {
+    CommandText::new(
+        "Strikethrough",
+        "Draw a line through the selected characters, in the text's own colour. The line is \
+         page content of its own: it does not move if the text is later moved or re-wrapped. \
+         While typing, it applies to the selected characters, the word at the caret, or what \
+         you type next.",
+    )
+}
+
+/// `format.align_left`
+#[must_use]
+pub const fn format_align_left() -> CommandText {
+    CommandText::new(
+        "Align Left",
+        "Line the paragraph up on its left edge. Applies to the paragraph the caret is in, or \
+         to every paragraph the selection touches.",
+    )
+}
+
+/// `format.align_centre`
+#[must_use]
+pub const fn format_align_centre() -> CommandText {
+    CommandText::new(
+        "Centre",
+        "Centre each line of the paragraph in its box. Applies to the paragraph the caret is \
+         in, or to every paragraph the selection touches.",
+    )
+}
+
+/// `format.align_right`
+#[must_use]
+pub const fn format_align_right() -> CommandText {
+    CommandText::new(
+        "Align Right",
+        "Line the paragraph up on its right edge. Applies to the paragraph the caret is in, or \
+         to every paragraph the selection touches.",
+    )
+}
+
+/// `format.align_justify`
+#[must_use]
+pub const fn format_align_justify() -> CommandText {
+    CommandText::new(
+        "Justify",
+        "Spread each line but the last to both edges of the paragraph's box. Applies to the \
+         paragraph the caret is in, or to every paragraph the selection touches.",
     )
 }
 

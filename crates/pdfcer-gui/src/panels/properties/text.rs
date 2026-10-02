@@ -16,6 +16,8 @@ use crate::text::panels::properties as t;
 /// The trace region, so a driven check can find this section on screen.
 // ui-text-exempt: trace region name, never displayed
 pub const REGION: &str = "properties.text";
+/// Prefix of the alignment buttons' regions, one per command id.
+pub const ALIGN_REGION: &str = "properties.text.align";
 /// The Bold button's own region.
 ///
 /// Published per control rather than leaving a driven check to divide
@@ -410,6 +412,7 @@ pub fn section(
     size_row(ui, draft, page, &runs, actions);
     weight_row(ui, draft, page, &runs, actions);
     render_row(ui, page, &runs, actions);
+    align_row(ui, actions);
     if owns_colour {
         colour_row(ui, draft, page, &runs, actions);
     }
@@ -564,6 +567,39 @@ fn render_row(ui: &mut Ui, page: usize, runs: &[usize], actions: &mut Vec<Action
                 runs: runs.to_vec(),
                 change: StyleChange::RenderMode(mode),
             });
+        }
+    });
+}
+
+/// Paragraph alignment: the ribbon's four commands, so both places act on the
+/// same paragraphs the same way (`OPERATOR_REQUESTS.md` O271).
+fn align_row(ui: &mut Ui, actions: &mut Vec<Action>) {
+    use crate::text::commands as c;
+    // ui-text-exempt: registered command ids, never displayed.
+    let ids = [
+        "format.align_left",
+        "format.align_centre",
+        "format.align_right",
+        "format.align_justify",
+    ];
+    let hints = [
+        c::format_align_left().tooltip,
+        c::format_align_centre().tooltip,
+        c::format_align_right().tooltip,
+        c::format_align_justify().tooltip,
+    ];
+    ui.horizontal(|ui| {
+        ui.label(t::text_align_label());
+        for ((id, name), hint) in ids.into_iter().zip(t::text_align_names()).zip(hints) {
+            let button = ui.button(name).on_hover_text(hint);
+            crate::diag::ui_rect_visible(
+                &format!("{ALIGN_REGION}.{id}"),
+                button.rect,
+                ui.clip_rect(),
+            );
+            if button.clicked() {
+                actions.push(Action::Command(id.to_owned()));
+            }
         }
     });
 }

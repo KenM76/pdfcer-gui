@@ -490,14 +490,6 @@ pub const PLANNED: &[(&str, &str)] = &[
          weight and fill; there is nothing that writes `Tc`, `Tw` or `TL` for an existing run, \
          so neither the panel nor the tab can carry it.",
     ),
-    (
-        "format.alignment",
-        // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — a text run's alignment. Same blocker as `format.spacing`, and a harder one: \
-         alignment is not a property a PDF text run HAS. It is a consequence of where each \
-         show operator was positioned, so re-aligning existing text means re-laying it out, \
-         which is `add_text`'s job on new content and nothing's job on old.",
-    ),
     // -- Not from `RIBBON_IA.md` §5: commanded by a context menu ------------
     //
     // One entry, and it is here rather than in a register of its own because

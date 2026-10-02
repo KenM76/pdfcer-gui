@@ -173,76 +173,34 @@ fn restyle(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &StyleChange)
         ops.reverse();
         let final_op = ops.len();
         for (which, op) in ops.into_iter().enumerate() {
-            let mut outcome: Option<FormatError> = None;
-            let mut notes: Vec<String> = Vec::new();
-            super::apply::vector_edit(doc, "format-text", page, 1, |session| {
-                // **The operator's posture, passed straight through** —
-                // never pinned to a value here to provoke an informative
-                // refusal.
-                //
-                // `set_style` walks all four rungs itself, so there is no
-                // question left to ask by forcing one, and the posture goes
-                // where it belongs: to the engine, as the operator set it.
-                // Under `Auto` the ladder decides and discloses; under `Warn`
-                // it does the same and [`ladder_note`] raises the synthetic
-                // case to a sentence of its own; under `Refuse` the ladder's
-                // **fourth** rung returns `SynthesisRefusedByPosture` — the
-                // wide reading of *"never fake it"*, decided by the side that
-                // knows what it tried.
-                //
-                // ⇒ One engine call per operator, and one only. A probe to ask
-                // which face is available, plus a pre-check to predict the
-                // posture refusal, plus the commit, is three reads of a page
-                // whose answer can change between them.
-                let options = FormatOptions::default().with_style_policy(policy);
-
-                let mut req = change.stamp(request(page, op.pin));
-                if let Some(plan) = &plan {
-                    req = req.embedded_font(plan.clone());
-                }
-                match session.format_text(&req, &options) {
-                    Ok(report) => {
-                        // The ladder's own sentence **first**, then the engine's
-                        // disclosures. The order is the operator's reading
-                        // order: what happened to their text, then the details
-                        // pdfcer owes them about how.
-                        if let Some(note) = ladder_note(&report, policy) {
-                            notes.push(note);
-                        }
-                        if let Some(note) = render_mode_note(&report) {
-                            notes.push(note);
-                        }
-                        notes.extend(report.disclosures);
-                        Ok(notes.clone())
-                    }
-                    Err(error) => {
-                        decline::record_text_style(refusal_of(&error));
-                        outcome = Some(error);
-                        Err(FormatError::NoOp)
-                    }
-                }
-            });
-
-            if let Some(error) = outcome {
-                // A refusal that reaches the operator and not the trace is a
-                // refusal nobody debugging can see. Without this line a
-                // gesture that applied eleven runs and then stopped on purpose
-                // leaves a trace holding eleven completed edits, no summary
-                // and no decline — which reads to whoever is driving it as
-                // *"Bold was pressed and nothing happened"*.
-                if applied > 0 {
-                    decline::record_text_style(t::TextStyleRefusal::PartOnly);
-                    emit_carried(doc, page, applied, total, &carried);
-                }
-                let detail = error.to_string();
-                crate::diag::trace(|| {
-                    // ui-text-exempt: diagnostic trace, never displayed in the UI
-                    format!(
-                        "text-style-declined page={page} run={run} applied={applied} runs={total} detail={detail}"
-                    )
-                });
-                return;
+            let mut req = change.stamp(request(page, op.pin));
+            if let Some(plan) = &plan {
+                req = req.embedded_font(plan.clone());
             }
+            let outcome = format_op(doc, page, policy, &req);
+            let notes = match outcome {
+                Ok(notes) => notes,
+                Err(error) => {
+                    // A refusal that reaches the operator and not the trace is a
+                    // refusal nobody debugging can see. Without this line a
+                    // gesture that applied eleven runs and then stopped on purpose
+                    // leaves a trace holding eleven completed edits, no summary
+                    // and no decline — which reads to whoever is driving it as
+                    // *"Bold was pressed and nothing happened"*.
+                    if applied > 0 {
+                        decline::record_text_style(t::TextStyleRefusal::PartOnly);
+                        emit_carried(doc, page, applied, total, &carried);
+                    }
+                    let detail = error.to_string();
+                    crate::diag::trace(|| {
+                        // ui-text-exempt: diagnostic trace, never displayed in the UI
+                        format!(
+                            "text-style-declined page={page} run={run} applied={applied} runs={total} detail={detail}"
+                        )
+                    });
+                    return;
+                }
+            };
             applied += 1;
             carried.extend(notes);
 
@@ -264,6 +222,59 @@ fn restyle(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &StyleChange)
             change.label()
         )
     });
+}
+
+/// **One `format_text` call through the funnel** — the notes it owes the
+/// operator, or the engine's refusal, already worded on the bar.
+pub(super) fn format_op(
+    doc: &mut OpenDoc,
+    page: usize,
+    policy: StylePolicy,
+    req: &FormatRequest,
+) -> Result<Vec<String>, FormatError> {
+    let mut outcome: Option<FormatError> = None;
+    let mut notes: Vec<String> = Vec::new();
+    super::apply::vector_edit(doc, "format-text", page, 1, |session| {
+        // **The operator's posture, passed straight through** —
+        // never pinned to a value here to provoke an informative
+        // refusal.
+        //
+        // `set_style` walks all four rungs itself, so there is no
+        // question left to ask by forcing one, and the posture goes
+        // where it belongs: to the engine, as the operator set it.
+        // Under `Auto` the ladder decides and discloses; under `Warn`
+        // it does the same and [`ladder_note`] raises the synthetic
+        // case to a sentence of its own; under `Refuse` the ladder's
+        // **fourth** rung returns `SynthesisRefusedByPosture` — the
+        // wide reading of *"never fake it"*, decided by the side that
+        // knows what it tried.
+        //
+        // ⇒ One engine call per operator, and one only. A probe to ask
+        // which face is available, plus a pre-check to predict the
+        // posture refusal, plus the commit, is three reads of a page
+        // whose answer can change between them.
+        let options = FormatOptions::default().with_style_policy(policy);
+        match session.format_text(req, &options) {
+            Ok(report) => {
+                // The ladder's own sentence first, then the engine's
+                // disclosures: what happened to the text, then how.
+                if let Some(note) = ladder_note(&report, policy) {
+                    notes.push(note);
+                }
+                if let Some(note) = render_mode_note(&report) {
+                    notes.push(note);
+                }
+                notes.extend(report.disclosures);
+                Ok(notes.clone())
+            }
+            Err(error) => {
+                decline::record_text_style(refusal_of(&error));
+                outcome = Some(error);
+                Err(FormatError::NoOp)
+            }
+        }
+    });
+    outcome.map_or(Ok(notes), Err)
 }
 
 /// The subset of the font at `path` covering every character of `runs` on
@@ -602,7 +613,10 @@ fn render_mode_note(report: &FormatReport) -> Option<String> {
         .then(|| t::text_render_mode_invisible().to_owned())
 }
 
+mod align;
+pub(super) use align::align;
 mod runwidth;
+pub(super) mod span;
 
 #[cfg(test)]
 mod tests;
@@ -647,7 +661,16 @@ mod tests;
 /// [`ReflowRefusal::FontIsComposite`]: a paragraph set in a Type 0 / CIDFont is
 /// refused by name, which is an engine feature not yet built rather than a
 /// guard.
-pub(super) fn reflow(doc: &mut OpenDoc, page: usize, block: usize) {
+///
+/// `alignment` is `None` to keep the paragraph's own alignment (O54) and
+/// `Some` to set it (O271).
+pub(super) fn reflow(
+    doc: &mut OpenDoc,
+    page: usize,
+    block: usize,
+    alignment: Option<pdfcer_core::text_edit::BlockAlignment>,
+) -> bool {
+    let mut applied = false;
     // ⚠ **There is no pre-flight gate here, and adding one is a mistake.**
     //
     // The tempting one refuses reflow whenever the document has been edited, or
@@ -687,7 +710,7 @@ pub(super) fn reflow(doc: &mut OpenDoc, page: usize, block: usize) {
     // the same shape as every other one this shell forwards: render normally,
     // report separately. The report arrives in `report.disclosures` and goes to
     // the status line verbatim.
-    let request = pdfcer_core::text_edit::ReflowRequest::new();
+    let request = pdfcer_core::text_edit::ReflowRequest::new().with_alignment_opt(alignment);
     let request = match doc.pages.get(page) {
         Some(page_ref) => request.with_page_cropbox(page_ref.crop_box),
         // A page index this document does not have. The reflow below will
@@ -720,6 +743,7 @@ pub(super) fn reflow(doc: &mut OpenDoc, page: usize, block: usize) {
                 crate::app::status::decline::record_reflow(reflow_refusal(error));
             })
             .map(|report| {
+                applied = true;
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed
                     format!(
@@ -727,7 +751,7 @@ pub(super) fn reflow(doc: &mut OpenDoc, page: usize, block: usize) {
                         // records: the funnel writes its own bare-named line for
                         // the same edit and `.last()` would read that one.
                         "reflow-block-applied page={page} block={block} lines={}->{} \
-                         justified={} height_delta={:.2}",
+                         justified={} height_delta={:.2} alignment={alignment:?}",
                         report.lines_before,
                         report.lines_after,
                         report.justified_lines,
@@ -740,10 +764,13 @@ pub(super) fn reflow(doc: &mut OpenDoc, page: usize, block: usize) {
                 // check by looking. A reflow that changed nothing is a correct
                 // outcome — the paragraph already fitted — and reads as a
                 // failure without a sentence.
-                if report.lines_before == report.lines_after && notes.is_empty() {
+                if alignment.is_some() && report.lines_before == 1 {
+                    notes.push(crate::text::textedit::align_single_line().to_owned());
+                } else if report.lines_before == report.lines_after && notes.is_empty() {
                     notes.push(crate::text::textedit::reflow_unchanged().to_owned());
                 }
                 notes
             })
     });
+    applied
 }

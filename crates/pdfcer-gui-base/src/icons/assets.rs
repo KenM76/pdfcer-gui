@@ -924,3 +924,21 @@ pub(super) const ALIGN_PANEL: &str = include_str!("assets/align-panel.svg");
 
 /// `model-3d.svg` — the art for [`super::Icon::Model3d`].
 pub(super) const MODEL_3D: &str = include_str!("assets/model-3d.svg");
+
+/// `para-align-left.svg` — the art for [`super::Icon::ParaAlignLeft`].
+pub(super) const PARA_ALIGN_LEFT: &str = include_str!("assets/para-align-left.svg");
+
+/// `para-align-centre.svg` — the art for [`super::Icon::ParaAlignCentre`].
+pub(super) const PARA_ALIGN_CENTRE: &str = include_str!("assets/para-align-centre.svg");
+
+/// `para-align-right.svg` — the art for [`super::Icon::ParaAlignRight`].
+pub(super) const PARA_ALIGN_RIGHT: &str = include_str!("assets/para-align-right.svg");
+
+/// `para-justify.svg` — the art for [`super::Icon::ParaJustify`].
+pub(super) const PARA_JUSTIFY: &str = include_str!("assets/para-justify.svg");
+
+/// `underline.svg` — the art for [`super::Icon::Underline`].
+pub(super) const UNDERLINE: &str = include_str!("assets/underline.svg");
+
+/// `strikethrough.svg` — the art for [`super::Icon::Strikethrough`].
+pub(super) const STRIKETHROUGH: &str = include_str!("assets/strikethrough.svg");

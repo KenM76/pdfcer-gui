@@ -48,8 +48,8 @@ pub(super) const FONT_COMMANDS: [&str; 5] = [
 pub(super) const TEXT_STYLE_REGION: &str = "properties.text";
 /// The face control inside the font editor.
 pub(super) const FACE_ROW_REGION: &str = "properties.text.face";
-/// The `text-style-applied` summary line.
-const STYLE_EVENT: &str = "text-style-applied";
+/// The `text-span-style-applied` summary line: the ribbon's Bold acts on exactly the swept characters.
+const STYLE_EVENT: &str = "text-span-style-applied";
 /// The `text-style-declined` line.
 const DECLINED_EVENT: &str = "text-style-declined";
 /// The label `vector_edit` writes when the restyle reached the engine.

@@ -129,6 +129,10 @@ mod facewall;
 mod plan;
 /// The narrowed fallback request: only the operators an edit touches.
 pub mod tier;
+/// What the next typed characters will carry.
+pub mod typing;
+/// Whether the text at a position is bold or italic, and by face or synthesis.
+pub mod weight;
 pub use plan::{Plan, plan};
 // O142 — a typo in a run written one glyph per show operator, which only
 // a spanning match can reach, and the guard that keeps the spanning match
@@ -328,6 +332,7 @@ pub fn abandon(ctx: &egui::Context) -> bool {
     reface::forget(ctx);
     history::forget(ctx);
     note::forget(ctx);
+    typing::forget(ctx);
     if had {
         // ui-text-exempt: diagnostic trace, never displayed.
         crate::diag::trace(|| "text-edit-abandon".to_owned());
@@ -351,6 +356,7 @@ pub(super) fn commit_into(
                 replacement: draft.text.clone(),
                 reface: reface::take(ctx, draft),
             });
+            typing::follow(ctx, draft.page, *run, original, &draft.text, actions);
         }
         Anchor::Origin { x, y } if !draft.text.is_empty() => {
             actions.push(Action::CommitAddText {

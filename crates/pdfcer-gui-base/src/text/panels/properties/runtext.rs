@@ -77,3 +77,15 @@ pub const fn run_width_no_baseline() -> &'static str {
 pub const fn run_width_unavailable() -> &'static str {
     "pdfcer cannot fit this text to a width."
 }
+
+/// Label of the paragraph-alignment row.
+#[must_use]
+pub const fn text_align_label() -> &'static str {
+    "Paragraph"
+}
+
+/// The four alignment buttons, in row order: left, centre, right, justify.
+#[must_use]
+pub const fn text_align_names() -> [&'static str; 4] {
+    ["Left", "Centre", "Right", "Justify"]
+}

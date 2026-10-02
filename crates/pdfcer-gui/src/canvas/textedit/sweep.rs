@@ -37,7 +37,7 @@ pub fn over_text(
         on_image: false,
     };
     if let Err(refusal) = super::click(ctx, &click, actions) {
-        super::route::decline(actions, refusal, " via=sweep");
+        super::route::decline(actions, refusal, " via=sweep"); // ui-text-exempt: trace suffix
     }
     true
 }

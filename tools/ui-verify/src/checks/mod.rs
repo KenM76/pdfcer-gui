@@ -987,6 +987,8 @@ pub mod subset_glyph;
 pub mod text_click_routes;
 pub mod text_tool_click_types;
 pub mod word_line_edit;
+/// Ctrl+B on the word at the caret, and the ribbon's paragraph alignment.
+pub mod word_styles;
 
 pub mod zoom_burst;
 pub mod zoom_gallery;

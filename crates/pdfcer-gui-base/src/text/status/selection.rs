@@ -253,6 +253,17 @@ pub enum TextStyleRefusal {
     WidthKerned,
     /// The run has no baseline length on the page to measure along.
     WidthNoBaseline,
+    /// The characters a range named have changed since it was chosen.
+    SpanMoved,
+    /// The chosen characters also appear earlier in the same piece of text,
+    /// and the engine addresses a part of a piece by its first occurrence.
+    SpanAmbiguous,
+    /// Bold is the face itself, so taking it off means choosing a regular face.
+    BoldIsFace,
+    /// Italic cannot be taken off text that has it.
+    ItalicStays,
+    /// The caret is in new text, which takes its style from the pen.
+    NewText,
 }
 
 impl TextStyleRefusal {
@@ -333,6 +344,21 @@ impl TextStyleRefusal {
             }
             Self::WidthNoBaseline => {
                 "This text has no length along its line on the page, so it has no width to set. Nothing changed."
+            }
+            Self::SpanMoved => {
+                "The text changed after you selected it, so pdfcer changed nothing. Select it again and retry."
+            }
+            Self::SpanAmbiguous => {
+                "The same letters appear earlier in this piece of text, and pdfcer cannot yet restyle the later copy on its own. Nothing changed; select the whole word or line instead."
+            }
+            Self::BoldIsFace => {
+                "This text is set in a bold face. To take bold off, pick the regular face in the Font box."
+            }
+            Self::ItalicStays => {
+                "pdfcer cannot yet take italic off text that has it. Nothing changed; pick an upright face in the Font box if the page has one."
+            }
+            Self::NewText => {
+                "New text takes its style from the text pen. Finish it with Enter, then select it to style part of it."
             }
         };
         std::borrow::Cow::Borrowed(fixed)

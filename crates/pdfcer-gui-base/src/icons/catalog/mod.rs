@@ -1216,6 +1216,18 @@ pub enum Icon {
     AlignPanel,
     /// A 3D model: a cube, its top face the accent.
     Model3d,
+    /// Paragraph alignment, left: lines flush at their left ends.
+    ParaAlignLeft,
+    /// Paragraph alignment, centre: lines centred on one axis.
+    ParaAlignCentre,
+    /// Paragraph alignment, right: lines flush at their right ends.
+    ParaAlignRight,
+    /// Paragraph alignment, justify: lines flush at both ends.
+    ParaJustify,
+    /// Underline the selected characters: a U over a rule.
+    Underline,
+    /// Strike through the selected characters: an S crossed by a rule.
+    Strikethrough,
 }
 
 // The mapping lives next door. `Icon::ALL`, `Icon::source` and `Icon::name`

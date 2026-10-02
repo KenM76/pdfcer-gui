@@ -52,13 +52,13 @@ channel: a reply is an input to *how* a thing is built, never to *which*. Each
 row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
-**Start here on `continue`.** The release tree `1ea6c59e` (engine v0.70.0,
-`96f10e3c`) was published to OneDrive (`pdfcer-gui2`) and GitHub as
-`v0.5.0-dev.20261001.1`. It was packaged with `--no-update`, to hold the engine
-at its release tag, and without `--verify`: the 84 gates and tests passed on
-that commit just before. It was smoke-launched off-screen clean. It carries
-O268's tabs and dialog button order. Next for O268: softer dialog controls and
-the OS presets. In order:
+**Start here on `continue`.** The release tree `0a56b608` (engine v0.72.0,
+`35769c3b`) was published to OneDrive and GitHub as `v0.5.0-dev.20261002.1`,
+packaged with `--no-update` to hold the engine at its release tag, and
+smoke-launched off-screen clean. It carries O270 steps 1 to 6, O269's hand
+signatures and O268's theme work. The engine has commits past v0.72.0; take
+them only for a fix a step needs, since the next release follows the next
+engine tag. In order:
 
 **O263, Align and Distribute: all four stages built and driven** (Align,
 Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting
@@ -78,10 +78,16 @@ the bar's all-signed line. The hand-signed state is session-only until
 G073. Trap: the drawn check failed once with no `hand-sign-opened` after its
 first click on a cold launch and passed on re-run; unexplained.
 
-**O270, Word-like text editing: plan steps 1 to 6 built and driven**,
-unpublished. The plan is `docs/plans/WORDLIKE_PLAN.md`; work it in its order
-(steps 7, 8, 9 remain GUI-only; step 7 carries O271's alignment
-buttons, in both places). Step 6's selection gestures (double, triple,
+**O270, Word-like text editing: plan steps 1 to 6 built and driven, step 7
+half**, unpublished. The plan is `docs/plans/WORDLIKE_PLAN.md`; work it in its
+order. Step 7's O271 (alignment in both places) and O273 (Ctrl+B/I/U, pressed
+toggles) live in `app::dispatch::textformat` and `app::conditions::textformat`;
+measure with `ui-verify --check ctrl_b_bolds_the_word_at_the_caret --check
+the_ribbon_aligns_the_paragraph_at_the_caret`. Step 7 still owes Properties
+fields on a substring, superscript/subscript, Delete paragraph and an HTML
+clipboard; G084–G087 are its engine requests. Trap: the ribbon draws only the
+active tab, so a check of a Format control's pressed state must raise the tab
+and read `ribbon-item-selected` under the shell's prefix. Step 6's selection gestures (double, triple,
 Shift+Up/Down, a drag over text, a rotated click) are measured with
 `ui-verify --check the_text_tool_selects_as_a_word_processor_does`. Step 1's keys live in `canvas::textedit::edits`,
 the draft's undo history in `editmodel::history`; measure with
@@ -129,8 +135,7 @@ A Text-tool click on text arms the caret tool (`canvas::clicking`), because
 The engine pin carries
 G074, G077 and G081 (`UnsupportedCause` is data); steps 12 and 13 consume them.
 Rental-form sweep (`tmp` script, Ken's copy only): 32 of 32 line edits commit
-at pin `dd5747d1`. Queued after the WORDLIKE steps: O273 (Ctrl+B/I/U on the
-selected characters) folds into step 7; O274 (a Keyboard Shortcuts page in
+at pin `dd5747d1`. Queued after the WORDLIKE steps: O274 (a Keyboard Shortcuts page in
 Settings) comes after step 9 and before the snapshot box (O272).
 
 **Since that release, unpublished:** File ▸ Security ▸ *Add validation

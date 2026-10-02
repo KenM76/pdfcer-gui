@@ -97,6 +97,58 @@ pub enum TextAction {
         /// The run's `/BaseFont`, which is the face the offer replaces.
         base_font: String,
     },
+    /// **Set the alignment of whole paragraphs** — `OPERATOR_REQUESTS.md`
+    /// O271. Each block is re-laid by the engine's block reflow with the given
+    /// alignment; block indices are numbered as for [`Self::Reflow`] and come
+    /// from `canvas::textedit::reflow::blocks_of_runs`.
+    Align {
+        /// The 0-based page.
+        page: usize,
+        /// The paragraphs, in the relaxed recognition's numbering.
+        blocks: Vec<usize>,
+        /// The alignment wanted.
+        alignment: pdfcer_core::text_edit::BlockAlignment,
+    },
+    /// **Restyle a character range** — O273. `from..to` is in page-text
+    /// positions as extracted when the gesture was made; `expected` is the text
+    /// they covered then. Apply re-extracts and declines if the range no longer
+    /// reads `expected`, so a stale range never restyles the wrong letters.
+    SpanStyle {
+        /// The 0-based page.
+        page: usize,
+        /// The range's start, inclusive.
+        from: pdfcer_core::text_edit::TextPosition,
+        /// The range's end, exclusive.
+        to: pdfcer_core::text_edit::TextPosition,
+        /// The characters the range covered when the gesture was made.
+        expected: String,
+        /// What to change.
+        change: crate::editactions::StyleChange,
+    },
+    /// **Underline or strike a character range** — O273. The line is
+    /// drawn as page content under the glyphs' quads, computed at apply time
+    /// from a fresh extraction; it does not move with the text.
+    Decorate {
+        /// The 0-based page.
+        page: usize,
+        /// The range's start, inclusive.
+        from: pdfcer_core::text_edit::TextPosition,
+        /// The range's end, exclusive.
+        to: pdfcer_core::text_edit::TextPosition,
+        /// The characters the range covered when the gesture was made.
+        expected: String,
+        /// Which line.
+        kind: Decoration,
+    },
+}
+
+/// The two drawn text decorations.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Decoration {
+    /// A line under the baseline.
+    Underline,
+    /// A line through the middle of the letters.
+    Strikethrough,
 }
 
 #[cfg(test)]

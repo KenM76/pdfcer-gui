@@ -350,6 +350,28 @@ pub(super) fn band() -> Vec<Command> {
         command("format.italic", t::format_italic(), 806)
             .with_icon("italic")
             .enabled_when("selection.text_runs"),
+        // Drawn lines rather than a property of the text: see `OPERATOR_REQUESTS.md`
+        // O273 and the tooltip, which says so to the operator.
+        command("format.underline", t::format_underline(), 819)
+            .with_icon("underline")
+            .enabled_when("selection.text_runs"),
+        command("format.strikethrough", t::format_strikethrough(), 820)
+            .with_icon("strikethrough")
+            .enabled_when("selection.text_runs"),
+        // O271: one command per alignment, dispatched alike from the ribbon and
+        // the text Properties panel.
+        command("format.align_left", t::format_align_left(), 821)
+            .with_icon("para-align-left")
+            .enabled_when("selection.text_runs"),
+        command("format.align_centre", t::format_align_centre(), 822)
+            .with_icon("para-align-centre")
+            .enabled_when("selection.text_runs"),
+        command("format.align_right", t::format_align_right(), 823)
+            .with_icon("para-align-right")
+            .enabled_when("selection.text_runs"),
+        command("format.align_justify", t::format_align_justify(), 824)
+            .with_icon("para-justify")
+            .enabled_when("selection.text_runs"),
         command("format.font_colour", t::format_font_colour(), 807)
             .enabled_when("selection.text_runs"),
         // -------------------------------------------------------------------

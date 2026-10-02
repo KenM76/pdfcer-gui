@@ -55,8 +55,9 @@ pub fn tab() -> Tab {
             //   building the tab first means writing the editors twice. A
             //   control that exists only on the tab has done exactly that.
             //
-            // Spacing and Alignment stay in `manifest::PLANNED`, for a reason
-            // that is not about order: `EditSession` has no verb for either.
+            // Alignment re-lays the paragraph through the engine's block reflow
+            // (O271); Spacing stays in `manifest::PLANNED` because
+            // `EditSession` has no verb for it.
             //
             // # Every item carries `visible_when`, and the SEPARATOR does not
             //
@@ -64,7 +65,7 @@ pub fn tab() -> Tab {
             // — deliberately, and its own docs say why: a divider's visibility
             // is a fact about its **neighbours**, and a separator with an
             // independently-set condition is a contradiction that renders. Here
-            // that costs nothing, because all five items share one condition:
+            // that costs nothing, because every item shares one condition:
             // either the whole group is drawn or none of it is, and a group
             // with nothing left is not drawn at all (`egui-shell`'s
             // `a_group_with_nothing_left_is_not_drawn`). The separator can
@@ -80,11 +81,20 @@ pub fn tab() -> Tab {
                     // set*, which is the seam Word draws in the same place: a
                     // face and a size are what the text IS, and bold, italic
                     // and colour are what is done to it. An operator scanning
-                    // the group meets two clusters rather than five controls.
+                    // the group meets clusters rather than a row of controls.
                     Item::Separator,
                     command("format.bold").shown_when(FONT_VISIBLE_WHEN),
                     command("format.italic").shown_when(FONT_VISIBLE_WHEN),
+                    command("format.underline").shown_when(FONT_VISIBLE_WHEN),
+                    command("format.strikethrough").shown_when(FONT_VISIBLE_WHEN),
                     Item::custom(super::FONT_COLOUR).shown_when(FONT_VISIBLE_WHEN),
+                    // Paragraph alignment, after the character cluster as in
+                    // Word's Home tab (O271).
+                    Item::Separator,
+                    command("format.align_left").shown_when(FONT_VISIBLE_WHEN),
+                    command("format.align_centre").shown_when(FONT_VISIBLE_WHEN),
+                    command("format.align_right").shown_when(FONT_VISIBLE_WHEN),
+                    command("format.align_justify").shown_when(FONT_VISIBLE_WHEN),
                 ],
             ),
             // ---------------------------------------------------------------
@@ -244,6 +254,12 @@ mod tests {
         "format.font_colour",
         "format.bold",
         "format.italic",
+        "format.underline",
+        "format.strikethrough",
+        "format.align_left",
+        "format.align_centre",
+        "format.align_right",
+        "format.align_justify",
         "format.select_form",
         "format.unshare_form",
         "format.merge_text_runs",

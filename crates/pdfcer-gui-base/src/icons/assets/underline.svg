@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Underline: a capital U with a rule beneath it, the letter standing for the selected characters. Drawn for pdfcer; generic geometry, no trademark risk. -->
+  <path d="M15 8v14a9 9 0 0 0 18 0V8" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M11 40h26" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

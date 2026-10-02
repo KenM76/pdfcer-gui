@@ -409,11 +409,13 @@ The plan, in build order, is `docs/plans/WORDLIKE_PLAN.md`.
 - *Clicks landing on the wrong thing*: built and driven. With the Text tool, a click on a form field fills the field, a click on a text box comment opens it, and a click on a scanned page says it is a picture of text, with a button beside the message that opens Recognise text. None of them start new text any more. The two messages that named the wrong menu are corrected, and a refusal on a protected file carries a button to Encrypt. Driven: `a_text_tool_click_reaches_what_is_under_it`.
 - *Preview in the wrong size*: built and driven. When the preview cannot use the text's own font, the stand-in is now the text's own size at the current zoom, and the status bar says why. Driven: `a_stand_in_preview_is_the_texts_size_and_says_why`.
 
-## O271 — **DECIDED, to build** — alignment buttons go in both places
+## O271 — **BUILT AND DRIVEN — awaiting your verdict** — alignment buttons go in both places
 
 His words: *"alignment buttons should go in both places."*
 
 Left, centre, right and justify go on the ribbon beside font and size, and in the text Properties panel. Both dispatch the same command. Built as part of O270, step 7 of `docs/plans/WORDLIKE_PLAN.md`.
+
+**Where it stands.** Built. Align Left, Centre, Right and Justify are in Format › Font and in Properties › This text › Paragraph, and act on the paragraph the caret is in or every paragraph the selection touches. Driven from the ribbon: `the_ribbon_aligns_the_paragraph_at_the_caret`. The Properties buttons run the same command but have not been driven themselves.
 
 ## O272 — **OPEN, design in progress** — a snapshot box that copies what you see, as vector or picture
 
@@ -423,7 +425,7 @@ A box drawn over the page that stays, with its moving dashed outline, until dism
 
 **Where it stands.** Not built. The design is being drafted.
 
-## O273 — **OPEN, queued** — bold, italic, underline and strikethrough on the selected characters, with Ctrl+B, Ctrl+I and Ctrl+U
+## O273 — **BUILT AND DRIVEN, with three limits — awaiting your verdict** — bold, italic, underline and strikethrough on the selected characters, with Ctrl+B, Ctrl+I and Ctrl+U
 
 His words: *"Does bold edit italics underline etc work too and have shortcuts?"*
 
@@ -431,7 +433,11 @@ Today Bold and Italic act only on a whole selected line, underline and strikethr
 
 Inside a text edit, Ctrl+B, Ctrl+I and Ctrl+U act on the selected characters, or on what is typed next at the caret, as in Word; outside one they act on the selected lines. Bold and italic use a real bold or italic face where one exists, and say so when they have to thicken or slant the letters instead. Underline and strikethrough are drawn lines that move with the text. Ribbon buttons for both sit beside Bold and Italic and show pressed when the selection carries the style.
 
-**Where it stands.** Not built. It is part of step 7 of `docs/plans/WORDLIKE_PLAN.md`.
+**Where it stands.** Built. Ctrl+B, Ctrl+I and Ctrl+U, and the ribbon's Bold, Italic, Underline and Strikethrough, act on the selected characters while typing, else the word the caret is in, else what you type next; outside a text edit, on the swept characters or the selected lines. Bold and Italic show pressed when the text at the caret has them. Driven: `ctrl_b_bolds_the_word_at_the_caret`. Three limits, each sent to the engine:
+
+- Taking bold or italic **off** works only where pdfcer thickened the letters itself; where the bold or italic is the font, the status bar says to choose the plain font in Properties (G086).
+- A word that also appears earlier in the same piece of text is declined rather than risk restyling the earlier one (G084).
+- Underline and strikethrough are lines of their own: they stay put if the text is later moved or rewrapped, and Underline shows pressed only for what you are about to type, not for text already underlined (G085). This is short of "lines that move with the text" above.
 
 ## O274 — **OPEN, queued** — a Keyboard Shortcuts page in Settings
 

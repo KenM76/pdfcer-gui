@@ -287,41 +287,24 @@ pub fn operators_in_run(
             glyph.text_start as usize,
             glyph.text_start as usize + glyph.text_len as usize,
         );
-        // The per-operator `find` text was built HERE until 2026-08-27,
-        // by walking the glyphs and extending a byte cursor over the run's
-        // text — *"but only over bytes a glyph actually covers. A gap here is a
-        // derived character and must not join the two halves."*
-        //
-        // That was a **second locator**, living beside the engine's, and it is
-        // deleted rather than kept. `Pass 145.0` made a pinned request with an
-        // empty `find` mean *the whole operator*, so the pin alone is the whole
-        // address and there is nothing left to slice.
-        //
-        // The measurement that made deleting it safe rather than hopeful:
-        // the engine probed 4,289 fixture files, 18,559 runs, 669,436 glyphs,
-        // **29,246 distinct operator spans, zero non-contiguous groups and zero
-        // groups whose slice did not index the run's text cleanly** — and
-        // sabotage-checked the detector so a green result is not vacuous. The
-        // invariant this walk was quietly relying on is now a documented
-        // guarantee with a test that re-runs on every `cargo test`.
-        //
-        // The same probe settled the other question: **2,420 of 18,559 runs
-        // (13 %) carry glyphs from more than one show operator.** This function
-        // is not an edge case; it is the ordinary shape of real typeset text.
-        if out
-            .last()
-            .is_none_or(|last| last.pin.span != p.operator_span)
-        {
-            out.push(Operator {
+        // An operator's glyphs are contiguous in the run's text (an engine
+        // guarantee), so its byte range is the hull of its glyphs' ranges. 13 %
+        // of real runs carry glyphs from more than one operator.
+        match out.last_mut() {
+            Some(last) if last.pin.span == p.operator_span => {
+                last.text.start = last.text.start.min(gs);
+                last.text.end = last.text.end.max(ge);
+            }
+            _ => out.push(Operator {
                 pin: Pinned {
                     span: p.operator_span,
                     target: target_of(p),
                     text_matrix: p.text_matrix,
                     ctm: p.ctm,
                 },
-            });
+                text: gs..ge,
+            }),
         }
-        let _ = (gs, ge);
     }
     out
 }
@@ -332,6 +315,8 @@ pub fn operators_in_run(
 pub struct Operator {
     /// The locator.
     pub pin: Pinned,
+    /// The byte range of the run's text this operator's glyphs cover.
+    pub text: std::ops::Range<usize>,
 }
 
 // ===========================================================================

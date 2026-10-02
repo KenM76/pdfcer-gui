@@ -182,6 +182,13 @@ pub const fn reflow_unchanged() -> &'static str {
     "This paragraph already fitted its box, so re-wrapping it changed nothing."
 }
 
+/// An alignment applied to a paragraph of one line, which has no width of its
+/// own to align within.
+#[must_use]
+pub const fn align_single_line() -> &'static str {
+    "This paragraph is one line, so it has no width of its own to align within. Nothing moved."
+}
+
 /// A reflow asked for with no caret placed.
 #[must_use]
 pub const fn reflow_needs_caret() -> &'static str {

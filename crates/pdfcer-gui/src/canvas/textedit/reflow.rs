@@ -30,6 +30,27 @@ pub fn block_of_run(doc: &OpenDoc, page_index: usize, run: usize) -> Option<usiz
     model.block_at(TextPosition::new(run, 0))
 }
 
+/// Every paragraph `runs` touch, numbered as [`block_of_run`] numbers them,
+/// ascending and without repeats. One extraction and one recognition.
+#[must_use]
+pub fn blocks_of_runs(doc: &OpenDoc, page_index: usize, runs: &[usize]) -> Vec<usize> {
+    let Some(text) = doc.provenance_page_text(page_index) else {
+        return Vec::new();
+    };
+    let Ok(cells) = detect_cell_regions(&doc.session.view(), page_index) else {
+        return Vec::new();
+    };
+    let model =
+        EditableTextModel::recognize_with_cells(&text, &reflow_recognition_options(), &cells);
+    let mut blocks: Vec<usize> = runs
+        .iter()
+        .filter_map(|run| model.block_at(TextPosition::new(*run, 0)))
+        .collect();
+    blocks.sort_unstable();
+    blocks.dedup();
+    blocks
+}
+
 #[cfg(test)]
 mod tests {
     /// **The recognition is the one the ENGINE will index the answer in.**

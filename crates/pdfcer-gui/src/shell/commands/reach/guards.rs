@@ -228,6 +228,9 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::app::dispatch::format::handles(id) {
         return Some("handles");
     }
+    if crate::app::dispatch::textformat::handles(id) {
+        return Some("handles");
+    }
     None
 }
 

@@ -76,6 +76,7 @@ pub(crate) mod settings;
 /// and the reflow that acts on the paragraph it is in. All three live there so
 /// the subject lives in one place.
 pub(crate) mod text;
+pub(crate) mod textformat;
 
 use super::actions::Action;
 use super::state::Status;
@@ -759,6 +760,7 @@ impl PdfcerApp {
             // parked in frame memory by the right-click that opened the menu,
             // which is an operand no ribbon control can ask for. Same shape as
             // `measure` and `markupnodes` below.
+            id if textformat::handles(id) => textformat::dispatch(self, ctx, id, actions),
             id if format::handles(id) => format::dispatch(self, ctx, id, actions),
             id if measure::handles(id) => {
                 measure::dispatch(self, ctx, id);
