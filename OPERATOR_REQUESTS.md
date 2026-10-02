@@ -399,7 +399,7 @@ The plan, in build order, is `docs/plans/WORDLIKE_PLAN.md`.
 **Where each part stands.**
 
 - *Lines that refused every edit*: built and driven. Word writes one line as several separate pieces; pdfcer now sends the engine only the piece your change touches. On a copy of his form, edits that commit went from 0 of 32 to 31 of 32, with the live preview in the line's own face. Driven: `a_line_written_in_pieces_edits`.
-- A change reaching across two pieces of a one-font line now commits too: the engine carries it across (G074, in this build). A letter that the form's embedded font can draw but the page never used can now be typed too. Still refused: one bold heading, which Word stored in a second kind of font holding a single letter (G075, the engine's next passes). The note under the box offers one click to the same bold face, which takes the letter.
+- A change reaching across two pieces of a one-font line now commits too: the engine carries it across (G074, in this build). A letter that the form's embedded font can draw but the page never used can now be typed too, including in the bold heading Word stored in a second kind of font. On a copy of his form, all 32 line edits now commit. A key no font on the page can draw is still refused, with the one-click offer below.
 - Known gap: when a piece grows, the piece after it on the same line does not move along, so they can overlap.
 - *Keys that did nothing*: built and driven. Every key the text's font cannot take is now named in a note just under the box you are typing in, never dropped silently. One click changes the text to the nearest font that has them all, and the keys you typed go back in. Driven: `every_refused_key_is_named_with_a_face_that_takes_them`.
 - *Caret that flickered*: built and driven. In Edit with the Text tool, a click on text opened a caret and closed it again at once, so it flickered and typing went nowhere. The click now leaves a caret that takes the next key. Driven: `a_text_tool_click_on_text_types_there`.
@@ -420,6 +420,24 @@ His words: *"can we add a marquee selector that stays on with the creeping catap
 A box drawn over the page that stays, with its moving dashed outline, until dismissed, and can be resized after it is placed. Copy takes everything visible inside it, review marks included, cropped to the box, and pastes into other programs either as a vector drawing or as a picture at a resolution set in settings.
 
 **Where it stands.** Not built. The design is being drafted.
+
+## O273 — **OPEN, queued** — bold, italic, underline and strikethrough on the selected characters, with Ctrl+B, Ctrl+I and Ctrl+U
+
+His words: *"Does bold edit italics underline etc work too and have shortcuts?"*
+
+Today Bold and Italic act only on a whole selected line, underline and strikethrough do not exist for page text, and no Ctrl+B, Ctrl+I or Ctrl+U is bound.
+
+Inside a text edit, Ctrl+B, Ctrl+I and Ctrl+U act on the selected characters, or on what is typed next at the caret, as in Word; outside one they act on the selected lines. Bold and italic use a real bold or italic face where one exists, and say so when they have to thicken or slant the letters instead. Underline and strikethrough are drawn lines that move with the text. Ribbon buttons for both sit beside Bold and Italic and show pressed when the selection carries the style.
+
+**Where it stands.** Not built. It is part of step 7 of `docs/plans/WORDLIKE_PLAN.md`.
+
+## O274 — **OPEN, queued** — a Keyboard Shortcuts page in Settings
+
+His words: *"Also shortcut keys should have a section in settings for customization or individual disabling."*
+
+A page in Settings listing every command with its key, grouped by ribbon tab, with the keys that work while typing text in their own group. Each can be changed by pressing the new key, cleared to switch it off, or reset. A key already in use is shown as a clash before anything is saved. The changes go into his own settings file, the one the program already reads, not a second one.
+
+**Where it stands.** Not built. It comes after the Word-like text steps and before the snapshot box (O272).
 
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 
