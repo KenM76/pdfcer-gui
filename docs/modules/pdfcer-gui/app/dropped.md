@@ -28,10 +28,18 @@ of them tells the operator anything.
 
 | dropped | action |
 |---|---|
-| a **PDF** | open it — the same [`Action::Open`] the File ▸ Open picker raises |
-| a **raster image** (png/jpg/bmp/tif) with a document open | insert it, straight into the placement window |
+| a **PDF** | open it — the same [`Action::Open`] the File ▸ Open picker raises; every PDF in the drop opens |
+| a **raster image** (png/jpg/bmp/tif) with a document open | place it at the drop point at its natural size, as one undoable edit; later pictures in the same drop cascade one `CASCADE_PT` step down and right |
+| the same, with **Alt** held | open the placement window for the first picture, the one `edit.insert_image` opens |
+| the same, in a mode that does not change page content | refuse, naming Edit |
 | a raster image with **no** document open | say so, and say what to do about it |
+| a **GIF or WebP** | say how to convert it |
 | anything else | say what pdfcer accepts |
+
+Placing at once rather than opening a window is what every editor in this
+class does with a dropped picture: the drop point *is* the placement, and a
+dialog asking where would ask a question the gesture already answered. Alt is
+the way back to the window for an operator who wants to size it first.
 
 **A dropped PDF opens rather than being inserted**, and that is the
 decision most worth stating because the opposite is defensible. Every viewer
@@ -69,10 +77,6 @@ undo.
 
 ## What is deliberately NOT here
 
-- **Multi-file drops.** Only the first is acted on, and the rest are named in
-  the disclosure. Opening five documents at once is a tabbed shell this one
-  is not; inserting five images is five placement windows, and the second
-  would open over the first with no way to tell them apart.
 - **Hover feedback on the way in.** `egui` offers `hovered_files`, and a
   preview would be the right thing eventually. It is left out today rather
   than done badly: a tint that appeared on any hover, including over a
@@ -118,15 +122,8 @@ A `.pdf` that is not a PDF therefore produces the *parser's* error, which is
 the specific one, rather than "pdfcer does not accept this kind of file",
 which would be wrong.
 
-### `fn resolve`
+### `fn land`
 
-`has_document` decides whether an image can be placed at all; the caller
-knows it and this module does not need the whole `OpenDoc` to find out.
-
-Returns the image to insert, if one was dropped and can be — the caller owns
-the picker-and-dialog path and this module deliberately does not reach into
-it.
-
-It is handed the files rather than reading them. See the header: the
-position-aware half of the feature has to read the input first, and two
-readers of one `dropped_files` would each see it and each act.
+Handed the landing rather than reading `dropped_files`: two readers of one
+`dropped_files` would each see it and each act. The position comes from `filedrag::Landed::at`; `None` (the platform did not
+say) places at the view's centre, the rule a paste uses.

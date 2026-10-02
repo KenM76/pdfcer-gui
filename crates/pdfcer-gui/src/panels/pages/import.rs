@@ -132,6 +132,7 @@ mod tests {
             crate::app::filedrag::Landed {
                 paths: vec![PathBuf::from("a.pdf")],
                 at: None,
+                alt: false,
             },
         );
         let mut actions = Vec::new();
@@ -158,6 +159,7 @@ mod tests {
             crate::app::filedrag::Landed {
                 paths: vec![PathBuf::from("no-such-file-anywhere.pdf")],
                 at: Some(egui::pos2(10.0, 10.0)),
+                alt: false,
             },
         );
         let mut actions = Vec::new();

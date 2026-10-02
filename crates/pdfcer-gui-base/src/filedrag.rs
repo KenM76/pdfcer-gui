@@ -18,6 +18,9 @@ pub struct Landed {
     /// Where the pointer was, in `egui` window points, or `None` when the
     /// operating system declined to say (see [`aim`]).
     pub at: Option<egui::Pos2>,
+    /// Whether Alt was held as it landed, asking for the placement window
+    /// rather than placing at once.
+    pub alt: bool,
 }
 
 /// The memory slot holding this frame's unclaimed drop.
@@ -71,11 +74,18 @@ pub fn poll(ctx: &egui::Context) {
         return;
     }
 
-    let at = aim(ctx);
+    // A scripted drop lands at the scripted pointer; the OS cursor is
+    // elsewhere while a harness drives the window.
+    let at = if crate::pointerscripted::scripted() {
+        ctx.input(|i| i.pointer.latest_pos())
+    } else {
+        aim(ctx)
+    };
+    let alt = ctx.input(|i| i.modifiers.alt) || native_window::alt_held();
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         format!(
-            "file-dropped n={} first={:?} at={}",
+            "file-dropped n={} first={:?} at={} alt={alt}",
             paths.len(),
             paths.first().and_then(|p| p.file_name()),
             at.map_or_else(
@@ -84,7 +94,7 @@ pub fn poll(ctx: &egui::Context) {
             )
         )
     });
-    ctx.data_mut(|d| d.insert_temp(id(LANDED_KEY), Landed { paths, at }));
+    ctx.data_mut(|d| d.insert_temp(id(LANDED_KEY), Landed { paths, at, alt }));
 }
 
 /// Whether a file is being dragged over the window right now.
@@ -203,6 +213,7 @@ mod tests {
                 Landed {
                     paths: vec![PathBuf::from("a.pdf")],
                     at: Some(egui::pos2(10.0, 20.0)),
+                    alt: false,
                 },
             );
         });
@@ -222,6 +233,7 @@ mod tests {
         let landing = Landed {
             paths: vec![PathBuf::from("drawing.pdf")],
             at: None,
+            alt: false,
         };
         ctx.data_mut(|d| d.insert_temp(id(LANDED_KEY), landing.clone()));
         assert_eq!(
@@ -245,6 +257,7 @@ mod tests {
         let landing = Landed {
             paths: vec![PathBuf::from("a.pdf"), PathBuf::from("b.pdf")],
             at: None,
+            alt: false,
         };
         assert_eq!(landing.paths.len(), 2);
     }

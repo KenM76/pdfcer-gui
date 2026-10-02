@@ -451,19 +451,19 @@ with one selection.
 
 | Group | Commands |
 |---|---|
-| **ce dimension** | Linear · Aligned · Angular · Radius / Diameter · Two-line · Perimeter · Length · Finish |
-| **Quantity** | Distance · Area · Count |
+| **ce dimension** | Linear · Aligned · Angular · Radius / Diameter · Two-line · Perimeter · Area · Length · Finish |
+| **Quantity** | Distance · Count |
 | **Scale** | Set scale · Calibrate from a known length · Manage ce-dimension groups… |
 | **Takeoff** | Schedule panel · Export CSV |
 
 The **Scale ▸ group** model — named groups carrying a shared scale and drafting
 standard — is better than what the comparison product does, and nothing here
-should dilute it. Area and Angular are the conspicuous absences for anyone doing
-takeoff on a drawing.
+should dilute it. Area is the conspicuous absence for anyone doing takeoff on a
+drawing; the engine has it past the pin (G098), and it lands with the pin move.
 
 Aligned is a constraint on the linear tool rather than a separate tool.
-Perimeter and Length are in the ce dimension group rather than in Quantity
-because they author a mark on the page; Quantity holds the readings that author
+Perimeter, Area and Length are in the ce dimension group rather than in
+Quantity because they author a mark on the page; Quantity holds the readings that author
 nothing.
 
 **Everything on this tab authors a ce dimension**, which is the dimension

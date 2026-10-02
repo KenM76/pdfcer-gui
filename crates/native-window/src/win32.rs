@@ -71,6 +71,8 @@ unsafe extern "system" {
     /// Fails — and returns zero — when the calling thread's desktop is not the
     /// input desktop, which is the locked-workstation and screensaver case.
     fn GetCursorPos(point: *mut Point) -> i32;
+    /// Whether a key is down right now, whichever window has the keyboard.
+    fn GetAsyncKeyState(key: i32) -> i16;
     /// Find a top-level window by class and/or title.
     ///
     /// Passing null for `parent` and `child_after` searches top-level windows
@@ -183,4 +185,14 @@ pub fn cursor_position() -> Option<(i32, i32)> {
     // BOOL; it allocates nothing and takes no ownership.
     let ok = unsafe { GetCursorPos(&raw mut point) };
     (ok != 0).then_some((point.x, point.y))
+}
+
+/// Whether Alt is held right now. Read from the device rather than the
+/// window's queue, because a file dragged from another program arrives while
+/// that program has the keyboard.
+#[must_use]
+pub fn alt_held() -> bool {
+    const VK_MENU: i32 = 0x12;
+    // SAFETY: no pointers; a virtual-key code in range.
+    unsafe { GetAsyncKeyState(VK_MENU) < 0 }
 }

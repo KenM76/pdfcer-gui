@@ -1161,18 +1161,8 @@ impl eframe::App for PdfcerApp {
         // once that surface has laid itself out. The fallback is
         // unconditional, so a surface that forgets to claim costs a feature
         // and never a file.
-        if let Some(landing) = crate::app::filedrag::unclaimed(&ctx)
-            && let Some(dropped_image) =
-                crate::app::dropped::resolve(&landing.paths, page_count.is_some(), &mut actions)
-        {
-            // The image goes straight into the placement window — the same one
-            // `edit.insert_image` opens, through the same import. See
-            // `dispatch::images::insert_path` for why that split exists.
-            crate::app::dispatch::images::insert_path(
-                &mut self.dialogs,
-                &self.status,
-                &dropped_image,
-            );
+        if let Some(landing) = crate::app::filedrag::unclaimed(&ctx) {
+            crate::app::dropped::land(self, &ctx, &landing, &mut actions);
         }
 
         // Step 2c — give every pending zoom an anchor, in ONE place.

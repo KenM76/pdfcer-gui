@@ -19,6 +19,7 @@
 //! <seq> type [vp=V] TEXT
 //! <seq> paste [vp=V] TEXT
 //! <seq> copy [vp=V]                      <seq> cut [vp=V]
+//! <seq> drop X Y [mods=…] [vp=V] PATH[|PATH…]
 //! ```
 //!
 //! `key` presses and releases one key named as `egui::Key::from_name` spells
@@ -27,6 +28,9 @@
 //! (and an optional `vp=`), spaces included, as one text event to whatever
 //! holds keyboard focus: click the field first. `copy` and `cut` deliver the
 //! platform's Copy and Cut commands, as Ctrl+C and Ctrl+X reach the app.
+//! `drop` moves to X Y, then lands the paths (spaces kept, `|` between them)
+//! as a file drop with `mods` held; while a script drives the window, a drop's
+//! position is the pointer's ([`scripted`]).
 //!
 //! Points are egui logical points of the target viewport — the space
 //! `ui-rect` lines are written in. `vp=` is `root` (the default) or the
@@ -53,6 +57,7 @@
 use std::collections::VecDeque;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use egui::{Context, Event, Modifiers, PointerButton, Pos2, RawInput, ViewportId, vec2};
@@ -65,6 +70,16 @@ const POLL: Duration = Duration::from_millis(50);
 /// egui's double-click delay or a click past its longest press; a real
 /// hand's timing is the operator's, a script's is not a thing under test.
 const STEP_FRAME_S: f64 = 1.0 / 60.0;
+
+/// Whether a script drives this process's pointer.
+static SCRIPTED: AtomicBool = AtomicBool::new(false);
+
+/// Whether a harness drives the pointer, so a file drop's position is the
+/// scripted pointer's rather than the operating system cursor's.
+#[must_use]
+pub fn scripted() -> bool {
+    SCRIPTED.load(Ordering::Relaxed)
+}
 
 /// Frames a drag spends moving when the step does not say.
 const DEFAULT_DRAG_STEPS: usize = 6;
@@ -108,6 +123,8 @@ struct Step {
     /// The input time given to this step's last frame, from which the next
     /// frame's is capped by [`STEP_FRAME_S`].
     clock: Option<f64>,
+    /// Files a `drop` lands with its last frame.
+    files: Vec<PathBuf>,
 }
 
 /// Parse one line; `Err` carries nothing, the caller quotes the line.
@@ -117,6 +134,9 @@ fn parse(line: &str) -> Result<Step, ()> {
     let verb = words.next().ok_or(())?.to_owned();
     if verb == "type" || verb == "paste" {
         return typed(seq, line, verb == "paste");
+    }
+    if verb == "drop" {
+        return dropped(seq, line);
     }
     let mut key = None;
     let mut numbers: Vec<f32> = Vec::new();
@@ -172,6 +192,7 @@ fn parse(line: &str) -> Result<Step, ()> {
         frames,
         sent: 0,
         clock: None,
+        files: Vec::new(),
     })
 }
 
@@ -229,6 +250,51 @@ fn typed(seq: u64, line: &str, paste: bool) -> Result<Step, ()> {
         frames: VecDeque::from([vec![event]]),
         sent: 0,
         clock: None,
+        files: Vec::new(),
+    })
+}
+
+/// A `drop` step: X and Y, optional `mods=` and `vp=`, then the paths.
+fn dropped(seq: u64, line: &str) -> Result<Step, ()> {
+    let mut rest = line.trim().splitn(3, ' ').nth(2).ok_or(())?;
+    let mut numbers = Vec::new();
+    let mut target = Target::Root;
+    let mut modifiers = Modifiers::NONE;
+    loop {
+        let (word, tail) = rest.split_once(' ').unwrap_or((rest, ""));
+        if numbers.len() < 2 {
+            numbers.push(word.parse::<f32>().map_err(|_| ())?);
+        } else if let Some(v) = word.strip_prefix("mods=") {
+            modifiers = parse_mods(v)?;
+        } else if let Some(v) = word.strip_prefix("vp=") {
+            target = if v == "root" {
+                Target::Root
+            } else {
+                Target::Named(v.to_owned())
+            };
+        } else {
+            break;
+        }
+        rest = tail;
+    }
+    let files: Vec<PathBuf> = rest
+        .split('|')
+        .filter(|p| !p.is_empty())
+        .map(PathBuf::from)
+        .collect();
+    if files.is_empty() {
+        return Err(());
+    }
+    let p = Pos2::new(numbers[0], numbers[1]);
+    Ok(Step {
+        seq,
+        verb: "drop".to_owned(),
+        target,
+        modifiers,
+        frames: VecDeque::from([vec![Event::PointerMoved(p)], Vec::new()]),
+        sent: 0,
+        clock: None,
+        files,
     })
 }
 
@@ -379,6 +445,7 @@ impl PointerScript {
         }
         // ui-text-exempt: an environment variable name, never displayed.
         let path = std::env::var_os("PDFCER_DIAG_POINTER")?;
+        SCRIPTED.store(true, Ordering::Relaxed);
         Some(Self {
             path: path.into(),
             offset: 0,
@@ -538,6 +605,14 @@ impl egui::Plugin for PointerScript {
             step.clock = Some(t);
         }
         input.events.extend(events);
+        if step.frames.is_empty() {
+            input
+                .dropped_files
+                .extend(step.files.drain(..).map(|path| egui::DroppedFile {
+                    path: Some(path),
+                    ..Default::default()
+                }));
+        }
         if step.modifiers != Modifiers::NONE {
             input.modifiers = step.modifiers;
         }
@@ -634,6 +709,26 @@ mod tests {
         assert!(matches!(&step.frames[0][..], [Event::Cut]));
         assert_eq!(step.target, Target::Named("abc".to_owned()));
         assert!(parse("9 copy 5").is_err());
+    }
+
+    #[test]
+    fn a_drop_moves_then_lands_every_path_with_its_modifiers() {
+        let step = parse("7 drop 10 20 mods=alt C:/a b.png|C:/c.png").expect("parses");
+        assert_eq!(step.verb, "drop");
+        assert!(step.modifiers.alt);
+        assert_eq!(step.frames.len(), 2);
+        assert!(
+            matches!(&step.frames[0][..], [Event::PointerMoved(p)] if *p == Pos2::new(10.0, 20.0))
+        );
+        assert_eq!(
+            step.files,
+            [PathBuf::from("C:/a b.png"), PathBuf::from("C:/c.png")]
+        );
+        assert!(parse("8 drop 10 20").is_err(), "a drop names a file");
+        assert!(
+            parse("9 drop 10 C:/a.png").is_err(),
+            "a drop names both coordinates"
+        );
     }
 
     #[test]

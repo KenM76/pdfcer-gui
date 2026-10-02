@@ -1,43 +1,45 @@
-//! # `text::dropped` — the three sentences a drop can answer with
+//! # `text::dropped` — the sentences a drop can answer with
 //!
-//!
-//! Two of the three say **what to do next**, because the operator's remedy is
-//! not guessable from the refusal. The third names what pdfcer takes, which is
-//! the only useful thing to say about a file it does not.
+//! Each says what to do next or names what pdfcer takes, because the
+//! operator's remedy is not guessable from a refusal.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/dropped.md`.
 
-/// More than one file was dropped and only the first was acted on.
+/// Pictures that a later engine may read, named with their own remedy.
+const CONVERTIBLE: &[&str] = &["gif", "webp"];
+
+/// Several pictures were dropped with Alt held, which opens the placement
+/// window for the first.
 #[must_use]
-pub fn only_the_first(count: usize) -> String {
+pub fn alt_takes_the_first(count: usize) -> String {
     format!(
-        "{count} files were dropped. pdfcer opened the first one; drop the others one at a time."
+        "{count} pictures were dropped with Alt held, which opens the placement window for the \
+         first one only. Drop the others without Alt to place them where they land."
     )
 }
 
 /// An image was dropped with no document open.
 #[must_use]
 pub const fn image_needs_a_document() -> &'static str {
-    // "the File tab" rather than the ribbon-path spelling with a
-    // ▸ in it: `text::glyphs` refused that codepoint here and was right
-    // to. It runs through this project's COMMENTS and appears in no
-    // operator-visible string, because the font stack cannot draw it — it
-    // renders as a substitution box, which on a sentence whose whole job is
-    // to tell the operator where to go is the worst place available for one.
+    // "the File tab" rather than a ribbon path with a triangle glyph: the
+    // font stack cannot draw that codepoint.
     "A picture needs a page to go on. Open a PDF first, or make one from the File tab, \
      then drop the picture again."
 }
 
-/// The file is not one pdfcer takes.
-///
-/// Names the extension back, because a mis-drag is common and seeing *which*
-/// file was caught is what tells the operator they grabbed the wrong one.
+/// The file is not one pdfcer takes; names the extension back, because seeing
+/// which file was caught is what tells the operator they grabbed the wrong one.
 #[must_use]
 pub fn not_accepted(ext: &str) -> String {
     if ext.is_empty() {
         "pdfcer takes a PDF to open, or a PNG, JPEG, BMP or TIFF to place on the page. That file \
          has no extension, so pdfcer could not tell what it was."
             .to_owned()
+    } else if CONVERTIBLE.contains(&ext) {
+        format!(
+            "pdfcer cannot read .{ext} pictures yet. Save the picture as PNG or JPEG in another \
+             program and drop that instead."
+        )
     } else {
         format!(
             "pdfcer takes a PDF to open, or a PNG, JPEG, BMP or TIFF to place on the page. It \
@@ -54,9 +56,10 @@ mod tests {
     #[test]
     fn every_sentence_explains_rather_than_labels() {
         let all = [
-            only_the_first(4),
+            alt_takes_the_first(4),
             image_needs_a_document().to_owned(),
             not_accepted("dwg"),
+            not_accepted("gif"),
             not_accepted(""),
         ];
         for s in all {
@@ -69,5 +72,14 @@ mod tests {
     #[test]
     fn an_unknown_extension_is_named_back() {
         assert!(not_accepted("dwg").contains(".dwg"));
+        assert!(not_accepted("webp").contains(".webp"));
+    }
+
+    /// A GIF or WebP gets a remedy, not the list of what is taken.
+    #[test]
+    fn a_convertible_picture_is_told_how_to_convert() {
+        for ext in CONVERTIBLE {
+            assert!(not_accepted(ext).contains("PNG or JPEG"), "{ext}");
+        }
     }
 }

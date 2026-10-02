@@ -269,6 +269,23 @@ impl ScriptedPointer {
         Ok(())
     }
 
+    /// Drop `files` at `at` in the root viewport with `mods` held, as a file
+    /// dragged from another program lands.
+    pub fn drop_files(
+        &self,
+        session: &Session,
+        at: WindowPoint,
+        mods: Option<&str>,
+        files: &[&Path],
+    ) -> Result<TraceLine> {
+        let mods = mods.map_or(String::new(), |m| format!(" mods={m}"));
+        let list: Vec<String> = files.iter().map(|p| p.display().to_string()).collect();
+        self.send(
+            session,
+            &format!("drop {}{mods} {}", xy(at), list.join("|")),
+        )
+    }
+
     /// Append one step in the seam's grammar (without the sequence number)
     /// and wait for its acknowledgement.
     pub fn send(&self, session: &Session, body: &str) -> Result<TraceLine> {

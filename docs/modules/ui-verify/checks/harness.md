@@ -15,7 +15,7 @@ screenshot would work without this. But several checks write a
 to overwrite, `redaction_removes_and_proves_it` writes the PDF it will
 redact, and `insert_image_places_a_picture`,
 `the_insert_window_steps_aside_so_you_can_point` and
-`a_dropped_image_reaches_the_placement_window` each write a PNG to drop
+`a_dropped_picture_lands_where_it_was_dropped` each write a PNG to drop
 — and for those, nothing has created the directory yet when `--out`
 points at a fresh per-check path.
 

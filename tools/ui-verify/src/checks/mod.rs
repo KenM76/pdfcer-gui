@@ -690,10 +690,8 @@ pub mod deep_zoom;
 
 pub mod deeper_rung_delete;
 
-/// **Drag-and-drop**, driven through the one seam that can carry it — a drop
-/// originates in Explorer and cannot be synthesised by moving a mouse, so
-/// without `PDFCER_DIAG_DROP_PATH` this would be the single feature in the shell
-/// that R1 cannot reach.
+/// A picture dropped on a page lands where it was dropped, through the
+/// scripted pointer's `drop` step.
 pub mod dropped_file;
 
 /// **Enter makes a second line, and Ctrl+Enter finishes it** —

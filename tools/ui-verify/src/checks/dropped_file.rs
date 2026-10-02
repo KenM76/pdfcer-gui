@@ -1,42 +1,56 @@
-//! `a_dropped_image_reaches_the_placement_window` — **drag-and-drop**, driven
-//! through the one seam that can carry it.
+//! `checks::dropped_file` — **a picture dropped on a page lands where it was
+//! dropped**
 //!
-//! Design and rationale: `docs/modules/ui-verify/checks/dropped_file.md`.
+//! Drives the window off the desktop through the scripted pointer's `drop`
+//! step, in Edit mode on a copy of the engine corpus's `four-pages.pdf`, with
+//! 48×24-pixel PNGs that declare no resolution (so 48×24 pt).
+//!
+//! Oracles are the app's `image-dropped` lines: one picture is centred within
+//! the tolerance of the drop point and Ctrl+Z traces `undo-applied`; two
+//! pictures dropped together land at the drop point and one cascade step down
+//! and right of it; a GIF traces `drop-refused ext=gif` and places nothing;
+//! with Alt held nothing is placed and the placement window's
+//! `dialog:insert-image` region is declared.
 
-use crate::checks::driving::{self, SHELL_DIAG_ENV};
+use super::os_image_paste as osp;
+use crate::checks::driving;
 use crate::checks::{Check, CheckContext};
 use crate::error::{Error, Result};
-use crate::launch::{LaunchSpec, Session};
+use crate::input::scripted::ScriptedPointer;
+use crate::launch::Session;
 use crate::report::CheckReport;
+use std::path::{Path, PathBuf};
 
-/// The seam that simulates one drop.
-const DROP_PATH_ENV: &str = "PDFCER_DIAG_DROP_PATH";
-/// `dropped n=… first=…` or `dropped source=env path=…`.
-const DROPPED_EVENT: &str = "dropped";
-/// The placement window's own region.
+const STEM: &str = "dropped-file";
+const PLACED: &str = "image-dropped";
+const REFUSED: &str = "drop-refused";
+const UNDONE: &str = "undo-applied";
 const PLACEMENT_REGION: &str = "dialog:insert-image";
-/// The fixture's size, in pixels.
-const FIXTURE_W: u32 = 48;
-/// See [`FIXTURE_W`].
-const FIXTURE_H: u32 = 24;
+/// The app's cascade step, `app::dropped::CASCADE_PT`.
+const CASCADE_PT: f64 = 18.0;
+const SIZE: (f64, f64) = (48.0, 24.0);
+const SECOND: (f64, f64) = (300.0, 300.0);
 
 /// See the module documentation.
-pub struct ADroppedImageReachesThePlacementWindow;
+pub struct ADroppedPictureLandsWhereItWasDropped;
 
-impl Check for ADroppedImageReachesThePlacementWindow {
+impl Check for ADroppedPictureLandsWhereItWasDropped {
     fn name(&self) -> &'static str {
-        "a_dropped_image_reaches_the_placement_window"
+        "a_dropped_picture_lands_where_it_was_dropped"
     }
 
     fn defect(&self) -> &'static str {
-        "a file dragged onto the window is ignored, silently and with no feedback — which teaches \
-         the operator that this program does not accept drops, a conclusion they will not revisit \
-         about a program that opens documents for a living"
+        "a picture dragged onto a page opens a dialog and lands at the page's centre instead of \
+         where it was dropped, and only the first of several is used"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         let mut report = CheckReport::new(self.name(), self.defect());
-        match drive(ctx, &mut report) {
+        let driven = fixtures(ctx).and_then(|files| {
+            osp::launch(ctx, &mut report, STEM)
+                .and_then(|(session, pointer)| drive(ctx, &mut report, &session, &pointer, &files))
+        });
+        match driven {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
             Err(why) => report.from_error(&why),
@@ -44,90 +58,166 @@ impl Check for ADroppedImageReachesThePlacementWindow {
     }
 }
 
-fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    let exe = ctx.resolve_exe().ok_or_else(|| {
-        Error::new(format!(
-            "no binary to drive. Pass --exe, or build the profile's default at {}.",
-            ctx.profile.default_exe
-        ))
-    })?;
-    let pdf = ctx.pdf.clone().ok_or_else(|| {
-        Error::new("no --pdf. A dropped image needs a page to go on; pass a document.")
-    })?;
-    let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
-        Error::new(format!(
-            "the `{}` profile declares no ui-rect trace event.",
-            ctx.profile.name
-        ))
-    })?;
-
-    // The fixture: a PNG this harness encodes, or the file named by
-    // `PDFCER_UIV_IMAGE` — the same seam `insert_image` grew on the same day and
-    // for the same reason. A drop of a **JPEG** is what the operator reported,
-    // so pointing this at one is the run that answers his sentence.
-    let fixture = match std::env::var_os("PDFCER_UIV_IMAGE") {
-        Some(v) => std::path::PathBuf::from(v),
-        None => {
-            let path = ctx.out("dropped_fixture.png");
-            let px = vec![90u8; (FIXTURE_W * FIXTURE_H * 3) as usize];
-            let png = crate::png::encode_rgb(FIXTURE_W, FIXTURE_H, &px)
-                .ok_or_else(|| Error::new("the harness's own PNG encoder refused its fixture"))?;
-            std::fs::write(&path, &png)
-                .map_err(|e| Error::new(format!("cannot write {}: {e}", path.display())))?;
-            path
-        }
-    };
-    if !fixture.exists() {
-        return Err(Error::new(format!(
-            "the fixture image at {} does not exist.",
-            fixture.display()
-        )));
+/// Two PNGs and a GIF, written beside the trace.
+fn fixtures(ctx: &CheckContext) -> Result<[PathBuf; 3]> {
+    let png = crate::png::encode_rgb(48, 24, &[90u8; 48 * 24 * 3])
+        .ok_or_else(|| Error::new("the harness's own PNG encoder refused its fixture"))?;
+    let files = [
+        ctx.out("dropped-a.png"),
+        ctx.out("dropped-b.png"),
+        ctx.out("dropped-c.gif"),
+    ];
+    for (path, bytes) in files.iter().zip([&png[..], &png[..], b"GIF89a"]) {
+        std::fs::write(path, bytes)
+            .map_err(|e| Error::new(format!("cannot write {}: {e}", path.display())))?;
     }
-    report.note(format!("dropping {}", fixture.display()));
+    Ok(files)
+}
 
-    let mut spec = LaunchSpec::new(&exe, ctx.out("dropped_file.trace.txt"));
-    spec.pdf = Some(pdf);
-    spec.env.push((
-        ctx.profile.diag_env.0.to_owned(),
-        ctx.profile.diag_env.1.to_owned(),
-    ));
-    spec.env
-        .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
-    spec.env
-        .push((DROP_PATH_ENV.to_owned(), fixture.display().to_string()));
-    spec.allow_stale = ctx.allow_stale;
-    spec.source_root = ctx.source_root.clone();
+fn drive(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    files: &[PathBuf; 3],
+) -> Result<Option<String>> {
+    let [a, b, gif] = files;
+    let mut failure = one(ctx, report, session, pointer, a)?;
+    if failure.is_none() {
+        failure = two(ctx, report, session, pointer, a, b)?;
+    }
+    if failure.is_none() {
+        failure = refused(ctx, session, pointer, gif)?;
+    }
+    if failure.is_none() {
+        failure = alt_opens_the_window(ctx, session, pointer, a)?;
+    }
+    let parked = pointer.gone(session);
+    match failure {
+        Some(failure) => Ok(Some(failure)),
+        None => parked.map(|_| None),
+    }
+}
 
-    let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
-    report.artifact(session.trace_path().to_path_buf());
-    report.note(format!("launched as pid {}", session.pid()));
-    // No clicks at all. The whole gesture is the drop, which the seam performs
-    // on the first frame; everything after it is the application's own doing.
-    session.settle(50);
-
+/// Drop `paths` at `p` with `mods`; the rectangles of the `image-dropped`
+/// lines it added.
+fn drop_at(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    p: (f64, f64),
+    mods: Option<&str>,
+    paths: &[&Path],
+) -> Result<Vec<[f64; 4]>> {
+    let before = osp::count(session, PLACED)?;
+    pointer.drop_files(session, osp::at(ctx, session, p)?, mods, paths)?;
+    session.settle(20);
     let trace = session.trace()?;
-    let Some(seen) = trace.last(DROPPED_EVENT) else {
+    Ok(trace
+        .events(PLACED)
+        .skip(before)
+        .filter_map(osp::rect)
+        .collect())
+}
+
+/// One picture lands centred on the drop point, then undoes.
+fn one(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    a: &Path,
+) -> Result<Option<String>> {
+    let placed = drop_at(ctx, session, pointer, osp::FIRST, None, &[a])?;
+    let [r] = placed[..] else {
         return Ok(Some(format!(
-            "★★ THE SHELL NEVER SAW THE DROP. `{DROP_PATH_ENV}` was set and no `{DROPPED_EVENT}` \
-             line followed, so `app::dropped::take` either is not being called from the frame or \
-             returned before its seam. It must run at the TOP of `eframe::App::ui`, before \
-             anything is drawn — `egui` reports drops on the Context rather than on a widget, so \
-             there is nowhere else correct to read them. Trace: {}.",
-            session.trace_path().display()
+            "one dropped picture traced {} `{PLACED}` line(s), not 1.",
+            placed.len()
         )));
     };
-    report.note(format!("★ the shell saw the drop: `{}`", seen.raw));
+    report.note(format!("one picture {}", osp::show(r)));
+    if let Some(failure) = osp::lands(r, osp::FIRST, SIZE) {
+        return Ok(Some(failure));
+    }
+    let undos = osp::count(session, UNDONE)?;
+    pointer.key(session, None, "Z", Some("ctrl"))?;
+    session.settle(20);
+    Ok((osp::count(session, UNDONE)? == undos).then(|| "Ctrl+Z did not undo the drop.".to_owned()))
+}
 
-    if driving::declared(&trace, ui_rect, PLACEMENT_REGION).is_none() {
+/// Two pictures land at the drop point and one cascade step from it.
+fn two(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    a: &Path,
+    b: &Path,
+) -> Result<Option<String>> {
+    let placed = drop_at(ctx, session, pointer, SECOND, None, &[a, b])?;
+    let [first, second] = placed[..] else {
         return Ok(Some(format!(
-            "★ THE DROP WAS SEEN AND NO PLACEMENT WINDOW OPENED. That is the defect this check \
-             exists for, one step further in: the file arrived, was classified, and went nowhere. \
-             Look at `app::dropped::take`'s `Image` arm and at `frame.rs`'s call site, which must \
-             hand the returned path to `dispatch::images::insert_path` — the half of the picker \
-             path that was split out on 2026-08-19 precisely so a drop could reuse it. Trace: {}.",
-            session.trace_path().display()
+            "two dropped pictures traced {} `{PLACED}` line(s), not 2.",
+            placed.len()
+        )));
+    };
+    report.note(format!(
+        "two pictures {} and {}",
+        osp::show(first),
+        osp::show(second)
+    ));
+    let next = (SECOND.0 + CASCADE_PT, SECOND.1 - CASCADE_PT);
+    Ok(osp::lands(first, SECOND, SIZE)
+        .or_else(|| osp::lands(second, next, SIZE).map(|f| format!("the second picture: {f}"))))
+}
+
+/// A GIF is named back and nothing is placed.
+fn refused(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    gif: &Path,
+) -> Result<Option<String>> {
+    let refusals = osp::count(session, REFUSED)?;
+    let placed = drop_at(ctx, session, pointer, osp::FIRST, None, &[gif])?;
+    if !placed.is_empty() {
+        return Ok(Some("a dropped GIF was placed on the page.".to_owned()));
+    }
+    let trace = session.trace()?;
+    let named = trace
+        .events(REFUSED)
+        .nth(refusals)
+        .is_some_and(|l| l.get("ext") == Some("gif"));
+    Ok((!named).then(|| format!("a dropped GIF traced no `{REFUSED} ext=gif` line.")))
+}
+
+/// With Alt held the placement window opens and nothing is placed.
+fn alt_opens_the_window(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    a: &Path,
+) -> Result<Option<String>> {
+    let ui_rect = ctx
+        .profile
+        .vocab
+        .ui_rect_event
+        .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
+    if driving::declared(&session.trace()?, ui_rect, PLACEMENT_REGION).is_some() {
+        return Err(Error::new(format!(
+            "`{PLACEMENT_REGION}` was declared before the Alt drop, so it cannot witness it."
         )));
     }
-    report.note("★★ the dropped image opened the SAME placement window the ribbon command opens");
-    Ok(None)
+    let placed = drop_at(ctx, session, pointer, osp::FIRST, Some("alt"), &[a])?;
+    if !placed.is_empty() {
+        return Ok(Some(
+            "an Alt drop placed the picture instead of asking.".to_owned(),
+        ));
+    }
+    session.settle(20);
+    Ok(
+        driving::declared(&session.trace()?, ui_rect, PLACEMENT_REGION)
+            .is_none()
+            .then(|| format!("an Alt drop opened no placement window (`{PLACEMENT_REGION}`).")),
+    )
 }

@@ -133,7 +133,14 @@ pub mod clipboard {
 }
 
 #[cfg(windows)]
-pub use win32::{cursor_position, own_window};
+pub use win32::{alt_held, cursor_position, own_window};
+
+/// Off Windows no key state is read; Alt is never held.
+#[cfg(not(windows))]
+#[must_use]
+pub fn alt_held() -> bool {
+    false
+}
 
 #[cfg(windows)]
 mod accent;
