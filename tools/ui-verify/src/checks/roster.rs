@@ -927,6 +927,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(tool_row::ThePointsToolShowsPointsOnOneClick),
         Box::new(tool_row::ShowPointsDrawsAnObjectsPointsWithoutDescending),
         Box::new(dropped_file::ADroppedPictureLandsWhereItWasDropped),
+        Box::new(caption_theme::TitleBarsFollowTheTheme),
         Box::new(first_frame::TheFirstFrameNamesTheArmedTool),
         Box::new(master_detail::TheInspectorIsOneMasterDetailColumn),
         // The left rail — `OPERATOR_REQUESTS.md` O123 part 7 and O126.

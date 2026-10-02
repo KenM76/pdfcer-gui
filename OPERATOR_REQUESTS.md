@@ -487,6 +487,12 @@ Ctrl+V and the ribbon's Paste take what another program copied: a picture (Snipp
 
 **Where it stands.** In progress. A picture copied in another program now pastes at the pointer in Edit, and a paste after any outside copy takes that newer copy instead of an older pdfcer clip. `Ctrl+V` works for it too, not only the ribbon's Paste. Driven: `a_picture_copied_in_another_program_pastes_at_the_pointer`, `ctrl_v_pastes_a_picture_when_the_clipboard_holds_no_text`. Text from Word or anywhere else now pastes at the pointer as well: as page text in Edit, as a text-box comment in Review (`text_copied_in_another_program_pastes_as_a_text_box_at_the_pointer`). A picture file dropped on a page lands where it was dropped, at its natural size, with no window; Alt as you drop opens the window instead (`a_dropped_picture_lands_where_it_was_dropped`). Dropped text and PDF files, SVG and the clipboard-to-pages commands are next. Dragging a picture or text straight out of another program's window (not a file) waits for your decision.
 
+## O281 — **BUILT AND DRIVEN — awaiting your verdict** — title bars follow the light or dark theme
+
+> **Ken:** *"in dark mode the window title bar isn't recoloured to match the mode."*
+
+Every window's title bar now takes the program's theme: dark under the Dark preset (and under Match the system when Windows is dark), light under Quiet and Airy. It applies to the main window and to every dialog and floating window, changes the moment the theme does (the Settings preview included), and holds when Windows' own light/dark setting changes underneath it. Driven: `title_bars_follow_the_theme` reads each window's caption mode back from Windows after picking Dark and then Quiet in Settings.
+
 ## O280 — **OPEN, queued; the engine has it (G098), waits on a pin move** — an Area measurement tool
 
 Relayed by the coordinator: an Area measurement tool.

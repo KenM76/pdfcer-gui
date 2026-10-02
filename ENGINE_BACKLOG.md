@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **78 of 293** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `wanted` — a real gap — **79 of 294** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -101,6 +101,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **OCR model add-on folders** — drop-in `models/<name>/` with a `pdfcer-ocr-model.txt` manifest, `pdfcer_core::ocr::addons::discover_ocr_models`, manifest module `pdfcer_core::ocr::addon_manifest` (Pass 442.0) | **wanted — in the pin, not yet wired.** The Recognise text dialog's engine list should name every discovered model, bundled first, with its label, languages and licence, and a folder whose manifest fails its `sha256` should be listed as refused with the engine's reason rather than hidden. |
 | **Program-type OCR add-ons** — a folder may carry an executable engine; `pdfcer-ocr-host` (`OcrRunner`, `RunOptions`, `ProgramPolicy`), `check_runnable`, settings key `ocr_program_addons` | **wanted — after the pin.** The engine's notice of 2026-10-02 (`notice_2026-10-02_program_ocr_addons_and_ocr_host_crate.md`) gives the drop-down contract: list with `discover_ocr_models`, enable each by `check_runnable` and show its `Err` verbatim as the disabled reason, label by `kind()` and `program()`, run through `OcrRunner::load` then `recognize`. What it takes here: a pin move past the change, the `pdfcer-ocr-host` dependency with the same OCR features as `pdfcer-core`, the Recognise text dialog's recogniser list drawn from discovery, an off-canvas line naming the program a run started (`runner.as_program()`), a run stopped (not warned) on a `RunnerError` naming a changed file, and a setting for `ocr_program_addons`. It supersedes the Tesseract row above, which becomes one discovered add-on. |
 | **Decode GIF (87a/89a) on image import** — first frame plus transparency as `/SMask`; `ImportNotes::gif_frames_ignored` | **wanted — after the pin.** The engine answered G096 with this, past the pin. What it takes here: a pin move, then a dropped or pasted `.gif` inserts instead of being refused, and a non-zero `gif_frames_ignored` becomes an off-canvas note naming how many animation frames were left out. No new command: the existing insert-picture, drop and paste routes carry it. |
+| Paint tiling patterns (`PatternType 1`, §8.7.3 Table 75) for fills, strokes and text … | **wanted — after the pin.** Engine Pass 448.0, past the pin. What it takes here: a pin move, after which tiled fills, strokes and text paint on screen as they print, a placed SVG `<pattern>` fill included, because the canvas draws through `pdfcer-render`. The shell does not read `patterns_unpainted` yet; a pattern the renderer declines needs an off-canvas note from that count. |
 | **Author an Area ce dimension** — flag a closed Perimeter ce dimension to report its area, `vector::polygon_area` | **wanted — after the pin.** The engine answered G098 with this, past the pin; it is O280. What it takes here: a pin move, then Measure ▸ ce dimension ▸ Area beside Perimeter, picking a closed outline as Perimeter does, with the running area beside the pointer computed by the same `polygon_area` the label uses. The engine's two refusals (an open outline, under three corners) are shown in the engine's words. |
 | **Switch a closed ce dimension between Perimeter and Area display** — `EditSession::set_dimension_area` | **wanted — after the pin.** Part of O280: a selected closed ce dimension offers Show perimeter / Show area in its right-click menu and Properties, one undo entry each. |
 | **PaddleOCR-VL engine** — vision-language OCR compiled behind `ocr-vl`, weights as an add-on folder | **wanted — after the pin.** It reaches this shell through the OCR add-on discovery row above: once the pin moves and the Recognise text dialog lists discovered add-ons, a PaddleOCR-VL folder appears there like any other. What is owed beyond that row is its disclosure: results are one word per line, region-aligned and inferred, which the OCR report must say off-canvas. |
@@ -178,7 +179,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 293** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `blocked` — waiting on something named — **2 of 294** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -196,7 +197,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 293** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 294** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -207,7 +208,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 293** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `declined` — deliberately no surface — **16 of 294** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -249,7 +250,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **197 of 293** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **197 of 294** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

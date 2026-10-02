@@ -120,6 +120,12 @@ pub fn describe_window(_w: WindowHandle) -> String {
     "an unidentified window (this platform has no window inspection)".to_string()
 }
 
+/// Always `None` — there is no window manager to ask.
+#[must_use]
+pub fn dark_caption(_w: WindowHandle) -> Option<bool> {
+    None
+}
+
 pub fn pid_of_window(_w: WindowHandle) -> Option<u32> {
     None
 }

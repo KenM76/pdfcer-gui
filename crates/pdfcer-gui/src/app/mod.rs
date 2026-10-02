@@ -32,6 +32,8 @@ pub mod dispatch;
 pub mod dropped;
 /// **Where on the window a file was dropped**, which the toolkit discards.
 pub use pdfcer_gui_base::filedrag;
+/// Title bars in the effective light or dark mode.
+pub(crate) mod caption;
 pub mod files;
 /// The three Format ▸ Font controls the ribbon cannot draw itself — a face
 /// chooser, a size field and a colour swatch. See its header for why the

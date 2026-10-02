@@ -157,7 +157,9 @@ Settings) comes after step 9 and before the snapshot box (O272). O280 (an Area
 measurement, `measure.area`) comes after O279 P10 and before step 8; the engine
 answered G098 past the pin, so it starts with a pin move after P7.
 
-**Since that release, unpublished:** File ▸ Security ▸ *Add validation
+**Since that release, unpublished:** title bars follow the light or dark
+theme (O281, `app::caption::sync` over `native_window::set_dark_captions`;
+measure with `ui-verify --check title_bars_follow_the_theme`). File ▸ Security ▸ *Add validation
 evidence…* (PAdES B-LT, `add_validation_material`), driven by
 `validation_evidence_added_without_the_mouse`. **O258, the live link:**
 `pdfcer-remote.exe` drives the open window over a per-user named pipe, gated by

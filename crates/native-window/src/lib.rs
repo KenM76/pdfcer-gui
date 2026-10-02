@@ -143,6 +143,21 @@ pub fn alt_held() -> bool {
 }
 
 #[cfg(windows)]
+mod caption;
+
+/// **Title bars in the application's light or dark mode** — every top-level
+/// window of this process; answers how many took it.
+#[cfg(windows)]
+pub use caption::set_dark_captions;
+
+/// Off Windows no title bar is set.
+#[cfg(not(windows))]
+#[must_use]
+pub fn set_dark_captions(_dark: bool) -> usize {
+    0
+}
+
+#[cfg(windows)]
 mod accent;
 
 /// **The operator's accent colour** as `[r, g, b]`, for a theme that follows

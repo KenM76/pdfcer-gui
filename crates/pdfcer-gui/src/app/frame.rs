@@ -172,6 +172,7 @@ impl eframe::App for PdfcerApp {
             egui_shell::theme::Theme::new(preset)
         };
         theme.apply(&ctx);
+        crate::app::caption::sync(&ctx);
         // Step 0a-bis — publish the application's own colour roles.
         //
         // Beside `apply` rather than in `configure_context`, for `apply`'s own

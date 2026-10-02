@@ -694,6 +694,9 @@ pub mod deeper_rung_delete;
 /// scripted pointer's `drop` step.
 pub mod dropped_file;
 
+/// Every window's title bar follows the Dark and Quiet presets.
+pub mod caption_theme;
+
 /// **Enter makes a second line, and Ctrl+Enter finishes it** —
 /// `OPERATOR_REQUESTS.md` O127, defect 2.
 ///
