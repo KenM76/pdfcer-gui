@@ -5,9 +5,11 @@
 //! registered `PNG` format (lossless, carries alpha) over `CF_DIBV5` over
 //! `CF_DIB`. A picture that states no resolution is taken at 96 pixels per
 //! inch, the resolution screen captures are made at, so a pasted screenshot
-//! lands at the size it had on screen. [`rect_at`] is the placement rule.
+//! lands at the size it had on screen. [`rect_at`] is the placement rule for
+//! a picture and [`textbox`] for text.
 
 pub mod dib;
+pub mod textbox;
 
 use pdfcer_core::image_import::ImportedImage;
 use pdfcer_core::page_tree::Rect;

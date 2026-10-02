@@ -8,8 +8,6 @@ use std::borrow::Cow;
 pub enum OsPasteRefusal {
     /// A picture that could not be decoded; the field is the reason.
     Unreadable(String),
-    /// Text, with no text box open to receive it.
-    Text,
     /// Nothing a page can take.
     Nothing,
 }
@@ -22,11 +20,8 @@ impl OsPasteRefusal {
             Self::Unreadable(why) => Cow::Owned(format!(
                 "The clipboard holds a picture pdfcer could not read: {why}. Nothing was pasted."
             )),
-            Self::Text => Cow::Borrowed(
-                "The clipboard holds text from another program. To paste it, edit a text box on the page and paste there.",
-            ),
             Self::Nothing => Cow::Borrowed(
-                "The clipboard holds nothing pdfcer can paste onto a page. Copy a picture, or something in pdfcer, and paste again.",
+                "The clipboard holds nothing pdfcer can paste onto a page. Copy a picture, some text, or something in pdfcer, and paste again.",
             ),
         }
     }

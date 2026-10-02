@@ -202,10 +202,7 @@ impl Keys<'_> {
     /// holds no line break, so pasted lines join with spaces and say so; new
     /// text keeps them.
     fn paste(&mut self, pasted: &str) {
-        let text = pasted
-            .replace("\r\n", "\n")
-            .replace(['\r'], "\n")
-            .replace('\t', " "); // ui-text-exempt: a typed character, not prose
+        let text = pdfcer_gui_base::clippaste::textbox::normalise(pasted);
         let joined = matches!(self.draft.anchor, Anchor::Run { .. }) && text.contains('\n');
         let text = if joined {
             text.replace('\n', " ") // ui-text-exempt: a typed character, not prose

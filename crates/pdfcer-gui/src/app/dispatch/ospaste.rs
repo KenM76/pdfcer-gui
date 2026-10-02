@@ -1,17 +1,23 @@
 //! Pasting what another program copied: a picture becomes page content at
-//! the pointer.
+//! the pointer, and text becomes a text box whose top-left corner is the
+//! pointer.
 //!
 //! Contract: [`newer`] decides whether the paste reads the OS clipboard at
 //! all (no pdfcer clip, or one older than the clipboard's last write);
-//! [`paste`] places what it read. A picture lands at its natural size,
-//! centred on the pointer (or the view centre), kept wholly on the page, as
-//! one undoable edit.
+//! [`paste`] places what it read as one undoable edit. A picture lands at its
+//! natural size, centred on the pointer (or the view centre), kept wholly on
+//! the page. Text becomes page text in a mode that edits content and a
+//! `/FreeText` comment in one that only authors markup;
+//! `clippaste::textbox` holds the geometry.
 
 use crate::app::PdfcerApp;
 use crate::app::actions::Action;
 use crate::app::state::Status;
+use crate::text::clipboard::ModeRefusal;
 use crate::text::ospaste::OsPasteRefusal;
-use pdfcer_gui_base::clippaste::{self, Incoming};
+use pdfcer_core::image_import::ImportedImage;
+use pdfcer_core::page_tree::Rect;
+use pdfcer_gui_base::clippaste::{self, Incoming, textbox};
 
 /// What the OS clipboard holds, when it is the content a paste should take.
 #[must_use]
@@ -34,7 +40,7 @@ fn read() -> Incoming {
     clippaste::read()
 }
 
-/// Paste `incoming` onto the current page.
+/// Paste `incoming` onto the page under the pointer, or the viewed page.
 pub fn paste(
     app: &mut PdfcerApp,
     ctx: &egui::Context,
@@ -42,30 +48,34 @@ pub fn paste(
     incoming: Incoming,
     actions: &mut Vec<Action>,
 ) {
-    let Status::Open(doc) = &app.status else {
-        return;
-    };
-    let (image, format) = match incoming {
-        Incoming::Image { image, format } => (image, format),
-        Incoming::Unreadable(why) => return decline("unreadable", OsPasteRefusal::Unreadable(why)),
-        Incoming::Text(_) => return decline("text", OsPasteRefusal::Text),
-        Incoming::Nothing => return decline("nothing", OsPasteRefusal::Nothing),
-    };
-    if !app.capabilities().edit_content {
-        crate::diag::trace(|| format!("command-declined id={id} reason=mode-cannot-paste-here"));
-        crate::app::status::decline::record_mode_refusal(
-            crate::text::clipboard::ModeRefusal::PastePicture,
-        );
-        return;
+    match incoming {
+        Incoming::Image { image, format } => picture(app, ctx, id, *image, format, actions),
+        Incoming::Text(text) => words(app, ctx, id, &text, actions),
+        Incoming::Unreadable(why) => decline("unreadable", OsPasteRefusal::Unreadable(why)),
+        Incoming::Nothing => decline("nothing", OsPasteRefusal::Nothing),
     }
+}
+
+fn target(app: &PdfcerApp, ctx: &egui::Context) -> Option<(usize, (f64, f64), Rect)> {
+    target_at(app, ctx, ctx.pointer_latest_pos())
+}
+
+/// The page to place on, the point on it, and its crop box, for window point
+/// `at`: its page and position, else the viewed page's centre.
+pub(crate) fn target_at(
+    app: &PdfcerApp,
+    ctx: &egui::Context,
+    at: Option<egui::Pos2>,
+) -> Option<(usize, (f64, f64), Rect)> {
+    let Status::Open(doc) = &app.status else {
+        return None;
+    };
     let frame = crate::canvas::zoom::last_frame(ctx);
     let page = frame.as_ref().map_or(doc.view.page_index, |f| f.page);
-    let Some(sheet) = doc.pages.get(page) else {
-        return;
-    };
+    let sheet = doc.pages.get(page)?;
     let at = frame
         .and_then(|f| {
-            let canvas = crate::canvas::zoom::anchor_point(ctx.pointer_latest_pos(), &f);
+            let canvas = crate::canvas::zoom::anchor_point(at, &f);
             crate::viewer::canvas_to_pdf_space(canvas, sheet)
         })
         .map_or_else(
@@ -75,23 +85,91 @@ pub fn paste(
             },
             |p| (f64::from(p.x), f64::from(p.y)),
         );
-    let rect = clippaste::rect_at(at, image.natural_size_pt(), sheet.crop_box);
-    crate::diag::trace(|| {
-        format!(
-            "clip-pasted source=os kind=image format={format} page={page} llx={:.2} lly={:.2} \
-             urx={:.2} ury={:.2}",
-            rect.llx, rect.lly, rect.urx, rect.ury
-        )
-    });
+    Some((page, at, sheet.crop_box))
+}
+
+fn picture(
+    app: &PdfcerApp,
+    ctx: &egui::Context,
+    id: &str,
+    image: ImportedImage,
+    format: &str,
+    actions: &mut Vec<Action>,
+) {
+    if !app.capabilities().edit_content {
+        return refuse(id, ModeRefusal::PastePicture);
+    }
+    let Some((page, at, crop)) = target(app, ctx) else {
+        return;
+    };
+    let rect = clippaste::rect_at(at, image.natural_size_pt(), crop);
+    // ui-text-exempt: diagnostic trace fields, never displayed
+    pasted(&format!("kind=image format={format}"), page, rect);
     actions.push(Action::InsertImage {
         page,
         rect,
         fit: pdfcer_core::edit::ImageFit::Contain,
-        image: std::sync::Arc::new(*image),
+        image: std::sync::Arc::new(image),
     });
 }
 
+/// Text as page text where content can change, else as a text-box comment.
+fn words(app: &PdfcerApp, ctx: &egui::Context, id: &str, text: &str, actions: &mut Vec<Action>) {
+    let caps = app.capabilities();
+    if !caps.edit_content && !caps.author_markup {
+        return refuse(id, ModeRefusal::PasteText);
+    }
+    let Some((page, at, crop)) = target(app, ctx) else {
+        return;
+    };
+    let text = textbox::normalise(text);
+    if caps.edit_content {
+        let rect = textbox::content_box(at, crop);
+        // ui-text-exempt: diagnostic trace fields, never displayed
+        pasted("kind=text as=content", page, rect);
+        actions.push(Action::CommitAddText {
+            page,
+            origin: (rect.llx, rect.lly),
+            text,
+            pen: crate::canvas::textedit::pen::read(ctx),
+            wrap: Some((rect.llx, rect.lly, rect.urx, rect.ury)),
+        });
+        return;
+    }
+    let size = pdfcer_gui_base::wordmarkup::TEXT_SIZE_PT;
+    let rect = textbox::comment_box(at, &text, size, crop);
+    // ui-text-exempt: diagnostic trace fields, never displayed
+    pasted("kind=text as=comment", page, rect);
+    actions.push(Action::CommitTextAnnot {
+        page,
+        kind: crate::canvas::textannot::TextAnnotKind::TextBox,
+        rect,
+        text,
+        stamp: pdfcer_core::annot_author::StampName::default(),
+        stamp_size: crate::canvas::textannot::DEFAULT_STAMP_SIZE,
+        icon: pdfcer_core::annot_author::StickyIcon::default(),
+        custom: None,
+    });
+}
+
+fn pasted(what: &str, page: usize, rect: Rect) {
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!(
+            "clip-pasted source=os {what} page={page} llx={:.2} lly={:.2} urx={:.2} ury={:.2}",
+            rect.llx, rect.lly, rect.urx, rect.ury
+        )
+    });
+}
+
+fn refuse(id: &str, why: ModeRefusal) {
+    // ui-text-exempt: diagnostic trace, never displayed in the UI
+    crate::diag::trace(|| format!("command-declined id={id} reason=mode-cannot-paste-here"));
+    crate::app::status::decline::record_mode_refusal(why);
+}
+
 fn decline(kind: &str, why: OsPasteRefusal) {
+    // ui-text-exempt: diagnostic trace, never displayed in the UI
     crate::diag::trace(|| format!("clip-paste-declined source=os kind={kind}"));
     crate::app::status::decline::record_os_paste(why);
 }

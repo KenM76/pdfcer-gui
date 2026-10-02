@@ -60,18 +60,19 @@ signatures and O268's theme work. The engine has commits past v0.72.0; take
 them only for a fix a step needs, since the next release follows the next
 engine tag. In order:
 
-**O279, paste from another program: plan steps P0 to P2 built and driven**
-(`docs/plans/PASTEIN_PLAN.md`; work P3 to P7 and P10 in order, P11 deferred).
-A picture on the OS clipboard pastes at the pointer in Edit
-(`app::dispatch::ospaste`), and `canvas::clipseq` makes a paste after an
+**O279, paste from another program: plan steps P0 to P3 built and driven**
+(`docs/plans/PASTEIN_PLAN.md`; work P4 to P7 and P10 in order, P11 deferred).
+A picture on the OS clipboard pastes at the pointer in Edit, and text as page
+text in Edit or a comment in Review (`app::dispatch::ospaste`), and `canvas::clipseq` makes a paste after an
 outside copy take that copy over an older pdfcer clip. `native_window::pastechord` hooks the main window so `Ctrl+V` reaches
 `app::keyboard::commands` when egui drops it (no text on the clipboard).
 Measure: `ui-verify --no-input --check a_picture_copied_in_another_program_pastes_at_the_pointer
---check ctrl_v_pastes_a_picture_when_the_clipboard_holds_no_text`; the second
+--check ctrl_v_pastes_a_picture_when_the_clipboard_holds_no_text
+--check text_copied_in_another_program_pastes_as_a_text_box_at_the_pointer`; the second
 posts key messages to the launched window only.
 The check writes the real clipboard; `ClipGuard` snapshots it and restores it
-only if nothing else wrote it meanwhile. Next: P3, text from another program
-as a text box at the pointer.
+only if nothing else wrote it meanwhile. Next: P4, a dropped picture lands
+at the drop point with no dialog.
 
 **O263, Align and Distribute: all four stages built and driven** (Align,
 Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting

@@ -309,6 +309,9 @@ pub enum ModeRefusal {
     /// `edit.paste` with **another program's picture** on the clipboard, in a
     /// mode that does not author page content.
     PastePicture,
+    /// `edit.paste` with **another program's text** on the clipboard, in a mode
+    /// that adds nothing to the page.
+    PasteText,
     /// `edit.cut` over **page content**, in a mode that does not change it.
     CutContent,
     /// `edit.cut` over a **comment or markup**, in a mode that authors none.
@@ -353,6 +356,9 @@ impl ModeRefusal {
             }
             Self::PastePicture => {
                 "The clipboard holds a picture from another program, and this mode does not change what is on the page. Switch to Edit to paste it."
+            }
+            Self::PasteText => {
+                "The clipboard holds text from another program, and this mode adds nothing to the page. Switch to Edit to paste it as page text, or to Review to paste it as a comment."
             }
             Self::CutContent => {
                 "That is page content, and this mode does not change what is on the page. Nothing has been removed — switch to Edit to cut it."
@@ -468,6 +474,8 @@ mod tests {
             (ModeRefusal::PasteMarkup, review),
             (ModeRefusal::PasteField, edit),
             (ModeRefusal::PastePicture, edit),
+            (ModeRefusal::PasteText, edit),
+            (ModeRefusal::PasteText, review),
             (ModeRefusal::CutContent, edit),
             (ModeRefusal::CutMarkup, review),
             (ModeRefusal::CutField, edit),
@@ -490,6 +498,7 @@ mod tests {
             ModeRefusal::PasteMarkup,
             ModeRefusal::PasteField,
             ModeRefusal::PastePicture,
+            ModeRefusal::PasteText,
             ModeRefusal::CutContent,
             ModeRefusal::CutMarkup,
             ModeRefusal::CutField,

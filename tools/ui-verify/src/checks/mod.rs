@@ -1056,6 +1056,8 @@ pub mod model_view_window;
 pub mod os_image_paste;
 /// Ctrl+V pastes another program's picture when the clipboard holds no text.
 pub mod paste_chord;
+/// Text another program copied pastes as a text box at the pointer.
+pub mod paste_text;
 /// Every kind of form field loses its border through Properties' No border.
 pub mod widget_no_border;
 

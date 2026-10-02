@@ -279,7 +279,6 @@ fn no_two_declines_share_a_sentence() {
         Declined::OsPaste(crate::text::ospaste::OsPasteRefusal::Unreadable(
             "x".to_owned(),
         )),
-        Declined::OsPaste(crate::text::ospaste::OsPasteRefusal::Text),
         Declined::OsPaste(crate::text::ospaste::OsPasteRefusal::Nothing),
     ];
     for (i, a) in all.iter().enumerate() {
@@ -544,13 +543,14 @@ fn os_picture() -> pdfcer_gui_base::clippaste::Incoming {
     }
 }
 
-/// **Another program's picture is refused outside Edit with its own
-/// sentence**, and another program's text is declined, not dropped.
+/// **Another program's picture is refused outside Edit, and its text in
+/// Read, each with its own sentence**; text pastes as page text in Edit and
+/// as a comment in Review.
 #[test]
 fn an_os_paste_the_app_cannot_place_reaches_the_bar() {
+    use crate::app::actions::Action;
     use crate::app::dispatch::ospaste::tests_fake;
     use crate::text::clipboard::ModeRefusal;
-    use crate::text::ospaste::OsPasteRefusal;
 
     let ctx = Context::default();
     let mut app = crate::app::tests::opened();
@@ -566,7 +566,6 @@ fn an_os_paste_the_app_cannot_place_reaches_the_bar() {
         Some(Declined::ClipboardMode(ModeRefusal::PastePicture))
     );
 
-    app.dispatch_command(&ctx, "mode.edit", &mut Vec::new());
     retire();
     tests_fake::set(pdfcer_gui_base::clippaste::Incoming::Text("hi".into()));
     let mut actions = Vec::new();
@@ -576,9 +575,37 @@ fn an_os_paste_the_app_cannot_place_reaches_the_bar() {
     };
     assert_eq!(
         live(&ctx, doc),
-        Some(Declined::OsPaste(OsPasteRefusal::Text))
+        Some(Declined::ClipboardMode(ModeRefusal::PasteText))
     );
     assert!(actions.is_empty(), "a declined paste edits nothing");
+
+    for (mode, content) in [("mode.edit", true), ("mode.review", false)] {
+        app.dispatch_command(&ctx, mode, &mut Vec::new());
+        tests_fake::set(pdfcer_gui_base::clippaste::Incoming::Text(
+            "a
+b"
+            .into(),
+        ));
+        let mut actions = Vec::new();
+        app.dispatch_command(&ctx, "edit.paste", &mut actions);
+        match actions.as_slice() {
+            [Action::CommitAddText { text, wrap, .. }] if content => {
+                assert_eq!(
+                    text,
+                    "a
+b",
+                    "line breaks are normalised"
+                );
+                assert!(wrap.is_some(), "pasted page text is boxed");
+            }
+            [Action::CommitTextAnnot { text, .. }] if !content => assert_eq!(
+                text,
+                "a
+b"
+            ),
+            other => panic!("{mode}: pasted text became {other:?}"),
+        }
+    }
 }
 
 // =======================================================================

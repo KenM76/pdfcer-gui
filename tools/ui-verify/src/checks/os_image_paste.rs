@@ -9,8 +9,8 @@
 //! Oracles are the app's `clip-pasted source=os` lines: a 64×32 bitmap stating
 //! 3780 pixels per metre is 48×24 pt and must be centred within
 //! [`TOLERANCE_PT`] of the pointer; a second paste elsewhere must land
-//! elsewhere; Ctrl+Z must trace `undo-applied`; text alone must trace
-//! `clip-paste-declined kind=text` and place nothing. Then pdfcer copies the
+//! elsewhere; Ctrl+Z must trace `undo-applied`; text alone must paste as text
+//! and add no picture. Then pdfcer copies the
 //! selection: a paste must be pdfcer's own (`clipboard-paste kind=selection`),
 //! and after another program's 32×16 bitmap lands, the next paste must be that
 //! bitmap at 24×12 pt.
@@ -28,7 +28,6 @@ const OFFSCREEN: &str = "-4200,-4200,1400,900";
 const INVOKE: &str = "mode.edit";
 const DOC: &str = "D:/Dev/pdfcer/fixtures/synthetic/pageops/four-pages.pdf";
 pub(super) const PASTED: &str = "clip-pasted";
-const DECLINED: &str = "clip-paste-declined";
 const OWN_PASTE: &str = "clipboard-paste";
 const OWN_COPY: &str = "clipboard-copy";
 const UNDONE: &str = "undo-applied";
@@ -162,7 +161,7 @@ pub(super) fn dib(width: u32, height: u32) -> Vec<u8> {
     b
 }
 
-fn utf16(text: &str) -> Vec<u8> {
+pub(super) fn utf16(text: &str) -> Vec<u8> {
     text.encode_utf16()
         .chain(std::iter::once(0))
         .flat_map(u16::to_le_bytes)
@@ -239,7 +238,7 @@ fn drive(
 ) -> Result<Option<String>> {
     let failure = match place_twice(ctx, report, session, pointer, guard)? {
         Some(failure) => Some(failure),
-        None => match text_declines(ctx, session, pointer, guard)? {
+        None => match text_is_no_picture(ctx, session, pointer, guard)? {
             Some(failure) => Some(failure),
             None => newer_wins(ctx, report, session, pointer, guard)?,
         },
@@ -286,29 +285,29 @@ fn place_twice(
     Ok((count(session, UNDONE)? == undos).then(|| "Ctrl+Z did not undo the paste.".to_owned()))
 }
 
-/// Text alone on the clipboard places nothing and says why.
-fn text_declines(
+/// Text alone on the clipboard pastes as text, never as a picture.
+fn text_is_no_picture(
     ctx: &CheckContext,
     session: &Session,
     pointer: &ScriptedPointer,
     guard: &mut ClipGuard,
 ) -> Result<Option<String>> {
     guard.set(&[(sys::CF_UNICODETEXT, utf16("plain words"))])?;
-    let pasted = count(session, PASTED)?;
+    let (pasted, added) = (count(session, PASTED)?, count(session, ADDED)?);
     pointer.hover(session, at(ctx, session, FIRST)?)?;
     pointer.paste(session, None, "plain words")?;
     session.settle(20);
-    let trace = session.trace()?;
-    if trace.events(PASTED).count() != pasted {
+    if count(session, ADDED)? != added {
         return Ok(Some(
             "text on the clipboard was placed as a picture.".to_owned(),
         ));
     }
-    let declined = trace
-        .events(DECLINED)
-        .last()
+    let trace = session.trace()?;
+    let as_text = trace
+        .events(PASTED)
+        .nth(pasted)
         .is_some_and(|l| l.get("kind") == Some("text"));
-    Ok((!declined).then(|| format!("pasting text traced no `{DECLINED} kind=text` line.")))
+    Ok((!as_text).then(|| format!("pasting text traced no `{PASTED} kind=text` line.")))
 }
 
 /// pdfcer's clip pastes until another program copies; then that copy does.
