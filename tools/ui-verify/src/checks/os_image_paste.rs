@@ -27,7 +27,7 @@ use crate::sys;
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 const INVOKE: &str = "mode.edit";
 const DOC: &str = "D:/Dev/pdfcer/fixtures/synthetic/pageops/four-pages.pdf";
-const PASTED: &str = "clip-pasted";
+pub(super) const PASTED: &str = "clip-pasted";
 const DECLINED: &str = "clip-paste-declined";
 const OWN_PASTE: &str = "clipboard-paste";
 const OWN_COPY: &str = "clipboard-copy";
@@ -37,7 +37,7 @@ const ADDED: &str = "add-image";
 const TOLERANCE_PT: f64 = 2.0;
 /// 3780 pixels per metre is 96 per inch, so a pixel is three quarters of a point.
 const PPM: u32 = 3780;
-const FIRST: (f64, f64) = (200.0, 500.0);
+pub(super) const FIRST: (f64, f64) = (200.0, 500.0);
 const SECOND: (f64, f64) = (400.0, 250.0);
 
 /// See the module documentation.
@@ -56,7 +56,7 @@ impl Check for AnOsPicturePastesAtThePointer {
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         let mut report = CheckReport::new(self.name(), self.defect());
         let mut guard = ClipGuard::take();
-        let driven = launch(ctx, &mut report)
+        let driven = launch(ctx, &mut report, "os-image-paste")
             .and_then(|(session, pointer)| drive(ctx, &mut report, &session, &pointer, &mut guard));
         report.note(guard.release());
         match driven {
@@ -69,13 +69,13 @@ impl Check for AnOsPicturePastesAtThePointer {
 
 /// The clipboard as it was before the check, put back afterwards unless
 /// someone other than the check or the app wrote it in between.
-struct ClipGuard {
+pub(super) struct ClipGuard {
     saved: Vec<(u32, Vec<u8>)>,
     last_ours: u32,
 }
 
 impl ClipGuard {
-    fn take() -> Self {
+    pub(super) fn take() -> Self {
         Self {
             saved: sys::snapshot(),
             last_ours: sys::clipboard_sequence(),
@@ -83,7 +83,7 @@ impl ClipGuard {
     }
 
     /// Write `items`, or fail the step.
-    fn set(&mut self, items: &[(u32, Vec<u8>)]) -> Result<()> {
+    pub(super) fn set(&mut self, items: &[(u32, Vec<u8>)]) -> Result<()> {
         if !sys::set_clipboard(items) {
             return Err(Error::new("the harness could not write the clipboard."));
         }
@@ -96,7 +96,7 @@ impl ClipGuard {
         self.last_ours = sys::clipboard_sequence();
     }
 
-    fn release(&self) -> String {
+    pub(super) fn release(&self) -> String {
         if sys::clipboard_sequence() != self.last_ours {
             return "clipboard left alone: another program wrote it during the check".to_owned();
         }
@@ -108,16 +108,20 @@ impl ClipGuard {
     }
 }
 
-fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, ScriptedPointer)> {
+pub(super) fn launch(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    stem: &str,
+) -> Result<(Session, ScriptedPointer)> {
     let exe = ctx
         .resolve_exe()
         .ok_or_else(|| Error::new("no binary to drive. Pass --exe, or build the default."))?;
     let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
         Error::new("the profile has no viewport variable to place the window off the desktop.")
     })?;
-    let doc = ctx.out("os-image-paste-source.pdf");
+    let doc = ctx.out(&format!("{stem}-source.pdf"));
     std::fs::copy(DOC, &doc).map_err(|e| Error::new(format!("copying {DOC}: {e}")))?;
-    let mut spec = LaunchSpec::new(&exe, ctx.out("os-image-paste.trace.txt"));
+    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(doc);
     for (k, v) in [
         (ctx.profile.diag_env.0, ctx.profile.diag_env.1),
@@ -130,7 +134,7 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, Scri
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("os-image-paste.pointer.txt"))?;
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out(&format!("{stem}.pointer.txt")))?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.artifact(pointer.path().to_path_buf());
@@ -139,7 +143,7 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, Scri
 }
 
 /// A `width`×`height` 32-bit `BI_BITFIELDS` bitmap at [`PPM`], opaque teal.
-fn dib(width: u32, height: u32) -> Vec<u8> {
+pub(super) fn dib(width: u32, height: u32) -> Vec<u8> {
     let mut b = Vec::new();
     for v in [40u32, width, height] {
         b.extend(v.to_le_bytes());
@@ -165,12 +169,12 @@ fn utf16(text: &str) -> Vec<u8> {
         .collect()
 }
 
-fn count(session: &Session, name: &str) -> Result<usize> {
+pub(super) fn count(session: &Session, name: &str) -> Result<usize> {
     Ok(session.trace()?.events(name).count())
 }
 
 /// Where `p` on page 0 is in the window, measured from the latest frame.
-fn at(ctx: &CheckContext, session: &Session, p: (f64, f64)) -> Result<WindowPoint> {
+pub(super) fn at(ctx: &CheckContext, session: &Session, p: (f64, f64)) -> Result<WindowPoint> {
     let pdf = std::path::Path::new(DOC);
     let geom = crate::fixture::page_geometry(pdf)
         .ok_or_else(|| Error::new(format!("{DOC} has no page geometry the harness reads.")))?;
@@ -191,25 +195,25 @@ fn paste_at(
     pointer.paste(session, None, "x")?;
     session.settle(20);
     let trace = session.trace()?;
-    let Some(line) = trace.events(PASTED).nth(before) else {
-        return Ok(None);
-    };
+    Ok(trace.events(PASTED).nth(before).and_then(rect))
+}
+
+/// A `clip-pasted` line's rectangle as `[llx, lly, urx, ury]`.
+pub(super) fn rect(line: &crate::trace::TraceLine) -> Option<[f64; 4]> {
     let field = |k| line.get(k).and_then(|v| v.parse::<f64>().ok());
-    Ok(
-        match (field("llx"), field("lly"), field("urx"), field("ury")) {
-            (Some(a), Some(b), Some(c), Some(d)) => Some([a, b, c, d]),
-            _ => None,
-        },
-    )
+    match (field("llx"), field("lly"), field("urx"), field("ury")) {
+        (Some(a), Some(b), Some(c), Some(d)) => Some([a, b, c, d]),
+        _ => None,
+    }
 }
 
 /// A rectangle as `llx lly urx ury`.
-fn show(r: [f64; 4]) -> String {
+pub(super) fn show(r: [f64; 4]) -> String {
     format!("{:.2} {:.2} {:.2} {:.2}", r[0], r[1], r[2], r[3])
 }
 
 /// `r` is `size` points and centred within the tolerance of `p`.
-fn lands(r: [f64; 4], p: (f64, f64), size: (f64, f64)) -> Option<String> {
+pub(super) fn lands(r: [f64; 4], p: (f64, f64), size: (f64, f64)) -> Option<String> {
     let (w, h) = (r[2] - r[0], r[3] - r[1]);
     let (cx, cy) = ((r[0] + r[2]) / 2.0, (r[1] + r[3]) / 2.0);
     if (w - size.0).abs() > 0.5 || (h - size.1).abs() > 0.5 {

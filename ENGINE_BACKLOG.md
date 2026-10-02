@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **70 of 285** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `wanted` — a real gap — **71 of 286** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -99,6 +99,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Take a style axis OFF** — `StyleTarget` (per-axis on, off or kept) on `FormatRequest::style`, `StyleRung::SynthesisRemoved`, `FormatError::NoFaceWithoutStyle`, module `pdfcer_core::text_edit::format::style_target`, `StyleLadder::unsynthesised` (our `G086`, Pass 441.0) | **wanted — in the pin, not yet wired.** Ctrl+B and Ctrl+I on a run that is already bold or italic should take the style off, and today the shell can only add one. The pressed ribbon toggle is to send the off state for its axis, and the status line to word the ladder's `removed` rung and `unsynthesised`. |
 | **`GlyphProvenance` carries line width and render mode** — `GlyphProvenance::line_width`, `render_mode()`, `text_edit::synth::detect_at` with `synth::shear_of`, `synth::unshear` and `synth::MIN_DETECT_STROKE_RATIO` (our `G087`, Pass 441.0) | **wanted — in the pin, not yet wired.** <!--namesake:GlyphProvenance--> The shell reads provenance's font, matrix and text state today, not the new fields. <!--namesake:line_width--> Its other `line_width`s are markup stroke widths. <!--namesake:render_mode--> `weight::at` reads the text state's `render_mode` operand, not the new method. `canvas::textedit::weight::at` decides whether Bold and Italic show pressed from the font name and the render mode, passing a line width of 0 because provenance carries none, so a synthetic bold drawn by widening the stroke is judged without its width. `detect_at` reads the width from the glyph and replaces that call. |
 | **OCR model add-on folders** — drop-in `models/<name>/` with a `pdfcer-ocr-model.txt` manifest, `pdfcer_core::ocr::addons::discover_ocr_models`, manifest module `pdfcer_core::ocr::addon_manifest` (Pass 442.0) | **wanted — in the pin, not yet wired.** The Recognise text dialog's engine list should name every discovered model, bundled first, with its label, languages and licence, and a folder whose manifest fails its `sha256` should be listed as refused with the engine's reason rather than hidden. |
+| **Program-type OCR add-ons** — a folder may carry an executable engine; `pdfcer-ocr-host` (`OcrRunner`, `RunOptions`, `ProgramPolicy`), `check_runnable`, settings key `ocr_program_addons` | **wanted — after the pin.** The engine's notice of 2026-10-02 (`notice_2026-10-02_program_ocr_addons_and_ocr_host_crate.md`) gives the drop-down contract: list with `discover_ocr_models`, enable each by `check_runnable` and show its `Err` verbatim as the disabled reason, label by `kind()` and `program()`, run through `OcrRunner::load` then `recognize`. What it takes here: a pin move past the change, the `pdfcer-ocr-host` dependency with the same OCR features as `pdfcer-core`, the Recognise text dialog's recogniser list drawn from discovery, an off-canvas line naming the program a run started (`runner.as_program()`), a run stopped (not warned) on a `RunnerError` naming a changed file, and a setting for `ocr_program_addons`. It supersedes the Tesseract row above, which becomes one discovered add-on. |
 | **Replace an existing 3D annotation's poster** — `EditSession::set_3d_poster`, undo kind `CommandKind::SetThreeDPoster` (our `G092`, Pass 440.0) | **wanted — in the pin, not yet wired.** The 3D annotation's context menu gains *Set poster from image…*, and *Use the model's view*; one undo entry each. |
 
 ### Vector objects (Inkscape-style editing)
@@ -170,7 +171,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 285** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `blocked` — waiting on something named — **2 of 286** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -188,7 +189,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 285** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 286** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -199,7 +200,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 285** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `declined` — deliberately no surface — **16 of 286** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -241,7 +242,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **197 of 285** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **197 of 286** <!-- counted by tools/walk-engine-backlog.py, 2026-10-02; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

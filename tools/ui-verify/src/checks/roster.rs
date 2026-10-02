@@ -1042,6 +1042,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(model_view_window::TheModelViewerZoomsAtThePointerAndFillsTheScreen),
         Box::new(model_poster::AnInsertedModelShowsItsPicture),
         Box::new(os_image_paste::AnOsPicturePastesAtThePointer),
+        Box::new(paste_chord::CtrlVPastesAPicture),
         Box::new(widget_no_border::EveryFieldKindCanLoseItsBorder),
         Box::new(comment_note::ANoteCanBeWrittenOntoAShape),
         // Its opposite number: `comment_note` proves a

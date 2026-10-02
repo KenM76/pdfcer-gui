@@ -33,7 +33,7 @@ use crate::geom::PixRect;
 pub struct WindowHandle(isize);
 
 impl WindowHandle {
-    fn hwnd(self) -> HWND {
+    pub(super) fn hwnd(self) -> HWND {
         self.0 as HWND
     }
 

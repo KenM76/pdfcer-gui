@@ -236,6 +236,9 @@ fn clipboard_chord(ev: &egui::Event, shift: bool) -> Option<&'static str> {
 }
 
 pub fn commands(ctx: &Context, keymap: Option<&Keymap>) -> Vec<String> {
+    // Taken before any early return, so a chord seen while typing is dropped
+    // rather than fired later.
+    let hooked = native_window::pastechord::take();
     let Some(keymap) = keymap else {
         return Vec::new();
     };
@@ -299,6 +302,7 @@ pub fn commands(ctx: &Context, keymap: Option<&Keymap>) -> Vec<String> {
     let (events, shift_held) = ctx.input(|i| (i.events.clone(), i.modifiers.shift));
 
     let mut out = Vec::new();
+    let mut pasted = false;
     for ev in events {
         // CTRL+C, CTRL+X AND CTRL+V NEVER ARRIVE AS KEY EVENTS, AND THAT IS
         // WHY THEY HAVE NEVER WORKED.
@@ -336,15 +340,8 @@ pub fn commands(ctx: &Context, keymap: Option<&Keymap>) -> Vec<String> {
         // entirely still works — which is R8's whole posture: the registry
         // decides, not this file.
         if let Some(chord) = clipboard_chord(&ev, shift_held) {
-            for (bound, id) in keymap.iter() {
-                if bound.eq_ignore_ascii_case(chord) {
-                    crate::diag::trace(|| {
-                        // ui-text-exempt: diagnostic trace, never displayed.
-                        format!("chord-command chord={chord:?} id={id} via=clipboard-event")
-                    });
-                    out.push(id.to_owned());
-                }
-            }
+            pasted |= matches!(ev, egui::Event::Paste(_));
+            bound_to(keymap, chord, "clipboard-event", &mut out);
             continue;
         }
         let egui::Event::Key {
@@ -405,7 +402,32 @@ pub fn commands(ctx: &Context, keymap: Option<&Keymap>) -> Vec<String> {
             out.push(id.to_owned());
         }
     }
+    if !pasted && let Some(chord) = hooked {
+        bound_to(keymap, hook_chord(chord), "paste-hook", &mut out);
+    }
     out
+}
+
+/// The keymap spelling of a paste chord the window saw.
+fn hook_chord(chord: native_window::pastechord::PasteChord) -> &'static str {
+    match chord {
+        // ui-text-exempt: keymap chord spellings, never displayed.
+        native_window::pastechord::PasteChord::Paste => "Ctrl+V",
+        native_window::pastechord::PasteChord::PasteShifted => "Ctrl+Shift+V",
+    }
+}
+
+/// Push every command `chord` is bound to, tracing which route raised it.
+fn bound_to(keymap: &Keymap, chord: &str, via: &str, out: &mut Vec<String>) {
+    for (bound, id) in keymap.iter() {
+        if bound.eq_ignore_ascii_case(chord) {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!("chord-command chord={chord:?} id={id} via={via}")
+            });
+            out.push(id.to_owned());
+        }
+    }
 }
 
 #[cfg(test)]

@@ -221,3 +221,13 @@ pub const fn desktop_bounds() -> (i32, i32, i32, i32) {
 
 /// Does nothing.
 pub fn type_char(_ch: char) {}
+
+/// Posts nothing.
+pub fn post_key(_w: WindowHandle, _vk: u16, _down: bool) -> bool {
+    false
+}
+
+/// Posts nothing.
+pub fn post_chord(_w: WindowHandle, _modifiers: &[u16], _vk: u16) -> bool {
+    false
+}

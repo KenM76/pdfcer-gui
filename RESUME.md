@@ -60,15 +60,18 @@ signatures and O268's theme work. The engine has commits past v0.72.0; take
 them only for a fix a step needs, since the next release follows the next
 engine tag. In order:
 
-**O279, paste from another program: plan steps P0 and P1 built and driven**
-(`docs/plans/PASTEIN_PLAN.md`; work P2 to P7 and P10 in order, P11 deferred).
+**O279, paste from another program: plan steps P0 to P2 built and driven**
+(`docs/plans/PASTEIN_PLAN.md`; work P3 to P7 and P10 in order, P11 deferred).
 A picture on the OS clipboard pastes at the pointer in Edit
 (`app::dispatch::ospaste`), and `canvas::clipseq` makes a paste after an
-outside copy take that copy over an older pdfcer clip. Measure:
-`ui-verify --no-input --check a_picture_copied_in_another_program_pastes_at_the_pointer`.
+outside copy take that copy over an older pdfcer clip. `native_window::pastechord` hooks the main window so `Ctrl+V` reaches
+`app::keyboard::commands` when egui drops it (no text on the clipboard).
+Measure: `ui-verify --no-input --check a_picture_copied_in_another_program_pastes_at_the_pointer
+--check ctrl_v_pastes_a_picture_when_the_clipboard_holds_no_text`; the second
+posts key messages to the launched window only.
 The check writes the real clipboard; `ClipGuard` snapshots it and restores it
-only if nothing else wrote it meanwhile. Next: P2, `Ctrl+V` reaching the app
-when egui swallows it for a non-text clipboard.
+only if nothing else wrote it meanwhile. Next: P3, text from another program
+as a text box at the pointer.
 
 **O263, Align and Distribute: all four stages built and driven** (Align,
 Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting

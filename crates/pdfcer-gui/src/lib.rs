@@ -162,6 +162,9 @@ pub fn run(initial: Option<PathBuf>) -> eframe::Result {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 format!("window-handle present={}", app.window.is_some())
             });
+            let hooked = app.window.is_some_and(native_window::pastechord::install);
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            diag::trace(|| format!("paste-hook installed={hooked}"));
             //
             // `app::frame`'s step 0b applies it every frame and would reach the
             // same value on frame 2, so this is not what makes the preference

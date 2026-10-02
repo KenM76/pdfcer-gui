@@ -10,8 +10,9 @@
 //! where the toolkit exposes no way to say what needs saying.
 //!
 //! There are three, and the rest of this header is about the first: **a dialog
-//! must be OWNED by the window it belongs to.** [`cursor_position`] and
-//! [`clipboard`] carry their own arguments where they are declared.
+//! must be OWNED by the window it belongs to.** [`cursor_position`],
+//! [`clipboard`] and [`pastechord`] carry their own arguments where they are
+//! declared.
 //!
 //! ## Why ownership, and why it is not cosmetic
 //!
@@ -87,6 +88,35 @@ mod win32;
 /// the crate header says about hand-written declarations applies to it.
 #[cfg(windows)]
 pub mod clipboard;
+
+/// The paste chord the toolkit drops when the clipboard holds no text.
+#[cfg(windows)]
+pub mod pastechord;
+
+/// Off Windows nothing is hooked and no chord is ever seen.
+#[cfg(not(windows))]
+pub mod pastechord {
+    /// A paste chord the window saw.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum PasteChord {
+        /// `Ctrl+V` or `Shift+Insert`.
+        Paste,
+        /// `Ctrl+Shift+V`.
+        PasteShifted,
+    }
+
+    /// No-op off Windows.
+    #[must_use]
+    pub fn install(_hwnd: isize) -> bool {
+        false
+    }
+
+    /// Always `None` off Windows.
+    #[must_use]
+    pub fn take() -> Option<PasteChord> {
+        None
+    }
+}
 
 /// Off Windows, the clipboard writer answers `false` — nothing was written.
 ///
