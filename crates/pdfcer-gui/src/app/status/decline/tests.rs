@@ -280,6 +280,10 @@ fn no_two_declines_share_a_sentence() {
             "x".to_owned(),
         )),
         Declined::OsPaste(crate::text::ospaste::OsPasteRefusal::Nothing),
+        Declined::OsPaste(crate::text::ospaste::OsPasteRefusal::NoPicture),
+        Declined::OsPaste(crate::text::ospaste::OsPasteRefusal::Unplaceable(
+            "x".to_owned(),
+        )),
     ];
     for (i, a) in all.iter().enumerate() {
         for b in &all[i + 1..] {

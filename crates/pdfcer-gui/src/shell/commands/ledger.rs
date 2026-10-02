@@ -386,11 +386,12 @@ fn registration_succeeds_and_registers_every_command() {
     // 184 → 185: `edit.insert_3d`, Edit ▸ Insert.
     // 185 → 186: `pages.labels`, Pages ▸ Stamp.
     // 186 → 192: Underline, Strikethrough and the four paragraph aligns, Format ▸ Font.
+    // 192 → 193: `markup.paste_image_stamp`, Markup ▸ Notes.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     assert_eq!(
         registry().len(),
-        192 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
+        193 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
     );
 }
 
@@ -787,10 +788,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 166 → 167: `edit.insert_3d` names `model-3d`, drawn for it.
     // 167 → 168: `pages.labels` names `list`, shared.
     // 168 → 174: Underline, Strikethrough and the four aligns, each drawn for it.
+    // 174 → 175: `markup.paste_image_stamp` names `paste`, shared with `edit.paste`.
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
     assert_eq!(
         named,
-        174 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
+        175 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

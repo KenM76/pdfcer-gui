@@ -2,7 +2,8 @@
 //!
 //! `file.new` (`RIBBON_IA.md` §5.1, the File ▸ File band) makes a blank
 //! document. This module holds the 443 bytes it makes it *out of*, the
-//! decisions behind them, and nothing else — the lifetime transition itself is
+//! decisions behind them, the one-page picture document a pasted stamp is
+//! drawn from, and nothing else — the lifetime transition itself is
 //! `pdfcer-gui`'s `PdfcerApp::new_document`'s, beside `open_path` and
 //! `close_document`, because that is one subject and this is another.
 //!
@@ -143,9 +144,55 @@ pub fn document_sized(rect: pdfcer_core::page_tree::Rect) -> Result<(Document, V
     Ok((doc, pages))
 }
 
+/// The one-page PDF of `image`: a page the picture's natural size, holding
+/// only the picture, filling it — the artwork a pasted stamp is made from.
+///
+/// Exempt from the settings funnel for [`document_sized`]'s reason: the
+/// template has no `/Info`, no annotation is authored, and the written bytes
+/// become stamp artwork rather than a file the operator saves.
+///
+/// # Errors
+///
+/// The engine's sentence when the template does not parse, the picture is
+/// refused, or the rewrite fails.
+pub fn picture_page(image: &pdfcer_core::image_import::ImportedImage) -> Result<Vec<u8>, String> {
+    let (w, h) = image.natural_size_pt();
+    let sheet = pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, w, h);
+    let base = Document::from_bytes(TEMPLATE.to_vec()).map_err(|e| e.to_string())?;
+    let mut session = pdfcer_core::edit::EditSession::new(base);
+    session.set_media_box(0, sheet).map_err(|e| e.to_string())?;
+    session
+        .add_image(&pdfcer_core::edit::NewImage::new(0, sheet, image))
+        .map_err(|e| e.to_string())?;
+    let (bytes, _report) = session
+        .to_full_bytes(&pdfcer_core::writer::SaveOptions::identity())
+        .map_err(|e| e.to_string())?;
+    Ok(bytes)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_picture_page_is_the_pictures_natural_size() {
+        let mut b = Vec::new();
+        for v in [40u32, 64, 32] {
+            b.extend(v.to_le_bytes());
+        }
+        b.extend(1u16.to_le_bytes());
+        b.extend(32u16.to_le_bytes());
+        for v in [0u32, 0, 3780, 3780, 0, 0] {
+            b.extend(v.to_le_bytes());
+        }
+        b.resize(40 + 64 * 32 * 4, 200);
+        let image = crate::clippaste::image_from_dib(&b).unwrap();
+        let doc = Document::from_bytes(picture_page(&image).unwrap()).unwrap();
+        let pages = pdfcer_core::page_tree::pages(&doc).unwrap();
+        assert_eq!(pages.len(), 1);
+        let m = pages[0].media_box;
+        assert!((m.width() - 48.0).abs() < 0.1 && (m.height() - 24.0).abs() < 0.1);
+    }
 
     /// **The compiled-in template really is a document.**
     #[test]

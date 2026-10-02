@@ -929,6 +929,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(dropped_file::ADroppedPictureLandsWhereItWasDropped),
         Box::new(dropped_text::ADroppedTextFileBecomesPagesAfterThisOne),
         Box::new(dropped_pdf::ADroppedPdfAsksOpenInsertOrPlace),
+        Box::new(paste_stamp::ACopiedPicturePastesAsAStampInReview),
         Box::new(caption_theme::TitleBarsFollowTheTheme),
         Box::new(first_frame::TheFirstFrameNamesTheArmedTool),
         Box::new(master_detail::TheInspectorIsOneMasterDetailColumn),

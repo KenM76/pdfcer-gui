@@ -172,7 +172,8 @@ mod tests {
     ///   `/Producer` into an `/Info` the template does not have. It uses
     ///   `identity()`, which promises to change nothing. The full argument is
     ///   on `blank::document_sized`; this line exists so a reader who finds
-    ///   the exemption first is not left guessing.
+    ///   the exemption first is not left guessing. `blank::picture_page`
+    ///   shares it: its bytes become stamp artwork, not a saved file.
     /// - **`redact/`** — see [`SettingsExt::save_options`]. The proof must run
     ///   over bytes no setting can vary.
     /// - **`#[cfg(test)]` modules anywhere** — a test pinning the engine's own

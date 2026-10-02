@@ -358,7 +358,7 @@ impl ModeRefusal {
                 "The clipboard holds a form field, which is part of the document rather than a comment on it, and this mode does not change what is on the page. Switch to Edit to paste it."
             }
             Self::PastePicture => {
-                "The clipboard holds a picture from another program, and this mode does not change what is on the page. Switch to Edit to paste it."
+                "The clipboard holds a picture from another program, and this mode adds nothing to the page. Switch to Edit to paste it as page content, or to Review to paste it as a stamp."
             }
             Self::PasteText => {
                 "The clipboard holds text from another program, and this mode adds nothing to the page. Switch to Edit to paste it as page text, or to Review to paste it as a comment."
@@ -480,6 +480,7 @@ mod tests {
             (ModeRefusal::PasteMarkup, review),
             (ModeRefusal::PasteField, edit),
             (ModeRefusal::PastePicture, edit),
+            (ModeRefusal::PastePicture, review),
             (ModeRefusal::PasteText, edit),
             (ModeRefusal::PasteText, review),
             (ModeRefusal::DropPicture, edit),

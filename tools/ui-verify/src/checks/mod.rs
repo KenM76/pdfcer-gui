@@ -697,6 +697,8 @@ pub mod dropped_file;
 pub mod dropped_pdf;
 /// A text file dropped on the window becomes pages after the one on screen.
 pub mod dropped_text;
+/// In Review a copied picture pastes as a stamp.
+pub mod paste_stamp;
 
 /// Every window's title bar follows the Dark and Quiet presets.
 pub mod caption_theme;

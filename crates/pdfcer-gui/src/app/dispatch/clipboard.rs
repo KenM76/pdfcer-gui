@@ -30,6 +30,8 @@ pub fn handles(id: &str) -> bool {
             // three-rung fork at the head of this file is the machinery it
             // needs: which operand does the gesture mean?
             | "edit.duplicate"
+            // Another program's picture as a stamp: `dispatch::ospaste`.
+            | "markup.paste_image_stamp"
     )
 }
 
@@ -48,6 +50,7 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mu
         // `egui`'s memory for it to consult. Its whole operand is the
         // selection.
         "edit.duplicate" => duplicate(app, id, actions),
+        "markup.paste_image_stamp" => super::ospaste::paste_stamp(app, ctx, id, actions),
         _ => {}
     }
 }

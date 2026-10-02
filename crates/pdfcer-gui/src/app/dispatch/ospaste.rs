@@ -6,7 +6,9 @@
 //! all (no pdfcer clip, or one older than the clipboard's last write);
 //! [`paste`] places what it read as one undoable edit. A picture lands at its
 //! natural size, centred on the pointer (or the view centre), kept wholly on
-//! the page. Text becomes page text in a mode that edits content and a
+//! the page; a mode that only authors markup places it as a stamp, as does
+//! [`paste_stamp`] in any mode that authors markup. Text becomes page text in
+//! a mode that edits content and a
 //! `/FreeText` comment in one that only authors markup;
 //! `clippaste::textbox` holds the geometry.
 
@@ -96,21 +98,89 @@ fn picture(
     format: &str,
     actions: &mut Vec<Action>,
 ) {
-    if !app.capabilities().edit_content {
+    let caps = app.capabilities();
+    if !caps.edit_content && !caps.author_markup {
         return refuse(id, ModeRefusal::PastePicture);
     }
     let Some((page, at, crop)) = target(app, ctx) else {
         return;
     };
     let rect = clippaste::rect_at(at, image.natural_size_pt(), crop);
-    // ui-text-exempt: diagnostic trace fields, never displayed
-    pasted(&format!("kind=image format={format}"), page, rect);
+    if !caps.edit_content {
+        return stamp(page, rect, &image, format, actions);
+    }
+    pasted(
+        &format!("kind=image format={format} as=content"), // ui-text-exempt: diagnostic trace
+        page,
+        rect,
+    );
     actions.push(Action::InsertImage {
         page,
         rect,
         fit: pdfcer_core::edit::ImageFit::Contain,
         image: std::sync::Arc::new(image),
     });
+}
+
+/// `markup.paste_image_stamp`: the clipboard's picture as a stamp at the
+/// pointer, or at the view centre when the pointer is off the page.
+pub fn paste_stamp(app: &PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut Vec<Action>) {
+    let (image, format) = match read() {
+        Incoming::Image { image, format } => (image, format),
+        Incoming::Unreadable(why) => return decline("unreadable", OsPasteRefusal::Unreadable(why)),
+        Incoming::Text(_) | Incoming::Nothing => {
+            return decline("no-picture", OsPasteRefusal::NoPicture);
+        }
+    };
+    if !app.capabilities().author_markup {
+        return refuse(id, ModeRefusal::PastePicture);
+    }
+    let Some((page, at, crop)) = target(app, ctx) else {
+        return;
+    };
+    let rect = clippaste::rect_at(at, image.natural_size_pt(), crop);
+    stamp(page, rect, &image, format, actions);
+}
+
+/// `image` as custom-stamp artwork filling `rect` on `page`.
+fn stamp(page: usize, rect: Rect, image: &ImportedImage, format: &str, actions: &mut Vec<Action>) {
+    let file = match stamp_file(image) {
+        Ok(file) => file,
+        Err(why) => return decline("unplaceable", OsPasteRefusal::Unplaceable(why)),
+    };
+    // ui-text-exempt: diagnostic trace, never displayed in the UI
+    pasted(&format!("kind=image format={format} as=stamp"), page, rect);
+    actions.push(Action::CommitTextAnnot {
+        page,
+        kind: crate::canvas::textannot::TextAnnotKind::Stamp,
+        rect,
+        text: String::new(),
+        stamp: crate::canvas::textannot::DEFAULT_STAMP,
+        stamp_size: crate::canvas::textannot::DEFAULT_STAMP_SIZE,
+        icon: crate::canvas::textannot::DEFAULT_STICKY_ICON,
+        custom: Some(crate::stamps::library::CustomStamp {
+            label: crate::text::ospaste::pasted_picture().to_owned(),
+            category: String::new(),
+            file,
+            page_index: 0,
+            dynamic: false,
+        }),
+    });
+}
+
+/// `image`'s one-page PDF, written to the temporary folder for the stamp
+/// verb to read; the file is named by the clipboard's change counter, so one
+/// copy is written once.
+fn stamp_file(image: &ImportedImage) -> Result<std::path::PathBuf, String> {
+    let bytes = pdfcer_gui_base::blank::picture_page(image)?;
+    // ui-text-exempt: a folder name, never displayed
+    // temp-path-exempt: the running program's folder, not a test's; each file is named by the clipboard's change counter.
+    let dir = std::env::temp_dir().join("pdfcer-gui");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    // ui-text-exempt: a file name, never displayed
+    let file = dir.join(format!("pasted-picture-{}.pdf", clippaste::sequence()));
+    std::fs::write(&file, bytes).map_err(|e| e.to_string())?;
+    Ok(file)
 }
 
 /// Text as page text where content can change, else as a text-box comment.

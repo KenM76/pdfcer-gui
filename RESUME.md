@@ -60,8 +60,8 @@ signatures and O268's theme work. The engine has commits past v0.72.0; take
 them only for a fix a step needs, since the next release follows the next
 engine tag. In order:
 
-**O279, paste from another program: plan steps P0 to P6 built and driven**
-(`docs/plans/PASTEIN_PLAN.md`; work P7 and P10 in order, P11 deferred).
+**O279, paste from another program: plan steps P0 to P7 built and driven**
+(`docs/plans/PASTEIN_PLAN.md`; work P10, P11 deferred).
 A picture on the OS clipboard pastes at the pointer in Edit, and text as page
 text in Edit or a comment in Review (`app::dispatch::ospaste`); a dropped
 picture lands at the drop point and a `.txt` becomes pages, and one PDF asks open, insert or place
@@ -74,11 +74,13 @@ Measure: `ui-verify --no-input --check a_picture_copied_in_another_program_paste
 --check text_copied_in_another_program_pastes_as_a_text_box_at_the_pointer
 --check a_dropped_picture_lands_where_it_was_dropped
 --check a_dropped_text_file_becomes_pages_after_this_one
---check a_dropped_pdf_asks_open_insert_or_place`; the second
+--check a_dropped_pdf_asks_open_insert_or_place
+--check a_copied_picture_pastes_as_a_stamp_in_review`; the second
 posts key messages to the launched window only.
 The check writes the real clipboard; `ClipGuard` snapshots it and restores it
-only if nothing else wrote it meanwhile. Next: P7, Review pastes a clipboard
-picture as a stamp.
+only if nothing else wrote it meanwhile. In Review a clipboard picture becomes a custom stamp made from a temporary
+one-page PDF (`blank::picture_page`) until G095 `add_image_stamp` lands.
+Next: P10, `file.new_from_clipboard` and `pages.insert_from_clipboard`.
 
 **O263, Align and Distribute: all four stages built and driven** (Align,
 Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting

@@ -254,6 +254,15 @@ pub const fn markup_stamp() -> CommandText {
     )
 }
 
+/// `markup.paste_image_stamp`
+#[must_use]
+pub const fn markup_paste_image_stamp() -> CommandText {
+    CommandText::new(
+        "Paste picture as stamp",
+        "Put the picture copied in another program on the page as a stamp, at its own size. In Review, Ctrl+V does the same at the pointer.",
+    )
+}
+
 /// `markup.comments`
 #[must_use]
 pub const fn markup_comments() -> CommandText {

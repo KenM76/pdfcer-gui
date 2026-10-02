@@ -296,6 +296,14 @@ pub(super) fn band() -> Vec<Command> {
         command("markup.stamp", t::markup_stamp(), 522)
             .with_icon("stamp")
             .enabled_when("doc.pages"),
+        // `paste` is shared with `edit.paste`: both put the clipboard on the page.
+        command(
+            "markup.paste_image_stamp",
+            t::markup_paste_image_stamp(),
+            523,
+        )
+        .with_icon("paste")
+        .enabled_when("doc.pages"),
         command("markup.flatten_page", t::markup_flatten_page(), 541)
             .with_icon("form-flatten")
             .enabled_when("doc.pages"),

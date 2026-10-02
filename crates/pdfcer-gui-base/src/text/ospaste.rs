@@ -8,6 +8,10 @@ use std::borrow::Cow;
 pub enum OsPasteRefusal {
     /// A picture that could not be decoded; the field is the reason.
     Unreadable(String),
+    /// A picture that could not be made into a stamp; the field is the reason.
+    Unplaceable(String),
+    /// No picture, where only a picture will do.
+    NoPicture,
     /// Nothing a page can take.
     Nothing,
 }
@@ -20,11 +24,23 @@ impl OsPasteRefusal {
             Self::Unreadable(why) => Cow::Owned(format!(
                 "The clipboard holds a picture pdfcer could not read: {why}. Nothing was pasted."
             )),
+            Self::Unplaceable(why) => Cow::Owned(format!(
+                "pdfcer could not make a stamp of the clipboard picture: {why}. Nothing was pasted."
+            )),
+            Self::NoPicture => Cow::Borrowed(
+                "The clipboard holds no picture. Copy one in another program, then paste it as a stamp.",
+            ),
             Self::Nothing => Cow::Borrowed(
                 "The clipboard holds nothing pdfcer can paste onto a page. Copy a picture, some text, or something in pdfcer, and paste again.",
             ),
         }
     }
+}
+
+/// The name a pasted picture's stamp carries.
+#[must_use]
+pub const fn pasted_picture() -> &'static str {
+    "Pasted picture"
 }
 
 /// Why a clipboard bitmap could not be decoded.
