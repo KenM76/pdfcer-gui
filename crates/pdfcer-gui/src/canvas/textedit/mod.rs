@@ -56,12 +56,19 @@
 pub mod blocks;
 pub use pdfcer_gui_base::editmodel::kind::TextEditKind;
 pub use pdfcer_gui_base::editmodel::{caret, disposition, lines, pen};
+/// One keystroke's effect on the open draft.
+mod edits;
+pub use edits::claim_tab;
+/// The open draft's undo stack.
+pub mod history;
 /// Where the pointer is in relation to the editor box, published by `paint`
 /// and read by everything that has to decide whether a press belongs to the
 /// draft or to the page.
 pub mod hit;
 /// What every key means inside a draft — the keystroke contract.
 pub mod keys;
+/// What the last keystroke changed on its way into the draft.
+pub mod note;
 /// What a draft looks like on the page — the in-place editor and its caret. Its
 /// header carries the standing rule that the text and the caret are measured
 /// from ONE layout.
@@ -308,6 +315,8 @@ pub fn abandon(ctx: &egui::Context) -> bool {
     // slot that outlives its subject is a fossil a later reader will trust.
     repertoire::forget(ctx);
     refused::forget(ctx);
+    history::forget(ctx);
+    note::forget(ctx);
     if had {
         // ui-text-exempt: diagnostic trace, never displayed.
         crate::diag::trace(|| "text-edit-abandon".to_owned());

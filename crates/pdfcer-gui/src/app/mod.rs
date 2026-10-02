@@ -56,6 +56,7 @@ pub mod markupband;
 pub mod frame;
 pub mod gating;
 pub mod keyboard;
+pub mod keyclaim;
 /// The **optional-content override** — `hidden_layers`, `set_hidden_layers`,
 /// `set_layer_visible`, `reset_layers`. Split out of [`state`] on 2026-09-01
 /// under R2, when that file reached the 1,500-line ceiling. Its header carries
@@ -1074,6 +1075,8 @@ pub fn configure_context(ctx: &egui::Context) {
     if let Some(script) = pdfcer_gui_base::pointerscripted::PointerScript::from_env() {
         ctx.add_plugin(script);
     }
+    // After the script, so a driven Tab is claimed exactly as an OS one is.
+    ctx.add_plugin(keyclaim::KeyClaim);
 }
 
 /// The application's own tests, including the `test_support` fixtures three

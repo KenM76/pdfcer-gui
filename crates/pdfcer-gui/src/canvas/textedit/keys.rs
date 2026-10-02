@@ -16,8 +16,11 @@
 
 use egui::Ui;
 
-use super::caret::{self, backspace, delete_forward, insert, word_left, word_right};
-use super::{Anchor, DIAG_TYPE, Draft, abandon, blocks, commit_into, hit, read, store};
+use pdfcer_gui_base::editmodel::history::EditKind;
+
+use super::caret::{self, insert, word_left, word_right};
+use super::edits::{Flow, Keys};
+use super::{Anchor, DIAG_TYPE, Draft, hit, read, store};
 use crate::app::state::OpenDoc;
 
 /// **What the pointer does inside the editor box** — place the caret, sweep a
@@ -78,7 +81,7 @@ fn pointer(ui: &Ui, ctx: &egui::Context, draft: &mut Draft) -> bool {
 }
 
 /// **Remove whatever is selected**, and answer the caret.
-fn take_selection(draft: &mut Draft) -> usize {
+pub(super) fn take_selection(draft: &mut Draft) -> usize {
     let Some((from, to)) = caret::range(draft.mark, draft.caret) else {
         return draft.caret;
     };
@@ -117,7 +120,8 @@ pub const fn enter_means(anchor: &Anchor, command: bool) -> EnterMeans {
     }
 }
 
-/// **Consume this frame's keystrokes into the draft.**
+/// **Consume this frame's keystrokes into the draft.** Answers `true` when the
+/// draft was committed or handed on this frame.
 pub fn typing(
     ui: &Ui,
     ctx: &egui::Context,
@@ -128,588 +132,81 @@ pub fn typing(
     let Some(mut draft) = read(ctx) else {
         return false;
     };
-    // THE POINTER FIRST, and before the seam, because a press that lands
-    // in the box is the operator saying *where* the next keystroke goes — and
-    // a keystroke arriving in the same frame must land at the new caret rather
-    // than the old one.
+    // The pointer first: a press in the box moves the caret a keystroke in the
+    // same frame must land at.
     let mut changed = pointer(ui, ctx, &mut draft);
+    if changed {
+        super::history::break_run(ctx);
+    }
     // Keys held by the refused-keys notice go in once their face has landed.
     if let Some(back) = super::refused::resume(ctx, doc, &draft) {
+        super::history::record(ctx, &draft, EditKind::Other);
         draft.caret = take_selection(&mut draft);
         draft.caret = insert(&mut draft.text, draft.caret, &back);
         changed = true;
     }
-    // The diagnostic seam, consumed exactly once per draft. See [`DIAG_TYPE`].
-    if !draft.seeded {
-        draft.seeded = true;
-        changed = true;
-        if let Ok(seed) = std::env::var(DIAG_TYPE)
-            && !seed.is_empty()
-        {
-            draft.text.clear();
-            draft.caret = insert(&mut draft.text, 0, &seed);
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed.
-                format!("text-edit-seeded len={}", draft.text.chars().count())
-            });
-        }
-    }
+    changed |= seed(&mut draft);
     if focused {
-        // Read once, outside the loop: see [`caret::shifted`] for why the
-        // frame's own modifier state is consulted at all, and why ignoring it
-        // cost this shell its whole first driven run of Shift+arrow.
-        let frame_shift = ui.input(|i| i.modifiers.shift);
+        let mut keys = Keys {
+            ctx,
+            doc,
+            draft: &mut draft,
+            actions,
+            // Read once: see [`caret::shifted`].
+            frame_shift: ui.input(|i| i.modifiers.shift),
+            changed,
+        };
         for ev in ui.input(|i| i.events.clone()) {
-            match ev {
-                // A typed character: sieved against the run's alphabet
-                // first, then inserted, replacing any selection. Both halves
-                // are argued inside the arm.
-                egui::Event::Text(t) if !t.is_empty() => {
-                    //
-                    // The request this shell sent the engine, quoted back in
-                    // `run_repertoire`'s own rustdoc:
-                    //
-                    // > *"the refusal arrives at commit, so he types a whole
-                    // > word and then loses it. The alphabet is knowable before
-                    // > the first keystroke and we do not use it that way yet."*
-                    //
-                    // Only a caret in an EXISTING run has a wall. An
-                    // `Origin`/`Box` anchor is text pdfcer is about to author
-                    // with a face pdfcer chooses, so nothing constrains it — and
-                    // `sieve` is not even asked, which also keeps the page walk
-                    // off the Add-text path entirely.
-                    //
-                    // `take_selection` runs only if something survives. A
-                    // keystroke that is refused whole must leave the selection
-                    // standing: the operator has not replaced his selection, he
-                    // has pressed a key that did nothing, and eating the
-                    // selection would be a second, silent loss on top of the
-                    // first.
-                    let sieved = match &draft.anchor {
-                        Anchor::Run { run, .. } => {
-                            super::repertoire::sieve(ctx, doc, draft.page, *run, &t)
-                        }
-                        Anchor::Origin { .. } | Anchor::Box { .. } => super::repertoire::Sieved {
-                            kept: t.clone(),
-                            refused: None,
-                        },
-                    };
-                    let refused_now = sieved.refused.clone();
-                    if let (Anchor::Run { run, .. }, Some((missing, base_font))) =
-                        (&draft.anchor, sieved.refused)
-                    {
-                        let character = missing[0];
-                        crate::diag::trace(|| {
-                            // ui-text-exempt: diagnostic trace, never displayed.
-                            //
-                            format!(
-                                "text-edit-key-refused page={} run={run} character='{character}' \
-                                 character_font={base_font}",
-                                draft.page
-                            )
-                        });
-                        actions.push(crate::app::actions::Action::Text(
-                            crate::app::actions::text::TextAction::KeyRefused {
-                                page: draft.page,
-                                run: *run,
-                                character,
-                                base_font,
-                            },
-                        ));
-                    }
-                    if !sieved.kept.is_empty() {
-                        // TYPING REPLACES THE SELECTION. Rule 2 of the four
-                        // in `caret`'s selection section, and the one an
-                        // operator notices first: select a word, type a word,
-                        // and the old one is gone.
-                        draft.caret = take_selection(&mut draft);
-                        draft.caret = insert(&mut draft.text, draft.caret, &sieved.kept);
-                        changed = true;
-                    }
-                    if let Some((missing, base_font)) = &refused_now {
-                        super::refused::note(
-                            ctx,
-                            &draft,
-                            missing,
-                            base_font,
-                            !sieved.kept.is_empty(),
-                        );
-                    }
-                }
-                // Rule 3: with a selection, Backspace and Delete remove
-                // THAT and nothing else — they stop being different keys, which
-                // is what every text field does and is why both arms are the
-                // same two lines.
-                egui::Event::Key {
-                    key: egui::Key::Backspace,
-                    pressed: true,
-                    ..
-                } => {
-                    draft.caret = if caret::range(draft.mark, draft.caret).is_some() {
-                        take_selection(&mut draft)
-                    } else {
-                        backspace(&mut draft.text, draft.caret)
-                    };
-                    changed = true;
-                }
-                egui::Event::Key {
-                    key: egui::Key::Delete,
-                    pressed: true,
-                    ..
-                } => {
-                    draft.caret = if caret::range(draft.mark, draft.caret).is_some() {
-                        take_selection(&mut draft)
-                    } else {
-                        delete_forward(&mut draft.text, draft.caret)
-                    };
-                    changed = true;
-                }
-                // SELECT ALL. `Ctrl+A` is not in the keymap and must not be:
-                // the application's own Select-all acts on OBJECTS, and while a
-                // draft is live the operator means the text they are typing.
-                // The draft takes the chord first and the event is consumed, so
-                // the two never both fire.
-                egui::Event::Key {
-                    key: egui::Key::A,
-                    pressed: true,
-                    modifiers,
-                    ..
-                } if modifiers.command => {
-                    draft.mark = Some(0);
-                    draft.caret = draft.text.chars().count();
-                    changed = true;
-                }
-                // THE DRAFT'S CLIPBOARD — copy, cut and paste. Defect O18.
-                //
-                // All three were absent until 2026-08-21, and the absence was
-                // not an oversight so much as a half-finished thought.
-                // `textsel::clipboard::pending_key` was widened that same week
-                // to STOP answering Ctrl+C while a draft is composing, with a
-                // correct argument: *"the operator is composing, and the
-                // selection they made before the caret landed is not what those
-                // two keys mean any more"*. True — and it left the chord with no
-                // owner at all, so it fell through to the ribbon keymap, reached
-                // `edit.copy`, and copied an OBJECT. The operator pasted into
-                // Notepad and got *"1 object copied from pdfcer"*.
-                //
-                // The lesson is the general one: taking a chord away from a
-                // handler is only half a decision. The other half is naming who
-                // gets it, and a chord with no owner does not go quiet — it goes
-                // to whoever claims it next.
-                //
-                // These arrive as `Event::Copy` / `Event::Cut` /
-                // `Event::Paste`, never as key events: `egui-winit` intercepts
-                // the three chords and returns before pushing an `Event::Key`.
-                // Matching on `Key::C` here would compile, read correctly, pass
-                // a unit test that injected a key event, and never fire once in
-                // the running application. That is exactly how O18 shipped.
-                egui::Event::Copy => {
-                    // Copy leaves the draft alone — `changed` stays as it was.
-                    // A copy is not an edit, so it must not mark the draft dirty
-                    // and must not cost an undo entry.
-                    copy_selection(ctx, &draft);
-                }
-                egui::Event::Cut => {
-                    // Cut is copy-then-delete, in that order, and it is a
-                    // no-op with no selection rather than a cut of the whole
-                    // draft. Some editors cut the current line when nothing is
-                    // selected; a text box on a drawing is not a code editor,
-                    // and silently removing everything the operator had typed on
-                    // a stray Ctrl+X is not a behaviour worth borrowing.
-                    if copy_selection(ctx, &draft) {
-                        draft.caret = take_selection(&mut draft);
-                        changed = true;
-                    }
-                }
-                egui::Event::Paste(pasted) if !pasted.is_empty() => {
-                    // Replaces the selection, exactly as typing does — rule 2
-                    // of the four in `caret`'s selection section. Reusing
-                    // `take_selection` rather than repeating its two lines is
-                    // what keeps paste and typing from drifting apart on a rule
-                    // the operator experiences as one behaviour.
-                    //
-                    // `caret::insert` filters control characters, so a multi-
-                    // line paste arrives as one line. That is a real limitation
-                    // and it is the RIGHT one until the draft is multi-line
-                    // (O15): inserting a newline the draft cannot represent
-                    // would either be dropped silently later or committed as a
-                    // literal control byte into a content stream.
-                    draft.caret = take_selection(&mut draft);
-                    draft.caret = insert(&mut draft.text, draft.caret, &pasted);
-                    changed = true;
-                }
-                // **Caret movement**, 2026-08-20, on the operator's report
-                // that *"the cursor just sits at the end of a text line. It
-                // can't be moved to the center of an existing text block."*
-                //
-                // These five arms are what makes the caret a caret. Before
-                // them the draft had no position at all: text was appended and
-                // Backspace popped, so changing `SHEET 1 OF 4` to `SHEET 2 OF
-                // 4` meant deleting back to `SHEET ` and retyping the rest.
-                //
-                // `changed` is set for a pure movement, and that is
-                // deliberate rather than sloppy. It is the flag that decides
-                // whether the draft is written back to `egui::Memory`, and a
-                // moved caret IS a changed draft - without this the arrow keys
-                // would appear to work for one frame and then snap back on the
-                // next load. It does NOT put anything on the undo stack:
-                // `commit_into` compares the TEXT with the original, so a draft
-                // whose caret moved and whose characters did not still pushes
-                // no action.
-                egui::Event::Key {
-                    key: egui::Key::ArrowLeft,
-                    pressed: true,
-                    modifiers,
-                    ..
-                } => {
-                    // Rule 4, applied by one function so every movement arm
-                    // agrees: Shift plants or keeps the mark, no Shift drops it.
-                    draft.mark = caret::moved(
-                        draft.mark,
-                        draft.caret,
-                        caret::shifted(modifiers.shift, frame_shift),
-                    );
-                    draft.caret = if modifiers.command {
-                        word_left(&draft.text, draft.caret)
-                    } else {
-                        draft.caret.saturating_sub(1)
-                    };
-                    changed = true;
-                }
-                egui::Event::Key {
-                    key: egui::Key::ArrowRight,
-                    pressed: true,
-                    modifiers,
-                    ..
-                } => {
-                    draft.mark = caret::moved(
-                        draft.mark,
-                        draft.caret,
-                        caret::shifted(modifiers.shift, frame_shift),
-                    );
-                    let end = draft.text.chars().count();
-                    draft.caret = if modifiers.command {
-                        word_right(&draft.text, draft.caret)
-                    } else {
-                        (draft.caret + 1).min(end)
-                    };
-                    changed = true;
-                }
-                // UP AND DOWN WALK THE PAGE'S OWN LINES, AND CROSS INTO
-                // THE NEXT PARAGRAPH.
-                //
-                // The operator, 2026-08-21: *"there was an acrobat feature in
-                // the original pdfcer-gui that attempted to reassemble
-                // individual lines into paragraphs and the cursor would move to
-                // the next block of text using the navigation keys."*
-                //
-                // **Salvage.** `canvas::textedit::blocks` carries the four
-                // lines it came from and the argument; the short form is that
-                // the reassembly is `pdfcer-core`'s — `caret_up` walks the
-                // model's *lines*, and a block is a group of lines, so the
-                // caret steps into the next paragraph without anything here
-                // knowing what a paragraph is. The old shell's whole
-                // contribution was **asking**, and this shell had not been.
-                //
-                // It was not bound at all before today, and that was right at
-                // the time: the caret is a character index into ONE run, and a
-                // single run has no line above it. What changed is not the
-                // draft — it is that the *page* is now the thing being
-                // navigated.
-                //
-                // THE DRAFT IS COMMITTED ON THE WAY OUT. A caret that left
-                // a run with unsaved keystrokes in it would silently discard
-                // them, which is the defect class this whole module exists
-                // against — and `commit_into` writes nothing when the text is
-                // unchanged, so an operator who is merely reading with the
-                // arrow keys puts nothing on the undo stack.
-                //
-                // A BOX draft is deliberately excluded. Its lines are the
-                // shell's wrap rather than the page's, so this model would move
-                // the caret to a run somewhere else on the sheet mid-paragraph.
-                // Named in `blocks`' header rather than left to be discovered.
-                egui::Event::Key {
-                    key: key @ (egui::Key::ArrowUp | egui::Key::ArrowDown),
-                    pressed: true,
-                    modifiers,
-                    ..
-                } => {
-                    // **THE DRAFT'S OWN LINES COME FIRST** — O127, defect 2.
-                    //
-                    // A multi-line draft is a thing the operator is *looking
-                    // at*, and Up in it means the line above **in the box**,
-                    // not the line above on the sheet. Asked before
-                    // `blocks::step` rather than after, because the two answers
-                    // are both plausible and only one of them is what the
-                    // operator can see.
-                    //
-                    // It is also the cheap one: this is arithmetic on a
-                    // `String`, while `blocks::step` extracts and recognises
-                    // the whole page — 336 ms on the benchmark CAD sheet, on a
-                    // keystroke path. A draft that answers here never pays it.
-                    //
-                    // ⇒ On a single-line draft `super::lines::up` answers
-                    // `None`, so this falls straight through and the page-level
-                    // walk behaves exactly as it did. Nothing about editing an
-                    // existing run changed.
-                    let vertical = if key == egui::Key::ArrowUp {
-                        super::lines::up(&draft.text, draft.caret)
-                    } else {
-                        super::lines::down(&draft.text, draft.caret)
-                    };
-                    if let Some(to) = vertical {
-                        // Rule 4 of the selection set, applied here as
-                        // everywhere: an unshifted movement drops the mark.
-                        // Shift+Up extends the selection through the break,
-                        // which is what a multi-line field does.
-                        draft.mark = caret::moved(
-                            draft.mark,
-                            draft.caret,
-                            caret::shifted(modifiers.shift, frame_shift),
-                        );
-                        draft.caret = to;
-                        changed = true;
-                        continue;
-                    }
-                    let dir = if key == egui::Key::ArrowUp {
-                        blocks::Vertical::Up
-                    } else {
-                        blocks::Vertical::Down
-                    };
-                    if blocks::step(ctx, doc, &draft, dir, actions) {
-                        return true;
-                    }
-                }
-                // HOME AND END REACH THE ENDS OF THE LINE THE OPERATOR CAN
-                // SEE, which on a CAD sheet is usually several show operators
-                // wide. `blocks::line` answers `false` when the line is this
-                // run — the common case, and the cheap one — and the two
-                // assignments below are what happens then.
-                egui::Event::Key {
-                    key: egui::Key::Home,
-                    pressed: true,
-                    modifiers,
-                    ..
-                } => {
-                    // Shift+Home selects to the start of the draft and stays
-                    // in it, rather than walking to another run: a selection
-                    // that spanned two show operators would be a selection this
-                    // shell cannot commit, and offering it would be a gesture
-                    // whose result is a refusal.
-                    let shift = caret::shifted(modifiers.shift, frame_shift);
-                    //
-                    // Before `blocks::line`, for the reason the vertical arm
-                    // gives: these are lines the operator typed and is looking
-                    // at, and the page's own lines are a different question
-                    // about a different thing.
-                    if super::lines::is_multi_line(&draft.text) {
-                        draft.mark = caret::moved(draft.mark, draft.caret, shift);
-                        draft.caret = super::lines::start_of_line(&draft.text, draft.caret);
-                        changed = true;
-                        continue;
-                    }
-                    if !shift && blocks::line(ctx, doc, &draft, false, actions) {
-                        return true;
-                    }
-                    draft.mark = caret::moved(draft.mark, draft.caret, shift);
-                    draft.caret = 0;
-                    changed = true;
-                }
-                egui::Event::Key {
-                    key: egui::Key::End,
-                    pressed: true,
-                    modifiers,
-                    ..
-                } => {
-                    let shift = caret::shifted(modifiers.shift, frame_shift);
-                    // The other half of Home's fix — see its comment.
-                    if super::lines::is_multi_line(&draft.text) {
-                        draft.mark = caret::moved(draft.mark, draft.caret, shift);
-                        draft.caret = super::lines::end_of_line(&draft.text, draft.caret);
-                        changed = true;
-                        continue;
-                    }
-                    if !shift && blocks::line(ctx, doc, &draft, true, actions) {
-                        return true;
-                    }
-                    draft.mark = caret::moved(draft.mark, draft.caret, shift);
-                    draft.caret = draft.text.chars().count();
-                    changed = true;
-                }
-                // ENTER MEANS TWO THINGS, AND THE ANCHOR DECIDES WHICH.
-                //
-                // The operator, 2026-08-21: *"I should be able to make it multi
-                // line."*
-                //
-                // | anchor | plain Enter | Ctrl+Enter |
-                // |---|---|---|
-                // | a **box** | a paragraph break | commit |
-                // | a point, or an existing run | commit | commit |
-                //
-                // This is the old shell's own split, carried across verbatim:
-                // *"in box mode a plain Enter is a paragraph break; Ctrl+Enter
-                // accepts. In point mode Enter accepts (single line)."* It is
-                // also what every program in the class does, which is the
-                // standing tie-breaker.
-                //
-                // And it is why `Anchor::Box` is a variant rather than an
-                // `Option<Rect>` on `Origin`. Enter cannot mean *insert* and
-                // *commit* in one draft, so the keystroke handler has to know
-                // which gesture started it — and asking the TEXT ("does it
-                // already contain a newline?") would make the first Enter
-                // commit and every one after it insert, which is the worst
-                // possible answer.
-                //
-                // A newline in an EXISTING run is refused by construction
-                // rather than by a check: `Anchor::Run` is not a box, so plain
-                // Enter commits there. That is correct and not a limitation
-                // being hidden — `edit_text` replaces the text of ONE show
-                // operator, and a show operator cannot contain a line break. A
-                // run that should become two lines is a *reflow*, which is a
-                // different verb with its own preconditions.
-                egui::Event::Key {
-                    key: egui::Key::Enter,
-                    pressed: true,
-                    modifiers,
-                    ..
-                } => {
-                    // The decision is a PURE FUNCTION and this arm only
-                    // carries it out — see [`enter_means`], whose docs are the
-                    // whole of Enter's contract and whose tests prove it
-                    // without a window, a document or a keyboard.
-                    let means = enter_means(&draft.anchor, modifiers.command);
-                    crate::diag::trace(|| {
-                        // ui-text-exempt: diagnostic trace, never displayed.
-                        //
-                        // Enter is the one keystroke in this handler with
-                        // THREE meanings, so its ARRIVAL is worth reporting
-                        // separately from its effect. The multi-line work spent
-                        // a driven run on *"did the key arrive, or did the
-                        // branch pick wrong?"*, which the `text-edit-typing`
-                        // line cannot answer: it reports a length, and both
-                        // failures leave the length unchanged.
-                        //
-                        // It now reports the DECISION rather than the two
-                        // inputs it was derived from. `boxed=1 command=0` left
-                        // a reader to re-run the rule in their head; `means=`
-                        // is the answer, so a harness can assert the branch
-                        // that was taken rather than the facts that fed it.
-                        format!("text-edit-enter means={means:?}")
-                    });
-                    if means == EnterMeans::Commit {
-                        // **Ctrl+Enter ALWAYS commits**, in every draft.
-                        // O127's brief: *"commit must not be reachable only by
-                        // mouse."* It already was for a box; it is now the one
-                        // chord that finishes any draft, so an operator does
-                        // not have to know which gesture started the one they
-                        // are in to know how to end it.
-                        commit_into(ctx, &draft, actions);
-                        abandon(ctx);
-                        return true;
-                    }
-                    if means == EnterMeans::CannotSplit {
-                        // **A LINE ALREADY ON THE PAGE CANNOT BE SPLIT, AND
-                        // NOW IT SAYS SO** — O127, defect 2.
-                        //
-                        // This used to commit. That is a defensible behaviour
-                        // and it is the wrong one, because it makes Enter mean
-                        // *insert a line break* in two drafts and *finish this
-                        // edit* in the third — so the operator's question
-                        // (*"can the enter key create new lines when we are
-                        // editing?"*) gets a silent, invisible "no" delivered
-                        // as a completed edit.
-                        //
-                        // ⇒ Enter now means one thing everywhere: **a new
-                        // line**. Where the file cannot hold one, the operator
-                        // is told, by name, with both routes out — and the
-                        // draft is left alive so the sentence is about the key
-                        // they just pressed rather than about a box that has
-                        // already closed.
-                        //
-                        // It is the FILE's rule and not a shortcoming of
-                        // this shell. `EditSession::edit_text` re-encodes the
-                        // replacement into the run's own font, and `\n` has no
-                        // code in any standard encoding — the engine refuses it
-                        // by name (`Refusal`, `TargetAbsent`, `'\n'`). A show
-                        // operator is one line by construction. Committing
-                        // quietly hid a fact the operator is entitled to.
-                        actions.push(crate::app::actions::Action::Text(
-                            crate::app::actions::text::TextAction::EnterCannotSplit,
-                        ));
-                        crate::diag::trace(|| {
-                            // ui-text-exempt: diagnostic trace, never displayed.
-                            "text-edit-enter-declined reason=run-cannot-hold-a-newline".to_owned()
-                        });
-                        continue;
-                    }
-                    // **BOTH AUTHORING ANCHORS TAKE A LINE BREAK.**
-                    //
-                    // The box always did. `Anchor::Origin` — a click on bare
-                    // page — did not, and committed instead; that is the half
-                    // of the report that reads *"can the enter key create new
-                    // lines when we are … creating text?"*
-                    //
-                    // The box was a variant rather than an `Option<Rect>` on
-                    // `Origin` **because Enter could not mean two things in one
-                    // draft**, and that argument is now retired rather than
-                    // ignored: Enter means the same thing in both, so the
-                    // variants no longer differ on this key at all. What still
-                    // separates them is the WIDTH — a drag chooses one and a
-                    // click does not — and that is settled at the commit, in
-                    // `app::actions::addtext`, where the page's own geometry is
-                    // in scope. It is not settled here, because a keystroke
-                    // handler that reached for a crop box would be the second
-                    // place in this shell that decides how wide new text is.
-                    //
-                    // `newline`, NOT `insert` — see its docs. `insert` drops
-                    // control characters, correctly, and ate this exact
-                    // keystroke for one driven run.
-                    draft.caret = take_selection(&mut draft);
-                    draft.caret = caret::newline(&mut draft.text, draft.caret);
-                    changed = true;
-                }
-                _ => {}
+            if keys.event(ev) == Flow::Done {
+                return true;
             }
         }
+        changed = keys.changed;
     }
     if changed {
-        // The selection, published for the harness.
-        //
-        // A TRACE RATHER THAN A MUTATION, and that is the point of it. The
-        // honest way to prove Shift+Right selected three characters is to type
-        // over them and see the text shrink — but a driven check runs on the
-        // operator's own drawing, and proving a *selection* by making an
-        // *edit* is a bad trade. This line carries the two numbers a wrong
-        // build would get wrong, so nothing has to be changed to read them.
-        //
-        // It reports the EMPTY case too, in its own words rather than by
-        // going quiet. Rule 4 — an unshifted move drops the selection — is
-        // exactly as important as the selecting, and an absent line cannot be
-        // told from a build where the trace stopped being emitted.
-        crate::diag::trace_on_change("text-select", || {
-            // ui-text-exempt: diagnostic trace, never displayed.
-            match caret::range(draft.mark, draft.caret) {
-                // The KEY IS NOT REPEATED in the value. `trace_on_change`
-                // prints `pdfcer-diag <key> <value>`, so a value beginning with
-                // the key produces `text-select text-select from=0 …` — which
-                // parses, reads as a typo, and was one until this line.
-                Some((from, to)) => {
-                    let n = to - from;
-                    // ui-text-exempt: diagnostic trace, never displayed.
-                    format!("from={from} to={to} n={n}")
-                }
-                // ui-text-exempt: diagnostic trace, never displayed.
-                None => format!("none caret={}", draft.caret),
-            }
-        });
+        publish_selection(&draft);
         store(ctx, draft);
     }
     false
 }
 
+/// The diagnostic seam ([`DIAG_TYPE`]), consumed once per draft; whether it
+/// changed the draft.
+fn seed(draft: &mut Draft) -> bool {
+    if draft.seeded {
+        return false;
+    }
+    draft.seeded = true;
+    if let Ok(seed) = std::env::var(DIAG_TYPE)
+        && !seed.is_empty()
+    {
+        draft.text.clear();
+        draft.caret = insert(&mut draft.text, 0, &seed);
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("text-edit-seeded len={}", draft.text.chars().count())
+        });
+    }
+    true
+}
+
+/// The selection, traced for the harness as `text-select`, including the empty
+/// case, so a check reads it without making an edit.
+fn publish_selection(draft: &Draft) {
+    crate::diag::trace_on_change("text-select", || {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        match caret::range(draft.mark, draft.caret) {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            Some((from, to)) => format!("from={from} to={to} n={}", to - from),
+            // ui-text-exempt: diagnostic trace, never displayed.
+            None => format!("none caret={}", draft.caret),
+        }
+    });
+}
+
 /// **Put the draft's selected text on the clipboard**, reporting whether there
 /// was any.
-fn copy_selection(ctx: &egui::Context, draft: &Draft) -> bool {
+pub(super) fn copy_selection(ctx: &egui::Context, draft: &Draft) -> bool {
     let Some((from, to)) = caret::range(draft.mark, draft.caret) else {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
@@ -728,6 +225,7 @@ fn copy_selection(ctx: &egui::Context, draft: &Draft) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::app::actions::Action;
     use crate::canvas::textedit::TextEditKind;
 
     /// A draft holding `text`, with the caret at the end and nothing selected.
@@ -907,19 +405,142 @@ mod tests {
         assert_eq!(after.text, "SHEETS 1 OF 4");
     }
 
-    /// **A multi-line paste arrives as one line**, because the draft is
-    /// single-line. Named as a test rather than left to be discovered: the
-    /// filtering is `caret::insert`'s and it is deliberate — a newline the draft
-    /// cannot represent would otherwise be dropped later or committed as a
-    /// literal control byte into a content stream.
+    /// New text keeps a pasted line break; a pasted tab is a space.
     #[test]
-    fn a_multi_line_paste_arrives_as_one_line() {
+    fn a_multi_line_paste_into_new_text_keeps_its_lines() {
         let ctx = egui::Context::default();
         draft_of(&ctx, "");
-        clipboard_frame(&ctx, egui::Event::Paste("one\ntwo".to_owned()));
+        clipboard_frame(&ctx, egui::Event::Paste("one\r\ntwo\tthree".to_owned()));
 
         let after = read(&ctx).expect("the draft survives");
-        assert_eq!(after.text, "onetwo");
+        assert_eq!(after.text, "one\ntwo three");
+    }
+
+    /// One frame carrying `key` with `modifiers`; the actions it pushed.
+    fn key_frame(ctx: &egui::Context, key: egui::Key, modifiers: egui::Modifiers) -> Vec<Action> {
+        let mut input = egui::RawInput {
+            modifiers,
+            ..Default::default()
+        };
+        input.events.push(egui::Event::Key {
+            key,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers,
+        });
+        frame_actions(ctx, input)
+    }
+
+    /// [`frame`], answering the actions the frame pushed.
+    fn frame_actions(ctx: &egui::Context, input: egui::RawInput) -> Vec<Action> {
+        let doc = crate::app::state::open_fixture(crate::app::state::FOUR_PAGES);
+        let inner = ctx.clone();
+        let out = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let sink = out.clone();
+        let _ = ctx.run_ui(input, move |c| {
+            egui::CentralPanel::default().show(c, |ui| {
+                let mut actions = Vec::new();
+                typing(ui, &inner, &doc, true, &mut actions);
+                sink.lock().unwrap().extend(actions);
+            });
+        });
+        std::mem::take(&mut *out.lock().unwrap())
+    }
+
+    fn type_frame(ctx: &egui::Context, text: &str) {
+        let mut input = egui::RawInput::default();
+        input.events.push(egui::Event::Text(text.to_owned()));
+        frame(ctx, input);
+    }
+
+    #[test]
+    fn ctrl_z_takes_back_a_run_of_typing_then_ctrl_y_puts_it_back() {
+        let ctx = egui::Context::default();
+        draft_of(&ctx, "AB");
+        type_frame(&ctx, "c");
+        type_frame(&ctx, "d");
+        let none = key_frame(&ctx, egui::Key::Z, egui::Modifiers::COMMAND);
+        assert!(none.is_empty(), "the draft's undo pushes no action");
+        assert_eq!(read(&ctx).unwrap().text, "AB");
+        key_frame(&ctx, egui::Key::Y, egui::Modifiers::COMMAND);
+        assert_eq!(read(&ctx).unwrap().text, "ABcd");
+    }
+
+    /// Tab in a draft is taken out of the raw input before egui's focus walk
+    /// can see it, and reaches the draft as spaces; Shift+Tab is dropped.
+    #[test]
+    fn a_tab_in_a_draft_never_reaches_the_focus_walk() {
+        let ctx = egui::Context::default();
+        draft_of(&ctx, "AB");
+        let tab = |pressed, modifiers| egui::Event::Key {
+            key: egui::Key::Tab,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers,
+        };
+        let mut input = egui::RawInput {
+            events: vec![
+                tab(true, egui::Modifiers::SHIFT),
+                tab(true, egui::Modifiers::NONE),
+                tab(false, egui::Modifiers::NONE),
+            ],
+            ..Default::default()
+        };
+        crate::canvas::textedit::claim_tab(&ctx, &mut input);
+        assert_eq!(input.events, vec![egui::Event::Text("\t".to_owned())]);
+        frame(&ctx, input);
+        assert_eq!(read(&ctx).unwrap().text, "AB ");
+    }
+
+    /// With no draft open, Tab is left for egui's focus walk.
+    #[test]
+    fn a_tab_with_no_draft_is_left_alone() {
+        let ctx = egui::Context::default();
+        let mut input = egui::RawInput {
+            events: vec![egui::Event::Key {
+                key: egui::Key::Tab,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            }],
+            ..Default::default()
+        };
+        crate::canvas::textedit::claim_tab(&ctx, &mut input);
+        assert_eq!(input.events.len(), 1);
+    }
+
+    #[test]
+    fn ctrl_z_with_nothing_typed_undoes_the_document() {
+        let ctx = egui::Context::default();
+        draft_of(&ctx, "AB");
+        let pushed = key_frame(&ctx, egui::Key::Z, egui::Modifiers::COMMAND);
+        assert!(read(&ctx).is_none(), "the draft is settled first");
+        assert_eq!(pushed.last(), Some(&Action::Undo));
+    }
+
+    #[test]
+    fn ctrl_backspace_removes_the_word_before_the_caret() {
+        let ctx = egui::Context::default();
+        draft_of(&ctx, "SHEET 1 OF 4");
+        key_frame(&ctx, egui::Key::Backspace, egui::Modifiers::COMMAND);
+        key_frame(&ctx, egui::Key::Backspace, egui::Modifiers::COMMAND);
+        assert_eq!(read(&ctx).unwrap().text, "SHEET 1 ");
+    }
+
+    #[test]
+    fn ctrl_s_commits_the_draft_then_saves() {
+        let ctx = egui::Context::default();
+        draft_of(&ctx, "NEW");
+        let pushed = key_frame(&ctx, egui::Key::S, egui::Modifiers::COMMAND);
+        assert!(read(&ctx).is_none());
+        assert!(matches!(pushed.first(), Some(Action::CommitAddText { .. })));
+        assert!(matches!(
+            pushed.last(),
+            Some(Action::Save | Action::SaveCopy)
+        ));
     }
 
     /// **A DRAG ACROSS THE TEXT SELECTS WHAT IT CROSSED** — the pointer

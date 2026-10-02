@@ -2,6 +2,26 @@
 
 ## What this is
 
+The frame's entry point for a draft's input. `typing` runs the pointer
+gestures, then hands each keyboard event to `edits::Keys`, which owns what a
+key means: one method per key family, each under the function limit.
+
+| key | inside a draft |
+|---|---|
+| Ctrl+Z | takes back the draft's last run of typing or deleting; with nothing typed, commits the draft and undoes the document |
+| Ctrl+Y, Ctrl+Shift+Z | puts it back; with nothing to redo in the draft, commits and redoes the document |
+| Ctrl+Backspace, Ctrl+Delete | removes the word before or after the caret |
+| Ctrl+A | selects the whole draft |
+| Ctrl+S | commits the draft, then saves (Save copy when the document has no file) |
+| Tab | types spaces to the next half-inch stop and says so in the status bar. `claim_tab` (run by the `app::keyclaim` plugin) turns the press into a typed tab before egui sees it; otherwise egui's focus walk would also move focus to the ribbon and the next Enter would press a button there |
+| paste | runs through the sieve; on a line already on the page, line breaks become spaces and the status bar says so |
+| Escape | commits the draft (O223) |
+
+Typing runs coalesce: consecutive typed characters are one undo entry until
+the caret moves, the pointer acts, or the edit changes kind. The history
+(`editmodel::history`) and the status note (`textedit::note`) are dropped with
+the draft.
+
 
 ## Why it is its own file
 
@@ -220,7 +240,8 @@ who had just asked the question with his fingers.
 
 ### `fn typing`
 
-Returns `true` when the draft was committed by Enter, so the caller knows the
+Returns `true` when the draft was committed — by Enter, Ctrl+S, or an undo or
+redo that reached past the draft into the document — so the caller knows the
 caret is gone.
 
 # Why the events are read raw rather than through a `TextEdit` widget

@@ -9,9 +9,9 @@
 use egui::{Align, Layout, Vec2};
 
 use super::{
-    NOTES_WIDTH_FRACTION, REGION_BLEND_SPACE, REGION_CATCHING_UP, REGION_EDIT_DISCLOSURE,
-    REGION_FILL_DISCLOSURE, REGION_LINE_WEIGHTS, REGION_LOAD_ANOMALIES, REGION_PREVIEW_FALLBACK,
-    REGION_RECOVERED, REGION_SPOTS_FLATTENED, ROW_HEIGHT_PTS,
+    NOTES_WIDTH_FRACTION, REGION_BLEND_SPACE, REGION_CATCHING_UP, REGION_DRAFT_NOTE,
+    REGION_EDIT_DISCLOSURE, REGION_FILL_DISCLOSURE, REGION_LINE_WEIGHTS, REGION_LOAD_ANOMALIES,
+    REGION_PREVIEW_FALLBACK, REGION_RECOVERED, REGION_SPOTS_FLATTENED, ROW_HEIGHT_PTS,
 };
 use crate::app::state::OpenDoc;
 use crate::text::forms as t_forms;
@@ -127,6 +127,19 @@ fn preview_fallback(ui: &mut egui::Ui) {
         ui,
         REGION_PREVIEW_FALLBACK,
         crate::text::previewfallback::line(why),
+    );
+}
+
+/// **What the last keystroke changed on its way into the draft** — live until
+/// the next edit.
+fn draft_note(ui: &mut egui::Ui) {
+    let Some(note) = crate::canvas::textedit::note::live(ui.ctx()) else {
+        return;
+    };
+    disclosure_line(
+        ui,
+        REGION_DRAFT_NOTE,
+        &pdfcer_gui_base::text::draftnote::line(note),
     );
 }
 
@@ -291,6 +304,7 @@ pub(super) fn all(ui: &mut egui::Ui, doc: &OpenDoc) {
     // Second: it describes what the operator is typing now, which outranks
     // every sentence about something already done.
     preview_fallback(ui);
+    draft_note(ui);
     fill_disclosure(ui, doc);
     edit_disclosure(ui, doc);
     recovered_disclosure(ui, doc);

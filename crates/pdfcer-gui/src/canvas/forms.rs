@@ -638,7 +638,7 @@ fn editor(
         },
     );
     // The canvas now holds the keyboard, and says so -- this is what lets
-    // `raw_input_hook` take the next Tab away from egui's focus walk before
+    // `app::keyclaim` take the next Tab away from egui's focus walk before
     // `Focus::begin_pass` can latch it. Published every frame the editor is
     // drawn, because the identity test that reads it is also its freshness
     // test: see `canvas::tabnav`'s header.

@@ -158,7 +158,6 @@ impl ScriptedPointer {
         self.send(session, &format!("wheel {} {dy}{mods}", xy(at)))
     }
 
-    /// Take the pointer off the window, so nothing stays hovered.
     /// Press and release one key in `viewport` (root when `None`), spelled as
     /// `egui::Key::from_name` spells it, with `mods` (`ctrl`, `shift`, `alt`,
     /// joined by `+`) or none.
@@ -188,6 +187,25 @@ impl ScriptedPointer {
         }
     }
 
+    /// Deliver `text` as pasted from the clipboard in `viewport` (root when
+    /// `None`); line breaks and tabs survive the one-line step.
+    pub fn paste(
+        &self,
+        session: &Session,
+        viewport: Option<&str>,
+        text: &str,
+    ) -> Result<TraceLine> {
+        let text = text
+            .replace('\\', "\\\\")
+            .replace('\n', "\\n")
+            .replace('\t', "\\t");
+        match viewport {
+            Some(vp) => self.send(session, &format!("paste vp={vp} {text}")),
+            None => self.send(session, &format!("paste {text}")),
+        }
+    }
+
+    /// Take the pointer off the window, so nothing stays hovered.
     pub fn gone(&self, session: &Session) -> Result<TraceLine> {
         self.send(session, "gone")
     }

@@ -76,11 +76,6 @@ impl eframe::App for PdfcerApp {
         });
     }
 
-    /// **The one place a key can be taken away from `egui`'s focus walk.**
-    fn raw_input_hook(&mut self, ctx: &egui::Context, raw_input: &mut egui::RawInput) {
-        crate::canvas::tabnav::claim(ctx, raw_input);
-    }
-
     /// eframe 0.35's entry point is `ui`, **not** `update`.
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();

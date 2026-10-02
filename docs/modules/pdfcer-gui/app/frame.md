@@ -114,20 +114,6 @@ The `glow` form of the signature, because that is the backend this
 workspace's `eframe` features select. The parameter is unused: this
 flushes a file, it does not touch the GPU.
 
-### `fn raw_input_hook`
-
-`OPERATOR_REQUESTS.md` O204. `egui::Memory`'s `Focus::begin_pass`
-latches a Tab into a focus direction straight from the `RawInput`
-events, before any application `ui` code runs, so a widget that
-consumed Tab out of `InputState` later in the frame would remove the
-evidence and not the effect. This hook runs before that latch.
-
-It is deliberately one line and knows nothing about forms, objects or
-pages: the decision about whether the canvas owns this press is an
-identity test inside [`crate::canvas::tabnav::claim`], against an id
-the canvas published for itself. Anything more here would be the
-application frame learning what a form field is.
-
 ### `fn ui`
 
 The trait hands a root [`egui::Ui`] rather than a [`egui::Context`]

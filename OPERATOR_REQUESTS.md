@@ -399,10 +399,11 @@ The plan, in build order, is `docs/plans/WORDLIKE_PLAN.md`.
 **Where each part stands.**
 
 - *Lines that refused every edit*: built and driven. Word writes one line as several separate pieces; pdfcer now sends the engine only the piece your change touches. On a copy of his form, edits that commit went from 0 of 32 to 31 of 32, with the live preview in the line's own face. Driven: `a_line_written_in_pieces_edits`.
-- Still refused: a change reaching across two pieces at once (asked of the engine as G074), and a character the form's font does not carry (G075).
+- A change reaching across two pieces of a one-font line now commits too: the engine carries it across (G074, in this build). Still refused: a character the form's font does not carry (G075; the engine has started on it, and his form's font is the kind it reaches last).
 - Known gap: when a piece grows, the piece after it on the same line does not move along, so they can overlap.
 - *Keys that did nothing*: built and driven. Every key the text's font cannot take is now named in a note just under the box you are typing in, never dropped silently. One click changes the text to the nearest font that has them all, and the keys you typed go back in. Driven: `every_refused_key_is_named_with_a_face_that_takes_them`.
 - *Caret that flickered*: built and driven. In Edit with the Text tool, a click on text opened a caret and closed it again at once, so it flickered and typing went nowhere. The click now leaves a caret that takes the next key. Driven: `a_text_tool_click_on_text_types_there`.
+- *Word's editing keys*: built and driven. While typing, Ctrl+Z and Ctrl+Y undo and redo the typing itself, Ctrl+Backspace removes a word, Ctrl+A selects the text, Ctrl+S keeps the edit and saves, and Tab types spaces to the next half-inch stop. Pasted text goes through the same font check as typing. A PDF line cannot hold a tab or a line break, so the status bar says when Tab became spaces or a pasted line break became a space. Escape still keeps what you typed, as you decided earlier (O223). Driven: `the_draft_keys_do_what_a_word_processor_does`.
 - *Preview in the wrong size*: built and driven. When the preview cannot use the text's own font, the stand-in is now the text's own size at the current zoom, and the status bar says why. Driven: `a_stand_in_preview_is_the_texts_size_and_says_why`.
 
 ## O271 — **DECIDED, to build** — alignment buttons go in both places

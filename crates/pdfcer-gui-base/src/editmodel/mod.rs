@@ -14,6 +14,8 @@ pub mod kind;
 pub mod caret;
 /// Which way the rest of the line moves when an edit changes its width.
 pub mod disposition;
+/// The draft's own undo and redo, and where Tab's spaces stop.
+pub mod history;
 /// The caret's arithmetic inside a draft that holds more than one line.
 pub mod lines;
 /// Which show operators a line edit touches.

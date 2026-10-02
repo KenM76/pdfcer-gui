@@ -60,6 +60,21 @@ impl Layout {
                 .map_or(0, |(i, _)| i),
         }
     }
+
+    /// The screen x of the caret slot before character `i`, clamped to the
+    /// last slot.
+    #[must_use]
+    pub fn x_at(&self, i: usize) -> f32 {
+        match &self.caret {
+            Caret::Galley { origin, galley } => {
+                origin.x + galley.pos_from_cursor(egui::text::CCursor::new(i)).min.x
+            }
+            Caret::Stops(stops) => stops
+                .get(i)
+                .or_else(|| stops.last())
+                .map_or(self.body.min.x, |p| p.x),
+        }
+    }
 }
 
 /// Publish this frame's editor box. Called by [`super::paint`] only.

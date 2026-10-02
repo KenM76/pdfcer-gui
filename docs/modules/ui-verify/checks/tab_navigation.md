@@ -14,8 +14,8 @@ the next field, not into the ribbon** — `OPERATOR_REQUESTS.md` O204.
 
 # Why only a driven run can answer it
 
-The mechanism lives in `eframe`'s `raw_input_hook`, which runs **before**
-`Context::run` and therefore before one line of application `ui` code. A
+The mechanism lives in the `app::keyclaim` input plugin, which runs **before**
+`Focus::begin_pass` and therefore before one line of application `ui` code. A
 unit test that calls the ring's own step function proves the ring steps; it
 cannot prove that the Tab press ever reached the ring, because the thing
 that would steal it — `Focus::begin_pass` latching a focus move out of

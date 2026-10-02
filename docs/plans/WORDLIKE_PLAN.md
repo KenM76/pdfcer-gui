@@ -31,7 +31,7 @@ Fix classes: **GUI** (this repo only) or **ENGINE** (needs a request; the number
 | A3 | Pasting several lines gives several lines | missing | Newlines are stripped, and a test pins "one\ntwo" → "onetwo" (code). | GUI interim (newline → space); then G076 |
 | A4 | Enter starts a new line or paragraph | refuses | Enter in existing text is declined with `run-cannot-hold-a-newline` (driven). | ENGINE G076 |
 | A5 | Ctrl+Z undoes my last keystrokes while typing | missing | Ctrl+Z is dead inside a draft (driven). | GUI |
-| A6 | Escape cancels what I typed | refuses | Escape commits: the trace says "abandon", then `edit-text` commits (driven). | GUI |
+| A6 | Escape cancels what I typed | by decision | Escape commits the draft: O223 decided it, so Ctrl+Z after Escape is the way back. | none |
 | A7 | Ctrl+S while typing saves including my typing | missing | Ctrl+S is dead while composing (code). | GUI |
 | A8 | Backspace at a line start joins it to the line above | refuses | Declined with `canvas-delete-declined reason=composing-text` (driven). | ENGINE G076 |
 | A9 | Delete at a line end joins the next line | refuses | Same as A8 (driven). | ENGINE G076 |
@@ -104,7 +104,7 @@ structure. Effort is in engineer-days, including the driven check.
 
 | Step | Work | Rows | Effort | Waits on |
 |---|---|---|---|---|
-| 1 | **Draft basics:** draft-level undo stack (Ctrl+Z/Ctrl+Y); Escape discards and Enter-outside/click-away commits; Ctrl+S commits then saves; paste runs through the sieve; newline → space on paste, with a status note; Ctrl+Backspace/Delete; Tab → spaces to the next 0.5 in stop; Ctrl+A selects the run | A2 A3 A5 A6 A7 A10 A11 B6 | 2 | - |
+| 1 | **Draft basics:** draft-level undo stack (Ctrl+Z/Ctrl+Y); Ctrl+S commits then saves; paste runs through the sieve; newline → space on paste, with a status note; Ctrl+Backspace/Delete; Tab → spaces to the next 0.5 in stop; Ctrl+A selects the run. Escape keeps committing (O223 supersedes A6) | A2 A3 A5 A7 A10 A11 B6 | 2 | Done; driven by `the_draft_keys_do_what_a_word_processor_does` |
 | 2 | **Clicks reach the right thing:** text tool on an image-only page → status "This page is a picture of text — Recognise text" with a button, and no Add text; on a form widget → field value editor; on FreeText → its editor; correct both wrong menu paths; refusals become a short sentence plus a button | E1 E2 E3 E4(msg) E5(msg) E11 | 2–3 | - |
 | 3 | **Never refuse a keystroke (interim):** when the sieve rejects a character, commit that substring re-faced via `FormatRequest::new(page, find).embedded_font(plan)` with the nearest installed face. Disclose it off-canvas. Undo is one entry. **Built first:** every refused key is named in a notice under the editor box (`canvas::textedit::refused`), with one click to the nearest face that has them all through the Properties font-change path, and the held keys typed back in once it lands. The notice is a pre-commit affordance about keys not in the document, on its own layer, so it does not mark applied content (R8b). **Still to build:** the automatic substring re-face | A1 | 2–3 | Replaced by G075(b)/G078 when they land |
 | 4 | **Chrome preview:** instrument `shape()` to log which branch (count mismatch or `outlines.skipped`) fires, then fix; also the Down-arrow line preview | A13 | 1–2 | - |
@@ -149,7 +149,7 @@ passing does not count. Fixture positions are in PDF points (`wl\pos.py`).
 
 1. **`word.pdf`**:
    - Click para 1, line 2 (y 653.3) and type `abc`, then Ctrl+Z ×3. Pass: the draft length returns to its original and nothing commits.
-   - Type `x`, then Escape. Pass: the trace shows no `edit-text`, and the shot equals the pre-shot.
+   - Type `x`, then Escape. Pass: `edit-text` commits (O223).
    - Type `x`, then Ctrl+S. Pass: `edit-text` precedes `save`.
    - Paste `one\ntwo`. Pass: the result reads `one two`, with a status note.
    - Paste `Q`. Pass: a sieve verdict before any commit.

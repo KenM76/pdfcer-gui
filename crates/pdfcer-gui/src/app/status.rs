@@ -191,6 +191,8 @@ pub(super) const REGION_SPOTS_FLATTENED: &str = "status-group:spots-flattened"; 
 pub(super) const REGION_CATCHING_UP: &str = "status-group:catching-up"; // ui-text-exempt: trace region name, never displayed
 /// The "your typing is shown in a stand-in font" line, while a draft is open.
 pub(super) const REGION_PREVIEW_FALLBACK: &str = "status-group:preview-fallback"; // ui-text-exempt: trace region name, never displayed
+/// The "the pasted lines were joined" / "Tab was typed as spaces" line.
+pub(super) const REGION_DRAFT_NOTE: &str = "status-group:draft-note"; // ui-text-exempt: trace region name, never displayed
 /// The "line weights are off, so this is not what will print" line —
 /// `OPERATOR_REQUESTS.md` **O137**.
 pub(super) const REGION_LINE_WEIGHTS: &str = "status-group:line-weights"; // ui-text-exempt: trace region name, never displayed

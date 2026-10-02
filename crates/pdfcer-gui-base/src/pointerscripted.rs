@@ -112,8 +112,8 @@ fn parse(line: &str) -> Result<Step, ()> {
     let mut words = line.split_whitespace();
     let seq: u64 = words.next().ok_or(())?.parse().map_err(|_| ())?;
     let verb = words.next().ok_or(())?.to_owned();
-    if verb == "type" {
-        return typed(seq, line);
+    if verb == "type" || verb == "paste" {
+        return typed(seq, line, verb == "paste");
     }
     let mut key = None;
     let mut numbers: Vec<f32> = Vec::new();
@@ -172,9 +172,29 @@ fn parse(line: &str) -> Result<Step, ()> {
     })
 }
 
-/// A `type` step: the text is the rest of the line after the verb and an
-/// optional leading `vp=`, separated by single spaces.
-fn typed(seq: u64, line: &str) -> Result<Step, ()> {
+/// `\n`, `\t` and `\\` in a `paste` step, as the characters they name.
+fn unescape(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut chars = text.chars();
+    while let Some(c) = chars.next() {
+        if c != '\\' {
+            out.push(c);
+            continue;
+        }
+        match chars.next() {
+            Some('n') => out.push('\n'),
+            Some('t') => out.push('\t'),
+            Some(other) => out.push(other),
+            None => out.push('\\'),
+        }
+    }
+    out
+}
+
+/// A `type` or `paste` step: the text is the rest of the line after the verb
+/// and an optional leading `vp=`, separated by single spaces. A paste unescapes
+/// `\n`, `\t` and `\\`, so a line break fits on the step's one line.
+fn typed(seq: u64, line: &str, paste: bool) -> Result<Step, ()> {
     let rest = line.trim().splitn(3, ' ').nth(2).ok_or(())?;
     let (target, text) = match rest.split_once(' ') {
         Some((v, text)) if v.starts_with("vp=") => {
@@ -193,12 +213,17 @@ fn typed(seq: u64, line: &str) -> Result<Step, ()> {
     if text.is_empty() {
         return Err(());
     }
+    let (verb, event) = if paste {
+        ("paste", Event::Paste(unescape(text)))
+    } else {
+        ("type", Event::Text(text.to_owned()))
+    };
     Ok(Step {
         seq,
-        verb: "type".to_owned(),
+        verb: verb.to_owned(),
         target,
         modifiers: Modifiers::NONE,
-        frames: VecDeque::from([vec![Event::Text(text.to_owned())]]),
+        frames: VecDeque::from([vec![event]]),
         sent: 0,
         clock: None,
     })
@@ -581,6 +606,13 @@ mod tests {
         assert_eq!(step.target, Target::Named("abc".to_owned()));
         assert!(matches!(&step.frames[0][..], [Event::Text(t)] if t == "hello"));
         assert!(parse("5 type").is_err());
+    }
+
+    #[test]
+    fn paste_carries_an_escaped_line_break() {
+        let step = parse("6 paste a\\nb\\\\c").unwrap();
+        assert_eq!(step.verb, "paste");
+        assert!(matches!(&step.frames[0][..], [Event::Paste(t)] if t == "a\nb\\c"));
     }
 
     #[test]

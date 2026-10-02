@@ -13,8 +13,8 @@
 
 Two halves, and they are in different parts of the frame.
 
-1. **Before egui sees the input.** [`claim`] runs from
-   `eframe::App::raw_input_hook`, removes the Tab key event from the raw
+1. **Before egui sees the input.** [`claim`] runs from the
+   `app::keyclaim` egui plugin, removes the Tab key event from the raw
    input, and parks a [`Request`]. It claims only when the widget that egui
    says currently holds focus is the one the canvas [`publish`]ed last pass.
 2. **During the canvas's own drawing.** The owning surface calls [`take`],
@@ -24,7 +24,7 @@ A surface that wants the ring therefore does exactly two things: publish the
 `egui::Id` of the widget it has focused, every pass it draws it; and take
 and act on the request.
 
-## Why the seam is `raw_input_hook` and nothing else can work
+## Why the seam is an input hook and nothing else can work
 
 egui latches the focus move in `Focus::begin_pass` **from the `RawInput`
 events**, before any application `ui` code runs (`egui::memory`, the
@@ -34,6 +34,11 @@ the walk to the next focusable widget is already going to happen. Consuming
 the key later removes the *evidence* and not the *effect* — which is the
 shape of fix that passes a unit test and leaves the operator tabbing through
 the ribbon.
+
+The hook is an egui plugin registered after the scripted pointer, not
+`eframe::App::raw_input_hook`: that hook runs before every plugin, so it
+never sees a driven Tab, and a check would measure a route the operator's
+keyboard does not take.
 
 ## Why ownership is an identity test and not a flag
 
@@ -101,7 +106,7 @@ it, and stop the paper panning the moment a page was clicked.
 
 ### `fn claim`
 
-Called from `eframe::App::raw_input_hook` — see the module header for why
+Called from the `app::keyclaim` plugin — see the module header for why
 that and only that. Removes every `Key::Tab` event from `raw_input` when it
 claims, so egui never sees one and `Focus::begin_pass` never latches a
 direction.

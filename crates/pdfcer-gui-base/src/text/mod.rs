@@ -250,6 +250,8 @@ pub mod stamps;
 /// Every string the status bar shows. Consumed by `pdfcer_gui::app::status`.
 pub mod status;
 
+/// What a keystroke changed on its way into a draft, for the status bar.
+pub mod draftnote;
 /// **Why a committed text edit was refused** — split out of [`textedit`] on
 /// 2026-09-06 under R2, along the seam that file's own section banner had
 /// already drawn. Everything in it is re-exported from [`textedit`], so no call

@@ -542,7 +542,7 @@ pub mod scale_reads_the_group;
 
 /// Tab inside a form field goes to the next FIELD — `OPERATOR_REQUESTS.md`
 /// O204. The only oracle for it: the press is taken in
-/// `eframe::App::raw_input_hook`, before one line of application `ui` code,
+/// the `app::keyclaim` input plugin, before one line of application `ui` code,
 /// so a unit test of the ring measures a press the ring may never receive.
 pub mod tab_navigation;
 
@@ -968,6 +968,8 @@ pub mod colour_icons;
 
 pub mod wheel_flips_pages;
 
+/// Undo, redo, word delete, Tab, paste, select-all and save inside a draft.
+pub mod draft_keys;
 /// A stand-in preview is the text's size, and the status bar says why.
 pub mod preview_fallback;
 /// Every refused key is named, with one click to a face that has them.

@@ -16,7 +16,7 @@ use crate::trace::Trace;
 const BOX_LINE: &str = "form-box";
 /// A text field took the keyboard.
 const FOCUS: &str = "form-focus";
-/// The `raw_input_hook` took a Tab press for a canvas ring.
+/// The `app::keyclaim` plugin took a Tab press for a canvas ring.
 const CLAIM: &str = "tab-claim";
 /// The field ring spent one.
 const MOVED: &str = "tab-field";
@@ -224,7 +224,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              `{CLAIM} scope=field` line. This is the operator's report verbatim — the press went \
              to egui's own focus walk, which hands it to the first focusable widget of the \
              frame, and that is the ribbon. Look at `canvas::tabnav::claim` and whether \
-             `eframe::App::raw_input_hook` still calls it: consuming Tab from `InputState` \
+             the `app::keyclaim` plugin still calls it: consuming Tab from `InputState` \
              anywhere inside the frame CANNOT work, because `Focus::begin_pass` reads \
              `RawInput.events` before any application code runs. Trace: {}.",
             session.trace_path().display()
