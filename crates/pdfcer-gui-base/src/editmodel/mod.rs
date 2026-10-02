@@ -16,6 +16,8 @@ pub mod caret;
 pub mod disposition;
 /// The draft's own undo and redo, and where Tab's spaces stop.
 pub mod history;
+/// The font folders' faces, from which an embedded subset is extended.
+pub mod installedfaces;
 /// The caret's arithmetic inside a draft that holds more than one line.
 pub mod lines;
 /// Which show operators a line edit touches.

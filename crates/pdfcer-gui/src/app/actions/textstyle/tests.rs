@@ -336,6 +336,9 @@ fn an_engine_decline_with_no_discriminant_names_no_cause_and_promises_no_remedy(
         C::MixedScale {
             matrix: "text matrix",
         },
+        C::NoSpaceGlyph {
+            font: "Helvetica".to_owned(),
+        },
     ];
 
     for cause in every_unsupported {

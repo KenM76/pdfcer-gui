@@ -169,12 +169,15 @@ pub fn options(reason: Reason) -> EditOptions {
 
 /// The options every typed edit and its keystroke query share: the embedded
 /// program reader, so a character a subset outlines but never showed can be
-/// typed. `EditSession::run_repertoire_with` must be asked with these, or the
-/// query refuses a key the commit would take.
+/// typed, and same-face sibling resources, so a character the run's resource
+/// cannot encode is set in another resource of the same face before the shell
+/// re-faces it. `EditSession::run_repertoire_with` must be asked with these,
+/// or the query refuses a key the commit would take.
 #[must_use]
 pub fn typing() -> EditOptions {
     EditOptions::default()
         .with_embedded_glyphs(&pdfcer_render::font::embedded_glyphs::EmbeddedProgramGlyphs)
+        .with_sibling_fonts(true)
 }
 
 #[cfg(test)]

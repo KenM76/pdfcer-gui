@@ -285,7 +285,7 @@ impl Library {
 }
 
 /// Whether the path's extension is one this will attempt.
-fn has_font_extension(path: &Path) -> bool {
+pub(crate) fn has_font_extension(path: &Path) -> bool {
     path.extension()
         .and_then(|e| e.to_str())
         .map(str::to_ascii_lowercase)

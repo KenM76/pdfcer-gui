@@ -29,7 +29,11 @@ caller knew, re-extracts the page itself, and re-recognises it with
 [`pdfcer_core::text_edit::reflow_recognition_options`] — a **relaxed**
 config that pushes `indent_ratio` out
 of reach so ragged-left lines merge into one block instead of fragmenting
-into one block per line. Then it indexes *that* list.
+into one block per line. On a page with a ruled table it recognises with
+the cells of `detect_cell_regions` (`recognize_with_cells`), which puts each
+cell in a block of its own after the page's paragraphs. Then it indexes
+*that* list, and `block_of_run` builds the same one; a page whose cells
+cannot be read is one `reflow_block` refuses as well.
 
 ⇒ **So the only correct thing to send is an index into that list.** Asking
 the caret's own recognition still answers *"which paragraph did he click

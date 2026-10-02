@@ -1,6 +1,6 @@
 //! # `text::fonts` — what the font-donor scan says when it skips a file
 //!
-//! Five sentences, all of them about something that did **not** happen.
+//! Sentences, all of them about something that did **not** happen.
 //!
 //! ## Why a skip gets a sentence at all
 //!
@@ -65,6 +65,13 @@ pub fn no_name(path: &Path) -> String {
         "Skipped {} — it is a font but advertises no name, and its filename gives none either.",
         path.display()
     )
+}
+
+/// Why a letter could not yet be added to an embedded font from the font
+/// folders: they are still being read.
+#[must_use]
+pub fn folders_still_indexing() -> String {
+    "pdfcer is still reading the font folders; type the letter again in a moment.".to_owned()
 }
 
 /// Where a **bundled** donor came from, for the row and for the engine's

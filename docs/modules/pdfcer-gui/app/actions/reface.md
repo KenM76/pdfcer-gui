@@ -17,9 +17,12 @@ Inside one `vector_edit`:
 3. `coalesce_last(steps, EditText)`, so one Undo takes the whole gesture.
    Refused → the `undo_split` note.
 
-A step that fails undoes the steps before it and returns `Stopped`, whose
-sentence the funnel shows. The undos leave redo entries; the engine has no
-verb to drop them (request G083).
+A checkpoint is taken before step 1. A step that fails rolls the session
+back to it (`EditSession::rollback`), so the document, Undo and Redo are as
+they were, and returns `Stopped`, whose sentence the funnel shows; undo
+history the rollback could not keep is added to it (`history_lost`). A
+gesture longer than the undo bound cannot be rolled back and is undone step
+by step, which leaves its steps on Redo.
 
 The engine's disclosures are de-duplicated (each `edit_text` repeats the
 save/relayout notes) and `set_in` is appended.

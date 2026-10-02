@@ -366,7 +366,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
     });
     Plan {
         request,
-        options: disposition::options(reason),
+        options: super::installed::augmented(doc, disposition::options(reason)),
         reason,
         one_operator,
         occurrences,

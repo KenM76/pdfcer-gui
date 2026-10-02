@@ -5,12 +5,16 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/reflow.md`.
 
-use pdfcer_core::text_edit::{EditableTextModel, TextPosition, reflow_recognition_options};
+use pdfcer_core::text_edit::{
+    EditableTextModel, TextPosition, detect_cell_regions, reflow_recognition_options,
+};
 
 use crate::app::state::OpenDoc;
 
 /// The block index the caret's run belongs to, **in the engine's numbering**,
-/// or `None`.
+/// or `None`. The model is the engine's: cell-aware, so a ruled table's cells
+/// number after the page's paragraphs; a page whose cells cannot be read is
+/// one `reflow_block` refuses too.
 #[must_use]
 pub fn block_of_run(doc: &OpenDoc, page_index: usize, run: usize) -> Option<usize> {
     // `with_provenance(true)`, which `reflow_block` requires by name — it
@@ -20,7 +24,9 @@ pub fn block_of_run(doc: &OpenDoc, page_index: usize, run: usize) -> Option<usiz
     // properties of the shared cache rather than of this function; see
     // `crate::app::cache::provenance`.
     let text = doc.provenance_page_text(page_index)?;
-    let model = EditableTextModel::recognize(&text, &reflow_recognition_options());
+    let cells = detect_cell_regions(&doc.session.view(), page_index).ok()?;
+    let model =
+        EditableTextModel::recognize_with_cells(&text, &reflow_recognition_options(), &cells);
     model.block_at(TextPosition::new(run, 0))
 }
 
@@ -35,7 +41,10 @@ mod tests {
         // own assertion and pass against wrong code. **A source scan cannot
         // contain its own needle** — the same trap `typing-guard-exempt:
         // SELF-REFERENTIAL` names one module along.
-        let engines = format!("recognize(&text, &{}())", "reflow_recognition_options");
+        let engines = format!(
+            "recognize_with_cells(&text, &{}(), &cells)",
+            "reflow_recognition_options"
+        );
         assert!(
             source.contains(&engines),
             "the block lookup no longer numbers its answer the way `reflow_block` reads it"
@@ -181,6 +190,51 @@ mod tests {
                 ))
             ),
             "the index this module produces is out of range for the engine"
+        );
+    }
+
+    /// On a ruled table the engine numbers each cell as its own block, after
+    /// the page's paragraphs; the lookup must name the cell, not the row the
+    /// plain recognition reads.
+    #[test]
+    fn a_ruled_tables_cell_is_named_in_the_engines_cell_aware_numbering() {
+        use pdfcer_core::text_edit::{
+            EditableTextModel, TextPosition, detect_cell_regions, reflow_recognition_options,
+        };
+
+        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/ruled-table.pdf");
+        let document = pdfcer_core::document::Document::load(&path).expect("the fixture loads");
+        let pages = pdfcer_core::page_tree::pages(&document).expect("a page tree");
+        let doc = crate::app::state::OpenDoc::new(
+            path.clone(),
+            pdfcer_core::edit::EditSession::new(document),
+            pages,
+        );
+        let text = doc.provenance_page_text(0).expect("page 0 extracts");
+        let regions = detect_cell_regions(&doc.session.view(), 0).expect("cells are read");
+        assert_eq!(
+            regions.len(),
+            9,
+            "the fixture's 3x3 table is no longer found by its rules"
+        );
+        let plain = EditableTextModel::recognize(&text, &reflow_recognition_options());
+        let celled =
+            EditableTextModel::recognize_with_cells(&text, &reflow_recognition_options(), &regions);
+        let mut differs = 0;
+        for run in 0..text.runs.len() {
+            let at = TextPosition::new(run, 0);
+            assert_eq!(
+                super::block_of_run(&doc, 0, run),
+                celled.block_at(at),
+                "run {run} is named in a numbering `reflow_block` does not use"
+            );
+            differs += usize::from(plain.block_at(at) != celled.block_at(at));
+        }
+        assert!(
+            differs > 0,
+            "the plain and cell-aware numberings agree on every run, so this fixture cannot \
+             tell them apart"
         );
     }
 }

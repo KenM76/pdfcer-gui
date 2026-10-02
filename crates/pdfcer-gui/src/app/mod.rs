@@ -929,6 +929,9 @@ impl PdfcerApp {
         } else {
             prefs::Prefs::load().0
         };
+        if !cfg!(test) {
+            let _ = crate::canvas::textedit::installed::warm(&prefs);
+        }
 
         // POINT THE TWO PASTE CHORDS AT THE OPERATOR'S CHOSEN ORDER —
         // `OPERATOR_REQUESTS.md` O58.

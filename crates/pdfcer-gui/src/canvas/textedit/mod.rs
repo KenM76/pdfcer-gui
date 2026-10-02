@@ -90,6 +90,9 @@ pub mod report;
 pub use caret::{backspace, delete_forward, insert, word_left, word_right};
 /// Why the open draft's preview is in a stand-in font, for the status bar.
 pub mod fallback;
+/// Every typed edit's options, able to extend the run's subset from its
+/// installed face.
+pub mod installed;
 /// **Naming the exact show operator, and the exact buffer it lives in** — the
 /// one producer of `(pinned_span, EditTarget)` in this shell, shared by the
 /// caret's `edit_text` and the restyle verbs' `format_text`.

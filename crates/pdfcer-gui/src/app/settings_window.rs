@@ -100,6 +100,7 @@ impl PdfcerApp {
         if let Some(shell) = self.shell.as_mut() {
             crate::shell::manifest::apply_paste_chords(shell, self.prefs.paste_chords);
         }
+        let _ = crate::canvas::textedit::installed::warm(&self.prefs);
 
         // AND THE ACROBAT PATH IS RE-RESOLVED — `OPERATOR_REQUESTS.md`
         // O122, and this is the paste-chord paragraph above applied to a

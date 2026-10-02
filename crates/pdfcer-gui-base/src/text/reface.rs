@@ -22,6 +22,13 @@ pub fn undo_split(steps: usize) -> String {
     format!("Undoing this edit takes {steps} steps of Undo.")
 }
 
+/// Said when abandoning a refused edit cost the oldest `n` steps of Undo.
+#[must_use]
+pub fn history_lost(n: usize) -> String {
+    let steps = if n == 1 { "step" } else { "steps" };
+    format!("The oldest {n} {steps} of Undo could not be kept.")
+}
+
 /// Why a re-faced edit was not made.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Stopped {

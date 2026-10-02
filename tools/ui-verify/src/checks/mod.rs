@@ -968,6 +968,8 @@ pub mod colour_icons;
 
 pub mod wheel_flips_pages;
 
+/// A letter a subset lacks is added from its installed face.
+pub mod augment_subset;
 /// Undo, redo, word delete, Tab, paste, select-all and save inside a draft.
 pub mod draft_keys;
 /// Every refused key is named, with one click to a face that has them.

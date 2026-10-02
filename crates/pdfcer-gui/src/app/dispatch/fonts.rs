@@ -56,6 +56,19 @@ pub(crate) fn handles(id: &str) -> bool {
 /// Where pdfcer may look for a donor font on this run.
 #[must_use]
 pub(crate) fn folders(prefs: &Prefs) -> Vec<PathBuf> {
+    search(prefs, prefs.use_os_fonts)
+}
+
+/// Where a typed letter's embedded subset may be extended from: this
+/// computer's font folder whatever `use_os_fonts` says, because a face there
+/// is used only once the engine has proved it is the subset's own font. Tests
+/// leave it out, so a suite never reads the machine's fonts.
+#[must_use]
+pub(crate) fn augment_folders(prefs: &Prefs) -> Vec<PathBuf> {
+    search(prefs, !cfg!(test))
+}
+
+fn search(prefs: &Prefs, os: bool) -> Vec<PathBuf> {
     // The operator's own folders, then this computer's if they asked for
     // them (`OPERATOR_REQUESTS.md` O50), then anything the harness named.
     //
@@ -63,7 +76,7 @@ pub(crate) fn folders(prefs: &Prefs) -> Vec<PathBuf> {
     // already listed by hand is not added twice -- so an operator who typed
     // `C:\Windows\Fonts` into the list and then ticked the box does not spend
     // two of their `prefs::fonts::MAX_FOLDERS` slots saying one thing.
-    let mut out = crate::app::prefs::fonts::search_path(&prefs.font_folders, prefs.use_os_fonts);
+    let mut out = crate::app::prefs::fonts::search_path(&prefs.font_folders, os);
     if let Ok(extra) = std::env::var(FONT_DIR_ENV) {
         // Semicolon-separated, matching the platform's own `PATH` convention
         // rather than inventing one. A colon would be ambiguous with a drive
