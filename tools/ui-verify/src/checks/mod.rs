@@ -1045,9 +1045,13 @@ pub mod attachments;
 /// A 3D model placed from the ribbon, listed, and saved back byte for byte.
 pub mod models;
 
+/// A placed 3D model shows the engine's picture of it on the page.
+pub mod model_poster;
 /// A placed 3D model opened in the viewer turns, pans and zooms under the
 /// scripted pointer.
 pub mod model_view;
+/// The 3D viewer zooms about the pointer, fills the screen and comes back.
+pub mod model_view_window;
 /// Every kind of form field loses its border through Properties' No border.
 pub mod widget_no_border;
 

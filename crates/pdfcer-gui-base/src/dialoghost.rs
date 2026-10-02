@@ -136,6 +136,7 @@ pub struct Host {
     /// [`Self::show`] — and on for a window that is a view rather than a
     /// transaction, such as the popped-out print preview.
     maximizable: bool,
+    minimizable: bool,
     /// The window's title bar text. Owned rather than `&'static str` because it
     /// may carry a document name.
     title: String,
@@ -226,14 +227,23 @@ impl Host {
             min_size,
             preferred: None,
             maximizable: false,
+            minimizable: false,
         }
     }
 
     /// Offer maximise in the title bar. For a window that is a view onto
-    /// something rather than a transaction; minimise stays off regardless.
+    /// something rather than a transaction.
     #[must_use]
     pub fn maximizable(mut self) -> Self {
         self.maximizable = true;
+        self
+    }
+
+    /// Offer minimise in the title bar. Only for a view that holds no
+    /// unfinished transaction, which a minimised window would hide.
+    #[must_use]
+    pub fn minimizable(mut self) -> Self {
+        self.minimizable = true;
         self
     }
 
@@ -315,12 +325,12 @@ impl Host {
             .with_title(self.title.clone())
             .with_inner_size(self.default_size)
             .with_min_inner_size(self.min_size)
-            // No minimize, and no maximize unless `maximizable` asked for it.
+            // No minimize or maximize unless asked for.
             // A dialog is one transaction; the
             // operator finishes it or abandons it, and a minimised dialog is a
             // transaction that has been left open with no surface saying so.
             // Every platform's dialog chrome makes the same choice.
-            .with_minimize_button(false)
+            .with_minimize_button(self.minimizable)
             .with_maximize_button(self.maximizable)
             // It IS in the window list, deliberately, and that is the half of
             // the operator's report that a borderless window would not fix:

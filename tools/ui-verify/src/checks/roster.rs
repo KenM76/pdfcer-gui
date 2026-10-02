@@ -1039,6 +1039,8 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(attachments::AFileCanBeAttachedAndTakenBackOut),
         Box::new(models::AModelIsPlacedListedAndSavedBack),
         Box::new(model_view::AModelTurnsUnderThePointer),
+        Box::new(model_view_window::TheModelViewerZoomsAtThePointerAndFillsTheScreen),
+        Box::new(model_poster::AnInsertedModelShowsItsPicture),
         Box::new(widget_no_border::EveryFieldKindCanLoseItsBorder),
         Box::new(comment_note::ANoteCanBeWrittenOntoAShape),
         // Its opposite number: `comment_note` proves a

@@ -19,9 +19,9 @@ use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     BringWindowToTop, EnumWindows, GA_ROOT, GetAncestor, GetClassNameW, GetClientRect,
     GetCursorPos, GetForegroundWindow, GetSystemMetrics, GetWindowTextW, GetWindowThreadProcessId,
-    IsWindowVisible, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN,
-    SW_MAXIMIZE, SW_SHOW, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, SetCursorPos, SetForegroundWindow,
-    SetWindowPos, ShowWindow, WindowFromPoint,
+    IsIconic, IsWindowVisible, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN,
+    SM_YVIRTUALSCREEN, SW_MAXIMIZE, SW_SHOW, SW_SHOWNOACTIVATE, SWP_NOMOVE, SWP_NOSIZE,
+    SWP_NOZORDER, SetCursorPos, SetForegroundWindow, SetWindowPos, ShowWindow, WindowFromPoint,
 };
 
 use crate::coords::WindowFrame;
@@ -249,6 +249,22 @@ pub fn maximize_window(w: WindowHandle) {
     // side-effect-only and tolerates a stale handle by returning false.
     unsafe {
         ShowWindow(w.hwnd(), SW_MAXIMIZE);
+    }
+}
+
+/// Whether the window is minimised.
+#[must_use]
+pub fn is_minimized(w: WindowHandle) -> bool {
+    // SAFETY: `IsIconic` only reads, and a stale handle reads as false.
+    unsafe { IsIconic(w.hwnd()) != 0 }
+}
+
+/// Restore a minimised window without activating it, so the operator's
+/// focus stays where it is.
+pub fn restore_quietly(w: WindowHandle) {
+    // SAFETY: as `maximize_window`.
+    unsafe {
+        ShowWindow(w.hwnd(), SW_SHOWNOACTIVATE);
     }
 }
 

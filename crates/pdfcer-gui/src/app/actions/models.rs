@@ -3,7 +3,8 @@
 use pdfcer_core::edit::MarkupOptions;
 use pdfcer_core::page_tree::Rect;
 use pdfcer_core::threed::{
-    ThreeDArtwork, ThreeDFormat, ThreeDSpec, extract_3d, list_3d_with_notes,
+    PlaceholderReason, ThreeDArtwork, ThreeDFormat, ThreeDPoster, ThreeDSpec, extract_3d,
+    list_3d_with_notes,
 };
 
 use crate::app::state::OpenDoc;
@@ -373,6 +374,7 @@ pub(super) fn insert(doc: &mut OpenDoc, page: usize) {
             .add_3d_annotation(page, &spec, &MarkupOptions::default())
             .map(|outcome| {
                 let mut notes = vec![t::inserted(&format, page)];
+                notes.extend(poster_note(&outcome.poster));
                 if outcome.below_required_version() {
                     notes.push(t::below_version(
                         &outcome.required_version.to_string(),
@@ -382,6 +384,42 @@ pub(super) fn insert(doc: &mut OpenDoc, page: usize) {
                 notes
             })
     });
+}
+
+/// The poster the engine drew, traced and worded for the status line: a
+/// rendered one is an inference about the model's look and is disclosed.
+fn poster_note(poster: &ThreeDPoster) -> Option<String> {
+    let (drawn, reason) = match poster {
+        ThreeDPoster::Supplied => ("supplied", "-"),
+        ThreeDPoster::Rendered(_) => ("rendered", "-"),
+        ThreeDPoster::Placeholder(why) => ("placeholder", placeholder_token(why)),
+        _ => ("other", "-"),
+    };
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed
+        format!("model-insert-poster drawn={drawn} reason={reason}")
+    });
+    match poster {
+        ThreeDPoster::Rendered(r) => Some(
+            t::poster_rendered(
+                r.compressed_skipped > 0 || r.wires_skipped > 0 || r.unplaced.is_some(),
+            )
+            .to_owned(),
+        ),
+        ThreeDPoster::Placeholder(why) => Some(t::poster_placeholder(&why.to_string())),
+        _ => None,
+    }
+}
+
+/// A trace token for `why`.
+fn placeholder_token(why: &PlaceholderReason) -> &'static str {
+    match why {
+        PlaceholderReason::Requested => "requested",
+        PlaceholderReason::NotDecoded { .. } => "not-decoded",
+        PlaceholderReason::NoDecoder => "no-decoder",
+        PlaceholderReason::Undecodable { .. } => "undecodable",
+        _ => "other",
+    }
 }
 
 /// A 4:3 box, half the page's width (capped by its height), centred on it.

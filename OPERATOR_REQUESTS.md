@@ -455,29 +455,29 @@ The Border control in Properties offers *No border* for every kind of field: tex
 
 **Where it stands.** Built. *No border* is the first choice in the Border list for every kind of field, and choosing it saves a border width of 0 and takes the border colour out (kept on check boxes and radio buttons, whose mark is drawn in it). Driven on a text field, check box, radio, drop-down, list, push button and signature field: `every_field_kind_can_lose_its_border`. Every one of them is redrawn with no frame, the signature field included, except a push button another program drew, which keeps its picture and the status bar says so. A check box or radio button another program drew is redrawn in pdfcer's own style, and the status bar says that too.
 
-## O276 — **OPEN, building** — an inserted 3D model shows a picture of the model on the page
+## O276 — **BUILT AND DRIVEN — awaiting your verdict** — an inserted 3D model shows a picture of the model on the page
 
 His words: *"Also I didn't see a preview of the 3D model."*
 
 A placed 3D model shows the model itself on the page, seen from the corner, instead of an empty box with a cube in it. Why he saw no model: pdfcer placed every model with its stand-in picture, a frame and a wireframe cube, because nothing rendered a preview at insert time (sent to the engine as G091). A U3D model, which pdfcer cannot draw, keeps the stand-in and the status line says so.
 
-**Where it stands.** Being built.
+**Where it stands.** Built. Placing a PRC model now puts the engine's own drawing of it on the page, seen from above its front-right corner and shaded. The status line says the picture is pdfcer's view and not one of the model's own saved views, and says so when parts could not be drawn. A model pdfcer cannot draw keeps the stand-in box and the status line gives the reason. Driven: `an_inserted_3d_model_shows_its_picture_on_the_page`.
 
-## O277 — **OPEN, building** — the 3D viewer zooms in on the mouse pointer
+## O277 — **BUILT AND DRIVEN — awaiting your verdict** — the 3D viewer zooms in on the mouse pointer
 
 His words: *"when I zoom in the 3D navigator window it should zoom centered around the mouse cursor"*
 
 Scrolling in the 3D viewer zooms about the point under the pointer, so that point stays where it is, as in a CAD viewer.
 
-**Where it stands.** Being built.
+**Where it stands.** Built. Scrolling zooms about the point under the pointer; scrolling at the centre of the picture zooms straight in. Driven: `the_model_viewer_zooms_at_the_pointer_and_fills_the_screen`.
 
-## O278 — **OPEN, building** — the 3D viewer window can be maximised and filled to the screen
+## O278 — **BUILT AND DRIVEN — awaiting your verdict** — the 3D viewer window can be minimised, maximised and filled to the screen
 
 His words: *"and the window itselt should have controls to make it full screen etc."*
 
-The 3D viewer's window has maximise, restore and close in its title bar, a Full screen button and F11 to fill the screen, and Esc or F11 to come back. Fit stays on the toolbar.
+The 3D viewer's window has minimise, maximise, restore and close in its title bar, a Full screen button and F11 to fill the screen, and Esc or F11 to come back. Fit stays on the toolbar. He added: the window must also minimise, and come back with the same view.
 
-**Where it stands.** Being built.
+**Where it stands.** Built. The title bar has minimise, maximise and close. The toolbar has *Minimize* (full screen has no title bar) and *Full screen*; F11 also toggles full screen, and Esc leaves it without closing the window. Fit works in full screen. Driven: `the_model_viewer_zooms_at_the_pointer_and_fills_the_screen` minimises the viewer and brings it back with the same camera, fills the screen, presses Fit, leaves with Esc and closes it.
 
 ## O279 — **OPEN, queued** — copy from another program and paste onto a page; drag an SVG onto a page
 

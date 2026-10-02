@@ -53,16 +53,19 @@ path = "src/main.rs"
 # (`cargo tree -p pdfcer-gui -i <crate>`) or a document that needs the
 # capability reveals it. `tools/gates/check-forwarded-features.sh` is the
 # instrument that makes the absence loud: it reads the engine's own
-# `default = [...]` list out of `D:\Dev\pdfcer`'s manifest and fails the
+# `default = [...]` list out of `pdfcer-core`'s manifest at the revision
+# `Cargo.lock` pins and fails the
 # build when a name in it is neither forwarded from here nor named in that
 # gate's DELIBERATELY-NOT-FORWARDED list with a reason.
 default = ["jpx", "ocrs", "ocrcer", "paddle", "signing", "timestamp", "3d"]
 jpx = ["pdfcer-core/jpx", "pdfcer-render/jpx"]
 
 # `3d` — the PRC reader in `pdfcer-3d`, for the Attachments panel's
-# *Save as mesh…* (STL/OBJ). Without it the button is not drawn; listing,
-# placing and saving a model as stored need no decoding.
-3d = ["dep:pdfcer-3d"]
+# *Save as mesh…* (STL/OBJ), and the engine's poster drawn from the model when
+# one is placed. Without it the button is not drawn and a placed model gets
+# the engine's placeholder poster; listing, placing and saving a model as
+# stored need no decoding.
+3d = ["dep:pdfcer-3d", "pdfcer-core/3d"]
 
 # ---------------------------------------------------------------------------
 # `signing` — the PRIVATE-KEY side, and only the private-key side.

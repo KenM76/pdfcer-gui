@@ -69,6 +69,15 @@ pub const fn move_window(_w: WindowHandle, _x: i32, _y: i32) {}
 /// runs against whatever size the window happened to open at.
 pub fn maximize_window(_w: WindowHandle) {}
 
+/// Always false.
+#[must_use]
+pub fn is_minimized(_w: WindowHandle) -> bool {
+    false
+}
+
+/// Does nothing.
+pub fn restore_quietly(_w: WindowHandle) {}
+
 /// Always refuses.
 pub fn cursor_position() -> Result<(i32, i32)> {
     refuse("reading the pointer position")

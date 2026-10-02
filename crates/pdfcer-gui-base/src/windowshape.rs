@@ -138,9 +138,34 @@ pub fn next_fullscreen(reported: Option<bool>, pending: Option<(u64, bool)>, now
     !current
 }
 
+/// Where the current viewport's outstanding request is parked: per viewport,
+/// so a second window's request is never believed for the first.
+fn pending_key(ctx: &egui::Context) -> egui::Id {
+    // `viewport_id` takes the context lock; never call it inside `data`.
+    egui::Id::new(PENDING_FULLSCREEN).with(ctx.viewport_id())
+}
+
+/// Whether the current viewport is in full screen, or has just been asked to
+/// be: a recent request outranks a report that has not caught up.
+#[must_use]
+pub fn fullscreen_believed(ctx: &egui::Context) -> bool {
+    let id = pending_key(ctx);
+    let pending: Option<(u64, bool)> = ctx.data(|d| d.get_temp(id));
+    let reported = ctx.input(|i| i.viewport().fullscreen);
+    !next_fullscreen(reported, pending, ctx.cumulative_pass_nr())
+}
+
+/// Ask the current viewport for full screen `on`, and remember the request.
+pub fn set_fullscreen(ctx: &egui::Context, on: bool) {
+    let id = pending_key(ctx);
+    let now = ctx.cumulative_pass_nr();
+    ctx.data_mut(|d| d.insert_temp(id, (now, on)));
+    ctx.send_viewport_cmd(ViewportCommand::Fullscreen(on));
+}
+
 /// Flip full screen, and report the state that was asked for.
 pub fn toggle_fullscreen(ctx: &egui::Context) -> bool {
-    let id = egui::Id::new(PENDING_FULLSCREEN);
+    let id = pending_key(ctx);
     let now = ctx.cumulative_pass_nr();
     let pending: Option<(u64, bool)> = ctx.data(|d| d.get_temp(id));
     let reported = ctx.input(|i| i.viewport().fullscreen);

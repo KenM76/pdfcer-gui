@@ -177,9 +177,27 @@ pub fn insert_refused(error: &ThreeDEmbedError) -> String {
 #[must_use]
 pub fn inserted(format: &ThreeDFormat, page_index: usize) -> String {
     format!(
-        "Placed a {} model on page {}. pdfcer shows a placeholder picture; the model itself opens in a 3D-capable reader such as Acrobat.",
+        "Placed a {} model on page {}. The model itself opens in a 3D-capable reader such as Acrobat.",
         format.label(),
         page_index + 1
+    )
+}
+
+/// The page's picture of a placed model is pdfcer's own drawing of it.
+#[must_use]
+pub fn poster_rendered(parts_missing: bool) -> &'static str {
+    if parts_missing {
+        "The picture on the page is pdfcer's drawing of the model from above its front-right corner, not one of the model's own saved views. Some parts could not be drawn and are missing from it."
+    } else {
+        "The picture on the page is pdfcer's drawing of the model from above its front-right corner, not one of the model's own saved views."
+    }
+}
+
+/// The page shows a placeholder for a placed model, and the engine's reason.
+#[must_use]
+pub fn poster_placeholder(reason: &str) -> String {
+    format!(
+        "The page shows a placeholder box for this model, because {reason}. The model itself is unchanged."
     )
 }
 
@@ -281,7 +299,44 @@ pub fn view_title(page_index: usize) -> String {
 /// How to move the camera.
 #[must_use]
 pub fn view_hint() -> &'static str {
-    "Drag to turn the model, drag with the right button to move it, scroll to zoom."
+    "Drag to turn the model, drag with the right button to move it, scroll to zoom in on \
+     the pointer. F11 fills the screen; Esc leaves it."
+}
+
+/// The button that minimises the viewer.
+#[must_use]
+pub fn view_minimize() -> &'static str {
+    "Minimize"
+}
+
+/// Its tip.
+#[must_use]
+pub fn view_minimize_tooltip() -> &'static str {
+    "Shrink the viewer to the taskbar. It comes back with the same view."
+}
+
+/// The button that fills the screen with the viewer.
+#[must_use]
+pub fn view_full_screen() -> &'static str {
+    "Full screen"
+}
+
+/// Its tip.
+#[must_use]
+pub fn view_full_screen_tooltip() -> &'static str {
+    "Fill the screen with this window (F11). Esc or F11 brings it back."
+}
+
+/// The same button while the viewer fills the screen.
+#[must_use]
+pub fn view_full_screen_leave() -> &'static str {
+    "Exit full screen"
+}
+
+/// Its tip.
+#[must_use]
+pub fn view_full_screen_leave_tooltip() -> &'static str {
+    "Put this window back to its size (Esc or F11)."
 }
 
 /// What the picture leaves out.

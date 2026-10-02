@@ -2,9 +2,11 @@
 //!
 //! Opened by *View…* on a PRC row of the Attachments panel's 3D models
 //! section. The engine's software renderer draws the placed model from a
-//! camera this window moves: drag orbits, right-drag pans, scroll zooms, and
-//! five named views jump to a side. A still image is rendered only when the
-//! camera or the picture's size changes.
+//! camera this window moves: drag orbits, right-drag pans, scroll zooms about
+//! the point under the pointer, and five named views jump to a side. The
+//! window maximises from its title bar and fills the screen from its button or
+//! F11; Escape leaves full screen before it closes the window. A still image is
+//! rendered only when the camera or the picture's size changes.
 //!
 //! Design: `docs/modules/pdfcer-gui/dialogs/model3d.md`.
 
@@ -24,6 +26,15 @@ pub const REGION_IMAGE: &str = "model3d.image"; // ui-text-exempt: trace region 
 pub const REGION_VIEW_PREFIX: &str = "model3d.view."; // ui-text-exempt: trace region name, never displayed
 /// The Fit button.
 pub const REGION_FIT: &str = "model3d.fit"; // ui-text-exempt: trace region name, never displayed
+/// The Close button.
+pub const REGION_CLOSE: &str = "model3d.close"; // ui-text-exempt: trace region name, never displayed
+/// The Minimize button.
+pub const REGION_MINIMIZE: &str = "model3d.minimize"; // ui-text-exempt: trace region name, never displayed
+/// The full-screen button.
+pub const REGION_FULL_SCREEN: &str = "model3d.full_screen"; // ui-text-exempt: trace region name, never displayed
+
+/// The viewer's OS window key.
+const VIEWPORT_KEY: &str = "model-3d"; // ui-text-exempt: a viewport key, never displayed
 
 /// The named views as (yaw, pitch) in degrees, in `t::view_names` order.
 /// Yaw 0 looks along +y (the front of a z-up model); pitch looks down.
@@ -42,6 +53,8 @@ const PITCH_LIMIT: f64 = FRAC_PI_2 - 0.01;
 /// The largest picture rendered, in pixels a side; the CPU renderer's cost
 /// grows with the area.
 const MAX_SIDE: f32 = 1600.0;
+/// The zoom range, as a multiple of the fitted view.
+const ZOOM_RANGE: (f64, f64) = (0.05, 50.0);
 
 /// Where the camera is, relative to a fitted view.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -76,15 +89,38 @@ impl Orbit {
         [-sy * cp, cy * cp, -sp]
     }
 
+    /// Multiply the zoom by `factor`, keeping the model point under the
+    /// pointer where it is on the picture.
+    ///
+    /// `offset` is the pointer's position from the picture's centre, right and
+    /// up, in picture heights. Exact on the plane through the target facing
+    /// the camera, the plane the pan moves in.
+    fn zoom_at(&mut self, bounds: &Bounds, aspect: f64, factor: f64, offset: [f64; 2]) {
+        let before = self.zoom;
+        let after = (before * factor).clamp(ZOOM_RANGE.0, ZOOM_RANGE.1);
+        let fitted = Self {
+            zoom: 1.0,
+            pan: [0.0, 0.0],
+            ..*self
+        };
+        // The fitted view's visible height, in model radii: what one picture
+        // height spans at zoom 1.
+        let span = fitted
+            .camera(bounds, aspect)
+            .map_or(2.0, |c| visible_height(&c))
+            / radius(bounds);
+        for (pan, off) in self.pan.iter_mut().zip(offset) {
+            *pan += off * span * (1.0 / before - 1.0 / after);
+        }
+        self.zoom = after;
+    }
+
     /// The camera for `bounds` in an image of `aspect` (width / height).
     fn camera(&self, bounds: &Bounds, aspect: f64) -> Result<Camera, pdfcer_3d::RenderError> {
         let dir = self.direction();
         let up = [0.0, 0.0, 1.0];
         let mut camera = Camera::fit(bounds, dir, up, self.perspective, aspect)?;
-        let radius = match bounds.radius() {
-            r if r.is_finite() && r > 0.0 => r,
-            _ => 1.0,
-        };
+        let radius = radius(bounds);
         let right = normalise(cross(dir, up));
         let image_up = cross(right, dir);
         let shift: [f64; 3] =
@@ -99,6 +135,28 @@ impl Orbit {
             };
         }
         Ok(camera)
+    }
+}
+
+/// The model's radius, or 1 for a model with no extent.
+fn radius(bounds: &Bounds) -> f64 {
+    match bounds.radius() {
+        r if r.is_finite() && r > 0.0 => r,
+        _ => 1.0,
+    }
+}
+
+/// How much of the target plane the picture shows vertically, in model units.
+fn visible_height(camera: &Camera) -> f64 {
+    match camera.projection {
+        Projection::Orthographic { height } => height,
+        Projection::Perspective { fov_y } => {
+            let distance = (0..3)
+                .map(|i| (camera.eye[i] - camera.target[i]).powi(2))
+                .sum::<f64>()
+                .sqrt();
+            2.0 * distance * (fov_y.to_radians() / 2.0).tan()
+        }
     }
 }
 
@@ -137,6 +195,12 @@ pub(crate) struct ModelView {
     rendered: Option<Rendered>,
     failed: Option<String>,
     close_requested: bool,
+    /// The minimised state last traced.
+    minimized: Option<bool>,
+    /// This frame's Escape left full screen, so it must not close the window.
+    escape_left_full_screen: bool,
+    /// The host drew a real OS window, the only kind that can fill the screen.
+    native: bool,
 }
 
 impl ModelView {
@@ -166,19 +230,110 @@ impl ModelView {
             rendered: None,
             failed: None,
             close_requested: false,
+            minimized: None,
+            escape_left_full_screen: false,
+            native: false,
         }
     }
 
     /// Draw it. Returns `false` when it should close.
     pub fn show(&mut self, ctx: &egui::Context) -> bool {
         let (frame, ()) = crate::dialogs::host::Host::new(
-            "model-3d", // ui-text-exempt: a viewport key, never displayed.
+            VIEWPORT_KEY,
             &self.title,
             egui::vec2(720.0, 600.0),
             egui::vec2(360.0, 320.0),
         )
+        .maximizable()
+        .minimizable()
         .show(ctx, |ui| self.body(ui));
-        !frame.closed && !std::mem::take(&mut self.close_requested)
+        self.native = frame.class == egui::ViewportClass::Immediate;
+        let closed = frame.closed && !std::mem::take(&mut self.escape_left_full_screen);
+        let button = std::mem::take(&mut self.close_requested);
+        if closed || button {
+            let how = if button { "button" } else { "window" };
+            // ui-text-exempt: diagnostic trace, never displayed
+            crate::diag::trace(|| format!("model-view-closed how={how}"));
+        }
+        !closed && !button
+    }
+
+    /// Full screen from the button or F11, and Escape out of it: the
+    /// conventional viewer keys. Only on a real OS window; an embedded
+    /// fallback has no screen of its own to fill.
+    fn full_screen_control(&mut self, ui: &mut Ui) {
+        use pdfcer_gui_base::windowshape;
+        if !self.native {
+            return;
+        }
+        let ctx = ui.ctx().clone();
+        self.minimize_control(ui);
+        let full = windowshape::fullscreen_believed(&ctx);
+        let (label, tip) = if full {
+            (
+                t::view_full_screen_leave(),
+                t::view_full_screen_leave_tooltip(),
+            )
+        } else {
+            (t::view_full_screen(), t::view_full_screen_tooltip())
+        };
+        let button = ui.button(label).on_hover_text(tip);
+        crate::diag::ui_rect_visible(REGION_FULL_SCREEN, button.rect, ui.clip_rect());
+        let (f11, escape, closing) = ui.input(|i| {
+            (
+                i.key_pressed(egui::Key::F11),
+                i.key_pressed(egui::Key::Escape),
+                i.viewport().close_requested(),
+            )
+        });
+        let wanted = if button.clicked() || f11 {
+            Some(!full)
+        } else if full && escape && !closing {
+            self.escape_left_full_screen = true;
+            Some(false)
+        } else {
+            None
+        };
+        if let Some(on) = wanted {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!(
+                    "model-view-full-screen asked={on} escape={}",
+                    full && escape
+                )
+            });
+            windowshape::set_fullscreen(&ctx, on);
+        }
+    }
+
+    /// A Minimize button, since full screen has no title bar, and a trace of
+    /// the window's minimised state as the OS reports it, with the camera.
+    fn minimize_control(&mut self, ui: &mut Ui) {
+        let button = ui
+            .button(t::view_minimize())
+            .on_hover_text(t::view_minimize_tooltip());
+        crate::diag::ui_rect_visible(REGION_MINIMIZE, button.rect, ui.clip_rect());
+        if button.clicked() {
+            ui.ctx()
+                .send_viewport_cmd(egui::ViewportCommand::Minimized(true));
+        }
+        let minimized = ui.input(|i| i.viewport().minimized);
+        if minimized.is_some() && minimized != self.minimized {
+            self.minimized = minimized;
+            let o = &self.orbit;
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!(
+                    "model-view-window minimized={} yaw={:.3} pitch={:.3} zoom={:.3} pan={:.4},{:.4}",
+                    minimized == Some(true),
+                    o.yaw,
+                    o.pitch,
+                    o.zoom,
+                    o.pan[0],
+                    o.pan[1]
+                )
+            });
+        }
     }
 
     fn body(&mut self, ui: &mut Ui) {
@@ -205,6 +360,7 @@ impl ModelView {
             }
             ui.checkbox(&mut self.orbit.perspective, t::view_perspective())
                 .on_hover_text(t::view_perspective_tooltip());
+            self.full_screen_control(ui);
         });
         ui.small(t::view_hint());
 
@@ -255,7 +411,9 @@ impl ModelView {
         if self.model.skipped > 0 {
             ui.small(t::mesh_skipped(self.model.skipped));
         }
-        if ui.button(t::view_close()).clicked() {
+        let close = ui.button(t::view_close());
+        crate::diag::ui_rect_visible(REGION_CLOSE, close.rect, ui.clip_rect());
+        if close.clicked() {
             self.close_requested = true;
         }
     }
@@ -276,11 +434,18 @@ impl ModelView {
             self.orbit.pan[0] -= f64::from(delta.x) * per_point;
             self.orbit.pan[1] += f64::from(delta.y) * per_point;
         }
-        if response.hovered() {
+        if let Some(at) = response.hover_pos() {
             let scroll = ui.input(|i| i.smooth_scroll_delta.y);
             if scroll != 0.0 {
-                self.orbit.zoom =
-                    (self.orbit.zoom * f64::from(scroll / 200.0).exp()).clamp(0.05, 50.0);
+                let rect = response.rect;
+                let height = f64::from(rect.height().max(1.0));
+                let offset = [
+                    f64::from(at.x - rect.center().x) / height,
+                    f64::from(rect.center().y - at.y) / height,
+                ];
+                let aspect = f64::from(rect.width().max(1.0)) / height;
+                let factor = f64::from(scroll / 200.0).exp();
+                self.orbit.zoom_at(&self.bounds, aspect, factor, offset);
             }
         }
     }
@@ -311,8 +476,13 @@ impl ModelView {
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed
                     format!(
-                        "model-view-rendered w={width} h={height} yaw={:.3} pitch={:.3} zoom={:.3} perspective={} covered={covered} hash={hash:016x}",
-                        self.orbit.yaw, self.orbit.pitch, self.orbit.zoom, self.orbit.perspective
+                        "model-view-rendered w={width} h={height} yaw={:.3} pitch={:.3} zoom={:.3} pan={:.4},{:.4} perspective={} covered={covered} hash={hash:016x}",
+                        self.orbit.yaw,
+                        self.orbit.pitch,
+                        self.orbit.zoom,
+                        self.orbit.pan[0],
+                        self.orbit.pan[1],
+                        self.orbit.perspective
                     )
                 });
                 crate::render::pressure::record_other(
@@ -385,5 +555,50 @@ mod tests {
             moved.target[2].abs() < 1e-9,
             "a sideways pan keeps the height"
         );
+    }
+
+    /// The model point on the target plane at `offset` (picture heights,
+    /// right and up from the centre).
+    fn under(orbit: &Orbit, bounds: &Bounds, aspect: f64, offset: [f64; 2]) -> [f64; 3] {
+        let camera = orbit.camera(bounds, aspect).expect("a view forms");
+        let dir = orbit.direction();
+        let right = normalise(cross(dir, [0.0, 0.0, 1.0]));
+        let up = cross(right, dir);
+        let h = visible_height(&camera);
+        std::array::from_fn(|i| camera.target[i] + (right[i] * offset[0] + up[i] * offset[1]) * h)
+    }
+
+    #[test]
+    fn a_wheel_zoom_keeps_the_point_under_the_pointer_still() {
+        let bounds = Bounds {
+            min: [-1.0, -2.0, -0.5],
+            max: [3.0, 1.0, 2.0],
+        };
+        for perspective in [true, false] {
+            let mut orbit = Orbit::named(0, perspective);
+            orbit.pan = [0.1, -0.2];
+            let (aspect, offset) = (1.6, [0.3, -0.15]);
+            let before = under(&orbit, &bounds, aspect, offset);
+            orbit.zoom_at(&bounds, aspect, 2.5, offset);
+            let after = under(&orbit, &bounds, aspect, offset);
+            for i in 0..3 {
+                assert!(
+                    (before[i] - after[i]).abs() < 1e-9,
+                    "{before:?} vs {after:?}"
+                );
+            }
+            assert!((orbit.zoom - 2.5).abs() < 1e-12);
+        }
+    }
+
+    #[test]
+    fn a_wheel_zoom_at_the_centre_does_not_pan() {
+        let bounds = Bounds {
+            min: [-1.0; 3],
+            max: [1.0; 3],
+        };
+        let mut orbit = Orbit::named(1, true);
+        orbit.zoom_at(&bounds, 1.0, 3.0, [0.0, 0.0]);
+        assert_eq!(orbit.pan, [0.0, 0.0]);
     }
 }
