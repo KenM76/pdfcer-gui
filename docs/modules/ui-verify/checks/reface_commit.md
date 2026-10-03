@@ -19,11 +19,13 @@ only those glyphs); off-desktop window, `ScriptedPointer` only,
 
 - No `text-edit-key-refused` line.
 - `text-edit-reface-planned` names `characters=U+0071,U+007A`.
-- `text-edit-reface-committed` is present (the commit took the re-faced path).
+- `text-edit-fallback` names `characters=U+0071,U+007A` (the engine's
+  fallback took the single-operator run).
 - `text-edit-reface-readback reads=1` and the reopened run is `len=5`.
 - Exactly one `undo-applied`, and the run reopens at `len=3`.
 
 ## Falsification
 
-`reface::take` returning `None` fails on the missing committed line. Skipping
+Dropping `with_fallback` from `try_commit` fails on the missing fallback line
+(the placeholder route commits instead). Skipping
 `coalesce_last` fails the one-Undo judgement.

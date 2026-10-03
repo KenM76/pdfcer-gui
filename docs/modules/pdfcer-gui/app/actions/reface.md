@@ -3,11 +3,26 @@
 `try_commit` runs when `Action::CommitTextEdit` carries a `Reface`
 (`textcommit::commit_text_edit` calls it first). It answers `false`, leaving
 the commit to the ordinary path, when the run now takes every character
-(`repertoire::refused_now`) or the line cannot be tokenised.
+(`repertoire::refused_now`).
 
-## The gesture
+## The engine's fallback first
 
-Inside one `vector_edit`:
+Inside one `vector_edit`, the edit is first asked of the engine with
+`EditOptions::with_fallback(fallbackface::named(face))` (G078): the engine
+splits the show operator around the characters with a `Tf` switch to the face
+at the run's own size, as one undo entry. It does so only when the match lies
+in one `Tj`/`TJ`. On success the engine's disclosures are kept, `set_in` is
+appended, and `not_embedded` too when the face is a standard-14 resource the
+edit added, which a reader substitutes.
+
+When the engine refuses and the line can be tokenised, the placeholder
+gesture below runs in the same closure, so the funnel records no decline for
+the first attempt. When it cannot be tokenised, the engine's refusal is
+classified by `record_edit_text_refusal` and shown.
+
+## The placeholder gesture
+
+For a match across several show operators:
 
 1. `edit_text` the tokenised line through the ordinary `Plan`, so the line is
    written exactly as any other edit (pins, narrowing, disposition).
@@ -28,6 +43,10 @@ The engine's disclosures are de-duplicated (each `edit_text` repeats the
 save/relayout notes) and `set_in` is appended.
 
 ## Trace
+
+- `text-edit-fallback page= run= characters=U+.. face= source=page|standard14|embedded`
+  — the engine set those characters in the fallback face; `face` is its
+  `/BaseFont`.
 
 - `text-edit-reface-declined page= run=` — tokenising failed.
 - `text-edit-reface-committed page= segments= steps=` — every step landed.

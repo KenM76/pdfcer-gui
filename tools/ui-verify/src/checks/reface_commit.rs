@@ -27,7 +27,7 @@ const TYPED: &str = "qz";
 const RUN_TEXT: &str = "ABC";
 const KEY_REFUSED: &str = "text-edit-key-refused"; // ui-text-exempt: a trace event name, never displayed
 const PLANNED: &str = "text-edit-reface-planned"; // ui-text-exempt: a trace event name, never displayed
-const COMMITTED: &str = "text-edit-reface-committed"; // ui-text-exempt: a trace event name, never displayed
+const FALLBACK: &str = "text-edit-fallback"; // ui-text-exempt: a trace event name, never displayed
 const READBACK: &str = "text-edit-reface-readback"; // ui-text-exempt: a trace event name, never displayed
 const CARET: &str = "text-edit-caret"; // ui-text-exempt: a trace event name, never displayed
 const UNDONE: &str = "undo-applied"; // ui-text-exempt: a trace event name, never displayed
@@ -153,11 +153,16 @@ fn judge(
             "★ no `{PLANNED}` line names both keys: `{planned:?}`. Trace: {path}."
         )));
     }
-    let Some(done) = trace.events(COMMITTED).last().map(|l| l.raw.clone()) else {
+    let Some(done) = trace.events(FALLBACK).last().map(|l| l.raw.clone()) else {
         return Ok(Some(format!(
-            "★★ the commit did not take the re-faced path: no `{COMMITTED}`. Trace: {path}."
+            "★★ the engine did not set the keys in a fallback face: no `{FALLBACK}`. Trace: {path}."
         )));
     };
+    if !done.contains("characters=U+0071,U+007A") {
+        return Ok(Some(format!(
+            "★★ the fallback set other characters than `{TYPED}`: `{done}`. Trace: {path}."
+        )));
+    }
     let reads = trace
         .events(READBACK)
         .last()

@@ -14,6 +14,8 @@ pub mod kind;
 pub mod caret;
 /// Which way the rest of the line moves when an edit changes its width.
 pub mod disposition;
+/// The `'static` fallback faces `EditOptions::with_fallback` takes.
+pub mod fallbackface;
 /// The draft's own undo and redo, and where Tab's spaces stop.
 pub mod history;
 /// The font folders' faces, from which an embedded subset is extended.

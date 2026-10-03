@@ -1,7 +1,9 @@
 //! # `app::actions::reface` — committing a text edit whose new characters the
 //! run's font lacks, with those characters set in another face
 //!
-//! [`commit`] commits the tokenised line through the ordinary plan, then for
+//! [`try_commit`] asks the engine to set the characters in the face itself
+//! (`EditOptions::with_fallback`), which it does when the match lies in one
+//! show operator. Otherwise [`commit`] commits the tokenised line through the ordinary plan, then for
 //! each segment, last first, moves its token to the face (`format_text`) and
 //! writes the characters over it (`edit_text`). Every step lands in one undo
 //! entry (`coalesce_last`); a step that fails rolls the session back to the
@@ -9,7 +11,10 @@
 //! fully edited or as they were.
 
 use pdfcer_core::edit::{Checkpoint, CommandKind, EditSession};
-use pdfcer_core::text_edit::{EditRequest, FontSelector, FormatOptions, FormatRequest};
+use pdfcer_core::text_edit::{
+    EditReport, EditRequest, FallbackSource, FontSelector, FormatOptions, FormatRequest,
+};
+use pdfcer_gui_base::editmodel::fallbackface;
 use pdfcer_gui_base::editmodel::reface::{Reface, Tokens};
 use pdfcer_gui_base::text::reface as t;
 
@@ -19,8 +24,10 @@ use crate::app::state::OpenDoc;
 use crate::canvas::textedit::Plan;
 
 /// Commit `replacement` with `reface`'s characters in its face, when the run
-/// still refuses any of them and the line can be tokenised. Answers whether
-/// it took the commit; `false` leaves it to the ordinary path.
+/// still refuses any of them. The engine's fallback (G078) is tried first; a
+/// match it cannot split — several show operators — falls to the placeholder
+/// route in the same undo step. Answers whether it took the commit; `false`
+/// leaves it to the ordinary path.
 pub(super) fn try_commit(
     doc: &mut OpenDoc,
     page: usize,
@@ -37,18 +44,28 @@ pub(super) fn try_commit(
         chars,
         ..reface.clone()
     };
-    let tokens = page_lines(doc, page).and_then(|lines| {
-        let refs: Vec<&str> = lines.iter().map(String::as_str).collect();
-        pdfcer_gui_base::editmodel::reface::tokenise_any(replacement, &reface, &refs)
-    });
-    let Some(tokens) = tokens else {
-        // ui-text-exempt: diagnostic trace, never displayed.
-        crate::diag::trace(|| format!("text-edit-reface-declined page={page} run={run}"));
-        return false;
-    };
-    let plan = crate::canvas::textedit::plan(doc, page, run, original, &tokens.text);
+    let mut engine = crate::canvas::textedit::plan(doc, page, run, original, replacement);
+    engine.options = engine
+        .options
+        .with_fallback(fallbackface::named(&reface.face));
+    let route = placeholder_route(doc, page, run, original, replacement, &reface);
     vector_edit(doc, "edit-text", page, 1, |session| {
-        commit(session, &plan, &tokens, &reface, page)
+        let (result, tier) = engine.attempt("commit", |r| session.edit_text(r, &engine.options));
+        match (result, route) {
+            (Ok(report), _) => Ok(engine_notes(page, run, report, &reface)),
+            (Err(_), Some((plan, tokens))) => {
+                commit(session, &plan, &tokens, &reface, page).map_err(|s| s.to_string())
+            }
+            (Err(error), None) => {
+                crate::app::status::decline::record_edit_text_refusal(
+                    page,
+                    run,
+                    engine.reached_one_operator(tier),
+                    &error,
+                );
+                Err(error.to_string())
+            }
+        }
     });
     let reads = page_lines(doc, page).is_some_and(|l| l.concat().contains(replacement));
     crate::diag::trace(|| {
@@ -59,6 +76,57 @@ pub(super) fn try_commit(
         )
     });
     true
+}
+
+/// The placeholder route's plan and tokens, when the line can be tokenised.
+fn placeholder_route(
+    doc: &OpenDoc,
+    page: usize,
+    run: usize,
+    original: &str,
+    replacement: &str,
+    reface: &Reface,
+) -> Option<(Plan, Tokens)> {
+    let tokens = page_lines(doc, page).and_then(|lines| {
+        let refs: Vec<&str> = lines.iter().map(String::as_str).collect();
+        pdfcer_gui_base::editmodel::reface::tokenise_any(replacement, reface, &refs)
+    });
+    let Some(tokens) = tokens else {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        crate::diag::trace(|| format!("text-edit-reface-declined page={page} run={run}"));
+        return None;
+    };
+    Some((
+        crate::canvas::textedit::plan(doc, page, run, original, &tokens.text),
+        tokens,
+    ))
+}
+
+/// The disclosures of an edit the engine committed, with the fallback traced
+/// and said in the operator's terms when it set any characters.
+fn engine_notes(page: usize, run: usize, report: EditReport, reface: &Reface) -> Vec<String> {
+    let mut notes = report.disclosures;
+    if let Some(used) = report.fallback {
+        let named: Vec<String> = used
+            .characters
+            .iter()
+            .map(|c| format!("U+{:04X}", u32::from(*c)))
+            .collect();
+        let source = fallbackface::source_token(used.source);
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!(
+                "text-edit-fallback page={page} run={run} characters={} face={} source={source}",
+                named.join(","),
+                used.base_font
+            )
+        });
+        notes.push(t::set_in(&used.characters, &reface.label));
+        if used.source == FallbackSource::AddedStandard14 {
+            notes.push(t::not_embedded(&reface.label));
+        }
+    }
+    notes
 }
 
 /// A re-faced commit that was not made, with the engine's reason.

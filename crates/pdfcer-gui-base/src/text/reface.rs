@@ -16,6 +16,12 @@ pub fn set_in(chars: &[char], face: &str) -> String {
     )
 }
 
+/// Said when the fallback face is a standard font the file does not embed.
+#[must_use]
+pub fn not_embedded(face: &str) -> String {
+    format!("{face} is not embedded, so another program may show these in a similar font.")
+}
+
 /// Said when the edit's steps could not be joined into one undo.
 #[must_use]
 pub fn undo_split(steps: usize) -> String {

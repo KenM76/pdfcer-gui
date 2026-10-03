@@ -162,8 +162,8 @@ the zoom and says why in the status bar (`canvas::textedit::fallback`);
 measure with `ui-verify --check a_stand_in_preview_is_the_texts_size_and_says_why`.
 A key a run's font lacks goes into the draft when a nearby face has it
 (`canvas::textedit::reface::plan`) and commits set in that face, the rest of
-the line untouched, as one undo entry (`app::actions::reface`, the G078
-workaround; a refused step rolls back to a checkpoint, so Redo is untouched,
+the line untouched, as one undo entry (`app::actions::reface`: the engine's G078 fallback when
+the match lies in one show operator, else placeholder tokens; a refused step rolls back to a checkpoint, so Redo is untouched,
 G083). Before that, a key the subset never carried is added to it from the
 same-name installed face (`editmodel::installedfaces`, indexed on a
 background thread at start, about 3 s over 542 files here; until then the
