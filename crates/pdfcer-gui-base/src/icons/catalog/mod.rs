@@ -798,6 +798,9 @@ pub enum Icon {
     /// as *the way round* and *what is enclosed*.
     MeasureArea,
 
+    /// The snapshot box — `view.tool_snapshot`. A dashed box with grips.
+    Snapshot,
+
     /// Radius / diameter measurement — `measure.radius_diameter`.
     ///
     ///

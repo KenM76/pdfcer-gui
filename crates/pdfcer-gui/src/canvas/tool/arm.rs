@@ -51,6 +51,7 @@ pub fn cursor_for(
             | DragKind::TextAnnot(_)
             | DragKind::Form(_)
             | DragKind::Place(_)
+            | DragKind::Snapshot
             | DragKind::TextBox => CursorIcon::Crosshair,
             DragKind::Move => CursorIcon::Grabbing,
             DragKind::Resize(grip) => grip.cursor(),
@@ -161,6 +162,7 @@ pub fn toggle_hand(ctx: &egui::Context) -> CanvasTool {
         | CanvasTool::Measure(_)
         | CanvasTool::TextAnnot(_)
         | CanvasTool::Place(_)
+        | CanvasTool::Snapshot
         | CanvasTool::Text
         | CanvasTool::TextEdit(_)
         | CanvasTool::Form(_) => CanvasTool::Hand,
@@ -181,6 +183,7 @@ pub fn toggle_text(ctx: &egui::Context) -> CanvasTool {
         | CanvasTool::Node
         | CanvasTool::Hand
         | CanvasTool::Place(_)
+        | CanvasTool::Snapshot
         | CanvasTool::Markup(_)
         | CanvasTool::Measure(_)
         | CanvasTool::TextAnnot(_)
@@ -376,7 +379,8 @@ pub fn retire_forbidden(ctx: &egui::Context, caps: Capabilities) -> bool {
         // arm — where the reason is stated — rather than as a `true` on a line of
         // its own, so that a future reader adding a fifth tool has to decide which
         // of the two groups it joins.
-        CanvasTool::Select | CanvasTool::Hand | CanvasTool::Text => true,
+        // Snapshot reads and copies; every mode may.
+        CanvasTool::Select | CanvasTool::Hand | CanvasTool::Text | CanvasTool::Snapshot => true,
         // **Node is on the OTHER side of the line the paragraph above
         // draws, and it answers to TWO capabilities.**
         //

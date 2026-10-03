@@ -135,6 +135,10 @@ fn sentence(ctx: &egui::Context, doc: &OpenDoc, tool: CanvasTool) -> (String, Op
         // O66 — the ONLY surface that states this gesture and its way out,
         // because the window that asked for the placement has hidden itself.
         CanvasTool::Place(_) => (crate::text::placing::armed_instruction().to_owned(), None),
+        CanvasTool::Snapshot => (
+            t::snapshot_instruction().to_owned(),
+            Some(t::snapshot_stays().to_owned()),
+        ),
         CanvasTool::TextAnnot(kind) => (
             t::text_annot_instruction(kind).to_owned(),
             Some(t::text_annot_release().to_owned()),
@@ -244,6 +248,7 @@ fn command_for(tool: CanvasTool) -> Option<&'static str> {
         CanvasTool::Select => Some("view.tool_select"),
         CanvasTool::Node => Some("view.tool_node"),
         CanvasTool::Hand => Some("view.tool_hand"),
+        CanvasTool::Snapshot => Some("view.tool_snapshot"),
         CanvasTool::Text => Some("view.tool_text"),
         CanvasTool::Markup(kind) => Some(crate::shell::commands::markup_command(kind)),
         // Each kind names its own command, which is what lets the strip show
@@ -301,6 +306,7 @@ mod tests {
             CanvasTool::Select,
             CanvasTool::Node,
             CanvasTool::Hand,
+            CanvasTool::Snapshot,
             CanvasTool::Text,
             CanvasTool::TextEdit(TextEditKind::Add),
             CanvasTool::TextEdit(TextEditKind::Edit),

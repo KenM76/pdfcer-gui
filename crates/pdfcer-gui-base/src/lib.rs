@@ -407,6 +407,9 @@ pub mod canvasmapping;
 /// The snap indicator and its screen tolerance.
 pub mod snapmark;
 
+/// The box View ▸ Snapshot leaves on a page, in PDF user space.
+pub mod snapshotbox;
+
 /// The overlay colour roles the canvas registers with the theme.
 pub mod overlayroles;
 

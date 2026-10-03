@@ -195,6 +195,10 @@ pub(super) fn band() -> Vec<Command> {
         command("view.tool_hand", t::view_tool_hand(), 225)
             .with_icon("hand")
             .enabled_when("doc.pages"),
+        // Beside the hand: a tool, reached from every mode because View is.
+        command("view.tool_snapshot", t::view_tool_snapshot(), 267)
+            .with_icon("snapshot")
+            .enabled_when("doc.pages"),
         //
         // Beside `view.tool_hand` because View ▸ Navigate is where the *other*
         // pointer-tool toggle already lives, and because View is the one tab

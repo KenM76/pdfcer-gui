@@ -285,6 +285,8 @@ pub enum DragKind {
     /// `Action` — the operator has not pressed Insert yet and may still change
     /// the numbers.
     Place(crate::canvas::placing::PlaceKind),
+    /// Lays a snapshot box — see [`crate::canvas::snapshot`].
+    Snapshot,
 }
 
 impl DragKind {
@@ -307,6 +309,7 @@ impl DragKind {
             Self::TextAnnot(_) => "TextAnnot",
             Self::Form(_) => "Form",
             Self::Place(_) => "Place",
+            Self::Snapshot => "Snapshot",
         }
     }
 }
@@ -531,6 +534,13 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     //
     // The capability comes from the KIND rather than being named here, so the
     // mapping exists once — see `PlaceKind::capability`.
+    // Snapshot: a drag lays the box; a click is nothing. Every mode may.
+    if tool == CanvasTool::Snapshot {
+        return PressMeaning {
+            drag: Some(DragKind::Snapshot),
+            click: false,
+        };
+    }
     if let CanvasTool::Place(kind) = tool {
         let permitted = kind.capability(caps);
         return PressMeaning {

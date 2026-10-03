@@ -171,6 +171,7 @@
                         ),
                         Command(id: "view.tool_text", size: Small),
                         Command(id: "view.tool_hand", size: Small),
+                        Command(id: "view.tool_snapshot", size: Small),
                         Command(
                             id: "view.smart_select",
                             size: Small,

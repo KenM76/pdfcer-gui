@@ -66,7 +66,8 @@ pub fn block_for(tool: CanvasTool) -> Option<Block> {
         | CanvasTool::Markup(_)
         | CanvasTool::TextAnnot(_)
         | CanvasTool::Form(_)
-        | CanvasTool::Place(_) => None,
+        | CanvasTool::Place(_)
+        | CanvasTool::Snapshot => None,
     }
 }
 

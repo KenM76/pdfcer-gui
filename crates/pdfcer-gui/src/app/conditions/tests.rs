@@ -126,49 +126,6 @@ fn every_armable_tool_kind_reports_a_pressed_state() {
         );
     }
 
-    // …and the two tools that carry **no** kind, which is why they cannot
-    // be reached by walking an `ALL`. They are the ones this test's own
-    // mechanism would silently miss, so they are named — and naming them is
-    // exactly the "list of ids that has to be remembered" this test's header
-    // warns about, which is why the warning is narrowed rather than ignored:
-    // walk the kinds where kinds exist, and enumerate the kindless ones,
-    // because there is nothing else to enumerate them from.
-    //
-    // The text tool is the more exposed of the pair. Arming it changes the
-    // cursor and nothing else on the canvas, so a missing pressed state
-    // would leave an operator with no evidence at all of the mode they are
-    // in — where a hand at least shows a grab cursor and moves the page.
-    for (tool, id) in [
-        (CanvasTool::Hand, "view.tool_hand"),
-        (CanvasTool::Text, "view.tool_text"),
-    ] {
-        let cond = egui_shell::ribbon::selected_condition(id);
-        tool::select(&ctx, CanvasTool::Select);
-        assert!(
-            !app.conditions(&ctx).is_set(&cond),
-            "`{id}` must not read pressed while the select tool is armed"
-        );
-        tool::select(&ctx, tool);
-        assert!(
-            app.conditions(&ctx).is_set(&cond),
-            "`{id}` names {tool:?}, which is armed, and the ribbon does not say so"
-        );
-        // …and arming it must not leave the OTHER kindless tool pressed,
-        // which is the property that makes them behave as a radio without
-        // anything enforcing it — the same payoff the kind-carrying enum
-        // gives the two families above.
-        let other = if tool == CanvasTool::Hand {
-            "view.tool_text"
-        } else {
-            "view.tool_hand"
-        };
-        assert!(
-            !app.conditions(&ctx)
-                .is_set(&egui_shell::ribbon::selected_condition(other)),
-            "arming {tool:?} must not leave `{other}` pressed"
-        );
-    }
-
     // …and exactly one is pressed at a time, which is the payoff of the
     // kind-carrying enum shape: a tool that could be two kinds at once is
     // unrepresentable, so two pressed buttons are too.
@@ -191,6 +148,47 @@ fn every_armable_tool_kind_reports_a_pressed_state() {
             )),
             "arming a measure tool must not leave a markup control pressed"
         );
+    }
+}
+
+/// The tools that carry no kind each read pressed while armed, and arming one
+/// leaves no other pressed. They are inputs named by hand because no `ALL`
+/// reaches them; the text tool is the most exposed, since arming it changes
+/// only the cursor.
+#[test]
+fn the_kindless_tools_read_pressed_one_at_a_time() {
+    use crate::canvas::tool::{self, CanvasTool};
+
+    let app = PdfcerApp::new();
+    let ctx = egui::Context::default();
+    let kindless = [
+        (CanvasTool::Hand, "view.tool_hand"),
+        (CanvasTool::Text, "view.tool_text"),
+        (CanvasTool::Snapshot, "view.tool_snapshot"),
+    ];
+    for (tool, id) in kindless {
+        let cond = egui_shell::ribbon::selected_condition(id);
+        tool::select(&ctx, CanvasTool::Select);
+        assert!(
+            !app.conditions(&ctx).is_set(&cond),
+            "`{id}` must not read pressed while the select tool is armed"
+        );
+        tool::select(&ctx, tool);
+        assert!(
+            app.conditions(&ctx).is_set(&cond),
+            "`{id}` names {tool:?}, which is armed, and the ribbon does not say so"
+        );
+        // …and arming it must not leave another kindless tool pressed,
+        // which is the property that makes them behave as a radio without
+        // anything enforcing it — the same payoff the kind-carrying enum
+        // gives the two families above.
+        for (_, other) in kindless.iter().filter(|(t, _)| *t != tool) {
+            assert!(
+                !app.conditions(&ctx)
+                    .is_set(&egui_shell::ribbon::selected_condition(other)),
+                "arming {tool:?} must not leave `{other}` pressed"
+            );
+        }
     }
 }
 

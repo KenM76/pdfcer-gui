@@ -20,6 +20,7 @@ pub mod forms;
 /// O66. A shared arm, not a feature of one dialog: his sentence was about
 /// *"anything we are inserting"*.
 pub mod placing;
+pub mod snapshot;
 // pdfcer's OWN crosshair bitmap, supplied to the OS as a real cursor. The
 // platform's stock crosshair is monochrome and its colour belongs to the
 // operator's pointer scheme, which is how it came to be white on white paper.

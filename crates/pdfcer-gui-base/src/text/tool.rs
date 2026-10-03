@@ -84,6 +84,18 @@ pub const fn hand_borrow() -> &'static str {
     "Holding Space borrows this from any other tool, so you rarely need to arm it."
 }
 
+/// The Snapshot tool's instruction.
+#[must_use]
+pub const fn snapshot_instruction() -> &'static str {
+    "Drag a box around the part of the page you want. Drag again to replace it."
+}
+
+/// The Snapshot tool's second line.
+#[must_use]
+pub const fn snapshot_stays() -> &'static str {
+    "The box stays on the page while you zoom and scroll."
+}
+
 /// The text-sweep tool's instruction.
 #[must_use]
 pub const fn text_select_instruction() -> &'static str {

@@ -389,11 +389,12 @@ fn registration_succeeds_and_registers_every_command() {
     // 192 → 193: `markup.paste_image_stamp`, Markup ▸ Notes.
     // 193 → 195: `file.new_from_clipboard` and `pages.insert_from_clipboard`.
     // 195 → 198: `measure.area`, and Show area / Show perimeter on a dimension.
+    // 198 → 199: `view.tool_snapshot` (O272), View ▸ Navigate.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     assert_eq!(
         registry().len(),
-        198 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
+        199 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
     );
 }
 
@@ -794,10 +795,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 175 → 177: the two clipboard-to-pages commands name `paste` too.
     // 177 → 180: `measure.area` and Show area name `measure-area`; Show perimeter
     // names `measure-perimeter`.
+    // 180 → 181: `view.tool_snapshot` names `snapshot`, drawn for it.
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
     assert_eq!(
         named,
-        180 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
+        181 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

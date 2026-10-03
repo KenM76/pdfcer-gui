@@ -384,6 +384,15 @@ pub enum GestureOutcome {
         /// In flight, or released.
         phase: Phase,
     },
+    /// A snapshot box being dragged out; corners raw, in canvas space.
+    Snapshot {
+        /// Where the drag began.
+        from: Pos2,
+        /// Where the pointer is now.
+        to: Pos2,
+        /// In flight, or released.
+        phase: Phase,
+    },
 }
 
 /// A primary-button drag in flight.
@@ -523,6 +532,11 @@ impl Drag {
             // where they have got to. Normalising here would silently move the
             // anchor to the top-left of the sweep, which a later Shift+click
             // would then extend from.
+            DragKind::Snapshot => GestureOutcome::Snapshot {
+                from: self.origin,
+                to: self.latest,
+                phase,
+            },
             DragKind::TextSelect => GestureOutcome::TextSelect {
                 from: self.origin,
                 to: self.latest,

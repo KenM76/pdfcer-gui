@@ -586,6 +586,11 @@ pub(super) const MEASURE_ANGLE: &str = include_str!("assets/measure-angle.svg");
 /// Area measurement — `measure.area`.
 pub(super) const MEASURE_AREA: &str = include_str!("assets/measure-area.svg");
 
+/// `snapshot.svg` — the art for [`super::Icon::Snapshot`].
+///
+/// The snapshot box — `view.tool_snapshot`.
+pub(super) const SNAPSHOT: &str = include_str!("assets/snapshot.svg");
+
 /// `measure-length.svg` — the art for [`super::Icon::MeasureLength`].
 ///
 /// Path-length measurement — `measure.length`.

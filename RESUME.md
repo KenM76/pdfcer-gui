@@ -95,7 +95,9 @@ own chords from `canvas::textedit::draftkeys` (`ui-verify --check
 a_changed_shortcut_takes_effect_and_persists`). O272, the snapshot box, is
 being built in eight steps (`docs/modules/pdfcer-gui-base/prefs/snapshot.md`
 has S1, the resolution setting: `ui-verify --check
-the_snapshot_resolution_persists`). Next: S2, the box on the canvas.
+the_snapshot_resolution_persists`; S2–S3, the box laid, moved, resized and
+cleared, is `canvas::snapshot`: `ui-verify --check
+a_snapshot_box_moves_resizes_and_clears`). Next: S4, the moving outline.
 
 **O263, Align and Distribute: all four stages built and driven** (Align,
 Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting

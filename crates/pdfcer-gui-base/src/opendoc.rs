@@ -992,6 +992,8 @@ pub struct OpenDoc {
     /// The operator's optional-content override. See [`LayerOverride`].
     ///
     pub layers: LayerOverride,
+    /// The View ▸ Snapshot box, if one is laid. View state; never saved.
+    pub snapshot: Option<crate::snapshotbox::SnapshotBox>,
 }
 
 impl OpenDoc {
@@ -1126,6 +1128,7 @@ impl OpenDoc {
             // — which is a distinct state from "hide nothing". See
             // `LayerOverride`.
             layers: LayerOverride::default(),
+            snapshot: None,
         }
     }
 

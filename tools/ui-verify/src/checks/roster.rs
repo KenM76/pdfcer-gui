@@ -1045,6 +1045,8 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(settings_nav::SettingsNavigateByPage),
         Box::new(shortcut_change::AChangedShortcutTakesEffectAndPersists),
         Box::new(snapshot_dpi::TheSnapshotResolutionPersists),
+        Box::new(snapshot_box::ASnapshotBoxStaysOnThePageThroughAZoom),
+        Box::new(snapshot_grips::ASnapshotBoxMovesResizesAndClears),
         Box::new(bookmark_move::ABookmarkCanBeDraggedAndABranchCollapsed),
         Box::new(attachments::AFileCanBeAttachedAndTakenBackOut),
         Box::new(models::AModelIsPlacedListedAndSavedBack),

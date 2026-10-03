@@ -134,7 +134,8 @@ pub fn gesture_needs_model(outcome: &GestureOutcome) -> bool {
         | GestureOutcome::Markup { .. }
         | GestureOutcome::TextAnnot { .. }
         | GestureOutcome::FormField { .. }
-        | GestureOutcome::Place { .. } => false,
+        | GestureOutcome::Place { .. }
+        | GestureOutcome::Snapshot { .. } => false,
     }
 }
 

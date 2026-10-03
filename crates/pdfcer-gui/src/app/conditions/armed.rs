@@ -56,6 +56,9 @@ impl crate::app::PdfcerApp {
         if crate::canvas::tool::selected(ctx) == crate::canvas::tool::CanvasTool::Hand {
             set.set(egui_shell::ribbon::selected_condition("view.tool_hand"));
         }
+        if crate::canvas::tool::selected(ctx) == crate::canvas::tool::CanvasTool::Snapshot {
+            set.set(egui_shell::ribbon::selected_condition("view.tool_snapshot"));
+        }
         // **The text tool's pressed state**, published exactly as the hand's
         // is, from the same `egui::Memory`-backed value and outside the
         // `Status::Open` arm for the same reason.

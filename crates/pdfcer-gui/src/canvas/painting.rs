@@ -296,6 +296,7 @@ pub(super) fn draw(
     if let Some(rect) = marquee {
         overlay::draw_marquee(&painter, map, rect);
     }
+    crate::canvas::snapshot::paint(&painter, doc, page_index, map);
     // The ghost sits ON TOP of the real outline, and both stay visible: the
     // pair is what states the displacement. `ghost` is `Some` only when
     // `moving::drag` has already established that the release will commit — a

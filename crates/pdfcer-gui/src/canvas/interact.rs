@@ -346,6 +346,7 @@ pub(super) fn interact(
     // `drop(targets)`, since taking `&mut doc` inside the match is impossible
     // while the provider `Ref` is alive.
     let mut hold_after_drop: Option<crate::canvas::shapes::ShapePreview> = None;
+    let mut snapshot_after_drop = None;
     // **R9's other half: a shape with no nodes says so.** `Pass 255.0`.
     //
     // A rectangle, an ellipse and a text mark draw no node anchors (a freehand
@@ -613,6 +614,10 @@ pub(super) fn interact(
         } => {
             pv.band = Some(crate::canvas::placing::band(from, to));
             crate::canvas::placing::band_released(&ctx, doc, from, to, phase);
+        }
+        GestureOutcome::Snapshot { from, to, phase } => {
+            pv.band = crate::canvas::snapshot::band(&ctx, doc, map, from, to);
+            snapshot_after_drop = Some((from, to, phase));
         }
         GestureOutcome::FormField {
             kind,
@@ -1039,6 +1044,9 @@ pub(super) fn interact(
     if let Some(hold) = hold_after_drop {
         doc.hold_preview(hold);
     }
+    if let Some((from, to, phase)) = snapshot_after_drop {
+        crate::canvas::snapshot::dragged(&ctx, doc, map, from, to, phase);
+    }
 
     // ---- 7b. the released zoom marquee ----------------------------------
     //
@@ -1158,6 +1166,7 @@ pub(super) fn interact(
         pointer_down,
         over_canvas,
     );
+    let icon = crate::canvas::snapshot::cursor(&ctx, doc, map, active_tool).or(icon);
     if let Some(icon) = icon {
         ctx.set_cursor_icon(icon);
     }

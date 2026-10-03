@@ -259,6 +259,16 @@ pub const fn view_tool_hand() -> CommandText {
     )
 }
 
+/// `view.tool_snapshot`
+#[must_use]
+pub const fn view_tool_snapshot() -> CommandText {
+    CommandText::new(
+        "Snapshot",
+        "Drag a box on the page. The box stays on the page while you zoom and scroll. Press \
+         again to return to the select tool.",
+    )
+}
+
 /// `view.tool_text`
 #[must_use]
 pub const fn view_tool_text() -> CommandText {

@@ -154,6 +154,7 @@ pub(super) fn tab() -> Tab {
                     icon_only("view.tool_node").shown_when("mode.edit_content"),
                     icon_only("view.tool_text"),
                     icon_only("view.tool_hand"),
+                    icon_only("view.tool_snapshot"),
                     // **Smart select** — `OPERATOR_REQUESTS.md` O70, and
                     // the operator asked for it here by name: *"we should have
                     // a checkbox in navigate for a Smart-Selector option."*

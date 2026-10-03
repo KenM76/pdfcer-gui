@@ -38,6 +38,7 @@ pub(crate) fn handles(id: &str) -> bool {
         id,
         "view.tool_select"
             | "view.tool_hand"
+            | "view.tool_snapshot"
             | "view.tool_text"
             | "view.tool_node"
             | "view.smart_select"
@@ -57,6 +58,9 @@ pub(crate) fn dispatch(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id:
         // how a ribbon comes to say Hand while the canvas marquees.
         "view.tool_hand" => {
             let _ = crate::canvas::tool::toggle_hand(ctx);
+        }
+        "view.tool_snapshot" => {
+            let _ = crate::canvas::snapshot::toggle(ctx);
         }
         // **The text tool**, the hand's twin down to the discarded return.
         //
@@ -174,6 +178,7 @@ mod tests {
         for id in [
             "view.tool_select",
             "view.tool_hand",
+            "view.tool_snapshot",
             "view.tool_text",
             "view.tool_node",
             "view.smart_select",

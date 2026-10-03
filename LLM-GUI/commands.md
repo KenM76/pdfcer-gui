@@ -118,6 +118,7 @@ view.text_chunks  Text chunks
 view.tool_hand  Hand
 view.tool_node  Points
 view.tool_select  Select
+view.tool_snapshot  Snapshot
 view.tool_text  Text
 view.zoom_actual  Actual size
 view.zoom_fit_height  Fit height
