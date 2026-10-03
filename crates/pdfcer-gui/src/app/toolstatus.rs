@@ -159,6 +159,7 @@ fn sentence(ctx: &egui::Context, doc: &OpenDoc, tool: CanvasTool) -> (String, Op
             (line, None)
         }
         CanvasTool::Measure(MeasureKind::Perimeter) => (perimeter_stage(ctx, doc), None),
+        CanvasTool::Measure(MeasureKind::Area) => (area_stage(ctx, doc), None),
         CanvasTool::Measure(MeasureKind::Circular) => (circular_stage(ctx, doc), None),
         CanvasTool::Measure(kind) => (t::measure_instruction(kind).to_owned(), None),
     }
@@ -185,6 +186,29 @@ fn perimeter_stage(ctx: &egui::Context, doc: &OpenDoc) -> String {
         group.format,
     );
     t::measure_perimeter_live(picked, &shown.text)
+}
+
+/// The area tool's live sentence: the instruction before three corners, the
+/// enclosed area from then on.
+fn area_stage(ctx: &egui::Context, doc: &OpenDoc) -> String {
+    let instruction = || t::measure_instruction(MeasureKind::Area).to_owned();
+    let Some(st) = crate::canvas::measure::read(ctx) else {
+        return instruction();
+    };
+    let picked = st.perimeter.points().len();
+    if picked < 3 {
+        return instruction();
+    }
+    let model = doc.session.dimension_model();
+    let Some(group) = model.group(st.group) else {
+        return instruction();
+    };
+    let shown = pdfcer_core::dimension::format_area_measurement(
+        st.perimeter.area_points(None),
+        group.scale,
+        group.format,
+    );
+    t::measure_area_live(picked, &shown.text)
 }
 
 /// The radius/diameter tool's live sentence: the instruction before the first
@@ -282,6 +306,7 @@ mod tests {
             CanvasTool::TextEdit(TextEditKind::Edit),
             CanvasTool::Measure(MeasureKind::Linear),
             CanvasTool::Measure(MeasureKind::Perimeter),
+            CanvasTool::Measure(MeasureKind::Area),
             CanvasTool::Measure(MeasureKind::Circular),
         ];
         for tool in named {

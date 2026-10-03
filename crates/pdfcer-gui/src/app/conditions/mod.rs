@@ -299,6 +299,12 @@ impl PdfcerApp {
                 Some((_, true)) => set.set(crate::shell::menus::DIMENSION_RADIUS_OFFERED),
                 None => {}
             }
+            // One closed perimeter ce dimension: the area / perimeter switch.
+            match crate::app::dispatch::dimdisplay::perimeter(doc, &doc.selection) {
+                Some((_, false)) => set.set(crate::shell::menus::DIMENSION_AREA_OFFERED),
+                Some((_, true)) => set.set(crate::shell::menus::DIMENSION_PERIMETER_OFFERED),
+                None => {}
+            }
             // Two or more runs of one page text object: `format.merge_text_runs`
             // is offered, and enabled when the engine's preflight agrees.
             if !doc.selection.is_empty() {

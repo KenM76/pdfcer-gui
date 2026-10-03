@@ -72,9 +72,10 @@ fn the_icon_column_lights_up_the_rows_whose_commands_already_name_a_glyph() {
     // 35 → 36: `format.merge_text_runs` on the canvas object menu.
     // 36 → 37: `markup.flatten` on the canvas markup menu.
     // 37 → 41: the canvas dimension menu, four rows.
+    // 41 → 43: Show area and Show perimeter on the dimension menu.
     assert_eq!(
         (glyph, blank, absent),
-        (41, 1, 0),
+        (43, 1, 0),
         "menu rows by icon slot state; per-menu breakdown:\n{report}"
     );
     assert_eq!(

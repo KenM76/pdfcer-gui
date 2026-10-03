@@ -278,7 +278,6 @@ standard — is the differentiator here, and nothing below should dilute it.
 | Item | What it waits for |
 |---|---|
 | **Angular** | Shell only. The engine's dimension kinds carry an angular variant and author it; this shell registers no command and arms no tool. The absent-command register still records this as needing an engine verb, which is stale. |
-| **Area** | An engine verb. The dimension kinds are linear, circular, angular and perimeter; there is no area kind to author. |
 | **Count tool and takeoff schedule** | An engine verb plus a schedule surface. The larger of the two remaining takeoff items. |
 | **Aligned** | Nothing. It is a *constraint* on a linear pick rather than a tool, so it belongs on a property control and not as another armable kind. |
 

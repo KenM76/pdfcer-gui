@@ -245,9 +245,9 @@ cannot disagree, where two hand-written tables can.
 
 `measure.aligned` is a *constraint* on a linear pick rather than a tool
 (the old shell's `LinearPick` carries an `AxisConstraint`), so it belongs on
-a property control, not here. `measure.angular`, `measure.area`,
-`measure.distance`, `measure.perimeter` and `measure.count` need engine
-verbs that do not exist — `RIBBON_IA.md` §5.6 marks them **N** — and
+a property control, not here. `measure.distance` and `measure.count` need
+engine verbs that do not exist — `RIBBON_IA.md` §5.6 marks them **N** —
+`measure.angular` is shell work not yet built, and
 `measure.calibrate` is a second entry path into the scale dialog rather than
 a fifth tool. All remain in [`super::manifest::PLANNED`], which is where an
 absent command is supposed to be.

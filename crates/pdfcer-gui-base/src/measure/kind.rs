@@ -89,6 +89,15 @@ pub enum MeasureKind {
     /// perfectly ordinary path — a loop of cable is still cable. Double-click
     /// and `measure.finish` are its endings.
     PathLength,
+    /// **Click the corners of a region; its enclosed area, in the group's units
+    /// squared.** The Perimeter gesture authoring a perimeter ce dimension with
+    /// `area: true`.
+    ///
+    /// Every ending closes the ring, because an area belongs to a closed
+    /// outline: clicking the first vertex, a double-click and `measure.finish`
+    /// all author the same closed shape, and the preview is drawn closed for
+    /// that reason.
+    Area,
     /// Pick two lines on the page; the engine authors the dimension between
     /// them — [`pdfcer_core::dimension::TwoLinePlacement`] decides where it
     /// lands, so this side chooses the pair and nothing else.
@@ -131,6 +140,7 @@ impl MeasureKind {
         Self::Circular,
         Self::Perimeter,
         Self::PathLength,
+        Self::Area,
         Self::TwoLine,
     ];
 
@@ -163,6 +173,7 @@ mod tests {
                 | MeasureKind::Circular
                 | MeasureKind::Perimeter
                 | MeasureKind::PathLength
+                | MeasureKind::Area
                 | MeasureKind::TwoLine => "ribbon",
                 MeasureKind::Scale => "elsewhere",
             }
@@ -192,7 +203,7 @@ mod tests {
         }
         assert_eq!(
             MeasureKind::ALL.len() + MeasureKind::ARMED_ELSEWHERE.len(),
-            6,
+            7,
             "a variant was added to the enum and to neither list, or counted twice"
         );
     }

@@ -161,6 +161,18 @@ pub(super) fn band() -> Vec<Command> {
         command("format.dimension_radius", t::format_dimension_radius(), 818)
             .with_icon("measure-radius")
             .enabled_when(crate::shell::menus::DIMENSION_RADIUS_OFFERED),
+        // The area / perimeter switch of a closed perimeter ce dimension, from
+        // the same menu and on the same terms.
+        command("format.dimension_area", t::format_dimension_area(), 825)
+            .with_icon("measure-area")
+            .enabled_when(crate::shell::menus::DIMENSION_AREA_OFFERED),
+        command(
+            "format.dimension_perimeter",
+            t::format_dimension_perimeter(),
+            826,
+        )
+        .with_icon("measure-perimeter")
+        .enabled_when(crate::shell::menus::DIMENSION_PERIMETER_OFFERED),
         //
         // `RIBBON_IA.md` §5.8 is what puts it here. That section's table gives
         // the **Vector object** row as `Stroke · Fill · Winding rule · Node

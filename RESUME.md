@@ -82,7 +82,9 @@ The check writes the real clipboard; `ClipGuard` snapshots it and restores it
 only if nothing else wrote it meanwhile. In Review a clipboard picture becomes a custom stamp made from a temporary
 one-page PDF (`blank::picture_page`) until G095 `add_image_stamp` lands.
 File ▸ New from clipboard and Pages ▸ Insert from clipboard are
-`app::dispatch::ospaste::pages`. Next: the engine pin move, then O280 (Area), then WORDLIKE step 8.
+`app::dispatch::ospaste::pages`. Measure ▸ Area (O280) sits beside Perimeter
+and a closed perimeter ce dimension switches between perimeter and area
+(`ui-verify --check an_area_measures_the_region_it_encloses`). Next: WORDLIKE step 8.
 
 **O263, Align and Distribute: all four stages built and driven** (Align,
 Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting
@@ -160,9 +162,7 @@ The engine pin carries
 G074, G077 and G081 (`UnsupportedCause` is data); steps 12 and 13 consume them.
 Rental-form sweep (`tmp` script, Ken's copy only): 32 of 32 line edits commit
 at pin `dd5747d1`. Queued after the WORDLIKE steps: O274 (a Keyboard Shortcuts page in
-Settings) comes after step 9 and before the snapshot box (O272). O280 (an Area
-measurement, `measure.area`) comes after O279 P10 and before step 8; the engine
-answered G098 past the pin, so it starts with a pin move after P7.
+Settings) comes after step 9 and before the snapshot box (O272).
 
 **Since that release, unpublished:** title bars follow the light or dark
 theme (O281, `app::caption::sync` over `native_window::set_dark_captions`;

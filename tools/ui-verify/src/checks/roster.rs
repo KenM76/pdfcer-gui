@@ -433,6 +433,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(bates_scripted::BatesNumberingWithoutTheMouse),
         Box::new(labels_scripted::PageLabelsWithoutTheMouse),
         Box::new(measure_place_scripted::MeasurePlaceWithoutTheMouse),
+        Box::new(measure_area_scripted::AnAreaMeasuresTheRegionItEncloses),
         // Adjacent to that rung deliberately: the chunk boxes are its VISIBLE
         // half. The descent above proves the selection can reach one chunk of
         // text; this proves an operator can see which chunk before committing a

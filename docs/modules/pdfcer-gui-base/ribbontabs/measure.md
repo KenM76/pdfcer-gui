@@ -32,10 +32,13 @@ was set.
 
 # What is absent, and one entry worth flagging
 
-`Angular`, and the whole **Quantity** (distance, perimeter, area,
-count) and **Takeoff** (schedule panel, export CSV) groups, are **N**.
-Area and Angular are the conspicuous absences for anyone doing takeoff
-on a drawing.
+`Angular`, and the whole **Quantity** (distance, count) and **Takeoff**
+(schedule panel, export CSV) groups, are **N**. Angular is the
+conspicuous absence for anyone doing takeoff on a drawing.
+
+`measure.area` sits beside `measure.perimeter` in the ce dimension group,
+not in Quantity: it authors a closed perimeter ce dimension labelled with
+its area, and Quantity holds the readings that author nothing.
 
 **`Two-line` is a C row and is at the top of the project's own queue.**
 Core and CLI shipped and were measured; the gesture's entry point has

@@ -89,25 +89,53 @@ impl PerimeterPick {
         })
     }
 
+    /// **The area ce dimension this pick would author**: always closed, so
+    /// `None` below three vertices.
+    #[must_use]
+    pub fn author_area(&self) -> Option<DimensionKind> {
+        if self.points.len() < MIN_CLOSED {
+            return None;
+        }
+        Some(DimensionKind::Perimeter {
+            points: self.points.clone(),
+            closed: true,
+            area: true,
+            offset: 0.0,
+            text_along: 0.0,
+        })
+    }
+
     /// **The shape as it would be drawn if the operator released now**, with
     /// `pointer` as a provisional last vertex.
+    ///
+    /// `area` draws it closed: every ending of the Area tool closes the ring,
+    /// so the closing segment is part of what the next ending commits. A
+    /// perimeter or length preview is open, because the operator has not
+    /// closed it and the closing segment would promise one segment too many.
     #[must_use]
-    pub fn preview(&self, pointer: Point) -> Option<DimensionKind> {
+    pub fn preview(&self, pointer: Point, area: bool) -> Option<DimensionKind> {
         if self.points.is_empty() {
             return None;
         }
         let mut points = self.points.clone();
         points.push(pointer);
+        let closed = area && points.len() >= MIN_CLOSED;
         Some(DimensionKind::Perimeter {
             points,
-            // Never previewed as closed. The operator has not closed it, and
-            // drawing the closing segment before they do would show a shape
-            // one segment longer than the one this click will commit.
-            closed: false,
-            area: false,
+            closed,
+            area: closed,
             offset: 0.0,
             text_along: 0.0,
         })
+    }
+
+    /// The area the picked vertices enclose, plus `pointer` when given, in
+    /// **square page points**; zero below three vertices.
+    #[must_use]
+    pub fn area_points(&self, pointer: Option<Point>) -> f64 {
+        let mut points = self.points.clone();
+        points.extend(pointer);
+        pdfcer_core::vector::polygon_area(&points)
     }
 
     /// The total length of the picked segments in **page points**, including
@@ -137,7 +165,12 @@ impl PerimeterPick {
 /// **End the gesture: hand the traced shape to the placing click and empty
 /// the pick.** Nothing to disclose: every vertex is one the operator clicked.
 pub(super) fn complete(st: &mut MeasureState) -> bool {
-    let Some(kind) = st.perimeter.author() else {
+    let authored = if st.kind == super::MeasureKind::Area {
+        st.perimeter.author_area()
+    } else {
+        st.perimeter.author()
+    };
+    let Some(kind) = authored else {
         return false;
     };
     st.placing = Some(Placing {
@@ -146,6 +179,15 @@ pub(super) fn complete(st: &mut MeasureState) -> bool {
     });
     st.perimeter.clear();
     true
+}
+
+/// The `kind=` a finish trace names: `area` for the Area tool, `perimeter`
+/// for the two tools that author a length.
+pub(super) const fn trace_kind(kind: super::MeasureKind) -> &'static str {
+    match kind {
+        super::MeasureKind::Area => "area", // ui-text-exempt: a trace value, never displayed
+        _ => "perimeter",                   // ui-text-exempt: a trace value, never displayed
+    }
 }
 
 /// **Take one resolved point for the perimeter tool**, and answer the three
@@ -190,7 +232,10 @@ pub(super) fn click(st: &mut MeasureState, c: Click<'_>) {
         }
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            format!("measure-finish via=double-click kind=perimeter page={page_index}")
+            format!(
+                "measure-finish via=double-click kind={} page={page_index}",
+                trace_kind(st.kind)
+            )
         });
         return;
     }
@@ -206,8 +251,10 @@ pub(super) fn click(st: &mut MeasureState, c: Click<'_>) {
     // path that returns to where it started is a perfectly ordinary path - a
     // loop of cable is still cable - and swallowing that click would be the
     // tool refusing a shape the operator drew.
-    if st.kind == super::MeasureKind::Perimeter
-        && closes_the_ring(st, canvas_point, picked, page, map)
+    if matches!(
+        st.kind,
+        super::MeasureKind::Perimeter | super::MeasureKind::Area
+    ) && closes_the_ring(st, canvas_point, picked, page, map)
     {
         if !st.perimeter.close() {
             crate::diag::trace(|| {
@@ -219,10 +266,11 @@ pub(super) fn click(st: &mut MeasureState, c: Click<'_>) {
             });
             return;
         }
+        let kind = trace_kind(st.kind);
         if complete(st) {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
-                format!("measure-finish via=close-ring kind=perimeter page={page_index}")
+                format!("measure-finish via=close-ring kind={kind} page={page_index}")
             });
         }
         return;
@@ -237,9 +285,10 @@ pub(super) fn click(st: &mut MeasureState, c: Click<'_>) {
         // nothing are the same screenshot at a glance, which is defect 8's
         // lesson; this is how a driven check proves a click became a vertex.
         format!(
-            "measure-perimeter-vertex n={} length_pt={:.2}",
+            "measure-perimeter-vertex n={} length_pt={:.2} area_pt2={:.2}",
             st.perimeter.points().len(),
-            st.perimeter.length_points()
+            st.perimeter.length_points(),
+            st.perimeter.area_points(None)
         )
     });
 }
@@ -374,12 +423,49 @@ mod tests {
     fn the_preview_is_open_even_when_the_pick_is_about_to_be_closed() {
         let p = square();
         let Some(DimensionKind::Perimeter { points, closed, .. }) =
-            p.preview(Point::new(-10.0, 50.0))
+            p.preview(Point::new(-10.0, 50.0), false)
         else {
             panic!("previews a perimeter");
         };
         assert_eq!(points.len(), 5, "the pointer is a provisional vertex");
         assert!(!closed);
+    }
+
+    /// The Area tool's preview is closed and labelled as an area, because
+    /// every one of its endings closes the ring.
+    #[test]
+    fn the_area_preview_is_closed() {
+        let p = square();
+        let Some(DimensionKind::Perimeter { closed, area, .. }) =
+            p.preview(Point::new(-10.0, 50.0), true)
+        else {
+            panic!("previews a perimeter");
+        };
+        assert!(closed && area);
+    }
+
+    /// The area authored is the closed ring's, and the running area counts
+    /// the pointer as a corner.
+    #[test]
+    fn the_area_tool_authors_a_closed_area() {
+        let mut p = PerimeterPick::default();
+        p.push(Point::new(0.0, 0.0));
+        p.push(Point::new(100.0, 0.0));
+        assert!(p.author_area().is_none(), "two corners enclose nothing");
+        assert!((p.area_points(Some(Point::new(100.0, 100.0))) - 5000.0).abs() < 1e-9);
+        p.push(Point::new(100.0, 100.0));
+        let Some(DimensionKind::Perimeter {
+            points,
+            closed,
+            area,
+            ..
+        }) = p.author_area()
+        else {
+            panic!("authors a perimeter");
+        };
+        assert_eq!(points.len(), 3);
+        assert!(closed && area, "an area is always of a closed ring");
+        assert!((square().area_points(None) - 10_000.0).abs() < 1e-9);
     }
 
     /// A committed pick is emptied, so a second Finish cannot author the same

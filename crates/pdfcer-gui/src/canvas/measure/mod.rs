@@ -145,6 +145,7 @@ pub fn finishable(ctx: &egui::Context) -> bool {
         Some(MeasureKind::Perimeter | MeasureKind::PathLength) => {
             read(ctx).is_some_and(|st| st.perimeter.author().is_some())
         }
+        Some(MeasureKind::Area) => read(ctx).is_some_and(|st| st.perimeter.author_area().is_some()),
         // Every other kind has a fixed arity and finishes itself. Spelled as a
         // catch-all rather than enumerated because the property being asserted
         // is "this tool ends on its own", which is the default and which a new
@@ -158,11 +159,12 @@ pub fn finishable(ctx: &egui::Context) -> bool {
 pub fn finish(ctx: &egui::Context) -> bool {
     match crate::canvas::tool::selected(ctx).measure_kind() {
         Some(MeasureKind::Circular) => finish_circular(ctx),
-        Some(MeasureKind::Perimeter | MeasureKind::PathLength) => {
+        Some(MeasureKind::Perimeter | MeasureKind::PathLength | MeasureKind::Area) => {
             let Some(mut st) = read(ctx) else {
                 return false;
             };
             let page_index = st.page_index;
+            let kind = perimeter::trace_kind(st.kind);
             if !perimeter::complete(&mut st) {
                 return false;
             }
@@ -172,7 +174,7 @@ pub fn finish(ctx: &egui::Context) -> bool {
                 //
                 // Which of the three endings asked for the commit - a fact no
                 // screenshot can carry and the engine cannot know.
-                format!("measure-finish via=command kind=perimeter page={page_index}")
+                format!("measure-finish via=command kind={kind} page={page_index}")
             });
             true
         }
@@ -384,7 +386,7 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
         // because closing the ring is a CANVAS-space hit test against the first
         // vertex - same physical target size at every zoom. See
         // `perimeter::closes_the_ring`.
-        MeasureKind::Perimeter | MeasureKind::PathLength => {
+        MeasureKind::Perimeter | MeasureKind::PathLength | MeasureKind::Area => {
             perimeter::click(
                 &mut st,
                 perimeter::Click {

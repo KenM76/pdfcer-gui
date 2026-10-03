@@ -71,6 +71,7 @@ pub mod evidence_scripted;
 pub mod export_tables_scripted;
 pub mod export_word_scripted;
 pub mod labels_scripted;
+pub mod measure_area_scripted;
 pub mod measure_place_scripted;
 pub mod purge_passwords_scripted;
 

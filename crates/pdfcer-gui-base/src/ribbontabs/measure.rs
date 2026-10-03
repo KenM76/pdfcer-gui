@@ -21,6 +21,7 @@ pub fn tab() -> Tab {
                     command("measure.linear"),
                     command("measure.radius_diameter"),
                     command("measure.perimeter"),
+                    command("measure.area"),
                     command("measure.length"),
                     command("measure.two_line"),
                     // **Finish** sits with the tools, not in its own group.

@@ -322,12 +322,16 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
         // closed: the operator has not closed it, and showing the closing
         // segment early would promise a shape one segment longer than the one
         // the next click commits.
-        MeasureKind::Perimeter | MeasureKind::PathLength => {
+        MeasureKind::Perimeter | MeasureKind::PathLength | MeasureKind::Area => {
             let Some(at) = hover.map(|h| h.at) else {
                 return;
             };
+            let area = kind == MeasureKind::Area;
+            if area {
+                area_readout(painter, doc, &st, at, (page, map), color);
+            }
             st.perimeter
-                .preview(at)
+                .preview(at, area)
                 .map(|kind| pick::dimension_preview_segments(&kind))
                 .unwrap_or_default()
         }
@@ -364,6 +368,50 @@ fn draw_dimension(
             painter.line_segment([sa, sb], stroke);
         }
     }
+}
+
+/// Trace slot for the Area tool's pointer readout.
+const AREA_READOUT_SLOT: &str = "measure-area-readout"; // ui-text-exempt: a trace slot, never displayed
+
+/// **The running area beside the pointer**, with the pointer counted as the
+/// next corner, formatted by the engine's `format_area_measurement` under the
+/// group's scale so it is the number the label will carry. A cursor
+/// affordance: drawn only while picking, never on committed content.
+fn area_readout(
+    painter: &egui::Painter,
+    doc: &OpenDoc,
+    st: &MeasureState,
+    at: Point,
+    (page, map): (&pdfcer_core::page_tree::Page, &PageMapping),
+    color: egui::Color32,
+) {
+    if st.perimeter.points().len() < 2 {
+        return;
+    }
+    let model = doc.session.dimension_model();
+    let Some(group) = model.group(st.group) else {
+        return;
+    };
+    let Some(pointer) = page_to_screen(at, page, map) else {
+        return;
+    };
+    let square_points = st.perimeter.area_points(Some(at));
+    let shown =
+        pdfcer_core::dimension::format_area_measurement(square_points, group.scale, group.format);
+    crate::diag::trace_changed(AREA_READOUT_SLOT, || {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!(
+            "measure-area-readout corners={} area_pt2={square_points:.2} text=\"{}\"",
+            st.perimeter.points().len() + 1,
+            shown.text
+        )
+    });
+    let galley = painter.layout_no_wrap(shown.text, egui::FontId::proportional(13.0), color);
+    let origin = pointer + egui::vec2(16.0, 16.0);
+    let backdrop = egui::Rect::from_min_size(origin, galley.size()).expand(3.0);
+    let fill = painter.ctx().global_style().visuals.window_fill;
+    painter.rect_filled(backdrop, 3.0, fill);
+    painter.galley(origin, galley, color);
 }
 
 /// A dimension's value text, where and how large the baker would put it.

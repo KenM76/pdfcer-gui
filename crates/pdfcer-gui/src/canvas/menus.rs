@@ -520,6 +520,13 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             (menus::DIMENSION_DIAMETER_OFFERED, display == Some(false)),
             (menus::DIMENSION_RADIUS_OFFERED, display == Some(true)),
         ]);
+        let area = crate::app::dispatch::dimdisplay::perimeter(doc, selection)
+            .filter(|_| author_measure)
+            .map(|(_, a)| a);
+        overrides.extend([
+            (menus::DIMENSION_AREA_OFFERED, area == Some(false)),
+            (menus::DIMENSION_PERIMETER_OFFERED, area == Some(true)),
+        ]);
     }
     // **`format.select_text_line`'s one condition** — O188(A), and the
     // narrowness is the same argument the Delete above makes: it is a fact

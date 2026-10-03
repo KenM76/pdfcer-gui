@@ -265,6 +265,8 @@ fn every_predicate_names_a_documented_condition() {
         // Published by `PdfcerApp::conditions` and re-asked per right-click.
         "dimension.diameter_offered",
         "dimension.radius_offered",
+        "dimension.area_offered",
+        "dimension.perimeter_offered",
     ];
     for command in registry().iter() {
         if let egui_shell::commands::Enable::When(name) = &command.enable {

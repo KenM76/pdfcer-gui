@@ -310,6 +310,15 @@ pub const fn measure_perimeter() -> CommandText {
     )
 }
 
+/// `measure.area`
+#[must_use]
+pub const fn measure_area() -> CommandText {
+    CommandText::new(
+        "Area",
+        "Click the corners of a region to measure the area it encloses, in the current dimension group's units squared. Click the first point again, or double-click the last one, to close it. The page gets the outline labelled with its area.",
+    )
+}
+
 /// `measure.length`
 #[must_use]
 pub const fn measure_length() -> CommandText {

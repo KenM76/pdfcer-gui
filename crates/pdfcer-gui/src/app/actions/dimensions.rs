@@ -288,6 +288,29 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                     .map(|_| Vec::new())
             });
         }
+        DimensionAction::SetArea { dimension, area } => {
+            super::apply::vector_edit(doc, "set-dimension-area", 0, 1, |session| {
+                session
+                    .set_dimension_area(dimension, area)
+                    .map(|()| Vec::new())
+            });
+            // The engine's own label after the switch: what a driven check
+            // compares, since perimeter and area differ only in the printed text.
+            let shown = doc
+                .session
+                .dimension_model()
+                .display(dimension)
+                .map(|d| d.text)
+                .unwrap_or_default();
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!(
+                    "dimension-area-applied id={} area={} text=\"{shown}\"",
+                    dimension.0,
+                    u8::from(area)
+                )
+            });
+        }
         DimensionAction::SetExtensionGap {
             dimension,
             end,

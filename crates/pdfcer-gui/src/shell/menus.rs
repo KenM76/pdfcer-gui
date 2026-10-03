@@ -88,6 +88,14 @@ pub const DIMENSION_DIAMETER_OFFERED: &str = "dimension.diameter_offered";
 /// `visible_when` and `enabled_when` of `format.dimension_radius`.
 pub const DIMENSION_RADIUS_OFFERED: &str = "dimension.radius_offered";
 
+/// The selection is one closed perimeter ce dimension showing its perimeter:
+/// the `visible_when` and `enabled_when` of `format.dimension_area`.
+pub const DIMENSION_AREA_OFFERED: &str = "dimension.area_offered";
+
+/// The selection is one closed perimeter ce dimension showing its area: the
+/// `visible_when` and `enabled_when` of `format.dimension_perimeter`.
+pub const DIMENSION_PERIMETER_OFFERED: &str = "dimension.perimeter_offered";
+
 /// **The right-click landed on one line of a MULTI-LINE text object** — the
 /// `visible_when` of `format.select_text_line`, and its `enabled_when` too.
 pub const RUN_SELECT_OFFERED: &str = "canvas.run_select_offered";
@@ -590,6 +598,8 @@ pub fn built_in() -> Menus {
             // Properties also carries. At most one of the pair is drawn.
             Item::command("format.dimension_diameter").shown_when(DIMENSION_DIAMETER_OFFERED),
             Item::command("format.dimension_radius").shown_when(DIMENSION_RADIUS_OFFERED),
+            Item::command("format.dimension_area").shown_when(DIMENSION_AREA_OFFERED),
+            Item::command("format.dimension_perimeter").shown_when(DIMENSION_PERIMETER_OFFERED),
             Item::Separator,
             Item::command("format.delete").shown_when(super::manifest::DELETE_PERMITTED),
         ]))

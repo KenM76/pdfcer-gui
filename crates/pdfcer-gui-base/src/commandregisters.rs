@@ -340,12 +340,6 @@ pub const PLANNED: &[(&str, &str)] = &[
         "N — the whole Measure ▸ Quantity group is unbuilt, so the GROUP is absent too.",
     ),
     // ui-text-exempt: developer note about an ABSENT command; never rendered.
-    (
-        "measure.area",
-        // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — as `measure.distance`, and the other conspicuous absence for takeoff work.",
-    ),
-    // ui-text-exempt: developer note about an ABSENT command; never rendered.
     ("measure.count", "N — as `measure.distance`."),
     (
         "measure.takeoff_schedule",
@@ -563,6 +557,16 @@ pub const TAB_SCOPED: &[(&str, &str)] = &[
         "format.dimension_radius",
         // ui-text-exempt: a register reason for a reviewer and a test; never rendered.
         "The twin of `format.dimension_diameter`, drawn only when the right-clicked circular ce dimension currently shows its diameter.",
+    ),
+    (
+        "format.dimension_area",
+        // ui-text-exempt: a register reason for a reviewer and a test; never rendered.
+        "Its operand is THE CLOSED PERIMETER CE DIMENSION THAT WAS RIGHT-CLICKED, and the row is drawn only when that outline currently reports its perimeter. The other home for the same switch is the Properties panel's Perimeter / Area choice.",
+    ),
+    (
+        "format.dimension_perimeter",
+        // ui-text-exempt: a register reason for a reviewer and a test; never rendered.
+        "The twin of `format.dimension_area`, drawn only when the right-clicked closed outline currently reports its area.",
     ),
     (
         "markup.flatten",

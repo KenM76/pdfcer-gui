@@ -386,6 +386,8 @@ fn each_menu_holds_exactly_the_documented_items() {
                 "format.properties",
                 "format.dimension_diameter",
                 "format.dimension_radius",
+                "format.dimension_area",
+                "format.dimension_perimeter",
                 "format.delete",
             ][..],
         ),

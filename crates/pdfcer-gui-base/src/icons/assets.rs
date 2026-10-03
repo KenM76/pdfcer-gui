@@ -581,6 +581,11 @@ pub(super) const LOCK: &str = include_str!("assets/lock.svg");
 /// Two-line measurement — `measure.two_line`.
 pub(super) const MEASURE_ANGLE: &str = include_str!("assets/measure-angle.svg");
 
+/// `measure-area.svg` — the art for [`super::Icon::MeasureArea`].
+///
+/// Area measurement — `measure.area`.
+pub(super) const MEASURE_AREA: &str = include_str!("assets/measure-area.svg");
+
 /// `measure-length.svg` — the art for [`super::Icon::MeasureLength`].
 ///
 /// Path-length measurement — `measure.length`.

@@ -113,6 +113,10 @@ pub(super) fn band() -> Vec<Command> {
         // the curve's own endpoints the way real extension lines do, so they
         // read as measurement furniture rather than stray marks. Removing them
         // does not simplify this icon, it turns it into a different one.
+        // The perimeter glyph hatched: the region the outline encloses.
+        command("measure.area", t::measure_area(), 609)
+            .with_icon("measure-area")
+            .enabled_when("doc.pages"),
         command("measure.length", t::measure_length(), 605)
             .with_icon("measure-length")
             .enabled_when("doc.pages"),

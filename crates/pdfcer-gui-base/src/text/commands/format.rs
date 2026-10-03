@@ -75,6 +75,24 @@ pub const fn format_dimension_radius() -> CommandText {
     )
 }
 
+/// `format.dimension_area`
+#[must_use]
+pub const fn format_dimension_area() -> CommandText {
+    CommandText::new(
+        "Show area",
+        "Make this closed outline report the area it encloses instead of the distance round it. The corners stay where they are. The same switch as Perimeter / Area in Properties. Undo reverses it.",
+    )
+}
+
+/// `format.dimension_perimeter`
+#[must_use]
+pub const fn format_dimension_perimeter() -> CommandText {
+    CommandText::new(
+        "Show perimeter",
+        "Make this closed outline report the distance round it instead of its area. The corners stay where they are. The same switch as Perimeter / Area in Properties. Undo reverses it.",
+    )
+}
+
 /// `format.select_form`
 #[must_use]
 pub const fn format_select_form() -> CommandText {

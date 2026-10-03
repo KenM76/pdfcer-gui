@@ -889,9 +889,7 @@ impl PdfcerApp {
                 aligning::dispatch(self, id, actions);
             }
             "markup.flatten" => flatten::dispatch(self, actions),
-            "format.dimension_diameter" | "format.dimension_radius" => {
-                dimdisplay::dispatch(self, id, actions)
-            }
+            id if dimdisplay::claims(id) => dimdisplay::dispatch(self, id, actions),
             "markup.flatten_page" => flatten::dispatch_page(self, actions),
             // The three text-bearing kinds, ABOVE the geometric markup arm.
             //

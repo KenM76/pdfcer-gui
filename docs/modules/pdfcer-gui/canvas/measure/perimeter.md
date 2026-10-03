@@ -156,6 +156,21 @@ ending assertable without a window.
 
 Returns `false` and places nothing when there is not enough shape to author.
 
+### `fn author_area`
+
+The Area tool's shape: the same corners, always closed and flagged `area`,
+and `None` below three corners — the engine refuses an area on fewer
+(`AreaNeedsThreeVertices`) or on an open outline (`AreaNeedsClosedOutline`),
+so the tool never asks for either. Every ending of the Area tool closes the
+ring, including the double-click and Finish that leave a Perimeter open.
+
+### `fn area_points`
+
+The enclosed area in square page points, by the engine's
+`vector::polygon_area` — the function the committed label is computed by,
+so the running readout and the label are one calculation. Passing the
+pointer includes it as the next corner.
+
 ### `struct Click`
 
 Called from [`super::click`]'s match, *after* the point has been through the

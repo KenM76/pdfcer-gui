@@ -728,8 +728,8 @@ pub use annotate::{
     markup_flatten, markup_flatten_page, markup_highlight, markup_ink, markup_paste_image_stamp,
     markup_polygon, markup_polyline, markup_rectangle, markup_remove_node, markup_squiggly,
     markup_stamp, markup_sticky_note, markup_strikeout, markup_text_box, markup_underline,
-    measure_finish, measure_length, measure_linear, measure_manage_groups, measure_perimeter,
-    measure_radius_diameter, measure_set_scale, measure_two_line,
+    measure_area, measure_finish, measure_length, measure_linear, measure_manage_groups,
+    measure_perimeter, measure_radius_diameter, measure_set_scale, measure_two_line,
 };
 
 /// The five Format ▸ Markup controls, a module of their own under **R2**.

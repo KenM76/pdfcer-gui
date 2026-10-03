@@ -65,6 +65,24 @@ pub const fn display_hint() -> &'static str {
      and not what was measured."
 }
 
+/// The perimeter option of a closed outline's Show as choice.
+#[must_use]
+pub const fn display_perimeter() -> &'static str {
+    "Perimeter"
+}
+
+/// The area option of a closed outline's Show as choice.
+#[must_use]
+pub const fn display_area() -> &'static str {
+    "Area"
+}
+
+/// What switching a closed outline between perimeter and area changes.
+#[must_use]
+pub const fn display_area_hint() -> &'static str {
+    "Both are read off the same corners, so this changes what is printed and not what was traced."
+}
+
 /// The heading over the eleven overrides.
 #[must_use]
 pub const fn overrides_heading() -> &'static str {

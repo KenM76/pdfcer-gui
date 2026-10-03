@@ -458,8 +458,9 @@ with one selection.
 
 The **Scale ▸ group** model — named groups carrying a shared scale and drafting
 standard — is better than what the comparison product does, and nothing here
-should dilute it. Area is the conspicuous absence for anyone doing takeoff on a
-drawing; the engine has it past the pin (G098), and it lands with the pin move.
+should dilute it. Area is the Perimeter tool's twin: the same corner picks and
+close-on-the-first-point, labelled with the enclosed area; a closed perimeter ce
+dimension switches between the two from its right-click menu and Properties.
 
 Aligned is a constraint on the linear tool rather than a separate tool.
 Perimeter, Area and Length are in the ce dimension group rather than in

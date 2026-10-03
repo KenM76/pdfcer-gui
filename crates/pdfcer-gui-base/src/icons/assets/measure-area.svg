@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic hatched closed outline — generic, no trademark risk -->
+  <!-- measure-perimeter.svg's skewed dashed quadrilateral, hatched inside at 45
+       degrees: the outline is the shape traced, the hatching is the region it
+       encloses. The hatch lines end on the outline's edges. -->
+  <path d="M12 36l5-24 20 4-3 20z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-dasharray="6 4"/>
+  <path d="M13.6 28.4L27.8 14.2M16 36L36.2 15.8M26 36L35.4 26.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+</svg>

@@ -166,6 +166,12 @@ pub fn measure_perimeter_live(vertices: usize, length: &str) -> String {
     format!("{vertices} points so far, {length} around. Click the first point to close it.")
 }
 
+/// The area tool's live sentence: how many corners, and the area they close.
+#[must_use]
+pub fn measure_area_live(vertices: usize, area: &str) -> String {
+    format!("{vertices} points so far, {area} enclosed. Click the first point to close it.")
+}
+
 /// The radius/diameter tool's LIVE sentence — how many points are in the fit,
 /// and what circle they currently make.
 #[must_use]
@@ -249,6 +255,9 @@ pub const fn measure_instruction(kind: MeasureKind) -> &'static str {
         // difference between this tool and Perimeter IS the missing ending.
         MeasureKind::PathLength => {
             "Click along what you are measuring. Double-click the last point to finish."
+        }
+        MeasureKind::Area => {
+            "Click the corners of the region. Click the first point again, or double-click the last one, to close it."
         }
         MeasureKind::TwoLine => "Click one line, then the other.",
         // The calibration pick, which is armed from inside the Set-scale

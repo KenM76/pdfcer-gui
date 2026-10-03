@@ -22,6 +22,9 @@ pub const LABEL_REGION: &str = "properties.dimension.label"; // ui-text-exempt: 
 /// The region the radius/diameter choice publishes.
 pub const REGION_DISPLAY: &str = "properties.dimension.display"; // ui-text-exempt: trace region name, never displayed
 
+/// The Perimeter / Area radio pair of a closed perimeter ce dimension.
+pub const REGION_AREA: &str = "properties.dimension.area"; // ui-text-exempt: trace region name, never displayed
+
 /// Draw the ce-dimension section, if one is selected. Returns whether it drew
 /// anything.
 pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
@@ -119,6 +122,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     }
 
     display_toggle(ui, record, actions);
+    area_toggle(ui, record, actions);
     label_row(ui, record, actions);
 
     // --- the overrides --------------------------------------------------
@@ -227,6 +231,45 @@ fn display_toggle(ui: &mut Ui, record: &DimensionRecord, actions: &mut Vec<Actio
         actions.push(Action::Dimension(DimensionAction::SetDisplay {
             dimension: record.id,
             show_diameter: chosen,
+        }));
+    }
+}
+
+/// **Perimeter or enclosed area**, for a closed perimeter ce dimension of at
+/// least three corners — the only shape the engine accepts an area on.
+fn area_toggle(ui: &mut Ui, record: &DimensionRecord, actions: &mut Vec<Action>) {
+    let DimensionKind::Perimeter {
+        closed: true,
+        area,
+        ref points,
+        ..
+    } = record.kind
+    else {
+        return;
+    };
+    if points.len() < 3 {
+        return;
+    }
+    let mut chosen = area;
+    ui.horizontal(|ui| {
+        ui.label(t::display_label());
+        let perimeter = ui.radio_value(&mut chosen, false, t::display_perimeter());
+        let enclosed = ui.radio_value(&mut chosen, true, t::display_area());
+        crate::diag::ui_rect(REGION_AREA, perimeter.rect.union(enclosed.rect));
+    });
+    ui.weak(t::display_area_hint());
+    if chosen != area {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                "dimension-area id={} area={}",
+                record.id.0,
+                u8::from(chosen)
+            )
+        });
+        actions.push(Action::Dimension(DimensionAction::SetArea {
+            dimension: record.id,
+            area: chosen,
         }));
     }
 }

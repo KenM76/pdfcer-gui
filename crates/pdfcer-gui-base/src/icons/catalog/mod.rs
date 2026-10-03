@@ -791,6 +791,13 @@ pub enum Icon {
     /// `icons::svg`'s note on why that attribute is parsed rather than ignored.
     MeasurePerimeter,
 
+    /// Area measurement — `measure.area`.
+    ///
+    /// [`Icon::MeasurePerimeter`]'s dashed quadrilateral with hatching inside
+    /// it: hatching is the drafting convention for a region, so the pair reads
+    /// as *the way round* and *what is enclosed*.
+    MeasureArea,
+
     /// Radius / diameter measurement — `measure.radius_diameter`.
     ///
     ///

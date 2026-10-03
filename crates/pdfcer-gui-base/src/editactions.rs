@@ -764,6 +764,16 @@ pub enum DimensionAction {
         show_diameter: bool,
     },
 
+    /// **Switch a closed perimeter ce dimension between its perimeter and its
+    /// enclosed area.** `EditSession::set_dimension_area`; raised only on an
+    /// actual change, for the reason [`Self::SetDisplay`] gives.
+    SetArea {
+        /// The closed perimeter ce dimension.
+        dimension: DimensionId,
+        /// `true` ⇒ label the enclosed area; `false` ⇒ the perimeter.
+        area: bool,
+    },
+
     /// **Set the gap between a linear ce dimension's measured point and its
     /// extension line**, from a drag of the grip at the line's near end.
     /// `EditSession::set_dimension_extension_gap`.

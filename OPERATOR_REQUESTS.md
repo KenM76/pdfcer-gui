@@ -493,13 +493,13 @@ Ctrl+V and the ribbon's Paste take what another program copied: a picture (Snipp
 
 Every window's title bar now takes the program's theme: dark under the Dark preset (and under Match the system when Windows is dark), light under Quiet and Airy. It applies to the main window and to every dialog and floating window, changes the moment the theme does (the Settings preview included), and holds when Windows' own light/dark setting changes underneath it. Driven: `title_bars_follow_the_theme` reads each window's caption mode back from Windows after picking Dark and then Quiet in Settings.
 
-## O280 — **OPEN, queued; the engine has it (G098), waits on a pin move** — an Area measurement tool
+## O280 — **BUILT AND DRIVEN — awaiting your verdict** — an Area measurement tool
 
 Relayed by the coordinator: an Area measurement tool.
 
 Measure ▸ ce dimension ▸ Area, beside Perimeter: click the corners of a region, close it on the first point, and the page gets a closed outline labelled with its area in the group's scale units squared, as Acrobat's Area tool does. It uses the same click-and-close picking as Perimeter, and the running area shows beside the pointer while you pick.
 
-**Where it stands.** Not built. The engine now measures area (G098), with the one function that computes the running area, so the number shown while picking and the number on the page cannot disagree; it also switches an existing closed ce dimension between perimeter and area. This program's engine version predates it, so the work starts with moving to the newer engine after the current paste work. Until then the command is absent rather than a preview the engine might later contradict. It sits beside Perimeter rather than in Quantity, because it labels the page and Quantity holds the readings that author nothing.
+**Where it stands.** Built. Measure ▸ ce dimension ▸ Area sits beside Perimeter. Click the corners; while you pick, the area enclosed so far shows beside the pointer and in the status line, and the outline is drawn closed. Click the first point again, double-click the last one, or press Finish to close it, then click where the label goes. The area is the engine's own figure, so the number shown while picking and the number on the page are one calculation. A closed perimeter ce dimension switches between its perimeter and its area from its right-click menu (*Show area* / *Show perimeter*) or the Perimeter / Area choice in Properties, one undo step each; an open one is not offered the switch. Driven off-screen: `an_area_measures_the_region_it_encloses` (the running area of a square, the readout, the close, the commit, and the switch to perimeter and back with the label returning to the readout's figure).
 
 ## O249 — **BUILT AND DRIVEN — awaiting your verdict** — every ce dimension gesture previews live; extension lines and text drag by handle; radius and diameter switch and move
 
