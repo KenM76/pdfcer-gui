@@ -163,3 +163,4 @@
 - [Pin moves are pre-approved](project_pin_moves_approved.md) — own commit, full gates, never mid-series.
 - [Read a passing check's trace](feedback_read_passing_trace.md) — the receipt said page 2 while the index oracle passed.
 - [Push only with a release](feedback_push_only_with_release.md) — commit locally; main goes to origin only inside an engine-triggered release.
+- [A relayed gate verdict may be another log](feedback_relayed_gate_verdict.md) — "84/84" came from a 3-day-old file; commit on your own RESULT.
