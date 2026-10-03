@@ -209,6 +209,7 @@ first, and there is no second chance to influence that at paste time.
 | 2 | [`ClipFormat::Emf`] | LibreOffice 24.x, which has no other vector route on Windows; Office *Paste Special ▸ Picture (Enhanced Metafile)*; Visio, CorelDRAW, CAD importers |
 | 3 | [`ClipFormat::Png`] | Paint.NET, GIMP, browsers, Snip & Sketch — and Office, when the operator deliberately pastes as a picture |
 | 4 | [`ClipFormat::DibV5`] | everything older than the `"PNG"` convention; Windows synthesises `CF_DIB` and `CF_BITMAP` from it |
+| 5 | [`ClipFormat::Pdf`] | pdfcer's own paste, which places it as a drawing; a snapshot copy alone carries it |
 
 # The property that makes a partial implementation harmful
 
@@ -220,13 +221,18 @@ vectors"*, which is indistinguishable from the feature not existing, except
 that it costs them the time to discover it.
 
 
-# Why `application/pdf` is not here
+# Why `application/pdf` is last, and only on a snapshot copy
 
 The engine's note offers it as an optional fifth entry and says only
-Inkscape reads it — and Inkscape already takes the SVG from position 1, so
-it would be a payload for nobody. It is also the most expensive one to
-build (a one-page PDF through `ObjectClip::to_pdf`), which is a real cost
-on a copy the operator expects to be instant.
+Inkscape reads it — and Inkscape already takes the SVG from position 1. Last
+in the order, it changes no other program's pick.
+
+A page or selection copy does not carry it: there it would cost a one-page
+PDF through `ObjectClip::to_pdf` on a copy the operator expects to be
+instant, for no reader. A snapshot copy has already made that PDF (the
+engine's region cut, which every other format is drawn from), and pdfcer's
+own paste reads it back as a drawing, so there it is a copy of bytes in hand
+for a reader that exists.
 
 ### `struct CopyPayload`
 

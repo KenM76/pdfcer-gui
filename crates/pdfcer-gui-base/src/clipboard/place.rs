@@ -217,6 +217,7 @@ pub(super) fn raster_at(
         png: Some(png),
         pixmap: Some(pixmap),
         pixels_per_metre: pixels_per_metre(dpi),
+        pdf: None,
     })
 }
 
@@ -261,6 +262,7 @@ fn frame(payload: &CopyPayload) -> Vec<Staged> {
                 .pixmap
                 .as_ref()
                 .map(|pixmap| dib_v5(pixmap, payload.pixels_per_metre)),
+            ClipFormat::Pdf => payload.pdf.clone(),
         };
         if let Some(bytes) = bytes {
             out.push(Staged { format, bytes });
@@ -300,10 +302,10 @@ fn put(staged: &[Staged]) -> Result<Vec<&'static str>, Refusal> {
 /// **How each format's bytes become a clipboard handle.**
 fn slot_for(format: ClipFormat) -> native_clipboard::Slot {
     match format {
-        // The two whose names do not exist until `RegisterClipboardFormat` has
+        // The three whose names do not exist until `RegisterClipboardFormat` has
         // been called. `ClipFormat::is_registered` says the same thing from the
         // other side, and the tests assert the two against each other.
-        ClipFormat::Svg | ClipFormat::Png => native_clipboard::Slot::Registered,
+        ClipFormat::Svg | ClipFormat::Png | ClipFormat::Pdf => native_clipboard::Slot::Registered,
         // NOT `Predefined(CF_ENHMETAFILE)`. A metafile is a GDI handle, and
         // handing the clipboard an `HGLOBAL` under that id is undefined rather
         // than refused — see `Slot::EnhMetaFile`.
@@ -327,6 +329,7 @@ mod tests {
             png: Some(vec![5, 6, 7, 8]),
             pixmap: Some(pixmap),
             pixels_per_metre: 5906,
+            pdf: None,
         }
     }
 
@@ -407,7 +410,7 @@ mod tests {
         );
     }
 
-    /// **The two registered formats are exactly the two `ClipFormat` says
+    /// **The registered slots are exactly the formats `ClipFormat` says
     /// are registered**, so the shell's vocabulary and Win32's cannot drift.
     #[test]
     fn the_registered_slots_match_the_registered_formats() {

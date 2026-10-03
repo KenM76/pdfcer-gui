@@ -21,7 +21,7 @@ const MENU: &str = "canvas-menu"; // ui-text-exempt: a trace event name, never d
 const CONTEXT: &str = "canvas.snapshot"; // ui-text-exempt: a menu context id, never displayed
 const MENU_COPY: &str = "menu.item.canvas.snapshot.edit.copy"; // ui-text-exempt: a trace region name, never displayed
 /// The placement order a page copy uses, as the app names the formats.
-const ORDER: &str = "image/svg+xml,CF_ENHMETAFILE,PNG,CF_DIBV5"; // ui-text-exempt: clipboard format names, never displayed
+const ORDER: &str = "image/svg+xml,CF_ENHMETAFILE,PNG,CF_DIBV5,application/pdf"; // ui-text-exempt: clipboard format names, never displayed
 const PNG: &str = "PNG"; // ui-text-exempt: a clipboard format name, never displayed
 const SVG: &str = "image/svg+xml"; // ui-text-exempt: a clipboard format name, never displayed
 /// How far a measured size may sit from the box's: the trace rounds the
@@ -117,7 +117,7 @@ fn drive(
 }
 
 /// Empty the clipboard, so what is read next was placed by this run.
-fn clear(guard: &mut ClipGuard) -> Result<()> {
+pub(super) fn clear(guard: &mut ClipGuard) -> Result<()> {
     if !sys::clear_clipboard() {
         return Err(crate::error::Error::new(
             "could not clear the clipboard, so a later read could be an earlier run's.",
@@ -128,7 +128,7 @@ fn clear(guard: &mut ClipGuard) -> Result<()> {
 }
 
 /// The laid box's width and height in points, from its trace line.
-fn box_size(rig: &Rig) -> Result<(f64, f64)> {
+pub(super) fn box_size(rig: &Rig) -> Result<(f64, f64)> {
     let trace = rig.session.trace()?;
     let line = trace
         .last(BOX_EVENT)

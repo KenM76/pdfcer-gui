@@ -1,9 +1,12 @@
 //! What another program left on the clipboard, read as something a page can
 //! take.
 //!
-//! Contract: [`read`] prefers a picture to text, and among pictures the
-//! registered `PNG` format (lossless, carries alpha) over `CF_DIBV5` over
-//! `CF_DIB`. A picture that states no resolution is taken at 96 pixels per
+//! Contract: [`read`] prefers a drawing (registered `application/pdf`, as a
+//! snapshot copy places it) to a picture, and a picture to text; among
+//! pictures the registered `PNG` format (lossless, carries alpha) over
+//! `CF_DIBV5` over `CF_DIB`. A PDF that does not parse, or whose first page has
+//! no area, is passed over for the picture beside it.
+//! A picture that states no resolution is taken at 96 pixels per
 //! inch, the resolution screen captures are made at, so a pasted screenshot
 //! lands at the size it had on screen. [`rect_at`] is the placement rule for
 //! a picture and [`textbox`] for text.
@@ -28,6 +31,14 @@ pub enum Incoming {
         /// The clipboard format it came from, for the trace.
         format: &'static str,
     },
+    /// A one-page drawing: PDF bytes, and the first page's crop box width and
+    /// height in points, unrotated, as a stamp's artwork draws it.
+    Pdf {
+        /// The document.
+        bytes: Vec<u8>,
+        /// The first page's crop box size, in points.
+        size_pt: (f64, f64),
+    },
     /// A picture that could not be decoded, and why.
     Unreadable(String),
     /// Text, and no picture.
@@ -47,6 +58,10 @@ pub fn sequence() -> u32 {
 #[must_use]
 pub fn read() -> Incoming {
     use native_clipboard::{CF_DIB, CF_DIBV5, CF_UNICODETEXT, Format, get};
+    let pdf_format = Format::Registered(crate::clipboard::ClipFormat::Pdf.name());
+    if let Some(drawing) = get(pdf_format).and_then(drawing) {
+        return drawing;
+    }
     let png_format = Format::Registered("PNG"); // ui-text-exempt: a Windows clipboard format name
     if let Some(png) = get(png_format) {
         return finish(
@@ -63,6 +78,14 @@ pub fn read() -> Incoming {
         .map(|wide| text_from_utf16(&wide))
         .filter(|t| !t.trim().is_empty())
         .map_or(Incoming::Nothing, Incoming::Text)
+}
+
+/// PDF bytes as a drawing, when they parse and their first page has area.
+fn drawing(bytes: Vec<u8>) -> Option<Incoming> {
+    let (_, pages) = page::opened(bytes.clone()).ok()?;
+    let crop = pages.first()?.crop_box;
+    let size_pt = (crop.width(), crop.height());
+    (size_pt.0 > 0.0 && size_pt.1 > 0.0).then_some(Incoming::Pdf { bytes, size_pt })
 }
 
 fn finish(image: Result<ImportedImage, String>, format: &'static str) -> Incoming {

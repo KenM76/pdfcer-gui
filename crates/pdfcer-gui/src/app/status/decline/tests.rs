@@ -489,6 +489,7 @@ fn a_mode_refusal_reads_like_no_other_decline() {
         ModeRefusal::PasteMarkup,
         ModeRefusal::PasteField,
         ModeRefusal::PastePicture,
+        ModeRefusal::PasteDrawing,
         ModeRefusal::CutContent,
         ModeRefusal::CutMarkup,
         ModeRefusal::CutField,
@@ -556,6 +557,31 @@ fn os_picture() -> pdfcer_gui_base::clippaste::Incoming {
 /// **Another program's picture is refused outside Edit, and its text in
 /// Read, each with its own sentence**; text pastes as page text in Edit and
 /// as a comment in Review.
+#[test]
+fn a_drawing_pasted_in_read_reaches_the_bar() {
+    use crate::app::dispatch::ospaste::tests_fake;
+    use crate::text::clipboard::ModeRefusal;
+
+    let ctx = Context::default();
+    let mut app = crate::app::tests::opened();
+    app.dispatch_command(&ctx, "mode.read", &mut Vec::new());
+    retire();
+    tests_fake::set(pdfcer_gui_base::clippaste::Incoming::Pdf {
+        bytes: b"%PDF-1.7".to_vec(),
+        size_pt: (72.0, 36.0),
+    });
+    let mut actions = Vec::new();
+    app.dispatch_command(&ctx, "edit.paste", &mut actions);
+    let Status::Open(doc) = &app.status else {
+        unreachable!("the fixture is open")
+    };
+    assert_eq!(
+        live(&ctx, doc),
+        Some(Declined::ClipboardMode(ModeRefusal::PasteDrawing))
+    );
+    assert!(actions.is_empty(), "a declined paste edits nothing");
+}
+
 #[test]
 fn an_os_paste_the_app_cannot_place_reaches_the_bar() {
     use crate::app::actions::Action;

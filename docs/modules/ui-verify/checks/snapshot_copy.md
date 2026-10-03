@@ -23,7 +23,8 @@ The clipboard is snapshotted before the run and restored after it with
 Judging requires, for that route's `clipboard-snapshot-copy` line:
 
 - no `clipboard-snapshot-copy-refused` line;
-- `vectors=cut` and `formats=image/svg+xml,CF_ENHMETAFILE,PNG,CF_DIBV5`;
+- `vectors=cut` and
+  `formats=image/svg+xml,CF_ENHMETAFILE,PNG,CF_DIBV5,application/pdf`;
 - the clipboard's PNG header is `ceil(side × dpi / 72)` pixels on each side,
   within one pixel (the trace rounds corners to 0.1 pt), at the `dpi=` the line
   reports, and its `w=` agrees;

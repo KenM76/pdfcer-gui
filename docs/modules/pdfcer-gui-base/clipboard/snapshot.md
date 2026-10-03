@@ -2,7 +2,8 @@
 
 Copies the snapshot box (O272) to the operating system's clipboard: the region
 under the box and nothing else, in the formats and order a page copy uses (SVG,
-EMF, PNG, DIBV5), placed by [`place`](place.md).
+EMF, PNG, DIBV5), then the cut page itself as `application/pdf`, placed by
+[`place`](place.md).
 
 ## Contract
 
@@ -38,9 +39,11 @@ EMF, PNG, DIBV5), placed by [`place`](place.md).
     document, an image it could not cut, among others; `RegionError`'s
     sentence). The picture is rendered from the original page cropped to the
     box with `render_page_with_view`, and placed alone.
-- **The region PDF is never placed.** `place::ORDER` has no
-  `application/pdf`, for the reason given in [`place`](place.md); the picture
-  and vectors cover every program that reads the clipboard.
+- **The cut page goes on the clipboard too**, as `application/pdf`, last in
+  `ORDER`, and only when the vectors are `Cut`: a withheld or refused cut would
+  carry drawing from outside the box. Its reader is pdfcer itself, whose paste
+  takes it as a drawing (`clippaste::read`), so a snapshot pasted back into a
+  document stays vector. It costs a copy of bytes the cut already made.
 - **Resolution.** `fitted_dpi(rect, asked)` is the highest whole dpi at or
   below the operator's whose picture fits both the renderer's edge limit
   (`MAX_PIXMAP_EDGE` less one pixel, for the renderer's rounding up) and

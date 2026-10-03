@@ -40,6 +40,13 @@ pub enum ClipFormat {
     /// `CF_DIB` and `CF_BITMAP` from it, so placing it is what makes a paste
     /// work in programs that have never heard of any of the above.
     DibV5,
+    /// Registered `"application/pdf"` — a complete one-page PDF whose page is
+    /// what was copied.
+    ///
+    /// Only a snapshot copy carries it, and it is placed last, so no program
+    /// that took an earlier format changes its pick. pdfcer's own paste reads
+    /// it back as a drawing.
+    Pdf,
 }
 
 impl ClipFormat {
@@ -54,6 +61,7 @@ impl ClipFormat {
             Self::Emf => "CF_ENHMETAFILE",
             Self::Png => "PNG",
             Self::DibV5 => "CF_DIBV5",
+            Self::Pdf => "application/pdf",
         }
     }
 
@@ -62,16 +70,17 @@ impl ClipFormat {
     /// constant.
     #[must_use]
     pub const fn is_registered(self) -> bool {
-        matches!(self, Self::Svg | Self::Png)
+        matches!(self, Self::Svg | Self::Png | Self::Pdf)
     }
 }
 
 /// **The placement order, and it is measured rather than chosen.**
-pub const ORDER: [ClipFormat; 4] = [
+pub const ORDER: [ClipFormat; 5] = [
     ClipFormat::Svg,
     ClipFormat::Emf,
     ClipFormat::Png,
     ClipFormat::DibV5,
+    ClipFormat::Pdf,
 ];
 
 /// What a copy-out would put on the clipboard.
@@ -97,6 +106,8 @@ pub struct CopyPayload {
     /// Pixels per metre for the DIB header — `dpi / 0.0254` — or 0 for
     /// "unspecified".
     pub pixels_per_metre: u32,
+    /// A one-page PDF of what was copied, for [`ClipFormat::Pdf`].
+    pub pdf: Option<Vec<u8>>,
 }
 
 impl CopyPayload {
@@ -110,6 +121,7 @@ impl CopyPayload {
                 ClipFormat::Emf => self.emf.is_some(),
                 ClipFormat::Png => self.png.is_some(),
                 ClipFormat::DibV5 => self.pixmap.is_some(),
+                ClipFormat::Pdf => self.pdf.is_some(),
             })
             .collect()
     }
@@ -211,7 +223,8 @@ pub fn pixels_per_metre(dpi: f32) -> u32 {
 mod tests {
     use super::*;
 
-    /// **The placement order is SVG, EMF, PNG, DIB — and nothing else.**
+    /// **The placement order is SVG, EMF, PNG, DIB, then PDF — and nothing
+    /// else.**
     #[test]
     fn the_placement_order_is_the_measured_one() {
         assert_eq!(
@@ -220,12 +233,14 @@ mod tests {
                 ClipFormat::Svg,
                 ClipFormat::Emf,
                 ClipFormat::Png,
-                ClipFormat::DibV5
+                ClipFormat::DibV5,
+                ClipFormat::Pdf
             ],
             "the order is MEASURED — SVG first is what makes Word store an \
              svgBlip and place the shape at the page's physical size; EMF \
-             second is LibreOffice 24.x's only vector route. Reordering these \
-             changes what every pasting application receives, silently."
+             second is LibreOffice 24.x's only vector route. PDF goes last so \
+             it changes no earlier pick. Reordering these changes what every \
+             pasting application receives, silently."
         );
     }
 
@@ -336,13 +351,16 @@ mod tests {
         assert!(!payload.formats().contains(&ClipFormat::DibV5));
     }
 
-    /// **The two registered names are exactly `image/svg+xml` and `PNG`.**
+    /// **The registered names are exactly `image/svg+xml`, `PNG` and
+    /// `application/pdf`.**
     #[test]
     fn the_registered_names_are_byte_exact() {
         assert_eq!(ClipFormat::Svg.name(), "image/svg+xml");
         assert_eq!(ClipFormat::Png.name(), "PNG");
+        assert_eq!(ClipFormat::Pdf.name(), "application/pdf");
         assert!(ClipFormat::Svg.is_registered());
         assert!(ClipFormat::Png.is_registered());
+        assert!(ClipFormat::Pdf.is_registered());
         assert!(
             !ClipFormat::Emf.is_registered() && !ClipFormat::DibV5.is_registered(),
             "CF_ENHMETAFILE and CF_DIBV5 are predefined constants; registering \

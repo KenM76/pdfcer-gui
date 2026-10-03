@@ -3,7 +3,7 @@
 //! screen.
 //!
 //! Contract: a picture becomes one page its natural size holding only the
-//! picture; text is set as File ▸ Import text as pages sets it with its
+//! picture; a drawing (a PDF on the clipboard) is its own first page; text is set as File ▸ Import text as pages sets it with its
 //! controls untouched. A clipboard holding neither, or a picture that cannot
 //! be read, is declined with the reason and nothing changes. An insert goes
 //! through the same actions as Insert from file and Import text as pages, so
@@ -61,6 +61,7 @@ fn new_document(app: &mut PdfcerApp, incoming: Incoming) {
                 Err(blank::TextPagesError::Failed(why)) => ("text", Err(why), Vec::new()),
             }
         }
+        Incoming::Pdf { bytes, .. } => ("pdf", page::opened(bytes), Vec::new()),
         other => return nothing(other),
     };
     app.adopt_created(made);
@@ -99,14 +100,13 @@ fn insert(app: &PdfcerApp, id: &str, incoming: Incoming, actions: &mut Vec<Actio
         Incoming::Image { image, .. } => {
             // ui-text-exempt: a file name, never displayed
             let name = format!("clipboard-page-{seq}.pdf");
-            match blank::picture_page(&image).and_then(|bytes| page::scratch(&name, &bytes)) {
-                Ok(path) => actions.push(Action::Page(PageAction::InsertPagesFromFile {
-                    path,
-                    pages: vec![0],
-                    position: InsertPosition::After(current),
-                })),
-                Err(why) => decline("unplaceable", OsPasteRefusal::NotAPage(why)),
-            }
+            let file = blank::picture_page(&image).and_then(|bytes| page::scratch(&name, &bytes));
+            insert_first_page(file, current, actions);
+        }
+        Incoming::Pdf { bytes, .. } => {
+            // ui-text-exempt: a file name, never displayed
+            let name = format!("clipboard-pdf-{seq}.pdf");
+            insert_first_page(page::scratch(&name, &bytes), current, actions);
         }
         Incoming::Text(text) => {
             // ui-text-exempt: a file name, never displayed
@@ -117,6 +117,22 @@ fn insert(app: &PdfcerApp, id: &str, incoming: Incoming, actions: &mut Vec<Actio
             }
         }
         other => nothing(other),
+    }
+}
+
+/// Page 1 of the PDF at `file`, inserted after page `current`.
+fn insert_first_page(
+    file: Result<std::path::PathBuf, String>,
+    current: usize,
+    actions: &mut Vec<Action>,
+) {
+    match file {
+        Ok(path) => actions.push(Action::Page(PageAction::InsertPagesFromFile {
+            path,
+            pages: vec![0],
+            position: InsertPosition::After(current),
+        })),
+        Err(why) => decline("unplaceable", OsPasteRefusal::NotAPage(why)),
     }
 }
 

@@ -132,6 +132,7 @@ fn cut_payload(
     dpi: f32,
 ) -> Result<(CopyPayload, Vectors), Refusal> {
     let render = |error: &dyn std::fmt::Display| Refusal::Render(error.to_string());
+    let pdf = bytes.clone();
     let cut = Document::from_bytes(bytes).map_err(|e| render(&e))?;
     let pages = pdfcer_core::page_tree::pages(&cut).map_err(|e| render(&e))?;
     let page = pages.first().ok_or(Refusal::NoPage)?;
@@ -153,7 +154,9 @@ fn cut_payload(
         glyphs_removed: report.glyphs_removed,
         notes: report.notes.clone(),
     };
-    Ok((raster_at(svg.svg, emf.emf, rendered.pixmap, dpi)?, vectors))
+    let mut payload = raster_at(svg.svg, emf.emf, rendered.pixmap, dpi)?;
+    payload.pdf = Some(pdf);
+    Ok((payload, vectors))
 }
 
 /// The picture formats alone, stamped with `dpi`.

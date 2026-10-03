@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **77 of 297** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `wanted` — a real gap — **78 of 298** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -75,6 +75,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Choose a layer when adding new content** — `paste_objects_on_layer`, `NewImage::on_layer`, `AddTextRequest::on_layer`, and a `layer` field on the markup options | **wanted; in the pin, not yet wired.** The add-text, add-image and markup-as-content verbs this shell already calls each gain `layer: Option<ObjId>`; `None` is the unlayered verb, and the add and its placement are one undo entry. The surface is a *Draw onto layer* chooser beside the Edit-mode add tools and Paste, defaulting to none, listing `read_layers`' layers plus New layer…. A layer the add cannot use is refused as `AddTextError::Layer`, and as `AddTextError::LayerNeedsSession` outside an edit session. |
 | **Put an annotation (including a widget) onto a layer** — `EditSession::set_annotation_layer` | **wanted; in the pin, not yet wired.** One `CommandKind::SetAnnotationLayer` undo entry returning an `AnnotationLayerChange` — `before`, `after`, `changed`, the annotation's `subtype`, and `popup_written` when its pop-up moved with it. The surface is the selection: a *Layer* chooser in Properties for a selected annotation or form field, listing the document's layers plus *none*, and the same item on the right-click menu. |
 | **Put existing page content onto a layer** — `EditSession::set_objects_layer` | **wanted; in the pin, not yet wired.** Planned by `plan_set_layer`; one `CommandKind::SetObjectsLayer` entry returning an `ObjectsLayerChange` — `moved`, `unchanged`, `binding_added` with the `property_name` bound, and `disclosures`. The surface is the same *Layer* chooser, offered for a selection of page objects; the engine refuses tagged content (`VectorEditError::LayerSectionHoldsTaggedContent`), spans crossing nesting (`VectorEditError::LayerSectionCrossesNesting`) or left unbalanced (`VectorEditError::LayerSpanUnbalanced`), and objects carrying their own `/OC`, and each refusal is an off-canvas sentence. |
+| **Place another PDF's page as page content, not as a stamp** — no verb; `EditSession::place_page_artwork` always writes a `/Stamp` (our `G100`) | **wanted, behind an engine ask.** <!--namesake:place_page_artwork--> the stamp verb is called; the missing verb is its page-content twin. A snapshot pasted back (`dispatch::ospaste::drawing`) and a dropped PDF placed as artwork both arrive as a stamp in Edit as well as Review, so in Edit the drawing selects, hides and deletes as markup and only flattening makes it part of the page. A picture pasted in Edit becomes content through `add_image`; the vector copy of the same region cannot. When the verb lands, Edit-mode paste of `application/pdf` calls it and Review keeps the stamp. |
 | Scale page contents to a target size ("resize page contents") … | **wanted; in the pin, not yet wired.** The Page size window changes the sheet and leaves the drawing where it was; `EditSession::scale_pages` scales the drawing onto the new sheet, uniformly, `fit` (pad, centred) or `fill` (cover, crop), rewriting every present page box and carrying annotations, widgets and link destinations with it. What it takes: a "Scale the drawing to the new size" choice in that window beside the existing box-only resize, with Fit/Fill; one undo step; the page refusal for a page carrying ce dimensions worded by name, not greyed. |
 
 ### Text
@@ -177,7 +178,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 297** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `blocked` — waiting on something named — **2 of 298** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -195,7 +196,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 297** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 298** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -206,7 +207,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **17 of 297** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `declined` — deliberately no surface — **17 of 298** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -249,7 +250,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **201 of 297** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **201 of 298** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -538,6 +539,7 @@ authoring is not among them: `EditSession::add_text_annotation` with
 The request O272's vector copy waits on.
 
 - **G099** — a page region cannot be exported with the viewer's state applied. Cropping a cloned `Page` hides the geometry outside the box but leaves it in the SVG, EMF or PDF. Answered by `pageops::extract_region` (its row under shipped); the snapshot copy is built on it.
+- **G100** — another PDF's page cannot be placed as page content; `place_page_artwork` always makes a stamp. A snapshot pasted back in Edit lands as a stamp meanwhile (its row under wanted).
 
 ## Measuring area
 

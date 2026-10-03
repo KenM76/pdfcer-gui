@@ -312,6 +312,9 @@ pub enum ModeRefusal {
     /// `edit.paste` with **another program's text** on the clipboard, in a mode
     /// that adds nothing to the page.
     PasteText,
+    /// `edit.paste` with **a drawing copied from a PDF** on the clipboard, in a
+    /// mode that authors no markup.
+    PasteDrawing,
     /// A picture **dropped** on the page, in a mode that does not change page
     /// content.
     DropPicture,
@@ -362,6 +365,9 @@ impl ModeRefusal {
             }
             Self::PasteText => {
                 "The clipboard holds text from another program, and this mode adds nothing to the page. Switch to Edit to paste it as page text, or to Review to paste it as a comment."
+            }
+            Self::PasteDrawing => {
+                "The clipboard holds a drawing copied from a PDF, and this mode adds nothing to the page. Switch to Review or Edit to paste it as a stamp."
             }
             Self::DropPicture => {
                 "A dropped picture goes onto the page, and this mode does not change what is on the page. Switch to Edit and drop it again."
@@ -483,6 +489,8 @@ mod tests {
             (ModeRefusal::PastePicture, review),
             (ModeRefusal::PasteText, edit),
             (ModeRefusal::PasteText, review),
+            (ModeRefusal::PasteDrawing, edit),
+            (ModeRefusal::PasteDrawing, review),
             (ModeRefusal::DropPicture, edit),
             (ModeRefusal::CutContent, edit),
             (ModeRefusal::CutMarkup, review),
@@ -507,6 +515,7 @@ mod tests {
             ModeRefusal::PasteField,
             ModeRefusal::PastePicture,
             ModeRefusal::PasteText,
+            ModeRefusal::PasteDrawing,
             ModeRefusal::DropPicture,
             ModeRefusal::CutContent,
             ModeRefusal::CutMarkup,

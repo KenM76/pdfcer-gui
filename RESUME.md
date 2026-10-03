@@ -93,14 +93,18 @@ shortcuts, is `settingspages::keys` over `shell::manifest::keys::apply`, which
 rebuilds the keymap from the loaded snapshot every time; a text draft reads its
 own chords from `canvas::textedit::draftkeys` (`ui-verify --check
 a_changed_shortcut_takes_effect_and_persists`). O272, the snapshot box, is
-being built in eight steps (`docs/modules/pdfcer-gui-base/prefs/snapshot.md`
+built in eight steps (`docs/modules/pdfcer-gui-base/prefs/snapshot.md`
 has S1, the resolution setting: `ui-verify --check
 the_snapshot_resolution_persists`; S2–S3, the box laid, moved, resized and
 cleared, is `canvas::snapshot`: `ui-verify --check
 a_snapshot_box_moves_resizes_and_clears`; S4, the marching outline:
 `ui-verify --check a_snapshot_box_outline_marches`; S5, Copy, is
 `clipboard::snapshot` on `pageops::extract_region`: `ui-verify --check
-a_snapshot_copy_is_cropped_at_the_set_dpi`). Next: S7, paste back.
+a_snapshot_copy_is_cropped_at_the_set_dpi`; S6–S7, the cut page on the
+clipboard as `application/pdf` and pasted back as a stamp, is
+`clippaste::drawing` and `dispatch::ospaste::drawing`: `ui-verify --check
+a_snapshot_pastes_back_as_a_drawing`). In Edit the paste is still a stamp,
+waiting on G100. Next: G078, then G076.
 
 **O263, Align and Distribute: all four stages built and driven** (Align,
 Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting
@@ -177,7 +181,7 @@ A Text-tool click on text arms the caret tool (`canvas::clicking`), because
 The engine pin carries
 G074, G077 and G081 (`UnsupportedCause` is data); steps 12 and 13 consume them.
 Rental-form sweep (`tmp` script, Ken's copy only): 32 of 32 line edits commit
-at pin `dd5747d1`. Next: the snapshot box (O272).
+at pin `dd5747d1`. Next: G078, then G076.
 
 **Since that release, unpublished:** title bars follow the light or dark
 theme (O281, `app::caption::sync` over `native_window::set_dark_captions`;

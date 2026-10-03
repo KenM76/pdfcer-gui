@@ -7,7 +7,10 @@
 //! [`paste`] places what it read as one undoable edit. A picture lands at its
 //! natural size, centred on the pointer (or the view centre), kept wholly on
 //! the page; a mode that only authors markup places it as a stamp, as does
-//! [`paste_stamp`] in any mode that authors markup. Text becomes page text in
+//! [`paste_stamp`] in any mode that authors markup. A drawing (a PDF another
+//! copy placed) lands as a stamp its crop box's size in any mode that authors
+//! markup, Edit included: the engine places a PDF page only as stamp artwork.
+//! Text becomes page text in
 //! a mode that edits content and a
 //! `/FreeText` comment in one that only authors markup;
 //! `clippaste::textbox` holds the geometry.
@@ -55,6 +58,7 @@ pub fn paste(
 ) {
     match incoming {
         Incoming::Image { image, format } => picture(app, ctx, id, *image, format, actions),
+        Incoming::Pdf { bytes, size_pt } => drawing(app, ctx, id, &bytes, size_pt, actions),
         Incoming::Text(text) => words(app, ctx, id, &text, actions),
         Incoming::Unreadable(why) => decline("unreadable", OsPasteRefusal::Unreadable(why)),
         Incoming::Nothing => decline("nothing", OsPasteRefusal::Nothing),
@@ -130,6 +134,9 @@ fn picture(
 pub fn paste_stamp(app: &PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut Vec<Action>) {
     let (image, format) = match read() {
         Incoming::Image { image, format } => (image, format),
+        Incoming::Pdf { bytes, size_pt } => {
+            return drawing(app, ctx, id, &bytes, size_pt, actions);
+        }
         Incoming::Unreadable(why) => return decline("unreadable", OsPasteRefusal::Unreadable(why)),
         Incoming::Text(_) | Incoming::Nothing => {
             return decline("no-picture", OsPasteRefusal::NoPicture);
@@ -153,7 +160,41 @@ fn stamp(page: usize, rect: Rect, image: &ImportedImage, format: &str, actions: 
     };
     // ui-text-exempt: diagnostic trace, never displayed in the UI
     pasted(&format!("kind=image format={format} as=stamp"), page, rect);
-    actions.push(Action::CommitTextAnnot {
+    let label = crate::text::ospaste::pasted_picture();
+    actions.push(stamp_action(page, rect, file, label));
+}
+
+/// A drawing as a stamp its own size, centred on the pointer or the view.
+fn drawing(
+    app: &PdfcerApp,
+    ctx: &egui::Context,
+    id: &str,
+    bytes: &[u8],
+    size_pt: (f64, f64),
+    actions: &mut Vec<Action>,
+) {
+    if !app.capabilities().author_markup {
+        return refuse(id, ModeRefusal::PasteDrawing);
+    }
+    let Some((page, at, crop)) = target(app, ctx) else {
+        return;
+    };
+    let rect = clippaste::rect_at(at, size_pt, crop);
+    // ui-text-exempt: a file name, never displayed
+    let name = format!("pasted-drawing-{}.pdf", clippaste::sequence());
+    let file = match clippaste::page::scratch(&name, bytes) {
+        Ok(file) => file,
+        Err(why) => return decline("unplaceable", OsPasteRefusal::Unplaceable(why)),
+    };
+    // ui-text-exempt: diagnostic trace, never displayed in the UI
+    pasted("kind=pdf as=stamp", page, rect);
+    let label = crate::text::ospaste::pasted_drawing();
+    actions.push(stamp_action(page, rect, file, label));
+}
+
+/// Page 1 of the PDF at `file` as a custom stamp named `label` filling `rect`.
+fn stamp_action(page: usize, rect: Rect, file: std::path::PathBuf, label: &str) -> Action {
+    Action::CommitTextAnnot {
         page,
         kind: crate::canvas::textannot::TextAnnotKind::Stamp,
         rect,
@@ -162,13 +203,13 @@ fn stamp(page: usize, rect: Rect, image: &ImportedImage, format: &str, actions: 
         stamp_size: crate::canvas::textannot::DEFAULT_STAMP_SIZE,
         icon: crate::canvas::textannot::DEFAULT_STICKY_ICON,
         custom: Some(crate::stamps::library::CustomStamp {
-            label: crate::text::ospaste::pasted_picture().to_owned(),
+            label: label.to_owned(),
             category: String::new(),
             file,
             page_index: 0,
             dynamic: false,
         }),
-    });
+    }
 }
 
 /// `image`'s one-page PDF, written to the temporary folder for the stamp
