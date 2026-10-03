@@ -1100,6 +1100,8 @@ pub mod bookmark_edit;
 pub mod settings_nav;
 /// A shortcut changed in Settings reaches the keys and survives a restart.
 pub mod shortcut_change;
+/// A snapshot box's outline marches and the page inside it holds still.
+pub mod snapshot_ants;
 /// A snapshot box stays on its page area through a zoom.
 pub mod snapshot_box;
 /// The snapshot resolution typed in Settings survives a restart.

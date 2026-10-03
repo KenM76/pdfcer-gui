@@ -11,6 +11,8 @@ pub fn overlays_for(theme: &Theme) -> Overlays {
     Overlays::new()
         .with(crate::snapmark::SNAP_INDICATOR_ROLE, theme.palette.notice)
         .with(crate::snapmark::SNAP_COMMITTED_ROLE, theme.palette.accent)
+        .with(crate::snapshotbox::ANTS_INK_ROLE, theme.palette.accent)
+        .with(crate::snapshotbox::ANTS_GAP_ROLE, theme.palette.on_accent)
 }
 
 /// Publish the roles for this frame.
@@ -42,6 +44,24 @@ mod tests {
         }
     }
 
+    /// The snapshot box's dashes and the line between them differ, on every
+    /// preset; equal, the outline would not visibly move.
+    #[test]
+    fn the_snapshot_dashes_and_their_gaps_are_distinct_on_every_preset() {
+        for preset in Preset::ALL {
+            let overlays = overlays_for(&Theme::new(*preset));
+            assert!(
+                overlays
+                    .assert_distinct(&[
+                        crate::snapshotbox::ANTS_INK_ROLE,
+                        crate::snapshotbox::ANTS_GAP_ROLE,
+                    ])
+                    .is_ok(),
+                "{preset:?} draws the snapshot box's dashes in the colour of their gaps"
+            );
+        }
+    }
+
     /// Every role the canvas asks for is defined, on every preset.
     #[test]
     fn every_role_the_canvas_reads_is_defined() {
@@ -50,6 +70,8 @@ mod tests {
             for role in [
                 crate::snapmark::SNAP_INDICATOR_ROLE,
                 crate::snapmark::SNAP_COMMITTED_ROLE,
+                crate::snapshotbox::ANTS_INK_ROLE,
+                crate::snapshotbox::ANTS_GAP_ROLE,
             ] {
                 assert!(
                     overlays.get(role).is_some(),

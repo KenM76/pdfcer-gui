@@ -52,8 +52,16 @@ because the condition is a property of the state, not of any one exit.
 `paint` runs after the marquee, on every page drawn. It converts the box's
 corners back with `viewer::pdf_space_to_canvas` and `PageMapping::rect_to_screen`
 — the same two steps every page-space overlay takes — so the box follows the
-page through zoom and scroll by construction. It strokes 1 px in the theme's
-canvas selection ink and declares the screen rect as region `canvas.snapshot`.
+page through zoom and scroll by construction. It declares the screen rect as
+region `canvas.snapshot`.
+
+The outline marches: a solid 1 px line in the `snapshot_ants_gap` role, then
+4 pt dashes with 4 pt gaps over it in `snapshot_ants_ink`, offset by
+`ants_offset` — 16 pt a second, wrapping every 8 pt, so the pattern repeats
+every half second. While a box is drawn, `paint` asks for a repaint every
+66 ms; when no box is drawn, nothing does, so an idle window stays idle. The
+eight grips are drawn with `overlay::draw_grips`, the grips every other
+object shows.
 
 The box is a pre-commit affordance (R8b): it marks a choice the operator is
 making, not applied content, and a save never contains it.

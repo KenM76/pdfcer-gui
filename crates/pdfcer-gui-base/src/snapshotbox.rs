@@ -8,6 +8,11 @@
 
 use pdfcer_core::page_tree::Rect;
 
+/// The overlay role the box's moving dashes are drawn in.
+pub const ANTS_INK_ROLE: &str = "snapshot_ants_ink"; // ui-text-exempt: a theme role key, never displayed
+/// The overlay role of the solid line under the dashes, which shows between them.
+pub const ANTS_GAP_ROLE: &str = "snapshot_ants_gap"; // ui-text-exempt: a theme role key, never displayed
+
 /// A snapshot box: a page and a rectangle on it, in PDF points.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct SnapshotBox {

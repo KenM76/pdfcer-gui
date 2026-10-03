@@ -41,6 +41,8 @@ the mapping is the argument:
 | role | palette entry | why that one |
 |---|---|---|
 | `preview` | `notice` | *"Something is worth knowing and nothing is broken"* — which is precisely what a snap marker is. It is a **proposal**: pdfcer saying *here is where I think you are pointing*, before any click has committed anything |
+| `snapshot_ants_ink` | `accent` | the snapshot box's moving dashes: a selection the operator is making, in the selection colour |
+| `snapshot_ants_gap` | `on_accent` | the line between the dashes; `on_accent` is the palette's contrast to `accent`, so the dashes read on any page |
 | `dimension_selected` | `accent` | what every other selection in this application is drawn in. A committed ce dimension that is selected is selected, and inventing a second selection colour for one object kind would be a cue that means nothing anywhere else |
 
 ## The pair must stay DISTINCT, and that is the test this module owes

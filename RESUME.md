@@ -97,7 +97,9 @@ being built in eight steps (`docs/modules/pdfcer-gui-base/prefs/snapshot.md`
 has S1, the resolution setting: `ui-verify --check
 the_snapshot_resolution_persists`; S2–S3, the box laid, moved, resized and
 cleared, is `canvas::snapshot`: `ui-verify --check
-a_snapshot_box_moves_resizes_and_clears`). Next: S4, the moving outline.
+a_snapshot_box_moves_resizes_and_clears`; S4, the marching outline:
+`ui-verify --check a_snapshot_box_outline_marches`). Next: S5, Copy, on
+`pageops::extract_region` (G099), which needs the pin moved past v0.73.0.
 
 **O263, Align and Distribute: all four stages built and driven** (Align,
 Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting

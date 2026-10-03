@@ -13,9 +13,11 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/snapshot.md`.
 
-use egui::{CornerRadius, Painter, Pos2, Rect, Stroke, StrokeKind, Vec2};
+use std::time::Duration;
+
+use egui::{CornerRadius, Painter, Pos2, Rect, Shape, Stroke, StrokeKind, Vec2};
 use pdfcer_gui_base::handles::{Grip, GripSet, grip_at};
-use pdfcer_gui_base::snapshotbox::SnapshotBox;
+use pdfcer_gui_base::snapshotbox::{ANTS_GAP_ROLE, ANTS_INK_ROLE, SnapshotBox};
 
 use crate::app::state::OpenDoc;
 use crate::canvas::gesture::Phase;
@@ -26,6 +28,13 @@ use crate::viewer;
 
 /// The box's screen rect, declared to the trace.
 pub const SNAPSHOT_REGION: &str = "canvas.snapshot"; // ui-text-exempt: trace region name, never displayed
+
+/// One dash and one gap of the moving outline, in screen points.
+const DASH_PT: f32 = 4.0;
+/// How fast the dashes move along the outline, in screen points a second.
+const MARCH_PT_PER_S: f64 = 16.0;
+/// The repaint interval while a box is drawn, about 15 frames a second.
+const MARCH_FRAME: Duration = Duration::from_millis(66);
 
 const GRAB_MEMORY_KEY: &str = "pdfcer-canvas-snapshot-grab"; // ui-text-exempt: internal memory id, never displayed
 
@@ -228,19 +237,50 @@ pub fn screen_rect(doc: &OpenDoc, page_index: usize, map: &PageMapping) -> Optio
     canvas_rect(doc, page_index).map(|r| map.rect_to_screen(r))
 }
 
-/// Paint the box on the page being drawn, and declare where it landed.
+/// Paint the box on the page being drawn as a marching outline with grips,
+/// declare where it landed, and ask for the next frame of the march.
 pub fn paint(painter: &Painter, doc: &OpenDoc, page_index: usize, map: &PageMapping) {
     let Some(screen) = screen_rect(doc, page_index, map) else {
         return;
     };
-    let ink = egui_shell::theme::Theme::canvas_selection_ink(painter.ctx());
+    let ctx = painter.ctx();
+    let roles = egui_shell::theme::Overlays::of(ctx);
+    let visuals = ctx.global_style().visuals.clone();
+    let ink = roles
+        .get(ANTS_INK_ROLE)
+        .unwrap_or_else(|| egui_shell::theme::Theme::canvas_selection_ink(ctx));
+    let gap = roles.get(ANTS_GAP_ROLE).unwrap_or(visuals.extreme_bg_color);
     painter.rect_stroke(
         screen,
         CornerRadius::ZERO,
-        Stroke::new(1.0, ink),
+        Stroke::new(1.0, gap),
         StrokeKind::Middle,
     );
+    let ring = [
+        screen.left_top(),
+        screen.right_top(),
+        screen.right_bottom(),
+        screen.left_bottom(),
+        screen.left_top(),
+    ];
+    let offset = ants_offset(ctx.input(|i| i.time));
+    painter.extend(Shape::dashed_line_with_offset(
+        &ring,
+        Stroke::new(1.0, ink),
+        &[DASH_PT],
+        &[DASH_PT],
+        offset,
+    ));
+    crate::canvas::overlay::draw_grips(painter, &visuals, screen, GripSet::scale_only());
     crate::diag::ui_rect(SNAPSHOT_REGION, screen);
+    ctx.request_repaint_after(MARCH_FRAME);
+}
+
+/// How far along one dash-and-gap period the dashes have moved at `time`
+/// seconds, in screen points.
+#[allow(clippy::cast_possible_truncation)] // ui-text-exempt: a clippy lint name, never displayed
+fn ants_offset(time: f64) -> f32 {
+    (time * MARCH_PT_PER_S).rem_euclid(f64::from(2.0 * DASH_PT)) as f32
 }
 
 #[cfg(test)]
@@ -266,6 +306,14 @@ mod tests {
         assert_eq!((east.min, east.max), (r().min, Pos2::new(310.0, 200.0)));
         let north = reshaped(Grip::North, r(), d);
         assert_eq!((north.min, north.max), (Pos2::new(100.0, 120.0), r().max));
+    }
+
+    #[test]
+    fn the_dashes_advance_and_wrap_within_one_period() {
+        assert!(ants_offset(0.0).abs() < f32::EPSILON);
+        assert!((ants_offset(0.125) - 2.0).abs() < 1e-4);
+        assert!(ants_offset(0.5).abs() < 1e-4);
+        assert!((0.0..8.0).contains(&ants_offset(1234.567)));
     }
 
     #[test]
